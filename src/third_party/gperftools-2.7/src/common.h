@@ -77,7 +77,7 @@ static const size_t kPageShift  = 15;
 #elif defined(TCMALLOC_64K_PAGES)
 static const size_t kPageShift  = 16;
 #else
-static const size_t kPageShift  = 13;
+static const size_t kPageShift  = 12;
 #endif
 
 static const size_t kClassSizesMax = 96;
@@ -85,7 +85,7 @@ static const size_t kClassSizesMax = 96;
 static const size_t kMaxThreadCacheSize = 4 << 20;
 
 static const size_t kPageSize   = 1 << kPageShift;
-static const size_t kMaxSize    = 256 * 1024;
+static const size_t kMaxSize    = 16 * 1024;
 static const size_t kAlignment  = 8;
 // For all span-lengths <= kMaxPages we keep an exact-size list in PageHeap.
 static const size_t kMaxPages = 1 << (20 - kPageShift);
