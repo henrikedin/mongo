@@ -60,7 +60,7 @@ public:
 
     void endAllSessions(transport::Session::TagMask tags) final;
 
-    std::size_t getNumberOfConnections() const;
+    Stats sessionStats() const final;
 
 private:
     using SSMList = stdx::list<std::shared_ptr<ServiceStateMachine>>;
@@ -71,6 +71,8 @@ private:
 
     mutable stdx::mutex _sessionsMutex;
     SSMList _sessions;
+
+    AtomicWord<size_t> _createdConnections{0};
 };
 
 }  // namespace mongo

@@ -83,8 +83,6 @@ public:
     Status wait(Ticket&& ticket) override;
     void asyncWait(Ticket&& ticket, TicketCallback callback) override;
 
-    Stats sessionStats() override;
-
     void end(const SessionHandle& session) override;
 
     void shutdown() override;

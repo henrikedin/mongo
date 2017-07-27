@@ -76,6 +76,10 @@ public:
 
     void endAllSessions(transport::Session::TagMask tags) override {}
 
+    Stats sessionStats() const override {
+        return Stats();
+    }
+
     void setUassertInHandler() {
         _uassertInHandler = true;
     }

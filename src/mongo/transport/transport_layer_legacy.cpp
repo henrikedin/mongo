@@ -153,15 +153,6 @@ Ticket TransportLayerLegacy::sourceMessage(const SessionHandle& session,
         stdx::make_unique<LegacyTicket>(std::move(legacySession), expiration, std::move(sourceCb)));
 }
 
-TransportLayer::Stats TransportLayerLegacy::sessionStats() {
-    Stats stats;
-    stats.numOpenSessions = _currentConnections.load();
-    stats.numAvailableSessions = Listener::globalTicketHolder.available();
-    stats.numCreatedSessions = Listener::globalConnectionNumber.load();
-
-    return stats;
-}
-
 Ticket TransportLayerLegacy::sinkMessage(const SessionHandle& session,
                                          const Message& message,
                                          Date_t expiration) {

@@ -61,6 +61,10 @@ public:
         _sessions.clear();
     }
 
+    Stats sessionStats() const override {
+        return Stats();
+    }
+
     transport::TransportLayerLegacy* tll = nullptr;
 
     std::list<transport::SessionHandle> _sessions;

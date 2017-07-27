@@ -96,6 +96,10 @@ public:
         MONGO_UNREACHABLE;
     }
 
+    Stats sessionStats() const override {
+        return Stats();
+    }
+
     void setReplyDelay(Milliseconds delay) {
         _replyDelay = delay;
     }

@@ -56,17 +56,6 @@ public:
     ASIOSession(TransportLayerASIO* tl, GenericSocket socket)
         : _socket(std::move(socket)), _tl(tl) {}
 
-    virtual ~ASIOSession() {
-        if (_didPostAcceptSetup) {
-            // This is incremented in TransportLayerASIO::_acceptConnection if there are less than
-            // maxConns connections already established. A call to postAcceptSetup means that the
-            // session is valid and will be handed off to the ServiceEntryPoint.
-            //
-            // We decrement this here to keep the counters in the TL accurate.
-            _tl->_currentConnections.subtractAndFetch(1);
-        }
-    }
-
     TransportLayer* getTransportLayer() const override {
         return _tl;
     }
@@ -149,8 +138,6 @@ public:
         if (ec) {
             LOG(3) << "Unable to get remote endpoint address: " << ec.message();
         }
-
-        _didPostAcceptSetup = true;
     }
 
     template <typename MutableBufferSequence, typename CompleteHandler>
@@ -341,7 +328,6 @@ private:
 #endif
 
     TransportLayerASIO* const _tl;
-    bool _didPostAcceptSetup = false;
 };
 
 }  // namespace transport

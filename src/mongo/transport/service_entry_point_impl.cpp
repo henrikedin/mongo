@@ -56,15 +56,48 @@ void ServiceEntryPointImpl::startSession(transport::SessionHandle session) {
     SSMListIterator ssmIt;
 
     const auto sync = (_svcCtx->getServiceExecutor() == nullptr);
+    const bool quiet = serverGlobalParams.quiet.load();
+    size_t connection_count;
+
     auto ssm = ServiceStateMachine::create(_svcCtx, std::move(session), sync);
     {
-        stdx::lock_guard<decltype(_sessionsMutex)> lk(_sessionsMutex);
-        ssmIt = _sessions.emplace(_sessions.begin(), ssm);
+        {
+            stdx::lock_guard<decltype(_sessionsMutex)> lk(_sessionsMutex);
+            connection_count = _sessions.size();
+            if (connection_count < serverGlobalParams.maxConns) {
+                ssmIt = _sessions.emplace(_sessions.begin(), ssm);
+            }
+        }
+        // did we successfully add a connection above?
+        if (connection_count < serverGlobalParams.maxConns) {
+            ++connection_count;
+        } else {
+            if (!quiet) {
+                log() << "connection refused because too many open connections: "
+                      << connection_count;
+            }
+            return;
+        }
+    }
+
+    _createdConnections.addAndFetch(1);
+    if (!quiet) {
+        const auto word = (connection_count == 1 ? " connection"_sd : " connections"_sd);
+        log() << "connection accepted from " << (*ssmIt)->_session()->remote() << " #"
+              << (*ssmIt)->_session()->id() << " (" << connection_count << word << " now open)";
     }
 
     ssm->setCleanupHook([this, ssmIt] {
-        stdx::lock_guard<decltype(_sessionsMutex)> lk(_sessionsMutex);
-        _sessions.erase(ssmIt);
+        size_t connection_count;
+        auto remote = (*ssmIt)->_session()->remote();
+        {
+            stdx::lock_guard<decltype(_sessionsMutex)> lk(_sessionsMutex);
+            _sessions.erase(ssmIt);
+            connection_count = _sessions.size();
+        }
+        const char* word = (connection_count == 1 ? " connection" : " connections");
+        log() << "end connection " << remote << " (" << connection_count << word << " now open)";
+
     });
 
     if (!sync) {
@@ -122,9 +155,19 @@ void ServiceEntryPointImpl::endAllSessions(transport::Session::TagMask tags) {
     }
 }
 
-std::size_t ServiceEntryPointImpl::getNumberOfConnections() const {
-    stdx::unique_lock<decltype(_sessionsMutex)> lk(_sessionsMutex);
-    return _sessions.size();
+ServiceEntryPoint::Stats ServiceEntryPointImpl::sessionStats() const {
+
+    size_t sessionCount;
+    {
+        stdx::lock_guard<decltype(_sessionsMutex)> lk(_sessionsMutex);
+        sessionCount = _sessions.size();
+    }
+
+    ServiceEntryPoint::Stats ret;
+    ret.numOpenSessions = sessionCount;
+    ret.numCreatedSessions = _createdConnections.load();
+    ret.numAvailableSessions = serverGlobalParams.maxConns - sessionCount;
+    return ret;
 }
 
 }  // namespace mongo
