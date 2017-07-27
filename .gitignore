@@ -153,3 +153,7 @@ CMakeLists.txt
 DriverInclude.wxs
 
 compile_commands.json
+/mongodb.VC.db
+/mongodb.VC.VC.opendb
+/mongodb.vcxproj.filters
+/log.txt

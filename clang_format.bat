@@ -1,0 +1,1 @@
+python buildscripts/clang_format.py format
