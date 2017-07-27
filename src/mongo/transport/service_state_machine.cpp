@@ -32,12 +32,13 @@
 
 #include "mongo/transport/service_state_machine.h"
 
+#include "mongo/base/checked_cast.h"
 #include "mongo/db/client.h"
 #include "mongo/db/dbmessage.h"
 #include "mongo/db/stats/counters.h"
 #include "mongo/stdx/memory.h"
 #include "mongo/transport/message_compressor_manager.h"
-#include "mongo/transport/service_entry_point.h"
+#include "mongo/transport/service_entry_point_impl.h"
 #include "mongo/transport/session.h"
 #include "mongo/transport/ticket.h"
 #include "mongo/transport/transport_layer.h"
@@ -436,7 +437,10 @@ void ServiceStateMachine::cleanupSession() {
     Client::releaseCurrent();
 
     if (!serverGlobalParams.quiet.load()) {
-        auto conns = tl->sessionStats().numOpenSessions;
+        // do we need to log here?
+
+        auto sep_impl = checked_cast<ServiceEntryPointImpl*>(_sep);
+        auto conns = sep_impl->sessionStats().numOpenSessions;
         const char* word = (conns == 1 ? " connection" : " connections");
         log() << "end connection " << remote << " (" << conns << word << " now open)";
     }

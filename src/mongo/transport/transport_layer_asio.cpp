@@ -127,8 +127,8 @@ void TransportLayerASIO::asyncWait(Ticket&& ticket, TicketCallback callback) {
           ownedASIOTicket = std::move(ownedASIOTicket) ](Status status) { callback(status); });
 }
 
-TransportLayer::Stats TransportLayerASIO::sessionStats() {
-    TransportLayer::Stats ret;
+Stats TransportLayerASIO::sessionStats() const {
+    Stats ret;
     auto sessionCount = _currentConnections.load();
     ret.numOpenSessions = sessionCount;
     ret.numCreatedSessions = _createdConnections.load();

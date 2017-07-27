@@ -47,6 +47,8 @@ class ServiceEntryPoint {
 public:
     virtual ~ServiceEntryPoint() = default;
 
+    virtual void setTransportLayer(transport::TransportLayer* transport_layer) = 0;
+
     /**
      * Begin running a new Session. This method returns immediately.
      */

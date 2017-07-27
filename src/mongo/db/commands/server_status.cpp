@@ -32,6 +32,7 @@
 
 #include "mongo/platform/basic.h"
 
+#include "mongo/base/checked_cast.h"
 #include "mongo/config.h"
 #include "mongo/db/auth/action_set.h"
 #include "mongo/db/auth/action_type.h"
@@ -48,6 +49,7 @@
 #include "mongo/db/stats/counters.h"
 #include "mongo/platform/process_id.h"
 #include "mongo/transport/message_compressor_registry.h"
+#include "mongo/transport/service_entry_point_impl.h"
 #include "mongo/transport/transport_layer.h"
 #include "mongo/util/log.h"
 #include "mongo/util/net/hostname_canonicalization.h"
@@ -232,10 +234,14 @@ public:
 
     BSONObj generateSection(OperationContext* opCtx, const BSONElement& configElement) const {
         BSONObjBuilder bb;
-        if (!opCtx->getServiceContext()->getTransportLayer()) {
+
+        ServiceEntryPoint* service_entry_point = opCtx->getServiceContext()->getServiceEntryPoint();
+        if (!service_entry_point) {
             return bb.obj();
         }
-        auto stats = opCtx->getServiceContext()->getTransportLayer()->sessionStats();
+
+        auto service_entry_point_impl = checked_cast<ServiceEntryPointImpl*>(service_entry_point);
+        auto stats = service_entry_point_impl->sessionStats();
         bb.append("current", static_cast<int>(stats.numOpenSessions));
         bb.append("available", static_cast<int>(stats.numAvailableSessions));
         bb.append("totalCreated", static_cast<int>(stats.numCreatedSessions));

@@ -34,6 +34,7 @@
 #include "mongo/db/server_options.h"
 #include "mongo/db/service_context.h"
 #include "mongo/stdx/memory.h"
+#include "mongo/transport/service_entry_point.h"
 #include "mongo/transport/service_executor_fixed.h"
 #include "mongo/transport/session.h"
 #include "mongo/transport/transport_layer_asio.h"
@@ -70,7 +71,7 @@ void TransportLayerManager::asyncWait(Ticket&& ticket, TicketCallback callback) 
 }
 
 template <typename Callable>
-void TransportLayerManager::_foreach(Callable&& cb) {
+void TransportLayerManager::_foreach(Callable&& cb) const {
     {
         stdx::lock_guard<stdx::mutex> lk(_tlsMutex);
         for (auto&& tl : _tls) {
@@ -79,7 +80,7 @@ void TransportLayerManager::_foreach(Callable&& cb) {
     }
 }
 
-TransportLayer::Stats TransportLayerManager::sessionStats() {
+Stats TransportLayerManager::sessionStats() const {
     Stats stats;
 
     _foreach([&](TransportLayer* tl) {
@@ -166,7 +167,9 @@ std::unique_ptr<TransportLayer> TransportLayerManager::createWithConfig(
 
     std::vector<std::unique_ptr<TransportLayer>> retVector;
     retVector.emplace_back(std::move(transportLayer));
-    return stdx::make_unique<TransportLayerManager>(std::move(retVector));
+    auto transport_layer_manager = stdx::make_unique<TransportLayerManager>(std::move(retVector));
+    sep->setTransportLayer(transport_layer_manager.get());
+    return std::move(transport_layer_manager);
 }
 
 }  // namespace transport

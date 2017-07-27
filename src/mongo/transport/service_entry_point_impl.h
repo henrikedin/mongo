@@ -35,12 +35,14 @@
 #include "mongo/stdx/mutex.h"
 #include "mongo/transport/service_entry_point.h"
 #include "mongo/transport/service_state_machine.h"
+#include "mongo/transport/stats.h"
 
 namespace mongo {
 class ServiceContext;
 
 namespace transport {
 class Session;
+class TransportLayer;
 }  // namespace transport
 
 /**
@@ -56,17 +58,22 @@ class ServiceEntryPointImpl : public ServiceEntryPoint {
 public:
     explicit ServiceEntryPointImpl(ServiceContext* svcCtx) : _svcCtx(svcCtx) {}
 
+    void setTransportLayer(transport::TransportLayer* transport_layer) final {
+        _transportLayer = transport_layer;
+    }
+
     void startSession(transport::SessionHandle session) final;
 
     void endAllSessions(transport::Session::TagMask tags) final;
 
-    std::size_t getNumberOfConnections() const;
+    transport::Stats sessionStats() const;
 
 private:
     using SSMList = stdx::list<std::shared_ptr<ServiceStateMachine>>;
     using SSMListIterator = SSMList::iterator;
 
     ServiceContext* const _svcCtx;
+    const transport::TransportLayer* _transportLayer;
     AtomicWord<std::size_t> _nWorkers;
 
     mutable stdx::mutex _sessionsMutex;

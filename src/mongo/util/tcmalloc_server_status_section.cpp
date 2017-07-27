@@ -36,9 +36,11 @@
 #include <gperftools/malloc_extension.h>
 #include <valgrind/valgrind.h>
 
+#include "mongo/base/checked_cast.h"
 #include "mongo/base/init.h"
 #include "mongo/db/commands/server_status.h"
 #include "mongo/db/service_context.h"
+#include "mongo/transport/service_entry_point_impl.h"
 #include "mongo/transport/transport_layer.h"
 #include "mongo/util/log.h"
 #include "mongo/util/net/listen.h"
@@ -60,8 +62,9 @@ stdx::mutex tcmallocCleanupLock;
  *  favorable times. Ideally would do some milder cleanup or scavenge...
  */
 void threadStateChange() {
-    if (getGlobalServiceContext()->getTransportLayer()->sessionStats().numOpenSessions <=
-        kManyClients)
+    auto sep_impl =
+        checked_cast<ServiceEntryPointImpl*>(getGlobalServiceContext()->getServiceEntryPoint());
+    if (sep_impl->sessionStats().numOpenSessions <= kManyClients)
         return;
 
 #if MONGO_HAVE_GPERFTOOLS_GET_THREAD_CACHE_SIZE

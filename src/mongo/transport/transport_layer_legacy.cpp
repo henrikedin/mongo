@@ -153,7 +153,7 @@ Ticket TransportLayerLegacy::sourceMessage(const SessionHandle& session,
         stdx::make_unique<LegacyTicket>(std::move(legacySession), expiration, std::move(sourceCb)));
 }
 
-TransportLayer::Stats TransportLayerLegacy::sessionStats() {
+Stats TransportLayerLegacy::sessionStats() const {
     Stats stats;
     stats.numOpenSessions = _currentConnections.load();
     stats.numAvailableSessions = Listener::globalTicketHolder.available();

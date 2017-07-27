@@ -31,6 +31,7 @@
 #include "mongo/base/status.h"
 #include "mongo/stdx/functional.h"
 #include "mongo/transport/session.h"
+#include "mongo/transport/stats.h"
 #include "mongo/transport/ticket.h"
 #include "mongo/util/net/message.h"
 #include "mongo/util/time_support.h"
@@ -63,29 +64,6 @@ public:
     static const Status TicketSessionClosedStatus;
 
     friend class Session;
-
-    /**
-     * Stats for sessions open in the Transport Layer.
-     */
-    struct Stats {
-        /**
-         * Returns the number of sessions currently open in the transport layer.
-         */
-        size_t numOpenSessions = 0;
-
-        /**
-         * Returns the total number of sessions that have ever been created by this TransportLayer.
-         */
-        size_t numCreatedSessions = 0;
-
-        /**
-         * Returns the number of available sessions we could still open. Only relevant
-         * when we are operating under a transport::Session limit (for example, in the
-         * legacy implementation, we respect a maximum number of connections). If there
-         * is no session limit, returns std::numeric_limits<int>::max().
-         */
-        size_t numAvailableSessions = 0;
-    };
 
     virtual ~TransportLayer() = default;
 
@@ -148,9 +126,9 @@ public:
     virtual void asyncWait(Ticket&& ticket, TicketCallback callback) = 0;
 
     /**
-     * Returns the number of sessions currently open in the transport layer.
-     */
-    virtual Stats sessionStats() = 0;
+    * Returns the number of sessions currently open in the transport layer.
+    */
+    virtual Stats sessionStats() const = 0;
 
     /**
      * End the given Session. Tickets for this Session that have already been

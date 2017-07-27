@@ -38,6 +38,7 @@
 #include "mongo/transport/service_entry_point_utils.h"
 #include "mongo/transport/service_state_machine.h"
 #include "mongo/transport/session.h"
+#include "mongo/transport/transport_layer.h"
 #include "mongo/util/log.h"
 #include "mongo/util/processinfo.h"
 #include "mongo/util/scopeguard.h"
@@ -129,9 +130,11 @@ void ServiceEntryPointImpl::endAllSessions(transport::Session::TagMask tags) {
     }
 }
 
-std::size_t ServiceEntryPointImpl::getNumberOfConnections() const {
-    stdx::unique_lock<decltype(_sessionsMutex)> lk(_sessionsMutex);
-    return _sessions.size();
+transport::Stats ServiceEntryPointImpl::sessionStats() const {
+    if (_transportLayer)
+        return _transportLayer->sessionStats();
+    else
+        return transport::Stats();
 }
 
 }  // namespace mongo

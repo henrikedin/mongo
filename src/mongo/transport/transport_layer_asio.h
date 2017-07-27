@@ -102,7 +102,7 @@ public:
 
     void asyncWait(Ticket&& ticket, TicketCallback callback) final;
 
-    Stats sessionStats() final;
+    Stats sessionStats() const final;
 
     void end(const SessionHandle& session) final;
 
