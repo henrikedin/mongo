@@ -50,9 +50,6 @@ class NamespaceString;
  */
 class BatchedCommandRequest {
 public:
-    // Maximum number of write ops supported per batch
-    static const size_t kMaxWriteBatchSize;
-
     enum BatchType { BatchType_Insert, BatchType_Update, BatchType_Delete, BatchType_Unknown };
 
     BatchedCommandRequest(BatchType batchType);
@@ -79,23 +76,26 @@ public:
     void parseRequest(const OpMsgRequest& request);
     std::string toString() const;
 
-    //
-    // Batch type accessors
-    //
-
     BatchType getBatchType() const {
         return _batchType;
     }
 
-    BatchedInsertRequest* getInsertRequest() const;
-    BatchedUpdateRequest* getUpdateRequest() const;
-    BatchedDeleteRequest* getDeleteRequest() const;
+    auto getInsertRequest() const {
+        return _insertReq.get();
+    }
+
+    auto getUpdateRequest() const {
+        return _updateReq.get();
+    }
+
+    auto getDeleteRequest() const {
+        return _deleteReq.get();
+    }
 
     // Index creation is also an insert, but a weird one.
     bool isInsertIndexRequest() const;
-    bool isValidIndexRequest(std::string* errMsg) const;
 
-    const NamespaceString& getTargetingNSS() const;
+    NamespaceString getTargetingNSS() const;
 
     //
     // individual field accessors

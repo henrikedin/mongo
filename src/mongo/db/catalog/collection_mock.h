@@ -86,6 +86,10 @@ public:
         std::abort();
     }
 
+    void refreshUUID(OperationContext* opCtx) {
+        std::abort();
+    }
+
     const IndexCatalog* getIndexCatalog() const {
         std::abort();
     }
@@ -125,6 +129,7 @@ public:
     }
 
     void deleteDocument(OperationContext* opCtx,
+                        StmtId stmtId,
                         const RecordId& loc,
                         OpDebug* opDebug,
                         bool fromMigrate,

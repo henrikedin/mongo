@@ -108,7 +108,7 @@ public:
 
     virtual void update(const std::string& ns, Query query, BSONObj obj, int flags);
 
-    virtual void killCursor(long long cursorID);
+    virtual void killCursor(const NamespaceString& ns, long long cursorID);
 
     // ---- access raw connections ----
 
@@ -132,7 +132,7 @@ public:
     // ---- callback pieces -------
 
     virtual void say(Message& toSend, bool isRetry = false, std::string* actualServer = 0);
-    virtual bool recv(Message& toRecv);
+    virtual bool recv(Message& toRecv, int lastRequestId);
     virtual void checkResponse(const std::vector<BSONObj>& batch,
                                bool networkError,
                                bool* retry = NULL,
@@ -186,9 +186,8 @@ public:
         return true;
     }
 
-    using DBClientWithCommands::runCommandWithTarget;
-    std::pair<rpc::UniqueReply, DBClientWithCommands*> runCommandWithTarget(
-        OpMsgRequest request) final;
+    using DBClientBase::runCommandWithTarget;
+    std::pair<rpc::UniqueReply, DBClientBase*> runCommandWithTarget(OpMsgRequest request) final;
 
     void setRequestMetadataWriter(rpc::RequestMetadataWriter writer) final;
 

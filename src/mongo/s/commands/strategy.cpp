@@ -42,6 +42,7 @@
 #include "mongo/db/auth/authorization_session.h"
 #include "mongo/db/commands.h"
 #include "mongo/db/logical_clock.h"
+#include "mongo/db/logical_session_id_helpers.h"
 #include "mongo/db/logical_time_validator.h"
 #include "mongo/db/matcher/extensions_callback_noop.h"
 #include "mongo/db/namespace_string.h"
@@ -256,12 +257,12 @@ void runAgainstRegistered(OperationContext* opCtx,
         return;
     }
 
+    initializeOperationSessionInfo(opCtx, request.body, c->requiresAuth());
+
     execCommandClient(opCtx, c, request, anObjBuilder);
 }
 
 void runCommand(OperationContext* opCtx, const OpMsgRequest& request, BSONObjBuilder&& builder) {
-    initializeOperationSessionInfo(opCtx, request.body);
-
     // Handle command option maxTimeMS.
     uassert(ErrorCodes::InvalidOptions,
             "no such command option $maxTimeMs; use maxTimeMS instead",
@@ -422,33 +423,7 @@ DbResponse Strategy::clientOpQueryCommand(OperationContext* opCtx,
                           << ") for $cmd type ns - can only be 1 or -1",
             q.ntoreturn == 1 || q.ntoreturn == -1);
 
-    BSONObj cmdObj = q.query;
-
-    // Handle the $cmd.sys pseudo-commands
-    if (nss.isSpecialCommand()) {
-        const auto upgradeToRealCommand = [&](StringData commandName) {
-            BSONObjBuilder cmdBob;
-            cmdBob.append(commandName, 1);
-            cmdBob.appendElements(cmdObj);  // fields are validated by Commands
-            return cmdBob.obj();
-        };
-
-        if (nss.coll() == "$cmd.sys.inprog") {
-            cmdObj = upgradeToRealCommand("currentOp");
-        } else if (nss.coll() == "$cmd.sys.killop") {
-            cmdObj = upgradeToRealCommand("killOp");
-        } else if (nss.coll() == "$cmd.sys.unlock") {
-            uasserted(40442, "can't do unlock through mongos");
-        } else {
-            uasserted(40443, str::stream() << "unknown psuedo-command namespace " << nss.ns());
-        }
-
-        // These commands must be run against the admin db even though the psuedo commands
-        // ignored the db.
-        nss = NamespaceString("admin", "$cmd");
-    }
-
-    const auto request = rpc::upconvertRequest(nss.db(), std::move(cmdObj), q.queryOptions);
+    const auto request = rpc::upconvertRequest(nss.db(), q.query, q.queryOptions);
     OpQueryReplyBuilder reply;
     runCommand(opCtx, request, BSONObjBuilder(reply.bufBuilderForResults()));
     return DbResponse{reply.toCommandReply()};

@@ -28,55 +28,30 @@
 
 #pragma once
 
-#include "mongo/base/clonable_ptr.h"
-#include "mongo/db/update/update_leaf_node.h"
+#include "mongo/db/update/array_culling_node.h"
 #include "mongo/stdx/memory.h"
 
 namespace mongo {
 
-class PullNode final : public UpdateLeafNode {
+/**
+ * Represents the application of a $pull to the value at the end of a path.
+ *
+ * The $pull update modifier updates an array by removing all values that match the supplied
+ * condition. If the value passed to the $pull modifier is a primitive value or array, then only
+ * exact matches are removed.
+ */
+class PullNode final : public ArrayCullingNode {
 public:
     Status init(BSONElement modExpr, const CollatorInterface* collator) final;
-
-    void apply(mutablebson::Element element,
-               FieldRef* pathToCreate,
-               FieldRef* pathTaken,
-               StringData matchedField,
-               bool fromReplication,
-               bool validateForStorage,
-               const FieldRefSet& immutablePaths,
-               const UpdateIndexData* indexData,
-               LogBuilder* logBuilder,
-               bool* indexesAffected,
-               bool* noop) const final;
 
     std::unique_ptr<UpdateNode> clone() const final {
         return stdx::make_unique<PullNode>(*this);
     }
 
-    void setCollator(const CollatorInterface* collator) final {
-        _matcher->setCollator(collator);
-    }
-
 private:
-    /**
-     * PullNode::apply() uses an ElementMatcher to determine which array elements meet the $pull
-     * condition. The different subclasses of ElementMatcher implement the different kinds of checks
-     * that can be used for a $pull operation.
-     */
-    class ElementMatcher {
-    public:
-        virtual ~ElementMatcher() = default;
-        virtual std::unique_ptr<ElementMatcher> clone() const = 0;
-        virtual bool match(mutablebson::ConstElement element) = 0;
-        virtual void setCollator(const CollatorInterface* collator) = 0;
-    };
-
     class ObjectMatcher;
     class WrappedObjectMatcher;
     class EqualityMatcher;
-
-    clonable_ptr<ElementMatcher> _matcher;
 };
 
 }  // namespace mongo

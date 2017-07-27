@@ -333,15 +333,14 @@ Status SyncTail::syncApply(OperationContext* opCtx,
                     return statusWithUUID.getStatus();
                 // We may be replaying operations on a collection that was renamed since. If so,
                 // it must have been in the same database or it would have gotten a new UUID.
+                // Need to throw instead of returning a status for it to be properly ignored.
                 actualNss = UUIDCatalog::get(opCtx).lookupNSSByUUID(statusWithUUID.getValue());
-                if (actualNss.isEmpty()) {
-                    return Status(ErrorCodes::NamespaceNotFound,
-                                  str::stream()
-                                      << "Failed to apply operation due to missing collection ("
+                uassert(ErrorCodes::NamespaceNotFound,
+                        str::stream() << "Failed to apply operation due to missing collection ("
                                       << statusWithUUID.getValue()
                                       << "): "
-                                      << redact(op.toString()));
-                }
+                                      << redact(op.toString()),
+                        !actualNss.isEmpty());
                 dassert(actualNss.db() == nss.db());
             }
             Lock::CollectionLock collLock(opCtx->lockState(), actualNss.ns(), MODE_IX);
@@ -750,14 +749,18 @@ void SyncTail::oplogApplication(ReplicationCoordinator* replCoord) {
         OperationContext& opCtx = *opCtxPtr;
 
         // For pausing replication in tests.
-        while (MONGO_FAIL_POINT(rsSyncApplyStop)) {
-            // Tests should not trigger clean shutdown while that failpoint is active. If we
-            // think we need this, we need to think hard about what the behavior should be.
-            if (_networkQueue->inShutdown()) {
-                severe() << "Turn off rsSyncApplyStop before attempting clean shutdown";
-                fassertFailedNoTrace(40304);
+        if (MONGO_FAIL_POINT(rsSyncApplyStop)) {
+            log() << "sync tail - rsSyncApplyStop fail point enabled. Blocking until fail point is "
+                     "disabled.";
+            while (MONGO_FAIL_POINT(rsSyncApplyStop)) {
+                // Tests should not trigger clean shutdown while that failpoint is active. If we
+                // think we need this, we need to think hard about what the behavior should be.
+                if (_networkQueue->inShutdown()) {
+                    severe() << "Turn off rsSyncApplyStop before attempting clean shutdown";
+                    fassertFailedNoTrace(40304);
+                }
+                sleepmillis(10);
             }
-            sleepmillis(10);
         }
 
         tryToGoLiveAsASecondary(&opCtx, replCoord);

@@ -217,7 +217,8 @@ TEST(WiredTigerRecordStoreTest, SizeStorer1) {
     string uri = checked_cast<WiredTigerRecordStore*>(rs.get())->getURI();
 
     string indexUri = "table:myindex";
-    WiredTigerSizeStorer ss(harnessHelper->conn(), indexUri);
+    const bool enableWtLogging = false;
+    WiredTigerSizeStorer ss(harnessHelper->conn(), indexUri, enableWtLogging);
     checked_cast<WiredTigerRecordStore*>(rs.get())->setSizeStorer(&ss);
 
     int N = 12;
@@ -287,7 +288,8 @@ TEST(WiredTigerRecordStoreTest, SizeStorer1) {
 
     {
         ServiceContext::UniqueOperationContext opCtx(harnessHelper->newOperationContext());
-        WiredTigerSizeStorer ss2(harnessHelper->conn(), indexUri);
+        const bool enableWtLogging = false;
+        WiredTigerSizeStorer ss2(harnessHelper->conn(), indexUri, enableWtLogging);
         ss2.fillCache();
         long long numRecords;
         long long dataSize;
@@ -318,7 +320,9 @@ class SizeStorerValidateTest : public mongo::unittest::Test {
 private:
     virtual void setUp() {
         harnessHelper.reset(new WiredTigerHarnessHelper());
-        sizeStorer.reset(new WiredTigerSizeStorer(harnessHelper->conn(), "table:sizeStorer"));
+        const bool enableWtLogging = false;
+        sizeStorer.reset(
+            new WiredTigerSizeStorer(harnessHelper->conn(), "table:sizeStorer", enableWtLogging));
         rs = harnessHelper->newNonCappedRecordStore();
         WiredTigerRecordStore* wtrs = checked_cast<WiredTigerRecordStore*>(rs.get());
         wtrs->setSizeStorer(sizeStorer.get());
@@ -375,9 +379,10 @@ protected:
 // Basic validation - size storer data is updated.
 TEST_F(SizeStorerValidateTest, Basic) {
     ServiceContext::UniqueOperationContext opCtx(harnessHelper->newOperationContext());
+    GoodValidateAdaptor adaptor;
     ValidateResults results;
     BSONObjBuilder output;
-    ASSERT_OK(rs->validate(opCtx.get(), kValidateIndex, NULL, &results, &output));
+    ASSERT_OK(rs->validate(opCtx.get(), kValidateIndex, &adaptor, &results, &output));
     BSONObj obj = output.obj();
     ASSERT_EQUALS(expectedNumRecords, obj.getIntField("nrecords"));
     ASSERT_EQUALS(expectedNumRecords, getNumRecords());
@@ -395,17 +400,6 @@ TEST_F(SizeStorerValidateTest, FullWithGoodAdaptor) {
     ASSERT_EQUALS(expectedNumRecords, obj.getIntField("nrecords"));
     ASSERT_EQUALS(expectedNumRecords, getNumRecords());
     ASSERT_EQUALS(expectedDataSize, getDataSize());
-}
-
-// Basic validation does not use the validation adaptor. So passing a bad adaptor
-// should not cause validate to fail.
-TEST_F(SizeStorerValidateTest, BasicWithBadAdapter) {
-    ServiceContext::UniqueOperationContext opCtx(harnessHelper->newOperationContext());
-    BadValidateAdaptor adaptor;
-    ValidateResults results;
-    BSONObjBuilder output;
-    ASSERT_OK(rs->validate(opCtx.get(), kValidateIndex, &adaptor, &results, &output));
-    ASSERT_EQUALS(true, results.valid);
 }
 
 // Full validation with a validation adaptor that fails - size storer data is not updated.

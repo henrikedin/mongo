@@ -51,5 +51,18 @@ void visitAllValuesAtPath(const Document& doc,
                           const FieldPath& path,
                           stdx::function<void(const Value&)> callback);
 
+/**
+ * Returns the element at 'path' in 'doc', or a missing Value if the path does not fully exist.
+ *
+ * Returns ErrorCodes::InternalError if an array is encountered along the path or at the end of the
+ * path.
+ */
+StatusWith<Value> extractElementAlongNonArrayPath(const Document& doc, const FieldPath& path);
+
+/**
+ * Extracts 'paths' from the input document and returns a BSON object containing only those paths.
+ */
+BSONObj documentToBsonWithPaths(const Document&, const std::set<std::string>& paths);
+
 }  // namespace document_path_support
 }  // namespace mongo

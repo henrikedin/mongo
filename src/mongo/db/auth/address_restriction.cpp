@@ -30,6 +30,7 @@
 
 #include "mongo/db/auth/address_restriction.h"
 #include "mongo/db/auth/address_restriction_gen.h"
+#include "mongo/db/server_options.h"
 #include "mongo/stdx/memory.h"
 
 constexpr mongo::StringData mongo::address_restriction_detail::ClientSource::label;
@@ -42,7 +43,7 @@ mongo::StatusWith<mongo::RestrictionSet<>> mongo::parseAddressRestrictionSet(
     const BSONObj& obj) try {
     IDLParserErrorContext ctx("address restriction");
     const auto ar = Address_restriction::parse(ctx, obj);
-    std::vector<std::unique_ptr<Restriction>> vec;
+    std::vector<std::unique_ptr<NamedRestriction>> vec;
 
     const boost::optional<std::vector<StringData>>& client = ar.getClientSource();
     if (client) {
@@ -73,6 +74,12 @@ mongo::StatusWith<mongo::SharedRestrictionDocument> mongo::parseAuthenticationRe
                                std::unique_ptr<document_type::element_type>>::value,
                   "SharedRestrictionDocument expected to contain a sequence of unique_ptrs");
 
+    if (serverGlobalParams.featureCompatibility.version.load() <
+        ServerGlobalParams::FeatureCompatibility::Version::k36) {
+        return Status(ErrorCodes::UnsupportedFormat,
+                      "'authenticationRestrictions' requires 3.6 feature compatibility version");
+    }
+
     document_type::sequence_type doc;
     for (const auto& elem : arr) {
         if (elem.type() != Object) {
@@ -90,4 +97,43 @@ mongo::StatusWith<mongo::SharedRestrictionDocument> mongo::parseAuthenticationRe
     }
 
     return std::make_shared<document_type>(std::move(doc));
+}
+
+mongo::StatusWith<mongo::BSONArray> mongo::getRawAuthenticationRestrictions(
+    const BSONArray& arr) noexcept try {
+    BSONArrayBuilder builder;
+
+    if (serverGlobalParams.featureCompatibility.version.load() <
+        ServerGlobalParams::FeatureCompatibility::Version::k36) {
+        return Status(ErrorCodes::UnsupportedFormat,
+                      "'authenticationRestrictions' requires 3.6 feature compatibility version");
+    }
+
+    for (auto const& elem : arr) {
+        if (elem.type() != Object) {
+            return Status(ErrorCodes::UnsupportedFormat,
+                          "'authenticationRestrictions' array sub-documents must be address "
+                          "restriction objects");
+        }
+        IDLParserErrorContext ctx("address restriction");
+        auto const ar = Address_restriction::parse(ctx, elem.Obj());
+        if (auto const&& client = ar.getClientSource()) {
+            // Validate
+            ClientSourceRestriction(client.get());
+        }
+        if (auto const&& server = ar.getServerAddress()) {
+            // Validate
+            ServerAddressRestriction(server.get());
+        }
+        if (!ar.getClientSource() && !ar.getServerAddress()) {
+            return Status(ErrorCodes::CollectionIsEmpty,
+                          "At least one of 'clientSource' and/or 'serverAddress' must be set");
+        }
+        builder.append(ar.toBSON());
+    }
+    return builder.arr();
+} catch (const DBException& e) {
+    return Status(ErrorCodes::BadValue, e.what());
+} catch (const std::exception& e) {
+    return Status(ErrorCodes::InternalError, e.what());
 }

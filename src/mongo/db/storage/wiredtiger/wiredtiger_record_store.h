@@ -110,6 +110,7 @@ public:
         int64_t cappedMaxDocs;
         CappedCallback* cappedCallback;
         WiredTigerSizeStorer* sizeStorer;
+        bool isReadOnly;
     };
 
     WiredTigerRecordStore(OperationContext* opCtx, Params params);
@@ -191,6 +192,10 @@ public:
                            RecordStoreCompactAdaptor* adaptor,
                            const CompactOptions* options,
                            CompactStats* stats);
+
+    virtual bool isInRecordIdOrder() const override {
+        return true;
+    }
 
     virtual Status validate(OperationContext* opCtx,
                             ValidateCmdLevel level,

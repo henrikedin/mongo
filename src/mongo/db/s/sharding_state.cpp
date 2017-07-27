@@ -113,7 +113,8 @@ void updateShardIdentityConfigStringCB(const string& setName, const string& newC
 }  // namespace
 
 ShardingState::ShardingState()
-    : _initializationState(static_cast<uint32_t>(InitializationState::kNew)),
+    : _chunkSplitter(stdx::make_unique<ChunkSplitter>()),
+      _initializationState(static_cast<uint32_t>(InitializationState::kNew)),
       _initializationStatus(Status(ErrorCodes::InternalError, "Uninitialized value")),
       _globalInit(&initializeGlobalShardingStateForMongod) {}
 
@@ -129,6 +130,11 @@ ShardingState* ShardingState::get(OperationContext* operationContext) {
 
 bool ShardingState::enabled() const {
     return _getInitializationState() == InitializationState::kInitialized;
+}
+
+void ShardingState::setEnabledForTest(const std::string& shardName) {
+    _setInitializationState(InitializationState::kInitialized);
+    _shardName = shardName;
 }
 
 Status ShardingState::canAcceptShardedCommands() const {
@@ -197,6 +203,14 @@ CollectionShardingState* ShardingState::getNS(const std::string& ns, OperationCo
     }
 
     return it->second.get();
+}
+
+void ShardingState::initiateChunkSplitter() {
+    _chunkSplitter->initiateChunkSplitter();
+}
+
+void ShardingState::interruptChunkSplitter() {
+    _chunkSplitter->interruptChunkSplitter();
 }
 
 void ShardingState::markCollectionsNotShardedAtStepdown() {
@@ -319,7 +333,8 @@ Status ShardingState::initializeFromShardIdentity(OperationContext* opCtx,
                 &ShardRegistry::replicaSetChangeShardRegistryUpdateHook);
             ReplicaSetMonitor::setAsynchronousConfigChangeHook(&updateShardIdentityConfigStringCB);
 
-            // Determine primary/secondary/standalone state in order to set it on the CatalogCache.
+            // Determine primary/secondary/standalone state in order to properly initialize sharding
+            // components.
             auto replCoord = repl::ReplicationCoordinator::get(opCtx);
             bool isReplSet =
                 replCoord->getReplicationMode() == repl::ReplicationCoordinator::modeReplSet;
@@ -328,6 +343,7 @@ Status ShardingState::initializeFromShardIdentity(OperationContext* opCtx,
                                repl::MemberState::RS_PRIMARY);
 
             Grid::get(opCtx)->catalogCache()->initializeReplicaSetRole(isStandaloneOrPrimary);
+            _chunkSplitter->setReplicaSetMode(isStandaloneOrPrimary);
 
             log() << "initialized sharding components for "
                   << (isStandaloneOrPrimary ? "primary" : "secondary") << " node.";

@@ -52,8 +52,10 @@ boost::optional<SessionTxnRecord> loadSessionRecord(OperationContext* opCtx,
                                                     const LogicalSessionId& sessionId) {
     DBDirectClient client(opCtx);
     Query sessionQuery(BSON(SessionTxnRecord::kSessionIdFieldName << sessionId.toBSON()));
-    auto result =
-        client.findOne(NamespaceString::kSessionTransactionsTableNamespace.ns(), sessionQuery);
+    auto result = client.findOne(NamespaceString::kSessionTransactionsTableNamespace.ns(),
+                                 sessionQuery,
+                                 nullptr,
+                                 DBClientCursor::QueryOptionLocal_forceOpQuery);  // SERVER-30318
 
     if (result.isEmpty()) {
         return boost::none;
@@ -177,6 +179,23 @@ const Timestamp& Session::getLastWriteOpTimeTs() const {
 
 TransactionHistoryIterator Session::getWriteHistory(OperationContext* opCtx) const {
     return TransactionHistoryIterator(getLastWriteOpTimeTs());
+}
+
+boost::optional<repl::OplogEntry> Session::checkStatementExecuted(OperationContext* opCtx,
+                                                                  StmtId stmtId) {
+    if (!opCtx->getTxnNumber()) {
+        return boost::none;
+    }
+
+    auto it = getWriteHistory(opCtx);
+    while (it.hasNext()) {
+        auto entry = it.next(opCtx);
+        if (entry.getStatementId() == stmtId) {
+            return entry;
+        }
+    }
+
+    return boost::none;
 }
 
 }  // namespace mongo

@@ -28,6 +28,10 @@
 
 #pragma once
 
+#include <initializer_list>
+#include <ostream>
+#include <string>
+
 #include "mongo/bson/bsonobj.h"
 #include "mongo/bson/bsonobj_comparator_interface.h"
 #include "mongo/bson/simple_bsonobj_comparator.h"
@@ -39,9 +43,6 @@
 #include "mongo/db/repl/sync_tail_test_fixture.h"
 #include "mongo/util/duration.h"
 #include "mongo/util/uuid.h"
-#include <initializer_list>
-#include <ostream>
-#include <string>
 
 namespace mongo {
 namespace repl {

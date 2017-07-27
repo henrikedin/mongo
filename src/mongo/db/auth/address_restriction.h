@@ -61,7 +61,7 @@ struct ServerAddress {
 
 // Represents a restriction based on client or server address
 template <typename T>
-class AddressRestriction : public Restriction {
+class AddressRestriction : public NamedRestriction {
 public:
     /**
      * Construct an empty AddressRestriction.
@@ -83,30 +83,6 @@ public:
         for (auto const& range : ranges) {
             _ranges.emplace_back(range);
         }
-    }
-
-    /**
-     * If the given BSONElement represents a valid CIDR range, constructs and returns the
-     * AddressRestriction. Otherwise returns an error.
-     */
-    static StatusWith<AddressRestriction<T>> parse(BSONElement from) {
-        auto cidr = CIDR::parse(from);
-        if (!cidr.isOK()) {
-            return cidr.getStatus();
-        }
-        return AddressRestriction<T>(std::move(cidr.getValue()));
-    }
-
-    /**
-     * If the given string represents a valid CIDR range, constructs and returns the
-     * AddressRestriction. Otherwise returns an error.
-     */
-    static StatusWith<AddressRestriction<T>> parse(StringData from) {
-        auto cidr = CIDR::parse(from);
-        if (!cidr.isOK()) {
-            return cidr.getStatus();
-        }
-        return AddressRestriction<T>(std::move(cidr.getValue()));
     }
 
     /**
@@ -137,7 +113,7 @@ public:
     /**
      * Append to builder an array element with the human-readable CIDR ranges.
      */
-    void appendToBuilder(BSONObjBuilder* builder) const {
+    void appendToBuilder(BSONObjBuilder* builder) const override {
         BSONArrayBuilder b;
         for (auto const& range : _ranges) {
             b.append(range.toString());
@@ -189,6 +165,13 @@ StatusWith<RestrictionSet<>> parseAddressRestrictionSet(const BSONObj& obj);
  * and return a SharedRestrictionDocument on success.
  */
 StatusWith<SharedRestrictionDocument> parseAuthenticationRestriction(const BSONArray& arr);
+
+/**
+ * Parse and validate a BSONArray containing AuthenticationRestrictions
+ * and return a new BSONArray representing a sanitized portion thereof.
+ */
+StatusWith<BSONArray> getRawAuthenticationRestrictions(const BSONArray& arr) noexcept;
+
 
 template <>
 inline BSONObjBuilder& BSONObjBuilderValueStream::operator<<<ClientSourceRestriction>(

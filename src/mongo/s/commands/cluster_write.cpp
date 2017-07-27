@@ -51,9 +51,6 @@
 namespace mongo {
 namespace {
 
-// Test whether we should split once data * splitTestFactor > chunkSize (approximately)
-const uint64_t splitTestFactor = 5;
-
 const uint64_t kTooManySplitPoints = 4;
 
 void toBatchError(const Status& status, BatchedCommandResponse* response) {
@@ -212,38 +209,6 @@ void ClusterWriter::write(OperationContext* opCtx,
     const BatchedCommandRequest* request = idRequest ? idRequest.get() : &origRequest;
 
     const NamespaceString& nss = request->getNS();
-    if (!nss.isValid()) {
-        toBatchError(Status(ErrorCodes::InvalidNamespace, nss.ns() + " is not a valid namespace"),
-                     response);
-        return;
-    }
-
-    if (!NamespaceString::validCollectionName(nss.coll())) {
-        toBatchError(
-            Status(ErrorCodes::BadValue, str::stream() << "invalid collection name " << nss.coll()),
-            response);
-        return;
-    }
-
-    if (request->sizeWriteOps() == 0u) {
-        toBatchError(Status(ErrorCodes::InvalidLength, "no write ops were included in the batch"),
-                     response);
-        return;
-    }
-
-    if (request->sizeWriteOps() > BatchedCommandRequest::kMaxWriteBatchSize) {
-        toBatchError(Status(ErrorCodes::InvalidLength,
-                            str::stream() << "exceeded maximum write batch size of "
-                                          << BatchedCommandRequest::kMaxWriteBatchSize),
-                     response);
-        return;
-    }
-
-    std::string errMsg;
-    if (request->isInsertIndexRequest() && !request->isValidIndexRequest(&errMsg)) {
-        toBatchError(Status(ErrorCodes::InvalidOptions, errMsg), response);
-        return;
-    }
 
     // Config writes and shard writes are done differently
     if (nss.db() == NamespaceString::kConfigDb || nss.db() == NamespaceString::kAdminDb) {
@@ -299,14 +264,7 @@ void updateChunkWriteStatsAndSplitIfNeeded(OperationContext* opCtx,
     const uint64_t desiredChunkSize =
         calculateDesiredChunkSize(balancerConfig->getMaxChunkSizeBytes(), manager->numChunks());
 
-    // If this chunk is at either end of the range, trigger auto-split at 10% less data written in
-    // order to trigger the top-chunk optimization.
-    const uint64_t splitThreshold = (minIsInf || maxIsInf)
-        ? static_cast<uint64_t>((double)desiredChunkSize * 0.9)
-        : desiredChunkSize;
-
-    // Check if there are enough estimated bytes written to warrant a split
-    if (chunkBytesWritten < splitThreshold / splitTestFactor) {
+    if (!chunk->shouldSplit(desiredChunkSize, minIsInf, maxIsInf)) {
         return;
     }
 
@@ -330,7 +288,8 @@ void updateChunkWriteStatsAndSplitIfNeeded(OperationContext* opCtx,
         }
 
         LOG(1) << "about to initiate autosplit: " << redact(chunk->toString())
-               << " dataWritten: " << chunkBytesWritten << " splitThreshold: " << splitThreshold;
+               << " dataWritten: " << chunkBytesWritten
+               << " desiredChunkSize: " << desiredChunkSize;
 
         const uint64_t chunkSizeToUse = [&]() {
             const uint64_t estNumSplitPoints = chunkBytesWritten / desiredChunkSize * 2;
@@ -418,7 +377,7 @@ void updateChunkWriteStatsAndSplitIfNeeded(OperationContext* opCtx,
         }();
 
         log() << "autosplitted " << nss << " chunk: " << redact(chunk->toString()) << " into "
-              << (splitPoints.size() + 1) << " parts (splitThreshold " << splitThreshold << ")"
+              << (splitPoints.size() + 1) << " parts (desiredChunkSize " << desiredChunkSize << ")"
               << (suggestedMigrateChunk ? "" : (std::string) " (migrate suggested" +
                           (shouldBalance ? ")" : ", but no migrations allowed)"));
 

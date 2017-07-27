@@ -228,6 +228,49 @@ void setOplogCollectionName() {
     }
 }
 
+void createIndexForApplyOps(OperationContext* opCtx,
+                            const BSONObj& indexSpec,
+                            const NamespaceString& indexNss,
+                            IncrementOpsAppliedStatsFn incrementOpsAppliedStats) {
+    // Check if collection exists.
+    Database* db = dbHolder().get(opCtx, indexNss.ns());
+    auto indexCollection = db ? db->getCollection(opCtx, indexNss) : nullptr;
+    uassert(ErrorCodes::NamespaceNotFound,
+            str::stream() << "Failed to create index due to missing collection: " << indexNss.ns(),
+            indexCollection);
+
+    OpCounters* opCounters = opCtx->writesAreReplicated() ? &globalOpCounters : &replOpCounters;
+    opCounters->gotInsert();
+
+    bool relaxIndexConstraints =
+        ReplicationCoordinator::get(opCtx)->shouldRelaxIndexConstraints(opCtx, indexNss);
+    if (indexSpec["background"].trueValue()) {
+        Lock::TempRelease release(opCtx->lockState());
+        if (opCtx->lockState()->isLocked()) {
+            // If TempRelease fails, background index build will deadlock.
+            LOG(3) << "apply op: building background index " << indexSpec
+                   << " in the foreground because temp release failed";
+            IndexBuilder builder(indexSpec, relaxIndexConstraints);
+            Status status = builder.buildInForeground(opCtx, db);
+            uassertStatusOK(status);
+        } else {
+            IndexBuilder* builder = new IndexBuilder(indexSpec, relaxIndexConstraints);
+            // This spawns a new thread and returns immediately.
+            builder->go();
+            // Wait for thread to start and register itself
+            IndexBuilder::waitForBgIndexStarting();
+        }
+        opCtx->recoveryUnit()->abandonSnapshot();
+    } else {
+        IndexBuilder builder(indexSpec, relaxIndexConstraints);
+        Status status = builder.buildInForeground(opCtx, db);
+        uassertStatusOK(status);
+    }
+    if (incrementOpsAppliedStats) {
+        incrementOpsAppliedStats();
+    }
+}
+
 namespace {
 
 Collection* getLocalOplogCollection(OperationContext* opCtx,
@@ -243,6 +286,32 @@ Collection* getLocalOplogCollection(OperationContext* opCtx,
             _localOplogCollection);
 
     return _localOplogCollection;
+}
+
+/**
+ * Attaches the session information of a write to an oplog entry if it exists.
+ */
+void appendSessionInfo(OperationContext* opCtx, BSONObjBuilder* builder, StmtId statementId) {
+    auto txnNum = opCtx->getTxnNumber();
+
+    if (!txnNum) {
+        return;
+    }
+
+    auto logicalSessionId = opCtx->getLogicalSessionId();
+    invariant(logicalSessionId);
+
+    // Note: certain operations, like implicit collection creation will not have a stmtId.
+    if (statementId == kUninitializedStmtId) {
+        return;
+    }
+
+    OperationSessionInfo sessionInfo;
+    sessionInfo.setSessionId(*logicalSessionId);
+    sessionInfo.setTxnNumber(txnNum);
+    sessionInfo.serialize(builder);
+
+    builder->append(OplogEntryBase::kStatementIdFieldName, statementId);
 }
 
 OplogDocWriter _logOpWriter(OperationContext* opCtx,
@@ -280,9 +349,7 @@ OplogDocWriter _logOpWriter(OperationContext* opCtx,
         b.appendDate("wall", wallTime);
     }
 
-    if (statementId != kUninitializedStmtId) {
-        // TODO: SERVER-28912 append stmtId to oplog entry
-    }
+    appendSessionInfo(opCtx, &b, statementId);
 
     return OplogDocWriter(OplogDocWriter(b.obj(), obj));
 }
@@ -387,7 +454,8 @@ OpTime logOp(OperationContext* opCtx,
              OptionalCollectionUUID uuid,
              const BSONObj& obj,
              const BSONObj* o2,
-             bool fromMigrate) {
+             bool fromMigrate,
+             StmtId statementId) {
     auto replCoord = ReplicationCoordinator::get(opCtx);
     if (replCoord->isOplogDisabledFor(opCtx, nss)) {
         return {};
@@ -400,7 +468,6 @@ OpTime logOp(OperationContext* opCtx,
     OplogSlot slot;
     getNextOpTime(opCtx, oplog, replCoord, replMode, 1, &slot);
 
-    // TODO: SERVER-28912 Include statementId for other ops
     auto writer = _logOpWriter(opCtx,
                                opstr,
                                nss,
@@ -411,7 +478,7 @@ OpTime logOp(OperationContext* opCtx,
                                slot.opTime,
                                slot.hash,
                                Date_t::now(),
-                               kUninitializedStmtId);
+                               statementId);
     const DocWriter* basePtr = &writer;
     _logOpsInner(opCtx, nss, &basePtr, 1, oplog, replMode, slot.opTime);
     return slot.opTime;
@@ -598,49 +665,6 @@ NamespaceString parseUUIDorNs(OperationContext* opCtx,
     return ui.ok() ? parseUUID(opCtx, ui) : parseNs(ns, cmd);
 }
 
-void createIndexForApplyOps(OperationContext* opCtx,
-                            const BSONObj& indexSpec,
-                            const NamespaceString& indexNss,
-                            IncrementOpsAppliedStatsFn incrementOpsAppliedStats) {
-    // Check if collection exists.
-    Database* db = dbHolder().get(opCtx, indexNss.ns());
-    auto indexCollection = db ? db->getCollection(opCtx, indexNss) : nullptr;
-    uassert(ErrorCodes::NamespaceNotFound,
-            str::stream() << "Failed to create index due to missing collection: " << indexNss.ns(),
-            indexCollection);
-
-    OpCounters* opCounters = opCtx->writesAreReplicated() ? &globalOpCounters : &replOpCounters;
-    opCounters->gotInsert();
-
-    bool relaxIndexConstraints =
-        ReplicationCoordinator::get(opCtx)->shouldRelaxIndexConstraints(opCtx, indexNss);
-    if (indexSpec["background"].trueValue()) {
-        Lock::TempRelease release(opCtx->lockState());
-        if (opCtx->lockState()->isLocked()) {
-            // If TempRelease fails, background index build will deadlock.
-            LOG(3) << "apply op: building background index " << indexSpec
-                   << " in the foreground because temp release failed";
-            IndexBuilder builder(indexSpec, relaxIndexConstraints);
-            Status status = builder.buildInForeground(opCtx, db);
-            uassertStatusOK(status);
-        } else {
-            IndexBuilder* builder = new IndexBuilder(indexSpec, relaxIndexConstraints);
-            // This spawns a new thread and returns immediately.
-            builder->go();
-            // Wait for thread to start and register itself
-            IndexBuilder::waitForBgIndexStarting();
-        }
-        opCtx->recoveryUnit()->abandonSnapshot();
-    } else {
-        IndexBuilder builder(indexSpec, relaxIndexConstraints);
-        Status status = builder.buildInForeground(opCtx, db);
-        uassertStatusOK(status);
-    }
-    if (incrementOpsAppliedStats) {
-        incrementOpsAppliedStats();
-    }
-}
-
 using OpApplyFn = stdx::function<Status(OperationContext* opCtx,
                                         const char* ns,
                                         const BSONElement& ui,
@@ -714,8 +738,23 @@ std::map<std::string, ApplyOpMetadata> opsMap = {
          const BSONElement& ui,
          BSONObj& cmd,
          const OpTime& opTime) -> Status {
-          BSONObjBuilder resultWeDontCareAbout;
-          return collMod(opCtx, parseUUIDorNs(opCtx, ns, ui, cmd), cmd, &resultWeDontCareAbout);
+          // Get UUID from cmd, if it exists.
+          OptionalCollectionUUID uuid;
+          NamespaceString nss;
+          if (ui.eoo()) {
+              uuid = boost::none;
+              nss = parseNs(ns, cmd);
+          } else {
+              uuid = uassertStatusOK(UUID::parse(ui));
+              // We need to see whether a collection with UUID ui exists before attempting to do
+              // a collMod on it. This is because we add UUIDs during upgrade to
+              // featureCompatibilityVersion 3.6 with a collMod command, so the collection will
+              // not have a UUID at the time we attempt to look it up by UUID.
+              auto& catalog = UUIDCatalog::get(opCtx);
+              nss = catalog.lookupCollectionByUUID(uuid.get()) ? catalog.lookupNSSByUUID(uuid.get())
+                                                               : parseNs(ns, cmd);
+          }
+          return collModForUUIDUpgrade(opCtx, nss, cmd, uuid);
       },
       {ErrorCodes::IndexNotFound, ErrorCodes::NamespaceNotFound}}},
     {"dropDatabase",
@@ -990,7 +1029,6 @@ Status applyOperation_inlock(OperationContext* opCtx,
             // 2. If okay, commit
             // 3. If not, do upsert (and commit)
             // 4. If both !Ok, return status
-            Status status{ErrorCodes::NotYetInitialized, ""};
 
             // We cannot rely on a DuplicateKey error if we'repart of a larger transaction, because
             // that would require the transaction to abort. So instead, use upsert in that case.
@@ -998,13 +1036,9 @@ Status applyOperation_inlock(OperationContext* opCtx,
 
             if (!needToDoUpsert) {
                 WriteUnitOfWork wuow(opCtx);
-                try {
-                    OpDebug* const nullOpDebug = nullptr;
-                    status =
-                        collection->insertDocument(opCtx, InsertStatement(o), nullOpDebug, true);
-                } catch (DBException dbe) {
-                    status = dbe.toStatus();
-                }
+                OpDebug* const nullOpDebug = nullptr;
+                auto status =
+                    collection->insertDocument(opCtx, InsertStatement(o), nullOpDebug, true);
                 if (status.isOK()) {
                     wuow.commit();
                 } else if (status == ErrorCodes::DuplicateKey) {

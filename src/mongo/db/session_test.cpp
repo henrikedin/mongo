@@ -32,9 +32,12 @@
 
 #include "mongo/base/init.h"
 #include "mongo/db/client.h"
+#include "mongo/db/curop.h"
 #include "mongo/db/db_raii.h"
 #include "mongo/db/dbdirectclient.h"
 #include "mongo/db/operation_context.h"
+#include "mongo/db/repl/oplog.h"
+#include "mongo/db/repl/oplog_entry.h"
 #include "mongo/db/repl/optime.h"
 #include "mongo/db/repl/replication_coordinator_mock.h"
 #include "mongo/db/service_context.h"
@@ -64,8 +67,14 @@ public:
         repl::ReplicationCoordinator::set(
             service, stdx::make_unique<repl::ReplicationCoordinatorMock>(service, replSettings));
 
-        _txnTable = stdx::make_unique<SessionCatalog>(nullptr);
-        _txnTable->onStepUp(_opCtx.get());
+        SessionCatalog::reset_forTest(service);
+        SessionCatalog::create(service);
+        SessionCatalog::get(service)->onStepUp(_opCtx.get());
+
+        // Note: internal code does not allow implicit creation of non-capped oplog collection.
+        DBDirectClient client(opCtx());
+        ASSERT_TRUE(
+            client.createCollection(NamespaceString::kRsOplogNamespace.ns(), 1024 * 1024, true));
     }
 
     void tearDown() override {
@@ -76,17 +85,33 @@ public:
         ServiceContextMongoDTest::tearDown();
     }
 
+    /**
+     * Helper method for inserting new entries to the oplog. This completely bypasses
+     * fixDocumentForInsert.
+     */
+    void insertOplogEntry(BSONObj entry) {
+        AutoGetCollection autoColl(opCtx(), NamespaceString::kRsOplogNamespace, MODE_IX);
+        auto coll = autoColl.getCollection();
+        ASSERT_TRUE(coll != nullptr);
+
+        auto status = coll->insertDocument(opCtx(),
+                                           InsertStatement(entry),
+                                           &CurOp::get(opCtx())->debug(),
+                                           /* enforceQuota */ false,
+                                           /* fromMigrate */ false);
+        ASSERT_OK(status);
+    }
+
     OperationContext* opCtx() {
         return _opCtx.get();
     }
 
 private:
     ServiceContext::UniqueOperationContext _opCtx;
-    std::unique_ptr<SessionCatalog> _txnTable;
 };
 
 TEST_F(SessionTest, CanCreateNewSessionEntry) {
-    const auto sessionId = LogicalSessionId::gen();
+    const auto sessionId = makeLogicalSessionIdForTest();
     const TxnNumber txnNum = 20;
 
     Session txnState(sessionId);
@@ -116,7 +141,7 @@ TEST_F(SessionTest, CanCreateNewSessionEntry) {
 }
 
 TEST_F(SessionTest, StartingOldTxnShouldAssert) {
-    const auto sessionId = LogicalSessionId::gen();
+    const auto sessionId = makeLogicalSessionIdForTest();
     const TxnNumber txnNum = 20;
 
     Session txnState(sessionId);
@@ -129,7 +154,7 @@ TEST_F(SessionTest, StartingOldTxnShouldAssert) {
 }
 
 TEST_F(SessionTest, StartingNewSessionWithCompatibleEntryInStorage) {
-    const auto sessionId = LogicalSessionId::gen();
+    const auto sessionId = makeLogicalSessionIdForTest();
     const TxnNumber txnNum = 20;
     const Timestamp origTs(985, 15);
 
@@ -168,7 +193,7 @@ TEST_F(SessionTest, StartingNewSessionWithCompatibleEntryInStorage) {
 }
 
 TEST_F(SessionTest, StartingNewSessionWithOlderEntryInStorageShouldUpdateEntry) {
-    const auto sessionId = LogicalSessionId::gen();
+    const auto sessionId = makeLogicalSessionIdForTest();
     TxnNumber txnNum = 20;
     const Timestamp origTs(985, 15);
 
@@ -207,7 +232,7 @@ TEST_F(SessionTest, StartingNewSessionWithOlderEntryInStorageShouldUpdateEntry) 
 }
 
 TEST_F(SessionTest, StartingNewSessionWithNewerEntryInStorageShouldAssert) {
-    const auto sessionId = LogicalSessionId::gen();
+    const auto sessionId = makeLogicalSessionIdForTest();
     TxnNumber txnNum = 20;
     const Timestamp origTs(985, 15);
 
@@ -246,7 +271,7 @@ TEST_F(SessionTest, StartingNewSessionWithNewerEntryInStorageShouldAssert) {
 }
 
 TEST_F(SessionTest, StoreOpTime) {
-    const auto sessionId = LogicalSessionId::gen();
+    const auto sessionId = makeLogicalSessionIdForTest();
     const TxnNumber txnNum = 20;
     const Timestamp ts1(100, 42);
 
@@ -312,7 +337,7 @@ TEST_F(SessionTest, StoreOpTime) {
 }
 
 TEST_F(SessionTest, CanBumpTransactionIdIfNewer) {
-    const auto sessionId = LogicalSessionId::gen();
+    const auto sessionId = makeLogicalSessionIdForTest();
     TxnNumber txnNum = 20;
     const Timestamp ts1(100, 42);
 
@@ -372,7 +397,7 @@ TEST_F(SessionTest, CanBumpTransactionIdIfNewer) {
 }
 
 TEST_F(SessionTest, StartingNewSessionWithDroppedTableShouldAssert) {
-    const auto sessionId = LogicalSessionId::gen();
+    const auto sessionId = makeLogicalSessionIdForTest();
     const TxnNumber txnNum = 20;
 
     const auto& ns = NamespaceString::kSessionTransactionsTableNamespace;
@@ -388,7 +413,7 @@ TEST_F(SessionTest, StartingNewSessionWithDroppedTableShouldAssert) {
 }
 
 TEST_F(SessionTest, SaveTxnProgressShouldAssertIfTableIsDropped) {
-    const auto sessionId = LogicalSessionId::gen();
+    const auto sessionId = makeLogicalSessionIdForTest();
     const TxnNumber txnNum = 20;
     const Timestamp ts1(100, 42);
 
@@ -408,14 +433,14 @@ TEST_F(SessionTest, SaveTxnProgressShouldAssertIfTableIsDropped) {
 }
 
 TEST_F(SessionTest, TwoSessionsShouldBeIndependent) {
-    const auto sessionId1 = LogicalSessionId::gen();
+    const auto sessionId1 = makeLogicalSessionIdForTest();
     const TxnNumber txnNum1 = 20;
     const Timestamp ts1(1903, 42);
 
     Session txnState1(sessionId1);
     txnState1.begin(opCtx(), txnNum1);
 
-    const auto sessionId2 = LogicalSessionId::gen();
+    const auto sessionId2 = makeLogicalSessionIdForTest();
     const TxnNumber txnNum2 = 300;
     const Timestamp ts2(671, 5);
 
@@ -470,6 +495,53 @@ TEST_F(SessionTest, TwoSessionsShouldBeIndependent) {
     }
 
     ASSERT_FALSE(cursor->more());
+}
+
+TEST_F(SessionTest, CheckStatementExecuted) {
+    const auto sessionId = makeLogicalSessionIdForTest();
+    const TxnNumber txnNum = 20;
+    const StmtId stmtId = 5;
+
+    opCtx()->setLogicalSessionId(sessionId);
+    opCtx()->setTxnNumber(txnNum);
+
+    Session session(sessionId);
+    session.begin(opCtx(), txnNum);
+
+    // Returns nothing if the statement has not been executed.
+    auto fetchedEntry = session.checkStatementExecuted(opCtx(), stmtId);
+    ASSERT_FALSE(fetchedEntry);
+
+    // Returns the correct oplog entry if the statement has completed.
+    auto optimeTs = Timestamp(50, 10);
+    insertOplogEntry(BSON("ts" << optimeTs << "t" << 1LL << "h" << 0LL << "op"
+                               << "i"
+                               << "ns"
+                               << "a.b"
+                               << "o"
+                               << BSON("_id" << 1 << "x" << 5)
+                               << "txnNumber"
+                               << txnNum
+                               << "stmtId"
+                               << stmtId
+                               << "prevTs"
+                               << Timestamp(0, 0)));
+    {
+        AutoGetCollection autoColl(opCtx(), NamespaceString("a.b"), MODE_IX);
+        WriteUnitOfWork wuow(opCtx());
+
+        session.saveTxnProgress(opCtx(), optimeTs);
+        wuow.commit();
+    }
+
+    fetchedEntry = session.checkStatementExecuted(opCtx(), stmtId);
+    ASSERT_TRUE(fetchedEntry);
+    ASSERT_EQ(fetchedEntry->getStatementId().get(), stmtId);
+
+    // Still returns nothing for uncompleted statements.
+    auto uncompletedStmtId = 10;
+    fetchedEntry = session.checkStatementExecuted(opCtx(), uncompletedStmtId);
+    ASSERT_FALSE(fetchedEntry);
 }
 
 }  // namespace

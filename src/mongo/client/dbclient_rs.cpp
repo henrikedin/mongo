@@ -186,7 +186,7 @@ void DBClientReplicaSet::setRequestMetadataWriter(rpc::RequestMetadataWriter wri
     if (_lastSlaveOkConn.get()) {
         _lastSlaveOkConn->setRequestMetadataWriter(writer);
     }
-    DBClientWithCommands::setRequestMetadataWriter(std::move(writer));
+    DBClientBase::setRequestMetadataWriter(std::move(writer));
 }
 
 void DBClientReplicaSet::setReplyMetadataReader(rpc::ReplyMetadataReader reader) {
@@ -197,7 +197,7 @@ void DBClientReplicaSet::setReplyMetadataReader(rpc::ReplyMetadataReader reader)
     if (_lastSlaveOkConn.get()) {
         _lastSlaveOkConn->setReplyMetadataReader(reader);
     }
-    DBClientWithCommands::setReplyMetadataReader(std::move(reader));
+    DBClientBase::setReplyMetadataReader(std::move(reader));
 }
 
 int DBClientReplicaSet::getMinWireVersion() {
@@ -617,7 +617,7 @@ BSONObj DBClientReplicaSet::findOne(const string& ns,
     return checkMaster()->findOne(ns, query, fieldsToReturn, queryOptions);
 }
 
-void DBClientReplicaSet::killCursor(long long cursorID) {
+void DBClientReplicaSet::killCursor(const NamespaceString& ns, long long cursorID) {
     // we should never call killCursor on a replica set connection
     // since we don't know which server it belongs to
     // can't assume master because of slave ok
@@ -819,12 +819,12 @@ void DBClientReplicaSet::say(Message& toSend, bool isRetry, string* actualServer
     return;
 }
 
-bool DBClientReplicaSet::recv(Message& m) {
+bool DBClientReplicaSet::recv(Message& m, int lastRequestId) {
     verify(_lazyState._lastClient);
 
     // TODO: It would be nice if we could easily wrap a conn error as a result error
     try {
-        return _lazyState._lastClient->recv(m);
+        return _lazyState._lastClient->recv(m, lastRequestId);
     } catch (DBException& e) {
         log() << "could not receive data from " << _lazyState._lastClient->toString()
               << causedBy(redact(e));
@@ -901,7 +901,7 @@ void DBClientReplicaSet::checkResponse(const std::vector<BSONObj>& batch,
     }
 }
 
-std::pair<rpc::UniqueReply, DBClientWithCommands*> DBClientReplicaSet::runCommandWithTarget(
+std::pair<rpc::UniqueReply, DBClientBase*> DBClientReplicaSet::runCommandWithTarget(
     OpMsgRequest request) {
     // This overload exists so we can parse out the read preference and then use server
     // selection directly without having to re-parse the raw message.

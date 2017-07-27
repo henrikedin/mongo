@@ -30,6 +30,7 @@
 
 #include "mongo/db/pipeline/document_source_out.h"
 
+#include "mongo/db/ops/write_ops.h"
 #include "mongo/stdx/memory.h"
 #include "mongo/util/destructor_guard.h"
 
@@ -48,16 +49,25 @@ DocumentSourceOut::~DocumentSourceOut() {
 
 std::unique_ptr<LiteParsedDocumentSourceForeignCollections> DocumentSourceOut::liteParse(
     const AggregationRequest& request, const BSONElement& spec) {
-    uassert(40325,
+    uassert(ErrorCodes::TypeMismatch,
             str::stream() << "$out stage requires a string argument, but found "
                           << typeName(spec.type()),
             spec.type() == BSONType::String);
 
     NamespaceString targetNss(request.getNamespaceString().db(), spec.valueStringData());
-    uassert(40326,
+    uassert(ErrorCodes::InvalidNamespace,
             str::stream() << "Invalid $out target namespace, " << targetNss.ns(),
             targetNss.isValid());
-    return stdx::make_unique<LiteParsedDocumentSourceForeignCollections>(std::move(targetNss));
+
+    ActionSet actions{ActionType::remove, ActionType::insert};
+    if (request.shouldBypassDocumentValidation()) {
+        actions.addAction(ActionType::bypassDocumentValidation);
+    }
+
+    PrivilegeVector privileges{Privilege(ResourcePattern::forExactNamespace(targetNss), actions)};
+
+    return stdx::make_unique<LiteParsedDocumentSourceForeignCollections>(std::move(targetNss),
+                                                                         std::move(privileges));
 }
 
 REGISTER_DOCUMENT_SOURCE(out, DocumentSourceOut::liteParse, DocumentSourceOut::createFromBson);
@@ -128,7 +138,7 @@ void DocumentSourceOut::initialize() {
                               << indexBson
                               << " error: "
                               << err,
-                DBClientWithCommands::getLastErrorString(err).empty());
+                DBClientBase::getLastErrorString(err).empty());
     }
     _initialized = true;
 }
@@ -137,7 +147,7 @@ void DocumentSourceOut::spill(const vector<BSONObj>& toInsert) {
     BSONObj err = _mongod->insert(_tempNs, toInsert);
     uassert(16996,
             str::stream() << "insert for $out failed: " << err,
-            DBClientWithCommands::getLastErrorString(err).empty());
+            DBClientBase::getLastErrorString(err).empty());
 }
 
 DocumentSource::GetNextResult DocumentSourceOut::getNext() {
@@ -160,7 +170,8 @@ DocumentSource::GetNextResult DocumentSourceOut::getNext() {
         BSONObj toInsert = nextInput.releaseDocument().toBson();
 
         bufferedBytes += toInsert.objsize();
-        if (!bufferedObjects.empty() && bufferedBytes > BSONObjMaxUserSize) {
+        if (!bufferedObjects.empty() && (bufferedBytes > BSONObjMaxUserSize ||
+                                         bufferedObjects.size() >= write_ops::kMaxWriteBatchSize)) {
             spill(bufferedObjects);
             bufferedObjects.clear();
             bufferedBytes = toInsert.objsize();

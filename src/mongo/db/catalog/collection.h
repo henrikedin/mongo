@@ -215,6 +215,8 @@ public:
         virtual const NamespaceString& ns() const = 0;
         virtual OptionalCollectionUUID uuid() const = 0;
 
+        virtual void refreshUUID(OperationContext* opCtx) = 0;
+
         virtual const IndexCatalog* getIndexCatalog() const = 0;
         virtual IndexCatalog* getIndexCatalog() = 0;
 
@@ -238,6 +240,7 @@ public:
             OperationContext* opCtx) const = 0;
 
         virtual void deleteDocument(OperationContext* opCtx,
+                                    StmtId stmtId,
                                     const RecordId& loc,
                                     OpDebug* opDebug,
                                     bool fromMigrate,
@@ -389,6 +392,10 @@ public:
         return this->_impl().uuid();
     }
 
+    inline void refreshUUID(OperationContext* opCtx) {
+        return this->_impl().refreshUUID(opCtx);
+    }
+
     inline const IndexCatalog* getIndexCatalog() const {
         return this->_impl().getIndexCatalog();
     }
@@ -453,11 +460,12 @@ public:
      * will not be logged.
      */
     inline void deleteDocument(OperationContext* const opCtx,
+                               StmtId stmtId,
                                const RecordId& loc,
                                OpDebug* const opDebug,
                                const bool fromMigrate = false,
                                const bool noWarn = false) {
-        return this->_impl().deleteDocument(opCtx, loc, opDebug, fromMigrate, noWarn);
+        return this->_impl().deleteDocument(opCtx, stmtId, loc, opDebug, fromMigrate, noWarn);
     }
 
     /*

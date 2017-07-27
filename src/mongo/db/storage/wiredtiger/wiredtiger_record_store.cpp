@@ -40,8 +40,10 @@
 #include "mongo/bson/util/builder.h"
 #include "mongo/db/concurrency/locker.h"
 #include "mongo/db/concurrency/write_conflict_exception.h"
+#include "mongo/db/mongod_options.h"
 #include "mongo/db/namespace_string.h"
 #include "mongo/db/operation_context.h"
+#include "mongo/db/repl/repl_settings.h"
 #include "mongo/db/service_context.h"
 #include "mongo/db/storage/oplog_hack.h"
 #include "mongo/db/storage/wiredtiger/wiredtiger_customization_hooks.h"
@@ -594,6 +596,15 @@ StatusWith<std::string> WiredTigerRecordStore::generateCreateString(
     }
     ss << ")";
 
+    const bool keepOldLoggingSettings = true;
+    if (keepOldLoggingSettings ||
+        WiredTigerUtil::useTableLogging(NamespaceString(ns),
+                                        getGlobalReplSettings().usingReplSets())) {
+        ss << ",log=(enabled=true)";
+    } else {
+        ss << ",log=(enabled=false)";
+    }
+
     return StatusWith<std::string>(ss);
 }
 
@@ -634,6 +645,14 @@ WiredTigerRecordStore::WiredTigerRecordStore(OperationContext* ctx, Params param
     } else {
         invariant(_cappedMaxSize == -1);
         invariant(_cappedMaxDocs == -1);
+    }
+
+    if (!params.isReadOnly) {
+        uassertStatusOK(WiredTigerUtil::setTableLogging(
+            ctx,
+            _uri,
+            WiredTigerUtil::useTableLogging(NamespaceString(ns()),
+                                            getGlobalReplSettings().usingReplSets())));
     }
 }
 
@@ -1257,7 +1276,6 @@ Status WiredTigerRecordStore::updateRecord(OperationContext* opCtx,
         return {ErrorCodes::IllegalOperation, "Cannot change the size of a document in the oplog"};
     }
 
-    setKey(c, id);
     WiredTigerItem value(data, len);
     c->set_value(c, value.Get());
     ret = WT_OP_CHECK(c->insert(c));
@@ -1347,7 +1365,7 @@ Status WiredTigerRecordStore::validate(OperationContext* opCtx,
                                        ValidateAdaptor* adaptor,
                                        ValidateResults* results,
                                        BSONObjBuilder* output) {
-    if (!_isEphemeral) {
+    if (!_isEphemeral && level == kValidateFull) {
         int err = WiredTigerUtil::verifyTable(opCtx, _uri, &results->errors);
         if (err == EBUSY) {
             std::string msg = str::stream()
@@ -1383,35 +1401,24 @@ Status WiredTigerRecordStore::validate(OperationContext* opCtx,
         ++nrecords;
         auto dataSize = record->data.size();
         dataSizeTotal += dataSize;
-        if (level == kValidateFull) {
-            size_t validatedSize;
-            Status status = adaptor->validate(record->id, record->data, &validatedSize);
+        size_t validatedSize;
+        Status status = adaptor->validate(record->id, record->data, &validatedSize);
 
-            // The validatedSize equals dataSize below is not a general requirement, but must be
-            // true for WT today because we never pad records.
-            if (!status.isOK() || validatedSize != static_cast<size_t>(dataSize)) {
-                if (results->valid) {
-                    // Only log once.
-                    results->errors.push_back("detected one or more invalid documents (see logs)");
-                }
-                nInvalid++;
-                results->valid = false;
-                log() << "document at location: " << record->id << " is corrupted";
+        // The validatedSize equals dataSize below is not a general requirement, but must be
+        // true for WT today because we never pad records.
+        if (!status.isOK() || validatedSize != static_cast<size_t>(dataSize)) {
+            if (results->valid) {
+                // Only log once.
+                results->errors.push_back("detected one or more invalid documents (see logs)");
             }
+            nInvalid++;
+            results->valid = false;
+            log() << "document at location: " << record->id << " is corrupted";
         }
     }
 
-    if (_sizeStorer && results->valid) {
-        if (nrecords != _numRecords.load() || dataSizeTotal != _dataSize.load()) {
-            warning() << _uri << ": Existing record and data size counters (" << _numRecords.load()
-                      << " records " << _dataSize.load() << " bytes) "
-                      << "are inconsistent with validation results (" << nrecords << " records "
-                      << dataSizeTotal << " bytes). "
-                      << "Updating counters with new values.";
-        }
-        _numRecords.store(nrecords);
-        _dataSize.store(dataSizeTotal);
-        _sizeStorer->storeToCache(_uri, _numRecords.load(), _dataSize.load());
+    if (results->valid) {
+        updateStatsAfterRepair(opCtx, nrecords, dataSizeTotal);
     }
 
     if (level == kValidateFull) {

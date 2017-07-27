@@ -37,6 +37,9 @@
 #include "mongo/db/client.h"
 #include "mongo/db/dbmessage.h"
 #include "mongo/db/namespace_string.h"
+#include "mongo/db/query/cursor_response.h"
+#include "mongo/db/query/getmore_request.h"
+#include "mongo/db/query/query_request.h"
 #include "mongo/rpc/factory.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/rpc/metadata.h"
@@ -58,7 +61,7 @@ using std::string;
 using std::vector;
 
 namespace {
-Message assembleCommandRequest(DBClientWithCommands* cli,
+Message assembleCommandRequest(DBClientBase* cli,
                                StringData database,
                                int legacyQueryOptions,
                                BSONObj legacyQuery) {
@@ -87,40 +90,70 @@ int DBClientCursor::nextBatchSize() {
     return batchSize < nToReturn ? batchSize : nToReturn;
 }
 
-void DBClientCursor::_assembleInit(Message& toSend) {
-    // If we haven't gotten a cursorId yet, we need to issue a new query or command.
-    if (!cursorId) {
-        if (_isCommand) {
-            // HACK:
-            // Unfortunately, this code is used by the shell to run commands,
-            // so we need to allow the shell to send invalid options so that we can
-            // test that the server rejects them. Thus, to allow generating commands with
-            // invalid options, we validate them here, and fall back to generating an OP_QUERY
-            // through assembleQueryRequest if the options are invalid.
-            bool hasValidNToReturnForCommand = (nToReturn == 1 || nToReturn == -1);
-            bool hasValidFlagsForCommand = !(opts & mongo::QueryOption_Exhaust);
-            bool hasInvalidMaxTimeMs = query.hasField("$maxTimeMS");
-
-            if (hasValidNToReturnForCommand && hasValidFlagsForCommand && !hasInvalidMaxTimeMs) {
-                toSend = assembleCommandRequest(_client, nsToDatabaseSubstring(ns), opts, query);
-                return;
-            }
-        }
-        assembleQueryRequest(ns, query, nextBatchSize(), nToSkip, fieldsToReturn, opts, toSend);
-        return;
+Message DBClientCursor::_assembleInit() {
+    if (cursorId) {
+        return _assembleGetMore();
     }
-    // Assemble a legacy getMore request.
-    BufBuilder b;
-    b.appendNum(opts);
-    b.appendStr(ns);
-    b.appendNum(nToReturn);
-    b.appendNum(cursorId);
-    toSend.setData(dbGetMore, b.buf(), b.len());
+
+    // If we haven't gotten a cursorId yet, we need to issue a new query or command.
+    if (_isCommand) {
+        // HACK:
+        // Unfortunately, this code is used by the shell to run commands,
+        // so we need to allow the shell to send invalid options so that we can
+        // test that the server rejects them. Thus, to allow generating commands with
+        // invalid options, we validate them here, and fall back to generating an OP_QUERY
+        // through assembleQueryRequest if the options are invalid.
+        bool hasValidNToReturnForCommand = (nToReturn == 1 || nToReturn == -1);
+        bool hasValidFlagsForCommand = !(opts & mongo::QueryOption_Exhaust);
+        bool hasInvalidMaxTimeMs = query.hasField("$maxTimeMS");
+
+        if (hasValidNToReturnForCommand && hasValidFlagsForCommand && !hasInvalidMaxTimeMs) {
+            return assembleCommandRequest(_client, ns.db(), opts, query);
+        }
+    } else if (_useFindCommand) {
+        auto qr = QueryRequest::fromLegacyQuery(ns,
+                                                query,
+                                                fieldsToReturn ? *fieldsToReturn : BSONObj(),
+                                                nToSkip,
+                                                nextBatchSize(),
+                                                opts);
+        if (qr.isOK() && !qr.getValue()->isExplain() && !qr.getValue()->isExhaust()) {
+            BSONObj cmd = qr.getValue()->asFindCommand();
+            if (auto readPref = query["$readPreference"]) {
+                // QueryRequest doesn't handle $readPreference.
+                cmd = BSONObjBuilder(std::move(cmd)).append(readPref).obj();
+            }
+            return assembleCommandRequest(_client, ns.db(), opts, std::move(cmd));
+        }
+        // else use legacy OP_QUERY request.
+    }
+
+    _useFindCommand = false;  // Make sure we handle the reply correctly.
+    Message toSend;
+    assembleQueryRequest(ns.ns(), query, nextBatchSize(), nToSkip, fieldsToReturn, opts, toSend);
+    return toSend;
+}
+
+Message DBClientCursor::_assembleGetMore() {
+    invariant(cursorId);
+    if (_useFindCommand) {
+        long long batchSize = nextBatchSize();
+        auto gmr = GetMoreRequest(ns,
+                                  cursorId,
+                                  boost::make_optional(batchSize != 0, batchSize),
+                                  boost::none,   // awaitDataTimeout
+                                  boost::none,   // term
+                                  boost::none);  // lastKnownCommittedOptime
+        return assembleCommandRequest(_client, ns.db(), opts, gmr.toBSON());
+    } else {
+        // Assemble a legacy getMore request.
+        return makeGetMoreMessage(ns.ns(), cursorId, nextBatchSize(), opts);
+    }
 }
 
 bool DBClientCursor::init() {
-    Message toSend;
-    _assembleInit(toSend);
+    invariant(!_connectionHasPendingReplies);
+    Message toSend = _assembleInit();
     verify(_client);
     Message reply;
     if (!_client->call(toSend, reply, false, &_originalHost)) {
@@ -141,14 +174,17 @@ void DBClientCursor::initLazy(bool isRetry) {
     massert(15875,
             "DBClientCursor::initLazy called on a client that doesn't support lazy",
             _client->lazySupported());
-    Message toSend;
-    _assembleInit(toSend);
+    Message toSend = _assembleInit();
     _client->say(toSend, isRetry, &_originalHost);
+    _lastRequestId = toSend.header().getId();
+    _connectionHasPendingReplies = true;
 }
 
 bool DBClientCursor::initLazyFinish(bool& retry) {
+    invariant(_connectionHasPendingReplies);
     Message reply;
-    bool recvd = _client->recv(reply);
+    bool recvd = _client->recv(reply, _lastRequestId);
+    _connectionHasPendingReplies = false;
 
     // If we get a bad response, return false
     if (!recvd || reply.empty()) {
@@ -168,34 +204,35 @@ bool DBClientCursor::initLazyFinish(bool& retry) {
 }
 
 void DBClientCursor::requestMore() {
+    invariant(!_connectionHasPendingReplies);
     verify(cursorId && batch.pos == batch.objs.size());
 
     if (haveLimit) {
         nToReturn -= batch.objs.size();
         verify(nToReturn > 0);
     }
-    BufBuilder b;
-    b.appendNum(opts);
-    b.appendStr(ns);
-    b.appendNum(nextBatchSize());
-    b.appendNum(cursorId);
 
-    Message toSend;
-    toSend.setData(dbGetMore, b.buf(), b.len());
-    Message response;
-
-    if (_client) {
-        _client->call(toSend, response);
-        dataReceived(response);
-    } else {
-        verify(_scopedHost.size());
-        ScopedDbConnection conn(_scopedHost);
-        conn->call(toSend, response);
-        _client = conn.get();
-        ON_BLOCK_EXIT([this] { _client = nullptr; });
-        dataReceived(response);
-        conn.done();
+    ON_BLOCK_EXIT([ this, origClient = _client ] { _client = origClient; });
+    boost::optional<ScopedDbConnection> connHolder;
+    if (!_client) {
+        invariant(_scopedHost.size());
+        connHolder.emplace(_scopedHost);
+        _client = connHolder->get();
     }
+
+    Message toSend = _assembleGetMore();
+    Message response;
+    _client->call(toSend, response);
+
+    // If call() succeeds, the connection is clean so we can return it to the pool, even if
+    // dataReceived() throws because the command reported failure. However, we can't return it yet,
+    // because dataReceived() needs to get the metadata reader from the connection.
+    ON_BLOCK_EXIT([&] {
+        if (connHolder)
+            connHolder->done();
+    });
+
+    dataReceived(response);
 }
 
 /** with QueryOption_Exhaust, the server just blasts data at us (marked at end with cursorid==0). */
@@ -204,21 +241,17 @@ void DBClientCursor::exhaustReceiveMore() {
     verify(!haveLimit);
     Message response;
     verify(_client);
-    if (!_client->recv(response)) {
+    if (!_client->recv(response, _lastRequestId)) {
         uasserted(16465, "recv failed while exhausting cursor");
     }
     dataReceived(response);
 }
 
-void DBClientCursor::commandDataReceived(const Message& reply) {
+BSONObj DBClientCursor::commandDataReceived(const Message& reply) {
     int op = reply.operation();
     invariant(op == opReply || op == dbCommandReply || op == dbMsg);
 
-    batch.objs.clear();
-    batch.pos = 0;
-
     auto commandReply = rpc::makeReply(&reply);
-
     auto commandStatus = getStatusFromCommandResult(commandReply->getCommandReply());
 
     if (ErrorCodes::SendStaleConfig == commandStatus) {
@@ -234,13 +267,25 @@ void DBClientCursor::commandDataReceived(const Message& reply) {
             opCtx, commandReply->getMetadata(), _client->getServerAddress()));
     }
 
-    batch.objs.push_back(commandReply->getCommandReply().getOwned());
+    return commandReply->getCommandReply().getOwned();
 }
 
 void DBClientCursor::dataReceived(const Message& reply, bool& retry, string& host) {
+    batch.objs.clear();
+    batch.pos = 0;
+
     // If this is a reply to our initial command request.
     if (_isCommand && cursorId == 0) {
-        commandDataReceived(reply);
+        batch.objs.push_back(commandDataReceived(reply));
+        return;
+    }
+
+    if (_useFindCommand) {
+        cursorId = 0;  // Don't try to kill cursor if we get back an error.
+        auto cr = uassertStatusOK(CursorResponse::parseFromBSON(commandDataReceived(reply)));
+        cursorId = cr.getCursorId();
+        ns = cr.getNSS();  // Unlike OP_REPLY, find command can change the ns to use for getMores.
+        batch.objs = cr.releaseBatch();
         return;
     }
 
@@ -270,8 +315,13 @@ void DBClientCursor::dataReceived(const Message& reply, bool& retry, string& hos
         cursorId = qr.getCursorId();
     }
 
-    batch.pos = 0;
-    batch.objs.clear();
+    if (opts & QueryOption_Exhaust) {
+        // With exhaust mode, each reply after the first claims to be a reply to the previous one
+        // rather than the initial request.
+        _connectionHasPendingReplies = (cursorId != 0);
+        _lastRequestId = reply.header().getId();
+    }
+
     batch.objs.reserve(qr.getNReturned());
 
     BufReader data(qr.data(), qr.dataLen());
@@ -458,33 +508,44 @@ DBClientCursor::DBClientCursor(DBClientBase* client,
       haveLimit(nToReturn > 0 && !(queryOptions & QueryOption_CursorTailable)),
       nToSkip(nToSkip),
       fieldsToReturn(fieldsToReturn),
-      opts(queryOptions),
+      opts(queryOptions & ~QueryOptionLocal_forceOpQuery),
       batchSize(batchSize == 1 ? 2 : batchSize),
       resultFlags(0),
       cursorId(cursorId),
       _ownCursor(true),
       wasError(false),
-      _enabledBSONVersion(Validator<BSONObj>::enabledBSONVersion()) {}
+      _enabledBSONVersion(Validator<BSONObj>::enabledBSONVersion()) {
+    if (queryOptions & QueryOptionLocal_forceOpQuery)
+        _useFindCommand = false;
+}
 
 DBClientCursor::~DBClientCursor() {
     kill();
 }
 
 void DBClientCursor::kill() {
-    DESTRUCTOR_GUARD(
-
+    DESTRUCTOR_GUARD({
         if (cursorId && _ownCursor && !globalInShutdownDeprecated()) {
-            if (_client) {
-                _client->killCursor(cursorId);
+            auto killCursor = [&](auto& conn) {
+                if (_useFindCommand) {
+                    conn->killCursor(ns, cursorId);
+                } else {
+                    auto toSend = makeKillCursorsMessage(cursorId);
+                    conn->say(toSend);
+                }
+            };
+
+            if (_client && !_connectionHasPendingReplies) {
+                killCursor(_client);
             } else {
-                verify(_scopedHost.size());
-                ScopedDbConnection conn(_scopedHost);
-                conn->killCursor(cursorId);
+                // Use a side connection to send the kill cursor request.
+                verify(_scopedHost.size() || (_client && _connectionHasPendingReplies));
+                ScopedDbConnection conn(_client ? _client->getServerAddress() : _scopedHost);
+                killCursor(conn);
                 conn.done();
             }
         }
-
-        );
+    });
 
     // Mark this cursor as dead since we can't do any getMores.
     cursorId = 0;

@@ -183,6 +183,33 @@ BSONObj validateIndexKey(const BSONObj& a, void* data) {
     return BSON("" << BSON("ok" << true));
 }
 
+BSONObj computeSHA256Block(const BSONObj& a, void* data) {
+    std::vector<ConstDataRange> blocks;
+
+    auto ele = a[0];
+
+    BSONObjBuilder bob;
+    switch (ele.type()) {
+        case BinData: {
+            int len;
+            const char* ptr = ele.binData(len);
+            SHA256Block::computeHash({ConstDataRange(ptr, len)}).appendAsBinData(bob, ""_sd);
+
+            break;
+        }
+        case String: {
+            auto str = ele.valueStringData();
+            SHA256Block::computeHash({ConstDataRange(str.rawData(), str.size())})
+                .appendAsBinData(bob, ""_sd);
+            break;
+        }
+        default:
+            uasserted(ErrorCodes::BadValue, "Can only computeSHA256Block of strings and bindata");
+    }
+
+    return bob.obj();
+}
+
 BSONObj replMonitorStats(const BSONObj& a, void* data) {
     uassert(17134,
             "replMonitorStats requires a single string argument (the ReplSet name)",
@@ -226,6 +253,7 @@ void installShellUtils(Scope& scope) {
     scope.injectNative("getBuildInfo", getBuildInfo);
     scope.injectNative("isKeyTooLarge", isKeyTooLarge);
     scope.injectNative("validateIndexKey", validateIndexKey);
+    scope.injectNative("computeSHA256Block", computeSHA256Block);
 
 #ifndef MONGO_SAFE_SHELL
     // can't launch programs
@@ -280,10 +308,10 @@ bool Prompter::confirm() {
 
 ConnectionRegistry::ConnectionRegistry() = default;
 
-void ConnectionRegistry::registerConnection(DBClientWithCommands& client) {
+void ConnectionRegistry::registerConnection(DBClientBase& client) {
     BSONObj info;
     if (client.runCommand("admin", BSON("whatsmyuri" << 1), info)) {
-        string connstr = dynamic_cast<DBClientBase&>(client).getServerAddress();
+        string connstr = client.getServerAddress();
         stdx::lock_guard<stdx::mutex> lk(_mutex);
         _connectionUris[connstr].insert(info["you"].str());
     }
@@ -303,7 +331,7 @@ void ConnectionRegistry::killOperationsOnAllConnections(bool withPrompt) const {
         const ConnectionString cs(status.getValue());
 
         string errmsg;
-        std::unique_ptr<DBClientWithCommands> conn(cs.connect("MongoDB Shell", errmsg));
+        std::unique_ptr<DBClientBase> conn(cs.connect("MongoDB Shell", errmsg));
         if (!conn) {
             continue;
         }
@@ -362,7 +390,7 @@ void ConnectionRegistry::killOperationsOnAllConnections(bool withPrompt) const {
 ConnectionRegistry connectionRegistry;
 
 bool _nokillop = false;
-void onConnect(DBClientWithCommands& c) {
+void onConnect(DBClientBase& c) {
     if (_nokillop) {
         return;
     }

@@ -47,6 +47,7 @@
 #include "mongo/db/auth/authorization_session.h"
 #include "mongo/db/auth/authz_manager_external_state.h"
 #include "mongo/db/auth/privilege.h"
+#include "mongo/db/auth/privilege_parser.h"
 #include "mongo/db/auth/role_graph.h"
 #include "mongo/db/auth/sasl_options.h"
 #include "mongo/db/auth/user.h"
@@ -456,25 +457,28 @@ Status AuthorizationManager::getUserDescription(OperationContext* opCtx,
 Status AuthorizationManager::getRoleDescription(OperationContext* opCtx,
                                                 const RoleName& roleName,
                                                 PrivilegeFormat privileges,
+                                                AuthenticationRestrictionsFormat restrictions,
                                                 BSONObj* result) {
-    return _externalState->getRoleDescription(opCtx, roleName, privileges, result);
+    return _externalState->getRoleDescription(opCtx, roleName, privileges, restrictions, result);
 }
 
 Status AuthorizationManager::getRolesDescription(OperationContext* opCtx,
                                                  const std::vector<RoleName>& roleName,
                                                  PrivilegeFormat privileges,
+                                                 AuthenticationRestrictionsFormat restrictions,
                                                  BSONObj* result) {
-    return _externalState->getRolesDescription(opCtx, roleName, privileges, result);
+    return _externalState->getRolesDescription(opCtx, roleName, privileges, restrictions, result);
 }
 
 
 Status AuthorizationManager::getRoleDescriptionsForDB(OperationContext* opCtx,
                                                       const std::string dbname,
                                                       PrivilegeFormat privileges,
+                                                      AuthenticationRestrictionsFormat restrictions,
                                                       bool showBuiltinRoles,
                                                       vector<BSONObj>* result) {
     return _externalState->getRoleDescriptionsForDB(
-        opCtx, dbname, privileges, showBuiltinRoles, result);
+        opCtx, dbname, privileges, restrictions, showBuiltinRoles, result);
 }
 
 Status AuthorizationManager::acquireUserToRefreshSessionCache(OperationContext* opCtx,

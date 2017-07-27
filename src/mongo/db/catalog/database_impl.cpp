@@ -220,8 +220,17 @@ Collection* DatabaseImpl::_getOrCreateCollectionInstance(OperationContext* opCtx
 
     // Not registering AddCollectionChange since this is for collections that already exist.
     Collection* coll = new Collection(opCtx, nss.ns(), uuid, cce.release(), rs.release(), _dbEntry);
-    if (uuid)
-        UUIDCatalog::get(opCtx).registerUUIDCatalogEntry(uuid.get(), coll);
+    if (uuid) {
+        // We are not in a WUOW only when we are called from Database::init(). There is no need
+        // to rollback UUIDCatalog changes because we are initializing existing collections.
+        auto&& uuidCatalog = UUIDCatalog::get(opCtx);
+        if (!opCtx->lockState()->inAWriteUnitOfWork()) {
+            uuidCatalog.registerUUIDCatalogEntry(uuid.get(), coll);
+        } else {
+            uuidCatalog.onCreateCollection(opCtx, coll, uuid.get());
+        }
+    }
+
     return coll;
 }
 
@@ -672,7 +681,10 @@ Collection* DatabaseImpl::getOrCreateCollection(OperationContext* opCtx,
 void DatabaseImpl::_checkCanCreateCollection(OperationContext* opCtx,
                                              const NamespaceString& nss,
                                              const CollectionOptions& options) {
-    massert(17399, "collection already exists", getCollection(opCtx, nss) == nullptr);
+    massert(17399,
+            str::stream() << "Cannot create collection " << nss.ns()
+                          << " - collection already exists.",
+            getCollection(opCtx, nss) == nullptr);
     massertNamespaceNotIndex(nss.ns(), "createCollection");
 
     uassert(14037,
@@ -722,8 +734,10 @@ Collection* DatabaseImpl::createCollection(OperationContext* opCtx,
     invariant(!options.isView());
 
     CollectionOptions optionsWithUUID = options;
-    if (enableCollectionUUIDs && !optionsWithUUID.uuid)
+    if (enableCollectionUUIDs && !optionsWithUUID.uuid &&
+        serverGlobalParams.featureCompatibility.isSchemaVersion36.load() == true) {
         optionsWithUUID.uuid.emplace(CollectionUUID::gen());
+    }
 
     NamespaceString nss(ns);
     _checkCanCreateCollection(opCtx, nss, optionsWithUUID);
@@ -782,10 +796,8 @@ void DatabaseImpl::dropDatabase(OperationContext* opCtx, Database* db) {
 
     audit::logDropDatabase(opCtx->getClient(), name);
 
-    UUIDCatalog::get(opCtx).onCloseDatabase(db);
     for (auto&& coll : *db) {
         Top::get(opCtx->getClient()->getServiceContext()).collectionDropped(coll->ns().ns(), true);
-        NamespaceUUIDCache::get(opCtx).evictNamespace(coll->ns());
     }
 
     dbHolder().close(opCtx, name, "database dropped");

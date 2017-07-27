@@ -85,8 +85,9 @@ public:
         GEO,
         WHERE,
 
-        // things that maybe shouldn't even be nodes
+        // Boolean expressions.
         ALWAYS_FALSE,
+        ALWAYS_TRUE,
 
         // Things that we parse but cannot be answered without an index.
         GEO_NEAR,
@@ -98,8 +99,11 @@ public:
         INTERNAL_2D_POINT_IN_ANNULUS,
 
         // JSON Schema expressions.
+        INTERNAL_SCHEMA_COND,
         INTERNAL_SCHEMA_MAX_ITEMS,
         INTERNAL_SCHEMA_MIN_ITEMS,
+        INTERNAL_SCHEMA_MAX_PROPERTIES,
+        INTERNAL_SCHEMA_MIN_PROPERTIES,
         INTERNAL_SCHEMA_OBJECT_MATCH,
         INTERNAL_SCHEMA_UNIQUE_ITEMS,
         INTERNAL_SCHEMA_XOR,
@@ -258,39 +262,5 @@ protected:
 private:
     MatchType _matchType;
     std::unique_ptr<TagData> _tagData;
-};
-
-class FalseMatchExpression : public MatchExpression {
-public:
-    FalseMatchExpression(StringData path) : MatchExpression(ALWAYS_FALSE) {
-        _path = path;
-    }
-
-    virtual bool matches(const MatchableDocument* doc, MatchDetails* details = 0) const {
-        return false;
-    }
-
-    virtual bool matchesSingleElement(const BSONElement& e) const {
-        return false;
-    }
-
-    virtual std::unique_ptr<MatchExpression> shallowClone() const {
-        return stdx::make_unique<FalseMatchExpression>(_path);
-    }
-
-    virtual void debugString(StringBuilder& debug, int level = 0) const;
-
-    virtual void serialize(BSONObjBuilder* out) const;
-
-    virtual bool equivalent(const MatchExpression* other) const {
-        return other->matchType() == ALWAYS_FALSE;
-    }
-
-    MatchCategory getCategory() const final {
-        return MatchCategory::kOther;
-    }
-
-private:
-    StringData _path;
 };
 }

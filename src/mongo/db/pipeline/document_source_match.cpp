@@ -34,8 +34,10 @@
 #include "mongo/db/matcher/expression_algo.h"
 #include "mongo/db/matcher/expression_array.h"
 #include "mongo/db/matcher/expression_leaf.h"
+#include "mongo/db/matcher/expression_parser.h"
 #include "mongo/db/matcher/extensions_callback_noop.h"
 #include "mongo/db/pipeline/document.h"
+#include "mongo/db/pipeline/document_path_support.h"
 #include "mongo/db/pipeline/expression.h"
 #include "mongo/db/pipeline/lite_parsed_document_source.h"
 #include "mongo/stdx/memory.h"
@@ -77,7 +79,8 @@ DocumentSource::GetNextResult DocumentSourceMatch::getNext() {
         // only serialize the fields we need to do the match.
         BSONObj toMatch = _dependencies.needWholeDocument
             ? nextInput.getDocument().toBson()
-            : getObjectForMatch(nextInput.getDocument(), _dependencies.fields);
+            : document_path_support::documentToBsonWithPaths(nextInput.getDocument(),
+                                                             _dependencies.fields);
 
         if (_expression->matchesBSON(toMatch)) {
             return nextInput;
@@ -117,22 +120,6 @@ Pipeline::SourceContainer::iterator DocumentSourceMatch::doOptimizeAt(
         return itr == container->begin() ? itr : std::prev(itr);
     }
     return std::next(itr);
-}
-
-BSONObj DocumentSourceMatch::getObjectForMatch(const Document& input,
-                                               const std::set<std::string>& fields) {
-    BSONObjBuilder matchObject;
-    for (auto&& field : fields) {
-        // getNestedField does not handle dotted paths correctly, so instead of retrieving the
-        // entire path, we just extract the first element of the path.
-        const auto prefix = FieldPath::extractFirstFieldFromDottedPath(field);
-        if (!matchObject.hasField(prefix)) {
-            // Avoid adding the same prefix twice.
-            input.getField(prefix).addToBsonObj(&matchObject, prefix);
-        }
-    }
-
-    return matchObject.obj();
 }
 
 namespace {
@@ -196,30 +183,31 @@ Document redactSafePortionDollarOps(BSONObj expr) {
             continue;
         }
 
-        switch (BSONObj::MatchType(field.getGtLtOp(BSONObj::Equality))) {
+        switch (*MatchExpressionParser::parsePathAcceptingKeyword(field,
+                                                                  PathAcceptingKeyword::EQUALITY)) {
             // These are always ok
-            case BSONObj::opTYPE:
-            case BSONObj::opREGEX:
-            case BSONObj::opOPTIONS:
-            case BSONObj::opMOD:
-            case BSONObj::opBITS_ALL_SET:
-            case BSONObj::opBITS_ALL_CLEAR:
-            case BSONObj::opBITS_ANY_SET:
-            case BSONObj::opBITS_ANY_CLEAR:
+            case PathAcceptingKeyword::TYPE:
+            case PathAcceptingKeyword::REGEX:
+            case PathAcceptingKeyword::OPTIONS:
+            case PathAcceptingKeyword::MOD:
+            case PathAcceptingKeyword::BITS_ALL_SET:
+            case PathAcceptingKeyword::BITS_ALL_CLEAR:
+            case PathAcceptingKeyword::BITS_ANY_SET:
+            case PathAcceptingKeyword::BITS_ANY_CLEAR:
                 output[field.fieldNameStringData()] = Value(field);
                 break;
 
             // These are ok if the type of the rhs is allowed in comparisons
-            case BSONObj::LTE:
-            case BSONObj::GTE:
-            case BSONObj::LT:
-            case BSONObj::GT:
+            case PathAcceptingKeyword::LESS_THAN_OR_EQUAL:
+            case PathAcceptingKeyword::GREATER_THAN_OR_EQUAL:
+            case PathAcceptingKeyword::LESS_THAN:
+            case PathAcceptingKeyword::GREATER_THAN:
                 if (isTypeRedactSafeInComparison(field.type()))
                     output[field.fieldNameStringData()] = Value(field);
                 break;
 
             // $in must be all-or-nothing (like $or). Can't include subset of elements.
-            case BSONObj::opIN: {
+            case PathAcceptingKeyword::IN_EXPR: {
                 bool allOk = true;
                 BSONForEach(elem, field.Obj()) {
                     if (!isTypeRedactSafeInComparison(elem.type())) {
@@ -234,7 +222,7 @@ Document redactSafePortionDollarOps(BSONObj expr) {
                 break;
             }
 
-            case BSONObj::opALL: {
+            case PathAcceptingKeyword::ALL: {
                 // $all can include subset of elements (like $and).
                 vector<Value> matches;
                 BSONForEach(elem, field.Obj()) {
@@ -249,7 +237,7 @@ Document redactSafePortionDollarOps(BSONObj expr) {
                 break;
             }
 
-            case BSONObj::opELEM_MATCH: {
+            case PathAcceptingKeyword::ELEM_MATCH: {
                 BSONObj subIn = field.Obj();
                 Document subOut;
                 if (subIn.firstElementFieldName()[0] == '$') {
@@ -265,20 +253,20 @@ Document redactSafePortionDollarOps(BSONObj expr) {
             }
 
             // These are never allowed
-            case BSONObj::Equality:  // This actually means unknown
-            case BSONObj::opNEAR:
-            case BSONObj::NE:
-            case BSONObj::opSIZE:
-            case BSONObj::NIN:
-            case BSONObj::opEXISTS:
-            case BSONObj::opWITHIN:
-            case BSONObj::opGEO_INTERSECTS:
-            case BSONObj::opINTERNAL_SCHEMA_MIN_ITEMS:
-            case BSONObj::opINTERNAL_SCHEMA_MAX_ITEMS:
-            case BSONObj::opINTERNAL_SCHEMA_UNIQUE_ITEMS:
-            case BSONObj::opINTERNAL_SCHEMA_OBJECT_MATCH:
-            case BSONObj::opINTERNAL_SCHEMA_MIN_LENGTH:
-            case BSONObj::opINTERNAL_SCHEMA_MAX_LENGTH:
+            case PathAcceptingKeyword::EQUALITY:  // This actually means unknown
+            case PathAcceptingKeyword::GEO_NEAR:
+            case PathAcceptingKeyword::NOT_EQUAL:
+            case PathAcceptingKeyword::SIZE:
+            case PathAcceptingKeyword::NOT_IN:
+            case PathAcceptingKeyword::EXISTS:
+            case PathAcceptingKeyword::WITHIN:
+            case PathAcceptingKeyword::GEO_INTERSECTS:
+            case PathAcceptingKeyword::INTERNAL_SCHEMA_MIN_ITEMS:
+            case PathAcceptingKeyword::INTERNAL_SCHEMA_MAX_ITEMS:
+            case PathAcceptingKeyword::INTERNAL_SCHEMA_UNIQUE_ITEMS:
+            case PathAcceptingKeyword::INTERNAL_SCHEMA_OBJECT_MATCH:
+            case PathAcceptingKeyword::INTERNAL_SCHEMA_MIN_LENGTH:
+            case PathAcceptingKeyword::INTERNAL_SCHEMA_MAX_LENGTH:
                 continue;
         }
     }

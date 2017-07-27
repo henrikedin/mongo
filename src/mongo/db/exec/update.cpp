@@ -291,6 +291,7 @@ BSONObj UpdateStage::transformAndUpdate(const Snapshotted<BSONObj>& oldObj, Reco
                 BSONObj idQuery = driver->makeOplogEntryQuery(newObj, request->isMulti());
                 OplogUpdateEntryArgs args;
                 args.nss = _collection->ns();
+                args.stmtId = request->getStmtId();
                 args.update = logObj;
                 args.criteria = idQuery;
                 args.fromMigrate = request->isFromMigration();
@@ -321,6 +322,7 @@ BSONObj UpdateStage::transformAndUpdate(const Snapshotted<BSONObj>& oldObj, Reco
                 OplogUpdateEntryArgs args;
                 args.nss = _collection->ns();
                 args.uuid = _collection->uuid();
+                args.stmtId = request->getStmtId();
                 args.update = logObj;
                 args.criteria = idQuery;
                 args.fromMigrate = request->isFromMigration();
@@ -481,9 +483,8 @@ void UpdateStage::doInsert() {
         WriteUnitOfWork wunit(getOpCtx());
         invariant(_collection);
         const bool enforceQuota = !request->isGod();
-        // TODO: SERVER-28912 include StmtId
         uassertStatusOK(_collection->insertDocument(getOpCtx(),
-                                                    InsertStatement(newObj),
+                                                    InsertStatement(request->getStmtId(), newObj),
                                                     _params.opDebug,
                                                     enforceQuota,
                                                     request->isFromMigration()));
@@ -611,7 +612,7 @@ PlanStage::StageState UpdateStage::doWork(WorkingSetID* out) {
         try {
             docStillMatches = write_stage_common::ensureStillMatches(
                 _collection, getOpCtx(), _ws, id, _params.canonicalQuery);
-        } catch (const WriteConflictException& wce) {
+        } catch (const WriteConflictException&) {
             // There was a problem trying to detect if the document still exists, so retry.
             memberFreer.Dismiss();
             return prepareToRetryWSM(id, out);
@@ -634,7 +635,7 @@ PlanStage::StageState UpdateStage::doWork(WorkingSetID* out) {
         WorkingSetCommon::prepareForSnapshotChange(_ws);
         try {
             child()->saveState();
-        } catch (const WriteConflictException& wce) {
+        } catch (const WriteConflictException&) {
             std::terminate();
         }
 
@@ -648,7 +649,7 @@ PlanStage::StageState UpdateStage::doWork(WorkingSetID* out) {
         try {
             // Do the update, get us the new version of the doc.
             newObj = transformAndUpdate(member->obj, recordId);
-        } catch (const WriteConflictException& wce) {
+        } catch (const WriteConflictException&) {
             memberFreer.Dismiss();  // Keep this member around so we can retry updating it.
             return prepareToRetryWSM(id, out);
         }
@@ -675,7 +676,7 @@ PlanStage::StageState UpdateStage::doWork(WorkingSetID* out) {
         // state outside of the WritUnitOfWork.
         try {
             child()->restoreState();
-        } catch (const WriteConflictException& wce) {
+        } catch (const WriteConflictException&) {
             // Note we don't need to retry updating anything in this case since the update
             // already was committed. However, we still need to return the updated document
             // (if it was requested).

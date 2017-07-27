@@ -37,6 +37,7 @@
 #include "mongo/base/status.h"
 #include "mongo/bson/util/bson_extract.h"
 #include "mongo/db/auth/action_type.h"
+#include "mongo/db/auth/address_restriction.h"
 #include "mongo/db/auth/authorization_manager.h"
 #include "mongo/db/auth/privilege.h"
 #include "mongo/db/auth/privilege_parser.h"
@@ -191,6 +192,7 @@ Status parseCreateOrUpdateUserCommands(const BSONObj& cmdObj,
     validFieldNames.insert("digestPassword");
     validFieldNames.insert("pwd");
     validFieldNames.insert("roles");
+    validFieldNames.insert("authenticationRestrictions");
 
     Status status = _checkNoExtraFields(cmdObj, cmdName, validFieldNames);
     if (!status.isOK()) {
@@ -246,6 +248,16 @@ Status parseCreateOrUpdateUserCommands(const BSONObj& cmdObj,
         }
         parsedArgs->customData = element.Obj();
         parsedArgs->hasCustomData = true;
+    }
+
+    // Parse authentication restrictions
+    if (cmdObj.hasField("authenticationRestrictions")) {
+        BSONElement element = cmdObj["authenticationRestrictions"];
+        if (element.type() != Array) {
+            return Status(ErrorCodes::BadValue, "authenticationRestrictions must be an array");
+        }
+        parsedArgs->authenticationRestrictions =
+            BSONArray(cmdObj["authenticationRestrictions"].Obj());
     }
 
     // Parse roles
@@ -356,6 +368,7 @@ Status parseRolesInfoCommand(const BSONObj& cmdObj, StringData dbname, RolesInfo
     unordered_set<std::string> validFieldNames;
     validFieldNames.insert("rolesInfo");
     validFieldNames.insert("showPrivileges");
+    validFieldNames.insert("showAuthenticationRestrictions");
     validFieldNames.insert("showBuiltinRoles");
 
     Status status = _checkNoExtraFields(cmdObj, "rolesInfo", validFieldNames);
@@ -398,6 +411,24 @@ Status parseRolesInfoCommand(const BSONObj& cmdObj, StringData dbname, RolesInfo
                       str::stream() << "Failed to parse 'showPrivileges'. 'showPrivileges' should "
                                        "either be a boolean or the string 'asUserFragment', given: "
                                     << showPrivileges.toString());
+    }
+
+    const auto showAuthenticationRestrictions = cmdObj["showAuthenticationRestrictions"];
+    if (showAuthenticationRestrictions.eoo()) {
+        parsedArgs->authenticationRestrictionsFormat = AuthenticationRestrictionsFormat::kOmit;
+    } else if (parsedArgs->privilegeFormat == PrivilegeFormat::kShowAsUserFragment) {
+        return Status(
+            ErrorCodes::UnsupportedFormat,
+            "showAuthenticationRestrictions may not be used with showPrivileges='asUserFragment'");
+    } else {
+        bool show;
+        status = bsonExtractBooleanField(cmdObj, "showAuthenticationRestrictions", &show);
+        if (!status.isOK()) {
+            return status;
+        }
+        parsedArgs->authenticationRestrictionsFormat = show
+            ? AuthenticationRestrictionsFormat::kShow
+            : AuthenticationRestrictionsFormat::kOmit;
     }
 
     status = bsonExtractBooleanFieldWithDefault(
@@ -459,6 +490,7 @@ Status parseCreateOrUpdateRoleCommands(const BSONObj& cmdObj,
     validFieldNames.insert(cmdName.toString());
     validFieldNames.insert("privileges");
     validFieldNames.insert("roles");
+    validFieldNames.insert("authenticationRestrictions");
 
     Status status = _checkNoExtraFields(cmdObj, cmdName, validFieldNames);
     if (!status.isOK()) {
@@ -506,6 +538,22 @@ Status parseCreateOrUpdateRoleCommands(const BSONObj& cmdObj,
         }
         parsedArgs->hasRoles = true;
     }
+
+    // Parse restrictions
+    if (cmdObj.hasField("authenticationRestrictions")) {
+        BSONElement restrictionsElement;
+        status = bsonExtractTypedField(
+            cmdObj, "authenticationRestrictions", Array, &restrictionsElement);
+        if (!status.isOK()) {
+            return status;
+        }
+        auto restrictions = getRawAuthenticationRestrictions(BSONArray(restrictionsElement.Obj()));
+        if (!restrictions.isOK()) {
+            return restrictions.getStatus();
+        }
+        parsedArgs->authenticationRestrictions = restrictions.getValue();
+    }
+
     return Status::OK();
 }
 

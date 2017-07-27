@@ -53,6 +53,8 @@
 #include "mongo/db/ops/update_lifecycle_impl.h"
 #include "mongo/db/ops/update_request.h"
 #include "mongo/db/ops/write_ops_exec.h"
+#include "mongo/db/ops/write_ops_gen.h"
+#include "mongo/db/ops/write_ops_retryability.h"
 #include "mongo/db/query/get_executor.h"
 #include "mongo/db/query/plan_summary_stats.h"
 #include "mongo/db/query/query_knobs.h"
@@ -60,6 +62,7 @@
 #include "mongo/db/repl/replication_coordinator.h"
 #include "mongo/db/s/collection_sharding_state.h"
 #include "mongo/db/s/sharding_state.h"
+#include "mongo/db/session_catalog.h"
 #include "mongo/db/stats/counters.h"
 #include "mongo/db/stats/top.h"
 #include "mongo/db/write_concern.h"
@@ -396,6 +399,12 @@ bool insertBatchAndHandleErrors(OperationContext* opCtx,
     return true;
 }
 
+template <typename T>
+StmtId getStmtIdForWriteOp(OperationContext* opCtx, const T& wholeOp, size_t opIndex) {
+    return opCtx->getTxnNumber() ? write_ops::getStmtIdForWriteAt(wholeOp, opIndex)
+                                 : kUninitializedStmtId;
+}
+
 }  // namespace
 
 WriteResult performInserts(OperationContext* opCtx, const write_ops::Insert& wholeOp) {
@@ -437,10 +446,13 @@ WriteResult performInserts(OperationContext* opCtx, const write_ops::Insert& who
     WriteResult out;
     out.results.reserve(wholeOp.getDocuments().size());
 
+    size_t stmtIdIndex = 0;
     size_t bytesInBatch = 0;
     std::vector<InsertStatement> batch;
     const size_t maxBatchSize = internalInsertMaxBatchSize.load();
     batch.reserve(std::min(wholeOp.getDocuments().size(), maxBatchSize));
+
+    auto session = OperationContextSession::get(opCtx);
 
     for (auto&& doc : wholeOp.getDocuments()) {
         const bool isLastDoc = (&doc == &wholeOp.getDocuments().back());
@@ -450,9 +462,16 @@ WriteResult performInserts(OperationContext* opCtx, const write_ops::Insert& who
             // correct order. In an ordered insert, if one of the docs ahead of us fails, we should
             // behave as-if we never got to this document.
         } else {
-            // TODO: SERVER-28912 get StmtId from request
-            batch.emplace_back(fixedDoc.getValue().isEmpty() ? doc
-                                                             : std::move(fixedDoc.getValue()));
+            auto stmtId = getStmtIdForWriteOp(opCtx, wholeOp, stmtIdIndex++);
+            if (session) {
+                if (auto entry = session->checkStatementExecuted(opCtx, stmtId)) {
+                    out.results.emplace_back(parseOplogEntryForInsert(*entry));
+                    continue;
+                }
+            }
+
+            BSONObj toInsert = fixedDoc.getValue().isEmpty() ? doc : std::move(fixedDoc.getValue());
+            batch.emplace_back(stmtId, toInsert);
             bytesInBatch += batch.back().doc.objsize();
             if (!isLastDoc && batch.size() < maxBatchSize && bytesInBatch < insertVectorMaxBytes)
                 continue;  // Add more to batch before inserting.
@@ -481,6 +500,7 @@ WriteResult performInserts(OperationContext* opCtx, const write_ops::Insert& who
 
 static SingleWriteResult performSingleUpdateOp(OperationContext* opCtx,
                                                const NamespaceString& ns,
+                                               StmtId stmtId,
                                                const write_ops::UpdateOpEntry& op) {
     globalOpCounters.gotUpdate();
     auto& curOp = *CurOp::get(opCtx);
@@ -499,6 +519,7 @@ static SingleWriteResult performSingleUpdateOp(OperationContext* opCtx,
     request.setQuery(op.getQ());
     request.setUpdates(op.getU());
     request.setCollation(write_ops::collationOf(op));
+    request.setStmtId(stmtId);
     request.setArrayFilters(write_ops::arrayFiltersOf(op));
     request.setMulti(op.getMulti());
     request.setUpsert(op.getUpsert());
@@ -578,9 +599,21 @@ WriteResult performUpdates(OperationContext* opCtx, const write_ops::Update& who
         opCtx, wholeOp.getWriteCommandBase().getBypassDocumentValidation());
     LastOpFixer lastOpFixer(opCtx, wholeOp.getNamespace());
 
+    size_t stmtIdIndex = 0;
     WriteResult out;
     out.results.reserve(wholeOp.getUpdates().size());
+
+    auto session = OperationContextSession::get(opCtx);
+
     for (auto&& singleOp : wholeOp.getUpdates()) {
+        auto stmtId = getStmtIdForWriteOp(opCtx, wholeOp, stmtIdIndex++);
+        if (session) {
+            if (auto entry = session->checkStatementExecuted(opCtx, stmtId)) {
+                out.results.emplace_back(parseOplogEntryForUpdate(*entry));
+                continue;
+            }
+        }
+
         // TODO: don't create nested CurOp for legacy writes.
         // Add Command pointer to the nested CurOp.
         auto& parentCurOp = *CurOp::get(opCtx);
@@ -594,7 +627,7 @@ WriteResult performUpdates(OperationContext* opCtx, const write_ops::Update& who
         try {
             lastOpFixer.startingOp();
             out.results.emplace_back(
-                performSingleUpdateOp(opCtx, wholeOp.getNamespace(), singleOp));
+                performSingleUpdateOp(opCtx, wholeOp.getNamespace(), stmtId, singleOp));
             lastOpFixer.finishedOpSuccessfully();
         } catch (const DBException& ex) {
             const bool canContinue =
@@ -609,6 +642,7 @@ WriteResult performUpdates(OperationContext* opCtx, const write_ops::Update& who
 
 static SingleWriteResult performSingleDeleteOp(OperationContext* opCtx,
                                                const NamespaceString& ns,
+                                               StmtId stmtId,
                                                const write_ops::DeleteOpEntry& op) {
     globalOpCounters.gotDelete();
     auto& curOp = *CurOp::get(opCtx);
@@ -628,6 +662,7 @@ static SingleWriteResult performSingleDeleteOp(OperationContext* opCtx,
     request.setCollation(write_ops::collationOf(op));
     request.setMulti(op.getMulti());
     request.setYieldPolicy(PlanExecutor::YIELD_AUTO);  // ParsedDelete overrides this for $isolated.
+    request.setStmtId(stmtId);
 
     ParsedDelete parsedDelete(opCtx, &request);
     uassertStatusOK(parsedDelete.parseRequest());
@@ -688,9 +723,21 @@ WriteResult performDeletes(OperationContext* opCtx, const write_ops::Delete& who
         opCtx, wholeOp.getWriteCommandBase().getBypassDocumentValidation());
     LastOpFixer lastOpFixer(opCtx, wholeOp.getNamespace());
 
+    size_t stmtIdIndex = 0;
     WriteResult out;
     out.results.reserve(wholeOp.getDeletes().size());
+
+    auto session = OperationContextSession::get(opCtx);
+
     for (auto&& singleOp : wholeOp.getDeletes()) {
+        auto stmtId = getStmtIdForWriteOp(opCtx, wholeOp, stmtIdIndex++);
+        if (session) {
+            if (auto entry = session->checkStatementExecuted(opCtx, stmtId)) {
+                out.results.emplace_back(parseOplogEntryForDelete(*entry));
+                continue;
+            }
+        }
+
         // TODO: don't create nested CurOp for legacy writes.
         // Add Command pointer to the nested CurOp.
         auto& parentCurOp = *CurOp::get(opCtx);
@@ -704,7 +751,7 @@ WriteResult performDeletes(OperationContext* opCtx, const write_ops::Delete& who
         try {
             lastOpFixer.startingOp();
             out.results.emplace_back(
-                performSingleDeleteOp(opCtx, wholeOp.getNamespace(), singleOp));
+                performSingleDeleteOp(opCtx, wholeOp.getNamespace(), stmtId, singleOp));
             lastOpFixer.finishedOpSuccessfully();
         } catch (const DBException& ex) {
             const bool canContinue =

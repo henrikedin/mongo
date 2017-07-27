@@ -42,6 +42,7 @@
 #include "mongo/db/json.h"
 #include "mongo/db/namespace_string.h"
 #include "mongo/db/operation_context.h"
+#include "mongo/db/server_options.h"
 #include "mongo/db/service_context_noop.h"
 #include "mongo/stdx/memory.h"
 #include "mongo/transport/session.h"
@@ -92,6 +93,8 @@ public:
     std::unique_ptr<AuthorizationSessionForTest> authzSession;
 
     void setUp() {
+        serverGlobalParams.featureCompatibility.version.store(
+            ServerGlobalParams::FeatureCompatibility::Version::k36);
         session = transportLayer.createSession();
         client = serviceContext.makeClient("testClient", session);
         RestrictionEnvironment::set(
@@ -569,6 +572,82 @@ TEST_F(AuthorizationSessionTest, UseOldUserInfoInFaceOfConnectivityProblems) {
         authzSession->isAuthorizedForActionsOnResource(testFooCollResource, ActionType::insert));
 }
 
+TEST_F(AuthorizationSessionTest, AcquireUserFailsWithOldFeatureCompatibilityVersion) {
+    ASSERT_OK(managerState->insertPrivilegeDocument(_opCtx.get(),
+                                                    BSON("user"
+                                                         << "spencer"
+                                                         << "db"
+                                                         << "test"
+                                                         << "credentials"
+                                                         << BSON("MONGODB-CR"
+                                                                 << "a")
+                                                         << "roles"
+                                                         << BSON_ARRAY(BSON("role"
+                                                                            << "readWrite"
+                                                                            << "db"
+                                                                            << "test"))
+                                                         << "authenticationRestrictions"
+                                                         << BSON_ARRAY(BSON(
+                                                                "clientSource"
+                                                                << BSON_ARRAY("192.168.0.0/24"
+                                                                              << "192.168.2.10")
+                                                                << "serverAddress"
+                                                                << BSON_ARRAY("192.168.0.2")))),
+                                                    BSONObj()));
+
+    serverGlobalParams.featureCompatibility.version.store(
+        ServerGlobalParams::FeatureCompatibility::Version::k34);
+
+    RestrictionEnvironment::set(
+        session,
+        stdx::make_unique<RestrictionEnvironment>(SockAddr("192.168.0.6", 5555, AF_UNSPEC),
+                                                  SockAddr("192.168.0.2", 5555, AF_UNSPEC)));
+
+    ASSERT_NOT_OK(authzSession->addAndAuthorizeUser(_opCtx.get(), UserName("spencer", "test")));
+}
+
+TEST_F(AuthorizationSessionTest, RefreshRemovesRestrictedUsersDuringFeatureCompatibilityDowngrade) {
+    ASSERT_OK(managerState->insertPrivilegeDocument(
+        _opCtx.get(),
+        BSON("user"
+             << "spencer"
+             << "db"
+             << "test"
+             << "credentials"
+             << BSON("MONGODB-CR"
+                     << "a")
+             << "roles"
+             << BSON_ARRAY(BSON("role"
+                                << "readWrite"
+                                << "db"
+                                << "test"))
+             << "authenticationRestrictions"
+             << BSON_ARRAY(BSON("clientSource" << BSON_ARRAY("192.168.0.0/24") << "serverAddress"
+                                               << BSON_ARRAY("192.168.0.2")))),
+        BSONObj()));
+
+    RestrictionEnvironment::set(
+        session,
+        stdx::make_unique<RestrictionEnvironment>(SockAddr("192.168.0.6", 5555, AF_UNSPEC),
+                                                  SockAddr("192.168.0.2", 5555, AF_UNSPEC)));
+
+    ASSERT_OK(authzSession->addAndAuthorizeUser(_opCtx.get(), UserName("spencer", "test")));
+
+    serverGlobalParams.featureCompatibility.version.store(
+        ServerGlobalParams::FeatureCompatibility::Version::k34);
+
+    ASSERT_TRUE(authzSession->lookupUser(UserName("spencer", "test")));
+    ASSERT_TRUE(
+        authzSession->isAuthorizedForActionsOnResource(testFooCollResource, ActionType::find));
+
+    authzManager->invalidateUserCache();
+    authzSession->startRequest(_opCtx.get());
+
+    ASSERT_FALSE(authzSession->lookupUser(UserName("spencer", "test")));
+    ASSERT_FALSE(
+        authzSession->isAuthorizedForActionsOnResource(testFooCollResource, ActionType::find));
+}
+
 TEST_F(AuthorizationSessionTest, AcquireUserObtainsAndValidatesAuthenticationRestrictions) {
     ASSERT_OK(managerState->insertPrivilegeDocument(
         _opCtx.get(),
@@ -655,6 +734,8 @@ TEST_F(AuthorizationSessionTest, AcquireUserObtainsAndValidatesAuthenticationRes
 }
 
 TEST_F(AuthorizationSessionTest, CheckAuthForAggregateFailsIfPipelineIsNotAnArray) {
+    authzSession->assumePrivilegesForDB(Privilege(testFooCollResource, {ActionType::find}));
+
     BSONObj cmdObjIntPipeline = BSON("aggregate" << testFooNss.coll() << "pipeline" << 7);
     ASSERT_EQ(ErrorCodes::TypeMismatch,
               authzSession->checkAuthForAggregate(testFooNss, cmdObjIntPipeline, false));
@@ -669,6 +750,8 @@ TEST_F(AuthorizationSessionTest, CheckAuthForAggregateFailsIfPipelineIsNotAnArra
 }
 
 TEST_F(AuthorizationSessionTest, CheckAuthForAggregateFailsIfPipelineFirstStageIsNotAnObject) {
+    authzSession->assumePrivilegesForDB(Privilege(testFooCollResource, {ActionType::find}));
+
     BSONObj cmdObjFirstStageInt =
         BSON("aggregate" << testFooNss.coll() << "pipeline" << BSON_ARRAY(7));
     ASSERT_EQ(ErrorCodes::TypeMismatch,
@@ -681,7 +764,8 @@ TEST_F(AuthorizationSessionTest, CheckAuthForAggregateFailsIfPipelineFirstStageI
 }
 
 TEST_F(AuthorizationSessionTest, CannotAggregateEmptyPipelineWithoutFindAction) {
-    BSONObj cmdObj = BSON("aggregate" << testFooNss.coll() << "pipeline" << BSONArray());
+    BSONObj cmdObj = BSON("aggregate" << testFooNss.coll() << "pipeline" << BSONArray() << "cursor"
+                                      << BSONObj());
     ASSERT_EQ(ErrorCodes::Unauthorized,
               authzSession->checkAuthForAggregate(testFooNss, cmdObj, false));
 }
@@ -689,7 +773,8 @@ TEST_F(AuthorizationSessionTest, CannotAggregateEmptyPipelineWithoutFindAction) 
 TEST_F(AuthorizationSessionTest, CanAggregateEmptyPipelineWithFindAction) {
     authzSession->assumePrivilegesForDB(Privilege(testFooCollResource, {ActionType::find}));
 
-    BSONObj cmdObj = BSON("aggregate" << testFooNss.coll() << "pipeline" << BSONArray());
+    BSONObj cmdObj = BSON("aggregate" << testFooNss.coll() << "pipeline" << BSONArray() << "cursor"
+                                      << BSONObj());
     ASSERT_OK(authzSession->checkAuthForAggregate(testFooNss, cmdObj, false));
 }
 
@@ -699,25 +784,28 @@ TEST_F(AuthorizationSessionTest, CannotAggregateWithoutFindActionIfFirstStageNot
 
     BSONArray pipeline = BSON_ARRAY(BSON("$limit" << 1) << BSON("$collStats" << BSONObj())
                                                         << BSON("$indexStats" << BSONObj()));
-    BSONObj cmdObj = BSON("aggregate" << testFooNss.coll() << "pipeline" << pipeline);
+    BSONObj cmdObj =
+        BSON("aggregate" << testFooNss.coll() << "pipeline" << pipeline << "cursor" << BSONObj());
     ASSERT_EQ(ErrorCodes::Unauthorized,
               authzSession->checkAuthForAggregate(testFooNss, cmdObj, false));
 }
 
-TEST_F(AuthorizationSessionTest, CanAggregateWithFindActionIfFirstStageNotIndexOrCollStats) {
+TEST_F(AuthorizationSessionTest, CannotAggregateWithFindActionIfPipelineContainsIndexOrCollStats) {
     authzSession->assumePrivilegesForDB(Privilege(testFooCollResource, {ActionType::find}));
-
     BSONArray pipeline = BSON_ARRAY(BSON("$limit" << 1) << BSON("$collStats" << BSONObj())
                                                         << BSON("$indexStats" << BSONObj()));
-    BSONObj cmdObj = BSON("aggregate" << testFooNss.coll() << "pipeline" << pipeline);
-    ASSERT_OK(authzSession->checkAuthForAggregate(testFooNss, cmdObj, false));
+    BSONObj cmdObj =
+        BSON("aggregate" << testFooNss.coll() << "pipeline" << pipeline << "cursor" << BSONObj());
+    ASSERT_EQ(ErrorCodes::Unauthorized,
+              authzSession->checkAuthForAggregate(testFooNss, cmdObj, false));
 }
 
 TEST_F(AuthorizationSessionTest, CannotAggregateCollStatsWithoutCollStatsAction) {
     authzSession->assumePrivilegesForDB(Privilege(testFooCollResource, {ActionType::find}));
 
     BSONArray pipeline = BSON_ARRAY(BSON("$collStats" << BSONObj()));
-    BSONObj cmdObj = BSON("aggregate" << testFooNss.coll() << "pipeline" << pipeline);
+    BSONObj cmdObj =
+        BSON("aggregate" << testFooNss.coll() << "pipeline" << pipeline << "cursor" << BSONObj());
     ASSERT_EQ(ErrorCodes::Unauthorized,
               authzSession->checkAuthForAggregate(testFooNss, cmdObj, false));
 }
@@ -726,7 +814,8 @@ TEST_F(AuthorizationSessionTest, CanAggregateCollStatsWithCollStatsAction) {
     authzSession->assumePrivilegesForDB(Privilege(testFooCollResource, {ActionType::collStats}));
 
     BSONArray pipeline = BSON_ARRAY(BSON("$collStats" << BSONObj()));
-    BSONObj cmdObj = BSON("aggregate" << testFooNss.coll() << "pipeline" << pipeline);
+    BSONObj cmdObj =
+        BSON("aggregate" << testFooNss.coll() << "pipeline" << pipeline << "cursor" << BSONObj());
     ASSERT_OK(authzSession->checkAuthForAggregate(testFooNss, cmdObj, false));
 }
 
@@ -734,7 +823,8 @@ TEST_F(AuthorizationSessionTest, CannotAggregateIndexStatsWithoutIndexStatsActio
     authzSession->assumePrivilegesForDB(Privilege(testFooCollResource, {ActionType::find}));
 
     BSONArray pipeline = BSON_ARRAY(BSON("$indexStats" << BSONObj()));
-    BSONObj cmdObj = BSON("aggregate" << testFooNss.coll() << "pipeline" << pipeline);
+    BSONObj cmdObj =
+        BSON("aggregate" << testFooNss.coll() << "pipeline" << pipeline << "cursor" << BSONObj());
     ASSERT_EQ(ErrorCodes::Unauthorized,
               authzSession->checkAuthForAggregate(testFooNss, cmdObj, false));
 }
@@ -743,7 +833,8 @@ TEST_F(AuthorizationSessionTest, CanAggregateIndexStatsWithIndexStatsAction) {
     authzSession->assumePrivilegesForDB(Privilege(testFooCollResource, {ActionType::indexStats}));
 
     BSONArray pipeline = BSON_ARRAY(BSON("$indexStats" << BSONObj()));
-    BSONObj cmdObj = BSON("aggregate" << testFooNss.coll() << "pipeline" << pipeline);
+    BSONObj cmdObj =
+        BSON("aggregate" << testFooNss.coll() << "pipeline" << pipeline << "cursor" << BSONObj());
     ASSERT_OK(authzSession->checkAuthForAggregate(testFooNss, cmdObj, false));
 }
 
@@ -751,7 +842,8 @@ TEST_F(AuthorizationSessionTest, CanAggregateCurrentOpAllUsersFalseWithoutInprog
     authzSession->assumePrivilegesForDB(Privilege(testFooCollResource, {ActionType::find}));
 
     BSONArray pipeline = BSON_ARRAY(BSON("$currentOp" << BSON("allUsers" << false)));
-    BSONObj cmdObj = BSON("aggregate" << testFooNss.coll() << "pipeline" << pipeline);
+    BSONObj cmdObj =
+        BSON("aggregate" << testFooNss.coll() << "pipeline" << pipeline << "cursor" << BSONObj());
     ASSERT_OK(authzSession->checkAuthForAggregate(testFooNss, cmdObj, false));
 }
 
@@ -759,14 +851,16 @@ TEST_F(AuthorizationSessionTest, CannotAggregateCurrentOpAllUsersFalseWithoutInp
     authzSession->assumePrivilegesForDB(Privilege(testFooCollResource, {ActionType::find}));
 
     BSONArray pipeline = BSON_ARRAY(BSON("$currentOp" << BSON("allUsers" << false)));
-    BSONObj cmdObj = BSON("aggregate" << testFooNss.coll() << "pipeline" << pipeline);
+    BSONObj cmdObj =
+        BSON("aggregate" << testFooNss.coll() << "pipeline" << pipeline << "cursor" << BSONObj());
     ASSERT_EQ(ErrorCodes::Unauthorized,
               authzSession->checkAuthForAggregate(testFooNss, cmdObj, true));
 }
 
 TEST_F(AuthorizationSessionTest, CannotAggregateCurrentOpAllUsersFalseIfNotAuthenticatedOnMongoD) {
     BSONArray pipeline = BSON_ARRAY(BSON("$currentOp" << BSON("allUsers" << false)));
-    BSONObj cmdObj = BSON("aggregate" << testFooNss.coll() << "pipeline" << pipeline);
+    BSONObj cmdObj =
+        BSON("aggregate" << testFooNss.coll() << "pipeline" << pipeline << "cursor" << BSONObj());
 
     ASSERT_EQ(ErrorCodes::Unauthorized,
               authzSession->checkAuthForAggregate(testFooNss, cmdObj, false));
@@ -774,7 +868,8 @@ TEST_F(AuthorizationSessionTest, CannotAggregateCurrentOpAllUsersFalseIfNotAuthe
 
 TEST_F(AuthorizationSessionTest, CannotAggregateCurrentOpAllUsersFalseIfNotAuthenticatedOnMongoS) {
     BSONArray pipeline = BSON_ARRAY(BSON("$currentOp" << BSON("allUsers" << false)));
-    BSONObj cmdObj = BSON("aggregate" << testFooNss.coll() << "pipeline" << pipeline);
+    BSONObj cmdObj =
+        BSON("aggregate" << testFooNss.coll() << "pipeline" << pipeline << "cursor" << BSONObj());
 
     ASSERT_EQ(ErrorCodes::Unauthorized,
               authzSession->checkAuthForAggregate(testFooNss, cmdObj, true));
@@ -784,7 +879,8 @@ TEST_F(AuthorizationSessionTest, CannotAggregateCurrentOpAllUsersTrueWithoutInpr
     authzSession->assumePrivilegesForDB(Privilege(testFooCollResource, {ActionType::find}));
 
     BSONArray pipeline = BSON_ARRAY(BSON("$currentOp" << BSON("allUsers" << true)));
-    BSONObj cmdObj = BSON("aggregate" << testFooNss.coll() << "pipeline" << pipeline);
+    BSONObj cmdObj =
+        BSON("aggregate" << testFooNss.coll() << "pipeline" << pipeline << "cursor" << BSONObj());
     ASSERT_EQ(ErrorCodes::Unauthorized,
               authzSession->checkAuthForAggregate(testFooNss, cmdObj, false));
 }
@@ -793,7 +889,8 @@ TEST_F(AuthorizationSessionTest, CannotAggregateCurrentOpAllUsersTrueWithoutInpr
     authzSession->assumePrivilegesForDB(Privilege(testFooCollResource, {ActionType::find}));
 
     BSONArray pipeline = BSON_ARRAY(BSON("$currentOp" << BSON("allUsers" << true)));
-    BSONObj cmdObj = BSON("aggregate" << testFooNss.coll() << "pipeline" << pipeline);
+    BSONObj cmdObj =
+        BSON("aggregate" << testFooNss.coll() << "pipeline" << pipeline << "cursor" << BSONObj());
     ASSERT_EQ(ErrorCodes::Unauthorized,
               authzSession->checkAuthForAggregate(testFooNss, cmdObj, true));
 }
@@ -803,7 +900,8 @@ TEST_F(AuthorizationSessionTest, CanAggregateCurrentOpAllUsersTrueWithInprogActi
         Privilege(ResourcePattern::forClusterResource(), {ActionType::inprog}));
 
     BSONArray pipeline = BSON_ARRAY(BSON("$currentOp" << BSON("allUsers" << true)));
-    BSONObj cmdObj = BSON("aggregate" << testFooNss.coll() << "pipeline" << pipeline);
+    BSONObj cmdObj =
+        BSON("aggregate" << testFooNss.coll() << "pipeline" << pipeline << "cursor" << BSONObj());
     ASSERT_OK(authzSession->checkAuthForAggregate(testFooNss, cmdObj, false));
 }
 
@@ -812,7 +910,8 @@ TEST_F(AuthorizationSessionTest, CanAggregateCurrentOpAllUsersTrueWithInprogActi
         Privilege(ResourcePattern::forClusterResource(), {ActionType::inprog}));
 
     BSONArray pipeline = BSON_ARRAY(BSON("$currentOp" << BSON("allUsers" << true)));
-    BSONObj cmdObj = BSON("aggregate" << testFooNss.coll() << "pipeline" << pipeline);
+    BSONObj cmdObj =
+        BSON("aggregate" << testFooNss.coll() << "pipeline" << pipeline << "cursor" << BSONObj());
     ASSERT_OK(authzSession->checkAuthForAggregate(testFooNss, cmdObj, true));
 }
 
@@ -821,7 +920,8 @@ TEST_F(AuthorizationSessionTest, CannotSpoofAllUsersTrueWithoutInprogActionOnMon
 
     BSONArray pipeline =
         BSON_ARRAY(BSON("$currentOp" << BSON("allUsers" << false << "allUsers" << true)));
-    BSONObj cmdObj = BSON("aggregate" << testFooNss.coll() << "pipeline" << pipeline);
+    BSONObj cmdObj =
+        BSON("aggregate" << testFooNss.coll() << "pipeline" << pipeline << "cursor" << BSONObj());
     ASSERT_EQ(ErrorCodes::Unauthorized,
               authzSession->checkAuthForAggregate(testFooNss, cmdObj, false));
 }
@@ -831,7 +931,8 @@ TEST_F(AuthorizationSessionTest, CannotSpoofAllUsersTrueWithoutInprogActionOnMon
 
     BSONArray pipeline =
         BSON_ARRAY(BSON("$currentOp" << BSON("allUsers" << false << "allUsers" << true)));
-    BSONObj cmdObj = BSON("aggregate" << testFooNss.coll() << "pipeline" << pipeline);
+    BSONObj cmdObj =
+        BSON("aggregate" << testFooNss.coll() << "pipeline" << pipeline << "cursor" << BSONObj());
     ASSERT_EQ(ErrorCodes::Unauthorized,
               authzSession->checkAuthForAggregate(testFooNss, cmdObj, true));
 }
@@ -841,9 +942,11 @@ TEST_F(AuthorizationSessionTest, AddPrivilegesForStageFailsIfOutNamespaceIsNotVa
 
     BSONArray pipeline = BSON_ARRAY(BSON("$out"
                                          << ""));
-    BSONObj cmdObj = BSON("aggregate" << testFooNss.coll() << "pipeline" << pipeline);
-    ASSERT_EQ(ErrorCodes::InvalidNamespace,
-              authzSession->checkAuthForAggregate(testFooNss, cmdObj, false));
+    BSONObj cmdObj =
+        BSON("aggregate" << testFooNss.coll() << "pipeline" << pipeline << "cursor" << BSONObj());
+    ASSERT_THROWS_CODE(authzSession->checkAuthForAggregate(testFooNss, cmdObj, false).ignore(),
+                       UserException,
+                       ErrorCodes::InvalidNamespace);
 }
 
 TEST_F(AuthorizationSessionTest, CannotAggregateOutWithoutInsertAndRemoveOnTargetNamespace) {
@@ -851,7 +954,8 @@ TEST_F(AuthorizationSessionTest, CannotAggregateOutWithoutInsertAndRemoveOnTarge
     authzSession->assumePrivilegesForDB(Privilege(testFooCollResource, {ActionType::find}));
 
     BSONArray pipeline = BSON_ARRAY(BSON("$out" << testBarNss.coll()));
-    BSONObj cmdObj = BSON("aggregate" << testFooNss.coll() << "pipeline" << pipeline);
+    BSONObj cmdObj =
+        BSON("aggregate" << testFooNss.coll() << "pipeline" << pipeline << "cursor" << BSONObj());
     ASSERT_EQ(ErrorCodes::Unauthorized,
               authzSession->checkAuthForAggregate(testFooNss, cmdObj, false));
 
@@ -874,12 +978,15 @@ TEST_F(AuthorizationSessionTest, CanAggregateOutWithInsertAndRemoveOnTargetNames
          Privilege(testBarCollResource, {ActionType::insert, ActionType::remove})});
 
     BSONArray pipeline = BSON_ARRAY(BSON("$out" << testBarNss.coll()));
-    BSONObj cmdObj = BSON("aggregate" << testFooNss.coll() << "pipeline" << pipeline);
+    BSONObj cmdObj =
+        BSON("aggregate" << testFooNss.coll() << "pipeline" << pipeline << "cursor" << BSONObj());
     ASSERT_OK(authzSession->checkAuthForAggregate(testFooNss, cmdObj, false));
 
     BSONObj cmdObjNoBypassDocumentValidation = BSON(
         "aggregate" << testFooNss.coll() << "pipeline" << pipeline << "bypassDocumentValidation"
-                    << false);
+                    << false
+                    << "cursor"
+                    << BSONObj());
     ASSERT_OK(
         authzSession->checkAuthForAggregate(testFooNss, cmdObjNoBypassDocumentValidation, false));
 }
@@ -891,9 +998,10 @@ TEST_F(AuthorizationSessionTest,
          Privilege(testBarCollResource, {ActionType::insert, ActionType::remove})});
 
     BSONArray pipeline = BSON_ARRAY(BSON("$out" << testBarNss.coll()));
-    BSONObj cmdObj = BSON("aggregate" << testFooNss.coll() << "pipeline" << pipeline
-                                      << "bypassDocumentValidation"
-                                      << true);
+    BSONObj cmdObj =
+        BSON("aggregate" << testFooNss.coll() << "pipeline" << pipeline << "cursor" << BSONObj()
+                         << "bypassDocumentValidation"
+                         << true);
     ASSERT_EQ(ErrorCodes::Unauthorized,
               authzSession->checkAuthForAggregate(testFooNss, cmdObj, false));
 }
@@ -907,9 +1015,10 @@ TEST_F(AuthorizationSessionTest,
              {ActionType::insert, ActionType::remove, ActionType::bypassDocumentValidation})});
 
     BSONArray pipeline = BSON_ARRAY(BSON("$out" << testBarNss.coll()));
-    BSONObj cmdObj = BSON("aggregate" << testFooNss.coll() << "pipeline" << pipeline
-                                      << "bypassDocumentValidation"
-                                      << true);
+    BSONObj cmdObj =
+        BSON("aggregate" << testFooNss.coll() << "pipeline" << pipeline << "cursor" << BSONObj()
+                         << "bypassDocumentValidation"
+                         << true);
     ASSERT_OK(authzSession->checkAuthForAggregate(testFooNss, cmdObj, false));
 }
 
@@ -917,7 +1026,8 @@ TEST_F(AuthorizationSessionTest, CannotAggregateLookupWithoutFindOnJoinedNamespa
     authzSession->assumePrivilegesForDB(Privilege(testFooCollResource, {ActionType::find}));
 
     BSONArray pipeline = BSON_ARRAY(BSON("$lookup" << BSON("from" << testBarNss.coll())));
-    BSONObj cmdObj = BSON("aggregate" << testFooNss.coll() << "pipeline" << pipeline);
+    BSONObj cmdObj =
+        BSON("aggregate" << testFooNss.coll() << "pipeline" << pipeline << "cursor" << BSONObj());
     ASSERT_EQ(ErrorCodes::Unauthorized,
               authzSession->checkAuthForAggregate(testFooNss, cmdObj, false));
 }
@@ -927,7 +1037,8 @@ TEST_F(AuthorizationSessionTest, CanAggregateLookupWithFindOnJoinedNamespace) {
                                          Privilege(testBarCollResource, {ActionType::find})});
 
     BSONArray pipeline = BSON_ARRAY(BSON("$lookup" << BSON("from" << testBarNss.coll())));
-    BSONObj cmdObj = BSON("aggregate" << testFooNss.coll() << "pipeline" << pipeline);
+    BSONObj cmdObj =
+        BSON("aggregate" << testFooNss.coll() << "pipeline" << pipeline << "cursor" << BSONObj());
     ASSERT_OK(authzSession->checkAuthForAggregate(testFooNss, cmdObj, false));
 }
 
@@ -939,7 +1050,8 @@ TEST_F(AuthorizationSessionTest, CannotAggregateLookupWithoutFindOnNestedJoinedN
     BSONArray nestedPipeline = BSON_ARRAY(BSON("$lookup" << BSON("from" << testQuxNss.coll())));
     BSONArray pipeline = BSON_ARRAY(
         BSON("$lookup" << BSON("from" << testBarNss.coll() << "pipeline" << nestedPipeline)));
-    BSONObj cmdObj = BSON("aggregate" << testFooNss.coll() << "pipeline" << pipeline);
+    BSONObj cmdObj =
+        BSON("aggregate" << testFooNss.coll() << "pipeline" << pipeline << "cursor" << BSONObj());
     ASSERT_EQ(ErrorCodes::Unauthorized,
               authzSession->checkAuthForAggregate(testFooNss, cmdObj, false));
 }
@@ -952,7 +1064,8 @@ TEST_F(AuthorizationSessionTest, CanAggregateLookupWithFindOnNestedJoinedNamespa
     BSONArray nestedPipeline = BSON_ARRAY(BSON("$lookup" << BSON("from" << testQuxNss.coll())));
     BSONArray pipeline = BSON_ARRAY(
         BSON("$lookup" << BSON("from" << testBarNss.coll() << "pipeline" << nestedPipeline)));
-    BSONObj cmdObj = BSON("aggregate" << testFooNss.coll() << "pipeline" << pipeline);
+    BSONObj cmdObj =
+        BSON("aggregate" << testFooNss.coll() << "pipeline" << pipeline << "cursor" << BSONObj());
     ASSERT_OK(authzSession->checkAuthForAggregate(testFooNss, cmdObj, false));
 }
 
@@ -992,6 +1105,7 @@ TEST_F(AuthorizationSessionTest, CheckAuthForAggregateWithDeeplyNestedLookup) {
     BSONArrayBuilder pipelineBuilder(cmdBuilder.subarrayStart("pipeline"));
     addNestedPipeline(&pipelineBuilder, maxLookupDepth);
     pipelineBuilder.doneFast();
+    cmdBuilder << "cursor" << BSONObj();
 
     ASSERT_OK(authzSession->checkAuthForAggregate(testFooNss, cmdBuilder.obj(), false));
 }
@@ -1001,7 +1115,8 @@ TEST_F(AuthorizationSessionTest, CannotAggregateGraphLookupWithoutFindOnJoinedNa
     authzSession->assumePrivilegesForDB(Privilege(testFooCollResource, {ActionType::find}));
 
     BSONArray pipeline = BSON_ARRAY(BSON("$graphLookup" << BSON("from" << testBarNss.coll())));
-    BSONObj cmdObj = BSON("aggregate" << testFooNss.coll() << "pipeline" << pipeline);
+    BSONObj cmdObj =
+        BSON("aggregate" << testFooNss.coll() << "pipeline" << pipeline << "cursor" << BSONObj());
     ASSERT_EQ(ErrorCodes::Unauthorized,
               authzSession->checkAuthForAggregate(testFooNss, cmdObj, false));
 }
@@ -1011,7 +1126,8 @@ TEST_F(AuthorizationSessionTest, CanAggregateGraphLookupWithFindOnJoinedNamespac
                                          Privilege(testBarCollResource, {ActionType::find})});
 
     BSONArray pipeline = BSON_ARRAY(BSON("$graphLookup" << BSON("from" << testBarNss.coll())));
-    BSONObj cmdObj = BSON("aggregate" << testFooNss.coll() << "pipeline" << pipeline);
+    BSONObj cmdObj =
+        BSON("aggregate" << testFooNss.coll() << "pipeline" << pipeline << "cursor" << BSONObj());
     ASSERT_OK(authzSession->checkAuthForAggregate(testFooNss, cmdObj, false));
 }
 
@@ -1023,7 +1139,8 @@ TEST_F(AuthorizationSessionTest,
     BSONArray pipeline =
         BSON_ARRAY(fromjson("{$facet: {lookup: [{$lookup: {from: 'bar'}}], graphLookup: "
                             "[{$graphLookup: {from: 'qux'}}]}}"));
-    BSONObj cmdObj = BSON("aggregate" << testFooNss.coll() << "pipeline" << pipeline);
+    BSONObj cmdObj =
+        BSON("aggregate" << testFooNss.coll() << "pipeline" << pipeline << "cursor" << BSONObj());
     ASSERT_EQ(ErrorCodes::Unauthorized,
               authzSession->checkAuthForAggregate(testFooNss, cmdObj, false));
 
@@ -1049,7 +1166,8 @@ TEST_F(AuthorizationSessionTest,
     BSONArray pipeline =
         BSON_ARRAY(fromjson("{$facet: {lookup: [{$lookup: {from: 'bar'}}], graphLookup: "
                             "[{$graphLookup: {from: 'qux'}}]}}"));
-    BSONObj cmdObj = BSON("aggregate" << testFooNss.coll() << "pipeline" << pipeline);
+    BSONObj cmdObj =
+        BSON("aggregate" << testFooNss.coll() << "pipeline" << pipeline << "cursor" << BSONObj());
     ASSERT_OK(authzSession->checkAuthForAggregate(testFooNss, cmdObj, false));
 }
 
