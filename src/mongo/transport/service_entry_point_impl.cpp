@@ -56,7 +56,7 @@ void ServiceEntryPointImpl::startSession(transport::SessionHandle session) {
     SSMListIterator ssmIt;
 
     const auto sync = (_svcCtx->getServiceExecutor() == nullptr);
-    auto ssm = ServiceStateMachine::create(_svcCtx, std::move(session), sync);
+    auto ssm = ServiceStateMachine::create(_svcCtx, session, sync);
     {
         stdx::lock_guard<decltype(_sessionsMutex)> lk(_sessionsMutex);
         ssmIt = _sessions.emplace(_sessions.begin(), ssm);

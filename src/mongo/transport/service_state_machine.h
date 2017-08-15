@@ -144,7 +144,9 @@ private:
     void maybeScheduleFunc(Executor* svcExec, Func&& func) {
         if (svcExec) {
             uassertStatusOK(svcExec->schedule(
-                [ func = std::move(func), anchor = shared_from_this() ] { func(); }));
+                [ func = std::move(func), anchor = shared_from_this() ] { 
+				func(); 
+			}));
         }
     }
 

@@ -35,6 +35,7 @@
 #include "mongo/db/service_context.h"
 #include "mongo/stdx/memory.h"
 #include "mongo/transport/service_executor_fixed.h"
+#include "mongo/transport/service_executor_passthrough.h"
 #include "mongo/transport/session.h"
 #include "mongo/transport/transport_layer_asio.h"
 #include "mongo/transport/transport_layer_legacy.h"
@@ -158,6 +159,10 @@ std::unique_ptr<TransportLayer> TransportLayerManager::createWithConfig(
             ctx->setServiceExecutor(
                 stdx::make_unique<ServiceExecutorFixed>(ctx, transportLayerASIO->getIOContext()));
         }
+		else if (config->serviceExecutor == "synchronous") {
+			ctx->setServiceExecutor(
+				stdx::make_unique<ServiceExecutorPassthrough>(ctx, transportLayerASIO->getIOContext()));
+		}
         transportLayer = std::move(transportLayerASIO);
     } else if (serverGlobalParams.transportLayer == "legacy") {
         transport::TransportLayerLegacy::Options opts(config);

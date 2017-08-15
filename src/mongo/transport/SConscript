@@ -76,6 +76,7 @@ tlEnv.Library(
     source=[
         'service_executor_base.cpp',
         'service_executor_fixed.cpp',
+        'service_executor_passthrough.cpp'
     ],
     LIBDEPS=[
         '$BUILD_DIR/mongo/db/service_context',
