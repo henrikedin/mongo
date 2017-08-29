@@ -405,22 +405,21 @@ void DatabaseImpl::getStats(OperationContext* opCtx, BSONObjBuilder* output, dou
     output->appendNumber("indexes", indexes);
     output->appendNumber("indexSize", indexSize / scale);
 
-    std::uint64_t bytes_total = 0;
-    std::uint64_t bytes_used = 0;
-    boost::system::error_code ec;
-
     boost::filesystem::path dbpath(storageGlobalParams.dbpath);
     if (storageGlobalParams.directoryperdb) {
         dbpath /= _name;
     }
 
+    boost::system::error_code ec;
     boost::filesystem::space_info space_info = boost::filesystem::space(dbpath, ec);
     if (!ec) {
-        bytes_total = space_info.capacity;
-        bytes_used = space_info.capacity - space_info.available;
+        output->appendNumber("fsUsedSize", (space_info.capacity - space_info.available) / scale);
+        output->appendNumber("fsTotalSize", space_info.capacity / scale);
+    } else {
+        output->appendNumber("fsUsedSize", -1);
+        output->appendNumber("fsTotalSize", -1);
     }
-    output->appendNumber("fsBytesUsed", bytes_used);
-    output->appendNumber("fsBytesTotal", bytes_total);
+
 
     _dbEntry->appendExtraStats(opCtx, output, scale);
 }

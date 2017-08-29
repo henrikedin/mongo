@@ -1108,8 +1108,8 @@ public:
             result.appendNumber("indexes", 0);
             result.appendNumber("indexSize", 0);
             result.appendNumber("fileSize", 0);
-            result.appendNumber("fsBytesUsed", 0);
-            result.appendNumber("fsBytesTotal", 0);
+            result.appendNumber("fsUsedSize", 0);
+            result.appendNumber("fsTotalSize", 0);
         } else {
             {
                 stdx::lock_guard<Client> lk(*opCtx->getClient());
