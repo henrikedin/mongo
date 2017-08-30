@@ -65,7 +65,7 @@ public:
 	void appendStats(BSONObjBuilder* bob) const final;
 
 private:
-	static thread_local std::deque<Task> _workQueue;
+	static thread_local std::deque<Task> _tlWorkQueue;
 	AtomicWord<bool> _stillRunning{ false };
 
 	stdx::mutex _threadsMutex;
