@@ -149,9 +149,15 @@ std::unique_ptr<TransportLayer> TransportLayerManager::createWithConfig(
     auto sep = ctx->getServiceEntryPoint();
     if (config->transportLayer == "asio") {
         transport::TransportLayerASIO::Options opts(config);
-        if (config->serviceExecutor != "synchronous") {
-            opts.async = true;
-        }
+		if (config->serviceExecutor == "adaptive") {
+			opts.async = ServiceExecutorAdaptive::transportModeStatic() == transport::Mode::Asynchronous;
+		}
+		else if (config->serviceExecutor == "passthrough") {
+			opts.async = ServiceExecutorPassthrough::transportModeStatic() == transport::Mode::Asynchronous;
+		}
+		else {
+			MONGO_UNREACHABLE;
+		}
 
         auto transportLayerASIO = stdx::make_unique<transport::TransportLayerASIO>(opts, sep);
 
@@ -159,14 +165,15 @@ std::unique_ptr<TransportLayer> TransportLayerManager::createWithConfig(
             ctx->setServiceExecutor(stdx::make_unique<ServiceExecutorAdaptive>(
                 ctx, transportLayerASIO->getIOContext()));
         }
-		else if (config->serviceExecutor == "synchronous") {
+		else if (config->serviceExecutor == "passthrough") {
 			ctx->setServiceExecutor(
-				stdx::make_unique<ServiceExecutorPassthrough>(ctx, transportLayerASIO->getIOContext()));
+				stdx::make_unique<ServiceExecutorPassthrough>(ctx));
 		}
         transportLayer = std::move(transportLayerASIO);
     } else if (serverGlobalParams.transportLayer == "legacy") {
         transport::TransportLayerLegacy::Options opts(config);
         transportLayer = stdx::make_unique<transport::TransportLayerLegacy>(opts, sep);
+		ctx->setServiceExecutor(stdx::make_unique<ServiceExecutorPassthrough>(ctx));
     }
 
     std::vector<std::unique_ptr<TransportLayer>> retVector;

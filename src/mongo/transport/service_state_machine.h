@@ -41,6 +41,7 @@
 #include "mongo/transport/service_entry_point.h"
 #include "mongo/transport/service_executor.h"
 #include "mongo/transport/session.h"
+#include "mongo/transport/transport_mode.h"
 
 namespace mongo {
 
@@ -65,9 +66,9 @@ public:
      */
     static std::shared_ptr<ServiceStateMachine> create(ServiceContext* svcContext,
                                                        transport::SessionHandle session,
-                                                       bool sync);
+		transport::Mode transport_mode);
 
-    ServiceStateMachine(ServiceContext* svcContext, transport::SessionHandle session, bool sync);
+    ServiceStateMachine(ServiceContext* svcContext, transport::SessionHandle session, transport::Mode transport_mode);
 
     /*
      * Any state may transition to EndSession in case of an error, otherwise the valid state
@@ -189,7 +190,7 @@ private:
     AtomicWord<State> _state{State::Created};
 
     ServiceEntryPoint* _sep;
-    bool _sync;
+    transport::Mode _transport_mode;
 
     ServiceContext* const _serviceContext;
 

@@ -178,16 +178,16 @@ private:
 
 std::shared_ptr<ServiceStateMachine> ServiceStateMachine::create(ServiceContext* svcContext,
                                                                  transport::SessionHandle session,
-                                                                 bool sync) {
-    return std::make_shared<ServiceStateMachine>(svcContext, std::move(session), sync);
+	transport::Mode transport_mode) {
+    return std::make_shared<ServiceStateMachine>(svcContext, std::move(session), transport_mode);
 }
 
 ServiceStateMachine::ServiceStateMachine(ServiceContext* svcContext,
                                          transport::SessionHandle session,
-                                         bool sync)
+	transport::Mode transport_mode)
     : _state{State::Created},
       _sep{svcContext->getServiceEntryPoint()},
-      _sync(sync),
+      _transport_mode(transport_mode),
       _serviceContext(svcContext),
       _sessionHandle(session),
       _dbClient{svcContext->makeClient("conn", std::move(session))},
@@ -347,12 +347,15 @@ void ServiceStateMachine::_processMessage(ThreadGuard& guard) {
         auto ticket = _session()->sinkMessage(toSink);
 
         _state.store(State::SinkWait);
-        if (_sync) {
+        if (_transport_mode == transport::Mode::Synchronous) {
             _sinkCallback(_session()->getTransportLayer()->wait(std::move(ticket)));
-        } else {
+        } else if (_transport_mode == transport::Mode::Asynchronous) {
             _session()->getTransportLayer()->asyncWait(
                 std::move(ticket), [this](Status status) { _sinkCallback(status); });
-        }
+		}
+		else {
+			MONGO_UNREACHABLE;
+		}
     } else {
         _state.store(State::Source);
         _inMessage.reset();
@@ -375,7 +378,8 @@ void ServiceStateMachine::runNext() {
 
 void ServiceStateMachine::_runNextInGuard(ThreadGuard& guard) {
     auto curState = state();
-    invariant(curState != State::Ended);
+	if (curState == State::Ended)
+		return;
 
     // If this is the first run of the SSM, then update its state to Source
     if (curState == State::Created) {
@@ -392,16 +396,19 @@ void ServiceStateMachine::_runNextInGuard(ThreadGuard& guard) {
 
                 auto ticket = _session()->sourceMessage(&_inMessage);
                 _state.store(State::SourceWait);
-                if (_sync) {
+                if (_transport_mode == transport::Mode::Synchronous) {
                     _sourceCallback([this](auto ticket) {
                         MONGO_IDLE_THREAD_BLOCK;
                         return _session()->getTransportLayer()->wait(std::move(ticket));
                     }(std::move(ticket)));
-                } else {
+                } else if (_transport_mode == transport::Mode::Asynchronous) {
                     _session()->getTransportLayer()->asyncWait(
                         std::move(ticket), [this](Status status) { _sourceCallback(status); });
                     break;
-                }
+				}
+				else {
+					MONGO_UNREACHABLE;
+				}
             }
             case State::Process:
                 _processMessage(guard);

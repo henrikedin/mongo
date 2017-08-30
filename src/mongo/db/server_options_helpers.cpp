@@ -221,7 +221,7 @@ Status addGeneralServerOptions(moe::OptionSection* options) {
                             moe::String,
                             "sets the service executor implementation")
         .hidden()
-        .setDefault(moe::Value("synchronous"));
+        .setDefault(moe::Value("passthrough"));
 
     options
         ->addOptionChaining(
@@ -828,20 +828,20 @@ Status storeServerOptions(const moe::Environment& params) {
     if (params.count("net.serviceExecutor")) {
         auto value = params["net.serviceExecutor"].as<std::string>();
         if (serverGlobalParams.transportLayer == "legacy") {
-            if (value != "synchronous"_sd) {
+            if (value != "passthrough"_sd) {
                 return {ErrorCodes::BadValue,
                         "Unsupported value for serviceExecutor with the legacy transportLayer, "
-                        "must be \"synchronous\""};
+                        "must be \"passthrough\""};
             }
         } else {
-            const auto valid = {"synchronous"_sd, "adaptive"_sd};
+            const auto valid = {"passthrough"_sd, "adaptive"_sd};
             if (std::find(valid.begin(), valid.end(), value) == valid.end()) {
                 return {ErrorCodes::BadValue, "Unsupported value for serviceExecutor"};
             }
         }
         serverGlobalParams.serviceExecutor = value;
     } else {
-        serverGlobalParams.serviceExecutor = "synchronous";
+        serverGlobalParams.serviceExecutor = "passthrough";
     }
 
     if (params.count("security.transitionToAuth")) {
