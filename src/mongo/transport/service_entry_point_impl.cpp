@@ -57,18 +57,18 @@ void ServiceEntryPointImpl::startSession(transport::SessionHandle session) {
 
     const auto sync = (_svcCtx->getServiceExecutor() == nullptr);
     const bool quiet = serverGlobalParams.quiet.load();
-    size_t connection_count;
+    int connection_count;
 
     auto ssm = ServiceStateMachine::create(_svcCtx, std::move(session), sync);
     {
         {
             stdx::lock_guard<decltype(_sessionsMutex)> lk(_sessionsMutex);
-            connection_count = _sessions.size();
+            connection_count = (int)_sessions.size();
             if (connection_count < serverGlobalParams.maxConns) {
                 ssmIt = _sessions.emplace(_sessions.begin(), ssm);
             }
         }
-        // did we successfully add a connection above?
+        // did we successfully add a connection above?2
         if (connection_count < serverGlobalParams.maxConns) {
             ++connection_count;
         } else {
