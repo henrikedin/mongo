@@ -215,7 +215,7 @@ protected:
         sc->setTransportLayer(std::move(tl));
         _tl->start().transitional_ignore();
 
-        _ssm = ServiceStateMachine::create(getGlobalServiceContext(), _tl->createSession(), true);
+        _ssm = ServiceStateMachine::create(getGlobalServiceContext(), _tl->createSession(), transport::Mode::Asynchronous);
         _tl->setSSM(_ssm.get());
     }
 

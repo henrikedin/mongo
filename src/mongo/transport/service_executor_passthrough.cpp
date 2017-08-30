@@ -44,7 +44,7 @@ constexpr auto kExecutorLabel = "executor";
 constexpr auto kExecutorName = "passthrough";
 }  // namespace
 
-thread_local std::deque<ThreadPoolInterface::Task> ServiceExecutorPassthrough::_workQueue = {};
+thread_local std::deque<ThreadPoolInterface::Task> ServiceExecutorPassthrough::_tlWorkQueue = {};
 
 ServiceExecutorPassthrough::ServiceExecutorPassthrough(ServiceContext* ctx) {
 }
@@ -79,20 +79,23 @@ Status ServiceExecutorPassthrough::shutdown() {
 }
 
 Status ServiceExecutorPassthrough::schedule(Task task, ScheduleFlags flags) {
-	if (!_workQueue.empty()) {
-		//log() << "Passthrough thread already started";
-		_workQueue.emplace_back(std::move(task));
+	// As we're running the network in synchronous mode there should always be 
+	// tasks in the work queue unless this is the first call to schedule for this connection
+	if (!_tlWorkQueue.empty()) {
+		_tlWorkQueue.emplace_back(std::move(task));
 		return Status::OK();
 	}
 
+	// First call to schedule() for this connection, spawn a worker thread that will push jobs 
+	// into the thread local job queue.
 	log() << "Starting new executor thread in passthrough mode";
 	stdx::lock_guard<stdx::mutex> lk(_threadsMutex);
 	stdx::thread newThread([this, task=std::move(task)] {
 		_num_threads.addAndFetch(1);
-		_workQueue.emplace_back(std::move(task));
-		while (!_workQueue.empty() && _stillRunning.loadRelaxed()) {
-			_workQueue.front()();
-			_workQueue.pop_front();
+		_tlWorkQueue.emplace_back(std::move(task));
+		while (!_tlWorkQueue.empty() && _stillRunning.loadRelaxed()) {
+			_tlWorkQueue.front()();
+			_tlWorkQueue.pop_front();
 
 			/*
 			* In perf testing we found that yielding after running a each request produced
@@ -104,6 +107,8 @@ Status ServiceExecutorPassthrough::schedule(Task task, ScheduleFlags flags) {
 		}
 		_num_threads.subtractAndFetch(1);
 
+		// We only need to do this cleanup in a normal connection close (no more jobs on this thread)
+		// If we're shutting down the service executor, it will be destroyed the normal way.
 		if (_stillRunning.loadRelaxed()) {
 			log() << "Executor thread removing itself from thread pool";
 			stdx::lock_guard<stdx::mutex> lk(_threadsMutex);
