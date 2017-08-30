@@ -28,10 +28,10 @@
 
 #pragma once
 
-#include <vector>
 #include <deque>
 #include <map>
 #include <unordered_map>
+#include <vector>
 
 #include "mongo/base/status.h"
 #include "mongo/platform/atomic_word.h"
@@ -47,7 +47,7 @@ namespace mongo {
 namespace transport {
 
 /**
- * The passthrough service executor emulates a thread per connection. 
+ * The passthrough service executor emulates a thread per connection.
  * Each connection has its own worker thread where jobs get scheduled.
  */
 class ServiceExecutorPassthrough : public ServiceExecutor {
@@ -55,24 +55,27 @@ public:
     explicit ServiceExecutorPassthrough(ServiceContext* ctx);
     virtual ~ServiceExecutorPassthrough();
 
-	Status start() final;
-	Status shutdown() final;
-	Status schedule(Task task, ScheduleFlags flags) final;
+    Status start() final;
+    Status shutdown() final;
+    Status schedule(Task task, ScheduleFlags flags) final;
 
-	static Mode transportModeStatic() { return Mode::Synchronous; }
-	Mode transportMode() const final { return transportModeStatic(); }
+    static Mode transportModeStatic() {
+        return Mode::Synchronous;
+    }
+    Mode transportMode() const final {
+        return transportModeStatic();
+    }
 
-	void appendStats(BSONObjBuilder* bob) const final;
+    void appendStats(BSONObjBuilder* bob) const final;
 
 private:
-	static thread_local std::deque<Task> _tlWorkQueue;
-	AtomicWord<bool> _stillRunning{ false };
+    static thread_local std::deque<Task> _tlWorkQueue;
+    AtomicWord<bool> _stillRunning{false};
 
-	stdx::mutex _threadsMutex;
-	std::unordered_map<stdx::thread::id, stdx::thread> _threads;
-	AtomicWord<unsigned> _num_threads{ 0 };
-	unsigned _num_cores{ 0 };
-
+    stdx::mutex _threadsMutex;
+    std::unordered_map<stdx::thread::id, stdx::thread> _threads;
+    AtomicWord<unsigned> _num_threads{0};
+    unsigned _num_cores{0};
 };
 
 }  // namespace transport

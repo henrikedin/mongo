@@ -76,10 +76,10 @@ public:
      */
     virtual Status shutdown() = 0;
 
-	/*
-	 * Returns if this service executor is using asynchronous or synchronous networking.
-	 */
-	virtual Mode transportMode() const = 0;
+    /*
+     * Returns if this service executor is using asynchronous or synchronous networking.
+     */
+    virtual Mode transportMode() const = 0;
 
     /*
      * Appends statistics about task scheduling to a BSONObjBuilder for serverStatus output.

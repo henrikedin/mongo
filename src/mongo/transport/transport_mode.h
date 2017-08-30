@@ -29,10 +29,7 @@
 #pragma once
 
 namespace mongo {
-	namespace transport {
-		enum class Mode {
-			Asynchronous = 0,
-			Synchronous = 1
-		};
-	}  // namespace transport
+namespace transport {
+enum class Mode { Asynchronous = 0, Synchronous = 1 };
+}  // namespace transport
 }  // namespace mongo

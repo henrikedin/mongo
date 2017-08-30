@@ -66,9 +66,11 @@ public:
      */
     static std::shared_ptr<ServiceStateMachine> create(ServiceContext* svcContext,
                                                        transport::SessionHandle session,
-		transport::Mode transport_mode);
+                                                       transport::Mode transport_mode);
 
-    ServiceStateMachine(ServiceContext* svcContext, transport::SessionHandle session, transport::Mode transport_mode);
+    ServiceStateMachine(ServiceContext* svcContext,
+                        transport::SessionHandle session,
+                        transport::Mode transport_mode);
 
     /*
      * Any state may transition to EndSession in case of an error, otherwise the valid state
