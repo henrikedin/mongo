@@ -46,89 +46,88 @@ constexpr auto kExecutorName = "passthrough";
 
 thread_local std::deque<ThreadPoolInterface::Task> ServiceExecutorPassthrough::_tlWorkQueue = {};
 
-ServiceExecutorPassthrough::ServiceExecutorPassthrough(ServiceContext* ctx) {
-}
+ServiceExecutorPassthrough::ServiceExecutorPassthrough(ServiceContext* ctx) {}
 
 ServiceExecutorPassthrough::~ServiceExecutorPassthrough() {
-	shutdown();
+    shutdown();
 }
 
 Status ServiceExecutorPassthrough::start() {
-	_num_cores = [] {
-		ProcessInfo p;
-		if (auto availCores = p.getNumAvailableCores()) {
-			return static_cast<unsigned>(*availCores);
-		}
-		return static_cast<unsigned>(p.getNumCores());
-	}();
+    _num_cores = [] {
+        ProcessInfo p;
+        if (auto availCores = p.getNumAvailableCores()) {
+            return static_cast<unsigned>(*availCores);
+        }
+        return static_cast<unsigned>(p.getNumCores());
+    }();
 
-	_stillRunning.store(true);
+    _stillRunning.store(true);
 
     return Status::OK();
 }
 
 Status ServiceExecutorPassthrough::shutdown() {
-	_stillRunning.store(false);
+    _stillRunning.store(false);
 
-	for (auto& kv : _threads) {
-		kv.second.join();
-	}
-	_threads.clear();
+    for (auto& kv : _threads) {
+        kv.second.join();
+    }
+    _threads.clear();
 
     return Status::OK();
 }
 
 Status ServiceExecutorPassthrough::schedule(Task task, ScheduleFlags flags) {
-	// As we're running the network in synchronous mode there should always be 
-	// tasks in the work queue unless this is the first call to schedule for this connection
-	if (!_tlWorkQueue.empty()) {
-		_tlWorkQueue.emplace_back(std::move(task));
-		return Status::OK();
-	}
+    // As we're running the network in synchronous mode there should always be
+    // tasks in the work queue unless this is the first call to schedule for this connection
+    if (!_tlWorkQueue.empty()) {
+        _tlWorkQueue.emplace_back(std::move(task));
+        return Status::OK();
+    }
 
-	// First call to schedule() for this connection, spawn a worker thread that will push jobs 
-	// into the thread local job queue.
-	log() << "Starting new executor thread in passthrough mode";
-	stdx::lock_guard<stdx::mutex> lk(_threadsMutex);
-	stdx::thread newThread([this, task=std::move(task)] {
-		_num_threads.addAndFetch(1);
-		_tlWorkQueue.emplace_back(std::move(task));
-		while (!_tlWorkQueue.empty() && _stillRunning.loadRelaxed()) {
-			_tlWorkQueue.front()();
-			_tlWorkQueue.pop_front();
+    // First call to schedule() for this connection, spawn a worker thread that will push jobs
+    // into the thread local job queue.
+    log() << "Starting new executor thread in passthrough mode";
+    stdx::lock_guard<stdx::mutex> lk(_threadsMutex);
+    stdx::thread newThread([ this, task = std::move(task) ] {
+        _num_threads.addAndFetch(1);
+        _tlWorkQueue.emplace_back(std::move(task));
+        while (!_tlWorkQueue.empty() && _stillRunning.loadRelaxed()) {
+            _tlWorkQueue.front()();
+            _tlWorkQueue.pop_front();
 
-			/*
-			* In perf testing we found that yielding after running a each request produced
-			* at 5% performance boost in microbenchmarks if the number of worker threads
-			* was greater than the number of available cores.
-			*/
-			if (_num_threads.loadRelaxed() > _num_cores)
-				stdx::this_thread::yield();
-		}
-		_num_threads.subtractAndFetch(1);
+            /*
+            * In perf testing we found that yielding after running a each request produced
+            * at 5% performance boost in microbenchmarks if the number of worker threads
+            * was greater than the number of available cores.
+            */
+            if (_num_threads.loadRelaxed() > _num_cores)
+                stdx::this_thread::yield();
+        }
+        _num_threads.subtractAndFetch(1);
 
-		// We only need to do this cleanup in a normal connection close (no more jobs on this thread)
-		// If we're shutting down the service executor, it will be destroyed the normal way.
-		if (_stillRunning.loadRelaxed()) {
-			log() << "Executor thread removing itself from thread pool";
-			stdx::lock_guard<stdx::mutex> lk(_threadsMutex);
-			auto& thisThread = _threads.at(stdx::this_thread::get_id());
-			thisThread.detach();
-			_threads.erase(stdx::this_thread::get_id());
-		}
-	});
+        // We only need to do this cleanup in a normal connection close (no more jobs on this
+        // thread)
+        // If we're shutting down the service executor, it will be destroyed the normal way.
+        if (_stillRunning.loadRelaxed()) {
+            log() << "Executor thread removing itself from thread pool";
+            stdx::lock_guard<stdx::mutex> lk(_threadsMutex);
+            auto& thisThread = _threads.at(stdx::this_thread::get_id());
+            thisThread.detach();
+            _threads.erase(stdx::this_thread::get_id());
+        }
+    });
 
-	auto newThreadId = newThread.get_id();
-	_threads.emplace(newThreadId, std::move(newThread));
+    auto newThreadId = newThread.get_id();
+    _threads.emplace(newThreadId, std::move(newThread));
 
-	return Status::OK();
+    return Status::OK();
 }
 
 void ServiceExecutorPassthrough::appendStats(BSONObjBuilder* bob) const {
-	BSONObjBuilder section(bob->subobjStart("serviceExecutorTaskStats"));
-	section << kExecutorLabel << kExecutorName
-		<< kThreadsRunning << _num_threads.load();
-	section.doneFast();
+    BSONObjBuilder section(bob->subobjStart("serviceExecutorTaskStats"));
+    section << kExecutorLabel << kExecutorName << kThreadsRunning << _num_threads.load();
+    section.doneFast();
 }
 
 }  // namespace transport
