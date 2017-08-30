@@ -29,36 +29,50 @@
 #pragma once
 
 #include <vector>
+#include <deque>
+#include <map>
+#include <unordered_map>
 
+#include "mongo/base/status.h"
+#include "mongo/platform/atomic_word.h"
+
+#include "mongo/stdx/mutex.h"
 #include "mongo/stdx/thread.h"
+#include "mongo/stdx/unordered_map.h"
+#include "mongo/util/concurrency/thread_pool_interface.h"
+
 #include "mongo/transport/service_executor.h"
-#include "mongo/transport/transport_layer_asio.h"
 
 namespace mongo {
 namespace transport {
 
 /**
- * This is an ASIO-based fixed-size ServiceExecutor. It should only be used for testing because
- * it won't add any threads if all threads become blocked.
+ * The passthrough service executor emulates a thread per connection. 
+ * Each connection has its own worker thread where jobs get scheduled.
  */
 class ServiceExecutorPassthrough : public ServiceExecutor {
 public:
-    explicit ServiceExecutorPassthrough(ServiceContext* ctx, std::shared_ptr<asio::io_context> ioCtx);
+    explicit ServiceExecutorPassthrough(ServiceContext* ctx);
     virtual ~ServiceExecutorPassthrough();
 
 	Status start() final;
 	Status shutdown() final;
 	Status schedule(Task task, ScheduleFlags flags) final;
 
+	static Mode transportModeStatic() { return Mode::Synchronous; }
+	Mode transportMode() const final { return transportModeStatic(); }
+
 	void appendStats(BSONObjBuilder* bob) const final;
 
 private:
+	static thread_local std::deque<Task> _workQueue;
+	AtomicWord<bool> _stillRunning{ false };
 
-    //std::shared_ptr<asio::io_context> _ioContext;
-    //std::vector<stdx::thread> _threads;
-	std::unique_ptr<asio::io_context> _io_context;
-    AtomicWord<bool> _isRunning{false};
-	AtomicWord<int> _threadsNeeded{ 0 };
+	stdx::mutex _threadsMutex;
+	std::unordered_map<stdx::thread::id, stdx::thread> _threads;
+	AtomicWord<unsigned> _num_threads{ 0 };
+	unsigned _num_cores{ 0 };
+
 };
 
 }  // namespace transport

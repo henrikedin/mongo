@@ -55,8 +55,7 @@ void ServiceEntryPointImpl::startSession(transport::SessionHandle session) {
 
     SSMListIterator ssmIt;
 
-    const auto sync = (_svcCtx->getServiceExecutor() == nullptr);
-    auto ssm = ServiceStateMachine::create(_svcCtx, std::move(session), sync);
+    auto ssm = ServiceStateMachine::create(_svcCtx, std::move(session), _svcCtx->getServiceExecutor()->transportMode());
     {
         stdx::lock_guard<decltype(_sessionsMutex)> lk(_sessionsMutex);
         ssmIt = _sessions.emplace(_sessions.begin(), ssm);
@@ -67,48 +66,7 @@ void ServiceEntryPointImpl::startSession(transport::SessionHandle session) {
         _sessions.erase(ssmIt);
     });
 
-    if (!sync) {
-        dassert(_svcCtx->getServiceExecutor());
-        ssm->scheduleNext();
-        return;
-    }
-
-    auto workerTask = [this, ssm]() mutable {
-        _nWorkers.addAndFetch(1);
-        const auto guard = MakeGuard([this, &ssm] { _nWorkers.subtractAndFetch(1); });
-
-        const auto numCores = [] {
-            ProcessInfo p;
-            if (auto availCores = p.getNumAvailableCores()) {
-                return static_cast<unsigned>(*availCores);
-            }
-            return static_cast<unsigned>(p.getNumCores());
-        }();
-
-        while (ssm->state() != ServiceStateMachine::State::Ended) {
-            ssm->runNext();
-
-            /*
-             * In perf testing we found that yielding after running a each request produced
-             * at 5% performance boost in microbenchmarks if the number of worker threads
-             * was greater than the number of available cores.
-             */
-            if (_nWorkers.load() > numCores)
-                stdx::this_thread::yield();
-        }
-    };
-
-    const auto launchResult = launchServiceWorkerThread(std::move(workerTask));
-    if (launchResult.isOK()) {
-        return;
-    }
-
-    // We never got off the ground. Manually remove the new SSM from
-    // the list of sessions and close the associated socket. The SSM
-    // will be destroyed.
-    stdx::lock_guard<decltype(_sessionsMutex)> lk(_sessionsMutex);
-    _sessions.erase(ssmIt);
-    ssm->terminateIfTagsDontMatch(0);
+    ssm->scheduleNext();
 }
 
 void ServiceEntryPointImpl::endAllSessions(transport::Session::TagMask tags) {

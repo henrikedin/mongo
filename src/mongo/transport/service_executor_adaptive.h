@@ -89,6 +89,9 @@ public:
     Status shutdown() final;
     Status schedule(Task task, ScheduleFlags flags) final;
 
+	static Mode transportModeStatic() { return Mode::Asynchronous; }
+	Mode transportMode() const final { return transportModeStatic(); }
+
     void appendStats(BSONObjBuilder* bob) const final;
 
     int threadsRunning() {

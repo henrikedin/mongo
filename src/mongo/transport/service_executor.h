@@ -32,6 +32,8 @@
 #include "mongo/bson/bsonobjbuilder.h"
 #include "mongo/stdx/functional.h"
 
+#include "mongo/transport/transport_mode.h"
+
 namespace mongo {
 // This needs to be forward declared here because the service_context.h is a circular dependency.
 class ServiceContext;
@@ -73,6 +75,11 @@ public:
      * This should only be called during server shutdown to gracefully destroy the ServiceExecutor
      */
     virtual Status shutdown() = 0;
+
+	/*
+	 * Returns if this service executor is using asynchronous or synchronous networking.
+	 */
+	virtual Mode transportMode() const = 0;
 
     /*
      * Appends statistics about task scheduling to a BSONObjBuilder for serverStatus output.

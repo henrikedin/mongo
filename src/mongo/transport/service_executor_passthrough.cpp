@@ -36,96 +36,94 @@
 #include "mongo/util/log.h"
 #include "mongo/util/processinfo.h"
 
-#include <asio.hpp>
-
 namespace mongo {
 namespace transport {
 namespace {
-//MONGO_EXPORT_STARTUP_SERVER_PARAMETER(fixedServiceExecutorNumThreads, int, -1);
-
+constexpr auto kThreadsRunning = "threadsRunning";
+constexpr auto kExecutorLabel = "executor";
+constexpr auto kExecutorName = "passthrough";
 }  // namespace
 
-ServiceExecutorPassthrough::ServiceExecutorPassthrough(ServiceContext* ctx,
-                                           std::shared_ptr<asio::io_context> ioCtx) {
-	_io_context = stdx::make_unique<asio::io_context>();
+thread_local std::deque<ThreadPoolInterface::Task> ServiceExecutorPassthrough::_workQueue = {};
+
+ServiceExecutorPassthrough::ServiceExecutorPassthrough(ServiceContext* ctx) {
 }
 
 ServiceExecutorPassthrough::~ServiceExecutorPassthrough() {
-    //invariant(!_isRunning.load());
+	shutdown();
 }
 
 Status ServiceExecutorPassthrough::start() {
-    /*invariant(!_isRunning.load());
+	_num_cores = [] {
+		ProcessInfo p;
+		if (auto availCores = p.getNumAvailableCores()) {
+			return static_cast<unsigned>(*availCores);
+		}
+		return static_cast<unsigned>(p.getNumCores());
+	}();
 
-    auto threadCount = fixedServiceExecutorNumThreads;
-    if (threadCount == -1) {
-        ProcessInfo pi;
-        threadCount = pi.getNumAvailableCores().value_or(pi.getNumCores());
-        log() << "No thread count configured for fixed executor. Using number of cores: "
-              << threadCount;
-    }
-
-    _isRunning.store(true);
-    for (auto i = 0; i < threadCount; i++) {
-        _threads.push_back(stdx::thread([this, i] {
-            auto threadId = i + 1;
-            LOG(3) << "Starting worker thread " << threadId;
-            asio::io_context::work work(*_ioContext);
-            while (_isRunning.load()) {
-                _ioContext->run();
-            }
-            LOG(3) << "Exiting worker thread " << threadId;
-        }));
-    }*/
+	_stillRunning.store(true);
 
     return Status::OK();
 }
 
 Status ServiceExecutorPassthrough::shutdown() {
-    /*invariant(_isRunning.load());
+	_stillRunning.store(false);
 
-    _isRunning.store(false);
-    _ioContext->stop();
-    for (auto& thread : _threads) {
-        thread.join();
-    }
-    _threads.clear();*/
+	for (auto& kv : _threads) {
+		kv.second.join();
+	}
+	_threads.clear();
 
     return Status::OK();
 }
 
 Status ServiceExecutorPassthrough::schedule(Task task, ScheduleFlags flags) {
-	task();
+	if (!_workQueue.empty()) {
+		//log() << "Passthrough thread already started";
+		_workQueue.emplace_back(std::move(task));
+		return Status::OK();
+	}
 
-	/*auto in_stack = std::make_shared<bool>(false);
-	_io_context->dispatch([in_stack, task = std::move(task)]()
-	{
-		*in_stack = true;
-		task();
+	log() << "Starting new executor thread in passthrough mode";
+	stdx::lock_guard<stdx::mutex> lk(_threadsMutex);
+	stdx::thread newThread([this, task=std::move(task)] {
+		_num_threads.addAndFetch(1);
+		_workQueue.emplace_back(std::move(task));
+		while (!_workQueue.empty() && _stillRunning.loadRelaxed()) {
+			_workQueue.front()();
+			_workQueue.pop_front();
+
+			/*
+			* In perf testing we found that yielding after running a each request produced
+			* at 5% performance boost in microbenchmarks if the number of worker threads
+			* was greater than the number of available cores.
+			*/
+			if (_num_threads.loadRelaxed() > _num_cores)
+				stdx::this_thread::yield();
+		}
+		_num_threads.subtractAndFetch(1);
+
+		if (_stillRunning.loadRelaxed()) {
+			log() << "Executor thread removing itself from thread pool";
+			stdx::lock_guard<stdx::mutex> lk(_threadsMutex);
+			auto& thisThread = _threads.at(stdx::this_thread::get_id());
+			thisThread.detach();
+			_threads.erase(stdx::this_thread::get_id());
+		}
 	});
 
-	if (*in_stack == false)
-	{
-		stdx::thread([this]()
-		{
-			_io_context->run_one();
-		}).detach();
-	}*/
+	auto newThreadId = newThread.get_id();
+	_threads.emplace(newThreadId, std::move(newThread));
 
-    return Status::OK();
+	return Status::OK();
 }
 
 void ServiceExecutorPassthrough::appendStats(BSONObjBuilder* bob) const {
-	//BSONObjBuilder section(bob->subobjStart("serviceExecutorTaskStats"));
-	//section << kExecutorLabel << kExecutorName  //
-	//	<< kTotalQueued << _totalQueued.load() << kTotalExecuted << _totalExecuted.load()
-	//	<< kTasksQueued << _tasksQueued.load() << kTasksExecuting << _tasksExecuting.load()
-	//	<< kTotalTimeRunningUs << ticksToMicros(_totalSpentRunning.load(), _tickSource)
-	//	<< kTotalTimeExecutingUs << ticksToMicros(_totalSpentExecuting.load(), _tickSource)
-	//	<< kTotalTimeQueuedUs << ticksToMicros(_totalSpentScheduled.load(), _tickSource)
-	//	<< kThreadsRunning << _threadsRunning.load() << kThreadsPending
-	//	<< _threadsPending.load();
-	//section.doneFast();
+	BSONObjBuilder section(bob->subobjStart("serviceExecutorTaskStats"));
+	section << kExecutorLabel << kExecutorName
+		<< kThreadsRunning << _num_threads.load();
+	section.doneFast();
 }
 
 }  // namespace transport
