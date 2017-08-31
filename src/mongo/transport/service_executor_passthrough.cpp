@@ -31,6 +31,7 @@
 #include "mongo/platform/basic.h"
 
 #include "mongo/transport/service_executor_passthrough.h"
+#include "mongo/transport/service_entry_point_utils.h"
 
 #include "mongo/db/server_parameters.h"
 #include "mongo/util/log.h"
@@ -88,37 +89,46 @@ Status ServiceExecutorPassthrough::schedule(Task task, ScheduleFlags flags) {
     // First call to schedule() for this connection, spawn a worker thread that will push jobs
     // into the thread local job queue.
     log() << "Starting new executor thread in passthrough mode";
-    stdx::lock_guard<stdx::mutex> lk(_threadsMutex);
-    stdx::thread newThread([ this, task = std::move(task) ] {
-        _num_threads.addAndFetch(1);
-        _tlWorkQueue.emplace_back(std::move(task));
-        while (!_tlWorkQueue.empty() && _stillRunning.loadRelaxed()) {
-            _tlWorkQueue.front()();
-            _tlWorkQueue.pop_front();
+    
+	stdx::thread newThread;
+	try {
+		newThread = stdx::thread([this, task = std::move(task)]{
+			_num_threads.addAndFetch(1);
+			_tlWorkQueue.emplace_back(std::move(task));
+			while (!_tlWorkQueue.empty() && _stillRunning.loadRelaxed()) {
+				_tlWorkQueue.front()();
+				_tlWorkQueue.pop_front();
 
-            /*
-            * In perf testing we found that yielding after running a each request produced
-            * at 5% performance boost in microbenchmarks if the number of worker threads
-            * was greater than the number of available cores.
-            */
-            if (_num_threads.loadRelaxed() > _num_cores)
-                stdx::this_thread::yield();
-        }
-        _num_threads.subtractAndFetch(1);
+				/*
+				* In perf testing we found that yielding after running a each request produced
+				* at 5% performance boost in microbenchmarks if the number of worker threads
+				* was greater than the number of available cores.
+				*/
+				if (_num_threads.loadRelaxed() > _num_cores)
+					stdx::this_thread::yield();
+			}
+			_num_threads.subtractAndFetch(1);
 
-        // We only need to do this cleanup in a normal connection close (no more jobs on this
-        // thread)
-        // If we're shutting down the service executor, it will be destroyed the normal way.
-        if (_stillRunning.loadRelaxed()) {
-            log() << "Executor thread removing itself from thread pool";
-            stdx::lock_guard<stdx::mutex> lk(_threadsMutex);
-            auto& thisThread = _threads.at(stdx::this_thread::get_id());
-            thisThread.detach();
-            _threads.erase(stdx::this_thread::get_id());
-        }
-    });
+			// We only need to do this cleanup in a normal connection close (no more jobs on this
+			// thread)
+			// If we're shutting down the service executor, it will be destroyed the normal way.
+			if (_stillRunning.loadRelaxed()) {
+				log() << "Executor thread removing itself from thread pool";
+				stdx::lock_guard<stdx::mutex> lk(_threadsMutex);
+				auto& thisThread = _threads.at(stdx::this_thread::get_id());
+				thisThread.detach();
+				_threads.erase(stdx::this_thread::get_id());
+			}
+		});
+	}
+	catch (...)
+	{
+
+	}
 
     auto newThreadId = newThread.get_id();
+
+	stdx::lock_guard<stdx::mutex> lk(_threadsMutex);
     _threads.emplace(newThreadId, std::move(newThread));
 
     return Status::OK();

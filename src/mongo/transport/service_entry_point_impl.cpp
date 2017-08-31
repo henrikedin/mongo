@@ -35,7 +35,6 @@
 #include <vector>
 
 #include "mongo/db/auth/restriction_environment.h"
-#include "mongo/transport/service_entry_point_utils.h"
 #include "mongo/transport/service_state_machine.h"
 #include "mongo/transport/session.h"
 #include "mongo/util/log.h"
