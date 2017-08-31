@@ -49,7 +49,7 @@ thread_local std::deque<ThreadPoolInterface::Task> ServiceExecutorPassthrough::_
 ServiceExecutorPassthrough::ServiceExecutorPassthrough(ServiceContext* ctx) {}
 
 ServiceExecutorPassthrough::~ServiceExecutorPassthrough() {
-    shutdown();
+    Status status = shutdown();
 }
 
 Status ServiceExecutorPassthrough::start() {
