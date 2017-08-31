@@ -463,9 +463,6 @@ ServiceStateMachine::State ServiceStateMachine::state() {
 void ServiceStateMachine::_cleanupSession(ThreadGuard& guard) {
     _state.store(State::Ended);
 
-    auto tl = _session()->getTransportLayer();
-    auto remote = _session()->remote();
-
     _inMessage.reset();
 
     // By ignoring the return value of Client::releaseCurrent() we destroy the session.
