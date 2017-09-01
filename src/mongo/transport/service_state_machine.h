@@ -51,8 +51,6 @@ namespace mongo {
  * user.
  */
 class ServiceStateMachine : public std::enable_shared_from_this<ServiceStateMachine> {
-    friend class ServiceEntryPointImpl;
-
     ServiceStateMachine(ServiceStateMachine&) = delete;
     ServiceStateMachine& operator=(ServiceStateMachine&) = delete;
 

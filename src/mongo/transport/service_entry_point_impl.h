@@ -72,7 +72,7 @@ private:
     mutable stdx::mutex _sessionsMutex;
     SSMList _sessions;
 
-    AtomicWord<size_t> _createdConnections{0};
+    size_t _createdConnections{0};
 };
 
 }  // namespace mongo

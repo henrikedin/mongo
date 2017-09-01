@@ -57,39 +57,37 @@ void ServiceEntryPointImpl::startSession(transport::SessionHandle session) {
 
     const auto sync = (_svcCtx->getServiceExecutor() == nullptr);
     const bool quiet = serverGlobalParams.quiet.load();
-    int connection_count;
+    int connectionCount;
 
-    auto ssm = ServiceStateMachine::create(_svcCtx, std::move(session), sync);
+    auto ssm = ServiceStateMachine::create(_svcCtx, session, sync);
     {
         {
             stdx::lock_guard<decltype(_sessionsMutex)> lk(_sessionsMutex);
-            connection_count = (int)_sessions.size();
-            if (connection_count < serverGlobalParams.maxConns) {
+            connectionCount = (int)_sessions.size() + 1;
+            if (connectionCount < serverGlobalParams.maxConns) {
                 ssmIt = _sessions.emplace(_sessions.begin(), ssm);
+                ++_createdConnections;
             }
         }
-        // did we successfully add a connection above?2
-        if (connection_count < serverGlobalParams.maxConns) {
-            ++connection_count;
-        } else {
+        // did we successfully add a connection above?
+        if (connectionCount >= serverGlobalParams.maxConns) {
             if (!quiet) {
                 log() << "connection refused because too many open connections: "
-                      << connection_count;
+                      << connectionCount;
             }
             return;
         }
     }
 
-    _createdConnections.addAndFetch(1);
     if (!quiet) {
-        const auto word = (connection_count == 1 ? " connection"_sd : " connections"_sd);
-        log() << "connection accepted from " << (*ssmIt)->_session()->remote() << " #"
-              << (*ssmIt)->_session()->id() << " (" << connection_count << word << " now open)";
+        const auto word = (connectionCount == 1 ? " connection"_sd : " connections"_sd);
+        log() << "connection accepted from " << session->remote() << " #" << session->id() << " ("
+              << connectionCount << word << " now open)";
     }
 
-    ssm->setCleanupHook([this, ssmIt] {
+    ssm->setCleanupHook([this, ssmIt, session] {
         size_t connection_count;
-        auto remote = (*ssmIt)->_session()->remote();
+        auto remote = session->remote();
         {
             stdx::lock_guard<decltype(_sessionsMutex)> lk(_sessionsMutex);
             _sessions.erase(ssmIt);
@@ -158,14 +156,16 @@ void ServiceEntryPointImpl::endAllSessions(transport::Session::TagMask tags) {
 ServiceEntryPoint::Stats ServiceEntryPointImpl::sessionStats() const {
 
     size_t sessionCount;
+    size_t createdConnections;
     {
         stdx::lock_guard<decltype(_sessionsMutex)> lk(_sessionsMutex);
         sessionCount = _sessions.size();
+        createdConnections = _createdConnections;
     }
 
     ServiceEntryPoint::Stats ret;
     ret.numOpenSessions = sessionCount;
-    ret.numCreatedSessions = _createdConnections.load();
+    ret.numCreatedSessions = createdConnections;
     ret.numAvailableSessions = serverGlobalParams.maxConns - sessionCount;
     return ret;
 }
