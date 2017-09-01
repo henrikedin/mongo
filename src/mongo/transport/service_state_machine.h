@@ -147,8 +147,15 @@ private:
                             Func&& func,
                             transport::ServiceExecutor::ScheduleFlags flags) {
         if (svcExec) {
-            uassertStatusOK(svcExec->schedule(
-                [ func = std::move(func), anchor = shared_from_this() ] { func(); }, flags));
+            Status status = svcExec->schedule(
+                [ func = std::move(func), anchor = shared_from_this() ] { func(); }, flags);
+            if (!status.isOK()) {
+                // The service executor failed to schedule the task
+                // This could for example be that we failed to start
+                // a worker thread. Terminate this connection to
+                // leave the system in a valid state.
+                terminateIfTagsDontMatch(0);
+            }
         }
     }
 
