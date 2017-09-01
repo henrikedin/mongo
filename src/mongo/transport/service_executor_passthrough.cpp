@@ -30,8 +30,11 @@
 
 #include "mongo/platform/basic.h"
 
-#include "mongo/transport/service_executor_passthrough.h"
 #include "mongo/transport/service_entry_point_utils.h"
+#include "mongo/transport/service_executor_passthrough.h"
+
+#include "mongo/stdx/chrono.h"
+#include "mongo/stdx/thread.h"
 
 #include "mongo/db/server_parameters.h"
 #include "mongo/util/log.h"
@@ -54,7 +57,7 @@ ServiceExecutorPassthrough::~ServiceExecutorPassthrough() {
 }
 
 Status ServiceExecutorPassthrough::start() {
-    _num_cores = [] {
+    _numHardwareCores = [] {
         ProcessInfo p;
         if (auto availCores = p.getNumAvailableCores()) {
             return static_cast<unsigned>(*availCores);
@@ -68,17 +71,23 @@ Status ServiceExecutorPassthrough::start() {
 }
 
 Status ServiceExecutorPassthrough::shutdown() {
+    log() << "Shutting down passthrough executor";
+
     _stillRunning.store(false);
 
-    for (auto& kv : _threads) {
-        kv.second.join();
-    }
-    _threads.clear();
+    stdx::unique_lock<stdx::mutex> lock(_shutdownMutex);
+    bool result = _shutdownCondition.wait_for(
+        lock, stdx::chrono::seconds(10), [this]() { return _numRunningWorkerThreads.load() == 0; });
 
-    return Status::OK();
+    return result
+        ? Status::OK()
+        : Status(ErrorCodes::Error::ExceededTimeLimit,
+                 "passthrough executor couldn't shutdown all worker threads within time limit.");
 }
 
 Status ServiceExecutorPassthrough::schedule(Task task, ScheduleFlags flags) {
+    invariant(_stillRunning.load());
+
     // As we're running the network in synchronous mode there should always be
     // tasks in the work queue unless this is the first call to schedule for this connection
     if (!_tlWorkQueue.empty()) {
@@ -89,54 +98,35 @@ Status ServiceExecutorPassthrough::schedule(Task task, ScheduleFlags flags) {
     // First call to schedule() for this connection, spawn a worker thread that will push jobs
     // into the thread local job queue.
     log() << "Starting new executor thread in passthrough mode";
-    
-	stdx::thread newThread;
-	try {
-		newThread = stdx::thread([this, task = std::move(task)]{
-			_num_threads.addAndFetch(1);
-			_tlWorkQueue.emplace_back(std::move(task));
-			while (!_tlWorkQueue.empty() && _stillRunning.loadRelaxed()) {
-				_tlWorkQueue.front()();
-				_tlWorkQueue.pop_front();
 
-				/*
-				* In perf testing we found that yielding after running a each request produced
-				* at 5% performance boost in microbenchmarks if the number of worker threads
-				* was greater than the number of available cores.
-				*/
-				if (_num_threads.loadRelaxed() > _num_cores)
-					stdx::this_thread::yield();
-			}
-			_num_threads.subtractAndFetch(1);
+    Status status = launchServiceWorkerThread([ this, task = std::move(task) ] {
+        _numRunningWorkerThreads.addAndFetch(1);
+        _tlWorkQueue.emplace_back(std::move(task));
+        while (!_tlWorkQueue.empty() && _stillRunning.loadRelaxed()) {
+            _tlWorkQueue.front()();
+            _tlWorkQueue.pop_front();
 
-			// We only need to do this cleanup in a normal connection close (no more jobs on this
-			// thread)
-			// If we're shutting down the service executor, it will be destroyed the normal way.
-			if (_stillRunning.loadRelaxed()) {
-				log() << "Executor thread removing itself from thread pool";
-				stdx::lock_guard<stdx::mutex> lk(_threadsMutex);
-				auto& thisThread = _threads.at(stdx::this_thread::get_id());
-				thisThread.detach();
-				_threads.erase(stdx::this_thread::get_id());
-			}
-		});
-	}
-	catch (...)
-	{
+            /*
+            * In perf testing we found that yielding after running a each request produced
+            * at 5% performance boost in microbenchmarks if the number of worker threads
+            * was greater than the number of available cores.
+            */
+            if (_numRunningWorkerThreads.loadRelaxed() > _numHardwareCores)
+                stdx::this_thread::yield();
+        }
 
-	}
+        stdx::unique_lock<stdx::mutex> lock(_shutdownMutex);
+        _numRunningWorkerThreads.subtractAndFetch(1);
+        stdx::notify_all_at_thread_exit(_shutdownCondition, std::move(lock));
+    });
 
-    auto newThreadId = newThread.get_id();
-
-	stdx::lock_guard<stdx::mutex> lk(_threadsMutex);
-    _threads.emplace(newThreadId, std::move(newThread));
-
-    return Status::OK();
+    return status;
 }
 
 void ServiceExecutorPassthrough::appendStats(BSONObjBuilder* bob) const {
     BSONObjBuilder section(bob->subobjStart("serviceExecutorTaskStats"));
-    section << kExecutorLabel << kExecutorName << kThreadsRunning << _num_threads.load();
+    section << kExecutorLabel << kExecutorName << kThreadsRunning
+            << _numRunningWorkerThreads.load();
     section.doneFast();
 }
 
