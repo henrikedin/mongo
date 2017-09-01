@@ -29,20 +29,13 @@
 #pragma once
 
 #include <deque>
-#include <map>
-#include <unordered_map>
-#include <vector>
 
 #include "mongo/base/status.h"
 #include "mongo/platform/atomic_word.h"
-
+#include "mongo/stdx/condition_variable.h"
 #include "mongo/stdx/mutex.h"
-#include "mongo/stdx/thread.h"
-#include "mongo/stdx/unordered_map.h"
-#include "mongo/util/concurrency/thread_pool_interface.h"
-
 #include "mongo/transport/service_executor.h"
-
+#include "mongo/util/concurrency/thread_pool_interface.h"
 
 namespace mongo {
 namespace transport {
@@ -73,10 +66,11 @@ private:
     static thread_local std::deque<Task> _tlWorkQueue;
     AtomicWord<bool> _stillRunning{false};
 
-    stdx::mutex _threadsMutex;
-    std::unordered_map<stdx::thread::id, stdx::thread> _threads;
-    AtomicWord<unsigned> _num_threads{0};
-    unsigned _num_cores{0};
+    stdx::mutex _shutdownMutex;
+    stdx::condition_variable _shutdownCondition;
+
+    AtomicWord<unsigned> _numRunningWorkerThreads{0};
+    unsigned _numHardwareCores{0};
 };
 
 }  // namespace transport
