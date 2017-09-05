@@ -216,7 +216,7 @@ protected:
         _tl->start().transitional_ignore();
 
         _ssm = ServiceStateMachine::create(
-            getGlobalServiceContext(), _tl->createSession(), transport::Mode::Asynchronous);
+            getGlobalServiceContext(), _tl->createSession(), transport::Mode::Synchronous);
         _tl->setSSM(_ssm.get());
     }
 
