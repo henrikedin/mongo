@@ -75,6 +75,7 @@ Status ServiceExecutorPassthrough::shutdown() {
 
     _stillRunning.store(false);
 
+    // TODO pass a time into this function
     stdx::unique_lock<stdx::mutex> lock(_shutdownMutex);
     bool result = _shutdownCondition.wait_for(
         lock, stdx::chrono::seconds(10), [this]() { return _numRunningWorkerThreads.load() == 0; });
