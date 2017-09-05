@@ -56,6 +56,8 @@
     assert(dbStats.hasOwnProperty("storageSize"), tojson(dbStats));
     assert(dbStats.hasOwnProperty("numExtents"), tojson(dbStats));
     assert(dbStats.hasOwnProperty("indexSize"), tojson(dbStats));
+    assert(dbStats.hasOwnProperty("fsUsedSize"), tojson(dbStats));
+    assert(dbStats.hasOwnProperty("fsTotalSize"), tojson(dbStats));
 
     // Confirm extentFreeList field existence. Displayed for mongoD running MMAPv1 and for mongoS
     // regardless of storage engine.

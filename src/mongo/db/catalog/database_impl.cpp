@@ -421,6 +421,8 @@ void DatabaseImpl::getStats(OperationContext* opCtx, BSONObjBuilder* output, dou
         } else {
             output->appendNumber("fsUsedSize", -1);
             output->appendNumber("fsTotalSize", -1);
+            log() << "Failed to query filesystem disk stats (code: " << ec.value()
+                  << "): " << ec.message();
         }
     }
 }
