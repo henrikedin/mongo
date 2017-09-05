@@ -1120,7 +1120,10 @@ void shutdownTask() {
         // Shutdown and wait for the service executor to exit
         auto svcExec = serviceContext->getServiceExecutor();
         if (svcExec) {
-            fassertStatusOK(40550, svcExec->shutdown());
+            Status status = svcExec->shutdown();
+            if (!status.isOK()) {
+                log(LogComponent::kNetwork) << status.reason();
+            }
         }
     }
 #endif
