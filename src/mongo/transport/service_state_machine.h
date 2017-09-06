@@ -154,6 +154,8 @@ private:
                 // This could for example be that we failed to start
                 // a worker thread. Terminate this connection to
                 // leave the system in a valid state.
+                log() << "Service executor failed to schedule task with error (code: "
+                      << status.code() << "): " << status.codeString();
                 terminateIfTagsDontMatch(0);
             }
         }
@@ -199,7 +201,7 @@ private:
     AtomicWord<State> _state{State::Created};
 
     ServiceEntryPoint* _sep;
-    transport::Mode _transport_mode;
+    transport::Mode _transportMode;
 
     ServiceContext* const _serviceContext;
 

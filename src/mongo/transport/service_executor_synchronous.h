@@ -44,20 +44,17 @@ namespace transport {
  * The passthrough service executor emulates a thread per connection.
  * Each connection has its own worker thread where jobs get scheduled.
  */
-class ServiceExecutorPassthrough : public ServiceExecutor {
+class ServiceExecutorSynchronous : public ServiceExecutor {
 public:
-    explicit ServiceExecutorPassthrough(ServiceContext* ctx);
-    virtual ~ServiceExecutorPassthrough();
+    explicit ServiceExecutorSynchronous(ServiceContext* ctx);
+    virtual ~ServiceExecutorSynchronous();
 
     Status start() final;
     Status shutdown() final;
     Status schedule(Task task, ScheduleFlags flags) final;
 
-    static Mode transportModeStatic() {
-        return Mode::Synchronous;
-    }
     Mode transportMode() const final {
-        return transportModeStatic();
+        return Mode::Synchronous;
     }
 
     void appendStats(BSONObjBuilder* bob) const final;
@@ -66,11 +63,10 @@ private:
     static thread_local std::deque<Task> _tlWorkQueue;
     AtomicWord<bool> _stillRunning{false};
 
-    stdx::mutex _shutdownMutex;
+    mutable stdx::mutex _shutdownMutex;
     stdx::condition_variable _shutdownCondition;
 
-    AtomicWord<unsigned> _numRunningWorkerThreads{0};
-    unsigned _numHardwareCores{0};
+    size_t _numRunningWorkerThreads{0};
 };
 
 }  // namespace transport

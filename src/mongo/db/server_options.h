@@ -76,7 +76,7 @@ struct ServerGlobalParams {
     std::string socket = "/tmp";  // UNIX domain socket directory
     std::string transportLayer;   // --transportLayer (must be either "asio" or "legacy")
 
-    // --serviceExecutor ("adaptive", "passthrough")
+    // --serviceExecutor ("adaptive", "synchronous")
     std::string serviceExecutor;
 
     int maxConns = DEFAULT_MAX_CONN;  // Maximum number of simultaneous open connections.

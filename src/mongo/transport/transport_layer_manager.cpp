@@ -35,7 +35,7 @@
 #include "mongo/db/service_context.h"
 #include "mongo/stdx/memory.h"
 #include "mongo/transport/service_executor_adaptive.h"
-#include "mongo/transport/service_executor_passthrough.h"
+#include "mongo/transport/service_executor_synchronous.h"
 #include "mongo/transport/session.h"
 #include "mongo/transport/transport_layer_asio.h"
 #include "mongo/transport/transport_layer_legacy.h"
@@ -150,11 +150,9 @@ std::unique_ptr<TransportLayer> TransportLayerManager::createWithConfig(
     if (config->transportLayer == "asio") {
         transport::TransportLayerASIO::Options opts(config);
         if (config->serviceExecutor == "adaptive") {
-            opts.async =
-                ServiceExecutorAdaptive::transportModeStatic() == transport::Mode::Asynchronous;
-        } else if (config->serviceExecutor == "passthrough") {
-            opts.async =
-                ServiceExecutorPassthrough::transportModeStatic() == transport::Mode::Asynchronous;
+            opts.async = true;
+        } else if (config->serviceExecutor == "synchronous") {
+            opts.async = false;
         } else {
             MONGO_UNREACHABLE;
         }
@@ -164,14 +162,14 @@ std::unique_ptr<TransportLayer> TransportLayerManager::createWithConfig(
         if (config->serviceExecutor == "adaptive") {
             ctx->setServiceExecutor(stdx::make_unique<ServiceExecutorAdaptive>(
                 ctx, transportLayerASIO->getIOContext()));
-        } else if (config->serviceExecutor == "passthrough") {
-            ctx->setServiceExecutor(stdx::make_unique<ServiceExecutorPassthrough>(ctx));
+        } else if (config->serviceExecutor == "synchronous") {
+            ctx->setServiceExecutor(stdx::make_unique<ServiceExecutorSynchronous>(ctx));
         }
         transportLayer = std::move(transportLayerASIO);
     } else if (serverGlobalParams.transportLayer == "legacy") {
         transport::TransportLayerLegacy::Options opts(config);
         transportLayer = stdx::make_unique<transport::TransportLayerLegacy>(opts, sep);
-        ctx->setServiceExecutor(stdx::make_unique<ServiceExecutorPassthrough>(ctx));
+        ctx->setServiceExecutor(stdx::make_unique<ServiceExecutorSynchronous>(ctx));
     }
 
     std::vector<std::unique_ptr<TransportLayer>> retVector;

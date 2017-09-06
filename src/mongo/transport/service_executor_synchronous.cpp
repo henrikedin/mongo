@@ -31,9 +31,8 @@
 #include "mongo/platform/basic.h"
 
 #include "mongo/transport/service_entry_point_utils.h"
-#include "mongo/transport/service_executor_passthrough.h"
+#include "mongo/transport/service_executor_synchronous.h"
 
-#include "mongo/stdx/chrono.h"
 #include "mongo/stdx/thread.h"
 
 #include "mongo/db/server_parameters.h"
@@ -43,42 +42,34 @@
 namespace mongo {
 namespace transport {
 namespace {
-constexpr auto kThreadsRunning = "threadsRunning";
-constexpr auto kExecutorLabel = "executor";
-constexpr auto kExecutorName = "passthrough";
+constexpr auto kThreadsRunning = "threadsRunning"_sd;
+constexpr auto kExecutorLabel = "executor"_sd;
+constexpr auto kExecutorName = "passthrough"_sd;
 }  // namespace
 
-thread_local std::deque<ThreadPoolInterface::Task> ServiceExecutorPassthrough::_tlWorkQueue = {};
+thread_local std::deque<ThreadPoolInterface::Task> ServiceExecutorSynchronous::_tlWorkQueue = {};
 
-ServiceExecutorPassthrough::ServiceExecutorPassthrough(ServiceContext* ctx) {}
+ServiceExecutorSynchronous::ServiceExecutorSynchronous(ServiceContext* ctx) {}
 
-ServiceExecutorPassthrough::~ServiceExecutorPassthrough() {
+ServiceExecutorSynchronous::~ServiceExecutorSynchronous() {
     Status status = shutdown();
 }
 
-Status ServiceExecutorPassthrough::start() {
-    _numHardwareCores = [] {
-        ProcessInfo p;
-        if (auto availCores = p.getNumAvailableCores()) {
-            return static_cast<unsigned>(*availCores);
-        }
-        return static_cast<unsigned>(p.getNumCores());
-    }();
-
+Status ServiceExecutorSynchronous::start() {
     _stillRunning.store(true);
 
     return Status::OK();
 }
 
-Status ServiceExecutorPassthrough::shutdown() {
-    log() << "Shutting down passthrough executor";
+Status ServiceExecutorSynchronous::shutdown() {
+    LOG(3) << "Shutting down passthrough executor";
 
     _stillRunning.store(false);
 
     // TODO pass a time into this function
     stdx::unique_lock<stdx::mutex> lock(_shutdownMutex);
     bool result = _shutdownCondition.wait_for(
-        lock, stdx::chrono::seconds(10), [this]() { return _numRunningWorkerThreads.load() == 0; });
+        lock, Seconds(10).toSystemDuration(), [this]() { return _numRunningWorkerThreads == 0; });
 
     return result
         ? Status::OK()
@@ -86,8 +77,9 @@ Status ServiceExecutorPassthrough::shutdown() {
                  "passthrough executor couldn't shutdown all worker threads within time limit.");
 }
 
-Status ServiceExecutorPassthrough::schedule(Task task, ScheduleFlags flags) {
-    invariant(_stillRunning.load());
+Status ServiceExecutorSynchronous::schedule(Task task, ScheduleFlags flags) {
+	if (!_stillRunning.load())
+		return Status(ErrorCodes::Error::ShutdownInProgress, "can't schedule tasks while shutdown is in progress.");
 
     // As we're running the network in synchronous mode there should always be
     // tasks in the work queue unless this is the first call to schedule for this connection
@@ -98,36 +90,38 @@ Status ServiceExecutorPassthrough::schedule(Task task, ScheduleFlags flags) {
 
     // First call to schedule() for this connection, spawn a worker thread that will push jobs
     // into the thread local job queue.
-    log() << "Starting new executor thread in passthrough mode";
+	LOG(3) << "Starting new executor thread in passthrough mode";
 
     Status status = launchServiceWorkerThread([ this, task = std::move(task) ] {
-        _numRunningWorkerThreads.addAndFetch(1);
+		{
+			stdx::unique_lock<stdx::mutex> lock(_shutdownMutex);
+			++_numRunningWorkerThreads;
+		}
+        
         _tlWorkQueue.emplace_back(std::move(task));
         while (!_tlWorkQueue.empty() && _stillRunning.loadRelaxed()) {
             _tlWorkQueue.front()();
             _tlWorkQueue.pop_front();
-
-            /*
-            * In perf testing we found that yielding after running a each request produced
-            * at 5% performance boost in microbenchmarks if the number of worker threads
-            * was greater than the number of available cores.
-            */
-            if (_numRunningWorkerThreads.loadRelaxed() > _numHardwareCores)
-                stdx::this_thread::yield();
         }
 
-        stdx::unique_lock<stdx::mutex> lock(_shutdownMutex);
-        _numRunningWorkerThreads.subtractAndFetch(1);
+		stdx::unique_lock<stdx::mutex> lock(_shutdownMutex);
+        --_numRunningWorkerThreads;
         stdx::notify_all_at_thread_exit(_shutdownCondition, std::move(lock));
     });
 
     return status;
 }
 
-void ServiceExecutorPassthrough::appendStats(BSONObjBuilder* bob) const {
+void ServiceExecutorSynchronous::appendStats(BSONObjBuilder* bob) const {
+	int numRunningWorkerThreads;
+	{
+		stdx::unique_lock<stdx::mutex> lock(_shutdownMutex);
+		numRunningWorkerThreads = (int)_numRunningWorkerThreads;
+	}
+
     BSONObjBuilder section(bob->subobjStart("serviceExecutorTaskStats"));
     section << kExecutorLabel << kExecutorName << kThreadsRunning
-            << _numRunningWorkerThreads.load();
+            << numRunningWorkerThreads;
     section.doneFast();
 }
 

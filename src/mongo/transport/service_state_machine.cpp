@@ -184,10 +184,10 @@ std::shared_ptr<ServiceStateMachine> ServiceStateMachine::create(ServiceContext*
 
 ServiceStateMachine::ServiceStateMachine(ServiceContext* svcContext,
                                          transport::SessionHandle session,
-                                         transport::Mode transport_mode)
+                                         transport::Mode transportMode)
     : _state{State::Created},
       _sep{svcContext->getServiceEntryPoint()},
-      _transport_mode(transport_mode),
+      _transportMode(transportMode),
       _serviceContext(svcContext),
       _sessionHandle(session),
       _dbClient{svcContext->makeClient("conn", std::move(session))},
@@ -347,9 +347,9 @@ void ServiceStateMachine::_processMessage(ThreadGuard& guard) {
         auto ticket = _session()->sinkMessage(toSink);
 
         _state.store(State::SinkWait);
-        if (_transport_mode == transport::Mode::Synchronous) {
+        if (_transportMode == transport::Mode::Synchronous) {
             _sinkCallback(_session()->getTransportLayer()->wait(std::move(ticket)));
-        } else if (_transport_mode == transport::Mode::Asynchronous) {
+        } else if (_transportMode == transport::Mode::Asynchronous) {
             _session()->getTransportLayer()->asyncWait(
                 std::move(ticket), [this](Status status) { _sinkCallback(status); });
         } else {
@@ -395,12 +395,12 @@ void ServiceStateMachine::_runNextInGuard(ThreadGuard& guard) {
 
                 auto ticket = _session()->sourceMessage(&_inMessage);
                 _state.store(State::SourceWait);
-                if (_transport_mode == transport::Mode::Synchronous) {
+                if (_transportMode == transport::Mode::Synchronous) {
                     _sourceCallback([this](auto ticket) {
                         MONGO_IDLE_THREAD_BLOCK;
                         return _session()->getTransportLayer()->wait(std::move(ticket));
                     }(std::move(ticket)));
-                } else if (_transport_mode == transport::Mode::Asynchronous) {
+                } else if (_transportMode == transport::Mode::Asynchronous) {
                     _session()->getTransportLayer()->asyncWait(
                         std::move(ticket), [this](Status status) { _sourceCallback(status); });
                     break;
