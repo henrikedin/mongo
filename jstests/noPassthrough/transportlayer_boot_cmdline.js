@@ -10,16 +10,16 @@
     var dbpath = MongoRunner.dataPath + baseDir + "/";
 
     var m = MongoRunner.runMongod(
-        {dbpath: dbpath, transportLayer: 'legacy', serviceExecutor: 'synchronous'});
+        {dbpath: dbpath, transportLayer: 'legacy', serviceExecutor: 'passthrough'});
     assert(m,
-           'MongoDB with transportLayer=legacy and serviceExecutor=synchronous failed to start up');
+           'MongoDB with transportLayer=legacy and serviceExecutor=passthrough failed to start up');
     MongoRunner.stopMongod(m);
 
     m = MongoRunner.runMongod(
         {dbpath: dbpath, transportLayer: 'legacy', serviceExecutor: 'adaptive'});
     assert.isnull(
         m,
-        'MongoDB with transportLayer=legacy and serviceExecutor=fixedForTesting managed to startup which is an unsupported combination');
+        'MongoDB with transportLayer=legacy and serviceExecutor=adaptive managed to startup which is an unsupported combination');
     if (m) {
         MongoRunner.stopMongod(m);
     }
