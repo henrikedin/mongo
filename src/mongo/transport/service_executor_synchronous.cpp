@@ -78,8 +78,9 @@ Status ServiceExecutorSynchronous::shutdown() {
 }
 
 Status ServiceExecutorSynchronous::schedule(Task task, ScheduleFlags flags) {
-	if (!_stillRunning.load())
-		return Status(ErrorCodes::Error::ShutdownInProgress, "can't schedule tasks while shutdown is in progress.");
+    if (!_stillRunning.load())
+        return Status(ErrorCodes::Error::ShutdownInProgress,
+                      "can't schedule tasks while shutdown is in progress.");
 
     // As we're running the network in synchronous mode there should always be
     // tasks in the work queue unless this is the first call to schedule for this connection
@@ -90,21 +91,21 @@ Status ServiceExecutorSynchronous::schedule(Task task, ScheduleFlags flags) {
 
     // First call to schedule() for this connection, spawn a worker thread that will push jobs
     // into the thread local job queue.
-	LOG(3) << "Starting new executor thread in passthrough mode";
+    LOG(3) << "Starting new executor thread in passthrough mode";
 
     Status status = launchServiceWorkerThread([ this, task = std::move(task) ] {
-		{
-			stdx::unique_lock<stdx::mutex> lock(_shutdownMutex);
-			++_numRunningWorkerThreads;
-		}
-        
+        {
+            stdx::unique_lock<stdx::mutex> lock(_shutdownMutex);
+            ++_numRunningWorkerThreads;
+        }
+
         _tlWorkQueue.emplace_back(std::move(task));
         while (!_tlWorkQueue.empty() && _stillRunning.loadRelaxed()) {
             _tlWorkQueue.front()();
             _tlWorkQueue.pop_front();
         }
 
-		stdx::unique_lock<stdx::mutex> lock(_shutdownMutex);
+        stdx::unique_lock<stdx::mutex> lock(_shutdownMutex);
         --_numRunningWorkerThreads;
         stdx::notify_all_at_thread_exit(_shutdownCondition, std::move(lock));
     });
@@ -113,15 +114,14 @@ Status ServiceExecutorSynchronous::schedule(Task task, ScheduleFlags flags) {
 }
 
 void ServiceExecutorSynchronous::appendStats(BSONObjBuilder* bob) const {
-	int numRunningWorkerThreads;
-	{
-		stdx::unique_lock<stdx::mutex> lock(_shutdownMutex);
-		numRunningWorkerThreads = (int)_numRunningWorkerThreads;
-	}
+    int numRunningWorkerThreads;
+    {
+        stdx::unique_lock<stdx::mutex> lock(_shutdownMutex);
+        numRunningWorkerThreads = (int)_numRunningWorkerThreads;
+    }
 
     BSONObjBuilder section(bob->subobjStart("serviceExecutorTaskStats"));
-    section << kExecutorLabel << kExecutorName << kThreadsRunning
-            << numRunningWorkerThreads;
+    section << kExecutorLabel << kExecutorName << kThreadsRunning << numRunningWorkerThreads;
     section.doneFast();
 }
 

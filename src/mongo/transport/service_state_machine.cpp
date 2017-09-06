@@ -465,6 +465,13 @@ ServiceStateMachine::State ServiceStateMachine::state() {
     return _state.load();
 }
 
+void ServiceStateMachine::_terminateAndLogIfError(Status status) {
+    if (!status.isOK()) {
+        log(logger::LogComponent::kExecutor) << status.codeString();
+        terminateIfTagsDontMatch(0);
+    }
+}
+
 void ServiceStateMachine::_cleanupSession(ThreadGuard& guard) {
     _state.store(State::Ended);
 

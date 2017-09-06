@@ -138,6 +138,13 @@ private:
     friend class ThreadGuard;
 
     /*
+    * Terminates the associated transport Session if status indicate error.
+    *
+    * This will not block on the session terminating cleaning itself up, it returns immediately.
+    */
+    void _terminateAndLogIfError(Status status);
+
+    /*
      * This and scheduleFunc() are helper functions to schedule tasks on the serviceExecutor
      * while maintaining a shared_ptr copy to anchor the lifetime of the SSM while waiting for
      * callbacks to run.
@@ -154,9 +161,7 @@ private:
                 // This could for example be that we failed to start
                 // a worker thread. Terminate this connection to
                 // leave the system in a valid state.
-                log() << "Service executor failed to schedule task with error (code: "
-                      << status.code() << "): " << status.codeString();
-                terminateIfTagsDontMatch(0);
+                _terminateAndLogIfError(status);
             }
         }
     }
