@@ -1122,7 +1122,7 @@ void shutdownTask() {
         if (svcExec) {
             Status status = svcExec->shutdown();
             if (!status.isOK()) {
-                log(LogComponent::kNetwork) << status.reason();
+                log(LogComponent::kExecutor) << status.reason();
             }
         }
     }

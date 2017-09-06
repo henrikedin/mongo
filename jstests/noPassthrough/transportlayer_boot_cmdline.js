@@ -12,7 +12,7 @@
     var m = MongoRunner.runMongod(
         {dbpath: dbpath, transportLayer: 'legacy', serviceExecutor: 'synchronous'});
     assert(m,
-           'MongoDB with transportLayer=legacy and serviceExecutor=passthrough failed to start up');
+           'MongoDB with transportLayer=legacy and serviceExecutor=synchronous failed to start up');
     MongoRunner.stopMongod(m);
 
     m = MongoRunner.runMongod(
