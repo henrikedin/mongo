@@ -117,12 +117,11 @@ void ServiceExecutorSynchronous::appendStats(BSONObjBuilder* bob) const {
     int numRunningWorkerThreads;
     {
         stdx::unique_lock<stdx::mutex> lock(_shutdownMutex);
-        numRunningWorkerThreads = (int)_numRunningWorkerThreads;
+        numRunningWorkerThreads = static_cast<int>(_numRunningWorkerThreads);
     }
 
     BSONObjBuilder section(bob->subobjStart("serviceExecutorTaskStats"));
     section << kExecutorLabel << kExecutorName << kThreadsRunning << numRunningWorkerThreads;
-    section.doneFast();
 }
 
 }  // namespace transport
