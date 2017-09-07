@@ -480,7 +480,7 @@ ServiceStateMachine::State ServiceStateMachine::state() {
 
 void ServiceStateMachine::_terminateAndLogIfError(Status status) {
     if (!status.isOK()) {
-        log(logger::LogComponent::kExecutor) << status.codeString();
+        warning(logger::LogComponent::kExecutor) << status.codeString();
         terminateIfTagsDontMatch(0);
     }
 }
