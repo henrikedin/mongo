@@ -201,9 +201,8 @@ const transport::SessionHandle& ServiceStateMachine::_session() const {
 
 void ServiceStateMachine::_sourceCallback(ThreadGuard* guard, Status status) {
     // If we have a guard that wasn't able to take ownership of the thread, then reschedule this
-    // call to
-    // runNext() so that this thread can do other useful work with its timeslice instead of going
-    // to sleep while waiting for the SSM to be released.
+    // call to runNext() so that this thread can do other useful work with its timeslice instead of
+    // going to sleep while waiting for the SSM to be released.
     if (guard && !*guard) {
         return _scheduleFunc(
             [this, status] {
@@ -221,10 +220,8 @@ void ServiceStateMachine::_sourceCallback(ThreadGuard* guard, Status status) {
         _state.store(State::Process);
 
         // If we're running with synchronous networking (we have no ThreadGuard here), no need to
-        // schedule a task during source
-        // because we will fall through the switch statement into the process state in
-        // _runNextInGuard
-        // which will schedule a new task
+        // schedule a task during source because we will fall through the switch statement into the
+        // process state in _runNextInGuard which will schedule a new task
         if (!guard)
             return;
 
@@ -407,8 +404,8 @@ void ServiceStateMachine::_runNextInGuard(ThreadGuard& guard) {
                 _state.store(State::SourceWait);
                 if (_transportMode == transport::Mode::Synchronous) {
                     // Don't provide a thread guard to _sourceCallback so we don't attempt to
-                    // schedule a new task
-                    // we will instead fall through to State::Process which will take care of that.
+                    // schedule a new task we will instead fall through to State::Process which will
+                    // take care of that.
                     _sourceCallback(nullptr, [this](auto ticket) {
                         MONGO_IDLE_THREAD_BLOCK;
                         return _session()->getTransportLayer()->wait(std::move(ticket));
