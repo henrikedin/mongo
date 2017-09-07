@@ -199,16 +199,18 @@ const transport::SessionHandle& ServiceStateMachine::_session() const {
     return _sessionHandle;
 }
 
-void ServiceStateMachine::_sourceCallback(Status status) {
-    // The first thing to do is create a ThreadGuard which will take ownership of the SSM in this
-    // thread.
-    ThreadGuard guard(this);
-    // If the guard wasn't able to take ownership of the thread, then reschedule this call to
+void ServiceStateMachine::_sourceCallback(ThreadGuard* guard, Status status) {
+    // If we have a guard that wasn't able to take ownership of the thread, then reschedule this
+    // call to
     // runNext() so that this thread can do other useful work with its timeslice instead of going
     // to sleep while waiting for the SSM to be released.
-    if (!guard) {
-        return _scheduleFunc([this, status] { _sourceCallback(status); },
-                             ServiceExecutor::DeferredTask);
+    if (guard && !*guard) {
+        return _scheduleFunc(
+            [this, status] {
+                ThreadGuard guard(this);
+                _sourceCallback(&guard, status);
+            },
+            ServiceExecutor::DeferredTask);
     }
 
     // Make sure we just called sourceMessage();
@@ -218,6 +220,14 @@ void ServiceStateMachine::_sourceCallback(Status status) {
     if (status.isOK()) {
         _state.store(State::Process);
 
+        // If we're running with synchronous networking (we have no ThreadGuard here), no need to
+        // schedule a task during source
+        // because we will fall through the switch statement into the process state in
+        // _runNextInGuard
+        // which will schedule a new task
+        if (!guard)
+            return;
+
         // Since we know that we're going to process a message, call scheduleNext() immediately
         // to schedule the call to processMessage() on the serviceExecutor (or just unwind the
         // stack)
@@ -225,7 +235,7 @@ void ServiceStateMachine::_sourceCallback(Status status) {
         // If this callback doesn't own the ThreadGuard, then we're being called recursively,
         // and the executor shouldn't start a new thread to process the message - it can use this
         // one just after this returns.
-        auto flags = guard.isOwner() ? ServiceExecutor::EmptyFlags : ServiceExecutor::DeferredTask;
+        auto flags = guard->isOwner() ? ServiceExecutor::EmptyFlags : ServiceExecutor::DeferredTask;
         return scheduleNext(flags);
     } else if (ErrorCodes::isInterruption(status.code()) ||
                ErrorCodes::isNetworkError(status.code())) {
@@ -243,7 +253,8 @@ void ServiceStateMachine::_sourceCallback(Status status) {
 
     // There was an error receiving a message from the client and we've already printed the error
     // so call runNextInGuard() to clean up the session without waiting.
-    _runNextInGuard(guard);
+    if (guard)
+        _runNextInGuard(*guard);
 }
 
 void ServiceStateMachine::_sinkCallback(Status status) {
@@ -377,8 +388,7 @@ void ServiceStateMachine::runNext() {
 
 void ServiceStateMachine::_runNextInGuard(ThreadGuard& guard) {
     auto curState = state();
-    if (curState == State::Ended)
-        return;
+    invariant(curState != State::Ended);
 
     // If this is the first run of the SSM, then update its state to Source
     if (curState == State::Created) {
@@ -396,13 +406,19 @@ void ServiceStateMachine::_runNextInGuard(ThreadGuard& guard) {
                 auto ticket = _session()->sourceMessage(&_inMessage);
                 _state.store(State::SourceWait);
                 if (_transportMode == transport::Mode::Synchronous) {
-                    _sourceCallback([this](auto ticket) {
+                    // Don't provide a thread guard to _sourceCallback so we don't attempt to
+                    // schedule a new task
+                    // we will instead fall through to State::Process which will take care of that.
+                    _sourceCallback(nullptr, [this](auto ticket) {
                         MONGO_IDLE_THREAD_BLOCK;
                         return _session()->getTransportLayer()->wait(std::move(ticket));
                     }(std::move(ticket)));
                 } else if (_transportMode == transport::Mode::Asynchronous) {
-                    _session()->getTransportLayer()->asyncWait(
-                        std::move(ticket), [this](Status status) { _sourceCallback(status); });
+                    _session()->getTransportLayer()->asyncWait(std::move(ticket),
+                                                               [this](Status status) {
+                                                                   ThreadGuard guard(this);
+                                                                   _sourceCallback(&guard, status);
+                                                               });
                     break;
                 } else {
                     MONGO_UNREACHABLE;
