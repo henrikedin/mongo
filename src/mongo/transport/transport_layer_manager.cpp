@@ -150,9 +150,9 @@ std::unique_ptr<TransportLayer> TransportLayerManager::createWithConfig(
     if (config->transportLayer == "asio") {
         transport::TransportLayerASIO::Options opts(config);
         if (config->serviceExecutor == "adaptive") {
-            opts.async = true;
+            opts.transportMode = transport::Mode::Asynchronous;
         } else if (config->serviceExecutor == "synchronous") {
-            opts.async = false;
+            opts.transportMode = transport::Mode::Synchronous;
         } else {
             MONGO_UNREACHABLE;
         }
