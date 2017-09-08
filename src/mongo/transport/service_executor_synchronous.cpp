@@ -45,9 +45,11 @@ namespace {
 constexpr auto kThreadsRunning = "threadsRunning"_sd;
 constexpr auto kExecutorLabel = "executor"_sd;
 constexpr auto kExecutorName = "passthrough"_sd;
+constexpr auto kMaxRecusionDepth = 10;
 }  // namespace
 
 thread_local std::deque<ThreadPoolInterface::Task> ServiceExecutorSynchronous::_localWorkQueue = {};
+thread_local int ServiceExecutorSynchronous::_localRecursionDepth = 0;
 
 ServiceExecutorSynchronous::ServiceExecutorSynchronous(ServiceContext* ctx) {}
 
@@ -86,14 +88,16 @@ Status ServiceExecutorSynchronous::shutdown() {
 }
 
 Status ServiceExecutorSynchronous::schedule(Task task, ScheduleFlags flags) {
-    if (!_stillRunning.load())
-        return Status(ErrorCodes::Error::ShutdownInProgress,
-                      "can't schedule tasks while shutdown is in progress.");
-
-    // As we're running the network in synchronous mode there should always be
-    // tasks in the work queue unless this is the first call to schedule for this connection
-    if (!_localWorkQueue.empty()) {
-		_localWorkQueue.emplace_back(std::move(task));
+    // If we have a positive recursion depth we're already running in a worker thread, determine if
+    // we can recurse deeper (estimate of remaining stack space), otherwise unroll and queue for the
+    // loop in the thread.
+    if (_localRecursionDepth > 0) {
+        if (_localRecursionDepth < kMaxRecusionDepth) {
+            ++_localRecursionDepth;
+            task();
+        } else {
+            _localWorkQueue.emplace_back(std::move(task));
+        }
         return Status::OK();
     }
 
@@ -106,6 +110,7 @@ Status ServiceExecutorSynchronous::schedule(Task task, ScheduleFlags flags) {
 
 		_localWorkQueue.emplace_back(std::move(task));
         while (!_localWorkQueue.empty() && _stillRunning.loadRelaxed()) {
+			_localRecursionDepth = 1;
 			_localWorkQueue.front()();
 			_localWorkQueue.pop_front();
 

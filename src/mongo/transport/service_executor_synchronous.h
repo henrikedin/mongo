@@ -61,6 +61,8 @@ public:
 
 private:
     static thread_local std::deque<Task> _localWorkQueue;
+    static thread_local int _localRecursionDepth;
+
     AtomicBool _stillRunning{false};
 
     mutable stdx::mutex _shutdownMutex;
