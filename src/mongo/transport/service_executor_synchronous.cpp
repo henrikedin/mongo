@@ -47,7 +47,7 @@ constexpr auto kExecutorLabel = "executor"_sd;
 constexpr auto kExecutorName = "passthrough"_sd;
 }  // namespace
 
-thread_local std::deque<ThreadPoolInterface::Task> ServiceExecutorSynchronous::_tlWorkQueue = {};
+thread_local std::deque<ThreadPoolInterface::Task> ServiceExecutorSynchronous::_localWorkQueue = {};
 
 ServiceExecutorSynchronous::ServiceExecutorSynchronous(ServiceContext* ctx) {}
 
@@ -69,7 +69,7 @@ Status ServiceExecutorSynchronous::shutdown() {
     // TODO pass a time into this function
     stdx::unique_lock<stdx::mutex> lock(_shutdownMutex);
     bool result = _shutdownCondition.wait_for(
-        lock, Seconds(10).toSystemDuration(), [this]() { return _numRunningWorkerThreads == 0; });
+        lock, Seconds(10).toSystemDuration(), [this]() { return _numRunningWorkerThreads.load() == 0; });
 
     return result
         ? Status::OK()
@@ -84,8 +84,8 @@ Status ServiceExecutorSynchronous::schedule(Task task, ScheduleFlags flags) {
 
     // As we're running the network in synchronous mode there should always be
     // tasks in the work queue unless this is the first call to schedule for this connection
-    if (!_tlWorkQueue.empty()) {
-        _tlWorkQueue.emplace_back(std::move(task));
+    if (!_localWorkQueue.empty()) {
+		_localWorkQueue.emplace_back(std::move(task));
         return Status::OK();
     }
 
@@ -94,34 +94,27 @@ Status ServiceExecutorSynchronous::schedule(Task task, ScheduleFlags flags) {
     LOG(3) << "Starting new executor thread in passthrough mode";
 
     Status status = launchServiceWorkerThread([ this, task = std::move(task) ] {
-        {
-            stdx::unique_lock<stdx::mutex> lock(_shutdownMutex);
-            ++_numRunningWorkerThreads;
+		_numRunningWorkerThreads.addAndFetch(1);
+
+		_localWorkQueue.emplace_back(std::move(task));
+        while (!_localWorkQueue.empty() && _stillRunning.loadRelaxed()) {
+			_localWorkQueue.front()();
+			_localWorkQueue.pop_front();
         }
 
-        _tlWorkQueue.emplace_back(std::move(task));
-        while (!_tlWorkQueue.empty() && _stillRunning.loadRelaxed()) {
-            _tlWorkQueue.front()();
-            _tlWorkQueue.pop_front();
-        }
-
-        stdx::unique_lock<stdx::mutex> lock(_shutdownMutex);
-        --_numRunningWorkerThreads;
-        stdx::notify_all_at_thread_exit(_shutdownCondition, std::move(lock));
+		if (_numRunningWorkerThreads.subtractAndFetch(1) == 0)
+		{
+			stdx::unique_lock<stdx::mutex> lock(_shutdownMutex);
+			stdx::notify_all_at_thread_exit(_shutdownCondition, std::move(lock));
+		}
     });
 
     return status;
 }
 
 void ServiceExecutorSynchronous::appendStats(BSONObjBuilder* bob) const {
-    int numRunningWorkerThreads;
-    {
-        stdx::unique_lock<stdx::mutex> lock(_shutdownMutex);
-        numRunningWorkerThreads = static_cast<int>(_numRunningWorkerThreads);
-    }
-
     BSONObjBuilder section(bob->subobjStart("serviceExecutorTaskStats"));
-    section << kExecutorLabel << kExecutorName << kThreadsRunning << numRunningWorkerThreads;
+    section << kExecutorLabel << kExecutorName << kThreadsRunning << (int)_numRunningWorkerThreads.loadRelaxed();
 }
 
 }  // namespace transport

@@ -60,13 +60,13 @@ public:
     void appendStats(BSONObjBuilder* bob) const override;
 
 private:
-    static thread_local std::deque<Task> _tlWorkQueue;
+    static thread_local std::deque<Task> _localWorkQueue;
     AtomicBool _stillRunning{false};
 
     mutable stdx::mutex _shutdownMutex;
     stdx::condition_variable _shutdownCondition;
 
-    size_t _numRunningWorkerThreads{0};
+    AtomicWord<size_t> _numRunningWorkerThreads{0};
 };
 
 }  // namespace transport
