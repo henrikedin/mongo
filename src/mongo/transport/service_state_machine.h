@@ -133,21 +133,19 @@ private:
      * callbacks to run.
      */
     template <typename Executor, typename Func>
-    void _maybeScheduleFunc(Executor* svcExec,
+    void _scheduleFunc(Executor* svcExec,
                             Func&& func,
                             transport::ServiceExecutor::ScheduleFlags flags) {
-        if (svcExec) {
-            Status status = svcExec->schedule(
-                [ func = std::move(func), anchor = shared_from_this() ] { func(); },
-                flags,
-                state());
-            if (!status.isOK()) {
-                // The service executor failed to schedule the task
-                // This could for example be that we failed to start
-                // a worker thread. Terminate this connection to
-                // leave the system in a valid state.
-                _terminateAndLogIfError(status);
-            }
+        Status status = svcExec->schedule(
+            [ func = std::move(func), anchor = shared_from_this() ] { func(); },
+            flags,
+            state());
+        if (!status.isOK()) {
+            // The service executor failed to schedule the task
+            // This could for example be that we failed to start
+            // a worker thread. Terminate this connection to
+            // leave the system in a valid state.
+            _terminateAndLogIfError(status);
         }
     }
 
@@ -155,7 +153,7 @@ private:
     void _scheduleFunc(Func&& func, transport::ServiceExecutor::ScheduleFlags flags) {
         auto svcExec = _serviceContext->getServiceExecutor();
         invariant(svcExec);
-        _maybeScheduleFunc(svcExec, func, flags);
+		_scheduleFunc(svcExec, func, flags);
     }
 
     /*
