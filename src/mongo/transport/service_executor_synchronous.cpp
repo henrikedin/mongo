@@ -59,9 +59,9 @@ Status ServiceExecutorSynchronous::start() {
     _numHardwareCores = [] {
         ProcessInfo p;
         if (auto availCores = p.getNumAvailableCores()) {
-            return static_cast<unsigned>(*availCores);
+            return static_cast<size_t>(*availCores);
         }
-        return static_cast<unsigned>(p.getNumCores());
+        return static_cast<size_t>(p.getNumCores());
     }();
 
     _stillRunning.store(true);
