@@ -87,7 +87,7 @@ public:
 
     Status start() final;
     Status shutdown() final;
-    Status schedule(Task task, ScheduleFlags flags) final;
+    Status schedule(Task task, ScheduleFlags flags, ServiceStateMachineState state) final;
 
     Mode transportMode() const final {
         return Mode::Asynchronous;

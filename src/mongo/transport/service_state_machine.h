@@ -40,6 +40,7 @@
 #include "mongo/transport/message_compressor_base.h"
 #include "mongo/transport/service_entry_point.h"
 #include "mongo/transport/service_executor.h"
+#include "mongo/transport/service_state_machine_state.h"
 #include "mongo/transport/session.h"
 #include "mongo/transport/transport_mode.h"
 
@@ -73,24 +74,6 @@ public:
                         transport::Mode transport_mode);
 
     /*
-     * Any state may transition to EndSession in case of an error, otherwise the valid state
-     * transitions are:
-     * Source -> SourceWait -> Process -> SinkWait -> Source (standard RPC)
-     * Source -> SourceWait -> Process -> SinkWait -> Process -> SinkWait ... (exhaust)
-     * Source -> SourceWait -> Process -> Source (fire-and-forget)
-     */
-    enum class State {
-        Created,     // The session has been created, but no operations have been performed yet
-        Source,      // Request a new Message from the network to handle
-        SourceWait,  // Wait for the new Message to arrive from the network
-        Process,     // Run the Message through the database
-        SinkWait,    // Wait for the database result to be sent by the network
-        EndSession,  // End the session - the ServiceStateMachine will be invalid after this
-        Ended        // The session has ended. It is illegal to call any method besides
-                     // state() if this is the current state.
-    };
-
-    /*
      * runNext() will run the current state of the state machine. It also handles all the error
      * handling and state management for requests.
      *
@@ -116,7 +99,7 @@ public:
     /*
      * Gets the current state of connection for testing/diagnostic purposes.
      */
-    State state();
+	ServiceStateMachineState state();
 
     /*
      * Terminates the associated transport Session if its tags don't match the supplied tags.
@@ -155,7 +138,7 @@ private:
                             transport::ServiceExecutor::ScheduleFlags flags) {
         if (svcExec) {
             Status status = svcExec->schedule(
-                [ func = std::move(func), anchor = shared_from_this() ] { func(); }, flags);
+                [ func = std::move(func), anchor = shared_from_this() ] { func(); }, flags, state());
             if (!status.isOK()) {
                 // The service executor failed to schedule the task
                 // This could for example be that we failed to start
@@ -205,7 +188,7 @@ private:
      */
     void _cleanupSession(ThreadGuard& guard);
 
-    AtomicWord<State> _state{State::Created};
+    AtomicWord<ServiceStateMachineState> _state{ServiceStateMachineState::Created};
 
     ServiceEntryPoint* _sep;
     transport::Mode _transportMode;
@@ -228,27 +211,27 @@ private:
 };
 
 template <typename T>
-T& operator<<(T& stream, const ServiceStateMachine::State& state) {
+T& operator<<(T& stream, const ServiceStateMachineState& state) {
     switch (state) {
-        case ServiceStateMachine::State::Created:
+        case ServiceStateMachineState::Created:
             stream << "created";
             break;
-        case ServiceStateMachine::State::Source:
+        case ServiceStateMachineState::Source:
             stream << "source";
             break;
-        case ServiceStateMachine::State::SourceWait:
+        case ServiceStateMachineState::SourceWait:
             stream << "sourceWait";
             break;
-        case ServiceStateMachine::State::Process:
+        case ServiceStateMachineState::Process:
             stream << "process";
             break;
-        case ServiceStateMachine::State::SinkWait:
+        case ServiceStateMachineState::SinkWait:
             stream << "sinkWait";
             break;
-        case ServiceStateMachine::State::EndSession:
+        case ServiceStateMachineState::EndSession:
             stream << "endSession";
             break;
-        case ServiceStateMachine::State::Ended:
+        case ServiceStateMachineState::Ended:
             stream << "ended";
             break;
     }

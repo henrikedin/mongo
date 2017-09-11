@@ -171,7 +171,7 @@ Status ServiceExecutorAdaptive::shutdown() {
     return Status::OK();
 }
 
-Status ServiceExecutorAdaptive::schedule(ServiceExecutorAdaptive::Task task, ScheduleFlags flags) {
+Status ServiceExecutorAdaptive::schedule(ServiceExecutorAdaptive::Task task, ScheduleFlags flags, ServiceStateMachineState state) {
     auto scheduleTime = _tickSource->getTicks();
     auto pending = _tasksQueued.addAndFetch(1);
 

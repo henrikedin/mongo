@@ -51,7 +51,7 @@ public:
 
     Status start() override;
     Status shutdown() override;
-    Status schedule(Task task, ScheduleFlags flags) override;
+    Status schedule(Task task, ScheduleFlags flags, ServiceStateMachineState state) override;
 
     Mode transportMode() const override {
         return Mode::Synchronous;
@@ -61,7 +61,6 @@ public:
 
 private:
     static thread_local std::deque<Task> _localWorkQueue;
-    static thread_local int _localRecursionDepth;
 
     AtomicBool _stillRunning{false};
 

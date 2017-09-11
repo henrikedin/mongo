@@ -136,7 +136,7 @@ public:
 
         // If the session has ended, then assume that it's unsafe to do anything but call the
         // cleanup hook.
-        if (_ssm->state() == State::Ended) {
+        if (_ssm->state() == ServiceStateMachineState::Ended) {
             // The cleanup hook may change as soon as we unlock the mutex, so move it out of the
             // ssm before unlocking the lock.
             auto cleanupHook = std::move(_ssm->_cleanupHook);
@@ -185,7 +185,7 @@ std::shared_ptr<ServiceStateMachine> ServiceStateMachine::create(ServiceContext*
 ServiceStateMachine::ServiceStateMachine(ServiceContext* svcContext,
                                          transport::SessionHandle session,
                                          transport::Mode transportMode)
-    : _state{State::Created},
+    : _state{ServiceStateMachineState::Created},
       _sep{svcContext->getServiceEntryPoint()},
       _transportMode(transportMode),
       _serviceContext(svcContext),
@@ -213,11 +213,11 @@ void ServiceStateMachine::_sourceCallback(ThreadGuard* guard, Status status) {
     }
 
     // Make sure we just called sourceMessage();
-    invariant(state() == State::SourceWait);
+    invariant(state() == ServiceStateMachineState::SourceWait);
     auto remote = _session()->remote();
 
     if (status.isOK()) {
-        _state.store(State::Process);
+        _state.store(ServiceStateMachineState::Process);
 
         // If we're running with synchronous networking (we have no ThreadGuard here), no need to
         // schedule a task during source because we will fall through the switch statement into the
@@ -237,15 +237,15 @@ void ServiceStateMachine::_sourceCallback(ThreadGuard* guard, Status status) {
     } else if (ErrorCodes::isInterruption(status.code()) ||
                ErrorCodes::isNetworkError(status.code())) {
         LOG(2) << "Session from " << remote << " encountered a network error during SourceMessage";
-        _state.store(State::EndSession);
+        _state.store(ServiceStateMachineState::EndSession);
     } else if (status == TransportLayer::TicketSessionClosedStatus) {
         // Our session may have been closed internally.
         LOG(2) << "Session from " << remote << " was closed internally during SourceMessage";
-        _state.store(State::EndSession);
+        _state.store(ServiceStateMachineState::EndSession);
     } else {
         log() << "Error receiving request from client: " << status << ". Ending connection from "
               << remote << " (connection id: " << _session()->id() << ")";
-        _state.store(State::EndSession);
+        _state.store(ServiceStateMachineState::EndSession);
     }
 
     // There was an error receiving a message from the client and we've already printed the error
@@ -266,7 +266,7 @@ void ServiceStateMachine::_sinkCallback(Status status) {
                              ServiceExecutor::DeferredTask);
     }
 
-    invariant(state() == State::SinkWait);
+    invariant(state() == ServiceStateMachineState::SinkWait);
 
     // If there was an error sinking the message to the client, then we should print an error and
     // end the session. No need to unwind the stack, so this will runNextInGuard() and return.
@@ -276,16 +276,16 @@ void ServiceStateMachine::_sinkCallback(Status status) {
     if (!status.isOK()) {
         log() << "Error sending response to client: " << status << ". Ending connection from "
               << _session()->remote() << " (connection id: " << _session()->id() << ")";
-        _state.store(State::EndSession);
+        _state.store(ServiceStateMachineState::EndSession);
         return _runNextInGuard(guard);
     } else if (_inExhaust) {
-        _state.store(State::Process);
+        _state.store(ServiceStateMachineState::Process);
     } else {
-        _state.store(State::Source);
+        _state.store(ServiceStateMachineState::Source);
     }
 
     // If the session ended, then runNext to clean it up
-    if (state() == State::EndSession) {
+    if (state() == ServiceStateMachineState::EndSession) {
         _runNextInGuard(guard);
     } else {  // Otherwise scheduleNext to unwind the stack and run the next step later
         // If this callback doesn't own the ThreadGuard, then we're being called recursively,
@@ -299,7 +299,7 @@ void ServiceStateMachine::_sinkCallback(Status status) {
 void ServiceStateMachine::_processMessage(ThreadGuard& guard) {
     // This may have been called just after a failure to source a message, in which case this
     // should return early so the session can be cleaned up.
-    if (state() != State::Process) {
+    if (state() != ServiceStateMachineState::Process) {
         return;
     }
     invariant(!_inMessage.empty());
@@ -354,7 +354,7 @@ void ServiceStateMachine::_processMessage(ThreadGuard& guard) {
         // Sink our response to the client
         auto ticket = _session()->sinkMessage(toSink);
 
-        _state.store(State::SinkWait);
+        _state.store(ServiceStateMachineState::SinkWait);
         if (_transportMode == transport::Mode::Synchronous) {
             _sinkCallback(_session()->getTransportLayer()->wait(std::move(ticket)));
         } else if (_transportMode == transport::Mode::Asynchronous) {
@@ -364,7 +364,7 @@ void ServiceStateMachine::_processMessage(ThreadGuard& guard) {
             MONGO_UNREACHABLE;
         }
     } else {
-        _state.store(State::Source);
+        _state.store(ServiceStateMachineState::Source);
         _inMessage.reset();
         return scheduleNext(ServiceExecutor::DeferredTask);
     }
@@ -385,11 +385,11 @@ void ServiceStateMachine::runNext() {
 
 void ServiceStateMachine::_runNextInGuard(ThreadGuard& guard) {
     auto curState = state();
-    invariant(curState != State::Ended);
+    invariant(curState != ServiceStateMachineState::Ended);
 
     // If this is the first run of the SSM, then update its state to Source
-    if (curState == State::Created) {
-        curState = State::Source;
+    if (curState == ServiceStateMachineState::Created) {
+        curState = ServiceStateMachineState::Source;
         _state.store(curState);
     }
 
@@ -397,19 +397,21 @@ void ServiceStateMachine::_runNextInGuard(ThreadGuard& guard) {
     invariant(Client::getCurrent() == _dbClientPtr);
     try {
         switch (curState) {
-            case State::Source: {
+            case ServiceStateMachineState::Source: {
                 invariant(_inMessage.empty());
 
                 auto ticket = _session()->sourceMessage(&_inMessage);
-                _state.store(State::SourceWait);
+                _state.store(ServiceStateMachineState::SourceWait);
                 if (_transportMode == transport::Mode::Synchronous) {
                     // Don't provide a thread guard to _sourceCallback so we don't attempt to
                     // schedule a new task we will instead fall through to State::Process which will
                     // take care of that.
-                    _sourceCallback(nullptr, [this](auto ticket) {
+					ThreadGuard guard2(this);
+                    _sourceCallback(&guard2, [this](auto ticket) {
                         MONGO_IDLE_THREAD_BLOCK;
                         return _session()->getTransportLayer()->wait(std::move(ticket));
                     }(std::move(ticket)));
+					break;
                 } else if (_transportMode == transport::Mode::Asynchronous) {
                     _session()->getTransportLayer()->asyncWait(std::move(ticket),
                                                                [this](Status status) {
@@ -421,10 +423,10 @@ void ServiceStateMachine::_runNextInGuard(ThreadGuard& guard) {
                     MONGO_UNREACHABLE;
                 }
             }
-            case State::Process:
+            case ServiceStateMachineState::Process:
                 _processMessage(guard);
                 break;
-            case State::EndSession:
+            case ServiceStateMachineState::EndSession:
                 // This will get handled below in an if statement. That way if an error occurs
                 // you don't have to call runNext() again to clean up the session.
                 break;
@@ -436,7 +438,7 @@ void ServiceStateMachine::_runNextInGuard(ThreadGuard& guard) {
             markThreadIdle();
         }
 
-        if (state() == State::EndSession) {
+        if (state() == ServiceStateMachineState::EndSession) {
             _cleanupSession(guard);
         }
 
@@ -449,7 +451,7 @@ void ServiceStateMachine::_runNextInGuard(ThreadGuard& guard) {
         quickExit(EXIT_UNCAUGHT);
     }
 
-    _state.store(State::EndSession);
+    _state.store(ServiceStateMachineState::EndSession);
     _cleanupSession(guard);
 }
 
@@ -458,7 +460,7 @@ void ServiceStateMachine::scheduleNext(ServiceExecutor::ScheduleFlags flags) {
 }
 
 void ServiceStateMachine::terminateIfTagsDontMatch(transport::Session::TagMask tags) {
-    if (state() == State::Ended)
+    if (state() == ServiceStateMachineState::Ended)
         return;
 
     if (_session()->getTags() & tags) {
@@ -470,11 +472,11 @@ void ServiceStateMachine::terminateIfTagsDontMatch(transport::Session::TagMask t
 }
 
 void ServiceStateMachine::setCleanupHook(stdx::function<void()> hook) {
-    invariant(state() == State::Created);
+    invariant(state() == ServiceStateMachineState::Created);
     _cleanupHook = std::move(hook);
 }
 
-ServiceStateMachine::State ServiceStateMachine::state() {
+ServiceStateMachineState ServiceStateMachine::state() {
     return _state.load();
 }
 
@@ -486,7 +488,7 @@ void ServiceStateMachine::_terminateAndLogIfError(Status status) {
 }
 
 void ServiceStateMachine::_cleanupSession(ThreadGuard& guard) {
-    _state.store(State::Ended);
+    _state.store(ServiceStateMachineState::Ended);
 
     auto tl = _session()->getTransportLayer();
     auto remote = _session()->remote();

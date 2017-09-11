@@ -32,6 +32,7 @@
 #include "mongo/bson/bsonobjbuilder.h"
 #include "mongo/stdx/functional.h"
 
+#include "mongo/transport/service_state_machine_state.h"
 #include "mongo/transport/transport_mode.h"
 
 namespace mongo {
@@ -49,7 +50,7 @@ public:
     using Task = stdx::function<void()>;
     enum ScheduleFlags {
         EmptyFlags = 0,
-        DeferredTask = 1,
+        DeferredTask = 1
     };
 
     /*
@@ -66,7 +67,7 @@ public:
      * If defer is true, then the executor may defer execution of this Task until an available
      * thread is available.
      */
-    virtual Status schedule(Task task, ScheduleFlags flags) = 0;
+    virtual Status schedule(Task task, ScheduleFlags flags, ServiceStateMachineState state) = 0;
 
     /*
      * Stops and joins the ServiceExecutor. Any outstanding tasks will not be executed, and any

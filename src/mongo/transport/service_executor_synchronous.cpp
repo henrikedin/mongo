@@ -45,11 +45,9 @@ namespace {
 constexpr auto kThreadsRunning = "threadsRunning"_sd;
 constexpr auto kExecutorLabel = "executor"_sd;
 constexpr auto kExecutorName = "passthrough"_sd;
-constexpr auto kMaxRecusionDepth = 10;
 }  // namespace
 
 thread_local std::deque<ThreadPoolInterface::Task> ServiceExecutorSynchronous::_localWorkQueue = {};
-thread_local int ServiceExecutorSynchronous::_localRecursionDepth = 0;
 
 ServiceExecutorSynchronous::ServiceExecutorSynchronous(ServiceContext* ctx) {}
 
@@ -87,13 +85,12 @@ Status ServiceExecutorSynchronous::shutdown() {
                  "passthrough executor couldn't shutdown all worker threads within time limit.");
 }
 
-Status ServiceExecutorSynchronous::schedule(Task task, ScheduleFlags flags) {
+Status ServiceExecutorSynchronous::schedule(Task task, ScheduleFlags flags, ServiceStateMachineState state) {
     // If we have a positive recursion depth we're already running in a worker thread, determine if
     // we can recurse deeper (estimate of remaining stack space), otherwise unroll and queue for the
     // loop in the thread.
-    if (_localRecursionDepth > 0) {
-        if (_localRecursionDepth < kMaxRecusionDepth) {
-            ++_localRecursionDepth;
+    if (!_localWorkQueue.empty()) {
+        if (state == ServiceStateMachineState::Process) {
             task();
         } else {
             _localWorkQueue.emplace_back(std::move(task));
@@ -110,7 +107,6 @@ Status ServiceExecutorSynchronous::schedule(Task task, ScheduleFlags flags) {
 
 		_localWorkQueue.emplace_back(std::move(task));
         while (!_localWorkQueue.empty() && _stillRunning.loadRelaxed()) {
-			_localRecursionDepth = 1;
 			_localWorkQueue.front()();
 			_localWorkQueue.pop_front();
 
