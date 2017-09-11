@@ -440,7 +440,7 @@ void ServiceStateMachine::_runNextInGuard(ThreadGuard& guard) {
 }
 
 void ServiceStateMachine::scheduleNext(ServiceExecutor::ScheduleFlags flags) {
-	_scheduleFunc(_serviceContext->getServiceExecutor(), [this] { runNext(); }, flags);
+    _scheduleFunc(_serviceContext->getServiceExecutor(), [this] { runNext(); }, flags);
 }
 
 void ServiceStateMachine::terminateIfTagsDontMatch(transport::Session::TagMask tags) {

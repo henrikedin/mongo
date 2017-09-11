@@ -134,12 +134,10 @@ private:
      */
     template <typename Executor, typename Func>
     void _scheduleFunc(Executor* svcExec,
-                            Func&& func,
-                            transport::ServiceExecutor::ScheduleFlags flags) {
+                       Func&& func,
+                       transport::ServiceExecutor::ScheduleFlags flags) {
         Status status = svcExec->schedule(
-            [ func = std::move(func), anchor = shared_from_this() ] { func(); },
-            flags,
-            state());
+            [ func = std::move(func), anchor = shared_from_this() ] { func(); }, flags, state());
         if (!status.isOK()) {
             // The service executor failed to schedule the task
             // This could for example be that we failed to start
@@ -153,7 +151,7 @@ private:
     void _scheduleFunc(Func&& func, transport::ServiceExecutor::ScheduleFlags flags) {
         auto svcExec = _serviceContext->getServiceExecutor();
         invariant(svcExec);
-		_scheduleFunc(svcExec, func, flags);
+        _scheduleFunc(svcExec, func, flags);
     }
 
     /*
