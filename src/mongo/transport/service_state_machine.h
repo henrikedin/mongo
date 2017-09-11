@@ -99,7 +99,7 @@ public:
     /*
      * Gets the current state of connection for testing/diagnostic purposes.
      */
-	ServiceStateMachineState state();
+    ServiceStateMachineState state();
 
     /*
      * Terminates the associated transport Session if its tags don't match the supplied tags.
@@ -138,7 +138,9 @@ private:
                             transport::ServiceExecutor::ScheduleFlags flags) {
         if (svcExec) {
             Status status = svcExec->schedule(
-                [ func = std::move(func), anchor = shared_from_this() ] { func(); }, flags, state());
+                [ func = std::move(func), anchor = shared_from_this() ] { func(); },
+                flags,
+                state());
             if (!status.isOK()) {
                 // The service executor failed to schedule the task
                 // This could for example be that we failed to start

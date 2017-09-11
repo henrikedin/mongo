@@ -200,53 +200,50 @@ const transport::SessionHandle& ServiceStateMachine::_session() const {
 }
 
 void ServiceStateMachine::_sourceCallback(Status status) {
-	// The first thing to do is create a ThreadGuard which will take ownership of the SSM in this
-	// thread.
-	ThreadGuard guard(this);
-	// If the guard wasn't able to take ownership of the thread, then reschedule this call to
-	// runNext() so that this thread can do other useful work with its timeslice instead of going
-	// to sleep while waiting for the SSM to be released.
-	if (!guard) {
-		return _scheduleFunc([this, status] { _sourceCallback(status); },
-			ServiceExecutor::DeferredTask);
-	}
+    // The first thing to do is create a ThreadGuard which will take ownership of the SSM in this
+    // thread.
+    ThreadGuard guard(this);
+    // If the guard wasn't able to take ownership of the thread, then reschedule this call to
+    // runNext() so that this thread can do other useful work with its timeslice instead of going
+    // to sleep while waiting for the SSM to be released.
+    if (!guard) {
+        return _scheduleFunc([this, status] { _sourceCallback(status); },
+                             ServiceExecutor::DeferredTask);
+    }
 
-	// Make sure we just called sourceMessage();
-	invariant(state() == ServiceStateMachineState::SourceWait);
-	auto remote = _session()->remote();
+    // Make sure we just called sourceMessage();
+    invariant(state() == ServiceStateMachineState::SourceWait);
+    auto remote = _session()->remote();
 
-	if (status.isOK()) {
-		_state.store(ServiceStateMachineState::Process);
+    if (status.isOK()) {
+        _state.store(ServiceStateMachineState::Process);
 
-		// Since we know that we're going to process a message, call scheduleNext() immediately
-		// to schedule the call to processMessage() on the serviceExecutor (or just unwind the
-		// stack)
+        // Since we know that we're going to process a message, call scheduleNext() immediately
+        // to schedule the call to processMessage() on the serviceExecutor (or just unwind the
+        // stack)
 
-		// If this callback doesn't own the ThreadGuard, then we're being called recursively,
-		// and the executor shouldn't start a new thread to process the message - it can use this
-		// one just after this returns.
-		auto flags = guard.isOwner() ? ServiceExecutor::EmptyFlags : ServiceExecutor::DeferredTask;
-		return scheduleNext(flags);
-	}
-	else if (ErrorCodes::isInterruption(status.code()) ||
-		ErrorCodes::isNetworkError(status.code())) {
-		LOG(2) << "Session from " << remote << " encountered a network error during SourceMessage";
-		_state.store(ServiceStateMachineState::EndSession);
-	}
-	else if (status == TransportLayer::TicketSessionClosedStatus) {
-		// Our session may have been closed internally.
-		LOG(2) << "Session from " << remote << " was closed internally during SourceMessage";
-		_state.store(ServiceStateMachineState::EndSession);
-	}
-	else {
-		log() << "Error receiving request from client: " << status << ". Ending connection from "
-			<< remote << " (connection id: " << _session()->id() << ")";
-		_state.store(ServiceStateMachineState::EndSession);
-	}
+        // If this callback doesn't own the ThreadGuard, then we're being called recursively,
+        // and the executor shouldn't start a new thread to process the message - it can use this
+        // one just after this returns.
+        auto flags = guard.isOwner() ? ServiceExecutor::EmptyFlags : ServiceExecutor::DeferredTask;
+        return scheduleNext(flags);
+    } else if (ErrorCodes::isInterruption(status.code()) ||
+               ErrorCodes::isNetworkError(status.code())) {
+        LOG(2) << "Session from " << remote << " encountered a network error during SourceMessage";
+        _state.store(ServiceStateMachineState::EndSession);
+    } else if (status == TransportLayer::TicketSessionClosedStatus) {
+        // Our session may have been closed internally.
+        LOG(2) << "Session from " << remote << " was closed internally during SourceMessage";
+        _state.store(ServiceStateMachineState::EndSession);
+    } else {
+        log() << "Error receiving request from client: " << status << ". Ending connection from "
+              << remote << " (connection id: " << _session()->id() << ")";
+        _state.store(ServiceStateMachineState::EndSession);
+    }
 
-	// There was an error receiving a message from the client and we've already printed the error
-	// so call runNextInGuard() to clean up the session without waiting.
-	_runNextInGuard(guard);
+    // There was an error receiving a message from the client and we've already printed the error
+    // so call runNextInGuard() to clean up the session without waiting.
+    _runNextInGuard(guard);
 }
 
 void ServiceStateMachine::_sinkCallback(Status status) {
@@ -403,14 +400,12 @@ void ServiceStateMachine::_runNextInGuard(ThreadGuard& guard) {
                         return _session()->getTransportLayer()->wait(std::move(ticket));
                     }(std::move(ticket)));
                 } else if (_transportMode == transport::Mode::Asynchronous) {
-                    _session()->getTransportLayer()->asyncWait(std::move(ticket),
-                                                               [this](Status status) {
-                                                                   _sourceCallback(status);
-                                                               });
+                    _session()->getTransportLayer()->asyncWait(
+                        std::move(ticket), [this](Status status) { _sourceCallback(status); });
                 } else {
                     MONGO_UNREACHABLE;
                 }
-				break;
+                break;
             }
             case ServiceStateMachineState::Process:
                 _processMessage(guard);

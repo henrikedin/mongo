@@ -29,21 +29,21 @@
 #pragma once
 
 namespace mongo {
-	/*
-	* Any state may transition to EndSession in case of an error, otherwise the valid state
-	* transitions are:
-	* Source -> SourceWait -> Process -> SinkWait -> Source (standard RPC)
-	* Source -> SourceWait -> Process -> SinkWait -> Process -> SinkWait ... (exhaust)
-	* Source -> SourceWait -> Process -> Source (fire-and-forget)
-	*/
-	enum class ServiceStateMachineState {
-		Created,     // The session has been created, but no operations have been performed yet
-		Source,      // Request a new Message from the network to handle
-		SourceWait,  // Wait for the new Message to arrive from the network
-		Process,     // Run the Message through the database
-		SinkWait,    // Wait for the database result to be sent by the network
-		EndSession,  // End the session - the ServiceStateMachine will be invalid after this
-		Ended        // The session has ended. It is illegal to call any method besides
-					 // state() if this is the current state.
-	};
+/*
+* Any state may transition to EndSession in case of an error, otherwise the valid state
+* transitions are:
+* Source -> SourceWait -> Process -> SinkWait -> Source (standard RPC)
+* Source -> SourceWait -> Process -> SinkWait -> Process -> SinkWait ... (exhaust)
+* Source -> SourceWait -> Process -> Source (fire-and-forget)
+*/
+enum class ServiceStateMachineState {
+    Created,     // The session has been created, but no operations have been performed yet
+    Source,      // Request a new Message from the network to handle
+    SourceWait,  // Wait for the new Message to arrive from the network
+    Process,     // Run the Message through the database
+    SinkWait,    // Wait for the database result to be sent by the network
+    EndSession,  // End the session - the ServiceStateMachine will be invalid after this
+    Ended        // The session has ended. It is illegal to call any method besides
+                 // state() if this is the current state.
+};
 }  // namespace mongo

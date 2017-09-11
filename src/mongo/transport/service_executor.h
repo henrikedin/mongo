@@ -50,7 +50,7 @@ public:
     using Task = stdx::function<void()>;
     enum ScheduleFlags {
         EmptyFlags = 0,
-        DeferredTask = 1
+        DeferredTask = 1,
     };
 
     /*
