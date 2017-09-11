@@ -56,6 +56,14 @@ ServiceExecutorSynchronous::~ServiceExecutorSynchronous() {
 }
 
 Status ServiceExecutorSynchronous::start() {
+	_numHardwareCores = [] {
+		ProcessInfo p;
+		if (auto availCores = p.getNumAvailableCores()) {
+			return static_cast<unsigned>(*availCores);
+		}
+		return static_cast<unsigned>(p.getNumCores());
+	}();
+
     _stillRunning.store(true);
 
     return Status::OK();
@@ -100,6 +108,14 @@ Status ServiceExecutorSynchronous::schedule(Task task, ScheduleFlags flags) {
         while (!_localWorkQueue.empty() && _stillRunning.loadRelaxed()) {
 			_localWorkQueue.front()();
 			_localWorkQueue.pop_front();
+
+			/*
+			* In perf testing we found that yielding after running a each request produced
+			* at 5% performance boost in microbenchmarks if the number of worker threads
+			* was greater than the number of available cores.
+			*/
+			if (_numRunningWorkerThreads.loadRelaxed() > _numHardwareCores)
+				stdx::this_thread::yield();
         }
 
 		if (_numRunningWorkerThreads.subtractAndFetch(1) == 0)

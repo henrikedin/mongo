@@ -67,6 +67,7 @@ private:
     stdx::condition_variable _shutdownCondition;
 
     AtomicWord<size_t> _numRunningWorkerThreads{0};
+	unsigned _numHardwareCores{ 0 };
 };
 
 }  // namespace transport
