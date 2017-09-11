@@ -89,10 +89,10 @@ Status ServiceExecutorSynchronous::shutdown() {
 Status ServiceExecutorSynchronous::schedule(Task task,
                                             ScheduleFlags flags,
                                             ServiceStateMachineState state) {
-    // If we have a positive recursion depth we're already running in a worker thread, determine if
-    // we can recurse deeper (estimate of remaining stack space), otherwise unroll and queue for the
-    // loop in the thread.
+    // If we are already running in a worker thread. Allow recursion of the Process state which
+    // prevents a yield after receiving a message. In testing this gives best performance.
     if (!_localWorkQueue.empty()) {
+
         if (state == ServiceStateMachineState::Process) {
             task();
         } else {
