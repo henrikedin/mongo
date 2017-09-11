@@ -180,7 +180,7 @@ private:
      * Provide a valid thread guard (with or without thread ownership) to indicate attempt to
      * schedule new tasks as required by asynchronous networking
      */
-    void _sourceCallback(ThreadGuard* guard, Status status);
+    void _sourceCallback(Status status);
     void _sinkCallback(Status status);
 
     /*
