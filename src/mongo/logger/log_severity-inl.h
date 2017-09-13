@@ -50,7 +50,7 @@ LogSeverity LogSeverity::Debug(int debugLevel) {
 }
 
 LogSeverity LogSeverity::cast(int ll) {
-    return LogSeverity(ll);
+    return LogSeverity(ll > -2 ? -2 : ll);
 }
 
 int LogSeverity::toInt() const {

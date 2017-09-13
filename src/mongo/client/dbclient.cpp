@@ -1389,6 +1389,7 @@ bool DBClientConnection::call(Message& toSend,
         }
     } catch (const DBException& ex) {
         _failed = true;
+		warning() << "Network Error: " << ex.what();
         _port->shutdown();
         throw;
     }

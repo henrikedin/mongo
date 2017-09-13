@@ -154,8 +154,8 @@ bool MessagingPort::recv(Message& m) {
         }
         if (static_cast<size_t>(len) < sizeof(header) ||
             static_cast<size_t>(len) > MaxMessageSizeBytes) {
-            LOG(0) << "recv(): message len " << len << " is invalid. "
-                   << "Min " << sizeof(header) << " Max: " << MaxMessageSizeBytes;
+			warning() << "recv(): message len " << len << " is invalid. "
+                    << "Min " << sizeof(header) << " Max: " << MaxMessageSizeBytes;
             return false;
         }
 
@@ -176,7 +176,7 @@ bool MessagingPort::recv(Message& m) {
         logger::LogSeverity severity = _psock->getLogLevel();
         if (!e.shouldPrint())
             severity = severity.lessSevere();
-        LOG(severity) << "SocketException: remote: " << remote() << " error: " << e;
+		warning() << "SocketException: remote: " << remote() << " error: " << e;
         m.reset();
         return false;
     }
