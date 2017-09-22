@@ -115,7 +115,7 @@ void ServiceEntryPointImpl::startSession(transport::SessionHandle session) {
               << connectionCount << word << " now open)";
     }
 
-    ssm->setCleanupHook([ this, ssmIt, session = std::move(session) ] {
+    ssm->setCleanupHook([this, ssmIt, session] {
         size_t connectionCount;
         auto remote = session->remote();
         {
@@ -170,10 +170,13 @@ void ServiceEntryPointImpl::startSession(transport::SessionHandle session) {
     // will be destroyed.
     stdx::lock_guard<decltype(_sessionsMutex)> lk(_sessionsMutex);
     _sessions.erase(ssmIt);
+    log() << "Failed to launch a thread, terminating the session (" << session->id()
+          << "): " << launchResult;
     ssm->terminateIfTagsDontMatch(0);
 }
 
 void ServiceEntryPointImpl::endAllSessions(transport::Session::TagMask tags) {
+    log() << "endAllSessions called for some reason.";
     // While holding the _sesionsMutex, loop over all the current connections, and if their tags
     // do not match the requested tags to skip, terminate the session.
     {

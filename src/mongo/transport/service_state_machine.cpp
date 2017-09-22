@@ -448,6 +448,8 @@ void ServiceStateMachine::terminateIfTagsDontMatch(transport::Session::TagMask t
         return;
     }
 
+    log() << "terminateIfTagsDontMatch closing connection # " << _session()->id();
+
     _session()->getTransportLayer()->end(_session());
 }
 

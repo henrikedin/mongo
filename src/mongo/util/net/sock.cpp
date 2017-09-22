@@ -697,11 +697,11 @@ void Socket::handleSendError(int ret, const char* context) {
     const int mongo_errno = errno;
     if ((mongo_errno == EAGAIN || mongo_errno == EWOULDBLOCK) && _timeout != 0) {
 #endif
-		warning() << "Socket " << context << " send() timed out " << remoteString();
+        warning() << "Socket " << context << " send() timed out " << remoteString();
         throw SocketException(SocketException::SEND_TIMEOUT, remoteString());
     } else if (mongo_errno != EINTR) {
-		warning() << "Socket " << context << " send() " << errnoWithDescription(mongo_errno)
-                       << ' ' << remoteString();
+        warning() << "Socket " << context << " send() " << errnoWithDescription(mongo_errno) << ' '
+                  << remoteString();
         throw SocketException(SocketException::SEND_ERROR, remoteString());
     }
 }
@@ -731,11 +731,11 @@ void Socket::handleRecvError(int ret, int len) {
     if (e == EAGAIN && _timeout > 0) {
 #endif
         // this is a timeout
-		warning() << "Socket recv() timeout  " << remoteString();
+        warning() << "Socket recv() timeout  " << remoteString();
         throw SocketException(SocketException::RECV_TIMEOUT, remoteString());
     }
 
-	warning() << "Socket recv() " << errnoWithDescription(e) << " " << remoteString();
+    warning() << "Socket recv() " << errnoWithDescription(e) << " " << remoteString();
     throw SocketException(SocketException::RECV_ERROR, remoteString());
 }
 
