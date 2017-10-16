@@ -43,7 +43,6 @@
 #include "mongo/util/net/hostandport.h"
 
 namespace mongo {
-
 /**
  * Encode a string for embedding in a URI.
  * Replaces reserved bytes with %xx sequences.
@@ -51,6 +50,7 @@ namespace mongo {
  * Optionally allows passthrough characters to remain unescaped.
  */
 void uriEncode(std::ostream& ss, StringData str, StringData passthrough = ""_sd);
+
 inline std::string uriEncode(StringData str, StringData passthrough = ""_sd) {
     std::ostringstream ss;
     uriEncode(ss, str, passthrough);
@@ -99,6 +99,7 @@ public:
     using OptionsMap = std::map<std::string, std::string>;
 
     static StatusWith<MongoURI> parse(const std::string& url);
+    static MongoURI parseImpl(const std::string& url);
 
     DBClientBase* connect(StringData applicationName,
                           std::string& errmsg,
@@ -140,20 +141,23 @@ public:
     // server (say a member of a replica-set), you can pass in its HostAndPort information to
     // get a new URI with the same info, except type() will be MASTER and getServers() will
     // be the single host you pass in.
-    MongoURI cloneURIForServer(const HostAndPort& hostAndPort) const {
-        return MongoURI(ConnectionString(hostAndPort), _user, _password, _database, _options);
+    MongoURI cloneURIForServer(HostAndPort hostAndPort) const {
+        return MongoURI(
+            ConnectionString(std::move(hostAndPort)), _user, _password, _database, _options);
     }
 
     ConnectionString::ConnectionType type() const {
         return _connectString.type();
     }
 
-    explicit MongoURI(const ConnectionString connectString)
-        : _connectString(std::move(connectString)){};
+    // private:
+    explicit MongoURI(ConnectionString connectString) : _connectString(std::move(connectString)){};
 
+public:
     MongoURI() = default;
 
     friend std::ostream& operator<<(std::ostream&, const MongoURI&);
+
     friend StringBuilder& operator<<(StringBuilder&, const MongoURI&);
 
 private:
@@ -166,7 +170,7 @@ private:
           _user(user),
           _password(password),
           _database(database),
-          _options(std::move(options)){};
+          _options(std::move(options)) {}
 
     BSONObj _makeAuthObjFromOptions(int maxWireVersion) const;
 
@@ -178,13 +182,10 @@ private:
 };
 
 inline std::ostream& operator<<(std::ostream& ss, const MongoURI& uri) {
-    ss << uri._connectString;
-    return ss;
+    return ss << uri._connectString;
 }
 
 inline StringBuilder& operator<<(StringBuilder& sb, const MongoURI& uri) {
-    sb << uri._connectString;
-    return sb;
+    return sb << uri._connectString;
 }
-
 }  // namespace mongo
