@@ -33,6 +33,7 @@
 #include "mongo/platform/bitwise_enum_operators.h"
 #include "mongo/stdx/functional.h"
 #include "mongo/transport/transport_mode.h"
+#include "mongo/transport/ticket.h"
 #include "mongo/util/duration.h"
 
 namespace mongo {
@@ -79,6 +80,8 @@ public:
      * thread is available.
      */
     virtual Status schedule(Task task, ScheduleFlags flags) noexcept = 0;
+
+	virtual void wait(transport::Ticket ticket, stdx::function<void(Status)> callback) = 0;
 
     /*
      * Stops and joins the ServiceExecutor. Any outstanding tasks will not be executed, and any

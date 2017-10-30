@@ -35,6 +35,8 @@
 #include "mongo/stdx/condition_variable.h"
 #include "mongo/stdx/mutex.h"
 #include "mongo/transport/service_executor.h"
+#include "mongo/db/service_context.h"
+#include "mongo/transport/transport_layer.h"
 
 namespace mongo {
 namespace transport {
@@ -50,6 +52,11 @@ public:
     Status start() override;
     Status shutdown(Milliseconds timeout) override;
     Status schedule(Task task, ScheduleFlags flags) noexcept override;
+
+	void wait(transport::Ticket ticket, stdx::function<void(Status)> callback) override
+	{
+		callback(getGlobalServiceContext()->getTransportLayer()->wait(std::move(ticket)));
+	}
 
     Mode transportMode() const override {
         return Mode::kSynchronous;

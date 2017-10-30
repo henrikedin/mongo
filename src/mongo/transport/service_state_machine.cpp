@@ -223,7 +223,12 @@ void ServiceStateMachine::_sourceMessage(ThreadGuard& guard) {
     _state.store(State::SourceWait);
     guard.release();
 
-    if (_transportMode == transport::Mode::kSynchronous) {
+	_serviceContext->getServiceExecutor()->wait(std::move(ticket), [this](Status status) 
+	{ 
+		_sourceCallback(status); 
+	});
+
+   /* if (_transportMode == transport::Mode::kSynchronous) {
         _sourceCallback([this](auto ticket) {
             MONGO_IDLE_THREAD_BLOCK;
             return _session()->getTransportLayer()->wait(std::move(ticket));
@@ -231,7 +236,7 @@ void ServiceStateMachine::_sourceMessage(ThreadGuard& guard) {
     } else if (_transportMode == transport::Mode::kAsynchronous) {
         _session()->getTransportLayer()->asyncWait(
             std::move(ticket), [this](Status status) { _sourceCallback(status); });
-    }
+    }*/
 }
 
 void ServiceStateMachine::_sinkMessage(ThreadGuard& guard, Message toSink) {
@@ -241,12 +246,17 @@ void ServiceStateMachine::_sinkMessage(ThreadGuard& guard, Message toSink) {
     _state.store(State::SinkWait);
     guard.release();
 
-    if (_transportMode == transport::Mode::kSynchronous) {
+	_serviceContext->getServiceExecutor()->wait(std::move(ticket), [this](Status status) 
+	{ 
+		_sinkCallback(status); 
+	});
+
+    /*if (_transportMode == transport::Mode::kSynchronous) {
         _sinkCallback(_session()->getTransportLayer()->wait(std::move(ticket)));
     } else if (_transportMode == transport::Mode::kAsynchronous) {
         _session()->getTransportLayer()->asyncWait(
             std::move(ticket), [this](Status status) { _sinkCallback(status); });
-    }
+    }*/
 }
 
 void ServiceStateMachine::_sourceCallback(Status status) {

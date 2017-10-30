@@ -38,6 +38,9 @@
 #include "mongo/transport/service_executor.h"
 #include "mongo/util/tick_source.h"
 
+#include "mongo/db/service_context.h"
+#include "mongo/transport/transport_layer.h"
+
 #include <asio.hpp>
 
 namespace mongo {
@@ -92,6 +95,11 @@ public:
     Status start() final;
     Status shutdown(Milliseconds timeout) final;
     Status schedule(Task task, ScheduleFlags flags) noexcept final;
+
+	void wait(transport::Ticket ticket, stdx::function<void(Status)> callback) override
+	{
+		getGlobalServiceContext()->getTransportLayer()->asyncWait(std::move(ticket), std::move(callback));
+	}
 
     Mode transportMode() const final {
         return Mode::kAsynchronous;

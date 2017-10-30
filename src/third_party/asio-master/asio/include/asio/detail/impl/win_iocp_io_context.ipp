@@ -62,7 +62,7 @@ struct win_iocp_io_context::timer_thread_function
 };
 
 win_iocp_io_context::win_iocp_io_context(
-    asio::execution_context& ctx, int concurrency_hint)
+    asio::execution_context& ctx, int concurrency_hint, bool use_win_thread_pool)
   : execution_context_service_base<win_iocp_io_context>(ctx),
     iocp_(),
     outstanding_work_(0),
@@ -71,18 +71,22 @@ win_iocp_io_context::win_iocp_io_context(
     shutdown_(0),
     gqcs_timeout_(get_gqcs_timeout()),
     dispatch_required_(0),
-    concurrency_hint_(concurrency_hint)
+    concurrency_hint_(concurrency_hint),
+	use_win_thread_pool_(use_win_thread_pool)
 {
   ASIO_HANDLER_TRACKING_INIT;
 
-  iocp_.handle = ::CreateIoCompletionPort(INVALID_HANDLE_VALUE, 0, 0,
-      static_cast<DWORD>(concurrency_hint >= 0 ? concurrency_hint : DWORD(~0)));
-  if (!iocp_.handle)
+  if (!use_win_thread_pool_)
   {
-    DWORD last_error = ::GetLastError();
-    asio::error_code ec(last_error,
-        asio::error::get_system_category());
-    asio::detail::throw_error(ec, "iocp");
+	  iocp_.handle = ::CreateIoCompletionPort(INVALID_HANDLE_VALUE, 0, 0,
+		  static_cast<DWORD>(concurrency_hint >= 0 ? concurrency_hint : DWORD(~0)));
+	  if (!iocp_.handle)
+	  {
+		DWORD last_error = ::GetLastError();
+		asio::error_code ec(last_error,
+			asio::error::get_system_category());
+		asio::detail::throw_error(ec, "iocp");
+	  }
   }
 }
 
@@ -131,19 +135,77 @@ void win_iocp_io_context::shutdown()
 }
 
 asio::error_code win_iocp_io_context::register_handle(
-    HANDLE handle, asio::error_code& ec)
+    HANDLE handle, void*& context_handle, asio::error_code& ec)
 {
-  if (::CreateIoCompletionPort(handle, iocp_.handle, 0, 0) == 0)
+  if (use_win_thread_pool_)
   {
-    DWORD last_error = ::GetLastError();
-    ec = asio::error_code(last_error,
-        asio::error::get_system_category());
+	context_handle = CreateThreadpoolIo(handle, []
+	(PTP_CALLBACK_INSTANCE Instance,
+     PVOID                 Context,
+     PVOID                 Overlapped,
+     ULONG                 IoResult,
+     ULONG_PTR             bytes_transferred,
+     PTP_IO                Io)
+	{
+		  win_iocp_io_context* this_ = reinterpret_cast<win_iocp_io_context*>(Context);
+		  win_iocp_operation* op = static_cast<win_iocp_operation*>(Overlapped);
+		  asio::error_code result_ec(IoResult,
+			  asio::error::get_system_category());
+
+		  // We may have been passed the last_error and bytes_transferred in the
+		  // OVERLAPPED structure itself.
+		  //if (completion_key == overlapped_contains_result)
+		  {
+			result_ec = asio::error_code(static_cast<int>(op->Offset),
+				*reinterpret_cast<asio::error_category*>(op->Internal));
+			//bytes_transferred = op->OffsetHigh;
+		  }
+
+		  // Otherwise ensure any result has been saved into the OVERLAPPED
+		  // structure.
+		  //else
+		  //{
+		//	op->Internal = reinterpret_cast<ulong_ptr_t>(&result_ec.category());
+		//	op->Offset = result_ec.value();
+		//	op->OffsetHigh = bytes_transferred;
+		 // }
+
+		  // Dispatch the operation only if ready. The operation may not be ready
+		  // if the initiating function (e.g. a call to WSARecv) has not yet
+		  // returned. This is because the initiating function still wants access
+		  // to the operation's OVERLAPPED structure.
+		  if (::InterlockedCompareExchange(&op->ready_, 1, 0) == 1)
+		  {
+			// Ensure the count of outstanding work is decremented on block exit.
+			work_finished_on_block_exit on_exit = { this_ };
+			(void)on_exit;
+
+			op->complete(this_, result_ec, bytes_transferred);
+			//ec = asio::error_code();
+			//return 1;
+		  }
+	},
+	this,
+	nullptr);
+
+	//StartThreadpoolIo(io_task);
+
+	return ec;
   }
   else
   {
-    ec = asio::error_code();
+	  if (::CreateIoCompletionPort(handle, iocp_.handle, 0, 0) == 0)
+	  {
+		DWORD last_error = ::GetLastError();
+		ec = asio::error_code(last_error,
+			asio::error::get_system_category());
+	  }
+	  else
+	  {
+		ec = asio::error_code();
+	  }
+	  return ec;
   }
-  return ec;
 }
 
 size_t win_iocp_io_context::run(asio::error_code& ec)

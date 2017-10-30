@@ -75,8 +75,8 @@ TransportLayerASIO::Options::Options(const ServerGlobalParams* params)
 
 TransportLayerASIO::TransportLayerASIO(const TransportLayerASIO::Options& opts,
                                        ServiceEntryPoint* sep)
-    : _workerIOContext(std::make_shared<asio::io_context>()),
-      _acceptorIOContext(stdx::make_unique<asio::io_context>()),
+    : _workerIOContext(std::make_shared<asio::io_context>(true)),
+      _acceptorIOContext(stdx::make_unique<asio::io_context>(true)),
 #ifdef MONGO_CONFIG_SSL
       _sslContext(nullptr),
 #endif
@@ -233,9 +233,9 @@ Status TransportLayerASIO::start() {
     _listenerThread = stdx::thread([this] {
         setThreadName("listener");
         while (_running.load()) {
-            asio::io_context::work work(*_acceptorIOContext);
+            //asio::io_context::work work(*_acceptorIOContext);
             try {
-                _acceptorIOContext->run();
+                //_acceptorIOContext->run();
             } catch (...) {
                 severe() << "Uncaught exception in the listener: " << exceptionToStatus();
                 fassertFailed(40491);

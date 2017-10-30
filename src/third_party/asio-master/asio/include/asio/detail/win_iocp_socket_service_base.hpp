@@ -57,6 +57,8 @@ public:
     // The native socket representation.
     socket_type socket_;
 
+	void* context_handle_{ nullptr };
+
     // The current state of the socket.
     socket_ops::state_type state_;
 

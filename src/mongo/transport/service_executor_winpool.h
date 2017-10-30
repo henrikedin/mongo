@@ -50,7 +50,7 @@ namespace transport {
  */
 class ServiceExecutorWinPool : public ServiceExecutor {
 public:
-    explicit ServiceExecutorWinPool(ServiceContext* ctx);
+    explicit ServiceExecutorWinPool(ServiceContext* ctx, std::shared_ptr<asio::io_context> ioCtx);
 
 	ServiceExecutorWinPool(ServiceExecutorWinPool&&) = default;
 	ServiceExecutorWinPool& operator=(ServiceExecutorWinPool&&) = default;
@@ -58,13 +58,18 @@ public:
 
     Status start() final;
     Status shutdown(Milliseconds timeout) final;
-    Status schedule(Task task, ScheduleFlags flags) final;
+    Status schedule(Task task, ScheduleFlags flags) noexcept final;
+
+	void wait(transport::Ticket ticket, stdx::function<void(Status)> callback) override;
 
     Mode transportMode() const final {
         return Mode::kAsynchronous;
     }
 
     void appendStats(BSONObjBuilder* bob) const final;
+
+private:
+	std::shared_ptr<asio::io_context> _ioContext;
 };
 
 }  // namespace transport

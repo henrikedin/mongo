@@ -174,7 +174,7 @@ public:
   typedef std::size_t count_type;
 
   /// Constructor.
-  ASIO_DECL io_context();
+  ASIO_DECL io_context(bool use_win_thread_pool = false);
 
   /// Constructor.
   /**
@@ -183,7 +183,7 @@ public:
    * @param concurrency_hint A suggestion to the implementation on how many
    * threads it should allow to run simultaneously.
    */
-  ASIO_DECL explicit io_context(int concurrency_hint);
+  ASIO_DECL explicit io_context(int concurrency_hint, bool use_win_thread_pool = false);
 
   /// Destructor.
   /**

@@ -156,7 +156,7 @@ std::unique_ptr<TransportLayer> TransportLayerManager::createWithConfig(
         }
 #if _WIN32
 		else if (config->serviceExecutor == "winpool") {
-			ctx->setServiceExecutor(stdx::make_unique<ServiceExecutorWinPool>(ctx));
+			ctx->setServiceExecutor(stdx::make_unique<ServiceExecutorWinPool>(ctx, transportLayerASIO->getIOContext()));
 		}
 #endif
         transportLayer = std::move(transportLayerASIO);

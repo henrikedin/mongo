@@ -33,11 +33,14 @@
 #include "mongo/transport/service_executor_winpool.h"
 
 #include "mongo/util/log.h"
+#include "mongo/db/service_context.h"
+#include "mongo/transport/transport_layer.h"
 
 namespace mongo {
 namespace transport {
 
-	ServiceExecutorWinPool::ServiceExecutorWinPool(ServiceContext* ctx)
+	ServiceExecutorWinPool::ServiceExecutorWinPool(ServiceContext* ctx, std::shared_ptr<asio::io_context> ioCtx)
+		:_ioContext(std::move(ioCtx))
 {
 }
 
@@ -53,6 +56,13 @@ Status ServiceExecutorWinPool::start() {
     for (auto i = 0; i < _config->reservedThreads(); i++) {
         _startWorkerThread();
     }*/
+
+
+	/*stdx::thread([this]()
+	{
+		asio::io_context::work work(*_ioContext);
+		_ioContext->run();
+	}).detach();*/
 
     return Status::OK();
 }
@@ -78,7 +88,7 @@ Status ServiceExecutorWinPool::shutdown(Milliseconds timeout) {
 	return Status::OK();
 }
 
-Status ServiceExecutorWinPool::schedule(ServiceExecutorWinPool::Task task, ScheduleFlags flags) {
+Status ServiceExecutorWinPool::schedule(ServiceExecutorWinPool::Task task, ScheduleFlags flags) noexcept try {
     //auto scheduleTime = _tickSource->getTicks();
     //auto pendingCounterPtr = (flags & kDeferredTask) ? &_deferredTasksQueued : &_tasksQueued;
     //pendingCounterPtr->addAndFetch(1);
@@ -143,7 +153,45 @@ Status ServiceExecutorWinPool::schedule(ServiceExecutorWinPool::Task task, Sched
 
 	SubmitThreadpoolWork(work);
 
+	/*auto t = new ServiceExecutorWinPool::Task(task);
+	_ioContext->post([t]()
+	{
+		auto work = CreateThreadpoolWork([](PTP_CALLBACK_INSTANCE Instance, PVOID Param, PTP_WORK work)
+		{
+			ServiceExecutorWinPool::Task* task = reinterpret_cast<ServiceExecutorWinPool::Task*>(Param);
+			(*task)();
+			delete task;
+		}, t, nullptr);
+
+
+		SubmitThreadpoolWork(work);
+	});*/
+
     return Status::OK();
+}
+catch (...) {
+	return exceptionToStatus();
+}
+
+void ServiceExecutorWinPool::wait(transport::Ticket ticket, stdx::function<void(Status)> callback)
+{
+	getGlobalServiceContext()->getTransportLayer()->asyncWait(std::move(ticket), [callback](Status status)
+	{
+		/*auto c = new stdx::function<void()>([callback, status]()
+		{
+			callback(status);
+		});
+		auto work = CreateThreadpoolWork([](PTP_CALLBACK_INSTANCE Instance, PVOID Param, PTP_WORK work)
+		{
+			stdx::function<void()>* callback = reinterpret_cast<stdx::function<void()>*>(Param);
+			(*callback)();
+			delete callback;
+		}, c, nullptr);
+
+		SubmitThreadpoolWork(work);*/
+
+		callback(status);
+	});
 }
 
 void ServiceExecutorWinPool::appendStats(BSONObjBuilder* bob) const {
