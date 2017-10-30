@@ -75,7 +75,7 @@ TransportLayerASIO::Options::Options(const ServerGlobalParams* params)
 
 TransportLayerASIO::TransportLayerASIO(const TransportLayerASIO::Options& opts,
                                        ServiceEntryPoint* sep)
-    : _workerIOContext(std::make_shared<asio::io_context>()),
+    : _workerIOContext(std::make_shared<asio::io_context>(true)),
       _acceptorIOContext(stdx::make_unique<asio::io_context>()),
 #ifdef MONGO_CONFIG_SSL
       _sslContext(nullptr),
@@ -116,10 +116,17 @@ void TransportLayerASIO::asyncWait(Ticket&& ticket, TicketCallback callback) {
     auto ownedASIOTicket = std::shared_ptr<TicketImpl>(getOwnedTicketImpl(std::move(ticket)));
     auto asioTicket = checked_cast<ASIOTicket*>(ownedASIOTicket.get());
 
-    asioTicket->fill(
-        false,
-        [ callback = std::move(callback),
-          ownedASIOTicket = std::move(ownedASIOTicket) ](Status status) { callback(status); });
+	asioTicket->fill(
+		false,
+		[callback = std::move(callback),
+		ownedASIOTicket = std::move(ownedASIOTicket)](Status status) { callback(status); });
+
+	/*_workerIOContext->post([ownedASIOTicket=std::move(ownedASIOTicket), callback=std::move(callback), asioTicket]() {
+		asioTicket->fill(
+			false,
+			[callback = std::move(callback),
+			ownedASIOTicket = std::move(ownedASIOTicket)](Status status) { callback(status); });
+	}*/
 }
 
 // Must not be called while holding the TransportLayerASIO mutex.
@@ -242,6 +249,24 @@ Status TransportLayerASIO::start() {
             }
         }
     });
+
+	/*_workerThreads.reserve(4);
+	for (int i = 0; i < 3; ++i)
+	{
+		_workerThreads.emplace_back([this, i] {
+			std::string threadName = str::stream() << "worker-network-" << i;
+			setThreadName(std::move(threadName));
+			while (_running.load()) {
+				asio::io_context::work work(*_workerIOContext);
+				try {
+					_workerIOContext->run();
+				}
+				catch (...) {
+					severe() << "Uncaught exception in the worker: " << exceptionToStatus();
+				}
+			}
+		});
+	}*/
 
     for (auto& acceptor : _acceptors) {
         acceptor.listen(serverGlobalParams.listenBacklog);

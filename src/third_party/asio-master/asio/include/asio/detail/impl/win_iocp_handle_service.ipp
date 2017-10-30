@@ -186,7 +186,7 @@ asio::error_code win_iocp_handle_service::assign(
     return ec;
   }
 
-  if (iocp_service_.register_handle(handle, ec))
+  if (iocp_service_.register_handle(handle, impl.context_handle_, ec))
     return ec;
 
   impl.handle_ = handle;
@@ -368,6 +368,8 @@ void win_iocp_handle_service::start_write_op(
   }
   else
   {
+	iocp_service_.begin_async_io(impl.context_handle_);
+
     DWORD bytes_transferred = 0;
     op->Offset = offset & 0xFFFFFFFF;
     op->OffsetHigh = (offset >> 32) & 0xFFFFFFFF;
@@ -474,6 +476,8 @@ void win_iocp_handle_service::start_read_op(
   }
   else
   {
+    iocp_service_.begin_async_io(impl.context_handle_);
+
     DWORD bytes_transferred = 0;
     op->Offset = offset & 0xFFFFFFFF;
     op->OffsetHigh = (offset >> 32) & 0xFFFFFFFF;

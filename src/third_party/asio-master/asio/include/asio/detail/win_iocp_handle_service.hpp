@@ -57,6 +57,8 @@ public:
     {
     }
 
+	void* context_handle_{nullptr};
+
   private:
     // Only this service will have access to the internal values.
     friend class win_iocp_handle_service;

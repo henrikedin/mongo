@@ -161,6 +161,7 @@ private:
 
     // Only used if _listenerOptions.async is false.
     stdx::thread _listenerThread;
+	std::vector<stdx::thread> _workerThreads;
 
     ServiceEntryPoint* const _sep = nullptr;
     AtomicWord<bool> _running{false};

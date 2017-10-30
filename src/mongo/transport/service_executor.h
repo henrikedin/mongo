@@ -34,6 +34,7 @@
 #include "mongo/stdx/functional.h"
 #include "mongo/transport/service_executor_task_names.h"
 #include "mongo/transport/transport_mode.h"
+#include "mongo/transport/ticket.h"
 #include "mongo/util/duration.h"
 
 namespace mongo {

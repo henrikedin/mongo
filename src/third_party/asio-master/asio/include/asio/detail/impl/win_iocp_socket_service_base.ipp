@@ -54,6 +54,7 @@ void win_iocp_socket_service_base::construct(
     win_iocp_socket_service_base::base_implementation_type& impl)
 {
   impl.socket_ = invalid_socket;
+  impl.context_handle_ = nullptr;
   impl.state_ = 0;
   impl.cancel_token_.reset();
 #if defined(ASIO_ENABLE_CANCELIO)
@@ -75,6 +76,9 @@ void win_iocp_socket_service_base::base_move_construct(
 {
   impl.socket_ = other_impl.socket_;
   other_impl.socket_ = invalid_socket;
+
+  impl.context_handle_ = other_impl.context_handle_;
+  other_impl.context_handle_ = nullptr;
 
   impl.state_ = other_impl.state_;
   other_impl.state_ = 0;
@@ -119,6 +123,9 @@ void win_iocp_socket_service_base::base_move_assign(
 
   impl.socket_ = other_impl.socket_;
   other_impl.socket_ = invalid_socket;
+
+  impl.context_handle_ = other_impl.context_handle_;
+  other_impl.context_handle_ = nullptr;
 
   impl.state_ = other_impl.state_;
   other_impl.state_ = 0;
@@ -189,6 +196,7 @@ asio::error_code win_iocp_socket_service_base::close(
   }
 
   impl.socket_ = invalid_socket;
+  impl.context_handle_ = nullptr;
   impl.state_ = 0;
   impl.cancel_token_.reset();
 #if defined(ASIO_ENABLE_CANCELIO)
@@ -338,7 +346,7 @@ asio::error_code win_iocp_socket_service_base::do_open(
     return ec;
 
   HANDLE sock_as_handle = reinterpret_cast<HANDLE>(sock.get());
-  if (iocp_service_.register_handle(sock_as_handle, ec))
+  if (iocp_service_.register_handle(sock_as_handle, impl.context_handle_, ec))
     return ec;
 
   impl.socket_ = sock.release();
@@ -364,7 +372,7 @@ asio::error_code win_iocp_socket_service_base::do_assign(
   }
 
   HANDLE sock_as_handle = reinterpret_cast<HANDLE>(native_socket);
-  if (iocp_service_.register_handle(sock_as_handle, ec))
+  if (iocp_service_.register_handle(sock_as_handle, impl.context_handle_, ec))
     return ec;
 
   impl.socket_ = native_socket;
@@ -393,6 +401,8 @@ void win_iocp_socket_service_base::start_send_op(
     iocp_service_.on_completion(op, asio::error::bad_descriptor);
   else
   {
+    iocp_service_.begin_async_io(impl.context_handle_);
+
     DWORD bytes_transferred = 0;
     int result = ::WSASend(impl.socket_, buffers,
         static_cast<DWORD>(buffer_count), &bytes_transferred, flags, op, 0);
@@ -419,6 +429,8 @@ void win_iocp_socket_service_base::start_send_to_op(
     iocp_service_.on_completion(op, asio::error::bad_descriptor);
   else
   {
+    iocp_service_.begin_async_io(impl.context_handle_);
+
     DWORD bytes_transferred = 0;
     int result = ::WSASendTo(impl.socket_, buffers,
         static_cast<DWORD>(buffer_count),
@@ -447,6 +459,8 @@ void win_iocp_socket_service_base::start_receive_op(
     iocp_service_.on_completion(op, asio::error::bad_descriptor);
   else
   {
+    iocp_service_.begin_async_io(impl.context_handle_);
+
     DWORD bytes_transferred = 0;
     DWORD recv_flags = flags;
     int result = ::WSARecv(impl.socket_, buffers,
@@ -496,6 +510,8 @@ void win_iocp_socket_service_base::start_receive_from_op(
     iocp_service_.on_completion(op, asio::error::bad_descriptor);
   else
   {
+    iocp_service_.begin_async_io(impl.context_handle_);
+
     DWORD bytes_transferred = 0;
     DWORD recv_flags = flags;
     int result = ::WSARecvFrom(impl.socket_, buffers,
@@ -531,6 +547,8 @@ void win_iocp_socket_service_base::start_accept_op(
       iocp_service_.on_completion(op, ec);
     else
     {
+	  iocp_service_.begin_async_io(impl.context_handle_);
+
       DWORD bytes_read = 0;
       BOOL result = ::AcceptEx(impl.socket_, new_socket.get(), output_buffer,
           0, address_length, address_length, &bytes_read, op);
@@ -556,6 +574,8 @@ void win_iocp_socket_service_base::restart_accept_op(
     iocp_service_.on_completion(op, ec);
   else
   {
+    //iocp_service_.begin_async_io(impl.context_handle_);
+
     DWORD bytes_read = 0;
     BOOL result = ::AcceptEx(s, new_socket.get(), output_buffer,
         0, address_length, address_length, &bytes_read, op);
@@ -619,6 +639,8 @@ void win_iocp_socket_service_base::start_connect_op(
       op->connect_ex_ = true;
       update_cancellation_thread_id(impl);
       iocp_service_.work_started();
+
+	  iocp_service_.begin_async_io(impl.context_handle_);
 
       BOOL result = connect_ex(impl.socket_,
           addr, static_cast<int>(addrlen), 0, 0, 0, op);

@@ -48,7 +48,8 @@ public:
   // Constructor. Specifies a concurrency hint that is passed through to the
   // underlying I/O completion port.
   ASIO_DECL win_iocp_io_context(asio::execution_context& ctx,
-      int concurrency_hint = -1);
+      int concurrency_hint = -1,
+	  bool use_win_thread_pool = false);
 
   // Destroy all user-defined handler objects owned by the service.
   ASIO_DECL void shutdown();
@@ -60,7 +61,7 @@ public:
 
   // Register a handle with the IO completion port.
   ASIO_DECL asio::error_code register_handle(
-      HANDLE handle, asio::error_code& ec);
+      HANDLE handle, void*& context_handle, asio::error_code& ec);
 
   // Run the event loop until stopped or no more work.
   ASIO_DECL size_t run(asio::error_code& ec);
@@ -102,7 +103,14 @@ public:
   void work_finished()
   {
     if (::InterlockedDecrement(&outstanding_work_) == 0)
-      stop();
+		if (!use_win_thread_pool_)
+			stop();
+  }
+
+  void begin_async_io(void* context_handle)
+  {
+	  if (use_win_thread_pool_)
+		  StartThreadpoolIo(reinterpret_cast<PTP_IO>(context_handle));
   }
 
   // Return whether a handler can be dispatched immediately.
@@ -311,6 +319,8 @@ private:
 
   // The concurrency hint used to initialise the io_context.
   const int concurrency_hint_;
+
+  const bool use_win_thread_pool_;
 };
 
 } // namespace detail

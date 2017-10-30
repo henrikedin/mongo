@@ -40,6 +40,9 @@
 #include "mongo/transport/service_executor_task_names.h"
 #include "mongo/util/tick_source.h"
 
+#include "mongo/db/service_context.h"
+#include "mongo/transport/transport_layer.h"
+
 #include <asio.hpp>
 
 namespace mongo {
