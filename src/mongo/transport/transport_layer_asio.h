@@ -46,6 +46,7 @@
 
 namespace asio {
 class io_context;
+class io_pool_context;
 
 template <typename Protocol>
 class basic_socket_acceptor;
@@ -149,8 +150,8 @@ private:
     // the io_context), so that we destroy any existing acceptors or
     // other io_service associated state before we drop the refcount
     // on the io_context, which may destroy it.
-    std::shared_ptr<asio::io_context> _workerIOContext;
-    std::unique_ptr<asio::io_context> _acceptorIOContext;
+    std::shared_ptr<asio::io_pool_context> _workerIOContext;
+    std::unique_ptr<asio::io_pool_context> _acceptorIOContext;
 
 #ifdef MONGO_CONFIG_SSL
     std::unique_ptr<asio::ssl::context> _sslContext;

@@ -75,8 +75,8 @@ TransportLayerASIO::Options::Options(const ServerGlobalParams* params)
 
 TransportLayerASIO::TransportLayerASIO(const TransportLayerASIO::Options& opts,
                                        ServiceEntryPoint* sep)
-    : _workerIOContext(std::make_shared<asio::io_context>(true)),
-      _acceptorIOContext(stdx::make_unique<asio::io_context>(true)),
+    : _workerIOContext(std::make_shared<asio::io_pool_context>()),
+      _acceptorIOContext(stdx::make_unique<asio::io_pool_context>()),
 #ifdef MONGO_CONFIG_SSL
       _sslContext(nullptr),
 #endif

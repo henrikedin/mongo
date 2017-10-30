@@ -63,6 +63,7 @@
 #include "asio/handler_invoke_hook.hpp"
 #include "asio/handler_type.hpp"
 #include "asio/io_context.hpp"
+#include "asio/io_pool_context.hpp"
 #include "asio/io_context_strand.hpp"
 #include "asio/io_service.hpp"
 #include "asio/io_service_strand.hpp"
