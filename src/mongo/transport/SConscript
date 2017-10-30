@@ -75,12 +75,17 @@ tlEnv.Library(
     ],
 )
 
+transport_layer_sources = [
+    'service_executor_adaptive.cpp',
+    'service_executor_synchronous.cpp'
+]
+
+if env.TargetOSIs('windows'):
+    transport_layer_sources.append('service_executor_winpool.cpp')
+
 tlEnv.Library(
     target='service_executor',
-    source=[
-        'service_executor_adaptive.cpp',
-        'service_executor_synchronous.cpp'
-    ],
+    source=transport_layer_sources,
     LIBDEPS=[
         '$BUILD_DIR/mongo/db/service_context',
     ],
@@ -89,6 +94,8 @@ tlEnv.Library(
         '$BUILD_DIR/third_party/shim_asio',
     ],
 )
+
+
 
 tlEnv.CppUnitTest(
     target='service_executor_test',

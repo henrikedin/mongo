@@ -45,6 +45,10 @@
 
 #include <iostream>
 
+#ifdef _WIN32
+#include "mongo/transport/service_executor_winpool.h"
+#endif
+
 namespace mongo {
 namespace transport {
 
@@ -134,6 +138,10 @@ std::unique_ptr<TransportLayer> TransportLayerManager::createWithConfig(
             opts.transportMode = transport::Mode::kAsynchronous;
         } else if (config->serviceExecutor == "synchronous") {
             opts.transportMode = transport::Mode::kSynchronous;
+#if _WIN32
+		} else if (config->serviceExecutor == "winpool") {
+			opts.transportMode = transport::Mode::kAsynchronous;
+#endif
         } else {
             MONGO_UNREACHABLE;
         }
@@ -146,6 +154,11 @@ std::unique_ptr<TransportLayer> TransportLayerManager::createWithConfig(
         } else if (config->serviceExecutor == "synchronous") {
             ctx->setServiceExecutor(stdx::make_unique<ServiceExecutorSynchronous>(ctx));
         }
+#if _WIN32
+		else if (config->serviceExecutor == "winpool") {
+			ctx->setServiceExecutor(stdx::make_unique<ServiceExecutorWinPool>(ctx));
+		}
+#endif
         transportLayer = std::move(transportLayerASIO);
     } else if (serverGlobalParams.transportLayer == "legacy") {
         transport::TransportLayerLegacy::Options opts(config);

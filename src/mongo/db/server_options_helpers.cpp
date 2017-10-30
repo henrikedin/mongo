@@ -834,7 +834,7 @@ Status storeServerOptions(const moe::Environment& params) {
                         "must be \"synchronous\""};
             }
         } else {
-            const auto valid = {"synchronous"_sd, "adaptive"_sd};
+            const auto valid = {"synchronous"_sd, "adaptive"_sd, "winpool"_sd};
             if (std::find(valid.begin(), valid.end(), value) == valid.end()) {
                 return {ErrorCodes::BadValue, "Unsupported value for serviceExecutor"};
             }
