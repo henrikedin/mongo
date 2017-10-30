@@ -73,12 +73,12 @@ public:
                         transport::Mode transportMode);
 
     /*
-    * Any state may transition to EndSession in case of an error, otherwise the valid state
-    * transitions are:
-    * Source -> SourceWait -> Process -> SinkWait -> Source (standard RPC)
-    * Source -> SourceWait -> Process -> SinkWait -> Process -> SinkWait ... (exhaust)
-    * Source -> SourceWait -> Process -> Source (fire-and-forget)
-    */
+     * Any state may transition to EndSession in case of an error, otherwise the valid state
+     * transitions are:
+     * Source -> SourceWait -> Process -> SinkWait -> Source (standard RPC)
+     * Source -> SourceWait -> Process -> SinkWait -> Process -> SinkWait ... (exhaust)
+     * Source -> SourceWait -> Process -> Source (fire-and-forget)
+     */
     enum class State {
         Created,     // The session has been created, but no operations have been performed yet
         Source,      // Request a new Message from the network to handle
@@ -104,14 +104,12 @@ public:
     void runNext();
 
     /*
-     * scheduleNext() schedules a call to runNext() in the future. This will be implemented with
-     * an async TransportLayer.
+     * start() schedules a call to runNext() in the future.
      *
      * It is guaranteed to unwind the stack, and not call runNext() recursively, but is not
      * guaranteed that runNext() will run after this returns.
      */
-    void scheduleNext(
-        transport::ServiceExecutor::ScheduleFlags flags = transport::ServiceExecutor::kEmptyFlags);
+    void start(bool markStaticOwnership);
 
     /*
      * Gets the current state of connection for testing/diagnostic purposes.
@@ -147,29 +145,21 @@ private:
     friend class ThreadGuard;
 
     /*
-    * Terminates the associated transport Session if status indicate error.
-    *
-    * This will not block on the session terminating cleaning itself up, it returns immediately.
-    */
+     * Terminates the associated transport Session if status indicate error.
+     *
+     * This will not block on the session terminating cleaning itself up, it returns immediately.
+     */
     void _terminateAndLogIfError(Status status);
 
     /*
-     * This and scheduleFunc() are helper functions to schedule tasks on the serviceExecutor
-     * while maintaining a shared_ptr copy to anchor the lifetime of the SSM while waiting for
-     * callbacks to run.
+     * This is a helper function to schedule tasks on the serviceExecutor maintaining a shared_ptr
+     * copy to anchor the lifetime of the SSM while waiting for callbacks to run.
+     *
+     * If scheduling the function fails, the SSM will be terminated and cleaned up immediately
      */
-    template <typename Func>
-    void _scheduleFunc(Func&& func, transport::ServiceExecutor::ScheduleFlags flags) {
-        Status status = _serviceContext->getServiceExecutor()->schedule(
-            [ func = std::move(func), anchor = shared_from_this() ] { func(); }, flags);
-        if (!status.isOK()) {
-            // The service executor failed to schedule the task
-            // This could for example be that we failed to start
-            // a worker thread. Terminate this connection to
-            // leave the system in a valid state.
-            _terminateAndLogIfError(status);
-        }
-    }
+    void _scheduleNextWithGuard(ThreadGuard& guard,
+                                transport::ServiceExecutor::ScheduleFlags flags,
+                                bool makeStatic = false);
 
     /*
      * Gets the transport::Session associated with this connection
@@ -197,6 +187,14 @@ private:
     void _sinkCallback(Status status);
 
     /*
+     * Source/Sink message from the TransportLayer. These will invalidate the ThreadGuard just
+     * before waiting on the TL. Callers should check if the guard is still valid after calling
+     * to make sure it's safe to change any of the SSM's state.
+     */
+    void _sourceMessage(ThreadGuard& guard);
+    void _sinkMessage(ThreadGuard& guard, Message toSink);
+
+    /*
      * Releases all the resources associated with the session and call the cleanupHook.
      */
     void _cleanupSession(ThreadGuard& guard);
@@ -218,8 +216,12 @@ private:
     boost::optional<MessageCompressorId> _compressorId;
     Message _inMessage;
 
-    AtomicWord<stdx::thread::id> _currentOwningThread;
-    std::atomic_flag _isOwned = ATOMIC_FLAG_INIT;  // NOLINT
+    enum class Ownership { Unowned, Owned, Static };
+    AtomicWord<Ownership> _owned{Ownership::Unowned};
+#if _DEBUG
+    AtomicWord<stdx::thread::id> _owningThread;
+#endif
+    std::string _oldThreadName;
 };
 
 template <typename T>

@@ -49,7 +49,7 @@ public:
 
     Status start() override;
     Status shutdown(Milliseconds timeout) override;
-    Status schedule(Task task, ScheduleFlags flags) override;
+    Status schedule(Task task, ScheduleFlags flags) noexcept override;
 
     Mode transportMode() const override {
         return Mode::kSynchronous;

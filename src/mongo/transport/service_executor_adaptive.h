@@ -91,7 +91,7 @@ public:
 
     Status start() final;
     Status shutdown(Milliseconds timeout) final;
-    Status schedule(Task task, ScheduleFlags flags) final;
+    Status schedule(Task task, ScheduleFlags flags) noexcept final;
 
     Mode transportMode() const final {
         return Mode::kAsynchronous;

@@ -78,7 +78,7 @@ public:
      * If defer is true, then the executor may defer execution of this Task until an available
      * thread is available.
      */
-    virtual Status schedule(Task task, ScheduleFlags flags) = 0;
+    virtual Status schedule(Task task, ScheduleFlags flags) noexcept = 0;
 
     /*
      * Stops and joins the ServiceExecutor. Any outstanding tasks will not be executed, and any

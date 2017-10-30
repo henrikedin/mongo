@@ -185,7 +185,8 @@ Status ServiceExecutorAdaptive::shutdown(Milliseconds timeout) {
                  "adaptive executor couldn't shutdown all worker threads within time limit.");
 }
 
-Status ServiceExecutorAdaptive::schedule(ServiceExecutorAdaptive::Task task, ScheduleFlags flags) {
+Status ServiceExecutorAdaptive::schedule(ServiceExecutorAdaptive::Task task,
+                                         ScheduleFlags flags) noexcept try {
     auto scheduleTime = _tickSource->getTicks();
     auto pendingCounterPtr = (flags & kDeferredTask) ? &_deferredTasksQueued : &_tasksQueued;
     pendingCounterPtr->addAndFetch(1);
@@ -239,6 +240,8 @@ Status ServiceExecutorAdaptive::schedule(ServiceExecutorAdaptive::Task task, Sch
     }
 
     return Status::OK();
+} catch (...) {
+    return exceptionToStatus();
 }
 
 bool ServiceExecutorAdaptive::_isStarved() const {

@@ -88,7 +88,7 @@ Status ServiceExecutorSynchronous::shutdown(Milliseconds timeout) {
                  "passthrough executor couldn't shutdown all worker threads within time limit.");
 }
 
-Status ServiceExecutorSynchronous::schedule(Task task, ScheduleFlags flags) {
+Status ServiceExecutorSynchronous::schedule(Task task, ScheduleFlags flags) noexcept try {
     if (!_stillRunning.load()) {
         return Status{ErrorCodes::ShutdownInProgress, "Executor is not running"};
     }
@@ -142,6 +142,8 @@ Status ServiceExecutorSynchronous::schedule(Task task, ScheduleFlags flags) {
     });
 
     return status;
+} catch (...) {
+    return exceptionToStatus();
 }
 
 void ServiceExecutorSynchronous::appendStats(BSONObjBuilder* bob) const {
