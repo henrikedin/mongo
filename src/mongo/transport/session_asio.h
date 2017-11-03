@@ -48,7 +48,7 @@
 namespace mongo {
 namespace transport {
 
-using GenericSocket = asio::generic::stream_protocol::socket;
+using GenericSocket = asio::generic::stream_pool_protocol::socket;
 
 class TransportLayerASIO::ASIOSession : public Session {
     MONGO_DISALLOW_COPYING(ASIOSession);

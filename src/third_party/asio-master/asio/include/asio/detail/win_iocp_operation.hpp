@@ -81,6 +81,7 @@ protected:
 private:
   friend class op_queue_access;
   friend class win_iocp_io_context;
+  friend class win_iocp_io_pool_context;
   win_iocp_operation* next_;
   func_type func_;
   long ready_;

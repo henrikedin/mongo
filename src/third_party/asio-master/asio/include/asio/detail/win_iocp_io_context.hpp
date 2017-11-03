@@ -61,7 +61,7 @@ public:
 
   // Register a handle with the IO completion port.
   ASIO_DECL asio::error_code register_handle(
-      HANDLE handle, void*& context_handle, asio::error_code& ec);
+      HANDLE handle, asio::error_code& ec);
 
   // Run the event loop until stopped or no more work.
   ASIO_DECL size_t run(asio::error_code& ec);

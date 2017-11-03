@@ -28,6 +28,7 @@ namespace asio {
 
 class execution_context;
 class io_context;
+class io_pool_context;
 
 #if !defined(GENERATING_DOCUMENTATION)
 template <typename Service> Service& use_service(execution_context&);
@@ -222,6 +223,9 @@ public:
    */
   template <typename Service>
   friend Service& use_service(io_context& ioc);
+
+  template <typename Service>
+  friend Service& use_service(io_pool_context& ioc);
 
 #if defined(GENERATING_DOCUMENTATION)
 

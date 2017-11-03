@@ -8,8 +8,8 @@
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
 
-#ifndef ASIO_DETAIL_IMPL_WIN_IOCP_SOCKET_SERVICE_BASE_IPP
-#define ASIO_DETAIL_IMPL_WIN_IOCP_SOCKET_SERVICE_BASE_IPP
+#ifndef ASIO_DETAIL_IMPL_WIN_IOCP_POOL_SOCKET_SERVICE_BASE_IPP
+#define ASIO_DETAIL_IMPL_WIN_IOCP_POOL_SOCKET_SERVICE_BASE_IPP
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1200)
 # pragma once
@@ -26,10 +26,10 @@
 namespace asio {
 namespace detail {
 
-win_iocp_socket_service_base::win_iocp_socket_service_base(
-    asio::io_context& io_context)
+win_iocp_pool_socket_service_base::win_iocp_pool_socket_service_base(
+    asio::io_pool_context& io_context)
   : io_context_(io_context),
-    iocp_service_(use_service<win_iocp_io_context>(io_context)),
+    iocp_service_(use_service<win_iocp_io_pool_context>(io_context)),
     reactor_(0),
     connect_ex_(0),
     nt_set_info_(0),
@@ -38,7 +38,7 @@ win_iocp_socket_service_base::win_iocp_socket_service_base(
 {
 }
 
-void win_iocp_socket_service_base::base_shutdown()
+void win_iocp_pool_socket_service_base::base_shutdown()
 {
   // Close all implementations, causing all operations to complete.
   asio::detail::mutex::scoped_lock lock(mutex_);
@@ -50,8 +50,8 @@ void win_iocp_socket_service_base::base_shutdown()
   }
 }
 
-void win_iocp_socket_service_base::construct(
-    win_iocp_socket_service_base::base_implementation_type& impl)
+void win_iocp_pool_socket_service_base::construct(
+    win_iocp_pool_socket_service_base::base_implementation_type& impl)
 {
   impl.socket_ = invalid_socket;
   impl.state_ = 0;
@@ -69,9 +69,9 @@ void win_iocp_socket_service_base::construct(
   impl_list_ = &impl;
 }
 
-void win_iocp_socket_service_base::base_move_construct(
-    win_iocp_socket_service_base::base_implementation_type& impl,
-    win_iocp_socket_service_base::base_implementation_type& other_impl)
+void win_iocp_pool_socket_service_base::base_move_construct(
+    win_iocp_pool_socket_service_base::base_implementation_type& impl,
+    win_iocp_pool_socket_service_base::base_implementation_type& other_impl)
 {
   impl.socket_ = other_impl.socket_;
   other_impl.socket_ = invalid_socket;
@@ -96,10 +96,10 @@ void win_iocp_socket_service_base::base_move_construct(
   impl_list_ = &impl;
 }
 
-void win_iocp_socket_service_base::base_move_assign(
-    win_iocp_socket_service_base::base_implementation_type& impl,
-    win_iocp_socket_service_base& other_service,
-    win_iocp_socket_service_base::base_implementation_type& other_impl)
+void win_iocp_pool_socket_service_base::base_move_assign(
+    win_iocp_pool_socket_service_base::base_implementation_type& impl,
+    win_iocp_pool_socket_service_base& other_service,
+    win_iocp_pool_socket_service_base::base_implementation_type& other_impl)
 {
   close_for_destruction(impl);
 
@@ -143,8 +143,8 @@ void win_iocp_socket_service_base::base_move_assign(
   }
 }
 
-void win_iocp_socket_service_base::destroy(
-    win_iocp_socket_service_base::base_implementation_type& impl)
+void win_iocp_pool_socket_service_base::destroy(
+    win_iocp_pool_socket_service_base::base_implementation_type& impl)
 {
   close_for_destruction(impl);
 
@@ -160,8 +160,8 @@ void win_iocp_socket_service_base::destroy(
   impl.prev_ = 0;
 }
 
-asio::error_code win_iocp_socket_service_base::close(
-    win_iocp_socket_service_base::base_implementation_type& impl,
+asio::error_code win_iocp_pool_socket_service_base::close(
+    win_iocp_pool_socket_service_base::base_implementation_type& impl,
     asio::error_code& ec)
 {
   if (is_open(impl))
@@ -198,8 +198,8 @@ asio::error_code win_iocp_socket_service_base::close(
   return ec;
 }
 
-socket_type win_iocp_socket_service_base::release(
-    win_iocp_socket_service_base::base_implementation_type& impl,
+socket_type win_iocp_pool_socket_service_base::release(
+    win_iocp_pool_socket_service_base::base_implementation_type& impl,
     asio::error_code& ec)
 {
   if (!is_open(impl))
@@ -231,8 +231,8 @@ socket_type win_iocp_socket_service_base::release(
   return tmp;
 }
 
-asio::error_code win_iocp_socket_service_base::cancel(
-    win_iocp_socket_service_base::base_implementation_type& impl,
+asio::error_code win_iocp_pool_socket_service_base::cancel(
+    win_iocp_pool_socket_service_base::base_implementation_type& impl,
     asio::error_code& ec)
 {
   if (!is_open(impl))
@@ -323,8 +323,8 @@ asio::error_code win_iocp_socket_service_base::cancel(
   return ec;
 }
 
-asio::error_code win_iocp_socket_service_base::do_open(
-    win_iocp_socket_service_base::base_implementation_type& impl,
+asio::error_code win_iocp_pool_socket_service_base::do_open(
+    win_iocp_pool_socket_service_base::base_implementation_type& impl,
     int family, int type, int protocol, asio::error_code& ec)
 {
   if (is_open(impl))
@@ -353,8 +353,8 @@ asio::error_code win_iocp_socket_service_base::do_open(
   return ec;
 }
 
-asio::error_code win_iocp_socket_service_base::do_assign(
-    win_iocp_socket_service_base::base_implementation_type& impl,
+asio::error_code win_iocp_pool_socket_service_base::do_assign(
+    win_iocp_pool_socket_service_base::base_implementation_type& impl,
     int type, socket_type native_socket, asio::error_code& ec)
 {
   if (is_open(impl))
@@ -364,7 +364,7 @@ asio::error_code win_iocp_socket_service_base::do_assign(
   }
 
   HANDLE sock_as_handle = reinterpret_cast<HANDLE>(native_socket);
-  if (iocp_service_.register_handle(sock_as_handle, ec))
+  if (iocp_service_.register_handle(sock_as_handle, impl.context_handle_, ec))
     return ec;
 
   impl.socket_ = native_socket;
@@ -379,8 +379,8 @@ asio::error_code win_iocp_socket_service_base::do_assign(
   return ec;
 }
 
-void win_iocp_socket_service_base::start_send_op(
-    win_iocp_socket_service_base::base_implementation_type& impl,
+void win_iocp_pool_socket_service_base::start_send_op(
+    win_iocp_pool_socket_service_base::base_implementation_type& impl,
     WSABUF* buffers, std::size_t buffer_count,
     socket_base::message_flags flags, bool noop, operation* op)
 {
@@ -393,6 +393,8 @@ void win_iocp_socket_service_base::start_send_op(
     iocp_service_.on_completion(op, asio::error::bad_descriptor);
   else
   {
+    iocp_service_.begin_async_io(impl.context_handle_);
+
     DWORD bytes_transferred = 0;
     int result = ::WSASend(impl.socket_, buffers,
         static_cast<DWORD>(buffer_count), &bytes_transferred, flags, op, 0);
@@ -406,8 +408,8 @@ void win_iocp_socket_service_base::start_send_op(
   }
 }
 
-void win_iocp_socket_service_base::start_send_to_op(
-    win_iocp_socket_service_base::base_implementation_type& impl,
+void win_iocp_pool_socket_service_base::start_send_to_op(
+    win_iocp_pool_socket_service_base::base_implementation_type& impl,
     WSABUF* buffers, std::size_t buffer_count,
     const socket_addr_type* addr, int addrlen,
     socket_base::message_flags flags, operation* op)
@@ -419,6 +421,8 @@ void win_iocp_socket_service_base::start_send_to_op(
     iocp_service_.on_completion(op, asio::error::bad_descriptor);
   else
   {
+    iocp_service_.begin_async_io(impl.context_handle_);
+
     DWORD bytes_transferred = 0;
     int result = ::WSASendTo(impl.socket_, buffers,
         static_cast<DWORD>(buffer_count),
@@ -433,8 +437,8 @@ void win_iocp_socket_service_base::start_send_to_op(
   }
 }
 
-void win_iocp_socket_service_base::start_receive_op(
-    win_iocp_socket_service_base::base_implementation_type& impl,
+void win_iocp_pool_socket_service_base::start_receive_op(
+    win_iocp_pool_socket_service_base::base_implementation_type& impl,
     WSABUF* buffers, std::size_t buffer_count,
     socket_base::message_flags flags, bool noop, operation* op)
 {
@@ -447,6 +451,8 @@ void win_iocp_socket_service_base::start_receive_op(
     iocp_service_.on_completion(op, asio::error::bad_descriptor);
   else
   {
+    iocp_service_.begin_async_io(impl.context_handle_);
+
     DWORD bytes_transferred = 0;
     DWORD recv_flags = flags;
     int result = ::WSARecv(impl.socket_, buffers,
@@ -464,8 +470,8 @@ void win_iocp_socket_service_base::start_receive_op(
   }
 }
 
-void win_iocp_socket_service_base::start_null_buffers_receive_op(
-    win_iocp_socket_service_base::base_implementation_type& impl,
+void win_iocp_pool_socket_service_base::start_null_buffers_receive_op(
+    win_iocp_pool_socket_service_base::base_implementation_type& impl,
     socket_base::message_flags flags, reactor_op* op)
 {
   if ((impl.state_ & socket_ops::stream_oriented) != 0)
@@ -484,8 +490,8 @@ void win_iocp_socket_service_base::start_null_buffers_receive_op(
   }
 }
 
-void win_iocp_socket_service_base::start_receive_from_op(
-    win_iocp_socket_service_base::base_implementation_type& impl,
+void win_iocp_pool_socket_service_base::start_receive_from_op(
+    win_iocp_pool_socket_service_base::base_implementation_type& impl,
     WSABUF* buffers, std::size_t buffer_count, socket_addr_type* addr,
     socket_base::message_flags flags, int* addrlen, operation* op)
 {
@@ -496,6 +502,8 @@ void win_iocp_socket_service_base::start_receive_from_op(
     iocp_service_.on_completion(op, asio::error::bad_descriptor);
   else
   {
+    iocp_service_.begin_async_io(impl.context_handle_);
+
     DWORD bytes_transferred = 0;
     DWORD recv_flags = flags;
     int result = ::WSARecvFrom(impl.socket_, buffers,
@@ -511,8 +519,8 @@ void win_iocp_socket_service_base::start_receive_from_op(
   }
 }
 
-void win_iocp_socket_service_base::start_accept_op(
-    win_iocp_socket_service_base::base_implementation_type& impl,
+void win_iocp_pool_socket_service_base::start_accept_op(
+    win_iocp_pool_socket_service_base::base_implementation_type& impl,
     bool peer_is_open, socket_holder& new_socket, int family, int type,
     int protocol, void* output_buffer, DWORD address_length, operation* op)
 {
@@ -531,6 +539,8 @@ void win_iocp_socket_service_base::start_accept_op(
       iocp_service_.on_completion(op, ec);
     else
     {
+	  iocp_service_.begin_async_io(impl.context_handle_);
+
       DWORD bytes_read = 0;
       BOOL result = ::AcceptEx(impl.socket_, new_socket.get(), output_buffer,
           0, address_length, address_length, &bytes_read, op);
@@ -543,7 +553,7 @@ void win_iocp_socket_service_base::start_accept_op(
   }
 }
 
-void win_iocp_socket_service_base::restart_accept_op(
+void win_iocp_pool_socket_service_base::restart_accept_op(
     socket_type s, socket_holder& new_socket, int family, int type,
     int protocol, void* output_buffer, DWORD address_length, operation* op)
 {
@@ -556,6 +566,8 @@ void win_iocp_socket_service_base::restart_accept_op(
     iocp_service_.on_completion(op, ec);
   else
   {
+    //iocp_service_.begin_async_io(impl.context_handle_);
+
     DWORD bytes_read = 0;
     BOOL result = ::AcceptEx(s, new_socket.get(), output_buffer,
         0, address_length, address_length, &bytes_read, op);
@@ -567,8 +579,8 @@ void win_iocp_socket_service_base::restart_accept_op(
   }
 }
 
-void win_iocp_socket_service_base::start_reactor_op(
-    win_iocp_socket_service_base::base_implementation_type& impl,
+void win_iocp_pool_socket_service_base::start_reactor_op(
+    win_iocp_pool_socket_service_base::base_implementation_type& impl,
     int op_type, reactor_op* op)
 {
   select_reactor& r = get_reactor();
@@ -585,8 +597,8 @@ void win_iocp_socket_service_base::start_reactor_op(
   iocp_service_.post_immediate_completion(op, false);
 }
 
-void win_iocp_socket_service_base::start_connect_op(
-    win_iocp_socket_service_base::base_implementation_type& impl,
+void win_iocp_pool_socket_service_base::start_connect_op(
+    win_iocp_pool_socket_service_base::base_implementation_type& impl,
     int family, int type, const socket_addr_type* addr,
     std::size_t addrlen, win_iocp_socket_connect_op_base* op)
 {
@@ -619,6 +631,8 @@ void win_iocp_socket_service_base::start_connect_op(
       op->connect_ex_ = true;
       update_cancellation_thread_id(impl);
       iocp_service_.work_started();
+
+	  iocp_service_.begin_async_io(impl.context_handle_);
 
       BOOL result = connect_ex(impl.socket_,
           addr, static_cast<int>(addrlen), 0, 0, 0, op);
@@ -655,8 +669,8 @@ void win_iocp_socket_service_base::start_connect_op(
   r.post_immediate_completion(op, false);
 }
 
-void win_iocp_socket_service_base::close_for_destruction(
-    win_iocp_socket_service_base::base_implementation_type& impl)
+void win_iocp_pool_socket_service_base::close_for_destruction(
+    win_iocp_pool_socket_service_base::base_implementation_type& impl)
 {
   if (is_open(impl))
   {
@@ -687,8 +701,8 @@ void win_iocp_socket_service_base::close_for_destruction(
 #endif // defined(ASIO_ENABLE_CANCELIO)
 }
 
-void win_iocp_socket_service_base::update_cancellation_thread_id(
-    win_iocp_socket_service_base::base_implementation_type& impl)
+void win_iocp_pool_socket_service_base::update_cancellation_thread_id(
+    win_iocp_pool_socket_service_base::base_implementation_type& impl)
 {
 #if defined(ASIO_ENABLE_CANCELIO)
   if (impl.safe_cancellation_thread_id_ == 0)
@@ -700,7 +714,7 @@ void win_iocp_socket_service_base::update_cancellation_thread_id(
 #endif // defined(ASIO_ENABLE_CANCELIO)
 }
 
-select_reactor& win_iocp_socket_service_base::get_reactor()
+select_reactor& win_iocp_pool_socket_service_base::get_reactor()
 {
   select_reactor* r = static_cast<select_reactor*>(
         interlocked_compare_exchange_pointer(
@@ -713,9 +727,9 @@ select_reactor& win_iocp_socket_service_base::get_reactor()
   return *r;
 }
 
-win_iocp_socket_service_base::connect_ex_fn
-win_iocp_socket_service_base::get_connect_ex(
-    win_iocp_socket_service_base::base_implementation_type& impl, int type)
+win_iocp_pool_socket_service_base::connect_ex_fn
+win_iocp_pool_socket_service_base::get_connect_ex(
+    win_iocp_pool_socket_service_base::base_implementation_type& impl, int type)
 {
 #if defined(ASIO_DISABLE_CONNECTEX)
   (void)impl;
@@ -748,8 +762,8 @@ win_iocp_socket_service_base::get_connect_ex(
 #endif // defined(ASIO_DISABLE_CONNECTEX)
 }
 
-win_iocp_socket_service_base::nt_set_info_fn
-win_iocp_socket_service_base::get_nt_set_info()
+win_iocp_pool_socket_service_base::nt_set_info_fn
+win_iocp_pool_socket_service_base::get_nt_set_info()
 {
   void* ptr = interlocked_compare_exchange_pointer(&nt_set_info_, 0, 0);
   if (!ptr)
@@ -766,7 +780,7 @@ win_iocp_socket_service_base::get_nt_set_info()
   return reinterpret_cast<nt_set_info_fn>(ptr == this ? 0 : ptr);
 }
 
-void* win_iocp_socket_service_base::interlocked_compare_exchange_pointer(
+void* win_iocp_pool_socket_service_base::interlocked_compare_exchange_pointer(
     void** dest, void* exch, void* cmp)
 {
 #if defined(_M_IX86)
@@ -778,7 +792,7 @@ void* win_iocp_socket_service_base::interlocked_compare_exchange_pointer(
 #endif
 }
 
-void* win_iocp_socket_service_base::interlocked_exchange_pointer(
+void* win_iocp_pool_socket_service_base::interlocked_exchange_pointer(
     void** dest, void* val)
 {
 #if defined(_M_IX86)
@@ -796,4 +810,4 @@ void* win_iocp_socket_service_base::interlocked_exchange_pointer(
 
 #endif // defined(ASIO_HAS_IOCP)
 
-#endif // ASIO_DETAIL_IMPL_WIN_IOCP_SOCKET_SERVICE_BASE_IPP
+#endif // ASIO_DETAIL_IMPL_WIN_IOCP_POOL_SOCKET_SERVICE_BASE_IPP

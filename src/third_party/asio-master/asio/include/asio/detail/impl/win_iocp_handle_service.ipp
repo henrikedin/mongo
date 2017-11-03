@@ -186,7 +186,7 @@ asio::error_code win_iocp_handle_service::assign(
     return ec;
   }
 
-  if (iocp_service_.register_handle(handle, impl.context_handle_, ec))
+  if (iocp_service_.register_handle(handle, ec))
     return ec;
 
   impl.handle_ = handle;

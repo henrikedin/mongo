@@ -328,9 +328,9 @@ private:
 
 #include "asio/detail/pop_options.hpp"
 
-#include "asio/detail/impl/win_iocp_io_context.hpp"
+#include "asio/detail/impl/win_iocp_io_pool_context.hpp"
 #if defined(ASIO_HEADER_ONLY)
-# include "asio/detail/impl/win_iocp_io_context.ipp"
+# include "asio/detail/impl/win_iocp_io_pool_context.ipp"
 #endif // defined(ASIO_HEADER_ONLY)
 
 #endif // defined(ASIO_HAS_IOCP)

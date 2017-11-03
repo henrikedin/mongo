@@ -49,10 +49,10 @@ class io_context;
 class io_pool_context;
 
 template <typename Protocol>
-class basic_socket_acceptor;
+class basic_pool_socket_acceptor;
 
 namespace generic {
-class stream_protocol;
+class stream_pool_protocol;
 }  // namespace generic
 
 namespace ssl {
@@ -121,7 +121,7 @@ private:
 
     using ASIOSessionHandle = std::shared_ptr<ASIOSession>;
     using ConstASIOSessionHandle = std::shared_ptr<const ASIOSession>;
-    using GenericAcceptor = asio::basic_socket_acceptor<asio::generic::stream_protocol>;
+    using GenericAcceptor = asio::basic_pool_socket_acceptor<asio::generic::stream_pool_protocol>;
 
     void _acceptConnection(GenericAcceptor& acceptor);
 

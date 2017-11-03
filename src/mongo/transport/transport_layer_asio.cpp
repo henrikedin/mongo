@@ -276,13 +276,15 @@ void TransportLayerASIO::shutdown() {
     // Otherwise the ServiceExecutor may need to continue running the io_context to drain running
     // connections, so we just cancel the acceptors and return.
     if (_listenerThread.joinable()) {
-        _acceptorIOContext->stop();
+        //_acceptorIOContext->stop();
         _listenerThread.join();
     }
 }
 
 const std::shared_ptr<asio::io_context>& TransportLayerASIO::getIOContext() {
-    return _workerIOContext;
+    //return _workerIOContext;
+	static std::shared_ptr<asio::io_context> temp;
+	return temp;
 }
 
 void TransportLayerASIO::_acceptConnection(GenericAcceptor& acceptor) {

@@ -8,8 +8,8 @@
 // file LICENSE_1_0.txt or copy at http://www.boost.org/LICENSE_1_0.txt)
 //
 
-#ifndef ASIO_DETAIL_WIN_IOCP_SOCKET_SERVICE_BASE_HPP
-#define ASIO_DETAIL_WIN_IOCP_SOCKET_SERVICE_BASE_HPP
+#ifndef ASIO_DETAIL_WIN_IOCP_POOL_SOCKET_SERVICE_BASE_HPP
+#define ASIO_DETAIL_WIN_IOCP_POOL_SOCKET_SERVICE_BASE_HPP
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1200)
 # pragma once
@@ -20,7 +20,7 @@
 #if defined(ASIO_HAS_IOCP)
 
 #include "asio/error.hpp"
-#include "asio/io_context.hpp"
+#include "asio/io_pool_context.hpp"
 #include "asio/socket_base.hpp"
 #include "asio/detail/bind_handler.hpp"
 #include "asio/detail/buffer_sequence_adapter.hpp"
@@ -35,7 +35,7 @@
 #include "asio/detail/socket_holder.hpp"
 #include "asio/detail/socket_ops.hpp"
 #include "asio/detail/socket_types.hpp"
-#include "asio/detail/win_iocp_io_context.hpp"
+#include "asio/detail/win_iocp_io_pool_context.hpp"
 #include "asio/detail/win_iocp_null_buffers_op.hpp"
 #include "asio/detail/win_iocp_socket_connect_op.hpp"
 #include "asio/detail/win_iocp_socket_send_op.hpp"
@@ -48,7 +48,7 @@
 namespace asio {
 namespace detail {
 
-class win_iocp_socket_service_base
+class win_iocp_pool_socket_service_base
 {
 public:
   // The implementation type of the socket.
@@ -56,6 +56,8 @@ public:
   {
     // The native socket representation.
     socket_type socket_;
+
+    void* pool_handle_;
 
     // The current state of the socket.
     socket_ops::state_type state_;
@@ -85,8 +87,8 @@ public:
   };
 
   // Constructor.
-  ASIO_DECL win_iocp_socket_service_base(
-      asio::io_context& io_context);
+  ASIO_DECL win_iocp_pool_socket_service_base(
+      asio::io_pool_context& io_context);
 
   // Destroy all user-defined handler objects owned by the service.
   ASIO_DECL void base_shutdown();
@@ -554,11 +556,11 @@ protected:
   ASIO_DECL void* interlocked_exchange_pointer(void** dest, void* val);
 
   // The io_context used to obtain the reactor, if required.
-  asio::io_context& io_context_;
+  asio::io_pool_context& io_context_;
 
   // The IOCP service used for running asynchronous operations and dispatching
   // handlers.
-  win_iocp_io_context& iocp_service_;
+  win_iocp_io_pool_context& iocp_service_;
 
   // The reactor used for performing connect operations. This object is created
   // only if needed.
@@ -583,9 +585,9 @@ protected:
 #include "asio/detail/pop_options.hpp"
 
 #if defined(ASIO_HEADER_ONLY)
-# include "asio/detail/impl/win_iocp_socket_service_base.ipp"
+# include "asio/detail/impl/win_iocp_pool_socket_service_base.ipp"
 #endif // defined(ASIO_HEADER_ONLY)
 
 #endif // defined(ASIO_HAS_IOCP)
 
-#endif // ASIO_DETAIL_WIN_IOCP_SOCKET_SERVICE_BASE_HPP
+#endif // ASIO_DETAIL_WIN_IOCP_POOL_SOCKET_SERVICE_BASE_HPP

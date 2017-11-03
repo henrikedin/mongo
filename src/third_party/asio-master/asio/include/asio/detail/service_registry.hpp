@@ -66,6 +66,9 @@ public:
   template <typename Service>
   Service& use_service(io_context& owner);
 
+  template <typename Service>
+  Service& use_service(io_pool_context& owner);
+
   // Add a service object. Throws on error, in which case ownership of the
   // object is retained by the caller.
   template <typename Service>
