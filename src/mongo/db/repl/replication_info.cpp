@@ -277,6 +277,9 @@ public:
 
             swParseClientMetadata.getValue().get().logClientMetadata(opCtx->getClient());
 
+            opCtx->getClient()->session()->setApplicationName(
+                swParseClientMetadata.getValue().get().getApplicationName());
+
             clientMetadataIsMasterState.setClientMetadata(
                 opCtx->getClient(), std::move(swParseClientMetadata.getValue()));
         }

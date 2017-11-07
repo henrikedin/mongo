@@ -482,6 +482,9 @@ void ServiceStateMachine::terminate() {
     if (state() == State::Ended)
         return;
 
+    log() << "Closed connection for connection # " << _session()->id()
+          << " . App name: " << _session()->getApplicationName();
+
     _session()->getTransportLayer()->end(_session());
 }
 
@@ -494,7 +497,8 @@ void ServiceStateMachine::terminateIfTagsDontMatch(transport::Session::TagMask t
     // If terminateIfTagsDontMatch gets called when we still are 'pending' where no tags have been
     // set, then skip the termination check.
     if ((sessionTags & tags) || (sessionTags & transport::Session::kPending)) {
-        log() << "Skip closing connection for connection # " << _session()->id();
+        log() << "Skip closing connection for connection # " << _session()->id()
+              << " . App name: " << _session()->getApplicationName();
         return;
     }
 

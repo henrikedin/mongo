@@ -87,6 +87,14 @@ public:
         return _id;
     }
 
+    void setApplicationName(StringData applicationName) {
+        _applicationId = applicationName.toString();
+    }
+
+    StringData getApplicationName() {
+        return _applicationId;
+    }
+
     /**
      * The TransportLayer for this Session.
      */
@@ -160,6 +168,7 @@ protected:
 
 private:
     const Id _id;
+    std::string _applicationId;
 
     AtomicWord<TagMask> _tags;
 };
