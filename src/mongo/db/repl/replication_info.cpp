@@ -277,8 +277,17 @@ public:
 
             swParseClientMetadata.getValue().get().logClientMetadata(opCtx->getClient());
 
-            opCtx->getClient()->session()->setApplicationName(
-                swParseClientMetadata.getValue().get().getApplicationName());
+            auto appName = swParseClientMetadata.getValue().get().getApplicationName();
+            if (!appName.empty()) {
+                opCtx->getClient()->session()->setApplicationName(appName);
+            } else {
+                opCtx->getClient()->session()->setApplicationName(swParseClientMetadata.getValue()
+                                                                      .get()
+                                                                      .getDocument()["driver"]
+                                                                                    ["name"]
+                                                                      .String());
+            }
+
 
             clientMetadataIsMasterState.setClientMetadata(
                 opCtx->getClient(), std::move(swParseClientMetadata.getValue()));

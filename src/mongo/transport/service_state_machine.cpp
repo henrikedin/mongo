@@ -502,6 +502,9 @@ void ServiceStateMachine::terminateIfTagsDontMatch(transport::Session::TagMask t
         return;
     }
 
+    log() << "terminateIfTagsDontMatch (conn id: " << _session()->id()
+          << ") (sessionTags: " << sessionTags << ") (requested: " << tags << ")";
+
     terminate();
 }
 

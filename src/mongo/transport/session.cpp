@@ -26,12 +26,15 @@
  *    it in the license file.
  */
 
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::logger::LogComponent::kNetwork
+
 #include "mongo/platform/basic.h"
 
 #include "mongo/transport/session.h"
 
 #include "mongo/platform/atomic_word.h"
 #include "mongo/transport/transport_layer.h"
+#include "mongo/util/log.h"
 #include "mongo/util/net/ssl_types.h"
 
 namespace mongo {
@@ -70,6 +73,10 @@ void Session::mutateTags(const stdx::function<TagMask(TagMask)>& mutateFunc) {
         // Any change to the session tags automatically clears kPending status.
         newValue &= ~kPending;
     } while (_tags.compareAndSwap(oldValue, newValue) != oldValue);
+
+    if (oldValue != newValue)
+        log() << "mutateTags (conn id: " << id() << ") (before: " << oldValue
+              << ") (after: " << newValue << ")";
 }
 
 Session::TagMask Session::getTags() const {
