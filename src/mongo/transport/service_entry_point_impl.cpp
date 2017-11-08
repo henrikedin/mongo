@@ -137,13 +137,18 @@ void ServiceEntryPointImpl::startSession(transport::SessionHandle session) {
 }
 
 void ServiceEntryPointImpl::endAllSessions(transport::Session::TagMask tags) {
-    // While holding the _sesionsMutex, loop over all the current connections, and if their tags
-    // do not match the requested tags to skip, terminate the session.
+    // While holding the _sesionsMutex, make a copy of the sessions so we can iterate over them
+    // without holding the lock. terminateIfTagsDontMatch might log, which is synchronous and can
+    // take a long time. Terminate any session that do not match the requested tags to skip.
+    std::vector<std::shared_ptr<ServiceStateMachine>> sessionsCopy;
     {
         stdx::unique_lock<decltype(_sessionsMutex)> lk(_sessionsMutex);
-        for (auto& ssm : _sessions) {
-            ssm->terminateIfTagsDontMatch(tags);
-        }
+        sessionsCopy.reserve(_sessions.size());
+        std::copy(_sessions.cbegin(), _sessions.cend(), std::back_inserter(sessionsCopy));
+    }
+
+    for (auto& ssm : sessionsCopy) {
+        ssm->terminateIfTagsDontMatch(tags);
     }
 }
 
