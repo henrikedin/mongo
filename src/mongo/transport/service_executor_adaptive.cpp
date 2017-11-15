@@ -289,7 +289,9 @@ void ServiceExecutorAdaptive::_controllerThreadRoutine() {
         const auto timerResetGuard =
             MakeGuard([&sinceLastControlRound] { sinceLastControlRound.reset(); });
 
-        _scheduleCondition.wait_for(fakeLk, _config->stuckThreadTimeout().toSystemDuration());
+        _scheduleCondition.wait_for(fakeLk,
+                                    _config->stuckThreadTimeout().toSystemDuration(),
+                                    [this]() { return _isStarved() || !_isRunning.load(); });
 
         // If the executor has stopped, then stop the controller altogether
         if (!_isRunning.load())
@@ -488,7 +490,6 @@ void ServiceExecutorAdaptive::_workerThreadRoutine(
     const auto guard = MakeGuard([this, &stillPending, state] {
         if (stillPending)
             _threadsPending.subtractAndFetch(1);
-        _threadsRunning.subtractAndFetch(1);
         _pastThreadsSpentRunning.addAndFetch(state->running.totalTime());
         _pastThreadsSpentExecuting.addAndFetch(state->executing.totalTime());
 
@@ -534,10 +535,12 @@ void ServiceExecutorAdaptive::_workerThreadRoutine(
             log() << "Exception escaped worker thread: " << e.what()
                   << " Starting new worker thread.";
             _startWorkerThread();
+            _threadsRunning.subtractAndFetch(1);
             break;
         } catch (...) {
             log() << "Unknown exception escaped worker thread. Starting new worker thread.";
             _startWorkerThread();
+            _threadsRunning.subtractAndFetch(1);
             break;
         }
         auto spentRunning = state->running.markStopped();
@@ -549,23 +552,49 @@ void ServiceExecutorAdaptive::_workerThreadRoutine(
         if (stillPending) {
             _threadsPending.subtractAndFetch(1);
             stillPending = false;
-        } else if (_threadsRunning.load() > _config->reservedThreads()) {
-            // If we spent less than our idle threshold actually running tasks then exit the thread.
-            // This time measurement doesn't include time spent running network callbacks, so the
-            // threshold is lower than you'd expect.
-            dassert(spentRunning < std::numeric_limits<double>::max());
+        } else {
+            bool terminateThread = false;
+            int pctExecuting;
+            int runningThreads;
 
-            // First get the ratio of ticks spent executing to ticks spent running. We expect this
-            // to be <= 1.0
-            double executingToRunning = state->executingCurRun / static_cast<double>(spentRunning);
+            const auto calculatePctExecuting = [&]() {
+                // If we spent less than our idle threshold actually running tasks then exit the
+                // thread.
+                // This time measurement doesn't include time spent running network callbacks,
+                // so the threshold is lower than you'd expect.
+                dassert(spentRunning < std::numeric_limits<double>::max());
 
-            // Multiply that by 100 to get the percentage of time spent executing tasks. We expect
-            // this to be <= 100.
-            executingToRunning *= 100;
-            dassert(executingToRunning <= 100);
+                // First get the ratio of ticks spent executing to ticks spent running. We
+                // expect this to be <= 1.0
+                double executingToRunning =
+                    state->executingCurRun / static_cast<double>(spentRunning);
 
-            int pctExecuting = static_cast<int>(executingToRunning);
-            if (pctExecuting < _config->idlePctThreshold()) {
+                // Multiply that by 100 to get the percentage of time spent executing tasks. We
+                // expect this to be <= 100.
+                executingToRunning *= 100;
+                dassert(executingToRunning <= 100);
+
+                return static_cast<int>(executingToRunning);
+            };
+
+            // Make sure we don't terminate threads below the reserved threshold. Atomically reduce
+            // threads one by one to guarantee this.
+            do {
+                runningThreads = _threadsRunning.load();
+
+                if (runningThreads <= _config->reservedThreads()) {
+                    terminateThread = false;
+                    break;  // keep thread
+                }
+
+                if (!terminateThread) {
+                    pctExecuting = calculatePctExecuting();
+                    terminateThread = pctExecuting <= _config->idlePctThreshold();
+                }
+            } while (terminateThread &&
+                     _threadsRunning.compareAndSwap(runningThreads, runningThreads - 1) !=
+                         runningThreads);
+            if (terminateThread) {
                 log() << "Thread was only executing tasks " << pctExecuting << "% over the last "
                       << runTime << ". Exiting thread.";
                 break;
