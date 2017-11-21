@@ -198,6 +198,7 @@ private:
                             CompleteHandler&& handler) {
         std::error_code ec;
         auto size = asio::write(stream, buffers, ec);
+
         if ((ec == asio::error::would_block || ec == asio::error::try_again) && !sync) {
             // asio::write is a loop internally, so some of buffers may have been read into already.
             // So we need to adjust the buffers passed into async_write to be offset by size, if
