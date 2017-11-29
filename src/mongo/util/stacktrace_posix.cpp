@@ -342,51 +342,52 @@ void processNoteSegment(const dl_phdr_info& info, const ElfW(Phdr) & phdr, BSONO
  * segment
  */
 void processLoadSegment(const dl_phdr_info& info, const ElfW(Phdr) & phdr, BSONObjBuilder* soInfo) {
-    if (phdr.p_offset)
-        return;
-    if (phdr.p_memsz < sizeof(ElfW(Ehdr)))
-        return;
-
-    // Segment includes beginning of file and is large enough to hold the ELF header
-    ElfW(Ehdr) eHeader;
-    memcpy(&eHeader, reinterpret_cast<const char*>(info.dlpi_addr) + phdr.p_vaddr, sizeof(eHeader));
-
-    std::string quotedFileName = "\"" + escape(info.dlpi_name) + "\"";
-
-    if (memcmp(&eHeader.e_ident[0], ELFMAG, SELFMAG)) {
-        warning() << "Bad ELF magic number in image of " << quotedFileName;
-        return;
-    }
-
-#define MKELFCLASS(N) _MKELFCLASS(N)
-#define _MKELFCLASS(N) ELFCLASS##N
-    if (eHeader.e_ident[EI_CLASS] != MKELFCLASS(__ELF_NATIVE_CLASS)) {
-        warning() << "Expected elf file class of " << quotedFileName << " to be "
-                  << MKELFCLASS(__ELF_NATIVE_CLASS) << "(" << __ELF_NATIVE_CLASS
-                  << "-bit), but found " << int(eHeader.e_ident[4]);
-        return;
-    }
-
-    if (eHeader.e_ident[EI_VERSION] != EV_CURRENT) {
-        warning() << "Wrong ELF version in " << quotedFileName << ".  Expected " << EV_CURRENT
-                  << " but found " << int(eHeader.e_ident[EI_VERSION]);
-        return;
-    }
-
-    soInfo->append("elfType", eHeader.e_type);
-
-    switch (eHeader.e_type) {
-        case ET_EXEC:
-            break;
-        case ET_DYN:
-            return;
-        default:
-            warning() << "Surprised to find " << quotedFileName << " is ELF file of type "
-                      << eHeader.e_type;
-            return;
-    }
-
-    soInfo->append("b", integerToHex(phdr.p_vaddr));
+    return;
+//    if (phdr.p_offset)
+//        return;
+//    if (phdr.p_memsz < sizeof(ElfW(Ehdr)))
+//        return;
+//
+//    // Segment includes beginning of file and is large enough to hold the ELF header
+//    ElfW(Ehdr) eHeader;
+//    memcpy(&eHeader, reinterpret_cast<const char*>(info.dlpi_addr) + phdr.p_vaddr, sizeof(eHeader));
+//
+//    std::string quotedFileName = "\"" + escape(info.dlpi_name) + "\"";
+//
+//    if (memcmp(&eHeader.e_ident[0], ELFMAG, SELFMAG)) {
+//        warning() << "Bad ELF magic number in image of " << quotedFileName;
+//        return;
+//    }
+//
+//#define MKELFCLASS(N) _MKELFCLASS(N)
+//#define _MKELFCLASS(N) ELFCLASS##N
+//    if (eHeader.e_ident[EI_CLASS] != MKELFCLASS(__ELF_NATIVE_CLASS)) {
+//        warning() << "Expected elf file class of " << quotedFileName << " to be "
+//                  << MKELFCLASS(__ELF_NATIVE_CLASS) << "(" << __ELF_NATIVE_CLASS
+//                  << "-bit), but found " << int(eHeader.e_ident[4]);
+//        return;
+//    }
+//
+//    if (eHeader.e_ident[EI_VERSION] != EV_CURRENT) {
+//        warning() << "Wrong ELF version in " << quotedFileName << ".  Expected " << EV_CURRENT
+//                  << " but found " << int(eHeader.e_ident[EI_VERSION]);
+//        return;
+//    }
+//
+//    soInfo->append("elfType", eHeader.e_type);
+//
+//    switch (eHeader.e_type) {
+//        case ET_EXEC:
+//            break;
+//        case ET_DYN:
+//            return;
+//        default:
+//            warning() << "Surprised to find " << quotedFileName << " is ELF file of type "
+//                      << eHeader.e_type;
+//            return;
+//    }
+//
+//    soInfo->append("b", integerToHex(phdr.p_vaddr));
 }
 
 /**
