@@ -43,7 +43,7 @@
 
 // Fix system header issue on Sun solaris and define required type by ourselves
 #if !defined(_WCHAR_T) && !defined(_WCHAR_T_DEFINED) && !defined(__QNX__)
-typedef int   wchar_t;
+typedef unsigned int   wchar_t;
 #endif
 
 
@@ -162,7 +162,7 @@ typedef unsigned bid__int64 fexcept_t;
 #if defined(__QNX__) || defined(__OpenBSD__)
 #include <fenv.h>
 #else
-typedef unsigned short int fexcept_t;
+#include <fenv.h>
 #endif
 #endif
 #endif

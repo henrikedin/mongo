@@ -33,6 +33,9 @@
 
 #include "mongo/bson/bsonobjbuilder.h"
 #include "mongo/db/json.h"
+#include "mongo/db/server_options.h"
+#include "mongo/db/server_parameters.h"
+#include "mongo/db/storage/storage_options.h"
 #include "mongo/stdx/memory.h"
 #include "mongo/unittest/temp_dir.h"
 #include "mongo/unittest/unittest.h"
@@ -498,6 +501,9 @@ TEST_F(MongodbCAPITest, CreateMultipleDBs) {
 int main(int argc, char** argv, char** envp) {
     ::mongo::clearSignalMask();
     ::mongo::setupSynchronousSignalHandlers();
+    ::mongo::serverGlobalParams.noUnixSocket = true;
+    //::mongo::storageGlobalParams.dbpath = "/data";
+    ::mongo::unittest::setupLogOutput();
     auto result = ::mongo::unittest::Suite::run(std::vector<std::string>(), "", 1);
     globalTempDir.reset();
     mongo::quickExit(result);

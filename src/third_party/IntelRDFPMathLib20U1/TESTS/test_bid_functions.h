@@ -168,7 +168,7 @@ typedef unsigned bid__int64 fexcept_t;
 #ifdef __QNX__
 #include <fenv.h>
 #else
-typedef unsigned short int fexcept_t;
+#include <fenv.h>
 #endif
 #endif
 #endif

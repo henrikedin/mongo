@@ -42,11 +42,6 @@
 #include <sys/time.h>
 #include <sys/utsname.h>
 #include <unistd.h>
-#ifdef __UCLIBC__
-#include <features.h>
-#else
-#include <gnu/libc-version.h>
-#endif
 
 #include <boost/filesystem.hpp>
 #include <boost/none.hpp>
@@ -497,13 +492,6 @@ void ProcessInfo::SystemInfo::collectSystemInfo() {
 
     BSONObjBuilder bExtra;
     bExtra.append("versionString", LinuxSysHelper::readLineFromFile("/proc/version"));
-#ifdef __UCLIBC__
-    stringstream ss;
-    ss << "uClibc-" << __UCLIBC_MAJOR__ << "." << __UCLIBC_MINOR__ << "." << __UCLIBC_SUBLEVEL__;
-    bExtra.append("libcVersion", ss.str());
-#else
-    bExtra.append("libcVersion", gnu_get_libc_version());
-#endif
     if (!verSig.empty())
         // optional
         bExtra.append("versionSignature", verSig);

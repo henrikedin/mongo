@@ -235,6 +235,8 @@ namespace mongo {
 
 namespace unittest {
 
+void setupLogOutput();
+
 class Result;
 
 /**
@@ -340,6 +342,7 @@ protected:
      * Prints the captured log lines.
      */
     void printCapturedLogLines() const;
+
 
 private:
     /**
