@@ -1,30 +1,30 @@
 /**
-  *    Copyright (C) 2017 MongoDB Inc.
-  *
-  *    This program is free software: you can redistribute it and/or  modify
-  *    it under the terms of the GNU Affero General Public License, version 3,
-  *    as published by the Free Software Foundation.
-  *
-  *    This program is distributed in the hope that it will be useful,
-  *    but WITHOUT ANY WARRANTY; without even the implied warranty of
-  *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  *    GNU Affero General Public License for more details.
-  *
-  *    You should have received a copy of the GNU Affero General Public License
-  *    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-  *
-  *    As a special exception, the copyright holders give permission to link the
-  *    code of portions of this program with the OpenSSL library under certain
-  *    conditions as described in each individual source file and distribute
-  *    linked combinations including the program with the OpenSSL library. You
-  *    must comply with the GNU Affero General Public License in all respects for
-  *    all of the code used other than as permitted herein. If you modify file(s)
-  *    with this exception, you may extend this exception to your version of the
-  *    file(s), but you are not obligated to do so. If you do not wish to do so,
-  *    delete this exception statement from your version. If you delete this
-  *    exception statement from all source files in the program, then also delete
-  *    it in the license file.
-  */
+*    Copyright (C) 2017 MongoDB Inc.
+*
+*    This program is free software: you can redistribute it and/or  modify
+*    it under the terms of the GNU Affero General Public License, version 3,
+*    as published by the Free Software Foundation.
+*
+*    This program is distributed in the hope that it will be useful,
+*    but WITHOUT ANY WARRANTY; without even the implied warranty of
+*    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+*    GNU Affero General Public License for more details.
+*
+*    You should have received a copy of the GNU Affero General Public License
+*    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*
+*    As a special exception, the copyright holders give permission to link the
+*    code of portions of this program with the OpenSSL library under certain
+*    conditions as described in each individual source file and distribute
+*    linked combinations including the program with the OpenSSL library. You
+*    must comply with the GNU Affero General Public License in all respects for
+*    all of the code used other than as permitted herein. If you modify file(s)
+*    with this exception, you may extend this exception to your version of the
+*    file(s), but you are not obligated to do so. If you do not wish to do so,
+*    delete this exception statement from your version. If you delete this
+*    exception statement from all source files in the program, then also delete
+*    it in the license file.
+*/
 
 #define MONGO_LOG_DEFAULT_COMPONENT ::mongo::logger::LogComponent::kDefault;
 
@@ -189,9 +189,9 @@ protected:
 };
 
 /*
- * This tests that the executor will launch a new thread if the current threads are blocked, and
- * that those threads retire when they become idle.
- */
+* This tests that the executor will launch a new thread if the current threads are blocked, and
+* that those threads retire when they become idle.
+*/
 TEST_F(ServiceExecutorAdaptiveFixture, TestStuckTask) {
     stdx::mutex blockedMutex;
     stdx::unique_lock<stdx::mutex> blockedLock(blockedMutex);
@@ -233,10 +233,10 @@ TEST_F(ServiceExecutorAdaptiveFixture, TestStuckTask) {
 }
 
 /*
- * This tests that the executor will start a new batch of reserved threads if it detects that
- * all
- * threads are running a task for longer than the stuckThreadTimeout.
- */
+* This tests that the executor will start a new batch of reserved threads if it detects that
+* all
+* threads are running a task for longer than the stuckThreadTimeout.
+*/
 TEST_F(ServiceExecutorAdaptiveFixture, TestStuckThreads) {
     stdx::mutex blockedMutex;
     stdx::unique_lock<stdx::mutex> blockedLock(blockedMutex);
@@ -330,19 +330,22 @@ TEST_F(ServiceExecutorAdaptiveFixture, TestStarvation) {
 */
 TEST_F(ServiceExecutorAdaptiveFixture, TestRecursion) {
     auto exec = makeAndStartExecutor<RecursionOptions>();
-    auto guard = MakeGuard([&] { ASSERT_OK(exec->shutdown(config->workerThreadRunTime() * 2)); });
 
     AtomicInt32 remainingTasks{config->recursionLimit() - 1};
     stdx::mutex mutex;
     stdx::condition_variable cv;
-
     stdx::function<void()> task;
+
+    auto guard = MakeGuard([&] { ASSERT_OK(exec->shutdown(config->workerThreadRunTime() * 2)); });
+
     task = [this, &task, &exec, &mutex, &cv, &remainingTasks] {
-        log() << "Starting task recursively";
         if (remainingTasks.subtractAndFetch(1) == 0) {
+            log() << "Signaling job done";
             cv.notify_one();
             return;
         }
+
+        log() << "Starting task recursively";
 
         ASSERT_OK(exec->schedule(
             task, ServiceExecutor::kMayRecurse, ServiceExecutorTaskName::kSSMProcessMessage));
@@ -366,10 +369,10 @@ TEST_F(ServiceExecutorAdaptiveFixture, TestRecursion) {
 }
 
 /*
- * This tests that deferred tasks don't cause a new thread to be created, and they don't
- * interfere
- * with new normal tasks
- */
+* This tests that deferred tasks don't cause a new thread to be created, and they don't
+* interfere
+* with new normal tasks
+*/
 TEST_F(ServiceExecutorAdaptiveFixture, TestDeferredTasks) {
     stdx::mutex blockedMutex;
     stdx::unique_lock<stdx::mutex> blockedLock(blockedMutex);
