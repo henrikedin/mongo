@@ -39,7 +39,6 @@
 #include "mongo/transport/service_entry_point_utils.h"
 #include "mongo/transport/service_executor_task_names.h"
 #include "mongo/util/concurrency/thread_name.h"
-#include "mongo/util/concurrency/thread_priority.h"
 #include "mongo/util/log.h"
 #include "mongo/util/processinfo.h"
 #include "mongo/util/scopeguard.h"
@@ -161,8 +160,6 @@ Status ServiceExecutorAdaptive::start() {
     invariant(!_isRunning.load());
     _isRunning.store(true);
     _controllerThread = stdx::thread(&ServiceExecutorAdaptive::_controllerThreadRoutine, this);
-    invariant(setThreadPriorityHighest(_controllerThread.native_handle()));
-
     for (auto i = 0; i < _config->reservedThreads(); i++) {
         _startWorkerThread();
     }
@@ -295,8 +292,6 @@ void ServiceExecutorAdaptive::_controllerThreadRoutine() {
         _scheduleCondition.wait_for(fakeLk,
                                     _config->stuckThreadTimeout().toSystemDuration(),
                                     [this]() { return _isStarved() || !_isRunning.load(); });
-
-        log() << "tick";
 
         // If the executor has stopped, then stop the controller altogether
         if (!_isRunning.load())
@@ -533,11 +528,8 @@ void ServiceExecutorAdaptive::_workerThreadRoutine(
             // In the case where the server has just started and there has been no work yet, this
             // means this loop will spin until the first client connect. Thsi call to restart avoids
             // that.
-            if (_ioContext->stopped()) {
+            if (_ioContext->stopped())
                 _ioContext->restart();
-                log() << "restarting asio io_context";
-            }
-
             // If an exceptione escaped from ASIO, then break from this thread and start a new one.
         } catch (std::exception& e) {
             log() << "Exception escaped worker thread: " << e.what()

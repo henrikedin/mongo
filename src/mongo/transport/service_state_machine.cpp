@@ -331,14 +331,14 @@ void ServiceStateMachine::_sinkCallback(Status status) {
     } else if (_inExhaust) {
         _state.store(State::Process);
         return _scheduleNextWithGuard(std::move(guard),
-                                      /*ServiceExecutor::kDeferredTask |*/
-                                      ServiceExecutor::kMayYieldBeforeSchedule,
+                                      ServiceExecutor::kDeferredTask |
+                                          ServiceExecutor::kMayYieldBeforeSchedule,
                                       transport::ServiceExecutorTaskName::kSSMProcessMessage);
     } else {
         _state.store(State::Source);
         return _scheduleNextWithGuard(std::move(guard),
-                                      /*ServiceExecutor::kDeferredTask |*/
-                                      ServiceExecutor::kMayYieldBeforeSchedule,
+                                      ServiceExecutor::kDeferredTask |
+                                          ServiceExecutor::kMayYieldBeforeSchedule,
                                       transport::ServiceExecutorTaskName::kSSMSourceMessage);
     }
 }
@@ -398,7 +398,7 @@ void ServiceStateMachine::_processMessage(ThreadGuard guard) {
         _state.store(State::Source);
         _inMessage.reset();
         return _scheduleNextWithGuard(std::move(guard),
-                                      ServiceExecutor::kEmptyFlags,
+                                      ServiceExecutor::kDeferredTask,
                                       transport::ServiceExecutorTaskName::kSSMSourceMessage);
     }
 }

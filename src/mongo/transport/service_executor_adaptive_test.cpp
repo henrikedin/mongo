@@ -330,22 +330,19 @@ TEST_F(ServiceExecutorAdaptiveFixture, TestStarvation) {
 */
 TEST_F(ServiceExecutorAdaptiveFixture, TestRecursion) {
     auto exec = makeAndStartExecutor<RecursionOptions>();
+    auto guard = MakeGuard([&] { ASSERT_OK(exec->shutdown(config->workerThreadRunTime() * 2)); });
 
     AtomicInt32 remainingTasks{config->recursionLimit() - 1};
     stdx::mutex mutex;
     stdx::condition_variable cv;
+
     stdx::function<void()> task;
-
-    auto guard = MakeGuard([&] { ASSERT_OK(exec->shutdown(config->workerThreadRunTime() * 2)); });
-
     task = [this, &task, &exec, &mutex, &cv, &remainingTasks] {
+        log() << "Starting task recursively";
         if (remainingTasks.subtractAndFetch(1) == 0) {
-            log() << "Signaling job done";
             cv.notify_one();
             return;
         }
-
-        log() << "Starting task recursively";
 
         ASSERT_OK(exec->schedule(
             task, ServiceExecutor::kMayRecurse, ServiceExecutorTaskName::kSSMProcessMessage));
