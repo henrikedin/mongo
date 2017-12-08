@@ -229,6 +229,7 @@ private:
     AtomicWord<int64_t> _totalQueued{0};
     AtomicWord<int64_t> _totalExecuted{0};
     AtomicWord<TickSource::Tick> _totalSpentQueued{0};
+	AtomicWord<TickSource::Tick> _lastTimeSpentQueued{0};
 
     // Threads signal this condition variable when they exit so we can gracefully shutdown
     // the executor.

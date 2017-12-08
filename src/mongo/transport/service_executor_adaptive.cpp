@@ -82,9 +82,12 @@ constexpr auto kTotalExecuted = "totalExecuted"_sd;
 constexpr auto kTotalTimeExecutingUs = "totalTimeExecutingMicros"_sd;
 constexpr auto kTotalTimeRunningUs = "totalTimeRunningMicros"_sd;
 constexpr auto kTotalTimeQueuedUs = "totalTimeQueuedMicros"_sd;
+constexpr auto kLastTimeQueuedUs = "lastTimeQueuedMicros"_sd;
 constexpr auto kThreadsInUse = "threadsInUse"_sd;
 constexpr auto kThreadsRunning = "threadsRunning"_sd;
 constexpr auto kThreadsPending = "threadsPending"_sd;
+constexpr auto kCurrentQueued = "tasksQueued"_sd;
+constexpr auto kDeferredQueued = "deferredQueued"_sd;
 constexpr auto kExecutorLabel = "executor"_sd;
 constexpr auto kExecutorName = "adaptive"_sd;
 
@@ -199,6 +202,7 @@ Status ServiceExecutorAdaptive::schedule(ServiceExecutorAdaptive::Task task,
     auto wrappedTask = [ this, task = std::move(task), scheduleTime, pendingCounterPtr, taskName ] {
         pendingCounterPtr->subtractAndFetch(1);
         auto start = _tickSource->getTicks();
+		_lastTimeSpentQueued.store(start - scheduleTime);
         _totalSpentQueued.addAndFetch(start - scheduleTime);
 
         _localThreadState->threadMetrics[static_cast<size_t>(taskName)]
@@ -579,11 +583,14 @@ void ServiceExecutorAdaptive::appendStats(BSONObjBuilder* bob) const {
             << kTotalQueued << _totalQueued.load()                                           //
             << kTotalExecuted << _totalExecuted.load()                                       //
             << kThreadsInUse << _threadsInUse.load()                                         //
+			<< kCurrentQueued << _tasksQueued.load()										 //
+			<< kDeferredQueued << _deferredTasksQueued.load()								 //
             << kTotalTimeRunningUs                                                           //
             << ticksToMicros(_getThreadTimerTotal(ThreadTimer::Running, lk), _tickSource)    //
             << kTotalTimeExecutingUs                                                         //
             << ticksToMicros(_getThreadTimerTotal(ThreadTimer::Executing, lk), _tickSource)  //
             << kTotalTimeQueuedUs << ticksToMicros(_totalSpentQueued.load(), _tickSource)    //
+		    << kLastTimeQueuedUs << ticksToMicros(_lastTimeSpentQueued.load(), _tickSource)  //
             << kThreadsRunning << _threadsRunning.load()                                     //
             << kThreadsPending << _threadsPending.load();
 
