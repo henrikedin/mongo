@@ -824,7 +824,7 @@ def printLocalInfo():
 
 printLocalInfo()
 
-boostLibs = [ "filesystem", "program_options", "system", "iostreams" ]
+boostLibs = [ "filesystem", "program_options", "system", "iostreams", "log" ]
 
 onlyServer = len( COMMAND_LINE_TARGETS ) == 0 or ( len( COMMAND_LINE_TARGETS ) == 1 and str( COMMAND_LINE_TARGETS[0] ) in [ "mongod" , "mongos" , "test" ] )
 
@@ -1491,7 +1491,7 @@ elif env.TargetOSIs('windows'):
     #  merely to alert users who may have relied upon the older, non-compliant behavior.  Our code
     #  should not have any problems with the older behavior, so we can just disable this warning.
     env.Append( CCFLAGS=["/wd4355", "/wd4800", "/wd4267", "/wd4244",
-                         "/wd4290", "/wd4068", "/wd4351", "/wd4373"] )
+                         "/wd4290", "/wd4068", "/wd4351", "/wd4373", "/wd4828", "/wd4348"] )
 
     # some warnings we should treat as errors:
     # c4013

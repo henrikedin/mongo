@@ -116,10 +116,7 @@ namespace boost
             }
             else
             {
-                // If we attempted to set the data to a null pointer, don't flag an error.
-                // This happens at shutdown, where boost has a race between thread and
-                // process exit handlers.
-                BOOST_VERIFY(!new_data);
+                BOOST_VERIFY(false);
                 //boost::throw_exception(thread_resource_error());
             }
 #endif
