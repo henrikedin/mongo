@@ -43,6 +43,48 @@
 #include <asio.hpp>
 
 namespace mongo {
+	template <typename T, int N>
+	class rolling_average
+	{
+	public:
+		rolling_average()
+		{
+			//_ticks.fill(0);
+		}
+
+		void push(TickSource::Tick tick)
+		{
+			std::size_t split;
+			T old;
+			T change{ 0 };
+			do
+			{
+				do
+				{
+					split = _split.load();
+				} while (_split.compareAndSwap(split, (split + 1) % N) != split);
+
+				old = _ticks[split].load();
+				change = old - change;
+
+				T total;
+				do
+				{
+					total = _total.load();
+				} while (_total.compareAndSwap(total, total + tick - change) != total);
+			} while (_ticks[split].compareAndSwap(old, tick) != old);
+		}
+
+		T average() const { return _total.load() / N; }
+
+	private:
+		std::array<AtomicWord<T>, N> _ticks;
+		AtomicWord<std::size_t> _split;
+		AtomicWord<T> _total;
+	};
+}
+
+namespace mongo {
 namespace transport {
 
 /**
@@ -229,6 +271,8 @@ private:
     AtomicWord<int64_t> _totalQueued{0};
     AtomicWord<int64_t> _totalExecuted{0};
     AtomicWord<TickSource::Tick> _totalSpentQueued{0};
+	//AtomicWord<TickSource::Tick> _lastTimeSpendQueued{0};
+	rolling_average<TickSource::Tick, 100> _lastTimeSpendQueued;
 
     // Threads signal this condition variable when they exit so we can gracefully shutdown
     // the executor.
