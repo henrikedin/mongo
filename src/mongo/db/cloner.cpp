@@ -410,7 +410,7 @@ void Cloner::copyIndexes(OperationContext* opCtx,
     indexer.commit();
     if (opCtx->writesAreReplicated()) {
         for (auto&& infoObj : indexInfoObjs) {
-            getGlobalServiceContext()->getOpObserver()->onCreateIndex(
+			opCtx->getServiceContext()->getOpObserver()->onCreateIndex(
                 opCtx, collection->ns(), collection->uuid(), infoObj, false);
         }
     }

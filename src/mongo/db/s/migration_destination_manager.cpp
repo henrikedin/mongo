@@ -430,8 +430,7 @@ void MigrationDestinationManager::_migrateThread(BSONObj min,
                                                  OID epoch,
                                                  WriteConcernOptions writeConcern) {
     Client::initThread("migrateThread");
-    auto opCtx = Client::getCurrent()->makeOperationContext();
-
+	auto opCtx = Client::getCurrent()->makeOperationContext();
 
     if (getGlobalAuthorizationManager()->isAuthEnabled()) {
         AuthorizationSession::get(opCtx->getClient())->grantInternalAuthorization();

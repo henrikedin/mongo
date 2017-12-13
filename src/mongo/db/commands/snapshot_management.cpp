@@ -70,7 +70,7 @@ public:
              const BSONObj& cmdObj,
              BSONObjBuilder& result) {
         auto snapshotManager =
-            getGlobalServiceContext()->getGlobalStorageEngine()->getSnapshotManager();
+            opCtx->getServiceContext()->getGlobalStorageEngine()->getSnapshotManager();
         if (!snapshotManager) {
             return appendCommandStatus(result, {ErrorCodes::CommandNotSupported, ""});
         }
@@ -116,7 +116,7 @@ public:
              const BSONObj& cmdObj,
              BSONObjBuilder& result) {
         auto snapshotManager =
-            getGlobalServiceContext()->getGlobalStorageEngine()->getSnapshotManager();
+            opCtx->getServiceContext()->getGlobalStorageEngine()->getSnapshotManager();
         if (!snapshotManager) {
             return appendCommandStatus(result, {ErrorCodes::CommandNotSupported, ""});
         }

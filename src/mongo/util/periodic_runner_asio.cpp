@@ -40,9 +40,10 @@
 
 namespace mongo {
 
-PeriodicRunnerASIO::PeriodicRunnerASIO(
+PeriodicRunnerASIO::PeriodicRunnerASIO(ServiceContext* serviceContext,
     std::unique_ptr<executor::AsyncTimerFactoryInterface> timerFactory)
-    : _io_service(),
+    : _serviceContext(serviceContext),
+	  _io_service(),
       _strand(_io_service),
       _timerFactory(std::move(timerFactory)),
       _state(State::kReady) {}
@@ -104,7 +105,7 @@ void PeriodicRunnerASIO::_spawnThreads(WithLock) {
     while (_threads.size() < _jobs.size()) {
         _threads.emplace_back([this] {
             try {
-                auto client = getGlobalServiceContext()->makeClient("PeriodicRunnerASIO");
+                auto client = _serviceContext->makeClient("PeriodicRunnerASIO");
                 Client::setCurrent(std::move(client));
 
                 asio::io_service::work workItem(_io_service);

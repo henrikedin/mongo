@@ -173,7 +173,7 @@ Status renameCollectionCommon(OperationContext* opCtx,
     if (sourceDB == targetDB) {
         return writeConflictRetry(opCtx, "renameCollection", target.ns(), [&] {
             WriteUnitOfWork wunit(opCtx);
-            auto opObserver = getGlobalServiceContext()->getOpObserver();
+            auto opObserver = opCtx->getServiceContext()->getOpObserver();
             if (!targetColl) {
                 // Target collection does not exist.
                 auto stayTemp = options.stayTemp;
@@ -332,7 +332,7 @@ Status renameCollectionCommon(OperationContext* opCtx,
             WriteUnitOfWork wunit(opCtx);
             indexer.commit();
             for (auto&& infoObj : indexesToCopy) {
-                getGlobalServiceContext()->getOpObserver()->onCreateIndex(
+				opCtx->getServiceContext()->getOpObserver()->onCreateIndex(
                     opCtx, tmpName, newUUID, infoObj, false);
             }
             wunit.commit();

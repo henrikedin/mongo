@@ -101,7 +101,7 @@ mongo::Status mongo::emptyCapped(OperationContext* opCtx, const NamespaceString&
         return status;
     }
 
-    getGlobalServiceContext()->getOpObserver()->onEmptyCapped(
+	opCtx->getServiceContext()->getOpObserver()->onEmptyCapped(
         opCtx, collection->ns(), collection->uuid());
 
     wuow.commit();

@@ -39,10 +39,10 @@
 
 namespace mongo {
 
-MONGO_INITIALIZER_WITH_PREREQUISITES(
-    LoadTimeZoneDB, ("GlobalLogManager", "SetGlobalEnvironment", "EndStartupOptionStorage"))
+MONGO_INITIALIZER_WITH_PREREQUISITES(LoadTimeZoneDB,
+                                     ("GlobalLogManager", "EndStartupOptionStorage"))
 (InitializerContext* context) {
-    auto serviceContext = getGlobalServiceContext();
+    auto serviceContext = context->service_context();
     if (!serverGlobalParams.timeZoneInfoPath.empty()) {
         std::unique_ptr<timelib_tzdb, TimeZoneDatabase::TimeZoneDBDeleter> timeZoneDatabase(
             timelib_zoneinfo(const_cast<char*>(serverGlobalParams.timeZoneInfoPath.c_str())),

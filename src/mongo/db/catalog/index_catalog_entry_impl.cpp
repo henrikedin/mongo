@@ -284,7 +284,7 @@ void IndexCatalogEntryImpl::setMultikey(OperationContext* opCtx,
         // setMultikey. The reason we need is to avoid artificial WriteConflicts, which happen with
         // snapshot isolation.
         {
-            StorageEngine* storageEngine = getGlobalServiceContext()->getGlobalStorageEngine();
+            StorageEngine* storageEngine = opCtx->getServiceContext()->getGlobalStorageEngine();
 
             // This ensures that the recovery unit is not swapped for engines that do not support
             // database level locking.

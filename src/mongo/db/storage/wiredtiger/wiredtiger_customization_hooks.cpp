@@ -39,10 +39,10 @@
 namespace mongo {
 
 /* Make a WiredTigerCustomizationHooks pointer a decoration on the global ServiceContext */
-MONGO_INITIALIZER_WITH_PREREQUISITES(SetWiredTigerCustomizationHooks, ("SetGlobalEnvironment"))
+MONGO_INITIALIZER(SetWiredTigerCustomizationHooks)
 (InitializerContext* context) {
     auto customizationHooks = stdx::make_unique<WiredTigerCustomizationHooks>();
-    WiredTigerCustomizationHooks::set(getGlobalServiceContext(), std::move(customizationHooks));
+    WiredTigerCustomizationHooks::set(context->service_context(), std::move(customizationHooks));
 
     return Status::OK();
 }

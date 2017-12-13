@@ -36,6 +36,8 @@
 
 namespace mongo {
 
+	class ServiceContext;
+
 /**
  * This is the service liason to mongod for the logical session cache.
  *
@@ -50,6 +52,8 @@ namespace mongo {
  */
 class ServiceLiasonMongod : public ServiceLiason {
 public:
+	ServiceLiasonMongod(ServiceContext* svc);
+
     LogicalSessionIdSet getActiveOpSessions() const override;
     LogicalSessionIdSet getOpenCursorSessions() const override;
 
@@ -66,7 +70,10 @@ protected:
     /**
      * Returns the service context.
      */
-    ServiceContext* _context() override;
+    ServiceContext* _context() const override;
+
+private:
+	ServiceContext* _serviceContext;
 };
 
 }  // namespace mongo

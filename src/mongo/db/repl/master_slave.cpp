@@ -1306,7 +1306,7 @@ static void replMasterThread() {
 
             try {
                 WriteUnitOfWork wuow(&opCtx);
-                getGlobalServiceContext()->getOpObserver()->onOpMessage(&opCtx, BSONObj());
+				opCtx.getServiceContext()->getOpObserver()->onOpMessage(&opCtx, BSONObj());
                 wuow.commit();
             } catch (...) {
                 log() << "caught exception in replMasterThread()" << endl;

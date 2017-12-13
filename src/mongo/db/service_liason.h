@@ -36,8 +36,6 @@
 
 namespace mongo {
 
-class ServiceContext;
-
 /**
  * A service-dependent type for the LogicalSessionCache to use to find the
  * current time, schedule periodic refresh jobs, and get a list of sessions
@@ -92,7 +90,7 @@ protected:
     /**
      * Returns the service context.
      */
-    virtual ServiceContext* _context() = 0;
+    virtual ServiceContext* _context() const = 0;
 };
 
 }  // namespace mongo

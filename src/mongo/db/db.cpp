@@ -168,6 +168,9 @@
 #include "mongo/util/time_support.h"
 #include "mongo/util/version.h"
 
+#include "mongo/util/system_clock_source.h"
+#include "mongo/util/system_tick_source.h"
+
 #if !defined(_WIN32)
 #include <sys/file.h>
 #endif
@@ -683,12 +686,11 @@ void initWireSpec() {
 
 MONGO_FP_DECLARE(shutdownAtStartup);
 
-ExitCode _initAndListen(int listenPort) {
+ExitCode _initAndListen(ServiceContextMongoD* serviceContext, int listenPort) {
     Client::initThread("initandlisten");
 
     initWireSpec();
-    auto serviceContext = checked_cast<ServiceContextMongoD*>(getGlobalServiceContext());
-
+    
     serviceContext->setFastClockSource(FastClockSourceFactory::create(Milliseconds(10)));
     auto opObserverRegistry = stdx::make_unique<OpObserverRegistry>();
     opObserverRegistry->addObserver(stdx::make_unique<OpObserverImpl>());
@@ -975,7 +977,7 @@ ExitCode _initAndListen(int listenPort) {
     PeriodicTask::startRunningPeriodicTasks();
 
     // Set up the periodic runner for background job execution
-    auto runner = makePeriodicRunner();
+    auto runner = makePeriodicRunner(serviceContext);
     runner->startup().transitional_ignore();
     serviceContext->setPeriodicRunner(std::move(runner));
 
@@ -1031,9 +1033,9 @@ ExitCode _initAndListen(int listenPort) {
     return waitForShutdown();
 }
 
-ExitCode initAndListen(int listenPort) {
+ExitCode initAndListen(ServiceContextMongoD* serviceContext, int listenPort) {
     try {
-        return _initAndListen(listenPort);
+        return _initAndListen(serviceContext, listenPort);
     } catch (DBException& e) {
         log() << "exception in initAndListen: " << e.toString() << ", terminating";
         return EXIT_UNCAUGHT;
@@ -1050,8 +1052,8 @@ ExitCode initAndListen(int listenPort) {
 }
 
 #if defined(_WIN32)
-ExitCode initService() {
-    return initAndListen(serverGlobalParams.port);
+ExitCode initService(ServiceContext* serviceContext) {
+    return initAndListen(checked_cast<ServiceContextMongoD*>(serviceContext), serverGlobalParams.port);
 }
 #endif
 
@@ -1066,7 +1068,7 @@ MONGO_INITIALIZER_GENERAL(ForkServer, ("EndStartupOptionHandling"), ("default"))
  * It is intended to separate the actions from "storage" and "validation" of our startup
  * configuration.
  */
-void startupConfigActions(const std::vector<std::string>& args) {
+void startupConfigActions(ServiceContext* serviceContext, const std::vector<std::string>& args) {
     // The "command" option is deprecated.  For backward compatibility, still support the "run"
     // and "dbppath" command.  The "run" command is the same as just running mongod, so just
     // falls through.
@@ -1093,6 +1095,7 @@ void startupConfigActions(const std::vector<std::string>& args) {
 
 #ifdef _WIN32
     ntservice::configureService(initService,
+								serviceContext,
                                 moe::startupOptionsParsed,
                                 defaultServiceStrings,
                                 std::vector<std::string>(),
@@ -1163,10 +1166,9 @@ auto makeReplicationExecutor(ServiceContext* serviceContext) {
             "NetworkInterfaceASIO-Replication", nullptr, std::move(hookList)));
 }
 
-MONGO_INITIALIZER_WITH_PREREQUISITES(CreateReplicationManager,
-                                     ("SetGlobalEnvironment", "SSLManager", "default"))
+MONGO_INITIALIZER_WITH_PREREQUISITES(CreateReplicationManager, ("SSLManager", "default"))
 (InitializerContext* context) {
-    auto serviceContext = getGlobalServiceContext();
+    auto serviceContext = context->service_context();
     repl::StorageInterface::set(serviceContext, stdx::make_unique<repl::StorageInterfaceImpl>());
     auto storageInterface = repl::StorageInterface::get(serviceContext);
 
@@ -1348,6 +1350,14 @@ void shutdownTask() {
     audit::logShutdown(client);
 }
 
+auto makeMongoDServiceContext() {
+    auto service = stdx::make_unique<ServiceContextMongoD>();
+    service->setServiceEntryPoint(stdx::make_unique<ServiceEntryPointMongod>(service.get()));
+    service->setTickSource(stdx::make_unique<SystemTickSource>());
+    service->setFastClockSource(stdx::make_unique<SystemClockSource>());
+    service->setPreciseClockSource(stdx::make_unique<SystemClockSource>());
+    return service;
+}
 
 }  // namespace
 
@@ -1358,7 +1368,9 @@ int mongoDbMain(int argc, char* argv[], char** envp) {
 
     srand(static_cast<unsigned>(curTimeMicros64()));
 
-    Status status = mongo::runGlobalInitializers(argc, argv, envp);
+	auto mongodServiceContext = makeMongoDServiceContext();
+	auto serviceContext = mongodServiceContext.get();
+    Status status = mongo::runGlobalInitializers(argc, argv, envp, std::move(mongodServiceContext));
     if (!status.isOK()) {
         severe(LogComponent::kControl) << "Failed global initialization: " << status;
         quickExit(EXIT_FAILURE);
@@ -1366,7 +1378,7 @@ int mongoDbMain(int argc, char* argv[], char** envp) {
 
     ErrorExtraInfo::invariantHaveAllParsers();
 
-    startupConfigActions(std::vector<std::string>(argv, argv + argc));
+    startupConfigActions(serviceContext, std::vector<std::string>(argv, argv + argc));
     cmdline_utils::censorArgvArray(argc, argv);
 
     if (!initializeServerGlobalState())
@@ -1384,7 +1396,7 @@ int mongoDbMain(int argc, char* argv[], char** envp) {
 #endif
 
     StartupTest::runTests();
-    ExitCode exitCode = initAndListen(serverGlobalParams.port);
+    ExitCode exitCode = initAndListen(serviceContext, serverGlobalParams.port);
     exitCleanly(exitCode);
     return 0;
 }

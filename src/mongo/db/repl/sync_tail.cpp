@@ -873,13 +873,14 @@ private:
 void SyncTail::oplogApplication(ReplicationCoordinator* replCoord) {
     OpQueueBatcher batcher(this);
 
+	ServiceContext* serviceContext = replCoord->getServiceContext();
     std::unique_ptr<ApplyBatchFinalizer> finalizer{
-        getGlobalServiceContext()->getGlobalStorageEngine()->isDurable()
+		serviceContext->getGlobalStorageEngine()->isDurable()
             ? new ApplyBatchFinalizerForJournal(replCoord)
             : new ApplyBatchFinalizer(replCoord)};
 
     // Get replication consistency markers.
-    ReplicationProcess* replProcess = ReplicationProcess::get(replCoord->getServiceContext());
+    ReplicationProcess* replProcess = ReplicationProcess::get(serviceContext);
     ReplicationConsistencyMarkers* consistencyMarkers = replProcess->getConsistencyMarkers();
     OpTime minValid;
 

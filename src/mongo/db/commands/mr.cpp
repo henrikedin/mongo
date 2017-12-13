@@ -527,7 +527,7 @@ void State::prepTempCollection() {
             }
             // Log the createIndex operation.
             auto uuid = tempColl->uuid();
-            getGlobalServiceContext()->getOpObserver()->onCreateIndex(
+			_opCtx->getServiceContext()->getOpObserver()->onCreateIndex(
                 _opCtx, _config.tempNamespace, uuid, *it, false);
         }
         wuow.commit();

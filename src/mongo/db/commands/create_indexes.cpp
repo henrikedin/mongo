@@ -393,7 +393,7 @@ public:
             indexer.commit();
 
             for (auto&& infoObj : indexInfoObjs) {
-                getGlobalServiceContext()->getOpObserver()->onCreateIndex(
+                opCtx->getServiceContext()->getOpObserver()->onCreateIndex(
                     opCtx, ns, collection->uuid(), infoObj, false);
             }
 

@@ -126,7 +126,7 @@ private:
             !repl::getGlobalReplicationCoordinator()->getMemberState().readable())
             return;
 
-        TTLCollectionCache& ttlCollectionCache = TTLCollectionCache::get(getGlobalServiceContext());
+        TTLCollectionCache& ttlCollectionCache = TTLCollectionCache::get(cc().getServiceContext());
         std::vector<std::string> ttlCollections = ttlCollectionCache.getCollections();
         std::vector<BSONObj> ttlIndexes;
 

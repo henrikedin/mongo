@@ -43,6 +43,7 @@
 #include "mongo/util/exit_code.h"
 
 namespace mongo {
+	class ServiceContext;
 
 namespace optionenvironment {
 class OptionSection;
@@ -58,7 +59,7 @@ struct NtServiceDefaultStrings {
     const wchar_t* serviceDescription;
 };
 
-typedef ExitCode (*ServiceCallback)(void);
+typedef ExitCode (*ServiceCallback)(mongo::ServiceContext*);
 
 /**
  * Configure the service.
@@ -73,6 +74,7 @@ typedef ExitCode (*ServiceCallback)(void);
  * the service as a regular process, depending on the return value of shouldStartService().
  */
 void configureService(ServiceCallback serviceCallback,
+					  mongo::ServiceContext* serviceContext,
                       const moe::Environment& params,
                       const NtServiceDefaultStrings& defaultStrings,
                       const std::vector<std::string>& disallowedOptions,

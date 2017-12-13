@@ -47,7 +47,7 @@ class OperationContext;
  */
 class CollectionInfoCacheImpl : public CollectionInfoCache::Impl {
 public:
-    explicit CollectionInfoCacheImpl(Collection* collection, const NamespaceString& ns);
+    explicit CollectionInfoCacheImpl(Collection* collection, ServiceContext* serviceContext, const NamespaceString& ns);
 
     ~CollectionInfoCacheImpl();
 
@@ -118,6 +118,7 @@ private:
     void rebuildIndexData(OperationContext* opCtx);
 
     Collection* _collection;  // not owned
+	ServiceContext* _serviceContext;
     const NamespaceString _ns;
 
     // ---  index keys cache

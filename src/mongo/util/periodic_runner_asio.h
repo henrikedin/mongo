@@ -39,6 +39,7 @@
 namespace mongo {
 
 class Client;
+class ServiceContext;
 
 /**
  * A PeriodicRunner implementation that uses the ASIO library's eventing system
@@ -65,7 +66,7 @@ public:
     /**
      * Construct a new instance of this class using the provided timer factory.
      */
-    explicit PeriodicRunnerASIO(std::unique_ptr<executor::AsyncTimerFactoryInterface> timerFactory);
+    explicit PeriodicRunnerASIO(ServiceContext* serviceContext, std::unique_ptr<executor::AsyncTimerFactoryInterface> timerFactory);
 
     ~PeriodicRunnerASIO();
 
@@ -110,6 +111,7 @@ private:
 
     void _spawnThreads(WithLock);
 
+	ServiceContext* _serviceContext;
     asio::io_service _io_service;
     asio::io_service::strand _strand;
 

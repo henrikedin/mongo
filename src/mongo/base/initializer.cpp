@@ -28,6 +28,7 @@
 #include "mongo/base/initializer.h"
 
 #include "mongo/base/global_initializer.h"
+#include "mongo/db/service_context.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/quick_exit.h"
 #include <iostream>
@@ -38,13 +39,14 @@ Initializer::Initializer() {}
 Initializer::~Initializer() {}
 
 Status Initializer::execute(const InitializerContext::ArgumentVector& args,
-                            const InitializerContext::EnvironmentMap& env) const {
+                            const InitializerContext::EnvironmentMap& env,
+                            std::unique_ptr<ServiceContext> serviceContext) const {
     std::vector<std::string> sortedNodes;
     Status status = _graph.topSort(&sortedNodes);
     if (Status::OK() != status)
         return status;
 
-    InitializerContext context(args, env);
+    InitializerContext context(args, env, std::move(serviceContext));
 
     for (size_t i = 0; i < sortedNodes.size(); ++i) {
         InitializerFunction fn = _graph.getInitializerFunction(sortedNodes[i]);
@@ -66,11 +68,15 @@ Status Initializer::execute(const InitializerContext::ArgumentVector& args,
 }
 
 Status runGlobalInitializers(const InitializerContext::ArgumentVector& args,
-                             const InitializerContext::EnvironmentMap& env) {
-    return getGlobalInitializer().execute(args, env);
+                             const InitializerContext::EnvironmentMap& env,
+                             std::unique_ptr<ServiceContext> serviceContext) {
+    return getGlobalInitializer().execute(args, env, std::move(serviceContext));
 }
 
-Status runGlobalInitializers(int argc, const char* const* argv, const char* const* envp) {
+Status runGlobalInitializers(int argc,
+                             const char* const* argv,
+                             const char* const* envp,
+                             std::unique_ptr<ServiceContext> serviceContext) {
     InitializerContext::ArgumentVector args(argc);
     std::copy(argv, argv + argc, args.begin());
 
@@ -86,11 +92,14 @@ Status runGlobalInitializers(int argc, const char* const* argv, const char* cons
         }
     }
 
-    return runGlobalInitializers(args, env);
+    return runGlobalInitializers(args, env, std::move(serviceContext));
 }
 
-void runGlobalInitializersOrDie(int argc, const char* const* argv, const char* const* envp) {
-    Status status = runGlobalInitializers(argc, argv, envp);
+void runGlobalInitializersOrDie(int argc,
+                                const char* const* argv,
+                                const char* const* envp,
+                                std::unique_ptr<ServiceContext> serviceContext) {
+    Status status = runGlobalInitializers(argc, argv, envp, std::move(serviceContext));
     if (!status.isOK()) {
         std::cerr << "Failed global initialization: " << status << std::endl;
         quickExit(1);

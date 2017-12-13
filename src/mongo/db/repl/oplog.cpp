@@ -276,7 +276,7 @@ void createIndexForApplyOps(OperationContext* opCtx,
     if (incrementOpsAppliedStats) {
         incrementOpsAppliedStats();
     }
-    getGlobalServiceContext()->getOpObserver()->onCreateIndex(
+    opCtx->getServiceContext()->getOpObserver()->onCreateIndex(
         opCtx, indexNss, indexCollection->uuid(), indexSpec, false);
 }
 
@@ -624,7 +624,7 @@ void createOplog(OperationContext* opCtx, const std::string& oplogCollectionName
     });
 
     /* sync here so we don't get any surprising lag later when we try to sync */
-    StorageEngine* storageEngine = getGlobalServiceContext()->getGlobalStorageEngine();
+    StorageEngine* storageEngine = opCtx->getServiceContext()->getGlobalStorageEngine();
     storageEngine->flushAllFiles(opCtx, true);
 
     log() << "******" << endl;

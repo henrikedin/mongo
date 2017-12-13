@@ -37,6 +37,8 @@
 
 namespace mongo {
 
+class ServiceContext;
+
 /**
  * Class representing an initialization process.
  *
@@ -66,7 +68,8 @@ public:
      * and the thing being initialized should be considered dead in the water.
      */
     Status execute(const InitializerContext::ArgumentVector& args,
-                   const InitializerContext::EnvironmentMap& env) const;
+                   const InitializerContext::EnvironmentMap& env,
+                   std::unique_ptr<ServiceContext> serviceContext) const;
 
 private:
     InitializerDependencyGraph _graph;
@@ -82,14 +85,21 @@ private:
  * should probably arrange to terminate the process themselves.
  */
 Status runGlobalInitializers(const InitializerContext::ArgumentVector& args,
-                             const InitializerContext::EnvironmentMap& env);
+                             const InitializerContext::EnvironmentMap& env,
+                             std::unique_ptr<ServiceContext> serviceContext);
 
-Status runGlobalInitializers(int argc, const char* const* argv, const char* const* envp);
+Status runGlobalInitializers(int argc,
+                             const char* const* argv,
+                             const char* const* envp,
+                             std::unique_ptr<ServiceContext> serviceContext);
 
 /**
  * Same as runGlobalInitializers(), except prints a brief message to std::cerr
  * and terminates the process on failure.
  */
-void runGlobalInitializersOrDie(int argc, const char* const* argv, const char* const* envp);
+void runGlobalInitializersOrDie(int argc,
+                                const char* const* argv,
+                                const char* const* envp,
+                                std::unique_ptr<ServiceContext> serviceContext);
 
 }  // namespace mongo

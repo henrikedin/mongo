@@ -41,10 +41,10 @@
 namespace mongo {
 
 /* Make a EncryptionHooks pointer a decoration on the global ServiceContext */
-MONGO_INITIALIZER_WITH_PREREQUISITES(SetEncryptionHooks, ("SetGlobalEnvironment"))
+MONGO_INITIALIZER(SetEncryptionHooks)
 (InitializerContext* context) {
     auto encryptionHooks = stdx::make_unique<EncryptionHooks>();
-    EncryptionHooks::set(getGlobalServiceContext(), std::move(encryptionHooks));
+    EncryptionHooks::set(context->service_context(), std::move(encryptionHooks));
 
     return Status::OK();
 }

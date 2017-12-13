@@ -463,7 +463,7 @@ Status applyOps(OperationContext* opCtx,
 
                 const BSONObj cmdRewritten = cmdBuilder.done();
 
-                auto opObserver = getGlobalServiceContext()->getOpObserver();
+                auto opObserver = opCtx->getServiceContext()->getOpObserver();
                 invariant(opObserver);
                 opObserver->onApplyOps(opCtx, dbName, cmdRewritten);
             }

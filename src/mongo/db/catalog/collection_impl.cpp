@@ -366,7 +366,7 @@ Status CollectionImpl::insertDocuments(OperationContext* opCtx,
         return status;
     invariant(sid == opCtx->recoveryUnit()->getSnapshotId());
 
-    getGlobalServiceContext()->getOpObserver()->onInserts(
+	opCtx->getServiceContext()->getOpObserver()->onInserts(
         opCtx, ns(), uuid(), begin, end, fromMigrate);
 
     opCtx->recoveryUnit()->onCommit([this]() { notifyCappedWaitersIfNeeded(); });
@@ -435,7 +435,7 @@ Status CollectionImpl::insertDocument(OperationContext* opCtx,
     }
     inserts.emplace_back(kUninitializedStmtId, doc, slot);
 
-    getGlobalServiceContext()->getOpObserver()->onInserts(
+	opCtx->getServiceContext()->getOpObserver()->onInserts(
         opCtx, ns(), uuid(), inserts.begin(), inserts.end(), false);
 
     opCtx->recoveryUnit()->onCommit([this]() { notifyCappedWaitersIfNeeded(); });
@@ -546,7 +546,7 @@ void CollectionImpl::deleteDocument(OperationContext* opCtx,
     }
 
     Snapshotted<BSONObj> doc = docFor(opCtx, loc);
-    getGlobalServiceContext()->getOpObserver()->aboutToDelete(opCtx, ns(), doc.value());
+	opCtx->getServiceContext()->getOpObserver()->aboutToDelete(opCtx, ns(), doc.value());
 
     boost::optional<BSONObj> deletedDoc;
     if (storeDeletedDoc == Collection::StoreDeletedDoc::On) {
@@ -564,7 +564,7 @@ void CollectionImpl::deleteDocument(OperationContext* opCtx,
 
     _recordStore->deleteRecord(opCtx, loc);
 
-    getGlobalServiceContext()->getOpObserver()->onDelete(
+	opCtx->getServiceContext()->getOpObserver()->onDelete(
         opCtx, ns(), uuid(), stmtId, fromMigrate, deletedDoc);
 }
 
@@ -685,7 +685,7 @@ RecordId CollectionImpl::updateDocument(OperationContext* opCtx,
     invariant(sid == opCtx->recoveryUnit()->getSnapshotId());
     args->updatedDoc = newDoc;
 
-    getGlobalServiceContext()->getOpObserver()->onUpdate(opCtx, *args);
+	opCtx->getServiceContext()->getOpObserver()->onUpdate(opCtx, *args);
 
     return {oldLocation};
 }
@@ -733,7 +733,7 @@ StatusWith<RecordId> CollectionImpl::_updateDocumentWithMove(OperationContext* o
     invariant(sid == opCtx->recoveryUnit()->getSnapshotId());
     args->updatedDoc = newDoc;
 
-    getGlobalServiceContext()->getOpObserver()->onUpdate(opCtx, *args);
+	opCtx->getServiceContext()->getOpObserver()->onUpdate(opCtx, *args);
 
     moveCounter.increment();
     if (opDebug) {
@@ -780,7 +780,7 @@ StatusWith<RecordData> CollectionImpl::updateDocumentWithDamages(
     if (newRecStatus.isOK()) {
         args->updatedDoc = newRecStatus.getValue().toBson();
 
-        getGlobalServiceContext()->getOpObserver()->onUpdate(opCtx, *args);
+        opCtx->getServiceContext()->getOpObserver()->onUpdate(opCtx, *args);
     }
     return newRecStatus;
 }

@@ -93,7 +93,6 @@ MONGO_EXPORT_STARTUP_SERVER_PARAMETER(startupAuthSchemaValidation, bool, true);
 MONGO_INITIALIZER_WITH_PREREQUISITES(CreateAuthorizationManager,
                                      ("SetupInternalSecurityUser",
                                       "OIDGeneration",
-                                      "SetGlobalEnvironment",
                                       "CreateAuthorizationExternalStateFactory",
                                       "EndStartupOptionStorage"))
 (InitializerContext* context) {
@@ -102,7 +101,7 @@ MONGO_INITIALIZER_WITH_PREREQUISITES(CreateAuthorizationManager,
     authzManager->setAuthEnabled(serverGlobalParams.authState ==
                                  ServerGlobalParams::AuthState::kEnabled);
     authzManager->setShouldValidateAuthSchemaOnStartup(startupAuthSchemaValidation);
-    AuthorizationManager::set(getGlobalServiceContext(), std::move(authzManager));
+    AuthorizationManager::set(context->service_context(), std::move(authzManager));
     return Status::OK();
 }
 

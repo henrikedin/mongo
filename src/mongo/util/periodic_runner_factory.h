@@ -33,10 +33,11 @@
 #include "mongo/util/periodic_runner.h"
 
 namespace mongo {
+	class ServiceContext;
 
 /**
  * Returns a new PeriodicRunner.
  */
-std::unique_ptr<PeriodicRunner> makePeriodicRunner();
+std::unique_ptr<PeriodicRunner> makePeriodicRunner(ServiceContext* serviceContext);
 
 }  // namespace mongo

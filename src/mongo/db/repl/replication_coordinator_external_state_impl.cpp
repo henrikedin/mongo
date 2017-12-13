@@ -359,7 +359,7 @@ OldThreadPool* ReplicationCoordinatorExternalStateImpl::getDbWorkThreadPool() co
 Status ReplicationCoordinatorExternalStateImpl::runRepairOnLocalDB(OperationContext* opCtx) {
     try {
         Lock::GlobalWrite globalWrite(opCtx);
-        StorageEngine* engine = getGlobalServiceContext()->getGlobalStorageEngine();
+        StorageEngine* engine = opCtx->getServiceContext()->getGlobalStorageEngine();
 
         if (!engine->isMmapV1()) {
             return Status::OK();

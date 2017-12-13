@@ -28,12 +28,14 @@
 #pragma once
 
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
 
 #include "mongo/base/disallow_copying.h"
 
 namespace mongo {
+class ServiceContext;
 
 /**
  * Context of an initialization process.  Passed as a parameter to initialization functions.
@@ -47,7 +49,9 @@ public:
     typedef std::vector<std::string> ArgumentVector;
     typedef std::map<std::string, std::string> EnvironmentMap;
 
-    InitializerContext(const ArgumentVector& args, const EnvironmentMap& env);
+    InitializerContext(const ArgumentVector& args,
+                       const EnvironmentMap& env,
+                       std::unique_ptr<ServiceContext> serviceContext);
 
     const ArgumentVector& args() const {
         return _args;
@@ -55,6 +59,7 @@ public:
     const EnvironmentMap& env() const {
         return _env;
     }
+    ServiceContext* service_context() const;
 
 private:
     ArgumentVector _args;

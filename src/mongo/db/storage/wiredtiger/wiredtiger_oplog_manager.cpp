@@ -60,7 +60,7 @@ void WiredTigerOplogManager::start(OperationContext* opCtx,
     auto lastRecord = reverseOplogCursor->next();
     _oplogMaxAtStartup = lastRecord ? lastRecord->id : RecordId();
 
-    auto replCoord = repl::ReplicationCoordinator::get(getGlobalServiceContext());
+    auto replCoord = repl::ReplicationCoordinator::get(opCtx->getServiceContext());
     bool isMasterSlave = false;
     if (replCoord) {
         isMasterSlave =

@@ -45,7 +45,7 @@ LogicalSessionIdSet ServiceLiasonMongos::getActiveOpSessions() const {
     invariant(hasGlobalServiceContext());
 
     // Append any in-use session ids from the global cluster cursor managers.
-    auto cursorManager = Grid::get(getGlobalServiceContext())->getCursorManager();
+    auto cursorManager = Grid::get(_context())->getCursorManager();
     cursorManager->appendActiveSessions(&activeSessions);
 
     return activeSessions;
@@ -59,26 +59,26 @@ LogicalSessionIdSet ServiceLiasonMongos::getOpenCursorSessions() const {
 
 void ServiceLiasonMongos::scheduleJob(PeriodicRunner::PeriodicJob job) {
     invariant(hasGlobalServiceContext());
-    getGlobalServiceContext()->getPeriodicRunner()->scheduleJob(std::move(job));
+    _context()->getPeriodicRunner()->scheduleJob(std::move(job));
 }
 
 void ServiceLiasonMongos::join() {
     invariant(hasGlobalServiceContext());
-    getGlobalServiceContext()->getPeriodicRunner()->shutdown();
+    _context()->getPeriodicRunner()->shutdown();
 }
 
 Date_t ServiceLiasonMongos::now() const {
     invariant(hasGlobalServiceContext());
-    return getGlobalServiceContext()->getFastClockSource()->now();
+    return _context()->getFastClockSource()->now();
 }
 
-ServiceContext* ServiceLiasonMongos::_context() {
+ServiceContext* ServiceLiasonMongos::_context() const {
     return getGlobalServiceContext();
 }
 
 std::pair<Status, int> ServiceLiasonMongos::killCursorsWithMatchingSessions(
     OperationContext* opCtx, const SessionKiller::Matcher& matcher) {
-    auto cursorManager = Grid::get(getGlobalServiceContext())->getCursorManager();
+    auto cursorManager = Grid::get(_context())->getCursorManager();
     return cursorManager->killCursorsWithMatchingSessions(opCtx, matcher);
 }
 

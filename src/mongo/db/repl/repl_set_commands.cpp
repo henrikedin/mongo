@@ -102,7 +102,7 @@ public:
                      BSONObjBuilder& result) {
         log() << "replSetTest command received: " << cmdObj.toString();
 
-        auto replCoord = ReplicationCoordinator::get(getGlobalServiceContext());
+        auto replCoord = ReplicationCoordinator::get(opCtx->getServiceContext());
 
         if (cmdObj.hasElement("waitForMemberState")) {
             long long stateVal;
@@ -446,7 +446,7 @@ public:
         if (status.isOK() && !parsedArgs.force) {
             // Users must not be allowed to provide their own contents for the o2 field.
             // o2 field of no-ops is supposed to be used internally.
-            getGlobalServiceContext()->getOpObserver()->onOpMessage(
+            opCtx->getServiceContext()->getOpObserver()->onOpMessage(
                 opCtx,
                 BSON("msg"
                      << "Reconfig set"
@@ -677,7 +677,7 @@ namespace {
  */
 bool replHasDatabases(OperationContext* opCtx) {
     std::vector<string> names;
-    StorageEngine* storageEngine = getGlobalServiceContext()->getGlobalStorageEngine();
+    StorageEngine* storageEngine = opCtx->getServiceContext()->getGlobalStorageEngine();
     storageEngine->listDatabases(&names);
 
     if (names.size() >= 2)

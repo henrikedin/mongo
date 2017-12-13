@@ -161,7 +161,7 @@ Database* DatabaseHolderImpl::openDb(OperationContext* opCtx, StringData ns, boo
     // requirement for X-lock on the database when we enter. So there is no way we can insert two
     // different databases for the same name.
     lk.unlock();
-    StorageEngine* storageEngine = getGlobalServiceContext()->getGlobalStorageEngine();
+    StorageEngine* storageEngine = opCtx->getServiceContext()->getGlobalStorageEngine();
     DatabaseCatalogEntry* entry = storageEngine->getDatabaseCatalogEntry(opCtx, dbname);
 
     if (!entry->exists()) {
@@ -207,7 +207,7 @@ void DatabaseHolderImpl::close(OperationContext* opCtx, StringData ns, const std
 
     _dbs.erase(it);
 
-    getGlobalServiceContext()
+	opCtx->getServiceContext()
         ->getGlobalStorageEngine()
         ->closeDatabase(opCtx, dbName.toString())
         .transitional_ignore();
@@ -246,7 +246,7 @@ bool DatabaseHolderImpl::closeAll(OperationContext* opCtx,
 
         _dbs.erase(name);
 
-        getGlobalServiceContext()
+		opCtx->getServiceContext()
             ->getGlobalStorageEngine()
             ->closeDatabase(opCtx, name)
             .transitional_ignore();

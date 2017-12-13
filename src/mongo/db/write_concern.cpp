@@ -186,7 +186,7 @@ Status waitForWriteConcern(OperationContext* opCtx,
         case WriteConcernOptions::SyncMode::NONE:
             break;
         case WriteConcernOptions::SyncMode::FSYNC: {
-            StorageEngine* storageEngine = getGlobalServiceContext()->getGlobalStorageEngine();
+            StorageEngine* storageEngine = opCtx->getServiceContext()->getGlobalStorageEngine();
             if (!storageEngine->isDurable()) {
                 result->fsyncFiles = storageEngine->flushAllFiles(opCtx, true);
             } else {

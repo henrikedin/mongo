@@ -50,27 +50,29 @@
 
 namespace mongo {
 namespace {
-MONGO_INITIALIZER(InitializeCollectionInfoCacheFactory)(InitializerContext* const) {
+MONGO_INITIALIZER(InitializeCollectionInfoCacheFactory)(InitializerContext* const context) {
+	ServiceContext* serviceContext = context->service_context();
     CollectionInfoCache::registerFactory(
-        [](Collection* const collection, const NamespaceString& ns) {
-            return stdx::make_unique<CollectionInfoCacheImpl>(collection, ns);
+        [serviceContext](Collection* const collection, const NamespaceString& ns) {
+            return stdx::make_unique<CollectionInfoCacheImpl>(collection, serviceContext, ns);
         });
     return Status::OK();
 }
 }  // namespace
 
-CollectionInfoCacheImpl::CollectionInfoCacheImpl(Collection* collection, const NamespaceString& ns)
+CollectionInfoCacheImpl::CollectionInfoCacheImpl(Collection* collection, ServiceContext* serviceContext, const NamespaceString& ns)
     : _collection(collection),
+	  _serviceContext(serviceContext),
       _ns(ns),
       _keysComputed(false),
       _planCache(stdx::make_unique<PlanCache>(ns.ns())),
       _querySettings(stdx::make_unique<QuerySettings>()),
-      _indexUsageTracker(getGlobalServiceContext()->getPreciseClockSource()) {}
+      _indexUsageTracker(serviceContext->getPreciseClockSource()) {}
 
 CollectionInfoCacheImpl::~CollectionInfoCacheImpl() {
     // Necessary because the collection cache will not explicitly get updated upon database drop.
     if (_hasTTLIndex) {
-        TTLCollectionCache& ttlCollectionCache = TTLCollectionCache::get(getGlobalServiceContext());
+        TTLCollectionCache& ttlCollectionCache = TTLCollectionCache::get(_serviceContext);
         ttlCollectionCache.unregisterCollection(_ns);
     }
 }
@@ -138,7 +140,7 @@ void CollectionInfoCacheImpl::computeIndexKeys(OperationContext* opCtx) {
         }
     }
 
-    TTLCollectionCache& ttlCollectionCache = TTLCollectionCache::get(getGlobalServiceContext());
+    TTLCollectionCache& ttlCollectionCache = TTLCollectionCache::get(_serviceContext);
 
     if (_hasTTLIndex != hadTTLIndex) {
         if (_hasTTLIndex) {

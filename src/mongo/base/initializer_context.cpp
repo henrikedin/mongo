@@ -26,10 +26,19 @@
  */
 
 #include "mongo/base/initializer_context.h"
+#include "mongo/db/service_context.h"
 
 namespace mongo {
 
-InitializerContext::InitializerContext(const ArgumentVector& args, const EnvironmentMap& env)
-    : _args(args), _env(env) {}
+InitializerContext::InitializerContext(const ArgumentVector& args,
+                                       const EnvironmentMap& env,
+                                       std::unique_ptr<ServiceContext> serviceContext)
+    : _args(args), _env(env) {
+    setGlobalServiceContext(std::move(serviceContext));
+}
+
+ServiceContext* InitializerContext::service_context() const {
+    return getGlobalServiceContext();
+}
 
 }  // namespace mongo

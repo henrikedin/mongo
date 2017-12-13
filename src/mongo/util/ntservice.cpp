@@ -60,6 +60,7 @@ bool _startService = false;
 SERVICE_STATUS_HANDLE _statusHandle = NULL;
 wstring _serviceName;
 ServiceCallback _serviceCallback = NULL;
+ServiceContext* _serviceContext = NULL;
 }  // namespace
 
 static void installServiceOrDie(const wstring& serviceName,
@@ -82,6 +83,7 @@ static DWORD WINAPI serviceCtrl(DWORD dwControl,
                                 LPVOID lpContext);
 
 void configureService(ServiceCallback serviceCallback,
+					  mongo::ServiceContext* serviceContext,
                       const moe::Environment& params,
                       const NtServiceDefaultStrings& defaultStrings,
                       const std::vector<std::string>& disallowedOptions,
@@ -90,6 +92,7 @@ void configureService(ServiceCallback serviceCallback,
     bool removeService = false;
     bool reinstallService = false;
 
+	_serviceContext = serviceContext;
     _serviceCallback = serviceCallback;
 
     int badOption = -1;
@@ -557,7 +560,7 @@ static void WINAPI initService(DWORD argc, LPTSTR* argv) {
 
     reportStatus(SERVICE_START_PENDING, 1000);
 
-    ExitCode exitCode = _serviceCallback();
+    ExitCode exitCode = _serviceCallback(_serviceContext);
 
     // During clean shutdown, ie NT SCM signals us, _serviceCallback returns here
     // as part of the listener loop terminating.

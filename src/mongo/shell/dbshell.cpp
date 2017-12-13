@@ -736,7 +736,7 @@ int _main(int argc, char* argv[], char** envp) {
 
     mongo::shell_utils::RecordMyLocation(argv[0]);
 
-    mongo::runGlobalInitializersOrDie(argc, argv, envp);
+    mongo::runGlobalInitializersOrDie(argc, argv, envp, nullptr); // add ServiceContext for mongo
 
     // hide password from ps output
     for (int i = 0; i < (argc - 1); ++i) {

@@ -233,7 +233,7 @@ Status initializeGlobalShardingState(OperationContext* opCtx,
         makeCatalogClient(opCtx->getServiceContext(), distLockProcessId),
         std::move(catalogCache),
         stdx::make_unique<ShardRegistry>(std::move(shardFactory), configCS),
-        stdx::make_unique<ClusterCursorManager>(getGlobalServiceContext()->getPreciseClockSource()),
+        stdx::make_unique<ClusterCursorManager>(opCtx->getServiceContext()->getPreciseClockSource()),
         stdx::make_unique<BalancerConfiguration>(),
         std::move(executorPool),
         networkPtr);

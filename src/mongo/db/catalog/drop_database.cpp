@@ -82,7 +82,7 @@ Status _finishDropDatabase(OperationContext* opCtx, const std::string& dbName, D
     }
 
     WriteUnitOfWork wunit(opCtx);
-    getGlobalServiceContext()->getOpObserver()->onDropDatabase(opCtx, dbName);
+	opCtx->getServiceContext()->getOpObserver()->onDropDatabase(opCtx, dbName);
     wunit.commit();
 
     return Status::OK();

@@ -40,14 +40,17 @@
 
 namespace mongo {
 
+	ServiceLiasonMongod::ServiceLiasonMongod(ServiceContext* svc)
+		:_serviceContext(svc)
+	{
+		invariant(_serviceContext);
+	}
+
 LogicalSessionIdSet ServiceLiasonMongod::getActiveOpSessions() const {
     LogicalSessionIdSet activeSessions;
 
-    invariant(hasGlobalServiceContext());
-
     // Walk through the service context and append lsids for all currently-running ops.
-    for (ServiceContext::LockedClientsCursor cursor(getGlobalServiceContext());
-         Client* client = cursor.next();) {
+    for (ServiceContext::LockedClientsCursor cursor(_context()); Client* client = cursor.next();) {
 
         stdx::lock_guard<Client> lk(*client);
         auto clientOpCtx = client->getOperationContext();
@@ -85,22 +88,19 @@ LogicalSessionIdSet ServiceLiasonMongod::getOpenCursorSessions() const {
 }
 
 void ServiceLiasonMongod::scheduleJob(PeriodicRunner::PeriodicJob job) {
-    invariant(hasGlobalServiceContext());
-    getGlobalServiceContext()->getPeriodicRunner()->scheduleJob(std::move(job));
+    _context()->getPeriodicRunner()->scheduleJob(std::move(job));
 }
 
 void ServiceLiasonMongod::join() {
-    invariant(hasGlobalServiceContext());
-    getGlobalServiceContext()->getPeriodicRunner()->shutdown();
+    _context()->getPeriodicRunner()->shutdown();
 }
 
 Date_t ServiceLiasonMongod::now() const {
-    invariant(hasGlobalServiceContext());
-    return getGlobalServiceContext()->getFastClockSource()->now();
+    return _context()->getFastClockSource()->now();
 }
 
-ServiceContext* ServiceLiasonMongod::_context() {
-    return getGlobalServiceContext();
+ServiceContext* ServiceLiasonMongod::_context() const {
+    return _serviceContext;
 }
 
 std::pair<Status, int> ServiceLiasonMongod::killCursorsWithMatchingSessions(

@@ -166,9 +166,9 @@ public:
 };
 }  // namespace
 
-MONGO_INITIALIZER_WITH_PREREQUISITES(WiredTigerEngineInit, ("SetGlobalEnvironment"))
+MONGO_INITIALIZER(WiredTigerEngineInit)
 (InitializerContext* context) {
-    getGlobalServiceContext()->registerStorageEngine(kWiredTigerEngineName,
+    context->service_context()->registerStorageEngine(kWiredTigerEngineName,
                                                      new WiredTigerFactory());
 
     return Status::OK();

@@ -174,7 +174,7 @@ Status waitForSigningKeys(OperationContext* opCtx) {
 #if defined(_WIN32)
 ntservice::NtServiceDefaultStrings defaultServiceStrings = {
     L"MongoS", L"MongoDB Router", L"MongoDB Sharding Router"};
-static ExitCode initService();
+static ExitCode initService(ServiceContext* serviceContext);
 #endif
 
 #if !defined(__has_feature)
@@ -337,38 +337,38 @@ static void _initWireSpec() {
     spec.isInternalClient = true;
 }
 
-static ExitCode runMongosServer() {
+static ExitCode runMongosServer(ServiceContext* serviceContext) {
     Client::initThread("mongosMain");
     printShardingVersionInfo(false);
 
     _initWireSpec();
 
-    auto sep = stdx::make_unique<ServiceEntryPointMongos>(getGlobalServiceContext());
-    getGlobalServiceContext()->setServiceEntryPoint(std::move(sep));
+    auto sep = stdx::make_unique<ServiceEntryPointMongos>(serviceContext);
+	serviceContext->setServiceEntryPoint(std::move(sep));
 
     auto tl = transport::TransportLayerManager::createWithConfig(&serverGlobalParams,
-                                                                 getGlobalServiceContext());
+		serviceContext);
     auto res = tl->setup();
     if (!res.isOK()) {
         error() << "Failed to set up listener: " << res;
         return EXIT_NET_ERROR;
     }
-    getGlobalServiceContext()->setTransportLayer(std::move(tl));
+	serviceContext->setTransportLayer(std::move(tl));
 
     auto unshardedHookList = stdx::make_unique<rpc::EgressMetadataHookList>();
     unshardedHookList->addHook(
-        stdx::make_unique<rpc::LogicalTimeMetadataHook>(getGlobalServiceContext()));
+        stdx::make_unique<rpc::LogicalTimeMetadataHook>(serviceContext));
     unshardedHookList->addHook(
-        stdx::make_unique<rpc::ShardingEgressMetadataHookForMongos>(getGlobalServiceContext()));
+        stdx::make_unique<rpc::ShardingEgressMetadataHookForMongos>(serviceContext));
 
     // Add sharding hooks to both connection pools - ShardingConnectionHook includes auth hooks
     globalConnPool.addHook(new ShardingConnectionHook(false, std::move(unshardedHookList)));
 
     auto shardedHookList = stdx::make_unique<rpc::EgressMetadataHookList>();
     shardedHookList->addHook(
-        stdx::make_unique<rpc::LogicalTimeMetadataHook>(getGlobalServiceContext()));
+        stdx::make_unique<rpc::LogicalTimeMetadataHook>(serviceContext));
     shardedHookList->addHook(
-        stdx::make_unique<rpc::ShardingEgressMetadataHookForMongos>(getGlobalServiceContext()));
+        stdx::make_unique<rpc::ShardingEgressMetadataHookForMongos>(serviceContext));
 
     shardConnectionPool.addHook(new ShardingConnectionHook(true, std::move(shardedHookList)));
 
@@ -432,29 +432,29 @@ static ExitCode runMongosServer() {
     PeriodicTask::startRunningPeriodicTasks();
 
     // Set up the periodic runner for background job execution
-    auto runner = makePeriodicRunner();
+    auto runner = makePeriodicRunner(serviceContext);
     runner->startup().transitional_ignore();
-    getGlobalServiceContext()->setPeriodicRunner(std::move(runner));
+	serviceContext->setPeriodicRunner(std::move(runner));
 
     SessionKiller::set(
-        getGlobalServiceContext(),
-        std::make_shared<SessionKiller>(getGlobalServiceContext(), killSessionsRemote));
+		serviceContext,
+        std::make_shared<SessionKiller>(serviceContext, killSessionsRemote));
 
     // Set up the logical session cache
-    LogicalSessionCache::set(getGlobalServiceContext(), makeLogicalSessionCacheS());
+    LogicalSessionCache::set(serviceContext, makeLogicalSessionCacheS());
 
-    auto start = getGlobalServiceContext()->getServiceExecutor()->start();
+    auto start = serviceContext->getServiceExecutor()->start();
     if (!start.isOK()) {
         error() << "Failed to start the service executor: " << start;
         return EXIT_NET_ERROR;
     }
 
-    start = getGlobalServiceContext()->getTransportLayer()->start();
+    start = serviceContext->getTransportLayer()->start();
     if (!start.isOK()) {
         return EXIT_NET_ERROR;
     }
 
-    getGlobalServiceContext()->notifyStartupComplete();
+	serviceContext->notifyStartupComplete();
 #if !defined(_WIN32)
     mongo::signalForkSuccess();
 #else
@@ -490,24 +490,24 @@ MONGO_INITIALIZER_WITH_PREREQUISITES(SetFeatureCompatibilityVersion36, ("EndStar
  * This function should contain the startup "actions" that we take based on the startup config.  It
  * is intended to separate the actions from "storage" and "validation" of our startup configuration.
  */
-static void startupConfigActions(const std::vector<std::string>& argv) {
+static void startupConfigActions(ServiceContext* serviceContext, const std::vector<std::string>& argv) {
 #if defined(_WIN32)
     vector<string> disallowedOptions;
     disallowedOptions.push_back("upgrade");
     ntservice::configureService(
-        initService, moe::startupOptionsParsed, defaultServiceStrings, disallowedOptions, argv);
+        initService, serviceContext, moe::startupOptionsParsed, defaultServiceStrings, disallowedOptions, argv);
 #endif
 }
 
-static int _main() {
+static int _main(ServiceContext* serviceContext) {
     if (!initializeServerGlobalState())
         return EXIT_FAILURE;
 
     startSignalProcessingThread();
 
-    getGlobalServiceContext()->setFastClockSource(FastClockSourceFactory::create(Milliseconds{10}));
+	serviceContext->setFastClockSource(FastClockSourceFactory::create(Milliseconds{10}));
 
-    auto shardingContext = Grid::get(getGlobalServiceContext());
+    auto shardingContext = Grid::get(serviceContext);
 
     // we either have a setting where all processes are in localhost or none are
     std::vector<HostAndPort> configServers = mongosGlobalParams.configdbs.getServers();
@@ -535,13 +535,13 @@ static int _main() {
     }
 #endif
 
-    return runMongosServer();
+    return runMongosServer(serviceContext);
 }
 
 #if defined(_WIN32)
 namespace mongo {
-static ExitCode initService() {
-    return runMongosServer();
+static ExitCode initService(ServiceContext* serviceContext) {
+    return runMongosServer(serviceContext);
 }
 }  // namespace mongo
 #endif
@@ -557,13 +557,13 @@ MONGO_INITIALIZER(CreateAuthorizationExternalStateFactory)(InitializerContext* c
     return Status::OK();
 }
 
-MONGO_INITIALIZER(SetGlobalEnvironment)(InitializerContext* context) {
-    setGlobalServiceContext(stdx::make_unique<ServiceContextNoop>());
-    getGlobalServiceContext()->setTickSource(stdx::make_unique<SystemTickSource>());
-    getGlobalServiceContext()->setFastClockSource(stdx::make_unique<SystemClockSource>());
-    getGlobalServiceContext()->setPreciseClockSource(stdx::make_unique<SystemClockSource>());
-    return Status::OK();
-}
+//MONGO_INITIALIZER(SetGlobalEnvironment)(InitializerContext* context) {
+//    setGlobalServiceContext(stdx::make_unique<ServiceContextNoop>());
+//    getGlobalServiceContext()->setTickSource(stdx::make_unique<SystemTickSource>());
+//    getGlobalServiceContext()->setFastClockSource(stdx::make_unique<SystemClockSource>());
+//    getGlobalServiceContext()->setPreciseClockSource(stdx::make_unique<SystemClockSource>());
+//    return Status::OK();
+//}
 
 #ifdef MONGO_CONFIG_SSL
 MONGO_INITIALIZER_GENERAL(setSSLManagerType, MONGO_NO_PREREQUISITES, ("SSLManager"))
@@ -583,7 +583,13 @@ int mongoSMain(int argc, char* argv[], char** envp) {
 
     setupSignalHandlers();
 
-    Status status = mongo::runGlobalInitializers(argc, argv, envp);
+	auto serviceContextNoop = stdx::make_unique<ServiceContextNoop>();
+	auto serviceContext = serviceContextNoop.get();
+	serviceContextNoop->setTickSource(stdx::make_unique<SystemTickSource>());
+	serviceContextNoop->setFastClockSource(stdx::make_unique<SystemClockSource>());
+	serviceContextNoop->setPreciseClockSource(stdx::make_unique<SystemClockSource>());
+
+    Status status = mongo::runGlobalInitializers(argc, argv, envp, std::move(serviceContextNoop));
     if (!status.isOK()) {
         severe(LogComponent::kDefault) << "Failed global initialization: " << status;
         quickExit(EXIT_FAILURE);
@@ -591,13 +597,13 @@ int mongoSMain(int argc, char* argv[], char** envp) {
 
     ErrorExtraInfo::invariantHaveAllParsers();
 
-    startupConfigActions(std::vector<std::string>(argv, argv + argc));
+    startupConfigActions(serviceContext, std::vector<std::string>(argv, argv + argc));
     cmdline_utils::censorArgvArray(argc, argv);
 
     mongo::logCommonStartupWarnings(serverGlobalParams);
 
     try {
-        int exitCode = _main();
+        int exitCode = _main(serviceContext);
         return exitCode;
     } catch (const SocketException& e) {
         error() << "uncaught SocketException in mongos main: " << redact(e);

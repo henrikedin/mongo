@@ -53,6 +53,7 @@ namespace {
 // it is better to release memory when it is likely the thread will be blocked for
 // a long time.
 const int kManyClients = 40;
+ServiceContext* serviceContext = nullptr;
 
 stdx::mutex tcmallocCleanupLock;
 
@@ -68,7 +69,7 @@ void threadStateChange() {
         return;
     }
 
-    if (getGlobalServiceContext()->getServiceEntryPoint()->numOpenSessions() <= kManyClients)
+    if (serviceContext->getServiceEntryPoint()->numOpenSessions() <= kManyClients)
         return;
 
 #if MONGO_HAVE_GPERFTOOLS_GET_THREAD_CACHE_SIZE
@@ -93,7 +94,8 @@ void threadStateChange() {
 }
 
 // Register threadStateChange callback
-MONGO_INITIALIZER(TCMallocThreadIdleListener)(InitializerContext*) {
+MONGO_INITIALIZER(TCMallocThreadIdleListener)(InitializerContext* context) {
+	serviceContext = context->service_context();
     if (!RUNNING_ON_VALGRIND)
         registerThreadIdleCallback(&threadStateChange);
     return Status::OK();

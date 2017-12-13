@@ -66,7 +66,7 @@ protected:
     /**
      * Returns the service context.
      */
-    ServiceContext* _context() override;
+    ServiceContext* _context() const override;
 };
 
 }  // namespace mongo

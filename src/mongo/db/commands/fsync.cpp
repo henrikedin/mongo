@@ -147,7 +147,7 @@ public:
 
             // Take a global IS lock to ensure the storage engine is not shutdown
             Lock::GlobalLock global(opCtx, MODE_IS, UINT_MAX);
-            StorageEngine* storageEngine = getGlobalServiceContext()->getGlobalStorageEngine();
+            StorageEngine* storageEngine = opCtx->getServiceContext()->getGlobalStorageEngine();
             result.append("numFiles", storageEngine->flushAllFiles(opCtx, sync));
             return true;
         }
@@ -355,7 +355,7 @@ void FSyncLockThread::run() {
             return;
         }
         opCtx.lockState()->downgradeGlobalXtoSForMMAPV1();
-        StorageEngine* storageEngine = getGlobalServiceContext()->getGlobalStorageEngine();
+        StorageEngine* storageEngine = cc().getServiceContext()->getGlobalStorageEngine();
 
         try {
             storageEngine->flushAllFiles(&opCtx, true);

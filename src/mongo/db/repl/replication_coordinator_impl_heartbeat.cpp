@@ -466,7 +466,7 @@ void ReplicationCoordinatorImpl::_heartbeatReconfigStore(
     }
 
     const StatusWith<int> myIndex = validateConfigForHeartbeatReconfig(
-        _externalState.get(), newConfig, getGlobalServiceContext());
+        _externalState.get(), newConfig, cc().getServiceContext());
 
     if (myIndex.getStatus() == ErrorCodes::NodeNotFound) {
         stdx::lock_guard<stdx::mutex> lk(_mutex);

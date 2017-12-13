@@ -180,7 +180,7 @@ void ReplicationConsistencyMarkersImpl::clearInitialSyncFlag(OperationContext* o
 
     _updateMinValidDocument(opCtx, update);
 
-    if (getGlobalServiceContext()->getGlobalStorageEngine()->isDurable()) {
+    if (opCtx->getServiceContext()->getGlobalStorageEngine()->isDurable()) {
         opCtx->recoveryUnit()->waitUntilDurable();
         replCoord->setMyLastDurableOpTime(time);
     }

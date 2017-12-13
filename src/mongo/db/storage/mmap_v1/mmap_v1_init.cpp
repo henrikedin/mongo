@@ -42,10 +42,11 @@ namespace {
 
 class MMAPV1Factory : public StorageEngine::Factory {
 public:
+    MMAPV1Factory(ServiceContext* serviceContext) : _serviceContext(serviceContext) {}
     virtual ~MMAPV1Factory() {}
     virtual StorageEngine* create(const StorageGlobalParams& params,
                                   const StorageEngineLockFile* lockFile) const {
-        return new MMAPV1Engine(lockFile, getGlobalServiceContext()->getFastClockSource());
+        return new MMAPV1Engine(lockFile, _serviceContext->getFastClockSource());
     }
 
     virtual StringData getCanonicalName() const {
@@ -72,13 +73,17 @@ public:
     bool supportsReadOnly() const override {
         return true;
     }
+
+private:
+    ServiceContext* _serviceContext;
 };
 
 }  // namespace
 
-MONGO_INITIALIZER_WITH_PREREQUISITES(MMAPV1EngineInit, ("SetGlobalEnvironment"))
+MONGO_INITIALIZER(MMAPV1EngineInit)
 (InitializerContext* context) {
-    getGlobalServiceContext()->registerStorageEngine("mmapv1", new MMAPV1Factory());
+    context->service_context()->registerStorageEngine(
+        "mmapv1", new MMAPV1Factory(context->service_context()));
     return Status::OK();
 }
 
