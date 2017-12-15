@@ -87,7 +87,8 @@ public:
     static void set(ServiceContext* service, std::unique_ptr<AuthorizationManager> authzManager);
 
     // The newly constructed AuthorizationManager takes ownership of "externalState"
-    explicit AuthorizationManager(std::unique_ptr<AuthzManagerExternalState> externalState);
+    explicit AuthorizationManager(ServiceContext* service,
+                                  std::unique_ptr<AuthzManagerExternalState> externalState);
 
     ~AuthorizationManager();
 
@@ -334,6 +335,10 @@ public:
                const BSONObj& obj,
                const BSONObj* patt);
 
+    ServiceContext* getServiceContext() const {
+        return _serviceContext;
+    }
+
 private:
     /**
      * Type used to guard accesses and updates to the user cache.
@@ -439,6 +444,8 @@ private:
      * Manipulated via CacheGuard.
      */
     stdx::condition_variable _fetchPhaseIsReady;
+
+    ServiceContext* _serviceContext;
 };
 
 }  // namespace mongo

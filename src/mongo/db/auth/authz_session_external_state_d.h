@@ -50,6 +50,9 @@ public:
     virtual bool serverIsArbiter() const;
 
     virtual void startRequest(OperationContext* opCtx);
+
+private:
+    ServiceContext* _serviceContext;
 };
 
 }  // namespace mongo

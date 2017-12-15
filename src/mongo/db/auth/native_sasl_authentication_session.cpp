@@ -73,9 +73,11 @@ MONGO_INITIALIZER(NativeSaslServerCore)(InitializerContext* context) {
 }
 
 // PostSaslCommands is reversely dependent on CyrusSaslCommands having been run
-MONGO_INITIALIZER_WITH_PREREQUISITES(PostSaslCommands, ("NativeSaslServerCore"))
+MONGO_INITIALIZER_WITH_PREREQUISITES(PostSaslCommands,
+                                     ("SetGlobalEnvironment", "NativeSaslServerCore"))
 (InitializerContext*) {
-    AuthorizationManager authzManager(stdx::make_unique<AuthzManagerExternalStateMock>());
+    AuthorizationManager authzManager(getGlobalServiceContext(),
+                                      stdx::make_unique<AuthzManagerExternalStateMock>());
     std::unique_ptr<AuthorizationSession> authzSession = authzManager.makeAuthorizationSession();
 
     for (size_t i = 0; i < saslGlobalParams.authenticationMechanisms.size(); ++i) {

@@ -97,8 +97,8 @@ MONGO_INITIALIZER_WITH_PREREQUISITES(CreateAuthorizationManager,
                                       "CreateAuthorizationExternalStateFactory",
                                       "EndStartupOptionStorage"))
 (InitializerContext* context) {
-    auto authzManager =
-        stdx::make_unique<AuthorizationManager>(AuthzManagerExternalState::create());
+    auto authzManager = stdx::make_unique<AuthorizationManager>(
+        getGlobalServiceContext(), AuthzManagerExternalState::create());
     authzManager->setAuthEnabled(serverGlobalParams.authState ==
                                  ServerGlobalParams::AuthState::kEnabled);
     authzManager->setShouldValidateAuthSchemaOnStartup(startupAuthSchemaValidation);

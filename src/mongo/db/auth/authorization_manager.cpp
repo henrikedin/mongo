@@ -270,12 +270,14 @@ private:
     stdx::unique_lock<stdx::mutex> _lock;
 };
 
-AuthorizationManager::AuthorizationManager(std::unique_ptr<AuthzManagerExternalState> externalState)
+AuthorizationManager::AuthorizationManager(ServiceContext* service,
+                                           std::unique_ptr<AuthzManagerExternalState> externalState)
     : _authEnabled(false),
       _privilegeDocsExist(false),
       _externalState(std::move(externalState)),
       _version(schemaVersionInvalid),
-      _isFetchPhaseBusy(false) {
+      _isFetchPhaseBusy(false),
+      _serviceContext(service) {
     _updateCacheGeneration_inlock();
 }
 

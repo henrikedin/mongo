@@ -42,7 +42,8 @@
 namespace mongo {
 
 AuthzSessionExternalStateMongod::AuthzSessionExternalStateMongod(AuthorizationManager* authzManager)
-    : AuthzSessionExternalStateServerCommon(authzManager) {}
+    : AuthzSessionExternalStateServerCommon(authzManager),
+      _serviceContext(authzManager->getServiceContext()) {}
 AuthzSessionExternalStateMongod::~AuthzSessionExternalStateMongod() {}
 
 void AuthzSessionExternalStateMongod::startRequest(OperationContext* opCtx) {
@@ -60,9 +61,9 @@ bool AuthzSessionExternalStateMongod::shouldIgnoreAuthChecks() const {
 
 bool AuthzSessionExternalStateMongod::serverIsArbiter() const {
     // Arbiters have access to extra privileges under localhost. See SERVER-5479.
-    return (repl::getGlobalReplicationCoordinator()->getReplicationMode() ==
+    return (repl::ReplicationCoordinator::get(_serviceContext)->getReplicationMode() ==
                 repl::ReplicationCoordinator::modeReplSet &&
-            repl::getGlobalReplicationCoordinator()->getMemberState().arbiter());
+            repl::ReplicationCoordinator::get(_serviceContext)->getMemberState().arbiter());
 }
 
 }  // namespace mongo
