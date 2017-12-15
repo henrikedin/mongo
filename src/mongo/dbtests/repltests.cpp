@@ -116,7 +116,7 @@ public:
 
         getGlobalServiceContext()->setOpObserver(stdx::make_unique<OpObserverImpl>());
 
-        setOplogCollectionName();
+        setOplogCollectionName(getGlobalServiceContext());
         createOplog(&_opCtx);
 
         OldClientWriteContext ctx(&_opCtx, ns());
