@@ -463,6 +463,11 @@ add_option('git-decider',
     type="choice",
 )
 
+add_option('target-platform',
+    default=None,
+    help="Platform to target if different from host platform",
+)
+
 try:
     with open("version.json", "r") as version_fp:
         version_data = json.load(version_fp)
@@ -525,12 +530,12 @@ def variable_arch_converter(val):
 # set of tools we need for each platform.
 # If we aren't on a platform where we know the minimal set of tools, we fall back to loading
 # the 'default' tool.
-def decide_platform_tools():
-    if mongo_platform.is_running_os('windows'):
+def decide_platform_tools(target_platform):
+    if target_platform == 'posix' or mongo_platform.is_running_os('linux', 'solaris'):
+        return ['gcc', 'g++', 'gnulink', 'ar', 'gas']
+    elif mongo_platform.is_running_os('windows'):
         # we only support MS toolchain on windows
         return ['msvc', 'mslink', 'mslib', 'masm']
-    elif mongo_platform.is_running_os('linux', 'solaris'):
-        return ['gcc', 'g++', 'gnulink', 'ar', 'gas']
     elif mongo_platform.is_running_os('darwin'):
         return ['gcc', 'g++', 'applelink', 'ar', 'libtool', 'as', 'xcode']
     else:
@@ -569,6 +574,9 @@ if sconsflags:
 
 env_vars.Add('ABIDW',
     help="Configures the path to the 'abidw' (a libabigail) utility")
+
+env_vars.Add('AR',
+    help='Sets path for the archiver')
 
 env_vars.Add('ARFLAGS',
     help='Sets flags for the archiver',
@@ -741,7 +749,7 @@ env_vars.Add('TARGET_OS',
 env_vars.Add('TOOLS',
     help='Sets the list of SCons tools to add to the environment',
     converter=variable_tools_converter,
-    default=decide_platform_tools())
+    default=decide_platform_tools(get_option('target-platform')))
 
 env_vars.Add('VARIANT_DIR',
     help='Sets the name (or generator function) for the variant directory',
@@ -888,7 +896,7 @@ envDict = dict(BUILD_ROOT=buildDir,
                LIBDEPS_TAG_EXPANSIONS=[],
                )
 
-env = Environment(variables=env_vars, **envDict)
+env = Environment(variables=env_vars, platform=get_option('target-platform'), **envDict)
 del envDict
 
 env.AddMethod(mongo_platform.env_os_is_wrapper, 'TargetOSIs')
@@ -1348,9 +1356,11 @@ if not 'mslink' in env['TOOLS']:
     if env.Verbose():
         env["LINKCOM"] = "${{TEMPFILE('{0}', '')}}".format(env['LINKCOM'])
         env["SHLINKCOM"] = "${{TEMPFILE('{0}', '')}}".format(env['SHLINKCOM'])
+        env["ARCOM"] = "${{TEMPFILE('{0}', '')}}".format(env['ARCOM'])
     else:
         env["LINKCOM"] = "${{TEMPFILE('{0}', 'LINKCOMSTR')}}".format(env['LINKCOM'])
         env["SHLINKCOM"] = "${{TEMPFILE('{0}', 'SHLINKCOMSTR')}}".format(env['SHLINKCOM'])
+        env["ARCOM"] = "${{TEMPFILE('{0}', 'ARCOMSTR')}}".format(env['ARCOM'])
 
 if env['_LIBDEPS'] == '$_LIBDEPS_OBJS':
     # The libraries we build in LIBDEPS_OBJS mode are just placeholders for tracking dependencies.

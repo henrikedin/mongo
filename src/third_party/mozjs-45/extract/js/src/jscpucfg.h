@@ -37,7 +37,7 @@
 # endif
 
 #elif defined(JS_HAVE_ENDIAN_H)
-# include <endian.h>
+# include <Endian.h>
 
 /*
  * Historically, OSes providing <endian.h> only defined
