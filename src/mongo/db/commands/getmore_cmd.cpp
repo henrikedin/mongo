@@ -393,7 +393,7 @@ public:
              const BSONObj& cmdObj,
              BSONObjBuilder& result) override {
         // Counted as a getMore, not as a command.
-        globalOpCounters.gotGetMore();
+		getGlobalOpCounters().gotGetMore();
 
         StatusWith<GetMoreRequest> parsedRequest = GetMoreRequest::parseFromBSON(dbname, cmdObj);
         if (!parsedRequest.isOK()) {

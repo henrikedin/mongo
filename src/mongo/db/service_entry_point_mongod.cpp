@@ -693,7 +693,7 @@ void execCommandDatabase(OperationContext* opCtx,
         }
 
         if (command->shouldAffectCommandCounter()) {
-            OpCounters* opCounters = &globalOpCounters;
+            OpCounters* opCounters = &getGlobalOpCounters();
             opCounters->gotCommand();
         }
 
@@ -907,7 +907,7 @@ DbResponse receivedQuery(OperationContext* opCtx,
                          Client& c,
                          const Message& m) {
     invariant(!nss.isCommand());
-    globalOpCounters.gotQuery();
+	getGlobalOpCounters().gotQuery();
 
     DbMessage d(m);
     QueryMessage q(d);
@@ -1017,7 +1017,7 @@ DbResponse receivedGetMore(OperationContext* opCtx,
                            const Message& m,
                            CurOp& curop,
                            bool* shouldLogOpDebug) {
-    globalOpCounters.gotGetMore();
+	getGlobalOpCounters().gotGetMore();
     DbMessage d(m);
 
     const char* ns = d.getns();

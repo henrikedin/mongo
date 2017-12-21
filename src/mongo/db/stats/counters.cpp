@@ -33,11 +33,18 @@
 
 #include "mongo/db/stats/counters.h"
 
+#include "mongo/base/init.h"
 #include "mongo/db/jsobj.h"
+#include "mongo/db/service_context.h"
+#include "mongo/util/aligned_ptr.h"
 #include "mongo/util/debug_util.h"
 #include "mongo/util/log.h"
 
 namespace mongo {
+namespace {
+	const auto getOpCounters =
+		ServiceContext::declareDecoration<unique_ptr_aligned<OpCounters>>();
+}
 
 using std::endl;
 
@@ -200,7 +207,21 @@ void NetworkCounter::append(BSONObjBuilder& b) {
 }
 
 
-OpCounters globalOpCounters;
 OpCounters replOpCounters;
 NetworkCounter networkCounter;
+
+OpCounters& getGlobalOpCounters()
+{
+	OpCounters* globalOpCounters = getOpCounters(getGlobalServiceContext()).get();
+	fassert(50660, globalOpCounters != nullptr);
+	return *globalOpCounters;
+}
+
+MONGO_INITIALIZER_WITH_PREREQUISITES(CreateGlobalOpCounters,
+("SetGlobalEnvironment"))
+(InitializerContext* context) {
+	getOpCounters(getGlobalServiceContext()) = unique_ptr_aligned<OpCounters>::make();
+	return Status::OK();
+}
+
 }

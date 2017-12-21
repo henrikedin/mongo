@@ -369,7 +369,7 @@ bool insertBatchAndHandleErrors(OperationContext* opCtx,
             lastOpFixer->startingOp();
             insertDocuments(opCtx, collection->getCollection(), batch.begin(), batch.end());
             lastOpFixer->finishedOpSuccessfully();
-            globalOpCounters.gotInserts(batch.size());
+			getGlobalOpCounters().gotInserts(batch.size());
             SingleWriteResult result;
             result.setN(1);
 
@@ -387,7 +387,7 @@ bool insertBatchAndHandleErrors(OperationContext* opCtx,
     // Try to insert the batch one-at-a-time. This path is executed both for singular batches, and
     // for batches that failed all-at-once inserting.
     for (auto it = batch.begin(); it != batch.end(); ++it) {
-        globalOpCounters.gotInsert();
+		getGlobalOpCounters().gotInsert();
         try {
             writeConflictRetry(opCtx, "insert", wholeOp.getNamespace().ns(), [&] {
                 try {
@@ -508,7 +508,7 @@ WriteResult performInserts(OperationContext* opCtx, const write_ops::Insert& who
         bytesInBatch = 0;
 
         if (canContinue && !fixedDoc.isOK()) {
-            globalOpCounters.gotInsert();
+			getGlobalOpCounters().gotInsert();
             try {
                 uassertStatusOK(fixedDoc.getStatus());
                 MONGO_UNREACHABLE;
@@ -533,7 +533,7 @@ static SingleWriteResult performSingleUpdateOp(OperationContext* opCtx,
             "Cannot use (or request) retryable writes with multi=true",
             !(opCtx->getTxnNumber() && op.getMulti()));
 
-    globalOpCounters.gotUpdate();
+	getGlobalOpCounters().gotUpdate();
     auto& curOp = *CurOp::get(opCtx);
     {
         stdx::lock_guard<Client> lk(*opCtx->getClient());
@@ -679,7 +679,7 @@ static SingleWriteResult performSingleDeleteOp(OperationContext* opCtx,
             "Cannot use (or request) retryable writes with limit=0",
             !(opCtx->getTxnNumber() && op.getMulti()));
 
-    globalOpCounters.gotDelete();
+	getGlobalOpCounters().gotDelete();
     auto& curOp = *CurOp::get(opCtx);
     {
         stdx::lock_guard<Client> lk(*opCtx->getClient());

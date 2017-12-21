@@ -89,7 +89,7 @@ private:
     CacheAligned<AtomicUInt32> _command;
 };
 
-extern OpCounters globalOpCounters;
+OpCounters& getGlobalOpCounters();
 extern OpCounters replOpCounters;
 
 class NetworkCounter {

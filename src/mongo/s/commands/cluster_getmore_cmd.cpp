@@ -96,7 +96,7 @@ public:
              const BSONObj& cmdObj,
              BSONObjBuilder& result) final {
         // Counted as a getMore, not as a command.
-        globalOpCounters.gotGetMore();
+		getGlobalOpCounters().gotGetMore();
 
         StatusWith<GetMoreRequest> parseStatus = GetMoreRequest::parseFromBSON(dbname, cmdObj);
         if (!parseStatus.isOK()) {

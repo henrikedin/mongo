@@ -245,7 +245,7 @@ void createIndexForApplyOps(OperationContext* opCtx,
             str::stream() << "Failed to create index due to missing collection: " << indexNss.ns(),
             indexCollection);
 
-    OpCounters* opCounters = opCtx->writesAreReplicated() ? &globalOpCounters : &replOpCounters;
+    OpCounters* opCounters = opCtx->writesAreReplicated() ? &getGlobalOpCounters() : &replOpCounters;
     opCounters->gotInsert();
 
     bool relaxIndexConstraints =
@@ -1004,7 +1004,7 @@ Status applyOperation_inlock(OperationContext* opCtx,
     LOG(3) << "applying op: " << redact(op)
            << ", oplog application mode: " << OplogApplication::modeToString(mode);
 
-    OpCounters* opCounters = opCtx->writesAreReplicated() ? &globalOpCounters : &replOpCounters;
+    OpCounters* opCounters = opCtx->writesAreReplicated() ? &getGlobalOpCounters() : &replOpCounters;
 
     std::array<StringData, 8> names = {"ts", "t", "o", "ui", "ns", "op", "b", "o2"};
     std::array<BSONElement, 8> fields;
