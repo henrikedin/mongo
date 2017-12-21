@@ -219,8 +219,8 @@ BSONObj OpCounterServerStatusSection::generateSection(OperationContext* opCtx,
     return _counters->getObj();
 }
 
-OpCounterServerStatusSection globalOpCounterServerStatusSection("opcounters",
-                                                                &getGlobalOpCounters());
+//OpCounterServerStatusSection globalOpCounterServerStatusSection("opcounters",
+//                                                                &getGlobalOpCounters());
 
 
 namespace {

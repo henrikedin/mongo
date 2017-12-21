@@ -57,23 +57,23 @@ public:
     }
 
 private:
-    typedef std::aligned_storage<sizeof(T), alignof(T)> storage_t;
+    typedef std::aligned_storage<sizeof(T) + alignof(T) - 16, alignof(T)> storage_t;
 
     T* aligned_pointer_() const noexcept {
         void* memory = internal_.get();
-        std::size_t memory_size = memory ? sizeof(storage_t) : 0;
+        std::size_t memory_size = memory ? sizeof(storage_t::type) : 0;
 
         return reinterpret_cast<T*>(std::align(alignof(T), sizeof(T), memory, memory_size));
     }
 
-    std::unique_ptr<storage_t> internal_;
+    std::unique_ptr<typename storage_t::type> internal_;
 };
 
 template <class T>
 template <class... Args>
 unique_ptr_aligned<T> unique_ptr_aligned<T>::make(Args&&... args) {
     unique_ptr_aligned<T> ptr;
-    ptr.internal_.reset(new storage_t());
+    ptr.internal_.reset(new storage_t::type());
     new (ptr.aligned_pointer_()) T(std::forward<Args>(args)...);
     return ptr;
 }
