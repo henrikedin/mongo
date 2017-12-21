@@ -154,7 +154,7 @@ public:
              const BSONObj& cmdObj,
              BSONObjBuilder& result) final {
         // We count find command as a query op.
-		getGlobalOpCounters().gotQuery();
+        getGlobalOpCounters().gotQuery();
 
         const NamespaceString nss(parseNsCollectionRequired(dbname, cmdObj));
 

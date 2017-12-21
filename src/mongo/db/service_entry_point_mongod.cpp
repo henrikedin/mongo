@@ -907,7 +907,7 @@ DbResponse receivedQuery(OperationContext* opCtx,
                          Client& c,
                          const Message& m) {
     invariant(!nss.isCommand());
-	getGlobalOpCounters().gotQuery();
+    getGlobalOpCounters().gotQuery();
 
     DbMessage d(m);
     QueryMessage q(d);
@@ -1017,7 +1017,7 @@ DbResponse receivedGetMore(OperationContext* opCtx,
                            const Message& m,
                            CurOp& curop,
                            bool* shouldLogOpDebug) {
-	getGlobalOpCounters().gotGetMore();
+    getGlobalOpCounters().gotGetMore();
     DbMessage d(m);
 
     const char* ns = d.getns();

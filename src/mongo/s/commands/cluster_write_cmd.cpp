@@ -221,15 +221,15 @@ public:
         // TODO: increase opcounters by more than one
         if (_writeType == BatchedCommandRequest::BatchType_Insert) {
             for (size_t i = 0; i < numAttempts; ++i) {
-				getGlobalOpCounters().gotInsert();
+                getGlobalOpCounters().gotInsert();
             }
         } else if (_writeType == BatchedCommandRequest::BatchType_Update) {
             for (size_t i = 0; i < numAttempts; ++i) {
-				getGlobalOpCounters().gotUpdate();
+                getGlobalOpCounters().gotUpdate();
             }
         } else if (_writeType == BatchedCommandRequest::BatchType_Delete) {
             for (size_t i = 0; i < numAttempts; ++i) {
-				getGlobalOpCounters().gotDelete();
+                getGlobalOpCounters().gotDelete();
             }
         }
 

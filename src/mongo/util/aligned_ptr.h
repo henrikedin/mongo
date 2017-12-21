@@ -29,43 +29,52 @@
 #pragma once
 
 namespace mongo {
-	template <class T>
-	class unique_ptr_aligned
-	{
-	public:
-		template <class... Args>
-		static unique_ptr_aligned<T> make(Args&&... args);
+template <class T>
+class unique_ptr_aligned {
+public:
+    template <class... Args>
+    static unique_ptr_aligned<T> make(Args&&... args);
 
-		explicit operator bool() const noexcept { return internal_; }
+    explicit operator bool() const noexcept {
+        return internal_;
+    }
 
-		T* get() const noexcept { return pointer_(); }
-		T& operator*() const noexcept { return *pointer_(); }
-		T* operator->() const noexcept { return pointer_(); }
+    T* get() const noexcept {
+        return pointer_();
+    }
+    T& operator*() const noexcept {
+        return *pointer_();
+    }
+    T* operator->() const noexcept {
+        return pointer_();
+    }
 
-		void reset() noexcept { internal_.reset(); }
-		void swap(unique_ptr_aligned<T>& other) noexcept { internal_.swap(other.internal_); }
+    void reset() noexcept {
+        internal_.reset();
+    }
+    void swap(unique_ptr_aligned<T>& other) noexcept {
+        internal_.swap(other.internal_);
+    }
 
-	private:
-		typedef std::aligned_storage<sizeof(T), alignof(T)> storage_t;
+private:
+    typedef std::aligned_storage<sizeof(T), alignof(T)> storage_t;
 
-		T* pointer_() const
-		{
-			void* memory = internal_.get();
-			std::size_t memory_size = memory ? sizeof(storage_t) : 0;
+    T* pointer_() const {
+        void* memory = internal_.get();
+        std::size_t memory_size = memory ? sizeof(storage_t) : 0;
 
-			return reinterpret_cast<T*>(std::align(alignof(T), sizeof(T), memory, memory_size));
-		}
+        return reinterpret_cast<T*>(std::align(alignof(T), sizeof(T), memory, memory_size));
+    }
 
-		std::unique_ptr<storage_t> internal_;
-	};
+    std::unique_ptr<storage_t> internal_;
+};
 
-	template <class T>
-	template <class... Args>
-	unique_ptr_aligned<T> unique_ptr_aligned<T>::make(Args&&... args)
-	{
-		unique_ptr_aligned<T> ptr;
-		ptr.internal_.reset(new storage_t());
-		new (ptr.pointer_()) T(std::forward<Args>(args)...);
-		return ptr;
-	}
+template <class T>
+template <class... Args>
+unique_ptr_aligned<T> unique_ptr_aligned<T>::make(Args&&... args) {
+    unique_ptr_aligned<T> ptr;
+    ptr.internal_.reset(new storage_t());
+    new (ptr.pointer_()) T(std::forward<Args>(args)...);
+    return ptr;
+}
 }

@@ -225,7 +225,7 @@ public:
              const BSONObj& cmdObj,
              BSONObjBuilder& result) override {
         // Although it is a command, a find command gets counted as a query.
-		getGlobalOpCounters().gotQuery();
+        getGlobalOpCounters().gotQuery();
 
         // Parse the command BSON to a QueryRequest.
         const bool isExplain = false;

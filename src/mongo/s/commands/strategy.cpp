@@ -183,7 +183,7 @@ void execCommandClient(OperationContext* opCtx,
     c->incrementCommandsExecuted();
 
     if (c->shouldAffectCommandCounter()) {
-		getGlobalOpCounters().gotCommand();
+        getGlobalOpCounters().gotCommand();
     }
 
     StatusWith<WriteConcernOptions> wcResult =
@@ -303,7 +303,7 @@ void runCommand(OperationContext* opCtx, const OpMsgRequest& request, BSONObjBui
 }  // namespace
 
 DbResponse Strategy::queryOp(OperationContext* opCtx, const NamespaceString& nss, DbMessage* dbm) {
-	getGlobalOpCounters().gotQuery();
+    getGlobalOpCounters().gotQuery();
 
     const QueryMessage q(*dbm);
 
@@ -476,7 +476,7 @@ DbResponse Strategy::getMore(OperationContext* opCtx, const NamespaceString& nss
         34424, str::stream() << "Invalid ntoreturn for OP_GET_MORE: " << ntoreturn, ntoreturn >= 0);
     const long long cursorId = dbm->pullInt64();
 
-	getGlobalOpCounters().gotGetMore();
+    getGlobalOpCounters().gotGetMore();
 
     // TODO: Handle stale config exceptions here from coll being dropped or sharded during op for
     // now has same semantics as legacy request.
@@ -530,7 +530,7 @@ void Strategy::killCursors(OperationContext* opCtx, DbMessage* dbm) {
                           << ".",
             numCursors >= 1 && numCursors < 30000);
 
-	getGlobalOpCounters().gotOp(dbKillCursors, false);
+    getGlobalOpCounters().gotOp(dbKillCursors, false);
 
     ConstDataCursor cursors(dbm->getArray(numCursors));
 
