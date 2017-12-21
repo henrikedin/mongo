@@ -40,13 +40,13 @@ public:
     }
 
     T* get() const noexcept {
-        return pointer_();
+        return aligned_pointer_();
     }
     T& operator*() const noexcept {
-        return *pointer_();
+        return *aligned_pointer_();
     }
     T* operator->() const noexcept {
-        return pointer_();
+        return aligned_pointer_();
     }
 
     void reset() noexcept {
@@ -59,7 +59,7 @@ public:
 private:
     typedef std::aligned_storage<sizeof(T), alignof(T)> storage_t;
 
-    T* pointer_() const {
+    T* aligned_pointer_() const noexcept {
         void* memory = internal_.get();
         std::size_t memory_size = memory ? sizeof(storage_t) : 0;
 
@@ -74,7 +74,7 @@ template <class... Args>
 unique_ptr_aligned<T> unique_ptr_aligned<T>::make(Args&&... args) {
     unique_ptr_aligned<T> ptr;
     ptr.internal_.reset(new storage_t());
-    new (ptr.pointer_()) T(std::forward<Args>(args)...);
+    new (ptr.aligned_pointer_()) T(std::forward<Args>(args)...);
     return ptr;
 }
 }
