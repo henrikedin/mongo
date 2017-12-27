@@ -209,6 +209,7 @@ for tup in env['MONGO_BUILDINFO_ENVIRONMENT_DATA']:
         ))
     )
 buildInfoInitializer = '{{ {0} }}'.format(', '.join(buildInfoInitializer))
+buildInfoInitializer = buildInfoInitializer.replace('\\', r'\\')
 
 generatedVersionFile = env.Substfile(
     'util/version_constants.h.in',
