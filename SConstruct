@@ -463,6 +463,11 @@ add_option('git-decider',
     type="choice",
 )
 
+add_option('android-toolchain-path',
+    default=None,
+    help="Android NDK toolchain path",
+)
+
 add_option('target-platform',
     default=None,
     help="Platform to target if different from host platform",
@@ -577,6 +582,9 @@ env_vars.Add('ABIDW',
 
 env_vars.Add('AR',
     help='Sets path for the archiver')
+
+env_vars.Add('PROGSUFFIX',
+    help='prog suffix')
 
 env_vars.Add('ARFLAGS',
     help='Sets flags for the archiver',
