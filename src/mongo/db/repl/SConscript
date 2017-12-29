@@ -1070,6 +1070,7 @@ env.CppUnitTest('isself_test',
                 LIBDEPS=[
                     '$BUILD_DIR/mongo/db/serveronly',
                     'isself',
+					"$BUILD_DIR/mongo/db/service_context_d",
                 ],
                 )
 

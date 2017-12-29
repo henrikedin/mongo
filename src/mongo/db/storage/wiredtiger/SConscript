@@ -122,6 +122,7 @@ if wiredtiger:
             '$BUILD_DIR/mongo/db/storage/storage_engine_metadata',
             '$BUILD_DIR/mongo/db/storage/storage_options',
             '$BUILD_DIR/mongo/db/storage/wiredtiger/storage_wiredtiger_core',
+			"$BUILD_DIR/mongo/db/service_context_d",
             ],
         )
 

@@ -209,6 +209,7 @@ if mmapv1:
             '$BUILD_DIR/mongo/db/service_context',
             '$BUILD_DIR/mongo/db/storage/storage_engine_metadata',
             '$BUILD_DIR/mongo/db/storage/storage_options',
+			"$BUILD_DIR/mongo/db/service_context_d",
             ],
         )
 

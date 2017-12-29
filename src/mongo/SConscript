@@ -273,10 +273,19 @@ generateConfigHeaderFile = env.Substfile(
 env.Alias('generated-sources', generateConfigHeaderFile)
 
 env.Library(
+    target="mongod_options_init",
+    source=[
+        "db/mongod_options_init.cpp",
+    ],
+    LIBDEPS_PRIVATE=[
+        'db/mongod_options',
+    ]
+)
+
+env.Library(
     target="mongodmain",
     source=[
         "db/db.cpp",
-        "db/mongod_options_init.cpp",
     ],
     LIBDEPS_PRIVATE=[
         'db/catalog/health_log',
@@ -289,11 +298,12 @@ env.Library(
         'db/kill_sessions_local',
         'db/keys_collection_client_direct',
         'db/logical_session_cache_factory_mongod',
-        'db/mongod_options',
+        'mongod_options_init',
         'db/mongodandmongos',
         'db/op_observer_d',
         'db/query_exec',
         'db/repair_database',
+        'db/repair_database_and_check_version',
         'db/repl/repl_set_commands',
         'db/repl/storage_interface_impl',
         'db/repl/topology_coordinator',
