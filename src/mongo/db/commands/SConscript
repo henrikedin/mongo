@@ -299,6 +299,7 @@ env.CppUnitTest(
         "$BUILD_DIR/mongo/db/query/query_test_service_context",
         "$BUILD_DIR/mongo/db/serveronly",
         "dcommands",
+		"$BUILD_DIR/mongo/db/service_context_d",
     ],
 )
 
@@ -309,6 +310,7 @@ env.CppUnitTest(
     ],
     LIBDEPS=[
         "$BUILD_DIR/mongo/db/serveronly",
+		"$BUILD_DIR/mongo/db/service_context_d",
         "dcommands",
     ],
 )
@@ -322,6 +324,7 @@ env.CppUnitTest(
         "$BUILD_DIR/mongo/db/query/query_planner",
         "$BUILD_DIR/mongo/db/query/query_test_service_context",
         "$BUILD_DIR/mongo/db/serveronly",
+		"$BUILD_DIR/mongo/db/service_context_d",
         "dcommands",
     ],
 )
