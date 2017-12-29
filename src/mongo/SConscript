@@ -318,6 +318,50 @@ env.Library(
     ],
 )
 
+env.Library(
+    target="mongodembedded",
+    source=[
+        "db/db.cpp",
+        "db/mongod_options_init.cpp",
+    ],
+    LIBDEPS_PRIVATE=[
+        'db/clientcursor',
+        'db/commands/core',
+        'db/conn_pool_options',
+        'db/dbdirectclient',
+        'db/ftdc/ftdc_mongod',
+        'db/index_d',
+        'db/initialize_snmp',
+        'db/kill_sessions_local',
+        'db/logical_session_cache_factory_mongod',
+        'db/mongod_options',
+        'db/mongodandmongos',
+        'db/op_observer_d',
+        'db/repair_database',
+        'db/repl/repl_set_commands',
+        'db/repl/storage_interface_impl',
+        'db/repl/topology_coordinator',
+        'db/s/balancer',
+        'db/serveronly',
+        'db/service_context_d',
+        'db/startup_warnings_mongod',
+        'db/system_index',
+        'db/ttl_d',
+        'executor/network_interface_factory',
+        'rpc/rpc',
+        's/catalog/sharding_catalog_manager',
+        's/commands/shared_cluster_commands',
+        'transport/service_entry_point',
+        'transport/transport_layer_manager',
+        'util/clock_sources',
+        'util/fail_point',
+        'util/ntservice',
+        'util/options_parser/options_parser_init',
+        'util/periodic_runner_factory',
+        'util/version_impl',
+    ],
+)
+
 
 if env.TargetOSIs('windows'):
     generatedDbManifest = env.Substfile(
