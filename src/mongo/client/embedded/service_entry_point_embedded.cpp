@@ -345,34 +345,34 @@ StatusWith<repl::ReadConcernArgs> _extractReadConcern(const BSONObj& cmdObj,
     return readConcernArgs;
 }
 
-//void _waitForWriteConcernAndAddToCommandResponse(OperationContext* opCtx,
-//                                                 const std::string& commandName,
-//                                                 const repl::OpTime& lastOpBeforeRun,
-//                                                 BSONObjBuilder* commandResponseBuilder) {
-//    auto lastOpAfterRun = repl::ReplClientInfo::forClient(opCtx->getClient()).getLastOp();
-//
-//    // Ensures that if we tried to do a write, we wait for write concern, even if that write was
-//    // a noop.
-//    if ((lastOpAfterRun == lastOpBeforeRun) &&
-//        GlobalLockAcquisitionTracker::get(opCtx).getGlobalExclusiveLockTaken()) {
-//        repl::ReplClientInfo::forClient(opCtx->getClient()).setLastOpToSystemLastOpTime(opCtx);
-//        lastOpAfterRun = repl::ReplClientInfo::forClient(opCtx->getClient()).getLastOp();
-//    }
-//
-//    WriteConcernResult res;
-//    auto waitForWCStatus =
-//        waitForWriteConcern(opCtx, lastOpAfterRun, opCtx->getWriteConcern(), &res);
-//    Command::appendCommandWCStatus(*commandResponseBuilder, waitForWCStatus, res);
-//
-//    // SERVER-22421: This code is to ensure error response backwards compatibility with the
-//    // user management commands. This can be removed in 3.6.
-//    if (!waitForWCStatus.isOK() && Command::isUserManagementCommand(commandName)) {
-//        BSONObj temp = commandResponseBuilder->asTempObj().copy();
-//        commandResponseBuilder->resetToEmpty();
-//        Command::appendCommandStatus(*commandResponseBuilder, waitForWCStatus);
-//        commandResponseBuilder->appendElementsUnique(temp);
-//    }
-//}
+void _waitForWriteConcernAndAddToCommandResponse(OperationContext* opCtx,
+                                                 const std::string& commandName,
+                                                 const repl::OpTime& lastOpBeforeRun,
+                                                 BSONObjBuilder* commandResponseBuilder) {
+    auto lastOpAfterRun = repl::ReplClientInfo::forClient(opCtx->getClient()).getLastOp();
+
+    // Ensures that if we tried to do a write, we wait for write concern, even if that write was
+    // a noop.
+    if ((lastOpAfterRun == lastOpBeforeRun) &&
+        GlobalLockAcquisitionTracker::get(opCtx).getGlobalExclusiveLockTaken()) {
+        repl::ReplClientInfo::forClient(opCtx->getClient()).setLastOpToSystemLastOpTime(opCtx);
+        lastOpAfterRun = repl::ReplClientInfo::forClient(opCtx->getClient()).getLastOp();
+    }
+
+    WriteConcernResult res;
+    auto waitForWCStatus =
+        waitForWriteConcern(opCtx, lastOpAfterRun, opCtx->getWriteConcern(), &res);
+    Command::appendCommandWCStatus(*commandResponseBuilder, waitForWCStatus, res);
+
+    // SERVER-22421: This code is to ensure error response backwards compatibility with the
+    // user management commands. This can be removed in 3.6.
+    if (!waitForWCStatus.isOK() && Command::isUserManagementCommand(commandName)) {
+        BSONObj temp = commandResponseBuilder->asTempObj().copy();
+        commandResponseBuilder->resetToEmpty();
+        Command::appendCommandStatus(*commandResponseBuilder, waitForWCStatus);
+        commandResponseBuilder->appendElementsUnique(temp);
+    }
+}
 
 /**
  * For replica set members it returns the last known op time from opCtx. Otherwise will return
@@ -479,33 +479,33 @@ bool runCommandImpl(OperationContext* opCtx,
         }*/
 
         result = command->publicRun(opCtx, request, inPlaceReplyBob);
-    //} else {
-    //    auto wcResult = extractWriteConcern(opCtx, cmd, db);
-    //    if (!wcResult.isOK()) {
-    //        auto result = Command::appendCommandStatus(inPlaceReplyBob, wcResult.getStatus());
-    //        inPlaceReplyBob.doneFast();
-    //        BSONObjBuilder metadataBob;
-    //        appendReplyMetadataOnError(opCtx, &metadataBob);
-    //        replyBuilder->setMetadata(metadataBob.done());
-    //        return result;
-    //    }
+    } else {
+        auto wcResult = extractWriteConcern(opCtx, cmd, db);
+        if (!wcResult.isOK()) {
+            auto result = Command::appendCommandStatus(inPlaceReplyBob, wcResult.getStatus());
+            inPlaceReplyBob.doneFast();
+            BSONObjBuilder metadataBob;
+            appendReplyMetadataOnError(opCtx, &metadataBob);
+            replyBuilder->setMetadata(metadataBob.done());
+            return result;
+        }
 
-    //    auto lastOpBeforeRun = repl::ReplClientInfo::forClient(opCtx->getClient()).getLastOp();
+        auto lastOpBeforeRun = repl::ReplClientInfo::forClient(opCtx->getClient()).getLastOp();
 
-    //    // Change the write concern while running the command.
-    //    const auto oldWC = opCtx->getWriteConcern();
-    //    ON_BLOCK_EXIT([&] { opCtx->setWriteConcern(oldWC); });
-    //    opCtx->setWriteConcern(wcResult.getValue());
-    //    ON_BLOCK_EXIT([&] {
-    //        _waitForWriteConcernAndAddToCommandResponse(
-    //            opCtx, command->getName(), lastOpBeforeRun, &inPlaceReplyBob);
-    //    });
+        // Change the write concern while running the command.
+        const auto oldWC = opCtx->getWriteConcern();
+        ON_BLOCK_EXIT([&] { opCtx->setWriteConcern(oldWC); });
+        opCtx->setWriteConcern(wcResult.getValue());
+        ON_BLOCK_EXIT([&] {
+            _waitForWriteConcernAndAddToCommandResponse(
+                opCtx, command->getName(), lastOpBeforeRun, &inPlaceReplyBob);
+        });
 
-    //    result = command->publicRun(opCtx, request, inPlaceReplyBob);
+        result = command->publicRun(opCtx, request, inPlaceReplyBob);
 
-    //    // Nothing in run() should change the writeConcern.
-    //    dassert(SimpleBSONObjComparator::kInstance.evaluate(opCtx->getWriteConcern().toBSON() ==
-    //                                                        wcResult.getValue().toBSON()));
+        // Nothing in run() should change the writeConcern.
+        dassert(SimpleBSONObjComparator::kInstance.evaluate(opCtx->getWriteConcern().toBSON() ==
+                                                            wcResult.getValue().toBSON()));
     }
 
     // When a linearizable read command is passed in, check to make sure we're reading

@@ -850,7 +850,6 @@ env.Library(
         "s/collection_metadata",
         "s/commands",
         "s/sharding",
-        "service_context_d",
         "startup_warnings_mongod",
         "stats/counters",
         "stats/serveronly",

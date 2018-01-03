@@ -42,6 +42,7 @@
 #include "mongo/db/client.h"
 #include "mongo/db/commands/feature_compatibility_version.h"
 #include "mongo/db/kill_sessions_local.h"
+#include "mongo/db/logical_clock.h"
 #include "mongo/db/logical_session_cache_factory_mongod.h"
 #include "mongo/db/index_rebuilder.h"
 #include "mongo/db/mongod_options.h"
@@ -63,15 +64,82 @@
 #include <boost/filesystem.hpp>
 
 // remove
+#include "mongo/db/repl/storage_interface_impl.h"
+#include "mongo/db/repl/replication_consistency_markers_impl.h"
+#include "mongo/db/repl/replication_recovery.h"
+#include "mongo/db/repl/replication_process.h"
+#include "mongo/db/repl/drop_pending_collection_reaper.h"
+#include "mongo/db/repl/topology_coordinator.h"
+#include "mongo/db/repl/replication_coordinator_impl.h"
+#include "mongo/db/repl/replication_coordinator_external_state_impl.h"
 //#include "mongo/db/service_context_d.h"
 //#include "mongo/db/service_entry_point_mongod.h"
 
 namespace mongo
 {
 	namespace {
+		/*auto makeReplicationExecutor(ServiceContext* serviceContext) {
+			ThreadPool::Options tpOptions;
+			tpOptions.poolName = "replexec";
+			tpOptions.maxThreads = 50;
+			tpOptions.onCreateThread = [](const std::string& threadName) {
+				Client::initThread(threadName.c_str());
+			};
+			auto hookList = stdx::make_unique<rpc::EgressMetadataHookList>();
+			hookList->addHook(stdx::make_unique<rpc::LogicalTimeMetadataHook>(serviceContext));
+			return stdx::make_unique<executor::ThreadPoolTaskExecutor>(
+				stdx::make_unique<ThreadPool>(tpOptions),
+				executor::makeNetworkInterface(
+					"NetworkInterfaceASIO-Replication", nullptr, std::move(hookList)));
+		}*/
+
 		MONGO_INITIALIZER_GENERAL(ForkServer, ("EndStartupOptionHandling"), ("default"))
 			(InitializerContext* context) {
 			//mongo::forkServerOrDie();
+			return Status::OK();
+		}
+
+		MONGO_INITIALIZER_WITH_PREREQUISITES(CreateReplicationManager,
+			("SetGlobalEnvironment", "SSLManager", "default"))
+			(InitializerContext* context) {
+			auto serviceContext = getGlobalServiceContext();
+			repl::StorageInterface::set(serviceContext, stdx::make_unique<repl::StorageInterfaceImpl>());
+			auto storageInterface = repl::StorageInterface::get(serviceContext);
+
+			auto consistencyMarkers =
+				stdx::make_unique<repl::ReplicationConsistencyMarkersImpl>(storageInterface);
+			auto recovery = stdx::make_unique<repl::ReplicationRecoveryImpl>(storageInterface,
+				consistencyMarkers.get());
+			repl::ReplicationProcess::set(
+				serviceContext,
+				stdx::make_unique<repl::ReplicationProcess>(
+					storageInterface, std::move(consistencyMarkers), std::move(recovery)));
+			auto replicationProcess = repl::ReplicationProcess::get(serviceContext);
+
+			repl::DropPendingCollectionReaper::set(
+				serviceContext, stdx::make_unique<repl::DropPendingCollectionReaper>(storageInterface));
+			auto dropPendingCollectionReaper = repl::DropPendingCollectionReaper::get(serviceContext);
+
+			repl::TopologyCoordinator::Options topoCoordOptions;
+			topoCoordOptions.maxSyncSourceLagSecs = Seconds(repl::maxSyncSourceLagSecs);
+			topoCoordOptions.clusterRole = serverGlobalParams.clusterRole;
+
+			auto logicalClock = stdx::make_unique<LogicalClock>(serviceContext);
+			LogicalClock::set(serviceContext, std::move(logicalClock));
+
+			auto replCoord = stdx::make_unique<repl::ReplicationCoordinatorImpl>(
+				serviceContext,
+				getGlobalReplSettings(),
+				stdx::make_unique<repl::ReplicationCoordinatorExternalStateImpl>(
+					serviceContext, dropPendingCollectionReaper, storageInterface, replicationProcess),
+				//makeReplicationExecutor(serviceContext),
+				nullptr,
+				stdx::make_unique<repl::TopologyCoordinator>(topoCoordOptions),
+				replicationProcess,
+				storageInterface,
+				static_cast<int64_t>(curTimeMillis64()));
+			repl::ReplicationCoordinator::set(serviceContext, std::move(replCoord));
+			repl::setOplogCollectionName();
 			return Status::OK();
 		}
 	}
@@ -132,10 +200,10 @@ namespace mongo
 		auto serviceContext = checked_cast<ServiceContextMongoEmbedded*>(getGlobalServiceContext());
 
 		serviceContext->setFastClockSource(FastClockSourceFactory::create(Milliseconds(10)));
-		/*auto opObserverRegistry = stdx::make_unique<OpObserverRegistry>();
+		auto opObserverRegistry = stdx::make_unique<OpObserverRegistry>();
 		opObserverRegistry->addObserver(stdx::make_unique<OpObserverImpl>());
 		opObserverRegistry->addObserver(stdx::make_unique<UUIDCatalogObserver>());
-		serviceContext->setOpObserver(std::move(opObserverRegistry));*/
+		serviceContext->setOpObserver(std::move(opObserverRegistry));
 
 		DBDirectClientFactory::get(serviceContext).registerImplementation([](OperationContext* opCtx) {
 			return std::unique_ptr<DBClientBase>(new DBDirectClient(opCtx));
