@@ -288,9 +288,6 @@ env.Library(
         '$BUILD_DIR/mongo/db/write_ops',
         '$BUILD_DIR/mongo/db/views/views',
     ],
-    LIBDEPS_PRIVATE=[
-        '$BUILD_DIR/mongo/db/query/internal_plans',
-    ],
 )
 
 env.CppUnitTest(
