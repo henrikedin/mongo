@@ -142,7 +142,8 @@ void checkNS(OperationContext* opCtx, const std::list<std::string>& nsToCheck) {
 }  // namespace
 
 void restartInProgressIndexesFromLastShutdown(OperationContext* opCtx) {
-    AuthorizationSession::get(opCtx->getClient())->grantInternalAuthorization();
+    // todo heed restore
+	//AuthorizationSession::get(opCtx->getClient())->grantInternalAuthorization();
 
     std::vector<std::string> dbNames;
 

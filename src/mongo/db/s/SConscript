@@ -59,6 +59,15 @@ env.Library(
 )
 
 env.Library(
+    target='metadata_manager',
+    source=[
+        'metadata_manager.cpp',
+    ],
+    LIBDEPS=[
+    ],
+)
+
+env.Library(
     target='sharding',
     source=[
         'active_migrations_registry.cpp',
@@ -66,7 +75,6 @@ env.Library(
         'chunk_splitter.cpp',
         'collection_range_deleter.cpp',
         'collection_sharding_state.cpp',
-        'metadata_manager.cpp',
         'migration_chunk_cloner_source.cpp',
         'migration_chunk_cloner_source_legacy.cpp',
         'migration_destination_manager.cpp',
@@ -101,6 +109,7 @@ env.Library(
         '$BUILD_DIR/mongo/s/sharding_initialization',
         '$BUILD_DIR/mongo/util/elapsed_tracker',
         'collection_metadata',
+        'metadata_manager',
         'migration_types',
         'sharding_task_executor',
         'type_shard_identity',

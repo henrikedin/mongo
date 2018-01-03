@@ -248,6 +248,22 @@ env.Library(
     ],
 )
 
+env.Library(
+    target='storage_interface_impl_clean',
+    source=[
+        'storage_interface_impl.cpp',
+        'collection_bulk_loader_impl.cpp',
+    ],
+    LIBDEPS=[
+        'rollback_idl',
+        'storage_interface',
+        '$BUILD_DIR/mongo/db/common',
+        '$BUILD_DIR/mongo/db/exec/exec',
+        '$BUILD_DIR/mongo/db/query/internal_plans',
+        '$BUILD_DIR/mongo/db/query/query',
+    ],
+)
+
 env.CppUnitTest(
     target='storage_interface_impl_test',
     source=[
