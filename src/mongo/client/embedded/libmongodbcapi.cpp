@@ -45,6 +45,8 @@
 #include "mongo/util/scopeguard.h"
 #include "mongo/util/shared_buffer.h"
 
+#include "embedded_main.h"
+
 struct libmongodbcapi_db {
     libmongodbcapi_db() = default;
 
@@ -111,11 +113,13 @@ libmongodbcapi_db* db_new(int argc, const char** argv, const char** envp) noexce
         }
         global_db->envpPointers.push_back(nullptr);
 
-        // call mongoDbMain() in a new thread because it currently does not terminate
-        global_db->mongodThread = stdx::thread([=] {
-            mongoDbMain(argc, global_db->argvPointers.data(), global_db->envpPointers.data());
-        });
-        global_db->mongodThread.detach();
+		embeddedMain(argc, global_db->argvPointers.data(), global_db->envpPointers.data());
+
+        //// call mongoDbMain() in a new thread because it currently does not terminate
+        //global_db->mongodThread = stdx::thread([=] {
+        //    
+        //});
+        //global_db->mongodThread.detach();
 
         // wait until the global service context is not null
         global_db->serviceContext = waitAndGetGlobalServiceContext();

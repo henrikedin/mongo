@@ -4,17 +4,53 @@ Import("env")
 
 env = env.Clone()
 
+env.Library(
+    target="service_context_embedded",
+    source=[
+        "service_context_embedded.cpp",
+        "service_entry_point_embedded.cpp",
+    ],
+    LIBDEPS=[
+        '$BUILD_DIR/mongo/base',
+        '$BUILD_DIR/mongo/transport/service_entry_point',
+        '$BUILD_DIR/mongo/db/storage/storage_engine_lock_file',
+        '$BUILD_DIR/mongo/db/storage/storage_engine_metadata',
+        #'$BUILD_DIR/mongo/db/auth/authmongod',
+        #'$BUILD_DIR/mongo/db/commands/dcommands_fsync',
+        #'$BUILD_DIR/mongo/db/concurrency/lock_manager',
+        #'$BUILD_DIR/mongo/db/curop',
+        #'$BUILD_DIR/mongo/db/curop_metrics',
+        #'$BUILD_DIR/mongo/db/lasterror',
+        #'$BUILD_DIR/mongo/db/ops/write_ops_parsers',
+        #'$BUILD_DIR/mongo/db/rw_concern_d',
+        #'$BUILD_DIR/mongo/db/s/sharding',
+        #'$BUILD_DIR/mongo/db/storage/storage_options',
+    ],
+    LIBDEPS_PRIVATE=[
+        #'$BUILD_DIR/mongo/db/ops/write_ops_exec',
+    ],
+)
+
 capi = env.Library(
     target='mongo_embedded_capi',
     source=[
         'libmongodbcapi.cpp',
+		'embedded_main.cpp',
     ],
     LIBDEPS_PRIVATE=[
         '$BUILD_DIR/mongo/base',
         '$BUILD_DIR/mongo/db/service_context',
+        'service_context_embedded',
         '$BUILD_DIR/mongo/mongodembedded',
         '$BUILD_DIR/mongo/transport/transport_layer_mock',
         '$BUILD_DIR/mongo/util/net/network',
+
+        # hacks to make it link, to be removed
+        #'$BUILD_DIR/mongo/db/keys_collection_client_direct',
+        #'$BUILD_DIR/mongo/db/repl/storage_interface_impl_clean',
+        #'$BUILD_DIR/mongo/db/s/split_chunk',
+        #'$BUILD_DIR/mongo/db/s/split_vector',
+        
     ]
 )
 
