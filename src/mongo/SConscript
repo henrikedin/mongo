@@ -290,8 +290,6 @@ env.Library(
         "db/db.cpp",
     ],
     LIBDEPS_PRIVATE=[
-        'mongod_options_init',
-        'db/repair_database_and_check_version',
         'db/clientcursor',
         'db/commands/core',
         'db/conn_pool_options',
@@ -304,6 +302,7 @@ env.Library(
         'db/mongod_options',
         'db/mongodandmongos',
         'db/op_observer_d',
+        'db/repair_database_and_check_version',
         'db/repl/repl_set_commands',
         'db/repl/storage_interface_impl',
         'db/repl/topology_coordinator',
