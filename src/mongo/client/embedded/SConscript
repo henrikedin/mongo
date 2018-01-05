@@ -33,7 +33,7 @@ env.Library(
         '$BUILD_DIR/mongo/util/net/network',
         '$BUILD_DIR/mongo/util/version_impl',
         '$BUILD_DIR/mongo/mongod_options_init',
-		'$BUILD_DIR/mongo/mongod_options',
+		'$BUILD_DIR/mongo/db/mongod_options',
         '$BUILD_DIR/mongo/db/repair_database_and_check_version',
         'service_context_embedded',
 		'$BUILD_DIR/mongo/db/op_observer_d',
