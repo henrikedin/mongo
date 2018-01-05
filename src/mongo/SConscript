@@ -505,6 +505,7 @@ if not has_option('noshell') and usemozjs:
         ],
         LIBDEPS_PRIVATE=[
             "$BUILD_DIR/mongo/client/connection_string",
+			"$BUILD_DIR/mongo/util/quick_exit",
         ]
     )
 
