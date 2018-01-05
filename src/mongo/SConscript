@@ -280,7 +280,7 @@ env.Library(
         "db/mongod_options_init.cpp",
     ],
     LIBDEPS_PRIVATE=[
-        'mongod_options',
+        'db/mongod_options',
     ]
 )
 
@@ -299,7 +299,7 @@ env.Library(
         'db/initialize_snmp',
         'db/kill_sessions_local',
         'db/logical_session_cache_factory_mongod',
-        'db/mongod_options',
+        'mongod_options_init',
         'db/mongodandmongos',
         'db/op_observer_d',
         'db/repair_database_and_check_version',
