@@ -4,7 +4,7 @@ Import("env")
 
 env = env.Clone()
 
-env.Library(target="unittest",
+env.Library(target="unittest_base",
             source=[
                 'bson_test_util.cpp',
                 'death_test.cpp',
@@ -15,6 +15,14 @@ env.Library(target="unittest",
             LIBDEPS=[
                 '$BUILD_DIR/mongo/base',
                 '$BUILD_DIR/mongo/util/options_parser/options_parser',
+            ])
+
+env.Library(target="unittest",
+            source=[
+            ],
+            LIBDEPS=[
+                'unittest_base',
+                '$BUILD_DIR/mongo/util/quick_exit',
             ])
 
 env.Library("unittest_main", ['unittest_main.cpp'],

@@ -411,6 +411,7 @@ env.Library(
         "$BUILD_DIR/mongo/util/processinfo",
         "$BUILD_DIR/mongo/util/signal_handlers",
         "auth/authorization_manager_global",
+        "$BUILD_DIR/mongo/util/quick_exit",
     ],
 )
 
@@ -867,6 +868,17 @@ env.Library(
         "update/update_driver",
         "update_index_data",
         "views/views_mongod",
+    ],
+)
+
+env.Library(
+    target="repair_database_and_check_version",
+    source=[
+        "repair_database_and_check_version.cpp",
+    ],
+    LIBDEPS_PRIVATE=[
+        'repair_database',
+        'dbdirectclient',
     ],
 )
 

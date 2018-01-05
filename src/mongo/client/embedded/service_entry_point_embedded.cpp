@@ -638,8 +638,8 @@ void execCommandDatabase(OperationContext* opCtx,
         OperationContextSession sessionTxnState(
             opCtx, cmdWhitelist.find(command->getName()) != cmdWhitelist.cend());
 
-        //ImpersonationSessionGuard guard(opCtx);
-        //uassertStatusOK(Command::checkAuthorization(command, opCtx, request));
+        ImpersonationSessionGuard guard(opCtx);
+        uassertStatusOK(Command::checkAuthorization(command, opCtx, request));
 
         const bool iAmPrimary = replCoord->canAcceptWritesForDatabase_UNSAFE(opCtx, dbname);
 
@@ -955,14 +955,13 @@ void _receivedKillCursors(OperationContext* opCtx, const Message& m) {
         verify(n < 30000);
     }
 
-	// todo heed restore
-    /*const char* cursorArray = dbmessage.getArray(n);
+    const char* cursorArray = dbmessage.getArray(n);
 
     int found = CursorManager::eraseCursorGlobalIfAuthorized(opCtx, n, cursorArray);
 
     if (shouldLog(logger::LogSeverity::Debug(1)) || found != n) {
         LOG(found == n ? 1 : 0) << "killcursors: found " << found << " of " << n;
-    }*/
+    }
 }
 
 void receivedInsert(OperationContext* opCtx, const NamespaceString& nsString, const Message& m) {
