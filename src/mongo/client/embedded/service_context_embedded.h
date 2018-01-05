@@ -41,7 +41,7 @@ class ServiceContextMongoEmbedded final : public ServiceContext {
 public:
     using FactoryMap = std::map<std::string, const StorageEngine::Factory*>;
 
-	ServiceContextMongoEmbedded();
+    ServiceContextMongoEmbedded();
 
     ~ServiceContextMongoEmbedded();
 
@@ -76,7 +76,8 @@ class StorageFactoriesIteratorMongoEmbedded final : public StorageFactoriesItera
 public:
     typedef ServiceContextMongoEmbedded::FactoryMap::const_iterator FactoryMapIterator;
 
-	StorageFactoriesIteratorMongoEmbedded(const FactoryMapIterator& begin, const FactoryMapIterator& end);
+    StorageFactoriesIteratorMongoEmbedded(const FactoryMapIterator& begin,
+                                          const FactoryMapIterator& end);
 
     bool more() const override;
     const StorageEngine::Factory* next() override;

@@ -252,7 +252,7 @@ void ServiceContextMongoEmbedded::shutdownGlobalStorageEngineCleanly() {
 }
 
 void ServiceContextMongoEmbedded::registerStorageEngine(const std::string& name,
-                                                 const StorageEngine::Factory* factory) {
+                                                        const StorageEngine::Factory* factory) {
     // No double-registering.
     invariant(0 == _storageFactories.count(name));
 
@@ -270,11 +270,12 @@ bool ServiceContextMongoEmbedded::isRegisteredStorageEngine(const std::string& n
 }
 
 StorageFactoriesIterator* ServiceContextMongoEmbedded::makeStorageFactoriesIterator() {
-    return new StorageFactoriesIteratorMongoEmbedded(_storageFactories.begin(), _storageFactories.end());
+    return new StorageFactoriesIteratorMongoEmbedded(_storageFactories.begin(),
+                                                     _storageFactories.end());
 }
 
-StorageFactoriesIteratorMongoEmbedded::StorageFactoriesIteratorMongoEmbedded(const FactoryMapIterator& begin,
-                                                               const FactoryMapIterator& end)
+StorageFactoriesIteratorMongoEmbedded::StorageFactoriesIteratorMongoEmbedded(
+    const FactoryMapIterator& begin, const FactoryMapIterator& end)
     : _curr(begin), _end(end) {}
 
 bool StorageFactoriesIteratorMongoEmbedded::more() const {
@@ -285,7 +286,8 @@ const StorageEngine::Factory* StorageFactoriesIteratorMongoEmbedded::next() {
     return _curr++->second;
 }
 
-std::unique_ptr<OperationContext> ServiceContextMongoEmbedded::_newOpCtx(Client* client, unsigned opId) {
+std::unique_ptr<OperationContext> ServiceContextMongoEmbedded::_newOpCtx(Client* client,
+                                                                         unsigned opId) {
     invariant(&cc() == client);
     auto opCtx = stdx::make_unique<OperationContext>(client, opId);
 

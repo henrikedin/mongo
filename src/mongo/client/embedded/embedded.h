@@ -30,11 +30,9 @@
 
 #include "mongo/platform/basic.h"
 
-namespace mongo
-{
-	namespace embedded
-	{
-		int initialize(int argc, char* argv[], char** envp);
-		void shutdown();
-	}
+namespace mongo {
+namespace embedded {
+int initialize(int argc, char* argv[], char** envp);
+void shutdown();
+}
 }

@@ -30,17 +30,17 @@
 
 namespace mongo {
 
-	// Do not derive from std::exception so we don't accidentally capture it at the wrong place. 
-	class quick_exit_exception
-	{
-	public:
-		quick_exit_exception(int code)
-			:_code(code) {}
+// Do not derive from std::exception so we don't accidentally capture it at the wrong place.
+class quick_exit_exception {
+public:
+    quick_exit_exception(int code) : _code(code) {}
 
-		int code() const noexcept { return _code; }
+    int code() const noexcept {
+        return _code;
+    }
 
-	private:
-		int _code;
-	};
+private:
+    int _code;
+};
 
 }  // namespace mongo

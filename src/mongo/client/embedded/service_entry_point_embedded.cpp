@@ -1023,7 +1023,7 @@ DbResponse receivedGetMore(OperationContext* opCtx,
     const char* ns = d.getns();
     int ntoreturn = d.pullInt();
     uassert(
-		50676, str::stream() << "Invalid ntoreturn for OP_GET_MORE: " << ntoreturn, ntoreturn >= 0);
+        50676, str::stream() << "Invalid ntoreturn for OP_GET_MORE: " << ntoreturn, ntoreturn >= 0);
     long long cursorid = d.pullInt64();
 
     curop.debug().ntoreturn = ntoreturn;
@@ -1056,15 +1056,14 @@ DbResponse receivedGetMore(OperationContext* opCtx,
         dbresponse.response =
             getMore(opCtx, ns, ntoreturn, cursorid, &exhaust, &isCursorAuthorized);
     } catch (AssertionException& e) {
-		// todo heed restore
-        //if (isCursorAuthorized) {
-        //    // If a cursor with id 'cursorid' was authorized, it may have been advanced
-        //    // before an exception terminated processGetMore.  Erase the ClientCursor
-        //    // because it may now be out of sync with the client's iteration state.
-        //    // SERVER-7952
-        //    // TODO Temporary code, see SERVER-4563 for a cleanup overview.
-        //    CursorManager::eraseCursorGlobal(opCtx, cursorid);
-        //}
+        if (isCursorAuthorized) {
+            // If a cursor with id 'cursorid' was authorized, it may have been advanced
+            // before an exception terminated processGetMore.  Erase the ClientCursor
+            // because it may now be out of sync with the client's iteration state.
+            // SERVER-7952
+            // TODO Temporary code, see SERVER-4563 for a cleanup overview.
+            CursorManager::eraseCursorGlobal(opCtx, cursorid);
+        }
 
         BSONObjBuilder err;
         err.append("$err", e.reason());

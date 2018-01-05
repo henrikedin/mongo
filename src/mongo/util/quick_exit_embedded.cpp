@@ -35,7 +35,7 @@
 namespace mongo {
 
 void quickExit(int code) {
-	throw quick_exit_exception(code);
+    throw quick_exit_exception(code);
 }
 
 }  // namespace mongo
