@@ -82,7 +82,7 @@ StorageEngine* ServiceContextMongoEmbedded::getGlobalStorageEngine() {
 
 void ServiceContextMongoEmbedded::createLockFile() {
     try {
-        _lockFile.reset(new StorageEngineLockFile(storageGlobalParams.dbpath));
+        _lockFile = stdx::make_unique<StorageEngineLockFile>(storageGlobalParams.dbpath);
     } catch (const std::exception& ex) {
         uassert(50668,
                 str::stream() << "Unable to determine status of lock file in the data directory "

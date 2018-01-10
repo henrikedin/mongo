@@ -32,7 +32,6 @@
 #include <set>
 
 #include "mongo/bson/bsonobjbuilder.h"
-#include "mongo/db/client.h"
 #include "mongo/db/json.h"
 #include "mongo/stdx/memory.h"
 #include "mongo/unittest/temp_dir.h"

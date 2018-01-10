@@ -1458,7 +1458,7 @@ env.Library(
         'service_context_d_test_fixture.cpp',
     ],
     LIBDEPS= [
-		'service_context_d',
+        'service_context_d',
         '$BUILD_DIR/mongo/db/serveronly',
         '$BUILD_DIR/mongo/db/storage/storage_options',
         '$BUILD_DIR/mongo/unittest/unittest',
@@ -1606,7 +1606,7 @@ env.CppUnitTest(
     ],
     LIBDEPS=[
         '$BUILD_DIR/mongo/db/repl/mock_repl_coord_server_fixture',
-		'service_context_d',
+        'service_context_d',
         'write_ops',
     ],
 )

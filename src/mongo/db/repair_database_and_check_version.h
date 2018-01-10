@@ -34,7 +34,6 @@
 
 namespace mongo {
 class OperationContext;
-class Status;
 
 /**
 * Return an error status if the wrong mongod version was used for these datafiles. The boolean
