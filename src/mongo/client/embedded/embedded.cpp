@@ -227,22 +227,19 @@ int initialize(int argc, char* argv[], char** envp) {
     if (serverGlobalParams.parsedOpts.hasField("storage")) {
         BSONElement storageElement = serverGlobalParams.parsedOpts.getField("storage");
         invariant(storageElement.isABSONObj());
-        BSONObj storageParamsObj = storageElement.Obj();
-        BSONObjIterator i = storageParamsObj.begin();
-        while (i.more()) {
-            BSONElement e = i.next();
-            // Ignore if field name under "storage" matches current storage engine.
-            if (storageGlobalParams.engine == e.fieldName()) {
-                continue;
-            }
+		for (auto&& e : storageElement.Obj()) {
+			// Ignore if field name under "storage" matches current storage engine.
+			if (storageGlobalParams.engine == e.fieldName()) {
+				continue;
+			}
 
-            // Warn if field name matches non-active registered storage engine.
-            if (serviceContext->isRegisteredStorageEngine(e.fieldName())) {
-                warning() << "Detected configuration for non-active storage engine "
-                          << e.fieldName() << " when current storage engine is "
-                          << storageGlobalParams.engine;
-            }
-        }
+			// Warn if field name matches non-active registered storage engine.
+			if (serviceContext->isRegisteredStorageEngine(e.fieldName())) {
+				warning() << "Detected configuration for non-active storage engine "
+					<< e.fieldName() << " when current storage engine is "
+					<< storageGlobalParams.engine;
+			}
+		}
     }
 
     logMongodStartupWarnings(storageGlobalParams, serverGlobalParams, serviceContext);
