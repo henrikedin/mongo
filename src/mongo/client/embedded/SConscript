@@ -14,21 +14,14 @@ env.Library(
     ],
     LIBDEPS_PRIVATE=[
         '$BUILD_DIR/mongo/base',
-        #'$BUILD_DIR/mongo/db/concurrency/lock_manager',
-        #'$BUILD_DIR/mongo/transport/service_entry_point',
-        '$BUILD_DIR/mongo/db/ops/write_ops_exec',
-        #'$BUILD_DIR/mongo/db/dbmessage',
-        #'$BUILD_DIR/mongo/db/curop',
-        '$BUILD_DIR/mongo/db/clientcursor',
-        '$BUILD_DIR/mongo/db/rw_concern_d',
-        '$BUILD_DIR/mongo/db/storage/storage_engine_lock_file',
-        '$BUILD_DIR/mongo/db/storage/storage_engine_metadata',
-        #'$BUILD_DIR/mongo/db/storage/storage_options',
-        '$BUILD_DIR/mongo/db/s/sharding',
-        
-
         '$BUILD_DIR/mongo/db/auth/authcore',
         '$BUILD_DIR/mongo/db/auth/authmongod',
+        '$BUILD_DIR/mongo/db/clientcursor',
+        '$BUILD_DIR/mongo/db/ops/write_ops_exec',
+        '$BUILD_DIR/mongo/db/rw_concern_d',
+        '$BUILD_DIR/mongo/db/s/sharding',
+        '$BUILD_DIR/mongo/db/storage/storage_engine_lock_file',
+        '$BUILD_DIR/mongo/db/storage/storage_engine_metadata',
     ],
 )
 
@@ -43,21 +36,11 @@ env.Library(
     LIBDEPS_PRIVATE=[
         '$BUILD_DIR/mongo/base',
         '$BUILD_DIR/mongo/db/concurrency/lock_manager',
-        '$BUILD_DIR/mongo/transport/service_entry_point',
-        #'$BUILD_DIR/mongo/db/ops/write_ops_exec',
-        #'$BUILD_DIR/mongo/db/dbmessage',
-        #'$BUILD_DIR/mongo/db/curop',
-        #'$BUILD_DIR/mongo/db/clientcursor',
-        #'$BUILD_DIR/mongo/db/rw_concern_d',
         '$BUILD_DIR/mongo/db/storage/storage_engine_lock_file',
         '$BUILD_DIR/mongo/db/storage/storage_engine_metadata',
         '$BUILD_DIR/mongo/db/storage/storage_options',
+        '$BUILD_DIR/mongo/transport/service_entry_point',
         '$BUILD_DIR/mongo/util/options_parser/options_parser_init',
-        #'$BUILD_DIR/mongo/db/s/sharding',
-        
-
-        #'$BUILD_DIR/mongo/db/auth/authcore',
-        #'$BUILD_DIR/mongo/db/auth/authmongod',
     ],
 )
 
@@ -72,7 +55,6 @@ env.Library(
     LIBDEPS_PRIVATE=[
         '$BUILD_DIR/mongo/base',
         '$BUILD_DIR/mongo/db/service_context',
-        #'$BUILD_DIR/mongo/transport/transport_layer_mock',
         '$BUILD_DIR/mongo/util/net/network',
         '$BUILD_DIR/mongo/util/version_impl',
         '$BUILD_DIR/mongo/mongod_options_init',
