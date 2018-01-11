@@ -26,34 +26,23 @@
 *    it in the license file.
 */
 
-#pragma once
+#include "mongo/platform/basic.h"
 
-#include "mongo/util/decorable.h"
+#include "process_context.h"
 
-namespace mongo
-{
-	class ProcessContext : public Decorable<ProcessContext> {
-		MONGO_DISALLOW_COPYING(ProcessContext);
-	public:
-		ProcessContext() {}
+namespace mongo {
+	namespace {
+		ProcessContext* globalProcessContext = nullptr;
+	}
 
-		void quickExit(int code);
-	};
+	ProcessContext* getProcessContext() {
+		//fassert(50660, globalProcessContext);
+		return globalProcessContext;
+	}
 
-	/**
-	* Returns the singleton ServiceContext for this server process.
-	*
-	* Fatal if there is currently no global ServiceContext.
-	*
-	* Caller does not own pointer.
-	*/
-	ProcessContext* getProcessContext();
+	void initializeProcessContext()
+	{
+		globalProcessContext = new ProcessContext();
+	}
 
-	/**
-	* Sets the global ServiceContext.  If 'serviceContext' is NULL, un-sets and deletes
-	* the current global ServiceContext.
-	*
-	* Takes ownership of 'serviceContext'.
-	*/
-	void initializeProcessContext();
 }

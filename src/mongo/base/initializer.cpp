@@ -29,7 +29,9 @@
 
 #include "mongo/base/global_initializer.h"
 #include "mongo/util/assert_util.h"
+#include "mongo/util/process_context.h"
 #include "mongo/util/quick_exit.h"
+
 #include <iostream>
 
 namespace mongo {
@@ -67,6 +69,8 @@ Status Initializer::execute(const InitializerContext::ArgumentVector& args,
 
 Status runGlobalInitializers(const InitializerContext::ArgumentVector& args,
                              const InitializerContext::EnvironmentMap& env) {
+
+	initializeProcessContext();
     return getGlobalInitializer().execute(args, env);
 }
 

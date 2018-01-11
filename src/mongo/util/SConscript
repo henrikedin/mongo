@@ -692,19 +692,19 @@ if env['MONGO_PROCESS_CONTEXT'] == 'standalone':
     env.Library(
         target='process_context',
         source=[
+			'process_context.cpp',
             'process_context_standalone.cpp',
         ],
         LIBDEPS=[
-            '$BUILD_DIR/mongo/base',
         ],
     )
 elif env['MONGO_PROCESS_CONTEXT'] == 'embedded':
     env.Library(
         target='process_context',
         source=[
+			'process_context.cpp',
             'process_context_embedded.cpp',
         ],
         LIBDEPS=[
-            '$BUILD_DIR/mongo/base',
         ],
     )
