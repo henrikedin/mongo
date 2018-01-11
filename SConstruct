@@ -240,6 +240,13 @@ add_option('allocator',
     type='choice',
 )
 
+add_option('process_context',
+    choices=["standalone", "embedded"],
+    default="standalone",
+    help='process_context to use (use "auto" for best choice for current platform)',
+    type='choice',
+)
+
 add_option('gdbserver',
     help='build in gdb server support',
     nargs=0,
@@ -1171,6 +1178,8 @@ if get_option('allocator') == "auto":
         env['MONGO_ALLOCATOR'] = "system"
 else:
     env['MONGO_ALLOCATOR'] = get_option('allocator')
+
+env['MONGO_PROCESS_CONTEXT'] = get_option('process_context')
 
 if has_option("cache"):
     if has_option("gcov"):
