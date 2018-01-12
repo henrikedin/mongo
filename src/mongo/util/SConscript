@@ -698,6 +698,9 @@ if env['MONGO_PROCESS_CONTEXT'] == 'standalone':
         LIBDEPS=[
             'quick_exit',
         ],
+        LIBDEPS_PRIVATE=[
+            'decorable'
+        ]
     )
 elif env['MONGO_PROCESS_CONTEXT'] == 'embedded':
     env.Library(
@@ -708,4 +711,7 @@ elif env['MONGO_PROCESS_CONTEXT'] == 'embedded':
         ],
         LIBDEPS=[
         ],
+        LIBDEPS_PRIVATE=[
+            'decorable'
+        ]
     )
