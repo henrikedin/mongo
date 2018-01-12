@@ -144,7 +144,6 @@ env.Library(
         '$BUILD_DIR/third_party/shim_pcrecpp',
         '$BUILD_DIR/third_party/shim_tz',
 		'util/process_context',
-        'util/quick_exit',
     ],
     LIBDEPS_PRIVATE=[
         'util/debugger',

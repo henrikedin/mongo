@@ -696,6 +696,7 @@ if env['MONGO_PROCESS_CONTEXT'] == 'standalone':
             'process_context_standalone.cpp',
         ],
         LIBDEPS=[
+            'quick_exit',
         ],
     )
 elif env['MONGO_PROCESS_CONTEXT'] == 'embedded':
