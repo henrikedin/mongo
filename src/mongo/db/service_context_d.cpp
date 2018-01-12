@@ -60,7 +60,9 @@ auto makeMongoDServiceContext() {
     return service;
 }
 
-MONGO_INITIALIZER(SetGlobalEnvironment)(InitializerContext* context) {
+MONGO_INITIALIZER_WITH_PREREQUISITES(SetGlobalEnvironment,
+                                     ("CreateAuthorizationExternalStateFactory"))
+(InitializerContext* context) {
     setGlobalServiceContext(makeMongoDServiceContext());
     return Status::OK();
 }

@@ -32,6 +32,7 @@
 #include "mongo/base/init.h"
 #include "mongo/db/auth/authorization_manager.h"
 #include "mongo/db/auth/authorization_manager_global.h"
+#include "mongo/db/auth/authorization_session.h"
 #include "mongo/db/auth/authz_manager_external_state.h"
 #include "mongo/db/server_options.h"
 #include "mongo/db/server_parameters.h"
@@ -88,22 +89,24 @@ AuthorizationManager* getGlobalAuthorizationManager() {
     return globalAuthManager;
 }
 
-MONGO_EXPORT_STARTUP_SERVER_PARAMETER(startupAuthSchemaValidation, bool, true);
+class AuthzClientObserver final : public ServiceContext::ClientObserver {
+public:
+    void onCreateClient(Client* client) override {
+        auto service = client->getServiceContext();
+        AuthorizationSession::set(client,
+                                  AuthorizationManager::get(service)->makeAuthorizationSession());
+    }
+
+    void onDestroyClient(Client* client) override {}
+
+    void onCreateOperationContext(OperationContext* opCtx) override {}
+    void onDestroyOperationContext(OperationContext* opCtx) override {}
+};
 
 MONGO_INITIALIZER_WITH_PREREQUISITES(CreateAuthorizationManager,
-                                     ("SetupInternalSecurityUser",
-                                      "OIDGeneration",
-                                      "SetGlobalEnvironment",
-                                      "CreateAuthorizationExternalStateFactory",
-                                      "EndStartupOptionStorage"))
+                                     ("OIDGeneration", "SetGlobalEnvironment"))
 (InitializerContext* context) {
-    auto authzManager =
-        stdx::make_unique<AuthorizationManager>(AuthzManagerExternalState::create());
-    authzManager->setAuthEnabled(serverGlobalParams.authState ==
-                                 ServerGlobalParams::AuthState::kEnabled);
-    authzManager->setShouldValidateAuthSchemaOnStartup(startupAuthSchemaValidation);
-    AuthorizationManager::set(getGlobalServiceContext(), std::move(authzManager));
+    getGlobalServiceContext()->registerClientObserver(stdx::make_unique<AuthzClientObserver>());
     return Status::OK();
 }
-
 }  // namespace mongo

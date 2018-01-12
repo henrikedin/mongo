@@ -105,6 +105,11 @@ public:
         return Decoration<T>(getRegistry()->declareDecoration<T>());
     }
 
+    template <typename T, typename C>
+    static Decoration<T> declareDecorationWithConstructor(C c) {
+        return Decoration<T>(getRegistry()->declareDecorationWithConstructor<T, C>(std::move(c)));
+    }
+
     template <typename T>
     static Decoration<T> declareDecorationWithOwner() {
         return Decoration<T>(getRegistry()->declareDecorationWithOwner<T, D>());

@@ -84,7 +84,6 @@ class AuthorizationManager {
 public:
     static AuthorizationManager* get(ServiceContext* service);
     static AuthorizationManager* get(ServiceContext& service);
-    static void set(ServiceContext* service, std::unique_ptr<AuthorizationManager> authzManager);
 
     // The newly constructed AuthorizationManager takes ownership of "externalState"
     explicit AuthorizationManager(std::unique_ptr<AuthzManagerExternalState> externalState);

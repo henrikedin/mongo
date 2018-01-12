@@ -66,6 +66,15 @@ public:
             sizeof(T), std::alignment_of<T>::value, &constructAt<T>, &destructAt<T>)));
     }
 
+    template <typename T, typename Constructor>
+    DecorationContainer::DecorationDescriptorWithType<T> declareDecorationWithConstructor(
+        Constructor constructor) {
+        MONGO_STATIC_ASSERT_MSG(std::is_nothrow_destructible<T>::value,
+                                "Decorations must be nothrow destructible");
+        return DecorationContainer::DecorationDescriptorWithType<T>(std::move(declareDecoration(
+            sizeof(T), std::alignment_of<T>::value, std::move(constructor), &destructAt<T>)));
+    }
+
     template <typename T, typename Owner>
     DecorationContainer::DecorationDescriptorWithType<T> declareDecorationWithOwner() {
         MONGO_STATIC_ASSERT_MSG(std::is_nothrow_destructible<T>::value,

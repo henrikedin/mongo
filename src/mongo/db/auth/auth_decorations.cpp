@@ -34,7 +34,9 @@
 #include "mongo/db/auth/authentication_session.h"
 #include "mongo/db/auth/authorization_manager.h"
 #include "mongo/db/auth/authorization_session.h"
+#include "mongo/db/auth/authz_manager_external_state.h"
 #include "mongo/db/client.h"
+#include "mongo/db/server_parameters.h"
 #include "mongo/db/service_context.h"
 #include "mongo/stdx/memory.h"
 #include "mongo/util/assert_util.h"
@@ -42,28 +44,29 @@
 namespace mongo {
 namespace {
 
+MONGO_EXPORT_STARTUP_SERVER_PARAMETER(startupAuthSchemaValidation, bool, true);
+
 const auto getAuthenticationSession =
     Client::declareDecoration<std::unique_ptr<AuthenticationSession>>();
 
+const auto authorizationConstructor = [](void* location, void* owner) {
+    auto serviceContext = static_cast<ServiceContext*>(owner);
+    auto authzManager = reinterpret_cast<AuthorizationManager*>(location);
+    new (authzManager) AuthorizationManager(serviceContext, AuthzManagerExternalState::create());
+
+    authzManager->setAuthEnabled(serverGlobalParams.authState ==
+                                 ServerGlobalParams::AuthState::kEnabled);
+
+    authzManager->setShouldValidateAuthSchemaOnStartup(startupAuthSchemaValidation);
+};
+
 const auto getAuthorizationManager =
-    ServiceContext::declareDecoration<std::unique_ptr<AuthorizationManager>>();
+    ServiceContext::declareDecorationWithConstructor<AuthorizationManager,
+                                                     decltype(authorizationConstructor)>(
+        authorizationConstructor);
 
 const auto getAuthorizationSession =
     Client::declareDecoration<std::unique_ptr<AuthorizationSession>>();
-
-class AuthzClientObserver final : public ServiceContext::ClientObserver {
-public:
-    void onCreateClient(Client* client) override {
-        auto service = client->getServiceContext();
-        AuthorizationSession::set(client,
-                                  AuthorizationManager::get(service)->makeAuthorizationSession());
-    }
-
-    void onDestroyClient(Client* client) override {}
-
-    void onCreateOperationContext(OperationContext* opCtx) override {}
-    void onDestroyOperationContext(OperationContext* opCtx) override {}
-};
 
 }  // namespace
 
@@ -77,21 +80,13 @@ void AuthenticationSession::swap(Client* client, std::unique_ptr<AuthenticationS
 }
 
 AuthorizationManager* AuthorizationManager::get(ServiceContext* service) {
-    return getAuthorizationManager(service).get();
+    return &getAuthorizationManager(service);
 }
 
 AuthorizationManager* AuthorizationManager::get(ServiceContext& service) {
-    return getAuthorizationManager(service).get();
+    return &getAuthorizationManager(service);
 }
 
-void AuthorizationManager::set(ServiceContext* service,
-                               std::unique_ptr<AuthorizationManager> authzManager) {
-    auto& manager = getAuthorizationManager(service);
-    invariant(authzManager);
-    invariant(!manager);
-    manager = std::move(authzManager);
-    service->registerClientObserver(stdx::make_unique<AuthzClientObserver>());
-}
 
 AuthorizationSession* AuthorizationSession::get(Client* client) {
     return get(*client);
