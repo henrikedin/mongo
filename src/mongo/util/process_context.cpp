@@ -31,18 +31,15 @@
 #include "process_context.h"
 
 namespace mongo {
-	namespace {
-		ProcessContext* globalProcessContext = nullptr;
-	}
+namespace {
+ProcessContext* globalProcessContext = nullptr;
+}
 
-	ProcessContext* getProcessContext() {
-		//fassert(50660, globalProcessContext);
-		return globalProcessContext;
-	}
+ProcessContext* getProcessContext() {
+    return globalProcessContext;
+}
 
-	void initializeProcessContext()
-	{
-		globalProcessContext = new ProcessContext();
-	}
-
+void initializeProcessContext() {
+    globalProcessContext = new ProcessContext();
+}
 }

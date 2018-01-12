@@ -30,30 +30,30 @@
 
 #include "mongo/util/decorable.h"
 
-namespace mongo
-{
-	class ProcessContext : public Decorable<ProcessContext> {
-		MONGO_DISALLOW_COPYING(ProcessContext);
-	public:
-		ProcessContext() {}
+namespace mongo {
+class ProcessContext : public Decorable<ProcessContext> {
+    MONGO_DISALLOW_COPYING(ProcessContext);
 
-		void quickExit(int code);
-	};
+public:
+    ProcessContext() {}
 
-	/**
-	* Returns the singleton ServiceContext for this server process.
-	*
-	* Fatal if there is currently no global ServiceContext.
-	*
-	* Caller does not own pointer.
-	*/
-	ProcessContext* getProcessContext();
+    void quickExit(int code);
+};
 
-	/**
-	* Sets the global ServiceContext.  If 'serviceContext' is NULL, un-sets and deletes
-	* the current global ServiceContext.
-	*
-	* Takes ownership of 'serviceContext'.
-	*/
-	void initializeProcessContext();
+/**
+* Returns the singleton ServiceContext for this server process.
+*
+* Fatal if there is currently no global ServiceContext.
+*
+* Caller does not own pointer.
+*/
+ProcessContext* getProcessContext();
+
+/**
+* Sets the global ServiceContext.  If 'serviceContext' is NULL, un-sets and deletes
+* the current global ServiceContext.
+*
+* Takes ownership of 'serviceContext'.
+*/
+void initializeProcessContext();
 }

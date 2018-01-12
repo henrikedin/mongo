@@ -33,8 +33,7 @@
 //#include "quick_exit.h"
 
 namespace mongo {
-	void ProcessContext::quickExit(int code)
-	{
-		//::quickExit(code);
-	}
+void ProcessContext::quickExit(int code) {
+    //::quickExit(code);
+}
 }

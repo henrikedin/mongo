@@ -70,7 +70,7 @@ Status Initializer::execute(const InitializerContext::ArgumentVector& args,
 Status runGlobalInitializers(const InitializerContext::ArgumentVector& args,
                              const InitializerContext::EnvironmentMap& env) {
 
-	initializeProcessContext();
+    initializeProcessContext();
     return getGlobalInitializer().execute(args, env);
 }
 
