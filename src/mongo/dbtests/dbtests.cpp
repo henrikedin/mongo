@@ -52,7 +52,7 @@
 #include "mongo/scripting/engine.h"
 #include "mongo/stdx/memory.h"
 #include "mongo/util/clock_source_mock.h"
-#include "mongo/util/quick_exit.h"
+#include "mongo/util/process_context.h"
 #include "mongo/util/signal_handlers_synchronous.h"
 #include "mongo/util/startup_test.h"
 #include "mongo/util/text.h"

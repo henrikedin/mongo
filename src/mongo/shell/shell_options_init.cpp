@@ -42,7 +42,7 @@ MONGO_GENERAL_STARTUP_OPTIONS_REGISTER(MongoShellOptions)(InitializerContext* co
 
 MONGO_STARTUP_OPTIONS_VALIDATE(MongoShellOptions)(InitializerContext* context) {
     if (!handlePreValidationMongoShellOptions(moe::startupOptionsParsed, context->args())) {
-        getProcessContext()->quickExit(EXIT_SUCCESS);
+        process::quickExit(EXIT_SUCCESS);
     }
     Status ret = moe::startupOptionsParsed.validate();
     if (!ret.isOK()) {
@@ -57,7 +57,7 @@ MONGO_STARTUP_OPTIONS_STORE(MongoShellOptions)(InitializerContext* context) {
     if (!ret.isOK()) {
         std::cerr << ret.toString() << std::endl;
         std::cerr << "try '" << context->args()[0] << " --help' for more information" << std::endl;
-        getProcessContext()->quickExit(EXIT_BADOPTIONS);
+        process::quickExit(EXIT_BADOPTIONS);
     }
     return Status::OK();
 }

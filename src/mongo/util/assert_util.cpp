@@ -172,7 +172,7 @@ NOINLINE_DECL void fassertFailedNoTraceWithLocation(int msgid,
     severe() << "Fatal Assertion " << msgid << " at " << file << " " << dec << line;
     breakpoint();
     severe() << "\n\n***aborting after fassert() failure\n\n" << endl;
-    getProcessContext()->quickExit(EXIT_ABRUPT);
+    process::quickExit(EXIT_ABRUPT);
 }
 
 MONGO_COMPILER_NORETURN void fassertFailedWithStatusWithLocation(int msgid,
@@ -194,7 +194,7 @@ MONGO_COMPILER_NORETURN void fassertFailedWithStatusNoTraceWithLocation(int msgi
              << line;
     breakpoint();
     severe() << "\n\n***aborting after fassert() failure\n\n" << endl;
-    getProcessContext()->quickExit(EXIT_ABRUPT);
+    process::quickExit(EXIT_ABRUPT);
 }
 
 NOINLINE_DECL void uassertedWithLocation(const Status& status, const char* file, unsigned line) {

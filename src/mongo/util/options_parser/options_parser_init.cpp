@@ -47,7 +47,7 @@ MONGO_STARTUP_OPTIONS_PARSE(StartupOptions)(InitializerContext* context) {
         std::cerr << ret.reason() << std::endl;
         // TODO: Figure out if there's a use case for this help message ever being different
         std::cerr << "try '" << context->args()[0] << " --help' for more information" << std::endl;
-        getProcessContext()->quickExit(EXIT_BADOPTIONS);
+        process::quickExit(EXIT_BADOPTIONS);
     }
     return Status::OK();
 }

@@ -42,11 +42,11 @@
 int wmain(int argc, wchar_t* argvW[], wchar_t* envpW[]) {
     mongo::WindowsCommandLine wcl(argc, argvW, envpW);
     int exitCode = mongo::mongoDbMain(argc, wcl.argv(), wcl.envp());
-    mongo::getProcessContext()->quickExit(exitCode);
+    mongo::process::quickExit(exitCode);
 }
 #else
 int main(int argc, char* argv[], char** envp) {
     int exitCode = mongo::mongoDbMain(argc, argv, envp);
-    mongo::getProcessContext()->quickExit(exitCode);
+    mongo::process::quickExit(exitCode);
 }
 #endif

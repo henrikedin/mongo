@@ -73,42 +73,42 @@ extern "C" void __gcov_flush();
 namespace mongo {
 namespace detail {
 
-	namespace {
-		stdx::mutex* const quickExitMutex = new stdx::mutex;
-	}  // namespace
+namespace {
+stdx::mutex* const quickExitMutex = new stdx::mutex;
+}  // namespace
 
-	void quickExit(int code) {
-		// Ensure that only one thread invokes the last rites here. No
-		// RAII here - we never want to unlock this.
-		if (quickExitMutex)
-			quickExitMutex->lock();
+void quickExit(int code) {
+    // Ensure that only one thread invokes the last rites here. No
+    // RAII here - we never want to unlock this.
+    if (quickExitMutex)
+        quickExitMutex->lock();
 
 #if defined(MONGO_CPU_PROFILER)
-		::ProfilerStop();
+    ::ProfilerStop();
 #endif
 
 #ifdef MONGO_GCOV
-		__gcov_flush();
+    __gcov_flush();
 #endif
 
 #if __has_feature(address_sanitizer)
-		// Always dump coverage data first because older versions of sanitizers may not write coverage
-		// data before exiting with errors. The underlying issue is fixed in clang 3.6, which also
-		// prevents coverage data from being written more than once via an atomic guard.
-		__sanitizer_cov_dump();
-		__lsan_do_leak_check();
+    // Always dump coverage data first because older versions of sanitizers may not write coverage
+    // data before exiting with errors. The underlying issue is fixed in clang 3.6, which also
+    // prevents coverage data from being written more than once via an atomic guard.
+    __sanitizer_cov_dump();
+    __lsan_do_leak_check();
 #endif
 
 #if defined(_WIN32)
-		// SERVER-23860: VS 2015 Debug Builds abort and Release builds AV when _exit is called on
-		// multiple threads. Each call to _exit shuts down the CRT, and so subsequent calls into the
-		// CRT result in undefined behavior. Bypass _exit CRT shutdown code and call TerminateProcess
-		// directly instead to match GLibc's _exit which calls the syscall exit_group.
-		::TerminateProcess(GetCurrentProcess(), code);
+    // SERVER-23860: VS 2015 Debug Builds abort and Release builds AV when _exit is called on
+    // multiple threads. Each call to _exit shuts down the CRT, and so subsequent calls into the
+    // CRT result in undefined behavior. Bypass _exit CRT shutdown code and call TerminateProcess
+    // directly instead to match GLibc's _exit which calls the syscall exit_group.
+    ::TerminateProcess(GetCurrentProcess(), code);
 #else
-		::_exit(code);
+    ::_exit(code);
 #endif
-	}
+}
 
 }  // namespace detail
-} // namespace mongo
+}  // namespace mongo

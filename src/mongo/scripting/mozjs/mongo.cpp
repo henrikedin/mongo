@@ -780,7 +780,7 @@ void MongoExternalInfo::Functions::load::call(JSContext* cx, JS::CallArgs args) 
 }
 
 void MongoExternalInfo::Functions::quit::call(JSContext* cx, JS::CallArgs args) {
-    getProcessContext()->quickExit(args.get(0).isNumber() ? args.get(0).toNumber() : 0);
+    process::quickExit(args.get(0).isNumber() ? args.get(0).toNumber() : 0);
 }
 
 void MongoExternalInfo::Functions::_forgetReplSet::call(JSContext* cx, JS::CallArgs args) {

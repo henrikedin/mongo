@@ -1,5 +1,5 @@
 /**
-*    Copyright (C) 2014 MongoDB Inc.
+*    Copyright (C) 2017 MongoDB Inc.
 *
 *    This program is free software: you can redistribute it and/or  modify
 *    it under the terms of the GNU Affero General Public License, version 3,
@@ -26,20 +26,20 @@
 *    it in the license file.
 */
 
-#include "mongo/platform/compiler.h"
+#pragma once
+
+#include "mongo/platform/basic.h"
 
 namespace mongo {
-namespace detail {
+	namespace embedded {
+		class QuickExitException {
+		public:
+			QuickExitException(int code) : _code(code) {}
 
-/** This function will call ::_exit and not return. Use this instead of calling ::_exit
-    *  directly:
-    *   - It offers a debugger hook to catch the process before leaving code under our control.
-    *   - For some builds (leak sanitizer) it gives us an opportunity to dump leaks.
-    *
-    *  The function is named differently than quick_exit so that we can distinguish it from
-    *  the C++11 function of the same name.
-    */
-MONGO_COMPILER_NORETURN void quickExit(int);
+			int code() const { return _code; }
 
-}  // namespace detail
-}  // namespace mongo
+		private:
+			int _code;
+		};
+	}
+}

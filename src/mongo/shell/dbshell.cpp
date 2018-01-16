@@ -240,7 +240,7 @@ string getURIFromArgs(const std::string& arg, const std::string& host, const std
     // since we have separate host/port args.
     if ((arg.find('/') != string::npos) && (host.size() || port.size())) {
         cerr << "If a full URI is provided, you cannot also specify --host or --port" << endl;
-        getProcessContext()->quickExit(-1);
+        process::quickExit(-1);
     }
 
     const auto parseDbHost = [port](const std::string& db, const std::string& host) -> std::string {
@@ -307,7 +307,7 @@ string getURIFromArgs(const std::string& arg, const std::string& host, const std
                     if (port.size() && (port != myport)) {
                         cerr << "connection string bears different port than provided by --port"
                              << endl;
-                        getProcessContext()->quickExit(-1);
+                        process::quickExit(-1);
                     }
                     ss << ':' << uriEncode(myport);
                 } else if (port.size()) {
@@ -1133,7 +1133,7 @@ int wmain(int argc, wchar_t* argvW[], wchar_t* envpW[]) {
         cerr << "exception: " << e.what() << endl;
         returnCode = 1;
     }
-    getProcessContext()->quickExit(returnCode);
+    process::quickExit(returnCode);
 }
 #else   // #ifdef _WIN32
 int main(int argc, char* argv[], char** envp) {

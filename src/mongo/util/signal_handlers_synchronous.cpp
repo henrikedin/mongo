@@ -148,7 +148,7 @@ class MallocFreeOStreamGuard {
 public:
     explicit MallocFreeOStreamGuard() : _lk(_streamMutex, stdx::defer_lock) {
         if (terminateDepth++) {
-            getProcessContext()->quickExit(EXIT_ABRUPT);
+            process::quickExit(EXIT_ABRUPT);
         }
         _lk.lock();
     }
@@ -357,7 +357,7 @@ void reportOutOfMemoryErrorAndExit() {
     MallocFreeOStreamGuard lk{};
     printStackTrace(mallocFreeOStream << "out of memory.\n");
     writeMallocFreeStreamToLog();
-    getProcessContext()->quickExit(EXIT_ABRUPT);
+    process::quickExit(EXIT_ABRUPT);
 }
 
 void clearSignalMask() {

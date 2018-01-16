@@ -440,7 +440,7 @@ void ServiceStateMachine::_runNextInGuard(ThreadGuard guard) {
         log() << "DBException handling request, closing client connection: " << redact(e);
     } catch (const std::exception& e) {
         error() << "Uncaught std::exception: " << e.what() << ", terminating";
-        getProcessContext()->quickExit(EXIT_UNCAUGHT);
+        process::quickExit(EXIT_UNCAUGHT);
     }
 
     if (!guard) {

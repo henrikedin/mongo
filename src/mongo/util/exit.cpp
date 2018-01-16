@@ -72,7 +72,7 @@ void runTasks(decltype(shutdownTasks) tasks) {
 MONGO_COMPILER_NORETURN void logAndQuickExit_inlock() {
     ExitCode code = shutdownExitCode.get();
     log() << "shutting down with code:" << code;
-    getProcessContext()->quickExit(code);
+    process::quickExit(code);
 }
 
 void setShutdownFlag() {

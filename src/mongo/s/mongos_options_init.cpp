@@ -47,7 +47,7 @@ MONGO_INITIALIZER_GENERAL(MongosOptions,
                           ("EndStartupOptionValidation"))
 (InitializerContext* context) {
     if (!handlePreValidationMongosOptions(moe::startupOptionsParsed, context->args())) {
-        getProcessContext()->quickExit(EXIT_SUCCESS);
+        process::quickExit(EXIT_SUCCESS);
     }
     // Run validation, but tell the Environment that we don't want it to be set as "valid",
     // since we may be making it invalid in the canonicalization process.
@@ -78,7 +78,7 @@ MONGO_INITIALIZER_GENERAL(MongosOptions_Store,
     if (!ret.isOK()) {
         std::cerr << ret.toString() << std::endl;
         std::cerr << "try '" << context->args()[0] << " --help' for more information" << std::endl;
-        getProcessContext()->quickExit(EXIT_BADOPTIONS);
+        process::quickExit(EXIT_BADOPTIONS);
     }
     return Status::OK();
 }

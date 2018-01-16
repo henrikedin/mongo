@@ -32,7 +32,9 @@
 #include "process_context.h"
 
 namespace mongo {
-void ProcessContext::quickExit(int code) {
-    detail::quickExit(code);
+namespace process {
+	MONGO_COMPILER_NORETURN void quickExit(int code) {
+		detail::quickExit(code);
+	}
 }
 }

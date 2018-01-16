@@ -91,7 +91,7 @@ void launchSignal(int sig) {
 
         if (cur == serverGlobalParams.parentProc || cur == serverGlobalParams.leaderProc) {
             // signal indicates successful start allowing us to exit
-            quickExit(0);
+            process::quickExit(0);
         }
     }
 }
@@ -128,13 +128,13 @@ static bool forkServer() {
         pid_t child1 = fork();
         if (child1 == -1) {
             cout << "ERROR: stage 1 fork() failed: " << errnoWithDescription();
-            quickExit(EXIT_ABRUPT);
+            process::quickExit(EXIT_ABRUPT);
         } else if (child1) {
             // this is run in the original parent process
             int pstat;
             if (waitpid(child1, &pstat, 0) == pid_t{-1}) {
                 perror("waitpid");
-                quickExit(-1);
+                process::quickExit(-1);
             }
 
             if (WIFEXITED(pstat)) {
@@ -147,15 +147,15 @@ static bool forkServer() {
                     cout << "child process started successfully, parent exiting" << endl;
                 }
 
-                quickExit(WEXITSTATUS(pstat));
+                process::quickExit(WEXITSTATUS(pstat));
             }
 
-            quickExit(50);
+            process::quickExit(50);
         }
 
         if (chdir("/") < 0) {
             cout << "Cant chdir() while forking server process: " << strerror(errno) << endl;
-            quickExit(-1);
+            process::quickExit(-1);
         }
         setsid();
 
@@ -164,21 +164,21 @@ static bool forkServer() {
         pid_t child2 = fork();
         if (child2 == -1) {
             cout << "ERROR: stage 2 fork() failed: " << errnoWithDescription();
-            quickExit(EXIT_ABRUPT);
+            process::quickExit(EXIT_ABRUPT);
         } else if (child2) {
             // this is run in the middle process
             int pstat;
             cout << "forked process: " << child2 << endl;
             if (waitpid(child2, &pstat, 0) == pid_t{-1}) {
                 perror("waitpid");
-                quickExit(-1);
+                process::quickExit(-1);
             }
 
             if (WIFEXITED(pstat)) {
-                quickExit(WEXITSTATUS(pstat));
+                process::quickExit(WEXITSTATUS(pstat));
             }
 
-            quickExit(51);
+            process::quickExit(51);
         }
 
         // this is run in the final child process (the server)
@@ -209,7 +209,7 @@ static bool forkServer() {
 
 void forkServerOrDie() {
     if (!forkServer())
-        getProcessContext()->quickExit(EXIT_FAILURE);
+        process::quickExit(EXIT_FAILURE);
 }
 
 MONGO_INITIALIZER_GENERAL(ServerLogRedirection,
@@ -335,7 +335,7 @@ MONGO_INITIALIZER_GENERAL(ServerLogRedirection,
  * TODO: Remove once exit() executes safely in mongo server processes.
  */
 static void shortCircuitExit() {
-    getProcessContext()->quickExit(EXIT_FAILURE);
+    process::quickExit(EXIT_FAILURE);
 }
 
 MONGO_INITIALIZER(RegisterShortCircuitExitHandler)(InitializerContext*) {

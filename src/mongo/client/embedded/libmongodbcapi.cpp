@@ -44,6 +44,7 @@
 #include "mongo/util/net/message.h"
 #include "mongo/util/scopeguard.h"
 #include "mongo/util/shared_buffer.h"
+#include "mongo/util/quick_exit_embedded.h"
 
 struct libmongodbcapi_db {
     libmongodbcapi_db() = default;
@@ -132,6 +133,9 @@ libmongodbcapi_db* db_new(int argc, const char** argv, const char** envp) noexce
     global_db->transportLayer = stdx::make_unique<transport::TransportLayerMock>();
 
     return global_db;
+} catch (const embedded::QuickExitException& exception) {
+	last_error = exception.code();
+	return nullptr;
 } catch (const std::exception&) {
     last_error = LIBMONGODB_CAPI_ERROR_UNKNOWN;
     return nullptr;
@@ -162,6 +166,9 @@ libmongodbcapi_client* client_new(libmongodbcapi_db* db) noexcept try {
 
     last_error = LIBMONGODB_CAPI_ERROR_SUCCESS;
     return rv;
+}catch (const embedded::QuickExitException& exception) {
+	last_error = exception.code();
+	return nullptr;
 } catch (const std::exception&) {
     last_error = LIBMONGODB_CAPI_ERROR_UNKNOWN;
     return nullptr;
@@ -196,6 +203,8 @@ int client_wire_protocol_rpc(libmongodbcapi_client* client,
     *output = (void*)client->response.response.buf();
 
     return LIBMONGODB_CAPI_ERROR_SUCCESS;
+} catch (const embedded::QuickExitException& exception) {
+	return exception.code();
 } catch (const std::exception&) {
     return LIBMONGODB_CAPI_ERROR_UNKNOWN;
 }

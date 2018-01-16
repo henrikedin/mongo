@@ -382,7 +382,7 @@ static ExitCode runMongosServer() {
     DBClientReplicaSet::setAuthPooledSecondaryConn(false);
 
     if (getHostName().empty()) {
-        getProcessContext()->quickExit(EXIT_BADOPTIONS);
+        process::quickExit(EXIT_BADOPTIONS);
     }
 
     auto opCtx = cc().makeOperationContext();
@@ -586,7 +586,7 @@ int mongoSMain(int argc, char* argv[], char** envp) {
     Status status = mongo::runGlobalInitializers(argc, argv, envp);
     if (!status.isOK()) {
         severe(LogComponent::kDefault) << "Failed global initialization: " << status;
-        getProcessContext()->quickExit(EXIT_FAILURE);
+        process::quickExit(EXIT_FAILURE);
     }
 
     ErrorExtraInfo::invariantHaveAllParsers();

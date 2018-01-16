@@ -286,7 +286,7 @@ StatusWith<std::vector<BSONObj>> MultiIndexBlockImpl::init(const std::vector<BSO
         Locker::LockSnapshot lockInfo;
         _opCtx->lockState()->saveLockStateAndUnlock(&lockInfo);
         if (_opCtx->recoveryUnit()->waitUntilDurable()) {
-            getProcessContext()->quickExit(EXIT_TEST);
+            process::quickExit(EXIT_TEST);
         }
     }
 

@@ -879,7 +879,7 @@ struct WinsockInit {
         WSADATA d;
         if (WSAStartup(MAKEWORD(2, 2), &d) != 0) {
             log() << "ERROR: wsastartup failed " << errnoWithDescription();
-            getProcessContext()->quickExit(EXIT_NTSERVICE_ERROR);
+            process::quickExit(EXIT_NTSERVICE_ERROR);
         }
     }
 } winsock_init;

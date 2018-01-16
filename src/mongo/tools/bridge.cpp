@@ -56,7 +56,7 @@
 #include "mongo/util/net/abstract_message_port.h"
 #include "mongo/util/net/listen.h"
 #include "mongo/util/net/message.h"
-#include "mongo/util/quick_exit.h"
+#include "mongo/util/process_context.h"
 #include "mongo/util/signal_handlers.h"
 #include "mongo/util/text.h"
 #include "mongo/util/time_support.h"
@@ -427,11 +427,11 @@ int bridgeMain(int argc, char** argv, char** envp) {
 int wmain(int argc, wchar_t* argvW[], wchar_t* envpW[]) {
     mongo::WindowsCommandLine wcl(argc, argvW, envpW);
     int exitCode = mongo::bridgeMain(argc, wcl.argv(), wcl.envp());
-    mongo::quickExit(exitCode);
+    mongo::process::quickExit(exitCode);
 }
 #else
 int main(int argc, char* argv[], char** envp) {
     int exitCode = mongo::bridgeMain(argc, argv, envp);
-    mongo::quickExit(exitCode);
+    mongo::process::quickExit(exitCode);
 }
 #endif

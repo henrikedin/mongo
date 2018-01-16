@@ -36,7 +36,7 @@
 #include "mongo/stdx/memory.h"
 #include "mongo/unittest/temp_dir.h"
 #include "mongo/unittest/unittest.h"
-#include "mongo/util/quick_exit.h"
+#include "mongo/util/process_context.h"
 #include "mongo/util/signal_handlers_synchronous.h"
 namespace {
 
@@ -160,5 +160,5 @@ int main(int argc, char** argv, char** envp) {
     ::mongo::setupSynchronousSignalHandlers();
     auto result = ::mongo::unittest::Suite::run(std::vector<std::string>(), "", 1);
     globalTempDir.reset();
-    mongo::quickExit(result);
+    mongo::process::quickExit(result);
 }

@@ -520,7 +520,7 @@ StatusWith<bool> repairDatabasesAndCheckVersion(OperationContext* opCtx) {
                      << redact(status);
             severe() << "Please consult our documentation when trying to downgrade to a previous"
                         " major release";
-            getProcessContext()->quickExit(EXIT_NEED_UPGRADE);
+            process::quickExit(EXIT_NEED_UPGRADE);
             MONGO_UNREACHABLE;
         }
 
@@ -860,7 +860,7 @@ ExitCode _initAndListen(int listenPort) {
             if (status == ErrorCodes::AuthSchemaIncompatible) {
                 exitCleanly(EXIT_NEED_UPGRADE);
             } else {
-                getProcessContext()->quickExit(EXIT_FAILURE);
+                process::quickExit(EXIT_FAILURE);
             }
         }
 
@@ -1075,19 +1075,19 @@ void startupConfigActions(const std::vector<std::string>& args) {
 
         if (command[0].compare("dbpath") == 0) {
             std::cout << storageGlobalParams.dbpath << endl;
-            getProcessContext()->quickExit(EXIT_SUCCESS);
+            process::quickExit(EXIT_SUCCESS);
         }
 
         if (command[0].compare("run") != 0) {
             std::cout << "Invalid command: " << command[0] << endl;
             printMongodHelp(moe::startupOptions);
-            getProcessContext()->quickExit(EXIT_FAILURE);
+            process::quickExit(EXIT_FAILURE);
         }
 
         if (command.size() > 1) {
             std::cout << "Too many parameters to 'run' command" << endl;
             printMongodHelp(moe::startupOptions);
-            getProcessContext()->quickExit(EXIT_FAILURE);
+            process::quickExit(EXIT_FAILURE);
         }
     }
 
@@ -1128,7 +1128,7 @@ void startupConfigActions(const std::vector<std::string>& args) {
         if (failed) {
             std::cerr << "There doesn't seem to be a server running with dbpath: "
                       << storageGlobalParams.dbpath << std::endl;
-            quickExit(EXIT_FAILURE);
+            process::quickExit(EXIT_FAILURE);
         }
 
         std::cout << "killing process with pid: " << pid << endl;
@@ -1136,14 +1136,14 @@ void startupConfigActions(const std::vector<std::string>& args) {
         if (ret) {
             int e = errno;
             std::cerr << "failed to kill process: " << errnoWithDescription(e) << endl;
-            quickExit(EXIT_FAILURE);
+            process::quickExit(EXIT_FAILURE);
         }
 
         while (boost::filesystem::exists(procPath)) {
             sleepsecs(1);
         }
 
-        quickExit(EXIT_SUCCESS);
+        process::quickExit(EXIT_SUCCESS);
     }
 #endif
 }
@@ -1361,7 +1361,7 @@ int mongoDbMain(int argc, char* argv[], char** envp) {
     Status status = mongo::runGlobalInitializers(argc, argv, envp);
     if (!status.isOK()) {
         severe(LogComponent::kControl) << "Failed global initialization: " << status;
-        getProcessContext()->quickExit(EXIT_FAILURE);
+        process::quickExit(EXIT_FAILURE);
     }
 
     ErrorExtraInfo::invariantHaveAllParsers();
@@ -1370,7 +1370,7 @@ int mongoDbMain(int argc, char* argv[], char** envp) {
     cmdline_utils::censorArgvArray(argc, argv);
 
     if (!initializeServerGlobalState())
-        getProcessContext()->quickExit(EXIT_FAILURE);
+        process::quickExit(EXIT_FAILURE);
 
     // Per SERVER-7434, startSignalProcessingThread() must run after any forks
     // (initializeServerGlobalState()) and before creation of any other threads.

@@ -96,7 +96,7 @@ void runGlobalInitializersOrDie(int argc, const char* const* argv, const char* c
     Status status = runGlobalInitializers(argc, argv, envp);
     if (!status.isOK()) {
         std::cerr << "Failed global initialization: " << status << std::endl;
-        getProcessContext()->quickExit(1);
+        process::quickExit(1);
     }
 }
 

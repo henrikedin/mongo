@@ -43,7 +43,7 @@
 #include "mongo/util/options_parser/options_parser.h"
 #include "mongo/util/options_parser/startup_option_init.h"
 #include "mongo/util/options_parser/startup_options.h"
-#include "mongo/util/quick_exit.h"
+#include "mongo/util/process_context.h"
 #include "mongo/util/signal_handlers_synchronous.h"
 
 using namespace mongo;

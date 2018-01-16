@@ -28,16 +28,21 @@
 
 #pragma once
 
+#include "mongo/platform/basic.h"
+
+#include "mongo/platform/compiler.h"
 #include "mongo/util/decorable.h"
 
 namespace mongo {
+namespace process {
+	MONGO_COMPILER_NORETURN void quickExit(int code);
+}
+
 class ProcessContext : public Decorable<ProcessContext> {
     MONGO_DISALLOW_COPYING(ProcessContext);
 
 public:
     ProcessContext() {}
-
-    void quickExit(int code);
 };
 
 /**
