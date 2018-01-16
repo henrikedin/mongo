@@ -31,15 +31,17 @@
 #include "mongo/platform/basic.h"
 
 namespace mongo {
-	namespace embedded {
-		class QuickExitException {
-		public:
-			QuickExitException(int code) : _code(code) {}
+namespace embedded {
+class QuickExitException {
+public:
+    QuickExitException(int code) : _code(code) {}
 
-			int code() const { return _code; }
+    int code() const {
+        return _code;
+    }
 
-		private:
-			int _code;
-		};
-	}
+private:
+    int _code;
+};
+}
 }

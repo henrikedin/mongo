@@ -35,7 +35,7 @@
 
 namespace mongo {
 namespace process {
-	MONGO_COMPILER_NORETURN void quickExit(int code);
+MONGO_COMPILER_NORETURN void quickExit(int code);
 }
 
 class ProcessContext : public Decorable<ProcessContext> {

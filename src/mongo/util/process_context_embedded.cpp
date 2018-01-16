@@ -33,9 +33,9 @@
 #include "quick_exit_embedded.h"
 
 namespace mongo {
-	namespace process {
-		MONGO_COMPILER_NORETURN void quickExit(int code) {
-			throw embedded::QuickExitException(code);
-		}
-	} 
+namespace process {
+MONGO_COMPILER_NORETURN void quickExit(int code) {
+    throw embedded::QuickExitException(code);
+}
+}
 }

@@ -33,8 +33,8 @@
 
 namespace mongo {
 namespace process {
-	MONGO_COMPILER_NORETURN void quickExit(int code) {
-		detail::quickExit(code);
-	}
+MONGO_COMPILER_NORETURN void quickExit(int code) {
+    detail::quickExit(code);
+}
 }
 }
