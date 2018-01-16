@@ -30,7 +30,6 @@
 #include "mongo/base/global_initializer.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/process_context.h"
-#include "mongo/util/quick_exit.h"
 
 #include <iostream>
 
@@ -97,7 +96,7 @@ void runGlobalInitializersOrDie(int argc, const char* const* argv, const char* c
     Status status = runGlobalInitializers(argc, argv, envp);
     if (!status.isOK()) {
         std::cerr << "Failed global initialization: " << status << std::endl;
-        quickExit(1);
+        getProcessContext()->quickExit(1);
     }
 }
 

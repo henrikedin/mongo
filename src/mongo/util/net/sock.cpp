@@ -68,7 +68,7 @@
 #include "mongo/util/net/private/socket_poll.h"
 #include "mongo/util/net/socket_exception.h"
 #include "mongo/util/net/ssl_manager.h"
-#include "mongo/util/quick_exit.h"
+#include "mongo/util/process_context.h"
 #include "mongo/util/winutil.h"
 
 namespace mongo {
@@ -879,7 +879,7 @@ struct WinsockInit {
         WSADATA d;
         if (WSAStartup(MAKEWORD(2, 2), &d) != 0) {
             log() << "ERROR: wsastartup failed " << errnoWithDescription();
-            quickExit(EXIT_NTSERVICE_ERROR);
+            getProcessContext()->quickExit(EXIT_NTSERVICE_ERROR);
         }
     }
 } winsock_init;

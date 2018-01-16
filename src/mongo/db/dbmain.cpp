@@ -30,7 +30,7 @@
 
 #include "mongo/db/dbmain.h"
 
-#include "mongo/util/quick_exit.h"
+#include "mongo/util/process_context.h"
 #include "mongo/util/text.h"
 
 #if defined(_WIN32)
@@ -42,11 +42,11 @@
 int wmain(int argc, wchar_t* argvW[], wchar_t* envpW[]) {
     mongo::WindowsCommandLine wcl(argc, argvW, envpW);
     int exitCode = mongo::mongoDbMain(argc, wcl.argv(), wcl.envp());
-    mongo::quickExit(exitCode);
+    mongo::getProcessContext()->quickExit(exitCode);
 }
 #else
 int main(int argc, char* argv[], char** envp) {
     int exitCode = mongo::mongoDbMain(argc, argv, envp);
-    mongo::quickExit(exitCode);
+    mongo::getProcessContext()->quickExit(exitCode);
 }
 #endif

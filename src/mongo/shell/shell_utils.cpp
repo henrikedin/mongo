@@ -42,8 +42,8 @@
 #include "mongo/shell/shell_utils_extended.h"
 #include "mongo/shell/shell_utils_launcher.h"
 #include "mongo/util/log.h"
+#include "mongo/util/process_context.h"
 #include "mongo/util/processinfo.h"
-#include "mongo/util/quick_exit.h"
 #include "mongo/util/text.h"
 #include "mongo/util/version.h"
 

@@ -66,7 +66,7 @@
 #include "mongo/util/exit.h"
 #include "mongo/util/log.h"
 #include "mongo/util/net/hostandport.h"
-#include "mongo/util/quick_exit.h"
+#include "mongo/util/process_context.h"
 #include "mongo/util/scopeguard.h"
 #include "mongo/util/signal_win32.h"
 #include "mongo/util/stringutils.h"

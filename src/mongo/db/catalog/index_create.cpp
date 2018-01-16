@@ -51,9 +51,9 @@
 #include "mongo/util/fail_point.h"
 #include "mongo/util/fail_point_service.h"
 #include "mongo/util/log.h"
+#include "mongo/util/process_context.h"
 #include "mongo/util/processinfo.h"
 #include "mongo/util/progress_meter.h"
-#include "mongo/util/quick_exit.h"
 
 namespace mongo {
 MultiIndexBlock::Impl::~Impl() = default;

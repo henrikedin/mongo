@@ -52,9 +52,9 @@
 #include "mongo/util/fail_point.h"
 #include "mongo/util/fail_point_service.h"
 #include "mongo/util/log.h"
+#include "mongo/util/process_context.h"
 #include "mongo/util/processinfo.h"
 #include "mongo/util/progress_meter.h"
-#include "mongo/util/quick_exit.h"
 
 namespace mongo {
 
@@ -286,7 +286,7 @@ StatusWith<std::vector<BSONObj>> MultiIndexBlockImpl::init(const std::vector<BSO
         Locker::LockSnapshot lockInfo;
         _opCtx->lockState()->saveLockStateAndUnlock(&lockInfo);
         if (_opCtx->recoveryUnit()->waitUntilDurable()) {
-            quickExit(EXIT_TEST);
+            getProcessContext()->quickExit(EXIT_TEST);
         }
     }
 

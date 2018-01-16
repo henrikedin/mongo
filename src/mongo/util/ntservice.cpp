@@ -44,7 +44,7 @@
 #include "mongo/util/exit.h"
 #include "mongo/util/log.h"
 #include "mongo/util/options_parser/environment.h"
-#include "mongo/util/quick_exit.h"
+#include "mongo/util/process_context.h"
 #include "mongo/util/signal_handlers.h"
 #include "mongo/util/text.h"
 #include "mongo/util/winutil.h"
@@ -109,38 +109,38 @@ void configureService(ServiceCallback serviceCallback,
     if (params.count("install")) {
         if (badOption != -1) {
             log() << "--install cannot be used with --" << disallowedOptions[badOption];
-            quickExit(EXIT_BADOPTIONS);
+            getProcessContext()->quickExit(EXIT_BADOPTIONS);
         }
         if (!params.count("systemLog.destination") ||
             params["systemLog.destination"].as<std::string>() != "file") {
             log() << "--install has to be used with a log file for server output";
-            quickExit(EXIT_BADOPTIONS);
+            getProcessContext()->quickExit(EXIT_BADOPTIONS);
         }
         installService = true;
     }
     if (params.count("reinstall")) {
         if (badOption != -1) {
             log() << "--reinstall cannot be used with --" << disallowedOptions[badOption];
-            quickExit(EXIT_BADOPTIONS);
+            getProcessContext()->quickExit(EXIT_BADOPTIONS);
         }
         if (!params.count("systemLog.destination") ||
             params["systemLog.destination"].as<std::string>() != "file") {
             log() << "--reinstall has to be used with a log file for server output";
-            quickExit(EXIT_BADOPTIONS);
+            getProcessContext()->quickExit(EXIT_BADOPTIONS);
         }
         reinstallService = true;
     }
     if (params.count("remove")) {
         if (badOption != -1) {
             log() << "--remove cannot be used with --" << disallowedOptions[badOption];
-            quickExit(EXIT_BADOPTIONS);
+            getProcessContext()->quickExit(EXIT_BADOPTIONS);
         }
         removeService = true;
     }
     if (params.count("service")) {
         if (badOption != -1) {
             log() << "--service cannot be used with --" << disallowedOptions[badOption];
-            quickExit(EXIT_BADOPTIONS);
+            getProcessContext()->quickExit(EXIT_BADOPTIONS);
         }
         _startService = true;
     }
@@ -148,7 +148,7 @@ void configureService(ServiceCallback serviceCallback,
     if (params.count("processManagement.windowsService.serviceName")) {
         if (badOption != -1) {
             log() << "--serviceName cannot be used with --" << disallowedOptions[badOption];
-            quickExit(EXIT_BADOPTIONS);
+            getProcessContext()->quickExit(EXIT_BADOPTIONS);
         }
         _serviceName = toWideString(
             params["processManagement.windowsService.serviceName"].as<string>().c_str());
@@ -156,7 +156,7 @@ void configureService(ServiceCallback serviceCallback,
     if (params.count("processManagement.windowsService.displayName")) {
         if (badOption != -1) {
             log() << "--serviceDisplayName cannot be used with --" << disallowedOptions[badOption];
-            quickExit(EXIT_BADOPTIONS);
+            getProcessContext()->quickExit(EXIT_BADOPTIONS);
         }
         windowsServiceDisplayName = toWideString(
             params["processManagement.windowsService.displayName"].as<string>().c_str());
@@ -164,7 +164,7 @@ void configureService(ServiceCallback serviceCallback,
     if (params.count("processManagement.windowsService.description")) {
         if (badOption != -1) {
             log() << "--serviceDescription cannot be used with --" << disallowedOptions[badOption];
-            quickExit(EXIT_BADOPTIONS);
+            getProcessContext()->quickExit(EXIT_BADOPTIONS);
         }
         windowsServiceDescription = toWideString(
             params["processManagement.windowsService.description"].as<string>().c_str());
@@ -172,7 +172,7 @@ void configureService(ServiceCallback serviceCallback,
     if (params.count("processManagement.windowsService.serviceUser")) {
         if (badOption != -1) {
             log() << "--serviceUser cannot be used with --" << disallowedOptions[badOption];
-            quickExit(EXIT_BADOPTIONS);
+            getProcessContext()->quickExit(EXIT_BADOPTIONS);
         }
         windowsServiceUser = toWideString(
             params["processManagement.windowsService.serviceUser"].as<string>().c_str());
@@ -180,7 +180,7 @@ void configureService(ServiceCallback serviceCallback,
     if (params.count("processManagement.windowsService.servicePassword")) {
         if (badOption != -1) {
             log() << "--servicePassword cannot be used with --" << disallowedOptions[badOption];
-            quickExit(EXIT_BADOPTIONS);
+            getProcessContext()->quickExit(EXIT_BADOPTIONS);
         }
         windowsServicePassword = toWideString(
             params["processManagement.windowsService.servicePassword"].as<string>().c_str());
@@ -198,10 +198,10 @@ void configureService(ServiceCallback serviceCallback,
                             windowsServicePassword,
                             argv,
                             reinstallService);
-        quickExit(EXIT_CLEAN);
+        getProcessContext()->quickExit(EXIT_CLEAN);
     } else if (removeService) {
         removeServiceOrDie(_serviceName);
-        quickExit(EXIT_CLEAN);
+        getProcessContext()->quickExit(EXIT_CLEAN);
     }
 }
 
@@ -288,7 +288,7 @@ void installServiceOrDie(const wstring& serviceName,
     if (schSCManager == NULL) {
         DWORD err = ::GetLastError();
         log() << "Error connecting to the Service Control Manager: " << windows::GetErrMsg(err);
-        quickExit(EXIT_NTSERVICE_ERROR);
+        getProcessContext()->quickExit(EXIT_NTSERVICE_ERROR);
     }
 
     SC_HANDLE schService = NULL;
@@ -312,7 +312,7 @@ void installServiceOrDie(const wstring& serviceName,
             }
 
             ::CloseServiceHandle(schSCManager);
-            quickExit(EXIT_NTSERVICE_ERROR);
+            getProcessContext()->quickExit(EXIT_NTSERVICE_ERROR);
         } else {
             break;
         }
@@ -338,7 +338,7 @@ void installServiceOrDie(const wstring& serviceName,
         DWORD err = ::GetLastError();
         log() << "Error creating service: " << windows::GetErrMsg(err);
         ::CloseServiceHandle(schSCManager);
-        quickExit(EXIT_NTSERVICE_ERROR);
+        getProcessContext()->quickExit(EXIT_NTSERVICE_ERROR);
     }
 
     log() << "Service '" << toUtf8String(serviceName) << "' (" << toUtf8String(displayName)
@@ -432,7 +432,7 @@ void installServiceOrDie(const wstring& serviceName,
     ::CloseServiceHandle(schSCManager);
 
     if (!serviceInstalled)
-        quickExit(EXIT_NTSERVICE_ERROR);
+        getProcessContext()->quickExit(EXIT_NTSERVICE_ERROR);
 }
 
 void removeServiceOrDie(const wstring& serviceName) {
@@ -442,14 +442,14 @@ void removeServiceOrDie(const wstring& serviceName) {
     if (schSCManager == NULL) {
         DWORD err = ::GetLastError();
         log() << "Error connecting to the Service Control Manager: " << windows::GetErrMsg(err);
-        quickExit(EXIT_NTSERVICE_ERROR);
+        getProcessContext()->quickExit(EXIT_NTSERVICE_ERROR);
     }
 
     SC_HANDLE schService = ::OpenService(schSCManager, serviceName.c_str(), SERVICE_ALL_ACCESS);
     if (schService == NULL) {
         log() << "Could not find a service named '" << toUtf8String(serviceName) << "' to remove";
         ::CloseServiceHandle(schSCManager);
-        quickExit(EXIT_NTSERVICE_ERROR);
+        getProcessContext()->quickExit(EXIT_NTSERVICE_ERROR);
     }
 
     SERVICE_STATUS serviceStatus;
@@ -480,7 +480,7 @@ void removeServiceOrDie(const wstring& serviceName) {
     }
 
     if (!serviceRemoved)
-        quickExit(EXIT_NTSERVICE_ERROR);
+        getProcessContext()->quickExit(EXIT_NTSERVICE_ERROR);
 }
 
 bool reportStatus(DWORD reportState, DWORD waitHint, DWORD exitCode) {
@@ -619,7 +619,7 @@ void startService() {
 
     log() << "Trying to start Windows service '" << toUtf8String(_serviceName) << "'";
     if (StartServiceCtrlDispatcherW(dispTable)) {
-        quickExit(EXIT_CLEAN);
+        getProcessContext()->quickExit(EXIT_CLEAN);
     } else {
         ::exit(EXIT_NTSERVICE_ERROR);
     }

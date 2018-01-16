@@ -74,7 +74,7 @@
 #include "mongo/util/exit.h"
 #include "mongo/util/log.h"
 #include "mongo/util/net/sock.h"
-#include "mongo/util/quick_exit.h"
+#include "mongo/util/process_context.h"
 
 using std::cout;
 using std::endl;
@@ -292,14 +292,14 @@ void ReplSource::loadAll(OperationContext* opCtx, SourceVector& v) {
                 log() << "http://dochub.mongodb.org/core/masterslave" << endl;
                 log() << "terminating mongod after 30 seconds" << endl;
                 sleepsecs(30);
-                quickExit(EXIT_REPLICATION_ERROR);
+                getProcessContext()->quickExit(EXIT_REPLICATION_ERROR);
             }
             if (tmp.only != replSettings.getOnly()) {
                 log() << "--only " << replSettings.getOnly() << " != " << tmp.only
                       << " from local.sources collection" << endl;
                 log() << "terminating after 30 seconds" << endl;
                 sleepsecs(30);
-                quickExit(EXIT_REPLICATION_ERROR);
+                getProcessContext()->quickExit(EXIT_REPLICATION_ERROR);
             }
         }
         uassert(17065, "Internal error reading from local.sources", PlanExecutor::IS_EOF == state);
@@ -315,7 +315,7 @@ void ReplSource::loadAll(OperationContext* opCtx, SourceVector& v) {
         try {
             massert(10384, "--only requires use of --source", replSettings.getOnly().empty());
         } catch (...) {
-            quickExit(EXIT_BADOPTIONS);
+            getProcessContext()->quickExit(EXIT_BADOPTIONS);
         }
     }
 

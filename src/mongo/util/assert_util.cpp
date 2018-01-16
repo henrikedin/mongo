@@ -50,7 +50,7 @@ using namespace std;
 #include "mongo/util/exit.h"
 #include "mongo/util/log.h"
 #include "mongo/util/mongoutils/str.h"
-#include "mongo/util/quick_exit.h"
+#include "mongo/util/process_context.h"
 #include "mongo/util/stacktrace.h"
 
 namespace mongo {
@@ -172,7 +172,7 @@ NOINLINE_DECL void fassertFailedNoTraceWithLocation(int msgid,
     severe() << "Fatal Assertion " << msgid << " at " << file << " " << dec << line;
     breakpoint();
     severe() << "\n\n***aborting after fassert() failure\n\n" << endl;
-    quickExit(EXIT_ABRUPT);
+    getProcessContext()->quickExit(EXIT_ABRUPT);
 }
 
 MONGO_COMPILER_NORETURN void fassertFailedWithStatusWithLocation(int msgid,
@@ -194,7 +194,7 @@ MONGO_COMPILER_NORETURN void fassertFailedWithStatusNoTraceWithLocation(int msgi
              << line;
     breakpoint();
     severe() << "\n\n***aborting after fassert() failure\n\n" << endl;
-    quickExit(EXIT_ABRUPT);
+    getProcessContext()->quickExit(EXIT_ABRUPT);
 }
 
 NOINLINE_DECL void uassertedWithLocation(const Status& status, const char* file, unsigned line) {

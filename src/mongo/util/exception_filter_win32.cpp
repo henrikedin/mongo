@@ -44,7 +44,7 @@
 #include "mongo/util/assert_util.h"
 #include "mongo/util/exit_code.h"
 #include "mongo/util/log.h"
-#include "mongo/util/quick_exit.h"
+#include "mongo/util/process_context.h"
 #include "mongo/util/stacktrace.h"
 #include "mongo/util/text.h"
 

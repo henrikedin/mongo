@@ -46,7 +46,7 @@
 
 #include "mongo/util/assert_util.h"
 #include "mongo/util/log.h"
-#include "mongo/util/quick_exit.h"
+#include "mongo/util/process_context.h"
 
 #define checkSyscall(EXPR)                                              \
     do {                                                                \
@@ -126,9 +126,9 @@ void DeathTestImpl::_doTest() {
         log() << "Caught test exception while expecting death: " << tafe;
         // To fail the test, we must exit with a successful error code, because the parent process
         // is checking for the child to die with an exit code indicating an error.
-        quickExit(EXIT_SUCCESS);
+        getProcessContext()->quickExit(EXIT_SUCCESS);
     }
-    quickExit(EXIT_SUCCESS);
+    getProcessContext()->quickExit(EXIT_SUCCESS);
 #endif
 }
 

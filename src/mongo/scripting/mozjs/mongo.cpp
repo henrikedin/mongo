@@ -51,7 +51,7 @@
 #include "mongo/scripting/mozjs/wrapconstrainedmethod.h"
 #include "mongo/stdx/memory.h"
 #include "mongo/util/assert_util.h"
-#include "mongo/util/quick_exit.h"
+#include "mongo/util/process_context.h"
 
 namespace mongo {
 namespace mozjs {
@@ -780,7 +780,7 @@ void MongoExternalInfo::Functions::load::call(JSContext* cx, JS::CallArgs args) 
 }
 
 void MongoExternalInfo::Functions::quit::call(JSContext* cx, JS::CallArgs args) {
-    quickExit(args.get(0).isNumber() ? args.get(0).toNumber() : 0);
+    getProcessContext()->quickExit(args.get(0).isNumber() ? args.get(0).toNumber() : 0);
 }
 
 void MongoExternalInfo::Functions::_forgetReplSet::call(JSContext* cx, JS::CallArgs args) {

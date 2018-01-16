@@ -37,7 +37,7 @@
 #include "mongo/scripting/mozjs/implscope.h"
 #include "mongo/util/concurrency/idle_thread_block.h"
 #include "mongo/util/destructor_guard.h"
-#include "mongo/util/quick_exit.h"
+#include "mongo/util/process_context.h"
 #include "mongo/util/scopeguard.h"
 
 namespace mongo {

@@ -40,7 +40,7 @@
 #include "mongo/stdx/mutex.h"
 #include "mongo/stdx/thread.h"
 #include "mongo/util/log.h"
-#include "mongo/util/quick_exit.h"
+#include "mongo/util/process_context.h"
 
 namespace mongo {
 
@@ -72,7 +72,7 @@ void runTasks(decltype(shutdownTasks) tasks) {
 MONGO_COMPILER_NORETURN void logAndQuickExit_inlock() {
     ExitCode code = shutdownExitCode.get();
     log() << "shutting down with code:" << code;
-    quickExit(code);
+    getProcessContext()->quickExit(code);
 }
 
 void setShutdownFlag() {

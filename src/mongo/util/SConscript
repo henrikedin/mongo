@@ -477,7 +477,7 @@ if has_option('use-cpu-profiler'):
 quick_exit_env.Library(
     target='quick_exit',
     source=[
-        'quick_exit.cpp',
+        'detail/quick_exit.cpp',
     ],
     LIBDEPS=[
         # NOTE: You *must not* add any other library dependencies to

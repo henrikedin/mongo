@@ -52,7 +52,7 @@
 #include "mongo/util/net/message.h"
 #include "mongo/util/net/socket_exception.h"
 #include "mongo/util/net/thread_idle_callback.h"
-#include "mongo/util/quick_exit.h"
+#include "mongo/util/process_context.h"
 
 namespace mongo {
 namespace {
@@ -440,7 +440,7 @@ void ServiceStateMachine::_runNextInGuard(ThreadGuard guard) {
         log() << "DBException handling request, closing client connection: " << redact(e);
     } catch (const std::exception& e) {
         error() << "Uncaught std::exception: " << e.what() << ", terminating";
-        quickExit(EXIT_UNCAUGHT);
+        getProcessContext()->quickExit(EXIT_UNCAUGHT);
     }
 
     if (!guard) {

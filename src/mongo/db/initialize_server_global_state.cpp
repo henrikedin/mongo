@@ -67,8 +67,8 @@
 #include "mongo/util/mongoutils/str.h"
 #include "mongo/util/net/listen.h"
 #include "mongo/util/net/ssl_manager.h"
+#include "mongo/util/process_context.h"
 #include "mongo/util/processinfo.h"
-#include "mongo/util/quick_exit.h"
 #include "mongo/util/signal_handlers_synchronous.h"
 
 #if defined(__APPLE__)
@@ -209,7 +209,7 @@ static bool forkServer() {
 
 void forkServerOrDie() {
     if (!forkServer())
-        quickExit(EXIT_FAILURE);
+        getProcessContext()->quickExit(EXIT_FAILURE);
 }
 
 MONGO_INITIALIZER_GENERAL(ServerLogRedirection,
@@ -335,7 +335,7 @@ MONGO_INITIALIZER_GENERAL(ServerLogRedirection,
  * TODO: Remove once exit() executes safely in mongo server processes.
  */
 static void shortCircuitExit() {
-    quickExit(EXIT_FAILURE);
+    getProcessContext()->quickExit(EXIT_FAILURE);
 }
 
 MONGO_INITIALIZER(RegisterShortCircuitExitHandler)(InitializerContext*) {

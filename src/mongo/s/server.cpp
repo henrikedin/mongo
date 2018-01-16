@@ -109,8 +109,8 @@
 #include "mongo/util/options_parser/startup_options.h"
 #include "mongo/util/periodic_runner.h"
 #include "mongo/util/periodic_runner_factory.h"
+#include "mongo/util/process_context.h"
 #include "mongo/util/processinfo.h"
-#include "mongo/util/quick_exit.h"
 #include "mongo/util/signal_handlers.h"
 #include "mongo/util/stacktrace.h"
 #include "mongo/util/stringutils.h"
@@ -382,7 +382,7 @@ static ExitCode runMongosServer() {
     DBClientReplicaSet::setAuthPooledSecondaryConn(false);
 
     if (getHostName().empty()) {
-        quickExit(EXIT_BADOPTIONS);
+        getProcessContext()->quickExit(EXIT_BADOPTIONS);
     }
 
     auto opCtx = cc().makeOperationContext();
@@ -586,7 +586,7 @@ int mongoSMain(int argc, char* argv[], char** envp) {
     Status status = mongo::runGlobalInitializers(argc, argv, envp);
     if (!status.isOK()) {
         severe(LogComponent::kDefault) << "Failed global initialization: " << status;
-        quickExit(EXIT_FAILURE);
+        getProcessContext()->quickExit(EXIT_FAILURE);
     }
 
     ErrorExtraInfo::invariantHaveAllParsers();

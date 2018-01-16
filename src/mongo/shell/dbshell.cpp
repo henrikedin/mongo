@@ -62,7 +62,7 @@
 #include "mongo/util/log.h"
 #include "mongo/util/net/ssl_options.h"
 #include "mongo/util/password.h"
-#include "mongo/util/quick_exit.h"
+#include "mongo/util/process_context.h"
 #include "mongo/util/scopeguard.h"
 #include "mongo/util/signal_handlers.h"
 #include "mongo/util/stacktrace.h"
@@ -240,7 +240,7 @@ string getURIFromArgs(const std::string& arg, const std::string& host, const std
     // since we have separate host/port args.
     if ((arg.find('/') != string::npos) && (host.size() || port.size())) {
         cerr << "If a full URI is provided, you cannot also specify --host or --port" << endl;
-        quickExit(-1);
+        getProcessContext()->quickExit(-1);
     }
 
     const auto parseDbHost = [port](const std::string& db, const std::string& host) -> std::string {
@@ -307,7 +307,7 @@ string getURIFromArgs(const std::string& arg, const std::string& host, const std
                     if (port.size() && (port != myport)) {
                         cerr << "connection string bears different port than provided by --port"
                              << endl;
-                        quickExit(-1);
+                        getProcessContext()->quickExit(-1);
                     }
                     ss << ':' << uriEncode(myport);
                 } else if (port.size()) {
@@ -1133,7 +1133,7 @@ int wmain(int argc, wchar_t* argvW[], wchar_t* envpW[]) {
         cerr << "exception: " << e.what() << endl;
         returnCode = 1;
     }
-    quickExit(returnCode);
+    getProcessContext()->quickExit(returnCode);
 }
 #else   // #ifdef _WIN32
 int main(int argc, char* argv[], char** envp) {

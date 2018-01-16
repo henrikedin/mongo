@@ -53,7 +53,7 @@
 #include "mongo/util/exception_filter_win32.h"
 #include "mongo/util/exit_code.h"
 #include "mongo/util/log.h"
-#include "mongo/util/quick_exit.h"
+#include "mongo/util/process_context.h"
 #include "mongo/util/stacktrace.h"
 #include "mongo/util/text.h"
 
@@ -148,7 +148,7 @@ class MallocFreeOStreamGuard {
 public:
     explicit MallocFreeOStreamGuard() : _lk(_streamMutex, stdx::defer_lock) {
         if (terminateDepth++) {
-            quickExit(EXIT_ABRUPT);
+            getProcessContext()->quickExit(EXIT_ABRUPT);
         }
         _lk.lock();
     }
@@ -357,7 +357,7 @@ void reportOutOfMemoryErrorAndExit() {
     MallocFreeOStreamGuard lk{};
     printStackTrace(mallocFreeOStream << "out of memory.\n");
     writeMallocFreeStreamToLog();
-    quickExit(EXIT_ABRUPT);
+    getProcessContext()->quickExit(EXIT_ABRUPT);
 }
 
 void clearSignalMask() {

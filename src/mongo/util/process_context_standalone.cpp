@@ -28,12 +28,11 @@
 
 #include "mongo/platform/basic.h"
 
+#include "mongo/util/detail/quick_exit.h"
 #include "process_context.h"
-
-//#include "quick_exit.h"
 
 namespace mongo {
 void ProcessContext::quickExit(int code) {
-    //::quickExit(code);
+    detail::quickExit(code);
 }
 }
