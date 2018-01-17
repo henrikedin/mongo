@@ -650,7 +650,7 @@ void updateUUIDSchemaVersion(OperationContext* opCtx, bool upgrade) {
     const WriteConcernOptions writeConcern(WriteConcernOptions::kMajority,
                                            WriteConcernOptions::SyncMode::UNSET,
                                            /*timeout*/ INT_MAX);
-	repl::ReplicationCoordinator::get(opCtx)->awaitReplication(opCtx, awaitOpTime, writeConcern);
+    repl::ReplicationCoordinator::get(opCtx)->awaitReplication(opCtx, awaitOpTime, writeConcern);
 }
 
 Status updateUUIDSchemaVersionNonReplicated(OperationContext* opCtx, bool upgrade) {

@@ -211,7 +211,8 @@ public:
         if (includeInitialSync) {
             responseStyle = ReplicationCoordinator::ReplSetGetStatusResponseStyle::kInitialSync;
         }
-        status = ReplicationCoordinator::get(opCtx)->processReplSetGetStatus(&result, responseStyle);
+        status =
+            ReplicationCoordinator::get(opCtx)->processReplSetGetStatus(&result, responseStyle);
         return CommandHelpers::appendCommandStatus(result, status);
     }
 
@@ -403,7 +404,7 @@ public:
         }
 
         Status status =
-			ReplicationCoordinator::get(opCtx)->processReplSetInitiate(opCtx, configObj, &result);
+            ReplicationCoordinator::get(opCtx)->processReplSetInitiate(opCtx, configObj, &result);
         return CommandHelpers::appendCommandStatus(result, status);
     }
 
@@ -582,7 +583,7 @@ public:
 
         return CommandHelpers::appendCommandStatus(
             result,
-			ReplicationCoordinator::get(opCtx)->setMaintenanceMode(
+            ReplicationCoordinator::get(opCtx)->setMaintenanceMode(
                 cmdObj["replSetMaintenance"].trueValue()));
     }
 
@@ -615,7 +616,7 @@ public:
 
         return CommandHelpers::appendCommandStatus(
             result,
-			ReplicationCoordinator::get(opCtx)->processReplSetSyncFrom(
+            ReplicationCoordinator::get(opCtx)->processReplSetSyncFrom(
                 opCtx, targetHostAndPort, &result));
     }
 
