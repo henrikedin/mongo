@@ -54,6 +54,7 @@ env.Library(
     ],
     LIBDEPS_PRIVATE=[
         '$BUILD_DIR/mongo/base',
+        '$BUILD_DIR/mongo/db/repl/repl_coordinator_embedded',
         '$BUILD_DIR/mongo/db/service_context',
         '$BUILD_DIR/mongo/util/net/network',
         '$BUILD_DIR/mongo/util/version_impl',
