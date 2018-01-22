@@ -50,7 +50,7 @@
 #include "mongo/db/op_observer_impl.h"
 #include "mongo/db/op_observer_registry.h"
 #include "mongo/db/repair_database_and_check_version.h"
-#include "mongo/db/repl/replication_coordinator_impl.h"
+#include "mongo/db/repl/replication_coordinator_embedded.h"
 #include "mongo/db/repl/storage_interface_impl.h"
 #include "mongo/db/session_catalog.h"
 #include "mongo/db/session_killer.h"
@@ -103,16 +103,16 @@ MONGO_INITIALIZER_WITH_PREREQUISITES(CreateReplicationManager,
 (InitializerContext* context) {
     auto serviceContext = getGlobalServiceContext();
     repl::StorageInterface::set(serviceContext, stdx::make_unique<repl::StorageInterfaceImpl>());
-    auto storageInterface = repl::StorageInterface::get(serviceContext);
+    //auto storageInterface = repl::StorageInterface::get(serviceContext);
 
-    auto replCoord = stdx::make_unique<repl::ReplicationCoordinatorImpl>(
+    auto replCoord = stdx::make_unique<repl::ReplicationCoordinatorEmbedded>(
         serviceContext,
-        getGlobalReplSettings(),
-        nullptr,
-        nullptr,
-        nullptr,
-        nullptr,
-        storageInterface,
+        //getGlobalReplSettings(),
+        //nullptr,
+        //nullptr,
+        //nullptr,
+        //nullptr,
+        //storageInterface,
         static_cast<int64_t>(curTimeMillis64()));
     repl::ReplicationCoordinator::set(serviceContext, std::move(replCoord));
     repl::setOplogCollectionName();

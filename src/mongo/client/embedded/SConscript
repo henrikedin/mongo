@@ -19,7 +19,9 @@ env.Library(
         '$BUILD_DIR/mongo/db/clientcursor',
         '$BUILD_DIR/mongo/db/ops/write_ops_exec',
         '$BUILD_DIR/mongo/db/rw_concern_d',
-        '$BUILD_DIR/mongo/db/s/sharding',
+		'$BUILD_DIR/mongo/db/s/sharding',
+		'$BUILD_DIR/mongo/db/s/split_chunk',
+        '$BUILD_DIR/mongo/db/s/split_vector',
         '$BUILD_DIR/mongo/db/storage/storage_engine_lock_file',
         '$BUILD_DIR/mongo/db/storage/storage_engine_metadata',
     ],
@@ -54,6 +56,7 @@ env.Library(
     ],
     LIBDEPS_PRIVATE=[
         '$BUILD_DIR/mongo/base',
+        '$BUILD_DIR/mongo/db/repl/repl_coordinator_embedded',
         '$BUILD_DIR/mongo/db/service_context',
         '$BUILD_DIR/mongo/util/net/network',
         '$BUILD_DIR/mongo/util/version_impl',
