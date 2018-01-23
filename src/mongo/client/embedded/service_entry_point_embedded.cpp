@@ -121,7 +121,7 @@ void generateLegacyQueryErrorResponse(const AssertionException* exception,
                                   << " ntoreturn:" << queryMessage.ntoreturn;
     }
 
-	auto scex = exception->extraInfo<StaleConfigInfo>();
+    auto scex = exception->extraInfo<StaleConfigInfo>();
 
     BSONObjBuilder err;
     err.append("$err", exception->reason());
@@ -171,7 +171,7 @@ void _generateErrorResponse(OperationContext* opCtx,
     // We could have thrown an exception after setting fields in the builder,
     // so we need to reset it to a clean state just to be sure.
     replyBuilder->reset();
-	replyBuilder->setCommandReply(exception.toStatus());
+    replyBuilder->setCommandReply(exception.toStatus());
     replyBuilder->setMetadata(replyMetadata);
 }
 
@@ -185,9 +185,9 @@ void _generateErrorResponse(OperationContext* opCtx,
     // We could have thrown an exception after setting fields in the builder,
     // so we need to reset it to a clean state just to be sure.
     replyBuilder->reset();
-	replyBuilder->setCommandReply(exception.toStatus(),
-		BSON("operationTime" << operationTime.asTimestamp()));
-	replyBuilder->setMetadata(replyMetadata);
+    replyBuilder->setCommandReply(exception.toStatus(),
+                                  BSON("operationTime" << operationTime.asTimestamp()));
+    replyBuilder->setMetadata(replyMetadata);
 }
 
 /**
@@ -231,19 +231,18 @@ void appendReplyMetadataOnError(OperationContext* opCtx, BSONObjBuilder* metadat
         replCoord->getReplicationMode() == repl::ReplicationCoordinator::modeReplSet;
 
     if (isReplSet) {
-		if (LogicalTimeValidator::isAuthorizedToAdvanceClock(opCtx)) {
-			// No need to sign cluster times for internal clients.
-			SignedLogicalTime currentTime(
-				LogicalClock::get(opCtx)->getClusterTime(), TimeProofService::TimeProof(), 0);
-			rpc::LogicalTimeMetadata logicalTimeMetadata(currentTime);
-			logicalTimeMetadata.writeToMetadata(metadataBob);
-		}
-		else if (auto validator = LogicalTimeValidator::get(opCtx)) {
-			auto currentTime =
-				validator->trySignLogicalTime(LogicalClock::get(opCtx)->getClusterTime());
-			rpc::LogicalTimeMetadata logicalTimeMetadata(currentTime);
-			logicalTimeMetadata.writeToMetadata(metadataBob);
-		}
+        if (LogicalTimeValidator::isAuthorizedToAdvanceClock(opCtx)) {
+            // No need to sign cluster times for internal clients.
+            SignedLogicalTime currentTime(
+                LogicalClock::get(opCtx)->getClusterTime(), TimeProofService::TimeProof(), 0);
+            rpc::LogicalTimeMetadata logicalTimeMetadata(currentTime);
+            logicalTimeMetadata.writeToMetadata(metadataBob);
+        } else if (auto validator = LogicalTimeValidator::get(opCtx)) {
+            auto currentTime =
+                validator->trySignLogicalTime(LogicalClock::get(opCtx)->getClusterTime());
+            rpc::LogicalTimeMetadata logicalTimeMetadata(currentTime);
+            logicalTimeMetadata.writeToMetadata(metadataBob);
+        }
     }
 }
 
@@ -268,19 +267,18 @@ void appendReplyMetadata(OperationContext* opCtx,
                 .writeToMetadata(metadataBob)
                 .transitional_ignore();
         }
-		if (LogicalTimeValidator::isAuthorizedToAdvanceClock(opCtx)) {
-			// No need to sign cluster times for internal clients.
-			SignedLogicalTime currentTime(
-				LogicalClock::get(opCtx)->getClusterTime(), TimeProofService::TimeProof(), 0);
-			rpc::LogicalTimeMetadata logicalTimeMetadata(currentTime);
-			logicalTimeMetadata.writeToMetadata(metadataBob);
-		}
-		else if (auto validator = LogicalTimeValidator::get(opCtx)) {
-			auto currentTime =
-				validator->trySignLogicalTime(LogicalClock::get(opCtx)->getClusterTime());
-			rpc::LogicalTimeMetadata logicalTimeMetadata(currentTime);
-			logicalTimeMetadata.writeToMetadata(metadataBob);
-		}
+        if (LogicalTimeValidator::isAuthorizedToAdvanceClock(opCtx)) {
+            // No need to sign cluster times for internal clients.
+            SignedLogicalTime currentTime(
+                LogicalClock::get(opCtx)->getClusterTime(), TimeProofService::TimeProof(), 0);
+            rpc::LogicalTimeMetadata logicalTimeMetadata(currentTime);
+            logicalTimeMetadata.writeToMetadata(metadataBob);
+        } else if (auto validator = LogicalTimeValidator::get(opCtx)) {
+            auto currentTime =
+                validator->trySignLogicalTime(LogicalClock::get(opCtx)->getClusterTime());
+            rpc::LogicalTimeMetadata logicalTimeMetadata(currentTime);
+            logicalTimeMetadata.writeToMetadata(metadataBob);
+        }
     }
 
     // If we're a shard other than the config shard, attach the last configOpTime we know about.
@@ -329,14 +327,14 @@ void _waitForWriteConcernAndAddToCommandResponse(OperationContext* opCtx,
     WriteConcernResult res;
     auto waitForWCStatus =
         waitForWriteConcern(opCtx, lastOpAfterRun, opCtx->getWriteConcern(), &res);
-	CommandHelpers::appendCommandWCStatus(*commandResponseBuilder, waitForWCStatus, res);
+    CommandHelpers::appendCommandWCStatus(*commandResponseBuilder, waitForWCStatus, res);
 
     // SERVER-22421: This code is to ensure error response backwards compatibility with the
     // user management commands. This can be removed in 3.6.
     if (!waitForWCStatus.isOK() && CommandHelpers::isUserManagementCommand(commandName)) {
         BSONObj temp = commandResponseBuilder->asTempObj().copy();
         commandResponseBuilder->resetToEmpty();
-		CommandHelpers::appendCommandStatus(*commandResponseBuilder, waitForWCStatus);
+        CommandHelpers::appendCommandStatus(*commandResponseBuilder, waitForWCStatus);
         commandResponseBuilder->appendElementsUnique(temp);
     }
 }
@@ -419,7 +417,8 @@ bool runCommandImpl(OperationContext* opCtx,
     } else {
         auto wcResult = extractWriteConcern(opCtx, cmd, db);
         if (!wcResult.isOK()) {
-            auto result = CommandHelpers::appendCommandStatus(inPlaceReplyBob, wcResult.getStatus());
+            auto result =
+                CommandHelpers::appendCommandStatus(inPlaceReplyBob, wcResult.getStatus());
             inPlaceReplyBob.doneFast();
             BSONObjBuilder metadataBob;
             appendReplyMetadataOnError(opCtx, &metadataBob);
@@ -445,14 +444,14 @@ bool runCommandImpl(OperationContext* opCtx,
                                                             wcResult.getValue().toBSON()));
     }
 
-	CommandHelpers::appendCommandStatus(inPlaceReplyBob, result);
+    CommandHelpers::appendCommandStatus(inPlaceReplyBob, result);
 
     auto operationTime = computeOperationTime(
         opCtx, startOperationTime, repl::ReadConcernArgs::get(opCtx).getLevel());
 
     // An uninitialized operation time means the cluster time is not propagated, so the operation
     // time should not be attached to the response.
-	if (operationTime != LogicalTime::kUninitialized) {
+    if (operationTime != LogicalTime::kUninitialized) {
         operationTime.appendAsOperationTime(&inPlaceReplyBob);
     }
 
@@ -676,7 +675,7 @@ void execCommandDatabase(OperationContext* opCtx,
         }
     } catch (const DBException& e) {
         // If we got a stale config, wait in case the operation is stuck in a critical section
-		if (auto sce = e.extraInfo<StaleConfigInfo>()) {
+        if (auto sce = e.extraInfo<StaleConfigInfo>()) {
             if (!opCtx->getClient()->isInDirectClient()) {
                 ShardingState::get(opCtx)
                     ->onStaleShardVersion(
@@ -767,7 +766,7 @@ DbResponse runCommands(OperationContext* opCtx, const Message& message) {
             // we restrict the log message to the name of the unrecognized command.
             // However, the complete command object will still be echoed to the client.
             if (!(c = CommandHelpers::findCommand(request.getCommandName()))) {
-				globalCommandRegistry()->incrementUnknownCommands();
+                globalCommandRegistry()->incrementUnknownCommands();
                 std::string msg = str::stream() << "no such command: '" << request.getCommandName()
                                                 << "'";
                 LOG(2) << msg;
@@ -834,14 +833,14 @@ DbResponse receivedQuery(OperationContext* opCtx,
         dbResponse.exhaustNS = runQuery(opCtx, q, nss, dbResponse.response);
     } catch (const AssertionException& e) {
         // If we got a stale config, wait in case the operation is stuck in a critical section
-		if (auto sce = e.extraInfo<StaleConfigInfo>()) {
-			if (!opCtx->getClient()->isInDirectClient()) {
-				ShardingState::get(opCtx)
-					->onStaleShardVersion(
-						opCtx, NamespaceString(sce->getns()), sce->getVersionReceived())
-					.transitional_ignore();
-			}
-		}
+        if (auto sce = e.extraInfo<StaleConfigInfo>()) {
+            if (!opCtx->getClient()->isInDirectClient()) {
+                ShardingState::get(opCtx)
+                    ->onStaleShardVersion(
+                        opCtx, NamespaceString(sce->getns()), sce->getVersionReceived())
+                    .transitional_ignore();
+            }
+        }
 
         dbResponse.response.reset();
         generateLegacyQueryErrorResponse(&e, q, &op, &dbResponse.response);

@@ -103,16 +103,16 @@ MONGO_INITIALIZER_WITH_PREREQUISITES(CreateReplicationManager,
 (InitializerContext* context) {
     auto serviceContext = getGlobalServiceContext();
     repl::StorageInterface::set(serviceContext, stdx::make_unique<repl::StorageInterfaceImpl>());
-    //auto storageInterface = repl::StorageInterface::get(serviceContext);
+    // auto storageInterface = repl::StorageInterface::get(serviceContext);
 
     auto replCoord = stdx::make_unique<repl::ReplicationCoordinatorEmbedded>(
         serviceContext,
-        //getGlobalReplSettings(),
-        //nullptr,
-        //nullptr,
-        //nullptr,
-        //nullptr,
-        //storageInterface,
+        // getGlobalReplSettings(),
+        // nullptr,
+        // nullptr,
+        // nullptr,
+        // nullptr,
+        // storageInterface,
         static_cast<int64_t>(curTimeMillis64()));
     repl::ReplicationCoordinator::set(serviceContext, std::move(replCoord));
     repl::setOplogCollectionName(serviceContext);
@@ -226,20 +226,20 @@ int initialize(int argc, char* argv[], char** envp) {
     // configuration file/environment.
     if (serverGlobalParams.parsedOpts.hasField("storage")) {
         BSONElement storageElement = serverGlobalParams.parsedOpts.getField("storage");
-		invariant(storageElement.isABSONObj());
-		for (auto&& e : storageElement.Obj()) {
-			// Ignore if field name under "storage" matches current storage engine.
-			if (storageGlobalParams.engine == e.fieldName()) {
-				continue;
-			}
+        invariant(storageElement.isABSONObj());
+        for (auto&& e : storageElement.Obj()) {
+            // Ignore if field name under "storage" matches current storage engine.
+            if (storageGlobalParams.engine == e.fieldName()) {
+                continue;
+            }
 
-			// Warn if field name matches non-active registered storage engine.
-			if (serviceContext->isRegisteredStorageEngine(e.fieldName())) {
-				warning() << "Detected configuration for non-active storage engine "
-					<< e.fieldName() << " when current storage engine is "
-					<< storageGlobalParams.engine;
-			}
-		}
+            // Warn if field name matches non-active registered storage engine.
+            if (serviceContext->isRegisteredStorageEngine(e.fieldName())) {
+                warning() << "Detected configuration for non-active storage engine "
+                          << e.fieldName() << " when current storage engine is "
+                          << storageGlobalParams.engine;
+            }
+        }
     }
 
     logMongodStartupWarnings(storageGlobalParams, serverGlobalParams, serviceContext);
