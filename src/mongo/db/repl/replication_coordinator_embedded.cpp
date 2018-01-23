@@ -1516,19 +1516,6 @@ ReplicationCoordinator::StatusAndDuration ReplicationCoordinatorEmbedded::awaitR
 	return{ Status::OK(), Milliseconds(0) };
 }
 
-ReplicationCoordinator::StatusAndDuration
-ReplicationCoordinatorEmbedded::awaitReplicationOfLastOpForClient(
-	OperationContext* opCtx, const WriteConcernOptions& writeConcern) {
-	/*Timer timer;
-	WriteConcernOptions fixedWriteConcern = populateUnsetWriteConcernOptionsSyncMode(writeConcern);
-	stdx::unique_lock<stdx::mutex> lock(_mutex);
-	const auto& clientInfo = ReplClientInfo::forClient(opCtx->getClient());
-	auto status = _awaitReplication_inlock(
-		&lock, opCtx, clientInfo.getLastOp(), clientInfo.getLastSnapshot(), fixedWriteConcern);
-	return {std::move(status), duration_cast<Milliseconds>(timer.elapsed())};*/
-	return { Status::OK(), Milliseconds(0) };
-}
-
 //Status ReplicationCoordinatorEmbedded::_awaitReplication_inlock(
 //    stdx::unique_lock<stdx::mutex>* lock,
 //    OperationContext* opCtx,
@@ -3523,7 +3510,7 @@ Status ReplicationCoordinatorEmbedded::updateTerm(OperationContext* opCtx, long 
 //    return EventHandle();
 //}
 
-Timestamp ReplicationCoordinatorEmbedded::reserveSnapshotName(OperationContext* opCtx) {
+Timestamp ReplicationCoordinatorEmbedded::getMinimumVisibleSnapshot(OperationContext* opCtx) {
     //Timestamp reservedName;
     //if (getReplicationMode() == Mode::modeReplSet) {
     //    invariant(opCtx->lockState()->isLocked());

@@ -123,9 +123,6 @@ public:
     virtual ReplicationCoordinator::StatusAndDuration awaitReplication(
         OperationContext* opCtx, const OpTime& opTime, const WriteConcernOptions& writeConcern) override;
 
-    virtual ReplicationCoordinator::StatusAndDuration awaitReplicationOfLastOpForClient(
-        OperationContext* opCtx, const WriteConcernOptions& writeConcern) override;
-
     virtual Status stepDown(OperationContext* opCtx,
                             bool force,
                             const Milliseconds& waitTime,
@@ -302,7 +299,7 @@ public:
 
     virtual Status updateTerm(OperationContext* opCtx, long long term) override;
 
-    virtual Timestamp reserveSnapshotName(OperationContext* opCtx) override;
+    virtual Timestamp getMinimumVisibleSnapshot(OperationContext* opCtx) override;
 
     virtual OpTime getCurrentCommittedSnapshotOpTime() const override;
 
