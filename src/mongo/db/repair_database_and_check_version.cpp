@@ -217,9 +217,9 @@ unsigned long long checkIfReplMissingFromCommandLine(OperationContext* opCtx) {
 }
 
 /**
- * Check that the oplog is capped, and abort the process if it is not.
- * Caller must lock DB before calling this function.
- */
+* Check that the oplog is capped, and abort the process if it is not.
+* Caller must lock DB before calling this function.
+*/
 void checkForCappedOplog(OperationContext* opCtx, Database* db) {
     const NamespaceString oplogNss(NamespaceString::kRsOplogNamespace);
     invariant(opCtx->lockState()->isDbLockedForMode(oplogNss.db(), MODE_IS));
@@ -233,9 +233,9 @@ void checkForCappedOplog(OperationContext* opCtx, Database* db) {
 }
 
 /**
- * Return an error status if the wrong mongod version was used for these datafiles. The boolean
- * represents whether there are non-local databases.
- */
+* Return an error status if the wrong mongod version was used for these datafiles. The boolean
+* represents whether there are non-local databases.
+*/
 StatusWith<bool> repairDatabasesAndCheckVersion(OperationContext* opCtx) {
     LOG(1) << "enter repairDatabases (to check pdfile version #)";
 
@@ -272,7 +272,8 @@ StatusWith<bool> repairDatabasesAndCheckVersion(OperationContext* opCtx) {
         }
     }
 
-    const repl::ReplSettings& replSettings = repl::getGlobalReplicationCoordinator()->getSettings();
+    const repl::ReplSettings& replSettings =
+        repl::ReplicationCoordinator::get(opCtx)->getSettings();
 
     if (!storageGlobalParams.readOnly) {
         StatusWith<std::vector<StorageEngine::CollectionIndexNamePair>> swIndexesToRebuild =
