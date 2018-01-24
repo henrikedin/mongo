@@ -106,14 +106,7 @@ MONGO_INITIALIZER_WITH_PREREQUISITES(CreateReplicationManager,
     // auto storageInterface = repl::StorageInterface::get(serviceContext);
 
     auto replCoord = stdx::make_unique<repl::ReplicationCoordinatorEmbedded>(
-        serviceContext,
-        // getGlobalReplSettings(),
-        // nullptr,
-        // nullptr,
-        // nullptr,
-        // nullptr,
-        // storageInterface,
-        static_cast<int64_t>(curTimeMillis64()));
+        serviceContext);
     repl::ReplicationCoordinator::set(serviceContext, std::move(replCoord));
     repl::setOplogCollectionName(serviceContext);
     return Status::OK();
