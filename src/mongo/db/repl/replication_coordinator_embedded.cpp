@@ -44,17 +44,17 @@ ReplicationCoordinatorEmbedded::ReplicationCoordinatorEmbedded(
 ReplicationCoordinatorEmbedded::~ReplicationCoordinatorEmbedded() = default;
 
 OpTime ReplicationCoordinatorEmbedded::getCurrentCommittedSnapshotOpTime() const {
-	uassert(ErrorCodes::NotImplementedForEmbedded,
-		str::stream() << "Not implemented for embedded: ", false);
+	uassert(ErrorCodes::NotImplementedForEmbedded, "Not implemented for embedded: getCurrentCommittedSnapshotOpTime", false);
     return OpTime();
 }
 
 void ReplicationCoordinatorEmbedded::appendDiagnosticBSON(mongo::BSONObjBuilder* bob) {
-   
+	uassert(ErrorCodes::NotImplementedForEmbedded, "Not implemented for embedded: appendDiagnosticBSON", false);
 }
 
 void ReplicationCoordinatorEmbedded::appendConnectionStats(
     executor::ConnectionPoolStats* stats) const {
+	uassert(ErrorCodes::NotImplementedForEmbedded, "Not implemented for embedded: appendConnectionStats", false);
 }
 
 void ReplicationCoordinatorEmbedded::startup(OperationContext* opCtx) {
@@ -73,85 +73,104 @@ ReplicationCoordinator::Mode ReplicationCoordinatorEmbedded::getReplicationMode(
 }
 
 MemberState ReplicationCoordinatorEmbedded::getMemberState() const {
-    static MemberState _memberState;
-    return _memberState;
+	uassert(ErrorCodes::NotImplementedForEmbedded, "Not implemented for embedded: getMemberState", false);
+    return MemberState();
 }
 
 Status ReplicationCoordinatorEmbedded::waitForMemberState(MemberState expectedState,
                                                           Milliseconds timeout) {
+	uassert(ErrorCodes::NotImplementedForEmbedded, "Not implemented for embedded: waitForMemberState", false);
     return Status::OK();
 }
 
 Seconds ReplicationCoordinatorEmbedded::getSlaveDelaySecs() const {
+	uassert(ErrorCodes::NotImplementedForEmbedded, "Not implemented for embedded: getSlaveDelaySecs", false);
     return Seconds{0};
 }
 
 void ReplicationCoordinatorEmbedded::clearSyncSourceBlacklist() {
+	uassert(ErrorCodes::NotImplementedForEmbedded, "Not implemented for embedded: clearSyncSourceBlacklist", false);
 }
 
 Status ReplicationCoordinatorEmbedded::setFollowerMode(const MemberState& newState) {
+	uassert(ErrorCodes::NotImplementedForEmbedded, "Not implemented for embedded: setFollowerMode", false);
     return Status::OK();
 }
 
 ReplicationCoordinator::ApplierState ReplicationCoordinatorEmbedded::getApplierState() {
-    static ReplicationCoordinator::ApplierState _applierState;
-    return _applierState;
+	uassert(ErrorCodes::NotImplementedForEmbedded, "Not implemented for embedded: getApplierState", false);
+    return ReplicationCoordinator::ApplierState();
 }
 
 void ReplicationCoordinatorEmbedded::signalDrainComplete(OperationContext* opCtx,
                                                          long long termWhenBufferIsEmpty) {
+	uassert(ErrorCodes::NotImplementedForEmbedded, "Not implemented for embedded: signalDrainComplete", false);
 }
 
 Status ReplicationCoordinatorEmbedded::waitForDrainFinish(Milliseconds timeout) {
+	uassert(ErrorCodes::NotImplementedForEmbedded, "Not implemented for embedded: waitForDrainFinish", false);
     return Status::OK();
 }
 
 void ReplicationCoordinatorEmbedded::signalUpstreamUpdater() {
+	uassert(ErrorCodes::NotImplementedForEmbedded, "Not implemented for embedded: signalUpstreamUpdater", false);
 }
 
 Status ReplicationCoordinatorEmbedded::setLastOptimeForSlave(const OID& rid, const Timestamp& ts) {
+	uassert(ErrorCodes::NotImplementedForEmbedded, "Not implemented for embedded: setLastOptimeForSlave", false);
     return Status::OK();
 }
 
 void ReplicationCoordinatorEmbedded::setMyHeartbeatMessage(const std::string& msg) {
+	uassert(ErrorCodes::NotImplementedForEmbedded, "Not implemented for embedded: setMyHeartbeatMessage", false);
 }
 
 void ReplicationCoordinatorEmbedded::setMyLastAppliedOpTimeForward(const OpTime& opTime,
                                                                    DataConsistency consistency) {
+	uassert(ErrorCodes::NotImplementedForEmbedded, "Not implemented for embedded: setMyLastAppliedOpTimeForward", false);
 }
 
 void ReplicationCoordinatorEmbedded::setMyLastDurableOpTimeForward(const OpTime& opTime) {
+	uassert(ErrorCodes::NotImplementedForEmbedded, "Not implemented for embedded: setMyLastDurableOpTimeForward", false);
 }
 
 void ReplicationCoordinatorEmbedded::setMyLastAppliedOpTime(const OpTime& opTime) {
+	uassert(ErrorCodes::NotImplementedForEmbedded, "Not implemented for embedded: setMyLastAppliedOpTime", false);
 }
 
 void ReplicationCoordinatorEmbedded::setMyLastDurableOpTime(const OpTime& opTime) {
+	uassert(ErrorCodes::NotImplementedForEmbedded, "Not implemented for embedded: setMyLastDurableOpTime", false);
 }
 
 void ReplicationCoordinatorEmbedded::resetMyLastOpTimes() {
+	uassert(ErrorCodes::NotImplementedForEmbedded, "Not implemented for embedded: resetMyLastOpTimes", false);
 }
 
 OpTime ReplicationCoordinatorEmbedded::getMyLastAppliedOpTime() const {
+	uassert(ErrorCodes::NotImplementedForEmbedded, "Not implemented for embedded: getMyLastAppliedOpTime", false);
     return OpTime();
 }
 
 OpTime ReplicationCoordinatorEmbedded::getMyLastDurableOpTime() const {
+	uassert(ErrorCodes::NotImplementedForEmbedded, "Not implemented for embedded: getMyLastDurableOpTime", false);
     return OpTime();
 }
 
 Status ReplicationCoordinatorEmbedded::waitUntilOpTimeForRead(OperationContext* opCtx,
                                                               const ReadConcernArgs& readConcern) {
+	uassert(ErrorCodes::NotImplementedForEmbedded, "Not implemented for embedded: waitUntilOpTimeForRead", false);
     return Status::OK();
 }
 
 Status ReplicationCoordinatorEmbedded::waitUntilOpTimeForReadUntil(
     OperationContext* opCtx, const ReadConcernArgs& readConcern, boost::optional<Date_t> deadline) {
+	uassert(ErrorCodes::NotImplementedForEmbedded, "Not implemented for embedded: waitUntilOpTimeForReadUntil", false);
     return Status::OK();
 }
 
 ReplicationCoordinator::StatusAndDuration ReplicationCoordinatorEmbedded::awaitReplication(
     OperationContext* opCtx, const OpTime& opTime, const WriteConcernOptions& writeConcern) {
+	uassert(ErrorCodes::NotImplementedForEmbedded, "Not implemented for embedded: awaitReplication", false);
     return {Status::OK(), Milliseconds(0)};
 }
 
@@ -159,7 +178,7 @@ Status ReplicationCoordinatorEmbedded::stepDown(OperationContext* opCtx,
                                                 const bool force,
                                                 const Milliseconds& waitTime,
                                                 const Milliseconds& stepdownTime) {
-
+	uassert(ErrorCodes::NotImplementedForEmbedded, "Not implemented for embedded: stepDown", false);
     return Status::OK();
 }
 
@@ -209,51 +228,61 @@ bool ReplicationCoordinatorEmbedded::shouldRelaxIndexConstraints(OperationContex
 }
 
 OID ReplicationCoordinatorEmbedded::getElectionId() {
+	uassert(ErrorCodes::NotImplementedForEmbedded, "Not implemented for embedded: getElectionId", false);
     return OID();
 }
 
 OID ReplicationCoordinatorEmbedded::getMyRID() const {
+	uassert(ErrorCodes::NotImplementedForEmbedded, "Not implemented for embedded: getMyRID", false);
     return OID();
 }
 
 int ReplicationCoordinatorEmbedded::getMyId() const {
+	uassert(ErrorCodes::NotImplementedForEmbedded, "Not implemented for embedded: getMyId", false);
     return 0;
 }
 
 Status ReplicationCoordinatorEmbedded::resyncData(OperationContext* opCtx,
                                                   bool waitUntilCompleted) {
+	uassert(ErrorCodes::NotImplementedForEmbedded, "Not implemented for embedded: resyncData", false);
     return Status::OK();
 }
 
 StatusWith<BSONObj> ReplicationCoordinatorEmbedded::prepareReplSetUpdatePositionCommand() const {
+	uassert(ErrorCodes::NotImplementedForEmbedded, "Not implemented for embedded: prepareReplSetUpdatePositionCommand", false);
     return BSONObj();
 }
 
 Status ReplicationCoordinatorEmbedded::processReplSetGetStatus(
     BSONObjBuilder* response, ReplSetGetStatusResponseStyle responseStyle) {
-
+	uassert(ErrorCodes::NotImplementedForEmbedded, "Not implemented for embedded: processReplSetGetStatus", false);
     return Status::OK();
 }
 
 void ReplicationCoordinatorEmbedded::fillIsMasterForReplSet(IsMasterResponse* response) {
+	uassert(ErrorCodes::NotImplementedForEmbedded, "Not implemented for embedded: fillIsMasterForReplSet", false);
 }
 
 void ReplicationCoordinatorEmbedded::appendSlaveInfoData(BSONObjBuilder* result) {
+	uassert(ErrorCodes::NotImplementedForEmbedded, "Not implemented for embedded: appendSlaveInfoData", false);
 }
 
 ReplSetConfig ReplicationCoordinatorEmbedded::getConfig() const {
-    static ReplSetConfig _rsConfig;
-    return _rsConfig;
+	uassert(ErrorCodes::NotImplementedForEmbedded, "Not implemented for embedded: getConfig", false);
+    return ReplSetConfig();
 }
 
 void ReplicationCoordinatorEmbedded::processReplSetGetConfig(BSONObjBuilder* result) {
+	uassert(ErrorCodes::NotImplementedForEmbedded, "Not implemented for embedded: processReplSetGetConfig", false);
 }
 
 void ReplicationCoordinatorEmbedded::processReplSetMetadata(
     const rpc::ReplSetMetadata& replMetadata) {
+	uassert(ErrorCodes::NotImplementedForEmbedded, "Not implemented for embedded: processReplSetMetadata", false);
 }
 
 void ReplicationCoordinatorEmbedded::cancelAndRescheduleElectionTimeout() {
+	uassert(ErrorCodes::NotImplementedForEmbedded, "Not implemented for embedded: cancelAndRescheduleElectionTimeout", false);
 }
 
 bool ReplicationCoordinatorEmbedded::getMaintenanceMode() {
@@ -267,69 +296,83 @@ Status ReplicationCoordinatorEmbedded::setMaintenanceMode(bool activate) {
 Status ReplicationCoordinatorEmbedded::processReplSetSyncFrom(OperationContext* opCtx,
                                                               const HostAndPort& target,
                                                               BSONObjBuilder* resultObj) {
+	uassert(ErrorCodes::NotImplementedForEmbedded, "Not implemented for embedded: processReplSetSyncFrom", false);
     return Status::OK();
 }
 
 Status ReplicationCoordinatorEmbedded::processReplSetFreeze(int secs, BSONObjBuilder* resultObj) {
+	uassert(ErrorCodes::NotImplementedForEmbedded, "Not implemented for embedded: processReplSetFreeze", false);
     return Status::OK();
 }
 
 Status ReplicationCoordinatorEmbedded::processHeartbeat(const ReplSetHeartbeatArgs& args,
                                                         ReplSetHeartbeatResponse* response) {
+	uassert(ErrorCodes::NotImplementedForEmbedded, "Not implemented for embedded: processHeartbeat", false);
     return Status::OK();
 }
 
 Status ReplicationCoordinatorEmbedded::processReplSetReconfig(OperationContext* opCtx,
                                                               const ReplSetReconfigArgs& args,
                                                               BSONObjBuilder* resultObj) {
+	uassert(ErrorCodes::NotImplementedForEmbedded, "Not implemented for embedded: processReplSetReconfig", false);
     return Status::OK();
 }
 
 Status ReplicationCoordinatorEmbedded::processReplSetInitiate(OperationContext* opCtx,
                                                               const BSONObj& configObj,
                                                               BSONObjBuilder* resultObj) {
+	uassert(ErrorCodes::NotImplementedForEmbedded, "Not implemented for embedded: processReplSetInitiate", false);
     return Status::OK();
 }
 
 Status ReplicationCoordinatorEmbedded::abortCatchupIfNeeded() {
+	uassert(ErrorCodes::NotImplementedForEmbedded, "Not implemented for embedded: abortCatchupIfNeeded", false);
     return Status::OK();
 }
 
 Status ReplicationCoordinatorEmbedded::processReplSetFresh(const ReplSetFreshArgs& args,
                                                            BSONObjBuilder* resultObj) {
+	uassert(ErrorCodes::NotImplementedForEmbedded, "Not implemented for embedded: processReplSetFresh", false);
     return Status::OK();
 }
 
 Status ReplicationCoordinatorEmbedded::processReplSetElect(const ReplSetElectArgs& args,
                                                            BSONObjBuilder* responseObj) {
+	uassert(ErrorCodes::NotImplementedForEmbedded, "Not implemented for embedded: processReplSetElect", false);
     return Status::OK();
 }
 
 Status ReplicationCoordinatorEmbedded::processReplSetUpdatePosition(
     const UpdatePositionArgs& updates, long long* configVersion) {
+	uassert(ErrorCodes::NotImplementedForEmbedded, "Not implemented for embedded: processReplSetUpdatePosition", false);
     return Status::OK();
 }
 
 Status ReplicationCoordinatorEmbedded::processHandshake(OperationContext* opCtx,
                                                         const HandshakeArgs& handshake) {
+	uassert(ErrorCodes::NotImplementedForEmbedded, "Not implemented for embedded: processHandshake", false);
     return Status::OK();
 }
 
 bool ReplicationCoordinatorEmbedded::buildsIndexes() {
+	uassert(ErrorCodes::NotImplementedForEmbedded, "Not implemented for embedded: buildsIndexes", false);
     return false;
 }
 
 std::vector<HostAndPort> ReplicationCoordinatorEmbedded::getHostsWrittenTo(const OpTime& op,
                                                                            bool durablyWritten) {
+	uassert(ErrorCodes::NotImplementedForEmbedded, "Not implemented for embedded: getHostsWrittenTo", false);
     return std::vector<HostAndPort>();
 }
 
 std::vector<HostAndPort> ReplicationCoordinatorEmbedded::getOtherNodesInReplSet() const {
+	uassert(ErrorCodes::NotImplementedForEmbedded, "Not implemented for embedded: getOtherNodesInReplSet", false);
     return std::vector<HostAndPort>();
 }
 
 Status ReplicationCoordinatorEmbedded::checkIfWriteConcernCanBeSatisfied(
     const WriteConcernOptions& writeConcern) const {
+	uassert(ErrorCodes::NotImplementedForEmbedded, "Not implemented for embedded: checkIfWriteConcernCanBeSatisfied", false);
     return Status::OK();
 }
 
@@ -338,6 +381,7 @@ WriteConcernOptions ReplicationCoordinatorEmbedded::getGetLastErrorDefault() {
 }
 
 Status ReplicationCoordinatorEmbedded::checkReplEnabledForCommand(BSONObjBuilder* result) {
+	uassert(ErrorCodes::NotImplementedForEmbedded, "Not implemented for embedded: checkReplEnabledForCommand", false);
     return Status::OK();
 }
 
@@ -346,27 +390,33 @@ bool ReplicationCoordinatorEmbedded::isReplEnabled() const {
 }
 
 HostAndPort ReplicationCoordinatorEmbedded::chooseNewSyncSource(const OpTime& lastOpTimeFetched) {
+	uassert(ErrorCodes::NotImplementedForEmbedded, "Not implemented for embedded: chooseNewSyncSource", false);
     return HostAndPort();
 }
 
 void ReplicationCoordinatorEmbedded::blacklistSyncSource(const HostAndPort& host, Date_t until) {
+	uassert(ErrorCodes::NotImplementedForEmbedded, "Not implemented for embedded: blacklistSyncSource", false);
 }
 
 void ReplicationCoordinatorEmbedded::resetLastOpTimesFromOplog(OperationContext* opCtx,
                                                                DataConsistency consistency) {
+	uassert(ErrorCodes::NotImplementedForEmbedded, "Not implemented for embedded: resetLastOpTimesFromOplog", false);
 }
 
 bool ReplicationCoordinatorEmbedded::shouldChangeSyncSource(
     const HostAndPort& currentSource,
     const rpc::ReplSetMetadata& replMetadata,
     boost::optional<rpc::OplogQueryMetadata> oqMetadata) {
+	uassert(ErrorCodes::NotImplementedForEmbedded, "Not implemented for embedded: shouldChangeSyncSource", false);
     return false;
 }
 
 void ReplicationCoordinatorEmbedded::advanceCommitPoint(const OpTime& committedOpTime) {
+	uassert(ErrorCodes::NotImplementedForEmbedded, "Not implemented for embedded: advanceCommitPoint", false);
 }
 
 OpTime ReplicationCoordinatorEmbedded::getLastCommittedOpTime() const {
+	uassert(ErrorCodes::NotImplementedForEmbedded, "Not implemented for embedded: getLastCommittedOpTime", false);
     return OpTime();
 }
 
@@ -374,6 +424,7 @@ Status ReplicationCoordinatorEmbedded::processReplSetRequestVotes(
     OperationContext* opCtx,
     const ReplSetRequestVotesArgs& args,
     ReplSetRequestVotesResponse* response) {
+	uassert(ErrorCodes::NotImplementedForEmbedded, "Not implemented for embedded: processReplSetRequestVotes", false);
     return Status::OK();
 }
 
@@ -381,30 +432,36 @@ void ReplicationCoordinatorEmbedded::prepareReplMetadata(OperationContext* opCtx
                                                          const BSONObj& metadataRequestObj,
                                                          const OpTime& lastOpTimeFromClient,
                                                          BSONObjBuilder* builder) const {
-
+	uassert(ErrorCodes::NotImplementedForEmbedded, "Not implemented for embedded: prepareReplMetadata", false);
 }
 
 bool ReplicationCoordinatorEmbedded::isV1ElectionProtocol() const {
+	uassert(ErrorCodes::NotImplementedForEmbedded, "Not implemented for embedded: isV1ElectionProtocol", false);
     return false;
 }
 
 bool ReplicationCoordinatorEmbedded::getWriteConcernMajorityShouldJournal() {
+	uassert(ErrorCodes::NotImplementedForEmbedded, "Not implemented for embedded: getWriteConcernMajorityShouldJournal", false);
     return false;
 }
 
 Status ReplicationCoordinatorEmbedded::processHeartbeatV1(const ReplSetHeartbeatArgsV1& args,
                                                           ReplSetHeartbeatResponse* response) {
+	uassert(ErrorCodes::NotImplementedForEmbedded, "Not implemented for embedded: processHeartbeatV1", false);
     return Status::OK();
 }
 
 void ReplicationCoordinatorEmbedded::summarizeAsHtml(ReplSetHtmlSummary* output) {
+	uassert(ErrorCodes::NotImplementedForEmbedded, "Not implemented for embedded: summarizeAsHtml", false);
 }
 
 long long ReplicationCoordinatorEmbedded::getTerm() {
+	uassert(ErrorCodes::NotImplementedForEmbedded, "Not implemented for embedded: getTerm", false);
     return 0;
 }
 
 Status ReplicationCoordinatorEmbedded::updateTerm(OperationContext* opCtx, long long term) {
+	uassert(ErrorCodes::NotImplementedForEmbedded, "Not implemented for embedded: updateTerm", false);
     return Status::OK();
 }
 
@@ -414,13 +471,16 @@ Timestamp ReplicationCoordinatorEmbedded::getMinimumVisibleSnapshot(OperationCon
 
 void ReplicationCoordinatorEmbedded::waitUntilSnapshotCommitted(OperationContext* opCtx,
                                                                 const Timestamp& untilSnapshot) {
+	uassert(ErrorCodes::NotImplementedForEmbedded, "Not implemented for embedded: waitUntilSnapshotCommitted", false);
 }
 
 size_t ReplicationCoordinatorEmbedded::getNumUncommittedSnapshots() {
+	uassert(ErrorCodes::NotImplementedForEmbedded, "Not implemented for embedded: getNumUncommittedSnapshots", false);
     return 0;
 }
 
 void ReplicationCoordinatorEmbedded::dropAllSnapshots() {
+	uassert(ErrorCodes::NotImplementedForEmbedded, "Not implemented for embedded: dropAllSnapshots", false);
 }
 
 WriteConcernOptions ReplicationCoordinatorEmbedded::populateUnsetWriteConcernOptionsSyncMode(
@@ -431,15 +491,18 @@ WriteConcernOptions ReplicationCoordinatorEmbedded::populateUnsetWriteConcernOpt
 }
 
 Status ReplicationCoordinatorEmbedded::stepUpIfEligible() {
+	uassert(ErrorCodes::NotImplementedForEmbedded, "Not implemented for embedded: stepUpIfEligible", false);
     return Status::OK();
 }
 
 ReplSettings::IndexPrefetchConfig ReplicationCoordinatorEmbedded::getIndexPrefetchConfig() const {
+	uassert(ErrorCodes::NotImplementedForEmbedded, "Not implemented for embedded: getIndexPrefetchConfig", false);
     return ReplSettings::IndexPrefetchConfig();
 }
 
 void ReplicationCoordinatorEmbedded::setIndexPrefetchConfig(
     const ReplSettings::IndexPrefetchConfig cfg) {
+	uassert(ErrorCodes::NotImplementedForEmbedded, "Not implemented for embedded: setIndexPrefetchConfig", false);
 }
 
 }  // namespace repl
