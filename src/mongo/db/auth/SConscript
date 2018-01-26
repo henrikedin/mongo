@@ -197,6 +197,24 @@ env.Library('authmongod',
                 '$BUILD_DIR/mongo/db/dbhelpers',
                 '$BUILD_DIR/mongo/db/repl/repl_coordinator_global',
                 '$BUILD_DIR/mongo/db/server_parameters',
+
+                #'$BUILD_DIR/mongo/client/embedded/service_entry_point_embedded',
+            ],
+)
+
+env.Library('authembedded',
+            ['authz_manager_external_state_embedded.cpp',
+             'authz_session_external_state_embedded.cpp',
+            ],
+            LIBDEPS=[
+                'authservercommon',
+                #'$BUILD_DIR/mongo/db/db_raii',
+                '$BUILD_DIR/mongo/db/dbdirectclient',
+                '$BUILD_DIR/mongo/db/dbhelpers',
+                #'$BUILD_DIR/mongo/db/repl/repl_coordinator_global',
+                #'$BUILD_DIR/mongo/db/server_parameters',
+
+                #'$BUILD_DIR/mongo/client/embedded/service_entry_point_embedded',
             ],
 )
 

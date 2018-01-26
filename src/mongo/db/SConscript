@@ -759,6 +759,16 @@ env.Library(
 )
 
 env.Library(
+    target="authz_manager_external_state_factory_embedded",
+    source=[
+        "authz_manager_external_state_factory_embedded.cpp",
+    ],
+    LIBDEPS=[
+        'auth/authembedded',
+    ],
+)
+
+env.Library(
     target='query_exec',
     source=[
         'clientcursor.cpp',

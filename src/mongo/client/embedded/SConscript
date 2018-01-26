@@ -15,7 +15,7 @@ env.Library(
     LIBDEPS_PRIVATE=[
         '$BUILD_DIR/mongo/base',
         '$BUILD_DIR/mongo/db/auth/authcore',
-        '$BUILD_DIR/mongo/db/auth/authmongod',
+        #'$BUILD_DIR/mongo/db/auth/authmongod',
         '$BUILD_DIR/mongo/db/clientcursor',
         '$BUILD_DIR/mongo/db/ops/write_ops_exec',
         '$BUILD_DIR/mongo/db/rw_concern_d',
@@ -24,6 +24,11 @@ env.Library(
         '$BUILD_DIR/mongo/db/s/split_vector',
         '$BUILD_DIR/mongo/db/storage/storage_engine_lock_file',
         '$BUILD_DIR/mongo/db/storage/storage_engine_metadata',
+
+        '$BUILD_DIR/mongo/db/introspect',
+        '$BUILD_DIR/mongo/db/curop_metrics',
+        '$BUILD_DIR/mongo/db/query_exec',
+        '$BUILD_DIR/mongo/db/write_ops',
     ],
 )
 
@@ -68,7 +73,7 @@ env.Library(
 		'$BUILD_DIR/mongo/db/startup_warnings_mongod',
         '$BUILD_DIR/mongo/db/repl/storage_interface_impl',
         '$BUILD_DIR/mongo/db/storage/wiredtiger/storage_wiredtiger',
-        '$BUILD_DIR/mongo/db/authz_manager_external_state_factory_d',
+        '$BUILD_DIR/mongo/db/authz_manager_external_state_factory_embedded',
         '$BUILD_DIR/mongo/db/catalog/catalog_impl',
         '$BUILD_DIR/mongo/db/commands/dcommands',
     ]

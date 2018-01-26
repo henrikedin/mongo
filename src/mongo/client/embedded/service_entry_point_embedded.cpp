@@ -35,7 +35,7 @@
 #include "mongo/base/checked_cast.h"
 #include "mongo/db/audit.h"
 #include "mongo/db/auth/authorization_session.h"
-#include "mongo/db/auth/impersonation_session.h"
+//#include "mongo/db/auth/impersonation_session.h"
 #include "mongo/db/client.h"
 #include "mongo/db/commands.h"
 #include "mongo/db/commands/fsync.h"
@@ -552,7 +552,7 @@ void execCommandDatabase(OperationContext* opCtx,
         OperationContextSession sessionTxnState(
             opCtx, cmdWhitelist.find(command->getName()) != cmdWhitelist.cend());
 
-        ImpersonationSessionGuard guard(opCtx);
+        //ImpersonationSessionGuard guard(opCtx);
         uassertStatusOK(Command::checkAuthorization(command, opCtx, request));
 
         const bool iAmPrimary = replCoord->canAcceptWritesForDatabase_UNSAFE(opCtx, dbname);
