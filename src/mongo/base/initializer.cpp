@@ -32,6 +32,8 @@
 #include "mongo/util/quick_exit.h"
 #include <iostream>
 
+#include <fstream>
+
 namespace mongo {
 
 Initializer::Initializer() {}
@@ -45,6 +47,15 @@ Status Initializer::execute(const InitializerContext::ArgumentVector& args,
         return status;
 
     InitializerContext context(args, env);
+	/*
+	std::ofstream f("initializers.txt");
+	for (auto&& node : sortedNodes)
+	{
+		f << node << "\n";
+	}
+	f << std::endl;
+	f.close();
+	*/
 
     for (size_t i = 0; i < sortedNodes.size(); ++i) {
         InitializerFunction fn = _graph.getInitializerFunction(sortedNodes[i]);

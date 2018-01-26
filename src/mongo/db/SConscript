@@ -141,7 +141,7 @@ env.Library(
     ],
     LIBDEPS=[
         '$BUILD_DIR/mongo/db/server_options_core',
-        '$BUILD_DIR/mongo/transport/transport_layer_common',
+        #'$BUILD_DIR/mongo/transport/transport_layer_common',
         '$BUILD_DIR/mongo/util/net/network',
     ]
 )
@@ -374,7 +374,7 @@ env.Clone().InjectModule("enterprise").Library(
         '$BUILD_DIR/mongo/base',
         '$BUILD_DIR/mongo/util/cmdline_utils/cmdline_utils',
         '$BUILD_DIR/mongo/util/fail_point',
-        '$BUILD_DIR/mongo/transport/message_compressor',
+        #'$BUILD_DIR/mongo/transport/message_compressor', # heed
         # The dependency on network is a temporary crutch that should go away once the
         # networking library has separate options
         '$BUILD_DIR/mongo/util/net/network',
@@ -423,7 +423,7 @@ env.Library(
     LIBDEPS=[
         '$BUILD_DIR/mongo/db/storage/mmap_v1/mmap_v1_options',
         'repl/repl_settings',
-        'repl/replica_set_messages',
+        #'repl/replica_set_messages',  #
         'server_options',
         'storage/storage_options',
     ],
@@ -464,7 +464,7 @@ env.Library(
         '$BUILD_DIR/mongo/util/fail_point',
         '$BUILD_DIR/mongo/util/net/network',
         '$BUILD_DIR/mongo/util/periodic_runner',
-        '$BUILD_DIR/mongo/transport/transport_layer_common',
+        #'$BUILD_DIR/mongo/transport/transport_layer_common',  #
     ],
 )
 
