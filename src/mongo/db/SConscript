@@ -414,6 +414,16 @@ env.Library(
     ],
 )
 
+env.Library(
+    target="global_settings",
+    source=[
+        "global_settings.cpp",
+    ],
+    LIBDEPS=[
+        'repl/repl_settings',
+    ],
+)
+
 # mongod options
 env.Library(
     target="mongod_options",
@@ -424,6 +434,25 @@ env.Library(
         '$BUILD_DIR/mongo/db/storage/mmap_v1/mmap_v1_options',
         'repl/repl_settings',
         'repl/replica_set_messages',
+        'server_options',
+        'storage/storage_options',
+    ],
+    LIBDEPS_PRIVATE=[
+        'global_settings',
+    ]
+)
+
+# embedded options
+env.Library(
+    target="embedded_options",
+    source=[
+        "embedded_options.cpp",
+    ],
+    LIBDEPS=[
+        '$BUILD_DIR/mongo/util/options_parser/options_parser',
+        #'$BUILD_DIR/mongo/db/storage/mmap_v1/mmap_v1_options',
+        #'repl/repl_settings',
+        #'repl/replica_set_messages',
         'server_options',
         'storage/storage_options',
     ],

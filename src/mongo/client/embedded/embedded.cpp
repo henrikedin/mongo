@@ -43,10 +43,10 @@
 #include "mongo/db/commands/feature_compatibility_version.h"
 #include "mongo/db/concurrency/lock_state.h"
 #include "mongo/db/dbdirectclient.h"
+#include "mongo/db/global_settings.h"
 #include "mongo/db/index_rebuilder.h"
 #include "mongo/db/kill_sessions_local.h"
 #include "mongo/db/log_process_details.h"
-#include "mongo/db/mongod_options.h"
 #include "mongo/db/op_observer_impl.h"
 #include "mongo/db/op_observer_registry.h"
 #include "mongo/db/repair_database_and_check_version.h"
@@ -105,8 +105,7 @@ MONGO_INITIALIZER_WITH_PREREQUISITES(CreateReplicationManager,
     repl::StorageInterface::set(serviceContext, stdx::make_unique<repl::StorageInterfaceImpl>());
     // auto storageInterface = repl::StorageInterface::get(serviceContext);
 
-    auto replCoord = stdx::make_unique<repl::ReplicationCoordinatorEmbedded>(
-        serviceContext);
+    auto replCoord = stdx::make_unique<repl::ReplicationCoordinatorEmbedded>(serviceContext);
     repl::ReplicationCoordinator::set(serviceContext, std::move(replCoord));
     repl::setOplogCollectionName(serviceContext);
     return Status::OK();

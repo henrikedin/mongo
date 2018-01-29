@@ -283,6 +283,16 @@ env.Library(
 )
 
 env.Library(
+    target="embedded_options_init",
+    source=[
+        "db/embedded_options_init.cpp",
+    ],
+    LIBDEPS_PRIVATE=[
+        'db/embedded_options',
+    ]
+)
+
+env.Library(
     target="mongodmain",
     source=[
         "db/db.cpp",
@@ -298,7 +308,7 @@ env.Library(
         'db/kill_sessions_local',
         'db/keys_collection_client_direct',
         'db/logical_session_cache_factory_mongod',
-        'mongod_options_init',
+        'db/mongod_options',
         'db/mongodandmongos',
         'db/op_observer_d',
         'db/query_exec',
@@ -314,6 +324,7 @@ env.Library(
         'db/system_index',
         'db/ttl_d',
         'executor/network_interface_factory',
+        'mongod_options_init',
         'rpc/rpc',
         's/catalog/sharding_catalog_manager',
         's/commands/shared_cluster_commands',
