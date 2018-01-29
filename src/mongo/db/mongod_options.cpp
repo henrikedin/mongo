@@ -40,6 +40,7 @@
 #include "mongo/bson/util/builder.h"
 #include "mongo/config.h"
 #include "mongo/db/db.h"
+#include "mongo/db/global_settings.h"
 #include "mongo/db/repl/repl_settings.h"
 #include "mongo/db/server_options.h"
 #include "mongo/db/server_options_helpers.h"
@@ -58,8 +59,6 @@ using std::cout;
 using std::endl;
 using std::string;
 
-
-MongodGlobalParams mongodGlobalParams;
 
 Status addMongodOptions(moe::OptionSection* options) {
     moe::OptionSection general_options("General options");
@@ -1299,18 +1298,6 @@ Status storeMongodOptions(const moe::Environment& params) {
 
     setGlobalReplSettings(replSettings);
     return Status::OK();
-}
-
-namespace {
-repl::ReplSettings globalReplSettings;
-}  // namespace
-
-void setGlobalReplSettings(const repl::ReplSettings& settings) {
-    globalReplSettings = settings;
-}
-
-const repl::ReplSettings& getGlobalReplSettings() {
-    return globalReplSettings;
 }
 
 }  // namespace mongo
