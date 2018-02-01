@@ -32,9 +32,9 @@
 
 namespace mongo {
 struct MongodGlobalParams {
-	bool scriptingEnabled = true;  // --noscripting
-	
-	boost::optional<std::vector<std::string>> whitelistedClusterNetwork;
+    bool scriptingEnabled = true;  // --noscripting
+
+    boost::optional<std::vector<std::string>> whitelistedClusterNetwork;
 };
 
 extern MongodGlobalParams mongodGlobalParams;

@@ -33,37 +33,37 @@
 namespace mongo {
 namespace embedded {
 
-	MONGO_GENERAL_STARTUP_OPTIONS_REGISTER(EmbeddedOptions)(InitializerContext* context) {
-		return addOptions(&moe::startupOptions);
-	}
+MONGO_GENERAL_STARTUP_OPTIONS_REGISTER(EmbeddedOptions)(InitializerContext* context) {
+    return addOptions(&moe::startupOptions);
+}
 
-	MONGO_INITIALIZER_GENERAL(EmbeddedOptions,
-		("BeginStartupOptionValidation", "AllFailPointsRegistered"),
-		("EndStartupOptionValidation"))
-		(InitializerContext* context) {
-		// Run validation, but tell the Environment that we don't want it to be set as "valid",
-		// since we may be making it invalid in the canonicalization process.
-		Status ret = moe::startupOptionsParsed.validate(false /*setValid*/);
-		if (!ret.isOK()) {
-			return ret;
-		}
-		ret = canonicalizeOptions(&moe::startupOptionsParsed);
-		if (!ret.isOK()) {
-			return ret;
-		}
-		ret = moe::startupOptionsParsed.validate();
-		if (!ret.isOK()) {
-			return ret;
-		}
-		return Status::OK();
-	}
+MONGO_INITIALIZER_GENERAL(EmbeddedOptions,
+                          ("BeginStartupOptionValidation", "AllFailPointsRegistered"),
+                          ("EndStartupOptionValidation"))
+(InitializerContext* context) {
+    // Run validation, but tell the Environment that we don't want it to be set as "valid",
+    // since we may be making it invalid in the canonicalization process.
+    Status ret = moe::startupOptionsParsed.validate(false /*setValid*/);
+    if (!ret.isOK()) {
+        return ret;
+    }
+    ret = canonicalizeOptions(&moe::startupOptionsParsed);
+    if (!ret.isOK()) {
+        return ret;
+    }
+    ret = moe::startupOptionsParsed.validate();
+    if (!ret.isOK()) {
+        return ret;
+    }
+    return Status::OK();
+}
 
-	MONGO_INITIALIZER_GENERAL(EmbeddedOptions_Store,
-		("BeginStartupOptionStorage"),
-		("EndStartupOptionStorage"))
-		(InitializerContext* context) {
-		return storeOptions(moe::startupOptionsParsed);
-	}
+MONGO_INITIALIZER_GENERAL(EmbeddedOptions_Store,
+                          ("BeginStartupOptionStorage"),
+                          ("EndStartupOptionStorage"))
+(InitializerContext* context) {
+    return storeOptions(moe::startupOptionsParsed);
+}
 
 }  // namespace embedded
 }  // namespace mongo

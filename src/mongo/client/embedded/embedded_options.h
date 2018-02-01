@@ -37,16 +37,16 @@ namespace moe = mongo::optionenvironment;
 
 namespace embedded {
 
-	Status addOptions(moe::OptionSection* options);
+Status addOptions(moe::OptionSection* options);
 
-	/**
-		* Canonicalize options for the given environment.
-		*
-		* For example, the options "dur", "nodur", "journal", "nojournal", and
-		* "storage.journaling.enabled" should all be merged into "storage.journaling.enabled".
-		*/
-	Status canonicalizeOptions(moe::Environment* params);
+/**
+    * Canonicalize options for the given environment.
+    *
+    * For example, the options "dur", "nodur", "journal", "nojournal", and
+    * "storage.journaling.enabled" should all be merged into "storage.journaling.enabled".
+    */
+Status canonicalizeOptions(moe::Environment* params);
 
-	Status storeOptions(const moe::Environment& params);
+Status storeOptions(const moe::Environment& params);
 }  // namespace embedded
 }  // namespace mongo

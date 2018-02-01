@@ -32,7 +32,7 @@
 
 namespace mongo {
 
-	MongodGlobalParams mongodGlobalParams;
+MongodGlobalParams mongodGlobalParams;
 
 namespace {
 repl::ReplSettings globalReplSettings;
