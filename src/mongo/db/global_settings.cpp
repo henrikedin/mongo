@@ -28,8 +28,6 @@
 
 #include "mongo/db/global_settings.h"
 
-//#include "mongo/db/repl/repl_settings.h"
-
 namespace mongo {
 
 MongodGlobalParams mongodGlobalParams;

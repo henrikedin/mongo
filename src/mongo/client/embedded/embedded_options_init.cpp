@@ -43,7 +43,7 @@ MONGO_INITIALIZER_GENERAL(EmbeddedOptions,
 (InitializerContext* context) {
     // Run validation, but tell the Environment that we don't want it to be set as "valid",
     // since we may be making it invalid in the canonicalization process.
-    Status ret = moe::startupOptionsParsed.validate(false /*setValid*/);
+    Status ret = moe::startupOptionsParsed.validate(false);
     if (!ret.isOK()) {
         return ret;
     }

@@ -32,7 +32,8 @@
 
 namespace mongo {
 struct MongodGlobalParams {
-    bool scriptingEnabled = true;  // --noscripting
+    bool scriptingEnabled = true;  // Use "security.javascriptEnabled" to set this variable. Or use
+                                   // --noscripting which will set it to false.
 
     boost::optional<std::vector<std::string>> whitelistedClusterNetwork;
 };
