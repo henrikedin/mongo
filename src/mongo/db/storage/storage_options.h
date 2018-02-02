@@ -53,7 +53,7 @@ struct StorageGlobalParams {
 
     // --storageEngine
     // storage engine for this instance of mongod.
-    std::string engine = "wiredTiger";
+    std::string engine = "mobile";
 
     // True if --storageEngine was passed on the command line, and false otherwise.
     bool engineSetByUser = false;
