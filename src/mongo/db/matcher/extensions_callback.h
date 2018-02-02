@@ -34,6 +34,9 @@
 
 namespace mongo {
 
+class NamespaceString;
+class OperationContext;
+
 /**
  * Certain match clauses (the "extension" clauses, namely $text and $where) require context in
  * order to perform parsing. This context is captured inside of an ExtensionsCallback object.
@@ -69,5 +72,8 @@ protected:
     static StatusWith<WhereMatchExpressionBase::WhereParams> extractWhereMatchExpressionParams(
         BSONElement where);
 };
+
+void installExtensionsCallbackFactory(std::function<std::unique_ptr<ExtensionsCallback>(OperationContext*, const NamespaceString*)> factory);
+std::unique_ptr<ExtensionsCallback> createExtensionsCallback(OperationContext* opCtx, const NamespaceString* nss);
 
 }  // namespace mongo

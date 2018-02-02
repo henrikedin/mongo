@@ -56,7 +56,6 @@
 #include "mongo/db/index/index_descriptor.h"
 #include "mongo/db/index_names.h"
 #include "mongo/db/matcher/extensions_callback_noop.h"
-#include "mongo/db/matcher/extensions_callback_real.h"
 #include "mongo/db/ops/update_lifecycle.h"
 #include "mongo/db/query/canonical_query.h"
 #include "mongo/db/query/collation/collator_factory_interface.h"
@@ -1020,14 +1019,14 @@ StatusWith<unique_ptr<PlanExecutor, PlanExecutor::Deleter>> getExecutorGroup(
     qr->setCollation(request.collation);
     qr->setExplain(request.explain);
 
-    const ExtensionsCallbackReal extensionsCallback(opCtx, &nss);
+    const auto extensionsCallback = createExtensionsCallback(opCtx, &nss);
 
     const boost::intrusive_ptr<ExpressionContext> expCtx;
     auto statusWithCQ =
         CanonicalQuery::canonicalize(opCtx,
                                      std::move(qr),
                                      expCtx,
-                                     extensionsCallback,
+                                     *extensionsCallback,
                                      MatchExpressionParser::kAllowAllSpecialFeatures);
     if (!statusWithCQ.isOK()) {
         return statusWithCQ.getStatus();
@@ -1264,7 +1263,7 @@ StatusWith<unique_ptr<PlanExecutor, PlanExecutor::Deleter>> getExecutorCount(
         std::move(qr),
         expCtx,
         collection ? static_cast<const ExtensionsCallback&>(
-                         ExtensionsCallbackReal(opCtx, &collection->ns()))
+                         *createExtensionsCallback(opCtx, &collection->ns()))
                    : static_cast<const ExtensionsCallback&>(ExtensionsCallbackNoop()),
         MatchExpressionParser::kAllowAllSpecialFeatures &
             ~MatchExpressionParser::AllowedFeatures::kIsolated);
@@ -1498,7 +1497,7 @@ StatusWith<unique_ptr<PlanExecutor, PlanExecutor::Deleter>> getExecutorDistinct(
         }
     }
 
-    const ExtensionsCallbackReal extensionsCallback(opCtx, &collection->ns());
+    const auto extensionsCallback = createExtensionsCallback(opCtx, &collection->ns());
 
     // If there are no suitable indices for the distinct hack bail out now into regular planning
     // with no projection.
@@ -1523,7 +1522,7 @@ StatusWith<unique_ptr<PlanExecutor, PlanExecutor::Deleter>> getExecutorDistinct(
         CanonicalQuery::canonicalize(opCtx,
                                      std::move(qr),
                                      expCtx,
-                                     extensionsCallback,
+                                     *extensionsCallback,
                                      MatchExpressionParser::kAllowAllSpecialFeatures &
                                          ~MatchExpressionParser::AllowedFeatures::kIsolated);
     if (!statusWithCQ.isOK()) {

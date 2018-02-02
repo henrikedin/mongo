@@ -56,7 +56,7 @@
 #include "mongo/db/jsobj.h"
 #include "mongo/db/matcher/expression_parser.h"
 #include "mongo/db/matcher/expression_text_base.h"
-#include "mongo/db/matcher/extensions_callback_real.h"
+#include "mongo/db/matcher/extensions_callback.h"
 #include "mongo/db/query/plan_executor.h"
 #include "mongo/stdx/memory.h"
 #include "mongo/util/log.h"
@@ -252,7 +252,7 @@ public:
                 auto statusWithMatcher =
                     MatchExpressionParser::parse(argObj,
                                                  expCtx,
-                                                 ExtensionsCallbackReal(opCtx, &collection->ns()),
+                                                 *createExtensionsCallback(opCtx, &collection->ns()),
                                                  MatchExpressionParser::kAllowAllSpecialFeatures);
                 if (!statusWithMatcher.isOK()) {
                     return NULL;

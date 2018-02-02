@@ -29,6 +29,7 @@
 #include "mongo/platform/basic.h"
 
 #include "mongo/db/matcher/extensions_callback.h"
+#include "mongo/db/matcher/extensions_callback_noop.h"
 
 #include "mongo/bson/util/bson_extract.h"
 
@@ -119,6 +120,21 @@ ExtensionsCallback::extractWhereMatchExpressionParams(BSONElement where) {
     }
 
     return params;
+}
+
+namespace
+{
+	std::function<std::unique_ptr<ExtensionsCallback>(OperationContext*, const NamespaceString*)> extensions_callback_factory;
+}
+
+void installExtensionsCallbackFactory(std::function<std::unique_ptr<ExtensionsCallback>(OperationContext*, const NamespaceString*)> factory)
+{
+	extensions_callback_factory = std::move(factory);
+}
+
+std::unique_ptr<ExtensionsCallback> createExtensionsCallback(OperationContext* opCtx, const NamespaceString* nss)
+{
+	return extensions_callback_factory(opCtx, nss);
 }
 
 }  // namespace mongo

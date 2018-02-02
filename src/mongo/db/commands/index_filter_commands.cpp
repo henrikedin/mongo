@@ -46,7 +46,7 @@
 #include "mongo/db/db_raii.h"
 #include "mongo/db/jsobj.h"
 #include "mongo/db/matcher/expression_parser.h"
-#include "mongo/db/matcher/extensions_callback_real.h"
+#include "mongo/db/matcher/extensions_callback.h"
 #include "mongo/db/namespace_string.h"
 #include "mongo/stdx/unordered_set.h"
 #include "mongo/util/log.h"
@@ -285,7 +285,7 @@ Status ClearFilters::clear(OperationContext* opCtx,
     querySettings->clearAllowedIndices();
 
     const NamespaceString nss(ns);
-    const ExtensionsCallbackReal extensionsCallback(opCtx, &nss);
+    const auto extensionsCallback = createExtensionsCallback(opCtx, &nss);
 
     // Remove corresponding entries from plan cache.
     // Admin hints affect the planning process directly. If there were
@@ -311,7 +311,7 @@ Status ClearFilters::clear(OperationContext* opCtx,
             CanonicalQuery::canonicalize(opCtx,
                                          std::move(qr),
                                          expCtx,
-                                         extensionsCallback,
+                                         *extensionsCallback,
                                          MatchExpressionParser::kAllowAllSpecialFeatures);
         invariantOK(statusWithCQ.getStatus());
         std::unique_ptr<CanonicalQuery> cq = std::move(statusWithCQ.getValue());

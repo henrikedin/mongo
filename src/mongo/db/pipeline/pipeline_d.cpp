@@ -50,7 +50,7 @@
 #include "mongo/db/exec/shard_filter.h"
 #include "mongo/db/exec/working_set.h"
 #include "mongo/db/index/index_access_method.h"
-#include "mongo/db/matcher/extensions_callback_real.h"
+#include "mongo/db/matcher/extensions_callback.h"
 #include "mongo/db/namespace_string.h"
 #include "mongo/db/pipeline/document_source.h"
 #include "mongo/db/pipeline/document_source_change_stream.h"
@@ -200,10 +200,10 @@ StatusWith<std::unique_ptr<PlanExecutor, PlanExecutor::Deleter>> attemptToGetExe
     qr->setCollation(pExpCtx->getCollator() ? pExpCtx->getCollator()->getSpec().toBSON()
                                             : pExpCtx->collation);
 
-    const ExtensionsCallbackReal extensionsCallback(pExpCtx->opCtx, &nss);
+    const auto extensionsCallback = createExtensionsCallback(pExpCtx->opCtx, &nss);
 
     auto cq = CanonicalQuery::canonicalize(
-        opCtx, std::move(qr), pExpCtx, extensionsCallback, Pipeline::kAllowedMatcherFeatures);
+        opCtx, std::move(qr), pExpCtx, *extensionsCallback, Pipeline::kAllowedMatcherFeatures);
 
     if (!cq.isOK()) {
         // Return an error instead of uasserting, since there are cases where the combination of

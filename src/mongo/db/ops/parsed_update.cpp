@@ -31,7 +31,7 @@
 #include "mongo/db/ops/parsed_update.h"
 
 #include "mongo/db/commands/feature_compatibility_version_command_parser.h"
-#include "mongo/db/matcher/extensions_callback_real.h"
+#include "mongo/db/matcher/extensions_callback.h"
 #include "mongo/db/ops/update_request.h"
 #include "mongo/db/query/canonical_query.h"
 #include "mongo/db/query/collation/collator_factory_interface.h"
@@ -95,7 +95,8 @@ Status ParsedUpdate::parseQuery() {
 Status ParsedUpdate::parseQueryToCQ() {
     dassert(!_canonicalQuery.get());
 
-    const ExtensionsCallbackReal extensionsCallback(_opCtx, &_request->getNamespaceString());
+    //const ExtensionsCallbackReal extensionsCallback(_opCtx, &_request->getNamespaceString());
+	const auto extensionsCallback = createExtensionsCallback(_opCtx, &_request->getNamespaceString());
 
     // The projection needs to be applied after the update operation, so we do not specify a
     // projection during canonicalization.
@@ -125,7 +126,7 @@ Status ParsedUpdate::parseQueryToCQ() {
 
     boost::intrusive_ptr<ExpressionContext> expCtx;
     auto statusWithCQ = CanonicalQuery::canonicalize(
-        _opCtx, std::move(qr), std::move(expCtx), extensionsCallback, allowedMatcherFeatures);
+        _opCtx, std::move(qr), std::move(expCtx), *extensionsCallback, allowedMatcherFeatures);
     if (statusWithCQ.isOK()) {
         _canonicalQuery = std::move(statusWithCQ.getValue());
     }

@@ -49,7 +49,7 @@
 #include "mongo/db/db_raii.h"
 #include "mongo/db/exec/working_set_common.h"
 #include "mongo/db/jsobj.h"
-#include "mongo/db/matcher/extensions_callback_real.h"
+#include "mongo/db/matcher/extensions_callback.h"
 #include "mongo/db/namespace_string.h"
 #include "mongo/db/query/cursor_response.h"
 #include "mongo/db/query/explain.h"
@@ -116,8 +116,8 @@ public:
                            BSONObjBuilder* out) const {
         const NamespaceString nss(CommandHelpers::parseNsCollectionRequired(dbname, cmdObj));
 
-        const ExtensionsCallbackReal extensionsCallback(opCtx, &nss);
-        auto parsedDistinct = ParsedDistinct::parse(opCtx, nss, cmdObj, extensionsCallback, true);
+        const auto extensionsCallback = createExtensionsCallback(opCtx, &nss);
+        auto parsedDistinct = ParsedDistinct::parse(opCtx, nss, cmdObj, *extensionsCallback, true);
         if (!parsedDistinct.isOK()) {
             return parsedDistinct.getStatus();
         }
@@ -159,8 +159,8 @@ public:
              BSONObjBuilder& result) {
         const NamespaceString nss(CommandHelpers::parseNsCollectionRequired(dbname, cmdObj));
 
-        const ExtensionsCallbackReal extensionsCallback(opCtx, &nss);
-        auto parsedDistinct = ParsedDistinct::parse(opCtx, nss, cmdObj, extensionsCallback, false);
+        const auto extensionsCallback = createExtensionsCallback(opCtx, &nss);
+        auto parsedDistinct = ParsedDistinct::parse(opCtx, nss, cmdObj, *extensionsCallback, false);
         if (!parsedDistinct.isOK()) {
             return CommandHelpers::appendCommandStatus(result, parsedDistinct.getStatus());
         }

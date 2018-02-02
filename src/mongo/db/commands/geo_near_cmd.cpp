@@ -48,7 +48,7 @@
 #include "mongo/db/index_names.h"
 #include "mongo/db/jsobj.h"
 #include "mongo/db/matcher/expression_geo.h"
-#include "mongo/db/matcher/extensions_callback_real.h"
+#include "mongo/db/matcher/extensions_callback.h"
 #include "mongo/db/pipeline/document_source_geo_near.h"
 #include "mongo/db/query/explain.h"
 #include "mongo/db/query/find_common.h"
@@ -214,13 +214,13 @@ public:
         qr->setProj(projObj);
         qr->setLimit(numWanted);
         qr->setCollation(collation);
-        const ExtensionsCallbackReal extensionsCallback(opCtx, &nss);
+        const auto extensionsCallback = createExtensionsCallback(opCtx, &nss);
         const boost::intrusive_ptr<ExpressionContext> expCtx;
         auto statusWithCQ =
             CanonicalQuery::canonicalize(opCtx,
                                          std::move(qr),
                                          expCtx,
-                                         extensionsCallback,
+                                         *extensionsCallback,
                                          MatchExpressionParser::kAllowAllSpecialFeatures &
                                              ~MatchExpressionParser::AllowedFeatures::kIsolated);
         if (!statusWithCQ.isOK()) {

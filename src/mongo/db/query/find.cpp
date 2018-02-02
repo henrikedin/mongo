@@ -44,7 +44,7 @@
 #include "mongo/db/exec/filter.h"
 #include "mongo/db/exec/working_set_common.h"
 #include "mongo/db/keypattern.h"
-#include "mongo/db/matcher/extensions_callback_real.h"
+#include "mongo/db/matcher/extensions_callback.h"
 #include "mongo/db/query/explain.h"
 #include "mongo/db/query/find_common.h"
 #include "mongo/db/query/get_executor.h"
@@ -526,13 +526,15 @@ std::string runQuery(OperationContext* opCtx,
     // Set CurOp information.
     beginQueryOp(opCtx, nss, q.query, q.ntoreturn, q.ntoskip);
 
+	const auto extensionsCallback = createExtensionsCallback(opCtx, &nss);
+
     // Parse the qm into a CanonicalQuery.
     const boost::intrusive_ptr<ExpressionContext> expCtx;
     auto statusWithCQ =
         CanonicalQuery::canonicalize(opCtx,
                                      q,
                                      expCtx,
-                                     ExtensionsCallbackReal(opCtx, &nss),
+                                     *extensionsCallback,
                                      MatchExpressionParser::kAllowAllSpecialFeatures &
                                          ~MatchExpressionParser::AllowedFeatures::kIsolated);
     if (!statusWithCQ.isOK()) {

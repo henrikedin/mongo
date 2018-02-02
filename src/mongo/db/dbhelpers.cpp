@@ -43,7 +43,7 @@
 #include "mongo/db/index/btree_access_method.h"
 #include "mongo/db/json.h"
 #include "mongo/db/keypattern.h"
-#include "mongo/db/matcher/extensions_callback_real.h"
+#include "mongo/db/matcher/extensions_callback.h"
 #include "mongo/db/namespace_string.h"
 #include "mongo/db/op_observer.h"
 #include "mongo/db/ops/delete.h"
@@ -120,14 +120,14 @@ RecordId Helpers::findOne(OperationContext* opCtx,
     if (!collection)
         return RecordId();
 
-    const ExtensionsCallbackReal extensionsCallback(opCtx, &collection->ns());
+    const auto extensionsCallback = createExtensionsCallback(opCtx, &collection->ns());
 
     const boost::intrusive_ptr<ExpressionContext> expCtx;
     auto statusWithCQ =
         CanonicalQuery::canonicalize(opCtx,
                                      std::move(qr),
                                      expCtx,
-                                     extensionsCallback,
+                                     *extensionsCallback,
                                      MatchExpressionParser::kAllowAllSpecialFeatures &
                                          ~MatchExpressionParser::AllowedFeatures::kIsolated);
 

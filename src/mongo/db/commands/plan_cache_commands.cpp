@@ -42,7 +42,7 @@
 #include "mongo/db/commands/plan_cache_commands.h"
 #include "mongo/db/db_raii.h"
 #include "mongo/db/jsobj.h"
-#include "mongo/db/matcher/extensions_callback_real.h"
+#include "mongo/db/matcher/extensions_callback.h"
 #include "mongo/db/namespace_string.h"
 #include "mongo/db/query/explain.h"
 #include "mongo/db/query/plan_ranker.h"
@@ -202,13 +202,13 @@ StatusWith<unique_ptr<CanonicalQuery>> PlanCacheCommand::canonicalize(OperationC
     qr->setSort(sortObj);
     qr->setProj(projObj);
     qr->setCollation(collationObj);
-    const ExtensionsCallbackReal extensionsCallback(opCtx, &nss);
+    const auto extensionsCallback = createExtensionsCallback(opCtx, &nss);
     const boost::intrusive_ptr<ExpressionContext> expCtx;
     auto statusWithCQ =
         CanonicalQuery::canonicalize(opCtx,
                                      std::move(qr),
                                      expCtx,
-                                     extensionsCallback,
+                                     *extensionsCallback,
                                      MatchExpressionParser::kAllowAllSpecialFeatures);
     if (!statusWithCQ.isOK()) {
         return statusWithCQ.getStatus();

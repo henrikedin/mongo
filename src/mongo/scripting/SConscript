@@ -9,6 +9,39 @@ Import([
     'usemozjs',
 ])
 
+#env.Library(
+#    target='scripting_interface',
+#    source=[
+#        'dbdirectclient_factory.cpp',
+#        'engine.cpp',
+#    ],
+#    LIBDEPS=[
+#        '$BUILD_DIR/mongo/base',
+#        #'$BUILD_DIR/mongo/client/clientdriver',
+#        '$BUILD_DIR/mongo/shell/mongojs',
+#        #'$BUILD_DIR/mongo/util/md5',
+#    ],
+#    LIBDEPS_PRIVATE=[
+#        '$BUILD_DIR/mongo/util/fail_point',
+#    ],
+#)
+#
+#env.Library(
+#    target='scripting_common',
+#    source=[
+#        'deadline_monitor.cpp',
+#        'utils.cpp',
+#    ],
+#    LIBDEPS=[
+#        '$BUILD_DIR/mongo/base',
+#        '$BUILD_DIR/mongo/client/clientdriver',
+#        '$BUILD_DIR/mongo/shell/mongojs',
+#        '$BUILD_DIR/mongo/util/md5',
+#
+#        '$BUILD_DIR/mongo/client/embedded/embedded',
+#    ],
+#)
+
 env.Library(
     target='scripting_common',
     source=[
@@ -152,6 +185,7 @@ if usemozjs:
             'scripting_common',
             '$BUILD_DIR/mongo/shell/mongojs',
             '$BUILD_DIR/mongo/db/service_context',
+            '$BUILD_DIR/mongo/client/embedded/embedded',
         ],
         LIBDEPS_PRIVATE=[
             '$BUILD_DIR/third_party/shim_mozjs',

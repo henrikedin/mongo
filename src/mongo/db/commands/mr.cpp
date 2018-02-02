@@ -52,7 +52,7 @@
 #include "mongo/db/dbhelpers.h"
 #include "mongo/db/exec/working_set_common.h"
 #include "mongo/db/index/index_descriptor.h"
-#include "mongo/db/matcher/extensions_callback_real.h"
+#include "mongo/db/matcher/extensions_callback.h"
 #include "mongo/db/op_observer.h"
 #include "mongo/db/ops/insert.h"
 #include "mongo/db/query/find_common.h"
@@ -1111,7 +1111,7 @@ void State::finalReduce(OperationContext* opCtx, CurOp* curOp, ProgressMeterHold
                                         count));
     }
 
-    const ExtensionsCallbackReal extensionsCallback(_opCtx, &_config.incLong);
+    const auto extensionsCallback = createExtensionsCallback(_opCtx, &_config.incLong);
 
     auto qr = stdx::make_unique<QueryRequest>(_config.incLong);
     qr->setSort(sortKey);
@@ -1121,7 +1121,7 @@ void State::finalReduce(OperationContext* opCtx, CurOp* curOp, ProgressMeterHold
         CanonicalQuery::canonicalize(opCtx,
                                      std::move(qr),
                                      expCtx,
-                                     extensionsCallback,
+                                     *extensionsCallback,
                                      MatchExpressionParser::kAllowAllSpecialFeatures &
                                          ~MatchExpressionParser::AllowedFeatures::kIsolated);
     verify(statusWithCQ.isOK());
@@ -1480,14 +1480,14 @@ public:
                 qr->setSort(config.sort);
                 qr->setCollation(config.collation);
 
-                const ExtensionsCallbackReal extensionsCallback(opCtx, &config.nss);
+                const auto extensionsCallback = createExtensionsCallback(opCtx, &config.nss);
 
                 const boost::intrusive_ptr<ExpressionContext> expCtx;
                 auto statusWithCQ = CanonicalQuery::canonicalize(
                     opCtx,
                     std::move(qr),
                     expCtx,
-                    extensionsCallback,
+                    *extensionsCallback,
                     MatchExpressionParser::kAllowAllSpecialFeatures &
                         ~MatchExpressionParser::AllowedFeatures::kIsolated);
                 if (!statusWithCQ.isOK()) {

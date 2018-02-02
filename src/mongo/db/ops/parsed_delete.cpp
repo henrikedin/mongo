@@ -35,7 +35,7 @@
 #include "mongo/db/catalog/collection.h"
 #include "mongo/db/catalog/database.h"
 #include "mongo/db/exec/delete.h"
-#include "mongo/db/matcher/extensions_callback_real.h"
+#include "mongo/db/matcher/extensions_callback.h"
 #include "mongo/db/ops/delete_request.h"
 #include "mongo/db/query/canonical_query.h"
 #include "mongo/db/query/get_executor.h"
@@ -70,7 +70,7 @@ Status ParsedDelete::parseRequest() {
 Status ParsedDelete::parseQueryToCQ() {
     dassert(!_canonicalQuery.get());
 
-    const ExtensionsCallbackReal extensionsCallback(_opCtx, &_request->getNamespaceString());
+    const auto extensionsCallback = createExtensionsCallback(_opCtx, &_request->getNamespaceString());
 
     // The projection needs to be applied after the delete operation, so we do not specify a
     // projection during canonicalization.
@@ -95,7 +95,7 @@ Status ParsedDelete::parseQueryToCQ() {
         CanonicalQuery::canonicalize(_opCtx,
                                      std::move(qr),
                                      expCtx,
-                                     extensionsCallback,
+                                     *extensionsCallback,
                                      MatchExpressionParser::kAllowAllSpecialFeatures);
 
     if (statusWithCQ.isOK()) {
