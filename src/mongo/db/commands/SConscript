@@ -129,6 +129,7 @@ env.Library(
         '$BUILD_DIR/mongo/db/concurrency/write_conflict_exception',
         '$BUILD_DIR/mongo/db/curop',
         '$BUILD_DIR/mongo/db/storage/mmap_v1/storage_mmapv1',
+        'fsync_locked',
     ],
 )
 
@@ -141,6 +142,19 @@ env.Library(
         'core',
         '$BUILD_DIR/mongo/db/commands',
         '$BUILD_DIR/mongo/db/dbdirectclient',
+    ],
+)
+
+env.Library(
+    target='fsync_locked',
+    source=[
+        'fsync_locked.cpp',
+    ],
+    LIBDEPS=[
+        #'$BUILD_DIR/mongo/db/audit',
+        #'$BUILD_DIR/mongo/db/commands',
+        #'$BUILD_DIR/mongo/db/auth/authorization_manager_global',
+        #'$BUILD_DIR/mongo/db/query/command_request_response',
     ],
 )
 
@@ -228,14 +242,13 @@ env.Library(
         '$BUILD_DIR/mongo/db/rw_concern_d',
         '$BUILD_DIR/mongo/db/server_options_core',
         '$BUILD_DIR/mongo/db/stats/serveronly_stats',
-        '$BUILD_DIR/mongo/db/storage/mmap_v1/storage_mmapv1',
         '$BUILD_DIR/mongo/db/views/views_mongod',
         '$BUILD_DIR/mongo/s/catalog/sharding_catalog_manager',
         '$BUILD_DIR/mongo/s/client/parallel',
         'core',
         'current_op_common',
         'dcommands_fcv',
-        'dcommands_fsync',
+        'fsync_locked',
         'killcursors_common',
         'write_commands_common',
     ],
