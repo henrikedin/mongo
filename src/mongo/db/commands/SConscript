@@ -151,10 +151,6 @@ env.Library(
         'fsync_locked.cpp',
     ],
     LIBDEPS=[
-        #'$BUILD_DIR/mongo/db/audit',
-        #'$BUILD_DIR/mongo/db/commands',
-        #'$BUILD_DIR/mongo/db/auth/authorization_manager_global',
-        #'$BUILD_DIR/mongo/db/query/command_request_response',
     ],
 )
 

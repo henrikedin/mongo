@@ -741,17 +741,17 @@ env.Library(
         "repair_database.cpp",
     ],
     LIBDEPS=[
-        '$BUILD_DIR/mongo/db/storage/mmap_v1/repair_database_interface',
-        "background",
-        "catalog/document_validation",
-        "catalog/index_create",
-        "catalog/index_key_validate",
-        "repl/repl_coordinator_interface",
         '$BUILD_DIR/mongo/db/catalog/collection',
         '$BUILD_DIR/mongo/db/catalog/database',
+        '$BUILD_DIR/mongo/db/storage/mmap_v1/repair_database_interface',
+        'background',
+        'catalog/document_validation',
+        'catalog/index_create',
+        'catalog/index_key_validate',
+        'repl/repl_coordinator_interface',
     ],
     LIBDEPS_PRIVATE=[
-        "$BUILD_DIR/mongo/db/repl/oplog",
+        '$BUILD_DIR/mongo/db/repl/oplog',
     ],
 )
 
