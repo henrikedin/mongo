@@ -486,12 +486,12 @@ Status MMAPV1Engine::repairDatabase(OperationContext* opCtx,
 }
 
 MONGO_INITIALIZER(RepairDatabaseMMapV1)(InitializerContext* context) {
-    setRepairDatabaseMmapv1Impl([](MMAPV1Engine* engine,
+    setRepairDatabaseMmapv1Impl([](StorageEngine* engine,
                                    OperationContext* opCtx,
                                    const std::string& dbName,
                                    bool preserveClonedFilesOnFailure,
                                    bool backupOriginalFiles) {
-        return engine->repairDatabase(
+        return static_cast<MMAPV1Engine*>(engine)->repairDatabase(
             opCtx, dbName, preserveClonedFilesOnFailure, backupOriginalFiles);
     });
     return Status::OK();

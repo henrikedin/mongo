@@ -51,7 +51,6 @@
 #include "mongo/db/catalog/uuid_catalog.h"
 #include "mongo/db/index/index_descriptor.h"
 #include "mongo/db/repl/replication_coordinator.h"
-#include "mongo/db/storage/mmap_v1/mmap_v1_engine.h"
 #include "mongo/db/storage/mmap_v1/repair_database_interface.h"
 #include "mongo/db/storage/storage_engine.h"
 #include "mongo/util/log.h"
@@ -251,11 +250,8 @@ Status repairDatabase(OperationContext* opCtx,
     if (engine->isMmapV1()) {
         // MMAPv1 is a layering violation so it implements its own repairDatabase. Call through a
         // shimmed interface, so the symbol can exist independent of mmapv1.
-        auto status = repairDatabaseMmapv1(static_cast<MMAPV1Engine*>(engine),
-                                           opCtx,
-                                           dbName,
-                                           preserveClonedFilesOnFailure,
-                                           backupOriginalFiles);
+        auto status = repairDatabaseMmapv1(
+            engine, opCtx, dbName, preserveClonedFilesOnFailure, backupOriginalFiles);
         repl::acquireOplogCollectionForLogging(opCtx);
         return status;
     }

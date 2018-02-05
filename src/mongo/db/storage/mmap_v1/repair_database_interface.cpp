@@ -30,17 +30,17 @@
 
 namespace mongo {
 namespace {
-stdx::function<Status(MMAPV1Engine*, OperationContext*, const std::string&, bool, bool)>
+stdx::function<Status(StorageEngine*, OperationContext*, const std::string&, bool, bool)>
     repairDatabaseMmapv1Func;
-}
+}  // namespace
 
 void setRepairDatabaseMmapv1Impl(
-    stdx::function<Status(MMAPV1Engine* engine, OperationContext*, const std::string&, bool, bool)>
+    stdx::function<Status(StorageEngine* engine, OperationContext*, const std::string&, bool, bool)>
         impl) {
     repairDatabaseMmapv1Func = std::move(impl);
 }
 
-Status repairDatabaseMmapv1(MMAPV1Engine* engine,
+Status repairDatabaseMmapv1(StorageEngine* engine,
                             OperationContext* opCtx,
                             const std::string& dbName,
                             bool preserveClonedFilesOnFailure,
@@ -48,4 +48,4 @@ Status repairDatabaseMmapv1(MMAPV1Engine* engine,
     return repairDatabaseMmapv1Func(
         engine, opCtx, dbName, preserveClonedFilesOnFailure, backupOriginalFiles);
 }
-}
+}  // namespace mongo

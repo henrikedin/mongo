@@ -32,15 +32,15 @@
 #include "mongo/stdx/functional.h"
 
 namespace mongo {
-class MMAPV1Engine;
+class StorageEngine;
 class OperationContext;
 
 void setRepairDatabaseMmapv1Impl(
-    stdx::function<Status(MMAPV1Engine*, OperationContext*, std::string const&, bool, bool)> impl);
+    stdx::function<Status(StorageEngine*, OperationContext*, std::string const&, bool, bool)> impl);
 
-Status repairDatabaseMmapv1(MMAPV1Engine* engine,
+Status repairDatabaseMmapv1(StorageEngine* engine,
                             OperationContext* opCtx,
                             const std::string& dbName,
                             bool preserveClonedFilesOnFailure,
                             bool backupOriginalFiles);
-}
+}  // namespace mongo
