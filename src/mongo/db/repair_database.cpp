@@ -252,6 +252,7 @@ Status repairDatabase(OperationContext* opCtx,
         // shimmed interface, so the symbol can exist independent of mmapv1.
         auto status = repairDatabaseMmapv1(
             engine, opCtx, dbName, preserveClonedFilesOnFailure, backupOriginalFiles);
+        // Restore oplog Collection pointer cache.
         repl::acquireOplogCollectionForLogging(opCtx);
         return status;
     }

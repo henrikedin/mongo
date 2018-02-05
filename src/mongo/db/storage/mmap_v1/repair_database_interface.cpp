@@ -26,7 +26,7 @@
  *    it in the license file.
  */
 
-#include "repair_database_interface.h"
+#include "mongo/db/storage/mmap_v1/repair_database_interface.h"
 
 namespace mongo {
 namespace {

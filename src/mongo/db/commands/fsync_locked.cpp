@@ -26,7 +26,7 @@
 *    it in the license file.
 */
 
-#include "fsync_locked.h"
+#include "mongo/db/commands/fsync_locked.h"
 
 namespace mongo {
 namespace {
