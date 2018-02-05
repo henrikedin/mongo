@@ -29,17 +29,15 @@
 #include "fsync_locked.h"
 
 namespace mongo {
-	namespace
-	{
-		stdx::function<bool()> lockedForWritingImpl;
-	}
+namespace {
+stdx::function<bool()> lockedForWritingImpl;
+}
 
-	bool lockedForWriting() {
-		return lockedForWritingImpl();
-	}
+bool lockedForWriting() {
+    return lockedForWritingImpl();
+}
 
-	void setLockedForWritingImpl(stdx::function<bool()> impl)
-	{
-		lockedForWritingImpl = std::move(impl);
-	}
+void setLockedForWritingImpl(stdx::function<bool()> impl) {
+    lockedForWritingImpl = std::move(impl);
+}
 }  // namespace mongo

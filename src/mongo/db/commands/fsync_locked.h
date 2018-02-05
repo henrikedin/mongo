@@ -31,14 +31,15 @@
 #include "mongo/stdx/functional.h"
 
 namespace mongo {
-	/**
-	* Returns true if mongod is currently fsyncLocked.
-	*/
-	bool lockedForWriting();
+/**
+* Returns true if mongod is currently fsyncLocked.
+*/
+bool lockedForWriting();
 
-	/**
-	* Sets the implementation for lockedForWriting(). Should be done once during startup in a MONGO_INITIALIZER.
-	*/
-	void setLockedForWritingImpl(stdx::function<bool()> impl);
+/**
+* Sets the implementation for lockedForWriting(). Should be done once during startup in a
+* MONGO_INITIALIZER.
+*/
+void setLockedForWritingImpl(stdx::function<bool()> impl);
 
 }  // namespace mongo
