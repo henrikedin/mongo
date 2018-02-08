@@ -60,7 +60,7 @@ const std::string mockHostName = "host.mockery.com";
 
 SaslConversation::SaslConversation(std::string mech)
     : authManagerExternalState(new AuthzManagerExternalStateMock),
-      authManager(std::unique_ptr<AuthzManagerExternalState>(authManagerExternalState)),
+      authManager(getGlobalServiceContext(), std::unique_ptr<AuthzManagerExternalState>(authManagerExternalState)),
       authSession(authManager.makeAuthorizationSession()),
       mechanism(mech) {
     OperationContextNoop opCtx;
