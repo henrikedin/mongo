@@ -83,12 +83,12 @@ void ShardLocalTest::setUp() {
     Client::initThreadIfNotAlready();
     _opCtx = getGlobalServiceContext()->makeOperationContext(&cc());
     serverGlobalParams.clusterRole = ClusterRole::ConfigServer;
-    _shardLocal = stdx::make_unique<ShardLocal>(ShardRegistry::kConfigServerShardId);
+    _shardLocal = stdx::make_unique<ShardLocal>(_opCtx->getServiceContext(), ShardRegistry::kConfigServerShardId);
     const repl::ReplSettings replSettings = {};
     repl::setGlobalReplicationCoordinator(
         new repl::ReplicationCoordinatorMock(_opCtx->getServiceContext(), replSettings));
     ASSERT_OK(
-        repl::ReplicationCoordinator(_opCtx.get())->setFollowerMode(repl::MemberState::RS_PRIMARY));
+        repl::ReplicationCoordinator::get(_opCtx.get())->setFollowerMode(repl::MemberState::RS_PRIMARY));
 }
 
 void ShardLocalTest::tearDown() {
