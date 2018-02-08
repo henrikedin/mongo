@@ -72,7 +72,7 @@ public:
         auto localManagerState = stdx::make_unique<AuthzManagerExternalStateMock>();
         localManagerState.get()->setAuthzVersion(AuthorizationManager::schemaVersion28SCRAM);
         auto uniqueAuthzManager =
-            stdx::make_unique<AuthorizationManager>(std::move(localManagerState));
+            stdx::make_unique<AuthorizationManager>(&serviceContext, std::move(localManagerState));
         AuthorizationManager::set(&serviceContext, std::move(uniqueAuthzManager));
 
         auto client = serviceContext.makeClient("testClient");
