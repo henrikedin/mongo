@@ -353,26 +353,26 @@ private:
     }
 };
 
-class AuthorizationManagerWithExplicitUserPrivilegesTest : public ::mongo::unittest::Test {
-public:
-    virtual ~AuthorizationManagerWithExplicitUserPrivilegesTest() {
-        if (authzManager)
-            authzManager->invalidateUserCache();
-    }
-
-    virtual void setUp() {
-        auto localExternalState =
-            stdx::make_unique<AuthzManagerExternalStateMockWithExplicitUserPrivileges>();
-        externalState = localExternalState.get();
-        externalState->setAuthzVersion(AuthorizationManager::schemaVersion26Final);
-        authzManager = stdx::make_unique<AuthorizationManager>(std::move(localExternalState));
-        externalState->setAuthorizationManager(authzManager.get());
-        authzManager->setAuthEnabled(true);
-    }
-
-    std::unique_ptr<AuthorizationManager> authzManager;
-    AuthzManagerExternalStateMockWithExplicitUserPrivileges* externalState;
-};
+//class AuthorizationManagerWithExplicitUserPrivilegesTest : public ::mongo::unittest::Test {
+//public:
+//    virtual ~AuthorizationManagerWithExplicitUserPrivilegesTest() {
+//        if (authzManager)
+//            authzManager->invalidateUserCache();
+//    }
+//
+//    virtual void setUp() {
+//        auto localExternalState =
+//            stdx::make_unique<AuthzManagerExternalStateMockWithExplicitUserPrivileges>();
+//        externalState = localExternalState.get();
+//        externalState->setAuthzVersion(AuthorizationManager::schemaVersion26Final);
+//        authzManager = stdx::make_unique<AuthorizationManager>(std::move(localExternalState));
+//        externalState->setAuthorizationManager(authzManager.get());
+//        authzManager->setAuthEnabled(true);
+//    }
+//
+//    std::unique_ptr<AuthorizationManager> authzManager;
+//    AuthzManagerExternalStateMockWithExplicitUserPrivileges* externalState;
+//};
 
 // Tests SERVER-21535, unrecognized actions should be ignored rather than causing errors.
 TEST_F(AuthorizationManagerTest, testAcquireV2UserWithUnrecognizedActions) {
