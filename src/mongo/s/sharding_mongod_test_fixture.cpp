@@ -214,9 +214,9 @@ std::unique_ptr<ShardRegistry> ShardingMongodTestFixture::makeShardRegistry(
 
     // Only config servers use ShardLocal for now.
     if (serverGlobalParams.clusterRole == ClusterRole::ConfigServer) {
-        ShardFactory::BuilderCallable localBuilder = [](const ShardId& shardId,
+        ShardFactory::BuilderCallable localBuilder = [this](const ShardId& shardId,
                                                         const ConnectionString& connStr) {
-            return stdx::make_unique<ShardLocal>(shardId);
+            return stdx::make_unique<ShardLocal>(getServiceContext(), shardId);
         };
         buildersMap.insert(
             std::pair<ConnectionString::ConnectionType, ShardFactory::BuilderCallable>(
