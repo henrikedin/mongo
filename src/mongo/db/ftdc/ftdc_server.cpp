@@ -298,7 +298,7 @@ void startFTDC(boost::filesystem::path& path,
         "",
         BSON("serverStatus" << 1 << "tcMalloc" << true << "sharding" << false)));
 
-    registerCollectors(controller.get());
+    registerCollectors(getGlobalServiceContext(), controller.get());
 
     // Install System Metric Collector as a periodic collector
     installSystemMetricsCollector(controller.get());

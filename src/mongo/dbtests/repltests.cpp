@@ -102,7 +102,8 @@ protected:
 
 public:
     Base()
-        : _client(&_opCtx), _defaultReplSettings(getGlobalReplicationCoordinator()->getSettings()) {
+        : _client(&_opCtx),
+          _defaultReplSettings(ReplicationCoordinator::get(&_opCtx)->getSettings()) {
         // Replication is not supported by mobile SE.
         if (mongo::storageGlobalParams.engine == "mobile") {
             return;
@@ -144,7 +145,7 @@ public:
             deleteAll(cllNS());
             setGlobalReplicationCoordinator(new repl::ReplicationCoordinatorMock(
                 _opCtx.getServiceContext(), _defaultReplSettings));
-            repl::getGlobalReplicationCoordinator()
+            repl::ReplicationCoordinator::get(&_opCtx)
                 ->setFollowerMode(repl::MemberState::RS_PRIMARY)
                 .ignore();
 

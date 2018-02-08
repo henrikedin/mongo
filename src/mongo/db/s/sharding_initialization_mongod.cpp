@@ -74,9 +74,10 @@ Status initializeGlobalShardingStateForMongod(OperationContext* opCtx,
                 shardId, connStr, targeterFactoryPtr->create(connStr));
         };
 
-    ShardFactory::BuilderCallable localBuilder = [](const ShardId& shardId,
-                                                    const ConnectionString& connStr) {
-        return stdx::make_unique<ShardLocal>(shardId);
+    ServiceContext* serviceContext = opCtx->getServiceContext();
+    ShardFactory::BuilderCallable localBuilder = [serviceContext](const ShardId& shardId,
+                                                                  const ConnectionString& connStr) {
+        return stdx::make_unique<ShardLocal>(serviceContext, shardId);
     };
 
     ShardFactory::BuildersMap buildersMap{

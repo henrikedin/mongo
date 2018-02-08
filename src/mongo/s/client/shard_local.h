@@ -38,7 +38,7 @@ class ShardLocal : public Shard {
     MONGO_DISALLOW_COPYING(ShardLocal);
 
 public:
-    explicit ShardLocal(const ShardId& id);
+    explicit ShardLocal(ServiceContext* serviceContext, const ShardId& id);
 
     ~ShardLocal() = default;
 
@@ -77,6 +77,7 @@ private:
         const BSONObj& sort,
         boost::optional<long long> limit) final;
 
+    ServiceContext* _serviceContext;
     RSLocalClient _rsLocalClient;
 };
 

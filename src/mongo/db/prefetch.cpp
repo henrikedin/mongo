@@ -215,13 +215,13 @@ public:
 
     virtual ~ReplIndexPrefetch() {}
 
-    const char* _value() {
-        if (getGlobalReplicationCoordinator()->getReplicationMode() !=
+    const char* _value(OperationContext* opCtx) {
+        if (ReplicationCoordinator::get(opCtx)->getReplicationMode() !=
             ReplicationCoordinator::modeReplSet) {
             return "uninitialized";
         }
         ReplSettings::IndexPrefetchConfig ip =
-            getGlobalReplicationCoordinator()->getIndexPrefetchConfig();
+            ReplicationCoordinator::get(opCtx)->getIndexPrefetchConfig();
         switch (ip) {
             case ReplSettings::IndexPrefetchConfig::PREFETCH_NONE:
                 return "none";
@@ -235,7 +235,7 @@ public:
     }
 
     virtual void append(OperationContext* opCtx, BSONObjBuilder& b, const string& name) {
-        b.append(name, _value());
+        b.append(name, _value(opCtx));
     }
 
     virtual Status set(const BSONElement& newValueElement) {

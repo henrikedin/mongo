@@ -42,9 +42,9 @@
 namespace mongo {
 
 namespace {
-void registerMongoDCollectors(FTDCController* controller) {
+void registerMongoDCollectors(ServiceContext* serviceContext, FTDCController* controller) {
     // These metrics are only collected if replication is enabled
-    if (repl::getGlobalReplicationCoordinator()->getReplicationMode() !=
+    if (repl::ReplicationCoordinator::get(serviceContext)->getReplicationMode() !=
         repl::ReplicationCoordinator::modeNone) {
         // CmdReplSetGetStatus
         controller->addPeriodicCollector(stdx::make_unique<FTDCSimpleInternalCommandCollector>(

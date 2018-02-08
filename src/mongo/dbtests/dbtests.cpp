@@ -154,7 +154,7 @@ int dbtestsMain(int argc, char** argv, char** envp) {
 
     repl::setGlobalReplicationCoordinator(
         new repl::ReplicationCoordinatorMock(service, replSettings));
-    repl::getGlobalReplicationCoordinator()
+    repl::ReplicationCoordinator::get(service)
         ->setFollowerMode(repl::MemberState::RS_PRIMARY)
         .ignore();
 
