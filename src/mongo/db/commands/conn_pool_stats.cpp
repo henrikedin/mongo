@@ -54,7 +54,7 @@ public:
         return "stats about connections between servers in a replica set or sharded cluster.";
     }
 
-    AllowedOnSecondary secondaryAllowed() const override {
+    AllowedOnSecondary secondaryAllowed(ServiceContext*) const override {
         return AllowedOnSecondary::kAlways;
     }
 

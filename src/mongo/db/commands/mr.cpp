@@ -1351,7 +1351,7 @@ class MapReduceCommand : public ErrmsgCommandDeprecated {
 public:
     MapReduceCommand() : ErrmsgCommandDeprecated("mapReduce", "mapreduce") {}
 
-    AllowedOnSecondary secondaryAllowed() const override {
+    AllowedOnSecondary secondaryAllowed(ServiceContext*) const override {
         if (repl::getGlobalReplicationCoordinator()->getReplicationMode() !=
             repl::ReplicationCoordinator::modeReplSet) {
             return AllowedOnSecondary::kAlways;
@@ -1689,7 +1689,7 @@ public:
     }
     MapReduceFinishCommand() : BasicCommand("mapreduce.shardedfinish") {}
 
-    AllowedOnSecondary secondaryAllowed() const override {
+    AllowedOnSecondary secondaryAllowed(ServiceContext*) const override {
         if (repl::getGlobalReplicationCoordinator()->getReplicationMode() !=
             repl::ReplicationCoordinator::modeReplSet) {
             return AllowedOnSecondary::kAlways;

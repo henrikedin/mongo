@@ -147,7 +147,7 @@ public:
     std::string help() const override {
         return "drop (delete) this database";
     }
-    AllowedOnSecondary secondaryAllowed() const override {
+    AllowedOnSecondary secondaryAllowed(ServiceContext*) const override {
         return AllowedOnSecondary::kNever;
     }
 
@@ -210,7 +210,7 @@ public:
 
 class CmdRepairDatabase : public ErrmsgCommandDeprecated {
 public:
-    AllowedOnSecondary secondaryAllowed() const override {
+    AllowedOnSecondary secondaryAllowed(ServiceContext*) const override {
         return AllowedOnSecondary::kAlways;
     }
     virtual bool maintenanceMode() const {
@@ -295,7 +295,7 @@ public:
 */
 class CmdProfile : public ErrmsgCommandDeprecated {
 public:
-    AllowedOnSecondary secondaryAllowed() const override {
+    AllowedOnSecondary secondaryAllowed(ServiceContext*) const override {
         return AllowedOnSecondary::kAlways;
     }
 
@@ -396,7 +396,7 @@ public:
 class CmdDrop : public ErrmsgCommandDeprecated {
 public:
     CmdDrop() : ErrmsgCommandDeprecated("drop") {}
-    AllowedOnSecondary secondaryAllowed() const override {
+    AllowedOnSecondary secondaryAllowed(ServiceContext*) const override {
         return AllowedOnSecondary::kNever;
     }
     virtual bool adminOnly() const {
@@ -452,7 +452,7 @@ public:
 class CmdCreate : public BasicCommand {
 public:
     CmdCreate() : BasicCommand("create") {}
-    AllowedOnSecondary secondaryAllowed() const override {
+    AllowedOnSecondary secondaryAllowed(ServiceContext*) const override {
         return AllowedOnSecondary::kNever;
     }
     virtual bool adminOnly() const {
@@ -570,7 +570,7 @@ class CmdFileMD5 : public BasicCommand {
 public:
     CmdFileMD5() : BasicCommand("filemd5") {}
 
-    AllowedOnSecondary secondaryAllowed() const override {
+    AllowedOnSecondary secondaryAllowed(ServiceContext*) const override {
         return AllowedOnSecondary::kAlways;
     }
 
@@ -747,7 +747,7 @@ class CmdDatasize : public ErrmsgCommandDeprecated {
 public:
     CmdDatasize() : ErrmsgCommandDeprecated("dataSize", "datasize") {}
 
-    AllowedOnSecondary secondaryAllowed() const override {
+    AllowedOnSecondary secondaryAllowed(ServiceContext*) const override {
         return AllowedOnSecondary::kAlways;
     }
     virtual bool supportsWriteConcern(const BSONObj& cmd) const override {
@@ -897,7 +897,7 @@ class CollectionStats : public ErrmsgCommandDeprecated {
 public:
     CollectionStats() : ErrmsgCommandDeprecated("collStats", "collstats") {}
 
-    AllowedOnSecondary secondaryAllowed() const override {
+    AllowedOnSecondary secondaryAllowed(ServiceContext*) const override {
         return AllowedOnSecondary::kAlways;
     }
     virtual bool supportsWriteConcern(const BSONObj& cmd) const override {
@@ -944,7 +944,7 @@ class CollectionModCommand : public BasicCommand {
 public:
     CollectionModCommand() : BasicCommand("collMod") {}
 
-    AllowedOnSecondary secondaryAllowed() const override {
+    AllowedOnSecondary secondaryAllowed(ServiceContext*) const override {
         return AllowedOnSecondary::kNever;
     }
     virtual bool supportsWriteConcern(const BSONObj& cmd) const override {
@@ -978,7 +978,7 @@ class DBStats : public ErrmsgCommandDeprecated {
 public:
     DBStats() : ErrmsgCommandDeprecated("dbStats", "dbstats") {}
 
-    AllowedOnSecondary secondaryAllowed() const override {
+    AllowedOnSecondary secondaryAllowed(ServiceContext*) const override {
         return AllowedOnSecondary::kAlways;
     }
     virtual bool supportsWriteConcern(const BSONObj& cmd) const override {
@@ -1074,7 +1074,7 @@ public:
 class CmdWhatsMyUri : public BasicCommand {
 public:
     CmdWhatsMyUri() : BasicCommand("whatsmyuri") {}
-    AllowedOnSecondary secondaryAllowed() const override {
+    AllowedOnSecondary secondaryAllowed(ServiceContext*) const override {
         return AllowedOnSecondary::kAlways;
     }
     virtual bool supportsWriteConcern(const BSONObj& cmd) const override {
@@ -1099,7 +1099,7 @@ class AvailableQueryOptions : public BasicCommand {
 public:
     AvailableQueryOptions() : BasicCommand("availableQueryOptions", "availablequeryoptions") {}
 
-    AllowedOnSecondary secondaryAllowed() const override {
+    AllowedOnSecondary secondaryAllowed(ServiceContext*) const override {
         return AllowedOnSecondary::kAlways;
     }
     virtual bool supportsWriteConcern(const BSONObj& cmd) const override {
