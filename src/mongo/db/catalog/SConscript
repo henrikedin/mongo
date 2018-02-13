@@ -288,6 +288,9 @@ env.Library(
         '$BUILD_DIR/mongo/db/ttl_collection_cache',
         '$BUILD_DIR/mongo/db/views/views_mongod',
     ],
+    LIBDEPS_PRIVATE=[
+        '$BUILD_DIR/mongo/db/storage/mmap_v1/mmap_v1_options',
+    ],
 )
 
 env.Library(
