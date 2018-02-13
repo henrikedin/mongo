@@ -286,10 +286,13 @@ public:
         for (const auto& c : commands) {
             BSONObjBuilder temp(b.subobjStart(c->getName()));
             temp.append("help", c->help());
-            temp.append("slaveOk", c->secondaryAllowed(opCtx->getServiceContext()) == Command::AllowedOnSecondary::kAlways);
+            temp.append("slaveOk",
+                        c->secondaryAllowed(opCtx->getServiceContext()) ==
+                            Command::AllowedOnSecondary::kAlways);
             temp.append("adminOnly", c->adminOnly());
             // optionally indicates that the command can be forced to run on a slave/secondary
-            if (c->secondaryAllowed(opCtx->getServiceContext()) == Command::AllowedOnSecondary::kOptIn)
+            if (c->secondaryAllowed(opCtx->getServiceContext()) ==
+                Command::AllowedOnSecondary::kOptIn)
                 temp.append("slaveOverrideOk", true);
             temp.done();
         }
