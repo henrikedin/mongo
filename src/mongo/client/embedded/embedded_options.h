@@ -38,11 +38,11 @@ namespace embedded {
 Status addOptions(optionenvironment::OptionSection* options);
 
 /**
-    * Canonicalize options for the given environment.
-    *
-    * For example, the options "dur", "nodur", "journal", "nojournal", and
-    * "storage.journaling.enabled" should all be merged into "storage.journaling.enabled".
-    */
+ * Canonicalize options for the given environment.
+ *
+ * For example, the options "dur", "nodur", "journal", "nojournal", and
+ * "storage.journaling.enabled" should all be merged into "storage.journaling.enabled".
+ */
 Status canonicalizeOptions(optionenvironment::Environment* params);
 
 Status storeOptions(const optionenvironment::Environment& params);
