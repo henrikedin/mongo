@@ -80,10 +80,10 @@ public:
     // hides set(const BSONElement&)
     using ExportedServerParameter<int, ServerParameterType::kStartupAndRuntime>::set;
 
-    virtual Status set(const int& newValue) {
+    Status set(ServiceContext* serviceContext, const int& newValue) override {
         stdx::unique_lock<stdx::mutex> lock(invalidationIntervalMutex);
-        Status status =
-            ExportedServerParameter<int, ServerParameterType::kStartupAndRuntime>::set(newValue);
+        Status status = ExportedServerParameter<int, ServerParameterType::kStartupAndRuntime>::set(
+            serviceContext, newValue);
         invalidationIntervalChangedCondition.notify_all();
         return status;
     }

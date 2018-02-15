@@ -42,6 +42,7 @@
 #include "mongo/base/status.h"
 #include "mongo/db/jsobj.h"
 #include "mongo/db/server_parameters.h"
+#include "mongo/db/service_context.h"
 #include "mongo/util/mongoutils/str.h"
 #include "mongo/util/processinfo.h"
 
@@ -56,8 +57,8 @@ public:
                                                     const std::string& tcmallocPropertyName);
 
     virtual void append(OperationContext* opCtx, BSONObjBuilder& b, const std::string& name);
-    virtual Status set(const BSONElement& newValueElement);
-    virtual Status setFromString(const std::string& str);
+    virtual Status set(ServiceContext* serviceContext, const BSONElement& newValueElement);
+    virtual Status setFromString(ServiceContext* serviceContext, const std::string& str);
 
 private:
     const std::string _tcmallocPropertyName;
@@ -80,7 +81,8 @@ void TcmallocNumericPropertyServerParameter::append(OperationContext* opCtx,
     }
 }
 
-Status TcmallocNumericPropertyServerParameter::set(const BSONElement& newValueElement) {
+Status TcmallocNumericPropertyServerParameter::set(ServiceContext* serviceContext,
+                                                   const BSONElement& newValueElement) {
     if (!newValueElement.isNumber()) {
         return Status(ErrorCodes::TypeMismatch,
                       str::stream() << "Expected server parameter " << newValueElement.fieldName()
@@ -111,7 +113,8 @@ Status TcmallocNumericPropertyServerParameter::set(const BSONElement& newValueEl
     return Status::OK();
 }
 
-Status TcmallocNumericPropertyServerParameter::setFromString(const std::string& str) {
+Status TcmallocNumericPropertyServerParameter::setFromString(ServiceContext* serviceContext,
+                                                             const std::string& str) {
     long long valueAsLongLong;
     Status status = parseNumberFromString(str, &valueAsLongLong);
     if (!status.isOK()) {
@@ -119,7 +122,7 @@ Status TcmallocNumericPropertyServerParameter::setFromString(const std::string& 
     }
     BSONObjBuilder builder;
     builder.append(name(), valueAsLongLong);
-    return set(builder.done().firstElement());
+    return set(serviceContext, builder.done().firstElement());
 }
 
 TcmallocNumericPropertyServerParameter tcmallocMaxTotalThreadCacheBytesParameter(
@@ -145,7 +148,10 @@ MONGO_INITIALIZER_GENERAL(TcmallocConfigurationDefaults,
         (systemMemorySizeMB / 8) * 1024 * 1024;  // 1/8 of system memory in bytes
     size_t cacheSize = std::min(defaultTcMallocCacheSize, derivedTcMallocCacheSize);
 
-    return tcmallocMaxTotalThreadCacheBytesParameter.setFromString(std::to_string(cacheSize));
+    // This is initialized before the service context and so we just provide nullptr here.
+    // Thus this command is not allowed to use the service context pointer.
+    return tcmallocMaxTotalThreadCacheBytesParameter.setFromString(nullptr,
+                                                                   std::to_string(cacheSize));
 }
 
 }  // namespace

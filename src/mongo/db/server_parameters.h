@@ -45,6 +45,7 @@
 
 namespace mongo {
 
+class ServiceContext;
 class ServerParameterSet;
 class OperationContext;
 
@@ -87,9 +88,9 @@ public:
 
     virtual void append(OperationContext* opCtx, BSONObjBuilder& b, const std::string& name) = 0;
 
-    virtual Status set(const BSONElement& newValueElement) = 0;
+    virtual Status set(ServiceContext* serviceContext, const BSONElement& newValueElement) = 0;
 
-    virtual Status setFromString(const std::string& str) = 0;
+    virtual Status setFromString(ServiceContext* serviceContext, const std::string& str) = 0;
 
 private:
     std::string _name;
@@ -145,7 +146,7 @@ enum class ServerParameterType {
 template <typename T>
 class BoundServerParameter : public ServerParameter {
 private:
-    using setter = stdx::function<Status(const T&)>;
+    using setter = stdx::function<Status(ServiceContext*, const T&)>;
     using getter = stdx::function<T()>;
     using SPT = ServerParameterType;
 
@@ -173,17 +174,17 @@ public:
         b.append(name, _getter());
     }
 
-    Status set(const BSONElement& newValueElement) override {
+    Status set(ServiceContext* serviceContext, const BSONElement& newValueElement) override {
         T newValue;
 
         if (!newValueElement.coerce(&newValue)) {
             return Status(ErrorCodes::BadValue, "Can't coerce value");
         }
 
-        return _setter(newValue);
+        return _setter(serviceContext, newValue);
     }
 
-    Status setFromString(const std::string& str) override;
+    Status setFromString(ServiceContext* serviceContext, const std::string& str) override;
 
 private:
     const setter _setter;
@@ -191,37 +192,40 @@ private:
 };
 
 template <>
-inline Status BoundServerParameter<bool>::setFromString(const std::string& str) {
+inline Status BoundServerParameter<bool>::setFromString(ServiceContext* serviceContext,
+                                                        const std::string& str) {
     if ((str == "1") || (str == "true")) {
-        return _setter(true);
+        return _setter(serviceContext, true);
     }
     if ((str == "0") || (str == "false")) {
-        return _setter(false);
+        return _setter(serviceContext, false);
     }
     return Status(ErrorCodes::BadValue, "Value is not a valid boolean");
 }
 
 template <>
-inline Status BoundServerParameter<std::string>::setFromString(const std::string& str) {
-    return _setter(str);
+inline Status BoundServerParameter<std::string>::setFromString(ServiceContext* serviceContext,
+                                                               const std::string& str) {
+    return _setter(serviceContext, str);
 }
 
 template <>
 inline Status BoundServerParameter<std::vector<std::string>>::setFromString(
-    const std::string& str) {
+    ServiceContext* serviceContext, const std::string& str) {
     std::vector<std::string> v;
     splitStringDelim(str, &v, ',');
-    return _setter(v);
+    return _setter(serviceContext, v);
 }
 
 template <typename T>
-inline Status BoundServerParameter<T>::setFromString(const std::string& str) {
+inline Status BoundServerParameter<T>::setFromString(ServiceContext* serviceContext,
+                                                     const std::string& str) {
     T value;
     Status status = parseNumberFromString(str, &value);
     if (!status.isOK()) {
         return status;
     }
-    return _setter(value);
+    return _setter(serviceContext, value);
 }
 
 template <typename T>
@@ -241,7 +245,7 @@ public:
                           SPT paramType = SPT::kStartupAndRuntime)
         : BoundServerParameter<T>(sps,
                                   name,
-                                  [this](const T& v) { return setLocked(v); },
+                                  [this](ServiceContext*, const T& v) { return setLocked(v); },
                                   [this]() { return getLocked(); },
                                   paramType),
           _value(initval) {}
@@ -365,18 +369,18 @@ public:
         : BoundServerParameter<T>(
               sps,
               name,
-              [this](const T& v) { return set(v); },
+              [this](ServiceContext* serviceContext, const T& v) { return set(serviceContext, v); },
               [this] { return server_parameter_storage_type<T, paramType>::get(_value); },
               paramType),
           _value(value) {}
     ~ExportedServerParameter() override {}
 
     // Don't let the template method hide our inherited method
-    Status set(const BSONElement& newValueElement) override {
-        return BoundServerParameter<T>::set(newValueElement);
+    Status set(ServiceContext* serviceContext, const BSONElement& newValueElement) override {
+        return BoundServerParameter<T>::set(serviceContext, newValueElement);
     }
 
-    virtual Status set(const T& newValue) {
+    virtual Status set(ServiceContext* serviceContext, const T& newValue) {
         auto const status = validate(newValue);
         if (!status.isOK()) {
             return status;

@@ -69,7 +69,7 @@ MONGO_INITIALIZER_GENERAL(MongodOptions,
 }
 
 MONGO_INITIALIZER_GENERAL(MongodOptions_Store,
-                          ("BeginStartupOptionStorage"),
+                          ("BeginStartupOptionStorage", "SetGlobalEnvironment"),
                           ("EndStartupOptionStorage"))
 (InitializerContext* context) {
     Status ret = storeMongodOptions(moe::startupOptionsParsed);

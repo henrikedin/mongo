@@ -34,6 +34,7 @@
 
 #include "mongo/db/operation_context_noop.h"
 #include "mongo/db/server_parameters.h"
+#include "mongo/db/service_context_noop.h"
 
 namespace mongo {
 
@@ -58,9 +59,10 @@ using std::string;
 using std::vector;
 
 TEST(ServerParameters, boundInt) {
+    ServiceContextNoop serviceContext;
     int ival = 123;
     BoundServerParameter<int> bspi("bspl",
-                                   [&ival](const int& v) {
+                                   [&ival](ServiceContext*, const int& v) {
                                        ival = v;
                                        return Status::OK();
                                    },
@@ -83,7 +85,7 @@ TEST(ServerParameters, boundInt) {
         {"789-0", -1, false},
     };
     for (auto const& p : setl) {
-        ASSERT_EQ(bspi.setFromString(p.setval).isOK(), p.succeed);
+        ASSERT_EQ(bspi.setFromString(&serviceContext, p.setval).isOK(), p.succeed);
         if (p.succeed) {
             ASSERT_EQUALS(p.expval, ival);
             ASSERT_EQUALS(p.expval, getInt(bspi));
@@ -92,9 +94,10 @@ TEST(ServerParameters, boundInt) {
 }
 
 TEST(ServerParameter, boundBool) {
+    ServiceContextNoop serviceContext;
     bool bval = true;
     BoundServerParameter<bool> bspb("bspb",
-                                    [&bval](const bool& v) {
+                                    [&bval](ServiceContext*, const bool& v) {
                                         bval = v;
                                         return Status::OK();
                                     },
@@ -118,7 +121,7 @@ TEST(ServerParameter, boundBool) {
         {"-1", false, false},
     };
     for (auto const& p : setb) {
-        ASSERT_EQ(bspb.setFromString(p.setval).isOK(), p.succeed);
+        ASSERT_EQ(bspb.setFromString(&serviceContext, p.setval).isOK(), p.succeed);
         if (p.succeed) {
             ASSERT_EQUALS(p.expval, bval);
             ASSERT_EQUALS(p.expval, getBool(bspb));
@@ -127,10 +130,11 @@ TEST(ServerParameter, boundBool) {
 }
 
 TEST(ServerParameters, boundStringExplicitLock) {
+    ServiceContextNoop serviceContext;
     stdx::mutex mut;
     std::string value("initial");
     BoundServerParameter<std::string> bspsel("bsp",
-                                             [&value, &mut](const std::string& v) {
+                                             [&value, &mut](ServiceContext*, const std::string& v) {
                                                  stdx::unique_lock<stdx::mutex> lk(mut);
                                                  value = v;
                                                  return Status::OK();
@@ -144,12 +148,13 @@ TEST(ServerParameters, boundStringExplicitLock) {
 
     const std::string sets[] = {"first-set", "second-set", "third-set"};
     for (auto const& p : sets) {
-        ASSERT_TRUE(bspsel.set(BSON("x" << p).firstElement()).isOK());
+        ASSERT_TRUE(bspsel.set(&serviceContext, BSON("x" << p).firstElement()).isOK());
         ASSERT_EQUALS(p, getStr(bspsel));
     }
 }
 
 TEST(ServerParameters, boundIntLock) {
+    ServiceContextNoop serviceContext;
     LockedServerParameter<int> bspi("lsp", 1234);
     ASSERT_EQUALS(1234, getInt(bspi));
     ASSERT_EQUALS(1234, bspi.getLocked());
@@ -183,7 +188,7 @@ TEST(ServerParameters, boundIntLock) {
         {"123  ", -1, false},
     };
     for (auto const& p : sets) {
-        ASSERT_EQ(bspi.setFromString(p.setstr).isOK(), p.succeed);
+        ASSERT_EQ(bspi.setFromString(&serviceContext, p.setstr).isOK(), p.succeed);
         if (p.succeed) {
             ASSERT_EQUALS(p.setint, getInt(bspi));
             ASSERT_EQUALS(p.setint, bspi.getLocked());
@@ -200,21 +205,23 @@ TEST(ServerParameters, boundIntLock) {
 }
 
 TEST(ServerParameters, Simple1) {
+    ServiceContextNoop serviceContext;
     AtomicInt32 f(5);
     ExportedServerParameter<int, ServerParameterType::kStartupAndRuntime> ff(NULL, "ff", &f);
     ASSERT_EQUALS("ff", ff.name());
 
-    ASSERT_TRUE(ff.set(6).isOK());
+    ASSERT_TRUE(ff.set(&serviceContext, 6).isOK());
     ASSERT_EQUALS(6, f.load());
 
-    ASSERT_TRUE(ff.set(BSON("x" << 7).firstElement()).isOK());
+    ASSERT_TRUE(ff.set(&serviceContext, BSON("x" << 7).firstElement()).isOK());
     ASSERT_EQUALS(7, f.load());
 
-    ASSERT_TRUE(ff.setFromString("8").isOK());
+    ASSERT_TRUE(ff.setFromString(&serviceContext, "8").isOK());
     ASSERT_EQUALS(8, f.load());
 }
 
 TEST(ServerParameters, Vector1) {
+    ServiceContextNoop serviceContext;
     vector<string> v;
 
     ExportedServerParameter<vector<string>, ServerParameterType::kStartupOnly> vv(NULL, "vv", &v);
@@ -222,7 +229,7 @@ TEST(ServerParameters, Vector1) {
     BSONObj x = BSON("x" << BSON_ARRAY("a"
                                        << "b"
                                        << "c"));
-    ASSERT_TRUE(vv.set(x.firstElement()).isOK());
+    ASSERT_TRUE(vv.set(&serviceContext, x.firstElement()).isOK());
 
     ASSERT_EQUALS(3U, v.size());
     ASSERT_EQUALS("a", v[0]);
@@ -238,7 +245,7 @@ TEST(ServerParameters, Vector1) {
     ASSERT(x.firstElement().woCompare(y.firstElement(), false) == 0);
 
 
-    ASSERT_TRUE(vv.setFromString("d,e").isOK());
+    ASSERT_TRUE(vv.setFromString(&serviceContext, "d,e").isOK());
     ASSERT_EQUALS(2U, v.size());
     ASSERT_EQUALS("d", v[0]);
     ASSERT_EQUALS("e", v[1]);

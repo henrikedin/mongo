@@ -538,7 +538,8 @@ MONGO_INITIALIZER(CreateAuthorizationExternalStateFactory)(InitializerContext* c
     return Status::OK();
 }
 
-MONGO_INITIALIZER(SetGlobalEnvironment)(InitializerContext* context) {
+MONGO_INITIALIZER_WITH_PREREQUISITES(SetGlobalEnvironment, MONGO_NO_PREREQUISITES)
+(InitializerContext* context) {
     setGlobalServiceContext(stdx::make_unique<ServiceContextNoop>());
     getGlobalServiceContext()->setTickSource(stdx::make_unique<SystemTickSource>());
     getGlobalServiceContext()->setFastClockSource(stdx::make_unique<SystemClockSource>());

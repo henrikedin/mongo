@@ -238,17 +238,17 @@ public:
         b.append(name, _value());
     }
 
-    virtual Status set(const BSONElement& newValueElement) {
-        if (getGlobalReplicationCoordinator()->getReplicationMode() !=
+    virtual Status set(ServiceContext* serviceContext, const BSONElement& newValueElement) {
+        if (ReplicationCoordinator::get(serviceContext)->getReplicationMode() !=
             ReplicationCoordinator::modeReplSet) {
             return Status(ErrorCodes::BadValue, "replication is not enabled");
         }
 
         std::string prefetch = newValueElement.valuestrsafe();
-        return setFromString(prefetch);
+        return setFromString(serviceContext, prefetch);
     }
 
-    virtual Status setFromString(const string& prefetch) {
+    virtual Status setFromString(ServiceContext* serviceContext, const string& prefetch) {
         log() << "changing replication index prefetch behavior to " << prefetch;
 
         ReplSettings::IndexPrefetchConfig prefetchConfig;
@@ -264,7 +264,7 @@ public:
                           str::stream() << "unrecognized indexPrefetch setting: " << prefetch);
         }
 
-        getGlobalReplicationCoordinator()->setIndexPrefetchConfig(prefetchConfig);
+        ReplicationCoordinator::get(serviceContext)->setIndexPrefetchConfig(prefetchConfig);
         return Status::OK();
     }
 
