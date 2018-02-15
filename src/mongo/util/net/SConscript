@@ -6,11 +6,21 @@ Import('ssl_provider')
 env = env.Clone()
 
 env.Library(
+    target='network_util',
+    source=[
+        "hostandport.cpp",
+        "hostname_canonicalization.cpp",
+        "sockaddr.cpp",
+    ],
+    LIBDEPS=[
+        '$BUILD_DIR/mongo/base',
+    ],
+)
+
+env.Library(
     target='network',
     source=[
         "cidr.cpp",
-        "hostandport.cpp",
-        "hostname_canonicalization.cpp",
         "listen.cpp",
         "message.cpp",
         "message_port.cpp",
@@ -18,7 +28,6 @@ env.Library(
         "private/socket_poll.cpp",
         "private/ssl_expiration.cpp",
         "sock.cpp",
-        "sockaddr.cpp",
         "socket_exception.cpp",
         "ssl_manager.cpp",
         'ssl_manager_%s.cpp' % (ssl_provider),
@@ -30,6 +39,7 @@ env.Library(
         '$BUILD_DIR/mongo/db/auth/auth_rolename',
         '$BUILD_DIR/mongo/util/concurrency/ticketholder',
         '$BUILD_DIR/mongo/util/decorable',
+        'network_util',
     ],
     LIBDEPS_PRIVATE=[
         '$BUILD_DIR/mongo/db/bson/dotted_path_support',
