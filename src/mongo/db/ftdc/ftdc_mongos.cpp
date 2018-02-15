@@ -60,23 +60,23 @@ public:
         b.append(name, _path.generic_string());
     }
 
-    Status set(const BSONElement& newValueElement) {
+    Status set(ServiceContext* serviceContext, const BSONElement& newValueElement) {
         if (newValueElement.type() != String) {
             return Status(ErrorCodes::BadValue,
                           "diagnosticDataCollectionDirectoryPath only supports type string");
         }
 
         std::string str = newValueElement.str();
-        return setFromString(str);
+        return setFromString(serviceContext, str);
     }
 
-    Status setFromString(const std::string& str) final {
+    Status setFromString(ServiceContext* serviceContext, const std::string& str) final {
         stdx::lock_guard<stdx::mutex> guard(_lock);
 
         FTDCController* controller = nullptr;
 
-        if (hasGlobalServiceContext()) {
-            controller = FTDCController::get(getGlobalServiceContext());
+        if (serviceContext) {
+            controller = FTDCController::get(serviceContext);
         }
 
         if (controller) {

@@ -60,7 +60,8 @@ auto makeMongoEmbeddedServiceContext() {
     return service;
 }
 
-MONGO_INITIALIZER(SetGlobalEnvironment)(InitializerContext* context) {
+MONGO_INITIALIZER_WITH_PREREQUISITES(SetGlobalEnvironment, MONGO_NO_PREREQUISITES)
+(InitializerContext* context) {
     setGlobalServiceContext(makeMongoEmbeddedServiceContext());
     return Status::OK();
 }

@@ -52,9 +52,10 @@ void WiredTigerEngineRuntimeConfigParameter::append(OperationContext* opCtx,
     b << name << _currentValue;
 }
 
-Status WiredTigerEngineRuntimeConfigParameter::set(const BSONElement& newValueElement) {
+Status WiredTigerEngineRuntimeConfigParameter::set(ServiceContext* serviceContext,
+                                                   const BSONElement& newValueElement) {
     try {
-        return setFromString(newValueElement.String());
+        return setFromString(serviceContext, newValueElement.String());
     } catch (const AssertionException& msg) {
         return Status(
             ErrorCodes::BadValue,
@@ -66,7 +67,8 @@ Status WiredTigerEngineRuntimeConfigParameter::set(const BSONElement& newValueEl
     }
 }
 
-Status WiredTigerEngineRuntimeConfigParameter::setFromString(const std::string& str) {
+Status WiredTigerEngineRuntimeConfigParameter::setFromString(ServiceContext* serviceContext,
+                                                             const std::string& str) {
     size_t pos = str.find('\0');
     if (pos != std::string::npos) {
         return Status(ErrorCodes::BadValue,

@@ -221,7 +221,7 @@ public:
                 foundParameter->second->append(opCtx, result, "was");
             }
 
-            uassertStatusOK(foundParameter->second->set(parameter));
+            uassertStatusOK(foundParameter->second->set(opCtx->getServiceContext(), parameter));
             numSet++;
         }
 
@@ -249,7 +249,7 @@ public:
         b << name << globalLogDomain()->getMinimumLogSeverity().toInt();
     }
 
-    virtual Status set(const BSONElement& newValueElement) {
+    virtual Status set(ServiceContext* serviceContext, const BSONElement& newValueElement) {
         int newValue;
         if (!newValueElement.coerce(&newValue) || newValue < 0)
             return Status(ErrorCodes::BadValue,
@@ -261,7 +261,7 @@ public:
         return Status::OK();
     }
 
-    virtual Status setFromString(const std::string& str) {
+    virtual Status setFromString(ServiceContext* serviceContext, const std::string& str) {
         int newValue;
         Status status = parseNumberFromString(str, &newValue);
         if (!status.isOK())
@@ -294,7 +294,7 @@ public:
         b << name << currentSettings;
     }
 
-    virtual Status set(const BSONElement& newValueElement) {
+    virtual Status set(ServiceContext* serviceContext, const BSONElement& newValueElement) {
         if (!newValueElement.isABSONObj()) {
             return Status(ErrorCodes::TypeMismatch,
                           mongoutils::str::stream()
@@ -304,7 +304,7 @@ public:
         return _set(newValueElement.Obj());
     }
 
-    virtual Status setFromString(const std::string& str) {
+    virtual Status setFromString(ServiceContext* serviceContext, const std::string& str) {
         try {
             return _set(mongo::fromjson(str));
         } catch (const DBException& ex) {
@@ -461,9 +461,9 @@ public:
         b << name << sslModeStr();
     }
 
-    virtual Status set(const BSONElement& newValueElement) {
+    virtual Status set(ServiceContext* serviceContext, const BSONElement& newValueElement) {
         try {
-            return setFromString(newValueElement.String());
+            return setFromString(serviceContext, newValueElement.String());
         } catch (const AssertionException& msg) {
             return Status(ErrorCodes::BadValue,
                           mongoutils::str::stream()
@@ -474,7 +474,7 @@ public:
         }
     }
 
-    virtual Status setFromString(const std::string& str) {
+    virtual Status setFromString(ServiceContext* serviceContext, const std::string& str) {
 #ifndef MONGO_CONFIG_SSL
         return Status(ErrorCodes::IllegalOperation,
                       mongoutils::str::stream()
@@ -532,9 +532,9 @@ public:
         b << name << clusterAuthModeStr();
     }
 
-    virtual Status set(const BSONElement& newValueElement) {
+    virtual Status set(ServiceContext* serviceContext, const BSONElement& newValueElement) {
         try {
-            return setFromString(newValueElement.String());
+            return setFromString(serviceContext, newValueElement.String());
         } catch (const AssertionException& msg) {
             return Status(ErrorCodes::BadValue,
                           mongoutils::str::stream()
@@ -545,7 +545,7 @@ public:
         }
     }
 
-    virtual Status setFromString(const std::string& str) {
+    virtual Status setFromString(ServiceContext* serviceContext, const std::string& str) {
 #ifndef MONGO_CONFIG_SSL
         return Status(ErrorCodes::IllegalOperation,
                       mongoutils::str::stream() << "Unable to set clusterAuthMode, "
@@ -613,15 +613,16 @@ public:
             builder << name << _value;
     }
 
-    virtual Status set(const BSONElement& newValueElement) override {
+    virtual Status set(ServiceContext* serviceContext,
+                       const BSONElement& newValueElement) override {
         if (newValueElement.type() != mongo::String)
             return {ErrorCodes::TypeMismatch,
                     mongoutils::str::stream() << "Value for parameter " << kName
                                               << " must be of type 'string'"};
-        return setFromString(newValueElement.String());
+        return setFromString(serviceContext, newValueElement.String());
     }
 
-    virtual Status setFromString(const std::string& str) override {
+    virtual Status setFromString(ServiceContext* serviceContext, const std::string& str) override {
         if (str.size() > kMaxSize)
             return {ErrorCodes::Overflow,
                     mongoutils::str::stream() << "Value for parameter " << kName

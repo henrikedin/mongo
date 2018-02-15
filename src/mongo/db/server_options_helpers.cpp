@@ -46,6 +46,7 @@
 #include "mongo/config.h"
 #include "mongo/db/server_options.h"
 #include "mongo/db/server_parameters.h"
+#include "mongo/db/service_context.h"
 #include "mongo/logger/log_component.h"
 #include "mongo/logger/message_event_utf8_encoder.h"
 #include "mongo/transport/message_compressor_registry.h"
@@ -1068,7 +1069,8 @@ Status storeServerOptions(const moe::Environment& params) {
                    << "\" at startup";
                 return Status(ErrorCodes::BadValue, sb.str());
             }
-            Status status = parameter->setFromString(parametersIt->second);
+            Status status =
+                parameter->setFromString(getGlobalServiceContext(), parametersIt->second);
             if (!status.isOK()) {
                 StringBuilder sb;
                 sb << "Bad value for parameter \"" << parametersIt->first

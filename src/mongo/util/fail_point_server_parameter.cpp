@@ -54,13 +54,15 @@ void FailPointServerParameter::append(OperationContext* opCtx,
     b << name << _failpoint->toBSON();
 }
 
-Status FailPointServerParameter::set(const BSONElement& newValueElement) {
+Status FailPointServerParameter::set(ServiceContext* serviceContext,
+                                     const BSONElement& newValueElement) {
     return {ErrorCodes::InternalError,
             "FailPointServerParameter::setFromString() should be used instead of "
             "FailPointServerParameter::set()"};
 }
 
-Status FailPointServerParameter::setFromString(const std::string& str) {
+Status FailPointServerParameter::setFromString(ServiceContext* serviceContext,
+                                               const std::string& str) {
     FailPointRegistry* registry = getGlobalFailPointRegistry();
     FailPoint* failPoint = registry->getFailPoint(_failPointName);
     if (failPoint == NULL) {

@@ -47,8 +47,8 @@ class AuthzVersionParameter : public ServerParameter {
 public:
     AuthzVersionParameter(ServerParameterSet* sps, const std::string& name);
     virtual void append(OperationContext* opCtx, BSONObjBuilder& b, const std::string& name);
-    virtual Status set(const BSONElement& newValueElement);
-    virtual Status setFromString(const std::string& str);
+    virtual Status set(ServiceContext* serviceContext, const BSONElement& newValueElement);
+    virtual Status setFromString(ServiceContext* serviceContext, const std::string& str);
 };
 
 MONGO_INITIALIZER_GENERAL(AuthzSchemaParameter,
@@ -70,11 +70,13 @@ void AuthzVersionParameter::append(OperationContext* opCtx,
     b.append(name, authzVersion);
 }
 
-Status AuthzVersionParameter::set(const BSONElement& newValueElement) {
+Status AuthzVersionParameter::set(ServiceContext* serviceContext,
+                                  const BSONElement& newValueElement) {
     return Status(ErrorCodes::InternalError, "set called on unsettable server parameter");
 }
 
-Status AuthzVersionParameter::setFromString(const std::string& newValueString) {
+Status AuthzVersionParameter::setFromString(ServiceContext* serviceContext,
+                                            const std::string& newValueString) {
     return Status(ErrorCodes::InternalError, "set called on unsettable server parameter");
 }
 

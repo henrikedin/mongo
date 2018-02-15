@@ -47,9 +47,9 @@ public:
      * logged at startup when making the `wiredtiger_open` call.
      */
     virtual void append(OperationContext* opCtx, BSONObjBuilder& b, const std::string& name);
-    virtual Status set(const BSONElement& newValueElement);
+    virtual Status set(ServiceContext* serviceContext, const BSONElement& newValueElement);
 
-    virtual Status setFromString(const std::string& str);
+    virtual Status setFromString(ServiceContext* serviceContext, const std::string& str);
 
 private:
     WiredTigerKVEngine* _engine;

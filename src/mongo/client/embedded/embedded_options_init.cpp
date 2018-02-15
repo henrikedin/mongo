@@ -60,7 +60,7 @@ MONGO_INITIALIZER_GENERAL(EmbeddedOptions,
 }
 
 MONGO_INITIALIZER_GENERAL(EmbeddedOptions_Store,
-                          ("BeginStartupOptionStorage"),
+                          ("BeginStartupOptionStorage", "SetGlobalEnvironment"),
                           ("EndStartupOptionStorage"))
 (InitializerContext* context) {
     return storeOptions(optionenvironment::startupOptionsParsed);

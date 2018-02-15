@@ -502,7 +502,7 @@ public:
         }
     }
 
-    virtual Status set(const BSONElement& newValueElement) {
+    virtual Status set(ServiceContext* serviceContext, const BSONElement& newValueElement) {
         return Status(ErrorCodes::IllegalOperation,
                       str::stream() << FeatureCompatibilityVersion::kParameterName
                                     << " cannot be set via setParameter. See "
@@ -510,7 +510,7 @@ public:
                                     << ".");
     }
 
-    virtual Status setFromString(const std::string& str) {
+    virtual Status setFromString(ServiceContext* serviceContext, const std::string& str) {
         return Status(ErrorCodes::IllegalOperation,
                       str::stream() << FeatureCompatibilityVersion::kParameterName
                                     << " cannot be set via setParameter. See "

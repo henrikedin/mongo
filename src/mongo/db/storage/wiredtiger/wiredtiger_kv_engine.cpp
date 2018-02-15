@@ -283,13 +283,13 @@ public:
         b.append(name, _holder->outof());
     }
 
-    virtual Status set(const BSONElement& newValueElement) {
+    virtual Status set(ServiceContext* serviceContext, const BSONElement& newValueElement) {
         if (!newValueElement.isNumber())
             return Status(ErrorCodes::BadValue, str::stream() << name() << " has to be a number");
         return _set(newValueElement.numberInt());
     }
 
-    virtual Status setFromString(const std::string& str) {
+    virtual Status setFromString(ServiceContext* serviceContext, const std::string& str) {
         int num = 0;
         Status status = parseNumberFromString(str, &num);
         if (!status.isOK())
