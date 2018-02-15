@@ -5,15 +5,26 @@ Import('env')
 env = env.Clone()
 
 env.Library(
-    target='transport_layer_common',
+    target='transport_layer_util',
     source=[
         'service_entry_point_utils.cpp',
         'session.cpp',
+    ],
+    LIBDEPS=[
+        '$BUILD_DIR/mongo/base',
+        '$BUILD_DIR/mongo/util/decorable',
+    ],
+)
+
+env.Library(
+    target='transport_layer_common',
+    source=[
         'transport_layer.cpp',
     ],
     LIBDEPS=[
         '$BUILD_DIR/mongo/util/net/network',
         '$BUILD_DIR/mongo/transport/message_compressor',
+        'transport_layer_util',
     ],
 )
 
@@ -75,6 +86,7 @@ tlEnv.Library(
     LIBDEPS_PRIVATE=[
         "$BUILD_DIR/mongo/util/processinfo",
         '$BUILD_DIR/third_party/shim_asio',
+        'transport_layer_common',
     ],
 )
 
