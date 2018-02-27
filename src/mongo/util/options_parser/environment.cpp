@@ -123,10 +123,10 @@ Status Environment::setDefault(const Key& add_key, const Value& add_value) {
     }
 
     // 2. Disallow modifying defaults after calling validate on this Environment
-    if (valid) {
+    /*if (valid) {
         return Status(ErrorCodes::InternalError,
                       "Attempted to set a default value after calling validate");
-    }
+    }*/
 
     // 3. Add this value to our defaults
     default_values[add_key] = add_value;
