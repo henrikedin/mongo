@@ -497,7 +497,7 @@ add_option('android-toolchain-path',
 
 add_option('msvc-debugging-format',
     choices=["codeview", "pdb"],
-    default="codeview",
+    default="pdb",
     help='Debugging format in debug builds using msvc. Codeview (/Z7) or Program database (/Zi). Default is codeview.',
     type='choice',
 )
