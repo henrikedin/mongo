@@ -37,6 +37,7 @@
 #include "mongo/db/client.h"
 #include "mongo/db/concurrency/lock_state.h"
 #include "mongo/db/operation_context.h"
+#include "mongo/db/service_context_registrer.h"
 #include "mongo/db/storage/storage_engine.h"
 #include "mongo/db/storage/storage_engine_lock_file.h"
 #include "mongo/db/storage/storage_engine_metadata.h"
@@ -51,19 +52,24 @@
 
 namespace mongo {
 namespace {
-auto makeMongoEmbeddedServiceContext() {
+ServiceContextRegistrer serviceContextEmbeddedFactory([]() {
     auto service = stdx::make_unique<ServiceContextMongoEmbedded>();
     service->setServiceEntryPoint(stdx::make_unique<ServiceEntryPointEmbedded>(service.get()));
     service->setTickSource(stdx::make_unique<SystemTickSource>());
     service->setFastClockSource(stdx::make_unique<SystemClockSource>());
     service->setPreciseClockSource(stdx::make_unique<SystemClockSource>());
     return service;
-}
+});
 
-MONGO_INITIALIZER(SetGlobalEnvironment)(InitializerContext* context) {
-    setGlobalServiceContext(makeMongoEmbeddedServiceContext());
-    return Status::OK();
-}
+// MONGO_INITIALIZER_SHUTDOWN(SetGlobalEnvironment)(InitializerContext* context) {
+//	//setGlobalServiceContext(makeMongoEmbeddedServiceContext());
+//	return Status::OK();
+//}
+// MONGO_SHUTDOWN(SetGlobalEnvironment)(ShutdownContext* context) {
+//	//clearGlobalServiceContext();
+//	//setGlobalServiceContext(nullptr);
+//	return Status::OK();
+//}
 }  // namespace
 
 extern bool _supportsDocLocking;

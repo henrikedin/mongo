@@ -93,7 +93,6 @@ MONGO_EXPORT_STARTUP_SERVER_PARAMETER(startupAuthSchemaValidation, bool, true);
 MONGO_INITIALIZER_WITH_PREREQUISITES(CreateAuthorizationManager,
                                      ("SetupInternalSecurityUser",
                                       "OIDGeneration",
-                                      "SetGlobalEnvironment",
                                       "CreateAuthorizationExternalStateFactory",
                                       "EndStartupOptionStorage"))
 (InitializerContext* context) {

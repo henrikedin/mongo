@@ -33,12 +33,18 @@
 #include <benchmark/benchmark.h>
 
 #include "mongo/base/initializer.h"
+#include "mongo/db/service_context.h"
+#include "mongo/db/service_context_registrer.h"
 #include "mongo/util/signal_handlers_synchronous.h"
 
 
 int main(int argc, char** argv, char** envp) {
     ::mongo::clearSignalMask();
     ::mongo::setupSynchronousSignalHandlers();
+
+	if (::mongo::hasServiceContextFactory()) {
+		::mongo::setGlobalServiceContext(::mongo::createServiceContext());
+	}
     ::mongo::runGlobalInitializersOrDie(argc, argv, envp);
 
     // Copied from the BENCHMARK_MAIN macro.

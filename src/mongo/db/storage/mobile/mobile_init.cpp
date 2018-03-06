@@ -70,7 +70,7 @@ public:
 };
 }  // namespace
 
-MONGO_INITIALIZER_WITH_PREREQUISITES(MobileKVEngineInit, ("SetGlobalEnvironment"))
+MONGO_INITIALIZER(MobileKVEngineInit)
 (InitializerContext* context) {
     getGlobalServiceContext()->registerStorageEngine("mobile", new MobileFactory());
     return Status::OK();

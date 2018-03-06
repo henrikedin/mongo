@@ -31,6 +31,7 @@
 #include "mongo/base/init.h"
 #include "mongo/db/repl/service_context_repl_mock.h"
 #include "mongo/db/service_context.h"
+#include "mongo/db/service_context_registrer.h"
 #include "mongo/stdx/memory.h"
 #include "mongo/util/clock_source_mock.h"
 
@@ -38,10 +39,9 @@ namespace mongo {
 namespace repl {
 namespace {
 
-MONGO_INITIALIZER(SetGlobalEnvironment)(InitializerContext* context) {
-    setGlobalServiceContext(stdx::make_unique<ServiceContextReplMock>());
-    return Status::OK();
-}
+ServiceContextRegistrer serviceContextEmbeddedFactory([]() {
+    return stdx::make_unique<ServiceContextReplMock>();
+});
 
 }  // namespace
 }  // namespace repl
