@@ -39,7 +39,7 @@ class StorageEngineLockFile;
 
 class ServiceContextMongoEmbedded final : public ServiceContext {
 public:
-    using FactoryMap = std::map<std::string, const StorageEngine::Factory*>;
+    using FactoryMap = std::map<std::string, std::unique_ptr<const StorageEngine::Factory>>;
 
     ServiceContextMongoEmbedded();
 
@@ -65,7 +65,6 @@ private:
 
     std::unique_ptr<StorageEngineLockFile> _lockFile;
 
-    // logically owned here, but never deleted by anyone.
     StorageEngine* _storageEngine = nullptr;
 
     // All possible storage engines are registered here through MONGO_INIT.

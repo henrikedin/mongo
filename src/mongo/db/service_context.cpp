@@ -69,12 +69,13 @@ ServiceContext* waitAndGetGlobalServiceContext() {
 }
 
 void setGlobalServiceContext(std::unique_ptr<ServiceContext>&& serviceContext) {
-	if (globalServiceContext)
-	{
-		auto oldServiceContext = globalServiceContext;
-		globalServiceContext = nullptr;
-		delete oldServiceContext;
-	}
+    if (globalServiceContext) {
+        // Make sure that calling getGlobalServiceContext() during the destructor results in
+        // nullptr. Decorations might try and do this.
+        auto oldServiceContext = globalServiceContext;
+        globalServiceContext = nullptr;
+        delete oldServiceContext;
+    }
 
     stdx::lock_guard<stdx::mutex> lk(globalServiceContextMutex);
 

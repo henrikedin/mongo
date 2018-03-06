@@ -114,10 +114,10 @@ TEST_F(MongodbCAPITest, CreateAndDestroyDBAndClient) {
     auto client = createClient();
 }
 
-// This test is to make sure that destroying the db will destroy all of its clients
-// This test will only fail under ASAN
+// This test is to make sure that destroying the db will fail if there's remaining clients left.
 TEST_F(MongodbCAPITest, DoNotDestroyClient) {
-    //createClient().release();
+    auto client = createClient();
+    ASSERT(libmongodbcapi_db_destroy(getDB()) != LIBMONGODB_CAPI_ERROR_SUCCESS);
 }
 
 TEST_F(MongodbCAPITest, CreateMultipleClients) {
@@ -495,11 +495,11 @@ TEST_F(MongodbCAPITest, InsertAndUpdate) {
 
 // This test is temporary to make sure that only one database can be created
 // This restriction may be relaxed at a later time
-//TEST_F(MongodbCAPITest, CreateMultipleDBs) {
-//    libmongodbcapi_db* db2 = libmongodbcapi_db_new(0, nullptr, nullptr);
-//    ASSERT(db2 == nullptr);
-//    ASSERT_EQUALS(libmongodbcapi_get_last_error(), LIBMONGODB_CAPI_ERROR_UNKNOWN);
-//}
+TEST_F(MongodbCAPITest, CreateMultipleDBs) {
+    libmongodbcapi_db* db2 = libmongodbcapi_db_new(0, nullptr, nullptr);
+    ASSERT(db2 == nullptr);
+    ASSERT_EQUALS(libmongodbcapi_get_last_error(), LIBMONGODB_CAPI_ERROR_UNKNOWN);
+}
 }  // namespace
 
 // Define main function as an entry to these tests.
@@ -530,5 +530,5 @@ int main(int argc, char** argv, char** envp) {
     ::mongo::unittest::setupTestLogger();
     ::mongo::unittest::Suite::run(std::vector<std::string>(), "", 1);
     globalTempDir.reset();
-    //mongo::quickExit(result);
+    // mongo::quickExit(result);
 }
