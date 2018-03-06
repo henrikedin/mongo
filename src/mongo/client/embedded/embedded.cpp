@@ -53,6 +53,7 @@
 #include "mongo/db/op_observer_registry.h"
 #include "mongo/db/repair_database_and_check_version.h"
 #include "mongo/db/repl/storage_interface_impl.h"
+#include "mongo/db/service_context_registrer.h"
 #include "mongo/db/session_catalog.h"
 #include "mongo/db/session_killer.h"
 #include "mongo/db/startup_warnings_mongod.h"
@@ -101,8 +102,7 @@ MONGO_INITIALIZER_GENERAL(ForkServer, ("EndStartupOptionHandling"), ("default"))
 // functional to provide any replication logic.
 GlobalInitializerRegisterer replicationManagerInitializer(
 	"CreateReplicationManager",
-	{ "SetGlobalEnvironment",
-	"SSLManager",
+	{ "SSLManager",
 	"default" },
 	[](InitializerContext* const) {
 	    auto serviceContext = getGlobalServiceContext();
@@ -204,6 +204,7 @@ int initialize(int argc, char* argv[], char** envp) {
     srand(static_cast<unsigned>(curTimeMicros64()));
     //
 
+    setGlobalServiceContext(createServiceContext());
     Status status = mongo::runGlobalInitializers(argc, argv, envp);
     if (!status.isOK()) {
         severe(LogComponent::kControl) << "Failed global initializations: " << status;

@@ -94,7 +94,6 @@ GlobalInitializerRegisterer createAuthorizationManagerInit(
 	"CreateAuthorizationManager",
 	{ "SetupInternalSecurityUser",
 	  "OIDGeneration",
-	  "SetGlobalEnvironment",
 	  "CreateAuthorizationExternalStateFactory",
 	  "EndStartupOptionStorage"},
 	[](InitializerContext* const) {

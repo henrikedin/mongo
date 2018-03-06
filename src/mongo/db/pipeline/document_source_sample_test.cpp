@@ -41,6 +41,7 @@
 #include "mongo/db/pipeline/document_value_test_util.h"
 #include "mongo/db/pipeline/expression_context.h"
 #include "mongo/db/service_context.h"
+#include "mongo/db/service_context_registrer.h"
 #include "mongo/stdx/memory.h"
 #include "mongo/unittest/death_test.h"
 #include "mongo/unittest/unittest.h"
@@ -51,6 +52,9 @@ namespace mongo {
 namespace {
 
 using boost::intrusive_ptr;
+
+// Stub to avoid including the server environment library.
+ServiceContextRegistrer serviceContextEmbeddedFactory([]() { return makeTestServiceContext(); });
 
 class SampleBasics : public AggregationContextFixture {
 public:
