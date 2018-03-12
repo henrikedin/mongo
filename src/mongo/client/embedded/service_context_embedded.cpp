@@ -60,15 +60,16 @@ auto makeMongoEmbeddedServiceContext() {
     return service;
 }
 
-MONGO_INITIALIZER_SHUTDOWN(SetGlobalEnvironment)(InitializerContext* context) {
-    setGlobalServiceContext(makeMongoEmbeddedServiceContext());
-    return Status::OK();
-}
-MONGO_SHUTDOWN(SetGlobalEnvironment)(ShutdownContext* context) {
-	//clearGlobalServiceContext();
+GlobalInitializerRegisterer serviceContextInitializer(
+	"SetGlobalEnvironment",
+	[](InitializerContext* const) {
+	setGlobalServiceContext(makeMongoEmbeddedServiceContext());
+	return Status::OK();
+},
+[](DeinitializerContext* const) {
 	setGlobalServiceContext(nullptr);
 	return Status::OK();
-}
+});
 }  // namespace
 
 extern bool _supportsDocLocking;

@@ -99,30 +99,28 @@ MONGO_INITIALIZER_GENERAL(ForkServer, ("EndStartupOptionHandling"), ("default"))
 
 // Create a minimalistic replication coordinator to provide a limited interface for users. Not
 // functional to provide any replication logic.
-MONGO_INITIALIZER_SHUTDOWN_WITH_PREREQUISITES(CreateReplicationManager,
-                                     ("SetGlobalEnvironment", "SSLManager", "default"))
-(InitializerContext* context) {
-    auto serviceContext = getGlobalServiceContext();
-    repl::StorageInterface::set(serviceContext, stdx::make_unique<repl::StorageInterfaceImpl>());
-
-    auto replCoord = stdx::make_unique<ReplicationCoordinatorEmbedded>(serviceContext);
-    repl::ReplicationCoordinator::set(serviceContext, std::move(replCoord));
-    repl::setOplogCollectionName(serviceContext);
-    return Status::OK();
-}
-
-MONGO_SHUTDOWN(CreateReplicationManager)
-(ShutdownContext* context) {
-	auto serviceContext = getGlobalServiceContext();
-
-	repl::ReplicationCoordinator::set(serviceContext, nullptr);
-	repl::StorageInterface::set(serviceContext, nullptr);
-
-	//auto replCoord = stdx::make_unique<ReplicationCoordinatorEmbedded>(serviceContext);
+GlobalInitializerRegisterer replicationManagerInitializer(
+	"CreateReplicationManager",
+	{ "SetGlobalEnvironment",
+	"SSLManager",
+	"default" },
+	[](InitializerContext* const) {
+	    auto serviceContext = getGlobalServiceContext();
+	    repl::StorageInterface::set(serviceContext, stdx::make_unique<repl::StorageInterfaceImpl>());
 	
-	//repl::setOplogCollectionName(serviceContext);
-	return Status::OK();
-}
+	    auto replCoord = stdx::make_unique<ReplicationCoordinatorEmbedded>(serviceContext);
+	    repl::ReplicationCoordinator::set(serviceContext, std::move(replCoord));
+	    repl::setOplogCollectionName(serviceContext);
+	    return Status::OK();
+},
+[](DeinitializerContext* const) {
+		auto serviceContext = getGlobalServiceContext();
+	
+		repl::ReplicationCoordinator::set(serviceContext, nullptr);
+		repl::StorageInterface::set(serviceContext, nullptr);
+	
+		return Status::OK();
+});
 
 MONGO_INITIALIZER(fsyncLockedForWriting)(InitializerContext* context) {
     setLockedForWritingImpl([]() { return false; });
@@ -193,7 +191,7 @@ void shutdown() {
 	if (Client::getCurrent())
 		Client::destroy();
 
-	mongo::runGlobalShutdowns().ignore();
+	mongo::runGlobalDeinitializers().ignore();
 
 	//delete globalLocker;
     log(LogComponent::kControl) << "now exiting";
