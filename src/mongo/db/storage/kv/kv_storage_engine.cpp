@@ -334,6 +334,8 @@ void KVStorageEngine::cleanShutdown() {
     _catalogRecordStore.reset(NULL);
 
     _engine->cleanShutdown();
+
+	delete this;
     // intentionally not deleting _engine
 }
 

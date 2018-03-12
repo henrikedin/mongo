@@ -70,10 +70,15 @@ public:
 };
 }  // namespace
 
-MONGO_INITIALIZER_WITH_PREREQUISITES(MobileKVEngineInit, ("SetGlobalEnvironment"))
+MONGO_INITIALIZER_SHUTDOWN_WITH_PREREQUISITES(MobileKVEngineInit, ("SetGlobalEnvironment"))
 (InitializerContext* context) {
     getGlobalServiceContext()->registerStorageEngine("mobile", new MobileFactory());
     return Status::OK();
+}
+
+MONGO_SHUTDOWN(MobileKVEngineInit)
+(ShutdownContext* context) {
+	return Status::OK();
 }
 
 }  // namespace mongo

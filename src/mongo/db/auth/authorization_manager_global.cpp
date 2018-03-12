@@ -90,7 +90,7 @@ AuthorizationManager* getGlobalAuthorizationManager() {
 
 MONGO_EXPORT_STARTUP_SERVER_PARAMETER(startupAuthSchemaValidation, bool, true);
 
-MONGO_INITIALIZER_WITH_PREREQUISITES(CreateAuthorizationManager,
+MONGO_INITIALIZER_SHUTDOWN_WITH_PREREQUISITES(CreateAuthorizationManager,
                                      ("SetupInternalSecurityUser",
                                       "OIDGeneration",
                                       "SetGlobalEnvironment",
@@ -104,6 +104,12 @@ MONGO_INITIALIZER_WITH_PREREQUISITES(CreateAuthorizationManager,
     authzManager->setShouldValidateAuthSchemaOnStartup(startupAuthSchemaValidation);
     AuthorizationManager::set(getGlobalServiceContext(), std::move(authzManager));
     return Status::OK();
+}
+
+MONGO_SHUTDOWN(CreateAuthorizationManager)
+	(ShutdownContext* context) {
+	AuthorizationManager::set(getGlobalServiceContext(), nullptr);
+	return Status::OK();
 }
 
 }  // namespace mongo

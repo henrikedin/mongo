@@ -136,10 +136,10 @@ libmongodbcapi_db* db_new(int argc, const char** argv, const char** envp) noexce
 
 void db_destroy(libmongodbcapi_db* db) noexcept {
     // todo, we can't teardown and re-initialize yet.
-    /*if (run_setup) {
+    if (run_setup) {
         embedded::shutdown();
         run_setup = false;
-    }*/
+    }
 
     delete db;
     invariant(!db || db == global_db);

@@ -51,15 +51,24 @@
 namespace mongo {
 namespace {
 
+	DatabaseHolder* _dbHolder = nullptr;
+
 DatabaseHolder& dbHolderImpl() {
-    static DatabaseHolder _dbHolder;
-    return _dbHolder;
+    return *_dbHolder;
 }
 
-MONGO_INITIALIZER_WITH_PREREQUISITES(InitializeDbHolderimpl, ("InitializeDatabaseHolderFactory"))
+MONGO_INITIALIZER_SHUTDOWN_WITH_PREREQUISITES(InitializeDbHolderimpl, ("InitializeDatabaseHolderFactory"))
 (InitializerContext* const) {
+	_dbHolder = new DatabaseHolder();
     registerDbHolderImpl(dbHolderImpl);
     return Status::OK();
+}
+
+MONGO_SHUTDOWN(InitializeDbHolderimpl)
+(ShutdownContext* const) {
+	delete _dbHolder;
+	_dbHolder = nullptr;
+	return Status::OK();
 }
 
 MONGO_INITIALIZER(InitializeDatabaseHolderFactory)(InitializerContext* const) {

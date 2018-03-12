@@ -60,9 +60,14 @@ auto makeMongoEmbeddedServiceContext() {
     return service;
 }
 
-MONGO_INITIALIZER(SetGlobalEnvironment)(InitializerContext* context) {
+MONGO_INITIALIZER_SHUTDOWN(SetGlobalEnvironment)(InitializerContext* context) {
     setGlobalServiceContext(makeMongoEmbeddedServiceContext());
     return Status::OK();
+}
+MONGO_SHUTDOWN(SetGlobalEnvironment)(ShutdownContext* context) {
+	//clearGlobalServiceContext();
+	setGlobalServiceContext(nullptr);
+	return Status::OK();
 }
 }  // namespace
 
@@ -70,7 +75,13 @@ extern bool _supportsDocLocking;
 
 ServiceContextMongoEmbedded::ServiceContextMongoEmbedded() = default;
 
-ServiceContextMongoEmbedded::~ServiceContextMongoEmbedded() = default;
+ServiceContextMongoEmbedded::~ServiceContextMongoEmbedded()
+{
+	for (auto&& factory : _storageFactories)
+	{
+		delete factory.second;
+	}
+}
 
 StorageEngine* ServiceContextMongoEmbedded::getGlobalStorageEngine() {
     // We don't check that globalStorageEngine is not-NULL here intentionally.  We can encounter
