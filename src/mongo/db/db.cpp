@@ -956,7 +956,7 @@ int mongoDbMain(int argc, char* argv[], char** envp) {
     srand(static_cast<unsigned>(curTimeMicros64()));
 
     setGlobalServiceContext(createServiceContext());
-    Status status = mongo::runGlobalInitializers(argc, argv, envp);
+    Status status = mongo::runGlobalInitializers(argc, argv, envp, getGlobalServiceContext());
     if (!status.isOK()) {
         severe(LogComponent::kControl) << "Failed global initialization: " << status;
         quickExit(EXIT_FAILURE);

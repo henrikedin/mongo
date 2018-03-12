@@ -104,8 +104,8 @@ GlobalInitializerRegisterer replicationManagerInitializer(
 	"CreateReplicationManager",
 	{ "SSLManager",
 	"default" },
-	[](InitializerContext* const) {
-	    auto serviceContext = getGlobalServiceContext();
+	[](InitializerContext* context) {
+	    auto serviceContext = context->serviceContext();
 	    repl::StorageInterface::set(serviceContext, stdx::make_unique<repl::StorageInterfaceImpl>());
 	
 	    auto replCoord = stdx::make_unique<ReplicationCoordinatorEmbedded>(serviceContext);
@@ -113,8 +113,8 @@ GlobalInitializerRegisterer replicationManagerInitializer(
 	    repl::setOplogCollectionName(serviceContext);
 	    return Status::OK();
 },
-[](DeinitializerContext* const) {
-		auto serviceContext = getGlobalServiceContext();
+[](DeinitializerContext* context) {
+		auto serviceContext = context->serviceContext();
 	
 		repl::ReplicationCoordinator::set(serviceContext, nullptr);
 		repl::StorageInterface::set(serviceContext, nullptr);
@@ -131,7 +131,7 @@ MONGO_INITIALIZER(fsyncLockedForWriting)(InitializerContext* context) {
 using logger::LogComponent;
 using std::endl;
 
-void shutdown() {
+void shutdown(ServiceContext* srvContext) {
 
 	//shutdownNoTerminate();
 
@@ -151,64 +151,42 @@ void shutdown() {
 	{
 		Lock::GlobalLock lk(shutdownOpCtx.get(), MODE_X, Date_t::max());
 		dbHolder().closeAll(shutdownOpCtx.get(), "shutdown");
+
+		// Shut down the background periodic task runner
+		if (auto runner = serviceContext->getPeriodicRunner()) {
+			runner->shutdown();
+		}
+
+		// Global storage engine may not be started in all cases before we exit
+		if (serviceContext->getGlobalStorageEngine()) {
+			serviceContext->shutdownGlobalStorageEngineCleanly();
+		}
+
+		mongo::runGlobalDeinitializers(serviceContext).ignore();
 	}
-	
 	shutdownOpCtx.reset();
-
-    // Shut down the background periodic task runner
-    if (auto runner = serviceContext->getPeriodicRunner()) {
-        runner->shutdown();
-    }
-
-    // We should always be able to acquire the global lock at shutdown.
-    //
-    // TODO: This call chain uses the locker directly, because we do not want to start an
-    // operation context, which also instantiates a recovery unit. Also, using the
-    // lockGlobalBegin/lockGlobalComplete sequence, we avoid taking the flush lock.
-    //
-    // For a Windows service, dbexit does not call exit(), so we must leak the lock outside
-    // of this function to prevent any operations from running that need a lock.
-    //
-   /* DefaultLockerImpl* globalLocker = new DefaultLockerImpl();
-    LockResult result = globalLocker->lockGlobalBegin(MODE_X, Date_t::max());
-    if (result == LOCK_WAITING) {
-        result = globalLocker->lockGlobalComplete(Date_t::max());
-    }*/
-
-	/*DefaultLockerImpl globalLocker;
-	LockResult result = globalLocker.lockGlobalBegin(MODE_X, Date_t::max());
-	if (result == LOCK_WAITING) {
-		result = globalLocker.lockGlobalComplete(Date_t::max());
-	}*/
-
-   // invariant(LOCK_OK == result);
-
-    // Global storage engine may not be started in all cases before we exit
-    if (serviceContext->getGlobalStorageEngine()) {
-        serviceContext->shutdownGlobalStorageEngineCleanly();
-    }
 
 	if (Client::getCurrent())
 		Client::destroy();
-
-	mongo::runGlobalDeinitializers().ignore();
+	
+	setGlobalServiceContext(nullptr);
 
 	//delete globalLocker;
     log(LogComponent::kControl) << "now exiting";
 }
 
 
-int initialize(int argc, char* argv[], char** envp) {
-    registerShutdownTask(shutdown);
+ServiceContext* initialize(int argc, char* argv[], char** envp) {
+    //registerShutdownTask(shutdown);
 
     srand(static_cast<unsigned>(curTimeMicros64()));
     //
 
     setGlobalServiceContext(createServiceContext());
-    Status status = mongo::runGlobalInitializers(argc, argv, envp);
+    Status status = mongo::runGlobalInitializers(argc, argv, envp, getGlobalServiceContext());
     if (!status.isOK()) {
         severe(LogComponent::kControl) << "Failed global initializations: " << status;
-        return EXIT_FAILURE;
+        return nullptr;
     }
 
     Client::initThread("initandlisten");
@@ -355,7 +333,7 @@ int initialize(int argc, char* argv[], char** envp) {
 
     serviceContext->notifyStartupComplete();
 
-    return 0;
+    return serviceContext;
 }
 }  // namespace embedded
 }  // namespace mongo

@@ -60,17 +60,6 @@ ServiceContextRegistrer serviceContextEmbeddedFactory([]() {
     service->setPreciseClockSource(stdx::make_unique<SystemClockSource>());
     return service;
 });
-
-//GlobalInitializerRegisterer serviceContextInitializer(
-//	"SetGlobalEnvironment",
-//	[](InitializerContext* const) {
-//	setGlobalServiceContext(makeMongoEmbeddedServiceContext());
-//	return Status::OK();
-//},
-//[](DeinitializerContext* const) {
-//	setGlobalServiceContext(nullptr);
-//	return Status::OK();
-//});
 }  // namespace
 
 extern bool _supportsDocLocking;

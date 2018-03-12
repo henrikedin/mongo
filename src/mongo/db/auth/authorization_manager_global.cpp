@@ -96,17 +96,17 @@ GlobalInitializerRegisterer createAuthorizationManagerInit(
 	  "OIDGeneration",
 	  "CreateAuthorizationExternalStateFactory",
 	  "EndStartupOptionStorage"},
-	[](InitializerContext* const) {
+	[](InitializerContext* context) {
 	    auto authzManager =
 	        stdx::make_unique<AuthorizationManager>(AuthzManagerExternalState::create());
 	    authzManager->setAuthEnabled(serverGlobalParams.authState ==
 	                                 ServerGlobalParams::AuthState::kEnabled);
 	    authzManager->setShouldValidateAuthSchemaOnStartup(startupAuthSchemaValidation);
-	    AuthorizationManager::set(getGlobalServiceContext(), std::move(authzManager));
+	    AuthorizationManager::set(context->serviceContext(), std::move(authzManager));
 	    return Status::OK();
 },
-[](DeinitializerContext* const) {
-		AuthorizationManager::set(getGlobalServiceContext(), nullptr);
+[](DeinitializerContext* context) {
+		AuthorizationManager::set(context->serviceContext(), nullptr);
 		return Status::OK();
 });
 

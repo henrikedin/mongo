@@ -29,7 +29,7 @@
 
 namespace mongo {
 
-InitializerContext::InitializerContext(const ArgumentVector& args, const EnvironmentMap& env)
-    : _args(args), _env(env) {}
+InitializerContext::InitializerContext(const ArgumentVector& args, const EnvironmentMap& env, ServiceContext* serviceContext)
+    : _args(args), _env(env), _serviceContext(serviceContext) {}
 
 }  // namespace mongo

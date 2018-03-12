@@ -80,7 +80,6 @@ namespace {
 
 libmongodbcapi_db* global_db = nullptr;
 thread_local int last_error = LIBMONGODB_CAPI_ERROR_SUCCESS;
-bool run_setup = false;
 
 libmongodbcapi_db* db_new(int argc, const char** argv, const char** envp) noexcept try {
     last_error = LIBMONGODB_CAPI_ERROR_SUCCESS;
@@ -89,41 +88,31 @@ libmongodbcapi_db* db_new(int argc, const char** argv, const char** envp) noexce
     }
     global_db = new libmongodbcapi_db;
 
-    if (!run_setup) {
-        // iterate over argv and copy them to argvStorage
-        for (int i = 0; i < argc; i++) {
-            // allocate space for the null terminator
-            auto s = mongo::stdx::make_unique<char[]>(std::strlen(argv[i]) + 1);
-            // copy the string + null terminator
-            std::strncpy(s.get(), argv[i], std::strlen(argv[i]) + 1);
-            global_db->argvPointers.push_back(s.get());
-            global_db->argvStorage.push_back(std::move(s));
-        }
-        global_db->argvPointers.push_back(nullptr);
-
-        // iterate over envp and copy them to envpStorage
-        while (envp != nullptr && *envp != nullptr) {
-            auto s = mongo::stdx::make_unique<char[]>(std::strlen(*envp) + 1);
-            std::strncpy(s.get(), *envp, std::strlen(*envp) + 1);
-            global_db->envpPointers.push_back(s.get());
-            global_db->envpStorage.push_back(std::move(s));
-            envp++;
-        }
-        global_db->envpPointers.push_back(nullptr);
-
-        embedded::initialize(argc, global_db->argvPointers.data(), global_db->envpPointers.data());
-
-        // wait until the global service context is not null
-        global_db->serviceContext = waitAndGetGlobalServiceContext();
-
-        // block until the global service context is initialized
-        global_db->serviceContext->waitForStartupComplete();
-
-        run_setup = true;
-    } else {
-        // wait until the global service context is not null
-        global_db->serviceContext = waitAndGetGlobalServiceContext();
+    // iterate over argv and copy them to argvStorage
+    for (int i = 0; i < argc; i++) {
+        // allocate space for the null terminator
+        auto s = mongo::stdx::make_unique<char[]>(std::strlen(argv[i]) + 1);
+        // copy the string + null terminator
+        std::strncpy(s.get(), argv[i], std::strlen(argv[i]) + 1);
+        global_db->argvPointers.push_back(s.get());
+        global_db->argvStorage.push_back(std::move(s));
     }
+    global_db->argvPointers.push_back(nullptr);
+
+    // iterate over envp and copy them to envpStorage
+    while (envp != nullptr && *envp != nullptr) {
+        auto s = mongo::stdx::make_unique<char[]>(std::strlen(*envp) + 1);
+        std::strncpy(s.get(), *envp, std::strlen(*envp) + 1);
+        global_db->envpPointers.push_back(s.get());
+        global_db->envpStorage.push_back(std::move(s));
+        envp++;
+    }
+    global_db->envpPointers.push_back(nullptr);
+
+	global_db->serviceContext = embedded::initialize(argc, global_db->argvPointers.data(), global_db->envpPointers.data());
+
+    // block until the global service context is initialized
+    global_db->serviceContext->waitForStartupComplete();
 
     // creating mock transport layer to be able to create sessions
     global_db->transportLayer = stdx::make_unique<transport::TransportLayerMock>();
@@ -135,11 +124,7 @@ libmongodbcapi_db* db_new(int argc, const char** argv, const char** envp) noexce
 }
 
 void db_destroy(libmongodbcapi_db* db) noexcept {
-    // todo, we can't teardown and re-initialize yet.
-    if (run_setup) {
-        embedded::shutdown();
-        run_setup = false;
-    }
+    embedded::shutdown(global_db->serviceContext);
 
     delete db;
     invariant(!db || db == global_db);
