@@ -335,7 +335,7 @@ void KVStorageEngine::cleanShutdown() {
 
     _engine->cleanShutdown();
 
-	delete this;
+    delete this;
     // intentionally not deleting _engine
 }
 

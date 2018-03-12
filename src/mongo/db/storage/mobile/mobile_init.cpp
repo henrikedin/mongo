@@ -71,13 +71,11 @@ public:
 }  // namespace
 
 GlobalInitializerRegisterer mobileKVEngineInitializer(
-	"MobileKVEngineInit",
-	[](InitializerContext* context) {
-	context->serviceContext()->registerStorageEngine("mobile", new MobileFactory());
-	return Status::OK();
-},
-[](DeinitializerContext* const) {
-	return Status::OK();
-});
+    "MobileKVEngineInit",
+    [](InitializerContext* context) {
+        context->serviceContext()->registerStorageEngine("mobile", new MobileFactory());
+        return Status::OK();
+    },
+    [](DeinitializerContext* const) { return Status::OK(); });
 
 }  // namespace mongo

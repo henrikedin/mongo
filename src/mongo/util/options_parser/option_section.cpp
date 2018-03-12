@@ -129,20 +129,17 @@ OptionDescription& OptionSection::addOptionChaining(
     return _options.back();
 }
 
-bool OptionSection::removeOptionChaining(OptionDescription& option_description)
-{
-	auto it = std::find_if(_options.begin(), _options.end(), [&option_description](auto&& entry)
-	{
-		return option_description._dottedName == option_description._dottedName &&
-			option_description._singleName == option_description._singleName &&
-			option_description._type == option_description._type;
-	});
-	if (it != _options.end())
-	{
-		_options.erase(it);
-		return true;
-	}
-	return false;
+bool OptionSection::removeOptionChaining(OptionDescription& option_description) {
+    auto it = std::find_if(_options.begin(), _options.end(), [&option_description](auto&& entry) {
+        return option_description._dottedName == option_description._dottedName &&
+            option_description._singleName == option_description._singleName &&
+            option_description._type == option_description._type;
+    });
+    if (it != _options.end()) {
+        _options.erase(it);
+        return true;
+    }
+    return false;
 }
 
 // Stuff for dealing with Boost

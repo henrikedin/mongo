@@ -40,7 +40,7 @@ Initializer::~Initializer() {}
 
 Status Initializer::executeInitializers(const InitializerContext::ArgumentVector& args,
                                         const InitializerContext::EnvironmentMap& env,
-										ServiceContext* serviceContext) {
+                                        ServiceContext* serviceContext) {
     std::vector<std::string> sortedNodes;
     Status status = _graph.topSort(&sortedNodes);
     if (Status::OK() != status)
@@ -106,11 +106,14 @@ Status Initializer::executeDeinitializers(ServiceContext* serviceContext) {
 
 Status runGlobalInitializers(const InitializerContext::ArgumentVector& args,
                              const InitializerContext::EnvironmentMap& env,
-							 ServiceContext* serviceContext) {
+                             ServiceContext* serviceContext) {
     return getGlobalInitializer().executeInitializers(args, env, serviceContext);
 }
 
-Status runGlobalInitializers(int argc, const char* const* argv, const char* const* envp, ServiceContext* serviceContext) {
+Status runGlobalInitializers(int argc,
+                             const char* const* argv,
+                             const char* const* envp,
+                             ServiceContext* serviceContext) {
     InitializerContext::ArgumentVector args(argc);
     std::copy(argv, argv + argc, args.begin());
 
@@ -133,7 +136,10 @@ Status runGlobalDeinitializers(ServiceContext* serviceContext) {
     return getGlobalInitializer().executeDeinitializers(serviceContext);
 }
 
-void runGlobalInitializersOrDie(int argc, const char* const* argv, const char* const* envp, ServiceContext* serviceContext) {
+void runGlobalInitializersOrDie(int argc,
+                                const char* const* argv,
+                                const char* const* envp,
+                                ServiceContext* serviceContext) {
     Status status = runGlobalInitializers(argc, argv, envp, serviceContext);
     if (!status.isOK()) {
         std::cerr << "Failed global initialization: " << status << std::endl;

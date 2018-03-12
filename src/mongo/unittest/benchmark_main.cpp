@@ -42,9 +42,9 @@ int main(int argc, char** argv, char** envp) {
     ::mongo::clearSignalMask();
     ::mongo::setupSynchronousSignalHandlers();
 
-	if (::mongo::hasServiceContextFactory()) {
-		::mongo::setGlobalServiceContext(::mongo::createServiceContext());
-	}
+    if (::mongo::hasServiceContextFactory()) {
+        ::mongo::setGlobalServiceContext(::mongo::createServiceContext());
+    }
     ::mongo::runGlobalInitializersOrDie(argc, argv, envp);
 
     // Copied from the BENCHMARK_MAIN macro.

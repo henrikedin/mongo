@@ -64,13 +64,12 @@
                               ("BeginGeneralStartupOptionRegistration"), \
                               ("EndGeneralStartupOptionRegistration"))
 
-#define MONGO_GENERAL_STARTUP_OPTIONS_SHUTDOWN_REGISTER(fname)           \
-    MONGO_INITIALIZER_SHUTDOWN_GENERAL(fname##_Register,                 \
-                              ("BeginGeneralStartupOptionRegistration"), \
-                              ("EndGeneralStartupOptionRegistration"))
+#define MONGO_GENERAL_STARTUP_OPTIONS_SHUTDOWN_REGISTER(fname)                    \
+    MONGO_INITIALIZER_SHUTDOWN_GENERAL(fname##_Register,                          \
+                                       ("BeginGeneralStartupOptionRegistration"), \
+                                       ("EndGeneralStartupOptionRegistration"))
 
-#define MONGO_GENERAL_STARTUP_OPTIONS_SHUTDOWN(fname)                    \
-	MONGO_SHUTDOWN(fname##_Register)
+#define MONGO_GENERAL_STARTUP_OPTIONS_SHUTDOWN(fname) MONGO_SHUTDOWN(fname##_Register)
 
 /**
  * Macro to define an initializer function named "<fname>_Register" to register module startup

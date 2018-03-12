@@ -67,7 +67,7 @@ public:
      */
     Status executeInitializers(const InitializerContext::ArgumentVector& args,
                                const InitializerContext::EnvironmentMap& env,
-							   ServiceContext* serviceContext);
+                               ServiceContext* serviceContext);
 
     Status executeDeinitializers(ServiceContext* serviceContext);
 
@@ -86,15 +86,21 @@ private:
  */
 Status runGlobalInitializers(const InitializerContext::ArgumentVector& args,
                              const InitializerContext::EnvironmentMap& env,
-							 ServiceContext* serviceContext);
+                             ServiceContext* serviceContext);
 
-Status runGlobalInitializers(int argc, const char* const* argv, const char* const* envp, ServiceContext* serviceContext);
+Status runGlobalInitializers(int argc,
+                             const char* const* argv,
+                             const char* const* envp,
+                             ServiceContext* serviceContext);
 
 /**
  * Same as runGlobalInitializers(), except prints a brief message to std::cerr
  * and terminates the process on failure.
  */
-void runGlobalInitializersOrDie(int argc, const char* const* argv, const char* const* envp, ServiceContext* serviceContext);
+void runGlobalInitializersOrDie(int argc,
+                                const char* const* argv,
+                                const char* const* envp,
+                                ServiceContext* serviceContext);
 
 /**
 * Run the global deinitializers. They will execute in reverse order from initialization.

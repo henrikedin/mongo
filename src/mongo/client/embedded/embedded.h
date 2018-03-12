@@ -31,7 +31,7 @@
 #include "mongo/platform/basic.h"
 
 namespace mongo {
-	class ServiceContext;
+class ServiceContext;
 
 namespace embedded {
 ServiceContext* initialize(int argc, char* argv[], char** envp);

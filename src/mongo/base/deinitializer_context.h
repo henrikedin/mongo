@@ -34,7 +34,7 @@
 #include "mongo/base/disallow_copying.h"
 
 namespace mongo {
-	class ServiceContext;
+class ServiceContext;
 /**
  * Context of a deinitialization process. Passed as a parameter to deinitialization functions.
  *
@@ -42,17 +42,17 @@ namespace mongo {
  */
 class DeinitializerContext {
 public:
-	DeinitializerContext(ServiceContext* serviceContext);
+    DeinitializerContext(ServiceContext* serviceContext);
 
-	DeinitializerContext(DeinitializerContext const&) = delete;
-	DeinitializerContext& operator=(DeinitializerContext const&) = delete;
+    DeinitializerContext(DeinitializerContext const&) = delete;
+    DeinitializerContext& operator=(DeinitializerContext const&) = delete;
 
-	ServiceContext* serviceContext() {
-		return _serviceContext;
-	}
+    ServiceContext* serviceContext() {
+        return _serviceContext;
+    }
 
 private:
-	ServiceContext* _serviceContext;
+    ServiceContext* _serviceContext;
 };
 
 }  // namespace mongo

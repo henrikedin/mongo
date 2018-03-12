@@ -101,26 +101,26 @@ MONGO_INITIALIZER_GENERAL(ForkServer, ("EndStartupOptionHandling"), ("default"))
 // Create a minimalistic replication coordinator to provide a limited interface for users. Not
 // functional to provide any replication logic.
 GlobalInitializerRegisterer replicationManagerInitializer(
-	"CreateReplicationManager",
-	{ "SSLManager",
-	"default" },
-	[](InitializerContext* context) {
-	    auto serviceContext = context->serviceContext();
-	    repl::StorageInterface::set(serviceContext, stdx::make_unique<repl::StorageInterfaceImpl>());
-	
-	    auto replCoord = stdx::make_unique<ReplicationCoordinatorEmbedded>(serviceContext);
-	    repl::ReplicationCoordinator::set(serviceContext, std::move(replCoord));
-	    repl::setOplogCollectionName(serviceContext);
-	    return Status::OK();
-},
-[](DeinitializerContext* context) {
-		auto serviceContext = context->serviceContext();
-	
-		repl::ReplicationCoordinator::set(serviceContext, nullptr);
-		repl::StorageInterface::set(serviceContext, nullptr);
-	
-		return Status::OK();
-});
+    "CreateReplicationManager",
+    {"SSLManager", "default"},
+    [](InitializerContext* context) {
+        auto serviceContext = context->serviceContext();
+        repl::StorageInterface::set(serviceContext,
+                                    stdx::make_unique<repl::StorageInterfaceImpl>());
+
+        auto replCoord = stdx::make_unique<ReplicationCoordinatorEmbedded>(serviceContext);
+        repl::ReplicationCoordinator::set(serviceContext, std::move(replCoord));
+        repl::setOplogCollectionName(serviceContext);
+        return Status::OK();
+    },
+    [](DeinitializerContext* context) {
+        auto serviceContext = context->serviceContext();
+
+        repl::ReplicationCoordinator::set(serviceContext, nullptr);
+        repl::StorageInterface::set(serviceContext, nullptr);
+
+        return Status::OK();
+    });
 
 MONGO_INITIALIZER(fsyncLockedForWriting)(InitializerContext* context) {
     setLockedForWritingImpl([]() { return false; });
@@ -133,12 +133,12 @@ using std::endl;
 
 void shutdown(ServiceContext* srvContext) {
 
-	//shutdownNoTerminate();
+    // shutdownNoTerminate();
 
-	/*if (Client::getCurrent())
-		Client::destroy();
+    /*if (Client::getCurrent())
+        Client::destroy();
 
-	mongo::runGlobalShutdowns();*/
+    mongo::runGlobalShutdowns();*/
 
     Client::initThreadIfNotAlready();
 
@@ -147,37 +147,37 @@ void shutdown(ServiceContext* srvContext) {
 
     serviceContext->setKillAllOperations();
 
-	auto shutdownOpCtx = serviceContext->makeOperationContext(client);
-	{
-		Lock::GlobalLock lk(shutdownOpCtx.get(), MODE_X, Date_t::max());
-		dbHolder().closeAll(shutdownOpCtx.get(), "shutdown");
+    auto shutdownOpCtx = serviceContext->makeOperationContext(client);
+    {
+        Lock::GlobalLock lk(shutdownOpCtx.get(), MODE_X, Date_t::max());
+        dbHolder().closeAll(shutdownOpCtx.get(), "shutdown");
 
-		// Shut down the background periodic task runner
-		if (auto runner = serviceContext->getPeriodicRunner()) {
-			runner->shutdown();
-		}
+        // Shut down the background periodic task runner
+        if (auto runner = serviceContext->getPeriodicRunner()) {
+            runner->shutdown();
+        }
 
-		// Global storage engine may not be started in all cases before we exit
-		if (serviceContext->getGlobalStorageEngine()) {
-			serviceContext->shutdownGlobalStorageEngineCleanly();
-		}
+        // Global storage engine may not be started in all cases before we exit
+        if (serviceContext->getGlobalStorageEngine()) {
+            serviceContext->shutdownGlobalStorageEngineCleanly();
+        }
 
-		mongo::runGlobalDeinitializers(serviceContext).ignore();
-	}
-	shutdownOpCtx.reset();
+        mongo::runGlobalDeinitializers(serviceContext).ignore();
+    }
+    shutdownOpCtx.reset();
 
-	if (Client::getCurrent())
-		Client::destroy();
-	
-	setGlobalServiceContext(nullptr);
+    if (Client::getCurrent())
+        Client::destroy();
 
-	//delete globalLocker;
+    setGlobalServiceContext(nullptr);
+
+    // delete globalLocker;
     log(LogComponent::kControl) << "now exiting";
 }
 
 
 ServiceContext* initialize(int argc, char* argv[], char** envp) {
-    //registerShutdownTask(shutdown);
+    // registerShutdownTask(shutdown);
 
     srand(static_cast<unsigned>(curTimeMicros64()));
     //
@@ -226,9 +226,9 @@ ServiceContext* initialize(int argc, char* argv[], char** envp) {
     serviceContext->initializeGlobalStorageEngine();
 
 #ifdef MONGO_CONFIG_WIREDTIGER_ENABLED
-    //if (EncryptionHooks::get(serviceContext)->restartRequired()) {
-    //    quickExit(EXIT_CLEAN);
-    //}
+// if (EncryptionHooks::get(serviceContext)->restartRequired()) {
+//    quickExit(EXIT_CLEAN);
+//}
 #endif
 
     // Warn if we detect configurations for multiple registered storage engines in the same

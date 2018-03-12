@@ -165,21 +165,21 @@ bool SASLServerMechanismRegistry::_mechanismSupportedByConfig(StringData mechNam
 }
 
 GlobalInitializerRegisterer SASLServerMechanismRegistryInitializer(
-	"CreateSASLServerMechanismRegistry",
-	[](InitializerContext* context) {
-	if (saslGlobalParams.hostName.empty())
-		saslGlobalParams.hostName = getHostNameCached();
-	if (saslGlobalParams.serviceName.empty())
-		saslGlobalParams.serviceName = "mongodb";
+    "CreateSASLServerMechanismRegistry",
+    [](InitializerContext* context) {
+        if (saslGlobalParams.hostName.empty())
+            saslGlobalParams.hostName = getHostNameCached();
+        if (saslGlobalParams.serviceName.empty())
+            saslGlobalParams.serviceName = "mongodb";
 
-	auto registry = stdx::make_unique<SASLServerMechanismRegistry>();
-	SASLServerMechanismRegistry::set(context->serviceContext(), std::move(registry));
-	return Status::OK();
-},
-[](DeinitializerContext* context) {
-	SASLServerMechanismRegistry::set(context->serviceContext(), nullptr);
+        auto registry = stdx::make_unique<SASLServerMechanismRegistry>();
+        SASLServerMechanismRegistry::set(context->serviceContext(), std::move(registry));
+        return Status::OK();
+    },
+    [](DeinitializerContext* context) {
+        SASLServerMechanismRegistry::set(context->serviceContext(), nullptr);
 
-	return Status::OK();
-});
+        return Status::OK();
+    });
 
 }  // namespace mongo

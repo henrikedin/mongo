@@ -109,7 +109,8 @@ libmongodbcapi_db* db_new(int argc, const char** argv, const char** envp) noexce
     }
     global_db->envpPointers.push_back(nullptr);
 
-	global_db->serviceContext = embedded::initialize(argc, global_db->argvPointers.data(), global_db->envpPointers.data());
+    global_db->serviceContext =
+        embedded::initialize(argc, global_db->argvPointers.data(), global_db->envpPointers.data());
 
     // block until the global service context is initialized
     global_db->serviceContext->waitForStartupComplete();

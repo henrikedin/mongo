@@ -127,7 +127,7 @@ public:
                                          const std::string& description,
                                          const std::vector<std::string>& deprecatedDottedNames);
 
-	bool removeOptionChaining(OptionDescription& option_description);
+    bool removeOptionChaining(OptionDescription& option_description);
 
     // These functions are used by the OptionsParser to make calls into boost::program_options
     Status getBoostOptions(po::options_description* boostOptions,

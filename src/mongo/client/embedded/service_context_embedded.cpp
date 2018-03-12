@@ -66,12 +66,10 @@ extern bool _supportsDocLocking;
 
 ServiceContextMongoEmbedded::ServiceContextMongoEmbedded() = default;
 
-ServiceContextMongoEmbedded::~ServiceContextMongoEmbedded()
-{
-	for (auto&& factory : _storageFactories)
-	{
-		delete factory.second;
-	}
+ServiceContextMongoEmbedded::~ServiceContextMongoEmbedded() {
+    for (auto&& factory : _storageFactories) {
+        delete factory.second;
+    }
 }
 
 StorageEngine* ServiceContextMongoEmbedded::getGlobalStorageEngine() {
