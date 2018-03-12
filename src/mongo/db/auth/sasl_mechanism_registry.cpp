@@ -164,7 +164,7 @@ bool SASLServerMechanismRegistry::_mechanismSupportedByConfig(StringData mechNam
     return sequenceContains(saslGlobalParams.authenticationMechanisms, mechName);
 }
 
-MONGO_INITIALIZER_WITH_PREREQUISITES(CreateSASLServerMechanismRegistry, ("SetGlobalEnvironment"))
+MONGO_INITIALIZER(CreateSASLServerMechanismRegistry)
 (::mongo::InitializerContext* context) {
     if (saslGlobalParams.hostName.empty())
         saslGlobalParams.hostName = getHostNameCached();
