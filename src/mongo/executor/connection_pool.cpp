@@ -280,7 +280,7 @@ ConnectionPool::ConnectionPool(std::unique_ptr<DependentTypeFactoryInterface> im
 }
 
 ConnectionPool::~ConnectionPool() {
-    if (_manager) {
+    if (hasGlobalServiceContext() && _manager) {
         _manager->remove(this);
     }
 }

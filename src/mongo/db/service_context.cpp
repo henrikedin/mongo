@@ -69,9 +69,12 @@ ServiceContext* waitAndGetGlobalServiceContext() {
 }
 
 void setGlobalServiceContext(std::unique_ptr<ServiceContext>&& serviceContext) {
-    fassert(17509, serviceContext.get());
-
-    delete globalServiceContext;
+	if (globalServiceContext)
+	{
+		auto oldServiceContext = globalServiceContext;
+		globalServiceContext = nullptr;
+		delete oldServiceContext;
+	}
 
     stdx::lock_guard<stdx::mutex> lk(globalServiceContextMutex);
 

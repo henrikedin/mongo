@@ -67,6 +67,8 @@
 #include "mongo/util/quick_exit.h"
 #include "mongo/util/time_support.h"
 
+#include "mongo/db/catalog/database_holder.h"
+
 #include <boost/filesystem.hpp>
 
 
@@ -97,17 +99,28 @@ MONGO_INITIALIZER_GENERAL(ForkServer, ("EndStartupOptionHandling"), ("default"))
 
 // Create a minimalistic replication coordinator to provide a limited interface for users. Not
 // functional to provide any replication logic.
-MONGO_INITIALIZER_WITH_PREREQUISITES(CreateReplicationManager,
-                                     ("SetGlobalEnvironment", "SSLManager", "default"))
-(InitializerContext* context) {
-    auto serviceContext = getGlobalServiceContext();
-    repl::StorageInterface::set(serviceContext, stdx::make_unique<repl::StorageInterfaceImpl>());
-
-    auto replCoord = stdx::make_unique<ReplicationCoordinatorEmbedded>(serviceContext);
-    repl::ReplicationCoordinator::set(serviceContext, std::move(replCoord));
-    repl::setOplogCollectionName(serviceContext);
-    return Status::OK();
-}
+GlobalInitializerRegisterer replicationManagerInitializer(
+	"CreateReplicationManager",
+	{ "SetGlobalEnvironment",
+	"SSLManager",
+	"default" },
+	[](InitializerContext* const) {
+	    auto serviceContext = getGlobalServiceContext();
+	    repl::StorageInterface::set(serviceContext, stdx::make_unique<repl::StorageInterfaceImpl>());
+	
+	    auto replCoord = stdx::make_unique<ReplicationCoordinatorEmbedded>(serviceContext);
+	    repl::ReplicationCoordinator::set(serviceContext, std::move(replCoord));
+	    repl::setOplogCollectionName(serviceContext);
+	    return Status::OK();
+},
+[](DeinitializerContext* const) {
+		auto serviceContext = getGlobalServiceContext();
+	
+		repl::ReplicationCoordinator::set(serviceContext, nullptr);
+		repl::StorageInterface::set(serviceContext, nullptr);
+	
+		return Status::OK();
+});
 
 MONGO_INITIALIZER(fsyncLockedForWriting)(InitializerContext* context) {
     setLockedForWritingImpl([]() { return false; });
@@ -119,12 +132,28 @@ using logger::LogComponent;
 using std::endl;
 
 void shutdown() {
+
+	//shutdownNoTerminate();
+
+	/*if (Client::getCurrent())
+		Client::destroy();
+
+	mongo::runGlobalShutdowns();*/
+
     Client::initThreadIfNotAlready();
 
     auto const client = Client::getCurrent();
     auto const serviceContext = client->getServiceContext();
 
     serviceContext->setKillAllOperations();
+
+	auto shutdownOpCtx = serviceContext->makeOperationContext(client);
+	{
+		Lock::GlobalLock lk(shutdownOpCtx.get(), MODE_X, Date_t::max());
+		dbHolder().closeAll(shutdownOpCtx.get(), "shutdown");
+	}
+	
+	shutdownOpCtx.reset();
 
     // Shut down the background periodic task runner
     if (auto runner = serviceContext->getPeriodicRunner()) {
@@ -140,19 +169,31 @@ void shutdown() {
     // For a Windows service, dbexit does not call exit(), so we must leak the lock outside
     // of this function to prevent any operations from running that need a lock.
     //
-    DefaultLockerImpl* globalLocker = new DefaultLockerImpl();
+   /* DefaultLockerImpl* globalLocker = new DefaultLockerImpl();
     LockResult result = globalLocker->lockGlobalBegin(MODE_X, Date_t::max());
     if (result == LOCK_WAITING) {
         result = globalLocker->lockGlobalComplete(Date_t::max());
-    }
+    }*/
 
-    invariant(LOCK_OK == result);
+	/*DefaultLockerImpl globalLocker;
+	LockResult result = globalLocker.lockGlobalBegin(MODE_X, Date_t::max());
+	if (result == LOCK_WAITING) {
+		result = globalLocker.lockGlobalComplete(Date_t::max());
+	}*/
+
+   // invariant(LOCK_OK == result);
 
     // Global storage engine may not be started in all cases before we exit
     if (serviceContext->getGlobalStorageEngine()) {
         serviceContext->shutdownGlobalStorageEngineCleanly();
     }
 
+	if (Client::getCurrent())
+		Client::destroy();
+
+	mongo::runGlobalDeinitializers().ignore();
+
+	//delete globalLocker;
     log(LogComponent::kControl) << "now exiting";
 }
 
@@ -206,9 +247,9 @@ int initialize(int argc, char* argv[], char** envp) {
     serviceContext->initializeGlobalStorageEngine();
 
 #ifdef MONGO_CONFIG_WIREDTIGER_ENABLED
-    if (EncryptionHooks::get(serviceContext)->restartRequired()) {
-        quickExit(EXIT_CLEAN);
-    }
+    //if (EncryptionHooks::get(serviceContext)->restartRequired()) {
+    //    quickExit(EXIT_CLEAN);
+    //}
 #endif
 
     // Warn if we detect configurations for multiple registered storage engines in the same
