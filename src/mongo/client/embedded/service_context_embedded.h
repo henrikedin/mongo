@@ -39,11 +39,9 @@ class StorageEngineLockFile;
 
 class ServiceContextMongoEmbedded final : public ServiceContext {
 public:
-    using FactoryMap = std::map<std::string, const StorageEngine::Factory*>;
+    using FactoryMap = std::map<std::string, std::unique_ptr<const StorageEngine::Factory>>;
 
     ServiceContextMongoEmbedded();
-
-    ~ServiceContextMongoEmbedded();
 
     StorageEngine* getGlobalStorageEngine() override;
 

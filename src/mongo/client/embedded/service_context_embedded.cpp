@@ -66,12 +66,6 @@ extern bool _supportsDocLocking;
 
 ServiceContextMongoEmbedded::ServiceContextMongoEmbedded() = default;
 
-ServiceContextMongoEmbedded::~ServiceContextMongoEmbedded() {
-    for (auto&& factory : _storageFactories) {
-        delete factory.second;
-    }
-}
-
 StorageEngine* ServiceContextMongoEmbedded::getGlobalStorageEngine() {
     // We don't check that globalStorageEngine is not-NULL here intentionally.  We can encounter
     // an error before it's initialized and proceed to exitCleanly which is equipped to deal
@@ -134,10 +128,12 @@ void ServiceContextMongoEmbedded::initializeGlobalStorageEngine() {
         if (storageGlobalParams.engineSetByUser) {
             // Verify that the name of the user-supplied storage engine matches the contents of
             // the metadata file.
-            const StorageEngine::Factory* factory =
-                mapFindWithDefault(_storageFactories,
-                                   storageGlobalParams.engine,
-                                   static_cast<const StorageEngine::Factory*>(nullptr));
+			auto factory = [&]() -> const StorageEngine::Factory* {
+				auto it = _storageFactories.find(storageGlobalParams.engine);
+				if (it != _storageFactories.end())
+					return nullptr;
+				return it->second.get();
+			}();
 
             if (factory) {
                 uassert(50667,
@@ -185,7 +181,7 @@ void ServiceContextMongoEmbedded::initializeGlobalStorageEngine() {
                           << " is only supported by the mmapv1 storage engine",
             repairpath.empty() || repairpath == dbpath || storageGlobalParams.engine == "mmapv1");
 
-    const StorageEngine::Factory* factory = _storageFactories[storageGlobalParams.engine];
+    const auto& factory = _storageFactories[storageGlobalParams.engine];
 
     uassert(50681,
             str::stream() << "Cannot start server with an unknown storage engine: "
@@ -261,7 +257,7 @@ void ServiceContextMongoEmbedded::registerStorageEngine(const std::string& name,
     // and all factories should be added before we pick a storage engine.
     invariant(NULL == _storageEngine);
 
-    _storageFactories[name] = factory;
+    _storageFactories[name].reset(factory);
 }
 
 bool ServiceContextMongoEmbedded::isRegisteredStorageEngine(const std::string& name) {
@@ -282,7 +278,7 @@ bool StorageFactoriesIteratorMongoEmbedded::more() const {
 }
 
 const StorageEngine::Factory* StorageFactoriesIteratorMongoEmbedded::next() {
-    return _curr++->second;
+    return _curr++->second.get();
 }
 
 std::unique_ptr<OperationContext> ServiceContextMongoEmbedded::_newOpCtx(Client* client,
