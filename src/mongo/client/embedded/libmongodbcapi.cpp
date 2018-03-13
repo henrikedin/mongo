@@ -124,7 +124,12 @@ libmongodbcapi_db* db_new(int argc, const char** argv, const char** envp) noexce
     return nullptr;
 }
 
-void db_destroy(libmongodbcapi_db* db) noexcept {
+int db_destroy(libmongodbcapi_db* db) noexcept {
+    if (!db->open_clients.empty()) {
+        last_error = LIBMONGODB_CAPI_ERROR_UNKNOWN;
+        return last_error;
+    }
+
     embedded::shutdown(global_db->serviceContext);
 
     delete db;
@@ -133,6 +138,7 @@ void db_destroy(libmongodbcapi_db* db) noexcept {
         global_db = nullptr;
     }
     last_error = LIBMONGODB_CAPI_ERROR_SUCCESS;
+    return last_error;
 }
 
 int db_pump(libmongodbcapi_db* db) noexcept try {
@@ -200,7 +206,7 @@ libmongodbcapi_db* libmongodbcapi_db_new(int argc, const char** argv, const char
     return mongo::db_new(argc, argv, envp);
 }
 
-void libmongodbcapi_db_destroy(libmongodbcapi_db* db) {
+int libmongodbcapi_db_destroy(libmongodbcapi_db* db) {
     return mongo::db_destroy(db);
 }
 
