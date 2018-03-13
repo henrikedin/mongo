@@ -72,10 +72,12 @@ ConnectionString getFixtureConnectionString() {
 int main(int argc, char** argv, char** envp) {
     setupSynchronousSignalHandlers();
 
+    ::mongo::ServiceContext* serviceContext = nullptr;
     if (::mongo::hasServiceContextFactory()) {
         ::mongo::setGlobalServiceContext(::mongo::createServiceContext());
+        serviceContext = ::mongo::getGlobalServiceContext();
     }
-    runGlobalInitializersOrDie(argc, argv, envp);
+    runGlobalInitializersOrDie(argc, argv, envp, serviceContext);
 
     quickExit(unittest::Suite::run(std::vector<std::string>(), "", 1));
 }

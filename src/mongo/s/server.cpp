@@ -580,7 +580,7 @@ ExitCode mongoSMain(int argc, char* argv[], char** envp) {
     setupSignalHandlers();
 
     setGlobalServiceContext(createServiceContext());
-    Status status = runGlobalInitializers(argc, argv, envp);
+    Status status = runGlobalInitializers(argc, argv, envp, getGlobalServiceContext());
     if (!status.isOK()) {
         severe(LogComponent::kDefault) << "Failed global initialization: " << status;
         return EXIT_ABRUPT;

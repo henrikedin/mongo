@@ -47,10 +47,12 @@ int main(int argc, char** argv, char** envp) {
     ::mongo::clearSignalMask();
     ::mongo::setupSynchronousSignalHandlers();
 
+    ::mongo::ServiceContext* serviceContext = nullptr;
     if (::mongo::hasServiceContextFactory()) {
         ::mongo::setGlobalServiceContext(::mongo::createServiceContext());
+        serviceContext = ::mongo::getGlobalServiceContext();
     }
-    ::mongo::runGlobalInitializersOrDie(argc, argv, envp);
+    ::mongo::runGlobalInitializersOrDie(argc, argv, envp, serviceContext);
 
     namespace moe = ::mongo::optionenvironment;
     moe::OptionsParser parser;

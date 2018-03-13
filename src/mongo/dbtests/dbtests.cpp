@@ -131,7 +131,7 @@ int dbtestsMain(int argc, char** argv, char** envp) {
     mongo::dbtests::initWireSpec();
 
     setGlobalServiceContext(createServiceContext());
-    mongo::runGlobalInitializersOrDie(argc, argv, envp);
+    mongo::runGlobalInitializersOrDie(argc, argv, envp, getGlobalServiceContext());
     serverGlobalParams.featureCompatibility.setVersion(
         ServerGlobalParams::FeatureCompatibility::Version::kFullyUpgradedTo40);
     repl::ReplSettings replSettings;
