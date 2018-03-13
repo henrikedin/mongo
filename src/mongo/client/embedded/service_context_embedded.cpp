@@ -128,12 +128,12 @@ void ServiceContextMongoEmbedded::initializeGlobalStorageEngine() {
         if (storageGlobalParams.engineSetByUser) {
             // Verify that the name of the user-supplied storage engine matches the contents of
             // the metadata file.
-			auto factory = [&]() -> const StorageEngine::Factory* {
-				auto it = _storageFactories.find(storageGlobalParams.engine);
-				if (it != _storageFactories.end())
-					return nullptr;
-				return it->second.get();
-			}();
+            auto factory = [&]() -> const StorageEngine::Factory* {
+                auto it = _storageFactories.find(storageGlobalParams.engine);
+                if (it != _storageFactories.end())
+                    return nullptr;
+                return it->second.get();
+            }();
 
             if (factory) {
                 uassert(50667,
