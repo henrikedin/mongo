@@ -243,6 +243,8 @@ void ServiceContextMongoEmbedded::initializeGlobalStorageEngine() {
 void ServiceContextMongoEmbedded::shutdownGlobalStorageEngineCleanly() {
     invariant(_storageEngine);
     _storageEngine->cleanShutdown();
+    delete _storageEngine;
+    _storageEngine = nullptr;
     if (_lockFile) {
         _lockFile->clearPidAndUnlock();
     }

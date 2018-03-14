@@ -371,12 +371,6 @@ public:
         OperationContext* opCtx) {
         return std::vector<CollectionIndexNamePair>();
     };
-
-protected:
-    /**
-     * The destructor will never be called. See cleanShutdown instead.
-     */
-    virtual ~StorageEngine() {}
 };
 
 }  // namespace mongo

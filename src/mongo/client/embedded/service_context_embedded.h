@@ -65,7 +65,6 @@ private:
 
     std::unique_ptr<StorageEngineLockFile> _lockFile;
 
-    // logically owned here, but never deleted by anyone.
     StorageEngine* _storageEngine = nullptr;
 
     // All possible storage engines are registered here through MONGO_INIT.
