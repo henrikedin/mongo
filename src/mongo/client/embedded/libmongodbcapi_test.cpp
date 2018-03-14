@@ -114,8 +114,7 @@ TEST_F(MongodbCAPITest, CreateAndDestroyDBAndClient) {
     auto client = createClient();
 }
 
-// This test is to make sure that destroying the db will destroy all of its clients
-// This test will only fail under ASAN
+// This test is to make sure that destroying the db will fail if there's remaining clients left.
 TEST_F(MongodbCAPITest, DoNotDestroyClient) {
     auto client = createClient();
     ASSERT(libmongodbcapi_db_destroy(getDB()) != LIBMONGODB_CAPI_ERROR_SUCCESS);

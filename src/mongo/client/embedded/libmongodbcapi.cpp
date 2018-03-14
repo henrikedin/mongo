@@ -112,9 +112,6 @@ libmongodbcapi_db* db_new(int argc, const char** argv, const char** envp) noexce
     global_db->serviceContext =
         embedded::initialize(argc, global_db->argvPointers.data(), global_db->envpPointers.data());
 
-    // block until the global service context is initialized
-    global_db->serviceContext->waitForStartupComplete();
-
     // creating mock transport layer to be able to create sessions
     global_db->transportLayer = stdx::make_unique<transport::TransportLayerMock>();
 
