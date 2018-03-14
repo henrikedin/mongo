@@ -72,7 +72,7 @@ StorageEngine* ServiceContextMongoEmbedded::getGlobalStorageEngine() {
     // We don't check that globalStorageEngine is not-NULL here intentionally.  We can encounter
     // an error before it's initialized and proceed to exitCleanly which is equipped to deal
     // with a NULL storage engine.
-    return _storageEngine;
+    return _storageEngine.get();
 }
 
 void ServiceContextMongoEmbedded::createLockFile() {
@@ -219,7 +219,7 @@ void ServiceContextMongoEmbedded::initializeGlobalStorageEngine() {
         }
     });
 
-    _storageEngine = factory->create(storageGlobalParams, _lockFile.get());
+    _storageEngine.reset(factory->create(storageGlobalParams, _lockFile.get()));
     _storageEngine->finishInit();
 
     if (_lockFile) {
@@ -243,8 +243,6 @@ void ServiceContextMongoEmbedded::initializeGlobalStorageEngine() {
 void ServiceContextMongoEmbedded::shutdownGlobalStorageEngineCleanly() {
     invariant(_storageEngine);
     _storageEngine->cleanShutdown();
-    delete _storageEngine;
-    _storageEngine = nullptr;
     if (_lockFile) {
         _lockFile->clearPidAndUnlock();
     }

@@ -65,7 +65,7 @@ private:
 
     std::unique_ptr<StorageEngineLockFile> _lockFile;
 
-    StorageEngine* _storageEngine = nullptr;
+    std::unique_ptr<StorageEngine> _storageEngine;
 
     // All possible storage engines are registered here through MONGO_INIT.
     FactoryMap _storageFactories;
