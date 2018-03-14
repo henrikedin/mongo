@@ -43,6 +43,8 @@ public:
 
     ServiceContextMongoEmbedded();
 
+    ~ServiceContextMongoEmbedded();
+
     StorageEngine* getGlobalStorageEngine() override;
 
     void createLockFile();

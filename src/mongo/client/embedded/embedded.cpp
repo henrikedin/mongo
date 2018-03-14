@@ -38,6 +38,7 @@
 #include "mongo/client/embedded/service_context_embedded.h"
 #include "mongo/client/embedded/service_entry_point_embedded.h"
 #include "mongo/config.h"
+#include "mongo/db/catalog/database_holder.h"
 #include "mongo/db/catalog/health_log.h"
 #include "mongo/db/catalog/uuid_catalog.h"
 #include "mongo/db/client.h"
@@ -67,8 +68,6 @@
 #include "mongo/util/periodic_runner_factory.h"
 #include "mongo/util/quick_exit.h"
 #include "mongo/util/time_support.h"
-
-#include "mongo/db/catalog/database_holder.h"
 
 #include <boost/filesystem.hpp>
 
@@ -133,20 +132,15 @@ using std::endl;
 
 void shutdown(ServiceContext* srvContext) {
 
-    // shutdownNoTerminate();
-
-    /*if (Client::getCurrent())
-        Client::destroy();
-
-    mongo::runGlobalShutdowns();*/
-
     Client::initThreadIfNotAlready();
-
     auto const client = Client::getCurrent();
     auto const serviceContext = client->getServiceContext();
+    dassert(srvContext == serviceContext);
 
     serviceContext->setKillAllOperations();
 
+    // We should always be able to acquire the global lock at shutdown.
+    // Close all open databases, shutdown storage engine and run all deinitializers.
     auto shutdownOpCtx = serviceContext->makeOperationContext(client);
     {
         Lock::GlobalLock lk(shutdownOpCtx.get(), MODE_X, Date_t::max());
@@ -171,16 +165,12 @@ void shutdown(ServiceContext* srvContext) {
 
     setGlobalServiceContext(nullptr);
 
-    // delete globalLocker;
     log(LogComponent::kControl) << "now exiting";
 }
 
 
 ServiceContext* initialize(int argc, char* argv[], char** envp) {
-    // registerShutdownTask(shutdown);
-
     srand(static_cast<unsigned>(curTimeMicros64()));
-    //
 
     setGlobalServiceContext(createServiceContext());
     Status status = mongo::runGlobalInitializers(argc, argv, envp, getGlobalServiceContext());
@@ -224,12 +214,6 @@ ServiceContext* initialize(int argc, char* argv[], char** envp) {
         stdx::make_unique<ServiceEntryPointEmbedded>(serviceContext));
 
     serviceContext->initializeGlobalStorageEngine();
-
-#ifdef MONGO_CONFIG_WIREDTIGER_ENABLED
-// if (EncryptionHooks::get(serviceContext)->restartRequired()) {
-//    quickExit(EXIT_CLEAN);
-//}
-#endif
 
     // Warn if we detect configurations for multiple registered storage engines in the same
     // configuration file/environment.

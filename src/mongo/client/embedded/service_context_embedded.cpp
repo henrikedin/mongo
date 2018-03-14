@@ -66,6 +66,8 @@ extern bool _supportsDocLocking;
 
 ServiceContextMongoEmbedded::ServiceContextMongoEmbedded() = default;
 
+ServiceContextMongoEmbedded::~ServiceContextMongoEmbedded() = default;
+
 StorageEngine* ServiceContextMongoEmbedded::getGlobalStorageEngine() {
     // We don't check that globalStorageEngine is not-NULL here intentionally.  We can encounter
     // an error before it's initialized and proceed to exitCleanly which is equipped to deal

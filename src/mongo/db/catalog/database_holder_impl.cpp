@@ -57,18 +57,18 @@ DatabaseHolder& dbHolderImpl() {
     return *_dbHolder;
 }
 
-GlobalInitializerRegisterer initializeDbHolderimplInit("InitializeDbHolderimpl",
-                                                       {"InitializeDatabaseHolderFactory"},
-                                                       [](InitializerContext* const) {
-                                                           _dbHolder = new DatabaseHolder();
-                                                           registerDbHolderImpl(dbHolderImpl);
-                                                           return Status::OK();
-                                                       },
-                                                       [](DeinitializerContext* const) {
-                                                           delete _dbHolder;
-                                                           _dbHolder = nullptr;
-                                                           return Status::OK();
-                                                       });
+GlobalInitializerRegisterer dbHolderImplInitializer("InitializeDbHolderimpl",
+                                                    {"InitializeDatabaseHolderFactory"},
+                                                    [](InitializerContext* const) {
+                                                        _dbHolder = new DatabaseHolder();
+                                                        registerDbHolderImpl(dbHolderImpl);
+                                                        return Status::OK();
+                                                    },
+                                                    [](DeinitializerContext* const) {
+                                                        delete _dbHolder;
+                                                        _dbHolder = nullptr;
+                                                        return Status::OK();
+                                                    });
 
 MONGO_INITIALIZER(InitializeDatabaseHolderFactory)(InitializerContext* const) {
     DatabaseHolder::registerFactory([] { return stdx::make_unique<DatabaseHolderImpl>(); });

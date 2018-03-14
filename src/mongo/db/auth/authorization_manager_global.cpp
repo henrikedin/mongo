@@ -90,7 +90,7 @@ AuthorizationManager* getGlobalAuthorizationManager() {
 
 MONGO_EXPORT_STARTUP_SERVER_PARAMETER(startupAuthSchemaValidation, bool, true);
 
-GlobalInitializerRegisterer createAuthorizationManagerInit(
+GlobalInitializerRegisterer authorizationManagerInitializer(
     "CreateAuthorizationManager",
     {"SetupInternalSecurityUser",
      "OIDGeneration",
