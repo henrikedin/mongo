@@ -34,7 +34,7 @@
 
 #include "mongo/base/initializer.h"
 #include "mongo/db/service_context.h"
-#include "mongo/db/service_context_registrer.h"
+#include "mongo/db/service_context_registerer.h"
 #include "mongo/util/signal_handlers_synchronous.h"
 
 

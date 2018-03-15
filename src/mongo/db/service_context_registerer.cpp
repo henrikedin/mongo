@@ -26,14 +26,14 @@
 *    it in the license file.
 */
 
-#include "mongo/db/service_context_registrer.h"
+#include "mongo/db/service_context_registerer.h"
 
 #include "mongo/db/service_context.h"
 
 namespace mongo {
 stdx::function<std::unique_ptr<ServiceContext>()>* serviceContextFactory = nullptr;
 
-ServiceContextRegistrer::ServiceContextRegistrer(
+ServiceContextRegisterer::ServiceContextRegisterer(
     stdx::function<std::unique_ptr<ServiceContext>()> fn) {
     invariant(!serviceContextFactory);
     serviceContextFactory = new stdx::function<std::unique_ptr<ServiceContext>()>(std::move(fn));

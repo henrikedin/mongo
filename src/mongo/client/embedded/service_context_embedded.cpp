@@ -37,7 +37,7 @@
 #include "mongo/db/client.h"
 #include "mongo/db/concurrency/lock_state.h"
 #include "mongo/db/operation_context.h"
-#include "mongo/db/service_context_registrer.h"
+#include "mongo/db/service_context_registerer.h"
 #include "mongo/db/storage/storage_engine.h"
 #include "mongo/db/storage/storage_engine_lock_file.h"
 #include "mongo/db/storage/storage_engine_metadata.h"
@@ -52,7 +52,7 @@
 
 namespace mongo {
 namespace {
-ServiceContextRegistrer serviceContextEmbeddedFactory([]() {
+ServiceContextRegisterer serviceContextCreator([]() {
     auto service = stdx::make_unique<ServiceContextMongoEmbedded>();
     service->setServiceEntryPoint(stdx::make_unique<ServiceEntryPointEmbedded>(service.get()));
     service->setTickSource(stdx::make_unique<SystemTickSource>());
@@ -130,12 +130,10 @@ void ServiceContextMongoEmbedded::initializeGlobalStorageEngine() {
         if (storageGlobalParams.engineSetByUser) {
             // Verify that the name of the user-supplied storage engine matches the contents of
             // the metadata file.
-            auto factory = [&]() -> const StorageEngine::Factory* {
-                auto it = _storageFactories.find(storageGlobalParams.engine);
-                if (it != _storageFactories.end())
-                    return nullptr;
-                return it->second.get();
-            }();
+            const StorageEngine::Factory* factory = nullptr;
+            auto it = _storageFactories.find(storageGlobalParams.engine);
+            if (it != _storageFactories.end())
+                factory = it->second.get();
 
             if (factory) {
                 uassert(50667,

@@ -471,7 +471,7 @@ env.Library(
         'operation_context_group.cpp',
         'service_context.cpp',
         'service_context_noop.cpp',
-        'service_context_registrer.cpp',
+        'service_context_registerer.cpp',
         'unclean_shutdown.cpp',
     ],
     LIBDEPS=[

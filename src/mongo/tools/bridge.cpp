@@ -39,7 +39,7 @@
 #include "mongo/db/dbmessage.h"
 #include "mongo/db/service_context.h"
 #include "mongo/db/service_context_noop.h"
-#include "mongo/db/service_context_registrer.h"
+#include "mongo/db/service_context_registerer.h"
 #include "mongo/platform/atomic_word.h"
 #include "mongo/platform/random.h"
 #include "mongo/rpc/command_request.h"
@@ -392,7 +392,7 @@ private:
 
 std::unique_ptr<mongo::BridgeListener> listener;
 
-ServiceContextRegistrer serviceContextEmbeddedFactory([]() {
+ServiceContextRegisterer serviceContextCreator([]() {
     return stdx::make_unique<ServiceContextNoop>();
 });
 

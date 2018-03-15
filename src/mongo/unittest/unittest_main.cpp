@@ -34,7 +34,7 @@
 #include "mongo/base/initializer.h"
 #include "mongo/base/status.h"
 #include "mongo/db/service_context.h"
-#include "mongo/db/service_context_registrer.h"
+#include "mongo/db/service_context_registerer.h"
 #include "mongo/unittest/unittest.h"
 #include "mongo/util/options_parser/environment.h"
 #include "mongo/util/options_parser/option_section.h"

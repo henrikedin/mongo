@@ -31,14 +31,14 @@
 #include "mongo/base/init.h"
 #include "mongo/db/service_context.h"
 #include "mongo/db/service_context_noop.h"
-#include "mongo/db/service_context_registrer.h"
+#include "mongo/db/service_context_registerer.h"
 #include "mongo/stdx/memory.h"
 
 
 namespace mongo {
 namespace {
 
-ServiceContextRegistrer serviceContextEmbeddedFactory([]() {
+ServiceContextRegisterer serviceContextEmbeddedFactory([]() {
     return stdx::make_unique<ServiceContextNoop>();
 });
 

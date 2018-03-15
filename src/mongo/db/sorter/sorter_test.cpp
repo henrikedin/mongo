@@ -38,7 +38,7 @@
 #include "mongo/config.h"
 #include "mongo/db/service_context.h"
 #include "mongo/db/service_context_noop.h"
-#include "mongo/db/service_context_registrer.h"
+#include "mongo/db/service_context_registerer.h"
 #include "mongo/stdx/memory.h"
 #include "mongo/stdx/thread.h"
 #include "mongo/unittest/temp_dir.h"
@@ -56,7 +56,7 @@ using std::pair;
 namespace {
 
 // Stub to avoid including the server environment library.
-ServiceContextRegistrer serviceContextEmbeddedFactory([]() {
+ServiceContextRegisterer serviceContextCreator([]() {
     return stdx::make_unique<ServiceContextNoop>();
 });
 }  // namespace

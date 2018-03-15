@@ -35,9 +35,9 @@
 namespace mongo {
 class ServiceContext;
 
-class ServiceContextRegistrer {
+class ServiceContextRegisterer {
 public:
-    ServiceContextRegistrer(stdx::function<std::unique_ptr<ServiceContext>()> fn);
+    ServiceContextRegisterer(stdx::function<std::unique_ptr<ServiceContext>()> fn);
 };
 
 bool hasServiceContextFactory();
