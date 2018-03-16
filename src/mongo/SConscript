@@ -294,7 +294,7 @@ env.Library(
     ],
     LIBDEPS_PRIVATE=[
         'db/catalog/health_log',
-        'db/commands/dcommands',
+        'db/commands/commands_mongod',
         'db/dbdirectclient',
         'db/ftdc/ftdc_mongod',
         'db/index_d',
@@ -415,7 +415,6 @@ if not hygienic:
                 's/version_mongos.cpp',
             ] + env.WindowsResourceFile("s/server.rc"),
             LIBDEPS=[
-                'db/commands/core_commands_standalone',
                 'db/commands/server_status',
                 'db/ftdc/ftdc_mongos',
                 'db/logical_time_metadata_hook',

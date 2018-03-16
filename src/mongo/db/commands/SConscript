@@ -63,22 +63,21 @@ env.Library(
     ],
 )
 
-# Commands available in every type of mongodb server. Embedded and standalone process based.
+# Commands available in every process that executes commands
 env.Library(
-    target="core_commands",
+    target="core",
     source=[
         "copydb_common.cpp",
+        "fail_point_cmd.cpp",
         "find_and_modify_common.cpp",
         "generic.cpp",
         "hashcmd.cpp",
         "parameters.cpp",
         "rename_collection_common.cpp",
     ],
-    LIBDEPS=[
+    LIBDEPS_PRIVATE=[
         '$BUILD_DIR/mongo/db/commands',
         '$BUILD_DIR/mongo/db/common',
-    ],
-    LIBDEPS_PRIVATE=[
         '$BUILD_DIR/mongo/db/log_process_details',
         '$BUILD_DIR/mongo/logger/parse_log_component_settings',
         '$BUILD_DIR/mongo/scripting/scripting_common',
@@ -86,16 +85,15 @@ env.Library(
     ],
 )
 
-# Commands available in every type of mongodb server running in standalone processes (not embedded). 
+# Commands available in all mongodb server processes (mongod, mongos, etc.) 
 env.Library(
-    target="core_commands_standalone",
+    target="servers",
     source=[
         "authentication_commands.cpp",
         "conn_pool_stats.cpp",
         "conn_pool_sync.cpp",
         "connection_status.cpp",
         "end_sessions_command.cpp",
-        "fail_point_cmd.cpp",
         "feature_compatibility_version_command_parser.cpp",
         "isself.cpp",
         "kill_all_sessions_by_pattern_command.cpp",
@@ -110,12 +108,11 @@ env.Library(
         "user_management_commands_common.cpp",
     ],
     LIBDEPS=[
-        '$BUILD_DIR/mongo/db/commands',
-        '$BUILD_DIR/mongo/db/common',
-        'core_commands',
-        
+        'core',
     ],
     LIBDEPS_PRIVATE=[
+        '$BUILD_DIR/mongo/db/commands',
+        '$BUILD_DIR/mongo/db/common',
         '$BUILD_DIR/mongo/client/clientdriver',
         '$BUILD_DIR/mongo/db/kill_sessions',
         '$BUILD_DIR/mongo/db/logical_session_cache',
@@ -132,29 +129,29 @@ env.Library(
 )
 
 env.Library(
-    target="dcommands_fsync",
+    target="commands_mongod_fsync",
     source=[
         "fsync.cpp",
     ],
-    LIBDEPS=[
+    LIBDEPS_PRIVATE=[
         '$BUILD_DIR/mongo/db/commands',
         '$BUILD_DIR/mongo/db/concurrency/write_conflict_exception',
         '$BUILD_DIR/mongo/db/curop',
         '$BUILD_DIR/mongo/db/storage/mmap_v1/storage_mmapv1',
-    ],
-    LIBDEPS_PRIVATE=[
         'fsync_locked',
     ]
 )
 
 env.Library(
-    target="dcommands_fcv",
+    target="commands_mongod_fcv",
     source=[
         "feature_compatibility_version.cpp",
     ],
     LIBDEPS=[
-        'core_commands_standalone',
         'feature_compatibility_version_parser',
+        'servers',
+    ],
+    LIBDEPS_PRIVATE=[
         '$BUILD_DIR/mongo/db/commands',
         '$BUILD_DIR/mongo/db/dbdirectclient',
     ],
@@ -171,7 +168,7 @@ env.Library(
 
 # Commands that are present in both mongod and embedded
 env.Library(
-    target="shared_commands",
+    target="commands_standalone",
     source=[
         "clone.cpp",
         "clone_collection.cpp",
@@ -180,6 +177,7 @@ env.Library(
         "copydb_start_commands.cpp",
         "count_cmd.cpp",
         "create_indexes.cpp",
+        "current_op.cpp",
         "dbcheck.cpp",
         "dbcommands.cpp",
         "dbhash.cpp",
@@ -207,13 +205,12 @@ env.Library(
         "write_commands/write_commands.cpp",
     ],
     LIBDEPS=[
-        '$BUILD_DIR/mongo/base',
-        '$BUILD_DIR/mongo/db/commands',
-        'core_commands',
-        'killcursors_common',
+        'core',
     ],
     LIBDEPS_PRIVATE=[
+        '$BUILD_DIR/mongo/base',
         '$BUILD_DIR/mongo/client/clientdriver',
+        '$BUILD_DIR/mongo/db/commands',
         '$BUILD_DIR/mongo/db/ops/write_ops_exec',
         '$BUILD_DIR/mongo/db/catalog/catalog_helpers',
         '$BUILD_DIR/mongo/db/catalog/catalog_impl',
@@ -235,18 +232,20 @@ env.Library(
         '$BUILD_DIR/mongo/db/stats/serveronly_stats',
         '$BUILD_DIR/mongo/db/views/views_mongod',
         '$BUILD_DIR/mongo/util/icu',
+        'current_op_common',
+        'fsync_locked',
+        'killcursors_common',
         'write_commands_common',
     ],
 )
 
 # Commands that should only be present in mongod
 env.Library(
-    target="dcommands",
+    target="commands_mongod",
     source=[
         "apply_ops_cmd.cpp",
         "compact.cpp",
         "cpuload.cpp",
-        "current_op.cpp",
         "do_txn_cmd.cpp",
         "eval.cpp",
         "group_cmd.cpp",
@@ -267,27 +266,25 @@ env.Library(
         "user_management_commands.cpp",
     ],
     LIBDEPS=[
-        '$BUILD_DIR/mongo/base',
-        '$BUILD_DIR/mongo/db/commands',
-        'core_commands_standalone',
-        'shared_commands',
+        'commands_mongod_fcv',
+        'commands_standalone',
+        'servers',
     ],
     LIBDEPS_PRIVATE=[
+        '$BUILD_DIR/mongo/base',
         '$BUILD_DIR/mongo/client/clientdriver',
         '$BUILD_DIR/mongo/db/auth/authmongod',
         '$BUILD_DIR/mongo/db/background',
         '$BUILD_DIR/mongo/db/catalog/catalog_helpers',
         '$BUILD_DIR/mongo/db/catalog/catalog_impl',
         '$BUILD_DIR/mongo/db/catalog/index_key_validate',
+        '$BUILD_DIR/mongo/db/commands',
         '$BUILD_DIR/mongo/db/index_d',
         '$BUILD_DIR/mongo/db/repl/oplog',
         '$BUILD_DIR/mongo/db/repl/repl_coordinator_interface',
         '$BUILD_DIR/mongo/db/rw_concern_d',
         '$BUILD_DIR/mongo/db/s/sharding_catalog_manager',
         '$BUILD_DIR/mongo/s/sharding_legacy_api',
-        'current_op_common',
-        'dcommands_fcv',
-        'fsync_locked',
     ],
 )
 
@@ -348,7 +345,7 @@ env.CppUnitTest(
         "$BUILD_DIR/mongo/db/query/query_test_service_context",
         "$BUILD_DIR/mongo/db/serveronly",
         "$BUILD_DIR/mongo/db/service_context_d",
-        "dcommands",
+        "commands_mongod",
     ],
 )
 
@@ -363,7 +360,7 @@ env.CppUnitTest(
         "$BUILD_DIR/mongo/db/serveronly",
         "$BUILD_DIR/mongo/db/service_context_d",
         "$BUILD_DIR/mongo/db/service_context_d_test_fixture",
-        "dcommands",
+        "commands_mongod",
     ],
 )
 
@@ -377,7 +374,7 @@ env.CppUnitTest(
         "$BUILD_DIR/mongo/db/query/query_test_service_context",
         "$BUILD_DIR/mongo/db/serveronly",
         "$BUILD_DIR/mongo/db/service_context_d",
-        "dcommands",
+        "commands_mongod",
     ],
 )
 
