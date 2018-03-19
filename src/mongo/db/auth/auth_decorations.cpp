@@ -86,8 +86,7 @@ AuthorizationManager* AuthorizationManager::get(ServiceContext& service) {
 
 void AuthorizationManager::set(ServiceContext* service,
                                std::unique_ptr<AuthorizationManager> authzManager) {
-    auto& manager = getAuthorizationManager(service);
-    manager = std::move(authzManager);
+    getAuthorizationManager(service) = std::move(authzManager);
     service->registerClientObserver(stdx::make_unique<AuthzClientObserver>());
 }
 
