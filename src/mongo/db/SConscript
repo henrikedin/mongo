@@ -530,8 +530,11 @@ env.Library(
         'auth/authcore',
         'command_can_run_here',
         'commands/server_status_core',
-        'commands/test_commands_enabled',
+        #'commands/test_commands_enabled',
         'service_context',
+    ],
+    LIBDEPS_PRIVATE=[
+        
     ],
 )
 
@@ -595,7 +598,7 @@ env.Library(
         'catalog/database',
         'catalog/database_holder',
         'catalog/uuid_catalog',
-        'commands/server_status',
+        #'commands/server_status',
         'concurrency/lock_manager',
         'curop_metrics',
         'dbdirectclient',
@@ -606,6 +609,9 @@ env.Library(
         's/sharding_api_d',
         'views/views',
     ],
+    LIBDEPS_PRIVATE=[
+        'commands/server_status',
+    ]
 )
 
 env.CppUnitTest(
@@ -672,7 +678,7 @@ env.Library(
         '$BUILD_DIR/mongo/base',
         '$BUILD_DIR/mongo/db/auth/authmongod',
         '$BUILD_DIR/mongo/db/concurrency/lock_manager',
-        '$BUILD_DIR/mongo/db/commands/mongod_fsync',
+        #'$BUILD_DIR/mongo/db/commands/mongod_fsync',
         '$BUILD_DIR/mongo/db/ops/write_ops_parsers',
         '$BUILD_DIR/mongo/db/s/sharding',
         '$BUILD_DIR/mongo/db/storage/storage_options',
@@ -758,7 +764,7 @@ env.Library(
         '$BUILD_DIR/mongo/base',
         '$BUILD_DIR/mongo/db/catalog/collection_options',
         '$BUILD_DIR/mongo/db/catalog/index_create',
-        '$BUILD_DIR/mongo/db/commands/list_collections_filter',
+        #'$BUILD_DIR/mongo/db/commands/list_collections_filter',
     ],
 )
 
@@ -768,7 +774,7 @@ env.Library(
         "curop_metrics.cpp",
     ],
     LIBDEPS=[
-        "commands/server_status_core",
+        #"commands/server_status_core",
         "curop",
     ],
 )
@@ -1264,12 +1270,15 @@ env.Library(
     ],
     LIBDEPS=[
         '$BUILD_DIR/mongo/s/client/sharding_client',
-        '$BUILD_DIR/mongo/s/commands/shared_cluster_commands',
+        #'$BUILD_DIR/mongo/s/commands/shared_cluster_commands',
         '$BUILD_DIR/mongo/s/coreshard',
         'dbdirectclient',
         'sessions_collection',
         'sessions_collection_sharded',
     ],
+    LIBDEPS_PRIVATE=[
+        '$BUILD_DIR/mongo/s/commands/shared_cluster_commands',
+    ]
 )
 
 env.Library(
@@ -1293,7 +1302,7 @@ env.Library(
         env.Idlc('commands/end_sessions.idl')[0],
     ],
     LIBDEPS=[
-        '$BUILD_DIR/mongo/db/commands/server_status',
+        #'$BUILD_DIR/mongo/db/commands/server_status',
         'logical_session_cache',
         'logical_session_id',
         'logical_session_id_helpers',
@@ -1302,6 +1311,9 @@ env.Library(
         'service_liason',
         'kill_sessions',
     ],
+    LIBDEPS_PRIVATE=[
+        '$BUILD_DIR/mongo/db/commands/server_status',
+    ]
 )
 
 env.Library(
@@ -1310,7 +1322,7 @@ env.Library(
         'transaction_reaper.cpp',
     ],
     LIBDEPS_PRIVATE=[
-        '$BUILD_DIR/mongo/db/commands/server_status',
+        #'$BUILD_DIR/mongo/db/commands/server_status',
         '$BUILD_DIR/mongo/db/repl/repl_coordinator_interface',
         '$BUILD_DIR/mongo/s/client/shard_interface',
         '$BUILD_DIR/mongo/s/coreshard',

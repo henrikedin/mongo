@@ -294,7 +294,7 @@ env.Library(
     ],
     LIBDEPS_PRIVATE=[
         'db/catalog/health_log',
-        'db/commands/commands_mongod',
+        'db/commands/mongod',
         'db/dbdirectclient',
         'db/ftdc/ftdc_mongod',
         'db/index_d',

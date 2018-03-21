@@ -77,6 +77,7 @@ env.Library(
     ],
     LIBDEPS_PRIVATE=[
         '$BUILD_DIR/mongo/db/commands',
+        '$BUILD_DIR/mongo/db/commands/test_commands_enabled',
         '$BUILD_DIR/mongo/db/common',
         '$BUILD_DIR/mongo/db/log_process_details',
         '$BUILD_DIR/mongo/logger/parse_log_component_settings',
@@ -109,6 +110,7 @@ env.Library(
     ],
     LIBDEPS_PRIVATE=[
         '$BUILD_DIR/mongo/db/commands',
+        '$BUILD_DIR/mongo/db/commands/test_commands_enabled',
         '$BUILD_DIR/mongo/db/common',
         '$BUILD_DIR/mongo/client/clientdriver',
         '$BUILD_DIR/mongo/db/kill_sessions',
@@ -236,7 +238,7 @@ env.Library(
 
 # Commands that should only be present in mongod
 env.Library(
-    target="commands_mongod",
+    target="mongod",
     source=[
         "apply_ops_cmd.cpp",
         "compact.cpp",
@@ -276,6 +278,7 @@ env.Library(
         '$BUILD_DIR/mongo/db/s/sharding_catalog_manager',
         '$BUILD_DIR/mongo/s/sharding_legacy_api',
         'mongod_fcv',
+        'mongod_fsync',
         'standalone',
         'servers',
     ],
@@ -338,10 +341,8 @@ env.CppUnitTest(
         "$BUILD_DIR/mongo/db/query/query_test_service_context",
         "$BUILD_DIR/mongo/db/serveronly",
         "$BUILD_DIR/mongo/db/service_context_d",
-    ],
-    LIBDEPS_PRIVATE=[
         "standalone",
-    ]
+    ],
 )
 
 env.CppUnitTest(
@@ -355,10 +356,8 @@ env.CppUnitTest(
         "$BUILD_DIR/mongo/db/serveronly",
         "$BUILD_DIR/mongo/db/service_context_d",
         "$BUILD_DIR/mongo/db/service_context_d_test_fixture",
+        "mongod",
     ],
-    LIBDEPS_PRIVATE=[
-        "commands_mongod",
-    ]
 )
 
 env.CppUnitTest(
@@ -371,10 +370,8 @@ env.CppUnitTest(
         "$BUILD_DIR/mongo/db/query/query_test_service_context",
         "$BUILD_DIR/mongo/db/serveronly",
         "$BUILD_DIR/mongo/db/service_context_d",
-    ],
-    LIBDEPS_PRIVATE=[
         "standalone",
-    ]
+    ],
 )
 
 if has_option('use-cpu-profiler'):

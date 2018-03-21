@@ -154,6 +154,7 @@ env.Library(
         '$BUILD_DIR/mongo/client/sasl_client',
         '$BUILD_DIR/mongo/db/commands',
         '$BUILD_DIR/mongo/db/commands/servers',
+        '$BUILD_DIR/mongo/db/commands/test_commands_enabled',
     ]
 )
 
@@ -173,20 +174,24 @@ env.Library('sasl_options',
             ],
 )
 
-env.Library('saslauth',
-            [
-                'sasl_mechanism_registry.cpp',
-                'sasl_plain_server_conversation.cpp',
-                'sasl_scram_server_conversation.cpp',
-            ],
-             LIBDEPS=[
-                'authcore',
-                'sasl_options',
-                '$BUILD_DIR/mongo/base/secure_allocator',
-                '$BUILD_DIR/mongo/db/commands/test_commands_enabled',
-                '$BUILD_DIR/mongo/util/icu',
-                '$BUILD_DIR/mongo/util/net/network',
-             ],
+env.Library(
+    target='saslauth',
+    source=[
+        'sasl_mechanism_registry.cpp',
+        'sasl_plain_server_conversation.cpp',
+        'sasl_scram_server_conversation.cpp',
+    ],
+    LIBDEPS=[
+        'authcore',
+        'sasl_options',
+        '$BUILD_DIR/mongo/base/secure_allocator',
+        #'$BUILD_DIR/mongo/db/commands/test_commands_enabled',
+        '$BUILD_DIR/mongo/util/icu',
+        '$BUILD_DIR/mongo/util/net/network',
+    ],
+    LIBDEPS_PRIVATE=[
+        '$BUILD_DIR/mongo/db/commands/test_commands_enabled',
+    ],
 )
 
 env.CppUnitTest(target='sasl_mechanism_registry_test',
