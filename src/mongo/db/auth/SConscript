@@ -136,22 +136,26 @@ env.Library(
     ],
 )
 
-env.Library('authservercommon',
-            [
-                'authz_session_external_state_server_common.cpp',
-                'sasl_commands.cpp',
-                'security_key.cpp',
-            ],
-            LIBDEPS=[
-                '$BUILD_DIR/mongo/client/sasl_client',
-                '$BUILD_DIR/mongo/db/commands',
-                '$BUILD_DIR/mongo/db/commands/servers',
-                'authcommon',
-                'authcore',
-                'authorization_manager_global',
-                'saslauth',
-                'security_file',
-            ])
+env.Library(
+    target='authservercommon',
+    source=[
+        'authz_session_external_state_server_common.cpp',
+        'sasl_commands.cpp',
+        'security_key.cpp',
+    ],
+    LIBDEPS=[
+        'authcommon',
+        'authcore',
+        'authorization_manager_global',
+        'saslauth',
+        'security_file',
+    ],
+    LIBDEPS_PRIVATE=[
+        '$BUILD_DIR/mongo/client/sasl_client',
+        '$BUILD_DIR/mongo/db/commands',
+        '$BUILD_DIR/mongo/db/commands/servers',
+    ]
+)
 
 env.Library('security_file',
             ['security_file.cpp'],

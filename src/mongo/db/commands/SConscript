@@ -107,9 +107,6 @@ env.Library(
         "start_session_command.cpp",
         "user_management_commands_common.cpp",
     ],
-    LIBDEPS=[
-        'core',
-    ],
     LIBDEPS_PRIVATE=[
         '$BUILD_DIR/mongo/db/commands',
         '$BUILD_DIR/mongo/db/common',
@@ -124,12 +121,13 @@ env.Library(
         '$BUILD_DIR/mongo/executor/task_executor_pool',
         '$BUILD_DIR/mongo/s/sharding_legacy_api',
         '$BUILD_DIR/mongo/s/coreshard',
+        'core',
         'feature_compatibility_version_parser',
     ]
 )
 
 env.Library(
-    target="commands_mongod_fsync",
+    target="mongod_fsync",
     source=[
         "fsync.cpp",
     ],
@@ -143,13 +141,12 @@ env.Library(
 )
 
 env.Library(
-    target="commands_mongod_fcv",
+    target="mongod_fcv",
     source=[
         "feature_compatibility_version.cpp",
     ],
     LIBDEPS=[
         'feature_compatibility_version_parser',
-        'servers',
     ],
     LIBDEPS_PRIVATE=[
         '$BUILD_DIR/mongo/db/commands',
@@ -168,7 +165,7 @@ env.Library(
 
 # Commands that are present in both mongod and embedded
 env.Library(
-    target="commands_standalone",
+    target="standalone",
     source=[
         "clone.cpp",
         "clone_collection.cpp",
@@ -204,9 +201,6 @@ env.Library(
         "validate.cpp",
         "write_commands/write_commands.cpp",
     ],
-    LIBDEPS=[
-        'core',
-    ],
     LIBDEPS_PRIVATE=[
         '$BUILD_DIR/mongo/base',
         '$BUILD_DIR/mongo/client/clientdriver',
@@ -232,6 +226,7 @@ env.Library(
         '$BUILD_DIR/mongo/db/stats/serveronly_stats',
         '$BUILD_DIR/mongo/db/views/views_mongod',
         '$BUILD_DIR/mongo/util/icu',
+        'core',
         'current_op_common',
         'fsync_locked',
         'killcursors_common',
@@ -265,11 +260,6 @@ env.Library(
         "txn_cmds.cpp",
         "user_management_commands.cpp",
     ],
-    LIBDEPS=[
-        'commands_mongod_fcv',
-        'commands_standalone',
-        'servers',
-    ],
     LIBDEPS_PRIVATE=[
         '$BUILD_DIR/mongo/base',
         '$BUILD_DIR/mongo/client/clientdriver',
@@ -285,6 +275,9 @@ env.Library(
         '$BUILD_DIR/mongo/db/rw_concern_d',
         '$BUILD_DIR/mongo/db/s/sharding_catalog_manager',
         '$BUILD_DIR/mongo/s/sharding_legacy_api',
+        'mongod_fcv',
+        'standalone',
+        'servers',
     ],
 )
 
@@ -345,8 +338,10 @@ env.CppUnitTest(
         "$BUILD_DIR/mongo/db/query/query_test_service_context",
         "$BUILD_DIR/mongo/db/serveronly",
         "$BUILD_DIR/mongo/db/service_context_d",
-        "commands_mongod",
     ],
+    LIBDEPS_PRIVATE=[
+        "standalone",
+    ]
 )
 
 env.CppUnitTest(
@@ -360,8 +355,10 @@ env.CppUnitTest(
         "$BUILD_DIR/mongo/db/serveronly",
         "$BUILD_DIR/mongo/db/service_context_d",
         "$BUILD_DIR/mongo/db/service_context_d_test_fixture",
-        "commands_mongod",
     ],
+    LIBDEPS_PRIVATE=[
+        "commands_mongod",
+    ]
 )
 
 env.CppUnitTest(
@@ -374,8 +371,10 @@ env.CppUnitTest(
         "$BUILD_DIR/mongo/db/query/query_test_service_context",
         "$BUILD_DIR/mongo/db/serveronly",
         "$BUILD_DIR/mongo/db/service_context_d",
-        "commands_mongod",
     ],
+    LIBDEPS_PRIVATE=[
+        "standalone",
+    ]
 )
 
 if has_option('use-cpu-profiler'):
