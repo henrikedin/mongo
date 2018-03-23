@@ -551,10 +551,10 @@ MONGO_INITIALIZER(CreateAuthorizationExternalStateFactory)(InitializerContext* c
 }
 
 ServiceContextRegisterer serviceContextCreator([]() {
-    auto service = stdx::make_unique<ServiceContextNoop>();
-    service->setTickSource(stdx::make_unique<SystemTickSource>());
-    service->setFastClockSource(stdx::make_unique<SystemClockSource>());
-    service->setPreciseClockSource(stdx::make_unique<SystemClockSource>());
+    auto service = std::make_unique<ServiceContextNoop>();
+    service->setTickSource(std::make_unique<SystemTickSource>());
+    service->setFastClockSource(std::make_unique<SystemClockSource>());
+    service->setPreciseClockSource(std::make_unique<SystemClockSource>());
     return service;
 });
 

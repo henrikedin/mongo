@@ -53,11 +53,11 @@
 namespace mongo {
 namespace {
 ServiceContextRegisterer serviceContextCreator([]() {
-    auto service = stdx::make_unique<ServiceContextMongoEmbedded>();
-    service->setServiceEntryPoint(stdx::make_unique<ServiceEntryPointEmbedded>(service.get()));
-    service->setTickSource(stdx::make_unique<SystemTickSource>());
-    service->setFastClockSource(stdx::make_unique<SystemClockSource>());
-    service->setPreciseClockSource(stdx::make_unique<SystemClockSource>());
+    auto service = std::make_unique<ServiceContextMongoEmbedded>();
+    service->setServiceEntryPoint(std::make_unique<ServiceEntryPointEmbedded>(service.get()));
+    service->setTickSource(std::make_unique<SystemTickSource>());
+    service->setFastClockSource(std::make_unique<SystemClockSource>());
+    service->setPreciseClockSource(std::make_unique<SystemClockSource>());
     return service;
 });
 }  // namespace

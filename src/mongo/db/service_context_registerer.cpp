@@ -31,19 +31,25 @@
 #include "mongo/db/service_context.h"
 
 namespace mongo {
-stdx::function<std::unique_ptr<ServiceContext>()>* serviceContextFactory = nullptr;
+namespace {
+	std::function<std::unique_ptr<ServiceContext>()>& getServiceContextFactory()
+	{
+		static std::function<std::unique_ptr<ServiceContext>()> factory;
+		return factory;
+	}
+}
 
 ServiceContextRegisterer::ServiceContextRegisterer(
-    stdx::function<std::unique_ptr<ServiceContext>()> fn) {
-    invariant(!serviceContextFactory);
-    serviceContextFactory = new stdx::function<std::unique_ptr<ServiceContext>()>(std::move(fn));
+    std::function<std::unique_ptr<ServiceContext>()> fn) {
+    invariant(!hasServiceContextFactory());
+	getServiceContextFactory() = std::move(fn);
 }
 
 bool hasServiceContextFactory() {
-    return serviceContextFactory;
+	return getServiceContextFactory() ? true : false;
 }
 
 std::unique_ptr<ServiceContext> createServiceContext() {
-    return (*serviceContextFactory)();
+    return getServiceContextFactory()();
 }
-}
+}  // namespace mongo

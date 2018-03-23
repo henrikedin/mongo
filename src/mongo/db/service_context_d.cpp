@@ -55,11 +55,11 @@
 namespace mongo {
 namespace {
 ServiceContextRegisterer serviceContextCreator([]() {
-    auto service = stdx::make_unique<ServiceContextMongoD>();
-    service->setServiceEntryPoint(stdx::make_unique<ServiceEntryPointMongod>(service.get()));
-    service->setTickSource(stdx::make_unique<SystemTickSource>());
-    service->setFastClockSource(stdx::make_unique<SystemClockSource>());
-    service->setPreciseClockSource(stdx::make_unique<SystemClockSource>());
+    auto service = std::make_unique<ServiceContextMongoD>();
+    service->setServiceEntryPoint(std::make_unique<ServiceEntryPointMongod>(service.get()));
+    service->setTickSource(std::make_unique<SystemTickSource>());
+    service->setFastClockSource(std::make_unique<SystemClockSource>());
+    service->setPreciseClockSource(std::make_unique<SystemClockSource>());
     return service;
 });
 }  // namespace

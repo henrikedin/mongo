@@ -49,7 +49,8 @@ public:
 
     InitializerContext(const ArgumentVector& args,
                        const EnvironmentMap& env,
-                       ServiceContext* serviceContext);
+                       ServiceContext* serviceContext)
+		: _args(args), _env(env), _serviceContext(serviceContext) {}
 
     const ArgumentVector& args() const {
         return _args;
@@ -58,7 +59,7 @@ public:
         return _env;
     }
 
-    ServiceContext* serviceContext() {
+    ServiceContext* serviceContext() const {
         return _serviceContext;
     }
 

@@ -530,5 +530,4 @@ int main(int argc, char** argv, char** envp) {
     ::mongo::unittest::setupTestLogger();
     ::mongo::unittest::Suite::run(std::vector<std::string>(), "", 1);
     globalTempDir.reset();
-    // mongo::quickExit(result);
 }

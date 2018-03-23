@@ -37,7 +37,8 @@
 #include "mongo/db/service_context_noop.h"
 #include "mongo/db/service_context_registerer.h"
 #include "mongo/db/storage/wiredtiger/wiredtiger_kv_engine.h"
-#include "mongo/stdx/memory.h"
+
+#include <memory>
 
 namespace mongo {
 namespace {
@@ -52,7 +53,7 @@ MONGO_INITIALIZER(SetInitRsOplogBackgroundThreadCallback)(InitializerContext* co
 }
 
 ServiceContextRegisterer serviceContextCreator([]() {
-    return stdx::make_unique<ServiceContextNoop>();
+    return std::make_unique<ServiceContextNoop>();
 });
 }  // namespace
 }  // namespace mongo

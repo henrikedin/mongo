@@ -28,6 +28,6 @@
 #include "mongo/base/deinitializer_context.h"
 
 namespace mongo {
-DeinitializerContext::DeinitializerContext(ServiceContext* serviceContext)
-    : _serviceContext(serviceContext) {}
+//explicit DeinitializerContext::DeinitializerContext(ServiceContext* serviceContext)
+//    : _serviceContext(serviceContext) {}
 }  // namespace mongo

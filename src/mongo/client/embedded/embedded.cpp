@@ -105,9 +105,9 @@ GlobalInitializerRegisterer replicationManagerInitializer(
     [](InitializerContext* context) {
         auto serviceContext = context->serviceContext();
         repl::StorageInterface::set(serviceContext,
-                                    stdx::make_unique<repl::StorageInterfaceImpl>());
+                                    std::make_unique<repl::StorageInterfaceImpl>());
 
-        auto replCoord = stdx::make_unique<ReplicationCoordinatorEmbedded>(serviceContext);
+        auto replCoord = std::make_unique<ReplicationCoordinatorEmbedded>(serviceContext);
         repl::ReplicationCoordinator::set(serviceContext, std::move(replCoord));
         repl::setOplogCollectionName(serviceContext);
         return Status::OK();
@@ -156,7 +156,8 @@ void shutdown(ServiceContext* srvContext) {
             serviceContext->shutdownGlobalStorageEngineCleanly();
         }
 
-        mongo::runGlobalDeinitializers(serviceContext).ignore();
+        Status status = mongo::runGlobalDeinitializers(serviceContext);
+		uassertStatusOKWithContext(status, "Global deinitilization failed");
     }
     shutdownOpCtx.reset();
 
@@ -174,10 +175,7 @@ ServiceContext* initialize(int argc, char* argv[], char** envp) {
 
     setGlobalServiceContext(createServiceContext());
     Status status = mongo::runGlobalInitializers(argc, argv, envp, getGlobalServiceContext());
-    if (!status.isOK()) {
-        severe(LogComponent::kControl) << "Failed global initializations: " << status;
-        return nullptr;
-    }
+	uassertStatusOKWithContext(status, "Global initilization failed");
 
     Client::initThread("initandlisten");
 
@@ -185,9 +183,9 @@ ServiceContext* initialize(int argc, char* argv[], char** envp) {
 
     auto serviceContext = checked_cast<ServiceContextMongoEmbedded*>(getGlobalServiceContext());
 
-    auto opObserverRegistry = stdx::make_unique<OpObserverRegistry>();
-    opObserverRegistry->addObserver(stdx::make_unique<OpObserverImpl>());
-    opObserverRegistry->addObserver(stdx::make_unique<UUIDCatalogObserver>());
+    auto opObserverRegistry = std::make_unique<OpObserverRegistry>();
+    opObserverRegistry->addObserver(std::make_unique<OpObserverImpl>());
+    opObserverRegistry->addObserver(std::make_unique<UUIDCatalogObserver>());
     serviceContext->setOpObserver(std::move(opObserverRegistry));
 
     DBDirectClientFactory::get(serviceContext).registerImplementation([](OperationContext* opCtx) {
@@ -211,7 +209,7 @@ ServiceContext* initialize(int argc, char* argv[], char** envp) {
     serviceContext->createLockFile();
 
     serviceContext->setServiceEntryPoint(
-        stdx::make_unique<ServiceEntryPointEmbedded>(serviceContext));
+        std::make_unique<ServiceEntryPointEmbedded>(serviceContext));
 
     serviceContext->initializeGlobalStorageEngine();
 

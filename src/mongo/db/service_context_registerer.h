@@ -28,8 +28,7 @@
 
 #pragma once
 
-#include "mongo/stdx/functional.h"
-
+#include <functional>
 #include <memory>
 
 namespace mongo {
@@ -37,9 +36,9 @@ class ServiceContext;
 
 class ServiceContextRegisterer {
 public:
-    ServiceContextRegisterer(stdx::function<std::unique_ptr<ServiceContext>()> fn);
+    explicit ServiceContextRegisterer(std::function<std::unique_ptr<ServiceContext>()> fn);
 };
 
 bool hasServiceContextFactory();
 std::unique_ptr<ServiceContext> createServiceContext();
-}
+}  // namespace mongo

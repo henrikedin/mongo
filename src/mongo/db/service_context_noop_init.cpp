@@ -39,7 +39,7 @@ namespace mongo {
 namespace {
 
 ServiceContextRegisterer serviceContextEmbeddedFactory([]() {
-    return stdx::make_unique<ServiceContextNoop>();
+    return std::make_unique<ServiceContextNoop>();
 });
 
 }  // namespace

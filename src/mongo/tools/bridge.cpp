@@ -393,7 +393,7 @@ private:
 std::unique_ptr<mongo::BridgeListener> listener;
 
 ServiceContextRegisterer serviceContextCreator([]() {
-    return stdx::make_unique<ServiceContextNoop>();
+    return std::make_unique<ServiceContextNoop>();
 });
 
 }  // namespace
