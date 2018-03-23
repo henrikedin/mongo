@@ -32,21 +32,20 @@
 
 namespace mongo {
 namespace {
-	std::function<std::unique_ptr<ServiceContext>()>& getServiceContextFactory()
-	{
-		static std::function<std::unique_ptr<ServiceContext>()> factory;
-		return factory;
-	}
+std::function<std::unique_ptr<ServiceContext>()>& getServiceContextFactory() {
+    static std::function<std::unique_ptr<ServiceContext>()> factory;
+    return factory;
+}
 }
 
 ServiceContextRegistrar::ServiceContextRegistrar(
     std::function<std::unique_ptr<ServiceContext>()> fn) {
     invariant(!hasServiceContextFactory());
-	getServiceContextFactory() = std::move(fn);
+    getServiceContextFactory() = std::move(fn);
 }
 
 bool hasServiceContextFactory() {
-	return getServiceContextFactory() ? true : false;
+    return getServiceContextFactory() ? true : false;
 }
 
 std::unique_ptr<ServiceContext> createServiceContext() {

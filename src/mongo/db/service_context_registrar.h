@@ -34,7 +34,10 @@
 namespace mongo {
 class ServiceContext;
 
-// This is a initialization registration system similar to MONGO_INITIALIZER. But it cannot be an MONGO_INITIALIZER because we need to create the service context before the MONGO_INITIALIZERS execute. This class should probably be refactored to use the shim system from this ticket: https://jira.mongodb.org/browse/SERVER-32645
+// This is a initialization registration system similar to MONGO_INITIALIZER. But it cannot be an
+// MONGO_INITIALIZER because we need to create the service context before the MONGO_INITIALIZERS
+// execute. This class should probably be refactored to use the shim system from this ticket:
+// https://jira.mongodb.org/browse/SERVER-32645
 class ServiceContextRegistrar {
 public:
     explicit ServiceContextRegistrar(std::function<std::unique_ptr<ServiceContext>()> fn);
