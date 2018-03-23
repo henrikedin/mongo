@@ -118,7 +118,7 @@
 #include "mongo/db/server_parameters.h"
 #include "mongo/db/service_context.h"
 #include "mongo/db/service_context_d.h"
-#include "mongo/db/service_context_registerer.h"
+#include "mongo/db/service_context_registrar.h"
 #include "mongo/db/service_entry_point_mongod.h"
 #include "mongo/db/session_catalog.h"
 #include "mongo/db/session_killer.h"

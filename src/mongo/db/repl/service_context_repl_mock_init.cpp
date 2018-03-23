@@ -31,7 +31,7 @@
 #include "mongo/base/init.h"
 #include "mongo/db/repl/service_context_repl_mock.h"
 #include "mongo/db/service_context.h"
-#include "mongo/db/service_context_registerer.h"
+#include "mongo/db/service_context_registrar.h"
 #include "mongo/util/clock_source_mock.h"
 
 #include <memory>
@@ -40,7 +40,7 @@ namespace mongo {
 namespace repl {
 namespace {
 
-ServiceContextRegisterer serviceContextCreator([]() {
+ServiceContextRegistrar serviceContextCreator([]() {
     return std::make_unique<ServiceContextReplMock>();
 });
 

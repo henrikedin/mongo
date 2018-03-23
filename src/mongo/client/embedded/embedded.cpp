@@ -54,7 +54,7 @@
 #include "mongo/db/op_observer_registry.h"
 #include "mongo/db/repair_database_and_check_version.h"
 #include "mongo/db/repl/storage_interface_impl.h"
-#include "mongo/db/service_context_registerer.h"
+#include "mongo/db/service_context_registrar.h"
 #include "mongo/db/session_catalog.h"
 #include "mongo/db/session_killer.h"
 #include "mongo/db/startup_warnings_mongod.h"
@@ -104,8 +104,7 @@ GlobalInitializerRegisterer replicationManagerInitializer(
     {"SSLManager", "default"},
     [](InitializerContext* context) {
         auto serviceContext = context->serviceContext();
-        repl::StorageInterface::set(serviceContext,
-                                    std::make_unique<repl::StorageInterfaceImpl>());
+        repl::StorageInterface::set(serviceContext, std::make_unique<repl::StorageInterfaceImpl>());
 
         auto replCoord = std::make_unique<ReplicationCoordinatorEmbedded>(serviceContext);
         repl::ReplicationCoordinator::set(serviceContext, std::move(replCoord));
@@ -157,7 +156,7 @@ void shutdown(ServiceContext* srvContext) {
         }
 
         Status status = mongo::runGlobalDeinitializers(serviceContext);
-		uassertStatusOKWithContext(status, "Global deinitilization failed");
+        uassertStatusOKWithContext(status, "Global deinitilization failed");
     }
     shutdownOpCtx.reset();
 
@@ -175,7 +174,7 @@ ServiceContext* initialize(int argc, char* argv[], char** envp) {
 
     setGlobalServiceContext(createServiceContext());
     Status status = mongo::runGlobalInitializers(argc, argv, envp, getGlobalServiceContext());
-	uassertStatusOKWithContext(status, "Global initilization failed");
+    uassertStatusOKWithContext(status, "Global initilization failed");
 
     Client::initThread("initandlisten");
 

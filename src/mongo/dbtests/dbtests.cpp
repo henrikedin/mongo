@@ -49,7 +49,7 @@
 #include "mongo/db/repl/storage_interface_mock.h"
 #include "mongo/db/service_context.h"
 #include "mongo/db/service_context_d.h"
-#include "mongo/db/service_context_registerer.h"
+#include "mongo/db/service_context_registrar.h"
 #include "mongo/db/wire_version.h"
 #include "mongo/dbtests/framework.h"
 #include "mongo/scripting/engine.h"

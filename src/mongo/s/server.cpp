@@ -61,7 +61,7 @@
 #include "mongo/db/server_options.h"
 #include "mongo/db/service_context.h"
 #include "mongo/db/service_context_noop.h"
-#include "mongo/db/service_context_registerer.h"
+#include "mongo/db/service_context_registrar.h"
 #include "mongo/db/session_killer.h"
 #include "mongo/db/startup_warnings_common.h"
 #include "mongo/db/wire_version.h"
@@ -550,7 +550,7 @@ MONGO_INITIALIZER(CreateAuthorizationExternalStateFactory)(InitializerContext* c
     return Status::OK();
 }
 
-ServiceContextRegisterer serviceContextCreator([]() {
+ServiceContextRegistrar serviceContextCreator([]() {
     auto service = std::make_unique<ServiceContextNoop>();
     service->setTickSource(std::make_unique<SystemTickSource>());
     service->setFastClockSource(std::make_unique<SystemClockSource>());

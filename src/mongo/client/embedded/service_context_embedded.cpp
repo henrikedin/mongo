@@ -37,7 +37,7 @@
 #include "mongo/db/client.h"
 #include "mongo/db/concurrency/lock_state.h"
 #include "mongo/db/operation_context.h"
-#include "mongo/db/service_context_registerer.h"
+#include "mongo/db/service_context_registrar.h"
 #include "mongo/db/storage/storage_engine.h"
 #include "mongo/db/storage/storage_engine_lock_file.h"
 #include "mongo/db/storage/storage_engine_metadata.h"
@@ -52,7 +52,7 @@
 
 namespace mongo {
 namespace {
-ServiceContextRegisterer serviceContextCreator([]() {
+ServiceContextRegistrar serviceContextCreator([]() {
     auto service = std::make_unique<ServiceContextMongoEmbedded>();
     service->setServiceEntryPoint(std::make_unique<ServiceEntryPointEmbedded>(service.get()));
     service->setTickSource(std::make_unique<SystemTickSource>());

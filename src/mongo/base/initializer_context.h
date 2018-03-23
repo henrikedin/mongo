@@ -27,14 +27,14 @@
 
 #pragma once
 
+#include "mongo/base/disallow_copying.h"
+#include "mongo/db/service_context_fwd.h"
+
 #include <map>
 #include <string>
 #include <vector>
 
-#include "mongo/base/disallow_copying.h"
-
 namespace mongo {
-class ServiceContext;
 /**
  * Context of an initialization process.  Passed as a parameter to initialization functions.
  *
@@ -50,7 +50,7 @@ public:
     InitializerContext(const ArgumentVector& args,
                        const EnvironmentMap& env,
                        ServiceContext* serviceContext)
-		: _args(args), _env(env), _serviceContext(serviceContext) {}
+        : _args(args), _env(env), _serviceContext(serviceContext) {}
 
     const ArgumentVector& args() const {
         return _args;

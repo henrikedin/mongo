@@ -26,19 +26,30 @@
 *    it in the license file.
 */
 
-#pragma once
+#include "mongo/db/service_context_registrar.h"
 
-#include <functional>
-#include <memory>
+#include "mongo/db/service_context.h"
 
 namespace mongo {
-class ServiceContext;
+namespace {
+	std::function<std::unique_ptr<ServiceContext>()>& getServiceContextFactory()
+	{
+		static std::function<std::unique_ptr<ServiceContext>()> factory;
+		return factory;
+	}
+}
 
-class ServiceContextRegisterer {
-public:
-    explicit ServiceContextRegisterer(std::function<std::unique_ptr<ServiceContext>()> fn);
-};
+ServiceContextRegistrar::ServiceContextRegistrar(
+    std::function<std::unique_ptr<ServiceContext>()> fn) {
+    invariant(!hasServiceContextFactory());
+	getServiceContextFactory() = std::move(fn);
+}
 
-bool hasServiceContextFactory();
-std::unique_ptr<ServiceContext> createServiceContext();
+bool hasServiceContextFactory() {
+	return getServiceContextFactory() ? true : false;
+}
+
+std::unique_ptr<ServiceContext> createServiceContext() {
+    return getServiceContextFactory()();
+}
 }  // namespace mongo
