@@ -82,8 +82,6 @@ env.Library(
         '$BUILD_DIR/mongo/db/common',
         '$BUILD_DIR/mongo/db/log_process_details',
         '$BUILD_DIR/mongo/logger/parse_log_component_settings',
-        '$BUILD_DIR/mongo/scripting/scripting_common',
-        '$BUILD_DIR/mongo/util/ntservice',
     ],
 )
 
@@ -97,6 +95,7 @@ env.Library(
         "connection_status.cpp",
         "end_sessions_command.cpp",
         "feature_compatibility_version_command_parser.cpp",
+        "generic_servers.cpp",
         "isself.cpp",
         "kill_all_sessions_by_pattern_command.cpp",
         "kill_all_sessions_command.cpp",
@@ -124,6 +123,8 @@ env.Library(
         '$BUILD_DIR/mongo/executor/task_executor_pool',
         '$BUILD_DIR/mongo/s/sharding_legacy_api',
         '$BUILD_DIR/mongo/s/coreshard',
+        '$BUILD_DIR/mongo/scripting/scripting_common',
+        '$BUILD_DIR/mongo/util/ntservice',
         'core',
         'feature_compatibility_version_parser',
     ]
@@ -236,6 +237,7 @@ env.Library(
         'kill_common',
         'list_collections_filter',
         'profile_common',
+        'servers',
         'test_commands_enabled',
         'write_commands_common',
     ],

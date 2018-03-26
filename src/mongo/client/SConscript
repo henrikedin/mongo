@@ -115,6 +115,9 @@ saslClientEnv.Library(
         '$BUILD_DIR/mongo/util/md5',
         '$BUILD_DIR/mongo/util/net/network',
     ],
+    LIBDEPS_PRIVATE=[
+        '$BUILD_DIR/mongo/db/auth/authcommon',
+    ],
     SYSLIBDEPS=saslLibs
 )
 
@@ -127,7 +130,10 @@ env.Library(
         '$BUILD_DIR/mongo/bson/util/bson_extract',
         '$BUILD_DIR/mongo/executor/remote_command',
         'sasl_client'
-    ]
+    ],
+    LIBDEPS_PRIVATE=[
+        '$BUILD_DIR/mongo/db/auth/authcommon',
+    ],
 )
 
 env.CppUnitTest(
