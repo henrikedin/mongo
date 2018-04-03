@@ -88,7 +88,7 @@ int libmongodbcapi_fini();
 *
 * @return A pointer to a db handle or null on error
 */
-libmongodbcapi_db* libmongodbcapi_db_new(int argc, const char** argv, const char** envp);
+libmongodbcapi_db* libmongodbcapi_db_new(const char* yaml_config);
 
 /**
 * Shuts down the database

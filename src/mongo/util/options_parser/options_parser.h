@@ -110,6 +110,11 @@ public:
                const std::map<std::string, std::string>& env,
                Environment*);
 
+    Status runConfigFile(const OptionSection&,
+                         const std::string& argv,
+                         const std::map<std::string, std::string>& env,
+                         Environment*);
+
 private:
     /** Handles parsing of the command line and adds the results to the given Environment */
     Status parseCommandLine(const OptionSection&,
@@ -119,6 +124,10 @@ private:
     /** Handles parsing of an INI config std::string and adds the results to the given Environment
      * */
     Status parseINIConfigFile(const OptionSection&, const std::string& config, Environment*);
+
+    /** Handles parsing of either YAML or INI config and adds the results to the given Environment
+     */
+    Status parseConfigFile(const OptionSection&, const std::string& argv, Environment*);
 
     /** Gets defaults from the OptionSection and adds them to the given Environment */
     Status addDefaultValues(const OptionSection&, Environment*);
