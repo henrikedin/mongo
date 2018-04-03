@@ -38,7 +38,6 @@
 #include "mongo/stdx/memory.h"
 #include "mongo/unittest/temp_dir.h"
 #include "mongo/unittest/unittest.h"
-//#include "mongo/util/mongoutils/str.h"
 #include "mongo/util/net/message.h"
 #include "mongo/util/net/op_msg.h"
 #include "mongo/util/options_parser/environment.h"
