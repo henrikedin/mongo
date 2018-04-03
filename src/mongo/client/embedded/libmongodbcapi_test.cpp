@@ -30,6 +30,7 @@
 #include "mongo/client/embedded/libmongodbcapi.h"
 
 #include <set>
+#include <fstream>
 
 #include "mongo/bson/bsonobjbuilder.h"
 #include "mongo/db/json.h"
@@ -191,6 +192,47 @@ TEST_F(MongodbCAPITest, BatteryLevel) {
     mongo::BSONObj inputObj = mongo::fromjson("{setBatteryLevel: 'low'}");
     auto inputOpMsg = mongo::OpMsgRequest::fromDBAndBody("admin", inputObj);
     performRpc(client, inputOpMsg);
+}
+
+TEST_F(MongodbCAPITest, ListCommands) {
+	// create the client object
+	auto client = createClient();
+
+	// craft the isMaster message
+	mongo::BSONObj inputObj = mongo::fromjson("{listCommands: 1}");
+	auto inputOpMsg = mongo::OpMsgRequest::fromDBAndBody("admin", inputObj);
+	auto inputMessage = inputOpMsg.serialize();
+
+
+	// declare the output size and pointer
+	void* output;
+	size_t outputSize;
+
+	// call the wire protocol
+	int err = libmongodbcapi_db_client_wire_protocol_rpc(
+		client.get(), inputMessage.buf(), inputMessage.size(), &output, &outputSize);
+	ASSERT_EQUALS(err, LIBMONGODB_CAPI_ERROR_SUCCESS);
+
+	// convert the shared buffer to a mongo::message and ensure that it is valid
+	auto outputMessage = messageFromBuffer(output, outputSize);
+	ASSERT(outputMessage.size() > 0);
+	ASSERT(outputMessage.operation() == inputMessage.operation());
+
+	// convert the message into an OpMessage to examine its BSON
+	auto outputOpMsg = mongo::OpMsg::parseOwned(outputMessage);
+	ASSERT(outputOpMsg.body.valid(mongo::BSONVersion::kLatest));
+	//ASSERT(outputOpMsg.body.getBoolField("ismaster"));
+
+	auto commands = outputOpMsg.body.getObjectField("commands");
+	std::ofstream f("commands.txt");
+
+	std::set<std::string> names;
+	commands.getFieldNames(names);
+	for (auto name : names)
+	{
+		f << name << std::endl;
+	}
+	
 }
 
 
