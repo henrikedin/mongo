@@ -34,9 +34,12 @@
 #include <vector>
 
 #include "mongo/client/embedded/embedded.h"
+#include "mongo/client/embedded/embedded_log_appender.h"
 #include "mongo/db/client.h"
 #include "mongo/db/dbmain.h"
 #include "mongo/db/service_context.h"
+#include "mongo/logger/logger.h"
+#include "mongo/logger/message_event_utf8_encoder.h"
 #include "mongo/stdx/memory.h"
 #include "mongo/stdx/unordered_map.h"
 #include "mongo/transport/service_entry_point.h"
@@ -80,9 +83,64 @@ namespace {
 
 bool libraryInitialized_ = false;
 libmongodbcapi_db* global_db = nullptr;
+mongo::logger::ComponentMessageLogDomain::AppenderHandle logCallbackHandle;
 thread_local int last_error = LIBMONGODB_CAPI_SUCCESS;
+thread_local int recursion_depth = 0;
+
+class RecursionGuard {
+public:
+    RecursionGuard() {
+        uassert(ErrorCodes::RecursionNotAllowed,
+                str::stream() << "Recursive calls to libmongodbcapi is not allowed",
+                recursion_depth == 0);
+        ++recursion_depth;
+    }
+
+    ~RecursionGuard() {
+        --recursion_depth;
+    }
+};
+
+int register_log_callback(libmongodbcapi_log_callback log_callback) {
+    using namespace logger;
+
+    if (!mongo::libraryInitialized_)
+        return LIBMONGODB_CAPI_ERROR_LIBRARY_NOT_INITIALIZED;
+
+    if (mongo::global_db)
+        return LIBMONGODB_CAPI_ERROR_DB_OPEN;
+
+    if (logCallbackHandle)
+        return LIBMONGODB_CAPI_ERROR_CALLBACK_ALREADY_REGISTERED;
+
+    logCallbackHandle = globalLogManager()->getGlobalDomain()->attachAppender(
+        std::make_unique<embedded::EmbeddedLogAppender<MessageEventEphemeral>>(
+            log_callback, std::make_unique<MessageEventUnadornedEncoder>()));
+
+    return LIBMONGODB_CAPI_SUCCESS;
+}
+
+int unregister_log_callback() {
+    using namespace logger;
+
+    if (!mongo::libraryInitialized_)
+        return LIBMONGODB_CAPI_ERROR_LIBRARY_NOT_INITIALIZED;
+
+    if (mongo::global_db)
+        return LIBMONGODB_CAPI_ERROR_DB_OPEN;
+
+    if (!logCallbackHandle)
+        return LIBMONGODB_CAPI_ERROR_CALLBACK_NOT_REGISTERED;
+
+    globalLogManager()->getGlobalDomain()->detachAppender(logCallbackHandle);
+    logCallbackHandle.reset();
+
+    return LIBMONGODB_CAPI_SUCCESS;
+}
 
 libmongodbcapi_db* db_new(int argc, const char** argv, const char** envp) noexcept try {
+    RecursionGuard guard;
+
     last_error = LIBMONGODB_CAPI_SUCCESS;
     if (!libraryInitialized_)
         throw std::runtime_error("libmongodbcapi_init not called");
@@ -147,12 +205,16 @@ int db_destroy(libmongodbcapi_db* db) noexcept {
 }
 
 int db_pump(libmongodbcapi_db* db) noexcept try {
+    RecursionGuard guard;
+
     return LIBMONGODB_CAPI_SUCCESS;
 } catch (const std::exception&) {
     return LIBMONGODB_CAPI_ERROR_UNKNOWN;
 }
 
 libmongodbcapi_client* client_new(libmongodbcapi_db* db) noexcept try {
+    RecursionGuard guard;
+
     auto new_client = stdx::make_unique<libmongodbcapi_client>(db);
     libmongodbcapi_client* rv = new_client.get();
     db->open_clients.insert(std::make_pair(rv, std::move(new_client)));
@@ -180,6 +242,8 @@ int client_wire_protocol_rpc(libmongodbcapi_client* client,
                              size_t input_size,
                              void** output,
                              size_t* output_size) noexcept try {
+    RecursionGuard recursion_guard;
+
     mongo::Client::setCurrent(std::move(client->client));
     const auto guard = mongo::MakeGuard([&] { client->client = mongo::Client::releaseCurrent(); });
 
@@ -223,6 +287,14 @@ int libmongodbcapi_fini() {
         return LIBMONGODB_CAPI_ERROR_DB_OPEN;
 
     return LIBMONGODB_CAPI_SUCCESS;
+}
+
+int libmongodbcapi_register_log_callback(libmongodbcapi_log_callback log_callback) {
+    return mongo::register_log_callback(log_callback);
+}
+
+int libmongodbcapi_unregister_log_callback() {
+	return mongo::unregister_log_callback();
 }
 
 libmongodbcapi_db* libmongodbcapi_db_new(int argc, const char** argv, const char** envp) {
