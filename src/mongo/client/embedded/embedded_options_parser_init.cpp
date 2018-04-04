@@ -41,11 +41,11 @@ namespace mongo {
 namespace optionenvironment {
 
 MONGO_STARTUP_OPTIONS_PARSE(StartupOptions)(InitializerContext* context) {
-    std::string config_str = !context->args().empty() ? context->args()[0] : "";
+    std::string config = !context->args().empty() ? context->args()[0] : "";
 
     OptionsParser parser;
     Status ret =
-        parser.runConfigFile(startupOptions, config_str, context->env(), &startupOptionsParsed);
+        parser.runConfigFile(startupOptions, config, context->env(), &startupOptionsParsed);
     uassertStatusOKWithContext(ret, "Options parsing failed.");
 
     return Status::OK();
