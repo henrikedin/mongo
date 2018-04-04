@@ -30,7 +30,7 @@
 #include "mongo/client/embedded/libmongodbcapi.h"
 
 #include <set>
-#include <sstream>
+#include <yaml-cpp/yaml.h>
 
 #include "mongo/bson/bsonobjbuilder.h"
 #include "mongo/db/json.h"
@@ -70,10 +70,18 @@ protected:
             globalTempDir = mongo::stdx::make_unique<mongo::unittest::TempDir>("embedded_mongo");
         }
 
-        std::stringstream stream;
-        stream << "storage:\n"
-               << "  dbPath: " << globalTempDir->path().c_str() << "\n";
-        db = libmongodbcapi_db_new(stream.str().c_str());
+        YAML::Emitter yaml;
+        yaml << YAML::BeginMap;
+
+        yaml << YAML::Key << "storage";
+        yaml << YAML::Value << YAML::BeginMap;
+        yaml << YAML::Key << "dbPath";
+        yaml << YAML::Value << globalTempDir->path();
+        yaml << YAML::EndMap;  // storage
+
+        yaml << YAML::EndMap;
+
+        db = libmongodbcapi_db_new(yaml.c_str());
         ASSERT(db != nullptr);
     }
 

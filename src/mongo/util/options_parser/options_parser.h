@@ -110,8 +110,12 @@ public:
                const std::map<std::string, std::string>& env,
                Environment*);
 
+    /** Handles parsing of a YAML or INI formatted string. The
+     *  OptionSection be a description of the allowed options.  This function populates the
+     *  given Environment with the results but does not call validate on the Environment.
+     */
     Status runConfigFile(const OptionSection&,
-                         const std::string& argv,
+                         const std::string& config,
                          const std::map<std::string, std::string>& env,
                          Environment*);
 

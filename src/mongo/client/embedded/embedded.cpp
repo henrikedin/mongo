@@ -171,6 +171,9 @@ ServiceContext* initialize(const char* yaml_config) {
     srand(static_cast<unsigned>(curTimeMicros64()));
 
     setGlobalServiceContext(createServiceContext());
+
+    // yaml_config is passed to the options parser through the argc/argv interface that already
+    // existed. If it is nullptr then use 0 count which will be interpreted as empty string.
     Status status = mongo::runGlobalInitializers(
         yaml_config ? 1 : 0, &yaml_config, nullptr, getGlobalServiceContext());
     uassertStatusOKWithContext(status, "Global initilization failed");

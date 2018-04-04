@@ -136,7 +136,9 @@ if get_option('install-mode') == 'hygienic':
         ],
     )
 
-capiTest = env.Program(
+capiTestEnv = env.Clone()
+capiTestEnv.InjectThirdPartyIncludePaths(libraries=['yaml'])
+capiTest = capiTestEnv.Program(
     target='mongo_embedded_capi_test',
     source=[
         'libmongodbcapi_test.cpp',
@@ -193,7 +195,9 @@ if get_option('install-mode') == 'hygienic':
         ],
     )
 
-embeddedTransportTest = env.Program(
+embeddedTransportTestEnv = env.Clone()
+embeddedTransportTestEnv.InjectThirdPartyIncludePaths(libraries=['yaml'])
+embeddedTransportTest = embeddedTransportTestEnv.Program(
     target='mongo_embedded_transport_test',
     source=[
         'embedded_transport_layer_test.cpp',

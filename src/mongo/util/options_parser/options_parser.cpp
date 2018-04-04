@@ -1200,9 +1200,8 @@ Status OptionsParser::run(const OptionSection& options,
 
 Status OptionsParser::runConfigFile(
     const OptionSection& options,
-    const std::string& config_file,
-    const std::map<std::string, std::string>&
-        env,  // XXX: Currently unused, just provided to make interface consistent with run()
+    const std::string& config,
+    const std::map<std::string, std::string>& env,  // Unused, interface consistent with run()
     Environment* configEnvironment) {
     // Add the default values to our resulting environment
     Status ret = addDefaultValues(options, configEnvironment);
@@ -1211,7 +1210,7 @@ Status OptionsParser::runConfigFile(
     }
 
     // Add values from the provided config file
-    ret = parseConfigFile(options, config_file, configEnvironment);
+    ret = parseConfigFile(options, config, configEnvironment);
     if (!ret.isOK()) {
         return ret;
     }
@@ -1234,6 +1233,7 @@ Status OptionsParser::parseConfigFile(const OptionSection& options,
         return ret;
     }
 
+    // Check if YAML parsing was successful, if not try to read as INI
     if (isYAMLConfig(YAMLConfig)) {
         ret = addYAMLNodesToEnvironment(YAMLConfig, options, "", configEnvironment);
         if (!ret.isOK()) {
