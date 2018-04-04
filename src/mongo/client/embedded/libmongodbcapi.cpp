@@ -294,7 +294,7 @@ int libmongodbcapi_register_log_callback(libmongodbcapi_log_callback log_callbac
 }
 
 int libmongodbcapi_unregister_log_callback() {
-	return mongo::unregister_log_callback();
+    return mongo::unregister_log_callback();
 }
 
 libmongodbcapi_db* libmongodbcapi_db_new(int argc, const char** argv, const char** envp) {
