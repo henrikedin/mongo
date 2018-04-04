@@ -41,6 +41,8 @@ namespace mongo {
 namespace optionenvironment {
 
 MONGO_STARTUP_OPTIONS_PARSE(StartupOptions)(InitializerContext* context) {
+    // Embedded uses a YAML config passed in argv to reuse the existing interface, extract it from
+    // the first element otherwise use empty string.
     std::string config = !context->args().empty() ? context->args()[0] : "";
 
     OptionsParser parser;
