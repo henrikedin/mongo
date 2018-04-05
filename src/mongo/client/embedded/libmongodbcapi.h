@@ -37,9 +37,9 @@ extern "C" {
 typedef struct libmongodbcapi_db libmongodbcapi_db;
 typedef struct libmongodbcapi_client libmongodbcapi_client;
 
-typedef void (*libmongodbcapi_log_callback)(const char* /*message*/,
-                                            const char* /*component*/,
-                                            int /*severity*/);
+typedef void (*libmongodbcapi_log_callback)(const char* message,
+                                            const char* component,
+                                            int severity);
 
 typedef enum {
     LIBMONGODB_CAPI_ERROR_UNKNOWN = -1,
