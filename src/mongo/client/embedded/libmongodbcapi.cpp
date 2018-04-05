@@ -104,15 +104,6 @@ public:
 int register_log_callback(libmongodbcapi_log_callback log_callback) {
     using namespace logger;
 
-    if (!mongo::libraryInitialized_)
-        return LIBMONGODB_CAPI_ERROR_LIBRARY_NOT_INITIALIZED;
-
-    if (mongo::global_db)
-        return LIBMONGODB_CAPI_ERROR_DB_OPEN;
-
-    if (logCallbackHandle)
-        return LIBMONGODB_CAPI_ERROR_CALLBACK_ALREADY_REGISTERED;
-
     logCallbackHandle = globalLogManager()->getGlobalDomain()->attachAppender(
         std::make_unique<embedded::EmbeddedLogAppender<MessageEventEphemeral>>(
             log_callback, std::make_unique<MessageEventUnadornedEncoder>()));
@@ -122,15 +113,6 @@ int register_log_callback(libmongodbcapi_log_callback log_callback) {
 
 int unregister_log_callback() {
     using namespace logger;
-
-    if (!mongo::libraryInitialized_)
-        return LIBMONGODB_CAPI_ERROR_LIBRARY_NOT_INITIALIZED;
-
-    if (mongo::global_db)
-        return LIBMONGODB_CAPI_ERROR_DB_OPEN;
-
-    if (!logCallbackHandle)
-        return LIBMONGODB_CAPI_ERROR_CALLBACK_NOT_REGISTERED;
 
     globalLogManager()->getGlobalDomain()->detachAppender(logCallbackHandle);
     logCallbackHandle.reset();
@@ -271,12 +253,21 @@ int get_last_capi_error() noexcept {
 }  // namespace mongo
 
 extern "C" {
-int libmongodbcapi_init(const char* yaml_config) {
+int libmongodbcapi_init(libmongodb_init_params* params) {
     if (mongo::libraryInitialized_)
         return LIBMONGODB_CAPI_ERROR_LIBRARY_ALREADY_INITIALIZED;
 
+    int result = LIBMONGODB_CAPI_SUCCESS;
+    if (params) {
+        if (params->log_callback) {
+            result = mongo::register_log_callback(params->log_callback);
+            if (result != LIBMONGODB_CAPI_SUCCESS)
+                return result;
+        }
+    }
+
     mongo::libraryInitialized_ = true;
-    return LIBMONGODB_CAPI_SUCCESS;
+    return result;
 }
 
 int libmongodbcapi_fini() {
@@ -286,15 +277,16 @@ int libmongodbcapi_fini() {
     if (mongo::global_db)
         return LIBMONGODB_CAPI_ERROR_DB_OPEN;
 
-    return LIBMONGODB_CAPI_SUCCESS;
-}
+    int result = LIBMONGODB_CAPI_SUCCESS;
+    if (mongo::logCallbackHandle) {
+        result = mongo::unregister_log_callback();
+        if (result != LIBMONGODB_CAPI_SUCCESS)
+            return result;
+    }
 
-int libmongodbcapi_register_log_callback(libmongodbcapi_log_callback log_callback) {
-    return mongo::register_log_callback(log_callback);
-}
+    mongo::libraryInitialized_ = false;
 
-int libmongodbcapi_unregister_log_callback() {
-    return mongo::unregister_log_callback();
+    return result;
 }
 
 libmongodbcapi_db* libmongodbcapi_db_new(int argc, const char** argv, const char** envp) {

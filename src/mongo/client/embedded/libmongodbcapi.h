@@ -52,13 +52,22 @@ typedef enum {
     LIBMONGODB_CAPI_ERROR_CALLBACK_NOT_REGISTERED,
 } libmongodbcapi_error;
 
+typedef struct {
+    // optional null-terminated YAML formatted MongoDB configuration.
+    // See documentation for valid options.
+    const char* yaml_config;
+
+    // optional log callback to the mongodbcapi library, it is not allowed to make any mongodbcapi
+    // function calls inside the callback.
+    libmongodbcapi_log_callback log_callback;
+} libmongodb_init_params;
 
 /**
 * Initializes the mongodbcapi library, required before any other call. Cannot be called again
 * without libmongodbcapi_fini() being called first.
 *
-* @param config null-terminated YAML formatted MongoDB configuration. See documentation for valid
-* options.
+* @param params pointer to libmongodbcapi_log_callback containing library initialization parameters.
+* Allowed to be NULL.
 *
 * @note This function is not thread safe.
 *
@@ -66,7 +75,7 @@ typedef enum {
 * @return Returns LIBMONGODB_CAPI_ERROR_LIBRARY_ALREADY_INITIALIZED if libmongodbcapi_init() has
 * already been called without an intervening call to libmongodbcapi_fini().
 */
-int libmongodbcapi_init(const char* yaml_config);
+int libmongodbcapi_init(libmongodb_init_params* params);
 
 /**
 * Tears down the state of the library, all databases must be closed before calling this.
@@ -81,41 +90,6 @@ int libmongodbcapi_init(const char* yaml_config);
 * @return Returns LIBMONGODB_CAPI_ERROR_UNKNOWN for any other unspecified errors.
 */
 int libmongodbcapi_fini();
-
-/**
-* Registeres a log callback to the mongodbcapi library, Cannot be called when databases are open.
-* It is not allowed to make any mongodbcapi function calls inside the callback.
-*
-* @param log_callback function to be called
-*
-* @note This function is not thread safe.
-* @note Only one callback can be registered at once.
-*
-* @return Returns LIBMONGODB_CAPI_SUCCESS on success.
-* @return Returns LIBMONGODB_CAPI_ERROR_LIBRARY_NOT_INITIALIZED if libmongodbcapi_init() has not
-* been called previously.
-* @return Returns LIBMONGODB_CAPI_ERROR_DB_OPEN if there are open databases that haven't been closed
-* with libmongodbcapi_db_destroy().
-* @return Returns LIBMONGODB_CAPI_ERROR_CALLBACK_ALREADY_REGISTERED if there's already a callback
-* registered that has not be unregistered with libmongodbcapi_unregister_log_callback() previously.
-*/
-int libmongodbcapi_register_log_callback(libmongodbcapi_log_callback log_callback);
-
-/**
-* Unregisteres a log callback to the mongodbcapi library, Cannot be called when databases are open.
-*
-* @param log_callback function to be called
-*
-* @note This function is not thread safe.
-*
-* @return Returns LIBMONGODB_CAPI_SUCCESS on success.
-* @return Returns LIBMONGODB_CAPI_ERROR_LIBRARY_NOT_INITIALIZED if libmongodbcapi_init() has not
-* been called previously.
-* @return Returns LIBMONGODB_CAPI_ERROR_DB_OPEN if there are open databases that haven't been closed
-* with libmongodbcapi_db_destroy().
-* @return Returns LIBMONGODB_CAPI_ERROR_CALLBACK_NOT_REGISTERED if there is no callback registered.
-*/
-int libmongodbcapi_unregister_log_callback();
 
 /**
 * Starts the database and returns a handle with the service context.
