@@ -35,27 +35,27 @@
 
 namespace mongo {
 
-	namespace {
+namespace {
 
-		class MultiIndexBlockImplEmbedded : public MultiIndexBlockImpl
-		{
-			using MultiIndexBlockImpl::MultiIndexBlockImpl;
+class MultiIndexBlockImplEmbedded : public MultiIndexBlockImpl {
+    using MultiIndexBlockImpl::MultiIndexBlockImpl;
 
-			bool initBackgroundIndexFromSpec(const BSONObj& spec) const override
-			{
-				uassert(ErrorCodes::IllegalOperation, "Background index building not supported on embedded"_sd, !spec["background"].trueValue());
-				return false;
-			}
-		};
+    bool initBackgroundIndexFromSpec(const BSONObj& spec) const override {
+        uassert(ErrorCodes::IllegalOperation,
+                "Background index building not supported on embedded"_sd,
+                !spec["background"].trueValue());
+        return false;
+    }
+};
 
-		MONGO_INITIALIZER(InitializeMultiIndexBlockFactory)(InitializerContext* const) {
-			MultiIndexBlock::registerFactory(
-				[](OperationContext* const opCtx, Collection* const collection) {
-				return stdx::make_unique<MultiIndexBlockImplEmbedded>(opCtx, collection);
-			});
-			return Status::OK();
-		}
+MONGO_INITIALIZER(InitializeMultiIndexBlockFactory)(InitializerContext* const) {
+    MultiIndexBlock::registerFactory(
+        [](OperationContext* const opCtx, Collection* const collection) {
+            return stdx::make_unique<MultiIndexBlockImplEmbedded>(opCtx, collection);
+        });
+    return Status::OK();
+}
 
-	}  // namespace
+}  // namespace
 
 }  // namespace mongo

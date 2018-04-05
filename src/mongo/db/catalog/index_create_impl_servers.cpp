@@ -35,26 +35,24 @@
 
 namespace mongo {
 
-	namespace {
+namespace {
 
-		class MultiIndexBlockImplServers : public MultiIndexBlockImpl
-		{
-			using MultiIndexBlockImpl::MultiIndexBlockImpl;
+class MultiIndexBlockImplServers : public MultiIndexBlockImpl {
+    using MultiIndexBlockImpl::MultiIndexBlockImpl;
 
-			bool initBackgroundIndexFromSpec(const BSONObj& spec) const override
-			{
-				return spec["background"].trueValue();
-			}
-		};
+    bool initBackgroundIndexFromSpec(const BSONObj& spec) const override {
+        return spec["background"].trueValue();
+    }
+};
 
-		MONGO_INITIALIZER(InitializeMultiIndexBlockFactory)(InitializerContext* const) {
-			MultiIndexBlock::registerFactory(
-				[](OperationContext* const opCtx, Collection* const collection) {
-				return stdx::make_unique<MultiIndexBlockImplServers>(opCtx, collection);
-			});
-			return Status::OK();
-		}
+MONGO_INITIALIZER(InitializeMultiIndexBlockFactory)(InitializerContext* const) {
+    MultiIndexBlock::registerFactory(
+        [](OperationContext* const opCtx, Collection* const collection) {
+            return stdx::make_unique<MultiIndexBlockImplServers>(opCtx, collection);
+        });
+    return Status::OK();
+}
 
-	}  // namespace
+}  // namespace
 
 }  // namespace mongo

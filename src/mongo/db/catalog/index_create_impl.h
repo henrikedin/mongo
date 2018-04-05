@@ -202,7 +202,7 @@ private:
         InsertDeleteOptions options;
     };
 
-	virtual bool initBackgroundIndexFromSpec(const BSONObj& spec) const = 0;
+    virtual bool initBackgroundIndexFromSpec(const BSONObj& spec) const = 0;
 
     std::vector<IndexToBuild> _indexes;
 

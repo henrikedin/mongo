@@ -194,18 +194,18 @@ TEST_F(MongodbCAPITest, CreateIndex) {
     auto inputOpMsg = mongo::OpMsgRequest::fromDBAndBody("index_db", inputObj);
     auto output = performRpc(client, inputOpMsg);
 
-	ASSERT(output.hasField("ok"));
-	ASSERT(output.getField("ok").numberDouble() == 1.0);
+    ASSERT(output.hasField("ok"));
+    ASSERT(output.getField("ok").numberDouble() == 1.0);
     ASSERT(output.getIntField("numIndexesAfter") == output.getIntField("numIndexesBefore") + 1);
 }
 
 TEST_F(MongodbCAPITest, CreateBackgroundIndex) {
-	// create the client object
-	auto client = createClient();
+    // create the client object
+    auto client = createClient();
 
-	// craft the createIndexes message
-	mongo::BSONObj inputObj = mongo::fromjson(
-		R"raw_delimiter({
+    // craft the createIndexes message
+    mongo::BSONObj inputObj = mongo::fromjson(
+        R"raw_delimiter({
             createIndexes: 'items',
             indexes: 
             [
@@ -218,11 +218,11 @@ TEST_F(MongodbCAPITest, CreateBackgroundIndex) {
                 }
             ]
         })raw_delimiter");
-	auto inputOpMsg = mongo::OpMsgRequest::fromDBAndBody("background_index_db", inputObj);
-	auto output = performRpc(client, inputOpMsg);
+    auto inputOpMsg = mongo::OpMsgRequest::fromDBAndBody("background_index_db", inputObj);
+    auto output = performRpc(client, inputOpMsg);
 
-	ASSERT(output.hasField("ok"));
-	ASSERT(output.getField("ok").numberDouble() != 1.0);
+    ASSERT(output.hasField("ok"));
+    ASSERT(output.getField("ok").numberDouble() != 1.0);
 }
 
 TEST_F(MongodbCAPITest, TrimMemory) {
