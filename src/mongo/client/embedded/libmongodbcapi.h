@@ -60,13 +60,13 @@ typedef struct {
     // optional log callback to the mongodbcapi library, it is not allowed to make any mongodbcapi
     // function calls inside the callback.
     libmongodbcapi_log_callback log_callback;
-} libmongodb_init_params;
+} libmongodbcapi_init_params;
 
 /**
 * Initializes the mongodbcapi library, required before any other call. Cannot be called again
 * without libmongodbcapi_fini() being called first.
 *
-* @param params pointer to libmongodbcapi_log_callback containing library initialization parameters.
+* @param params pointer to libmongodbcapi_init_params containing library initialization parameters.
 * Allowed to be NULL.
 *
 * @note This function is not thread safe.
@@ -75,7 +75,7 @@ typedef struct {
 * @return Returns LIBMONGODB_CAPI_ERROR_LIBRARY_ALREADY_INITIALIZED if libmongodbcapi_init() has
 * already been called without an intervening call to libmongodbcapi_fini().
 */
-int libmongodbcapi_init(libmongodb_init_params* params);
+int libmongodbcapi_init(libmongodbcapi_init_params* params);
 
 /**
 * Tears down the state of the library, all databases must be closed before calling this.

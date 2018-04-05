@@ -253,7 +253,7 @@ int get_last_capi_error() noexcept {
 }  // namespace mongo
 
 extern "C" {
-int libmongodbcapi_init(libmongodb_init_params* params) {
+int libmongodbcapi_init(libmongodbcapi_init_params* params) {
     if (mongo::libraryInitialized_)
         return LIBMONGODB_CAPI_ERROR_LIBRARY_ALREADY_INITIALIZED;
 

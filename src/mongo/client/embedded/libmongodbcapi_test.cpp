@@ -425,7 +425,7 @@ int main(int argc, char** argv, char** envp) {
 
     // Initialize the library with a log callback and test so we receive at least one callback
     // during the lifetime of the test
-    libmongodb_init_params params;
+    libmongodbcapi_init_params params;
     memset(&params, 0, sizeof(params));
     params.log_callback = [](const char* message, const char* component, int severety) {
         ASSERT(message);
