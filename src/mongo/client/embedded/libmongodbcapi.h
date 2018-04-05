@@ -61,7 +61,7 @@ typedef struct {
     // See documentation for valid options.
     const char* yaml_config;
 
-    // bitfield of log destinations, accepts values from libmongodbcapi_log_flags. 
+    // bitfield of log destinations, accepts values from libmongodbcapi_log_flags.
     // Default is stdout.
     int log_flags;
 
