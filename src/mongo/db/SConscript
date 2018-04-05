@@ -1086,6 +1086,9 @@ env.Library(
         "views/views_mongod",
         'keys_collection_client_direct',
     ],
+    LIBDEPS_PRIVATE=[
+        "catalog/index_create_impl_servers",
+    ]
 )
 
 env.Library(
