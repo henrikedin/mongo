@@ -104,7 +104,7 @@ public:
 int register_log_callback(libmongodbcapi_log_callback log_callback) {
     using namespace logger;
 
-    logCallbackHandle = globalLogManager()->getGlobalDomain()->attachAppender(
+    logCallbackHandle = globalLogDomain()->attachAppender(
         std::make_unique<embedded::EmbeddedLogAppender<MessageEventEphemeral>>(
             log_callback, std::make_unique<MessageEventUnadornedEncoder>()));
 
@@ -114,10 +114,56 @@ int register_log_callback(libmongodbcapi_log_callback log_callback) {
 int unregister_log_callback() {
     using namespace logger;
 
-    globalLogManager()->getGlobalDomain()->detachAppender(logCallbackHandle);
+    globalLogDomain()->detachAppender(logCallbackHandle);
     logCallbackHandle.reset();
 
     return LIBMONGODB_CAPI_SUCCESS;
+}
+
+int init(libmongodbcapi_init_params* params) {
+    using namespace logger;
+
+    if (libraryInitialized_)
+        return LIBMONGODB_CAPI_ERROR_LIBRARY_ALREADY_INITIALIZED;
+
+    int result = LIBMONGODB_CAPI_SUCCESS;
+    if (params) {
+        // The standard console log appender may or may not be installed here, depending if this is
+        // the first time we initialize the library or not. Make sure we handle both cases.
+        if (params->log_flags & LIBMONGODB_CAPI_LOG_STDOUT) {
+            globalLogManager()->reattachDefaultConsoleAppender();
+        } else {
+            globalLogManager()->detachDefaultConsoleAppender();
+        }
+
+        if ((params->log_flags & LIBMONGODB_CAPI_LOG_CALLBACK) && params->log_callback) {
+            result = register_log_callback(params->log_callback);
+            if (result != LIBMONGODB_CAPI_SUCCESS)
+                return result;
+        }
+    }
+
+    libraryInitialized_ = true;
+    return result;
+}
+
+int fini() {
+    if (!libraryInitialized_)
+        return LIBMONGODB_CAPI_ERROR_LIBRARY_NOT_INITIALIZED;
+
+    if (global_db)
+        return LIBMONGODB_CAPI_ERROR_DB_OPEN;
+
+    int result = LIBMONGODB_CAPI_SUCCESS;
+    if (logCallbackHandle) {
+        result = unregister_log_callback();
+        if (result != LIBMONGODB_CAPI_SUCCESS)
+            return result;
+    }
+
+    libraryInitialized_ = false;
+
+    return result;
 }
 
 libmongodbcapi_db* db_new(int argc, const char** argv, const char** envp) noexcept try {
@@ -254,39 +300,11 @@ int get_last_capi_error() noexcept {
 
 extern "C" {
 int libmongodbcapi_init(libmongodbcapi_init_params* params) {
-    if (mongo::libraryInitialized_)
-        return LIBMONGODB_CAPI_ERROR_LIBRARY_ALREADY_INITIALIZED;
-
-    int result = LIBMONGODB_CAPI_SUCCESS;
-    if (params) {
-        if (params->log_callback) {
-            result = mongo::register_log_callback(params->log_callback);
-            if (result != LIBMONGODB_CAPI_SUCCESS)
-                return result;
-        }
-    }
-
-    mongo::libraryInitialized_ = true;
-    return result;
+    return mongo::init(params);
 }
 
 int libmongodbcapi_fini() {
-    if (!mongo::libraryInitialized_)
-        return LIBMONGODB_CAPI_ERROR_LIBRARY_NOT_INITIALIZED;
-
-    if (mongo::global_db)
-        return LIBMONGODB_CAPI_ERROR_DB_OPEN;
-
-    int result = LIBMONGODB_CAPI_SUCCESS;
-    if (mongo::logCallbackHandle) {
-        result = mongo::unregister_log_callback();
-        if (result != LIBMONGODB_CAPI_SUCCESS)
-            return result;
-    }
-
-    mongo::libraryInitialized_ = false;
-
-    return result;
+    return mongo::fini();
 }
 
 libmongodbcapi_db* libmongodbcapi_db_new(int argc, const char** argv, const char** envp) {

@@ -51,6 +51,7 @@ public:
 
     /**
      * Gets the global domain for this manager.  It has no name.
+     * Will attach a default console log appender.
      */
     ComponentMessageLogDomain* getGlobalDomain() {
         return &_globalDomain;
@@ -61,11 +62,22 @@ public:
      */
     MessageLogDomain* getNamedDomain(const std::string& name);
 
+    /**
+     * Detaches the default console log appender
+     */
+    void detachDefaultConsoleAppender();
+
+    /**
+     * Reattaches the default console log appender
+     */
+    void reattachDefaultConsoleAppender();
+
 private:
     typedef stdx::unordered_map<std::string, MessageLogDomain*> DomainsByNameMap;
 
     DomainsByNameMap _domains;
     ComponentMessageLogDomain _globalDomain;
+    ComponentMessageLogDomain::AppenderHandle _defaultAppender;
 };
 
 }  // namespace logger

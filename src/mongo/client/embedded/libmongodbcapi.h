@@ -50,10 +50,20 @@ typedef enum {
     LIBMONGODB_CAPI_ERROR_DB_OPEN,
 } libmongodbcapi_error;
 
+typedef enum {
+    LIBMONGODB_CAPI_LOG_NONE = 0,
+    LIBMONGODB_CAPI_LOG_STDOUT = 1,
+    LIBMONGODB_CAPI_LOG_CALLBACK = 2
+} libmongodbcapi_log_flags;
+
 typedef struct {
     // optional null-terminated YAML formatted MongoDB configuration.
     // See documentation for valid options.
     const char* yaml_config;
+
+    // bitfield of log destinations, accepts values from libmongodbcapi_log_flags. 
+    // Default is stdout.
+    int log_flags;
 
     // optional log callback to the mongodbcapi library, it is not allowed to make any mongodbcapi
     // function calls inside the callback.

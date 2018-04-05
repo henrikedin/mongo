@@ -427,6 +427,8 @@ int main(int argc, char** argv, char** envp) {
     // during the lifetime of the test
     libmongodbcapi_init_params params;
     memset(&params, 0, sizeof(params));
+
+    params.log_flags = LIBMONGODB_CAPI_LOG_STDOUT | LIBMONGODB_CAPI_LOG_CALLBACK;
     params.log_callback = [](const char* message, const char* component, int severety) {
         ASSERT(message);
         ASSERT(component);

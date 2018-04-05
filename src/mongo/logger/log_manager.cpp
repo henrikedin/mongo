@@ -36,9 +36,7 @@ namespace mongo {
 namespace logger {
 
 LogManager::LogManager() {
-    // Should really fassert that the following status .isOK(), but it never fails.
-    _globalDomain.attachAppender(std::make_unique<ConsoleAppender<MessageEventEphemeral>>(
-        std::make_unique<MessageEventDetailsEncoder>()));
+    reattachDefaultConsoleAppender();
 }
 
 LogManager::~LogManager() {
@@ -53,6 +51,21 @@ MessageLogDomain* LogManager::getNamedDomain(const std::string& name) {
         domain = new MessageLogDomain;
     }
     return domain;
+}
+
+void LogManager::detachDefaultConsoleAppender() {
+    if (_defaultAppender) {
+        _globalDomain.detachAppender(_defaultAppender);
+        _defaultAppender.reset();
+    }
+}
+
+void LogManager::reattachDefaultConsoleAppender() {
+    if (!_defaultAppender) {
+        _defaultAppender =
+            _globalDomain.attachAppender(std::make_unique<ConsoleAppender<MessageEventEphemeral>>(
+                std::make_unique<MessageEventDetailsEncoder>()));
+    }
 }
 
 }  // logger
