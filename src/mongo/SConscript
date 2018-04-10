@@ -460,6 +460,31 @@ env.Library("linenoise_utf8",
         "shell/linenoise_utf8.cpp",
     ])
 
+# --- mongoe ---
+
+mongoe_env = env.Clone()
+mongoe_env.InjectThirdPartyIncludePaths(libraries=['yaml'])
+mongoe = mongoe_env.Program(
+    target='mongoe',
+    source=[
+        'client/embedded/mongoe_main.cpp',
+    ],
+    LIBDEPS=[
+        'client/embedded/embedded',
+        'db/commands/shell_protocol',
+        'db/mongod_options',
+        'db/server_options',
+        'transport/transport_layer_manager',
+        'util/signal_handlers',
+    ],
+    INSTALL_ALIAS=[
+        'mobile-test',
+    ],
+)
+
+if not hygienic:
+    env.Install('#/', mongoe)
+
 # --- shell ---
 
 if not has_option('noshell') and usemozjs:
@@ -639,6 +664,9 @@ if not hygienic:
 
 installBinary( env, "mongod" )
 installBinary( env, "mongos" )
+
+if mongoe_env is not None:
+    installBinary( mongoe_env, "mongoe" )
 
 if shellEnv is not None:
     installBinary( shellEnv, "mongo" )
