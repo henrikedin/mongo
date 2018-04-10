@@ -99,8 +99,10 @@ env.Library(
         '$BUILD_DIR/mongo/db/commands/mongod_fcv',
         '$BUILD_DIR/mongo/db/op_observer_d',
         '$BUILD_DIR/mongo/db/repair_database_and_check_version',
+        '$BUILD_DIR/mongo/db/repl/repl_set_commands_no_repl',
         '$BUILD_DIR/mongo/db/repl/storage_interface_impl',
         '$BUILD_DIR/mongo/db/storage/mobile/storage_mobile',
+        '$BUILD_DIR/mongo/db/storage/storage_init_d',
         '$BUILD_DIR/mongo/util/version_impl',
         'embedded_commands',
         'embedded_options',
@@ -157,6 +159,32 @@ capiTest = env.Program(
 
 env.RegisterUnitTest(capiTest[0])
 env.Alias('embedded_capi', capiTest)
+
+mongoe = env.Program(
+    target='mongoe',
+    source=[
+        'mongoe_main.cpp',
+        'standalone_embedded_options.cpp',
+        'standalone_embedded_options_init.cpp',
+    ],
+    LIBDEPS=[
+        '$BUILD_DIR/mongo/transport/transport_layer_manager',
+        '$BUILD_DIR/mongo/db/server_options',
+        '$BUILD_DIR/mongo/util/signal_handlers',
+        'embedded',
+
+        '$BUILD_DIR/mongo/db/commands',
+        '$BUILD_DIR/mongo/db/commands/mongod_mongoe',
+        
+    ],
+)
+
+hygienic = get_option('install-mode') == 'hygienic'
+
+if hygienic:
+    env.Default('$INSTALL_DIR/bin/mongoe$PROGSUFFIX')
+else:
+    env.Default(env.Install('#/', mongoe))
 
 if not env['MONGO_HAVE_LIBMONGOC']:
     Return()

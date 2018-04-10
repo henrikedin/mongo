@@ -1051,10 +1051,33 @@ env.CppUnitTest('isself_test',
                 )
 
 env.Library(
+    target='repl_set_commands_no_repl',
+    source=[
+        'repl_set_command.cpp',
+        'repl_set_get_status_cmd.cpp',
+    ],
+    LIBDEPS=[
+        '$BUILD_DIR/mongo/base',
+        '$BUILD_DIR/mongo/db/auth/authcore',
+        '$BUILD_DIR/mongo/db/commands',
+        #'$BUILD_DIR/mongo/db/commands/test_commands_enabled',
+        #'$BUILD_DIR/mongo/db/concurrency/lock_manager',
+        #'$BUILD_DIR/mongo/db/dbhelpers',
+        '$BUILD_DIR/mongo/db/lasterror',
+        '$BUILD_DIR/mongo/db/repl/repl_coordinator_interface',
+        #'$BUILD_DIR/mongo/db/storage/storage_options',
+        #'drop_pending_collection_reaper',
+        #'repl_settings',
+        #'replica_set_messages',
+        #'replication_process',
+        #'serveronly_repl',
+    ],
+)
+
+env.Library(
     target='repl_set_commands',
     source=[
         'repl_set_commands.cpp',
-        'repl_set_command.cpp',
         'repl_set_request_votes.cpp',
     ],
     LIBDEPS=[
@@ -1067,6 +1090,7 @@ env.Library(
         '$BUILD_DIR/mongo/db/repl/repl_coordinator_interface',
         '$BUILD_DIR/mongo/db/storage/storage_options',
         'drop_pending_collection_reaper',
+        'repl_set_commands_no_repl',
         'repl_settings',
         'replica_set_messages',
         'replication_process',

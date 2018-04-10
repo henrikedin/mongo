@@ -53,7 +53,30 @@ Status OptionSection::addSection(const OptionSection& subSection) {
             return Status(ErrorCodes::InternalError, sb.str());
         }
     }
-    _subSections.push_back(subSection);
+	auto it = std::find_if(_subSections.begin(), _subSections.end(), [&subSection](const OptionSection& section)
+	{
+		return section._name == subSection._name;
+	});
+	if (it == _subSections.end())
+	{
+		_subSections.push_back(subSection);
+	}
+	else
+	{
+		auto begin = it->_options.begin();
+		auto end = it->_options.end();
+		for (auto&& option : subSection._options)
+		{
+			if (std::find_if(begin, end, [&option](auto&& existing)
+			{
+				return existing._dottedName == option._dottedName;
+			}) == end)
+			{
+				it->_options.insert(it->_options.end(), option);
+			}
+		}
+		//it->_options.insert(it->_options.end(), subSection._options.begin(), subSection._options.end());
+	}
     return Status::OK();
 }
 
