@@ -37,6 +37,7 @@
 #include "mongo/db/client.h"
 #include "mongo/db/commands.h"
 #include "mongo/db/curop.h"
+#include "mongo/db/dbdirectcursor.h"
 #include "mongo/db/operation_context.h"
 #include "mongo/db/repl/replication_coordinator.h"
 #include "mongo/db/wire_version.h"
@@ -112,10 +113,6 @@ ConnectionString::ConnectionType DBDirectClient::type() const {
     return ConnectionString::MASTER;
 }
 
-double DBDirectClient::getSoTimeout() const {
-    return 0;
-}
-
 bool DBDirectClient::lazySupported() const {
     return true;
 }
@@ -166,8 +163,29 @@ unique_ptr<DBClientCursor> DBDirectClient::query(const string& ns,
                                                  const BSONObj* fieldsToReturn,
                                                  int queryOptions,
                                                  int batchSize) {
-    return DBClientBase::query(
-        ns, query, nToReturn, nToSkip, fieldsToReturn, queryOptions, batchSize);
+    std::unique_ptr<DBClientCursor> c(new DBDirectCursor(
+        this, ns, query.obj, 0, nToReturn, nToSkip, fieldsToReturn, queryOptions, batchSize));
+    if (c->init())
+        return c;
+    return nullptr;
+}
+
+std::unique_ptr<DBClientCursor> DBDirectClient::getMore(const std::string& ns,
+                                                        long long cursorId,
+                                                        int nToReturn,
+                                                        int options) {
+    unique_ptr<DBClientCursor> c(new DBDirectCursor(this,
+                                                    ns,
+                                                    BSONObj(),  // query
+                                                    cursorId,
+                                                    nToReturn,
+                                                    0,        // nToSkip
+                                                    nullptr,  // fieldsToReturn
+                                                    options,
+                                                    0));
+    if (c->init())
+        return c;
+    return nullptr;
 }
 
 unsigned long long DBDirectClient::count(

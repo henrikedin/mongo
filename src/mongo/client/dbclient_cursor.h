@@ -1,6 +1,4 @@
-// file dbclientcursor.h
-
-/*    Copyright 2009 10gen Inc.
+/*    Copyright 2018 MongoDB Inc.
  *
  *    This program is free software: you can redistribute it and/or  modify
  *    it under the terms of the GNU Affero General Public License, version 3,
@@ -32,14 +30,16 @@
 #include <stack>
 
 #include "mongo/base/disallow_copying.h"
-#include "mongo/client/dbclientinterface.h"
+#include "mongo/db/dbmessage.h"
 #include "mongo/db/jsobj.h"
 #include "mongo/db/json.h"
+#include "mongo/db/namespace_string.h"
 #include "mongo/rpc/message.h"
 
 namespace mongo {
 
 class AScopedConnection;
+class DBClientBase;
 
 /** Queries return a cursor object */
 class DBClientCursor {
@@ -148,13 +148,7 @@ public:
                    int queryOptions,
                    int bs);
 
-    DBClientCursor(DBClientBase* client,
-                   const std::string& ns,
-                   long long cursorId,
-                   int nToReturn,
-                   int options);
-
-    virtual ~DBClientCursor();
+    virtual ~DBClientCursor(){};
 
     long long getCursorId() const {
         return cursorId;
@@ -166,8 +160,6 @@ public:
     void decouple() {
         _ownCursor = false;
     }
-
-    void attach(AScopedConnection* conn);
 
     std::string originalHost() const {
         return _originalHost;
@@ -186,11 +178,6 @@ public:
     bool initLazyFinish(bool& retry);
 
     /**
-     * For exhaust. Used in DBClientConnection.
-     */
-    void exhaustReceiveMore();
-
-    /**
      * Marks this object as dead and sends the KillCursors message to the server.
      *
      * Any errors that result from this are swallowed since this is typically performed as part of
@@ -200,7 +187,7 @@ public:
      * Killing an already killed or exhausted cursor does nothing, so it is safe to always call this
      * if you want to ensure that a cursor is killed.
      */
-    void kill();
+    virtual void kill() = 0;
 
     /**
      * Returns true if the connection this cursor is using has pending replies.
@@ -215,7 +202,7 @@ public:
         return _connectionHasPendingReplies;
     }
 
-private:
+protected:
     DBClientCursor(DBClientBase* client,
                    const std::string& ns,
                    const BSONObj& query,
@@ -249,7 +236,6 @@ private:
     int resultFlags;
     long long cursorId;
     bool _ownCursor;  // see decouple()
-    std::string _scopedHost;
     std::string _lazyHost;
     bool wasError;
     BSONVersion _enabledBSONVersion;
@@ -270,9 +256,9 @@ private:
      */
     BSONObj commandDataReceived(const Message& reply);
 
-    void requestMore();
+    virtual void requestMore() = 0;
 
-    // init pieces
+    //// init pieces
     Message _assembleInit();
     Message _assembleGetMore();
 };

@@ -109,9 +109,9 @@ public:
 
     static StatusWith<MongoURI> parse(const std::string& url);
 
-    DBClientBase* connect(StringData applicationName,
-                          std::string& errmsg,
-                          boost::optional<double> socketTimeoutSecs = boost::none) const;
+    DBClientNetwork* connect(StringData applicationName,
+                             std::string& errmsg,
+                             boost::optional<double> socketTimeoutSecs = boost::none) const;
 
     const std::string& getUser() const {
         return _user;

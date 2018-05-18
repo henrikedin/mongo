@@ -269,7 +269,7 @@ env.CppIntegrationTest(
     ],
     LIBDEPS=[
         'protocol',
-        '$BUILD_DIR/mongo/client/clientdriver',
+        '$BUILD_DIR/mongo/client/clientdriver_network',
         '$BUILD_DIR/mongo/util/version_impl',
     ],
 )

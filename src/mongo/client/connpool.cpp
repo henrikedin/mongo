@@ -40,6 +40,8 @@
 #include <string>
 
 #include "mongo/client/connection_string.h"
+#include "mongo/client/dbclient_connection.h"
+#include "mongo/client/dbclient_cursor.h"
 #include "mongo/client/global_conn_pool.h"
 #include "mongo/client/replica_set_monitor.h"
 #include "mongo/executor/connection_pool_stats.h"
@@ -96,8 +98,8 @@ void PoolForHost::clear() {
     _pool = decltype(_pool){};
 }
 
-void PoolForHost::done(DBConnectionPool* pool, DBClientBase* c_raw) {
-    std::unique_ptr<DBClientBase> c{c_raw};
+void PoolForHost::done(DBConnectionPool* pool, DBClientNetwork* c_raw) {
+    std::unique_ptr<DBClientNetwork> c{c_raw};
     const bool isFailed = c->isFailed();
 
     --_checkedOut;
@@ -145,7 +147,7 @@ bool PoolForHost::isBadSocketCreationTime(uint64_t microSec) {
         microSec <= _minValidCreationTimeMicroSec;
 }
 
-DBClientBase* PoolForHost::get(DBConnectionPool* pool, double socketTimeout) {
+DBClientNetwork* PoolForHost::get(DBConnectionPool* pool, double socketTimeout) {
     while (!_pool.empty()) {
         auto sc = std::move(_pool.top());
         _pool.pop();
@@ -189,7 +191,7 @@ void PoolForHost::getStaleConnections(Date_t idleThreshold, vector<DBClientBase*
 }
 
 
-PoolForHost::StoredConnection::StoredConnection(std::unique_ptr<DBClientBase> c)
+PoolForHost::StoredConnection::StoredConnection(std::unique_ptr<DBClientNetwork> c)
     : conn(std::move(c)), added(Date_t::now()) {}
 
 bool PoolForHost::StoredConnection::ok() {
@@ -245,13 +247,13 @@ void PoolForHost::shutdown() {
 class DBConnectionPool::Detail {
 public:
     template <typename Connect>
-    static DBClientBase* get(DBConnectionPool* _this,
-                             const std::string& host,
-                             double timeout,
-                             Connect connect) {
+    static DBClientNetwork* get(DBConnectionPool* _this,
+                                const std::string& host,
+                                double timeout,
+                                Connect connect) {
         while (!(_this->_inShutdown.load())) {
             // Get a connection from the pool, if there is one.
-            std::unique_ptr<DBClientBase> c(_this->_get(host, timeout));
+            std::unique_ptr<DBClientNetwork> c(_this->_get(host, timeout));
             if (c) {
                 // This call may throw.
                 _this->onHandedOut(c.get());
@@ -314,7 +316,7 @@ void DBConnectionPool::shutdown() {
     }
 }
 
-DBClientBase* DBConnectionPool::_get(const string& ident, double socketTimeout) {
+DBClientNetwork* DBConnectionPool::_get(const string& ident, double socketTimeout) {
     uassert(ErrorCodes::ShutdownInProgress,
             "Can't use connection pool during shutdown",
             !globalInShutdownDeprecated());
@@ -332,9 +334,9 @@ int DBConnectionPool::openConnections(const string& ident, double socketTimeout)
     return p.openConnections();
 }
 
-DBClientBase* DBConnectionPool::_finishCreate(const string& ident,
-                                              double socketTimeout,
-                                              DBClientBase* conn) {
+DBClientNetwork* DBConnectionPool::_finishCreate(const string& ident,
+                                                 double socketTimeout,
+                                                 DBClientNetwork* conn) {
     {
         stdx::lock_guard<stdx::mutex> L(_mutex);
         PoolForHost& p = _pools[PoolKey(ident, socketTimeout)];
@@ -358,7 +360,7 @@ DBClientBase* DBConnectionPool::_finishCreate(const string& ident,
     return conn;
 }
 
-DBClientBase* DBConnectionPool::get(const ConnectionString& url, double socketTimeout) {
+DBClientNetwork* DBConnectionPool::get(const ConnectionString& url, double socketTimeout) {
     auto connect = [&]() {
         string errmsg;
         auto c = url.connect(StringData(), errmsg, socketTimeout).release();
@@ -369,7 +371,7 @@ DBClientBase* DBConnectionPool::get(const ConnectionString& url, double socketTi
     return Detail::get(this, url.toString(), socketTimeout, connect);
 }
 
-DBClientBase* DBConnectionPool::get(const string& host, double socketTimeout) {
+DBClientNetwork* DBConnectionPool::get(const string& host, double socketTimeout) {
     auto connect = [&] {
         const ConnectionString cs(uassertStatusOK(ConnectionString::parse(host)));
 
@@ -387,10 +389,10 @@ DBClientBase* DBConnectionPool::get(const string& host, double socketTimeout) {
     return Detail::get(this, host, socketTimeout, connect);
 }
 
-DBClientBase* DBConnectionPool::get(const MongoURI& uri, double socketTimeout) {
+DBClientNetwork* DBConnectionPool::get(const MongoURI& uri, double socketTimeout) {
     auto connect = [&] {
         string errmsg;
-        std::unique_ptr<DBClientBase> c(uri.connect(StringData(), errmsg, socketTimeout));
+        std::unique_ptr<DBClientNetwork> c(uri.connect(StringData(), errmsg, socketTimeout));
         uassert(40356, _name + ": connect failed " + uri.toString() + " : " + errmsg, c);
         return c.release();
     };
@@ -420,7 +422,7 @@ void DBConnectionPool::onRelease(DBClientBase* conn) {
     }
 }
 
-void DBConnectionPool::release(const string& host, DBClientBase* c) {
+void DBConnectionPool::release(const string& host, DBClientNetwork* c) {
     onRelease(c);
 
     stdx::unique_lock<stdx::mutex> lk(_mutex);
@@ -564,7 +566,7 @@ bool DBConnectionPool::poolKeyCompare::operator()(const PoolKey& a, const PoolKe
     return a.timeout < b.timeout;
 }
 
-bool DBConnectionPool::isConnectionGood(const string& hostName, DBClientBase* conn) {
+bool DBConnectionPool::isConnectionGood(const string& hostName, DBClientNetwork* conn) {
     if (conn == NULL) {
         return false;
     }

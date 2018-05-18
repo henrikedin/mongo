@@ -89,7 +89,7 @@ public:
     struct Status {
         // May be read concurrently, but only written from this thread
         long long created = 0;
-        DBClientBase* avail = nullptr;
+        DBClientNetwork* avail = nullptr;
     };
 
     ClientConnections() {
@@ -111,7 +111,7 @@ public:
         return _perThread.get();
     }
 
-    DBClientBase* get(const std::string& addr, const std::string& ns) {
+    DBClientNetwork* get(const std::string& addr, const std::string& ns) {
         {
             // We want to report ns stats
             scoped_spinlock lock(_lock);
@@ -121,7 +121,7 @@ public:
 
         Status* s = _getStatus(addr);
 
-        std::unique_ptr<DBClientBase> c;
+        std::unique_ptr<DBClientNetwork> c;
         if (s->avail) {
             c.reset(s->avail);
             s->avail = 0;
@@ -172,7 +172,7 @@ public:
         }
     }
 
-    void done(const std::string& addr, DBClientBase* conn) {
+    void done(const std::string& addr, DBClientNetwork* conn) {
         Status* s = _hosts[addr];
         verify(s);
 
@@ -251,7 +251,7 @@ public:
         }
     }
 
-    void release(const std::string& addr, DBClientBase* conn) {
+    void release(const std::string& addr, DBClientNetwork* conn) {
         shardConnectionPool.release(addr, conn);
     }
 

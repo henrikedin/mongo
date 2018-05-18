@@ -28,7 +28,7 @@
 
 #pragma once
 
-#include "mongo/client/dbclientinterface.h"
+#include "mongo/client/dbclient_base.h"
 #include "mongo/db/dbmessage.h"
 #include "mongo/db/lasterror.h"
 #include "mongo/util/net/hostandport.h"
@@ -57,42 +57,45 @@ public:
     // XXX: is this valid or useful?
     void setOpCtx(OperationContext* opCtx);
 
-    virtual std::unique_ptr<DBClientCursor> query(const std::string& ns,
-                                                  Query query,
-                                                  int nToReturn = 0,
-                                                  int nToSkip = 0,
-                                                  const BSONObj* fieldsToReturn = 0,
-                                                  int queryOptions = 0,
-                                                  int batchSize = 0);
+    std::unique_ptr<DBClientCursor> query(const std::string& ns,
+                                          Query query,
+                                          int nToReturn = 0,
+                                          int nToSkip = 0,
+                                          const BSONObj* fieldsToReturn = 0,
+                                          int queryOptions = 0,
+                                          int batchSize = 0) override;
 
-    virtual bool isFailed() const;
+    std::unique_ptr<DBClientCursor> getMore(const std::string& ns,
+                                            long long cursorId,
+                                            int nToReturn = 0,
+                                            int options = 0) override;
 
-    virtual bool isStillConnected();
+    bool isFailed() const override;
 
-    virtual std::string toString() const;
+    bool isStillConnected() override;
 
-    virtual std::string getServerAddress() const;
+    std::string toString() const override;
 
-    virtual bool call(Message& toSend,
-                      Message& response,
-                      bool assertOk = true,
-                      std::string* actualServer = 0);
+    std::string getServerAddress() const override;
 
-    virtual void say(Message& toSend, bool isRetry = false, std::string* actualServer = 0);
+    bool call(Message& toSend,
+              Message& response,
+              bool assertOk = true,
+              std::string* actualServer = 0) override;
 
-    virtual unsigned long long count(const std::string& ns,
-                                     const BSONObj& query = BSONObj(),
-                                     int options = 0,
-                                     int limit = 0,
-                                     int skip = 0);
+    void say(Message& toSend, bool isRetry = false, std::string* actualServer = 0) override;
 
-    virtual ConnectionString::ConnectionType type() const;
+    unsigned long long count(const std::string& ns,
+                             const BSONObj& query = BSONObj(),
+                             int options = 0,
+                             int limit = 0,
+                             int skip = 0) override;
 
-    double getSoTimeout() const;
+    ConnectionString::ConnectionType type() const override;
 
-    virtual bool lazySupported() const;
+    bool lazySupported() const override;
 
-    virtual QueryOptions _lookupAvailableOptions();
+    QueryOptions _lookupAvailableOptions() override;
 
     int getMinWireVersion() final;
     int getMaxWireVersion() final;

@@ -32,9 +32,9 @@
 #include "mongo/dbtests/mock/mock_dbclient_cursor.h"
 
 namespace mongo {
-MockDBClientCursor::MockDBClientCursor(mongo::DBClientBase* client,
+MockDBClientCursor::MockDBClientCursor(mongo::DBClientNetwork* client,
                                        const mongo::BSONArray& resultSet)
-    : mongo::DBClientCursor(client, "", 0, 0, 0) {
+    : mongo::DBClientCursorNetwork(client, "", 0, 0, 0) {
     _resultSet = resultSet.copy();
     _cursor.reset(new mongo::DBClientMockCursor(BSONArray(_resultSet)));
 }
