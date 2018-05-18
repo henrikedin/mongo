@@ -30,7 +30,7 @@
 #pragma once
 
 
-#include "mongo/client/dbclientcursor.h"
+#include "mongo/client/dbclient_cursor_network.h"
 #include "mongo/client/dbclientmockcursor.h"
 
 namespace mongo {
@@ -39,9 +39,9 @@ namespace mongo {
  * Simple adapter class for mongo::DBClientMockCursor to mongo::DBClientCursor.
  * Only supports more and next, the behavior of other operations are undefined.
  */
-class MockDBClientCursor : public mongo::DBClientCursor {
+class MockDBClientCursor : public mongo::DBClientCursorNetwork {
 public:
-    MockDBClientCursor(mongo::DBClientBase* client, const mongo::BSONArray& mockCollection);
+    MockDBClientCursor(mongo::DBClientNetwork* client, const mongo::BSONArray& mockCollection);
 
     bool more() override;
 

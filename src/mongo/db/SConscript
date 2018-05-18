@@ -659,6 +659,7 @@ env.Library(
     target='dbdirectclient',
     source=[
         'dbdirectclient.cpp',
+        'dbdirectcursor.cpp',
     ],
     LIBDEPS=[
         '$BUILD_DIR/mongo/client/clientdriver',

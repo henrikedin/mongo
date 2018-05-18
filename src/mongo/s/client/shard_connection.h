@@ -57,19 +57,19 @@ public:
     void done();
     void kill();
 
-    DBClientBase& conn() {
+    DBClientNetwork& conn() {
         _finishInit();
         verify(_conn);
         return *_conn;
     }
 
-    DBClientBase* operator->() {
+    DBClientNetwork* operator->() {
         _finishInit();
         verify(_conn);
         return _conn;
     }
 
-    DBClientBase* get() {
+    DBClientNetwork* get() {
         _finishInit();
         verify(_conn);
         return _conn;
@@ -79,7 +79,7 @@ public:
      * @return the connection object underneath without setting the shard version.
      * @throws AssertionException if _conn is uninitialized.
      */
-    DBClientBase* getRawConn() const {
+    DBClientNetwork* getRawConn() const {
         verify(_conn);
         return _conn;
     }
@@ -142,7 +142,7 @@ private:
 
     bool _finishedInit;
 
-    DBClientBase* _conn;
+    DBClientNetwork* _conn;
     bool _setVersion;
 };
 

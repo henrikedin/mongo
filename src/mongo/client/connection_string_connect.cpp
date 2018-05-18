@@ -34,8 +34,8 @@
 #include <list>
 #include <memory>
 
+#include "mongo/client/dbclient_cursor.h"
 #include "mongo/client/dbclient_rs.h"
-#include "mongo/client/dbclientinterface.h"
 #include "mongo/client/mongo_uri.h"
 #include "mongo/stdx/memory.h"
 #include "mongo/util/assert_util.h"
@@ -46,10 +46,10 @@ namespace mongo {
 stdx::mutex ConnectionString::_connectHookMutex;
 ConnectionString::ConnectionHook* ConnectionString::_connectHook = NULL;
 
-std::unique_ptr<DBClientBase> ConnectionString::connect(StringData applicationName,
-                                                        std::string& errmsg,
-                                                        double socketTimeout,
-                                                        const MongoURI* uri) const {
+std::unique_ptr<DBClientNetwork> ConnectionString::connect(StringData applicationName,
+                                                           std::string& errmsg,
+                                                           double socketTimeout,
+                                                           const MongoURI* uri) const {
     MongoURI newURI{};
     if (uri) {
         newURI = *uri;

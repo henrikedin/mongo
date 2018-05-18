@@ -1,6 +1,4 @@
-/** @file dbclient_rs.h Connect to a Replica Set, from C++ */
-
-/*    Copyright 2009 10gen Inc.
+/*    Copyright 2018 MongoDB Inc.
  *
  *    This program is free software: you can redistribute it and/or  modify
  *    it under the terms of the GNU Affero General Public License, version 3,
@@ -31,7 +29,8 @@
 
 #include <utility>
 
-#include "mongo/client/dbclientinterface.h"
+#include "mongo/client/dbclient_connection.h"
+#include "mongo/client/dbclient_network.h"
 #include "mongo/client/mongo_uri.h"
 #include "mongo/util/net/hostandport.h"
 
@@ -50,11 +49,11 @@ typedef std::shared_ptr<ReplicaSetMonitor> ReplicaSetMonitorPtr;
    On a failover situation, expect at least one operation to return an error (throw
    an exception) before the failover is complete.  Operations are not retried.
 */
-class DBClientReplicaSet : public DBClientBase {
+class DBClientReplicaSet : public DBClientNetwork {
 public:
-    using DBClientBase::query;
-    using DBClientBase::update;
-    using DBClientBase::remove;
+    using DBClientNetwork::query;
+    using DBClientNetwork::update;
+    using DBClientNetwork::remove;
 
     /** Call connect() after constructing. autoReconnect is always on for DBClientReplicaSet
      * connections. */

@@ -33,8 +33,8 @@
 #include "mongo/s/client/parallel.h"
 
 #include "mongo/client/constants.h"
+#include "mongo/client/dbclient_cursor_network.h"
 #include "mongo/client/dbclient_rs.h"
-#include "mongo/client/dbclientcursor.h"
 #include "mongo/client/replica_set_monitor.h"
 #include "mongo/db/bson/dotted_path_support.h"
 #include "mongo/db/query/query_request.h"
@@ -84,7 +84,7 @@ struct ParallelConnectionState {
     // Please do not reorder. cursor destructor can use conn.
     // On a related note, never attempt to cleanup these pointers manually.
     std::shared_ptr<ShardConnection> conn;
-    std::shared_ptr<DBClientCursor> cursor;
+    std::shared_ptr<DBClientCursorNetwork> cursor;
 
     // Version information
     std::shared_ptr<ChunkManager> manager;
@@ -132,12 +132,12 @@ class DBClientCursorHolder {
 public:
     DBClientCursorHolder() = default;
 
-    void reset(DBClientCursor* cursor, ParallelConnectionMetadata* pcmData) {
+    void reset(DBClientCursorNetwork* cursor, ParallelConnectionMetadata* pcmData) {
         _cursor.reset(cursor);
         _pcmData.reset(pcmData);
     }
 
-    DBClientCursor* get() {
+    DBClientCursorNetwork* get() {
         return _cursor.get();
     }
 
@@ -151,7 +151,7 @@ public:
     }
 
 private:
-    std::unique_ptr<DBClientCursor> _cursor;
+    std::unique_ptr<DBClientCursorNetwork> _cursor;
     std::unique_ptr<ParallelConnectionMetadata> _pcmData;
 };
 
@@ -545,7 +545,7 @@ void ParallelSortClusteredCursor::startInit(OperationContext* opCtx) {
                 if (shardIds.size() > 1) {
                     // Query limits split for multiple shards
 
-                    state->cursor.reset(new DBClientCursor(
+                    state->cursor.reset(new DBClientCursorNetwork(
                         state->conn->get(),
                         ns,
                         _qSpec.query(),
@@ -572,7 +572,7 @@ void ParallelSortClusteredCursor::startInit(OperationContext* opCtx) {
                 } else {
                     // Single shard query
 
-                    state->cursor.reset(new DBClientCursor(
+                    state->cursor.reset(new DBClientCursorNetwork(
                         state->conn->get(),
                         ns,
                         _qSpec.query(),
@@ -1008,17 +1008,17 @@ void ParallelSortClusteredCursor::_oldInit() {
                    << " options: " << _options;
 
             if (!_cursors[i].get())
-                _cursors[i].reset(
-                    new DBClientCursor(conns[i]->get(),
-                                       _ns,
-                                       _query,
-                                       0,                                 // nToReturn
-                                       0,                                 // nToSkip
-                                       _fields.isEmpty() ? 0 : &_fields,  // fieldsToReturn
-                                       _options,
-                                       _batchSize == 0 ? 0 : _batchSize + _needToSkip  // batchSize
-                                       ),
-                    NULL);
+                _cursors[i].reset(new DBClientCursorNetwork(
+                                      conns[i]->get(),
+                                      _ns,
+                                      _query,
+                                      0,                                 // nToReturn
+                                      0,                                 // nToSkip
+                                      _fields.isEmpty() ? 0 : &_fields,  // fieldsToReturn
+                                      _options,
+                                      _batchSize == 0 ? 0 : _batchSize + _needToSkip  // batchSize
+                                      ),
+                                  NULL);
 
             try {
                 _cursors[i].get()->initLazy(!firstPass);

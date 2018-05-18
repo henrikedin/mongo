@@ -31,8 +31,8 @@
 #include "mongo/scripting/mozjs/mongo.h"
 
 #include "mongo/bson/simple_bsonelement_comparator.h"
+#include "mongo/client/dbclient_cursor_network.h"
 #include "mongo/client/dbclient_rs.h"
-#include "mongo/client/dbclientinterface.h"
 #include "mongo/client/global_conn_pool.h"
 #include "mongo/client/mongo_uri.h"
 #include "mongo/client/native_sasl_client_session.h"
@@ -40,6 +40,8 @@
 #include "mongo/client/sasl_client_authenticate.h"
 #include "mongo/client/sasl_client_session.h"
 #include "mongo/db/auth/sasl_command_constants.h"
+#include "mongo/db/dbdirectclient.h"
+#include "mongo/db/dbdirectcursor.h"
 #include "mongo/db/logical_session_id.h"
 #include "mongo/db/logical_session_id_helpers.h"
 #include "mongo/db/namespace_string.h"
@@ -505,8 +507,18 @@ void MongoBase::Functions::cursorFromId::call(JSContext* cx, JS::CallArgs args) 
     long long cursorId = NumberLongInfo::ToNumberLong(cx, args.get(1));
 
     // The shell only calls this method when it wants to test OP_GETMORE.
-    auto cursor = stdx::make_unique<DBClientCursor>(
-        conn, ns, cursorId, 0, DBClientCursor::QueryOptionLocal_forceOpQuery);
+    // This should probably be a factory method on DBClientBase, but just needed here so not exposed
+    // like that.
+    std::unique_ptr<DBClientCursor> cursor;
+    if (auto conn_network = dynamic_cast<DBClientNetwork*>(conn)) {
+        cursor = stdx::make_unique<DBClientCursorNetwork>(
+            conn_network, ns, cursorId, 0, DBClientCursor::QueryOptionLocal_forceOpQuery);
+    } else if (auto conn_direct = dynamic_cast<DBDirectClient*>(conn)) {
+        cursor = stdx::make_unique<DBDirectCursor>(
+            conn_direct, ns, cursorId, 0, DBClientCursor::QueryOptionLocal_forceOpQuery);
+    } else {
+        invariant(false);
+    }
 
     if (args.get(2).isNumber())
         cursor->setBatchSize(ValueWriter(cx, args.get(2)).toInt32());
