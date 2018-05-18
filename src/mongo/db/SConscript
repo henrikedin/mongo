@@ -146,7 +146,6 @@ env.Library(
     LIBDEPS=[
         '$BUILD_DIR/mongo/db/server_options_core',
         '$BUILD_DIR/mongo/transport/transport_layer_common',
-        '$BUILD_DIR/mongo/util/net/network',
     ]
 )
 
@@ -207,8 +206,8 @@ env.Library(
         '$BUILD_DIR/mongo/db/query/command_request_response',
         '$BUILD_DIR/mongo/rpc/client_metadata',
         '$BUILD_DIR/mongo/util/fail_point',
-        '$BUILD_DIR/mongo/util/net/network',
         '$BUILD_DIR/mongo/util/progress_meter',
+        'server_options',
     ],
 )
 
@@ -390,9 +389,9 @@ env.Clone().InjectModule("enterprise").Library(
         '$BUILD_DIR/mongo/util/cmdline_utils/cmdline_utils',
         '$BUILD_DIR/mongo/util/fail_point',
         '$BUILD_DIR/mongo/transport/message_compressor',
-        # The dependency on net/ssl_manager is a temporary crutch that should go away once the
+        # The dependency on net/network is a temporary crutch that should go away once the
         # networking library has separate options
-        '$BUILD_DIR/mongo/util/net/ssl_manager',
+        '$BUILD_DIR/mongo/util/net/network',
         '$BUILD_DIR/mongo/util/options_parser/options_parser',
         'server_options_core',
         'server_parameters',
@@ -624,7 +623,6 @@ env.Library(
         'curop_metrics',
         'dbdirectclient',
         'index/index_access_method',
-        'logical_session_id',
         'namespace_string',
         'repl/oplog_entry',
         's/sharding_api_d',
@@ -765,6 +763,7 @@ env.Library(
         '$BUILD_DIR/mongo/db/ops/write_ops_exec',
         '$BUILD_DIR/mongo/db/rw_concern_d',
         '$BUILD_DIR/mongo/db/s/sharding_runtime_d',
+        '$BUILD_DIR/mongo/db/stats/counters',
         '$BUILD_DIR/mongo/db/storage/storage_engine_lock_file',
         '$BUILD_DIR/mongo/db/storage/storage_engine_metadata',
     ],
@@ -967,7 +966,6 @@ env.Library(
     ],
     LIBDEPS=[
         '$BUILD_DIR/mongo/base',
-        '$BUILD_DIR/mongo/s/common_s',
         '$BUILD_DIR/mongo/scripting/scripting',
         '$BUILD_DIR/mongo/util/background_job',
         '$BUILD_DIR/mongo/util/elapsed_tracker',
@@ -1697,7 +1695,6 @@ env.Library(
         'repl/replica_set_messages',
         'server_options',
         '$BUILD_DIR/mongo/base',
-        '$BUILD_DIR/mongo/util/net/network',
     ],
 )
 

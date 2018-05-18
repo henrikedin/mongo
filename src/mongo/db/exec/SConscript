@@ -33,7 +33,6 @@ env.Library(
         "scoped_timer.cpp",
     ],
     LIBDEPS = [
-        '$BUILD_DIR/mongo/util/net/network',
     ],
 )
 
