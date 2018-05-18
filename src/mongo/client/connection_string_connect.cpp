@@ -34,8 +34,8 @@
 #include <list>
 #include <memory>
 
+#include "mongo/client/dbclient_cursor.h"
 #include "mongo/client/dbclient_rs.h"
-#include "mongo/client/dbclientinterface.h"
 #include "mongo/client/mongo_uri.h"
 #include "mongo/stdx/memory.h"
 #include "mongo/util/assert_util.h"
