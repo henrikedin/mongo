@@ -131,9 +131,9 @@ public:
     }
 
     /// Change batchSize after construction. Can change after requesting first batch.
-    /*void setBatchSize(int newBatchSize) {
+    void setBatchSize(int newBatchSize) {
         batchSize = newBatchSize;
-    }*/
+    }
 
 
     /**
