@@ -317,7 +317,7 @@ env.Library(
         'grid.cpp',
     ],
     LIBDEPS=[
-        '$BUILD_DIR/mongo/client/clientdriver',
+        '$BUILD_DIR/mongo/client/clientdriver_network',
         '$BUILD_DIR/mongo/db/logical_time_metadata_hook',
         'client/shard_interface',
         'query/cluster_cursor_manager',

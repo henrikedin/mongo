@@ -171,7 +171,7 @@ bool DBClientCursor::init() {
 }
 
 void DBClientCursor::initLazy(bool isRetry) {
-    massert(15875,
+    massert(50850,
             "DBClientCursor::initLazy called on a client that doesn't support lazy",
             _client->lazySupported());
     Message toSend = _assembleInit();
@@ -202,55 +202,57 @@ bool DBClientCursor::initLazyFinish(bool& retry) {
 
     return !retry;
 }
-
-void DBClientCursor::requestMore() {
-    if (opts & QueryOption_Exhaust) {
-        return exhaustReceiveMore();
-    }
-
-    invariant(!_connectionHasPendingReplies);
-    verify(cursorId && batch.pos == batch.objs.size());
-
-    if (haveLimit) {
-        nToReturn -= batch.objs.size();
-        verify(nToReturn > 0);
-    }
-
-    ON_BLOCK_EXIT([ this, origClient = _client ] { _client = origClient; });
-    boost::optional<ScopedDbConnection> connHolder;
-    if (!_client) {
-        invariant(_scopedHost.size());
-        connHolder.emplace(_scopedHost);
-        _client = connHolder->get();
-    }
-
-    Message toSend = _assembleGetMore();
-    Message response;
-    _client->call(toSend, response);
-
-    // If call() succeeds, the connection is clean so we can return it to the pool, even if
-    // dataReceived() throws because the command reported failure. However, we can't return it yet,
-    // because dataReceived() needs to get the metadata reader from the connection.
-    ON_BLOCK_EXIT([&] {
-        if (connHolder)
-            connHolder->done();
-    });
-
-    dataReceived(response);
-}
-
-/** with QueryOption_Exhaust, the server just blasts data at us (marked at end with cursorid==0). */
-void DBClientCursor::exhaustReceiveMore() {
-    verify(cursorId && batch.pos == batch.objs.size());
-    uassert(40675, "Cannot have limit for exhaust query", !haveLimit);
-    Message response;
-    verify(_client);
-    if (!_client->recv(response, _lastRequestId)) {
-        uasserted(16465, "recv failed while exhausting cursor");
-    }
-    dataReceived(response);
-}
-
+//
+// void DBClientCursor::requestMore() {
+//    if (opts & QueryOption_Exhaust) {
+//        return exhaustReceiveMore();
+//    }
+//
+//    invariant(!_connectionHasPendingReplies);
+//    verify(cursorId && batch.pos == batch.objs.size());
+//
+//    if (haveLimit) {
+//        nToReturn -= batch.objs.size();
+//        verify(nToReturn > 0);
+//    }
+//
+//    ON_BLOCK_EXIT([ this, origClient = _client ] { _client = origClient; });
+//    boost::optional<ScopedDbConnection> connHolder;
+//    if (!_client) {
+//        invariant(_scopedHost.size());
+//        connHolder.emplace(_scopedHost);
+//        _client = connHolder->get();
+//    }
+//
+//    Message toSend = _assembleGetMore();
+//    Message response;
+//    _client->call(toSend, response);
+//
+//    // If call() succeeds, the connection is clean so we can return it to the pool, even if
+//    // dataReceived() throws because the command reported failure. However, we can't return it
+//    yet,
+//    // because dataReceived() needs to get the metadata reader from the connection.
+//    ON_BLOCK_EXIT([&] {
+//        if (connHolder)
+//            connHolder->done();
+//    });
+//
+//    dataReceived(response);
+//}
+//
+///** with QueryOption_Exhaust, the server just blasts data at us (marked at end with cursorid==0).
+///*/
+// void DBClientCursor::exhaustReceiveMore() {
+//    verify(cursorId && batch.pos == batch.objs.size());
+//    uassert(50851, "Cannot have limit for exhaust query", !haveLimit);
+//    Message response;
+//    verify(_client);
+//    if (!_client->recv(response, _lastRequestId)) {
+//        uasserted(50852, "recv failed while exhausting cursor");
+//    }
+//    dataReceived(response);
+//}
+//
 BSONObj DBClientCursor::commandDataReceived(const Message& reply) {
     int op = reply.operation();
     invariant(op == opReply || op == dbCommandReply || op == dbMsg);
@@ -273,7 +275,7 @@ BSONObj DBClientCursor::commandDataReceived(const Message& reply) {
 
     return commandReply->getCommandReply().getOwned();
 }
-
+//
 void DBClientCursor::dataReceived(const Message& reply, bool& retry, string& host) {
     batch.objs.clear();
     batch.pos = 0;
@@ -397,7 +399,7 @@ BSONObj DBClientCursor::nextSafe() {
 
     return o;
 }
-
+//
 void DBClientCursor::peek(vector<BSONObj>& v, int atMost) {
     auto end = atMost >= static_cast<int>(batch.objs.size() - batch.pos)
         ? batch.objs.end()
@@ -432,63 +434,63 @@ bool DBClientCursor::peekError(BSONObj* error) {
         *error = v[0].getOwned();
     return true;
 }
-
-void DBClientCursor::attach(AScopedConnection* conn) {
-    verify(_scopedHost.size() == 0);
-    verify(conn);
-    verify(conn->get());
-
-    if (conn->get()->type() == ConnectionString::SET) {
-        if (_lazyHost.size() > 0)
-            _scopedHost = _lazyHost;
-        else if (_client)
-            _scopedHost = _client->getServerAddress();
-        else
-            massert(14821,
-                    "No client or lazy client specified, cannot store multi-host connection.",
-                    false);
-    } else {
-        _scopedHost = conn->getHost();
-    }
-
-    conn->done();
-    _client = 0;
-    _lazyHost = "";
-}
-
-DBClientCursor::DBClientCursor(DBClientBase* client,
-                               const std::string& ns,
-                               const BSONObj& query,
-                               int nToReturn,
-                               int nToSkip,
-                               const BSONObj* fieldsToReturn,
-                               int queryOptions,
-                               int batchSize)
-    : DBClientCursor(client,
-                     ns,
-                     query,
-                     0,  // cursorId
-                     nToReturn,
-                     nToSkip,
-                     fieldsToReturn,
-                     queryOptions,
-                     batchSize) {}
-
-DBClientCursor::DBClientCursor(DBClientBase* client,
-                               const std::string& ns,
-                               long long cursorId,
-                               int nToReturn,
-                               int queryOptions)
-    : DBClientCursor(client,
-                     ns,
-                     BSONObj(),  // query
-                     cursorId,
-                     nToReturn,
-                     0,        // nToSkip
-                     nullptr,  // fieldsToReturn
-                     queryOptions,
-                     0) {}  // batchSize
-
+//
+// void DBClientCursor::attach(AScopedConnection* conn) {
+//    verify(_scopedHost.size() == 0);
+//    verify(conn);
+//    verify(conn->get());
+//
+//    if (conn->get()->type() == ConnectionString::SET) {
+//        if (_lazyHost.size() > 0)
+//            _scopedHost = _lazyHost;
+//        else if (_client)
+//            _scopedHost = _client->getServerAddress();
+//        else
+//            massert(50853,
+//                    "No client or lazy client specified, cannot store multi-host connection.",
+//                    false);
+//    } else {
+//        _scopedHost = conn->getHost();
+//    }
+//
+//    conn->done();
+//    _client = 0;
+//    _lazyHost = "";
+//}
+//
+// DBClientCursor::DBClientCursorNetwork(DBClientNetwork* client,
+//                               const std::string& ns,
+//                               const BSONObj& query,
+//                               int nToReturn,
+//                               int nToSkip,
+//                               const BSONObj* fieldsToReturn,
+//                               int queryOptions,
+//                               int batchSize)
+//    : DBClientCursor(client,
+//                     ns,
+//                     query,
+//                     0,  // cursorId
+//                     nToReturn,
+//                     nToSkip,
+//                     fieldsToReturn,
+//                     queryOptions,
+//                     batchSize) {}
+//
+// DBClientCursor::DBClientCursorNetwork(DBClientNetwork* client,
+//                               const std::string& ns,
+//                               long long cursorId,
+//                               int nToReturn,
+//                               int queryOptions)
+//    : DBClientCursor(client,
+//                     ns,
+//                     BSONObj(),  // query
+//                     cursorId,
+//                     nToReturn,
+//                     0,        // nToSkip
+//                     nullptr,  // fieldsToReturn
+//                     queryOptions,
+//                     0) {}  // batchSize
+//
 DBClientCursor::DBClientCursor(DBClientBase* client,
                                const std::string& ns,
                                const BSONObj& query,
@@ -519,36 +521,36 @@ DBClientCursor::DBClientCursor(DBClientBase* client,
 }
 
 DBClientCursor::~DBClientCursor() {
-    kill();
+    // kill_base();
 }
-
-void DBClientCursor::kill() {
-    DESTRUCTOR_GUARD({
-        if (cursorId && _ownCursor && !globalInShutdownDeprecated()) {
-            auto killCursor = [&](auto& conn) {
-                if (_useFindCommand) {
-                    conn->killCursor(ns, cursorId);
-                } else {
-                    auto toSend = makeKillCursorsMessage(cursorId);
-                    conn->say(toSend);
-                }
-            };
-
-            if (_client && !_connectionHasPendingReplies) {
-                killCursor(_client);
-            } else {
-                // Use a side connection to send the kill cursor request.
-                verify(_scopedHost.size() || (_client && _connectionHasPendingReplies));
-                ScopedDbConnection conn(_client ? _client->getServerAddress() : _scopedHost);
-                killCursor(conn);
-                conn.done();
-            }
-        }
-    });
-
-    // Mark this cursor as dead since we can't do any getMores.
-    cursorId = 0;
-}
+//
+// void DBClientCursor::kill() {
+//    DESTRUCTOR_GUARD({
+//        if (cursorId && _ownCursor && !globalInShutdownDeprecated()) {
+//            auto killCursor = [&](auto& conn) {
+//                if (_useFindCommand) {
+//                    conn->killCursor(ns, cursorId);
+//                } else {
+//                    auto toSend = makeKillCursorsMessage(cursorId);
+//                    conn->say(toSend);
+//                }
+//            };
+//
+//            if (_client && !_connectionHasPendingReplies) {
+//                killCursor(_client);
+//            } else {
+//                // Use a side connection to send the kill cursor request.
+//                verify(_scopedHost.size() || (_client && _connectionHasPendingReplies));
+//                ScopedDbConnection conn(_client ? _client->getServerAddress() : _scopedHost);
+//                killCursor(conn);
+//                conn.done();
+//            }
+//        }
+//    });
+//
+//    // Mark this cursor as dead since we can't do any getMores.
+//    cursorId = 0;
+//}
 
 
 }  // namespace mongo

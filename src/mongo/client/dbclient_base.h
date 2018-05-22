@@ -32,6 +32,7 @@
 
 #include "mongo/base/string_data.h"
 #include "mongo/client/connection_string.h"
+#include "mongo/client/dbclient_cursor.h"
 #include "mongo/client/index_spec.h"
 #include "mongo/client/mongo_uri.h"
 #include "mongo/client/query.h"
@@ -47,9 +48,9 @@
 #include "mongo/rpc/protocol.h"
 #include "mongo/rpc/unique_message.h"
 #include "mongo/stdx/functional.h"
-#include "mongo/transport/message_compressor_manager.h"
-#include "mongo/transport/session.h"
-#include "mongo/transport/transport_layer.h"
+//#include "mongo/transport/message_compressor_manager.h"
+//#include "mongo/transport/session.h"
+//#include "mongo/transport/transport_layer.h"
 #include "mongo/util/mongoutils/str.h"
 
 namespace mongo {
@@ -617,13 +618,15 @@ public:
      @return    cursor.   0 if error (connection failure)
      @throws AssertionException
     */
-    virtual std::unique_ptr<DBClientCursor> query(const std::string& ns,
-                                                  Query query,
-                                                  int nToReturn = 0,
-                                                  int nToSkip = 0,
-                                                  const BSONObj* fieldsToReturn = 0,
-                                                  int queryOptions = 0,
-                                                  int batchSize = 0);
+    std::unique_ptr<DBClientCursor> query(const std::string& ns,
+                                          Query query,
+                                          int nToReturn = 0,
+                                          int nToSkip = 0,
+                                          const BSONObj* fieldsToReturn = 0,
+                                          int queryOptions = 0,
+                                          int batchSize = 0) {
+        return query_impl(ns, query, nToReturn, nToSkip, fieldsToReturn, queryOptions, batchSize);
+    }
 
 
     /** Uses QueryOption_Exhaust, when available.
@@ -655,7 +658,7 @@ public:
     virtual std::unique_ptr<DBClientCursor> getMore(const std::string& ns,
                                                     long long cursorId,
                                                     int nToReturn = 0,
-                                                    int options = 0);
+                                                    int options = 0) = 0;
 
     /**
        insert an object into the database
@@ -688,11 +691,6 @@ public:
 
     virtual ConnectionString::ConnectionType type() const = 0;
 
-    virtual double getSoTimeout() const = 0;
-
-    virtual uint64_t getSockCreationMicroSec() const {
-        return INVALID_SOCK_CREATION_TIME;
-    }
 
     virtual void reset() {}
 
@@ -708,6 +706,14 @@ public:
                                                       const Message& replyMsg);
 
 protected:
+    virtual std::unique_ptr<DBClientCursor> query_impl(const std::string& ns,
+                                                       Query query,
+                                                       int nToReturn,
+                                                       int nToSkip,
+                                                       const BSONObj* fieldsToReturn,
+                                                       int queryOptions,
+                                                       int batchSize) = 0;
+
     /** if the result of a command is ok*/
     bool isOk(const BSONObj&);
 

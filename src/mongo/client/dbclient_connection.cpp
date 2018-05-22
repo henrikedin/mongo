@@ -42,7 +42,7 @@
 #include "mongo/bson/util/builder.h"
 #include "mongo/client/authenticate.h"
 #include "mongo/client/constants.h"
-#include "mongo/client/dbclient_cursor.h"
+#include "mongo/client/dbclient_cursor_network.h"
 #include "mongo/client/replica_set_monitor.h"
 #include "mongo/config.h"
 #include "mongo/db/auth/internal_user_auth.h"
@@ -544,7 +544,8 @@ unsigned long long DBClientConnection::query(stdx::function<void(DBClientCursorB
     queryOptions &= (int)(QueryOption_NoCursorTimeout | QueryOption_SlaveOk);
     queryOptions |= (int)QueryOption_Exhaust;
 
-    unique_ptr<DBClientCursor> c(this->query(ns, query, 0, 0, fieldsToReturn, queryOptions));
+    std::unique_ptr<DBClientCursorNetwork> c(
+        this->query_internal(ns, query, 0, 0, fieldsToReturn, queryOptions));
     uassert(13386, "socket error for mapping query", c.get());
 
     unsigned long long n = 0;

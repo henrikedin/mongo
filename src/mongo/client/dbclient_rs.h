@@ -31,8 +31,8 @@
 
 #include <utility>
 
-#include "mongo/client/dbclient_base.h"
 #include "mongo/client/dbclient_connection.h"
+#include "mongo/client/dbclient_network.h"
 #include "mongo/client/mongo_uri.h"
 #include "mongo/util/net/hostandport.h"
 
@@ -51,7 +51,7 @@ typedef std::shared_ptr<ReplicaSetMonitor> ReplicaSetMonitorPtr;
    On a failover situation, expect at least one operation to return an error (throw
    an exception) before the failover is complete.  Operations are not retried.
 */
-class DBClientReplicaSet : public DBClientBase {
+class DBClientReplicaSet : public DBClientNetwork {
 public:
     using DBClientBase::query;
     using DBClientBase::update;

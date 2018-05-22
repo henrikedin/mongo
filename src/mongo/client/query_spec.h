@@ -159,4 +159,3 @@ public:
 #define QUERY(x) ::mongo::Query(BSON(x))
 
 }  // namespace mongo
-

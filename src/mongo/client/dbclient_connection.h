@@ -31,8 +31,8 @@
 #include <cstdint>
 
 #include "mongo/base/string_data.h"
-#include "mongo/client/dbclient_base.h"
 #include "mongo/client/connection_string.h"
+#include "mongo/client/dbclient_network.h"
 #include "mongo/client/index_spec.h"
 #include "mongo/client/mongo_uri.h"
 #include "mongo/client/query.h"
@@ -67,7 +67,7 @@ class DBClientCursorBatchIterator;
     A basic connection to the database.
     This is the main entry point for talking to a simple Mongo setup
 */
-class DBClientConnection : public DBClientBase {
+class DBClientConnection : public DBClientNetwork {
 public:
     using DBClientBase::query;
 
@@ -147,15 +147,15 @@ public:
      */
     virtual void logout(const std::string& dbname, BSONObj& info);
 
-    virtual std::unique_ptr<DBClientCursor> query(const std::string& ns,
-                                                  Query query = Query(),
-                                                  int nToReturn = 0,
-                                                  int nToSkip = 0,
-                                                  const BSONObj* fieldsToReturn = 0,
-                                                  int queryOptions = 0,
-                                                  int batchSize = 0) {
+    std::unique_ptr<DBClientCursor> query_impl(const std::string& ns,
+                                               Query query = Query(),
+                                               int nToReturn = 0,
+                                               int nToSkip = 0,
+                                               const BSONObj* fieldsToReturn = 0,
+                                               int queryOptions = 0,
+                                               int batchSize = 0) override {
         checkConnection();
-        return DBClientBase::query(
+        return DBClientNetwork::query_impl(
             ns, query, nToReturn, nToSkip, fieldsToReturn, queryOptions, batchSize);
     }
 

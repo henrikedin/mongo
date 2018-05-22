@@ -39,7 +39,7 @@
 #include "mongo/util/time_support.h"
 
 namespace mongo {
-	class DBClientConnection;
+class DBClientConnection;
 namespace executor {
 class NetworkConnectionHook;
 }  // namespace executor

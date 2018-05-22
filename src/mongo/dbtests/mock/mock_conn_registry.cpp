@@ -87,7 +87,7 @@ MockConnRegistry::MockConnHook::MockConnHook(MockConnRegistry* registry) : _regi
 
 MockConnRegistry::MockConnHook::~MockConnHook() {}
 
-std::unique_ptr<mongo::DBClientBase> MockConnRegistry::MockConnHook::connect(
+std::unique_ptr<mongo::DBClientNetwork> MockConnRegistry::MockConnHook::connect(
     const ConnectionString& connString, std::string& errmsg, double socketTimeout) {
     const string hostName(connString.toString());
     auto conn = _registry->connect(hostName);

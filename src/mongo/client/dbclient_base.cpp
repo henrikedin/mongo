@@ -731,29 +731,29 @@ std::pair<BSONObj, NamespaceString> DBClientBase::findOneByUUID(const std::strin
 
 const uint64_t DBClientBase::INVALID_SOCK_CREATION_TIME = std::numeric_limits<uint64_t>::max();
 
-unique_ptr<DBClientCursor> DBClientBase::query(const string& ns,
-                                               Query query,
-                                               int nToReturn,
-                                               int nToSkip,
-                                               const BSONObj* fieldsToReturn,
-                                               int queryOptions,
-                                               int batchSize) {
-    unique_ptr<DBClientCursor> c(new DBClientCursor(
-        this, ns, query.obj, nToReturn, nToSkip, fieldsToReturn, queryOptions, batchSize));
-    if (c->init())
-        return c;
-    return nullptr;
-}
-
-unique_ptr<DBClientCursor> DBClientBase::getMore(const string& ns,
-                                                 long long cursorId,
-                                                 int nToReturn,
-                                                 int options) {
-    unique_ptr<DBClientCursor> c(new DBClientCursor(this, ns, cursorId, nToReturn, options));
-    if (c->init())
-        return c;
-    return nullptr;
-}
+// unique_ptr<DBClientCursor> DBClientBase::query(const string& ns,
+//                                               Query query,
+//                                               int nToReturn,
+//                                               int nToSkip,
+//                                               const BSONObj* fieldsToReturn,
+//                                               int queryOptions,
+//                                               int batchSize) {
+//    unique_ptr<DBClientCursor> c(new DBClientCursor(
+//        this, ns, query.obj, nToReturn, nToSkip, fieldsToReturn, queryOptions, batchSize));
+//    if (c->init())
+//        return c;
+//    return nullptr;
+//}
+//
+// unique_ptr<DBClientCursor> DBClientBase::getMore(const string& ns,
+//                                                 long long cursorId,
+//                                                 int nToReturn,
+//                                                 int options) {
+//    unique_ptr<DBClientCursor> c(new DBClientCursor(this, ns, cursorId, nToReturn, options));
+//    if (c->init())
+//        return c;
+//    return nullptr;
+//}
 
 struct DBClientFunConvertor {
     void operator()(DBClientCursorBatchIterator& i) {

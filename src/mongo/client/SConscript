@@ -46,7 +46,7 @@ env.CppUnitTest(
         'mongo_uri_test.cpp',
     ],
     LIBDEPS=[
-        'clientdriver',
+        'clientdriver_network',
         '$BUILD_DIR/mongo/transport/transport_layer_egress_init',
     ],
 )
@@ -162,19 +162,12 @@ clientDriverEnv.InjectThirdPartyIncludePaths('asio')
 clientDriverEnv.Library(
     target='clientdriver',
     source=[
-        'connection_string_connect.cpp',
-        'mongo_uri_connect.cpp',
-        'connpool.cpp',
         'dbclient_base.cpp',
-        'dbclient_connection.cpp',
         'dbclient_cursor.cpp',
-        'dbclient_rs.cpp',
         'index_spec.cpp',
-        'global_conn_pool.cpp',
-        'replica_set_monitor.cpp',
-        'replica_set_monitor_manager.cpp',
     ],
     LIBDEPS=[
+        '$BUILD_DIR/mongo/db/auth/authcommon',
         '$BUILD_DIR/mongo/db/dbmessage',
         '$BUILD_DIR/mongo/db/query/command_request_response',
         '$BUILD_DIR/mongo/db/query/query_request',
@@ -196,6 +189,49 @@ clientDriverEnv.Library(
         'read_preference',
     ],
     LIBDEPS_PRIVATE=[
+        '$BUILD_DIR/mongo/db/commands/test_commands_enabled',
+        '$BUILD_DIR/mongo/transport/message_compressor',
+        '$BUILD_DIR/mongo/util/net/ssl_manager',
+    ],
+)
+
+clientDriverEnv.Library(
+    target='clientdriver_network',
+    source=[
+        'connection_string_connect.cpp',
+        'mongo_uri_connect.cpp',
+        'connpool.cpp',
+        'dbclient_connection.cpp',
+        'dbclient_cursor_network.cpp',
+        'dbclient_network.cpp',
+        'dbclient_rs.cpp',
+        'global_conn_pool.cpp',
+        'replica_set_monitor.cpp',
+        'replica_set_monitor_manager.cpp',
+    ],
+    LIBDEPS=[
+        '$BUILD_DIR/mongo/db/dbmessage',
+        '$BUILD_DIR/mongo/db/query/command_request_response',
+        '$BUILD_DIR/mongo/db/query/query_request',
+        '$BUILD_DIR/mongo/db/wire_version',
+        '$BUILD_DIR/mongo/db/write_concern_options',
+        '$BUILD_DIR/mongo/executor/connection_pool_stats',
+        '$BUILD_DIR/mongo/executor/network_interface_factory',
+        '$BUILD_DIR/mongo/executor/network_interface_thread_pool',
+        '$BUILD_DIR/mongo/executor/thread_pool_task_executor',
+        '$BUILD_DIR/mongo/rpc/command_status',
+        '$BUILD_DIR/mongo/rpc/rpc',
+        '$BUILD_DIR/mongo/s/stale_config',
+        '$BUILD_DIR/mongo/util/background_job',
+        '$BUILD_DIR/mongo/util/md5',
+        '$BUILD_DIR/mongo/util/net/network',
+        'authentication',
+        'clientdriver',
+        'client_query',
+        'connection_string',
+        'read_preference',
+    ],
+    LIBDEPS_PRIVATE=[
         '$BUILD_DIR/mongo/db/auth/internal_user_auth',
         '$BUILD_DIR/mongo/db/commands/test_commands_enabled',
         '$BUILD_DIR/mongo/transport/message_compressor',
@@ -209,7 +245,7 @@ env.CppIntegrationTest(
         'connpool_integration_test.cpp',
     ],
     LIBDEPS=[
-        'clientdriver',
+        'clientdriver_network',
         '$BUILD_DIR/mongo/util/version_impl',
     ],
 )
@@ -242,7 +278,7 @@ env.Library(
         'connection_pool.cpp',
     ],
     LIBDEPS=[
-        'clientdriver',
+        'clientdriver_network',
     ],
     LIBDEPS_PRIVATE=[
         '$BUILD_DIR/mongo/db/auth/internal_user_auth',
@@ -257,7 +293,7 @@ env.Library(
         'remote_command_targeter_standalone.cpp',
     ],
     LIBDEPS=[
-        'clientdriver',
+        'clientdriver_network',
         '$BUILD_DIR/mongo/db/service_context',
     ],
 )
@@ -283,8 +319,8 @@ env.CppUnitTest(
     ],
     LIBDEPS=[
         '$BUILD_DIR/mongo/db/write_concern_options',
-        'clientdriver',
-    ],
+        'clientdriver_network',
+    ]
 )
 
 env.CppUnitTest('dbclient_rs_test',

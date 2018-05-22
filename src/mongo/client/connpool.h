@@ -32,7 +32,7 @@
 #include <cstdint>
 #include <stack>
 
-#include "mongo/client/dbclient_base.h"
+#include "mongo/client/dbclient_network.h"
 #include "mongo/client/mongo_uri.h"
 #include "mongo/platform/atomic_word.h"
 #include "mongo/stdx/condition_variable.h"
@@ -144,12 +144,12 @@ public:
     /**
      * gets a connection or return NULL
      */
-    DBClientBase* get(DBConnectionPool* pool, double socketTimeout);
+    DBClientNetwork* get(DBConnectionPool* pool, double socketTimeout);
 
     // Deletes all connections in the pool
     void clear();
 
-    void done(DBConnectionPool* pool, DBClientBase* c);
+    void done(DBConnectionPool* pool, DBClientNetwork* c);
 
     void flush();
 
@@ -193,7 +193,7 @@ public:
 
 private:
     struct StoredConnection {
-        StoredConnection(std::unique_ptr<DBClientBase> c);
+        StoredConnection(std::unique_ptr<DBClientNetwork> c);
 
         bool ok();
 
@@ -202,7 +202,7 @@ private:
          */
         bool addedBefore(Date_t time);
 
-        std::unique_ptr<DBClientBase> conn;
+        std::unique_ptr<DBClientNetwork> conn;
 
         // The time when this connection was added to the pool. Will
         // be reset if the connection is checked out and re-added.
@@ -321,9 +321,9 @@ public:
     /**
      * Gets a connection to the given host with the given timeout, in seconds.
      */
-    DBClientBase* get(const std::string& host, double socketTimeout = 0);
-    DBClientBase* get(const ConnectionString& host, double socketTimeout = 0);
-    DBClientBase* get(const MongoURI& uri, double socketTimeout = 0);
+    DBClientNetwork* get(const std::string& host, double socketTimeout = 0);
+    DBClientNetwork* get(const ConnectionString& host, double socketTimeout = 0);
+    DBClientNetwork* get(const MongoURI& uri, double socketTimeout = 0);
 
     /**
      * Gets the number of connections available in the pool.
@@ -331,7 +331,7 @@ public:
     int getNumAvailableConns(const std::string& host, double socketTimeout = 0) const;
     int getNumBadConns(const std::string& host, double socketTimeout = 0) const;
 
-    void release(const std::string& host, DBClientBase* c);
+    void release(const std::string& host, DBClientNetwork* c);
 
     void addHook(DBConnectionHook* hook);  // we take ownership
     void appendConnectionStats(executor::ConnectionPoolStats* stats) const;
@@ -350,7 +350,7 @@ public:
      * @return true if the connection is not bad, meaning, it is good to keep it for
      *     future use.
      */
-    bool isConnectionGood(const std::string& host, DBClientBase* conn);
+    bool isConnectionGood(const std::string& host, DBClientNetwork* conn);
 
     // Removes and deletes all connections from the pool for the host (regardless of timeout)
     void removeHost(const std::string& host);
@@ -375,9 +375,11 @@ private:
 
     DBConnectionPool(DBConnectionPool& p);
 
-    DBClientBase* _get(const std::string& ident, double socketTimeout);
+    DBClientNetwork* _get(const std::string& ident, double socketTimeout);
 
-    DBClientBase* _finishCreate(const std::string& ident, double socketTimeout, DBClientBase* conn);
+    DBClientNetwork* _finishCreate(const std::string& ident,
+                                   double socketTimeout,
+                                   DBClientNetwork* conn);
 
     struct PoolKey {
         PoolKey(const std::string& i, double t) : ident(i), timeout(t) {}
@@ -458,7 +460,7 @@ public:
     ScopedDbConnection() : _host(""), _conn(0), _socketTimeoutSecs(0) {}
 
     /* @param conn - bind to an existing connection */
-    ScopedDbConnection(const std::string& host, DBClientBase* conn, double socketTimeout = 0)
+    ScopedDbConnection(const std::string& host, DBClientNetwork* conn, double socketTimeout = 0)
         : _host(host), _conn(conn), _socketTimeoutSecs(socketTimeout) {
         _setSocketTimeout();
     }
@@ -513,7 +515,7 @@ private:
     void _setSocketTimeout();
 
     const std::string _host;
-    DBClientBase* _conn;
+    DBClientNetwork* _conn;
     const double _socketTimeoutSecs;
 };
 

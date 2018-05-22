@@ -30,9 +30,9 @@
 
 #include "mongo/client/connection_pool.h"
 
+#include "mongo/client/connpool.h"
 #include "mongo/client/dbclient_connection.h"
 #include "mongo/client/dbclient_cursor.h"
-#include "mongo/client/connpool.h"
 #include "mongo/client/mongo_uri.h"
 #include "mongo/db/auth/authorization_manager_global.h"
 #include "mongo/db/auth/internal_user_auth.h"

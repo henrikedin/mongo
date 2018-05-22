@@ -99,9 +99,9 @@ private:
         MockConnHook(MockConnRegistry* registry);
         ~MockConnHook();
 
-        std::unique_ptr<mongo::DBClientBase> connect(const mongo::ConnectionString& connString,
-                                                     std::string& errmsg,
-                                                     double socketTimeout);
+        std::unique_ptr<mongo::DBClientNetwork> connect(const mongo::ConnectionString& connString,
+                                                        std::string& errmsg,
+                                                        double socketTimeout);
 
     private:
         MockConnRegistry* _registry;
