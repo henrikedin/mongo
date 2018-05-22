@@ -108,8 +108,8 @@ const JSFunctionSpec MongoExternalInfo::freeFunctions[4] = {
 namespace {
 
 const std::shared_ptr<DBClientNetwork>& getConnectionRef(JS::CallArgs& args) {
-    auto ret =
-        static_cast<std::shared_ptr<DBClientNetwork>*>(JS_GetPrivate(args.thisv().toObjectOrNull()));
+    auto ret = static_cast<std::shared_ptr<DBClientNetwork>*>(
+        JS_GetPrivate(args.thisv().toObjectOrNull()));
     uassert(
         ErrorCodes::BadValue, "Trying to get connection for closed Mongo object", *ret != nullptr);
     return *ret;
@@ -123,8 +123,8 @@ void setCursor(MozJSImplScope* scope,
                JS::HandleObject target,
                std::unique_ptr<DBClientCursor> cursor,
                JS::CallArgs& args) {
-    auto client =
-        static_cast<std::shared_ptr<DBClientNetwork>*>(JS_GetPrivate(args.thisv().toObjectOrNull()));
+    auto client = static_cast<std::shared_ptr<DBClientNetwork>*>(
+        JS_GetPrivate(args.thisv().toObjectOrNull()));
 
     // Copy the client shared pointer to up the refcount
     JS_SetPrivate(target, scope->trackedNew<CursorInfo::CursorHolder>(std::move(cursor), *client));
@@ -135,8 +135,8 @@ void setCursorHandle(MozJSImplScope* scope,
                      NamespaceString ns,
                      long long cursorId,
                      JS::CallArgs& args) {
-    auto client =
-        static_cast<std::shared_ptr<DBClientNetwork>*>(JS_GetPrivate(args.thisv().toObjectOrNull()));
+    auto client = static_cast<std::shared_ptr<DBClientNetwork>*>(
+        JS_GetPrivate(args.thisv().toObjectOrNull()));
 
     // Copy the client shared pointer to up the refcount.
     JS_SetPrivate(
@@ -807,8 +807,8 @@ void MongoBase::Functions::isMongos::call(JSContext* cx, JS::CallArgs args) {
 }
 
 void MongoBase::Functions::_startSession::call(JSContext* cx, JS::CallArgs args) {
-    auto client =
-        static_cast<std::shared_ptr<DBClientNetwork>*>(JS_GetPrivate(args.thisv().toObjectOrNull()));
+    auto client = static_cast<std::shared_ptr<DBClientNetwork>*>(
+        JS_GetPrivate(args.thisv().toObjectOrNull()));
 
     LogicalSessionIdToClient id;
     id.setId(UUID::gen());
