@@ -164,6 +164,7 @@ clientDriverEnv.Library(
     source=[
         'dbclient_base.cpp',
         'dbclient_cursor.cpp',
+        'dbclient_util.cpp',
         'index_spec.cpp',
     ],
     LIBDEPS=[

@@ -62,13 +62,6 @@ struct RemoteCommandResponse;
 class DBClientCursor;
 class DBClientCursorBatchIterator;
 
-// Useful utilities for namespaces
-/** @return the database name portion of an ns std::string */
-std::string nsGetDB(const std::string& ns);
-
-/** @return the collection name portion of an ns std::string */
-std::string nsGetCollection(const std::string& ns);
-
 /**
  abstract class that implements the core db operations
  */
@@ -412,20 +405,7 @@ public:
      */
     virtual bool dropCollection(const std::string& ns,
                                 const WriteConcernOptions& writeConcern = WriteConcernOptions(),
-                                BSONObj* info = nullptr) {
-        std::string db = nsGetDB(ns);
-        std::string coll = nsGetCollection(ns);
-        uassert(10011, "no collection name", coll.size());
-
-        BSONObj temp;
-        if (info == nullptr) {
-            info = &temp;
-        }
-
-        bool res = runCommand(
-            db.c_str(), BSON("drop" << coll << "writeConcern" << writeConcern.toBSON()), *info);
-        return res;
-    }
+                                BSONObj* info = nullptr);
 
     /** Copy database from one server or name to another server or name.
 
@@ -476,11 +456,7 @@ public:
     /** validate a collection, checking for errors and reporting back statistics.
         this operation is slow and blocking.
      */
-    bool validate(const std::string& ns, bool scandata = true) {
-        BSONObj cmd = BSON("validate" << nsGetCollection(ns) << "scandata" << scandata);
-        BSONObj info;
-        return runCommand(nsGetDB(ns).c_str(), cmd, info);
-    }
+    bool validate(const std::string& ns, bool scandata = true);
 
     /* The following helpers are simply more convenient forms of eval() for certain common cases */
 
@@ -761,12 +737,5 @@ private:
     enum QueryOptions _cachedAvailableOptions;
     bool _haveCachedAvailableOptions;
 };  // DBClientBase
-
-BSONElement getErrField(const BSONObj& result);
-bool hasErrField(const BSONObj& result);
-
-inline std::ostream& operator<<(std::ostream& s, const Query& q) {
-    return s << q.toString();
-}
 
 }  // namespace mongo

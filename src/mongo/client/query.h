@@ -159,6 +159,10 @@ private:
     }
 };
 
+inline std::ostream& operator<<(std::ostream& s, const Query& q) {
+    return s << q.toString();
+}
+
 void assembleQueryRequest(const std::string& ns,
                           BSONObj query,
                           int nToReturn,

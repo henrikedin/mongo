@@ -43,6 +43,7 @@
 #include "mongo/client/authenticate.h"
 #include "mongo/client/constants.h"
 #include "mongo/client/dbclient_cursor.h"
+#include "mongo/client/dbclient_util.h"
 #include "mongo/client/replica_set_monitor.h"
 #include "mongo/config.h"
 #include "mongo/db/auth/internal_user_auth.h"
@@ -949,33 +950,27 @@ void DBClientBase::createIndex(StringData ns, const IndexSpec& descriptor) {
     }
 }
 
-/* -- DBClientCursor ---------------------------------------------- */
+bool DBClientBase::dropCollection(const std::string& ns,
+                                  const WriteConcernOptions& writeConcern,
+                                  BSONObj* info) {
+    std::string db = nsGetDB(ns);
+    std::string coll = nsGetCollection(ns);
+    uassert(10011, "no collection name", coll.size());
 
-BSONElement getErrField(const BSONObj& o) {
-    return o["$err"];
+    BSONObj temp;
+    if (info == nullptr) {
+        info = &temp;
+    }
+
+    bool res = runCommand(
+        db.c_str(), BSON("drop" << coll << "writeConcern" << writeConcern.toBSON()), *info);
+    return res;
 }
 
-bool hasErrField(const BSONObj& o) {
-    return !getErrField(o).eoo();
+bool DBClientBase::validate(const std::string& ns, bool scandata) {
+    BSONObj cmd = BSON("validate" << nsGetCollection(ns) << "scandata" << scandata);
+    BSONObj info;
+    return runCommand(nsGetDB(ns).c_str(), cmd, info);
 }
-
-/** @return the database name portion of an ns string */
-string nsGetDB(const string& ns) {
-    string::size_type pos = ns.find(".");
-    if (pos == string::npos)
-        return ns;
-
-    return ns.substr(0, pos);
-}
-
-/** @return the collection name portion of an ns string */
-string nsGetCollection(const string& ns) {
-    string::size_type pos = ns.find(".");
-    if (pos == string::npos)
-        return "";
-
-    return ns.substr(pos + 1);
-}
-
 
 }  // namespace mongo
