@@ -69,7 +69,7 @@ class DBClientCursorBatchIterator;
 */
 class DBClientConnection : public DBClientNetwork {
 public:
-    using DBClientBase::query;
+    using DBClientNetwork::query;
 
     /**
      * A hook used to validate the reply of an 'isMaster' command during connection. If the hook

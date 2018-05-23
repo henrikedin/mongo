@@ -53,9 +53,9 @@ typedef std::shared_ptr<ReplicaSetMonitor> ReplicaSetMonitorPtr;
 */
 class DBClientReplicaSet : public DBClientNetwork {
 public:
-    using DBClientBase::query;
-    using DBClientBase::update;
-    using DBClientBase::remove;
+    using DBClientNetwork::query;
+    using DBClientNetwork::update;
+    using DBClientNetwork::remove;
 
     /** Call connect() after constructing. autoReconnect is always on for DBClientReplicaSet
      * connections. */

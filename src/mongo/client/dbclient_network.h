@@ -35,6 +35,7 @@ class DBClientCursorNetwork;
 
 class DBClientNetwork : public DBClientBase {
 public:
+    using DBClientBase::query;
     std::unique_ptr<DBClientCursor> query(const std::string& ns,
                                           Query query,
                                           int nToReturn = 0,
