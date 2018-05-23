@@ -46,13 +46,13 @@ std::unique_ptr<DBClientCursorNetwork> DBClientNetwork::query_internal(
     return nullptr;
 }
 
-std::unique_ptr<DBClientCursor> DBClientNetwork::query_impl(const std::string& ns,
-                                                            Query query,
-                                                            int nToReturn,
-                                                            int nToSkip,
-                                                            const BSONObj* fieldsToReturn,
-                                                            int queryOptions,
-                                                            int batchSize) {
+std::unique_ptr<DBClientCursor> DBClientNetwork::query(const std::string& ns,
+                                                       Query query,
+                                                       int nToReturn,
+                                                       int nToSkip,
+                                                       const BSONObj* fieldsToReturn,
+                                                       int queryOptions,
+                                                       int batchSize) {
     return std::unique_ptr<DBClientCursor>(
         query_internal(ns, query, nToReturn, nToSkip, fieldsToReturn, queryOptions, batchSize)
             .release());

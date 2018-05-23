@@ -57,13 +57,13 @@ public:
     // XXX: is this valid or useful?
     void setOpCtx(OperationContext* opCtx);
 
-    virtual std::unique_ptr<DBClientCursor> query_impl(const std::string& ns,
-                                                       Query query,
-                                                       int nToReturn = 0,
-                                                       int nToSkip = 0,
-                                                       const BSONObj* fieldsToReturn = 0,
-                                                       int queryOptions = 0,
-                                                       int batchSize = 0);
+    virtual std::unique_ptr<DBClientCursor> query(const std::string& ns,
+                                                  Query query,
+                                                  int nToReturn = 0,
+                                                  int nToSkip = 0,
+                                                  const BSONObj* fieldsToReturn = 0,
+                                                  int queryOptions = 0,
+                                                  int batchSize = 0);
 
     std::unique_ptr<DBClientCursor> getMore(const std::string& ns,
                                             long long cursorId,

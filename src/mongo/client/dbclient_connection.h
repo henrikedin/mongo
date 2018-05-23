@@ -147,15 +147,15 @@ public:
      */
     virtual void logout(const std::string& dbname, BSONObj& info);
 
-    std::unique_ptr<DBClientCursor> query_impl(const std::string& ns,
-                                               Query query = Query(),
-                                               int nToReturn = 0,
-                                               int nToSkip = 0,
-                                               const BSONObj* fieldsToReturn = 0,
-                                               int queryOptions = 0,
-                                               int batchSize = 0) override {
+    std::unique_ptr<DBClientCursor> query(const std::string& ns,
+                                          Query query = Query(),
+                                          int nToReturn = 0,
+                                          int nToSkip = 0,
+                                          const BSONObj* fieldsToReturn = 0,
+                                          int queryOptions = 0,
+                                          int batchSize = 0) override {
         checkConnection();
-        return DBClientNetwork::query_impl(
+        return DBClientNetwork::query(
             ns, query, nToReturn, nToSkip, fieldsToReturn, queryOptions, batchSize);
     }
 

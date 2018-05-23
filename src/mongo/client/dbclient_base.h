@@ -594,15 +594,13 @@ public:
      @return    cursor.   0 if error (connection failure)
      @throws AssertionException
     */
-    std::unique_ptr<DBClientCursor> query(const std::string& ns,
-                                          Query query,
-                                          int nToReturn = 0,
-                                          int nToSkip = 0,
-                                          const BSONObj* fieldsToReturn = 0,
-                                          int queryOptions = 0,
-                                          int batchSize = 0) {
-        return query_impl(ns, query, nToReturn, nToSkip, fieldsToReturn, queryOptions, batchSize);
-    }
+    virtual std::unique_ptr<DBClientCursor> query(const std::string& ns,
+                                                  Query query,
+                                                  int nToReturn = 0,
+                                                  int nToSkip = 0,
+                                                  const BSONObj* fieldsToReturn = 0,
+                                                  int queryOptions = 0,
+                                                  int batchSize = 0) = 0;
 
 
     /** Uses QueryOption_Exhaust, when available.
@@ -682,13 +680,13 @@ public:
                                                       const Message& replyMsg);
 
 protected:
-    virtual std::unique_ptr<DBClientCursor> query_impl(const std::string& ns,
-                                                       Query query,
-                                                       int nToReturn,
-                                                       int nToSkip,
-                                                       const BSONObj* fieldsToReturn,
-                                                       int queryOptions,
-                                                       int batchSize) = 0;
+    // virtual std::unique_ptr<DBClientCursor> query_impl(const std::string& ns,
+    //                                                   Query query,
+    //                                                   int nToReturn,
+    //                                                   int nToSkip,
+    //                                                   const BSONObj* fieldsToReturn,
+    //                                                   int queryOptions,
+    //                                                   int batchSize) = 0;
 
     /** if the result of a command is ok*/
     bool isOk(const BSONObj&);

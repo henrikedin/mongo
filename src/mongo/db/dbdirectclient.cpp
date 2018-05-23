@@ -160,13 +160,13 @@ void DBDirectClient::say(Message& toSend, bool isRetry, string* actualServer) {
     invariant(dbResponse.response.empty());
 }
 
-unique_ptr<DBClientCursor> DBDirectClient::query_impl(const string& ns,
-                                                      Query query,
-                                                      int nToReturn,
-                                                      int nToSkip,
-                                                      const BSONObj* fieldsToReturn,
-                                                      int queryOptions,
-                                                      int batchSize) {
+unique_ptr<DBClientCursor> DBDirectClient::query(const string& ns,
+                                                 Query query,
+                                                 int nToReturn,
+                                                 int nToSkip,
+                                                 const BSONObj* fieldsToReturn,
+                                                 int queryOptions,
+                                                 int batchSize) {
     std::unique_ptr<DBClientCursor> c(new DBDirectCursor(
         this, ns, query.obj, 0, nToReturn, nToSkip, fieldsToReturn, queryOptions, batchSize));
     if (c->init())

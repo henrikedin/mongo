@@ -35,13 +35,13 @@ class DBClientCursorNetwork;
 
 class DBClientNetwork : public DBClientBase {
 public:
-    std::unique_ptr<DBClientCursor> query_impl(const std::string& ns,
-                                               Query query,
-                                               int nToReturn,
-                                               int nToSkip,
-                                               const BSONObj* fieldsToReturn,
-                                               int queryOptions,
-                                               int batchSize) override;
+    std::unique_ptr<DBClientCursor> query(const std::string& ns,
+                                          Query query,
+                                          int nToReturn = 0,
+                                          int nToSkip = 0,
+                                          const BSONObj* fieldsToReturn = nullptr,
+                                          int queryOptions = 0,
+                                          int batchSize = 0) override;
 
     std::unique_ptr<DBClientCursor> getMore(const std::string& ns,
                                             long long cursorId,
