@@ -168,7 +168,7 @@ unique_ptr<DBClientCursor> DBDirectClient::query_impl(const string& ns,
                                                       int queryOptions,
                                                       int batchSize) {
     std::unique_ptr<DBClientCursor> c(new DBDirectCursor(
-        this, ns, query.obj, nToReturn, nToSkip, fieldsToReturn, queryOptions, batchSize));
+        this, ns, query.obj, 0, nToReturn, nToSkip, fieldsToReturn, queryOptions, batchSize));
     if (c->init())
         return c;
     return nullptr;
@@ -181,6 +181,7 @@ std::unique_ptr<DBClientCursor> DBDirectClient::getMore(const std::string& ns,
     unique_ptr<DBClientCursor> c(new DBDirectCursor(this,
                                                     ns,
                                                     BSONObj(),  // query
+                                                    cursorId,
                                                     nToReturn,
                                                     0,        // nToSkip
                                                     nullptr,  // fieldsToReturn

@@ -38,6 +38,7 @@ public:
     DBDirectCursor(DBDirectClient* client,
                    const std::string& ns,
                    const BSONObj& query,
+                   long long cursorId,
                    int nToReturn,
                    int nToSkip,
                    const BSONObj* fieldsToReturn,

@@ -36,12 +36,14 @@ namespace mongo {
 DBDirectCursor::DBDirectCursor(DBDirectClient* client,
                                const std::string& ns,
                                const BSONObj& query,
+                               long long cursorId,
                                int nToReturn,
                                int nToSkip,
                                const BSONObj* fieldsToReturn,
                                int queryOptions,
                                int bs)
-    : DBClientCursor(client, ns, query, 0, nToReturn, nToSkip, fieldsToReturn, queryOptions, bs) {
+    : DBClientCursor(
+          client, ns, query, cursorId, nToReturn, nToSkip, fieldsToReturn, queryOptions, bs) {
     invariant(!(opts & QueryOption_Exhaust));
 }
 
