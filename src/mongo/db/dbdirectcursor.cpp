@@ -47,6 +47,24 @@ DBDirectCursor::DBDirectCursor(DBDirectClient* client,
     invariant(!(opts & QueryOption_Exhaust));
 }
 
+DBDirectCursor::DBDirectCursor(DBDirectClient* client,
+                               const std::string& ns,
+                               long long cursorId,
+                               int nToReturn,
+                               int queryOptions)
+    : DBClientCursor(client,
+                     ns,
+                     BSONObj(),  // query
+                     cursorId,
+                     nToReturn,
+                     0,        // nToSkip
+                     nullptr,  // fieldsToReturn
+                     queryOptions,
+                     0)  // batchSize
+{
+    invariant(!(opts & QueryOption_Exhaust));
+}
+
 DBDirectCursor::~DBDirectCursor() {
     kill_direct();
 }

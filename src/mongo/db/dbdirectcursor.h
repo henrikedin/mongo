@@ -45,6 +45,12 @@ public:
                    int queryOptions,
                    int bs);
 
+    DBDirectCursor(DBDirectClient* client,
+                   const std::string& ns,
+                   long long cursorId,
+                   int nToReturn,
+                   int queryOptions);
+
     virtual ~DBDirectCursor();
 
     void kill() override;

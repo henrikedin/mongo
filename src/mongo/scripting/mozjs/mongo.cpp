@@ -41,6 +41,8 @@
 #include "mongo/client/sasl_client_authenticate.h"
 #include "mongo/client/sasl_client_session.h"
 #include "mongo/db/auth/sasl_command_constants.h"
+#include "mongo/db/dbdirectclient.h"
+#include "mongo/db/dbdirectcursor.h"
 #include "mongo/db/logical_session_id.h"
 #include "mongo/db/logical_session_id_helpers.h"
 #include "mongo/db/namespace_string.h"
@@ -107,15 +109,15 @@ const JSFunctionSpec MongoExternalInfo::freeFunctions[4] = {
 
 namespace {
 
-const std::shared_ptr<DBClientNetwork>& getConnectionRef(JS::CallArgs& args) {
-    auto ret = static_cast<std::shared_ptr<DBClientNetwork>*>(
-        JS_GetPrivate(args.thisv().toObjectOrNull()));
+const std::shared_ptr<DBClientBase>& getConnectionRef(JS::CallArgs& args) {
+    auto ret =
+        static_cast<std::shared_ptr<DBClientBase>*>(JS_GetPrivate(args.thisv().toObjectOrNull()));
     uassert(
         ErrorCodes::BadValue, "Trying to get connection for closed Mongo object", *ret != nullptr);
     return *ret;
 }
 
-DBClientNetwork* getConnection(JS::CallArgs& args) {
+DBClientBase* getConnection(JS::CallArgs& args) {
     return getConnectionRef(args).get();
 }
 
@@ -123,8 +125,8 @@ void setCursor(MozJSImplScope* scope,
                JS::HandleObject target,
                std::unique_ptr<DBClientCursor> cursor,
                JS::CallArgs& args) {
-    auto client = static_cast<std::shared_ptr<DBClientNetwork>*>(
-        JS_GetPrivate(args.thisv().toObjectOrNull()));
+    auto client =
+        static_cast<std::shared_ptr<DBClientBase>*>(JS_GetPrivate(args.thisv().toObjectOrNull()));
 
     // Copy the client shared pointer to up the refcount
     JS_SetPrivate(target, scope->trackedNew<CursorInfo::CursorHolder>(std::move(cursor), *client));
@@ -135,8 +137,8 @@ void setCursorHandle(MozJSImplScope* scope,
                      NamespaceString ns,
                      long long cursorId,
                      JS::CallArgs& args) {
-    auto client = static_cast<std::shared_ptr<DBClientNetwork>*>(
-        JS_GetPrivate(args.thisv().toObjectOrNull()));
+    auto client =
+        static_cast<std::shared_ptr<DBClientBase>*>(JS_GetPrivate(args.thisv().toObjectOrNull()));
 
     // Copy the client shared pointer to up the refcount.
     JS_SetPrivate(
@@ -189,7 +191,7 @@ void setHiddenMongo(JSContext* cx,
 }  // namespace
 
 void MongoBase::finalize(JSFreeOp* fop, JSObject* obj) {
-    auto conn = static_cast<std::shared_ptr<DBClientNetwork>*>(JS_GetPrivate(obj));
+    auto conn = static_cast<std::shared_ptr<DBClientBase>*>(JS_GetPrivate(obj));
 
     if (conn) {
         getScope(fop)->trackedDelete(conn);
@@ -200,7 +202,7 @@ void MongoBase::Functions::close::call(JSContext* cx, JS::CallArgs args) {
     getConnection(args);
 
     auto thisv = args.thisv().toObjectOrNull();
-    auto conn = static_cast<std::shared_ptr<DBClientNetwork>*>(JS_GetPrivate(thisv));
+    auto conn = static_cast<std::shared_ptr<DBClientBase>*>(JS_GetPrivate(thisv));
 
     conn->reset();
 
@@ -506,8 +508,24 @@ void MongoBase::Functions::cursorFromId::call(JSContext* cx, JS::CallArgs args) 
     long long cursorId = NumberLongInfo::ToNumberLong(cx, args.get(1));
 
     // The shell only calls this method when it wants to test OP_GETMORE.
-    auto cursor = stdx::make_unique<DBClientCursorNetwork>(
-        conn, ns, cursorId, 0, DBClientCursor::QueryOptionLocal_forceOpQuery);
+    /*auto cursor = stdx::make_unique<DBClientCursorNetwork>(
+        conn, ns, cursorId, 0, DBClientCursor::QueryOptionLocal_forceOpQuery);*/
+
+    /*auto create_cursor = [](auto connection)
+    {
+
+    }*/
+
+    std::unique_ptr<DBClientCursor> cursor;
+    if (auto conn_network = dynamic_cast<DBClientNetwork*>(conn)) {
+        cursor = stdx::make_unique<DBClientCursorNetwork>(
+            conn_network, ns, cursorId, 0, DBClientCursor::QueryOptionLocal_forceOpQuery);
+    } else if (auto conn_direct = dynamic_cast<DBDirectClient*>(conn)) {
+        cursor = stdx::make_unique<DBDirectCursor>(
+            conn_direct, ns, cursorId, 0, DBClientCursor::QueryOptionLocal_forceOpQuery);
+    } else {
+        invariant(false);
+    }
 
     if (args.get(2).isNumber())
         cursor->setBatchSize(ValueWriter(cx, args.get(2)).toInt32());
@@ -751,7 +769,7 @@ void MongoExternalInfo::construct(JSContext* cx, JS::CallArgs args) {
 
     boost::optional<std::string> appname = cs.getAppName();
     std::string errmsg;
-    std::unique_ptr<DBClientNetwork> conn(cs.connect(appname.value_or("MongoDB Shell"), errmsg));
+    std::unique_ptr<DBClientBase> conn(cs.connect(appname.value_or("MongoDB Shell"), errmsg));
 
     if (!conn.get()) {
         uasserted(ErrorCodes::InternalError, errmsg);
@@ -763,7 +781,7 @@ void MongoExternalInfo::construct(JSContext* cx, JS::CallArgs args) {
     scope->getProto<MongoExternalInfo>().newObject(&thisv);
     ObjectWrapper o(cx, thisv);
 
-    JS_SetPrivate(thisv, scope->trackedNew<std::shared_ptr<DBClientNetwork>>(conn.release()));
+    JS_SetPrivate(thisv, scope->trackedNew<std::shared_ptr<DBClientBase>>(conn.release()));
 
     o.setBoolean(InternedString::slaveOk, false);
     o.setString(InternedString::host, cs.toString());
@@ -807,8 +825,8 @@ void MongoBase::Functions::isMongos::call(JSContext* cx, JS::CallArgs args) {
 }
 
 void MongoBase::Functions::_startSession::call(JSContext* cx, JS::CallArgs args) {
-    auto client = static_cast<std::shared_ptr<DBClientNetwork>*>(
-        JS_GetPrivate(args.thisv().toObjectOrNull()));
+    auto client =
+        static_cast<std::shared_ptr<DBClientBase>*>(JS_GetPrivate(args.thisv().toObjectOrNull()));
 
     LogicalSessionIdToClient id;
     id.setId(UUID::gen());
