@@ -32,6 +32,7 @@
 #include <vector>
 
 #include "mongo/bson/bsonobjbuilder.h"
+#include "mongo/client/dbclient_connection.h"
 #include "mongo/client/connpool.h"
 #include "mongo/client/global_conn_pool.h"
 #include "mongo/db/commands.h"

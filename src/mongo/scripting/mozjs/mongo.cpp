@@ -33,7 +33,7 @@
 #include "mongo/bson/simple_bsonelement_comparator.h"
 #include "mongo/client/dbclient_cursor_network.h"
 #include "mongo/client/dbclient_rs.h"
-#include "mongo/client/dbclientinterface.h"
+//#include "mongo/client/dbclientinterface.h"
 #include "mongo/client/global_conn_pool.h"
 #include "mongo/client/mongo_uri.h"
 #include "mongo/client/native_sasl_client_session.h"

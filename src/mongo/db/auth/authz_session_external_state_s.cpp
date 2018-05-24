@@ -31,7 +31,7 @@
 #include <string>
 
 #include "mongo/base/status.h"
-#include "mongo/client/dbclientinterface.h"
+//#include "mongo/client/dbclientinterface.h"
 #include "mongo/db/auth/authorization_manager.h"
 #include "mongo/db/jsobj.h"
 #include "mongo/s/grid.h"

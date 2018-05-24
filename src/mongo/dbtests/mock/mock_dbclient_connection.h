@@ -30,7 +30,7 @@
 #include <string>
 #include <vector>
 
-#include "mongo/client/dbclientinterface.h"
+#include "mongo/client/dbclient_connection.h"
 #include "mongo/dbtests/mock/mock_remote_db_server.h"
 
 namespace mongo {

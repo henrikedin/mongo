@@ -171,4 +171,9 @@ void assembleQueryRequest(const std::string& ns,
                           int queryOptions,
                           Message& toSend);
 
+/** Typically one uses the QUERY(...) macro to construct a Query object.
+Example: QUERY( "age" << 33 << "school" << "UCLA" )
+*/
+#define QUERY(x) ::mongo::Query(BSON(x))
+
 }  // namespace mongo
