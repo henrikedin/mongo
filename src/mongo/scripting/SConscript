@@ -150,11 +150,12 @@ if usemozjs:
         LIBDEPS=[
             'bson_template_evaluator',
             'scripting_common',
-            '$BUILD_DIR/mongo/client/clientdriver_network',
             '$BUILD_DIR/mongo/db/service_context',
             '$BUILD_DIR/mongo/shell/mongojs',
         ],
         LIBDEPS_PRIVATE=[
+            '$BUILD_DIR/mongo/client/clientdriver_network',
+            '$BUILD_DIR/mongo/db/dbdirectclient',
             '$BUILD_DIR/third_party/shim_mozjs',
         ],
     )
