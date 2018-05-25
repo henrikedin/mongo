@@ -27,6 +27,21 @@ env.Library(
     ]
 )
 
+server_status_libdeps_private=[
+    '$BUILD_DIR/mongo/db/auth/auth',
+    '$BUILD_DIR/mongo/db/auth/authprivilege',
+    '$BUILD_DIR/mongo/db/server_options_core',
+    '$BUILD_DIR/mongo/db/stats/counters',
+    '$BUILD_DIR/mongo/transport/message_compressor',
+    '$BUILD_DIR/mongo/transport/service_executor',
+    '$BUILD_DIR/mongo/util/net/network',
+    '$BUILD_DIR/mongo/util/processinfo',
+    'server_status_core',
+]
+
+if has_option('ssl'):
+    server_status_libdeps_private.append('$BUILD_DIR/mongo/util/net/ssl_manager')
+
 env.Library(
     target='server_status',
     source=[
@@ -35,18 +50,7 @@ env.Library(
     LIBDEPS=[
         '$BUILD_DIR/mongo/db/commands',
     ],
-    LIBDEPS_PRIVATE=[
-        '$BUILD_DIR/mongo/db/auth/auth',
-        '$BUILD_DIR/mongo/db/auth/authprivilege',
-        '$BUILD_DIR/mongo/db/server_options_core',
-        '$BUILD_DIR/mongo/db/stats/counters',
-        '$BUILD_DIR/mongo/transport/message_compressor',
-        '$BUILD_DIR/mongo/transport/service_executor',
-        '$BUILD_DIR/mongo/util/net/network',
-        '$BUILD_DIR/mongo/util/net/ssl_manager',
-        '$BUILD_DIR/mongo/util/processinfo',
-        'server_status_core',
-    ],
+    LIBDEPS_PRIVATE=server_status_libdeps_private,
 )
 
 env.Library(
@@ -231,6 +235,7 @@ env.Library(
         '$BUILD_DIR/mongo/db/query_exec',
         '$BUILD_DIR/mongo/db/repair_database',
         '$BUILD_DIR/mongo/db/rw_concern_d',
+        '$BUILD_DIR/mongo/db/stats/counters',
         '$BUILD_DIR/mongo/db/storage/storage_engine_common',
         '$BUILD_DIR/mongo/db/views/views_mongod',
         'core',

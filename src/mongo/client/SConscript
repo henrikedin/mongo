@@ -1,6 +1,7 @@
 # -*- mode: python -*-
 
 Import('env')
+Import("has_option")
 
 env = env.Clone()
 
@@ -156,6 +157,16 @@ env.Library(
     ],
 )
 
+clientdriver_libdeps_private = [
+    '$BUILD_DIR/mongo/db/auth/internal_user_auth',
+    '$BUILD_DIR/mongo/s/stale_config',
+    '$BUILD_DIR/mongo/util/md5',
+    'authentication',
+]
+
+if has_option('ssl'):
+    clientdriver_libdeps_private.append('$BUILD_DIR/mongo/util/net/ssl_manager')
+
 env.Library(
     target='clientdriver',
     source=[
@@ -174,13 +185,7 @@ env.Library(
         'client_query',
         'connection_string',
     ],
-    LIBDEPS_PRIVATE=[
-        '$BUILD_DIR/mongo/db/auth/internal_user_auth',
-        '$BUILD_DIR/mongo/s/stale_config',
-        '$BUILD_DIR/mongo/util/md5',
-        '$BUILD_DIR/mongo/util/net/ssl_manager',
-        'authentication',
-    ],
+    LIBDEPS_PRIVATE=clientdriver_libdeps_private,
 )
 
 clientDriverNetworkEnv = env.Clone()
