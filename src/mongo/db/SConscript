@@ -1189,7 +1189,7 @@ envWithAsio.CppUnitTest(
     ],
 )
 
-envWithAsio.Library(
+env.Library(
     target='service_liason_mock',
     source=[
         'service_liason_mock.cpp',
@@ -1202,7 +1202,7 @@ envWithAsio.Library(
     ],
 )
 
-envWithAsio.Library(
+env.Library(
     target='service_liason_mongod',
     source=[
         'service_liason_mongod.cpp',
@@ -1394,7 +1394,7 @@ envWithAsio.CppUnitTest(
     ],
 )
 
-envWithAsio.Library(
+env.Library(
     target='logical_session_cache_factory_mongod',
     source=[
         'logical_session_cache_factory_mongod.cpp',

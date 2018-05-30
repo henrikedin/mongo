@@ -32,7 +32,7 @@ env.Library(
 tlEnv = env.Clone()
 tlEnv.InjectThirdPartyIncludePaths(libraries=['asio'])
 
-tlEnv.Library(
+env.Library(
     target='transport_layer_manager',
     source=[
         'transport_layer_manager.cpp',
