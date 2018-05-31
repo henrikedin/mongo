@@ -436,10 +436,10 @@ Status addGeneralServerOptions(moe::OptionSection* options) {
                             "fraction of slow ops to include in the profile and console log")
         .setDefault(moe::Value(1.0));
 
-    auto ret = addMessageCompressionOptions(options, false);
+    /*auto ret = addMessageCompressionOptions(options, false);
     if (!ret.isOK()) {
         return ret;
-    }
+    }*/
 
     return Status::OK();
 }
@@ -834,7 +834,7 @@ Status storeServerOptions(const moe::Environment& params) {
 
     if (params.count("net.ipv6") && params["net.ipv6"].as<bool>() == true) {
         serverGlobalParams.enableIPv6 = true;
-        enableIPv6();
+        //enableIPv6();
     }
 
     if (params.count("net.listenBacklog")) {
@@ -1117,10 +1117,10 @@ Status storeServerOptions(const moe::Environment& params) {
     }
 #endif
 
-    ret = storeMessageCompressionOptions(params);
+    /*ret = storeMessageCompressionOptions(params);
     if (!ret.isOK()) {
         return ret;
-    }
+    }*/
 
     return Status::OK();
 }

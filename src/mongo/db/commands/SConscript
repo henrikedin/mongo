@@ -40,11 +40,22 @@ env.Library(
         '$BUILD_DIR/mongo/db/auth/authprivilege',
         '$BUILD_DIR/mongo/db/server_options_core',
         '$BUILD_DIR/mongo/db/stats/counters',
+        '$BUILD_DIR/mongo/util/processinfo',
+        'server_status_core',
+    ],
+)
+
+env.Library(
+    target='server_status_servers',
+    source=[
+        'server_status_servers.cpp',
+    ],
+    LIBDEPS_PRIVATE=[
+        '$BUILD_DIR/mongo/db/stats/counters',
         '$BUILD_DIR/mongo/transport/message_compressor',
         '$BUILD_DIR/mongo/transport/service_executor',
-        '$BUILD_DIR/mongo/util/net/network',
         '$BUILD_DIR/mongo/util/net/ssl_manager',
-        '$BUILD_DIR/mongo/util/processinfo',
+        'server_status',
         'server_status_core',
     ],
 )
