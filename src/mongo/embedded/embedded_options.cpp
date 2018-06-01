@@ -90,7 +90,7 @@ Status addOptions(optionenvironment::OptionSection* options) {
 
 Status canonicalizeOptions(optionenvironment::Environment* params) {
 
-    Status ret = canonicalizeServerOptions(params);
+    Status ret = canonicalizeBaseOptions(params);
     if (!ret.isOK()) {
         return ret;
     }

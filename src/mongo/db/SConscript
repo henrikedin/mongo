@@ -399,6 +399,25 @@ env.Clone().InjectModule("enterprise").Library(
     ],
 )
 
+env.Clone().InjectModule("enterprise").Library(
+    target="server_options_servers",
+    source=[
+        "server_options_server_helpers.cpp",
+    ],
+    LIBDEPS=[
+        '$BUILD_DIR/mongo/base',
+        '$BUILD_DIR/mongo/util/cmdline_utils/cmdline_utils',
+        '$BUILD_DIR/mongo/util/fail_point',
+        #'$BUILD_DIR/mongo/transport/message_compressor',
+        # The dependency on net/ssl_manager is a temporary crutch that should go away once the
+        # networking library has separate options
+        '$BUILD_DIR/mongo/util/net/ssl_manager',
+        '$BUILD_DIR/mongo/util/options_parser/options_parser',
+        'server_options_core',
+        'server_parameters',
+    ],
+)
+
 env.CppUnitTest(
     target='server_options_test',
     source=[
@@ -452,7 +471,7 @@ env.Library(
         '$BUILD_DIR/mongo/db/storage/mmap_v1/mmap_v1_options',
         'repl/repl_settings',
         'repl/replica_set_messages',
-        'server_options',
+        'server_options_servers',
         'storage/storage_options',
     ],
     LIBDEPS_PRIVATE=[
@@ -1766,7 +1785,7 @@ env.Library(
     LIBDEPS=[
         'repl/repl_coordinator_interface',
         'repl/replica_set_messages',
-        'server_options',
+        'server_options_servers',
         '$BUILD_DIR/mongo/base',
         '$BUILD_DIR/mongo/util/net/network',
     ],
