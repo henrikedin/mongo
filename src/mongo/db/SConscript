@@ -421,7 +421,7 @@ env.CppUnitTest(
         'server_options_test.cpp',
     ],
     LIBDEPS=[
-        'server_options',
+        'server_options_servers',
     ],
 )
 
