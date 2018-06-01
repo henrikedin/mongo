@@ -34,6 +34,7 @@
 #include "mongo/transport/service_entry_point.h"
 #include "mongo/util/net/hostname_canonicalization.h"
 #include "mongo/util/net/socket_utils.h"
+#include "mongo/util/net/ssl_manager.h"
 #include "mongo/db/commands/server_status.h"
 
 namespace mongo {
