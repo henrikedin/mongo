@@ -3362,16 +3362,25 @@ tasks:
 
     - func: "build cdriver" # noop if ${build_cdriver} is not "true"
 
-    - func: "scons compile"
-      vars:
-        targets: install-mobile-dev install-mobile-test
-        task_compile_flags: >-
-          --disable-warnings-as-errors
-          --install-mode=hygienic
-          --js-engine=none
-          --link-model=dynamic
-          --prefix='$BUILD_ROOT/mongo-embedded-sdk-$MONGO_VERSION'
-          CPPPATH='$BUILD_ROOT/mongo-embedded-sdk-$MONGO_VERSION/include/libbson-1.0 $BUILD_ROOT/mongo-embedded-sdk-$MONGO_VERSION/include/libmongoc-1.0'
+    #- func: "scons compile"
+    #  vars:
+    #    targets: install-mobile-dev install-mobile-test
+    #    task_compile_flags: >-
+    #      --disable-warnings-as-errors
+    #      --install-mode=hygienic
+    #      --js-engine=none
+    #      --link-model=dynamic
+    #      --prefix='$BUILD_ROOT/mongo-embedded-sdk-$MONGO_VERSION'
+    #      CPPPATH='$BUILD_ROOT/mongo-embedded-sdk-$MONGO_VERSION/include/libbson-1.0 $BUILD_ROOT/mongo-embedded-sdk-$MONGO_VERSION/include/libmongoc-1.0'
+
+    # Compile Java 
+    - command: shell.exec
+      params:
+        working_dir: "src/src/mongo/embedded/java/mongodb-embedded-capi"
+        script: |
+          chmod +x gradlew
+          ./gradlew build
+          cp build/libs/* ../../../../build
 
     # Need to sign artifacts on iOS-ish.
     - command: shell.exec
