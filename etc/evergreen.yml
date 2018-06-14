@@ -1101,6 +1101,18 @@ functions:
         mv $WORKDIR/src/build/mongo-embedded-sdk-$VERSION-tmp $WORKDIR/src/build/mongo-embedded-sdk-$VERSION
         fi
 
+  "build java capi" :
+    command: shell.exec
+    params:
+      working_dir: "src/src/mongo/embedded/java/mongodb-embedded-capi"
+      script: |
+        if [ "${build_java_capi|}" = "true" ]; then
+        chmod +x gradlew
+        ./gradlew build
+        mkdir ../../../../../build/mongo-embedded-sdk-${version}/jar
+        cp build/libs/* ../../../../../build/mongo-embedded-sdk-${version}/jar
+        fi
+
   "build new tools" :
     command: shell.exec
     params:
@@ -3362,25 +3374,18 @@ tasks:
 
     - func: "build cdriver" # noop if ${build_cdriver} is not "true"
 
-    #- func: "scons compile"
-    #  vars:
-    #    targets: install-mobile-dev install-mobile-test
-    #    task_compile_flags: >-
-    #      --disable-warnings-as-errors
-    #      --install-mode=hygienic
-    #      --js-engine=none
-    #      --link-model=dynamic
-    #      --prefix='$BUILD_ROOT/mongo-embedded-sdk-$MONGO_VERSION'
-    #      CPPPATH='$BUILD_ROOT/mongo-embedded-sdk-$MONGO_VERSION/include/libbson-1.0 $BUILD_ROOT/mongo-embedded-sdk-$MONGO_VERSION/include/libmongoc-1.0'
+    - func: "scons compile"
+      vars:
+        targets: install-mobile-dev install-mobile-test
+        task_compile_flags: >-
+          --disable-warnings-as-errors
+          --install-mode=hygienic
+          --js-engine=none
+          --link-model=dynamic
+          --prefix='$BUILD_ROOT/mongo-embedded-sdk-$MONGO_VERSION'
+          CPPPATH='$BUILD_ROOT/mongo-embedded-sdk-$MONGO_VERSION/include/libbson-1.0 $BUILD_ROOT/mongo-embedded-sdk-$MONGO_VERSION/include/libmongoc-1.0'
 
-    # Compile Java 
-    - command: shell.exec
-      params:
-        working_dir: "src/src/mongo/embedded/java/mongodb-embedded-capi"
-        script: |
-          chmod +x gradlew
-          ./gradlew build
-          cp build/libs/* ../../../../build
+    - func: "build java capi" # noop if ${build_java_capi} is not "true"
 
     # Need to sign artifacts on iOS-ish.
     - command: shell.exec
@@ -9557,6 +9562,7 @@ buildvariants:
   expansions:
     test_flags: --excludeWithAnyTags=requires_mmapv1,uses_transactions
     build_cdriver: true
+    build_java_capi: true
     compile_env: JAVA_HOME=/opt/java/jdk8/
     compile_flags: >-
       -j$(grep -c ^processor /proc/cpuinfo)
@@ -9597,6 +9603,7 @@ buildvariants:
   expansions:
     test_flags: --excludeWithAnyTags=requires_mmapv1,uses_transactions
     build_cdriver: true
+    build_java_capi: true
     compile_env: JAVA_HOME=/opt/java/jdk8/
     compile_flags: >-
       -j$(grep -c ^processor /proc/cpuinfo)
@@ -9636,6 +9643,7 @@ buildvariants:
   expansions:
     test_flags: --excludeWithAnyTags=requires_mmapv1,uses_transactions
     build_cdriver: true
+    build_java_capi: true
     compile_env: JAVA_HOME=/opt/java/jdk8/
     compile_flags: >-
       -j$(grep -c ^processor /proc/cpuinfo)
