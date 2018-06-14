@@ -1113,6 +1113,28 @@ functions:
         cp build/libs/* ../../../../../build/mongo-embedded-sdk-${version}/jar
         fi
 
+  "build android capi" :
+    command: shell.exec
+    params:
+      script: |
+        if [ "${android_sdk_path|}" ]; then
+        export ANDROID_HOME=${android_sdk_path|}
+        ROOT=$pwd
+
+        cd src/src/mongo/embedded/android
+
+        ${activate_virtualenv}
+
+        echo ANDROID_HOME=${ANDROID_HOME}
+
+        chmod +x gradlew
+        mkdir -p mongodb-embedded-capi/src/main/jniLibs/${android_toolchain_system_image_arch}
+        cp ../../../../build/mongo-embedded-sdk-${version}/lib/*.so mongodb-embedded-capi/src/main/jniLibs/${android_toolchain_system_image_arch}
+        ./gradlew assembleRelease
+        mkdir ../../../../build/mongo-embedded-sdk-${version}/aar
+        cp mongodb-embedded-capi/build/outputs/aar/*.aar ../../../../build/mongo-embedded-sdk-${version}/aar
+        fi
+
   "build new tools" :
     command: shell.exec
     params:
@@ -3386,6 +3408,7 @@ tasks:
           CPPPATH='$BUILD_ROOT/mongo-embedded-sdk-$MONGO_VERSION/include/libbson-1.0 $BUILD_ROOT/mongo-embedded-sdk-$MONGO_VERSION/include/libmongoc-1.0'
 
     - func: "build java capi" # noop if ${build_java_capi} is not "true"
+    - func: "build android capi" # noop if ${android_sdk_path} is not "true"
 
     # Need to sign artifacts on iOS-ish.
     - command: shell.exec
@@ -9590,6 +9613,7 @@ buildvariants:
     disable_unit_tests: true
     enable_embedded_tests: android_emulator
     setup_android_toolchain: true
+    android_sdk_path: $(pwd)/android_sdk
     android_toolchain_system_image_arch: "armeabi-v7a"
     android_toolchain_target_arch: "arm"
   tasks:
@@ -9630,6 +9654,7 @@ buildvariants:
     disable_unit_tests: true
     enable_embedded_tests: android_emulator
     setup_android_toolchain: true
+    android_sdk_path: $(pwd)/android_sdk
     android_toolchain_system_image_arch: "arm64-v8a"
     android_toolchain_target_arch: "arm64"
   tasks:
@@ -9670,6 +9695,7 @@ buildvariants:
     # The Android x86_64 emulator requires KVM.
     enable_embedded_tests: false
     setup_android_toolchain: true
+    android_sdk_path: $(pwd)/android_sdk
     android_toolchain_system_image_arch: "x86_64"
     android_toolchain_target_arch: "x86_64"
   tasks:
