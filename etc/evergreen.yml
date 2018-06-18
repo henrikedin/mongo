@@ -1119,18 +1119,15 @@ functions:
       script: |
         if [ "${android_sdk_path|}" ]; then
         export ANDROID_HOME=${android_sdk_path|}
-        ROOT=$pwd
 
         cd src/src/mongo/embedded/android
 
         ${activate_virtualenv}
 
-        echo ANDROID_HOME=${ANDROID_HOME}
-
         chmod +x gradlew
         mkdir -p mongodb-embedded-capi/src/main/jniLibs/${android_toolchain_system_image_arch}
         cp ../../../../build/mongo-embedded-sdk-${version}/lib/*.so mongodb-embedded-capi/src/main/jniLibs/${android_toolchain_system_image_arch}
-        ./gradlew assembleRelease
+        ./gradlew build
         mkdir ../../../../build/mongo-embedded-sdk-${version}/aar
         cp mongodb-embedded-capi/build/outputs/aar/*.aar ../../../../build/mongo-embedded-sdk-${version}/aar
         fi
