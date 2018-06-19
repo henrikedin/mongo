@@ -34,7 +34,7 @@
 
 #include "mongo/base/status_with.h"
 #include "mongo/bson/bsonobjbuilder.h"
-#include "mongo/client/dbclientinterface.h"
+#include "mongo/client/dbclient_base.h"
 #include "mongo/db/auth/sasl_command_constants.h"
 #include "mongo/util/mongoutils/str.h"
 #include "mongo/util/password_digest.h"
@@ -165,8 +165,8 @@ BSONObj MongoURI::_makeAuthObjFromOptions(int maxWireVersion) const {
 }
 
 DBClientBase* MongoURI::connect(StringData applicationName,
-                                std::string& errmsg,
-                                boost::optional<double> socketTimeoutSecs) const {
+                                   std::string& errmsg,
+                                   boost::optional<double> socketTimeoutSecs) const {
     OptionsMap::const_iterator it = _options.find("socketTimeoutMS");
     if (it != _options.end() && !socketTimeoutSecs) {
         try {

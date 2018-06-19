@@ -34,7 +34,7 @@
 
 #include "mongo/client/constants.h"
 #include "mongo/client/dbclient_rs.h"
-#include "mongo/client/dbclientcursor.h"
+#include "mongo/client/dbclient_cursor.h"
 #include "mongo/client/replica_set_monitor.h"
 #include "mongo/db/bson/dotted_path_support.h"
 #include "mongo/db/query/query_request.h"

@@ -31,8 +31,6 @@
 
 #include "mongo/platform/basic.h"
 
-#include "mongo/client/dbclientinterface.h"
-
 #include <algorithm>
 #include <utility>
 
@@ -42,7 +40,8 @@
 #include "mongo/bson/util/builder.h"
 #include "mongo/client/authenticate.h"
 #include "mongo/client/constants.h"
-#include "mongo/client/dbclientcursor.h"
+#include "mongo/client/dbclient_connection.h"
+#include "mongo/client/dbclient_cursor.h"
 #include "mongo/client/replica_set_monitor.h"
 #include "mongo/config.h"
 #include "mongo/db/auth/internal_user_auth.h"
