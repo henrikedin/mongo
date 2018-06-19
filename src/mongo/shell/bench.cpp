@@ -34,8 +34,7 @@
 
 #include <pcrecpp.h>
 
-#include "mongo/client/dbclient_cursor.h"
-#include "mongo/client/dbclient_network.h"
+#include "mongo/client/dbclientcursor.h"
 #include "mongo/db/namespace_string.h"
 #include "mongo/db/query/cursor_response.h"
 #include "mongo/db/query/getmore_request.h"
