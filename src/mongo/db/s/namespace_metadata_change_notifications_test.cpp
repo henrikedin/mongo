@@ -30,7 +30,8 @@
 
 #include "mongo/db/operation_context_noop.h"
 #include "mongo/db/s/namespace_metadata_change_notifications.h"
-#include "mongo/db/service_context_noop.h"
+#include "mongo/db/service_context.h"
+#include "mongo/db/service_context_d_test_fixture.h"
 #include "mongo/stdx/memory.h"
 #include "mongo/stdx/thread.h"
 #include "mongo/unittest/unittest.h"
@@ -41,23 +42,11 @@ namespace {
 
 const NamespaceString kNss("foo.bar");
 
-class NamespaceMetadataChangeNotificationsTest : public unittest::Test {
+class NamespaceMetadataChangeNotificationsTest : public ServiceContextMongoDTest {
 protected:
     NamespaceMetadataChangeNotificationsTest() {
-        _serviceCtx.setTickSource(stdx::make_unique<TickSourceMock>());
+        getServiceContext()->setTickSource(stdx::make_unique<TickSourceMock>());
     }
-
-    void setUp() override {
-        _client = _serviceCtx.makeClient("Test");
-    }
-
-    Client* client() const {
-        return _client.get();
-    }
-
-private:
-    ServiceContextNoop _serviceCtx;
-    ServiceContext::UniqueClient _client;
 };
 
 TEST_F(NamespaceMetadataChangeNotificationsTest, WaitForNotify) {
@@ -75,7 +64,7 @@ TEST_F(NamespaceMetadataChangeNotificationsTest, WaitForNotify) {
     notifications.notifyChange(kNss);
 
     {
-        auto opCtx = client()->makeOperationContext();
+        auto opCtx = getClient()->makeOperationContext();
         scopedNotif.get(opCtx.get());
     }
 }
@@ -110,7 +99,7 @@ TEST_F(NamespaceMetadataChangeNotificationsTest, MoveConstructionWaitForNotify) 
     notifications.notifyChange(kNss);
 
     {
-        auto opCtx = client()->makeOperationContext();
+        auto opCtx = getClient()->makeOperationContext();
         movedScopedNotif.get(opCtx.get());
     }
 }

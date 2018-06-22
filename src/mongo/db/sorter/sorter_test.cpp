@@ -54,14 +54,6 @@ using namespace mongo::sorter;
 using std::make_shared;
 using std::pair;
 
-namespace {
-
-// Stub to avoid including the server environment library.
-ServiceContextRegistrar serviceContextCreator([]() {
-    return std::make_unique<ServiceContextNoop>();
-});
-}  // namespace
-
 //
 // Sorter framework testing utilities
 //
