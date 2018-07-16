@@ -395,7 +395,7 @@ size_t QueryPlannerTest::getNumSolutions() const {
 void QueryPlannerTest::dumpSolutions() const {
     mongoutils::str::stream ost;
     dumpSolutions(ost);
-    log() << std::string(ost);
+    MONGO_BOOST_LOG << std::string(ost);
 }
 
 void QueryPlannerTest::dumpSolutions(mongoutils::str::stream& ost) const {

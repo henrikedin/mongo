@@ -64,7 +64,7 @@ void NetworkInterfaceThreadPool::dtorImpl() {
 void NetworkInterfaceThreadPool::startup() {
     stdx::unique_lock<stdx::mutex> lk(_mutex);
     if (_started) {
-        severe() << "Attempting to start pool, but it has already started";
+        MONGO_BOOST_SEVERE << "Attempting to start pool, but it has already started";
         fassertFailed(34358);
     }
     _started = true;
@@ -86,7 +86,7 @@ void NetworkInterfaceThreadPool::join() {
         stdx::unique_lock<stdx::mutex> lk(_mutex);
 
         if (_joining) {
-            severe() << "Attempted to join pool more than once";
+            MONGO_BOOST_SEVERE << "Attempted to join pool more than once";
             fassertFailed(34357);
         }
 
@@ -160,7 +160,7 @@ void NetworkInterfaceThreadPool::consumeTasks(stdx::unique_lock<stdx::mutex> lk)
             try {
                 task();
             } catch (...) {
-                severe() << "Exception escaped task in network interface thread pool";
+                MONGO_BOOST_SEVERE << "Exception escaped task in network interface thread pool";
                 std::terminate();
             }
         }

@@ -72,7 +72,7 @@ protected:
 
     static auto getNewSeed() {
         auto seed = Date_t::now().asInt64();
-        unittest::log() << "Generated new seed is " << seed;
+        unittest::MONGO_BOOST_LOG << "Generated new seed is " << seed;
 
         return seed;
     }

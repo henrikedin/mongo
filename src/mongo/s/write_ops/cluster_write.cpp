@@ -147,7 +147,7 @@ void splitIfNeeded(OperationContext* opCtx,
                    const TargeterStats& stats) {
     auto routingInfoStatus = Grid::get(opCtx)->catalogCache()->getCollectionRoutingInfo(opCtx, nss);
     if (!routingInfoStatus.isOK()) {
-        log() << "failed to get collection information for " << nss
+        MONGO_BOOST_LOG << "failed to get collection information for " << nss
               << " while checking for auto-split" << causedBy(routingInfoStatus.getStatus());
         return;
     }
@@ -163,7 +163,7 @@ void splitIfNeeded(OperationContext* opCtx,
         try {
             chunk.emplace(routingInfo.cm()->findIntersectingChunkWithSimpleCollation(it->first));
         } catch (const AssertionException& ex) {
-            warning() << "could not find chunk while checking for auto-split: "
+            MONGO_BOOST_WARNING << "could not find chunk while checking for auto-split: "
                       << causedBy(redact(ex));
             return;
         }
@@ -361,7 +361,7 @@ void updateChunkWriteStatsAndSplitIfNeeded(OperationContext* opCtx,
             auto collStatus =
                 Grid::get(opCtx)->catalogClient()->getCollection(opCtx, manager->getns());
             if (!collStatus.isOK()) {
-                log() << "Auto-split for " << nss << " failed to load collection metadata"
+                MONGO_BOOST_LOG << "Auto-split for " << nss << " failed to load collection metadata"
                       << causedBy(redact(collStatus.getStatus()));
                 return false;
             }
@@ -369,7 +369,7 @@ void updateChunkWriteStatsAndSplitIfNeeded(OperationContext* opCtx,
             return collStatus.getValue().value.getAllowBalance();
         }();
 
-        log() << "autosplitted " << nss << " chunk: " << redact(chunk.toString()) << " into "
+        MONGO_BOOST_LOG << "autosplitted " << nss << " chunk: " << redact(chunk.toString()) << " into "
               << (splitPoints.size() + 1) << " parts (desiredChunkSize " << desiredChunkSize << ")"
               << (suggestedMigrateChunk ? "" : (std::string) " (migrate suggested" +
                           (shouldBalance ? ")" : ", but no migrations allowed)"));
@@ -407,7 +407,7 @@ void updateChunkWriteStatsAndSplitIfNeeded(OperationContext* opCtx,
         chunk.getWritesTracker()->clearBytesWritten();
 
         if (ErrorCodes::isStaleShardVersionError(ex.code())) {
-            log() << "Unable to auto-split chunk " << redact(chunkRange.toString()) << causedBy(ex)
+            MONGO_BOOST_LOG << "Unable to auto-split chunk " << redact(chunkRange.toString()) << causedBy(ex)
                   << ", going to invalidate routing table entry for " << nss;
             Grid::get(opCtx)->catalogCache()->invalidateShardedCollection(nss);
         }

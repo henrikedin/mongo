@@ -306,7 +306,7 @@ const EphemeralForTestRecordStore::EphemeralForTestRecord* EphemeralForTestRecor
     const RecordId& loc) const {
     Records::const_iterator it = _data->records.find(loc);
     if (it == _data->records.end()) {
-        error() << "EphemeralForTestRecordStore::recordFor cannot find record for " << ns() << ":"
+        MONGO_BOOST_ERROR << "EphemeralForTestRecordStore::recordFor cannot find record for " << ns() << ":"
                 << loc;
     }
     invariant(it != _data->records.end());
@@ -317,7 +317,7 @@ EphemeralForTestRecordStore::EphemeralForTestRecord* EphemeralForTestRecordStore
     const RecordId& loc) {
     Records::iterator it = _data->records.find(loc);
     if (it == _data->records.end()) {
-        error() << "EphemeralForTestRecordStore::recordFor cannot find record for " << ns() << ":"
+        MONGO_BOOST_ERROR << "EphemeralForTestRecordStore::recordFor cannot find record for " << ns() << ":"
                 << loc;
     }
     invariant(it != _data->records.end());
@@ -594,7 +594,7 @@ Status EphemeralForTestRecordStore::validate(OperationContext* opCtx,
                 results->errors.push_back("detected one or more invalid documents (see logs)");
             }
             results->valid = false;
-            log() << "Invalid object detected in " << _ns << ": " << status.reason();
+            MONGO_BOOST_LOG << "Invalid object detected in " << _ns << ": " << status.reason();
         }
     }
 

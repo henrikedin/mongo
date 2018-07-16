@@ -138,7 +138,7 @@ int64_t BackgroundThreadClockSource::_updateCurrent_inlock() {
     auto now = _clockSource->now().toMillisSinceEpoch();
     if (!now) {
         // We use 0 to indicate that the thread isn't running.
-        severe() << "ClockSource " << demangleName(typeid(*_clockSource)) << " reported time 0."
+        MONGO_BOOST_SEVERE << "ClockSource " << demangleName(typeid(*_clockSource)) << " reported time 0."
                  << " Is it 1970?";
         fassertFailed(40399);
     }

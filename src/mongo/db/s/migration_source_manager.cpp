@@ -148,7 +148,7 @@ MigrationSourceManager::MigrationSourceManager(OperationContext* opCtx,
             "Destination shard cannot be the same as source",
             _args.getFromShardId() != _args.getToShardId());
 
-    log() << "Starting chunk migration " << redact(_args.toString())
+    MONGO_BOOST_LOG << "Starting chunk migration " << redact(_args.toString())
           << " with expected collection version epoch " << _args.getVersionEpoch();
 
     // Force refresh of the metadata to ensure we have the latest
@@ -340,7 +340,7 @@ Status MigrationSourceManager::enterCriticalSection(OperationContext* opCtx) {
                           << signalStatus.toString()};
     }
 
-    log() << "Migration successfully entered critical section";
+    MONGO_BOOST_LOG << "Migration successfully entered critical section";
 
     scopedGuard.Dismiss();
     return Status::OK();
@@ -438,7 +438,7 @@ Status MigrationSourceManager::commitChunkMetadataOnConfig(OperationContext* opC
         // Need to get the latest optime in case the refresh request goes to a secondary --
         // otherwise the read won't wait for the write that _configsvrCommitChunkMigration may have
         // done
-        log() << "Error occurred while committing the migration. Performing a majority write "
+        MONGO_BOOST_LOG << "Error occurred while committing the migration. Performing a majority write "
                  "against the config server to obtain its latest optime"
               << causedBy(redact(migrationCommitStatus));
 
@@ -508,7 +508,7 @@ Status MigrationSourceManager::commitChunkMetadataOnConfig(OperationContext* opC
 
         CollectionShardingState::get(opCtx, getNss())->refreshMetadata(opCtx, nullptr);
 
-        log() << "Failed to refresh metadata after a "
+        MONGO_BOOST_LOG << "Failed to refresh metadata after a "
               << (migrationCommitStatus.isOK() ? "failed commit attempt" : "successful commit")
               << ". Metadata was cleared so it will get a full refresh when accessed again."
               << causedBy(redact(refreshStatus));
@@ -542,7 +542,7 @@ Status MigrationSourceManager::commitChunkMetadataOnConfig(OperationContext* opC
     }
 
     // Migration succeeded
-    log() << "Migration succeeded and updated collection version to "
+    MONGO_BOOST_LOG << "Migration succeeded and updated collection version to "
           << refreshedMetadata->getCollVersion();
 
     MONGO_FAIL_POINT_PAUSE_WHILE_SET(hangBeforeLeavingCriticalSection);
@@ -589,17 +589,17 @@ Status MigrationSourceManager::commitChunkMetadataOnConfig(OperationContext* opC
     }
 
     if (_args.getWaitForDelete()) {
-        log() << "Waiting for cleanup of " << getNss().ns() << " range "
+        MONGO_BOOST_LOG << "Waiting for cleanup of " << getNss().ns() << " range "
               << redact(range.toString());
         return notification.waitStatus(opCtx);
     }
 
     if (notification.ready() && !notification.waitStatus(opCtx).isOK()) {
-        warning() << "Failed to initiate cleanup of " << getNss().ns() << " range "
+        MONGO_BOOST_WARNING << "Failed to initiate cleanup of " << getNss().ns() << " range "
                   << redact(range.toString())
                   << " due to: " << redact(notification.waitStatus(opCtx));
     } else {
-        log() << "Leaving cleanup of " << getNss().ns() << " range " << redact(range.toString())
+        MONGO_BOOST_LOG << "Leaving cleanup of " << getNss().ns() << " range " << redact(range.toString())
               << " to complete in background";
         notification.abandon();
     }
@@ -627,7 +627,7 @@ void MigrationSourceManager::cleanupOnError(OperationContext* opCtx) {
     try {
         _cleanup(opCtx);
     } catch (const ExceptionForCat<ErrorCategory::NotMasterError>& ex) {
-        warning() << "Failed to clean up migration: " << redact(_args.toString())
+        MONGO_BOOST_WARNING << "Failed to clean up migration: " << redact(_args.toString())
                   << "due to: " << redact(ex);
     }
 }

@@ -55,7 +55,7 @@ void ProgressMeter::reset(unsigned long long total, int secondsBetween, int chec
 
 bool ProgressMeter::hit(int n) {
     if (!_active) {
-        warning() << "hit an inactive ProgressMeter";
+        MONGO_BOOST_WARNING << "hit an inactive ProgressMeter";
         return false;
     }
 
@@ -70,7 +70,7 @@ bool ProgressMeter::hit(int n) {
 
     if (_total > 0) {
         int per = (int)(((double)_done * 100.0) / (double)_total);
-        LogstreamBuilder out = log();
+		std::stringstream out;
         out << "  " << _name << ": " << _done;
 
         if (_showTotal) {
@@ -81,6 +81,7 @@ bool ProgressMeter::hit(int n) {
             out << " (" << _units << ")";
         }
         out << endl;
+		MONGO_BOOST_LOG << out.str();
     }
     _lastTime = t;
     return true;

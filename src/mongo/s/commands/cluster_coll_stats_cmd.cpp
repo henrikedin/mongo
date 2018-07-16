@@ -170,7 +170,7 @@ public:
                         }
                     }
                 } else {
-                    log() << "mongos collstats doesn't know about: " << e.fieldName();
+                    MONGO_BOOST_LOG << "mongos collstats doesn't know about: " << e.fieldName();
                 }
             }
 

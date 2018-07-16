@@ -453,7 +453,7 @@ StatusWith<ResolvedView> ViewCatalog::resolveView(OperationContext* opCtx,
         int depth = 0;
         for (; depth < ViewGraph::kMaxViewDepth; depth++) {
             while (MONGO_FAIL_POINT(hangDuringViewResolution)) {
-                log() << "Yielding mutex and hanging due to 'hangDuringViewResolution' failpoint";
+                MONGO_BOOST_LOG << "Yielding mutex and hanging due to 'hangDuringViewResolution' failpoint";
                 lock.unlock();
                 sleepmillis(1000);
                 lock.lock();

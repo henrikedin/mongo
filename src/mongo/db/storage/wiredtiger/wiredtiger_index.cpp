@@ -61,15 +61,15 @@
 #define TRACING_ENABLED 0
 
 #if TRACING_ENABLED
-#define TRACE_CURSOR log() << "WT index (" << (const void*)&_idx << ") "
-#define TRACE_INDEX log() << "WT index (" << (const void*)this << ") "
+#define TRACE_CURSOR MONGO_BOOST_LOG << "WT index (" << (const void*)&_idx << ") "
+#define TRACE_INDEX MONGO_BOOST_LOG << "WT index (" << (const void*)this << ") "
 #else
 #define TRACE_CURSOR \
     if (0)           \
-    log()
+    MONGO_BOOST_LOG
 #define TRACE_INDEX \
     if (0)          \
-    log()
+    MONGO_BOOST_LOG
 #endif
 
 namespace mongo {
@@ -350,14 +350,14 @@ void WiredTigerIndex::fullValidate(OperationContext* opCtx,
                 << "This is a transient issue as the collection was actively "
                    "in use by other operations.";
 
-            warning() << msg;
+            MONGO_BOOST_WARNING << msg;
             fullResults->warnings.push_back(msg);
         } else if (err) {
             std::string msg = str::stream() << "verify() returned " << wiredtiger_strerror(err)
                                             << ". "
                                             << "This indicates structural damage. "
                                             << "Not examining individual index entries.";
-            error() << msg;
+            MONGO_BOOST_ERROR << msg;
             fullResults->errors.push_back(msg);
             fullResults->valid = false;
             return;
@@ -587,8 +587,8 @@ protected:
         if (!err)
             return cursor;
 
-        warning() << "failed to create WiredTiger bulk cursor: " << wiredtiger_strerror(err);
-        warning() << "falling back to non-bulk cursor for index " << idx->uri();
+        MONGO_BOOST_WARNING << "failed to create WiredTiger bulk cursor: " << wiredtiger_strerror(err);
+        MONGO_BOOST_WARNING << "falling back to non-bulk cursor for index " << idx->uri();
 
         invariantWTOK(session->open_cursor(session, idx->uri().c_str(), NULL, NULL, &cursor));
         return cursor;
@@ -1084,13 +1084,13 @@ protected:
             bool nextNotIncreasing = cmp > 0 || (cmp == 0 && _key.getSize() > item.size);
 
             if (MONGO_FAIL_POINT(WTEmulateOutOfOrderNextIndexKey)) {
-                log() << "WTIndex::updatePosition simulating next key not increasing.";
+                MONGO_BOOST_LOG << "WTIndex::updatePosition simulating next key not increasing.";
                 nextNotIncreasing = true;
             }
 
             if (nextNotIncreasing) {
                 // Our new key is less than the old key which means the next call moved to !next.
-                log() << "WTIndex::updatePosition -- the new key ( "
+                MONGO_BOOST_LOG << "WTIndex::updatePosition -- the new key ( "
                       << redact(toHex(item.data, item.size)) << ") is less than the previous key ("
                       << redact(_key.toString()) << "), which is a bug.";
 
@@ -1215,7 +1215,7 @@ private:
         _typeBits.resetFromBuffer(&br);
 
         if (!br.atEof()) {
-            severe() << "Unique index cursor seeing multiple records for key "
+            MONGO_BOOST_SEVERE << "Unique index cursor seeing multiple records for key "
                      << redact(curr(kWantKey)->key) << " in index " << _idx.indexName() << " ("
                      << _idx.uri() << ") belonging to collection " << _idx.collectionNamespace();
             fassertFailed(28608);
@@ -1545,7 +1545,7 @@ void WiredTigerIndexUnique::_unindexTimestampUnsafe(OperationContext* opCtx,
     }
 
     if (!foundId) {
-        warning().stream() << id << " not found in the index for key " << redact(key);
+		BOOST_LOG_TRIVIAL(warning) << id << " not found in the index for key " << redact(key);
         return;  // nothing to do
     }
 

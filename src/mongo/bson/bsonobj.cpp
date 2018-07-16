@@ -447,7 +447,7 @@ Status BSONObj::storageValidEmbedded() const {
 }
 
 void BSONObj::dump() const {
-    LogstreamBuilder builder = log();
+	std::stringstream builder;
     builder << hex;
     const char* p = objdata();
     for (int i = 0; i < objsize(); i++) {
@@ -456,6 +456,7 @@ void BSONObj::dump() const {
             builder << '\t' << *p;
         p++;
     }
+	MONGO_BOOST_LOG << builder.str();
 }
 
 void BSONObj::getFields(unsigned n, const char** fieldNames, BSONElement* fields) const {

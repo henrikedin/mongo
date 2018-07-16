@@ -204,7 +204,7 @@ StatusWith<boost::optional<ChunkRange>> splitChunkAtMultiplePoints(
     }
 
     if (!status.isOK()) {
-        log() << "Split chunk " << redact(cmdObj) << " failed" << causedBy(redact(status));
+        MONGO_BOOST_LOG << "Split chunk " << redact(cmdObj) << " failed" << causedBy(redact(status));
         return status.withContext("split failed");
     }
 
@@ -218,7 +218,7 @@ StatusWith<boost::optional<ChunkRange>> splitChunkAtMultiplePoints(
 
         return boost::optional<ChunkRange>(std::move(chunkRangeStatus.getValue()));
     } else if (status != ErrorCodes::NoSuchKey) {
-        warning()
+		MONGO_BOOST_WARNING
             << "Chunk migration will be skipped because splitChunk returned invalid response: "
             << redact(cmdResponse) << ". Extracting " << kShouldMigrate << " field failed"
             << causedBy(redact(status));

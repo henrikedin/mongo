@@ -229,7 +229,7 @@ void MigrationDestinationManager::setState(State newState) {
 }
 
 void MigrationDestinationManager::_setStateFail(StringData msg) {
-    log() << msg;
+    MONGO_BOOST_LOG << msg;
     {
         stdx::lock_guard<stdx::mutex> sl(_mutex);
         _errmsg = msg.toString();
@@ -241,7 +241,7 @@ void MigrationDestinationManager::_setStateFail(StringData msg) {
 }
 
 void MigrationDestinationManager::_setStateFailWarn(StringData msg) {
-    warning() << msg;
+    MONGO_BOOST_WARNING << msg;
     {
         stdx::lock_guard<stdx::mutex> sl(_mutex);
         _errmsg = msg.toString();
@@ -395,7 +395,7 @@ void MigrationDestinationManager::cloneDocumentsFromDonor(
         } catch (...) {
             stdx::lock_guard<Client> lk(*opCtx->getClient());
             opCtx->getServiceContext()->killOperation(opCtx, exceptionToStatus().code());
-            log() << "Batch insertion failed " << causedBy(redact(exceptionToStatus()));
+            MONGO_BOOST_LOG << "Batch insertion failed " << causedBy(redact(exceptionToStatus()));
         }
     }};
     auto inserterThreadJoinGuard = MakeGuard([&] {
@@ -531,7 +531,7 @@ void MigrationDestinationManager::_migrateDriver(OperationContext* opCtx) {
 
     auto const serviceContext = opCtx->getServiceContext();
 
-    log() << "Starting receiving end of migration of chunk " << redact(_min) << " -> "
+    MONGO_BOOST_LOG << "Starting receiving end of migration of chunk " << redact(_min) << " -> "
           << redact(_max) << " for collection " << _nss.ns() << " from " << _fromShard
           << " at epoch " << _epoch.toString() << " with session id " << *_sessionId;
 
@@ -541,7 +541,7 @@ void MigrationDestinationManager::_migrateDriver(OperationContext* opCtx) {
     const auto initialState = getState();
 
     if (initialState == ABORT) {
-        error() << "Migration abort requested before it started";
+        MONGO_BOOST_ERROR << "Migration abort requested before it started";
         return;
     }
 
@@ -760,7 +760,7 @@ void MigrationDestinationManager::_migrateDriver(OperationContext* opCtx) {
 
                 if (getState() == ABORT) {
                     auto message = "Migration aborted while copying documents";
-                    log() << message;
+                    MONGO_BOOST_LOG << message;
                     uasserted(50748, message);
                 }
 
@@ -785,7 +785,7 @@ void MigrationDestinationManager::_migrateDriver(OperationContext* opCtx) {
                             << "cannot migrate chunk, local document " << redact(localDoc)
                             << " has same _id as cloned "
                             << "remote document " << redact(docToClone);
-                        warning() << errMsg;
+                        MONGO_BOOST_WARNING << errMsg;
 
                         // Exception will abort migration cleanly
                         uasserted(16976, errMsg);
@@ -804,7 +804,7 @@ void MigrationDestinationManager::_migrateDriver(OperationContext* opCtx) {
                             repl::ReplClientInfo::forClient(opCtx->getClient()).getLastOp(),
                             _writeConcern);
                     if (replStatus.status.code() == ErrorCodes::WriteConcernFailed) {
-                        warning() << "secondaryThrottle on, but doc insert timed out; "
+                        MONGO_BOOST_WARNING << "secondaryThrottle on, but doc insert timed out; "
                                      "continuing";
                     } else {
                         massertStatusOK(replStatus.status);
@@ -877,7 +877,7 @@ void MigrationDestinationManager::_migrateDriver(OperationContext* opCtx) {
                 opCtx->checkForInterrupt();
 
                 if (getState() == ABORT) {
-                    log() << "Migration aborted while waiting for replication at catch up stage";
+                    MONGO_BOOST_LOG << "Migration aborted while waiting for replication at catch up stage";
                     return;
                 }
 
@@ -885,7 +885,7 @@ void MigrationDestinationManager::_migrateDriver(OperationContext* opCtx) {
                     break;
 
                 if (i > 100) {
-                    log() << "secondaries having hard time keeping up with migrate";
+                    MONGO_BOOST_LOG << "secondaries having hard time keeping up with migrate";
                 }
 
                 sleepmillis(20);
@@ -905,14 +905,14 @@ void MigrationDestinationManager::_migrateDriver(OperationContext* opCtx) {
         // Pause to wait for replication. This will prevent us from going into critical section
         // until we're ready.
 
-        log() << "Waiting for replication to catch up before entering critical section";
+        MONGO_BOOST_LOG << "Waiting for replication to catch up before entering critical section";
 
         auto awaitReplicationResult = repl::ReplicationCoordinator::get(opCtx)->awaitReplication(
             opCtx, lastOpApplied, _writeConcern);
         uassertStatusOKWithContext(awaitReplicationResult.status,
                                    awaitReplicationResult.status.codeString());
 
-        log() << "Chunk data replicated successfully.";
+        MONGO_BOOST_LOG << "Chunk data replicated successfully.";
     }
 
     {
@@ -949,7 +949,7 @@ void MigrationDestinationManager::_migrateDriver(OperationContext* opCtx) {
             }
 
             if (getState() == ABORT) {
-                log() << "Migration aborted while transferring mods";
+                MONGO_BOOST_LOG << "Migration aborted while transferring mods";
                 return;
             }
 
@@ -1072,7 +1072,7 @@ bool MigrationDestinationManager::_applyMigrateOp(OperationContext* opCtx,
                 const std::string errMsg = str::stream()
                     << "cannot migrate chunk, local document " << redact(localDoc)
                     << " has same _id as reloaded remote document " << redact(updatedDoc);
-                warning() << errMsg;
+                MONGO_BOOST_WARNING << errMsg;
 
                 // Exception will abort migration cleanly
                 uasserted(16977, errMsg);
@@ -1093,13 +1093,13 @@ bool MigrationDestinationManager::_flushPendingWrites(OperationContext* opCtx,
                                                       const repl::OpTime& lastOpApplied) {
     if (!opReplicatedEnough(opCtx, lastOpApplied, _writeConcern)) {
         repl::OpTime op(lastOpApplied);
-        OCCASIONALLY log() << "migrate commit waiting for a majority of slaves for '" << _nss.ns()
+        OCCASIONALLY MONGO_BOOST_LOG << "migrate commit waiting for a majority of slaves for '" << _nss.ns()
                            << "' " << redact(_min) << " -> " << redact(_max)
                            << " waiting for: " << op;
         return false;
     }
 
-    log() << "migrate commit succeeded flushing to secondaries for '" << _nss.ns() << "' "
+    MONGO_BOOST_LOG << "migrate commit succeeded flushing to secondaries for '" << _nss.ns() << "' "
           << redact(_min) << " -> " << redact(_max);
 
     return true;
@@ -1146,7 +1146,7 @@ void MigrationDestinationManager::_forgetPending(OperationContext* opCtx, ChunkR
     // This can currently happen because drops aren't synchronized with in-migrations. The idea for
     // checking this here is that in the future we shouldn't have this problem.
     if (!metadata->isSharded() || metadata->getCollVersion().epoch() != _epoch) {
-        log() << "no need to forget pending chunk " << redact(range.toString())
+        MONGO_BOOST_LOG << "no need to forget pending chunk " << redact(range.toString())
               << " because the epoch for " << _nss.ns() << " changed";
         return;
     }

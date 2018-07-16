@@ -134,7 +134,7 @@ void finishCurOp(OperationContext* opCtx, CurOp* curOp) {
         // We need to ignore all errors here. We don't want a successful op to fail because of a
         // failure to record stats. We also don't want to replace the error reported for an op that
         // is failing.
-        log() << "Ignoring error from finishCurOp: " << redact(ex);
+        MONGO_BOOST_LOG << "Ignoring error from finishCurOp: " << redact(ex);
     }
 }
 
@@ -375,7 +375,7 @@ bool insertBatchAndHandleErrors(OperationContext* opCtx,
     auto acquireCollection = [&] {
         while (true) {
             if (MONGO_FAIL_POINT(hangDuringBatchInsert)) {
-                log() << "batch insert - hangDuringBatchInsert fail point enabled. Blocking until "
+                MONGO_BOOST_LOG << "batch insert - hangDuringBatchInsert fail point enabled. Blocking until "
                          "fail point is disabled.";
                 MONGO_FAIL_POINT_PAUSE_WHILE_SET(hangDuringBatchInsert);
             }

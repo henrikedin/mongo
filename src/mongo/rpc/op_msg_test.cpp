@@ -607,11 +607,11 @@ void testSerializer(const Message& fromSerializer, OpMsgBytes&& expected) {
         std::mismatch(gotSD.begin(), gotSD.end(), expectedSD.begin(), expectedSD.end()).first -
         gotSD.begin();
 
-    log() << "Mismatch after " << commonLength << " bytes.";
-    log() << "Common prefix: " << hexdump(gotSD.rawData(), commonLength);
-    log() << "Got suffix     : "
+    MONGO_BOOST_LOG << "Mismatch after " << commonLength << " bytes.";
+    MONGO_BOOST_LOG << "Common prefix: " << hexdump(gotSD.rawData(), commonLength);
+    MONGO_BOOST_LOG << "Got suffix     : "
           << hexdump(gotSD.rawData() + commonLength, gotSD.size() - commonLength);
-    log() << "Expected suffix: "
+    MONGO_BOOST_LOG << "Expected suffix: "
           << hexdump(expectedSD.rawData() + commonLength, expectedSD.size() - commonLength);
     FAIL("Serialization didn't match expected data. See above for details.");
 }

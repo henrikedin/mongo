@@ -312,4 +312,8 @@ private:
     const ShardId _id;
 };
 
+inline std::ostream& operator<<(std::ostream& s, const Shard& shard) {
+	return (s << shard.toString());
+}
+
 }  // namespace mongo

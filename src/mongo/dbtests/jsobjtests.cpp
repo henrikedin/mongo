@@ -159,7 +159,7 @@ FieldCompareResult compareDottedFieldNames(const string& l, const string& r, con
             return LEFT_SUBFIELD;
     }
 
-    log() << "compareDottedFieldNames ERROR  l: " << l << " r: " << r << "  TOO MANY LOOPS" << endl;
+    MONGO_BOOST_LOG << "compareDottedFieldNames ERROR  l: " << l << " r: " << r << "  TOO MANY LOOPS" << endl;
     verify(0);
     return SAME;  // will never get here
 }

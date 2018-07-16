@@ -258,7 +258,7 @@ public:
                               cm->getShardKeyPattern(),
                               ChunkRange(chunk->getMin(), chunk->getMax()));
 
-        log() << "Splitting chunk "
+        MONGO_BOOST_LOG << "Splitting chunk "
               << redact(ChunkRange(chunk->getMin(), chunk->getMax()).toString())
               << " in collection " << nss.ns() << " on shard " << chunk->getShardId() << " at key "
               << redact(splitPoint);

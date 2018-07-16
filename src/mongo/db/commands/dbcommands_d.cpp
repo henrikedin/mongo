@@ -275,7 +275,7 @@ public:
                     if (partialOk) {
                         break;  // skipped chunk is probably on another shard
                     }
-                    log() << "should have chunk: " << n << " have:" << myn;
+                    MONGO_BOOST_LOG << "should have chunk: " << n << " have:" << myn;
                     dumpChunks(opCtx, nss.ns(), query, sort);
                     uassert(10040, "chunks out of order", n == myn);
                 }
@@ -350,7 +350,7 @@ public:
         q.sort(sort);
         unique_ptr<DBClientCursor> c = client.query(ns, q);
         while (c->more()) {
-            log() << c->nextSafe();
+            MONGO_BOOST_LOG << c->nextSafe();
         }
     }
 

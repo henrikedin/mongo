@@ -117,7 +117,7 @@ void fassertOnRepeatedExecution(const LogicalSessionId& lsid,
                                 StmtId stmtId,
                                 const repl::OpTime& firstOpTime,
                                 const repl::OpTime& secondOpTime) {
-    severe() << "Statement id " << stmtId << " from transaction [ " << lsid.toBSON() << ":"
+    MONGO_BOOST_SEVERE << "Statement id " << stmtId << " from transaction [ " << lsid.toBSON() << ":"
              << txnNumber << " ] was committed once with opTime " << firstOpTime
              << " and a second time with opTime " << secondOpTime
              << ". This indicates possible data corruption or server bug and the process will be "

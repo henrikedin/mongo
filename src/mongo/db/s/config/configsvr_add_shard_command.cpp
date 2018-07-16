@@ -128,7 +128,7 @@ public:
             parsedRequest.hasMaxSize() ? parsedRequest.getMaxSize() : kMaxSizeMBDefault);
 
         if (!addShardResult.isOK()) {
-            log() << "addShard request '" << parsedRequest << "'"
+            MONGO_BOOST_LOG << "addShard request '" << parsedRequest << "'"
                   << "failed" << causedBy(addShardResult.getStatus());
             uassertStatusOK(addShardResult.getStatus());
         }

@@ -71,7 +71,7 @@ void QueryPlannerCommon::reverseScans(QuerySolutionNode* node) {
         }
 
         if (!isn->bounds.isValidFor(isn->index.keyPattern, isn->direction)) {
-            severe() << "Invalid bounds: " << redact(isn->bounds.toString());
+            MONGO_BOOST_SEVERE << "Invalid bounds: " << redact(isn->bounds.toString());
             MONGO_UNREACHABLE;
         }
 

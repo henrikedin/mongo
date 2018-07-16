@@ -144,7 +144,7 @@ void warnOnMultiVersion(const vector<ClusterStatistics::ShardStatistics>& cluste
         sb << stat.shardId << " is at " << stat.mongoVersion << "; ";
     }
 
-    warning() << sb.str();
+    MONGO_BOOST_WARNING << sb.str();
 }
 
 }  // namespace
@@ -304,7 +304,7 @@ void Balancer::_mainThread() {
     auto opCtx = cc().makeOperationContext();
     auto shardingContext = Grid::get(opCtx.get());
 
-    log() << "CSRS balancer is starting";
+    MONGO_BOOST_LOG << "CSRS balancer is starting";
 
     {
         stdx::lock_guard<stdx::mutex> scopedLock(_mutex);
@@ -317,7 +317,7 @@ void Balancer::_mainThread() {
     while (!_stopRequested()) {
         Status refreshStatus = balancerConfig->refreshAndCheck(opCtx.get());
         if (!refreshStatus.isOK()) {
-            warning() << "Balancer settings could not be loaded and will be retried in "
+            MONGO_BOOST_WARNING << "Balancer settings could not be loaded and will be retried in "
                       << durationCount<Seconds>(kInitBackoffInterval) << " seconds"
                       << causedBy(refreshStatus);
 
@@ -328,13 +328,13 @@ void Balancer::_mainThread() {
         break;
     }
 
-    log() << "CSRS balancer thread is recovering";
+    MONGO_BOOST_LOG << "CSRS balancer thread is recovering";
 
     _migrationManager.finishRecovery(opCtx.get(),
                                      balancerConfig->getMaxChunkSizeBytes(),
                                      balancerConfig->getSecondaryThrottle());
 
-    log() << "CSRS balancer thread is recovered";
+    MONGO_BOOST_LOG << "CSRS balancer thread is recovered";
 
     // Main balancer loop
     while (!_stopRequested()) {
@@ -349,7 +349,7 @@ void Balancer::_mainThread() {
 
             Status refreshStatus = balancerConfig->refreshAndCheck(opCtx.get());
             if (!refreshStatus.isOK()) {
-                warning() << "Skipping balancing round" << causedBy(refreshStatus);
+                MONGO_BOOST_WARNING << "Skipping balancing round" << causedBy(refreshStatus);
                 _endRound(opCtx.get(), kBalanceRoundDefaultInterval);
                 continue;
             }
@@ -371,7 +371,7 @@ void Balancer::_mainThread() {
 
                 Status status = _enforceTagRanges(opCtx.get());
                 if (!status.isOK()) {
-                    warning() << "Failed to enforce tag ranges" << causedBy(status);
+                    MONGO_BOOST_WARNING << "Failed to enforce tag ranges" << causedBy(status);
                 } else {
                     LOG(1) << "Done enforcing tag range boundaries.";
                 }
@@ -400,7 +400,7 @@ void Balancer::_mainThread() {
                       _balancedLastTime ? kShortBalanceRoundInterval
                                         : kBalanceRoundDefaultInterval);
         } catch (const std::exception& e) {
-            log() << "caught exception while doing balance: " << e.what();
+            MONGO_BOOST_LOG << "caught exception while doing balance: " << e.what();
 
             // Just to match the opening statement if in log level 1
             LOG(1) << "*** End of balancing round";
@@ -432,7 +432,7 @@ void Balancer::_mainThread() {
         _threadOperationContext = nullptr;
     }
 
-    log() << "CSRS balancer is now stopped";
+    MONGO_BOOST_LOG << "CSRS balancer is now stopped";
 }
 
 bool Balancer::_stopRequested() {
@@ -497,7 +497,7 @@ bool Balancer::_checkOIDs(OperationContext* opCtx) {
             if (oids.count(x) == 0) {
                 oids[x] = shardId;
             } else {
-                log() << "error: 2 machines have " << x << " as oid machine piece: " << shardId
+                MONGO_BOOST_LOG << "error: 2 machines have " << x << " as oid machine piece: " << shardId
                       << " and " << oids[x];
 
                 result = uassertStatusOK(s->runCommandWithFixedRetryAttempts(
@@ -523,7 +523,7 @@ bool Balancer::_checkOIDs(OperationContext* opCtx) {
                 return false;
             }
         } else {
-            log() << "warning: oidMachine not set on: " << s->toString();
+            MONGO_BOOST_LOG << "warning: oidMachine not set on: " << s->toString();
         }
     }
 
@@ -555,7 +555,7 @@ Status Balancer::_enforceTagRanges(OperationContext* opCtx) {
                                                   ChunkRange(splitInfo.minKey, splitInfo.maxKey),
                                                   splitInfo.splitKeys);
         if (!splitStatus.isOK()) {
-            warning() << "Failed to enforce tag range for chunk " << redact(splitInfo.toString())
+            MONGO_BOOST_WARNING << "Failed to enforce tag range for chunk " << redact(splitInfo.toString())
                       << causedBy(redact(splitStatus.getStatus()));
         }
     }
@@ -601,14 +601,14 @@ int Balancer::_moveChunks(OperationContext* opCtx,
         if (status == ErrorCodes::ChunkTooBig) {
             numChunksProcessed++;
 
-            log() << "Performing a split because migration " << redact(requestIt->toString())
+            MONGO_BOOST_LOG << "Performing a split because migration " << redact(requestIt->toString())
                   << " failed for size reasons" << causedBy(redact(status));
 
             _splitOrMarkJumbo(opCtx, requestIt->nss, requestIt->minKey);
             continue;
         }
 
-        log() << "Balancer move " << redact(requestIt->toString()) << " failed"
+        MONGO_BOOST_LOG << "Balancer move " << redact(requestIt->toString()) << " failed"
               << causedBy(redact(status));
     }
 
@@ -645,7 +645,7 @@ void Balancer::_splitOrMarkJumbo(OperationContext* opCtx,
                                                   ChunkRange(chunk.getMin(), chunk.getMax()),
                                                   splitPoints));
     } catch (const DBException&) {
-        log() << "Marking chunk " << redact(chunk.toString()) << " as jumbo.";
+        MONGO_BOOST_LOG << "Marking chunk " << redact(chunk.toString()) << " as jumbo.";
 
         chunk.markAsJumbo();
 
@@ -659,7 +659,7 @@ void Balancer::_splitOrMarkJumbo(OperationContext* opCtx,
             false,
             ShardingCatalogClient::kMajorityWriteConcern);
         if (!status.isOK()) {
-            log() << "Couldn't set jumbo for chunk: " << redact(chunkName)
+            MONGO_BOOST_LOG << "Couldn't set jumbo for chunk: " << redact(chunkName)
                   << causedBy(redact(status.getStatus()));
         }
     }

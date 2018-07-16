@@ -297,7 +297,7 @@ Status AuthorizationManagerImpl::getAuthorizationVersion(OperationContext* opCtx
         Status status = _externalState->getStoredAuthorizationVersion(opCtx, &newVersion);
         guard.endFetchPhase();
         if (!status.isOK()) {
-            warning() << "Problem fetching the stored schema version of authorization data: "
+            MONGO_BOOST_WARNING << "Problem fetching the stored schema version of authorization data: "
                       << redact(status);
             *version = schemaVersionInvalid;
             return status;
@@ -690,7 +690,7 @@ void AuthorizationManagerImpl::_invalidateRelevantCacheData(const char* op,
             : extractUserNameFromIdString(o["_id"].str());
 
         if (!userName.isOK()) {
-            warning() << "Invalidating user cache based on user being updated failed, will "
+            MONGO_BOOST_WARNING << "Invalidating user cache based on user being updated failed, will "
                          "invalidate the entire cache instead: "
                       << userName.getStatus();
             invalidateUserCache();

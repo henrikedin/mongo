@@ -54,19 +54,19 @@ void logCommonStartupWarnings(const ServerGlobalParams& serverParams) {
     {
         auto&& vii = VersionInfoInterface::instance();
         if ((vii.minorVersion() % 2) != 0) {
-            log() << startupWarningsLog;
-            log() << "** NOTE: This is a development version (" << vii.version() << ") of MongoDB."
+            MONGO_BOOST_LOG << startupWarningsLog;
+            MONGO_BOOST_LOG << "** NOTE: This is a development version (" << vii.version() << ") of MongoDB."
                   << startupWarningsLog;
-            log() << "**       Not recommended for production." << startupWarningsLog;
+            MONGO_BOOST_LOG << "**       Not recommended for production." << startupWarningsLog;
             warned = true;
         }
     }
 
     if (serverParams.authState == ServerGlobalParams::AuthState::kUndefined) {
-        log() << startupWarningsLog;
-        log() << "** WARNING: Access control is not enabled for the database."
+        MONGO_BOOST_LOG << startupWarningsLog;
+        MONGO_BOOST_LOG << "** WARNING: Access control is not enabled for the database."
               << startupWarningsLog;
-        log() << "**          Read and write access to data and configuration is "
+        MONGO_BOOST_LOG << "**          Read and write access to data and configuration is "
                  "unrestricted."
               << startupWarningsLog;
         warned = true;
@@ -74,8 +74,8 @@ void logCommonStartupWarnings(const ServerGlobalParams& serverParams) {
 
     const bool is32bit = sizeof(int*) == 4;
     if (is32bit) {
-        log() << startupWarningsLog;
-        log() << "** WARNING: This 32-bit MongoDB binary is deprecated" << startupWarningsLog;
+        MONGO_BOOST_LOG << startupWarningsLog;
+        MONGO_BOOST_LOG << "** WARNING: This 32-bit MongoDB binary is deprecated" << startupWarningsLog;
         warned = true;
     }
 
@@ -88,13 +88,13 @@ void logCommonStartupWarnings(const ServerGlobalParams& serverParams) {
         sslGlobalParams.sslCertificateSelector.empty() &&
 #endif
         sslGlobalParams.sslCAFile.empty()) {
-        log() << "";
-        log() << "** WARNING: No SSL certificate validation can be performed since"
+        MONGO_BOOST_LOG << "";
+        MONGO_BOOST_LOG << "** WARNING: No SSL certificate validation can be performed since"
                  " no CA file has been provided";
 #ifdef MONGO_CONFIG_SSL_CERTIFICATE_SELECTORS
-        log() << "**          and no sslCertificateSelector has been specified.";
+        MONGO_BOOST_LOG << "**          and no sslCertificateSelector has been specified.";
 #endif
-        log() << "**          Please specify an sslCAFile parameter.";
+        MONGO_BOOST_LOG << "**          Please specify an sslCAFile parameter.";
     }
 
 #if defined(_WIN32) && !defined(_WIN64)
@@ -102,41 +102,41 @@ void logCommonStartupWarnings(const ServerGlobalParams& serverParams) {
     BOOL wow64Process;
     BOOL retWow64 = IsWow64Process(GetCurrentProcess(), &wow64Process);
     if (retWow64 && wow64Process) {
-        log() << "** NOTE: This is a 32-bit MongoDB binary running on a 64-bit operating"
+        MONGO_BOOST_LOG << "** NOTE: This is a 32-bit MongoDB binary running on a 64-bit operating"
               << startupWarningsLog;
-        log() << "**      system. Switch to a 64-bit build of MongoDB to" << startupWarningsLog;
-        log() << "**      support larger databases." << startupWarningsLog;
+        MONGO_BOOST_LOG << "**      system. Switch to a 64-bit build of MongoDB to" << startupWarningsLog;
+        MONGO_BOOST_LOG << "**      support larger databases." << startupWarningsLog;
         warned = true;
     }
 #endif
 
 #if !defined(_WIN32)
     if (getuid() == 0) {
-        log() << "** WARNING: You are running this process as the root user, "
+        MONGO_BOOST_LOG << "** WARNING: You are running this process as the root user, "
               << "which is not recommended." << startupWarningsLog;
         warned = true;
     }
 #endif
 
     if (serverParams.bind_ips.empty()) {
-        log() << startupWarningsLog;
-        log() << "** WARNING: This server is bound to localhost." << startupWarningsLog;
-        log() << "**          Remote systems will be unable to connect to this server. "
+        MONGO_BOOST_LOG << startupWarningsLog;
+        MONGO_BOOST_LOG << "** WARNING: This server is bound to localhost." << startupWarningsLog;
+        MONGO_BOOST_LOG << "**          Remote systems will be unable to connect to this server. "
               << startupWarningsLog;
-        log() << "**          Start the server with --bind_ip <address> to specify which IP "
+        MONGO_BOOST_LOG << "**          Start the server with --bind_ip <address> to specify which IP "
               << startupWarningsLog;
-        log() << "**          addresses it should serve responses from, or with --bind_ip_all to"
+        MONGO_BOOST_LOG << "**          addresses it should serve responses from, or with --bind_ip_all to"
               << startupWarningsLog;
-        log() << "**          bind to all interfaces. If this behavior is desired, start the"
+        MONGO_BOOST_LOG << "**          bind to all interfaces. If this behavior is desired, start the"
               << startupWarningsLog;
-        log() << "**          server with --bind_ip 127.0.0.1 to disable this warning."
+        MONGO_BOOST_LOG << "**          server with --bind_ip 127.0.0.1 to disable this warning."
               << startupWarningsLog;
         warned = true;
     }
 
 
     if (warned) {
-        log() << startupWarningsLog;
+        MONGO_BOOST_LOG << startupWarningsLog;
     }
 }
 }  // namespace mongo

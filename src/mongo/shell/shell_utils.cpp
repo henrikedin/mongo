@@ -410,7 +410,7 @@ void ConnectionRegistry::killOperationsOnAllConnections(bool withPrompt) const {
             if (auto elem = op["client"]) {
                 // mongod currentOp client
                 if (elem.type() != String) {
-                    warning() << "Ignoring operation " << op["opid"].toString(false)
+                    MONGO_BOOST_WARNING << "Ignoring operation " << op["opid"].toString(false)
                               << "; expected 'client' field in currentOp response to have type "
                                  "string, but found "
                               << typeName(elem.type());
@@ -420,7 +420,7 @@ void ConnectionRegistry::killOperationsOnAllConnections(bool withPrompt) const {
             } else if (auto elem = op["client_s"]) {
                 // mongos currentOp client
                 if (elem.type() != String) {
-                    warning() << "Ignoring operation " << op["opid"].toString(false)
+                    MONGO_BOOST_WARNING << "Ignoring operation " << op["opid"].toString(false)
                               << "; expected 'client_s' field in currentOp response to have type "
                                  "string, but found "
                               << typeName(elem.type());

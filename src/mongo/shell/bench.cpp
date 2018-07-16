@@ -735,7 +735,7 @@ void BenchRunConfig::initializeFromBson(const BSONObj& args) {
                 ops.push_back(opFromBson(i.next().Obj()));
             }
         } else {
-            log() << "benchRun passed an unsupported field: " << name;
+            MONGO_BOOST_LOG << "benchRun passed an unsupported field: " << name;
             uassert(34376, "benchRun passed an unsupported configuration field", false);
         }
     }
@@ -756,9 +756,9 @@ BenchRunState::BenchRunState(unsigned numWorkers)
 
 BenchRunState::~BenchRunState() {
     if (_numActiveWorkers != 0)
-        warning() << "Destroying BenchRunState with active workers";
+        MONGO_BOOST_WARNING << "Destroying BenchRunState with active workers";
     if (_numUnstartedWorkers != 0)
-        warning() << "Destroying BenchRunState with unstarted workers";
+        MONGO_BOOST_WARNING << "Destroying BenchRunState with unstarted workers";
 }
 
 void BenchRunState::waitForState(State awaitedState) {
@@ -899,7 +899,7 @@ void BenchRunWorker::generateLoadOnConnection(DBClientBase* conn) {
                         (!_config->noWatchPattern && _config->watchPattern &&
                          yesWatch) ||  // If we're just watching things
                         (_config->watchPattern && _config->noWatchPattern && yesWatch && !noWatch))
-                        log() << "Error in benchRun thread for op "
+                        MONGO_BOOST_LOG << "Error in benchRun thread for op "
                               << kOpTypeNames.find(op.op)->second << causedBy(ex);
                 }
 
@@ -927,7 +927,7 @@ void BenchRunWorker::generateLoadOnConnection(DBClientBase* conn) {
                 ++opState.stats->errCount;
             } catch (...) {
                 if (!_config->hideErrors || op.showError)
-                    log() << "Error in benchRun thread caused by unknown error for op "
+                    MONGO_BOOST_LOG << "Error in benchRun thread caused by unknown error for op "
                           << kOpTypeNames.find(op.op)->second;
                 if (!_config->handleErrors && !op.handleError)
                     return;
@@ -998,7 +998,7 @@ void BenchRunOp::executeOnce(DBClientBase* conn,
             }
 
             if (!config.hideResults || this->showResult)
-                log() << "Result from benchRun thread [findOne] : " << result;
+                MONGO_BOOST_LOG << "Result from benchRun thread [findOne] : " << result;
         } break;
         case OpType::COMMAND: {
             bool ok;
@@ -1127,13 +1127,13 @@ void BenchRunOp::executeOnce(DBClientBase* conn,
             }
 
             if (this->expected >= 0 && count != this->expected) {
-                log() << "bench query on: " << this->ns << " expected: " << this->expected
+                MONGO_BOOST_LOG << "bench query on: " << this->ns << " expected: " << this->expected
                       << " got: " << count;
                 verify(false);
             }
 
             if (!config.hideResults || this->showResult)
-                log() << "Result from benchRun thread [query] : " << count;
+                MONGO_BOOST_LOG << "Result from benchRun thread [query] : " << count;
         } break;
         case OpType::UPDATE: {
             BSONObj result;
@@ -1178,7 +1178,7 @@ void BenchRunOp::executeOnce(DBClientBase* conn,
 
             if (this->safe) {
                 if (!config.hideResults || this->showResult)
-                    log() << "Result from benchRun thread [safe update] : " << result;
+                    MONGO_BOOST_LOG << "Result from benchRun thread [safe update] : " << result;
 
                 if (!result["err"].eoo() && result["err"].type() == String &&
                     (config.throwGLE || this->throwGLE))
@@ -1242,7 +1242,7 @@ void BenchRunOp::executeOnce(DBClientBase* conn,
 
             if (this->safe) {
                 if (!config.hideResults || this->showResult)
-                    log() << "Result from benchRun thread [safe insert] : " << result;
+                    MONGO_BOOST_LOG << "Result from benchRun thread [safe insert] : " << result;
 
                 if (!result["err"].eoo() && result["err"].type() == String &&
                     (config.throwGLE || this->throwGLE))
@@ -1287,7 +1287,7 @@ void BenchRunOp::executeOnce(DBClientBase* conn,
 
             if (this->safe) {
                 if (!config.hideResults || this->showResult)
-                    log() << "Result from benchRun thread [safe remove] : " << result;
+                    MONGO_BOOST_LOG << "Result from benchRun thread [safe remove] : " << result;
 
                 if (!result["err"].eoo() && result["err"].type() == String &&
                     (config.throwGLE || this->throwGLE))
@@ -1330,11 +1330,11 @@ void BenchRunWorker::run() {
         BenchRunWorkerStateGuard workerStateGuard(_brState);
         generateLoadOnConnection(conn.get());
     } catch (const DBException& e) {
-        error() << "DBException not handled in benchRun thread" << causedBy(e);
+        MONGO_BOOST_ERROR << "DBException not handled in benchRun thread" << causedBy(e);
     } catch (const std::exception& e) {
-        error() << "std::exception not handled in benchRun thread" << causedBy(e);
+        MONGO_BOOST_ERROR << "std::exception not handled in benchRun thread" << causedBy(e);
     } catch (...) {
-        error() << "Unknown exception not handled in benchRun thread.";
+        MONGO_BOOST_ERROR << "Unknown exception not handled in benchRun thread.";
     }
 }
 

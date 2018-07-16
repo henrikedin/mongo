@@ -94,7 +94,7 @@ private:
                     (opSepPos != (opToKill.size() - 1)));  // can't be NN:
 
         auto shardIdent = opToKill.substr(0, opSepPos);
-        log() << "want to kill op: " << redact(opToKill);
+        MONGO_BOOST_LOG << "want to kill op: " << redact(opToKill);
 
         // Will throw if shard id is not found
         auto shardStatus = Grid::get(opCtx)->shardRegistry()->getShard(opCtx, shardIdent);

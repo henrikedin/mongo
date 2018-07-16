@@ -112,7 +112,7 @@ TEST_F(LogTestUnadornedEncoder, DetachAppender) {
 class A {
 public:
     std::string toString() const {
-        log() << "Golly!\n";
+        MONGO_BOOST_LOG << "Golly!\n";
         return "Golly!";
     }
 };
@@ -120,7 +120,7 @@ public:
 // Tests that logging while in the midst of logging produces two distinct log messages, with the
 // inner log message appearing before the outer.
 TEST_F(LogTestUnadornedEncoder, LogstreamBuilderReentrance) {
-    log() << "Logging A() -- " << A() << " -- done!" << std::endl;
+    MONGO_BOOST_LOG << "Logging A() -- " << A() << " -- done!" << std::endl;
     ASSERT_EQUALS(2U, _logLines.size());
     ASSERT_EQUALS(std::string("Golly!\n"), _logLines[0]);
     ASSERT_EQUALS(std::string("Logging A() -- Golly! -- done!\n"), _logLines[1]);
@@ -132,7 +132,7 @@ TEST_F(LogTestUnadornedEncoder, LogstreamBuilderReentrance) {
 class B {
 public:
     B() {
-        log() << "Exercising initializer time logging.";
+        MONGO_BOOST_LOG << "Exercising initializer time logging.";
     }
 } b;
 
@@ -458,7 +458,7 @@ TEST_F(LogTestDetailsEncoder, ) {
 //                                 -> MessageEventDetailsEncoder
 TEST_F(LogTestDetailsEncoder, LogFunctions) {
     // severe() - no component specified.
-    severe() << "This is logged";
+    MONGO_BOOST_SEVERE << "This is logged";
     ASSERT_EQUALS(1U, _logLines.size());
     ASSERT_NOT_EQUALS(_logLines[0].find(str::stream() << " F " << componentDefault.getNameForLog()),
                       std::string::npos);
@@ -472,7 +472,7 @@ TEST_F(LogTestDetailsEncoder, LogFunctions) {
 
     // error() - no component specified.
     _logLines.clear();
-    error() << "This is logged";
+    MONGO_BOOST_ERROR << "This is logged";
     ASSERT_EQUALS(1U, _logLines.size());
     ASSERT_NOT_EQUALS(_logLines[0].find(str::stream() << " E " << componentDefault.getNameForLog()),
                       std::string::npos);
@@ -486,7 +486,7 @@ TEST_F(LogTestDetailsEncoder, LogFunctions) {
 
     // warning() - no component specified.
     _logLines.clear();
-    warning() << "This is logged";
+    MONGO_BOOST_WARNING << "This is logged";
     ASSERT_EQUALS(1U, _logLines.size());
     ASSERT_NOT_EQUALS(_logLines[0].find(str::stream() << " W " << componentDefault.getNameForLog()),
                       std::string::npos);
@@ -500,7 +500,7 @@ TEST_F(LogTestDetailsEncoder, LogFunctions) {
 
     // log() - no component specified.
     _logLines.clear();
-    log() << "This is logged";
+    MONGO_BOOST_LOG << "This is logged";
     ASSERT_EQUALS(1U, _logLines.size());
     ASSERT_NOT_EQUALS(_logLines[0].find(str::stream() << " I " << componentDefault.getNameForLog()),
                       std::string::npos);

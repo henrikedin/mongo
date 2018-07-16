@@ -96,7 +96,7 @@ KVStorageEngine::KVStorageEngine(
 void KVStorageEngine::loadCatalog(OperationContext* opCtx) {
     bool catalogExists = _engine->hasIdent(opCtx, catalogInfo);
     if (_options.forRepair && catalogExists) {
-        log() << "Repairing catalog metadata";
+        MONGO_BOOST_LOG << "Repairing catalog metadata";
         // TODO should also validate all BSON in the catalog.
         _engine->repairIdent(opCtx, catalogInfo).transitional_ignore();
     }
@@ -152,7 +152,7 @@ void KVStorageEngine::loadCatalog(OperationContext* opCtx) {
             if (!std::binary_search(identsKnownToStorageEngine.begin(),
                                     identsKnownToStorageEngine.end(),
                                     collectionIdent)) {
-                log() << "Dropping collection " << coll
+                MONGO_BOOST_LOG << "Dropping collection " << coll
                       << " unknown to storage engine after unclean shutdown";
 
                 WriteUnitOfWork wuow(opCtx);
@@ -251,7 +251,7 @@ KVStorageEngine::reconcileCatalogAndIdents(OperationContext* opCtx) {
         }
 
         const auto& toRemove = it;
-        log() << "Dropping unknown ident: " << toRemove;
+        MONGO_BOOST_LOG << "Dropping unknown ident: " << toRemove;
         WriteUnitOfWork wuow(opCtx);
         fassert(40591, _engine->dropIdent(opCtx, toRemove));
         wuow.commit();
@@ -294,7 +294,7 @@ KVStorageEngine::reconcileCatalogAndIdents(OperationContext* opCtx) {
             // majority of nodes. The code will rebuild the index, despite potentially
             // encountering another `dropIndex` command.
             if (indexMetaData.ready && !foundIdent) {
-                log() << "Expected index data is missing, rebuilding. Collection: " << coll
+                MONGO_BOOST_LOG << "Expected index data is missing, rebuilding. Collection: " << coll
                       << " Index: " << indexName;
                 ret.emplace_back(coll, indexName);
                 continue;
@@ -305,7 +305,7 @@ KVStorageEngine::reconcileCatalogAndIdents(OperationContext* opCtx) {
             // table is not found, or the index build did not successfully complete, this code
             // will return the index to be rebuilt.
             if (indexMetaData.isBackgroundSecondaryBuild && (!foundIdent || !indexMetaData.ready)) {
-                log()
+				MONGO_BOOST_LOG
                     << "Expected background index build did not complete, rebuilding. Collection: "
                     << coll << " Index: " << indexName;
                 ret.emplace_back(coll, indexName);
@@ -319,7 +319,7 @@ KVStorageEngine::reconcileCatalogAndIdents(OperationContext* opCtx) {
             // index when it replays the oplog. In these cases the index entry in the catalog
             // should be dropped.
             if (!indexMetaData.ready && !indexMetaData.isBackgroundSecondaryBuild) {
-                log() << "Dropping unfinished index. Collection: " << coll
+                MONGO_BOOST_LOG << "Dropping unfinished index. Collection: " << coll
                       << " Index: " << indexName;
                 // Ensure the `ident` is dropped while we have the `indexIdent` value.
                 fassert(50713, _engine->dropIdent(opCtx, indexIdent));
@@ -552,7 +552,7 @@ StatusWith<Timestamp> KVStorageEngine::recoverToStableTimestamp(OperationContext
 
     catalog::openCatalog(opCtx, state);
 
-    log() << "recoverToStableTimestamp successful. Stable Timestamp: " << swTimestamp.getValue();
+    MONGO_BOOST_LOG << "recoverToStableTimestamp successful. Stable Timestamp: " << swTimestamp.getValue();
     return {swTimestamp.getValue()};
 }
 

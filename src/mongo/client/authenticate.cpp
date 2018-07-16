@@ -165,7 +165,7 @@ void auth(RunCommandHook runCommand,
     auto authCompletionHandler = [handler](AuthResponse response) {
         if (isFailedAuthOk(response)) {
             // If auth failed in transitionToAuth, just pretend it succeeded.
-            log() << "Failed to authenticate in transitionToAuth, falling back to no "
+            MONGO_BOOST_LOG << "Failed to authenticate in transitionToAuth, falling back to no "
                      "authentication.";
 
             // We need to mock a successful AuthResponse.

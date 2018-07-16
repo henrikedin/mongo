@@ -103,7 +103,7 @@ void SyncSourceFeedback::forwardSlaveProgress() {
         if (_reporter) {
             auto triggerStatus = _reporter->trigger();
             if (!triggerStatus.isOK()) {
-                warning() << "unable to forward slave progress to " << _reporter->getTarget()
+                MONGO_BOOST_WARNING << "unable to forward slave progress to " << _reporter->getTarget()
                           << ": " << triggerStatus;
             }
         }
@@ -115,7 +115,7 @@ Status SyncSourceFeedback::_updateUpstream(Reporter* reporter) {
 
     auto triggerStatus = reporter->trigger();
     if (!triggerStatus.isOK()) {
-        warning() << "unable to schedule reporter to update replication progress on " << syncTarget
+        MONGO_BOOST_WARNING << "unable to schedule reporter to update replication progress on " << syncTarget
                   << ": " << triggerStatus;
         return triggerStatus;
     }
@@ -123,7 +123,7 @@ Status SyncSourceFeedback::_updateUpstream(Reporter* reporter) {
     auto status = reporter->join();
 
     if (!status.isOK()) {
-        log() << "SyncSourceFeedback error sending update to " << syncTarget << ": " << status;
+        MONGO_BOOST_LOG << "SyncSourceFeedback error sending update to " << syncTarget << ": " << status;
     }
 
     // Sync source blacklisting will be done in BackgroundSync and SyncSourceResolver.

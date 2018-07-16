@@ -144,7 +144,7 @@ void scheduleCleanup(executor::TaskExecutor* executor,
         });
 
     if (!swCallbackHandle.isOK()) {
-        log() << "Failed to schedule the orphan data cleanup task"
+        MONGO_BOOST_LOG << "Failed to schedule the orphan data cleanup task"
               << causedBy(redact(swCallbackHandle.getStatus()));
     }
 }
@@ -224,7 +224,7 @@ void MetadataManager::refreshActiveMetadata(std::unique_ptr<CollectionMetadata> 
 
     // Collection is becoming unsharded
     if (!remoteMetadata) {
-        log() << "Marking collection " << _nss.ns() << " with "
+        MONGO_BOOST_LOG << "Marking collection " << _nss.ns() << " with "
               << redact(_metadata.back()->metadata.toStringBasic()) << " as unsharded";
 
         _receivingChunks.clear();
@@ -235,7 +235,7 @@ void MetadataManager::refreshActiveMetadata(std::unique_ptr<CollectionMetadata> 
 
     // Collection is becoming sharded
     if (_metadata.empty()) {
-        log() << "Marking collection " << _nss.ns() << " as sharded with "
+        MONGO_BOOST_LOG << "Marking collection " << _nss.ns() << " as sharded with "
               << remoteMetadata->toStringBasic();
 
         invariant(_receivingChunks.empty());
@@ -249,7 +249,7 @@ void MetadataManager::refreshActiveMetadata(std::unique_ptr<CollectionMetadata> 
     // If the metadata being installed has a different epoch from ours, this means the collection
     // was dropped and recreated, so we must entirely reset the metadata state
     if (activeMetadata->getCollVersion().epoch() != remoteMetadata->getCollVersion().epoch()) {
-        log() << "Overwriting metadata for collection " << _nss.ns() << " from "
+        MONGO_BOOST_LOG << "Overwriting metadata for collection " << _nss.ns() << " from "
               << activeMetadata->toStringBasic() << " to " << remoteMetadata->toStringBasic()
               << " due to epoch change";
 
@@ -266,7 +266,7 @@ void MetadataManager::refreshActiveMetadata(std::unique_ptr<CollectionMetadata> 
         return;
     }
 
-    log() << "Updating collection metadata for " << _nss.ns() << " from "
+    MONGO_BOOST_LOG << "Updating collection metadata for " << _nss.ns() << " from "
           << activeMetadata->toStringBasic() << " to " << remoteMetadata->toStringBasic();
 
     // Resolve any receiving chunks, which might have completed by now
@@ -298,7 +298,7 @@ void MetadataManager::_setActiveMetadata(WithLock wl, CollectionMetadata newMeta
 void MetadataManager::_retireExpiredMetadata(WithLock lock) {
     while (_metadata.size() > 1 && !_metadata.front()->usageCounter) {
         if (!_metadata.front()->orphans.empty()) {
-            log() << "Queries possibly dependent on " << _nss.ns()
+            MONGO_BOOST_LOG << "Queries possibly dependent on " << _nss.ns()
                   << " range(s) finished; scheduling ranges for deletion";
             // It is safe to push orphan ranges from _metadata.back(), even though new queries might
             // start any time, because any request to delete a range it maps is rejected.
@@ -377,7 +377,7 @@ auto MetadataManager::beginReceive(ChunkRange const& range) -> CleanupNotificati
 
     _receivingChunks.emplace(range.getMin().getOwned(), range.getMax().getOwned());
 
-    log() << "Scheduling deletion of any documents in " << _nss.ns() << " range "
+    MONGO_BOOST_LOG << "Scheduling deletion of any documents in " << _nss.ns() << " range "
           << redact(range.toString()) << " before migrating in a chunk covering the range";
 
     return _pushRangeToClean(lg, range, Date_t{});
@@ -389,7 +389,7 @@ void MetadataManager::forgetReceive(ChunkRange const& range) {
 
     // This is potentially a partially received chunk, which needs to be cleaned up. We know none
     // of these documents are in use, so they can go straight to the deletion queue.
-    log() << "Abandoning in-migration of " << _nss.ns() << " range " << range
+    MONGO_BOOST_LOG << "Abandoning in-migration of " << _nss.ns() << " range " << range
           << "; scheduling deletion of any documents already copied";
 
     invariant(!_overlapsInUseChunk(lg, range));
@@ -423,12 +423,12 @@ auto MetadataManager::cleanUpRange(ChunkRange const& range, Date_t whenToDelete)
     if (!overlapMetadata) {
         // No running queries can depend on it, so queue it for deletion immediately.
         const auto whenStr = (whenToDelete == Date_t{}) ? "immediate"_sd : "deferred"_sd;
-        log() << "Scheduling " << whenStr << " deletion of " << _nss.ns() << " range "
+        MONGO_BOOST_LOG << "Scheduling " << whenStr << " deletion of " << _nss.ns() << " range "
               << redact(range.toString());
         return _pushRangeToClean(lg, range, whenToDelete);
     }
 
-    log() << "Deletion of " << _nss.ns() << " range " << redact(range.toString())
+    MONGO_BOOST_LOG << "Deletion of " << _nss.ns() << " range " << redact(range.toString())
           << " will be scheduled after all possibly dependent queries finish";
 
     // Put it on the oldest metadata permissible; the current one might live a long time.

@@ -62,7 +62,7 @@ private:
         return _blerp(lk, i);
     }
     int _blerp(WithLock, int i) {
-        log() << i << " bleep" << (i == 1 ? "\n" : "s\n");
+        MONGO_BOOST_LOG << i << " bleep" << (i == 1 ? "\n" : "s\n");
         return i;
     }
     stdx::mutex _m;

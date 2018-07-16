@@ -67,7 +67,7 @@ const struct WinsockInit {
     WinsockInit() {
         WSADATA d;
         if (WSAStartup(MAKEWORD(2, 2), &d) != 0) {
-            log() << "ERROR: wsastartup failed " << errnoWithDescription();
+            MONGO_BOOST_LOG << "ERROR: wsastartup failed " << errnoWithDescription();
             quickExit(EXIT_NTSERVICE_ERROR);
         }
     }
@@ -112,7 +112,7 @@ void setSocketKeepAliveParams(int sock,
             // Return seconds
             return val ? (val.get() / 1000) : default_value;
         }
-        error() << "can't get KeepAlive parameter: " << withval.getStatus();
+        MONGO_BOOST_ERROR << "can't get KeepAlive parameter: " << withval.getStatus();
         return default_value;
     };
 
@@ -134,7 +134,7 @@ void setSocketKeepAliveParams(int sock,
                      &sent,
                      nullptr,
                      nullptr)) {
-            error() << "failed setting keepalive values: " << WSAGetLastError();
+            MONGO_BOOST_ERROR << "failed setting keepalive values: " << WSAGetLastError();
         }
     }
 #elif defined(__APPLE__) || defined(__linux__)
@@ -144,13 +144,13 @@ void setSocketKeepAliveParams(int sock,
             socklen_t len = sizeof(optval);
 
             if (getsockopt(sock, level, optnum, (char*)&optval, &len)) {
-                error() << "can't get " << optname << ": " << errnoWithDescription();
+                MONGO_BOOST_ERROR << "can't get " << optname << ": " << errnoWithDescription();
             }
 
             if (optval > maxval) {
                 optval = maxval;
                 if (setsockopt(sock, level, optnum, (char*)&optval, sizeof(optval))) {
-                    error() << "can't set " << optname << ": " << errnoWithDescription();
+                    MONGO_BOOST_ERROR << "can't set " << optname << ": " << errnoWithDescription();
                 }
             }
         };
@@ -194,7 +194,7 @@ std::string getHostName() {
     char buf[256];
     int ec = gethostname(buf, 127);
     if (ec || *buf == 0) {
-        log() << "can't get this server's hostname " << errnoWithDescription();
+        MONGO_BOOST_LOG << "can't get this server's hostname " << errnoWithDescription();
         return "";
     }
     return buf;

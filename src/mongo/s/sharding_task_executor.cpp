@@ -176,7 +176,7 @@ StatusWith<TaskExecutor::CallbackHandle> ShardingTaskExecutor::scheduleRemoteCom
 
         if (!args.response.isOK()) {
             if (isMongos() && args.response.status == ErrorCodes::IncompatibleWithUpgradedServer) {
-                severe()
+				MONGO_BOOST_SEVERE
                     << "This mongos server must be upgraded. It is attempting to communicate with "
                        "an upgraded cluster with which it is incompatible. Error: '"
                     << args.response.status.toString()
@@ -215,14 +215,14 @@ StatusWith<TaskExecutor::CallbackHandle> ShardingTaskExecutor::scheduleRemoteCom
 
                 auto shardConn = ConnectionString::parse(args.request.target.toString());
                 if (!shardConn.isOK()) {
-                    severe() << "got bad host string in saveGLEStats: " << args.request.target;
+                    MONGO_BOOST_SEVERE << "got bad host string in saveGLEStats: " << args.request.target;
                 }
 
                 clusterGLE->addHostOpTime(shardConn.getValue(),
                                           HostOpTime(shardingMetadata.getLastOpTime(),
                                                      shardingMetadata.getLastElectionId()));
             } else if (swShardingMetadata.getStatus() != ErrorCodes::NoSuchKey) {
-                warning() << "Got invalid sharding metadata "
+                MONGO_BOOST_WARNING << "Got invalid sharding metadata "
                           << redact(swShardingMetadata.getStatus()) << " metadata object was '"
                           << redact(args.response.metadata) << "'";
             }

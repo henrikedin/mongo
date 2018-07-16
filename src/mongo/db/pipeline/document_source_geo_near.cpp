@@ -171,7 +171,7 @@ void DocumentSourceGeoNear::parseOptions(BSONObj options) {
     }
 
     if (options.hasField("uniqueDocs"))
-        warning() << "ignoring deprecated uniqueDocs option in $geoNear aggregation stage";
+        MONGO_BOOST_WARNING << "ignoring deprecated uniqueDocs option in $geoNear aggregation stage";
 
     if (auto keyElt = options[kKeyFieldName]) {
         uassert(ErrorCodes::TypeMismatch,

@@ -144,31 +144,31 @@ void logMongodStartupWarnings(const StorageGlobalParams& storageParams,
     bool warned = false;
 
     if (sizeof(int*) == 4) {
-        log() << startupWarningsLog;
-        log() << "** NOTE: This is a 32 bit MongoDB binary." << startupWarningsLog;
-        log() << "**       32 bit builds are limited to less than 2GB of data "
+        MONGO_BOOST_LOG << startupWarningsLog;
+        MONGO_BOOST_LOG << "** NOTE: This is a 32 bit MongoDB binary." << startupWarningsLog;
+        MONGO_BOOST_LOG << "**       32 bit builds are limited to less than 2GB of data "
               << "(or less with --journal)." << startupWarningsLog;
         if (!storageParams.dur) {
-            log() << "**       Note that journaling defaults to off for 32 bit "
+            MONGO_BOOST_LOG << "**       Note that journaling defaults to off for 32 bit "
                   << "and is currently off." << startupWarningsLog;
         }
-        log() << "**       See http://dochub.mongodb.org/core/32bit" << startupWarningsLog;
+        MONGO_BOOST_LOG << "**       See http://dochub.mongodb.org/core/32bit" << startupWarningsLog;
         warned = true;
     }
 
     if (!ProcessInfo::blockCheckSupported()) {
-        log() << startupWarningsLog;
-        log() << "** NOTE: your operating system version does not support the method that "
+        MONGO_BOOST_LOG << startupWarningsLog;
+        MONGO_BOOST_LOG << "** NOTE: your operating system version does not support the method that "
               << "MongoDB" << startupWarningsLog;
-        log() << "**       uses to detect impending page faults." << startupWarningsLog;
-        log() << "**       This may result in slower performance for certain use "
+        MONGO_BOOST_LOG << "**       uses to detect impending page faults." << startupWarningsLog;
+        MONGO_BOOST_LOG << "**       This may result in slower performance for certain use "
               << "cases" << startupWarningsLog;
         warned = true;
     }
 #ifdef __linux__
     if (boost::filesystem::exists("/proc/vz") && !boost::filesystem::exists("/proc/bc")) {
-        log() << startupWarningsLog;
-        log() << "** WARNING: You are running in OpenVZ which can cause issues on versions "
+        MONGO_BOOST_LOG << startupWarningsLog;
+        MONGO_BOOST_LOG << "** WARNING: You are running in OpenVZ which can cause issues on versions "
               << "of RHEL older than RHEL6." << startupWarningsLog;
         warned = true;
     }
@@ -177,8 +177,8 @@ void logMongodStartupWarnings(const StorageGlobalParams& storageParams,
     try {
         hasMultipleNumaNodes = boost::filesystem::exists("/sys/devices/system/node/node1");
     } catch (boost::filesystem::filesystem_error& e) {
-        log() << startupWarningsLog;
-        log() << "** WARNING: Cannot detect if NUMA interleaving is enabled. "
+        MONGO_BOOST_LOG << startupWarningsLog;
+        MONGO_BOOST_LOG << "** WARNING: Cannot detect if NUMA interleaving is enabled. "
               << "Failed to probe \"" << e.path1().string() << "\": " << e.code().message()
               << startupWarningsLog;
     }
@@ -200,26 +200,26 @@ void logMongodStartupWarnings(const StorageGlobalParams& storageParams,
             std::string line;  // we only need the first line
             std::getline(f, line);
             if (f.fail()) {
-                warning() << "failed to read from /proc/self/numa_maps: " << errnoWithDescription()
+                MONGO_BOOST_WARNING << "failed to read from /proc/self/numa_maps: " << errnoWithDescription()
                           << startupWarningsLog;
                 warned = true;
             } else {
                 // skip over pointer
                 std::string::size_type where = line.find(' ');
                 if ((where == std::string::npos) || (++where == line.size())) {
-                    log() << startupWarningsLog;
-                    log() << "** WARNING: cannot parse numa_maps line: '" << line << "'"
+                    MONGO_BOOST_LOG << startupWarningsLog;
+                    MONGO_BOOST_LOG << "** WARNING: cannot parse numa_maps line: '" << line << "'"
                           << startupWarningsLog;
                     warned = true;
                 }
                 // if the text following the space doesn't begin with 'interleave', then
                 // issue the warning.
                 else if (line.find("interleave", where) != where) {
-                    log() << startupWarningsLog;
-                    log() << "** WARNING: You are running on a NUMA machine." << startupWarningsLog;
-                    log() << "**          We suggest launching mongod like this to avoid "
+                    MONGO_BOOST_LOG << startupWarningsLog;
+                    MONGO_BOOST_LOG << "** WARNING: You are running on a NUMA machine." << startupWarningsLog;
+                    MONGO_BOOST_LOG << "**          We suggest launching mongod like this to avoid "
                           << "performance problems:" << startupWarningsLog;
-                    log() << "**              numactl --interleave=all mongod [other options]"
+                    MONGO_BOOST_LOG << "**              numactl --interleave=all mongod [other options]"
                           << startupWarningsLog;
                     warned = true;
                 }
@@ -233,9 +233,9 @@ void logMongodStartupWarnings(const StorageGlobalParams& storageParams,
         f >> val;
 
         if (val == 2) {
-            log() << startupWarningsLog;
-            log() << "** WARNING: /proc/sys/vm/overcommit_memory is " << val << startupWarningsLog;
-            log() << "**          Journaling works best with it set to 0 or 1"
+            MONGO_BOOST_LOG << startupWarningsLog;
+            MONGO_BOOST_LOG << "** WARNING: /proc/sys/vm/overcommit_memory is " << val << startupWarningsLog;
+            MONGO_BOOST_LOG << "**          Journaling works best with it set to 0 or 1"
                   << startupWarningsLog;
         }
     }
@@ -246,10 +246,10 @@ void logMongodStartupWarnings(const StorageGlobalParams& storageParams,
         f >> val;
 
         if (val != 0) {
-            log() << startupWarningsLog;
-            log() << "** WARNING: /proc/sys/vm/zone_reclaim_mode is " << val << startupWarningsLog;
-            log() << "**          We suggest setting it to 0" << startupWarningsLog;
-            log() << "**          http://www.kernel.org/doc/Documentation/sysctl/vm.txt"
+            MONGO_BOOST_LOG << startupWarningsLog;
+            MONGO_BOOST_LOG << "** WARNING: /proc/sys/vm/zone_reclaim_mode is " << val << startupWarningsLog;
+            MONGO_BOOST_LOG << "**          We suggest setting it to 0" << startupWarningsLog;
+            MONGO_BOOST_LOG << "**          http://www.kernel.org/doc/Documentation/sysctl/vm.txt"
                   << startupWarningsLog;
         }
     }
@@ -259,16 +259,16 @@ void logMongodStartupWarnings(const StorageGlobalParams& storageParams,
         StartupWarningsMongod::readTransparentHugePagesParameter("enabled");
     if (transparentHugePagesEnabledResult.isOK()) {
         if (transparentHugePagesEnabledResult.getValue() == "always") {
-            log() << startupWarningsLog;
-            log() << "** WARNING: " << kTransparentHugePagesDirectory << "/enabled is 'always'."
+            MONGO_BOOST_LOG << startupWarningsLog;
+            MONGO_BOOST_LOG << "** WARNING: " << kTransparentHugePagesDirectory << "/enabled is 'always'."
                   << startupWarningsLog;
-            log() << "**        We suggest setting it to 'never'" << startupWarningsLog;
+            MONGO_BOOST_LOG << "**        We suggest setting it to 'never'" << startupWarningsLog;
             warned = true;
         }
     } else if (transparentHugePagesEnabledResult.getStatus().code() !=
                ErrorCodes::NonExistentPath) {
-        warning() << startupWarningsLog;
-        warning() << transparentHugePagesEnabledResult.getStatus().reason() << startupWarningsLog;
+        MONGO_BOOST_WARNING << startupWarningsLog;
+        MONGO_BOOST_WARNING << transparentHugePagesEnabledResult.getStatus().reason() << startupWarningsLog;
         warned = true;
     }
 
@@ -276,15 +276,15 @@ void logMongodStartupWarnings(const StorageGlobalParams& storageParams,
         StartupWarningsMongod::readTransparentHugePagesParameter("defrag");
     if (transparentHugePagesDefragResult.isOK()) {
         if (transparentHugePagesDefragResult.getValue() == "always") {
-            log() << startupWarningsLog;
-            log() << "** WARNING: " << kTransparentHugePagesDirectory << "/defrag is 'always'."
+            MONGO_BOOST_LOG << startupWarningsLog;
+            MONGO_BOOST_LOG << "** WARNING: " << kTransparentHugePagesDirectory << "/defrag is 'always'."
                   << startupWarningsLog;
-            log() << "**        We suggest setting it to 'never'" << startupWarningsLog;
+            MONGO_BOOST_LOG << "**        We suggest setting it to 'never'" << startupWarningsLog;
             warned = true;
         }
     } else if (transparentHugePagesDefragResult.getStatus().code() != ErrorCodes::NonExistentPath) {
-        warning() << startupWarningsLog;
-        warning() << transparentHugePagesDefragResult.getStatus().reason() << startupWarningsLog;
+        MONGO_BOOST_WARNING << startupWarningsLog;
+        MONGO_BOOST_WARNING << transparentHugePagesDefragResult.getStatus().reason() << startupWarningsLog;
         warned = true;
     }
 #endif  // __linux__
@@ -296,14 +296,14 @@ void logMongodStartupWarnings(const StorageGlobalParams& storageParams,
 
     if (!getrlimit(RLIMIT_NOFILE, &rlnofile)) {
         if (rlnofile.rlim_cur < minNumFiles) {
-            log() << startupWarningsLog;
-            log() << "** WARNING: soft rlimits too low. Number of files is " << rlnofile.rlim_cur
+            MONGO_BOOST_LOG << startupWarningsLog;
+            MONGO_BOOST_LOG << "** WARNING: soft rlimits too low. Number of files is " << rlnofile.rlim_cur
                   << ", should be at least " << minNumFiles << startupWarningsLog;
         }
     } else {
         const auto errmsg = errnoWithDescription();
-        log() << startupWarningsLog;
-        log() << "** WARNING: getrlimit failed. " << errmsg << startupWarningsLog;
+        MONGO_BOOST_LOG << startupWarningsLog;
+        MONGO_BOOST_LOG << "** WARNING: getrlimit failed. " << errmsg << startupWarningsLog;
     }
 
 // Solaris does not have RLIMIT_NPROC & RLIMIT_MEMLOCK, these are exposed via getrctl(2) instead
@@ -318,8 +318,8 @@ void logMongodStartupWarnings(const StorageGlobalParams& storageParams,
 
     if (!getrlimit(RLIMIT_NPROC, &rlnproc) && !getrlimit(RLIMIT_MEMLOCK, &rlmemlock)) {
         if ((rlmemlock.rlim_cur / ProcessInfo::getPageSize()) < minLockedPages) {
-            log() << startupWarningsLog;
-            log() << "** WARNING: soft rlimits too low. The locked memory size is "
+            MONGO_BOOST_LOG << startupWarningsLog;
+            MONGO_BOOST_LOG << "** WARNING: soft rlimits too low. The locked memory size is "
                   << rlmemlock.rlim_cur << " bytes, it should be at least "
                   << minLockedPages * ProcessInfo::getPageSize() << " bytes" << startupWarningsLog;
         }
@@ -334,8 +334,8 @@ void logMongodStartupWarnings(const StorageGlobalParams& storageParams,
         }
 #endif
         else if (rlnproc.rlim_cur < rlnofile.rlim_cur / filesToProcsRatio) {
-            log() << startupWarningsLog;
-            log() << "** WARNING: soft rlimits too low. rlimits set to " << rlnproc.rlim_cur
+            MONGO_BOOST_LOG << startupWarningsLog;
+            MONGO_BOOST_LOG << "** WARNING: soft rlimits too low. rlimits set to " << rlnproc.rlim_cur
                   << " processes, " << rlnofile.rlim_cur
                   << " files. Number of processes should be at least "
                   << rlnofile.rlim_cur / filesToProcsRatio << " : " << 1 / filesToProcsRatio
@@ -343,8 +343,8 @@ void logMongodStartupWarnings(const StorageGlobalParams& storageParams,
         }
     } else {
         const auto errmsg = errnoWithDescription();
-        log() << startupWarningsLog;
-        log() << "** WARNING: getrlimit failed. " << errmsg << startupWarningsLog;
+        MONGO_BOOST_LOG << startupWarningsLog;
+        MONGO_BOOST_LOG << "** WARNING: getrlimit failed. " << errmsg << startupWarningsLog;
     }
 #endif
 #endif
@@ -353,18 +353,18 @@ void logMongodStartupWarnings(const StorageGlobalParams& storageParams,
     ProcessInfo p;
 
     if (p.hasNumaEnabled()) {
-        log() << startupWarningsLog;
-        log() << "** WARNING: You are running on a NUMA machine." << startupWarningsLog;
-        log() << "**          We suggest disabling NUMA in the machine BIOS " << startupWarningsLog;
-        log() << "**          by enabling interleaving to avoid performance problems. "
+        MONGO_BOOST_LOG << startupWarningsLog;
+        MONGO_BOOST_LOG << "** WARNING: You are running on a NUMA machine." << startupWarningsLog;
+        MONGO_BOOST_LOG << "**          We suggest disabling NUMA in the machine BIOS " << startupWarningsLog;
+        MONGO_BOOST_LOG << "**          by enabling interleaving to avoid performance problems. "
               << startupWarningsLog;
-        log() << "**          See your BIOS documentation for more information."
+        MONGO_BOOST_LOG << "**          See your BIOS documentation for more information."
               << startupWarningsLog;
         warned = true;
     }
 
     if (p.isDataFileZeroingNeeded()) {
-        log() << "Hotfix KB2731284 or later update is not installed, will zero-out data files."
+        MONGO_BOOST_LOG << "Hotfix KB2731284 or later update is not installed, will zero-out data files."
               << startupWarningsLog;
         warned = true;
     }
@@ -372,15 +372,15 @@ void logMongodStartupWarnings(const StorageGlobalParams& storageParams,
 #endif  // #ifdef _WIN32
 
     if (storageParams.engine == "ephemeralForTest") {
-        log() << startupWarningsLog;
-        log() << "** NOTE: The ephemeralForTest storage engine is for testing only. "
+        MONGO_BOOST_LOG << startupWarningsLog;
+        MONGO_BOOST_LOG << "** NOTE: The ephemeralForTest storage engine is for testing only. "
               << startupWarningsLog;
-        log() << "**       Do not use in production." << startupWarningsLog;
+        MONGO_BOOST_LOG << "**       Do not use in production." << startupWarningsLog;
         warned = true;
     }
 
     if (warned) {
-        log() << startupWarningsLog;
+        MONGO_BOOST_LOG << startupWarningsLog;
     }
 }
 }  // namespace mongo

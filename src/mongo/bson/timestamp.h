@@ -132,4 +132,8 @@ private:
     unsigned secs = 0;
 };
 
+inline std::ostream& operator<<(std::ostream& s, const Timestamp& timestamp) {
+	return (s << timestamp.toString());
+}
+
 }  // namespace mongo

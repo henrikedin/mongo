@@ -317,7 +317,7 @@ IndexBounds ChunkManager::collapseQuerySolution(const QuerySolutionNode* node) {
     // children.size() > 1, assert it's OR / SORT_MERGE.
     if (node->getType() != STAGE_OR && node->getType() != STAGE_SORT_MERGE) {
         // Unexpected node. We should never reach here.
-        error() << "could not generate index bounds on query solution tree: "
+        MONGO_BOOST_ERROR << "could not generate index bounds on query solution tree: "
                 << redact(node->toString());
         dassert(false);  // We'd like to know this error in testing.
 

@@ -314,7 +314,7 @@ void CatalogCache::onStaleDatabaseVersion(const StringData dbName,
     } else if (!itDbEntry->second->dbt ||
                databaseVersion::equal(itDbEntry->second->dbt->getVersion(), databaseVersion)) {
         // If the versions match, the cached database info is stale, so mark it as needs refresh.
-        log() << "Marking cached database entry for '" << dbName << "' as stale";
+        MONGO_BOOST_LOG << "Marking cached database entry for '" << dbName << "' as stale";
         itDbEntry->second->needsRefresh = true;
     }
 }
@@ -416,7 +416,7 @@ void CatalogCache::_scheduleDatabaseRefresh(WithLock,
                                             const std::string& dbName,
                                             std::shared_ptr<DatabaseInfoEntry> dbEntry) {
 
-    log() << "Refreshing cached database entry for " << dbName
+    MONGO_BOOST_LOG << "Refreshing cached database entry for " << dbName
           << "; current cached database info is "
           << (dbEntry->dbt ? dbEntry->dbt->toBSON() : BSONObj());
 
@@ -424,11 +424,11 @@ void CatalogCache::_scheduleDatabaseRefresh(WithLock,
         [ this, t = Timer(), dbName ](const StatusWith<DatabaseType>& swDbt) {
         // TODO (SERVER-34164): Track and increment stats for database refreshes.
         if (!swDbt.isOK()) {
-            log() << "Refresh for database " << dbName << " took " << t.millis() << " ms and failed"
+            MONGO_BOOST_LOG << "Refresh for database " << dbName << " took " << t.millis() << " ms and failed"
                   << causedBy(redact(swDbt.getStatus()));
             return;
         }
-        log() << "Refresh for database " << dbName << " took " << t.millis() << " ms and found "
+        MONGO_BOOST_LOG << "Refresh for database " << dbName << " took " << t.millis() << " ms and found "
               << swDbt.getValue().toBSON();
     };
 
@@ -506,13 +506,13 @@ void CatalogCache::_scheduleCollectionRefresh(WithLock lk,
         if (!status.isOK()) {
             _stats.countFailedRefreshes.addAndFetch(1);
 
-            log() << "Refresh for collection " << nss << " took " << t.millis() << " ms and failed"
+            MONGO_BOOST_LOG << "Refresh for collection " << nss << " took " << t.millis() << " ms and failed"
                   << causedBy(redact(status));
         } else if (routingInfoAfterRefresh) {
-            log() << "Refresh for collection " << nss << " took " << t.millis()
+            MONGO_BOOST_LOG << "Refresh for collection " << nss << " took " << t.millis()
                   << " ms and found version " << routingInfoAfterRefresh->getVersion();
         } else {
-            log() << "Refresh for collection " << nss << " took " << t.millis()
+            MONGO_BOOST_LOG << "Refresh for collection " << nss << " took " << t.millis()
                   << " ms and found the collection is not sharded";
         }
     };
@@ -573,7 +573,7 @@ void CatalogCache::_scheduleCollectionRefresh(WithLock lk,
     const ChunkVersion startingCollectionVersion =
         (existingRoutingInfo ? existingRoutingInfo->getVersion() : ChunkVersion::UNSHARDED());
 
-    log() << "Refreshing chunks for collection " << nss << " based on version "
+    MONGO_BOOST_LOG << "Refreshing chunks for collection " << nss << " based on version "
           << startingCollectionVersion;
 
     try {

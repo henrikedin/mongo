@@ -1090,7 +1090,7 @@ std::unique_ptr<QuerySolutionNode> QueryPlannerAccess::buildIndexedOr(
     // when any of our children lack index tags.  If a node lacks an index tag it cannot
     // be answered via an index.
     if (!inArrayOperator && 0 != root->numChildren()) {
-        warning() << "planner OR error, non-indexed child of OR.";
+        MONGO_BOOST_WARNING << "planner OR error, non-indexed child of OR.";
         // We won't enumerate an OR without indices for each child, so this isn't an issue, even
         // if we have an AND with an OR child -- we won't get here unless the OR is fully
         // indexed.

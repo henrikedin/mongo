@@ -258,7 +258,7 @@ void FreeMonProcessor::run() {
         // Stop the queue
         _queue.stop();
 
-        warning() << "Uncaught exception in '" << exceptionToStatus()
+        MONGO_BOOST_WARNING << "Uncaught exception in '" << exceptionToStatus()
                   << "' in free monitoring subsystem. Shutting down the "
                      "free monitoring subsystem.";
     }
@@ -614,7 +614,7 @@ void FreeMonProcessor::doAsyncRegisterComplete(
 
     Status s = validateRegistrationResponse(resp);
     if (!s.isOK()) {
-        warning() << "Free Monitoring registration halted due to " << s;
+        MONGO_BOOST_WARNING << "Free Monitoring registration halted due to " << s;
 
         // Disable on any error
         _state->setState(StorageStateEnum::disabled);
@@ -660,7 +660,7 @@ void FreeMonProcessor::doAsyncRegisterComplete(
     // Notify waiters
     notifyPendingRegisters(Status::OK());
 
-    log() << "Free Monitoring is Enabled. Frequency: " << resp.getReportingInterval() << " seconds";
+    MONGO_BOOST_LOG << "Free Monitoring is Enabled. Frequency: " << resp.getReportingInterval() << " seconds";
 
     // Enqueue next metrics upload immediately to deliver a good experience
     enqueue(FreeMonMessage::createNow(FreeMonMessageType::MetricsSend));
@@ -680,7 +680,7 @@ void FreeMonProcessor::doAsyncRegisterFail(
 
     if (!_registrationRetry->incrementError()) {
         // We have exceeded our retry
-        warning() << "Free Monitoring is abandoning registration after excess retries";
+        MONGO_BOOST_WARNING << "Free Monitoring is abandoning registration after excess retries";
         return;
     }
 
@@ -702,7 +702,7 @@ void FreeMonProcessor::doCommandUnregister(
 
     writeState(client);
 
-    log() << "Free Monitoring is Disabled";
+    MONGO_BOOST_LOG << "Free Monitoring is Disabled";
 
     msg->setStatus(Status::OK());
 }
@@ -789,7 +789,7 @@ void FreeMonProcessor::doAsyncMetricsComplete(
 
     Status s = validateMetricsResponse(resp);
     if (!s.isOK()) {
-        warning() << "Free Monitoring metrics uploading halted due to " << s;
+        MONGO_BOOST_WARNING << "Free Monitoring metrics uploading halted due to " << s;
 
         // Disable free monitoring on validation errors
         _state->setState(StorageStateEnum::disabled);
@@ -862,7 +862,7 @@ void FreeMonProcessor::doAsyncMetricsFail(
 
     if (!_metricsRetry->incrementError()) {
         // We have exceeded our retry
-        warning() << "Free Monitoring is abandoning metrics upload after excess retries";
+        MONGO_BOOST_WARNING << "Free Monitoring is abandoning metrics upload after excess retries";
         return;
     }
 
@@ -959,7 +959,7 @@ void FreeMonProcessor::doNotifyOnUpsert(
         // Stop the queue
         _queue.stop();
 
-        warning() << "Uncaught exception in '" << exceptionToStatus()
+        MONGO_BOOST_WARNING << "Uncaught exception in '" << exceptionToStatus()
                   << "' in free monitoring op observer. Shutting down the "
                      "free monitoring subsystem.";
     }

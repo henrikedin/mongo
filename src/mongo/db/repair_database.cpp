@@ -192,7 +192,7 @@ Status rebuildIndexesOnCollection(OperationContext* opCtx,
         // database even if decimal is disabled.
         Status status = validateBSON(data.data(), data.size(), BSONVersion::kLatest);
         if (!status.isOK()) {
-            log() << "Invalid BSON detected at " << id << ": " << redact(status) << ". Deleting.";
+            MONGO_BOOST_LOG << "Invalid BSON detected at " << id << ": " << redact(status) << ". Deleting.";
             cursor->save();  // 'data' is no longer valid.
             {
                 WriteUnitOfWork wunit(opCtx);
@@ -236,7 +236,7 @@ Status repairDatabase(OperationContext* opCtx, StorageEngine* engine, const std:
     invariant(opCtx->lockState()->isLocked());
     invariant(dbName.find('.') == string::npos);
 
-    log() << "repairDatabase " << dbName << endl;
+    MONGO_BOOST_LOG << "repairDatabase " << dbName << endl;
 
     BackgroundOperation::assertNoBgOpInProgForDb(dbName);
 
@@ -264,7 +264,7 @@ Status repairDatabase(OperationContext* opCtx, StorageEngine* engine, const std:
             // Restore oplog Collection pointer cache.
             repl::acquireOplogCollectionForLogging(opCtx);
         } catch (...) {
-            severe() << "Unexpected exception encountered while reopening database after repair.";
+            MONGO_BOOST_SEVERE << "Unexpected exception encountered while reopening database after repair.";
             std::terminate();  // Logs additional info about the specific error.
         }
     });
@@ -279,7 +279,7 @@ Status repairDatabase(OperationContext* opCtx, StorageEngine* engine, const std:
         // leave data in an inconsistent state. Interrupting between collections is ok, however.
         opCtx->checkForInterrupt();
 
-        log() << "Repairing collection " << *it;
+        MONGO_BOOST_LOG << "Repairing collection " << *it;
 
         Status status = engine->repairRecordStore(opCtx, *it);
         if (!status.isOK())

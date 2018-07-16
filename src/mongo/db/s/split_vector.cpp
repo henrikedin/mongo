@@ -135,7 +135,7 @@ StatusWith<std::vector<BSONObj>> splitVector(OperationContext* opCtx,
             return emptyVector;
         }
 
-        log() << "request split points lookup for chunk " << nss.toString() << " " << redact(minKey)
+        MONGO_BOOST_LOG << "request split points lookup for chunk " << nss.toString() << " " << redact(minKey)
               << " -->> " << redact(maxKey);
 
         // We'll use the average object size and number of object to find approximately how many
@@ -146,7 +146,7 @@ StatusWith<std::vector<BSONObj>> splitVector(OperationContext* opCtx,
         long long keyCount = maxChunkSize.get() / (2 * avgRecSize);
 
         if (maxChunkObjects.get() && (maxChunkObjects.get() < keyCount)) {
-            log() << "limiting split vector to " << maxChunkObjects.get() << " (from " << keyCount
+            MONGO_BOOST_LOG << "limiting split vector to " << maxChunkObjects.get() << " (from " << keyCount
                   << ") objects ";
             keyCount = maxChunkObjects.get();
         }
@@ -205,7 +205,7 @@ StatusWith<std::vector<BSONObj>> splitVector(OperationContext* opCtx,
 
                 // Stop if we have enough split points.
                 if (maxSplitPoints && maxSplitPoints.get() && (numChunks >= maxSplitPoints.get())) {
-                    log() << "max number of requested split points reached (" << numChunks
+                    MONGO_BOOST_LOG << "max number of requested split points reached (" << numChunks
                           << ") before the end of chunk " << nss.toString() << " " << redact(minKey)
                           << " -->> " << redact(maxKey);
                     break;
@@ -230,7 +230,7 @@ StatusWith<std::vector<BSONObj>> splitVector(OperationContext* opCtx,
             force = false;
             keyCount = currCount / 2;
             currCount = 0;
-            log() << "splitVector doing another cycle because of force, keyCount now: " << keyCount;
+            MONGO_BOOST_LOG << "splitVector doing another cycle because of force, keyCount now: " << keyCount;
 
             exec = InternalPlanner::indexScan(opCtx,
                                               collection,
@@ -251,7 +251,7 @@ StatusWith<std::vector<BSONObj>> splitVector(OperationContext* opCtx,
 
         // Warn for keys that are more numerous than maxChunkSize allows.
         for (auto it = tooFrequentKeys.cbegin(); it != tooFrequentKeys.cend(); ++it) {
-            warning() << "possible low cardinality key detected in " << nss.toString()
+            MONGO_BOOST_WARNING << "possible low cardinality key detected in " << nss.toString()
                       << " - key is " << prettyKey(idx->keyPattern(), *it);
         }
 
@@ -259,7 +259,7 @@ StatusWith<std::vector<BSONObj>> splitVector(OperationContext* opCtx,
         splitKeys.erase(splitKeys.begin());
 
         if (timer.millis() > serverGlobalParams.slowMS) {
-            warning() << "Finding the split vector for " << nss.toString() << " over "
+            MONGO_BOOST_WARNING << "Finding the split vector for " << nss.toString() << " over "
                       << redact(keyPattern) << " keyCount: " << keyCount
                       << " numSplits: " << splitKeys.size() << " lookedAt: " << currCount
                       << " took " << timer.millis() << "ms";

@@ -85,7 +85,7 @@ public:
     CetRegistrationAgent(const std::string& name, ExecutorTestCaseFactory makeTest) {
         auto& entry = executorTestCaseRegistry()[name];
         if (entry) {
-            severe() << "Multiple attempts to register ExecutorTest named " << name;
+            MONGO_BOOST_SEVERE << "Multiple attempts to register ExecutorTest named " << name;
             fassertFailed(28713);
         }
         entry = std::move(makeTest);

@@ -120,10 +120,10 @@ protected:
                                         UUID uuid,
                                         NamespaceString nss,
                                         const SimpleBSONObjUnorderedSet& idSet) final {
-        log() << "Simulating writing a rollback file for namespace " << nss.ns() << " with uuid "
+        MONGO_BOOST_LOG << "Simulating writing a rollback file for namespace " << nss.ns() << " with uuid "
               << uuid;
         for (auto&& id : idSet) {
-            log() << "Looking up " << id.jsonString();
+            MONGO_BOOST_LOG << "Looking up " << id.jsonString();
             auto document = _findDocumentById(opCtx, uuid, nss, id.firstElement());
             if (document) {
                 _uuidToObjsMap[uuid].push_back(*document);
@@ -802,7 +802,7 @@ DEATH_TEST_F(RollbackImplTest,
     _storageInterface->setStableTimestamp(nullptr, Timestamp(1, 1));
 
     auto status = _rollback->runRollback(_opCtx.get());
-    unittest::log() << "Mongod did not crash. Status: " << status;
+    unittest::MONGO_BOOST_LOG << "Mongod did not crash. Status: " << status;
     MONGO_UNREACHABLE;
 }
 
@@ -1201,7 +1201,7 @@ DEATH_TEST_F(RollbackImplTest,
     ASSERT_OK(_storageInterface->dropCollection(_opCtx.get(), nss));
 
     auto status = _rollback->runRollback(_opCtx.get());
-    unittest::log() << "mongod did not crash when expected; status: " << status;
+    unittest::MONGO_BOOST_LOG << "mongod did not crash when expected; status: " << status;
 }
 
 DEATH_TEST_F(RollbackImplTest,
@@ -1215,7 +1215,7 @@ DEATH_TEST_F(RollbackImplTest,
     _storageInterface->setStableTimestamp(nullptr, Timestamp(1, 1));
 
     auto status = _rollback->runRollback(_opCtx.get());
-    unittest::log() << "mongod did not crash when expected; status: " << status;
+    unittest::MONGO_BOOST_LOG << "mongod did not crash when expected; status: " << status;
 }
 
 TEST_F(RollbackImplTest, RollbackSetsMultipleCollectionCounts) {
@@ -1604,7 +1604,7 @@ DEATH_TEST_F(RollbackImplObserverInfoTest,
         Timestamp(2, 2), boost::none, "admin.$cmd", BSON("applyOps" << subops.arr()), 2);
 
     auto status = _rollback->_namespacesForOp_forTest(OplogEntry(applyOpsCmdOp.first));
-    unittest::log() << "Mongod did not crash. Status: " << status.getStatus();
+    unittest::MONGO_BOOST_LOG << "Mongod did not crash. Status: " << status.getStatus();
     MONGO_UNREACHABLE;
 }
 
@@ -1710,7 +1710,7 @@ DEATH_TEST_F(RollbackImplObserverInfoTest,
     ASSERT_OK(_insertOplogEntry(unknownCmdOp.first));
 
     auto status = _rollback->runRollback(_opCtx.get());
-    unittest::log() << "Mongod did not crash. Status: " << status;
+    unittest::MONGO_BOOST_LOG << "Mongod did not crash. Status: " << status;
     MONGO_UNREACHABLE;
 }
 

@@ -79,5 +79,9 @@ inline bool Document::isInPlaceModeEnabled() const {
     return getCurrentInPlaceMode() == kInPlaceEnabled;
 }
 
+inline std::ostream& operator<<(std::ostream& s, const Document& document) {
+	return (s << document.toString());
+}
+
 }  // namespace mutablebson
 }  // namespace mongo

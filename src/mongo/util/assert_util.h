@@ -140,6 +140,10 @@ private:
     Status _status;
 };
 
+inline std::ostream& operator<<(std::ostream& s, const DBException& dbex) {
+	return (s << dbex.toString());
+}
+
 class AssertionException : public DBException {
 public:
     AssertionException(const Status& status) : DBException(status) {}

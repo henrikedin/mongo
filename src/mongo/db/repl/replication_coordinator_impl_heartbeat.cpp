@@ -256,7 +256,7 @@ stdx::unique_lock<stdx::mutex> ReplicationCoordinatorImpl::_handleHeartbeatRespo
         case HeartbeatResponseAction::StepDownSelf:
             invariant(action.getPrimaryConfigIndex() == _selfIndex);
             if (_topCoord->prepareForUnconditionalStepDown()) {
-                log() << "Stepping down from primary in response to heartbeat";
+                MONGO_BOOST_LOG << "Stepping down from primary in response to heartbeat";
                 _stepDownStart();
             } else {
                 LOG(2) << "Heartbeat would have triggered a stepdown, but we're already in the "
@@ -271,7 +271,7 @@ stdx::unique_lock<stdx::mutex> ReplicationCoordinatorImpl::_handleHeartbeatRespo
                 Milliseconds priorityTakeoverDelay = _rsConfig.getPriorityTakeoverDelay(_selfIndex);
                 Milliseconds randomOffset = _getRandomizedElectionOffset_inlock();
                 _priorityTakeoverWhen = _replExecutor->now() + priorityTakeoverDelay + randomOffset;
-                log() << "Scheduling priority takeover at " << _priorityTakeoverWhen;
+                MONGO_BOOST_LOG << "Scheduling priority takeover at " << _priorityTakeoverWhen;
                 _priorityTakeoverCbh = _scheduleWorkAt(
                     _priorityTakeoverWhen, [=](const mongo::executor::TaskExecutor::CallbackArgs&) {
                         _startElectSelfIfEligibleV1(
@@ -285,7 +285,7 @@ stdx::unique_lock<stdx::mutex> ReplicationCoordinatorImpl::_handleHeartbeatRespo
             if (!_catchupTakeoverCbh.isValid() && !_priorityTakeoverCbh.isValid()) {
                 Milliseconds catchupTakeoverDelay = _rsConfig.getCatchUpTakeoverDelay();
                 _catchupTakeoverWhen = _replExecutor->now() + catchupTakeoverDelay;
-                log() << "Scheduling catchup takeover at " << _catchupTakeoverWhen;
+                MONGO_BOOST_LOG << "Scheduling catchup takeover at " << _catchupTakeoverWhen;
                 _catchupTakeoverCbh = _scheduleWorkAt(
                     _catchupTakeoverWhen, [=](const mongo::executor::TaskExecutor::CallbackArgs&) {
                         _startElectSelfIfEligibleV1(
@@ -312,7 +312,7 @@ void remoteStepdownCallback(const executor::TaskExecutor::RemoteCommandCallbackA
         LOG(1) << "stepdown of primary(" << cbData.request.target << ") succeeded with response -- "
                << cbData.response.data;
     } else {
-        warning() << "stepdown of primary(" << cbData.request.target << ") failed due to "
+        MONGO_BOOST_WARNING << "stepdown of primary(" << cbData.request.target << ") failed due to "
                   << cbData.response.status;
     }
 }
@@ -328,7 +328,7 @@ void ReplicationCoordinatorImpl::_requestRemotePrimaryStepdown(const HostAndPort
                                            20LL)),
         nullptr);
 
-    log() << "Requesting " << target << " step down from primary";
+    MONGO_BOOST_LOG << "Requesting " << target << " step down from primary";
     auto cbh = _replExecutor->scheduleRemoteCommand(request, remoteStepdownCallback);
     if (cbh.getStatus() != ErrorCodes::ShutdownInProgress) {
         fassert(18808, cbh.getStatus());
@@ -359,7 +359,7 @@ void ReplicationCoordinatorImpl::_stepDownFinish(
 
     if (MONGO_FAIL_POINT(blockHeartbeatStepdown)) {
         // This log output is used in js tests so please leave it.
-        log() << "stepDown - blockHeartbeatStepdown fail point enabled. "
+        MONGO_BOOST_LOG << "stepDown - blockHeartbeatStepdown fail point enabled. "
                  "Blocking until fail point is disabled.";
 
         auto inShutdown = [&] {
@@ -420,7 +420,7 @@ void ReplicationCoordinatorImpl::_scheduleHeartbeatReconfig_inlock(const ReplSet
         case kConfigPreStart:
         case kConfigStartingUp:
         case kConfigReplicationDisabled:
-            severe() << "Reconfiguration request occurred while _rsConfigState == "
+            MONGO_BOOST_SEVERE << "Reconfiguration request occurred while _rsConfigState == "
                      << int(_rsConfigState) << "; aborting.";
             fassertFailed(18807);
     }
@@ -451,7 +451,7 @@ void ReplicationCoordinatorImpl::_heartbeatReconfigStore(
     const executor::TaskExecutor::CallbackArgs& cbd, const ReplSetConfig& newConfig) {
 
     if (cbd.status.code() == ErrorCodes::CallbackCanceled) {
-        log() << "The callback to persist the replica set configuration was canceled - "
+        MONGO_BOOST_LOG << "The callback to persist the replica set configuration was canceled - "
               << "the configuration was not persisted but was used: " << newConfig.toBSON();
         return;
     }
@@ -475,7 +475,7 @@ void ReplicationCoordinatorImpl::_heartbeatReconfigStore(
 
     bool shouldStartDataReplication = false;
     if (!myIndex.getStatus().isOK() && myIndex.getStatus() != ErrorCodes::NodeNotFound) {
-        warning() << "Not persisting new configuration in heartbeat response to disk because "
+        MONGO_BOOST_WARNING << "Not persisting new configuration in heartbeat response to disk because "
                      "it is invalid: "
                   << myIndex.getStatus();
     } else {
@@ -489,7 +489,7 @@ void ReplicationCoordinatorImpl::_heartbeatReconfigStore(
             stdx::lock_guard<stdx::mutex> lk(_mutex);
             isFirstConfig = !_rsConfig.isInitialized();
             if (!status.isOK()) {
-                error() << "Ignoring new configuration in heartbeat response because we failed to"
+                MONGO_BOOST_ERROR << "Ignoring new configuration in heartbeat response because we failed to"
                            " write it to stable storage; "
                         << status;
                 invariant(_rsConfigState == kConfigHBReconfiguring);
@@ -586,16 +586,16 @@ void ReplicationCoordinatorImpl::_heartbeatReconfigFinish(
     if (!myIndex.isOK()) {
         switch (myIndex.getStatus().code()) {
             case ErrorCodes::NodeNotFound:
-                log() << "Cannot find self in new replica set configuration; I must be removed; "
+                MONGO_BOOST_LOG << "Cannot find self in new replica set configuration; I must be removed; "
                       << myIndex.getStatus();
                 break;
             case ErrorCodes::DuplicateKey:
-                error() << "Several entries in new config represent this node; "
+                MONGO_BOOST_ERROR << "Several entries in new config represent this node; "
                            "Removing self until an acceptable configuration arrives; "
                         << myIndex.getStatus();
                 break;
             default:
-                error() << "Could not validate configuration received from remote node; "
+                MONGO_BOOST_ERROR << "Could not validate configuration received from remote node; "
                            "Removing self until an acceptable configuration arrives; "
                         << myIndex.getStatus();
                 break;
@@ -745,7 +745,7 @@ void ReplicationCoordinatorImpl::_cancelAndRescheduleLivenessUpdate_inlock(int u
 
 void ReplicationCoordinatorImpl::_cancelPriorityTakeover_inlock() {
     if (_priorityTakeoverCbh.isValid()) {
-        log() << "Canceling priority takeover callback";
+        MONGO_BOOST_LOG << "Canceling priority takeover callback";
         _replExecutor->cancel(_priorityTakeoverCbh);
         _priorityTakeoverCbh = CallbackHandle();
         _priorityTakeoverWhen = Date_t();
@@ -754,7 +754,7 @@ void ReplicationCoordinatorImpl::_cancelPriorityTakeover_inlock() {
 
 void ReplicationCoordinatorImpl::_cancelCatchupTakeover_inlock() {
     if (_catchupTakeoverCbh.isValid()) {
-        log() << "Canceling catchup takeover callback";
+        MONGO_BOOST_LOG << "Canceling catchup takeover callback";
         _replExecutor->cancel(_catchupTakeoverCbh);
         _catchupTakeoverCbh = CallbackHandle();
         _catchupTakeoverWhen = Date_t();
@@ -820,7 +820,7 @@ void ReplicationCoordinatorImpl::_startElectSelfIfEligibleV1(
         _cancelPriorityTakeover_inlock();
         _cancelAndRescheduleElectionTimeout_inlock();
         if (_inShutdown) {
-            log() << "Not starting an election, since we are shutting down";
+            MONGO_BOOST_LOG << "Not starting an election, since we are shutting down";
             return;
         }
     }
@@ -829,23 +829,23 @@ void ReplicationCoordinatorImpl::_startElectSelfIfEligibleV1(
     if (!status.isOK()) {
         switch (reason) {
             case TopologyCoordinator::StartElectionReason::kElectionTimeout:
-                log() << "Not starting an election, since we are not electable due to: "
+                MONGO_BOOST_LOG << "Not starting an election, since we are not electable due to: "
                       << status.reason();
                 break;
             case TopologyCoordinator::StartElectionReason::kPriorityTakeover:
-                log() << "Not starting an election for a priority takeover, "
+                MONGO_BOOST_LOG << "Not starting an election for a priority takeover, "
                       << "since we are not electable due to: " << status.reason();
                 break;
             case TopologyCoordinator::StartElectionReason::kStepUpRequest:
-                log() << "Not starting an election for a replSetStepUp request, "
+                MONGO_BOOST_LOG << "Not starting an election for a replSetStepUp request, "
                       << "since we are not electable due to: " << status.reason();
                 break;
             case TopologyCoordinator::StartElectionReason::kCatchupTakeover:
-                log() << "Not starting an election for a catchup takeover, "
+                MONGO_BOOST_LOG << "Not starting an election for a catchup takeover, "
                       << "since we are not electable due to: " << status.reason();
                 break;
             case TopologyCoordinator::StartElectionReason::kSingleNodeStepDownTimeout:
-                log() << "Not starting an election for a single node replica set stepdown timeout, "
+                MONGO_BOOST_LOG << "Not starting an election for a single node replica set stepdown timeout, "
                       << "since we are not electable due to: " << status.reason();
                 break;
         }
@@ -854,20 +854,20 @@ void ReplicationCoordinatorImpl::_startElectSelfIfEligibleV1(
 
     switch (reason) {
         case TopologyCoordinator::StartElectionReason::kElectionTimeout:
-            log() << "Starting an election, since we've seen no PRIMARY in the past "
+            MONGO_BOOST_LOG << "Starting an election, since we've seen no PRIMARY in the past "
                   << _rsConfig.getElectionTimeoutPeriod();
             break;
         case TopologyCoordinator::StartElectionReason::kPriorityTakeover:
-            log() << "Starting an election for a priority takeover";
+            MONGO_BOOST_LOG << "Starting an election for a priority takeover";
             break;
         case TopologyCoordinator::StartElectionReason::kStepUpRequest:
-            log() << "Starting an election due to step up request";
+            MONGO_BOOST_LOG << "Starting an election due to step up request";
             break;
         case TopologyCoordinator::StartElectionReason::kCatchupTakeover:
-            log() << "Starting an election for a catchup takeover";
+            MONGO_BOOST_LOG << "Starting an election for a catchup takeover";
             break;
         case TopologyCoordinator::StartElectionReason::kSingleNodeStepDownTimeout:
-            log() << "Starting an election due to single node replica set stepdown timeout";
+            MONGO_BOOST_LOG << "Starting an election due to single node replica set stepdown timeout";
             break;
     }
 

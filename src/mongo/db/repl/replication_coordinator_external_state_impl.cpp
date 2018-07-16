@@ -265,13 +265,13 @@ void ReplicationCoordinatorExternalStateImpl::startSteadyStateReplication(
     _bgSync =
         std::make_unique<BackgroundSync>(replCoord, this, _replicationProcess, _oplogApplier.get());
 
-    log() << "Starting replication fetcher thread";
+    MONGO_BOOST_LOG << "Starting replication fetcher thread";
     _bgSync->startup(opCtx);
 
-    log() << "Starting replication applier thread";
+    MONGO_BOOST_LOG << "Starting replication applier thread";
     _oplogApplierShutdownFuture = _oplogApplier->startup();
 
-    log() << "Starting replication reporter thread";
+    MONGO_BOOST_LOG << "Starting replication reporter thread";
     invariant(!_syncSourceFeedbackThread);
     // Get the pointer while holding the lock so that _stopDataReplication_inlock() won't
     // leave the unique pointer empty if the _syncSourceFeedbackThread's function starts
@@ -302,18 +302,18 @@ void ReplicationCoordinatorExternalStateImpl::_stopDataReplication_inlock(Operat
     // _syncSourceFeedbackThread should be joined before _bgSync's shutdown because it has
     // a pointer of _bgSync.
     if (oldSSF) {
-        log() << "Stopping replication reporter thread";
+        MONGO_BOOST_LOG << "Stopping replication reporter thread";
         _syncSourceFeedback.shutdown();
         oldSSF->join();
     }
 
     if (oldBgSync) {
-        log() << "Stopping replication fetcher thread";
+        MONGO_BOOST_LOG << "Stopping replication fetcher thread";
         oldBgSync->shutdown(opCtx);
     }
 
     if (oldApplier) {
-        log() << "Stopping replication applier thread";
+        MONGO_BOOST_LOG << "Stopping replication applier thread";
         oldApplier->shutdown();
     }
 
@@ -348,7 +348,7 @@ void ReplicationCoordinatorExternalStateImpl::startThreads(const ReplSettings& s
         return;
     }
 
-    log() << "Starting replication storage threads";
+    MONGO_BOOST_LOG << "Starting replication storage threads";
     _service->getStorageEngine()->setJournalListener(this);
 
     _oplogApplierTaskExecutor = makeTaskExecutor(_service, "rsSync");
@@ -376,7 +376,7 @@ void ReplicationCoordinatorExternalStateImpl::shutdown(OperationContext* opCtx) 
         _noopWriter->stopWritingPeriodicNoops();
     }
 
-    log() << "Stopping replication storage threads";
+    MONGO_BOOST_LOG << "Stopping replication storage threads";
     _taskExecutor->shutdown();
     _oplogApplierTaskExecutor->shutdown();
 
@@ -782,7 +782,7 @@ void ReplicationCoordinatorExternalStateImpl::_shardingOnTransitionToPrimaryHook
         auto status = ShardingState::get(opCtx)->updateShardIdentityConfigString(
             opCtx, configsvrConnStr.toString());
         if (!status.isOK()) {
-            warning() << "error encountered while trying to update config connection string to "
+            MONGO_BOOST_WARNING << "error encountered while trying to update config connection string to "
                       << configsvrConnStr << causedBy(status);
         }
 
@@ -878,7 +878,7 @@ void ReplicationCoordinatorExternalStateImpl::notifyOplogMetadataWaiters(
                 _taskExecutor.get(),
                 [committedOpTime, reaper](const executor::TaskExecutor::CallbackArgs& args) {
                     if (MONGO_FAIL_POINT(dropPendingCollectionReaperHang)) {
-                        log() << "fail point dropPendingCollectionReaperHang enabled. "
+                        MONGO_BOOST_LOG << "fail point dropPendingCollectionReaperHang enabled. "
                                  "Blocking until fail point is disabled. "
                                  "committedOpTime: "
                               << committedOpTime;

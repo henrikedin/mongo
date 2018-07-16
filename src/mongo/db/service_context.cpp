@@ -93,7 +93,7 @@ ServiceContext::ServiceContext()
 ServiceContext::~ServiceContext() {
     stdx::lock_guard<stdx::mutex> lk(_mutex);
     for (const auto& client : _clients) {
-        severe() << "Client " << client->desc() << " still exists while destroying ServiceContext@"
+        MONGO_BOOST_SEVERE << "Client " << client->desc() << " still exists while destroying ServiceContext@"
                  << static_cast<void*>(this);
     }
     invariant(_clients.empty());

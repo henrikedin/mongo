@@ -62,7 +62,7 @@ class TransportLayerASIO::BatonASIO : public Baton {
     struct EventFDHolder {
         EventFDHolder() : fd(::eventfd(0, EFD_CLOEXEC)) {
             if (fd < 0) {
-                severe() << "error in eventfd: " << errnoWithDescription(errno);
+                MONGO_BOOST_SEVERE << "error in eventfd: " << errnoWithDescription(errno);
                 fassertFailed(50833);
             }
         }
@@ -294,7 +294,7 @@ public:
 
             // If poll failed, it better be in EINTR
             if (rval < 0 && errno != EINTR) {
-                severe() << "error in poll: " << errnoWithDescription(errno);
+                MONGO_BOOST_SEVERE << "error in poll: " << errnoWithDescription(errno);
                 fassertFailed(50834);
             }
 

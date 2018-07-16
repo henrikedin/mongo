@@ -92,7 +92,7 @@ public:
     void scheduleNetworkResponse(std::string cmdName, const BSONObj& obj) {
         NetworkInterfaceMock* net = getNet();
         if (!net->hasReadyRequests()) {
-            log() << "The network doesn't have a request to process for this response: " << obj;
+            MONGO_BOOST_LOG << "The network doesn't have a request to process for this response: " << obj;
         }
         verifyNextRequestCommandName(cmdName);
         scheduleNetworkResponse(net->getNextReadyRequest(), obj);
@@ -109,7 +109,7 @@ public:
     void scheduleNetworkResponse(std::string cmdName, Status errorStatus) {
         NetworkInterfaceMock* net = getNet();
         if (!getNet()->hasReadyRequests()) {
-            log() << "The network doesn't have a request to process for the error: " << errorStatus;
+            MONGO_BOOST_LOG << "The network doesn't have a request to process for the error: " << errorStatus;
         }
         verifyNextRequestCommandName(cmdName);
         net->scheduleResponse(net->getNextReadyRequest(), net->now(), errorStatus);
@@ -128,9 +128,9 @@ public:
     void finishProcessingNetworkResponse() {
         getNet()->runReadyNetworkOperations();
         if (getNet()->hasReadyRequests()) {
-            log() << "The network has unexpected requests to process, next req:";
+            MONGO_BOOST_LOG << "The network has unexpected requests to process, next req:";
             NetworkInterfaceMock::NetworkOperation req = *getNet()->getNextReadyRequest();
-            log() << req.getDiagnosticString();
+            MONGO_BOOST_LOG << req.getDiagnosticString();
         }
         ASSERT_FALSE(getNet()->hasReadyRequests());
     }
@@ -175,7 +175,7 @@ protected:
                 // Get collection info from map.
                 const auto collInfo = &_collections[nss];
                 if (collInfo->stats.initCalled) {
-                    log() << "reusing collection during test which may cause problems, ns:" << nss;
+                    MONGO_BOOST_LOG << "reusing collection during test which may cause problems, ns:" << nss;
                 }
                 (collInfo->loader = new CollectionBulkLoaderMock(&collInfo->stats))
                     ->init(secondaryIndexSpecs)
@@ -232,14 +232,14 @@ protected:
             if (responses[processedRequests].first != "" &&
                 !cmdName.equalCaseInsensitive(expectedName)) {
                 // Error, wrong response for request name
-                log() << "ERROR: expected " << expectedName
+                MONGO_BOOST_LOG << "ERROR: expected " << expectedName
                       << " but the request was: " << noi->getRequest().cmdObj;
             }
 
             // process fixed set of responses
-            log() << "Sending response for network request:";
-            log() << "     req: " << noi->getRequest().dbname << "." << noi->getRequest().cmdObj;
-            log() << "     resp:" << responses[processedRequests].second;
+            MONGO_BOOST_LOG << "Sending response for network request:";
+            MONGO_BOOST_LOG << "     req: " << noi->getRequest().dbname << "." << noi->getRequest().cmdObj;
+            MONGO_BOOST_LOG << "     resp:" << responses[processedRequests].second;
             net->scheduleResponse(noi,
                                   net->now(),
                                   RemoteCommandResponse(responses[processedRequests].second,
@@ -248,14 +248,14 @@ protected:
 
             if ((Date_t::now() - lastLog) > Seconds(1)) {
                 lastLog = Date_t();
-                log() << net->getDiagnosticString();
+                MONGO_BOOST_LOG << net->getDiagnosticString();
                 net->logQueues();
             }
             net->runReadyNetworkOperations();
 
             guard.dismiss();
             if (++processedRequests >= expectedResponses) {
-                log() << "done processing expected requests ";
+                MONGO_BOOST_LOG << "done processing expected requests ";
                 break;  // once we have processed all requests, continue;
             }
         }
@@ -267,10 +267,10 @@ protected:
         NetworkGuard guard(net);
         if (net->hasReadyRequests()) {
             // Error.
-            log() << "There are unexpected requests left:";
+            MONGO_BOOST_LOG << "There are unexpected requests left:";
             while (net->hasReadyRequests()) {
                 auto noi = net->getNextReadyRequest();
-                log() << "cmd: " << noi->getRequest().cmdObj.toString();
+                MONGO_BOOST_LOG << "cmd: " << noi->getRequest().cmdObj.toString();
             }
             return {ErrorCodes::CommandFailed, "There were unprocessed requests."};
         }
@@ -290,7 +290,7 @@ protected:
                                [](const BSONObj&) { return true; },
                                [&](const Status& status) {
                                    UniqueLock lk(mutex);
-                                   log() << "setting result to " << status;
+                                   MONGO_BOOST_LOG << "setting result to " << status;
                                    done = true;
                                    result = status;
                                    cvDone.notify_all();
@@ -405,7 +405,7 @@ TEST_F(DBsClonerTest, StartupReturnsListDatabasesScheduleErrorButDoesNotInvokeCo
                            HostAndPort{"local:1234"},
                            [](const BSONObj&) { return true; },
                            [&result](const Status& status) {
-                               log() << "setting result to " << status;
+                               MONGO_BOOST_LOG << "setting result to " << status;
                                result = status;
                            }};
 
@@ -425,7 +425,7 @@ TEST_F(DBsClonerTest, StartupReturnsShuttingDownInProgressAfterShutdownIsCalled)
                            HostAndPort{"local:1234"},
                            [](const BSONObj&) { return true; },
                            [&result](const Status& status) {
-                               log() << "setting result to " << status;
+                               MONGO_BOOST_LOG << "setting result to " << status;
                                result = status;
                            }};
     ON_BLOCK_EXIT([this] { getExecutor().shutdown(); });
@@ -446,7 +446,7 @@ TEST_F(DBsClonerTest, StartupReturnsInternalErrorAfterSuccessfulStartup) {
                            HostAndPort{"local:1234"},
                            [](const BSONObj&) { return true; },
                            [&result](const Status& status) {
-                               log() << "setting result to " << status;
+                               MONGO_BOOST_LOG << "setting result to " << status;
                                result = status;
                            }};
     ON_BLOCK_EXIT([this] { getExecutor().shutdown(); });
@@ -547,7 +547,7 @@ TEST_F(DBsClonerTest, FailsOnListDatabases) {
                            HostAndPort{"local:1234"},
                            [](const BSONObj&) { return true; },
                            [&result](const Status& status) {
-                               log() << "setting result to " << status;
+                               MONGO_BOOST_LOG << "setting result to " << status;
                                result = status;
                            }};
 
@@ -598,7 +598,7 @@ TEST_F(DBsClonerTest, DatabasesClonerReturnsCallbackCanceledIfShutdownDuringList
                            HostAndPort{"local:1234"},
                            [](const BSONObj&) { return true; },
                            [&result](const Status& status) {
-                               log() << "setting result to " << status;
+                               MONGO_BOOST_LOG << "setting result to " << status;
                                result = status;
                            }};
 
@@ -634,7 +634,7 @@ TEST_F(DBsClonerTest, DatabasesClonerResetsOnFinishCallbackFunctionAfterCompleti
                            HostAndPort{"local:1234"},
                            [](const BSONObj&) { return true; },
                            [&result, sharedCallbackData](const Status& status) {
-                               log() << "setting result to " << status;
+                               MONGO_BOOST_LOG << "setting result to " << status;
                                result = status;
                            }};
 
@@ -667,7 +667,7 @@ TEST_F(DBsClonerTest, DatabasesClonerResetsOnFinishCallbackFunctionAfterCompleti
                            HostAndPort{"local:1234"},
                            [](const BSONObj&) { return true; },
                            [&result, sharedCallbackData](const Status& status) {
-                               log() << "setting result to " << status;
+                               MONGO_BOOST_LOG << "setting result to " << status;
                                result = status;
                            }};
 
@@ -696,7 +696,7 @@ TEST_F(DBsClonerTest, FailsOnListCollectionsOnOnlyDatabase) {
                            HostAndPort{"local:1234"},
                            [](const BSONObj&) { return true; },
                            [&result](const Status& status) {
-                               log() << "setting result to " << status;
+                               MONGO_BOOST_LOG << "setting result to " << status;
                                result = status;
                            }};
 
@@ -726,7 +726,7 @@ TEST_F(DBsClonerTest, FailsOnListCollectionsOnFirstOfTwoDatabases) {
                            HostAndPort{"local:1234"},
                            [](const BSONObj&) { return true; },
                            [&result](const Status& status) {
-                               log() << "setting result to " << status;
+                               MONGO_BOOST_LOG << "setting result to " << status;
                                result = status;
                            }};
 
@@ -785,7 +785,7 @@ TEST_F(DBsClonerTest, FailingToScheduleSecondDatabaseClonerShouldCancelTheCloner
                            HostAndPort{"local:1234"},
                            [](const BSONObj&) { return true; },
                            [&result](const Status& status) {
-                               log() << "setting result to " << status;
+                               MONGO_BOOST_LOG << "setting result to " << status;
                                result = status;
                            }};
 
@@ -830,7 +830,7 @@ TEST_F(DBsClonerTest, DatabaseClonerChecksAdminDbUsingStorageInterfaceAfterCopyi
                            HostAndPort{"local:1234"},
                            [](const BSONObj&) { return true; },
                            [&result](const Status& status) {
-                               log() << "setting result to " << status;
+                               MONGO_BOOST_LOG << "setting result to " << status;
                                result = status;
                            }};
 
@@ -871,7 +871,7 @@ TEST_F(DBsClonerTest, AdminDbValidationErrorShouldAbortTheCloner) {
                            HostAndPort{"local:1234"},
                            [](const BSONObj&) { return true; },
                            [&result](const Status& status) {
-                               log() << "setting result to " << status;
+                               MONGO_BOOST_LOG << "setting result to " << status;
                                result = status;
                            }};
 

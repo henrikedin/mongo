@@ -63,10 +63,10 @@ public:
         if (!out.good()) {
             auto errAndStr = errnoAndDescription();
             if (errAndStr.first == 0) {
-                log() << "ERROR: Cannot write pid file to " << path.string()
+                MONGO_BOOST_LOG << "ERROR: Cannot write pid file to " << path.string()
                       << ": Unable to determine OS error";
             } else {
-                log() << "ERROR: Cannot write pid file to " << path.string() << ": "
+                MONGO_BOOST_LOG << "ERROR: Cannot write pid file to " << path.string() << ": "
                       << errAndStr.second;
             }
         } else {
@@ -77,7 +77,7 @@ public:
                     boost::filesystem::group_read | boost::filesystem::others_read,
                 ec);
             if (ec) {
-                log() << "Could not set permissions on pid file " << path.string() << ": "
+                MONGO_BOOST_LOG << "Could not set permissions on pid file " << path.string() << ": "
                       << ec.message();
                 return false;
             }

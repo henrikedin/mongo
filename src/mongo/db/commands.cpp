@@ -412,7 +412,7 @@ void CommandInvocation::checkAuthorization(OperationContext* opCtx,
             }
         }
     } catch (const DBException& e) {
-        log(LogComponent::kAccessControl) << e.toStatus();
+        MONGO_BOOST_LOG_COMPONENT(LogComponent::kAccessControl) << e.toStatus();
         CommandHelpers::auditLogAuthEvent(opCtx, this, request, e.code());
         throw;
     }

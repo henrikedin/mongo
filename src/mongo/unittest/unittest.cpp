@@ -246,11 +246,11 @@ void Test::stopCapturingLogMessages() {
     _isCapturingLogMessages = false;
 }
 void Test::printCapturedLogLines() const {
-    log() << "****************************** Captured Lines (start) *****************************";
+    MONGO_BOOST_LOG << "****************************** Captured Lines (start) *****************************";
     for (const auto& line : getCapturedLogMessages()) {
-        log() << line;
+        MONGO_BOOST_LOG << line;
     }
-    log() << "****************************** Captured Lines (end) ******************************";
+    MONGO_BOOST_LOG << "****************************** Captured Lines (end) ******************************";
 }
 
 int64_t Test::countLogLinesContaining(const std::string& needle) {
@@ -298,7 +298,7 @@ Result* Suite::run(const std::string& filter, int runsPerTest) {
                 if (runsPerTest > 1) {
                     runTimes << "  (" << x + 1 << "/" << runsPerTest << ")";
                 }
-                log() << "\t going to run test: " << tc->getName() << runTimes.str();
+                MONGO_BOOST_LOG << "\t going to run test: " << tc->getName() << runTimes.str();
                 tc->run();
             }
             passes = true;
@@ -314,7 +314,7 @@ Result* Suite::run(const std::string& filter, int runsPerTest) {
 
         if (!passes) {
             std::string s = err.str();
-            log() << "FAIL: " << s;
+            MONGO_BOOST_LOG << "FAIL: " << s;
             r->_fails.push_back(tc->getName());
             r->_messages.push_back(s);
         }
@@ -325,20 +325,20 @@ Result* Suite::run(const std::string& filter, int runsPerTest) {
 
     r->_millis = timer.millis();
 
-    log() << "\t DONE running tests" << std::endl;
+    MONGO_BOOST_LOG << "\t DONE running tests" << std::endl;
 
     return r;
 }
 
 int Suite::run(const std::vector<std::string>& suites, const std::string& filter, int runsPerTest) {
     if (_allSuites().empty()) {
-        log() << "error: no suites registered.";
+        MONGO_BOOST_LOG << "error: no suites registered.";
         return EXIT_FAILURE;
     }
 
     for (unsigned int i = 0; i < suites.size(); i++) {
         if (_allSuites().count(suites[i]) == 0) {
-            log() << "invalid test suite [" << suites[i] << "], use --list to see valid names"
+            MONGO_BOOST_LOG << "invalid test suite [" << suites[i] << "], use --list to see valid names"
                   << std::endl;
             return EXIT_FAILURE;
         }
@@ -358,11 +358,11 @@ int Suite::run(const std::vector<std::string>& suites, const std::string& filter
         std::shared_ptr<Suite>& s = _allSuites()[name];
         fassert(16145, s != NULL);
 
-        log() << "going to run suite: " << name << std::endl;
+        MONGO_BOOST_LOG << "going to run suite: " << name << std::endl;
         results.emplace_back(s->run(filter, runsPerTest));
     }
 
-    log() << "**************************************************" << std::endl;
+    MONGO_BOOST_LOG << "**************************************************" << std::endl;
 
     int rc = 0;
 
@@ -375,7 +375,7 @@ int Suite::run(const std::vector<std::string>& suites, const std::string& filter
 
     Result::cur = NULL;
     for (const auto& r : results) {
-        log() << r->toString();
+        MONGO_BOOST_LOG << r->toString();
         if (abs(r->rc()) > abs(rc))
             rc = r->rc();
 
@@ -395,18 +395,18 @@ int Suite::run(const std::vector<std::string>& suites, const std::string& filter
     totals._asserts = asserts;
     totals._millis = millis;
 
-    log() << totals.toString();  // includes endl
+    MONGO_BOOST_LOG << totals.toString();  // includes endl
 
     // summary
     if (!totals._fails.empty()) {
-        log() << "Failing tests:" << std::endl;
+        MONGO_BOOST_LOG << "Failing tests:" << std::endl;
         for (const std::string& s : totals._fails) {
-            log() << "\t " << s << " Failed";
+            MONGO_BOOST_LOG << "\t " << s << " Failed";
         }
-        log() << "FAILURE - " << totals._fails.size() << " tests in " << failedSuites.size()
+        MONGO_BOOST_LOG << "FAILURE - " << totals._fails.size() << " tests in " << failedSuites.size()
               << " suites failed";
     } else {
-        log() << "SUCCESS - All tests in all suites passed";
+        MONGO_BOOST_LOG << "SUCCESS - All tests in all suites passed";
     }
 
     return rc;
@@ -469,7 +469,7 @@ TestAssertionFailure::~TestAssertionFailure() noexcept(false) {
     if (!_stream.str().empty()) {
         _exception.setMessage(_exception.getMessage() + " " + _stream.str());
     }
-    error() << "Throwing exception: " << _exception;
+    MONGO_BOOST_ERROR << "Throwing exception: " << _exception;
     throw _exception;
 }
 

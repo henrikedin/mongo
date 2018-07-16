@@ -160,7 +160,7 @@ inline std::ostream& operator<<(std::ostream& stream, const boost::optional<Reco
 }
 
 inline logger::LogstreamBuilder& operator<<(logger::LogstreamBuilder& stream, const RecordId& id) {
-    stream.stream() << id;
+	BOOST_LOG_TRIVIAL(info) << id;
     return stream;
 }
 }  // namespace mongo

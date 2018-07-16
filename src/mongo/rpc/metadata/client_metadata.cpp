@@ -435,7 +435,7 @@ const BSONObj& ClientMetadata::getDocument() const {
 
 void ClientMetadata::logClientMetadata(Client* client) const {
     invariant(!getDocument().isEmpty());
-    log() << "received client metadata from " << client->getRemote().toString() << " "
+    MONGO_BOOST_LOG << "received client metadata from " << client->getRemote().toString() << " "
           << client->desc() << ": " << getDocument();
 }
 

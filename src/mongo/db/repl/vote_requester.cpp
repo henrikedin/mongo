@@ -105,7 +105,7 @@ std::vector<RemoteCommandRequest> VoteRequester::Algorithm::getRequests() const 
 
 void VoteRequester::Algorithm::processResponse(const RemoteCommandRequest& request,
                                                const RemoteCommandResponse& response) {
-    auto logLine = log();
+	std::stringstream logLine;
     logLine << "VoteRequester(term " << _term << (_dryRun ? " dry run" : "") << ") ";
     _responsesProcessed++;
     if (!response.isOK()) {  // failed response
@@ -144,6 +144,7 @@ void VoteRequester::Algorithm::processResponse(const RemoteCommandRequest& reque
         _staleTerm = true;
     }
     logLine << "; response message: " << response.data;
+	MONGO_BOOST_LOG << logLine.str();
 }
 
 bool VoteRequester::Algorithm::hasReceivedSufficientResponses() const {

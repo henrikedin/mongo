@@ -201,7 +201,7 @@ Status OperationContext::checkForInterruptNoAssert() {
 
     MONGO_FAIL_POINT_BLOCK(checkForInterruptFail, scopedFailPoint) {
         if (opShouldFail(getClient(), scopedFailPoint.getData())) {
-            log() << "set pending kill on op " << getOpID() << ", for checkForInterruptFail";
+            MONGO_BOOST_LOG << "set pending kill on op " << getOpID() << ", for checkForInterruptFail";
             markKilled();
         }
     }

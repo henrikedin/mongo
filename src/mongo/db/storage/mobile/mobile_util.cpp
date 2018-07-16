@@ -134,7 +134,7 @@ void checkStatus(int retStatus, int desiredStatus, const char* fnName, const cha
             s << "------ Error Message: " << errMsg;
         }
 
-        severe() << s.str();
+        MONGO_BOOST_SEVERE << s.str();
         fassertFailed(37000);
     }
 }
@@ -143,7 +143,7 @@ void checkStatus(int retStatus, int desiredStatus, const char* fnName, const cha
  * Helper to add and log errors for validate.
  */
 void validateLogAndAppendError(ValidateResults* results, const std::string& errMsg) {
-    error() << "validate found error: " << errMsg;
+    MONGO_BOOST_ERROR << "validate found error: " << errMsg;
     results->errors.push_back(errMsg);
     results->valid = false;
 }

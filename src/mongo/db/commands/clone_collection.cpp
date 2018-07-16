@@ -144,7 +144,7 @@ public:
         BSONElement copyIndexesSpec = cmdObj.getField("copyindexes");
         bool copyIndexes = copyIndexesSpec.isBoolean() ? copyIndexesSpec.boolean() : true;
 
-        log() << "cloneCollection.  collection: " << ns << " from: " << fromhost
+        MONGO_BOOST_LOG << "cloneCollection.  collection: " << ns << " from: " << fromhost
               << " query: " << redact(query) << " " << (copyIndexes ? "" : ", not copying indexes");
 
         Cloner cloner;

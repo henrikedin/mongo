@@ -312,7 +312,7 @@ void ServiceStateMachine::_sourceCallback(Status status) {
         LOG(2) << "Session from " << remote << " was closed internally during SourceMessage";
         _state.store(State::EndSession);
     } else {
-        log() << "Error receiving request from client: " << status << ". Ending connection from "
+        MONGO_BOOST_LOG << "Error receiving request from client: " << status << ". Ending connection from "
               << remote << " (connection id: " << _session()->id() << ")";
         _state.store(State::EndSession);
     }
@@ -335,7 +335,7 @@ void ServiceStateMachine::_sinkCallback(Status status) {
     // Otherwise, update the current state depending on whether we're in exhaust or not, and call
     // scheduleNext() to unwind the stack and do the next step.
     if (!status.isOK()) {
-        log() << "Error sending response to client: " << status << ". Ending connection from "
+        MONGO_BOOST_LOG << "Error sending response to client: " << status << ". Ending connection from "
               << _session()->remote() << " (connection id: " << _session()->id() << ")";
         _state.store(State::EndSession);
         return _runNextInGuard(std::move(guard));
@@ -448,9 +448,9 @@ void ServiceStateMachine::_runNextInGuard(ThreadGuard guard) {
         return;
     } catch (const DBException& e) {
         // must be right above std::exception to avoid catching subclasses
-        log() << "DBException handling request, closing client connection: " << redact(e);
+        MONGO_BOOST_LOG << "DBException handling request, closing client connection: " << redact(e);
     } catch (const std::exception& e) {
-        error() << "Uncaught std::exception: " << e.what() << ", terminating";
+        MONGO_BOOST_ERROR << "Uncaught std::exception: " << e.what() << ", terminating";
         quickExit(EXIT_UNCAUGHT);
     }
 
@@ -510,7 +510,7 @@ void ServiceStateMachine::terminateIfTagsDontMatch(transport::Session::TagMask t
     // If terminateIfTagsDontMatch gets called when we still are 'pending' where no tags have been
     // set, then skip the termination check.
     if ((sessionTags & tags) || (sessionTags & transport::Session::kPending)) {
-        log() << "Skip closing connection for connection # " << _session()->id();
+        MONGO_BOOST_LOG << "Skip closing connection for connection # " << _session()->id();
         return;
     }
 
@@ -528,7 +528,7 @@ ServiceStateMachine::State ServiceStateMachine::state() {
 
 void ServiceStateMachine::_terminateAndLogIfError(Status status) {
     if (!status.isOK()) {
-        warning(logger::LogComponent::kExecutor) << "Terminating session due to error: " << status;
+		MONGO_BOOST_WARNING_COMPONENT(logger::LogComponent::kExecutor) << "Terminating session due to error: " << status;
         terminate();
     }
 }

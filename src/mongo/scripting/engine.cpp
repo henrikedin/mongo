@@ -131,7 +131,7 @@ bool Scope::execFile(const string& filename, bool printResult, bool reportError,
     boost::filesystem::path p(filename);
 #endif
     if (!exists(p)) {
-        error() << "file [" << filename << "] doesn't exist";
+        MONGO_BOOST_ERROR << "file [" << filename << "] doesn't exist";
         return false;
     }
 
@@ -150,7 +150,7 @@ bool Scope::execFile(const string& filename, bool printResult, bool reportError,
         }
 
         if (empty) {
-            error() << "directory [" << filename << "] doesn't have any *.js files";
+            MONGO_BOOST_ERROR << "directory [" << filename << "] doesn't have any *.js files";
             return false;
         }
 
@@ -165,7 +165,7 @@ bool Scope::execFile(const string& filename, bool printResult, bool reportError,
 
     fileofs fo = f.len();
     if (fo > kMaxJsFileLength) {
-        warning() << "attempted to execute javascript file larger than 2GB";
+        MONGO_BOOST_WARNING << "attempted to execute javascript file larger than 2GB";
         return false;
     }
     unsigned len = static_cast<unsigned>(fo);
@@ -250,7 +250,7 @@ void Scope::loadStored(OperationContext* opCtx, bool ignoreNotConnected) {
                 throw;
             }
 
-            error() << "unable to load stored JavaScript function " << n.valuestr()
+            MONGO_BOOST_ERROR << "unable to load stored JavaScript function " << n.valuestr()
                     << "(): " << redact(setElemEx);
         }
     }
@@ -331,7 +331,7 @@ public:
 
         if (scope->hasOutOfMemoryException()) {
             // make some room
-            log() << "Clearing all idle JS contexts due to out of memory";
+            MONGO_BOOST_LOG << "Clearing all idle JS contexts due to out of memory";
             _pools.clear();
             return;
         }

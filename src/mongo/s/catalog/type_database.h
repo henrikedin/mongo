@@ -120,4 +120,8 @@ private:
     DatabaseVersion _version;
 };
 
+inline std::ostream& operator<<(std::ostream& s, const DatabaseType& dt) {
+	return (s << dt.toString());
+}
+
 }  // namespace mongo

@@ -213,7 +213,7 @@ bool initShardVersionEmptyNS(OperationContext* opCtx, DBClientBase* conn_in) {
         // connections are used.
 
         OCCASIONALLY {
-            warning() << "failed to initialize new replica set connection version, "
+            MONGO_BOOST_WARNING << "failed to initialize new replica set connection version, "
                       << "will initialize on first use";
         }
 
@@ -394,7 +394,7 @@ bool checkShardVersion(OperationContext* opCtx,
 
     string errmsg = str::stream() << "setShardVersion failed shard: " << shard->toString() << " "
                                   << result;
-    log() << "     " << errmsg;
+    MONGO_BOOST_LOG << "     " << errmsg;
     massert(10429, errmsg, 0);
     return true;
 }

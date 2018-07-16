@@ -659,7 +659,7 @@ bool isInterestingDisk(const boost::filesystem::path& path) {
     }
 
     if (ec) {
-        warning() << "Error checking directory '" << blockDevicePath.generic_string()
+        MONGO_BOOST_WARNING << "Error checking directory '" << blockDevicePath.generic_string()
                   << "': " << ec.message();
         return false;
     }
@@ -679,13 +679,13 @@ std::vector<std::string> findPhysicalDisks(StringData sysBlockPath) {
 
     auto statusSysBlock = boost::filesystem::status(sysBlockPathStr, ec);
     if (ec) {
-        warning() << "Error checking directory '" << sysBlockPathStr << "': " << ec.message();
+        MONGO_BOOST_WARNING << "Error checking directory '" << sysBlockPathStr << "': " << ec.message();
         return {};
     }
 
     if (!(boost::filesystem::exists(statusSysBlock) &&
           boost::filesystem::is_directory(statusSysBlock))) {
-        warning() << "Could not find directory '" << sysBlockPathStr << "': " << ec.message();
+        MONGO_BOOST_WARNING << "Could not find directory '" << sysBlockPathStr << "': " << ec.message();
         return {};
     }
 
@@ -696,7 +696,7 @@ std::vector<std::string> findPhysicalDisks(StringData sysBlockPath) {
     // disk device. It does not contain disk partitions.
     boost::filesystem::directory_iterator di(sysBlockPathStr, ec);
     if (ec) {
-        warning() << "Error getting directory iterator '" << sysBlockPathStr
+        MONGO_BOOST_WARNING << "Error getting directory iterator '" << sysBlockPathStr
                   << "': " << ec.message();
         return {};
     }

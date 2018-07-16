@@ -322,7 +322,7 @@ TEST_F(ReplCoordHBV1Test,
     enterNetwork();
     const NetworkInterfaceMock::NetworkOperationIterator noi = getNet()->getNextReadyRequest();
     const RemoteCommandRequest& request = noi->getRequest();
-    log() << request.target.toString() << " processing " << request.cmdObj;
+    MONGO_BOOST_LOG << request.target.toString() << " processing " << request.cmdObj;
     getNet()->scheduleResponse(noi,
                                getNet()->now(),
                                makeResponseStatus(BSON("ok" << 0.0 << "errmsg"
@@ -332,7 +332,7 @@ TEST_F(ReplCoordHBV1Test,
 
     if (request.target != HostAndPort("node2", 12345) &&
         request.cmdObj.firstElement().fieldNameStringData() != "replSetHeartbeat") {
-        error() << "Black holing unexpected request to " << request.target << ": "
+        MONGO_BOOST_ERROR << "Black holing unexpected request to " << request.target << ": "
                 << request.cmdObj;
         getNet()->blackHole(noi);
     }
@@ -394,10 +394,10 @@ TEST_F(ReplCoordHBV1Test, IgnoreTheContentsOfMetadataWhenItsReplicaSetIdDoesNotM
         const RemoteCommandRequest& request = noi->getRequest();
         if (request.target == host2 &&
             request.cmdObj.firstElement().fieldNameStringData() == "replSetHeartbeat") {
-            log() << request.target.toString() << " processing " << request.cmdObj;
+            MONGO_BOOST_LOG << request.target.toString() << " processing " << request.cmdObj;
             net->scheduleResponse(noi, net->now(), heartbeatResponse);
         } else {
-            log() << "blackholing request to " << request.target.toString() << ": "
+            MONGO_BOOST_LOG << "blackholing request to " << request.target.toString() << ": "
                   << request.cmdObj;
             net->blackHole(noi);
         }
@@ -412,7 +412,7 @@ TEST_F(ReplCoordHBV1Test, IgnoreTheContentsOfMetadataWhenItsReplicaSetIdDoesNotM
     ASSERT_OK(getReplCoord()->processReplSetGetStatus(
         &statusBuilder, ReplicationCoordinator::ReplSetGetStatusResponseStyle::kBasic));
     auto statusObj = statusBuilder.obj();
-    unittest::log() << "replica set status = " << statusObj;
+    unittest::MONGO_BOOST_LOG << "replica set status = " << statusObj;
 
     ASSERT_EQ(mongo::Array, statusObj["members"].type());
     auto members = statusObj["members"].Array();

@@ -67,7 +67,7 @@ bool MemberData::setUpValues(Date_t now, ReplSetHeartbeatResponse&& hbResponse) 
     }
     // Log if the state changes
     if (_lastResponse.getState() != hbResponse.getState()) {
-        log() << "Member " << _hostAndPort.toString() << " is now in state "
+        MONGO_BOOST_LOG << "Member " << _hostAndPort.toString() << " is now in state "
               << hbResponse.getState().toString() << rsLog;
     }
 
@@ -86,7 +86,7 @@ void MemberData::setDownValues(Date_t now, const std::string& heartbeatMessage) 
     _updatedSinceRestart = true;
 
     if (_lastResponse.getState() != MemberState::RS_DOWN) {
-        log() << "Member " << _hostAndPort.toString() << " is now in state RS_DOWN" << rsLog;
+        MONGO_BOOST_LOG << "Member " << _hostAndPort.toString() << " is now in state RS_DOWN" << rsLog;
     }
 
     _lastResponse = ReplSetHeartbeatResponse();
@@ -108,7 +108,7 @@ void MemberData::setAuthIssue(Date_t now) {
     _updatedSinceRestart = true;
 
     if (_lastResponse.getState() != MemberState::RS_UNKNOWN) {
-        log() << "Member " << _hostAndPort.toString()
+        MONGO_BOOST_LOG << "Member " << _hostAndPort.toString()
               << " is now in state RS_UNKNOWN due to authentication issue." << rsLog;
     }
 
@@ -132,7 +132,7 @@ void MemberData::setLastDurableOpTime(OpTime opTime, Date_t now) {
     if (_lastAppliedOpTime < opTime) {
         // TODO(russotto): We think this should never happen, rollback or no rollback.  Make this an
         // invariant and see what happens.
-        log() << "Durable progress (" << opTime << ") is ahead of the applied progress ("
+        MONGO_BOOST_LOG << "Durable progress (" << opTime << ") is ahead of the applied progress ("
               << _lastAppliedOpTime << ". This is likely due to a "
                                        "rollback."
               << " memberid: " << _memberId << _hostAndPort.toString()

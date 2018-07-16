@@ -63,7 +63,7 @@ public:
     virtual StorageEngine* create(const StorageGlobalParams& params,
                                   const StorageEngineLockFile* lockFile) const {
         if (lockFile && lockFile->createdByUncleanShutdown()) {
-            warning() << "Recovering data from the last clean checkpoint.";
+            MONGO_BOOST_WARNING << "Recovering data from the last clean checkpoint.";
         }
 
 #if defined(__linux__)
@@ -75,11 +75,11 @@ public:
             int ret = statfs(params.dbpath.c_str(), &fs_stats);
 
             if (ret == 0 && fs_stats.f_type == EXT4_SUPER_MAGIC) {
-                log() << startupWarningsLog;
-                log() << "** WARNING: Using the XFS filesystem is strongly recommended with the "
+                MONGO_BOOST_LOG << startupWarningsLog;
+                MONGO_BOOST_LOG << "** WARNING: Using the XFS filesystem is strongly recommended with the "
                          "WiredTiger storage engine"
                       << startupWarningsLog;
-                log() << "**          See "
+                MONGO_BOOST_LOG << "**          See "
                          "http://dochub.mongodb.org/core/prodnotes-filesystem"
                       << startupWarningsLog;
             }
@@ -91,11 +91,11 @@ public:
         ProcessInfo p;
         if (p.supported()) {
             if (cacheMB > memoryThresholdPercentage * p.getMemSizeMB()) {
-                log() << startupWarningsLog;
-                log() << "** WARNING: The configured WiredTiger cache size is more than "
+                MONGO_BOOST_LOG << startupWarningsLog;
+                MONGO_BOOST_LOG << "** WARNING: The configured WiredTiger cache size is more than "
                       << memoryThresholdPercentage * 100 << "% of available RAM."
                       << startupWarningsLog;
-                log() << "**          See "
+                MONGO_BOOST_LOG << "**          See "
                          "http://dochub.mongodb.org/core/faq-memory-diagnostics-wt"
                       << startupWarningsLog;
             }

@@ -218,7 +218,7 @@ executor::RemoteCommandResponse ReplCoordTest::makeResponseStatus(const BSONObj&
 executor::RemoteCommandResponse ReplCoordTest::makeResponseStatus(const BSONObj& doc,
                                                                   const BSONObj& metadata,
                                                                   Milliseconds millis) {
-    log() << "Responding with " << doc << " (metadata: " << metadata << "; elapsed: " << millis
+    MONGO_BOOST_LOG << "Responding with " << doc << " (metadata: " << metadata << "; elapsed: " << millis
           << ")";
     return RemoteCommandResponse(doc, metadata, millis);
 }
@@ -231,7 +231,7 @@ void ReplCoordTest::simulateEnoughHeartbeatsForAllNodesUp() {
     for (int i = 0; i < rsConfig.getNumMembers() - 1; ++i) {
         const NetworkInterfaceMock::NetworkOperationIterator noi = net->getNextReadyRequest();
         const RemoteCommandRequest& request = noi->getRequest();
-        log() << request.target.toString() << " processing " << request.cmdObj;
+        MONGO_BOOST_LOG << request.target.toString() << " processing " << request.cmdObj;
         ReplSetHeartbeatArgsV1 hbArgs;
         if (hbArgs.initialize(request.cmdObj).isOK()) {
             ReplSetHeartbeatResponse hbResp;
@@ -242,7 +242,7 @@ void ReplCoordTest::simulateEnoughHeartbeatsForAllNodesUp() {
             BSONObjBuilder respObj;
             net->scheduleResponse(noi, net->now(), makeResponseStatus(hbResp.toBSON(true)));
         } else {
-            error() << "Black holing unexpected request to " << request.target << ": "
+            MONGO_BOOST_ERROR << "Black holing unexpected request to " << request.target << ": "
                     << request.cmdObj;
             net->blackHole(noi);
         }
@@ -259,11 +259,11 @@ void ReplCoordTest::simulateSuccessfulDryRun(
 
     auto electionTimeoutWhen = replCoord->getElectionTimeout_forTest();
     ASSERT_NOT_EQUALS(Date_t(), electionTimeoutWhen);
-    log() << "Election timeout scheduled at " << electionTimeoutWhen << " (simulator time)";
+    MONGO_BOOST_LOG << "Election timeout scheduled at " << electionTimeoutWhen << " (simulator time)";
 
     int voteRequests = 0;
     int votesExpected = rsConfig.getNumMembers() / 2;
-    log() << "Simulating dry run responses - expecting " << votesExpected
+    MONGO_BOOST_LOG << "Simulating dry run responses - expecting " << votesExpected
           << " replSetRequestVotes requests";
     net->enterNetwork();
     while (voteRequests < votesExpected) {
@@ -272,7 +272,7 @@ void ReplCoordTest::simulateSuccessfulDryRun(
         }
         const NetworkInterfaceMock::NetworkOperationIterator noi = net->getNextReadyRequest();
         const RemoteCommandRequest& request = noi->getRequest();
-        log() << request.target.toString() << " processing " << request.cmdObj;
+        MONGO_BOOST_LOG << request.target.toString() << " processing " << request.cmdObj;
         if (request.cmdObj.firstElement().fieldNameStringData() == "replSetRequestVotes") {
             ASSERT_TRUE(request.cmdObj.getBoolField("dryRun"));
             onDryRunRequest(request);
@@ -288,17 +288,17 @@ void ReplCoordTest::simulateSuccessfulDryRun(
         } else if (consumeHeartbeatV1(noi)) {
             // The heartbeat has been consumed.
         } else {
-            error() << "Black holing unexpected request to " << request.target << ": "
+            MONGO_BOOST_ERROR << "Black holing unexpected request to " << request.target << ": "
                     << request.cmdObj;
             net->blackHole(noi);
         }
         net->runReadyNetworkOperations();
     }
     net->exitNetwork();
-    log() << "Simulating dry run responses - scheduled " << voteRequests
+    MONGO_BOOST_LOG << "Simulating dry run responses - scheduled " << voteRequests
           << " replSetRequestVotes responses";
     getReplCoord()->waitForElectionDryRunFinish_forTest();
-    log() << "Simulating dry run responses - dry run completed";
+    MONGO_BOOST_LOG << "Simulating dry run responses - dry run completed";
 }
 
 void ReplCoordTest::simulateSuccessfulDryRun() {
@@ -309,7 +309,7 @@ void ReplCoordTest::simulateSuccessfulDryRun() {
 void ReplCoordTest::simulateSuccessfulV1Election() {
     auto electionTimeoutWhen = getReplCoord()->getElectionTimeout_forTest();
     ASSERT_NOT_EQUALS(Date_t(), electionTimeoutWhen);
-    log() << "Election timeout scheduled at " << electionTimeoutWhen << " (simulator time)";
+    MONGO_BOOST_LOG << "Election timeout scheduled at " << electionTimeoutWhen << " (simulator time)";
 
     simulateSuccessfulV1ElectionAt(electionTimeoutWhen);
 }
@@ -324,14 +324,14 @@ void ReplCoordTest::simulateSuccessfulV1ElectionWithoutExitingDrainMode(Date_t e
     // Process requests until we're primary and consume the heartbeats for the notification
     // of election win.
     while (!replCoord->getMemberState().primary() || hasReadyRequests) {
-        log() << "Waiting on network in state " << replCoord->getMemberState();
+        MONGO_BOOST_LOG << "Waiting on network in state " << replCoord->getMemberState();
         getNet()->enterNetwork();
         if (net->now() < electionTime) {
             net->runUntil(electionTime);
         }
         const NetworkInterfaceMock::NetworkOperationIterator noi = net->getNextReadyRequest();
         const RemoteCommandRequest& request = noi->getRequest();
-        log() << request.target.toString() << " processing " << request.cmdObj;
+        MONGO_BOOST_LOG << request.target.toString() << " processing " << request.cmdObj;
         ReplSetHeartbeatArgsV1 hbArgs;
         Status status = hbArgs.initialize(request.cmdObj);
         if (hbArgs.initialize(request.cmdObj).isOK()) {
@@ -354,7 +354,7 @@ void ReplCoordTest::simulateSuccessfulV1ElectionWithoutExitingDrainMode(Date_t e
                                                                << "voteGranted"
                                                                << true)));
         } else {
-            error() << "Black holing unexpected request to " << request.target << ": "
+            MONGO_BOOST_ERROR << "Black holing unexpected request to " << request.target << ": "
                     << request.cmdObj;
             net->blackHole(noi);
         }
@@ -462,7 +462,7 @@ void ReplCoordTest::simulateCatchUpAbort() {
         auto noi = net->getNextReadyRequest();
         auto request = noi->getRequest();
         // Black hole heartbeat requests caused by time advance.
-        log() << "Black holing request to " << request.target.toString() << " : " << request.cmdObj;
+        MONGO_BOOST_LOG << "Black holing request to " << request.target.toString() << " : " << request.cmdObj;
         net->blackHole(noi);
         if (net->now() < heartbeatTimeoutWhen) {
             net->runUntil(heartbeatTimeoutWhen);

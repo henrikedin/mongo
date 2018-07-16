@@ -120,7 +120,7 @@ public:
                                           << "' to shard '"
                                           << toString
                                           << "' because that shard does not exist");
-            log() << msg;
+            MONGO_BOOST_LOG << msg;
             uasserted(ErrorCodes::ShardNotFound, msg);
         }
 

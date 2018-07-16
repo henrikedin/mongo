@@ -75,14 +75,14 @@ AtomicBool DBException::traceExceptions(false);
 
 void DBException::traceIfNeeded(const DBException& e) {
     if (traceExceptions.load()) {
-        warning() << "DBException thrown" << causedBy(e) << std::endl;
+        MONGO_BOOST_WARNING << "DBException thrown" << causedBy(e) << std::endl;
         printStackTrace();
     }
 }
 
 NOINLINE_DECL void verifyFailed(const char* expr, const char* file, unsigned line) {
     assertionCount.condrollover(++assertionCount.regular);
-    error() << "Assertion failure " << expr << ' ' << file << ' ' << std::dec << line << std::endl;
+    MONGO_BOOST_ERROR << "Assertion failure " << expr << ' ' << file << ' ' << std::dec << line << std::endl;
     logContext();
     std::stringstream temp;
     temp << "assertion " << file << ":" << line;
@@ -90,7 +90,7 @@ NOINLINE_DECL void verifyFailed(const char* expr, const char* file, unsigned lin
     breakpoint();
 #if defined(MONGO_CONFIG_DEBUG_BUILD)
     // this is so we notice in buildbot
-    severe() << "\n\n***aborting after verify() failure as this is a debug/test build\n\n"
+    MONGO_BOOST_SEVERE << "\n\n***aborting after verify() failure as this is a debug/test build\n\n"
              << std::endl;
     std::abort();
 #endif
@@ -98,9 +98,9 @@ NOINLINE_DECL void verifyFailed(const char* expr, const char* file, unsigned lin
 }
 
 NOINLINE_DECL void invariantFailed(const char* expr, const char* file, unsigned line) noexcept {
-    severe() << "Invariant failure " << expr << ' ' << file << ' ' << std::dec << line << std::endl;
+    MONGO_BOOST_SEVERE << "Invariant failure " << expr << ' ' << file << ' ' << std::dec << line << std::endl;
     breakpoint();
-    severe() << "\n\n***aborting after invariant() failure\n\n" << std::endl;
+    MONGO_BOOST_SEVERE << "\n\n***aborting after invariant() failure\n\n" << std::endl;
     std::abort();
 }
 
@@ -108,10 +108,10 @@ NOINLINE_DECL void invariantFailedWithMsg(const char* expr,
                                           const std::string& msg,
                                           const char* file,
                                           unsigned line) noexcept {
-    severe() << "Invariant failure " << expr << " " << msg << " " << file << ' ' << std::dec << line
+    MONGO_BOOST_SEVERE << "Invariant failure " << expr << " " << msg << " " << file << ' ' << std::dec << line
              << std::endl;
     breakpoint();
-    severe() << "\n\n***aborting after invariant() failure\n\n" << std::endl;
+    MONGO_BOOST_SEVERE << "\n\n***aborting after invariant() failure\n\n" << std::endl;
     std::abort();
 }
 
@@ -119,10 +119,10 @@ NOINLINE_DECL void invariantOKFailed(const char* expr,
                                      const Status& status,
                                      const char* file,
                                      unsigned line) noexcept {
-    severe() << "Invariant failure: " << expr << " resulted in status " << redact(status) << " at "
+    MONGO_BOOST_SEVERE << "Invariant failure: " << expr << " resulted in status " << redact(status) << " at "
              << file << ' ' << std::dec << line;
     breakpoint();
-    severe() << "\n\n***aborting after invariant() failure\n\n" << std::endl;
+    MONGO_BOOST_SEVERE << "\n\n***aborting after invariant() failure\n\n" << std::endl;
     std::abort();
 }
 
@@ -131,26 +131,26 @@ NOINLINE_DECL void invariantOKFailedWithMsg(const char* expr,
                                             const std::string& msg,
                                             const char* file,
                                             unsigned line) noexcept {
-    severe() << "Invariant failure: " << expr << " " << msg << " resulted in status "
+    MONGO_BOOST_SEVERE << "Invariant failure: " << expr << " " << msg << " resulted in status "
              << redact(status) << " at " << file << ' ' << std::dec << line;
     breakpoint();
-    severe() << "\n\n***aborting after invariant() failure\n\n" << std::endl;
+    MONGO_BOOST_SEVERE << "\n\n***aborting after invariant() failure\n\n" << std::endl;
     std::abort();
 }
 
 NOINLINE_DECL void fassertFailedWithLocation(int msgid, const char* file, unsigned line) noexcept {
-    severe() << "Fatal Assertion " << msgid << " at " << file << " " << std::dec << line;
+    MONGO_BOOST_SEVERE << "Fatal Assertion " << msgid << " at " << file << " " << std::dec << line;
     breakpoint();
-    severe() << "\n\n***aborting after fassert() failure\n\n" << std::endl;
+    MONGO_BOOST_SEVERE << "\n\n***aborting after fassert() failure\n\n" << std::endl;
     std::abort();
 }
 
 NOINLINE_DECL void fassertFailedNoTraceWithLocation(int msgid,
                                                     const char* file,
                                                     unsigned line) noexcept {
-    severe() << "Fatal Assertion " << msgid << " at " << file << " " << std::dec << line;
+    MONGO_BOOST_SEVERE << "Fatal Assertion " << msgid << " at " << file << " " << std::dec << line;
     breakpoint();
-    severe() << "\n\n***aborting after fassert() failure\n\n" << std::endl;
+    MONGO_BOOST_SEVERE << "\n\n***aborting after fassert() failure\n\n" << std::endl;
     quickExit(EXIT_ABRUPT);
 }
 
@@ -158,10 +158,10 @@ MONGO_COMPILER_NORETURN void fassertFailedWithStatusWithLocation(int msgid,
                                                                  const Status& status,
                                                                  const char* file,
                                                                  unsigned line) noexcept {
-    severe() << "Fatal assertion " << msgid << " " << redact(status) << " at " << file << " "
+    MONGO_BOOST_SEVERE << "Fatal assertion " << msgid << " " << redact(status) << " at " << file << " "
              << std::dec << line;
     breakpoint();
-    severe() << "\n\n***aborting after fassert() failure\n\n" << std::endl;
+    MONGO_BOOST_SEVERE << "\n\n***aborting after fassert() failure\n\n" << std::endl;
     std::abort();
 }
 
@@ -169,10 +169,10 @@ MONGO_COMPILER_NORETURN void fassertFailedWithStatusNoTraceWithLocation(int msgi
                                                                         const Status& status,
                                                                         const char* file,
                                                                         unsigned line) noexcept {
-    severe() << "Fatal assertion " << msgid << " " << redact(status) << " at " << file << " "
+    MONGO_BOOST_SEVERE << "Fatal assertion " << msgid << " " << redact(status) << " at " << file << " "
              << std::dec << line;
     breakpoint();
-    severe() << "\n\n***aborting after fassert() failure\n\n" << std::endl;
+    MONGO_BOOST_SEVERE << "\n\n***aborting after fassert() failure\n\n" << std::endl;
     quickExit(EXIT_ABRUPT);
 }
 
@@ -184,7 +184,7 @@ NOINLINE_DECL void uassertedWithLocation(const Status& status, const char* file,
 
 NOINLINE_DECL void msgassertedWithLocation(const Status& status, const char* file, unsigned line) {
     assertionCount.condrollover(++assertionCount.msg);
-    error() << "Assertion: " << redact(status) << ' ' << file << ' ' << std::dec << line;
+    MONGO_BOOST_ERROR << "Assertion: " << redact(status) << ' ' << file << ' ' << std::dec << line;
     error_details::throwExceptionForStatus(status);
 }
 
@@ -250,7 +250,7 @@ Status exceptionToStatus() noexcept {
                           << boost::diagnostic_information(ex));
 
     } catch (...) {
-        severe() << "Caught unknown exception in exceptionToStatus()";
+        MONGO_BOOST_SEVERE << "Caught unknown exception in exceptionToStatus()";
         std::terminate();
     }
 }

@@ -366,7 +366,7 @@ BSONObj InitialSyncer::_getInitialSyncProgress_inlock() const {
         }
         return bob.obj();
     } catch (const DBException& e) {
-        log() << "Error creating initial sync progress object: " << e.toString();
+        MONGO_BOOST_LOG << "Error creating initial sync progress object: " << e.toString();
     }
     BSONObjBuilder bob;
     _appendInitialSyncProgressMinimal_inlock(&bob);
@@ -427,7 +427,7 @@ void InitialSyncer::_tearDown_inlock(OperationContext* opCtx,
         invariant(currentLastAppliedOpTime == lastApplied.getValue().opTime);
     }
 
-    log() << "initial sync done; took "
+    MONGO_BOOST_LOG << "initial sync done; took "
           << duration_cast<Seconds>(_stats.initialSyncEnd - _stats.initialSyncStart) << ".";
     initialSyncCompletes.increment();
 }
@@ -446,7 +446,7 @@ void InitialSyncer::_startInitialSyncAttemptCallback(
         return;
     }
 
-    log() << "Starting initial sync (attempt " << (initialSyncAttempt + 1) << " of "
+    MONGO_BOOST_LOG << "Starting initial sync (attempt " << (initialSyncAttempt + 1) << " of "
           << initialSyncMaxAttempts << ")";
 
     // This completion guard invokes _finishInitialSyncAttempt on destruction.
@@ -598,7 +598,7 @@ Status InitialSyncer::_truncateOplogAndDropReplicatedDatabases() {
     LOG(2) << "Truncating the existing oplog: " << _opts.localOplogNS;
     Timer timer;
     auto status = _storage->truncateCollection(opCtx.get(), _opts.localOplogNS);
-    log() << "Initial syncer oplog truncation finished in: " << timer.millis() << "ms";
+    MONGO_BOOST_LOG << "Initial syncer oplog truncation finished in: " << timer.millis() << "ms";
     if (!status.isOK()) {
         // 1a.) Create the oplog.
         LOG(2) << "Creating the oplog: " << _opts.localOplogNS;
@@ -745,7 +745,7 @@ void InitialSyncer::_fcvFetcherCallback(const StatusWith<Fetcher::QueryResponse>
         std::string name;
         auto status = mongo::bsonExtractStringField(dbInfo, "name", &name);
         if (!status.isOK()) {
-            error() << "listDatabases filter failed to parse database name from " << redact(dbInfo)
+            MONGO_BOOST_ERROR << "listDatabases filter failed to parse database name from " << redact(dbInfo)
                     << ": " << redact(status);
             return false;
         }
@@ -806,7 +806,7 @@ void InitialSyncer::_fcvFetcherCallback(const StatusWith<Fetcher::QueryResponse>
         // This could have been done with a scheduleWorkAt but this is used only by JS tests where
         // we run with multiple threads so it's fine to spin on this thread.
         // This log output is used in js tests so please leave it.
-        log() << "initial sync - initialSyncHangBeforeCopyingDatabases fail point "
+        MONGO_BOOST_LOG << "initial sync - initialSyncHangBeforeCopyingDatabases fail point "
                  "enabled. Blocking until fail point is disabled.";
         while (MONGO_FAIL_POINT(initialSyncHangBeforeCopyingDatabases) && !_isShuttingDown()) {
             mongo::sleepsecs(1);
@@ -836,7 +836,7 @@ void InitialSyncer::_fcvFetcherCallback(const StatusWith<Fetcher::QueryResponse>
 void InitialSyncer::_oplogFetcherCallback(const Status& oplogFetcherFinishStatus,
                                           std::shared_ptr<OnCompletionGuard> onCompletionGuard) {
     stdx::lock_guard<stdx::mutex> lock(_mutex);
-    log() << "Finished fetching oplog during initial sync: " << redact(oplogFetcherFinishStatus)
+    MONGO_BOOST_LOG << "Finished fetching oplog during initial sync: " << redact(oplogFetcherFinishStatus)
           << ". Last fetched optime and hash: " << _lastFetched.toString();
 
     auto status = _checkForShutdownAndConvertStatus_inlock(
@@ -852,7 +852,7 @@ void InitialSyncer::_oplogFetcherCallback(const Status& oplogFetcherFinishStatus
     // an OK status is when the 'stopReplProducer' fail point is enabled, which causes the
     // OplogFetcher to ignore the current sync source response and return early.
     if (status.isOK()) {
-        log() << "Finished fetching oplog fetching early. Last fetched optime and hash: "
+        MONGO_BOOST_LOG << "Finished fetching oplog fetching early. Last fetched optime and hash: "
               << _lastFetched.toString();
         return;
     }
@@ -868,7 +868,7 @@ void InitialSyncer::_oplogFetcherCallback(const Status& oplogFetcherFinishStatus
 
 void InitialSyncer::_databasesClonerCallback(const Status& databaseClonerFinishStatus,
                                              std::shared_ptr<OnCompletionGuard> onCompletionGuard) {
-    log() << "Finished cloning data: " << redact(databaseClonerFinishStatus)
+    MONGO_BOOST_LOG << "Finished cloning data: " << redact(databaseClonerFinishStatus)
           << ". Beginning oplog replay.";
 
     stdx::lock_guard<stdx::mutex> lock(_mutex);
@@ -950,7 +950,7 @@ void InitialSyncer::_lastOplogEntryFetcherCallbackForStopTimestamp(
 
     stdx::lock_guard<stdx::mutex> lock(_mutex);
     _lastApplied = optimeWithHash;
-    log() << "No need to apply operations. (currently at "
+    MONGO_BOOST_LOG << "No need to apply operations. (currently at "
           << _initialSyncState->stopTimestamp.toBSON() << ")";
 
     // This sets the error in 'onCompletionGuard' and shuts down the OplogFetcher on error.
@@ -970,7 +970,7 @@ void InitialSyncer::_getNextApplierBatchCallback(
 
     auto batchResult = _getNextApplierBatch_inlock();
     if (!batchResult.isOK()) {
-        warning() << "Failure creating next apply batch: " << redact(batchResult.getStatus());
+        MONGO_BOOST_WARNING << "Failure creating next apply batch: " << redact(batchResult.getStatus());
         onCompletionGuard->setResultAndCancelRemainingWork_inlock(lock, batchResult.getStatus());
         return;
     }
@@ -1009,7 +1009,7 @@ void InitialSyncer::_getNextApplierBatchCallback(
                "in the oplog buffer. Aborting this initial sync attempt. Last applied: "
             << _lastApplied.toString() << ". Last fetched: " << _lastFetched.toString()
             << ". Number of operations applied: " << _initialSyncState->appliedOps;
-        log() << msg;
+        MONGO_BOOST_LOG << msg;
         status = Status(ErrorCodes::RemoteResultsUnavailable, msg);
         onCompletionGuard->setResultAndCancelRemainingWork_inlock(lock, status);
         return;
@@ -1038,7 +1038,7 @@ void InitialSyncer::_multiApplierCallback(const Status& multiApplierStatus,
     auto status =
         _checkForShutdownAndConvertStatus_inlock(multiApplierStatus, "error applying batch");
     if (!status.isOK()) {
-        error() << "Failed to apply batch due to '" << redact(status) << "'";
+        MONGO_BOOST_ERROR << "Failed to apply batch due to '" << redact(status) << "'";
         onCompletionGuard->setResultAndCancelRemainingWork_inlock(lock, status);
         return;
     }
@@ -1076,7 +1076,7 @@ void InitialSyncer::_lastOplogEntryFetcherCallbackAfterFetchingMissingDocuments(
     auto status = _checkForShutdownAndConvertStatus_inlock(
         result.getStatus(), "error getting last oplog entry after fetching missing documents");
     if (!status.isOK()) {
-        error() << "Failed to get new minValid from source " << _syncSource << " due to '"
+        MONGO_BOOST_ERROR << "Failed to get new minValid from source " << _syncSource << " due to '"
                 << redact(status) << "'";
         onCompletionGuard->setResultAndCancelRemainingWork_inlock(lock, status);
         return;
@@ -1084,7 +1084,7 @@ void InitialSyncer::_lastOplogEntryFetcherCallbackAfterFetchingMissingDocuments(
 
     auto&& optimeWithHashStatus = parseOpTimeWithHash(result);
     if (!optimeWithHashStatus.isOK()) {
-        error() << "Failed to parse new minValid from source " << _syncSource << " due to '"
+        MONGO_BOOST_ERROR << "Failed to parse new minValid from source " << _syncSource << " due to '"
                 << redact(optimeWithHashStatus.getStatus()) << "'";
         onCompletionGuard->setResultAndCancelRemainingWork_inlock(lock,
                                                                   optimeWithHashStatus.getStatus());
@@ -1159,17 +1159,17 @@ void InitialSyncer::_finishInitialSyncAttempt(const StatusWith<OpTimeWithHash>& 
         auto scheduleResult = _exec->scheduleWork(
             [=](const mongo::executor::TaskExecutor::CallbackArgs&) { _finishCallback(result); });
         if (!scheduleResult.isOK()) {
-            warning() << "Unable to schedule initial syncer completion task due to "
+            MONGO_BOOST_WARNING << "Unable to schedule initial syncer completion task due to "
                       << redact(scheduleResult.getStatus())
                       << ". Running callback on current thread.";
             _finishCallback(result);
         }
     });
 
-    log() << "Initial sync attempt finishing up.";
+    MONGO_BOOST_LOG << "Initial sync attempt finishing up.";
 
     stdx::lock_guard<stdx::mutex> lock(_mutex);
-    log() << "Initial Sync Attempt Statistics: " << redact(_getInitialSyncProgress_inlock());
+    MONGO_BOOST_LOG << "Initial Sync Attempt Statistics: " << redact(_getInitialSyncProgress_inlock());
 
     auto runTime = _initialSyncState ? _initialSyncState->timer.millis() : 0;
     _stats.initialSyncAttemptInfos.emplace_back(
@@ -1188,7 +1188,7 @@ void InitialSyncer::_finishInitialSyncAttempt(const StatusWith<OpTimeWithHash>& 
     // startup.
     initialSyncFailedAttempts.increment();
 
-    error() << "Initial sync attempt failed -- attempts left: "
+    MONGO_BOOST_ERROR << "Initial sync attempt failed -- attempts left: "
             << (_stats.maxFailedInitialSyncAttempts - _stats.failedInitialSyncAttempts)
             << " cause: " << redact(result.getStatus());
 
@@ -1196,7 +1196,7 @@ void InitialSyncer::_finishInitialSyncAttempt(const StatusWith<OpTimeWithHash>& 
     if (_stats.failedInitialSyncAttempts >= _stats.maxFailedInitialSyncAttempts) {
         const std::string err =
             "The maximum number of retries have been exhausted for initial sync.";
-        severe() << err;
+        MONGO_BOOST_SEVERE << err;
 
         initialSyncFailures.increment();
 
@@ -1245,7 +1245,7 @@ void InitialSyncer::_finishCallback(StatusWith<OpTimeWithHash> lastApplied) {
 
     if (MONGO_FAIL_POINT(initialSyncHangBeforeFinish)) {
         // This log output is used in js tests so please leave it.
-        log() << "initial sync - initialSyncHangBeforeFinish fail point "
+        MONGO_BOOST_LOG << "initial sync - initialSyncHangBeforeFinish fail point "
                  "enabled. Blocking until fail point is disabled.";
         while (MONGO_FAIL_POINT(initialSyncHangBeforeFinish) && !_isShuttingDown()) {
             mongo::sleepsecs(1);
@@ -1256,7 +1256,7 @@ void InitialSyncer::_finishCallback(StatusWith<OpTimeWithHash> lastApplied) {
     try {
         onCompletion(lastApplied);
     } catch (...) {
-        warning() << "initial syncer finish callback threw exception: "
+        MONGO_BOOST_WARNING << "initial syncer finish callback threw exception: "
                   << redact(exceptionToStatus());
     }
 
@@ -1316,7 +1316,7 @@ void InitialSyncer::_checkApplierProgressAndScheduleGetNextApplierBatch_inlock(
             << "Possible rollback on sync source " << _syncSource.toString() << ". Currently at "
             << _initialSyncState->stopTimestamp.toBSON() << ". Started at "
             << _initialSyncState->beginTimestamp.toBSON();
-        error() << msg;
+        MONGO_BOOST_ERROR << msg;
         onCompletionGuard->setResultAndCancelRemainingWork_inlock(
             lock, Status(ErrorCodes::OplogOutOfOrder, msg));
         return;
@@ -1325,7 +1325,7 @@ void InitialSyncer::_checkApplierProgressAndScheduleGetNextApplierBatch_inlock(
     if (_lastApplied.opTime.isNull()) {
         // Check if any ops occurred while cloning.
         invariant(_initialSyncState->beginTimestamp < _initialSyncState->stopTimestamp);
-        log() << "Applying operations until " << _initialSyncState->stopTimestamp.toBSON()
+        MONGO_BOOST_LOG << "Applying operations until " << _initialSyncState->stopTimestamp.toBSON()
               << " before initial sync can complete. (starting at "
               << _initialSyncState->beginTimestamp.toBSON() << ")";
         // Fall through to scheduling _getNextApplierBatchCallback().

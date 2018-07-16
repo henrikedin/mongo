@@ -187,7 +187,7 @@ void QuorumChecker::_tabulateHeartbeatResponse(const RemoteCommandRequest& reque
                                                const executor::RemoteCommandResponse& response) {
     ++_numResponses;
     if (!response.isOK()) {
-        warning() << "Failed to complete heartbeat request to " << request.target << "; "
+        MONGO_BOOST_WARNING << "Failed to complete heartbeat request to " << request.target << "; "
                   << response.status;
         _badResponses.push_back(std::make_pair(request.target, response.status));
         return;
@@ -201,12 +201,12 @@ void QuorumChecker::_tabulateHeartbeatResponse(const RemoteCommandRequest& reque
         std::string message = str::stream() << "Our set name did not match that of "
                                             << request.target.toString();
         _vetoStatus = Status(ErrorCodes::NewReplicaSetConfigurationIncompatible, message);
-        warning() << message;
+        MONGO_BOOST_WARNING << message;
         return;
     }
 
     if (!hbStatus.isOK() && hbStatus != ErrorCodes::InvalidReplicaSetConfig) {
-        warning() << "Got error (" << hbStatus << ") response on heartbeat request to "
+        MONGO_BOOST_WARNING << "Got error (" << hbStatus << ") response on heartbeat request to "
                   << request.target << "; " << hbResp;
         _badResponses.push_back(std::make_pair(request.target, hbStatus));
         return;
@@ -219,7 +219,7 @@ void QuorumChecker::_tabulateHeartbeatResponse(const RemoteCommandRequest& reque
                 << " is no larger than the version on " << request.target.toString()
                 << ", which is " << hbResp.getConfigVersion();
             _vetoStatus = Status(ErrorCodes::NewReplicaSetConfigurationIncompatible, message);
-            warning() << message;
+            MONGO_BOOST_WARNING << message;
             return;
         }
     }
@@ -234,7 +234,7 @@ void QuorumChecker::_tabulateHeartbeatResponse(const RemoteCommandRequest& reque
                 << " did not match that of " << request.target.toString() << ", which is "
                 << replMetadata.getValue().getReplicaSetId();
             _vetoStatus = Status(ErrorCodes::NewReplicaSetConfigurationIncompatible, message);
-            warning() << message;
+            MONGO_BOOST_WARNING << message;
         }
     }
 

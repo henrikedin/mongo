@@ -119,7 +119,7 @@ std::unique_ptr<CollatorInterface> parseCollation(OperationContext* opCtx,
     // integration, shut down the server. Errors other than IncompatibleCollationVersion should not
     // be possible, so these are an invariant rather than fassert.
     if (collator == ErrorCodes::IncompatibleCollationVersion) {
-        log() << "Collection " << nss
+        MONGO_BOOST_LOG << "Collection " << nss
               << " has a default collation which is incompatible with this version: "
               << collationSpec;
         fassertFailedNoTrace(40144);
@@ -252,7 +252,7 @@ Status CollectionImpl::checkValidation(OperationContext* opCtx, const BSONObj& d
         return Status::OK();
 
     if (_validationAction == ValidationAction::WARN) {
-        warning() << "Document would fail validation"
+        MONGO_BOOST_WARNING << "Document would fail validation"
                   << " collection: " << ns() << " doc: " << redact(document);
         return Status::OK();
     }
@@ -339,7 +339,7 @@ Status CollectionImpl::insertDocuments(OperationContext* opCtx,
             const std::string msg = str::stream()
                 << "Failpoint (failCollectionInserts) has been enabled (" << data
                 << "), so rejecting insert (first doc): " << begin->doc;
-            log() << msg;
+            MONGO_BOOST_LOG << msg;
             return {ErrorCodes::FailPointEnabled, msg};
         }
     }
@@ -397,7 +397,7 @@ Status CollectionImpl::insertDocument(OperationContext* opCtx,
             const std::string msg = str::stream()
                 << "Failpoint (failCollectionInserts) has been enabled (" << data
                 << "), so rejecting insert: " << doc;
-            log() << msg;
+            MONGO_BOOST_LOG << msg;
             return {ErrorCodes::FailPointEnabled, msg};
         }
     }
@@ -544,7 +544,7 @@ void CollectionImpl::deleteDocument(OperationContext* opCtx,
                                     bool noWarn,
                                     Collection::StoreDeletedDoc storeDeletedDoc) {
     if (isCapped()) {
-        log() << "failing remove on a capped ns " << _ns;
+        MONGO_BOOST_LOG << "failing remove on a capped ns " << _ns;
         uasserted(10089, "cannot remove from a capped collection");
         return;
     }
@@ -1020,7 +1020,7 @@ void _validateIndexes(OperationContext* opCtx,
     while (i.more()) {
         opCtx->checkForInterrupt();
         const IndexDescriptor* descriptor = i.next();
-        log(LogComponent::kIndex) << "validating index " << descriptor->indexNamespace() << endl;
+        MONGO_BOOST_LOG_COMPONENT(LogComponent::kIndex) << "validating index " << descriptor->indexNamespace() << endl;
         IndexAccessMethod* iam = indexCatalog->getIndex(descriptor);
         ValidateResults& curIndexResults = (*indexNsResultsMap)[descriptor->indexNamespace()];
         bool checkCounts = false;
@@ -1204,7 +1204,7 @@ Status CollectionImpl::validate(OperationContext* opCtx,
         // Validate the record store
         std::string uuidString = str::stream()
             << " (UUID: " << (uuid() ? uuid()->toString() : "none") << ")";
-        log(LogComponent::kIndex) << "validating collection " << ns().toString() << uuidString
+        MONGO_BOOST_LOG_COMPONENT(LogComponent::kIndex) << "validating collection " << ns().toString() << uuidString
                                   << endl;
         _validateRecordStore(
             opCtx, _recordStore, level, background, &indexValidator, results, output);
@@ -1238,10 +1238,10 @@ Status CollectionImpl::validate(OperationContext* opCtx,
             opCtx, &_indexCatalog, &indexNsResultsMap, &keysPerIndex, level, results, output);
 
         if (!results->valid) {
-            log(LogComponent::kIndex) << "validating collection " << ns().toString() << " failed"
+            MONGO_BOOST_LOG_COMPONENT(LogComponent::kIndex) << "validating collection " << ns().toString() << " failed"
                                       << uuidString << endl;
         } else {
-            log(LogComponent::kIndex) << "validated collection " << ns().toString() << uuidString
+            MONGO_BOOST_LOG_COMPONENT(LogComponent::kIndex) << "validated collection " << ns().toString() << uuidString
                                       << endl;
         }
     } catch (DBException& e) {

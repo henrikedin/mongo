@@ -257,7 +257,7 @@ void DatabaseImpl::init(OperationContext* const opCtx) {
     Status status = validateDBName(_name);
 
     if (!status.isOK()) {
-        warning() << "tried to open invalid db: " << _name;
+        MONGO_BOOST_WARNING << "tried to open invalid db: " << _name;
         uasserted(10028, status.toString());
     }
 
@@ -280,7 +280,7 @@ void DatabaseImpl::init(OperationContext* const opCtx) {
     Status reloadStatus = _views.reloadIfNeeded(opCtx);
 
     if (!reloadStatus.isOK()) {
-        warning() << "Unable to parse views: " << redact(reloadStatus)
+        MONGO_BOOST_WARNING << "Unable to parse views: " << redact(reloadStatus)
                   << "; remove any invalid views from the " << _viewsName
                   << " collection to restore server functionality." << startupWarningsLog;
     }
@@ -307,13 +307,13 @@ void DatabaseImpl::clearTmpCollections(OperationContext* opCtx) {
             Status status = dropCollection(opCtx, ns, {});
 
             if (!status.isOK()) {
-                warning() << "could not drop temp collection '" << ns << "': " << redact(status);
+                MONGO_BOOST_WARNING << "could not drop temp collection '" << ns << "': " << redact(status);
                 continue;
             }
 
             wunit.commit();
         } catch (const WriteConflictException&) {
-            warning() << "could not drop temp collection '" << ns << "' due to "
+            MONGO_BOOST_WARNING << "could not drop temp collection '" << ns << "' due to "
                                                                      "WriteConflictException";
             opCtx->recoveryUnit()->abandonSnapshot();
         }
@@ -430,7 +430,7 @@ void DatabaseImpl::getStats(OperationContext* opCtx, BSONObjBuilder* output, dou
         } else {
             output->appendNumber("fsUsedSize", -1);
             output->appendNumber("fsTotalSize", -1);
-            log() << "Failed to query filesystem disk stats (code: " << ec.value()
+            MONGO_BOOST_LOG << "Failed to query filesystem disk stats (code: " << ec.value()
                   << "): " << ec.message();
         }
     }
@@ -555,7 +555,7 @@ Status DatabaseImpl::dropCollectionEvenIfSystem(OperationContext* opCtx,
 
         // Drop the offending indexes.
         for (auto&& index : indexesToDrop) {
-            log() << "dropCollection: " << fullns << " (" << uuidString << ") - index namespace '"
+            MONGO_BOOST_LOG << "dropCollection: " << fullns << " (" << uuidString << ") - index namespace '"
                   << index->indexNamespace()
                   << "' would be too long after drop-pending rename. Dropping index immediately.";
             // Log the operation before the drop so that each drop is timestamped at the same time
@@ -573,7 +573,7 @@ Status DatabaseImpl::dropCollectionEvenIfSystem(OperationContext* opCtx,
         // After writing the oplog entry, all errors are fatal. See getNextOpTime() comments in
         // oplog.cpp.
         if (dropOpTime.isNull()) {
-            log() << "dropCollection: " << fullns << " (" << uuidString
+            MONGO_BOOST_LOG << "dropCollection: " << fullns << " (" << uuidString
                   << ") - no drop optime available for pending-drop. "
                   << "Dropping collection immediately.";
             fassert(40462, _finishDropCollection(opCtx, fullns, collection));
@@ -586,7 +586,7 @@ Status DatabaseImpl::dropCollectionEvenIfSystem(OperationContext* opCtx,
         // writing to the oplog.
         auto opTime = opObserver->onDropCollection(opCtx, fullns, uuid);
         if (!opTime.isNull()) {
-            severe() << "dropCollection: " << fullns << " (" << uuidString
+            MONGO_BOOST_SEVERE << "dropCollection: " << fullns << " (" << uuidString
                      << ") - unexpected oplog entry written to the oplog with optime " << opTime;
             fassertFailed(40468);
         }
@@ -596,7 +596,7 @@ Status DatabaseImpl::dropCollectionEvenIfSystem(OperationContext* opCtx,
 
     // Rename collection using drop-pending namespace generated from drop optime.
     const bool stayTemp = true;
-    log() << "dropCollection: " << fullns << " (" << uuidString
+    MONGO_BOOST_LOG << "dropCollection: " << fullns << " (" << uuidString
           << ") - renaming to drop-pending collection: " << dpns << " with drop optime "
           << dropOpTime;
     fassert(40464, renameCollection(opCtx, fullns.ns(), dpns.ns(), stayTemp));
@@ -624,7 +624,7 @@ Status DatabaseImpl::_finishDropCollection(OperationContext* opCtx,
 
     auto uuid = collection->uuid();
     auto uuidString = uuid ? uuid.get().toString() : "no UUID";
-    log() << "Finishing collection drop for " << fullns << " (" << uuidString << ").";
+    MONGO_BOOST_LOG << "Finishing collection drop for " << fullns << " (" << uuidString << ").";
 
     return _dbEntry->dropCollection(opCtx, fullns.toString());
 }
@@ -699,7 +699,7 @@ Status DatabaseImpl::renameCollection(OperationContext* opCtx,
 
         Top::get(opCtx->getServiceContext()).collectionDropped(fromNS.toString());
 
-        log() << "renameCollection: renaming collection " << coll->uuid()->toString() << " from "
+        MONGO_BOOST_LOG << "renameCollection: renaming collection " << coll->uuid()->toString() << " from "
               << fromNS << " to " << toNS;
     }
 
@@ -792,7 +792,7 @@ Collection* DatabaseImpl::createCollection(OperationContext* opCtx,
         if (!canAcceptWrites) {
             std::string msg = str::stream() << "Attempted to create a new collection " << nss.ns()
                                             << " without a UUID";
-            severe() << msg;
+            MONGO_BOOST_SEVERE << msg;
             uasserted(ErrorCodes::InvalidOptions, msg);
         }
         if (canAcceptWrites) {
@@ -816,11 +816,11 @@ Collection* DatabaseImpl::createCollection(OperationContext* opCtx,
     audit::logCreateCollection(&cc(), ns);
 
     if (optionsWithUUID.uuid) {
-        log() << "createCollection: " << ns << " with "
+        MONGO_BOOST_LOG << "createCollection: " << ns << " with "
               << (generatedUUID ? "generated" : "provided")
               << " UUID: " << optionsWithUUID.uuid.get();
     } else {
-        log() << "createCollection: " << ns << " with no UUID.";
+        MONGO_BOOST_LOG << "createCollection: " << ns << " with no UUID.";
     }
 
     massertStatusOK(
@@ -1078,7 +1078,7 @@ MONGO_REGISTER_SHIM(Database::dropAllDatabasesExceptLocal)(OperationContext* opC
 
     if (n.size() == 0)
         return;
-    log() << "dropAllDatabasesExceptLocal " << n.size();
+    MONGO_BOOST_LOG << "dropAllDatabasesExceptLocal " << n.size();
 
     repl::ReplicationCoordinator::get(opCtx)->dropAllSnapshots();
 
@@ -1090,7 +1090,7 @@ MONGO_REGISTER_SHIM(Database::dropAllDatabasesExceptLocal)(OperationContext* opC
                 // This is needed since dropDatabase can't be rolled back.
                 // This is safe be replaced by "invariant(db);dropDatabase(opCtx, db);" once fixed
                 if (db == nullptr) {
-                    log() << "database disappeared after listDatabases but before drop: " << dbName;
+                    MONGO_BOOST_LOG << "database disappeared after listDatabases but before drop: " << dbName;
                 } else {
                     DatabaseImpl::dropDatabase(opCtx, db);
                 }

@@ -186,12 +186,12 @@ void openWiredTiger(const std::string& path,
         return;
     }
 
-    severe() << "Failed to start up WiredTiger under any compatibility version.";
+    MONGO_BOOST_SEVERE << "Failed to start up WiredTiger under any compatibility version.";
     if (ret == EINVAL) {
         fassertFailedNoTrace(28561);
     }
 
-    severe() << wtRCToStatus(ret).reason();
+    MONGO_BOOST_SEVERE << wtRCToStatus(ret).reason();
     fassertFailedNoTrace(28595);
 }
 }  // namespace
@@ -315,7 +315,7 @@ public:
                 }
             } catch (const WriteConflictException&) {
                 // Temporary: remove this after WT-3483
-                warning() << "Checkpoint encountered a write conflict exception.";
+                MONGO_BOOST_WARNING << "Checkpoint encountered a write conflict exception.";
             } catch (const AssertionException& exc) {
                 invariant(ErrorCodes::isShutdownError(exc.code()), exc.what());
             }
@@ -343,7 +343,7 @@ public:
         if (prevStable < initialData && stableTimestamp.asULL() >= initialData) {
             _firstStableCheckpointTaken = true;
 
-            log() << "Triggering the first stable checkpoint. Initial Data: "
+            MONGO_BOOST_LOG << "Triggering the first stable checkpoint. Initial Data: "
                   << Timestamp(initialData) << " PrevStable: " << Timestamp(prevStable)
                   << " CurrStable: " << stableTimestamp;
             stdx::unique_lock<stdx::mutex> lock(_mutex);
@@ -465,7 +465,7 @@ WiredTigerKVEngine::WiredTigerKVEngine(const std::string& canonicalName,
             try {
                 boost::filesystem::create_directory(journalPath);
             } catch (std::exception& e) {
-                log() << "error creating journal dir " << journalPath.string() << ' ' << e.what();
+                MONGO_BOOST_LOG << "error creating journal dir " << journalPath.string() << ' ' << e.what();
                 throw;
             }
         }
@@ -515,8 +515,8 @@ WiredTigerKVEngine::WiredTigerKVEngine(const std::string& canonicalName,
         // the normal path without the journal.
         if (boost::filesystem::exists(journalPath)) {
             string config = ss.str();
-            log() << "Detected WT journal files.  Running recovery from last checkpoint.";
-            log() << "journal to nojournal transition config: " << config;
+            MONGO_BOOST_LOG << "Detected WT journal files.  Running recovery from last checkpoint.";
+            MONGO_BOOST_LOG << "journal to nojournal transition config: " << config;
             int ret = wiredtiger_open(
                 path.c_str(), _eventHandler.getWtEventHandler(), config.c_str(), &_conn);
             if (ret == EINVAL) {
@@ -530,7 +530,7 @@ WiredTigerKVEngine::WiredTigerKVEngine(const std::string& canonicalName,
             try {
                 boost::filesystem::remove_all(journalPath);
             } catch (std::exception& e) {
-                error() << "error removing journal dir " << journalPath.string() << ' ' << e.what();
+                MONGO_BOOST_ERROR << "error removing journal dir " << journalPath.string() << ' ' << e.what();
                 throw;
             }
         }
@@ -539,7 +539,7 @@ WiredTigerKVEngine::WiredTigerKVEngine(const std::string& canonicalName,
     }
 
     string config = ss.str();
-    log() << "wiredtiger_open config: " << config;
+    MONGO_BOOST_LOG << "wiredtiger_open config: " << config;
     openWiredTiger(path, _eventHandler.getWtEventHandler(), config, &_conn, &_fileVersion);
     _eventHandler.setStartupSuccessful();
     _wtOpenConfig = config;
@@ -573,7 +573,7 @@ WiredTigerKVEngine::WiredTigerKVEngine(const std::string& canonicalName,
     _sizeStorerUri = _uri("sizeStorer");
     WiredTigerSession session(_conn);
     if (!_readOnly && repair && _hasUri(session.getSession(), _sizeStorerUri)) {
-        log() << "Repairing size cache";
+        MONGO_BOOST_LOG << "Repairing size cache";
         fassertNoTrace(28577, _salvageIfNeeded(_sizeStorerUri.c_str()));
     }
 
@@ -611,7 +611,7 @@ void WiredTigerKVEngine::appendGlobalStats(BSONObjBuilder& b) {
 }
 
 void WiredTigerKVEngine::cleanShutdown() {
-    log() << "WiredTigerKVEngine shutting down";
+    MONGO_BOOST_LOG << "WiredTigerKVEngine shutting down";
     if (!_readOnly)
         syncSizeInfo(true);
     if (!_conn) {
@@ -620,14 +620,14 @@ void WiredTigerKVEngine::cleanShutdown() {
 
     // these must be the last things we do before _conn->close();
     if (_journalFlusher) {
-        log() << "Shutting down journal flusher thread";
+        MONGO_BOOST_LOG << "Shutting down journal flusher thread";
         _journalFlusher->shutdown();
-        log() << "Finished shutting down journal flusher thread";
+        MONGO_BOOST_LOG << "Finished shutting down journal flusher thread";
     }
     if (_checkpointThread) {
-        log() << "Shutting down checkpoint thread";
+        MONGO_BOOST_LOG << "Shutting down checkpoint thread";
         _checkpointThread->shutdown();
-        log() << "Finished shutting down checkpoint thread";
+        MONGO_BOOST_LOG << "Finished shutting down checkpoint thread";
         LOG_FOR_RECOVERY(2) << "Shutdown timestamps. StableTimestamp: "
                             << _checkpointThread->getStableTimestamp()
                             << " Initial data timestamp: "
@@ -655,7 +655,7 @@ void WiredTigerKVEngine::cleanShutdown() {
     }
 
     if (_fileVersion.shouldDowngrade(_readOnly, _inRepairMode, !_recoveryTimestamp.isNull())) {
-        log() << "Downgrading WiredTiger datafiles.";
+        MONGO_BOOST_LOG << "Downgrading WiredTiger datafiles.";
         LOG(1) << "Downgrade compatibility configuration: " << _fileVersion.getDowngradeString();
         invariantWTOK(_conn->reconfigure(_conn, _fileVersion.getDowngradeString().c_str()));
     }
@@ -698,7 +698,7 @@ Status WiredTigerKVEngine::_salvageIfNeeded(const char* uri) {
 
     int rc = (session->verify)(session, uri, NULL);
     if (rc == 0) {
-        log() << "Verify succeeded on uri " << uri << ". Not salvaging.";
+        MONGO_BOOST_LOG << "Verify succeeded on uri " << uri << ". Not salvaging.";
         return Status::OK();
     }
 
@@ -706,7 +706,7 @@ Status WiredTigerKVEngine::_salvageIfNeeded(const char* uri) {
         // SERVER-16457: verify and salvage are occasionally failing with EBUSY. For now we
         // lie and return OK to avoid breaking tests. This block should go away when that ticket
         // is resolved.
-        error()
+        MONGO_BOOST_ERROR
             << "Verify on " << uri << " failed with EBUSY. "
             << "This means the collection was being accessed. No repair is necessary unless other "
                "errors are reported.";
@@ -714,32 +714,32 @@ Status WiredTigerKVEngine::_salvageIfNeeded(const char* uri) {
     }
 
     if (rc == ENOENT) {
-        warning() << "Data file is missing for " << uri
+        MONGO_BOOST_WARNING << "Data file is missing for " << uri
                   << ". Attempting to drop and re-create the collection.";
 
         auto swMetadata = WiredTigerUtil::getMetadataRaw(session, uri);
         if (!swMetadata.isOK()) {
-            error() << "Failed to get metadata for " << uri;
+            MONGO_BOOST_ERROR << "Failed to get metadata for " << uri;
             return swMetadata.getStatus();
         }
 
         rc = session->drop(session, uri, NULL);
         if (rc != 0) {
-            error() << "Failed to drop " << uri;
+            MONGO_BOOST_ERROR << "Failed to drop " << uri;
             return wtRCToStatus(rc);
         }
 
         rc = session->create(session, uri, swMetadata.getValue().c_str());
         if (rc != 0) {
-            error() << "Failed to create " << uri << " with config: " << swMetadata.getValue();
+            MONGO_BOOST_ERROR << "Failed to create " << uri << " with config: " << swMetadata.getValue();
             return wtRCToStatus(rc);
         }
-        log() << "Successfully re-created " << uri << ".";
+        MONGO_BOOST_LOG << "Successfully re-created " << uri << ".";
         return Status::OK();
     }
 
     // TODO need to cleanup the sizeStorer cache after salvaging.
-    log() << "Verify failed on uri " << uri << ". Running a salvage operation.";
+    MONGO_BOOST_LOG << "Verify failed on uri " << uri << ". Running a salvage operation.";
     return wtRCToStatus(session->salvage(session, uri, NULL), "Salvage failed:");
 }
 
@@ -1121,7 +1121,7 @@ void WiredTigerKVEngine::_ensureIdentPath(StringData ident) {
             try {
                 boost::filesystem::create_directory(subdir);
             } catch (const std::exception& e) {
-                error() << "error creating path " << subdir.string() << ' ' << e.what();
+                MONGO_BOOST_ERROR << "error creating path " << subdir.string() << ' ' << e.what();
                 throw;
             }
         }
@@ -1176,7 +1176,7 @@ void WiredTigerKVEngine::setStableTimestamp(Timestamp stableTimestamp) {
                               stableTimestamp.asULL());
     if (size < 0) {
         int e = errno;
-        error() << "error snprintf " << errnoWithDescription(e);
+        MONGO_BOOST_ERROR << "error snprintf " << errnoWithDescription(e);
         fassertFailedNoTrace(50757);
     }
     invariant(static_cast<std::size_t>(size) < sizeof(stableTSConfigString));
@@ -1253,7 +1253,7 @@ void WiredTigerKVEngine::_setOldestTimestamp(Timestamp newOldestTimestamp, bool 
     }
     if (size < 0) {
         int e = errno;
-        error() << "error snprintf " << errnoWithDescription(e);
+        MONGO_BOOST_ERROR << "error snprintf " << errnoWithDescription(e);
         fassertFailedNoTrace(40661);
     }
     invariant(static_cast<std::size_t>(size) < sizeof(oldestTSConfigString));
@@ -1319,7 +1319,7 @@ bool WiredTigerKVEngine::supportsRecoverToStableTimestamp() const {
 
 StatusWith<Timestamp> WiredTigerKVEngine::recoverToStableTimestamp(OperationContext* opCtx) {
     if (!supportsRecoverToStableTimestamp()) {
-        severe() << "WiredTiger is configured to not support recover to a stable timestamp";
+        MONGO_BOOST_SEVERE << "WiredTiger is configured to not support recover to a stable timestamp";
         fassertFailed(50665);
     }
 
@@ -1372,7 +1372,7 @@ Timestamp WiredTigerKVEngine::getAllCommittedTimestamp() const {
 
 boost::optional<Timestamp> WiredTigerKVEngine::getRecoveryTimestamp() const {
     if (!supportsRecoverToStableTimestamp()) {
-        severe() << "WiredTiger is configured to not support recover to a stable timestamp";
+        MONGO_BOOST_SEVERE << "WiredTiger is configured to not support recover to a stable timestamp";
         fassertFailed(50745);
     }
 
@@ -1385,7 +1385,7 @@ boost::optional<Timestamp> WiredTigerKVEngine::getRecoveryTimestamp() const {
 
 boost::optional<Timestamp> WiredTigerKVEngine::getLastStableCheckpointTimestamp() const {
     if (!supportsRecoverToStableTimestamp()) {
-        severe() << "WiredTiger is configured to not support recover to a stable timestamp";
+        MONGO_BOOST_SEVERE << "WiredTiger is configured to not support recover to a stable timestamp";
         fassertFailed(50770);
     }
 

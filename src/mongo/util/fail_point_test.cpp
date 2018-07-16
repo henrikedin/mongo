@@ -186,7 +186,7 @@ private:
                 // Expanded ASSERT_EQUALS since the error is not being
                 // printed out properly
                 if (data["a"].numberInt() != 44) {
-                    mongo::error() << "blockTask thread detected anomaly"
+                    mongo::MONGO_BOOST_ERROR << "blockTask thread detected anomaly"
                                    << " - data: " << data << std::endl;
                     ASSERT(false);
                 }
@@ -205,7 +205,7 @@ private:
                     const mongo::BSONObj& data = scopedFp.getData();
 
                     if (data["a"].numberInt() != 44) {
-                        mongo::error() << "blockWithExceptionTask thread detected anomaly"
+                        mongo::MONGO_BOOST_ERROR << "blockWithExceptionTask thread detected anomaly"
                                        << " - data: " << data << std::endl;
                         ASSERT(false);
                     }

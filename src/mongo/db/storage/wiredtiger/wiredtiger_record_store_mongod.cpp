@@ -118,7 +118,7 @@ public:
         } catch (const ExceptionForCat<ErrorCategory::Interruption>&) {
             return false;
         } catch (const std::exception& e) {
-            severe() << "error in OplogTruncaterThread: " << e.what();
+            MONGO_BOOST_SEVERE << "error in OplogTruncaterThread: " << e.what();
             fassertFailedNoTrace(!"error in OplogTruncaterThread");
         } catch (...) {
             fassertFailedNoTrace(!"unknown error in OplogTruncaterThread");
@@ -155,9 +155,9 @@ bool initRsOplogBackgroundThread(StringData ns) {
     stdx::lock_guard<stdx::mutex> lock(_backgroundThreadMutex);
     NamespaceString nss(ns);
     if (_backgroundThreadNamespaces.count(nss)) {
-        log() << "OplogTruncaterThread " << ns << " already started";
+        MONGO_BOOST_LOG << "OplogTruncaterThread " << ns << " already started";
     } else {
-        log() << "Starting OplogTruncaterThread " << ns;
+        MONGO_BOOST_LOG << "Starting OplogTruncaterThread " << ns;
         BackgroundJob* backgroundThread = new OplogTruncaterThread(nss);
         backgroundThread->go();
         _backgroundThreadNamespaces.insert(nss);

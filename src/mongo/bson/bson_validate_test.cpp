@@ -92,7 +92,7 @@ TEST(BSONValidate, RandomData) {
         delete[] x;
     }
 
-    log() << "RandomData: didn't crash valid/total: " << numValid << "/" << numToRun
+    MONGO_BOOST_LOG << "RandomData: didn't crash valid/total: " << numValid << "/" << numToRun
           << " (want few valid ones)"
           << " jsonSize: " << jsonSize << endl;
 }
@@ -138,14 +138,14 @@ TEST(BSONValidate, MuckingData1) {
         }
     }
 
-    log() << "MuckingData1: didn't crash valid/total: " << numValid << "/" << numToRun
+    MONGO_BOOST_LOG << "MuckingData1: didn't crash valid/total: " << numValid << "/" << numToRun
           << " (want few valid ones) "
           << " jsonSize: " << jsonSize << endl;
 }
 
 TEST(BSONValidate, Fuzz) {
     int64_t seed = time(0);
-    log() << "BSONValidate Fuzz random seed: " << seed << endl;
+    MONGO_BOOST_LOG << "BSONValidate Fuzz random seed: " << seed << endl;
     PseudoRandom randomSource(seed);
 
     BSONObj original = BSON("one" << 3 << "two" << 5 << "three" << BSONObj() << "four"

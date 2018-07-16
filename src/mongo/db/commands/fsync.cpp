@@ -131,7 +131,7 @@ public:
         const bool sync =
             !cmdObj["async"].trueValue();  // async means do an fsync, but return immediately
         const bool lock = cmdObj["lock"].trueValue();
-        log() << "CMD fsync: sync:" << sync << " lock:" << lock;
+        MONGO_BOOST_LOG << "CMD fsync: sync:" << sync << " lock:" << lock;
 
         if (!lock) {
             // Take a global IS lock to ensure the storage engine is not shutdown
@@ -172,14 +172,14 @@ public:
 
             if (!status.isOK()) {
                 releaseLock();
-                warning() << "fsyncLock failed. Lock count reset to 0. Status: " << status;
+                MONGO_BOOST_WARNING << "fsyncLock failed. Lock count reset to 0. Status: " << status;
                 uassertStatusOK(status);
             }
         }
 
-        log() << "mongod is locked and no writes are allowed. db.fsyncUnlock() to unlock";
-        log() << "Lock count is " << getLockCount();
-        log() << "    For more info see " << FSyncCommand::url();
+        MONGO_BOOST_LOG << "mongod is locked and no writes are allowed. db.fsyncUnlock() to unlock";
+        MONGO_BOOST_LOG << "Lock count is " << getLockCount();
+        MONGO_BOOST_LOG << "    For more info see " << FSyncCommand::url();
         result.append("info", "now locked against writes, use db.fsyncUnlock() to unlock");
         result.append("lockCount", getLockCount());
         result.append("seeAlso", FSyncCommand::url());
@@ -284,7 +284,7 @@ public:
                    const BSONObj& cmdObj,
                    std::string& errmsg,
                    BSONObjBuilder& result) override {
-        log() << "command: unlock requested";
+        MONGO_BOOST_LOG << "command: unlock requested";
 
         Lock::ExclusiveLock lk(opCtx->lockState(), commandMutex);
 
@@ -293,9 +293,9 @@ public:
             result.append("info", str::stream() << "fsyncUnlock completed");
             result.append("lockCount", lockCount);
             if (lockCount == 0) {
-                log() << "fsyncUnlock completed. mongod is now unlocked and free to accept writes";
+                MONGO_BOOST_LOG << "fsyncUnlock completed. mongod is now unlocked and free to accept writes";
             } else {
-                log() << "fsyncUnlock completed. Lock count is now " << lockCount;
+                MONGO_BOOST_LOG << "fsyncUnlock completed. Lock count is now " << lockCount;
             }
             return true;
         } else {
@@ -308,7 +308,7 @@ private:
     // Returns true if lock count is decremented.
     bool unlockFsync() {
         if (fsyncCmd.getLockCount() == 0) {
-            error() << "fsyncUnlock called when not locked";
+            MONGO_BOOST_ERROR << "fsyncUnlock called when not locked";
             return false;
         }
 
@@ -338,7 +338,7 @@ void FSyncLockThread::run() {
         try {
             storageEngine->flushAllFiles(&opCtx, true);
         } catch (const std::exception& e) {
-            error() << "error doing flushAll: " << e.what();
+            MONGO_BOOST_ERROR << "error doing flushAll: " << e.what();
             fsyncCmd.threadStatus = Status(ErrorCodes::CommandFailed, e.what());
             fsyncCmd.acquireFsyncLockSyncCV.notify_one();
             return;
@@ -348,7 +348,7 @@ void FSyncLockThread::run() {
                 uassertStatusOK(storageEngine->beginBackup(&opCtx));
             });
         } catch (const DBException& e) {
-            error() << "storage engine unable to begin backup : " << e.toString();
+            MONGO_BOOST_ERROR << "storage engine unable to begin backup : " << e.toString();
             fsyncCmd.threadStatus = e.toStatus();
             fsyncCmd.acquireFsyncLockSyncCV.notify_one();
             return;
@@ -364,7 +364,7 @@ void FSyncLockThread::run() {
         storageEngine->endBackup(&opCtx);
 
     } catch (const std::exception& e) {
-        severe() << "FSyncLockThread exception: " << e.what();
+        MONGO_BOOST_SEVERE << "FSyncLockThread exception: " << e.what();
         fassertFailed(40350);
     }
 }

@@ -176,7 +176,7 @@ Status _doTxn(OperationContext* opCtx,
 
         ab.append(status.isOK());
         if (!status.isOK()) {
-            log() << "doTxn error applying: " << status;
+            MONGO_BOOST_LOG << "doTxn error applying: " << status;
             errors++;
         }
 

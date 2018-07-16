@@ -376,7 +376,7 @@ size_t WiredTigerUtil::getCacheSizeMB(double requestedCacheSizeGB) {
         cacheSizeMB = 1024 * requestedCacheSizeGB;
     }
     if (cacheSizeMB > kMaxSizeCacheMB) {
-        log() << "Requested cache size: " << cacheSizeMB << "MB exceeds max; setting to "
+        MONGO_BOOST_LOG << "Requested cache size: " << cacheSizeMB << "MB exceeds max; setting to "
               << kMaxSizeCacheMB << "MB";
         cacheSizeMB = kMaxSizeCacheMB;
     }
@@ -401,7 +401,7 @@ int mdb_handle_error_with_startup_suppression(WT_EVENT_HANDLER* handler,
             }
         }
 
-        error() << "WiredTiger error (" << errorCode << ") " << redact(message)
+        MONGO_BOOST_ERROR << "WiredTiger error (" << errorCode << ") " << redact(message)
                 << " Raw: " << message;
         fassert(50853, errorCode != WT_PANIC);
     } catch (...) {
@@ -415,7 +415,7 @@ int mdb_handle_error(WT_EVENT_HANDLER* handler,
                      int errorCode,
                      const char* message) {
     try {
-        error() << "WiredTiger error (" << errorCode << ") " << redact(message);
+        MONGO_BOOST_ERROR << "WiredTiger error (" << errorCode << ") " << redact(message);
         fassert(28558, errorCode != WT_PANIC);
     } catch (...) {
         std::terminate();
@@ -425,7 +425,7 @@ int mdb_handle_error(WT_EVENT_HANDLER* handler,
 
 int mdb_handle_message(WT_EVENT_HANDLER* handler, WT_SESSION* session, const char* message) {
     try {
-        log() << "WiredTiger message " << redact(message);
+        MONGO_BOOST_LOG << "WiredTiger message " << redact(message);
     } catch (...) {
         std::terminate();
     }
@@ -437,7 +437,7 @@ int mdb_handle_progress(WT_EVENT_HANDLER* handler,
                         const char* operation,
                         uint64_t progress) {
     try {
-        log() << "WiredTiger progress " << redact(operation) << " " << progress;
+        MONGO_BOOST_LOG << "WiredTiger progress " << redact(operation) << " " << progress;
     } catch (...) {
         std::terminate();
     }

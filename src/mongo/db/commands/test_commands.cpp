@@ -81,7 +81,7 @@ public:
                            string& errmsg,
                            BSONObjBuilder& result) {
         const NamespaceString nss(CommandHelpers::parseNsCollectionRequired(dbname, cmdObj));
-        log() << "test only command godinsert invoked coll:" << nss.coll();
+        MONGO_BOOST_LOG << "test only command godinsert invoked coll:" << nss.coll();
         BSONObj obj = cmdObj["obj"].embeddedObjectUserCheck();
 
         Lock::DBLock lk(opCtx, dbname, MODE_X);

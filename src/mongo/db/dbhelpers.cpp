@@ -314,14 +314,14 @@ Helpers::RemoveSaver::~RemoveSaver() {
         size_t resultLen;
         Status status = _protector->finalize(protectedBuffer.get(), protectedSizeMax, &resultLen);
         if (!status.isOK()) {
-            severe() << "Unable to finalize DataProtector while closing RemoveSaver: "
+            MONGO_BOOST_SEVERE << "Unable to finalize DataProtector while closing RemoveSaver: "
                      << redact(status);
             fassertFailed(34350);
         }
 
         _out->write(reinterpret_cast<const char*>(protectedBuffer.get()), resultLen);
         if (_out->fail()) {
-            severe() << "Couldn't write finalized DataProtector data to: " << _file.string()
+            MONGO_BOOST_SEVERE << "Couldn't write finalized DataProtector data to: " << _file.string()
                      << " for remove saving: " << redact(errnoWithDescription());
             fassertFailed(34351);
         }
@@ -329,12 +329,12 @@ Helpers::RemoveSaver::~RemoveSaver() {
         protectedBuffer.reset(new uint8_t[protectedSizeMax]);
         status = _protector->finalizeTag(protectedBuffer.get(), protectedSizeMax, &resultLen);
         if (!status.isOK()) {
-            severe() << "Unable to get finalizeTag from DataProtector while closing RemoveSaver: "
+            MONGO_BOOST_SEVERE << "Unable to get finalizeTag from DataProtector while closing RemoveSaver: "
                      << redact(status);
             fassertFailed(34352);
         }
         if (resultLen != _protector->getNumberOfBytesReservedForTag()) {
-            severe() << "Attempted to write tag of size " << resultLen
+            MONGO_BOOST_SEVERE << "Attempted to write tag of size " << resultLen
                      << " when DataProtector only reserved "
                      << _protector->getNumberOfBytesReservedForTag() << " bytes";
             fassertFailed(34353);
@@ -342,7 +342,7 @@ Helpers::RemoveSaver::~RemoveSaver() {
         _out->seekp(0);
         _out->write(reinterpret_cast<const char*>(protectedBuffer.get()), resultLen);
         if (_out->fail()) {
-            severe() << "Couldn't write finalizeTag from DataProtector to: " << _file.string()
+            MONGO_BOOST_SEVERE << "Couldn't write finalizeTag from DataProtector to: " << _file.string()
                      << " for remove saving: " << redact(errnoWithDescription());
             fassertFailed(34354);
         }
@@ -359,7 +359,7 @@ Status Helpers::RemoveSaver::goingToDelete(const BSONObj& o) {
         if (_out->fail()) {
             string msg = str::stream() << "couldn't create file: " << _file.string()
                                        << " for remove saving: " << redact(errnoWithDescription());
-            error() << msg;
+            MONGO_BOOST_ERROR << msg;
             _out.reset();
             _out = 0;
             return Status(ErrorCodes::FileNotOpen, msg);
@@ -392,7 +392,7 @@ Status Helpers::RemoveSaver::goingToDelete(const BSONObj& o) {
     if (_out->fail()) {
         string msg = str::stream() << "couldn't write document to file: " << _file.string()
                                    << " for remove saving: " << redact(errnoWithDescription());
-        error() << msg;
+        MONGO_BOOST_ERROR << msg;
         return Status(ErrorCodes::OperationFailed, msg);
     }
     return Status::OK();

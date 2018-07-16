@@ -206,7 +206,7 @@ ChunkVersion createFirstChunks(OperationContext* opCtx,
     const OID epoch = OID::gen();
     ChunkVersion version(1, 0, epoch);
 
-    log() << "going to create " << splitPoints.size() + 1 << " chunk(s) for: " << nss
+    MONGO_BOOST_LOG << "going to create " << splitPoints.size() + 1 << " chunk(s) for: " << nss
           << " using new epoch " << version.epoch();
 
     const auto validAfter = LogicalClock::get(opCtx)->getClusterTime().asTimestamp();
@@ -566,7 +566,7 @@ void ShardingCatalogManager::shardCollection(OperationContext* opCtx,
     auto status = ssvResponse.isOK() ? std::move(ssvResponse.getValue().commandStatus)
                                      : std::move(ssvResponse.getStatus());
     if (!status.isOK()) {
-        warning() << "could not update initial version of " << nss.ns() << " on shard primary "
+        MONGO_BOOST_WARNING << "could not update initial version of " << nss.ns() << " on shard primary "
                   << dbPrimaryShardId << causedBy(redact(status));
     }
 

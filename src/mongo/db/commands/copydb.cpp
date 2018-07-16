@@ -128,7 +128,7 @@ public:
         const char* deprecationWarning =
             "Support for the copydb command has been deprecated. See "
             "http://dochub.mongodb.org/core/copydb-clone-deprecation";
-        warning() << deprecationWarning;
+        MONGO_BOOST_WARNING << deprecationWarning;
         result.append("note", deprecationWarning);
         boost::optional<DisableDocumentValidation> maybeDisableValidation;
         if (shouldBypassDocumentValidationForCommand(cmdObj))

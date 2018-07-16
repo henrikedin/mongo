@@ -92,7 +92,7 @@ Status addFreeMonitoringOptions(moe::OptionSection* options) {
 
     Status ret = options->addSection(freeMonitoringOptions);
     if (!ret.isOK()) {
-        error() << "Failed to add free monitoring option section: " << ret.toString();
+        MONGO_BOOST_ERROR << "Failed to add free monitoring option section: " << ret.toString();
         return ret;
     }
 

@@ -129,7 +129,7 @@ void safeClose(int fd) {
 #endif
     if (close(fd) != 0) {
         const auto ewd = errnoWithDescription();
-        error() << "failed to close fd " << fd << ": " << ewd;
+        MONGO_BOOST_ERROR << "failed to close fd " << fd << ": " << ewd;
         fassertFailed(40318);
     }
 }
@@ -400,7 +400,7 @@ void ProgramRunner::start() {
         int status = pipe(pipeEnds);
         if (status != 0) {
             const auto ewd = errnoWithDescription();
-            error() << "failed to create pipe: " << ewd;
+            MONGO_BOOST_ERROR << "failed to create pipe: " << ewd;
             fassertFailed(16701);
         }
 #ifndef _WIN32
@@ -411,13 +411,13 @@ void ProgramRunner::start() {
         status = fcntl(pipeEnds[0], F_SETFD, FD_CLOEXEC);
         if (status != 0) {
             const auto ewd = errnoWithDescription();
-            error() << "failed to set FD_CLOEXEC on pipe end 0: " << ewd;
+            MONGO_BOOST_ERROR << "failed to set FD_CLOEXEC on pipe end 0: " << ewd;
             fassertFailed(40308);
         }
         status = fcntl(pipeEnds[1], F_SETFD, FD_CLOEXEC);
         if (status != 0) {
             const auto ewd = errnoWithDescription();
-            error() << "failed to set FD_CLOEXEC on pipe end 1: " << ewd;
+            MONGO_BOOST_ERROR << "failed to set FD_CLOEXEC on pipe end 1: " << ewd;
             fassertFailed(40317);
         }
 #endif
@@ -444,7 +444,7 @@ void ProgramRunner::start() {
         for (unsigned i = 0; i < _argv.size(); i++) {
             ss << " " << _argv[i];
         }
-        log() << ss.str();
+        MONGO_BOOST_LOG << ss.str();
     }
 }
 
@@ -688,7 +688,7 @@ bool wait_for_pid(ProcessId pid, bool block = true, int* exit_code = NULL) {
         return false;
     } else if (ret != WAIT_OBJECT_0) {
         const auto ewd = errnoWithDescription();
-        log() << "wait_for_pid: WaitForSingleObject failed: " << ewd;
+        MONGO_BOOST_LOG << "wait_for_pid: WaitForSingleObject failed: " << ewd;
     }
 
     DWORD tmp;
@@ -707,7 +707,7 @@ bool wait_for_pid(ProcessId pid, bool block = true, int* exit_code = NULL) {
         return true;
     } else {
         const auto ewd = errnoWithDescription();
-        log() << "GetExitCodeProcess failed: " << ewd;
+        MONGO_BOOST_LOG << "GetExitCodeProcess failed: " << ewd;
         return false;
     }
 #else
@@ -810,7 +810,7 @@ BSONObj ResetDbpath(const BSONObj& a, void* data) {
     verify(a.nFields() == 1);
     string path = a.firstElement().valuestrsafe();
     if (path.empty()) {
-        warning() << "ResetDbpath(): nothing to do, path was empty";
+        MONGO_BOOST_WARNING << "ResetDbpath(): nothing to do, path was empty";
         return undefinedReturn;
     }
     if (boost::filesystem::exists(path))
@@ -823,7 +823,7 @@ BSONObj PathExists(const BSONObj& a, void* data) {
     verify(a.nFields() == 1);
     string path = a.firstElement().valuestrsafe();
     if (path.empty()) {
-        warning() << "PathExists(): path was empty";
+        MONGO_BOOST_WARNING << "PathExists(): path was empty";
         return BSON(string("") << false);
     };
     bool exists = boost::filesystem::exists(path);
@@ -840,7 +840,7 @@ void copyDir(const boost::filesystem::path& from, const boost::filesystem::path&
             boost::system::error_code ec;
             boost::filesystem::copy_file(p, to / p.leaf(), ec);
             if (ec) {
-                log() << "Skipping copying of file from '" << p.generic_string() << "' to '"
+                MONGO_BOOST_LOG << "Skipping copying of file from '" << p.generic_string() << "' to '"
                       << (to / p.leaf()).generic_string() << "' due to: " << ec.message();
             }
         } else if (p.leaf() != "mongod.lock" && p.leaf() != "WiredTiger.lock") {
@@ -863,7 +863,7 @@ BSONObj CopyDbpath(const BSONObj& a, void* data) {
     string from = i.next().str();
     string to = i.next().str();
     if (from.empty() || to.empty()) {
-        warning() << "CopyDbpath(): nothing to do, source or destination path(s) were empty";
+        MONGO_BOOST_WARNING << "CopyDbpath(): nothing to do, source or destination path(s) were empty";
         return undefinedReturn;
     }
     if (boost::filesystem::exists(to))
@@ -889,9 +889,9 @@ inline void kill_wrapper(ProcessId pid, int sig, int port, const BSONObj& opt) {
         int gle = GetLastError();
         if (gle != ERROR_FILE_NOT_FOUND) {
             const auto ewd = errnoWithDescription();
-            warning() << "kill_wrapper OpenEvent failed: " << ewd;
+            MONGO_BOOST_WARNING << "kill_wrapper OpenEvent failed: " << ewd;
         } else {
-            log() << "kill_wrapper OpenEvent failed to open event to the process " << pid.asUInt32()
+            MONGO_BOOST_LOG << "kill_wrapper OpenEvent failed to open event to the process " << pid.asUInt32()
                   << ". It has likely died already or server is running an older version."
                   << " Attempting to shutdown through admin command.";
 
@@ -933,7 +933,7 @@ inline void kill_wrapper(ProcessId pid, int sig, int port, const BSONObj& opt) {
     bool result = SetEvent(event);
     if (!result) {
         const auto ewd = errnoWithDescription();
-        error() << "kill_wrapper SetEvent failed: " << ewd;
+        MONGO_BOOST_ERROR << "kill_wrapper SetEvent failed: " << ewd;
         return;
     }
 #else
@@ -942,7 +942,7 @@ inline void kill_wrapper(ProcessId pid, int sig, int port, const BSONObj& opt) {
         if (errno == ESRCH) {
         } else {
             const auto ewd = errnoWithDescription();
-            log() << "killFailed: " << ewd;
+            MONGO_BOOST_LOG << "killFailed: " << ewd;
             verify(x == 0);
         }
     }
@@ -954,7 +954,7 @@ int killDb(int port, ProcessId _pid, int signal, const BSONObj& opt) {
     ProcessId pid;
     if (port > 0) {
         if (!registry.isPortRegistered(port)) {
-            log() << "No db started on port: " << port;
+            MONGO_BOOST_LOG << "No db started on port: " << port;
             return 0;
         }
         pid = registry.pidForPort(port);
@@ -968,7 +968,7 @@ int killDb(int port, ProcessId _pid, int signal, const BSONObj& opt) {
     try {
         wait_for_pid(pid, true, &exitCode);
     } catch (...) {
-        warning() << "process " << pid << " failed to terminate.";
+        MONGO_BOOST_WARNING << "process " << pid << " failed to terminate.";
         return EXIT_FAILURE;
     }
 
@@ -1018,7 +1018,7 @@ BSONObj StopMongoProgram(const BSONObj& a, void* data) {
     uassert(ErrorCodes::BadValue, "stopMongoProgram needs a number", a.firstElement().isNumber());
     int port = int(a.firstElement().number());
     int code = killDb(port, ProcessId::fromNative(0), getSignal(a), getStopMongodOpts(a));
-    log() << "shell: stopped mongo program on port " << port;
+    MONGO_BOOST_LOG << "shell: stopped mongo program on port " << port;
     return BSON("" << (double)code);
 }
 
@@ -1029,7 +1029,7 @@ BSONObj StopMongoProgramByPid(const BSONObj& a, void* data) {
         ErrorCodes::BadValue, "stopMongoProgramByPid needs a number", a.firstElement().isNumber());
     ProcessId pid = ProcessId::fromNative(int(a.firstElement().number()));
     int code = killDb(0, pid, getSignal(a), getStopMongodOpts(a));
-    log() << "shell: stopped mongo program with pid " << pid;
+    MONGO_BOOST_LOG << "shell: stopped mongo program with pid " << pid;
     return BSON("" << (double)code);
 }
 
@@ -1041,7 +1041,7 @@ int KillMongoProgramInstances() {
         int port = registry.portForPid(pid);
         int code = killDb(port != -1 ? port : 0, pid, SIGTERM);
         if (code != EXIT_SUCCESS) {
-            log() << "Process with pid " << pid << " exited with error code " << code;
+            MONGO_BOOST_LOG << "Process with pid " << pid << " exited with error code " << code;
             returnCode = code;
         }
     }

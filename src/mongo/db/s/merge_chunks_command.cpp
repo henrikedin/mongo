@@ -95,7 +95,7 @@ Status mergeChunks(OperationContext* opCtx,
                                        << " to merge chunks in [" << redact(minKey) << ", "
                                        << redact(maxKey) << ")";
 
-        warning() << context << causedBy(scopedDistLock.getStatus());
+        MONGO_BOOST_WARNING << context << causedBy(scopedDistLock.getStatus());
         return scopedDistLock.getStatus().withContext(context);
     }
 
@@ -114,7 +114,7 @@ Status mergeChunks(OperationContext* opCtx,
         std::string errmsg = stream() << "could not merge chunks, collection " << nss.ns()
                                       << " is not sharded";
 
-        warning() << errmsg;
+        MONGO_BOOST_WARNING << errmsg;
         return {ErrorCodes::StaleEpoch, errmsg};
     }
 
@@ -126,7 +126,7 @@ Status mergeChunks(OperationContext* opCtx,
             << " has changed since merge was sent (sent epoch: " << epoch.toString()
             << ", current epoch: " << shardVersion.epoch() << ")";
 
-        warning() << errmsg;
+        MONGO_BOOST_WARNING << errmsg;
         return {ErrorCodes::StaleEpoch, errmsg};
     }
 
@@ -137,7 +137,7 @@ Status mergeChunks(OperationContext* opCtx,
                                       << " for collection " << nss.ns() << " with key pattern "
                                       << metadata->getKeyPattern().toString();
 
-        warning() << errmsg;
+        MONGO_BOOST_WARNING << errmsg;
         return Status(ErrorCodes::IllegalOperation, errmsg);
     }
 
@@ -164,7 +164,7 @@ Status mergeChunks(OperationContext* opCtx,
             << redact(minKey) << " and ending at " << redact(maxKey) << " does not belong to shard "
             << shardingState->getShardName();
 
-        warning() << errmsg;
+        MONGO_BOOST_WARNING << errmsg;
         return Status(ErrorCodes::IllegalOperation, errmsg);
     }
 
@@ -182,7 +182,7 @@ Status mergeChunks(OperationContext* opCtx,
             << "could not merge chunks, collection " << nss.ns() << " range starting at "
             << redact(minKey) << " does not belong to shard " << shardingState->getShardName();
 
-        warning() << errmsg;
+        MONGO_BOOST_WARNING << errmsg;
         return Status(ErrorCodes::IllegalOperation, errmsg);
     }
 
@@ -196,7 +196,7 @@ Status mergeChunks(OperationContext* opCtx,
             << "could not merge chunks, collection " << nss.ns() << " range ending at "
             << redact(maxKey) << " does not belong to shard " << shardingState->getShardName();
 
-        warning() << errmsg;
+        MONGO_BOOST_WARNING << errmsg;
         return Status(ErrorCodes::IllegalOperation, errmsg);
     }
 
@@ -210,7 +210,7 @@ Status mergeChunks(OperationContext* opCtx,
             << (!validRangeStartKey && !validRangeEndKey ? " or " : "")
             << (!validRangeEndKey ? "ending at " + redact(maxKey.toString()) : "");
 
-        warning() << errmsg;
+        MONGO_BOOST_WARNING << errmsg;
         return Status(ErrorCodes::IllegalOperation, errmsg);
     }
 
@@ -219,7 +219,7 @@ Status mergeChunks(OperationContext* opCtx,
                                       << " already contains chunk for "
                                       << redact(ChunkRange(minKey, maxKey).toString());
 
-        warning() << errmsg;
+        MONGO_BOOST_WARNING << errmsg;
         return Status(ErrorCodes::IllegalOperation, errmsg);
     }
 
@@ -233,7 +233,7 @@ Status mergeChunks(OperationContext* opCtx,
                 << redact(ChunkRange(chunksToMerge[i - 1].getMax(), chunksToMerge[i].getMin())
                               .toString());
 
-            warning() << errmsg;
+            MONGO_BOOST_WARNING << errmsg;
             return Status(ErrorCodes::IllegalOperation, errmsg);
         }
     }

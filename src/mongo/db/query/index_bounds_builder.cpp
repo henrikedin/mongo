@@ -686,12 +686,12 @@ void IndexBoundsBuilder::translate(const MatchExpression* expr,
 
             *tightnessOut = IndexBoundsBuilder::INEXACT_FETCH;
         } else {
-            warning() << "Planner error trying to build geo bounds for " << elt.toString()
+            MONGO_BOOST_WARNING << "Planner error trying to build geo bounds for " << elt.toString()
                       << " index element.";
             verify(0);
         }
     } else {
-        warning() << "Planner error, trying to build bounds for expression: "
+        MONGO_BOOST_WARNING << "Planner error, trying to build bounds for expression: "
                   << redact(expr->toString());
         verify(0);
     }
@@ -998,7 +998,7 @@ void IndexBoundsBuilder::alignBounds(IndexBounds* bounds, const BSONObj& kp, int
     }
 
     if (!bounds->isValidFor(kp, scanDir)) {
-        log() << "INVALID BOUNDS: " << redact(bounds->toString()) << endl
+        MONGO_BOOST_LOG << "INVALID BOUNDS: " << redact(bounds->toString()) << endl
               << "kp = " << redact(kp) << endl
               << "scanDir = " << scanDir;
         MONGO_UNREACHABLE;

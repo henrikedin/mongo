@@ -428,7 +428,7 @@ public:
             MONGO_UNREACHABLE;
         }
 
-        unittest::log() << "Returning success on DBClientCursorForTest::query()";
+        unittest::MONGO_BOOST_LOG << "Returning success on DBClientCursorForTest::query()";
 
         BSONArrayBuilder builder;
         builder.append(makeOp(1, 1));

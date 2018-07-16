@@ -462,7 +462,7 @@ Status MobileRecordStore::validate(OperationContext* opCtx,
                 }
 
                 ++numInvalidRecs;
-                log() << "document at location " << recId << " is corrupted";
+                MONGO_BOOST_LOG << "document at location " << recId << " is corrupted";
             }
         }
 

@@ -212,7 +212,7 @@ void ShardingStateRecovery::endMetadataOp(OperationContext* opCtx) {
     Status status =
         modifyRecoveryDocument(opCtx, RecoveryDocument::Decrement, WriteConcernOptions());
     if (!status.isOK()) {
-        warning() << "Failed to decrement minOpTimeUpdaters due to " << redact(status);
+        MONGO_BOOST_WARNING << "Failed to decrement minOpTimeUpdaters due to " << redact(status);
     }
 }
 
@@ -239,7 +239,7 @@ Status ShardingStateRecovery::recover(OperationContext* opCtx) {
 
     const auto recoveryDoc = std::move(recoveryDocStatus.getValue());
 
-    log() << "Sharding state recovery process found document " << redact(recoveryDoc.toBSON());
+    MONGO_BOOST_LOG << "Sharding state recovery process found document " << redact(recoveryDoc.toBSON());
 
     Grid* const grid = Grid::get(opCtx);
     ShardingState* const shardingState = ShardingState::get(opCtx);
@@ -251,7 +251,7 @@ Status ShardingStateRecovery::recover(OperationContext* opCtx) {
         return Status::OK();
     }
 
-    log() << "Sharding state recovery document indicates there were "
+    MONGO_BOOST_LOG << "Sharding state recovery document indicates there were "
           << recoveryDoc.getMinOpTimeUpdaters()
           << " metadata change operations in flight. Contacting the config server primary in order "
              "to retrieve the most recent opTime.";
@@ -266,12 +266,12 @@ Status ShardingStateRecovery::recover(OperationContext* opCtx) {
     if (!status.isOK())
         return status;
 
-    log() << "Sharding state recovered. New config server opTime is " << grid->configOpTime();
+    MONGO_BOOST_LOG << "Sharding state recovered. New config server opTime is " << grid->configOpTime();
 
     // Finally, clear the recovery document so next time we don't need to recover
     status = modifyRecoveryDocument(opCtx, RecoveryDocument::Clear, kLocalWriteConcern);
     if (!status.isOK()) {
-        warning() << "Failed to reset sharding state recovery document due to " << redact(status);
+        MONGO_BOOST_WARNING << "Failed to reset sharding state recovery document due to " << redact(status);
     }
 
     return Status::OK();

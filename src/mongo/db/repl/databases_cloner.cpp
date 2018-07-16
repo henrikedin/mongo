@@ -338,7 +338,7 @@ void DatabasesCloner::_onListDatabaseFinish(
             if (status.isOK()) {
                 LOG(1) << "collection clone finished: " << srcNss;
             } else {
-                warning() << "collection clone for '" << srcNss << "' failed due to "
+                MONGO_BOOST_WARNING << "collection clone for '" << srcNss << "' failed due to "
                           << status.toString();
             }
         };
@@ -372,7 +372,7 @@ void DatabasesCloner::_onListDatabaseFinish(
             std::string err = str::stream() << "could not create cloner for database: " << dbName
                                             << " due to: " << startStatus.toString();
             _setStatus_inlock({ErrorCodes::InitialSyncFailure, err});
-            error() << err;
+            MONGO_BOOST_ERROR << err;
             break;  // exit for_each loop
         }
 
@@ -401,7 +401,7 @@ RemoteCommandRetryScheduler* DatabasesCloner::_getListDatabasesScheduler() const
 void DatabasesCloner::_onEachDBCloneFinish(const Status& status, const std::string& name) {
     UniqueLock lk(_mutex);
     if (!status.isOK()) {
-        warning() << "database '" << name << "' (" << (_stats.databasesCloned + 1) << " of "
+        MONGO_BOOST_WARNING << "database '" << name << "' (" << (_stats.databasesCloned + 1) << " of "
                   << _databaseCloners.size() << ") clone failed due to " << status.toString();
         _fail_inlock(&lk, status);
         return;
@@ -439,7 +439,7 @@ void DatabasesCloner::_onEachDBCloneFinish(const Status& status, const std::stri
     auto&& dbCloner = _databaseCloners[_stats.databasesCloned];
     auto startStatus = dbCloner->startup();
     if (!startStatus.isOK()) {
-        warning() << "failed to schedule database '" << name << "' ("
+        MONGO_BOOST_WARNING << "failed to schedule database '" << name << "' ("
                   << (_stats.databasesCloned + 1) << " of " << _databaseCloners.size()
                   << ") due to " << startStatus.toString();
         _fail_inlock(&lk, startStatus);

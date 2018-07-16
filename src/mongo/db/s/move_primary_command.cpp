@@ -48,7 +48,7 @@ namespace {
  */
 void uassertStatusOKWithWarning(const Status& status) {
     if (!status.isOK()) {
-        warning() << "movePrimary failed" << causedBy(redact(status));
+        MONGO_BOOST_WARNING << "movePrimary failed" << causedBy(redact(status));
         uassertStatusOK(status);
     }
 }

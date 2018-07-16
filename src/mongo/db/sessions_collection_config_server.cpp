@@ -106,14 +106,14 @@ Status SessionsCollectionConfigServer::setupSessionsCollection(OperationContext*
 
         auto res = _shardCollectionIfNeeded(opCtx);
         if (!res.isOK()) {
-            log() << "Failed to create config.system.sessions: " << res.reason()
+            MONGO_BOOST_LOG << "Failed to create config.system.sessions: " << res.reason()
                   << ", will try again at the next refresh interval";
             return res;
         }
 
         res = _generateIndexesIfNeeded(opCtx);
         if (!res.isOK()) {
-            log() << "Failed to generate TTL index for config.system.sessions on all shards, "
+            MONGO_BOOST_LOG << "Failed to generate TTL index for config.system.sessions on all shards, "
                   << "will try again on the next refresh interval";
         }
 

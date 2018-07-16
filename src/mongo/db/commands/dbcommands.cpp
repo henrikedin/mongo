@@ -237,7 +237,7 @@ public:
             CurOp::get(opCtx)->setNS_inlock(dbname);
         }
 
-        log() << "repairDatabase " << dbname;
+        MONGO_BOOST_LOG << "repairDatabase " << dbname;
         BackgroundOperation::assertNoBgOpInProgForDb(dbname);
 
         uassert(ErrorCodes::BadValue,
@@ -358,7 +358,7 @@ public:
         if (cmdObj.hasField("autoIndexId")) {
             const char* deprecationWarning =
                 "the autoIndexId option is deprecated and will be removed in a future release";
-            warning() << deprecationWarning;
+            MONGO_BOOST_WARNING << deprecationWarning;
             result.append("note", deprecationWarning);
         }
 
@@ -561,7 +561,7 @@ public:
         }
 
         if (PlanExecutor::FAILURE == state || PlanExecutor::DEAD == state) {
-            warning() << "Internal error while reading " << ns;
+            MONGO_BOOST_WARNING << "Internal error while reading " << ns;
             uassertStatusOK(WorkingSetCommon::getMemberObjectStatus(obj).withContext(
                 "Executor error while reading during dataSize command"));
         }

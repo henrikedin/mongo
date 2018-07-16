@@ -178,7 +178,7 @@ Status waitForWriteConcern(OperationContext* opCtx,
 
     switch (writeConcernWithPopulatedSyncMode.syncMode) {
         case WriteConcernOptions::SyncMode::UNSET:
-            severe() << "Attempting to wait on a WriteConcern with an unset sync option";
+            MONGO_BOOST_SEVERE << "Attempting to wait on a WriteConcern with an unset sync option";
             fassertFailed(34410);
         case WriteConcernOptions::SyncMode::NONE:
             break;

@@ -45,10 +45,10 @@ void printShardingVersionInfo(bool out) {
     auto&& vii = VersionInfoInterface::instance();
     if (out) {
         setPlainConsoleLogger();
-        log() << mongosVersion(vii);
+        MONGO_BOOST_LOG << mongosVersion(vii);
         vii.logBuildInfo();
     } else {
-        log() << mongosVersion(vii);
+        MONGO_BOOST_LOG << mongosVersion(vii);
         vii.logBuildInfo();
         logProcessDetails();
     }

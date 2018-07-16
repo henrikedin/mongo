@@ -161,7 +161,7 @@ public:
         OldClientContext ctx(opCtx, nss.ns());
         BackgroundOperation::assertNoBgOpInProgForNs(nss.ns());
 
-        log() << "compact " << nss.ns() << " begin, options: " << compactOptions;
+        MONGO_BOOST_LOG << "compact " << nss.ns() << " begin, options: " << compactOptions;
 
         StatusWith<CompactStats> status = collection->compact(opCtx, &compactOptions);
         uassertStatusOK(status.getStatus());
@@ -169,7 +169,7 @@ public:
         if (status.getValue().corruptDocuments > 0)
             result.append("invalidObjects", status.getValue().corruptDocuments);
 
-        log() << "compact " << nss.ns() << " end";
+        MONGO_BOOST_LOG << "compact " << nss.ns() << " end";
 
         return true;
     }

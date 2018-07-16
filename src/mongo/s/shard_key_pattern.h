@@ -250,4 +250,8 @@ private:
     bool _hasId;
 };
 
+inline std::ostream& operator<<(std::ostream& s, const ShardKeyPattern& skp) {
+	return (s << skp.toString());
+}
+
 }  // namespace mongo

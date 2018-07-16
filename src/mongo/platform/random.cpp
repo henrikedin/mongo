@@ -111,7 +111,7 @@ public:
         auto ntstatus = ::BCryptOpenAlgorithmProvider(
             &_algHandle, BCRYPT_RNG_ALGORITHM, MS_PRIMITIVE_PROVIDER, 0);
         if (ntstatus != STATUS_SUCCESS) {
-            error() << "Failed to open crypto algorithm provider while creating secure random "
+            MONGO_BOOST_ERROR << "Failed to open crypto algorithm provider while creating secure random "
                        "object; NTSTATUS: "
                     << ntstatus;
             fassertFailed(28815);
@@ -121,7 +121,7 @@ public:
     virtual ~WinSecureRandom() {
         auto ntstatus = ::BCryptCloseAlgorithmProvider(_algHandle, 0);
         if (ntstatus != STATUS_SUCCESS) {
-            warning() << "Failed to close crypto algorithm provider destroying secure random "
+            MONGO_BOOST_WARNING << "Failed to close crypto algorithm provider destroying secure random "
                          "object; NTSTATUS: "
                       << ntstatus;
         }
@@ -132,7 +132,7 @@ public:
         auto ntstatus =
             ::BCryptGenRandom(_algHandle, reinterpret_cast<PUCHAR>(&value), sizeof(value), 0);
         if (ntstatus != STATUS_SUCCESS) {
-            error() << "Failed to generate random number from secure random object; NTSTATUS: "
+            MONGO_BOOST_ERROR << "Failed to generate random number from secure random object; NTSTATUS: "
                     << ntstatus;
             fassertFailed(28814);
         }
@@ -154,7 +154,7 @@ public:
     InputStreamSecureRandom(const char* fn) {
         _in = stdx::make_unique<std::ifstream>(fn, std::ios::binary | std::ios::in);
         if (!_in->is_open()) {
-            error() << "cannot open " << fn << " " << strerror(errno);
+            MONGO_BOOST_ERROR << "cannot open " << fn << " " << strerror(errno);
             fassertFailed(28839);
         }
     }
@@ -163,7 +163,7 @@ public:
         int64_t r;
         _in->read(reinterpret_cast<char*>(&r), sizeof(r));
         if (_in->fail()) {
-            error() << "InputStreamSecureRandom failed to generate random bytes";
+            MONGO_BOOST_ERROR << "InputStreamSecureRandom failed to generate random bytes";
             fassertFailed(28840);
         }
         return r;

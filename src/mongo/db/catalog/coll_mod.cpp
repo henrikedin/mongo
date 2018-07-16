@@ -598,7 +598,7 @@ void updateUniqueIndexesOnUpgrade(OperationContext* opCtx) {
     const auto& clientInfo = repl::ReplClientInfo::forClient(opCtx->getClient());
     auto awaitOpTime = clientInfo.getLastOp();
 
-    log() << "Finished updating version of unique indexes for upgrade, waiting for all"
+    MONGO_BOOST_LOG << "Finished updating version of unique indexes for upgrade, waiting for all"
           << " index updates to be committed at optime " << awaitOpTime;
 
     const WriteConcernOptions writeConcern(WriteConcernOptions::kMajority,

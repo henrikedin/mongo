@@ -238,7 +238,7 @@ void ReplicaSetMonitor::_scheduleRefresh(Date_t when) {
     }
 
     if (!status.isOK()) {
-        severe() << "Can't continue refresh for replica set " << getName() << " due to "
+        MONGO_BOOST_SEVERE << "Can't continue refresh for replica set " << getName() << " due to "
                  << redact(status.getStatus());
         fassertFailed(40140);
     }
@@ -507,7 +507,7 @@ Refresher::NextStep Refresher::getNextStep() {
     if (_scan->hostsToScan.empty()) {
         // We've tried all hosts we can, so nothing more to do in this round.
         if (!_scan->foundUpMaster) {
-            warning() << "Unable to reach primary for set " << _set->name;
+            MONGO_BOOST_WARNING << "Unable to reach primary for set " << _set->name;
 
             // Since we've talked to everyone we could but still didn't find a primary, we
             // do the best we can, and assume all unconfirmedReplies are actually from nodes
@@ -540,7 +540,7 @@ Refresher::NextStep Refresher::getNextStep() {
         } else {
             auto nScans = _set->consecutiveFailedScans++;
             if (nScans <= 10 || nScans % 10 == 0) {
-                log() << "Cannot reach any nodes for set " << _set->name
+                MONGO_BOOST_LOG << "Cannot reach any nodes for set " << _set->name
                       << ". Please check network connectivity and the status of the set. "
                       << "This has happened for " << _set->consecutiveFailedScans
                       << " checks in a row.";
@@ -587,7 +587,7 @@ void Refresher::receivedIsMaster(const HostAndPort& from,
                 _scan->possibleNodes.insert(reply.normalHosts.begin(), reply.normalHosts.end());
             }
         } else {
-            error() << "replset name mismatch: expected \"" << _set->name << "\", "
+            MONGO_BOOST_ERROR << "replset name mismatch: expected \"" << _set->name << "\", "
                     << "but remote node " << from << " has replset name \"" << reply.setName << "\""
                     << ", ismaster: " << replyObj;
         }
@@ -756,7 +756,7 @@ Status Refresher::receivedIsMasterFromMaster(const HostAndPort& from, const IsMa
 
         // LogLevel can be pretty low, since replica set reconfiguration should be pretty rare
         // and we want to record our changes
-        log() << "changing hosts to " << _set->getConfirmedServerAddress() << " from " << oldAddr;
+        MONGO_BOOST_LOG << "changing hosts to " << _set->getConfirmedServerAddress() << " from " << oldAddr;
 
         if (syncConfigChangeHook) {
             syncConfigChangeHook(_set->name, _set->getConfirmedServerAddress());
@@ -915,7 +915,7 @@ void IsMasterReply::parse(const BSONObj& obj) {
         }
     } catch (const std::exception& e) {
         ok = false;
-        log() << "exception while parsing isMaster reply: " << e.what() << " " << obj;
+        MONGO_BOOST_LOG << "exception while parsing isMaster reply: " << e.what() << " " << obj;
     }
 }
 
@@ -923,7 +923,7 @@ Node::Node(const HostAndPort& host) : host(host), latencyMicros(unknownLatency) 
 
 void Node::markFailed(const Status& status) {
     if (isUp) {
-        log() << "Marking host " << host << " as failed" << causedBy(redact(status));
+        MONGO_BOOST_LOG << "Marking host " << host << " as failed" << causedBy(redact(status));
 
         isUp = false;
     }
@@ -1004,7 +1004,7 @@ SetState::SetState(StringData name, const std::set<HostAndPort>& seedNodes)
     uassert(13642, "Replica set seed list can't be empty", !seedNodes.empty());
 
     if (name.empty())
-        warning() << "Replica set name empty, first node: " << *(seedNodes.begin());
+        MONGO_BOOST_WARNING << "Replica set name empty, first node: " << *(seedNodes.begin());
 
     // This adds the seed hosts to nodes, but they aren't usable for anything except seeding a
     // scan until we start a scan and either find a master or contact all hosts without finding

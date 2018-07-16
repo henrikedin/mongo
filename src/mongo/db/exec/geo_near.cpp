@@ -127,12 +127,12 @@ static void extractGeometries(const BSONObj& doc,
                     // Valid geometry element
                     geometries->push_back(std::move(stored));
                 } else {
-                    warning() << "geoNear stage read non-geometry element " << redact(nextEl)
+                    MONGO_BOOST_WARNING << "geoNear stage read non-geometry element " << redact(nextEl)
                               << " in array " << redact(el);
                 }
             }
         } else {
-            warning() << "geoNear stage read non-geometry element " << redact(el);
+            MONGO_BOOST_WARNING << "geoNear stage read non-geometry element " << redact(el);
         }
     }
 }

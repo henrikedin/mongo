@@ -100,7 +100,7 @@ void generateSystemIndexForExistingCollection(OperationContext* opCtx,
                                               const IndexSpec& spec) {
     // Do not try and generate any system indexes in read only mode.
     if (storageGlobalParams.readOnly) {
-        warning() << "Running in queryable backup mode. Unable to create authorization index on "
+        MONGO_BOOST_WARNING << "Running in queryable backup mode. Unable to create authorization index on "
                   << ns;
         return;
     }
@@ -119,7 +119,7 @@ void generateSystemIndexForExistingCollection(OperationContext* opCtx,
             opCtx, spec.toBSON(), ns, serverGlobalParams.featureCompatibility);
         BSONObj indexSpec = fassert(40452, indexSpecStatus);
 
-        log() << "No authorization index detected on " << ns
+        MONGO_BOOST_LOG << "No authorization index detected on " << ns
               << " collection. Attempting to recover by creating an index with spec: " << indexSpec;
 
         MultiIndexBlock indexer(opCtx, collection);
@@ -141,9 +141,9 @@ void generateSystemIndexForExistingCollection(OperationContext* opCtx,
             wunit.commit();
         });
 
-        log() << "Authorization index construction on " << ns << " is complete";
+        MONGO_BOOST_LOG << "Authorization index construction on " << ns << " is complete";
     } catch (const DBException& e) {
-        severe() << "Failed to regenerate index for " << ns << ". Exception: " << e.what();
+        MONGO_BOOST_SEVERE << "Failed to regenerate index for " << ns << ". Exception: " << e.what();
         throw;
     }
 }

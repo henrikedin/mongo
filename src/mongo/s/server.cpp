@@ -145,7 +145,7 @@ Status waitForSigningKeys(OperationContext* opCtx) {
         // internalClient.
         if (rsm && (rsm->getMaxWireVersion() < WireVersion::SUPPORTS_OP_MSG ||
                     rsm->getMaxWireVersion() != rsm->getMinWireVersion())) {
-            log() << "Not waiting for signing keys, not supported by the config shard "
+            MONGO_BOOST_LOG << "Not waiting for signing keys, not supported by the config shard "
                   << configCS.getSetName();
             return Status::OK();
         }
@@ -158,13 +158,13 @@ Status waitForSigningKeys(OperationContext* opCtx) {
             if (LogicalTimeValidator::get(opCtx)->shouldGossipLogicalTime()) {
                 return Status::OK();
             }
-            log() << "Waiting for signing keys, sleeping for " << kSignKeysRetryInterval
+            MONGO_BOOST_LOG << "Waiting for signing keys, sleeping for " << kSignKeysRetryInterval
                   << " and trying again.";
             sleepFor(kSignKeysRetryInterval);
             continue;
         } catch (const DBException& ex) {
             Status status = ex.toStatus();
-            warning() << "Error waiting for signing keys, sleeping for " << kSignKeysRetryInterval
+            MONGO_BOOST_WARNING << "Error waiting for signing keys, sleeping for " << kSignKeysRetryInterval
                       << " and trying again " << causedBy(status);
             sleepFor(kSignKeysRetryInterval);
             continue;
@@ -183,7 +183,7 @@ void cleanupTask(ServiceContext* serviceContext) {
 
         // Shutdown the TransportLayer so that new connections aren't accepted
         if (auto tl = serviceContext->getTransportLayer()) {
-            log(LogComponent::kNetwork) << "shutdown: going to close all sockets...";
+			MONGO_BOOST_LOG_COMPONENT(LogComponent::kNetwork) << "shutdown: going to close all sockets...";
 
             tl->shutdown();
         }
@@ -235,7 +235,7 @@ void cleanupTask(ServiceContext* serviceContext) {
         // Shutdown the Service Entry Point and its sessions and give it a grace period to complete.
         if (auto sep = serviceContext->getServiceEntryPoint()) {
             if (!sep->shutdown(Seconds(10))) {
-                log(LogComponent::kNetwork)
+                MONGO_BOOST_LOG_COMPONENT(LogComponent::kNetwork)
                     << "Service entry point failed to shutdown within timelimit.";
             }
         }
@@ -244,7 +244,7 @@ void cleanupTask(ServiceContext* serviceContext) {
         if (auto svcExec = serviceContext->getServiceExecutor()) {
             Status status = svcExec->shutdown(Seconds(5));
             if (!status.isOK()) {
-                log(LogComponent::kNetwork)
+                MONGO_BOOST_LOG_COMPONENT(LogComponent::kNetwork)
                     << "Service executor failed to shutdown within timelimit: " << status.reason();
             }
         }
@@ -345,7 +345,7 @@ ExitCode runMongosServer(ServiceContext* serviceContext) {
         transport::TransportLayerManager::createWithConfig(&serverGlobalParams, serviceContext);
     auto res = tl->setup();
     if (!res.isOK()) {
-        error() << "Failed to set up listener: " << res;
+        MONGO_BOOST_ERROR << "Failed to set up listener: " << res;
         return EXIT_NET_ERROR;
     }
     serviceContext->setTransportLayer(std::move(tl));
@@ -393,10 +393,10 @@ ExitCode runMongosServer(ServiceContext* serviceContext) {
         if (!status.isOK()) {
             if (status == ErrorCodes::CallbackCanceled) {
                 invariant(globalInShutdownDeprecated());
-                log() << "Shutdown called before mongos finished starting up";
+                MONGO_BOOST_LOG << "Shutdown called before mongos finished starting up";
                 return EXIT_CLEAN;
             }
-            error() << "Error initializing sharding system: " << status;
+            MONGO_BOOST_ERROR << "Error initializing sharding system: " << status;
             return EXIT_SHARDING_ERROR;
         }
 
@@ -410,7 +410,7 @@ ExitCode runMongosServer(ServiceContext* serviceContext) {
 
     Status status = AuthorizationManager::get(serviceContext)->initialize(NULL);
     if (!status.isOK()) {
-        error() << "Initializing authorization data failed: " << status;
+        MONGO_BOOST_ERROR << "Initializing authorization data failed: " << status;
         return EXIT_SHARDING_ERROR;
     }
 
@@ -442,13 +442,13 @@ ExitCode runMongosServer(ServiceContext* serviceContext) {
 
     status = serviceContext->getServiceExecutor()->start();
     if (!status.isOK()) {
-        error() << "Failed to start the service executor: " << redact(status);
+        MONGO_BOOST_ERROR << "Failed to start the service executor: " << redact(status);
         return EXIT_NET_ERROR;
     }
 
     status = serviceContext->getTransportLayer()->start();
     if (!status.isOK()) {
-        error() << "Failed to start the transport layer: " << redact(status);
+        MONGO_BOOST_ERROR << "Failed to start the transport layer: " << redact(status);
         return EXIT_NET_ERROR;
     }
 
@@ -459,7 +459,7 @@ ExitCode runMongosServer(ServiceContext* serviceContext) {
 #else
     if (ntservice::shouldStartService()) {
         ntservice::reportStatus(SERVICE_RUNNING);
-        log() << "Service running";
+        MONGO_BOOST_LOG << "Service running";
     }
 #endif
 
@@ -508,7 +508,7 @@ ExitCode main(ServiceContext* serviceContext) {
         }
 
         if (configAddr.isLocalHost() != shardingContext->allowLocalHost()) {
-            log(LogComponent::kDefault) << "cannot mix localhost and ip addresses in configdbs";
+			MONGO_BOOST_LOG_COMPONENT(LogComponent::kDefault) << "cannot mix localhost and ip addresses in configdbs";
             return EXIT_BADOPTIONS;
         }
     }
@@ -565,7 +565,7 @@ ExitCode mongoSMain(int argc, char* argv[], char** envp) {
 
     Status status = runGlobalInitializers(argc, argv, envp);
     if (!status.isOK()) {
-        severe(LogComponent::kDefault) << "Failed global initialization: " << status;
+		MONGO_BOOST_SEVERE_COMPONENT(LogComponent::kDefault) << "Failed global initialization: " << status;
         return EXIT_ABRUPT;
     }
 
@@ -584,13 +584,13 @@ ExitCode mongoSMain(int argc, char* argv[], char** envp) {
 
         return main(getGlobalServiceContext());
     } catch (const DBException& e) {
-        error() << "uncaught DBException in mongos main: " << redact(e);
+        MONGO_BOOST_ERROR << "uncaught DBException in mongos main: " << redact(e);
         return EXIT_UNCAUGHT;
     } catch (const std::exception& e) {
-        error() << "uncaught std::exception in mongos main:" << redact(e.what());
+        MONGO_BOOST_ERROR << "uncaught std::exception in mongos main:" << redact(e.what());
         return EXIT_UNCAUGHT;
     } catch (...) {
-        error() << "uncaught unknown exception in mongos main";
+        MONGO_BOOST_ERROR << "uncaught unknown exception in mongos main";
         return EXIT_UNCAUGHT;
     }
 }

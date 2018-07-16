@@ -55,7 +55,7 @@ Status::ErrorInfo* Status::ErrorInfo::create(ErrorCodes::Error code,
         // have extra info.
         if (kDebugBuild) {
             // Make it easier to find this issue by fatally failing in debug builds.
-            severe() << "Code " << code << " is supposed to have extra info";
+            MONGO_BOOST_SEVERE << "Code " << code << " is supposed to have extra info";
             fassertFailed(40680);
         }
 
@@ -124,7 +124,7 @@ StringBuilderImpl<Allocator>& operator<<(StringBuilderImpl<Allocator>& sb, const
             // This really shouldn't happen but it would be really annoying if it broke error
             // logging in production.
             if (kDebugBuild) {
-                severe() << "Error serializing extra info for " << status.code()
+                MONGO_BOOST_SEVERE << "Error serializing extra info for " << status.code()
                          << " in Status::toString()";
                 std::terminate();
             }

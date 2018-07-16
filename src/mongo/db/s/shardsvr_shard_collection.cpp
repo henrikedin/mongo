@@ -87,7 +87,7 @@ const ReadPreferenceSetting kConfigReadSelector(ReadPreference::Nearest, TagSet{
  */
 void uassertStatusOKWithWarning(const Status& status) {
     if (!status.isOK()) {
-        warning() << "shardsvrShardCollection failed" << causedBy(redact(status));
+        MONGO_BOOST_WARNING << "shardsvrShardCollection failed" << causedBy(redact(status));
         uassertStatusOK(status);
     }
 }
@@ -461,7 +461,7 @@ ChunkVersion createFirstChunks(OperationContext* opCtx,
     const OID epoch = OID::gen();
     ChunkVersion version(1, 0, epoch);
 
-    log() << "going to create " << splitPoints.size() + 1 << " chunk(s) for: " << nss
+    MONGO_BOOST_LOG << "going to create " << splitPoints.size() + 1 << " chunk(s) for: " << nss
           << " using new epoch " << version.epoch();
 
     const auto validAfter = LogicalClock::get(opCtx)->getClusterTime().asTimestamp();

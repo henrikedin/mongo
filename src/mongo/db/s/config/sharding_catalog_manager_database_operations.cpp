@@ -115,7 +115,7 @@ DatabaseType ShardingCatalogManager::createDatabase(OperationContext* opCtx,
     // Insert an entry for the new database into the sharding catalog.
     DatabaseType db(dbName, std::move(primaryShardId), false, databaseVersion::makeNew());
 
-    log() << "Registering new database " << db << " in sharding catalog";
+    MONGO_BOOST_LOG << "Registering new database " << db << " in sharding catalog";
 
     uassertStatusOK(Grid::get(opCtx)->catalogClient()->insertConfigDocument(
         opCtx, DatabaseType::ConfigNS, db.toBSON(), ShardingCatalogClient::kLocalWriteConcern));
@@ -152,7 +152,7 @@ void ShardingCatalogManager::enableSharding(OperationContext* opCtx, const std::
                                                 Milliseconds{30000}),
                             &unusedResult));
 
-    log() << "Enabling sharding for database [" << dbName << "] in config db";
+    MONGO_BOOST_LOG << "Enabling sharding for database [" << dbName << "] in config db";
     uassertStatusOK(Grid::get(opCtx)->catalogClient()->updateConfigDocument(
         opCtx,
         DatabaseType::ConfigNS,
@@ -240,7 +240,7 @@ Status ShardingCatalogManager::commitMovePrimary(OperationContext* opCtx,
         ShardingCatalogClient::kLocalWriteConcern);
 
     if (!updateStatus.isOK()) {
-        log() << "error committing movePrimary: " << dbname
+        MONGO_BOOST_LOG << "error committing movePrimary: " << dbname
               << causedBy(redact(updateStatus.getStatus()));
         return updateStatus.getStatus();
     }

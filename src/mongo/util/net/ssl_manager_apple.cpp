@@ -1262,11 +1262,11 @@ StatusWith<boost::optional<SSLPeerInfo>> SSLManagerApple::parseAndValidatePeerCe
                             bool warn = false) -> StatusWith<boost::optional<SSLPeerInfo>> {
         constexpr StringData prefix = "SSL peer certificate validation failed: "_sd;
         if (warn) {
-            warning() << prefix << msg;
+            MONGO_BOOST_WARNING << prefix << msg;
             return {boost::none};
         } else {
             std::string m = str::stream() << prefix << msg << "; connection rejected";
-            error() << m;
+            MONGO_BOOST_ERROR << m;
             return Status(ErrorCodes::SSLHandshakeFailed, m);
         }
     };
@@ -1390,9 +1390,9 @@ StatusWith<boost::optional<SSLPeerInfo>> SSLManagerApple::parseAndValidatePeerCe
     if (!sanMatch && !cnMatch) {
         const auto msg = certErr.str();
         if (_allowInvalidCertificates || _allowInvalidHostnames || isUnixDomainSocket(remoteHost)) {
-            warning() << msg;
+            MONGO_BOOST_WARNING << msg;
         } else {
-            error() << msg;
+            MONGO_BOOST_ERROR << msg;
             return Status(ErrorCodes::SSLHandshakeFailed, msg);
         }
     }

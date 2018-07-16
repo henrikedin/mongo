@@ -53,7 +53,7 @@ MONGO_INITIALIZER(Behaviors_Win32)(InitializerContext*) {
     _CrtSetReportHook(crtDebugCallback);
 
     if (_setmaxstdio(2048) == -1) {
-        warning() << "Failed to increase max open files limit from default of 512 to 2048";
+        MONGO_BOOST_WARNING << "Failed to increase max open files limit from default of 512 to 2048";
     }
 
     // Let's try to set minimum Windows Kernel quantum length to smallest viable timer resolution in
@@ -65,9 +65,9 @@ MONGO_INITIALIZER(Behaviors_Win32)(InitializerContext*) {
     int timerResolution;
 
     if (timeGetDevCaps(&tc, sizeof(TIMECAPS)) != TIMERR_NOERROR) {
-        warning() << "Failed to read timer resolution range.";
+        MONGO_BOOST_WARNING << "Failed to read timer resolution range.";
         if (timeBeginPeriod(1) != TIMERR_NOERROR) {
-            warning() << "Failed to set minimum timer resolution to 1 millisecond.";
+            MONGO_BOOST_WARNING << "Failed to set minimum timer resolution to 1 millisecond.";
         }
     } else {
         timerResolution =

@@ -56,7 +56,7 @@ void CertificateExpirationMonitor::taskDoWork() {
 
     if (_certExpiration <= now) {
         // The certificate has expired.
-        warning() << "Server certificate is now invalid. It expired on "
+        MONGO_BOOST_WARNING << "Server certificate is now invalid. It expired on "
                   << dateToISOStringUTC(_certExpiration);
         return;
     }
@@ -65,7 +65,7 @@ void CertificateExpirationMonitor::taskDoWork() {
 
     if (remainingValidDuration <= 30 * oneDay) {
         // The certificate will expire in the next 30 days.
-        warning() << "Server certificate will expire on " << dateToISOStringUTC(_certExpiration)
+        MONGO_BOOST_WARNING << "Server certificate will expire on " << dateToISOStringUTC(_certExpiration)
                   << " in " << durationCount<Hours>(remainingValidDuration) / 24 << " days.";
     }
 }

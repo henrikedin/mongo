@@ -814,7 +814,7 @@ LockManager::Partition* LockManager::_getPartition(LockRequest* request) const {
 }
 
 void LockManager::dump() const {
-    log() << "Dumping LockManager @ " << static_cast<const void*>(this) << '\n';
+    MONGO_BOOST_LOG << "Dumping LockManager @ " << static_cast<const void*>(this) << '\n';
 
     for (unsigned i = 0; i < _numLockBuckets; i++) {
         LockBucket* bucket = &_lockBuckets[i];
@@ -932,7 +932,7 @@ void LockManager::_dumpBucket(const LockBucket* bucket) const {
         }
 
         sb << "-----------------------------------------------------------\n";
-        log() << sb.str();
+        MONGO_BOOST_LOG << sb.str();
     }
 }
 

@@ -434,7 +434,7 @@ std::string returnStringFromElementOrNull(mongo::BSONElement element) {
 
 // Helper method to take a valid test case, parse() it, and assure the output is correct
 void testValidURIFormat(URITestCase testCase) {
-    mongo::unittest::log() << "Testing URI: " << testCase.URI << '\n';
+    mongo::unittest::MONGO_BOOST_LOG << "Testing URI: " << testCase.URI << '\n';
     std::string errMsg;
     const auto cs_status = MongoURI::parse(testCase.URI);
     ASSERT_OK(cs_status);
@@ -462,7 +462,7 @@ TEST(MongoURI, InvalidURIs) {
 
     for (size_t i = 0; i != numCases; ++i) {
         const InvalidURITestCase testCase = invalidCases[i];
-        mongo::unittest::log() << "Testing URI: " << testCase.URI << '\n';
+        mongo::unittest::MONGO_BOOST_LOG << "Testing URI: " << testCase.URI << '\n';
         auto cs_status = MongoURI::parse(testCase.URI);
         ASSERT_NOT_OK(cs_status);
     }
@@ -541,7 +541,7 @@ TEST(MongoURI, specTests) {
             if (!valid) {
                 // This uri string is invalid --> parse the uri and ensure it fails
                 const InvalidURITestCase testCase = {uri};
-                mongo::unittest::log() << "Testing URI: " << testCase.URI << '\n';
+                mongo::unittest::MONGO_BOOST_LOG << "Testing URI: " << testCase.URI << '\n';
                 auto cs_status = MongoURI::parse(testCase.URI);
                 ASSERT_NOT_OK(cs_status);
             } else {
@@ -843,7 +843,7 @@ TEST(MongoURI, srvRecordTest) {
 
         for (std::size_t i = 0; i < std::min(options.size(), expectedOptions.size()); ++i) {
             if (options[i] != expectedOptions[i]) {
-                mongo::unittest::log() << "Option: \"" << options[i].first << "="
+                mongo::unittest::MONGO_BOOST_LOG << "Option: \"" << options[i].first << "="
                                        << options[i].second << "\" doesn't equal: \""
                                        << expectedOptions[i].first << "="
                                        << expectedOptions[i].second << "\""

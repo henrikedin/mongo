@@ -57,7 +57,7 @@ void flushMyDirectory(const boost::filesystem::path& file) {
     // so make a warning. need a better solution longer term.
     // massert(40389, str::stream() << "Couldn't find parent dir for file: " << file.string(),);
     if (!file.has_branch_path()) {
-        log() << "warning flushMyDirectory couldn't find parent dir for file: " << file.string();
+        MONGO_BOOST_LOG << "warning flushMyDirectory couldn't find parent dir for file: " << file.string();
         return;
     }
 
@@ -75,11 +75,11 @@ void flushMyDirectory(const boost::filesystem::path& file) {
         int e = errno;
         if (e == EINVAL) {  // indicates filesystem does not support synchronization
             if (!_warnedAboutFilesystem) {
-                log() << "\tWARNING: This file system is not supported. For further information"
+                MONGO_BOOST_LOG << "\tWARNING: This file system is not supported. For further information"
                       << " see:" << startupWarningsLog;
-                log() << "\t\t\thttp://dochub.mongodb.org/core/unsupported-filesystems"
+                MONGO_BOOST_LOG << "\t\t\thttp://dochub.mongodb.org/core/unsupported-filesystems"
                       << startupWarningsLog;
-                log() << "\t\tPlease notify MongoDB, Inc. if an unlisted filesystem generated "
+                MONGO_BOOST_LOG << "\t\tPlease notify MongoDB, Inc. if an unlisted filesystem generated "
                       << "this warning." << startupWarningsLog;
                 _warnedAboutFilesystem = true;
             }
@@ -244,13 +244,13 @@ void StorageEngineLockFile::clearPidAndUnlock() {
     if (!_lockFileHandle->isValid()) {
         return;
     }
-    log() << "shutdown: removing fs lock...";
+    MONGO_BOOST_LOG << "shutdown: removing fs lock...";
     // This ought to be an unlink(), but Eliot says the last
     // time that was attempted, there was a race condition
     // with StorageEngineLockFile::open().
     if (::ftruncate(_lockFileHandle->_fd, 0)) {
         int errorcode = errno;
-        log() << "couldn't remove fs lock " << errnoWithDescription(errorcode);
+        MONGO_BOOST_LOG << "couldn't remove fs lock " << errnoWithDescription(errorcode);
     }
     close();
 }

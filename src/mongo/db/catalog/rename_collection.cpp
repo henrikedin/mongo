@@ -103,7 +103,7 @@ Status renameTargetCollectionToTmp(OperationContext* opCtx,
 
         wunit.commit();
 
-        log() << "Successfully renamed the target " << targetNs.ns() << " (" << targetUUID
+        MONGO_BOOST_LOG << "Successfully renamed the target " << targetNs.ns() << " (" << targetUUID
               << ") to " << tmpName << " so that the source " << sourceNs.ns() << " (" << sourceUUID
               << ") could be renamed to " << targetNs.ns();
 
@@ -279,7 +279,7 @@ Status renameCollectionCommon(OperationContext* opCtx,
                 // 'renameOpTime' must be null because a valid 'renameOpTimeFromApplyOps' implies
                 // replicated writes are not enabled.
                 if (!renameOpTime.isNull()) {
-                    severe() << "renameCollection: " << source << " to " << target
+                    MONGO_BOOST_SEVERE << "renameCollection: " << source << " to " << target
                              << " (with dropTarget=true) - unexpected renameCollection oplog entry"
                              << " written to the oplog with optime " << renameOpTime;
                     fassertFailed(40616);
@@ -365,7 +365,7 @@ Status renameCollectionCommon(OperationContext* opCtx,
         if (!status.isOK()) {
             // Ignoring failure case when dropping the temporary collection during cleanup because
             // the rename operation has already failed for another reason.
-            log() << "Unable to drop temporary collection " << tmpName << " while renaming from "
+            MONGO_BOOST_LOG << "Unable to drop temporary collection " << tmpName << " while renaming from "
                   << source << " to " << target << ": " << status;
         }
     });
@@ -501,7 +501,7 @@ Status renameCollection(OperationContext* opCtx,
 
     const std::string dropTargetMsg =
         options.dropTarget ? " and drop " + target.toString() + "." : ".";
-    log() << "renameCollectionForCommand: rename " << source << " to " << target << dropTargetMsg;
+    MONGO_BOOST_LOG << "renameCollectionForCommand: rename " << source << " to " << target << dropTargetMsg;
 
     OptionalCollectionUUID noTargetUUID;
     return renameCollectionCommon(opCtx, source, target, noTargetUUID, {}, options);
@@ -584,7 +584,7 @@ Status renameCollectionForApplyOps(OperationContext* opCtx,
     const std::string dropTargetMsg =
         options.dropTargetUUID ? " and drop " + options.dropTargetUUID->toString() + "." : ".";
     const std::string uuidString = targetUUID ? targetUUID->toString() : "UUID unknown";
-    log() << "renameCollectionForApplyOps: rename " << sourceNss << " (" << uuidString << ") to "
+    MONGO_BOOST_LOG << "renameCollectionForApplyOps: rename " << sourceNss << " (" << uuidString << ") to "
           << targetNss << dropTargetMsg;
 
     options.stayTemp = cmd["stayTemp"].trueValue();
@@ -606,7 +606,7 @@ Status renameCollectionForRollback(OperationContext* opCtx,
     RenameCollectionOptions options;
     invariant(!options.dropTarget);
 
-    log() << "renameCollectionForRollback: rename " << source << " (" << uuid << ") to " << target
+    MONGO_BOOST_LOG << "renameCollectionForRollback: rename " << source << " (" << uuid << ") to " << target
           << ".";
 
     return renameCollectionCommon(opCtx, source, target, uuid, {}, options);

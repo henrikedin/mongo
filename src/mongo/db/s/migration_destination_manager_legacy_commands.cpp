@@ -110,7 +110,7 @@ public:
                 << "cannot start receiving chunk " << redact(chunkRange.toString())
                 << causedBy(redact(statusWithFromShardConnectionString.getStatus()));
 
-            warning() << errmsg;
+            MONGO_BOOST_WARNING << errmsg;
             return false;
         }
 
@@ -217,7 +217,7 @@ public:
         Status const status = mdm->startCommit(sessionId);
         mdm->report(result, opCtx, false);
         if (!status.isOK()) {
-            log() << status.reason();
+            MONGO_BOOST_LOG << status.reason();
             uassertStatusOK(status);
         }
         return true;
@@ -265,7 +265,7 @@ public:
             Status const status = mdm->abort(migrationSessionIdStatus.getValue());
             mdm->report(result, opCtx, false);
             if (!status.isOK()) {
-                log() << status.reason();
+                MONGO_BOOST_LOG << status.reason();
                 uassertStatusOK(status);
             }
         } else if (migrationSessionIdStatus == ErrorCodes::NoSuchKey) {

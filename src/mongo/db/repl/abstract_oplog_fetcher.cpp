@@ -226,10 +226,10 @@ void AbstractOplogFetcher::_callback(const Fetcher::QueryResponseStatus& result,
         {
             stdx::lock_guard<stdx::mutex> lock(_mutex);
             if (_fetcherRestarts == _maxFetcherRestarts) {
-                log() << "Error returned from oplog query (no more query restarts left): "
+                MONGO_BOOST_LOG << "Error returned from oplog query (no more query restarts left): "
                       << redact(responseStatus);
             } else {
-                log() << "Restarting oplog query due to error: " << redact(responseStatus)
+                MONGO_BOOST_LOG << "Restarting oplog query due to error: " << redact(responseStatus)
                       << ". Last fetched optime (with hash): " << _lastFetched
                       << ". Restarts remaining: " << (_maxFetcherRestarts - _fetcherRestarts);
                 _fetcherRestarts++;
@@ -243,10 +243,10 @@ void AbstractOplogFetcher::_callback(const Fetcher::QueryResponseStatus& result,
 
                 auto scheduleStatus = _scheduleFetcher_inlock();
                 if (scheduleStatus.isOK()) {
-                    log() << "Scheduled new oplog query " << _fetcher->toString();
+                    MONGO_BOOST_LOG << "Scheduled new oplog query " << _fetcher->toString();
                     return;
                 }
-                error() << "Error scheduling new oplog query: " << redact(scheduleStatus)
+                MONGO_BOOST_ERROR << "Error scheduling new oplog query: " << redact(scheduleStatus)
                         << ". Returning current oplog query error: " << redact(responseStatus);
             }
         }

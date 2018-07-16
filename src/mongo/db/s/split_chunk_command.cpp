@@ -119,7 +119,7 @@ public:
         auto parseShardNameStatus = bsonExtractStringField(cmdObj, "from", &shardName);
         uassertStatusOK(parseShardNameStatus);
 
-        log() << "received splitChunk request: " << redact(cmdObj);
+        MONGO_BOOST_LOG << "received splitChunk request: " << redact(cmdObj);
 
         vector<BSONObj> splitKeys;
         {

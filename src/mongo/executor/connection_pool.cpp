@@ -529,7 +529,7 @@ void ConnectionPool::SpecificPool::returnConnection(ConnectionInterface* connPtr
 
     if (!conn->getStatus().isOK()) {
         // TODO: alert via some callback if the host is bad
-        log() << "Ending connection to host " << _hostAndPort << " due to bad connection status; "
+        MONGO_BOOST_LOG << "Ending connection to host " << _hostAndPort << " due to bad connection status; "
               << openConnections(lk) << " connections to that host remain open";
         return;
     }
@@ -541,7 +541,7 @@ void ConnectionPool::SpecificPool::returnConnection(ConnectionInterface* connPtr
         if (_readyPool.size() + _processingPool.size() + _checkedOutPool.size() >=
             _parent->_options.minConnections) {
             // If we already have minConnections, just let the connection lapse
-            log() << "Ending idle connection to host " << _hostAndPort
+            MONGO_BOOST_LOG << "Ending idle connection to host " << _hostAndPort
                   << " because the pool meets constraints; " << openConnections(lk)
                   << " connections to that host remain open";
             return;
@@ -579,7 +579,7 @@ void ConnectionPool::SpecificPool::returnConnection(ConnectionInterface* connPtr
                     // various callers have their own time limit which is unrelated
                     // to our internal one.
                     if (status.code() == ErrorCodes::NetworkInterfaceExceededTimeLimit) {
-                        log() << "Pending connection to host " << _hostAndPort
+                        MONGO_BOOST_LOG << "Pending connection to host " << _hostAndPort
                               << " did not complete within the connection timeout,"
                               << " retrying with a new connection;" << openConnections(lk)
                               << " connections to that host remain open";
@@ -649,7 +649,7 @@ void ConnectionPool::SpecificPool::processFailure(const Status& status,
     _readyPool.clear();
 
     // Log something helpful
-    log() << "Dropping all pooled connections to " << _hostAndPort << " due to " << status;
+    MONGO_BOOST_LOG << "Dropping all pooled connections to " << _hostAndPort << " due to " << status;
 
     // Migrate processing connections to the dropped pool
     for (auto&& x : _processingPool) {
@@ -700,10 +700,10 @@ void ConnectionPool::SpecificPool::fulfillRequests(stdx::unique_lock<stdx::mutex
         conn->cancelTimeout();
 
         if (!conn->isHealthy()) {
-            log() << "dropping unhealthy pooled connection to " << conn->getHostAndPort();
+            MONGO_BOOST_LOG << "dropping unhealthy pooled connection to " << conn->getHostAndPort();
 
             if (_readyPool.empty()) {
-                log() << "after drop, pool was empty, going to spawn some connections";
+                MONGO_BOOST_LOG << "after drop, pool was empty, going to spawn some connections";
                 // Spawn some more connections to the bad host if we're all out.
                 spawnConnections(lk);
             }
@@ -760,7 +760,7 @@ void ConnectionPool::SpecificPool::spawnConnections(stdx::unique_lock<stdx::mute
             // make a new connection and put it in processing
             handle = _parent->_factory->makeConnection(_hostAndPort, _generation);
         } catch (std::system_error& e) {
-            severe() << "Failed to construct a new connection object: " << e.what();
+            MONGO_BOOST_SEVERE << "Failed to construct a new connection object: " << e.what();
             fassertFailed(40336);
         }
 

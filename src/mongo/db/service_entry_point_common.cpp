@@ -152,12 +152,12 @@ void generateLegacyQueryErrorResponse(const AssertionException& exception,
                                       Message* response) {
     curop->debug().errInfo = exception.toStatus();
 
-    log(LogComponent::kQuery) << "assertion " << exception.toString() << " ns:" << queryMessage.ns
+    MONGO_BOOST_LOG_COMPONENT(LogComponent::kQuery) << "assertion " << exception.toString() << " ns:" << queryMessage.ns
                               << " query:" << (queryMessage.query.valid(BSONVersion::kLatest)
                                                    ? redact(queryMessage.query)
                                                    : "query object is corrupt");
     if (queryMessage.ntoskip || queryMessage.ntoreturn) {
-        log(LogComponent::kQuery) << " ntoskip:" << queryMessage.ntoskip
+        MONGO_BOOST_LOG_COMPONENT(LogComponent::kQuery) << " ntoskip:" << queryMessage.ntoskip
                                   << " ntoreturn:" << queryMessage.ntoreturn;
     }
 
@@ -173,7 +173,7 @@ void generateLegacyQueryErrorResponse(const AssertionException& exception,
 
     const bool isStaleConfig = exception.code() == ErrorCodes::StaleConfig;
     if (isStaleConfig) {
-        log(LogComponent::kQuery) << "stale version detected during query over " << queryMessage.ns
+        MONGO_BOOST_LOG_COMPONENT(LogComponent::kQuery) << "stale version detected during query over " << queryMessage.ns
                                   << " : " << errObj;
     }
 
@@ -594,14 +594,14 @@ void evaluateFailCommandFailPoint(OperationContext* opCtx, StringData commandNam
         if (bsonExtractBooleanField(data.getData(), "closeConnection", &closeConnection).isOK() &&
             closeConnection) {
             opCtx->getClient()->session()->end();
-            log() << "Failing command '" << commandName
+            MONGO_BOOST_LOG << "Failing command '" << commandName
                   << "' via 'failCommand' failpoint. Action: closing connection.";
             uasserted(50838, "Failing command due to 'failCommand' failpoint");
         }
 
         long long errorCode;
         if (bsonExtractIntegerField(data.getData(), "errorCode", &errorCode).isOK()) {
-            log() << "Failing command '" << commandName
+            MONGO_BOOST_LOG << "Failing command '" << commandName
                   << "' via 'failCommand' failpoint. Action: returning error code " << errorCode
                   << ".";
             uasserted(ErrorCodes::Error(errorCode),
@@ -1108,7 +1108,10 @@ void receivedKillCursors(OperationContext* opCtx, const Message& m) {
     uassert(13004, str::stream() << "sent negative cursors to kill: " << n, n >= 1);
 
     if (n > 2000) {
-        (n < 30000 ? warning() : error()) << "receivedKillCursors, n=" << n;
+		if (n < 30000)
+			MONGO_BOOST_WARNING << "receivedKillCursors, n=" << n;
+		else
+			MONGO_BOOST_ERROR << "receivedKillCursors, n=" << n;
         verify(n < 30000);
     }
 
@@ -1328,7 +1331,7 @@ DbResponse ServiceEntryPointCommon::handleRequest(OperationContext* opCtx,
                 slowMsOverride = 10;
                 receivedKillCursors(opCtx, m);
             } else if (op != dbInsert && op != dbUpdate && op != dbDelete) {
-                log() << "    operation isn't supported: " << static_cast<int>(op);
+                MONGO_BOOST_LOG << "    operation isn't supported: " << static_cast<int>(op);
                 currentOp.done();
                 forceLog = true;
             } else {

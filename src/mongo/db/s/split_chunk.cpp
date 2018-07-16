@@ -219,7 +219,7 @@ StatusWith<boost::optional<ChunkRange>> splitChunk(OperationContext* opCtx,
 
     Collection* const collection = autoColl.getCollection();
     if (!collection) {
-        warning() << "will not perform top-chunk checking since " << nss.toString()
+        MONGO_BOOST_WARNING << "will not perform top-chunk checking since " << nss.toString()
                   << " does not exist after splitting";
         return boost::optional<ChunkRange>(boost::none);
     }

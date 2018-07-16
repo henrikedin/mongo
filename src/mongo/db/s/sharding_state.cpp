@@ -92,7 +92,7 @@ void updateShardIdentityConfigStringCB(const std::string& setName,
     auto status = ShardingState::get(uniqOpCtx.get())
                       ->updateShardIdentityConfigString(uniqOpCtx.get(), newConnectionString);
     if (!status.isOK() && !ErrorCodes::isNotMasterError(status.code())) {
-        warning() << "error encountered while trying to update config connection string to "
+        MONGO_BOOST_WARNING << "error encountered while trying to update config connection string to "
                   << newConnectionString << causedBy(redact(status));
     }
 }
@@ -187,7 +187,7 @@ Status ShardingState::initializeFromShardIdentity(OperationContext* opCtx,
             "Invalid shard identity document found when initializing sharding state");
     }
 
-    log() << "initializing sharding state with: " << shardIdentity;
+    MONGO_BOOST_LOG << "initializing sharding state with: " << shardIdentity;
 
     stdx::unique_lock<stdx::mutex> lk(_mutex);
 
@@ -234,11 +234,11 @@ Status ShardingState::initializeFromShardIdentity(OperationContext* opCtx,
             CatalogCacheLoader::get(opCtx).initializeReplicaSetRole(isStandaloneOrPrimary);
             ChunkSplitter::get(opCtx).setReplicaSetMode(isStandaloneOrPrimary);
 
-            log() << "initialized sharding components for "
+            MONGO_BOOST_LOG << "initialized sharding components for "
                   << (isStandaloneOrPrimary ? "primary" : "secondary") << " node.";
             _setInitializationState(InitializationState::kInitialized);
         } else {
-            log() << "failed to initialize sharding components" << causedBy(status);
+            MONGO_BOOST_LOG << "failed to initialize sharding components" << causedBy(status);
             _initializationStatus = status;
             _setInitializationState(InitializationState::kError);
         }
@@ -336,7 +336,7 @@ StatusWith<bool> ShardingState::initializeShardingAwarenessIfNeeded(OperationCon
 
         if (serverGlobalParams.clusterRole == ClusterRole::ShardServer) {
             if (!foundShardIdentity) {
-                warning() << "Started with --shardsvr, but no shardIdentity document was found on "
+                MONGO_BOOST_WARNING << "Started with --shardsvr, but no shardIdentity document was found on "
                              "disk in "
                           << NamespaceString::kServerConfigurationNamespace
                           << ". This most likely means this server has not yet been added to a "
@@ -362,7 +362,7 @@ StatusWith<bool> ShardingState::initializeShardingAwarenessIfNeeded(OperationCon
         } else {
             // Warn if a shardIdentity document is found on disk but *not* started with --shardsvr.
             if (!shardIdentityBSON.isEmpty()) {
-                warning() << "Not started with --shardsvr, but a shardIdentity document was found "
+                MONGO_BOOST_WARNING << "Not started with --shardsvr, but a shardIdentity document was found "
                              "on disk in "
                           << NamespaceString::kServerConfigurationNamespace << ": "
                           << shardIdentityBSON;
@@ -414,7 +414,7 @@ Status ShardingState::updateShardIdentityConfigString(OperationContext* opCtx,
 
         auto result = update(opCtx, autoDb.getDb(), updateReq);
         if (result.numMatched == 0) {
-            warning() << "failed to update config string of shard identity document because "
+            MONGO_BOOST_WARNING << "failed to update config string of shard identity document because "
                       << "it does not exist. This shard could have been removed from the cluster";
         } else {
             LOG(2) << "Updated config server connection string in shardIdentity document to"

@@ -91,7 +91,7 @@ MoveTimingHelper::~MoveTimingHelper() {
                         ShardingCatalogClient::kMajorityWriteConcern)
             .transitional_ignore();
     } catch (const std::exception& e) {
-        warning() << "couldn't record timing for moveChunk '" << _where
+        MONGO_BOOST_WARNING << "couldn't record timing for moveChunk '" << _where
                   << "': " << redact(e.what());
     }
 }

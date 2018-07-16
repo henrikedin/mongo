@@ -132,7 +132,7 @@ LogicalTime LogicalClock::reserveTicks(uint64_t nTicks) {
     // second.
     else if (clusterTime.asTimestamp().getInc() > (kMaxSignedInt - nTicks)) {
 
-        log() << "Exceeded maximum allowable increment value within one second. Moving clusterTime "
+        MONGO_BOOST_LOG << "Exceeded maximum allowable increment value within one second. Moving clusterTime "
                  "forward to the next second.";
 
         // Move time forward to the next second

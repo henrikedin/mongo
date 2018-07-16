@@ -41,6 +41,8 @@
 #include "mongo/stdx/chrono.h"
 #include "mongo/util/exit_code.h"
 
+#include <boost/log/trivial.hpp>
+
 namespace mongo {
 namespace logger {
 
@@ -254,3 +256,13 @@ private:
 
 }  // namespace logger
 }  // namespace mongo
+
+#define MONGO_BOOST_LOG_COMPONENT(component) BOOST_LOG_TRIVIAL(info)
+#define MONGO_BOOST_WARNING_COMPONENT(component) BOOST_LOG_TRIVIAL(warning)
+#define MONGO_BOOST_ERROR_COMPONENT(component) BOOST_LOG_TRIVIAL(error)
+#define MONGO_BOOST_SEVERE_COMPONENT(component) BOOST_LOG_TRIVIAL(fatal)
+
+#define MONGO_BOOST_LOG BOOST_LOG_TRIVIAL(info)
+#define MONGO_BOOST_WARNING BOOST_LOG_TRIVIAL(warning)
+#define MONGO_BOOST_ERROR BOOST_LOG_TRIVIAL(error)
+#define MONGO_BOOST_SEVERE BOOST_LOG_TRIVIAL(fatal)

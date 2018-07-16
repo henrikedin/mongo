@@ -756,9 +756,9 @@ private:
                 conn.done();
             }
         } catch (const DBException& e) {
-            warning() << "Cannot cleanup shard results" << redact(e);
+            MONGO_BOOST_WARNING << "Cannot cleanup shard results" << redact(e);
         } catch (const std::exception& e) {
-            severe() << "Cannot cleanup shard results" << causedBy(redact(e.what()));
+            MONGO_BOOST_SEVERE << "Cannot cleanup shard results" << causedBy(redact(e.what()));
         }
     }
 

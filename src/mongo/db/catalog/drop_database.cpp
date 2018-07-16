@@ -65,10 +65,10 @@ Status _finishDropDatabase(OperationContext* opCtx, const std::string& dbName, D
     Database::dropDatabase(opCtx, db);
     dropPendingGuard.Dismiss();
 
-    log() << "dropDatabase " << dbName << " - finished";
+    MONGO_BOOST_LOG << "dropDatabase " << dbName << " - finished";
 
     if (MONGO_FAIL_POINT(dropDatabaseHangAfterLastCollectionDrop)) {
-        log() << "dropDatabase - fail point dropDatabaseHangAfterLastCollectionDrop enabled. "
+        MONGO_BOOST_LOG << "dropDatabase - fail point dropDatabaseHangAfterLastCollectionDrop enabled. "
                  "Blocking until fail point is disabled. ";
         MONGO_FAIL_POINT_PAUSE_WHILE_SET(dropDatabaseHangAfterLastCollectionDrop);
     }
@@ -128,7 +128,7 @@ Status dropDatabase(OperationContext* opCtx, const std::string& dbName) {
                        str::stream() << "Not primary while dropping database " << dbName));
         }
 
-        log() << "dropDatabase " << dbName << " - starting";
+        MONGO_BOOST_LOG << "dropDatabase " << dbName << " - starting";
         db->setDropPending(opCtx, true);
 
         // If Database::dropCollectionEventIfSystem() fails, we should reset the drop-pending state
@@ -140,7 +140,7 @@ Status dropDatabase(OperationContext* opCtx, const std::string& dbName) {
             const auto& nss = collection->ns();
             if (nss.isDropPendingNamespace() && replCoord->isReplEnabled() &&
                 opCtx->writesAreReplicated()) {
-                log() << "dropDatabase " << dbName << " - found drop-pending collection: " << nss;
+                MONGO_BOOST_LOG << "dropDatabase " << dbName << " - found drop-pending collection: " << nss;
                 latestDropPendingOpTime = std::max(
                     latestDropPendingOpTime, uassertStatusOK(nss.getDropPendingNamespaceOpTime()));
                 continue;
@@ -152,10 +152,10 @@ Status dropDatabase(OperationContext* opCtx, const std::string& dbName) {
         }
         numCollectionsToDrop = collectionsToDrop.size();
 
-        log() << "dropDatabase " << dbName << " - dropping " << numCollectionsToDrop
+        MONGO_BOOST_LOG << "dropDatabase " << dbName << " - dropping " << numCollectionsToDrop
               << " collections";
         for (auto nss : collectionsToDrop) {
-            log() << "dropDatabase " << dbName << " - dropping collection: " << nss;
+            MONGO_BOOST_LOG << "dropDatabase " << dbName << " - dropping collection: " << nss;
             if (!opCtx->writesAreReplicated()) {
                 // Dropping a database on a primary replicates individual collection drops
                 // followed by a database drop oplog entry. When a secondary observes the database
@@ -235,7 +235,7 @@ Status dropDatabase(OperationContext* opCtx, const std::string& dbName) {
         const WriteConcernOptions dropDatabaseWriteConcern(
             WriteConcernOptions::kMajority, WriteConcernOptions::SyncMode::UNSET, wTimeout);
 
-        log() << "dropDatabase " << dbName << " waiting for " << awaitOpTime
+        MONGO_BOOST_LOG << "dropDatabase " << dbName << " waiting for " << awaitOpTime
               << " to be replicated at " << dropDatabaseWriteConcern.toBSON() << ". Dropping "
               << numCollectionsToDrop << " collections, with last collection drop at "
               << latestDropPendingOpTime;
@@ -244,7 +244,7 @@ Status dropDatabase(OperationContext* opCtx, const std::string& dbName) {
 
         // If the user-provided write concern is weaker than majority, this is effectively a no-op.
         if (result.status.isOK() && !userWriteConcern.usedDefault) {
-            log() << "dropDatabase " << dbName << " waiting for " << awaitOpTime
+            MONGO_BOOST_LOG << "dropDatabase " << dbName << " waiting for " << awaitOpTime
                   << " to be replicated at " << userWriteConcern.toBSON();
             result = replCoord->awaitReplication(opCtx, awaitOpTime, userWriteConcern);
         }
@@ -258,7 +258,7 @@ Status dropDatabase(OperationContext* opCtx, const std::string& dbName) {
                               << ") to replicate.");
         }
 
-        log() << "dropDatabase " << dbName << " - successfully dropped " << numCollectionsToDrop
+        MONGO_BOOST_LOG << "dropDatabase " << dbName << " - successfully dropped " << numCollectionsToDrop
               << " collections (most recent drop optime: " << awaitOpTime << ") after "
               << result.duration << ". dropping database";
     }

@@ -629,14 +629,14 @@ private:
     void assertEquals(const BSONObj& expected, const BSONObj& actual, const char* msg) {
         const bool bad = expected.woCompare(actual);
         if (bad) {
-            ::mongo::log() << "want:" << expected.jsonString() << " size: " << expected.objsize()
+            ::mongo::MONGO_BOOST_LOG << "want:" << expected.jsonString() << " size: " << expected.objsize()
                            << endl;
-            ::mongo::log() << "got :" << actual.jsonString() << " size: " << actual.objsize()
+            ::mongo::MONGO_BOOST_LOG << "got :" << actual.jsonString() << " size: " << actual.objsize()
                            << endl;
-            ::mongo::log() << expected.hexDump() << endl;
-            ::mongo::log() << actual.hexDump() << endl;
-            ::mongo::log() << msg << endl;
-            ::mongo::log() << "orig json:" << this->json();
+            ::mongo::MONGO_BOOST_LOG << expected.hexDump() << endl;
+            ::mongo::MONGO_BOOST_LOG << actual.hexDump() << endl;
+            ::mongo::MONGO_BOOST_LOG << msg << endl;
+            ::mongo::MONGO_BOOST_LOG << "orig json:" << this->json();
         }
         ASSERT(!bad);
     }

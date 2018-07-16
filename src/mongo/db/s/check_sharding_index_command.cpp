@@ -192,7 +192,7 @@ public:
                 const string msg = str::stream()
                     << "found missing value in key " << redact(currKey)
                     << " for doc: " << (obj.hasField("_id") ? redact(obj) : redact(obj["_id"]));
-                log() << "checkShardingIndex for '" << nss.toString() << "' failed: " << msg;
+                MONGO_BOOST_LOG << "checkShardingIndex for '" << nss.toString() << "' failed: " << msg;
 
                 errmsg = msg;
                 return false;

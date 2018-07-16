@@ -202,7 +202,7 @@ Status RollbackImpl::runRollback(OperationContext* opCtx) {
             return status;
         }
     } else {
-        log() << "Not writing rollback files. 'createRollbackDataFiles' set to false.";
+        MONGO_BOOST_LOG << "Not writing rollback files. 'createRollbackDataFiles' set to false.";
     }
 
     // Recover to the stable timestamp.
@@ -215,7 +215,7 @@ Status RollbackImpl::runRollback(OperationContext* opCtx) {
 
     // Log the total number of insert and update operations that have been rolled back as a result
     // of recovering to the stable timestamp.
-    log() << "Rollback reverted " << _observerInfo.rollbackCommandCounts[kInsertCmdName]
+    MONGO_BOOST_LOG << "Rollback reverted " << _observerInfo.rollbackCommandCounts[kInsertCmdName]
           << " insert operations, " << _observerInfo.rollbackCommandCounts[kUpdateCmdName]
           << " update operations and " << _observerInfo.rollbackCommandCounts[kDeleteCmdName]
           << " delete operations.";
@@ -272,7 +272,7 @@ Status RollbackImpl::runRollback(OperationContext* opCtx) {
     }
     _listener->onRollbackOpObserver(_observerInfo);
 
-    log() << "Rollback complete";
+    MONGO_BOOST_LOG << "Rollback complete";
 
     return Status::OK();
 }
@@ -293,7 +293,7 @@ Status RollbackImpl::_transitionToRollback(OperationContext* opCtx) {
         return Status(ErrorCodes::ShutdownInProgress, "rollback shutting down");
     }
 
-    log() << "transition to ROLLBACK";
+    MONGO_BOOST_LOG << "transition to ROLLBACK";
     {
         Lock::GlobalWrite globalWrite(opCtx);
 
@@ -303,7 +303,7 @@ Status RollbackImpl::_transitionToRollback(OperationContext* opCtx) {
                                             << _replicationCoordinator->getMemberState().toString()
                                             << " to "
                                             << MemberState(MemberState::RS_ROLLBACK).toString());
-            log() << status;
+            MONGO_BOOST_LOG << status;
             return status;
         }
     }
@@ -326,7 +326,7 @@ Status RollbackImpl::_awaitBgIndexCompletion(OperationContext* opCtx) {
 
     // Wait for all background operations to complete by waiting on each database.
     std::vector<StringData> dbNames(dbs.begin(), dbs.end());
-    log() << "Waiting for all background operations to complete before starting rollback";
+    MONGO_BOOST_LOG << "Waiting for all background operations to complete before starting rollback";
     for (auto db : dbNames) {
         auto numInProg = BackgroundOperation::numInProgForDb(db);
         if (numInProg > 0) {
@@ -341,7 +341,7 @@ Status RollbackImpl::_awaitBgIndexCompletion(OperationContext* opCtx) {
         }
     }
 
-    log() << "Finished waiting for background operations to complete before rollback";
+    MONGO_BOOST_LOG << "Finished waiting for background operations to complete before rollback";
     return Status::OK();
 }
 
@@ -453,7 +453,7 @@ void RollbackImpl::_correctRecordStoreCounts(OperationContext* opCtx) {
         if (!status.isOK()) {
             // We ignore errors here because crashing or leaving rollback would only leave
             // collection counts more inaccurate.
-            warning() << "Failed to set count of " << nss.ns() << " (" << uuid.toString() << ") ["
+            MONGO_BOOST_WARNING << "Failed to set count of " << nss.ns() << " (" << uuid.toString() << ") ["
                       << ident << "] to " << newCount << ". Received: " << status;
         } else {
             LOG(2) << "Set collection count of " << nss.ns() << " (" << uuid.toString() << ") ["
@@ -468,7 +468,7 @@ Status RollbackImpl::_findRecordStoreCounts(OperationContext* opCtx) {
     }
     const auto& uuidCatalog = UUIDCatalog::get(opCtx);
 
-    log() << "finding record store counts";
+    MONGO_BOOST_LOG << "finding record store counts";
     for (const auto& uiCount : _countDiffs) {
         auto uuid = uiCount.first;
         auto countDiff = uiCount.second;
@@ -486,7 +486,7 @@ Status RollbackImpl::_findRecordStoreCounts(OperationContext* opCtx) {
         }
         auto oldCount = countSW.getValue();
         if (oldCount > static_cast<uint64_t>(std::numeric_limits<long long>::max())) {
-            warning() << "Count for " << nss.ns() << " (" << uuid.toString() << ") was " << oldCount
+            MONGO_BOOST_WARNING << "Count for " << nss.ns() << " (" << uuid.toString() << ") was " << oldCount
                       << " which is larger than the maximum int64_t value. Not attempting to fix "
                          "count during rollback.";
             continue;
@@ -496,7 +496,7 @@ Status RollbackImpl::_findRecordStoreCounts(OperationContext* opCtx) {
         auto newCount = oldCountSigned + countDiff;
 
         if (newCount < 0) {
-            warning() << "Attempted to set count for " << nss.ns() << " (" << uuid.toString()
+            MONGO_BOOST_WARNING << "Attempted to set count for " << nss.ns() << " (" << uuid.toString()
                       << ") to " << newCount
                       << " but set it to 0 instead. This is likely due to the count previously "
                          "becoming inconsistent from an unclean shutdown or a rollback that could "
@@ -587,14 +587,14 @@ Status RollbackImpl::_processRollbackOp(const OplogEntry& oplogEntry) {
             idVal == ShardIdentityType::IdName) {
             // Check if the creation of the shard identity document is being rolled back.
             _observerInfo.shardIdentityRolledBack = true;
-            warning() << "Shard identity document rollback detected. oplog op: "
+            MONGO_BOOST_WARNING << "Shard identity document rollback detected. oplog op: "
                       << redact(oplogEntry.toBSON());
         } else if (serverGlobalParams.clusterRole == ClusterRole::ConfigServer &&
                    opNss == VersionType::ConfigNS) {
             // Check if the creation of the config server config version document is being rolled
             // back.
             _observerInfo.configServerConfigVersionRolledBack = true;
-            warning() << "Config version document rollback detected. oplog op: "
+            MONGO_BOOST_WARNING << "Config version document rollback detected. oplog op: "
                       << redact(oplogEntry.toBSON());
         }
 
@@ -627,7 +627,7 @@ StatusWith<RollBackLocalOperations::RollbackCommonPoint> RollbackImpl::_findComm
         return Status(ErrorCodes::ShutdownInProgress, "rollback shutting down");
     }
 
-    log() << "finding common point";
+    MONGO_BOOST_LOG << "finding common point";
 
     // We save some aggregate information about all operations that are rolled back, so that we can
     // pass this information to the rollback op observer. In most cases, other subsystems do not
@@ -657,7 +657,7 @@ StatusWith<RollBackLocalOperations::RollbackCommonPoint> RollbackImpl::_findComm
     OpTime lastCommittedOpTime = _replicationCoordinator->getLastCommittedOpTime();
     OpTime committedSnapshot = _replicationCoordinator->getCurrentCommittedSnapshotOpTime();
 
-    log() << "Rollback common point is " << commonPointOpTime;
+    MONGO_BOOST_LOG << "Rollback common point is " << commonPointOpTime;
 
     // Rollback common point should be >= the replication commit point.
     invariant(!_replicationCoordinator->isV1ElectionProtocol() ||
@@ -717,7 +717,7 @@ Status RollbackImpl::_checkAgainstTimeLimit(
             }
 
         } else {
-            warning() << "Wall clock times on oplog entries not monotonically increasing. This "
+            MONGO_BOOST_WARNING << "Wall clock times on oplog entries not monotonically increasing. This "
                          "might indicate a backward clock skew. Time at common point: "
                       << commonPointWallTime << ". Time at top of oplog: " << topOfOplogWallTime;
         }
@@ -750,7 +750,7 @@ Timestamp RollbackImpl::_findTruncateTimestamp(
     auto truncatePointTime = OpTime::parseFromOplogEntry(truncatePointRecord->data.releaseToBson());
     invariant(truncatePointTime.getStatus());
 
-    log() << "Marking to truncate all oplog entries with timestamps greater than or equal to "
+    MONGO_BOOST_LOG << "Marking to truncate all oplog entries with timestamps greater than or equal to "
           << truncatePointTime.getValue();
     return truncatePointTime.getValue().getTimestamp();
 }
@@ -765,7 +765,7 @@ boost::optional<BSONObj> RollbackImpl::_findDocumentById(OperationContext* opCtx
     } else if (document.getStatus().code() == ErrorCodes::NoSuchKey) {
         return boost::none;
     } else {
-        severe() << "Rollback failed to read document with " << redact(id) << " in namespace "
+        MONGO_BOOST_SEVERE << "Rollback failed to read document with " << redact(id) << " in namespace "
                  << nss.ns() << " with uuid " << uuid.toString() << causedBy(document.getStatus());
         fassert(50751, document.getStatus());
     }
@@ -783,7 +783,7 @@ Status RollbackImpl::_writeRollbackFiles(OperationContext* opCtx) {
                                 << " is unexpectedly missing in the UUIDCatalog");
 
         if (_isInShutdown()) {
-            log() << "Rollback shutting down; not writing rollback file for namespace " << nss.ns()
+            MONGO_BOOST_LOG << "Rollback shutting down; not writing rollback file for namespace " << nss.ns()
                   << " with uuid " << uuid;
             continue;
         }
@@ -803,7 +803,7 @@ void RollbackImpl::_writeRollbackFileForNamespace(OperationContext* opCtx,
                                                   NamespaceString nss,
                                                   const SimpleBSONObjUnorderedSet& idSet) {
     Helpers::RemoveSaver removeSaver(kRollbackRemoveSaverType, nss.ns(), kRollbackRemoveSaverWhy);
-    log() << "Preparing to write deleted documents to a rollback file for collection " << nss.ns()
+    MONGO_BOOST_LOG << "Preparing to write deleted documents to a rollback file for collection " << nss.ns()
           << " with uuid " << uuid.toString() << " to " << removeSaver.file().generic_string();
 
     // The RemoveSaver will save the data files in a directory structure similar to the following:
@@ -852,7 +852,7 @@ StatusWith<Timestamp> RollbackImpl::_recoverToStableTimestamp(OperationContext* 
         try {
             auto stableTimestampSW = _storageInterface->recoverToStableTimestamp(opCtx);
             if (!stableTimestampSW.isOK()) {
-                severe() << "RecoverToStableTimestamp failed. "
+                MONGO_BOOST_SEVERE << "RecoverToStableTimestamp failed. "
                          << causedBy(stableTimestampSW.getStatus());
                 return {ErrorCodes::UnrecoverableRollbackError,
                         "Recover to stable timestamp failed."};
@@ -868,7 +868,7 @@ Status RollbackImpl::_triggerOpObserver(OperationContext* opCtx) {
     if (_isInShutdown()) {
         return Status(ErrorCodes::ShutdownInProgress, "rollback shutting down");
     }
-    log() << "Triggering the rollback op observer";
+    MONGO_BOOST_LOG << "Triggering the rollback op observer";
     opCtx->getServiceContext()->getOpObserver()->onReplicationRollback(opCtx, _observerInfo);
     return Status::OK();
 }
@@ -877,13 +877,13 @@ void RollbackImpl::_transitionFromRollbackToSecondary(OperationContext* opCtx) {
     invariant(opCtx);
     invariant(_replicationCoordinator->getMemberState() == MemberState(MemberState::RS_ROLLBACK));
 
-    log() << "transition to SECONDARY";
+    MONGO_BOOST_LOG << "transition to SECONDARY";
 
     Lock::GlobalWrite globalWrite(opCtx);
 
     auto status = _replicationCoordinator->setFollowerMode(MemberState::RS_SECONDARY);
     if (!status.isOK()) {
-        severe() << "Failed to transition into " << MemberState(MemberState::RS_SECONDARY)
+        MONGO_BOOST_SEVERE << "Failed to transition into " << MemberState(MemberState::RS_SECONDARY)
                  << "; expected to be in state " << MemberState(MemberState::RS_ROLLBACK)
                  << "; found self in " << _replicationCoordinator->getMemberState()
                  << causedBy(status);
@@ -904,21 +904,21 @@ void RollbackImpl::_resetDropPendingState(OperationContext* opCtx) {
 }
 
 void RollbackImpl::_summarizeRollback(OperationContext* opCtx) const {
-    log() << "Rollback summary:";
-    log() << "\tstart time: " << _rollbackStats.startTime;
-    log() << "\tend time: " << opCtx->getServiceContext()->getFastClockSource()->now();
-    log() << "\tsync source: " << _remoteOplog->hostAndPort().toString();
-    log() << "\trollback data file directory: "
+    MONGO_BOOST_LOG << "Rollback summary:";
+    MONGO_BOOST_LOG << "\tstart time: " << _rollbackStats.startTime;
+    MONGO_BOOST_LOG << "\tend time: " << opCtx->getServiceContext()->getFastClockSource()->now();
+    MONGO_BOOST_LOG << "\tsync source: " << _remoteOplog->hostAndPort().toString();
+    MONGO_BOOST_LOG << "\trollback data file directory: "
           << _rollbackStats.rollbackDataFileDirectory.value_or("none; no files written");
     if (_rollbackStats.rollbackId) {
-        log() << "\trollback id: " << *_rollbackStats.rollbackId;
+        MONGO_BOOST_LOG << "\trollback id: " << *_rollbackStats.rollbackId;
     }
     if (_rollbackStats.lastLocalOptime) {
-        log() << "\tlast optime on branch of history rolled back: "
+        MONGO_BOOST_LOG << "\tlast optime on branch of history rolled back: "
               << *_rollbackStats.lastLocalOptime;
     }
     if (_rollbackStats.commonPoint) {
-        log() << "\tcommon point optime: " << *_rollbackStats.commonPoint;
+        MONGO_BOOST_LOG << "\tcommon point optime: " << *_rollbackStats.commonPoint;
     }
     if (_rollbackStats.lastLocalWallClockTime && _rollbackStats.commonPointWallClockTime) {
 
@@ -926,34 +926,34 @@ void RollbackImpl::_summarizeRollback(OperationContext* opCtx) const {
         auto commonWall = *_rollbackStats.commonPointWallClockTime;
         unsigned long long diff = durationCount<Seconds>(Milliseconds(lastWall - commonWall));
 
-        log() << "\tlast wall clock time on the branch of history rolled back: " << lastWall;
-        log() << "\tcommon point wall clock time: " << commonWall;
-        log() << "\tdifference in wall clock times: " << diff << " second(s)";
+        MONGO_BOOST_LOG << "\tlast wall clock time on the branch of history rolled back: " << lastWall;
+        MONGO_BOOST_LOG << "\tcommon point wall clock time: " << commonWall;
+        MONGO_BOOST_LOG << "\tdifference in wall clock times: " << diff << " second(s)";
     }
     if (_rollbackStats.truncateTimestamp) {
-        log() << "\ttruncate timestamp: " << *_rollbackStats.truncateTimestamp;
+        MONGO_BOOST_LOG << "\ttruncate timestamp: " << *_rollbackStats.truncateTimestamp;
     }
     if (_rollbackStats.stableTimestamp) {
-        log() << "\tstable timestamp: " << *_rollbackStats.stableTimestamp;
+        MONGO_BOOST_LOG << "\tstable timestamp: " << *_rollbackStats.stableTimestamp;
     }
-    log() << "\tshard identity document rolled back: " << std::boolalpha
+    MONGO_BOOST_LOG << "\tshard identity document rolled back: " << std::boolalpha
           << _observerInfo.shardIdentityRolledBack;
-    log() << "\tconfig server config version document rolled back: " << std::boolalpha
+    MONGO_BOOST_LOG << "\tconfig server config version document rolled back: " << std::boolalpha
           << _observerInfo.configServerConfigVersionRolledBack;
-    log() << "\taffected sessions: " << (_observerInfo.rollbackSessionIds.empty() ? "none" : "");
+    MONGO_BOOST_LOG << "\taffected sessions: " << (_observerInfo.rollbackSessionIds.empty() ? "none" : "");
     for (const auto& sessionId : _observerInfo.rollbackSessionIds) {
-        log() << "\t\t" << sessionId;
+        MONGO_BOOST_LOG << "\t\t" << sessionId;
     }
-    log() << "\taffected namespaces: " << (_observerInfo.rollbackNamespaces.empty() ? "none" : "");
+    MONGO_BOOST_LOG << "\taffected namespaces: " << (_observerInfo.rollbackNamespaces.empty() ? "none" : "");
     for (const auto& nss : _observerInfo.rollbackNamespaces) {
-        log() << "\t\t" << nss.ns();
+        MONGO_BOOST_LOG << "\t\t" << nss.ns();
     }
-    log() << "\tcounts of interesting commands rolled back: "
+    MONGO_BOOST_LOG << "\tcounts of interesting commands rolled back: "
           << (_observerInfo.rollbackCommandCounts.empty() ? "none" : "");
     for (const auto& entry : _observerInfo.rollbackCommandCounts) {
-        log() << "\t\t" << entry.first << ": " << entry.second;
+        MONGO_BOOST_LOG << "\t\t" << entry.first << ": " << entry.second;
     }
-    log() << "\ttotal number of entries rolled back (including no-ops): "
+    MONGO_BOOST_LOG << "\ttotal number of entries rolled back (including no-ops): "
           << _observerInfo.numberOfEntriesObserved;
 }
 

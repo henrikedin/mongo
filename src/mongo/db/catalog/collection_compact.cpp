@@ -132,7 +132,7 @@ StatusWith<CompactStats> CollectionImpl::compact(OperationContext* opCtx,
             LOG(1) << "compacting index: " << descriptor->toString();
             Status status = index->compact(opCtx);
             if (!status.isOK()) {
-                error() << "failed to compact index: " << descriptor->toString();
+                MONGO_BOOST_ERROR << "failed to compact index: " << descriptor->toString();
                 return status;
             }
         }
@@ -174,7 +174,7 @@ StatusWith<CompactStats> CollectionImpl::compact(OperationContext* opCtx,
         // note that the drop indexes call also invalidates all clientcursors for the namespace,
         // which is important and wanted here
         WriteUnitOfWork wunit(opCtx);
-        log() << "compact dropping indexes";
+        MONGO_BOOST_LOG << "compact dropping indexes";
         _indexCatalog.dropAllIndexes(opCtx, true);
         wunit.commit();
     }
@@ -195,7 +195,7 @@ StatusWith<CompactStats> CollectionImpl::compact(OperationContext* opCtx,
     if (!status.isOK())
         return StatusWith<CompactStats>(status);
 
-    log() << "starting index commits";
+    MONGO_BOOST_LOG << "starting index commits";
     status = indexer.doneInserting();
     if (!status.isOK())
         return StatusWith<CompactStats>(status);

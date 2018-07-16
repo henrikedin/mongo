@@ -93,7 +93,7 @@ public:
             return status.getStatus();
         }
 
-        log() << "Processing bridge command: " << cmdName;
+        MONGO_BOOST_LOG << "Processing bridge command: " << cmdName;
 
         BridgeCommand* command = status.getValue();
         return command->run(cmdObj, &_settingsMutex, &_settings);
@@ -246,7 +246,7 @@ DbResponse ServiceEntryPointBridge::handleRequest(OperationContext* opCtx, const
                     tl->connect(destAddr, transport::kGlobalSSLMode, connectExpiration - now);
                 auto status = sws.getStatus();
                 if (!status.isOK()) {
-                    warning() << "Unable to establish connection to " << destAddr << ": " << status;
+                    MONGO_BOOST_WARNING << "Unable to establish connection to " << destAddr << ": " << status;
                     now = getGlobalServiceContext()->getFastClockSource()->now();
                 } else {
                     return std::move(sws.getValue());
@@ -322,7 +322,7 @@ DbResponse ServiceEntryPointBridge::handleRequest(OperationContext* opCtx, const
     switch (hostSettings.state) {
         // Close the connection to 'dest'.
         case HostSettings::State::kHangUp:
-            log() << "Rejecting connection from " << dest << ", end connection "
+            MONGO_BOOST_LOG << "Rejecting connection from " << dest << ", end connection "
                   << source->remote().toString();
             source->end();
             return {Message()};
@@ -331,11 +331,11 @@ DbResponse ServiceEntryPointBridge::handleRequest(OperationContext* opCtx, const
             if (dest.nextCanonicalDouble() < hostSettings.loss) {
                 std::string hostName = dest.toString();
                 if (cmdRequest) {
-                    log() << "Discarding \"" << cmdRequest->getCommandName()
+                    MONGO_BOOST_LOG << "Discarding \"" << cmdRequest->getCommandName()
                           << "\" command with arguments " << cmdRequest->body << " from "
                           << hostName;
                 } else {
-                    log() << "Discarding " << networkOpToString(request.operation()) << " from "
+                    MONGO_BOOST_LOG << "Discarding " << networkOpToString(request.operation()) << " from "
                           << hostName;
                 }
                 return {Message()};
@@ -369,7 +369,7 @@ DbResponse ServiceEntryPointBridge::handleRequest(OperationContext* opCtx, const
         // reply with. If the message handling settings were since changed to close
         // connections from 'host', then do so now.
         if (hostSettings.state == HostSettings::State::kHangUp) {
-            log() << "Closing connection from " << dest << ", end connection " << source->remote();
+            MONGO_BOOST_LOG << "Closing connection from " << dest << ", end connection " << source->remote();
             source->end();
             return {Message()};
         }
@@ -428,12 +428,12 @@ int bridgeMain(int argc, char** argv, char** envp) {
         opts, serviceContext->getServiceEntryPoint()));
     auto tl = serviceContext->getTransportLayer();
     if (!tl->setup().isOK()) {
-        log() << "Error setting up transport layer";
+        MONGO_BOOST_LOG << "Error setting up transport layer";
         return EXIT_NET_ERROR;
     }
 
     if (!tl->start().isOK()) {
-        log() << "Error starting transport layer";
+        MONGO_BOOST_LOG << "Error starting transport layer";
         return EXIT_NET_ERROR;
     }
 

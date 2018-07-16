@@ -1635,7 +1635,7 @@ TEST_F(DConcurrencyTestFixture, CompatibleFirstStress) {
     for (auto& thread : threads)
         thread.join();
     for (int threadId = 0; threadId < numThreads; threadId++) {
-        log() << "thread " << threadId << " stats: " << acquisitionCount[threadId]
+        MONGO_BOOST_LOG << "thread " << threadId << " stats: " << acquisitionCount[threadId]
               << " acquisitions, " << timeoutCount[threadId] << " timeouts, "
               << busyWaitCount[threadId] / 1'000'000 << "M busy waits";
     }

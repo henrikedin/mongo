@@ -45,7 +45,7 @@ namespace {
  * Accepts an errno code, prints its error message, and exits.
  */
 void failWithErrno(int err) {
-    severe() << "error in Ticketholder: " << errnoWithDescription(err);
+    MONGO_BOOST_SEVERE << "error in Ticketholder: " << errnoWithDescription(err);
     fassertFailed(28604);
 }
 
@@ -217,7 +217,7 @@ Status TicketHolder::resize(int newSize) {
            << "more than newSize(" << newSize << ")";
 
         std::string errmsg = ss.str();
-        log() << errmsg;
+        MONGO_BOOST_LOG << errmsg;
         return Status(ErrorCodes::BadValue, errmsg);
     }
 

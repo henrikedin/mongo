@@ -226,7 +226,7 @@ Message OpMsgBuilder::finish() {
         std::set<StringData> seenFields;
         for (auto elem : resumeBody().asTempObj()) {
             if (!(seenFields.insert(elem.fieldNameStringData()).second)) {
-                severe() << "OP_MSG with duplicate field '" << elem.fieldNameStringData()
+                MONGO_BOOST_SEVERE << "OP_MSG with duplicate field '" << elem.fieldNameStringData()
                          << "' : " << redact(resumeBody().asTempObj());
                 fassert(40474, false);
             }

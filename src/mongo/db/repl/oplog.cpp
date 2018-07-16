@@ -552,7 +552,7 @@ std::vector<OpTime> logInsertOps(OperationContext* opCtx,
     MONGO_FAIL_POINT_BLOCK(sleepBetweenInsertOpTimeGenerationAndLogOp, customWait) {
         const BSONObj& data = customWait.getData();
         auto numMillis = data["waitForMillis"].numberInt();
-        log() << "Sleeping for " << numMillis << "ms after receiving " << count << " optimes from "
+        MONGO_BOOST_LOG << "Sleeping for " << numMillis << "ms after receiving " << count << " optimes from "
               << opTimes.front() << " to " << opTimes.back();
         sleepmillis(numMillis);
     }
@@ -635,7 +635,7 @@ void createOplog(OperationContext* opCtx, const std::string& oplogCollectionName
                 stringstream ss;
                 ss << "cmdline oplogsize (" << n << ") different than existing (" << o
                    << ") see: http://dochub.mongodb.org/core/increase-oplog";
-                log() << ss.str() << endl;
+                MONGO_BOOST_LOG << ss.str() << endl;
                 uasserted(13257, ss.str());
             }
         }
@@ -648,8 +648,8 @@ void createOplog(OperationContext* opCtx, const std::string& oplogCollectionName
     /* create an oplog collection, if it doesn't yet exist. */
     const auto sz = getNewOplogSizeBytes(opCtx, replSettings);
 
-    log() << "******" << endl;
-    log() << "creating replication oplog of size: " << (int)(sz / (1024 * 1024)) << "MB..." << endl;
+    MONGO_BOOST_LOG << "******" << endl;
+    MONGO_BOOST_LOG << "creating replication oplog of size: " << (int)(sz / (1024 * 1024)) << "MB..." << endl;
 
     CollectionOptions options;
     options.capped = true;
@@ -670,7 +670,7 @@ void createOplog(OperationContext* opCtx, const std::string& oplogCollectionName
     StorageEngine* storageEngine = getGlobalServiceContext()->getStorageEngine();
     storageEngine->flushAllFiles(opCtx, true);
 
-    log() << "******" << endl;
+    MONGO_BOOST_LOG << "******" << endl;
 }
 
 void createOplog(OperationContext* opCtx) {
@@ -866,7 +866,7 @@ std::map<std::string, ApplyOpMetadata> opsMap = {
           BSONObjBuilder resultWeDontCareAbout;
           auto nss = parseUUIDorNs(opCtx, ns, ui, cmd);
           if (nss.isDropPendingNamespace()) {
-              log()
+              MONGO_BOOST_LOG
                   << "applyCommand: " << nss << " (UUID: " << ui.toString(false)
                   << "): collection is already in a drop-pending state: ignoring collection drop: "
                   << redact(cmd);
@@ -1364,7 +1364,7 @@ Status applyOperation_inlock(OperationContext* opCtx,
 
                     UpdateResult res = update(opCtx, db, request);
                     if (res.numMatched == 0 && res.upserted.isEmpty()) {
-                        error() << "No document was updated even though we got a DuplicateKey "
+                        MONGO_BOOST_ERROR << "No document was updated even though we got a DuplicateKey "
                                    "error when inserting";
                         fassertFailedNoTrace(28750);
                     }
@@ -1416,7 +1416,7 @@ Status applyOperation_inlock(OperationContext* opCtx,
                     if (updateCriteria.nFields() == 1) {
                         // was a simple { _id : ... } update criteria
                         string msg = str::stream() << "failed to apply update: " << redact(op);
-                        error() << msg;
+                        MONGO_BOOST_ERROR << msg;
                         return Status(ErrorCodes::UpdateOperationFailed, msg);
                     }
 
@@ -1432,7 +1432,7 @@ Status applyOperation_inlock(OperationContext* opCtx,
                         (!indexCatalog->haveIdIndex(opCtx) &&
                          Helpers::findOne(opCtx, collection, updateCriteria, false).isNull())) {
                         string msg = str::stream() << "couldn't find doc: " << redact(op);
-                        error() << msg;
+                        MONGO_BOOST_ERROR << msg;
                         return Status(ErrorCodes::UpdateOperationFailed, msg);
                     }
 
@@ -1444,7 +1444,7 @@ Status applyOperation_inlock(OperationContext* opCtx,
                     // if an regular non-mod update fails the item is (presumably) missing.
                     if (!upsert) {
                         string msg = str::stream() << "update of non-mod failed: " << redact(op);
-                        error() << msg;
+                        MONGO_BOOST_ERROR << msg;
                         return Status(ErrorCodes::UpdateOperationFailed, msg);
                     }
                 }
@@ -1655,7 +1655,7 @@ Status applyCommand_inlock(OperationContext* opCtx,
             }
             default:
                 if (!curOpToApply.acceptableErrors.count(status.code())) {
-                    error() << "Failed command " << redact(o) << " on " << nss.db()
+                    MONGO_BOOST_ERROR << "Failed command " << redact(o) << " on " << nss.db()
                             << " with status " << status << " during oplog application";
                     return status;
                 }

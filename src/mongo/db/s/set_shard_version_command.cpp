@@ -302,7 +302,7 @@ public:
                     if (critSecSignal) {
                         collLock.reset();
                         autoDb.reset();
-                        log() << "waiting till out of critical section";
+                        MONGO_BOOST_LOG << "waiting till out of critical section";
                         critSecSignal->waitFor(opCtx, Seconds(10));
                     }
 
@@ -323,7 +323,7 @@ public:
                     if (critSecSignal) {
                         collLock.reset();
                         autoDb.reset();
-                        log() << "waiting till out of critical section";
+                        MONGO_BOOST_LOG << "waiting till out of critical section";
                         critSecSignal->waitFor(opCtx, Seconds(10));
                     }
 
@@ -363,7 +363,7 @@ public:
                                        << ", stored shard version is " << currVersion.toString()
                                        << causedBy(redact(status));
 
-                warning() << errmsg;
+                MONGO_BOOST_WARNING << errmsg;
 
                 result.append("ns", nss.ns());
                 requestedVersion.appendLegacyWithField(&result, "version");
@@ -379,7 +379,7 @@ public:
                                        << ", requested version is " << requestedVersion.toString()
                                        << " but found version " << currVersion.toString();
 
-                OCCASIONALLY warning() << errmsg;
+                OCCASIONALLY MONGO_BOOST_WARNING << errmsg;
 
                 // WARNING: the exact fields below are important for compatibility with mongos
                 // version reload.

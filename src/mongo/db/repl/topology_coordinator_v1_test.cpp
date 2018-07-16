@@ -1647,7 +1647,7 @@ TEST_F(TopoCoordTest, ReplSetGetStatus) {
         &resultStatus);
     ASSERT_OK(resultStatus);
     BSONObj rsStatus = statusBuilder.obj();
-    unittest::log() << rsStatus;
+    unittest::MONGO_BOOST_LOG << rsStatus;
 
     // Test results for all non-self members
     ASSERT_EQUALS(setName, rsStatus["set"].String());
@@ -1755,7 +1755,7 @@ TEST_F(TopoCoordTest, ReplSetGetStatus) {
         &resultStatus);
     ASSERT_OK(resultStatus);
     rsStatus = statusBuilder2.obj();
-    unittest::log() << rsStatus;
+    unittest::MONGO_BOOST_LOG << rsStatus;
     ASSERT_EQUALS(setName, rsStatus["set"].String());
     ASSERT_FALSE(rsStatus.hasField("lastStableCheckpointTimestamp"));
 }

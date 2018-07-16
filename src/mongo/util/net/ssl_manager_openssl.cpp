@@ -446,13 +446,13 @@ void setupFIPS() {
 #if defined(MONGO_CONFIG_HAVE_FIPS_MODE_SET)
     int status = FIPS_mode_set(1);
     if (!status) {
-        severe() << "can't activate FIPS mode: "
+        MONGO_BOOST_SEVERE << "can't activate FIPS mode: "
                  << SSLManagerInterface::getSSLErrorMessage(ERR_get_error());
         fassertFailedNoTrace(16703);
     }
-    log() << "FIPS 140-2 mode activated";
+    MONGO_BOOST_LOG << "FIPS 140-2 mode activated";
 #else
-    severe() << "this version of mongodb was not compiled with FIPS support";
+    MONGO_BOOST_SEVERE << "this version of mongodb was not compiled with FIPS support";
     fassertFailedNoTrace(17089);
 #endif
 }
@@ -796,14 +796,14 @@ unsigned long long SSLManagerOpenSSL::_convertASN1ToMillis(ASN1_TIME* asn1time) 
     ON_BLOCK_EXIT(BIO_free, outBIO);
 
     if (timeError <= 0) {
-        error() << "ASN1_TIME_print failed or wrote no data.";
+        MONGO_BOOST_ERROR << "ASN1_TIME_print failed or wrote no data.";
         return 0;
     }
 
     char dateChar[DATE_LEN];
     timeError = BIO_gets(outBIO, dateChar, DATE_LEN);
     if (timeError <= 0) {
-        error() << "BIO_gets call failed to transfer contents to buf";
+        MONGO_BOOST_ERROR << "BIO_gets call failed to transfer contents to buf";
         return 0;
     }
 
@@ -832,13 +832,13 @@ bool SSLManagerOpenSSL::_parseAndValidateCertificate(const std::string& keyFile,
                                                      Date_t* serverCertificateExpirationDate) {
     BIO* inBIO = BIO_new(BIO_s_file());
     if (inBIO == NULL) {
-        error() << "failed to allocate BIO object: " << getSSLErrorMessage(ERR_get_error());
+        MONGO_BOOST_ERROR << "failed to allocate BIO object: " << getSSLErrorMessage(ERR_get_error());
         return false;
     }
 
     ON_BLOCK_EXIT(BIO_free, inBIO);
     if (BIO_read_filename(inBIO, keyFile.c_str()) <= 0) {
-        error() << "cannot read key file when setting subject name: " << keyFile << ' '
+        MONGO_BOOST_ERROR << "cannot read key file when setting subject name: " << keyFile << ' '
                 << getSSLErrorMessage(ERR_get_error());
         return false;
     }
@@ -849,7 +849,7 @@ bool SSLManagerOpenSSL::_parseAndValidateCertificate(const std::string& keyFile,
                                    &SSLManagerOpenSSL::password_cb,
                                    const_cast<void*>(static_cast<const void*>(&keyPassword)));
     if (x509 == NULL) {
-        error() << "cannot retrieve certificate from keyfile: " << keyFile << ' '
+        MONGO_BOOST_ERROR << "cannot retrieve certificate from keyfile: " << keyFile << ' '
                 << getSSLErrorMessage(ERR_get_error());
         return false;
     }
@@ -859,18 +859,18 @@ bool SSLManagerOpenSSL::_parseAndValidateCertificate(const std::string& keyFile,
     if (serverCertificateExpirationDate != NULL) {
         unsigned long long notBeforeMillis = _convertASN1ToMillis(X509_get_notBefore(x509));
         if (notBeforeMillis == 0) {
-            error() << "date conversion failed";
+            MONGO_BOOST_ERROR << "date conversion failed";
             return false;
         }
 
         unsigned long long notAfterMillis = _convertASN1ToMillis(X509_get_notAfter(x509));
         if (notAfterMillis == 0) {
-            error() << "date conversion failed";
+            MONGO_BOOST_ERROR << "date conversion failed";
             return false;
         }
 
         if ((notBeforeMillis > curTimeMillis64()) || (curTimeMillis64() > notAfterMillis)) {
-            severe() << "The provided SSL certificate is expired or not yet valid.";
+            MONGO_BOOST_SEVERE << "The provided SSL certificate is expired or not yet valid.";
             fassertFailedNoTrace(28652);
         }
 
@@ -884,20 +884,20 @@ bool SSLManagerOpenSSL::_setupPEM(SSL_CTX* context,
                                   const std::string& keyFile,
                                   const std::string& password) {
     if (SSL_CTX_use_certificate_chain_file(context, keyFile.c_str()) != 1) {
-        error() << "cannot read certificate file: " << keyFile << ' '
+        MONGO_BOOST_ERROR << "cannot read certificate file: " << keyFile << ' '
                 << getSSLErrorMessage(ERR_get_error());
         return false;
     }
 
     BIO* inBio = BIO_new(BIO_s_file());
     if (!inBio) {
-        error() << "failed to allocate BIO object: " << getSSLErrorMessage(ERR_get_error());
+        MONGO_BOOST_ERROR << "failed to allocate BIO object: " << getSSLErrorMessage(ERR_get_error());
         return false;
     }
     const auto bioGuard = MakeGuard([&inBio]() { BIO_free(inBio); });
 
     if (BIO_read_filename(inBio, keyFile.c_str()) <= 0) {
-        error() << "cannot read PEM key file: " << keyFile << ' '
+        MONGO_BOOST_ERROR << "cannot read PEM key file: " << keyFile << ' '
                 << getSSLErrorMessage(ERR_get_error());
         return false;
     }
@@ -913,21 +913,21 @@ bool SSLManagerOpenSSL::_setupPEM(SSL_CTX* context,
     }
     EVP_PKEY* privateKey = PEM_read_bio_PrivateKey(inBio, nullptr, password_cb, userdata);
     if (!privateKey) {
-        error() << "cannot read PEM key file: " << keyFile << ' '
+        MONGO_BOOST_ERROR << "cannot read PEM key file: " << keyFile << ' '
                 << getSSLErrorMessage(ERR_get_error());
         return false;
     }
     const auto privateKeyGuard = MakeGuard([&privateKey]() { EVP_PKEY_free(privateKey); });
 
     if (SSL_CTX_use_PrivateKey(context, privateKey) != 1) {
-        error() << "cannot use PEM key file: " << keyFile << ' '
+        MONGO_BOOST_ERROR << "cannot use PEM key file: " << keyFile << ' '
                 << getSSLErrorMessage(ERR_get_error());
         return false;
     }
 
     // Verify that the certificate and the key go together.
     if (SSL_CTX_check_private_key(context) != 1) {
-        error() << "SSL certificate validation: " << getSSLErrorMessage(ERR_get_error());
+        MONGO_BOOST_ERROR << "SSL certificate validation: " << getSSLErrorMessage(ERR_get_error());
         return false;
     }
 
@@ -1126,11 +1126,11 @@ bool SSLManagerOpenSSL::_setupCRL(SSL_CTX* context, const std::string& crlFile) 
 
     int status = X509_load_crl_file(lookup, crlFile.c_str(), X509_FILETYPE_PEM);
     if (status == 0) {
-        error() << "cannot read CRL file: " << crlFile << ' '
+        MONGO_BOOST_ERROR << "cannot read CRL file: " << crlFile << ' '
                 << getSSLErrorMessage(ERR_get_error());
         return false;
     }
-    log() << "ssl imported " << status << " revoked certificate" << ((status == 1) ? "" : "s")
+    MONGO_BOOST_LOG << "ssl imported " << status << " revoked certificate" << ((status == 1) ? "" : "s")
           << " from the revocation list.";
     return true;
 }
@@ -1246,12 +1246,12 @@ StatusWith<boost::optional<SSLPeerInfo>> SSLManagerOpenSSL::parseAndValidatePeer
         if (_weakValidation) {
             // do not give warning if certificate warnings are  suppressed
             if (!_suppressNoCertificateWarning) {
-                warning() << "no SSL certificate provided by peer";
+                MONGO_BOOST_WARNING << "no SSL certificate provided by peer";
             }
             return {boost::none};
         } else {
             auto msg = "no SSL certificate provided by peer; connection rejected";
-            error() << msg;
+            MONGO_BOOST_ERROR << msg;
             return Status(ErrorCodes::SSLHandshakeFailed, msg);
         }
     }
@@ -1261,14 +1261,14 @@ StatusWith<boost::optional<SSLPeerInfo>> SSLManagerOpenSSL::parseAndValidatePeer
 
     if (result != X509_V_OK) {
         if (_allowInvalidCertificates) {
-            warning() << "SSL peer certificate validation failed: "
+            MONGO_BOOST_WARNING << "SSL peer certificate validation failed: "
                       << X509_verify_cert_error_string(result);
             return {boost::none};
         } else {
             str::stream msg;
             msg << "SSL peer certificate validation failed: "
                 << X509_verify_cert_error_string(result);
-            error() << msg.ss.str();
+            MONGO_BOOST_ERROR << msg.ss.str();
             return Status(ErrorCodes::SSLHandshakeFailed, msg);
         }
     }
@@ -1337,9 +1337,9 @@ StatusWith<boost::optional<SSLPeerInfo>> SSLManagerOpenSSL::parseAndValidatePeer
                    << remoteHost << " does not match " << certificateNames.str();
         std::string msg = msgBuilder.str();
         if (_allowInvalidCertificates || _allowInvalidHostnames || isUnixDomainSocket(remoteHost)) {
-            warning() << msg;
+            MONGO_BOOST_WARNING << msg;
         } else {
-            error() << msg;
+            MONGO_BOOST_ERROR << msg;
             return Status(ErrorCodes::SSLHandshakeFailed, msg);
         }
     }
@@ -1410,7 +1410,7 @@ void SSLManagerOpenSSL::_handleSSLError(SSLConnectionOpenSSL* conn, int ret) {
             // However, it turns out this CAN happen during a connect, if the other side
             // accepts the socket connection but fails to do the SSL handshake in a timely
             // manner.
-            error() << "SSL: " << code << ", possibly timed out during connect";
+            MONGO_BOOST_ERROR << "SSL: " << code << ", possibly timed out during connect";
             break;
 
         case SSL_ERROR_ZERO_RETURN:
@@ -1421,20 +1421,20 @@ void SSLManagerOpenSSL::_handleSSLError(SSLConnectionOpenSSL* conn, int ret) {
             // If ERR_get_error returned 0, the error queue is empty
             // check the return value of the actual SSL operation
             if (err != 0) {
-                error() << "SSL: " << getSSLErrorMessage(err);
+                MONGO_BOOST_ERROR << "SSL: " << getSSLErrorMessage(err);
             } else if (ret == 0) {
-                error() << "Unexpected EOF encountered during SSL communication";
+                MONGO_BOOST_ERROR << "Unexpected EOF encountered during SSL communication";
             } else {
-                error() << "The SSL BIO reported an I/O error " << errnoWithDescription();
+                MONGO_BOOST_ERROR << "The SSL BIO reported an I/O error " << errnoWithDescription();
             }
             break;
         case SSL_ERROR_SSL: {
-            error() << "SSL: " << getSSLErrorMessage(err);
+            MONGO_BOOST_ERROR << "SSL: " << getSSLErrorMessage(err);
             break;
         }
 
         default:
-            error() << "unrecognized SSL error";
+            MONGO_BOOST_ERROR << "unrecognized SSL error";
             break;
     }
     _flushNetworkBIO(conn);

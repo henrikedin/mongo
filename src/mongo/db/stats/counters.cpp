@@ -102,7 +102,7 @@ void OpCounters::gotOp(int op, bool isCommand) {
         case opReply:
             break;
         default:
-            log() << "OpCounters::gotOp unknown op: " << op << endl;
+            MONGO_BOOST_LOG << "OpCounters::gotOp unknown op: " << op << endl;
     }
 }
 

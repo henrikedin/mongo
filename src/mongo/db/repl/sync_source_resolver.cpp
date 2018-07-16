@@ -218,7 +218,7 @@ Status SyncSourceResolver::_scheduleFetcher(std::unique_ptr<Fetcher> fetcher) {
         _shuttingDownFetcher = std::move(_fetcher);
         _fetcher = std::move(fetcher);
     } else {
-        error() << "Error scheduling fetcher to evaluate host as sync source, host:"
+        MONGO_BOOST_ERROR << "Error scheduling fetcher to evaluate host as sync source, host:"
                 << fetcher->getSource() << ", error: " << status;
     }
     return status;
@@ -229,7 +229,7 @@ OpTime SyncSourceResolver::_parseRemoteEarliestOpTime(const HostAndPort& candida
     if (queryResponse.documents.empty()) {
         // Remote oplog is empty.
         const auto until = _taskExecutor->now() + kOplogEmptyBlacklistDuration;
-        log() << "Blacklisting " << candidate << " due to empty oplog for "
+        MONGO_BOOST_LOG << "Blacklisting " << candidate << " due to empty oplog for "
               << kOplogEmptyBlacklistDuration << " until: " << until;
         _syncSourceSelector->blacklistSyncSource(candidate, until);
         return OpTime();
@@ -239,7 +239,7 @@ OpTime SyncSourceResolver::_parseRemoteEarliestOpTime(const HostAndPort& candida
     if (firstObjFound.isEmpty()) {
         // First document in remote oplog is empty.
         const auto until = _taskExecutor->now() + kFirstOplogEntryEmptyBlacklistDuration;
-        log() << "Blacklisting " << candidate << " due to empty first document for "
+        MONGO_BOOST_LOG << "Blacklisting " << candidate << " due to empty first document for "
               << kFirstOplogEntryEmptyBlacklistDuration << " until: " << until;
         _syncSourceSelector->blacklistSyncSource(candidate, until);
         return OpTime();
@@ -248,7 +248,7 @@ OpTime SyncSourceResolver::_parseRemoteEarliestOpTime(const HostAndPort& candida
     const auto remoteEarliestOpTime = OpTime::parseFromOplogEntry(firstObjFound);
     if (!remoteEarliestOpTime.isOK()) {
         const auto until = _taskExecutor->now() + kFirstOplogEntryNullTimestampBlacklistDuration;
-        log() << "Blacklisting " << candidate << " due to error parsing OpTime from the oldest"
+        MONGO_BOOST_LOG << "Blacklisting " << candidate << " due to error parsing OpTime from the oldest"
               << " oplog entry for " << kFirstOplogEntryNullTimestampBlacklistDuration
               << " until: " << until << ". Error: " << remoteEarliestOpTime.getStatus()
               << ", Entry: " << redact(firstObjFound);
@@ -259,7 +259,7 @@ OpTime SyncSourceResolver::_parseRemoteEarliestOpTime(const HostAndPort& candida
     if (remoteEarliestOpTime.getValue().isNull()) {
         // First document in remote oplog is empty.
         const auto until = _taskExecutor->now() + kFirstOplogEntryNullTimestampBlacklistDuration;
-        log() << "Blacklisting " << candidate << " due to null timestamp in first document for "
+        MONGO_BOOST_LOG << "Blacklisting " << candidate << " due to null timestamp in first document for "
               << kFirstOplogEntryNullTimestampBlacklistDuration << " until: " << until;
         _syncSourceSelector->blacklistSyncSource(candidate, until);
         return OpTime();
@@ -289,7 +289,7 @@ void SyncSourceResolver::_firstOplogEntryFetcherCallback(
     if (!queryResult.isOK()) {
         // We got an error.
         const auto until = _taskExecutor->now() + kFetcherErrorBlacklistDuration;
-        log() << "Blacklisting " << candidate << " due to error: '" << queryResult.getStatus()
+        MONGO_BOOST_LOG << "Blacklisting " << candidate << " due to error: '" << queryResult.getStatus()
               << "' for " << kFetcherErrorBlacklistDuration << " until: " << until;
         _syncSourceSelector->blacklistSyncSource(candidate, until);
 
@@ -310,7 +310,7 @@ void SyncSourceResolver::_firstOplogEntryFetcherCallback(
         const auto blacklistDuration = kTooStaleBlacklistDuration;
         const auto until = _taskExecutor->now() + Minutes(1);
 
-        log() << "We are too stale to use " << candidate << " as a sync source. "
+        MONGO_BOOST_LOG << "We are too stale to use " << candidate << " as a sync source. "
               << "Blacklisting this sync source"
               << " because our last fetched timestamp: " << _lastOpTimeFetched.getTimestamp()
               << " is before their earliest timestamp: " << remoteEarliestOpTime.getTimestamp()
@@ -380,7 +380,7 @@ void SyncSourceResolver::_rbidRequestCallback(
         rbid = rbidReply.response.data["rbid"].Int();
     } catch (const DBException& ex) {
         const auto until = _taskExecutor->now() + kFetcherErrorBlacklistDuration;
-        log() << "Blacklisting " << candidate << " due to error: '" << ex << "' for "
+        MONGO_BOOST_LOG << "Blacklisting " << candidate << " due to error: '" << ex << "' for "
               << kFetcherErrorBlacklistDuration << " until: " << until;
         _syncSourceSelector->blacklistSyncSource(candidate, until);
         _chooseAndProbeNextSyncSource(earliestOpTimeSeen).transitional_ignore();
@@ -452,7 +452,7 @@ void SyncSourceResolver::_requiredOpTimeFetcherCallback(
     if (!queryResult.isOK()) {
         // We got an error.
         const auto until = _taskExecutor->now() + kFetcherErrorBlacklistDuration;
-        log() << "Blacklisting " << candidate << " due to required optime fetcher error: '"
+        MONGO_BOOST_LOG << "Blacklisting " << candidate << " due to required optime fetcher error: '"
               << queryResult.getStatus() << "' for " << kFetcherErrorBlacklistDuration
               << " until: " << until << ". required optime: " << _requiredOpTime;
         _syncSourceSelector->blacklistSyncSource(candidate, until);
@@ -465,7 +465,7 @@ void SyncSourceResolver::_requiredOpTimeFetcherCallback(
     auto status = _compareRequiredOpTimeWithQueryResponse(queryResponse);
     if (!status.isOK()) {
         const auto until = _taskExecutor->now() + kNoRequiredOpTimeBlacklistDuration;
-        warning() << "We cannot use " << candidate.toString()
+        MONGO_BOOST_WARNING << "We cannot use " << candidate.toString()
                   << " as a sync source because it does not contain the necessary "
                      "operations for us to reach a consistent state: "
                   << status << " last fetched optime: " << _lastOpTimeFetched
@@ -528,7 +528,7 @@ Status SyncSourceResolver::_finishCallback(const SyncSourceResolverResponse& res
     try {
         _onCompletion(response);
     } catch (...) {
-        warning() << "sync source resolver finish callback threw exception: "
+        MONGO_BOOST_WARNING << "sync source resolver finish callback threw exception: "
                   << exceptionToStatus();
     }
 

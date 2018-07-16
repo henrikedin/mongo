@@ -115,7 +115,7 @@ void TLConnection::setup(Milliseconds timeout, SetupCallback cb) {
     handler->promise.getFuture().getAsync(
         [ this, cb = std::move(cb) ](Status status) { cb(this, std::move(status)); });
 
-    log() << "Connecting to " << _peer;
+    MONGO_BOOST_LOG << "Connecting to " << _peer;
     setTimeout(timeout, [this, handler, timeout] {
         if (handler->done.swap(true)) {
             return;
@@ -162,7 +162,7 @@ void TLConnection::setup(Milliseconds timeout, SetupCallback cb) {
             if (status.isOK()) {
                 handler->promise.emplaceValue();
             } else {
-                log() << "Failed to connect to " << _peer << " - " << redact(status);
+                MONGO_BOOST_LOG << "Failed to connect to " << _peer << " - " << redact(status);
                 handler->promise.setError(status);
             }
         });

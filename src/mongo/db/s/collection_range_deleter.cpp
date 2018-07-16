@@ -212,7 +212,7 @@ boost::optional<Date_t> CollectionRangeDeleter::cleanUpNextRange(
                 opCtx, collection, scopedCollectionMetadata->getKeyPattern(), *range, maxToDelete);
         } catch (const DBException& e) {
             wrote = e.toStatus();
-            warning() << e.what();
+            MONGO_BOOST_WARNING << e.what();
         }
     }  // drop autoColl
 
@@ -350,7 +350,7 @@ StatusWith<int> CollectionRangeDeleter::_doDeletion(OperationContext* opCtx,
             break;
         }
         if (state == PlanExecutor::FAILURE || state == PlanExecutor::DEAD) {
-            warning() << PlanExecutor::statestr(state) << " - cursor error while trying to delete "
+            MONGO_BOOST_WARNING << PlanExecutor::statestr(state) << " - cursor error while trying to delete "
                       << redact(min) << " to " << redact(max) << " in " << nss << ": "
                       << redact(WorkingSetCommon::toStatusString(obj))
                       << ", stats: " << Explain::getWinningPlanStats(exec.get());
@@ -369,7 +369,7 @@ StatusWith<int> CollectionRangeDeleter::_doDeletion(OperationContext* opCtx,
         });
         auto restoreStateStatus = exec->restoreState();
         if (!restoreStateStatus.isOK()) {
-            warning() << "error restoring cursor state while trying to delete " << redact(min)
+            MONGO_BOOST_WARNING << "error restoring cursor state while trying to delete " << redact(min)
                       << " to " << redact(max) << " in " << nss
                       << ", stats: " << Explain::getWinningPlanStats(exec.get()) << ": "
                       << redact(restoreStateStatus);

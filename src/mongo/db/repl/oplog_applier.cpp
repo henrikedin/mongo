@@ -120,9 +120,9 @@ Future<void> OplogApplier::startup() {
     auto callback =
         [ this, promise = pf.promise.share() ](const CallbackArgs& args) mutable noexcept {
         invariant(args.status);
-        log() << "Starting oplog application";
+        MONGO_BOOST_LOG << "Starting oplog application";
         _run(_oplogBuffer);
-        log() << "Finished oplog application";
+        MONGO_BOOST_LOG << "Finished oplog application";
         promise.setWith([] {});
     };
     invariant(_executor->scheduleWork(callback).getStatus());
@@ -172,7 +172,7 @@ StatusWith<OplogApplier::Operations> OplogApplier::getNextApplierBatch(
             std::string message = str::stream()
                 << "expected oplog version " << OplogEntry::kOplogVersion << " but found version "
                 << entry.getVersion() << " in oplog entry: " << redact(entry.toBSON());
-            severe() << message;
+            MONGO_BOOST_SEVERE << message;
             return {ErrorCodes::BadValue, message};
         }
 

@@ -190,11 +190,11 @@ protected:
 
 TEST_F(ClusterAggregateTest, NoErrors) {
     loadRoutingTableWithTwoChunksAndTwoShards(kNss);
-    log() << "Target one shard: " << kAggregateCmdTargeted;
+    MONGO_BOOST_LOG << "Target one shard: " << kAggregateCmdTargeted;
     // Target one shard.
     runAggCommandSuccessful(kAggregateCmdTargeted, true);
 
-    log() << "Target all shards: " << kAggregateCmdScatterGather;
+    MONGO_BOOST_LOG << "Target all shards: " << kAggregateCmdScatterGather;
     // Target all shards.
     runAggCommandSuccessful(kAggregateCmdScatterGather, false);
 }

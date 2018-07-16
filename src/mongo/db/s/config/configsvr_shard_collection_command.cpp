@@ -577,7 +577,7 @@ void migrateAndFurtherSplitInitialChunks(OperationContext* opCtx,
             MigrationSecondaryThrottleOptions::create(MigrationSecondaryThrottleOptions::kOff),
             true);
         if (!moveStatus.isOK()) {
-            warning() << "couldn't move chunk " << redact(chunk.toString()) << " to shard " << *to
+            MONGO_BOOST_WARNING << "couldn't move chunk " << redact(chunk.toString()) << " to shard " << *to
                       << " while sharding collection " << nss.ns() << causedBy(redact(moveStatus));
         }
     }
@@ -612,7 +612,7 @@ void migrateAndFurtherSplitInitialChunks(OperationContext* opCtx,
                     ChunkRange(currentChunk->getMin(), currentChunk->getMax()),
                     subSplits);
                 if (!splitStatus.isOK()) {
-                    warning() << "couldn't split chunk " << redact(currentChunk->toString())
+                    MONGO_BOOST_WARNING << "couldn't split chunk " << redact(currentChunk->toString())
                               << " while sharding collection " << nss.ns()
                               << causedBy(redact(splitStatus.getStatus()));
                 }

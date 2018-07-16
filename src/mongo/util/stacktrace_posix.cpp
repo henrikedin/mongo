@@ -354,7 +354,7 @@ void processLoadSegment(const dl_phdr_info& info, const ElfW(Phdr) & phdr, BSONO
     std::string quotedFileName = "\"" + escape(info.dlpi_name) + "\"";
 
     if (memcmp(&eHeader.e_ident[0], ELFMAG, SELFMAG)) {
-        warning() << "Bad ELF magic number in image of " << quotedFileName;
+        MONGO_BOOST_WARNING << "Bad ELF magic number in image of " << quotedFileName;
         return;
     }
 
@@ -373,7 +373,7 @@ void processLoadSegment(const dl_phdr_info& info, const ElfW(Phdr) & phdr, BSONO
 #define MKELFCLASS(N) _MKELFCLASS(N)
 #define _MKELFCLASS(N) ELFCLASS##N
     if (eHeader.e_ident[EI_CLASS] != MKELFCLASS(ARCH_BITS)) {
-        warning() << "Expected elf file class of " << quotedFileName << " to be "
+        MONGO_BOOST_WARNING << "Expected elf file class of " << quotedFileName << " to be "
                   << MKELFCLASS(ARCH_BITS) << "(" << ARCH_BITS << "-bit), but found "
                   << int(eHeader.e_ident[4]);
         return;
@@ -382,7 +382,7 @@ void processLoadSegment(const dl_phdr_info& info, const ElfW(Phdr) & phdr, BSONO
 #undef ARCH_BITS
 
     if (eHeader.e_ident[EI_VERSION] != EV_CURRENT) {
-        warning() << "Wrong ELF version in " << quotedFileName << ".  Expected " << EV_CURRENT
+        MONGO_BOOST_WARNING << "Wrong ELF version in " << quotedFileName << ".  Expected " << EV_CURRENT
                   << " but found " << int(eHeader.e_ident[EI_VERSION]);
         return;
     }
@@ -395,7 +395,7 @@ void processLoadSegment(const dl_phdr_info& info, const ElfW(Phdr) & phdr, BSONO
         case ET_DYN:
             return;
         default:
-            warning() << "Surprised to find " << quotedFileName << " is ELF file of type "
+            MONGO_BOOST_WARNING << "Surprised to find " << quotedFileName << " is ELF file of type "
                       << eHeader.e_type;
             return;
     }

@@ -109,7 +109,7 @@ shared_ptr<ReplicaSetMonitor> ReplicaSetMonitorManager::getOrCreateMonitor(
 
     const std::set<HostAndPort> servers(connStr.getServers().begin(), connStr.getServers().end());
 
-    log() << "Starting new replica set monitor for " << connStr.toString();
+    MONGO_BOOST_LOG << "Starting new replica set monitor for " << connStr.toString();
 
     auto newMonitor = std::make_shared<ReplicaSetMonitor>(setName, servers);
     _monitors[setName] = newMonitor;
@@ -128,7 +128,7 @@ shared_ptr<ReplicaSetMonitor> ReplicaSetMonitorManager::getOrCreateMonitor(const
         return monitor;
     }
 
-    log() << "Starting new replica set monitor for " << uri.toString();
+    MONGO_BOOST_LOG << "Starting new replica set monitor for " << uri.toString();
 
     auto newMonitor = std::make_shared<ReplicaSetMonitor>(uri);
     _monitors[setName] = newMonitor;
@@ -156,7 +156,7 @@ void ReplicaSetMonitorManager::removeMonitor(StringData setName) {
             monitor->markAsRemoved();
         }
         _monitors.erase(it);
-        log() << "Removed ReplicaSetMonitor for replica set " << setName;
+        MONGO_BOOST_LOG << "Removed ReplicaSetMonitor for replica set " << setName;
     }
 }
 

@@ -121,4 +121,8 @@ private:
     boost::optional<long long> _maxSizeMB;
 };
 
+inline std::ostream& operator<<(std::ostream& s, const AddShardRequest& asr) {
+	return (s << asr.toString());
+}
+
 }  // namespace mongo

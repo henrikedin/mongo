@@ -134,14 +134,14 @@ bool testKeygen(const BSONObj& kp,
     //
     bool match = keysetsEqual(expectedKeys, actualKeys);
     if (!match) {
-        log() << "Expected: " << dumpKeyset(expectedKeys) << ", "
+        MONGO_BOOST_LOG << "Expected: " << dumpKeyset(expectedKeys) << ", "
               << "Actual: " << dumpKeyset(actualKeys);
         return false;
     }
 
     match = (expectedMultikeyPaths == actualMultikeyPaths);
     if (!match) {
-        log() << "Expected: " << dumpMultikeyPaths(expectedMultikeyPaths) << ", "
+        MONGO_BOOST_LOG << "Expected: " << dumpMultikeyPaths(expectedMultikeyPaths) << ", "
               << "Actual: " << dumpMultikeyPaths(actualMultikeyPaths);
     }
 

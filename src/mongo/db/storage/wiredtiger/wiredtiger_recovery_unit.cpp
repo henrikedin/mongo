@@ -526,7 +526,7 @@ WiredTigerCursor::WiredTigerCursor(const std::string& uri,
     _session = _ru->getSession();
     _cursor = _session->getCursor(uri, tableId, forRecordStore);
     if (!_cursor) {
-        error() << "no cursor for uri: " << uri;
+        MONGO_BOOST_ERROR << "no cursor for uri: " << uri;
     }
 }
 

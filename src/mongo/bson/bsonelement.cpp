@@ -818,7 +818,7 @@ std::string BSONElement::_asCode() const {
             return std::string(codeWScopeCode(),
                                ConstDataView(valuestr()).read<LittleEndian<int>>() - 1);
         default:
-            log() << "can't convert type: " << (int)(type()) << " to code" << std::endl;
+            MONGO_BOOST_LOG << "can't convert type: " << (int)(type()) << " to code" << std::endl;
     }
     uassert(10062, "not code", 0);
     return "";

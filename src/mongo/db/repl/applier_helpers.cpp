@@ -202,7 +202,7 @@ StatusWith<InsertGroup::ConstIterator> InsertGroup::groupAndApplyInserts(ConstIt
         if (Mode::kInitialSync == _mode && ErrorCodes::DuplicateKey == status) {
             LOG(2) << status;
         } else {
-            error() << status;
+            MONGO_BOOST_ERROR << status;
         }
 
         // Avoid quadratic run time from failed insert by not retrying until we

@@ -77,7 +77,7 @@ boost::optional<DatabaseVersion> DatabaseShardingState::getDbVersion(
 void DatabaseShardingState::setDbVersion(OperationContext* opCtx,
                                          boost::optional<DatabaseVersion> newDbVersion) {
     invariant(opCtx->lockState()->isDbLockedForMode(get.owner(this)->name(), MODE_X));
-    log() << "setting this node's cached database version for " << get.owner(this)->name() << " to "
+    MONGO_BOOST_LOG << "setting this node's cached database version for " << get.owner(this)->name() << " to "
           << (newDbVersion ? newDbVersion->toBSON() : BSONObj());
     _dbVersion = newDbVersion;
 }

@@ -109,7 +109,7 @@ public:
             const auto cm = cachedCollInfo.cm();
 
             for (const auto& chunk : cm->chunks()) {
-                log() << redact(chunk.toString());
+                MONGO_BOOST_LOG << redact(chunk.toString());
             }
 
             cm->getVersion().appendLegacyWithField(&result, "version");

@@ -270,7 +270,7 @@ void encodeGeoMatchExpression(const GeoMatchExpression* tree, StringBuilder* key
     } else if (STRICT_SPHERE == geoQuery.getGeometry().getNativeCRS()) {
         *keyBuilder << "ss";
     } else {
-        error() << "unknown CRS type " << (int)geoQuery.getGeometry().getNativeCRS()
+        MONGO_BOOST_ERROR << "unknown CRS type " << (int)geoQuery.getGeometry().getNativeCRS()
                 << " in geometry of type " << geoQuery.getGeometry().getDebugType();
         MONGO_UNREACHABLE;
     }
@@ -300,7 +300,7 @@ void encodeGeoNearMatchExpression(const GeoNearMatchExpression* tree, StringBuil
             *keyBuilder << "ss";
             break;
         case UNSET:
-            error() << "unknown CRS type " << (int)nearQuery.centroid->crs
+            MONGO_BOOST_ERROR << "unknown CRS type " << (int)nearQuery.centroid->crs
                     << " in point geometry for near query";
             MONGO_UNREACHABLE;
             break;

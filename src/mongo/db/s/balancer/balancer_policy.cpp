@@ -325,7 +325,7 @@ vector<MigrateInfo> BalancerPolicy::balance(const ShardStatisticsVector& shardSt
                     _getLeastLoadedReceiverShard(shardStats, distribution, tag, *usedShards);
                 if (!to.isValid()) {
                     if (migrations.empty()) {
-                        warning() << "Chunk " << redact(chunk.toString())
+                        MONGO_BOOST_WARNING << "Chunk " << redact(chunk.toString())
                                   << " is on a draining shard, but no appropriate recipient found";
                     }
                     continue;
@@ -339,7 +339,7 @@ vector<MigrateInfo> BalancerPolicy::balance(const ShardStatisticsVector& shardSt
             }
 
             if (migrations.empty()) {
-                warning() << "Unable to find any chunk to move from draining shard " << stat.shardId
+                MONGO_BOOST_WARNING << "Unable to find any chunk to move from draining shard " << stat.shardId
                           << ". numJumboChunks: " << numJumboChunks;
             }
         }
@@ -363,7 +363,7 @@ vector<MigrateInfo> BalancerPolicy::balance(const ShardStatisticsVector& shardSt
                     continue;
 
                 if (chunk.getJumbo()) {
-                    warning() << "Chunk " << redact(chunk.toString()) << " violates zone "
+                    MONGO_BOOST_WARNING << "Chunk " << redact(chunk.toString()) << " violates zone "
                               << redact(tag) << ", but it is jumbo and cannot be moved";
                     continue;
                 }
@@ -372,7 +372,7 @@ vector<MigrateInfo> BalancerPolicy::balance(const ShardStatisticsVector& shardSt
                     _getLeastLoadedReceiverShard(shardStats, distribution, tag, *usedShards);
                 if (!to.isValid()) {
                     if (migrations.empty()) {
-                        warning() << "Chunk " << redact(chunk.toString()) << " violates zone "
+                        MONGO_BOOST_WARNING << "Chunk " << redact(chunk.toString()) << " violates zone "
                                   << redact(tag) << ", but no appropriate recipient found";
                     }
                     continue;
@@ -411,7 +411,7 @@ vector<MigrateInfo> BalancerPolicy::balance(const ShardStatisticsVector& shardSt
         // should not be possible so warn the operator to correct it.
         if (totalNumberOfShardsWithTag == 0) {
             if (!tag.empty()) {
-                warning() << "Zone " << redact(tag) << " in collection " << distribution.nss()
+                MONGO_BOOST_WARNING << "Zone " << redact(tag) << " in collection " << distribution.nss()
                           << " has no assigned shards and chunks which fall into it cannot be "
                              "balanced. This should be corrected by either assigning shards to the "
                              "zone or by deleting it.";
@@ -472,7 +472,7 @@ bool BalancerPolicy::_singleZoneBalance(const ShardStatisticsVector& shardStats,
     const ShardId to = _getLeastLoadedReceiverShard(shardStats, distribution, tag, *usedShards);
     if (!to.isValid()) {
         if (migrations->empty()) {
-            log() << "No available shards to take chunks for zone [" << tag << "]";
+            MONGO_BOOST_LOG << "No available shards to take chunks for zone [" << tag << "]";
         }
         return false;
     }
@@ -516,7 +516,7 @@ bool BalancerPolicy::_singleZoneBalance(const ShardStatisticsVector& shardStats,
     }
 
     if (numJumboChunks) {
-        warning() << "Shard: " << from << ", collection: " << distribution.nss().ns()
+        MONGO_BOOST_WARNING << "Shard: " << from << ", collection: " << distribution.nss().ns()
                   << " has only jumbo chunks for zone \'" << tag
                   << "\' and cannot be balanced. Jumbo chunks count: " << numJumboChunks;
     }

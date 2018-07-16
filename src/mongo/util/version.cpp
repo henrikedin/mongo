@@ -111,7 +111,7 @@ const VersionInfoInterface& VersionInfoInterface::instance(NotEnabledAction acti
         return *globalVersionInfo;
     if (action == NotEnabledAction::kFallback)
         return kFallbackVersionInfo;
-    severe() << "Terminating because valid version info has not been configured";
+    MONGO_BOOST_SEVERE << "Terminating because valid version info has not been configured";
     fassertFailed(40278);
 }
 
@@ -188,17 +188,17 @@ std::string VersionInfoInterface::openSSLVersion(StringData prefix, StringData s
 }
 
 void VersionInfoInterface::logTargetMinOS() const {
-    log() << "targetMinOS: " << targetMinOS();
+    MONGO_BOOST_LOG << "targetMinOS: " << targetMinOS();
 }
 
 void VersionInfoInterface::logBuildInfo() const {
-    log() << "git version: " << gitVersion();
+    MONGO_BOOST_LOG << "git version: " << gitVersion();
 
 #if defined(MONGO_CONFIG_SSL) && MONGO_CONFIG_SSL_PROVIDER == MONGO_CONFIG_SSL_PROVIDER_OPENSSL
-    log() << openSSLVersion("OpenSSL version: ");
+    MONGO_BOOST_LOG << openSSLVersion("OpenSSL version: ");
 #endif
 
-    log() << "allocator: " << allocator();
+    MONGO_BOOST_LOG << "allocator: " << allocator();
 
     std::stringstream ss;
     ss << "modules: ";
@@ -210,15 +210,15 @@ void VersionInfoInterface::logBuildInfo() const {
             ss << m << " ";
         }
     }
-    log() << ss.str();
+    MONGO_BOOST_LOG << ss.str();
 
-    log() << "build environment:";
+    MONGO_BOOST_LOG << "build environment:";
     for (auto&& envDataEntry : buildInfo()) {
         if (std::get<3>(envDataEntry)) {
             auto val = std::get<1>(envDataEntry);
             if (val.size() == 0)
                 continue;
-            log() << "    " << std::get<0>(envDataEntry) << ": " << std::get<1>(envDataEntry);
+            MONGO_BOOST_LOG << "    " << std::get<0>(envDataEntry) << ": " << std::get<1>(envDataEntry);
         }
     }
 }

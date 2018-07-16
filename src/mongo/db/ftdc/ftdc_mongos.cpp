@@ -129,7 +129,7 @@ void startMongoSFTDC() {
 
     if (directory.empty()) {
         if (serverGlobalParams.logpath.empty()) {
-            warning() << "FTDC is disabled because neither '--logpath' nor set parameter "
+            MONGO_BOOST_WARNING << "FTDC is disabled because neither '--logpath' nor set parameter "
                          "'diagnosticDataCollectionDirectoryPath' are specified.";
             startMode = FTDCStartMode::kSkipStart;
         } else {

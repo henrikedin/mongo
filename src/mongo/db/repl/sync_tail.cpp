@@ -624,7 +624,7 @@ void tryToGoLiveAsASecondary(OperationContext* opCtx,
     // Execute the transition to SECONDARY.
     auto status = replCoord->setFollowerMode(MemberState::RS_SECONDARY);
     if (!status.isOK()) {
-        warning() << "Failed to transition into " << MemberState(MemberState::RS_SECONDARY)
+        MONGO_BOOST_WARNING << "Failed to transition into " << MemberState(MemberState::RS_SECONDARY)
                   << ". Current state: " << replCoord->getMemberState() << causedBy(status);
     }
 }
@@ -758,13 +758,13 @@ void SyncTail::_oplogApplication(OplogBuffer* oplogBuffer,
 
         // For pausing replication in tests.
         if (MONGO_FAIL_POINT(rsSyncApplyStop)) {
-            log() << "sync tail - rsSyncApplyStop fail point enabled. Blocking until fail point is "
+            MONGO_BOOST_LOG << "sync tail - rsSyncApplyStop fail point enabled. Blocking until fail point is "
                      "disabled.";
             while (MONGO_FAIL_POINT(rsSyncApplyStop)) {
                 // Tests should not trigger clean shutdown while that failpoint is active. If we
                 // think we need this, we need to think hard about what the behavior should be.
                 if (inShutdown()) {
-                    severe() << "Turn off rsSyncApplyStop before attempting clean shutdown";
+                    MONGO_BOOST_SEVERE << "Turn off rsSyncApplyStop before attempting clean shutdown";
                     fassertFailedNoTrace(40304);
                 }
                 sleepmillis(10);
@@ -910,7 +910,7 @@ bool SyncTail::tryPopAndWaitForMore(OperationContext* opCtx,
     // check for oplog version change
     int curVersion = entry.getVersion();
     if (curVersion != OplogEntry::kOplogVersion) {
-        severe() << "expected oplog version " << OplogEntry::kOplogVersion << " but found version "
+        MONGO_BOOST_SEVERE << "expected oplog version " << OplogEntry::kOplogVersion << " but found version "
                  << curVersion << " in oplog entry: " << redact(entry.toBSON());
         fassertFailedNoTrace(18820);
     }
@@ -981,7 +981,7 @@ BSONObj SyncTail::getMissingDoc(OperationContext* opCtx, const OplogEntry& oplog
     OplogReader missingObjReader;  // why are we using OplogReader to run a non-oplog query?
 
     if (MONGO_FAIL_POINT(initialSyncHangBeforeGettingMissingDocument)) {
-        log() << "initial sync - initialSyncHangBeforeGettingMissingDocument fail point enabled. "
+        MONGO_BOOST_LOG << "initial sync - initialSyncHangBeforeGettingMissingDocument fail point enabled. "
                  "Blocking until fail point is disabled.";
         while (MONGO_FAIL_POINT(initialSyncHangBeforeGettingMissingDocument)) {
             mongo::sleepsecs(1);
@@ -1000,12 +1000,12 @@ BSONObj SyncTail::getMissingDoc(OperationContext* opCtx, const OplogEntry& oplog
         try {
             bool ok = missingObjReader.connect(*source);
             if (!ok) {
-                warning() << "network problem detected while connecting to the "
+                MONGO_BOOST_WARNING << "network problem detected while connecting to the "
                           << "sync source, attempt " << retryCount << " of " << retryMax << endl;
                 continue;  // try again
             }
         } catch (const NetworkException&) {
-            warning() << "network problem detected while connecting to the "
+            MONGO_BOOST_WARNING << "network problem detected while connecting to the "
                       << "sync source, attempt " << retryCount << " of " << retryMax << endl;
             continue;  // try again
         }
@@ -1014,7 +1014,7 @@ BSONObj SyncTail::getMissingDoc(OperationContext* opCtx, const OplogEntry& oplog
         const auto idElem = oplogEntry.getIdElement();
 
         if (idElem.eoo()) {
-            severe() << "cannot fetch missing document without _id field: "
+            MONGO_BOOST_SEVERE << "cannot fetch missing document without _id field: "
                      << redact(oplogEntry.toBSON());
             fassertFailedNoTrace(28742);
         }
@@ -1032,11 +1032,11 @@ BSONObj SyncTail::getMissingDoc(OperationContext* opCtx, const OplogEntry& oplog
                 missingObj = missingObjReader.findOneByUUID(dbname.toString(), *uuid, query);
             }
         } catch (const NetworkException&) {
-            warning() << "network problem detected while fetching a missing document from the "
+            MONGO_BOOST_WARNING << "network problem detected while fetching a missing document from the "
                       << "sync source, attempt " << retryCount << " of " << retryMax << endl;
             continue;  // try again
         } catch (DBException& e) {
-            error() << "assertion fetching missing object: " << redact(e) << endl;
+            MONGO_BOOST_ERROR << "assertion fetching missing object: " << redact(e) << endl;
             throw;
         }
 
@@ -1061,12 +1061,12 @@ void SyncTail::fetchAndInsertMissingDocument(OperationContext* opCtx,
         AutoGetCollectionForRead autoColl(opCtx, nss);
         Collection* const collection = autoColl.getCollection();
         if (collection && collection->isCapped()) {
-            log() << "Not fetching missing document in capped collection (" << nss << ")";
+            MONGO_BOOST_LOG << "Not fetching missing document in capped collection (" << nss << ")";
             return;
         }
     }
 
-    log() << "Fetching missing document: " << redact(oplogEntry.toBSON());
+    MONGO_BOOST_LOG << "Fetching missing document: " << redact(oplogEntry.toBSON());
     BSONObj missingObj = getMissingDoc(opCtx, oplogEntry);
 
     if (missingObj.isEmpty()) {
@@ -1074,7 +1074,7 @@ void SyncTail::fetchAndInsertMissingDocument(OperationContext* opCtx,
         if (auto optionalObject2 = oplogEntry.getObject2()) {
             object2 = *optionalObject2;
         }
-        log() << "Missing document not found on source; presumably deleted later in oplog. o first "
+        MONGO_BOOST_LOG << "Missing document not found on source; presumably deleted later in oplog. o first "
                  "field: "
               << redact(oplogEntry.getObject()) << ", o2: " << redact(object2);
 
@@ -1182,7 +1182,7 @@ Status multiSyncApply(OperationContext* opCtx,
                         continue;
                     }
 
-                    severe() << "Error applying operation (" << redact(entry.toBSON())
+                    MONGO_BOOST_SEVERE << "Error applying operation (" << redact(entry.toBSON())
                              << "): " << causedBy(redact(status));
                     return status;
                 }
@@ -1194,7 +1194,7 @@ Status multiSyncApply(OperationContext* opCtx,
                     continue;
                 }
 
-                severe() << "writer worker caught exception: " << redact(e)
+                MONGO_BOOST_SEVERE << "writer worker caught exception: " << redact(e)
                          << " on: " << redact(entry.toBSON());
                 return e.toStatus();
             }
@@ -1221,7 +1221,7 @@ StatusWith<OpTime> SyncTail::multiApply(OperationContext* opCtx, MultiApplier::O
 
     auto replCoord = ReplicationCoordinator::get(opCtx);
     if (replCoord->getApplierState() == ReplicationCoordinator::ApplierState::Stopped) {
-        severe() << "attempting to replicate ops while primary";
+        MONGO_BOOST_SEVERE << "attempting to replicate ops while primary";
         return {ErrorCodes::CannotApplyOplogWhilePrimary,
                 "attempting to replicate ops while primary"};
     }
@@ -1271,7 +1271,7 @@ StatusWith<OpTime> SyncTail::multiApply(OperationContext* opCtx, MultiApplier::O
             for (auto it = statusVector.cbegin(); it != statusVector.cend(); ++it) {
                 const auto& status = *it;
                 if (!status.isOK()) {
-                    severe()
+					MONGO_BOOST_SEVERE
                         << "Failed to apply batch of operations. Number of operations in batch: "
                         << ops.size() << ". First operation: " << redact(ops.front().toBSON())
                         << ". Last operation: " << redact(ops.back().toBSON())
@@ -1292,11 +1292,11 @@ StatusWith<OpTime> SyncTail::multiApply(OperationContext* opCtx, MultiApplier::O
 
     // Use this fail point to hold the PBWM lock and prevent the batch from completing.
     if (MONGO_FAIL_POINT(pauseBatchApplicationBeforeCompletion)) {
-        log() << "pauseBatchApplicationBeforeCompletion fail point enabled. Blocking until fail "
+        MONGO_BOOST_LOG << "pauseBatchApplicationBeforeCompletion fail point enabled. Blocking until fail "
                  "point is disabled.";
         while (MONGO_FAIL_POINT(pauseBatchApplicationBeforeCompletion)) {
             if (inShutdown()) {
-                severe() << "Turn off pauseBatchApplicationBeforeCompletion before attempting "
+                MONGO_BOOST_SEVERE << "Turn off pauseBatchApplicationBeforeCompletion before attempting "
                             "clean shutdown";
                 fassertFailedNoTrace(50798);
             }

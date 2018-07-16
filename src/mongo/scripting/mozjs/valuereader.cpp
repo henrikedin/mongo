@@ -77,7 +77,7 @@ void ValueReader::fromBSONElement(const BSONElement& elem, const BSONObj& parent
                 scope->getProto<CodeInfo>().newInstance(args, _value);
             } else {
                 if (!elem.codeWScopeObject().isEmpty())
-                    warning() << "CodeWScope doesn't transfer to db.eval";
+                    MONGO_BOOST_WARNING << "CodeWScope doesn't transfer to db.eval";
                 scope->newFunction(StringData(elem.codeWScopeCode(), elem.codeWScopeCodeLen() - 1),
                                    _value);
             }

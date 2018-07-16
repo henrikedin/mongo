@@ -87,7 +87,7 @@ public:
 #error This targeted Windows version is not supported
 #endif  // NTDDI_VERSION
 #else
-        severe() << "VersionInfoInterface::targetMinOS is only available for Windows";
+        MONGO_BOOST_SEVERE << "VersionInfoInterface::targetMinOS is only available for Windows";
         fassertFailed(40277);
 #endif
     }

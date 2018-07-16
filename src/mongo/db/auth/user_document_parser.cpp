@@ -436,14 +436,14 @@ Status V2UserDocumentParser::initializeUserPrivilegesFromUserDocument(const BSON
     std::string errmsg;
     for (BSONObjIterator it(privilegesElement.Obj()); it.more(); it.next()) {
         if ((*it).type() != Object) {
-            warning() << "Wrong type of element in inheritedPrivileges array for "
+            MONGO_BOOST_WARNING << "Wrong type of element in inheritedPrivileges array for "
                       << user->getName() << ": " << *it;
             continue;
         }
         Privilege privilege;
         ParsedPrivilege pp;
         if (!pp.parseBSON((*it).Obj(), &errmsg)) {
-            warning() << "Could not parse privilege element in user document for "
+            MONGO_BOOST_WARNING << "Could not parse privilege element in user document for "
                       << user->getName() << ": " << errmsg;
             continue;
         }
@@ -451,14 +451,14 @@ Status V2UserDocumentParser::initializeUserPrivilegesFromUserDocument(const BSON
         Status status =
             ParsedPrivilege::parsedPrivilegeToPrivilege(pp, &privilege, &unrecognizedActions);
         if (!status.isOK()) {
-            warning() << "Could not parse privilege element in user document for "
+            MONGO_BOOST_WARNING << "Could not parse privilege element in user document for "
                       << user->getName() << causedBy(status);
             continue;
         }
         if (unrecognizedActions.size()) {
             std::string unrecognizedActionsString;
             joinStringDelim(unrecognizedActions, &unrecognizedActionsString, ',');
-            warning() << "Encountered unrecognized actions \" " << unrecognizedActionsString
+            MONGO_BOOST_WARNING << "Encountered unrecognized actions \" " << unrecognizedActionsString
                       << "\" while parsing user document for " << user->getName();
         }
         privileges.push_back(privilege);

@@ -378,7 +378,7 @@ private:
     // disable profiling and then log an error message.
     void disable(const char* msg) {
         sampleIntervalBytes = 0;
-        log() << msg;
+        MONGO_BOOST_LOG << msg;
     }
 
     //
@@ -502,7 +502,7 @@ private:
                 free(demangled);
         }
         stackInfo.stackObj = builder.obj();
-        log() << "heapProfile stack" << stackInfo.stackNum << ": " << stackInfo.stackObj;
+        MONGO_BOOST_LOG << "heapProfile stack" << stackInfo.stackNum << ": " << stackInfo.stackObj;
     }
 
     //
@@ -528,12 +528,12 @@ private:
             const size_t objTableSize = objHashTable.memorySizeBytes();
             const size_t stackTableSize = stackHashTable.memorySizeBytes();
             const double MB = 1024 * 1024;
-            log() << "sampleIntervalBytes " << sampleIntervalBytesParameter << "; "
+            MONGO_BOOST_LOG << "sampleIntervalBytes " << sampleIntervalBytesParameter << "; "
                   << "maxActiveMemory " << maxActiveMemory / MB << " MB; "
                   << "objTableSize " << objTableSize / MB << " MB; "
                   << "stackTableSize " << stackTableSize / MB << " MB";
             // print a stack trace to log somap for post-facto symbolization
-            log() << "following stack trace is for heap profiler informational purposes";
+            MONGO_BOOST_LOG << "following stack trace is for heap profiler informational purposes";
             printStackTrace();
             logGeneralStats = false;
         }
@@ -593,7 +593,7 @@ private:
         // importantStacks grows monotonically, so it can accumulate unneeded stacks,
         // so we clear it periodically.
         if (++numImportantSamples >= kMaxImportantSamples) {
-            log() << "clearing importantStacks";
+            MONGO_BOOST_LOG << "clearing importantStacks";
             importantStacks.clear();
             numImportantSamples = 0;
         }

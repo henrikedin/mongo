@@ -113,7 +113,7 @@ std::vector<OplogEntry> RandomizedIdempotencyTest::createUpdateSequence(
 std::string RandomizedIdempotencyTest::getStateString(const CollectionState& state1,
                                                       const CollectionState& state2,
                                                       const std::vector<OplogEntry>& ops) {
-    unittest::log() << IdempotencyTest::getStateString(state1, state2, ops);
+    unittest::MONGO_BOOST_LOG << IdempotencyTest::getStateString(state1, state2, ops);
     StringBuilder sb;
     sb << "Ran update ops: ";
     sb << "[ ";

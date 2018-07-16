@@ -67,7 +67,7 @@ OplogEntry::CommandType parseCommandType(const BSONObj& objectField) {
     } else if (commandString == "deleteIndexes") {
         return OplogEntry::CommandType::kDropIndexes;
     } else {
-        severe() << "Unknown oplog entry command type: " << commandString
+        MONGO_BOOST_SEVERE << "Unknown oplog entry command type: " << commandString
                  << " Object field: " << redact(objectField);
         fassertFailedNoTrace(40444);
     }

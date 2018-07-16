@@ -304,15 +304,12 @@ ExitCode _initAndListen(int listenPort) {
 
     {
         ProcessId pid = ProcessId::getCurrent();
-        LogstreamBuilder l = log(LogComponent::kControl);
-        l << "MongoDB starting : pid=" << pid << " port=" << serverGlobalParams.port
-          << " dbpath=" << storageGlobalParams.dbpath;
-
-        const bool is32bit = sizeof(int*) == 4;
-        l << (is32bit ? " 32" : " 64") << "-bit host=" << getHostNameCached() << endl;
+		const bool is32bit = sizeof(int*) == 4;
+        MONGO_BOOST_LOG_COMPONENT(LogComponent::kControl) << "MongoDB starting : pid=" << pid << " port=" << serverGlobalParams.port
+          << " dbpath=" << storageGlobalParams.dbpath << (is32bit ? " 32" : " 64") << "-bit host=" << getHostNameCached() << endl;
     }
 
-    DEV log(LogComponent::kControl) << "DEBUG build (which is slower)" << endl;
+    DEV MONGO_BOOST_LOG_COMPONENT(LogComponent::kControl) << "DEBUG build (which is slower)" << endl;
 
 #if defined(_WIN32)
     VersionInfoInterface::instance().logTargetMinOS();
@@ -328,7 +325,7 @@ ExitCode _initAndListen(int listenPort) {
             transport::TransportLayerManager::createWithConfig(&serverGlobalParams, serviceContext);
         auto res = tl->setup();
         if (!res.isOK()) {
-            error() << "Failed to set up listener: " << res;
+            MONGO_BOOST_ERROR << "Failed to set up listener: " << res;
             return EXIT_NET_ERROR;
         }
         serviceContext->setTransportLayer(std::move(tl));
@@ -355,7 +352,7 @@ ExitCode _initAndListen(int listenPort) {
 
             // Warn if field name matches non-active registered storage engine.
             if (isRegisteredStorageEngine(serviceContext, e.fieldName())) {
-                warning() << "Detected configuration for non-active storage engine "
+                MONGO_BOOST_WARNING << "Detected configuration for non-active storage engine "
                           << e.fieldName() << " when current storage engine is "
                           << storageGlobalParams.engine;
             }
@@ -365,7 +362,7 @@ ExitCode _initAndListen(int listenPort) {
     // Disallow running a storage engine that doesn't support capped collections with --profile
     if (!getGlobalServiceContext()->getStorageEngine()->supportsCappedCollections() &&
         serverGlobalParams.defaultProfile != 0) {
-        log() << "Running " << storageGlobalParams.engine << " with profiling is not supported. "
+        MONGO_BOOST_LOG << "Running " << storageGlobalParams.engine << " with profiling is not supported. "
               << "Make sure you are not using --profile.";
         exitCleanly(EXIT_BADOPTIONS);
     }
@@ -373,7 +370,7 @@ ExitCode _initAndListen(int listenPort) {
     // Disallow running WiredTiger with --nojournal in a replica set
     if (storageGlobalParams.engine == "wiredTiger" && !storageGlobalParams.dur &&
         replSettings.usingReplSets()) {
-        log() << "Running wiredTiger without journaling in a replica set is not "
+        MONGO_BOOST_LOG << "Running wiredTiger without journaling in a replica set is not "
               << "supported. Make sure you are not using --nojournal and that "
               << "storage.journal.enabled is not set to 'false'.";
         exitCleanly(EXIT_BADOPTIONS);
@@ -385,11 +382,11 @@ ExitCode _initAndListen(int listenPort) {
     if (sslGlobalParams.sslAllowInvalidCertificates &&
         ((serverGlobalParams.clusterAuthMode.load() == ServerGlobalParams::ClusterAuthMode_x509) ||
          sequenceContains(saslGlobalParams.authenticationMechanisms, "MONGODB-X509"))) {
-        log() << "** WARNING: While invalid X509 certificates may be used to" << startupWarningsLog;
-        log() << "**          connect to this server, they will not be considered"
+        MONGO_BOOST_LOG << "** WARNING: While invalid X509 certificates may be used to" << startupWarningsLog;
+        MONGO_BOOST_LOG << "**          connect to this server, they will not be considered"
               << startupWarningsLog;
-        log() << "**          permissible for authentication." << startupWarningsLog;
-        log() << startupWarningsLog;
+        MONGO_BOOST_LOG << "**          permissible for authentication." << startupWarningsLog;
+        MONGO_BOOST_LOG << startupWarningsLog;
     }
 #endif
 
@@ -438,7 +435,7 @@ ExitCode _initAndListen(int listenPort) {
         // accidentally buying into this behavior. New errors that are returned from the method
         // may or may not want to go through a clean shutdown, and they likely won't want the
         // program to return an exit code of `EXIT_NEED_DOWNGRADE`.
-        severe(LogComponent::kControl) << "** IMPORTANT: "
+		MONGO_BOOST_SEVERE_COMPONENT(LogComponent::kControl) << "** IMPORTANT: "
                                        << swNonLocalDatabases.getStatus().reason();
         invariant(swNonLocalDatabases == ErrorCodes::MustDowngrade);
         exitCleanly(EXIT_NEED_DOWNGRADE);
@@ -454,7 +451,7 @@ ExitCode _initAndListen(int listenPort) {
     }
 
     if (storageGlobalParams.upgrade) {
-        log() << "finished checking dbs";
+        MONGO_BOOST_LOG << "finished checking dbs";
         exitCleanly(EXIT_CLEAN);
     }
 
@@ -470,7 +467,7 @@ ExitCode _initAndListen(int listenPort) {
     if (globalAuthzManager->shouldValidateAuthSchemaOnStartup()) {
         Status status = verifySystemIndexes(startupOpCtx.get());
         if (!status.isOK()) {
-            log() << redact(status);
+            MONGO_BOOST_LOG << redact(status);
             if (status == ErrorCodes::AuthSchemaIncompatible) {
                 exitCleanly(EXIT_NEED_UPGRADE);
             } else if (status == ErrorCodes::NotMaster) {
@@ -486,7 +483,7 @@ ExitCode _initAndListen(int listenPort) {
         status =
             globalAuthzManager->getAuthorizationVersion(startupOpCtx.get(), &foundSchemaVersion);
         if (!status.isOK()) {
-            log() << "Auth schema version is incompatible: "
+            MONGO_BOOST_LOG << "Auth schema version is incompatible: "
                   << "User and role management commands require auth data to have "
                   << "at least schema version " << AuthorizationManager::schemaVersion26Final
                   << " but startup could not verify schema version: " << status;
@@ -494,7 +491,7 @@ ExitCode _initAndListen(int listenPort) {
         }
 
         if (foundSchemaVersion <= AuthorizationManager::schemaVersion26Final) {
-            log() << "This server is using MONGODB-CR, an authentication mechanism which "
+            MONGO_BOOST_LOG << "This server is using MONGODB-CR, an authentication mechanism which "
                   << "has been removed from MongoDB 4.0. In order to upgrade the auth schema, "
                   << "first downgrade MongoDB binaries to version 3.6 and then run the "
                   << "authSchemaUpgrade command. "
@@ -502,16 +499,16 @@ ExitCode _initAndListen(int listenPort) {
             exitCleanly(EXIT_NEED_UPGRADE);
         }
     } else if (globalAuthzManager->isAuthEnabled()) {
-        error() << "Auth must be disabled when starting without auth schema validation";
+        MONGO_BOOST_ERROR << "Auth must be disabled when starting without auth schema validation";
         exitCleanly(EXIT_BADOPTIONS);
     } else {
         // If authSchemaValidation is disabled and server is running without auth,
         // warn the user and continue startup without authSchema metadata checks.
-        log() << startupWarningsLog;
-        log() << "** WARNING: Startup auth schema validation checks are disabled for the "
+        MONGO_BOOST_LOG << startupWarningsLog;
+        MONGO_BOOST_LOG << "** WARNING: Startup auth schema validation checks are disabled for the "
                  "database."
               << startupWarningsLog;
-        log() << "**          This mode should only be used to manually repair corrupted auth "
+        MONGO_BOOST_LOG << "**          This mode should only be used to manually repair corrupted auth "
                  "data."
               << startupWarningsLog;
     }
@@ -571,23 +568,23 @@ ExitCode _initAndListen(int listenPort) {
         const unsigned long long missingRepl =
             checkIfReplMissingFromCommandLine(startupOpCtx.get());
         if (missingRepl) {
-            log() << startupWarningsLog;
-            log() << "** WARNING: mongod started without --replSet yet " << missingRepl
+            MONGO_BOOST_LOG << startupWarningsLog;
+            MONGO_BOOST_LOG << "** WARNING: mongod started without --replSet yet " << missingRepl
                   << " documents are present in local.system.replset." << startupWarningsLog;
-            log() << "**          Database contents may appear inconsistent with the oplog and may "
+            MONGO_BOOST_LOG << "**          Database contents may appear inconsistent with the oplog and may "
                      "appear to not contain"
                   << startupWarningsLog;
-            log() << "**          writes that were visible when this node was running as part of a "
+            MONGO_BOOST_LOG << "**          writes that were visible when this node was running as part of a "
                      "replica set."
                   << startupWarningsLog;
-            log() << "**          Restart with --replSet unless you are doing maintenance and no "
+            MONGO_BOOST_LOG << "**          Restart with --replSet unless you are doing maintenance and no "
                      "other clients are connected."
                   << startupWarningsLog;
-            log() << "**          The TTL collection monitor will not start because of this."
+            MONGO_BOOST_LOG << "**          The TTL collection monitor will not start because of this."
                   << startupWarningsLog;
-            log() << "**         ";
-            log() << " For more info see http://dochub.mongodb.org/core/ttlcollections";
-            log() << startupWarningsLog;
+            MONGO_BOOST_LOG << "**         ";
+            MONGO_BOOST_LOG << " For more info see http://dochub.mongodb.org/core/ttlcollections";
+            MONGO_BOOST_LOG << startupWarningsLog;
         } else {
             startTTLBackgroundJob();
         }
@@ -639,13 +636,13 @@ ExitCode _initAndListen(int listenPort) {
 
     auto start = serviceContext->getServiceExecutor()->start();
     if (!start.isOK()) {
-        error() << "Failed to start the service executor: " << start;
+        MONGO_BOOST_ERROR << "Failed to start the service executor: " << start;
         return EXIT_NET_ERROR;
     }
 
     start = serviceContext->getTransportLayer()->start();
     if (!start.isOK()) {
-        error() << "Failed to start the listener: " << start.toString();
+        MONGO_BOOST_ERROR << "Failed to start the listener: " << start.toString();
         return EXIT_NET_ERROR;
     }
 
@@ -656,12 +653,12 @@ ExitCode _initAndListen(int listenPort) {
 #else
     if (ntservice::shouldStartService()) {
         ntservice::reportStatus(SERVICE_RUNNING);
-        log() << "Service running";
+        MONGO_BOOST_LOG << "Service running";
     }
 #endif
 
     if (MONGO_FAIL_POINT(shutdownAtStartup)) {
-        log() << "starting clean exit via failpoint";
+        MONGO_BOOST_LOG << "starting clean exit via failpoint";
         exitCleanly(EXIT_CLEAN);
     }
 
@@ -673,16 +670,16 @@ ExitCode initAndListen(int listenPort) {
     try {
         return _initAndListen(listenPort);
     } catch (DBException& e) {
-        log() << "exception in initAndListen: " << e.toString() << ", terminating";
+        MONGO_BOOST_LOG << "exception in initAndListen: " << e.toString() << ", terminating";
         return EXIT_UNCAUGHT;
     } catch (std::exception& e) {
-        log() << "exception in initAndListen std::exception: " << e.what() << ", terminating";
+        MONGO_BOOST_LOG << "exception in initAndListen std::exception: " << e.what() << ", terminating";
         return EXIT_UNCAUGHT;
     } catch (int& n) {
-        log() << "exception in initAndListen int: " << n << ", terminating";
+        MONGO_BOOST_LOG << "exception in initAndListen int: " << n << ", terminating";
         return EXIT_UNCAUGHT;
     } catch (...) {
-        log() << "exception in initAndListen, terminating";
+        MONGO_BOOST_LOG << "exception in initAndListen, terminating";
         return EXIT_UNCAUGHT;
     }
 }
@@ -865,7 +862,7 @@ void shutdownTask() {
 
     // Shutdown the TransportLayer so that new connections aren't accepted
     if (auto tl = serviceContext->getTransportLayer()) {
-        log(LogComponent::kNetwork) << "shutdown: going to close listening sockets...";
+        MONGO_BOOST_LOG_COMPONENT(LogComponent::kNetwork) << "shutdown: going to close listening sockets...";
         tl->shutdown();
     }
 
@@ -919,7 +916,7 @@ void shutdownTask() {
     // Shutdown the Service Entry Point and its sessions and give it a grace period to complete.
     if (auto sep = serviceContext->getServiceEntryPoint()) {
         if (!sep->shutdown(Seconds(10))) {
-            log(LogComponent::kNetwork)
+            MONGO_BOOST_LOG_COMPONENT(LogComponent::kNetwork)
                 << "Service entry point failed to shutdown within timelimit.";
         }
     }
@@ -928,7 +925,7 @@ void shutdownTask() {
     if (auto svcExec = serviceContext->getServiceExecutor()) {
         Status status = svcExec->shutdown(Seconds(5));
         if (!status.isOK()) {
-            log(LogComponent::kNetwork) << "Service executor failed to shutdown within timelimit: "
+            MONGO_BOOST_LOG_COMPONENT(LogComponent::kNetwork) << "Service executor failed to shutdown within timelimit: "
                                         << status.reason();
         }
     }
@@ -967,7 +964,7 @@ void shutdownTask() {
     // the memory and makes leak sanitizer happy.
     ScriptEngine::dropScopeCache();
 
-    log(LogComponent::kControl) << "now exiting";
+    MONGO_BOOST_LOG_COMPONENT(LogComponent::kControl) << "now exiting";
 
     audit::logShutdown(client);
 }
@@ -984,7 +981,7 @@ int mongoDbMain(int argc, char* argv[], char** envp) {
 
     Status status = mongo::runGlobalInitializers(argc, argv, envp);
     if (!status.isOK()) {
-        severe(LogComponent::kControl) << "Failed global initialization: " << status;
+		MONGO_BOOST_SEVERE_COMPONENT(LogComponent::kControl) << "Failed global initialization: " << status;
         quickExit(EXIT_FAILURE);
     }
     auto service = getGlobalServiceContext();

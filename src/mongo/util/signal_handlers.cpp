@@ -92,24 +92,24 @@ namespace {
 #ifdef _WIN32
 void consoleTerminate(const char* controlCodeName) {
     setThreadName("consoleTerminate");
-    log() << "got " << controlCodeName << ", will terminate after current cmd ends";
+    MONGO_BOOST_LOG << "got " << controlCodeName << ", will terminate after current cmd ends";
     exitCleanly(EXIT_KILL);
 }
 
 BOOL WINAPI CtrlHandler(DWORD fdwCtrlType) {
     switch (fdwCtrlType) {
         case CTRL_C_EVENT:
-            log() << "Ctrl-C signal";
+            MONGO_BOOST_LOG << "Ctrl-C signal";
             consoleTerminate("CTRL_C_EVENT");
             return TRUE;
 
         case CTRL_CLOSE_EVENT:
-            log() << "CTRL_CLOSE_EVENT signal";
+            MONGO_BOOST_LOG << "CTRL_CLOSE_EVENT signal";
             consoleTerminate("CTRL_CLOSE_EVENT");
             return TRUE;
 
         case CTRL_BREAK_EVENT:
-            log() << "CTRL_BREAK_EVENT signal";
+            MONGO_BOOST_LOG << "CTRL_BREAK_EVENT signal";
             consoleTerminate("CTRL_BREAK_EVENT");
             return TRUE;
 
@@ -118,7 +118,7 @@ BOOL WINAPI CtrlHandler(DWORD fdwCtrlType) {
             return FALSE;
 
         case CTRL_SHUTDOWN_EVENT:
-            log() << "CTRL_SHUTDOWN_EVENT signal";
+            MONGO_BOOST_LOG << "CTRL_SHUTDOWN_EVENT signal";
             consoleTerminate("CTRL_SHUTDOWN_EVENT");
             return TRUE;
 
@@ -132,7 +132,7 @@ void eventProcessingThread() {
 
     HANDLE event = CreateEventA(NULL, TRUE, FALSE, eventName.c_str());
     if (event == NULL) {
-        warning() << "eventProcessingThread CreateEvent failed: " << errnoWithDescription();
+        MONGO_BOOST_WARNING << "eventProcessingThread CreateEvent failed: " << errnoWithDescription();
         return;
     }
 
@@ -141,11 +141,11 @@ void eventProcessingThread() {
     int returnCode = WaitForSingleObject(event, INFINITE);
     if (returnCode != WAIT_OBJECT_0) {
         if (returnCode == WAIT_FAILED) {
-            warning() << "eventProcessingThread WaitForSingleObject failed: "
+            MONGO_BOOST_WARNING << "eventProcessingThread WaitForSingleObject failed: "
                       << errnoWithDescription();
             return;
         } else {
-            warning() << "eventProcessingThread WaitForSingleObject failed: "
+            MONGO_BOOST_WARNING << "eventProcessingThread WaitForSingleObject failed: "
                       << errnoWithDescription(returnCode);
             return;
         }
@@ -153,7 +153,7 @@ void eventProcessingThread() {
 
     setThreadName("eventTerminate");
 
-    log() << "shutdown event signaled, will terminate after current cmd ends";
+    MONGO_BOOST_LOG << "shutdown event signaled, will terminate after current cmd ends";
     exitCleanly(EXIT_CLEAN);
 }
 
@@ -193,7 +193,7 @@ void signalProcessingThread(LogFileStatus rotate) {
                 break;
             default:
                 // interrupt/terminate signal
-                log() << "got signal " << actualSignal << " (" << strsignal(actualSignal)
+                MONGO_BOOST_LOG << "got signal " << actualSignal << " (" << strsignal(actualSignal)
                       << "), will terminate after current cmd ends" << endl;
                 exitCleanly(EXIT_CLEAN);
                 break;

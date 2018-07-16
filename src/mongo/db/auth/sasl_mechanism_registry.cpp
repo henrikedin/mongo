@@ -93,7 +93,7 @@ void SASLServerMechanismRegistry::advertiseMechanismNamesForUser(OperationContex
         });
         if (!status.isOK()) {
             if (status.code() == ErrorCodes::UserNotFound) {
-                log() << "Supported SASL mechanisms requested for unknown user '" << userName
+                MONGO_BOOST_LOG << "Supported SASL mechanisms requested for unknown user '" << userName
                       << "'";
                 return;
             }

@@ -149,7 +149,7 @@ public:
     void scheduleNetworkResponse(std::string cmdName, const BSONObj& obj) {
         NetworkInterfaceMock* net = getNet();
         if (!net->hasReadyRequests()) {
-            log() << "The network doesn't have a request to process for this response: " << obj;
+            MONGO_BOOST_LOG << "The network doesn't have a request to process for this response: " << obj;
         }
         verifyNextRequestCommandName(cmdName);
         scheduleNetworkResponse(net->getNextReadyRequest(), obj);
@@ -160,9 +160,9 @@ public:
         NetworkInterfaceMock* net = getNet();
         Milliseconds millis(0);
         RemoteCommandResponse response(obj, BSONObj(), millis);
-        log() << "Sending response for network request:";
-        log() << "     req: " << noi->getRequest().dbname << "." << noi->getRequest().cmdObj;
-        log() << "     resp:" << response;
+        MONGO_BOOST_LOG << "Sending response for network request:";
+        MONGO_BOOST_LOG << "     req: " << noi->getRequest().dbname << "." << noi->getRequest().cmdObj;
+        MONGO_BOOST_LOG << "     resp:" << response;
 
         net->scheduleResponse(noi, net->now(), response);
     }
@@ -170,7 +170,7 @@ public:
     void scheduleNetworkResponse(std::string cmdName, Status errorStatus) {
         NetworkInterfaceMock* net = getNet();
         if (!getNet()->hasReadyRequests()) {
-            log() << "The network doesn't have a request to process for the error: " << errorStatus;
+            MONGO_BOOST_LOG << "The network doesn't have a request to process for the error: " << errorStatus;
         }
         verifyNextRequestCommandName(cmdName);
         net->scheduleResponse(net->getNextReadyRequest(), net->now(), errorStatus);
@@ -208,9 +208,9 @@ public:
     void finishProcessingNetworkResponse() {
         getNet()->runReadyNetworkOperations();
         if (getNet()->hasReadyRequests()) {
-            log() << "The network has unexpected requests to process, next req:";
+            MONGO_BOOST_LOG << "The network has unexpected requests to process, next req:";
             NetworkInterfaceMock::NetworkOperation req = *getNet()->getNextReadyRequest();
-            log() << req.getDiagnosticString();
+            MONGO_BOOST_LOG << req.getDiagnosticString();
         }
         ASSERT_FALSE(getNet()->hasReadyRequests());
     }
@@ -295,7 +295,7 @@ protected:
                 // Get collection info from map.
                 const auto collInfo = &_collections[nss];
                 if (collInfo->stats.initCalled) {
-                    log() << "reusing collection during test which may cause problems, ns:" << nss;
+                    MONGO_BOOST_LOG << "reusing collection during test which may cause problems, ns:" << nss;
                 }
                 (collInfo->loader = new CollectionBulkLoaderMock(&collInfo->stats))
                     ->init(secondaryIndexSpecs)
@@ -829,7 +829,7 @@ TEST_F(InitialSyncerTest,
 
     // Check number of failed attempts in stats.
     auto progress = initialSyncer->getInitialSyncProgress();
-    unittest::log() << "Progress after " << initialSyncMaxAttempts
+    unittest::MONGO_BOOST_LOG << "Progress after " << initialSyncMaxAttempts
                     << " failed attempts: " << progress;
     ASSERT_EQUALS(progress.getIntField("failedInitialSyncAttempts"), int(initialSyncMaxAttempts))
         << progress;
@@ -3684,7 +3684,7 @@ TEST_F(
     ASSERT_TRUE(fetchCountIncremented);
 
     auto progress = initialSyncer->getInitialSyncProgress();
-    log() << "Progress after failed initial sync attempt: " << progress;
+    MONGO_BOOST_LOG << "Progress after failed initial sync attempt: " << progress;
     ASSERT_EQUALS(1, progress.getIntField("fetchedMissingDocs")) << progress;
 }
 
@@ -3782,10 +3782,10 @@ TEST_F(InitialSyncerTest, GetInitialSyncProgressReturnsCorrectProgress) {
         processSuccessfulFCVFetcherResponse40();
     }
 
-    log() << "Done playing first failed response";
+    MONGO_BOOST_LOG << "Done playing first failed response";
 
     auto progress = initialSyncer->getInitialSyncProgress();
-    log() << "Progress after first failed response: " << progress;
+    MONGO_BOOST_LOG << "Progress after first failed response: " << progress;
     ASSERT_EQUALS(progress.nFields(), 8) << progress;
     ASSERT_EQUALS(progress.getIntField("failedInitialSyncAttempts"), 0) << progress;
     ASSERT_EQUALS(progress.getIntField("maxFailedInitialSyncAttempts"), 2) << progress;
@@ -3809,7 +3809,7 @@ TEST_F(InitialSyncerTest, GetInitialSyncProgressReturnsCorrectProgress) {
         net->runReadyNetworkOperations();
     }
 
-    log() << "Done playing failed responses";
+    MONGO_BOOST_LOG << "Done playing failed responses";
 
     // Play the first 2 responses of the successful round of responses to ensure that the
     // initial syncer starts the oplog fetcher.
@@ -3831,10 +3831,10 @@ TEST_F(InitialSyncerTest, GetInitialSyncProgressReturnsCorrectProgress) {
         processSuccessfulFCVFetcherResponse40();
     }
 
-    log() << "Done playing first successful response";
+    MONGO_BOOST_LOG << "Done playing first successful response";
 
     progress = initialSyncer->getInitialSyncProgress();
-    log() << "Progress after failure: " << progress;
+    MONGO_BOOST_LOG << "Progress after failure: " << progress;
     ASSERT_EQUALS(progress.nFields(), 8) << progress;
     ASSERT_EQUALS(progress.getIntField("failedInitialSyncAttempts"), 1) << progress;
     ASSERT_EQUALS(progress.getIntField("maxFailedInitialSyncAttempts"), 2) << progress;
@@ -3923,10 +3923,10 @@ TEST_F(InitialSyncerTest, GetInitialSyncProgressReturnsCorrectProgress) {
         // applying the first batch.
         processSuccessfulLastOplogEntryFetcherResponse({makeOplogEntryObj(7)});
     }
-    log() << "Done playing all but last successful response";
+    MONGO_BOOST_LOG << "Done playing all but last successful response";
 
     progress = initialSyncer->getInitialSyncProgress();
-    log() << "Progress after all but last successful response: " << progress;
+    MONGO_BOOST_LOG << "Progress after all but last successful response: " << progress;
     ASSERT_EQUALS(progress.nFields(), 9) << progress;
     ASSERT_EQUALS(progress.getIntField("failedInitialSyncAttempts"), 1) << progress;
     ASSERT_EQUALS(progress.getIntField("maxFailedInitialSyncAttempts"), 2) << progress;
@@ -3980,12 +3980,12 @@ TEST_F(InitialSyncerTest, GetInitialSyncProgressReturnsCorrectProgress) {
         net->runReadyNetworkOperations();
     }
 
-    log() << "waiting for initial sync to verify it completed OK";
+    MONGO_BOOST_LOG << "waiting for initial sync to verify it completed OK";
     initialSyncer->join();
     ASSERT_EQUALS(makeOplogEntry(7).getOpTime(), unittest::assertGet(_lastApplied).opTime);
 
     progress = initialSyncer->getInitialSyncProgress();
-    log() << "Progress at end: " << progress;
+    MONGO_BOOST_LOG << "Progress at end: " << progress;
     ASSERT_EQUALS(progress.nFields(), 11) << progress;
     ASSERT_EQUALS(progress.getIntField("failedInitialSyncAttempts"), 1) << progress;
     ASSERT_EQUALS(progress.getIntField("maxFailedInitialSyncAttempts"), 2) << progress;

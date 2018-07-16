@@ -2535,7 +2535,7 @@ public:
             Status status = updatePrivilegeDocument(opCtx, userName, userObj);
             if (!status.isOK()) {
                 // Match the behavior of mongorestore to continue on failure
-                warning() << "Could not update user " << userName
+                MONGO_BOOST_WARNING << "Could not update user " << userName
                           << " in _mergeAuthzCollections command: " << redact(status);
             }
         } else {
@@ -2543,7 +2543,7 @@ public:
             Status status = insertPrivilegeDocument(opCtx, userObj);
             if (!status.isOK()) {
                 // Match the behavior of mongorestore to continue on failure
-                warning() << "Could not insert user " << userName
+                MONGO_BOOST_WARNING << "Could not insert user " << userName
                           << " in _mergeAuthzCollections command: " << redact(status);
             }
         }
@@ -2573,7 +2573,7 @@ public:
             Status status = updateRoleDocument(opCtx, roleName, roleObj);
             if (!status.isOK()) {
                 // Match the behavior of mongorestore to continue on failure
-                warning() << "Could not update role " << roleName
+                MONGO_BOOST_WARNING << "Could not update role " << roleName
                           << " in _mergeAuthzCollections command: " << redact(status);
             }
         } else {
@@ -2581,7 +2581,7 @@ public:
             Status status = insertRoleDocument(opCtx, roleObj);
             if (!status.isOK()) {
                 // Match the behavior of mongorestore to continue on failure
-                warning() << "Could not insert role " << roleName
+                MONGO_BOOST_WARNING << "Could not insert role " << roleName
                           << " in _mergeAuthzCollections command: " << redact(status);
             }
         }

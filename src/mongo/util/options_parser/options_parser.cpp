@@ -279,7 +279,7 @@ Status YAMLNodeToValue(const YAML::Node& YAMLNode,
             type = iterator->_type;
             *canonicalKey = iterator->_dottedName;
             if (isDeprecated) {
-                warning() << "Option: " << key << " is deprecated. Please use "
+                MONGO_BOOST_WARNING << "Option: " << key << " is deprecated. Please use "
                           << iterator->_dottedName << " instead.";
             }
         }
@@ -379,10 +379,10 @@ Status checkLongName(const po::variables_map& vm,
 
     if (vm.count(long_name)) {
         if (!vm[long_name].defaulted() && singleName != canonicalSingleName) {
-            warning() << "Option: " << singleName << " is deprecated. Please use "
+            MONGO_BOOST_WARNING << "Option: " << singleName << " is deprecated. Please use "
                       << canonicalSingleName << " instead.";
         } else if (long_name == "sslMode") {
-            warning() << "Option: sslMode is deprecated. Please use tlsMode instead.";
+            MONGO_BOOST_WARNING << "Option: sslMode is deprecated. Please use tlsMode instead.";
         }
 
         Value optionValue;

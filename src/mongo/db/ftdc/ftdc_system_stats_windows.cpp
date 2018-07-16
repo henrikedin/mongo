@@ -143,7 +143,7 @@ void installSystemMetricsCollector(FTDCController* controller) {
 
     auto swCollector = createCollector();
     if (!swCollector.getStatus().isOK()) {
-        warning() << "Failed to initialize Performance Counters for FTDC: "
+        MONGO_BOOST_WARNING << "Failed to initialize Performance Counters for FTDC: "
                   << swCollector.getStatus();
         return;
     }

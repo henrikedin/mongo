@@ -75,7 +75,7 @@ S2AccessMethod::S2AccessMethod(IndexCatalogEntry* btreeState, SortedDataInterfac
             geoFields >= 1);
 
     if (descriptor->isSparse()) {
-        warning() << "Sparse option ignored for index spec " << descriptor->keyPattern().toString();
+        MONGO_BOOST_WARNING << "Sparse option ignored for index spec " << descriptor->keyPattern().toString();
     }
 }
 

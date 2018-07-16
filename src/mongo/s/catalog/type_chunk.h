@@ -108,6 +108,10 @@ private:
     BSONObj _maxKey;
 };
 
+inline std::ostream& operator<<(std::ostream& s, const ChunkRange& cr) {
+	return (s << cr.toString());
+}
+
 class ChunkHistory : public ChunkHistoryBase {
 public:
     ChunkHistory() : ChunkHistoryBase() {}

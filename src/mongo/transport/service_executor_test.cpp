@@ -95,7 +95,7 @@ public:
         try {
             _ioContext.run_for(time.toSystemDuration());
         } catch (...) {
-            severe() << "Uncaught exception in reactor: " << exceptionToStatus();
+            MONGO_BOOST_SEVERE << "Uncaught exception in reactor: " << exceptionToStatus();
             fassertFailed(50476);
         }
     }

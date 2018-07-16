@@ -248,7 +248,7 @@ class DeathTestSelfTestFixture : public ::mongo::unittest::Test {
 public:
     void setUp() override {}
     void tearDown() override {
-        mongo::unittest::log() << "Died in tear-down";
+        mongo::unittest::MONGO_BOOST_LOG << "Died in tear-down";
         invariant(false);
     }
 };

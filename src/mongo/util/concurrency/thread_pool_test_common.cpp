@@ -75,7 +75,7 @@ public:
     TptRegistrationAgent(const std::string& name, ThreadPoolTestCaseFactory makeTest) {
         auto& entry = threadPoolTestCaseRegistry()[name];
         if (entry) {
-            severe() << "Multiple attempts to register ThreadPoolTest named " << name;
+            MONGO_BOOST_SEVERE << "Multiple attempts to register ThreadPoolTest named " << name;
             fassertFailed(34355);
         }
         entry = std::move(makeTest);
@@ -90,7 +90,7 @@ public:
     TptDeathRegistrationAgent(const std::string& name, ThreadPoolTestCaseFactory makeTest) {
         auto& entry = threadPoolTestCaseRegistry()[name];
         if (entry) {
-            severe() << "Multiple attempts to register ThreadPoolDeathTest named " << name;
+            MONGO_BOOST_SEVERE << "Multiple attempts to register ThreadPoolDeathTest named " << name;
             fassertFailed(34356);
         }
         entry = [makeTest](ThreadPoolFactory makeThreadPool) {

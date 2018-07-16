@@ -83,7 +83,7 @@ int mongoedMain(int argc, char* argv[], char** envp) {
             return;
 
         if (auto tl = serviceContext->getTransportLayer()) {
-            log(logger::LogComponent::kNetwork) << "shutdown: going to close listening sockets...";
+			MONGO_BOOST_LOG_COMPONENT(logger::LogComponent::kNetwork) << "shutdown: going to close listening sockets...";
             tl->shutdown();
         }
 
@@ -91,7 +91,7 @@ int mongoedMain(int argc, char* argv[], char** envp) {
             if (sep->shutdown(Seconds(10))) {
                 embedded::shutdown(serviceContext);
             } else {
-                log(logger::LogComponent::kNetwork) << "Failed to shutdown service entry point "
+				MONGO_BOOST_LOG_COMPONENT(logger::LogComponent::kNetwork) << "Failed to shutdown service entry point "
                                                        "within timelimit, skipping embedded "
                                                        "shutdown.";
             }
@@ -100,7 +100,7 @@ int mongoedMain(int argc, char* argv[], char** envp) {
 
     setupSignalHandlers();
 
-    log() << "MongoDB embedded standalone application, for testing purposes only";
+    MONGO_BOOST_LOG << "MongoDB embedded standalone application, for testing purposes only";
 
     try {
         optionenvironment::OptionSection startupOptions("Options");
@@ -129,7 +129,7 @@ int mongoedMain(int argc, char* argv[], char** envp) {
         uassertStatusOK(serviceContext->getServiceExecutor()->start());
         uassertStatusOK(serviceContext->getTransportLayer()->start());
     } catch (const std::exception& ex) {
-        error() << ex.what();
+        MONGO_BOOST_ERROR << ex.what();
         return EXIT_BADOPTIONS;
     }
 

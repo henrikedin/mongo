@@ -237,7 +237,7 @@ void ShardRegistry::startup(OperationContext* opCtx) {
     }
 
     if (!status.isOK()) {
-        severe() << "Can't schedule ShardRegistry reload due to " << causedBy(status.getStatus());
+        MONGO_BOOST_SEVERE << "Can't schedule ShardRegistry reload due to " << causedBy(status.getStatus());
         fassertFailed(40252);
     }
 }
@@ -245,7 +245,7 @@ void ShardRegistry::startup(OperationContext* opCtx) {
 void ShardRegistry::_internalReload(const CallbackArgs& cbArgs) {
     LOG(1) << "Reloading shardRegistry";
     if (!cbArgs.status.isOK()) {
-        warning() << "cant reload ShardRegistry " << causedBy(cbArgs.status);
+        MONGO_BOOST_WARNING << "cant reload ShardRegistry " << causedBy(cbArgs.status);
         return;
     }
 
@@ -255,7 +255,7 @@ void ShardRegistry::_internalReload(const CallbackArgs& cbArgs) {
     try {
         reload(opCtx.get());
     } catch (const DBException& e) {
-        log() << "Periodic reload of shard registry failed " << causedBy(e) << "; will retry after "
+        MONGO_BOOST_LOG << "Periodic reload of shard registry failed " << causedBy(e) << "; will retry after "
               << kRefreshPeriod;
     }
 
@@ -271,7 +271,7 @@ void ShardRegistry::_internalReload(const CallbackArgs& cbArgs) {
     }
 
     if (!status.isOK()) {
-        severe() << "Can't schedule ShardRegistry reload due to " << causedBy(status.getStatus());
+        MONGO_BOOST_SEVERE << "Can't schedule ShardRegistry reload due to " << causedBy(status.getStatus());
         fassertFailed(40253);
     }
 }
@@ -376,13 +376,13 @@ void ShardRegistry::replicaSetChangeConfigServerUpdateHook(const std::string& se
             false,
             ShardingCatalogClient::kMajorityWriteConcern);
         if (!status.isOK()) {
-            error() << "RSChangeWatcher: could not update config db for set: " << setName
+            MONGO_BOOST_ERROR << "RSChangeWatcher: could not update config db for set: " << setName
                     << " to: " << newConnectionString << causedBy(status.getStatus());
         }
     } catch (const std::exception& e) {
-        warning() << "caught exception while updating config servers: " << e.what();
+        MONGO_BOOST_WARNING << "caught exception while updating config servers: " << e.what();
     } catch (...) {
-        warning() << "caught unknown exception while updating config servers";
+        MONGO_BOOST_WARNING << "caught unknown exception while updating config servers";
     }
 }
 
@@ -421,7 +421,7 @@ ShardRegistryData::ShardRegistryData(OperationContext* opCtx, ShardFactory* shar
         // been stored (i.e., the entire getAllShards call would fail).
         auto shardHostStatus = ConnectionString::parse(shardType.getHost());
         if (!shardHostStatus.isOK()) {
-            warning() << "Unable to parse shard host " << shardHostStatus.getStatus().toString();
+            MONGO_BOOST_WARNING << "Unable to parse shard host " << shardHostStatus.getStatus().toString();
             continue;
         }
 
@@ -558,7 +558,7 @@ void ShardRegistryData::_addShard(WithLock lk,
         auto oldConnString = currentShard->originalConnString();
 
         if (oldConnString.toString() != connString.toString()) {
-            log() << "Updating ShardRegistry connection string for shard " << currentShard->getId()
+            MONGO_BOOST_LOG << "Updating ShardRegistry connection string for shard " << currentShard->getId()
                   << " from: " << oldConnString.toString() << " to: " << connString.toString();
         }
 

@@ -93,7 +93,7 @@ Status onShardVersionMismatch(OperationContext* opCtx,
         forceShardFilteringMetadataRefresh(opCtx, nss, forceRefreshFromThisThread);
         return Status::OK();
     } catch (const DBException& ex) {
-        log() << "Failed to refresh metadata for collection" << nss << causedBy(redact(ex));
+        MONGO_BOOST_LOG << "Failed to refresh metadata for collection" << nss << causedBy(redact(ex));
         return ex.toStatus();
     }
 }
@@ -181,7 +181,7 @@ void onDbVersionMismatch(OperationContext* opCtx,
         // OperationShardingState, wait for the movePrimary critical section to complete before
         // attempting a refresh.
     } catch (const DBException& ex) {
-        log() << "Failed to wait for movePrimary critical section to complete "
+        MONGO_BOOST_LOG << "Failed to wait for movePrimary critical section to complete "
               << causedBy(redact(ex));
         return;
     }
@@ -189,7 +189,7 @@ void onDbVersionMismatch(OperationContext* opCtx,
     try {
         forceDatabaseRefresh(opCtx, dbName);
     } catch (const DBException& ex) {
-        log() << "Failed to refresh databaseVersion for database " << dbName
+        MONGO_BOOST_LOG << "Failed to refresh databaseVersion for database " << dbName
               << causedBy(redact(ex));
     }
 }
@@ -214,7 +214,7 @@ void forceDatabaseRefresh(OperationContext* opCtx, const StringData dbName) {
         Lock::DBLock dbLock(opCtx, dbName, MODE_IS);
         const auto db = DatabaseHolder::getDatabaseHolder().get(opCtx, dbName);
         if (!db) {
-            log() << "Database " << dbName
+            MONGO_BOOST_LOG << "Database " << dbName
                   << " has been dropped; not caching the refreshed databaseVersion";
             return;
         }
@@ -234,7 +234,7 @@ void forceDatabaseRefresh(OperationContext* opCtx, const StringData dbName) {
     Lock::DBLock dbLock(opCtx, dbName, MODE_X);
     const auto db = DatabaseHolder::getDatabaseHolder().get(opCtx, dbName);
     if (!db) {
-        log() << "Database " << dbName
+        MONGO_BOOST_LOG << "Database " << dbName
               << " has been dropped; not caching the refreshed databaseVersion";
         return;
     }

@@ -107,7 +107,7 @@ struct ServerParameterOptions : public ServiceExecutorAdaptive::Options {
             value = ProcessInfo::getNumAvailableCores() / 2;
             value = std::max(value, 2);
             adaptiveServiceExecutorReservedThreads.store(value);
-            log() << "No thread count configured for executor. Using number of cores / 2: "
+            MONGO_BOOST_LOG << "No thread count configured for executor. Using number of cores / 2: "
                   << value;
         }
         return value;
@@ -129,7 +129,7 @@ struct ServerParameterOptions : public ServiceExecutorAdaptive::Options {
         static Nanoseconds minTimerResolution = getMinimumTimerResolution();
         Microseconds value{adaptiveServiceExecutorMaxQueueLatencyMicros.load()};
         if (value < minTimerResolution) {
-            log() << "Target MaxQueueLatencyMicros (" << value
+            MONGO_BOOST_LOG << "Target MaxQueueLatencyMicros (" << value
                   << ") is less than minimum timer resolution of OS (" << minTimerResolution
                   << "). Using " << minTimerResolution;
             value = duration_cast<Microseconds>(minTimerResolution) + Microseconds{1};
@@ -381,7 +381,7 @@ void ServiceExecutorAdaptive::_controllerThreadRoutine() {
                 // thread to unblock the executor for now.
                 stuckThreadTimeout /= 2;
                 stuckThreadTimeout = std::max(Milliseconds{10}, stuckThreadTimeout);
-                log() << "Detected blocked worker threads, "
+                MONGO_BOOST_LOG << "Detected blocked worker threads, "
                       << "starting new thread to unblock service executor. "
                       << "Stuck thread timeout now: " << stuckThreadTimeout;
                 _startWorkerThread(ThreadCreationReason::kStuckDetection);
@@ -403,7 +403,7 @@ void ServiceExecutorAdaptive::_controllerThreadRoutine() {
 
         auto threadsRunning = _threadsRunning.load();
         if (threadsRunning < _config->reservedThreads()) {
-            log() << "Starting " << _config->reservedThreads() - threadsRunning
+            MONGO_BOOST_LOG << "Starting " << _config->reservedThreads() - threadsRunning
                   << " to replenish reserved worker threads";
             while (_threadsRunning.load() < _config->reservedThreads()) {
                 _startWorkerThread(ThreadCreationReason::kReserveMinimum);
@@ -452,7 +452,7 @@ void ServiceExecutorAdaptive::_controllerThreadRoutine() {
         // number of tasks executing (the number of free threads), then start a new worker to
         // avoid starvation.
         if (_isStarved()) {
-            log() << "Starting worker thread to avoid starvation.";
+            MONGO_BOOST_LOG << "Starting worker thread to avoid starvation.";
             _startWorkerThread(ThreadCreationReason::kStarvation);
         }
     }
@@ -473,7 +473,7 @@ void ServiceExecutorAdaptive::_startWorkerThread(ThreadCreationReason reason) {
         launchServiceWorkerThread([this, num, it] { _workerThreadRoutine(num, it); });
 
     if (!launchResult.isOK()) {
-        warning() << "Failed to launch new worker thread: " << launchResult;
+        MONGO_BOOST_WARNING << "Failed to launch new worker thread: " << launchResult;
         lk.lock();
         _threadsPending.subtractAndFetch(1);
         _threadsRunning.subtractAndFetch(1);
@@ -559,7 +559,7 @@ void ServiceExecutorAdaptive::_workerThreadRoutine(
         setThreadName(threadName);
     }
 
-    log() << "Started new database worker thread " << threadId;
+    MONGO_BOOST_LOG << "Started new database worker thread " << threadId;
 
     bool guardThreadsRunning = true;
     const auto guard = MakeGuard([this, &guardThreadsRunning, state] {
@@ -637,7 +637,7 @@ void ServiceExecutorAdaptive::_workerThreadRoutine(
                  _threadsRunning.compareAndSwap(runningThreads, runningThreads - 1) !=
                      runningThreads);
         if (terminateThread) {
-            log() << "Thread was only executing tasks " << pctExecuting << "% over the last "
+            MONGO_BOOST_LOG << "Thread was only executing tasks " << pctExecuting << "% over the last "
                   << runTime << ". Exiting thread.";
 
             // Because we've already modified _threadsRunning, make sure the thread guard also

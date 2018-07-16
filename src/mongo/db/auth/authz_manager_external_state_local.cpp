@@ -52,11 +52,11 @@ Status AuthzManagerExternalStateLocal::initialize(OperationContext* opCtx) {
     Status status = _initializeRoleGraph(opCtx);
     if (!status.isOK()) {
         if (status == ErrorCodes::GraphContainsCycle) {
-            error() << "Cycle detected in admin.system.roles; role inheritance disabled. "
+            MONGO_BOOST_ERROR << "Cycle detected in admin.system.roles; role inheritance disabled. "
                        "Remove the listed cycle and any others to re-enable role inheritance. "
                     << redact(status);
         } else {
-            error() << "Could not generate role graph from admin.system.roles; "
+            MONGO_BOOST_ERROR << "Could not generate role graph from admin.system.roles; "
                        "only system roles available: "
                     << redact(status);
         }
@@ -473,7 +473,7 @@ namespace {
 void addRoleFromDocumentOrWarn(RoleGraph* roleGraph, const BSONObj& doc) {
     Status status = roleGraph->addRoleFromDocument(doc);
     if (!status.isOK()) {
-        warning() << "Skipping invalid admin.system.roles document while calculating privileges"
+        MONGO_BOOST_WARNING << "Skipping invalid admin.system.roles document while calculating privileges"
                      " for user-defined roles:  "
                   << redact(status) << "; document " << redact(doc);
     }
@@ -502,7 +502,7 @@ Status AuthzManagerExternalStateLocal::_initializeRoleGraph(OperationContext* op
 
     RoleGraphState newState;
     if (status == ErrorCodes::GraphContainsCycle) {
-        error() << "Inconsistent role graph during authorization manager initialization.  Only "
+        MONGO_BOOST_ERROR << "Inconsistent role graph during authorization manager initialization.  Only "
                    "direct privileges available. "
                 << redact(status);
         newState = roleGraphStateHasCycle;
@@ -551,17 +551,17 @@ public:
             oplogEntryBuilder << "op" << _op << "ns" << _nss.ns() << "o" << _o;
             if (_isO2Set)
                 oplogEntryBuilder << "o2" << _o2;
-            error() << "Unsupported modification to roles collection in oplog; "
+            MONGO_BOOST_ERROR << "Unsupported modification to roles collection in oplog; "
                        "restart this process to reenable user-defined roles; "
                     << redact(status) << "; Oplog entry: " << redact(oplogEntryBuilder.done());
         } else if (!status.isOK()) {
-            warning() << "Skipping bad update to roles collection in oplog. " << redact(status)
+            MONGO_BOOST_WARNING << "Skipping bad update to roles collection in oplog. " << redact(status)
                       << " Oplog entry: " << redact(_op);
         }
         status = _externalState->_roleGraph.recomputePrivilegeData();
         if (status == ErrorCodes::GraphContainsCycle) {
             _externalState->_roleGraphState = _externalState->roleGraphStateHasCycle;
-            error() << "Inconsistent role graph during authorization manager initialization.  "
+            MONGO_BOOST_ERROR << "Inconsistent role graph during authorization manager initialization.  "
                        "Only direct privileges available. "
                     << redact(status) << " after applying oplog entry " << redact(_op);
         } else {

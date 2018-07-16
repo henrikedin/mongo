@@ -74,7 +74,7 @@ void EnablePrivilege(const wchar_t* name) {
     LUID luid;
     if (!LookupPrivilegeValueW(nullptr, name, &luid)) {
         auto str = errnoWithPrefix("Failed to LookupPrivilegeValue");
-        warning() << str;
+        MONGO_BOOST_WARNING << str;
         return;
     }
 
@@ -82,7 +82,7 @@ void EnablePrivilege(const wchar_t* name) {
     HANDLE accessToken;
     if (!OpenProcessToken(GetCurrentProcess(), TOKEN_ADJUST_PRIVILEGES, &accessToken)) {
         auto str = errnoWithPrefix("Failed to OpenProcessToken");
-        warning() << str;
+        MONGO_BOOST_WARNING << str;
         return;
     }
 
@@ -97,11 +97,11 @@ void EnablePrivilege(const wchar_t* name) {
     if (!AdjustTokenPrivileges(
             accessToken, false, &privileges, sizeof(privileges), nullptr, nullptr)) {
         auto str = errnoWithPrefix("Failed to AdjustTokenPrivileges");
-        warning() << str;
+        MONGO_BOOST_WARNING << str;
     }
 
     if (GetLastError() == ERROR_NOT_ALL_ASSIGNED) {
-        warning() << "Failed to adjust token privilege for privilege '" << toUtf8String(name)
+        MONGO_BOOST_WARNING << "Failed to adjust token privilege for privilege '" << toUtf8String(name)
                   << "'";
     }
 }
@@ -126,7 +126,7 @@ void growWorkingSize(std::size_t bytes) {
 
     if (!GetProcessWorkingSetSize(GetCurrentProcess(), &minWorkingSetSize, &maxWorkingSetSize)) {
         auto str = errnoWithPrefix("Failed to GetProcessWorkingSetSize");
-        severe() << str;
+        MONGO_BOOST_SEVERE << str;
         fassertFailed(40285);
     }
 
@@ -141,7 +141,7 @@ void growWorkingSize(std::size_t bytes) {
                                     QUOTA_LIMITS_HARDWS_MIN_ENABLE |
                                         QUOTA_LIMITS_HARDWS_MAX_DISABLE)) {
         auto str = errnoWithPrefix("Failed to SetProcessWorkingSetSizeEx");
-        severe() << str;
+        MONGO_BOOST_SEVERE << str;
         fassertFailed(40286);
     }
 }
@@ -161,7 +161,7 @@ void* systemAllocate(std::size_t bytes) {
 
     if (!ptr) {
         auto str = errnoWithPrefix("Failed to VirtualAlloc");
-        severe() << str;
+        MONGO_BOOST_SEVERE << str;
         fassertFailed(28835);
     }
 
@@ -178,7 +178,7 @@ void* systemAllocate(std::size_t bytes) {
         }
 
         auto str = errnoWithPrefix("Failed to VirtualLock");
-        severe() << str;
+        MONGO_BOOST_SEVERE << str;
         fassertFailed(28828);
     }
 
@@ -188,7 +188,7 @@ void* systemAllocate(std::size_t bytes) {
 void systemDeallocate(void* ptr, std::size_t bytes) {
     if (VirtualUnlock(ptr, bytes) == 0) {
         auto str = errnoWithPrefix("Failed to VirtualUnlock");
-        severe() << str;
+        MONGO_BOOST_SEVERE << str;
         fassertFailed(28829);
     }
 
@@ -196,7 +196,7 @@ void systemDeallocate(void* ptr, std::size_t bytes) {
     // (that's how the api works).
     if (VirtualFree(ptr, 0, MEM_RELEASE) == 0) {
         auto str = errnoWithPrefix("Failed to VirtualFree");
-        severe() << str;
+        MONGO_BOOST_SEVERE << str;
         fassertFailed(28830);
     }
 }
@@ -236,13 +236,13 @@ void* systemAllocate(std::size_t bytes) {
 
     if (!ptr) {
         auto str = errnoWithPrefix("Failed to mmap");
-        severe() << str;
+        MONGO_BOOST_SEVERE << str;
         fassertFailed(28831);
     }
 
     if (mlock(ptr, bytes) != 0) {
         auto str = errnoWithPrefix("Failed to mlock");
-        severe() << str;
+        MONGO_BOOST_SEVERE << str;
         fassertFailed(28832);
     }
 
@@ -262,12 +262,12 @@ void systemDeallocate(void* ptr, std::size_t bytes) {
 #endif
 
     if (munlock(ptr, bytes) != 0) {
-        severe() << errnoWithPrefix("Failed to munlock");
+        MONGO_BOOST_SEVERE << errnoWithPrefix("Failed to munlock");
         fassertFailed(28833);
     }
 
     if (munmap(ptr, bytes) != 0) {
-        severe() << errnoWithPrefix("Failed to munmap");
+        MONGO_BOOST_SEVERE << errnoWithPrefix("Failed to munmap");
         fassertFailed(28834);
     }
 }

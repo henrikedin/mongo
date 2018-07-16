@@ -92,7 +92,7 @@ static void assertExpectedResults(
                 ASSERT_EQUALS(op.second.getType(), result.getType());
             }
         } catch (...) {
-            log() << "failed with arguments: " << Value(op.first);
+            MONGO_BOOST_LOG << "failed with arguments: " << Value(op.first);
             throw;
         }
     }

@@ -59,7 +59,7 @@ std::string dumpKeyset(const BSONObjSet& objs) {
 
 bool assertKeysetsEqual(const BSONObjSet& expectedKeys, const BSONObjSet& actualKeys) {
     if (expectedKeys.size() != actualKeys.size()) {
-        log() << "Expected: " << dumpKeyset(expectedKeys) << ", "
+        MONGO_BOOST_LOG << "Expected: " << dumpKeyset(expectedKeys) << ", "
               << "Actual: " << dumpKeyset(actualKeys);
         return false;
     }
@@ -68,7 +68,7 @@ bool assertKeysetsEqual(const BSONObjSet& expectedKeys, const BSONObjSet& actual
                     expectedKeys.end(),
                     actualKeys.begin(),
                     SimpleBSONObjComparator::kInstance.makeEqualTo())) {
-        log() << "Expected: " << dumpKeyset(expectedKeys) << ", "
+        MONGO_BOOST_LOG << "Expected: " << dumpKeyset(expectedKeys) << ", "
               << "Actual: " << dumpKeyset(actualKeys);
         return false;
     }

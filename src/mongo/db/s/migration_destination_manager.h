@@ -136,7 +136,7 @@ public:
 private:
     /**
      * These log the argument msg; then, under lock, move msg to _errmsg and set the state to FAIL.
-     * The setStateWailWarn version logs with "warning() << msg".
+     * The setStateWailWarn version logs with "MONGO_BOOST_WARNING << msg".
      */
     void _setStateFail(StringData msg);
     void _setStateFailWarn(StringData msg);

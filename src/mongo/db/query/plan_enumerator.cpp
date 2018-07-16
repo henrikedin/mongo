@@ -340,7 +340,7 @@ PlanEnumerator::MemoID PlanEnumerator::memoIDForNode(MatchExpression* node) {
     stdx::unordered_map<MatchExpression*, MemoID>::iterator it = _nodeToId.find(node);
 
     if (_nodeToId.end() == it) {
-        error() << "Trying to look up memo entry for node, none found.";
+        MONGO_BOOST_ERROR << "Trying to look up memo entry for node, none found.";
         MONGO_UNREACHABLE;
     }
 

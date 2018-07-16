@@ -91,7 +91,7 @@ TEST(Decimal128BSONTest, TestsConstructingDecimalWithBsonDump) {
             BSONElement extjson = b.getField("extjson");
             BSONElement canonical_extjson = b.getField("canonical_extjson");
 
-            log() << "Test - " << desc.str();
+            MONGO_BOOST_LOG << "Test - " << desc.str();
 
             StringData hexString = bson.valueStringData();
             BSONObj d = convertHexStringToBsonObj(hexString);
@@ -105,7 +105,7 @@ TEST(Decimal128BSONTest, TestsConstructingDecimalWithBsonDump) {
             }
 
             ASSERT_EQ(trimWhiteSpace(outputJson), trimWhiteSpace(expectedJson));
-            log() << "PASSED";
+            MONGO_BOOST_LOG << "PASSED";
         }
     }
 }

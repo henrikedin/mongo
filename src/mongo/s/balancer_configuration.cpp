@@ -190,7 +190,7 @@ Status BalancerConfiguration::_refreshChunkSizeSettings(OperationContext* opCtx)
     }
 
     if (settings.getMaxChunkSizeBytes() != getMaxChunkSizeBytes()) {
-        log() << "MaxChunkSize changing from " << getMaxChunkSizeBytes() / (1024 * 1024) << "MB"
+        MONGO_BOOST_LOG << "MaxChunkSize changing from " << getMaxChunkSizeBytes() / (1024 * 1024) << "MB"
               << " to " << settings.getMaxChunkSizeBytes() / (1024 * 1024) << "MB";
 
         _maxChunkSizeBytes.store(settings.getMaxChunkSizeBytes());
@@ -216,7 +216,7 @@ Status BalancerConfiguration::_refreshAutoSplitSettings(OperationContext* opCtx)
     }
 
     if (settings.getShouldAutoSplit() != getShouldAutoSplit()) {
-        log() << "ShouldAutoSplit changing from " << getShouldAutoSplit() << " to "
+        MONGO_BOOST_LOG << "ShouldAutoSplit changing from " << getShouldAutoSplit() << " to "
               << settings.getShouldAutoSplit();
 
         _shouldAutoSplit.store(settings.getShouldAutoSplit());
@@ -329,7 +329,7 @@ bool BalancerSettingsType::isTimeInBalancingWindow(const boost::posix_time::ptim
         return true;
     }
 
-    LOG(1).stream() << "inBalancingWindow: "
+	BOOST_LOG_TRIVIAL(info) << "inBalancingWindow: "
                     << " now: " << now << " startTime: " << *_activeWindowStart
                     << " stopTime: " << *_activeWindowStop;
 

@@ -163,7 +163,7 @@ Status ShardingCatalogClientImpl::logAction(OperationContext* opCtx,
         if (result.isOK()) {
             _actionLogCollectionCreated.store(1);
         } else {
-            log() << "couldn't create config.actionlog collection:" << causedBy(result);
+            MONGO_BOOST_LOG << "couldn't create config.actionlog collection:" << causedBy(result);
             return result;
         }
     }
@@ -189,7 +189,7 @@ Status ShardingCatalogClientImpl::logChange(OperationContext* opCtx,
         if (result.isOK()) {
             _changeLogCollectionCreated.store(1);
         } else {
-            log() << "couldn't create config.changelog collection:" << causedBy(result);
+            MONGO_BOOST_LOG << "couldn't create config.changelog collection:" << causedBy(result);
             return result;
         }
     }
@@ -219,13 +219,13 @@ Status ShardingCatalogClientImpl::_log(OperationContext* opCtx,
     changeLog.setDetails(detail);
 
     BSONObj changeLogBSON = changeLog.toBSON();
-    log() << "about to log metadata event into " << logCollName << ": " << redact(changeLogBSON);
+    MONGO_BOOST_LOG << "about to log metadata event into " << logCollName << ": " << redact(changeLogBSON);
 
     const NamespaceString nss("config", logCollName);
     Status result = insertConfigDocument(opCtx, nss, changeLogBSON, writeConcern);
 
     if (!result.isOK()) {
-        warning() << "Error encountered while logging config change with ID [" << changeId
+        MONGO_BOOST_WARNING << "Error encountered while logging config change with ID [" << changeId
                   << "] into collection " << logCollName << ": " << redact(result);
     }
 
@@ -773,7 +773,7 @@ Status ShardingCatalogClientImpl::applyChunkOpsDeprecated(OperationContext* opCt
         // document in the list of updates should be returned from a query to the chunks
         // collection. The last chunk can be identified by namespace and version number.
 
-        warning() << "chunk operation commit failed and metadata will be revalidated"
+        MONGO_BOOST_WARNING << "chunk operation commit failed and metadata will be revalidated"
                   << causedBy(redact(status));
 
         // Look for the chunk in this shard whose version got bumped. We assume that if that

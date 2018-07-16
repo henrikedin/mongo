@@ -163,7 +163,7 @@ private:
             try {
                 doTTLForIndex(&opCtx, idx);
             } catch (const DBException& dbex) {
-                error() << "Error processing ttl index: " << idx << " -- " << dbex.toString();
+                MONGO_BOOST_ERROR << "Error processing ttl index: " << idx << " -- " << dbex.toString();
                 // Continue on to the next index.
                 continue;
             }
@@ -180,7 +180,7 @@ private:
             return;
         }
         if (!userAllowedWriteNS(collectionNSS).isOK()) {
-            error() << "namespace '" << collectionNSS
+            MONGO_BOOST_ERROR << "namespace '" << collectionNSS
                     << "' doesn't allow deletes, skipping ttl job for: " << idx;
             return;
         }
@@ -188,7 +188,7 @@ private:
         const BSONObj key = idx["key"].Obj();
         const StringData name = idx["name"].valueStringData();
         if (key.nFields() != 1) {
-            error() << "key for ttl index can only have 1 field, skipping ttl job for: " << idx;
+            MONGO_BOOST_ERROR << "key for ttl index can only have 1 field, skipping ttl job for: " << idx;
             return;
         }
 
@@ -217,13 +217,13 @@ private:
         idx = desc->infoObj();
 
         if (IndexType::INDEX_BTREE != IndexNames::nameToType(desc->getAccessMethodName())) {
-            error() << "special index can't be used as a ttl index, skipping ttl job for: " << idx;
+            MONGO_BOOST_ERROR << "special index can't be used as a ttl index, skipping ttl job for: " << idx;
             return;
         }
 
         BSONElement secondsExpireElt = idx[secondsExpireField];
         if (!secondsExpireElt.isNumber()) {
-            error() << "ttl indexes require the " << secondsExpireField << " field to be "
+            MONGO_BOOST_ERROR << "ttl indexes require the " << secondsExpireField << " field to be "
                     << "numeric but received a type of " << typeName(secondsExpireElt.type())
                     << ", skipping ttl job for: " << idx;
             return;
@@ -268,7 +268,7 @@ private:
 
         Status result = exec->executePlan();
         if (!result.isOK()) {
-            error() << "ttl query execution for index " << idx
+            MONGO_BOOST_ERROR << "ttl query execution for index " << idx
                     << " failed with status: " << redact(result);
             return;
         }

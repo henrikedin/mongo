@@ -135,7 +135,7 @@ BSONObj FTDCController::getMostRecentPeriodicDocument() {
 }
 
 void FTDCController::start() {
-    log() << "Initializing full-time diagnostic data capture with directory '"
+    MONGO_BOOST_LOG << "Initializing full-time diagnostic data capture with directory '"
           << _path.generic_string() << "'";
 
     // Start the thread
@@ -150,7 +150,7 @@ void FTDCController::start() {
 }
 
 void FTDCController::stop() {
-    log() << "Shutting down full-time diagnostic data capture";
+    MONGO_BOOST_LOG << "Shutting down full-time diagnostic data capture";
 
     {
         stdx::lock_guard<stdx::mutex> lock(_mutex);
@@ -178,7 +178,7 @@ void FTDCController::stop() {
     if (_mgr) {
         auto s = _mgr->close();
         if (!s.isOK()) {
-            log() << "Failed to close full-time diagnostic data capture file manager: " << s;
+            MONGO_BOOST_LOG << "Failed to close full-time diagnostic data capture file manager: " << s;
         }
     }
 }
@@ -256,7 +256,7 @@ void FTDCController::doLoop() {
             }
         }
     } catch (...) {
-        warning() << "Uncaught exception in '" << exceptionToStatus()
+        MONGO_BOOST_WARNING << "Uncaught exception in '" << exceptionToStatus()
                   << "' in full-time diagnostic data capture subsystem. Shutting down the "
                      "full-time diagnostic data capture subsystem.";
     }

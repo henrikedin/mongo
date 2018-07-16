@@ -91,9 +91,9 @@ Status ReplicationProcess::refreshRollbackID(OperationContext* opCtx) {
     }
 
     if (kUninitializedRollbackId == _rbid) {
-        log() << "Rollback ID is " << rbidResult.getValue();
+        MONGO_BOOST_LOG << "Rollback ID is " << rbidResult.getValue();
     } else {
-        log() << "Rollback ID is " << rbidResult.getValue() << " (previously " << _rbid << ")";
+        MONGO_BOOST_LOG << "Rollback ID is " << rbidResult.getValue() << " (previously " << _rbid << ")";
     }
     _rbid = rbidResult.getValue();
 
@@ -105,7 +105,7 @@ int ReplicationProcess::getRollbackID() const {
     if (kUninitializedRollbackId == _rbid) {
         // This may happen when serverStatus is called by an internal client before we have a chance
         // to read the rollback ID from storage.
-        warning() << "Rollback ID is not initialized yet.";
+        MONGO_BOOST_WARNING << "Rollback ID is not initialized yet.";
     }
     return _rbid;
 }
@@ -121,11 +121,11 @@ Status ReplicationProcess::initializeRollbackID(OperationContext* opCtx) {
 
     auto initRbidSW = _storageInterface->initializeRollbackID(opCtx);
     if (initRbidSW.isOK()) {
-        log() << "Initialized the rollback ID to " << initRbidSW.getValue();
+        MONGO_BOOST_LOG << "Initialized the rollback ID to " << initRbidSW.getValue();
         _rbid = initRbidSW.getValue();
         invariant(kUninitializedRollbackId != _rbid);
     } else {
-        warning() << "Failed to initialize the rollback ID: " << initRbidSW.getStatus().reason();
+        MONGO_BOOST_WARNING << "Failed to initialize the rollback ID: " << initRbidSW.getStatus().reason();
     }
     return initRbidSW.getStatus();
 }
@@ -138,11 +138,11 @@ Status ReplicationProcess::incrementRollbackID(OperationContext* opCtx) {
     // If the rollback ID was incremented successfully, cache the new value in _rbid to be returned
     // the next time getRollbackID() is called.
     if (status.isOK()) {
-        log() << "Incremented the rollback ID to " << status.getValue();
+        MONGO_BOOST_LOG << "Incremented the rollback ID to " << status.getValue();
         _rbid = status.getValue();
         invariant(kUninitializedRollbackId != _rbid);
     } else {
-        warning() << "Failed to increment the rollback ID: " << status.getStatus().reason();
+        MONGO_BOOST_WARNING << "Failed to increment the rollback ID: " << status.getStatus().reason();
     }
 
     return status.getStatus();

@@ -60,7 +60,7 @@ void ReplClientInfo::setLastOpToSystemLastOpTime(OperationContext* opCtx) {
         if (systemOpTime >= _lastOp) {
             _lastOp = systemOpTime;
         } else {
-            log() << "Not setting the last OpTime for this Client from " << _lastOp
+            MONGO_BOOST_LOG << "Not setting the last OpTime for this Client from " << _lastOp
                   << " to the current system time of " << systemOpTime
                   << " as that would be moving the OpTime backwards.  This should only happen if "
                      "there was a rollback recently";

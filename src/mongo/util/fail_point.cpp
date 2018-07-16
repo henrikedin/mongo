@@ -179,7 +179,7 @@ FailPoint::RetCode FailPoint::slowShouldFailOpenBlock(
             return slowOff;
         }
         default:
-            error() << "FailPoint Mode not supported: " << static_cast<int>(_mode);
+            MONGO_BOOST_ERROR << "FailPoint Mode not supported: " << static_cast<int>(_mode);
             fassertFailed(16444);
     }
 }

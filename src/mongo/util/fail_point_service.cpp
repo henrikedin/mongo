@@ -72,7 +72,7 @@ void setGlobalFailPoint(const std::string& failPointName, const BSONObj& cmdObj)
     std::tie(mode, val, data) = uassertStatusOK(FailPoint::parseBSON(cmdObj));
 
     failPoint->setMode(mode, val, data);
-    warning() << "failpoint: " << failPointName << " set to: " << failPoint->toBSON();
+    MONGO_BOOST_WARNING << "failpoint: " << failPointName << " set to: " << failPoint->toBSON();
 }
 
 FailPointEnableBlock::FailPointEnableBlock(const std::string& failPointName) {

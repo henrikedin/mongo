@@ -341,7 +341,7 @@ public:
             // Throw an assertion if query execution fails for any reason.
             if (PlanExecutor::FAILURE == state || PlanExecutor::DEAD == state) {
                 firstBatch.abandon();
-                error() << "Plan executor error during find command: "
+                MONGO_BOOST_ERROR << "Plan executor error during find command: "
                         << PlanExecutor::statestr(state)
                         << ", stats: " << redact(Explain::getWinningPlanStats(exec.get()));
 

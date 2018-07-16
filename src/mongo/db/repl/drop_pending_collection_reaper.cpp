@@ -87,7 +87,7 @@ void DropPendingCollectionReaper::addDropPendingNamespace(
     if (std::find_if(lowerBound, upperBound, matcher) == upperBound) {
         _dropPendingNamespaces.insert(std::make_pair(dropOpTime, dropPendingNamespace));
     } else {
-        severe() << "Failed to add drop-pending collection " << dropPendingNamespace
+        MONGO_BOOST_SEVERE << "Failed to add drop-pending collection " << dropPendingNamespace
                  << " with drop optime " << dropOpTime << ": duplicate optime and namespace pair.";
         fassertFailedNoTrace(40448);
     }
@@ -116,7 +116,7 @@ bool DropPendingCollectionReaper::rollBackDropPendingCollection(
         auto matcher = [&pendingNss](const auto& pair) { return pair.second == pendingNss; };
         auto it = std::find_if(lowerBound, upperBound, matcher);
         if (it == upperBound) {
-            warning() << "Cannot find drop-pending namespace at OpTime " << opTime
+            MONGO_BOOST_WARNING << "Cannot find drop-pending namespace at OpTime " << opTime
                       << " for collection " << collectionNamespace << " to roll back.";
             return false;
         }
@@ -124,7 +124,7 @@ bool DropPendingCollectionReaper::rollBackDropPendingCollection(
         _dropPendingNamespaces.erase(it);
     }
 
-    log() << "Rolling back collection drop for " << pendingNss << " with drop OpTime " << opTime
+    MONGO_BOOST_LOG << "Rolling back collection drop for " << pendingNss << " with drop OpTime " << opTime
           << " to namespace " << collectionNamespace;
 
     return true;
@@ -154,11 +154,11 @@ void DropPendingCollectionReaper::dropCollectionsOlderThan(OperationContext* opC
         for (const auto& opTimeAndNamespace : toDrop) {
             const auto& dropOpTime = opTimeAndNamespace.first;
             const auto& nss = opTimeAndNamespace.second;
-            log() << "Completing collection drop for " << nss << " with drop optime " << dropOpTime
+            MONGO_BOOST_LOG << "Completing collection drop for " << nss << " with drop optime " << dropOpTime
                   << " (notification optime: " << opTime << ")";
             auto status = _storageInterface->dropCollection(opCtx, nss);
             if (!status.isOK()) {
-                warning() << "Failed to remove drop-pending collection " << nss
+                MONGO_BOOST_WARNING << "Failed to remove drop-pending collection " << nss
                           << " with drop optime " << dropOpTime
                           << " (notification optime: " << opTime << "): " << status;
             }

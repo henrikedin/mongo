@@ -139,7 +139,7 @@ void IndexBuilder::run() {
 
     Status status = _build(opCtx.get(), db, true, &dlk);
     if (!status.isOK()) {
-        error() << "IndexBuilder could not build index: " << redact(status);
+        MONGO_BOOST_ERROR << "IndexBuilder could not build index: " << redact(status);
         fassert(28555, ErrorCodes::isInterruption(status.code()));
     }
 }
@@ -172,7 +172,7 @@ Status _failIndexBuild(MultiIndexBlock& indexer, Status status, bool allowBackgr
     }
 
     if (allowBackgroundBuilding) {
-        error() << "Background index build failed. Status: " << redact(status);
+        MONGO_BOOST_ERROR << "Background index build failed. Status: " << redact(status);
         fassertFailed(50769);
     } else {
         return status;

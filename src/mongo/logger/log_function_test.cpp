@@ -61,7 +61,7 @@ const LogComponent componentB = MONGO_LOG_DEFAULT_COMPONENT;
 // of kDefault.
 TEST_F(LogTestDetailsEncoder, LogFunctionsOverrideGlobalComponent) {
     // severe() - no component specified.
-    severe() << "This is logged";
+    MONGO_BOOST_SEVERE << "This is logged";
     ASSERT_TRUE(shouldLog(LogSeverity::Severe()));
     ASSERT_EQUALS(1U, _logLines.size());
     ASSERT_NOT_EQUALS(_logLines[0].find(str::stream() << " F " << componentB.getNameForLog()),
@@ -77,7 +77,7 @@ TEST_F(LogTestDetailsEncoder, LogFunctionsOverrideGlobalComponent) {
 
     // error() - no component specified.
     _logLines.clear();
-    error() << "This is logged";
+    MONGO_BOOST_ERROR << "This is logged";
     ASSERT_TRUE(shouldLog(LogSeverity::Error()));
     ASSERT_EQUALS(1U, _logLines.size());
     ASSERT_NOT_EQUALS(_logLines[0].find(str::stream() << " E " << componentB.getNameForLog()),
@@ -93,7 +93,7 @@ TEST_F(LogTestDetailsEncoder, LogFunctionsOverrideGlobalComponent) {
 
     // warning() - no component specified.
     _logLines.clear();
-    warning() << "This is logged";
+    MONGO_BOOST_WARNING << "This is logged";
     ASSERT_TRUE(shouldLog(LogSeverity::Warning()));
     ASSERT_EQUALS(1U, _logLines.size());
     ASSERT_NOT_EQUALS(_logLines[0].find(str::stream() << " W " << componentB.getNameForLog()),
@@ -109,7 +109,7 @@ TEST_F(LogTestDetailsEncoder, LogFunctionsOverrideGlobalComponent) {
 
     // log() - no component specified.
     _logLines.clear();
-    log() << "This is logged";
+    MONGO_BOOST_LOG << "This is logged";
     ASSERT_TRUE(shouldLog(LogSeverity::Log()));
     ASSERT_EQUALS(1U, _logLines.size());
     ASSERT_NOT_EQUALS(_logLines[0].find(str::stream() << " I " << componentB.getNameForLog()),

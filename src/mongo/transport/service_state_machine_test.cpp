@@ -65,7 +65,7 @@ public:
     void startSession(transport::SessionHandle session) override {}
 
     DbResponse handleRequest(OperationContext* opCtx, const Message& request) override {
-        log() << "In handleRequest";
+        MONGO_BOOST_LOG << "In handleRequest";
         _ranHandler = true;
         ASSERT_TRUE(haveClient());
 
@@ -124,7 +124,7 @@ public:
             tl->_lastTicketSource = true;
 
             tl->_ranSource = true;
-            log() << "In sourceMessage";
+            MONGO_BOOST_LOG << "In sourceMessage";
 
             if (tl->_waitHook)
                 tl->_waitHook();
@@ -147,7 +147,7 @@ public:
             ASSERT_EQ(tl->_ssm->state(), ServiceStateMachine::State::SinkWait);
             tl->_lastTicketSource = false;
 
-            log() << "In sinkMessage";
+            MONGO_BOOST_LOG << "In sinkMessage";
             tl->_ranSink = true;
 
             if (tl->_waitHook)
@@ -315,7 +315,7 @@ protected:
 void ServiceStateMachineFixture::runPingTest(State first, State second) {
     ASSERT_FALSE(haveClient());
     ASSERT_EQ(_ssm->state(), State::Created);
-    log() << "run next";
+    MONGO_BOOST_LOG << "run next";
     _ssm->runNext();
 
     ASSERT_EQ(_ssm->state(), first);
@@ -411,7 +411,7 @@ TEST_F(ServiceStateMachineFixture, TerminateWorksForAllStates) {
     SimpleEvent hookRan, okayToContinue;
 
     auto cleanupHook = [&hookRan] {
-        log() << "Cleaning up session";
+        MONGO_BOOST_LOG << "Cleaning up session";
         hookRan.signal();
     };
 
@@ -420,7 +420,7 @@ TEST_F(ServiceStateMachineFixture, TerminateWorksForAllStates) {
     State waitFor = State::Created;
     SimpleEvent atDesiredState;
     auto waitForHook = [this, &waitFor, &atDesiredState, &okayToContinue]() {
-        log() << "Checking for wakeup at " << stateToString(_ssm->state()) << ". Expecting "
+        MONGO_BOOST_LOG << "Checking for wakeup at " << stateToString(_ssm->state()) << ". Expecting "
               << stateToString(waitFor);
         if (_ssm->state() == waitFor) {
             atDesiredState.signal();
@@ -440,7 +440,7 @@ TEST_F(ServiceStateMachineFixture, TerminateWorksForAllStates) {
     // Run this same test for each state.
     auto states = {State::Source, State::SourceWait, State::Process, State::SinkWait};
     for (const auto testState : states) {
-        log() << "Testing termination during " << stateToString(testState);
+        MONGO_BOOST_LOG << "Testing termination during " << stateToString(testState);
 
         // Reset the _ssm to a fresh SSM and reset our tracking variables.
         _ssm = ServiceStateMachine::create(
@@ -458,7 +458,7 @@ TEST_F(ServiceStateMachineFixture, TerminateWorksForAllStates) {
 
         // Wait for the SSM to advance to the expected state
         atDesiredState.wait();
-        log() << "Terminating session at " << stateToString(_ssm->state());
+        MONGO_BOOST_LOG << "Terminating session at " << stateToString(_ssm->state());
 
         // Terminate the SSM
         _ssm->terminate();
@@ -485,7 +485,7 @@ TEST_F(ServiceStateMachineFixture, TerminateWorksForAllStatesWithScheduleFailure
     bool scheduleFailed = false;
 
     auto cleanupHook = [&hookRan] {
-        log() << "Cleaning up session";
+        MONGO_BOOST_LOG << "Cleaning up session";
         hookRan.signal();
     };
 
@@ -494,7 +494,7 @@ TEST_F(ServiceStateMachineFixture, TerminateWorksForAllStatesWithScheduleFailure
     State waitFor = State::Created;
     SimpleEvent atDesiredState;
     auto waitForHook = [this, &waitFor, &scheduleFailed, &okayToContinue, &atDesiredState]() {
-        log() << "Checking for wakeup at " << stateToString(_ssm->state()) << ". Expecting "
+        MONGO_BOOST_LOG << "Checking for wakeup at " << stateToString(_ssm->state()) << ". Expecting "
               << stateToString(waitFor);
         if (_ssm->state() == waitFor) {
             atDesiredState.signal();
@@ -511,7 +511,7 @@ TEST_F(ServiceStateMachineFixture, TerminateWorksForAllStatesWithScheduleFailure
 
     auto states = {State::Source, State::SourceWait, State::Process, State::SinkWait};
     for (const auto testState : states) {
-        log() << "Testing termination during " << stateToString(testState);
+        MONGO_BOOST_LOG << "Testing termination during " << stateToString(testState);
         _ssm = ServiceStateMachine::create(
             getGlobalServiceContext(), _tl->createSession(), transport::Mode::kSynchronous);
         _tl->setSSM(_ssm.get());
@@ -529,7 +529,7 @@ TEST_F(ServiceStateMachineFixture, TerminateWorksForAllStatesWithScheduleFailure
         // Wait for the SSM to advance to the expected state
         atDesiredState.wait();
         ASSERT_EQ(_ssm->state(), testState);
-        log() << "Terminating session at " << stateToString(_ssm->state());
+        MONGO_BOOST_LOG << "Terminating session at " << stateToString(_ssm->state());
 
         // Terminate the SSM
         _ssm->terminate();
@@ -559,7 +559,7 @@ TEST_F(ServiceStateMachineFixture, SSMRunsRecursively) {
     // The scheduleHook just runs the task, effectively making this a recursive executor.
     int recursionDepth = 0;
     _sexec->setScheduleHook([&recursionDepth](auto task) {
-        log() << "running task in executor. depth: " << ++recursionDepth;
+        MONGO_BOOST_LOG << "running task in executor. depth: " << ++recursionDepth;
         task();
         return true;
     });

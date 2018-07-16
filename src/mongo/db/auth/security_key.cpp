@@ -59,14 +59,14 @@ using std::string;
 bool setUpSecurityKey(const string& filename) {
     StatusWith<std::string> keyString = mongo::readSecurityFile(filename);
     if (!keyString.isOK()) {
-        log() << keyString.getStatus().reason();
+        MONGO_BOOST_LOG << keyString.getStatus().reason();
         return false;
     }
 
     std::string str = std::move(keyString.getValue());
     const unsigned long long keyLength = str.size();
     if (keyLength < 6 || keyLength > 1024) {
-        log() << " security key in " << filename << " has length " << keyLength
+        MONGO_BOOST_LOG << " security key in " << filename << " has length " << keyLength
               << ", must be between 6 and 1024 chars";
         return false;
     }

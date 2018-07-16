@@ -200,7 +200,7 @@ void WiredTigerOplogManager::_oplogJournalThreadLoop(
         }
 
         if (_shuttingDown) {
-            log() << "oplog journal thread loop shutting down";
+            MONGO_BOOST_LOG << "oplog journal thread loop shutting down";
             return;
         }
         invariant(_opsWaitingForJournal);

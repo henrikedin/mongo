@@ -179,7 +179,7 @@ public:
         const bool isConnGood = shardConnectionPool.isConnectionGood(addr, conn);
 
         if (s->avail != NULL) {
-            warning() << "Detected additional sharded connection in the "
+            MONGO_BOOST_WARNING << "Detected additional sharded connection in the "
                       << "thread local pool for " << addr;
 
             if (DBException::traceExceptions.load()) {
@@ -242,7 +242,7 @@ public:
 
                 versionManager.checkShardVersionCB(opCtx, s->avail, ns, false, 1);
             } catch (const DBException& ex) {
-                warning() << "Problem while initially checking shard versions on"
+                MONGO_BOOST_WARNING << "Problem while initially checking shard versions on"
                           << " " << shardId << causedBy(redact(ex));
 
                 // NOTE: This is only a heuristic, to avoid multiple stale version retries across
@@ -407,7 +407,7 @@ ShardConnection::~ShardConnection() {
             }
         } else {
             // see done() comments above for why we log this line
-            log() << "sharded connection to " << _conn->getServerAddress()
+            MONGO_BOOST_LOG << "sharded connection to " << _conn->getServerAddress()
                   << " not being returned to the pool";
 
             kill();

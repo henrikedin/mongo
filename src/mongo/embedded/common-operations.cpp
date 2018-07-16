@@ -65,7 +65,7 @@ bool mongo::embeddedTest::insert_data(mongoc_collection_t* collection) {
     ret = mongoc_bulk_operation_execute(bulk, NULL, &error);
 
     if (!ret) {
-        log() << "Error inserting data: " << error.message;
+        MONGO_BOOST_LOG << "Error inserting data: " << error.message;
     }
 
     mongoc_bulk_operation_destroy(bulk);
@@ -100,7 +100,7 @@ bool copydb(mongoc_client_t* client, const char* other_host_and_port) {
                        BCON_UTF8(other_host_and_port));
     res = mongoc_database_command_simple(admindb, command, NULL, &reply, &error);
     if (!res) {
-        mongo::log() << "Error with copydb: " << error.message;
+        mongo::MONGO_BOOST_LOG << "Error with copydb: " << error.message;
         goto copy_cleanup;
     }
 
@@ -135,7 +135,7 @@ bool clone_collection(mongoc_database_t* database, const char* other_host_and_po
                        "}");
     res = mongoc_database_command_simple(database, command, NULL, &reply, &error);
     if (!res) {
-        mongo::log() << "Error with clone: " << error.message;
+        mongo::MONGO_BOOST_LOG << "Error with clone: " << error.message;
         goto clone_cleanup;
     }
 
@@ -170,7 +170,7 @@ bool mongo::embeddedTest::explain(mongoc_collection_t* collection) {
                        "}");
     res = mongoc_collection_command_simple(collection, command, NULL, &reply, &error);
     if (!res) {
-        log() << "Error with explain: " << error.message;
+        MONGO_BOOST_LOG << "Error with explain: " << error.message;
         goto explain_cleanup;
     }
 
@@ -197,7 +197,7 @@ int mongo::embeddedTest::run_c_driver_all() {
     client = mongoc_client_new(NULL);
 
     if (!client) {
-        log() << " Invalid client ";
+        MONGO_BOOST_LOG << " Invalid client ";
         res = 2;
         goto cleanup;
     }

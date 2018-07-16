@@ -126,11 +126,11 @@ void UserCacheInvalidator::initialize(OperationContext* opCtx) {
     }
 
     if (currentGeneration.getStatus().code() == ErrorCodes::CommandNotFound) {
-        warning() << "_getUserCacheGeneration command not found while fetching initial user "
+        MONGO_BOOST_WARNING << "_getUserCacheGeneration command not found while fetching initial user "
                      "cache generation from the config server(s).  This most likely means you are "
                      "running an outdated version of mongod on the config servers";
     } else {
-        warning() << "An error occurred while fetching initial user cache generation from "
+        MONGO_BOOST_WARNING << "An error occurred while fetching initial user cache generation from "
                      "config servers: "
                   << currentGeneration.getStatus();
     }
@@ -163,11 +163,11 @@ void UserCacheInvalidator::run() {
         StatusWith<OID> currentGeneration = getCurrentCacheGeneration(opCtx.get());
         if (!currentGeneration.isOK()) {
             if (currentGeneration.getStatus().code() == ErrorCodes::CommandNotFound) {
-                warning() << "_getUserCacheGeneration command not found on config server(s), "
+                MONGO_BOOST_WARNING << "_getUserCacheGeneration command not found on config server(s), "
                              "this most likely means you are running an outdated version of mongod "
                              "on the config servers";
             } else {
-                warning() << "An error occurred while fetching current user cache generation "
+                MONGO_BOOST_WARNING << "An error occurred while fetching current user cache generation "
                              "to check if user cache needs invalidation: "
                           << currentGeneration.getStatus();
             }
@@ -177,7 +177,7 @@ void UserCacheInvalidator::run() {
         }
 
         if (currentGeneration.getValue() != _previousCacheGeneration) {
-            log() << "User cache generation changed from " << _previousCacheGeneration << " to "
+            MONGO_BOOST_LOG << "User cache generation changed from " << _previousCacheGeneration << " to "
                   << currentGeneration.getValue() << "; invalidating user cache";
             _authzManager->invalidateUserCache();
             _previousCacheGeneration = currentGeneration.getValue();

@@ -151,7 +151,7 @@ void shellHistoryInit() {
 
     Status res = linenoiseHistoryLoad(historyFile.c_str());
     if (!res.isOK()) {
-        error() << "Error loading history file: " << res;
+        MONGO_BOOST_ERROR << "Error loading history file: " << res;
     }
     linenoiseSetCompletionCallback(completionHook);
 }
@@ -159,7 +159,7 @@ void shellHistoryInit() {
 void shellHistoryDone() {
     Status res = linenoiseHistorySave(historyFile.c_str());
     if (!res.isOK()) {
-        error() << "Error saving history file: " << res;
+        MONGO_BOOST_ERROR << "Error saving history file: " << res;
     }
     linenoiseHistoryFree();
 }

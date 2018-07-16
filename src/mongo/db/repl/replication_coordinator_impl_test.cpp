@@ -1343,7 +1343,7 @@ protected:
         getNet()->runUntil(getNet()->now() + heartbeatInterval);
         NetworkInterfaceMock::NetworkOperationIterator noi = getNet()->getNextReadyRequest();
         RemoteCommandRequest request = noi->getRequest();
-        log() << request.target.toString() << " processing " << request.cmdObj;
+        MONGO_BOOST_LOG << request.target.toString() << " processing " << request.cmdObj;
         ReplSetHeartbeatArgsV1 hbArgs;
         if (hbArgs.initialize(request.cmdObj).isOK()) {
             ReplSetHeartbeatResponse hbResp;
@@ -1359,7 +1359,7 @@ protected:
         }
         while (getNet()->hasReadyRequests()) {
             auto noi = getNet()->getNextReadyRequest();
-            log() << "Blackholing network request " << noi->getRequest().cmdObj;
+            MONGO_BOOST_LOG << "Blackholing network request " << noi->getRequest().cmdObj;
             getNet()->blackHole(noi);
         }
 
@@ -1850,7 +1850,7 @@ protected:
             ReplSetHeartbeatArgsV1 hbArgs;
             ASSERT_OK(hbArgs.initialize(request.cmdObj));
 
-            log() << request.target.toString() << " processing " << request.cmdObj;
+            MONGO_BOOST_LOG << request.target.toString() << " processing " << request.cmdObj;
 
             // Catch up 'numNodesCaughtUp' nodes out of 5.
             OpTime optimeResponse = (hbNum <= numNodesCaughtUp) ? optimePrimary : optimeLagged;
@@ -2157,7 +2157,7 @@ TEST_F(StepDownTest,
     getNet()->runUntil(getNet()->now() + Milliseconds(2000));
     NetworkInterfaceMock::NetworkOperationIterator noi = getNet()->getNextReadyRequest();
     RemoteCommandRequest request = noi->getRequest();
-    log() << "HB1: " << request.target.toString() << " processing " << request.cmdObj;
+    MONGO_BOOST_LOG << "HB1: " << request.target.toString() << " processing " << request.cmdObj;
     ReplSetHeartbeatArgsV1 hbArgs;
     if (hbArgs.initialize(request.cmdObj).isOK()) {
         ReplSetHeartbeatResponse hbResp;
@@ -2426,7 +2426,7 @@ TEST_F(ReplCoordTest, NodeIncludesOtherMembersProgressInUpdatePositionCommand) {
         long long memberId = entry[UpdatePositionArgs::kMemberIdFieldName].Number();
         memberIds.insert(memberId);
         if (memberId == 0) {
-            log() << 0;
+            MONGO_BOOST_LOG << 0;
             ASSERT_OK(bsonExtractOpTimeField(
                 entry, UpdatePositionArgs::kAppliedOpTimeFieldName, &appliedOpTime));
             ASSERT_OK(bsonExtractOpTimeField(
@@ -2434,7 +2434,7 @@ TEST_F(ReplCoordTest, NodeIncludesOtherMembersProgressInUpdatePositionCommand) {
             ASSERT_EQUALS(optime1, appliedOpTime);
             ASSERT_EQUALS(optime1, durableOpTime);
         } else if (memberId == 1) {
-            log() << 1;
+            MONGO_BOOST_LOG << 1;
             ASSERT_OK(bsonExtractOpTimeField(
                 entry, UpdatePositionArgs::kAppliedOpTimeFieldName, &appliedOpTime));
             ASSERT_OK(bsonExtractOpTimeField(
@@ -2442,7 +2442,7 @@ TEST_F(ReplCoordTest, NodeIncludesOtherMembersProgressInUpdatePositionCommand) {
             ASSERT_EQUALS(optime2, appliedOpTime);
             ASSERT_EQUALS(OpTime(), durableOpTime);
         } else if (memberId == 2) {
-            log() << 2;
+            MONGO_BOOST_LOG << 2;
             ASSERT_OK(bsonExtractOpTimeField(
                 entry, UpdatePositionArgs::kAppliedOpTimeFieldName, &appliedOpTime));
             ASSERT_OK(bsonExtractOpTimeField(
@@ -2450,7 +2450,7 @@ TEST_F(ReplCoordTest, NodeIncludesOtherMembersProgressInUpdatePositionCommand) {
             ASSERT_EQUALS(optime3, appliedOpTime);
             ASSERT_EQUALS(optime3, durableOpTime);
         } else {
-            log() << 3;
+            MONGO_BOOST_LOG << 3;
             ASSERT_EQUALS(3, memberId);
             ASSERT_OK(bsonExtractOpTimeField(
                 entry, UpdatePositionArgs::kAppliedOpTimeFieldName, &appliedOpTime));
@@ -4535,7 +4535,7 @@ TEST_F(ReplCoordTest, PrepareOplogQueryMetadata) {
         &metadataBob);
 
     BSONObj metadata = metadataBob.done();
-    log() << metadata;
+    MONGO_BOOST_LOG << metadata;
 
     auto oqMetadata = rpc::OplogQueryMetadata::readFromMetadata(metadata);
     ASSERT_OK(oqMetadata.getStatus());
@@ -4657,12 +4657,12 @@ TEST_F(ReplCoordTest,
     const auto& request = noi->getRequest();
     ASSERT_EQUALS(HostAndPort("node2", 12345), request.target);
     ASSERT_EQUALS("replSetHeartbeat", request.cmdObj.firstElement().fieldNameStringData());
-    log() << "black holing " << noi->getRequest().cmdObj;
+    MONGO_BOOST_LOG << "black holing " << noi->getRequest().cmdObj;
     net->blackHole(noi);
 
     // Advance simulator clock to some time before the first scheduled election.
     auto electionTimeoutWhen = replCoord->getElectionTimeout_forTest();
-    log() << "Election initially scheduled at " << electionTimeoutWhen << " (simulator time)";
+    MONGO_BOOST_LOG << "Election initially scheduled at " << electionTimeoutWhen << " (simulator time)";
     ASSERT_GREATER_THAN(electionTimeoutWhen, net->now());
     auto until = net->now() + (electionTimeoutWhen - net->now()) / 2;
     net->runUntil(until);
@@ -4764,7 +4764,7 @@ TEST_F(ReplCoordTest,
     ASSERT_TRUE(net->hasReadyRequests());
     auto noi = net->getNextReadyRequest();
     auto&& request = noi->getRequest();
-    log() << "processing " << request.cmdObj;
+    MONGO_BOOST_LOG << "processing " << request.cmdObj;
     ASSERT_EQUALS(HostAndPort("node2", 12345), request.target);
     ASSERT_EQUALS("replSetHeartbeat", request.cmdObj.firstElement().fieldNameStringData());
 
@@ -4830,7 +4830,7 @@ TEST_F(ReplCoordTest,
     ASSERT_TRUE(net->hasReadyRequests());
     auto noi = net->getNextReadyRequest();
     auto&& request = noi->getRequest();
-    log() << "processing " << request.cmdObj;
+    MONGO_BOOST_LOG << "processing " << request.cmdObj;
     ASSERT_EQUALS(HostAndPort("node2", 12345), request.target);
 
     ASSERT_EQUALS("replSetHeartbeat", request.cmdObj.firstElement().fieldNameStringData());
@@ -4884,7 +4884,7 @@ TEST_F(ReplCoordTest,
     ASSERT_TRUE(net->hasReadyRequests());
     auto noi = net->getNextReadyRequest();
     auto&& request = noi->getRequest();
-    log() << "processing " << request.cmdObj;
+    MONGO_BOOST_LOG << "processing " << request.cmdObj;
     ASSERT_EQUALS(HostAndPort("node2", 12345), request.target);
 
     ASSERT_EQUALS("replSetHeartbeat", request.cmdObj.firstElement().fieldNameStringData());
@@ -4938,7 +4938,7 @@ TEST_F(ReplCoordTest,
     ASSERT_TRUE(net->hasReadyRequests());
     auto noi = net->getNextReadyRequest();
     auto&& request = noi->getRequest();
-    log() << "processing " << request.cmdObj;
+    MONGO_BOOST_LOG << "processing " << request.cmdObj;
     ASSERT_EQUALS(HostAndPort("node2", 12345), request.target);
 
     ASSERT_EQUALS("replSetHeartbeat", request.cmdObj.firstElement().fieldNameStringData());

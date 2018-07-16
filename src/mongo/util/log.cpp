@@ -64,24 +64,26 @@ Status logger::registerExtraLogContextFn(logger::ExtraLogContextFn contextFn) {
 bool rotateLogs(bool renameFiles) {
     using logger::RotatableFileManager;
     RotatableFileManager* manager = logger::globalRotatableFileManager();
-    log() << "Log rotation initiated";
+    MONGO_BOOST_LOG << "Log rotation initiated";
     RotatableFileManager::FileNameStatusPairVector result(
         manager->rotateAll(renameFiles, "." + terseCurrentTime(false)));
     for (RotatableFileManager::FileNameStatusPairVector::iterator it = result.begin();
          it != result.end();
          it++) {
-        warning() << "Rotating log file " << it->first << " failed: " << it->second.toString();
+        MONGO_BOOST_WARNING << "Rotating log file " << it->first << " failed: " << it->second.toString();
     }
     return result.empty();
 }
 
 void logContext(const char* errmsg) {
     if (errmsg) {
-        log() << errmsg << endl;
+        MONGO_BOOST_LOG << errmsg << endl;
     }
     // NOTE: We disable long-line truncation for the stack trace, because the JSON representation of
     // the stack trace can sometimes exceed the long line limit.
-    printStackTrace(log().setIsTruncatable(false).stream());
+	std::stringstream ss;
+	printStackTrace(ss);
+	BOOST_LOG_TRIVIAL(warning) << ss.str();
 }
 
 void setPlainConsoleLogger() {

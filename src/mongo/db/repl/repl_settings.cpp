@@ -106,7 +106,7 @@ void ReplSettings::setPrefetchIndexMode(std::string prefetchIndexModeString) {
             _prefetchIndexMode = IndexPrefetchConfig::PREFETCH_ALL;
         else {
             _prefetchIndexMode = IndexPrefetchConfig::PREFETCH_ALL;
-            warning() << "unrecognized indexPrefetchMode setting \"" << prefetchIndexModeString
+            MONGO_BOOST_WARNING << "unrecognized indexPrefetchMode setting \"" << prefetchIndexModeString
                       << "\", defaulting to \"all\"";
         }
     }

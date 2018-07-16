@@ -376,7 +376,7 @@ void ParallelSortClusteredCursor::setupVersionAndHandleSlaveOk(
             OCCASIONALLY {
                 const DBClientReplicaSet* repl = dynamic_cast<const DBClientReplicaSet*>(rawConn);
                 dassert(repl);
-                warning() << "Primary for " << repl->getServerAddress()
+                MONGO_BOOST_WARNING << "Primary for " << repl->getServerAddress()
                           << " was down before, bypassing setShardVersion."
                           << " The local replica set view and targeting may be stale.";
             }
@@ -402,7 +402,7 @@ void ParallelSortClusteredCursor::setupVersionAndHandleSlaveOk(
                 const DBClientReplicaSet* repl =
                     dynamic_cast<const DBClientReplicaSet*>(state->conn->getRawConn());
                 dassert(repl);
-                warning() << "Cannot contact primary for " << repl->getServerAddress()
+                MONGO_BOOST_WARNING << "Cannot contact primary for " << repl->getServerAddress()
                           << " to check shard version."
                           << " The local replica set view and targeting may be stale.";
             }
@@ -499,11 +499,11 @@ void ParallelSortClusteredCursor::startInit(OperationContext* opCtx) {
                 bool compatibleManager = true;
 
                 if (primary && !state->primary)
-                    warning() << "Collection becoming unsharded detected";
+                    MONGO_BOOST_WARNING << "Collection becoming unsharded detected";
                 if (manager && !state->manager)
-                    warning() << "Collection becoming sharded detected";
+                    MONGO_BOOST_WARNING << "Collection becoming sharded detected";
                 if (primary && state->primary && primary != state->primary)
-                    warning() << "Weird shift of primary detected";
+                    MONGO_BOOST_WARNING << "Weird shift of primary detected";
 
                 compatiblePrimary = primary && state->primary && primary == state->primary;
                 compatibleManager =
@@ -621,7 +621,7 @@ void ParallelSortClusteredCursor::startInit(OperationContext* opCtx) {
 
             // This is somewhat strange
             if (staleNS != nss) {
-                warning() << "versioned ns " << nss.ns() << " doesn't match stale config namespace "
+                MONGO_BOOST_WARNING << "versioned ns " << nss.ns() << " doesn't match stale config namespace "
                           << staleNS;
             }
 
@@ -629,7 +629,7 @@ void ParallelSortClusteredCursor::startInit(OperationContext* opCtx) {
             startInit(opCtx);
             return;
         } catch (NetworkException& e) {
-            warning() << "socket exception when initializing on " << shardId
+            MONGO_BOOST_WARNING << "socket exception when initializing on " << shardId
                       << ", current connection state is " << mdata.toBSON() << causedBy(redact(e));
             mdata.errored = true;
             if (returnPartial) {
@@ -638,7 +638,7 @@ void ParallelSortClusteredCursor::startInit(OperationContext* opCtx) {
             }
             throw;
         } catch (DBException& e) {
-            warning() << "db exception when initializing on " << shardId
+            MONGO_BOOST_WARNING << "db exception when initializing on " << shardId
                       << ", current connection state is " << mdata.toBSON() << causedBy(redact(e));
             mdata.errored = true;
             if (returnPartial && e.code() == 15925 /* From above! */) {
@@ -647,12 +647,12 @@ void ParallelSortClusteredCursor::startInit(OperationContext* opCtx) {
             }
             throw;
         } catch (std::exception& e) {
-            warning() << "exception when initializing on " << shardId
+            MONGO_BOOST_WARNING << "exception when initializing on " << shardId
                       << ", current connection state is " << mdata.toBSON() << causedBy(e);
             mdata.errored = true;
             throw;
         } catch (...) {
-            warning() << "unknown exception when initializing on " << shardId
+            MONGO_BOOST_WARNING << "unknown exception when initializing on " << shardId
                       << ", current connection state is " << mdata.toBSON();
             mdata.errored = true;
             throw;
@@ -771,7 +771,7 @@ void ParallelSortClusteredCursor::finishInit(OperationContext* opCtx) {
             mdata.cleanup(true);
             continue;
         } catch (NetworkException& e) {
-            warning() << "socket exception when finishing on " << shardId
+            MONGO_BOOST_WARNING << "socket exception when finishing on " << shardId
                       << ", current connection state is " << mdata.toBSON() << causedBy(redact(e));
             mdata.errored = true;
             if (returnPartial) {
@@ -783,7 +783,7 @@ void ParallelSortClusteredCursor::finishInit(OperationContext* opCtx) {
             // NOTE: RECV() WILL NOT THROW A SOCKET EXCEPTION - WE GET THIS AS ERROR 15988 FROM
             // ABOVE
             if (e.code() == 15988) {
-                warning() << "exception when receiving data from " << shardId
+                MONGO_BOOST_WARNING << "exception when receiving data from " << shardId
                           << ", current connection state is " << mdata.toBSON()
                           << causedBy(redact(e));
 
@@ -797,22 +797,22 @@ void ParallelSortClusteredCursor::finishInit(OperationContext* opCtx) {
                 // the InvalidBSON exception indicates that the BSON is malformed ->
                 // don't print/call "mdata.toBSON()" to avoid unexpected errors e.g. a segfault
                 if (e.code() == ErrorCodes::InvalidBSON)
-                    warning() << "bson is malformed :: db exception when finishing on " << shardId
+                    MONGO_BOOST_WARNING << "bson is malformed :: db exception when finishing on " << shardId
                               << causedBy(redact(e));
                 else
-                    warning() << "db exception when finishing on " << shardId
+                    MONGO_BOOST_WARNING << "db exception when finishing on " << shardId
                               << ", current connection state is " << mdata.toBSON()
                               << causedBy(redact(e));
                 mdata.errored = true;
                 throw;
             }
         } catch (std::exception& e) {
-            warning() << "exception when finishing on " << shardId
+            MONGO_BOOST_WARNING << "exception when finishing on " << shardId
                       << ", current connection state is " << mdata.toBSON() << causedBy(e);
             mdata.errored = true;
             throw;
         } catch (...) {
-            warning() << "unknown exception when finishing on " << shardId
+            MONGO_BOOST_WARNING << "unknown exception when finishing on " << shardId
                       << ", current connection state is " << mdata.toBSON();
             mdata.errored = true;
             throw;
@@ -835,7 +835,7 @@ void ParallelSortClusteredCursor::finishInit(OperationContext* opCtx) {
 
                 // This is somewhat strange
                 if (staleNS.ns() != ns) {
-                    warning() << "versioned ns " << ns << " doesn't match stale config namespace "
+                    MONGO_BOOST_WARNING << "versioned ns " << ns << " doesn't match stale config namespace "
                               << staleNS;
                 }
             }
@@ -853,7 +853,7 @@ void ParallelSortClusteredCursor::finishInit(OperationContext* opCtx) {
 
         // Erase empty stuff
         if (!mdata.pcState) {
-            log() << "PCursor erasing empty state " << mdata.toBSON();
+            MONGO_BOOST_LOG << "PCursor erasing empty state " << mdata.toBSON();
             _cursorMap.erase(i++);
             continue;
         } else {
@@ -943,13 +943,13 @@ void ParallelSortClusteredCursor::_oldInit() {
         bool firstPass = retryQueries.size() == 0;
 
         if (!firstPass) {
-            log() << "retrying " << (returnPartial ? "(partial) " : "")
+            MONGO_BOOST_LOG << "retrying " << (returnPartial ? "(partial) " : "")
                   << "parallel connection to ";
             for (set<int>::const_iterator it = retryQueries.begin(); it != retryQueries.end();
                  ++it) {
-                log() << serverHosts[*it] << ", ";
+                MONGO_BOOST_LOG << serverHosts[*it] << ", ";
             }
-            log() << finishedQueries << " finished queries.";
+            MONGO_BOOST_LOG << finishedQueries << " finished queries.";
         }
 
         size_t num = 0;
@@ -1048,7 +1048,7 @@ void ParallelSortClusteredCursor::_oldInit() {
 
             try {
                 if (!_cursors[i].get()->initLazyFinish(retry)) {
-                    warning() << "invalid result from " << conns[i]->getHost()
+                    MONGO_BOOST_WARNING << "invalid result from " << conns[i]->getHost()
                               << (retry ? ", retrying" : "");
                     _cursors[i].reset(NULL, NULL);
 
@@ -1152,12 +1152,12 @@ void ParallelSortClusteredCursor::_oldInit() {
         } else if (throwException) {
             uasserted(14827, errMsg.str());
         } else {
-            warning() << redact(errMsg.str());
+            MONGO_BOOST_WARNING << redact(errMsg.str());
         }
     }
 
     if (retries > 0)
-        log() << "successfully finished parallel query after " << retries << " retries";
+        MONGO_BOOST_LOG << "successfully finished parallel query after " << retries << " retries";
 }
 
 bool ParallelSortClusteredCursor::more() {
@@ -1250,9 +1250,9 @@ void ParallelConnectionMetadata::cleanup(bool full) {
                     bool retry = false;
                     pcState->cursor->initLazyFinish(retry);
                 } catch (std::exception&) {
-                    warning() << "exception closing cursor";
+                    MONGO_BOOST_WARNING << "exception closing cursor";
                 } catch (...) {
-                    warning() << "unknown exception closing cursor";
+                    MONGO_BOOST_WARNING << "unknown exception closing cursor";
                 }
             }
         }

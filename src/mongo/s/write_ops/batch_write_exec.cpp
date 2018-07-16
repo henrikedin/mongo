@@ -331,7 +331,7 @@ void BatchWriteExec::executeBatch(OperationContext* opCtx,
         if (!refreshStatus.isOK()) {
             // It's okay if we can't refresh, we'll just record errors for the ops if
             // needed.
-            warning() << "could not refresh targeter" << causedBy(refreshStatus.reason());
+            MONGO_BOOST_WARNING << "could not refresh targeter" << causedBy(refreshStatus.reason());
         }
 
         //

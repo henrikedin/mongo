@@ -94,6 +94,10 @@ struct CompactOptions {
     }
 };
 
+inline std::ostream& operator<<(std::ostream& s, const CompactOptions& co) {
+	return (s << co.toString());
+}
+
 struct CompactStats {
     long long corruptDocuments = 0;
 };

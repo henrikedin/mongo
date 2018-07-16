@@ -189,7 +189,7 @@ Status DatabaseCloner::startup() noexcept {
         const auto databaseElem = data["database"];
         if (!databaseElem || databaseElem.checkAndGetStringData() == _dbname) {
             lk.unlock();
-            log() << "initial sync - initialSyncHangBeforeListCollections fail point "
+            MONGO_BOOST_LOG << "initial sync - initialSyncHangBeforeListCollections fail point "
                      "enabled. Blocking until fail point is disabled.";
             while (MONGO_FAIL_POINT(initialSyncHangBeforeListCollections) && !_isShuttingDown()) {
                 mongo::sleepsecs(1);
@@ -202,7 +202,7 @@ Status DatabaseCloner::startup() noexcept {
     LOG(1) << "Scheduling listCollections call for database: " << _dbname;
     Status scheduleResult = _listCollectionsFetcher.schedule();
     if (!scheduleResult.isOK()) {
-        error() << "Error scheduling listCollections for database: " << _dbname
+        MONGO_BOOST_ERROR << "Error scheduling listCollections for database: " << _dbname
                 << ", error:" << scheduleResult;
         _state = State::kComplete;
         return scheduleResult;
@@ -304,7 +304,7 @@ void DatabaseCloner::_listCollectionsCallback(const StatusWith<Fetcher::QueryRes
     MONGO_FAIL_POINT_BLOCK(initialSyncHangAfterListCollections, options) {
         const BSONObj& data = options.getData();
         if (data["database"].String() == _dbname) {
-            log() << "initial sync - initialSyncHangAfterListCollections fail point "
+            MONGO_BOOST_LOG << "initial sync - initialSyncHangAfterListCollections fail point "
                      "enabled. Blocking until fail point is disabled.";
             while (MONGO_FAIL_POINT(initialSyncHangAfterListCollections)) {
                 mongo::sleepsecs(1);

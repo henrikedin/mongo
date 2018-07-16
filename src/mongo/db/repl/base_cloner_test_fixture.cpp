@@ -163,7 +163,7 @@ void BaseClonerTest::scheduleNetworkResponse(NetworkOperationIterator noi, const
     auto net = getNet();
     Milliseconds millis(0);
     RemoteCommandResponse response(obj, BSONObj(), millis);
-    log() << "Scheduling response to request:" << noi->getDiagnosticString() << " -- resp:" << obj;
+    MONGO_BOOST_LOG << "Scheduling response to request:" << noi->getDiagnosticString() << " -- resp:" << obj;
     net->scheduleResponse(noi, net->now(), response);
 }
 
@@ -172,7 +172,7 @@ void BaseClonerTest::scheduleNetworkResponse(NetworkOperationIterator noi,
                                              const std::string& reason) {
     auto net = getNet();
     RemoteCommandResponse responseStatus(code, reason);
-    log() << "Scheduling error response to request:" << noi->getDiagnosticString()
+    MONGO_BOOST_LOG << "Scheduling error response to request:" << noi->getDiagnosticString()
           << " -- status:" << responseStatus.status.toString();
     net->scheduleResponse(noi, net->now(), responseStatus);
 }
@@ -181,12 +181,12 @@ void BaseClonerTest::scheduleNetworkResponse(const BSONObj& obj) {
     if (!getNet()->hasReadyRequests()) {
         BSONObjBuilder b;
         getExecutor().appendDiagnosticBSON(&b);
-        log() << "Expected network request for resp: " << obj;
-        log() << "      replExec: " << b.done();
-        log() << "      net:" << getNet()->getDiagnosticString();
+        MONGO_BOOST_LOG << "Expected network request for resp: " << obj;
+        MONGO_BOOST_LOG << "      replExec: " << b.done();
+        MONGO_BOOST_LOG << "      net:" << getNet()->getDiagnosticString();
     }
     if (getStatus() != getDetectableErrorStatus()) {
-        log() << "Status has changed during network response playback to: " << getStatus();
+        MONGO_BOOST_LOG << "Status has changed during network response playback to: " << getStatus();
         return;
     }
     ASSERT_TRUE(getNet()->hasReadyRequests());

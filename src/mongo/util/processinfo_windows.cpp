@@ -98,7 +98,7 @@ int ProcessInfo::getVirtualMemorySize() {
     BOOL status = GlobalMemoryStatusEx(&mse);
     if (!status) {
         DWORD gle = GetLastError();
-        error() << "GlobalMemoryStatusEx failed with " << errnoWithDescription(gle);
+        MONGO_BOOST_ERROR << "GlobalMemoryStatusEx failed with " << errnoWithDescription(gle);
         fassert(28621, status);
     }
 
@@ -112,7 +112,7 @@ int ProcessInfo::getResidentSize() {
     BOOL status = GetProcessMemoryInfo(GetCurrentProcess(), &pmc, sizeof(pmc));
     if (!status) {
         DWORD gle = GetLastError();
-        error() << "GetProcessMemoryInfo failed with " << errnoWithDescription(gle);
+        MONGO_BOOST_ERROR << "GetProcessMemoryInfo failed with " << errnoWithDescription(gle);
         fassert(28622, status);
     }
 
@@ -125,7 +125,7 @@ double ProcessInfo::getSystemMemoryPressurePercentage() {
     BOOL status = GlobalMemoryStatusEx(&mse);
     if (!status) {
         DWORD gle = GetLastError();
-        error() << "GlobalMemoryStatusEx failed with " << errnoWithDescription(gle);
+        MONGO_BOOST_ERROR << "GlobalMemoryStatusEx failed with " << errnoWithDescription(gle);
         fassert(28623, status);
     }
 
@@ -181,7 +181,7 @@ bool getFileVersion(const char* filePath, DWORD& fileVersionMS, DWORD& fileVersi
     DWORD verSize = GetFileVersionInfoSizeA(filePath, NULL);
     if (verSize == 0) {
         DWORD gle = GetLastError();
-        warning() << "GetFileVersionInfoSizeA on " << filePath << " failed with "
+        MONGO_BOOST_WARNING << "GetFileVersionInfoSizeA on " << filePath << " failed with "
                   << errnoWithDescription(gle);
         return false;
     }
@@ -189,7 +189,7 @@ bool getFileVersion(const char* filePath, DWORD& fileVersionMS, DWORD& fileVersi
     std::unique_ptr<char[]> verData(new char[verSize]);
     if (GetFileVersionInfoA(filePath, NULL, verSize, verData.get()) == 0) {
         DWORD gle = GetLastError();
-        warning() << "GetFileVersionInfoSizeA on " << filePath << " failed with "
+        MONGO_BOOST_WARNING << "GetFileVersionInfoSizeA on " << filePath << " failed with "
                   << errnoWithDescription(gle);
         return false;
     }
@@ -198,13 +198,13 @@ bool getFileVersion(const char* filePath, DWORD& fileVersionMS, DWORD& fileVersi
     VS_FIXEDFILEINFO* verInfo;
     if (VerQueryValueA(verData.get(), "\\", (LPVOID*)&verInfo, &size) == 0) {
         DWORD gle = GetLastError();
-        warning() << "VerQueryValueA on " << filePath << " failed with "
+        MONGO_BOOST_WARNING << "VerQueryValueA on " << filePath << " failed with "
                   << errnoWithDescription(gle);
         return false;
     }
 
     if (size != sizeof(VS_FIXEDFILEINFO)) {
-        warning() << "VerQueryValueA on " << filePath << " returned structure with unexpected size";
+        MONGO_BOOST_WARNING << "VerQueryValueA on " << filePath << " returned structure with unexpected size";
         return false;
     }
 
@@ -223,7 +223,7 @@ bool isKB2731284OrLaterUpdateInstalled() {
     UINT pathBufferSize = GetSystemDirectoryA(NULL, 0);
     if (pathBufferSize == 0) {
         DWORD gle = GetLastError();
-        warning() << "GetSystemDirectoryA failed with " << errnoWithDescription(gle);
+        MONGO_BOOST_WARNING << "GetSystemDirectoryA failed with " << errnoWithDescription(gle);
         return false;
     }
 
@@ -232,12 +232,12 @@ bool isKB2731284OrLaterUpdateInstalled() {
     systemDirectoryPathLen = GetSystemDirectoryA(systemDirectory.get(), pathBufferSize);
     if (systemDirectoryPathLen == 0) {
         DWORD gle = GetLastError();
-        warning() << "GetSystemDirectoryA failed with " << errnoWithDescription(gle);
+        MONGO_BOOST_WARNING << "GetSystemDirectoryA failed with " << errnoWithDescription(gle);
         return false;
     }
 
     if (systemDirectoryPathLen != pathBufferSize - 1) {
-        warning() << "GetSystemDirectoryA returned unexpected path length";
+        MONGO_BOOST_WARNING << "GetSystemDirectoryA returned unexpected path length";
         return false;
     }
 
@@ -406,7 +406,7 @@ bool ProcessInfo::checkNumaEnabled() {
                     new BYTE[returnLength]));
             } else {
                 DWORD gle = GetLastError();
-                warning() << "GetLogicalProcessorInformation failed with "
+                MONGO_BOOST_WARNING << "GetLogicalProcessorInformation failed with "
                           << errnoWithDescription(gle);
                 return false;
             }

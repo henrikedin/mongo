@@ -112,10 +112,10 @@ StringMap toNestedStringMap(BSONObj& obj) {
     BSONObjBuilder builder;                                  \
     ASSERT_OK(collector->collect(&builder));                 \
     auto obj = builder.obj();                                \
-    log() << "OBJ:" << obj;                                  \
+    MONGO_BOOST_LOG << "OBJ:" << obj;                                  \
     auto stringMap = toNestedStringMap(obj);                 \
     for (const auto& kvp : stringMap) {                      \
-        log() << "kvp " << kvp.first << " - " << kvp.second; \
+        MONGO_BOOST_LOG << "kvp " << kvp.first << " - " << kvp.second; \
     }
 
 #define COLLECT_COUNTERS_QUIET               \

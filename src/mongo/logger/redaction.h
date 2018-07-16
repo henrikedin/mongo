@@ -40,8 +40,8 @@
  * The 'redact' methods are designed to be used as part of our log streams
  * log(), LOG(), warning(), error(), severe() similar to the example below.
  *
- * log() << "My sensitive query is: " << query;
- * log() << "My sensitive query is: " << redact(query);
+ * MONGO_BOOST_LOG << "My sensitive query is: " << query;
+ * MONGO_BOOST_LOG << "My sensitive query is: " << redact(query);
  */
 
 namespace mongo {

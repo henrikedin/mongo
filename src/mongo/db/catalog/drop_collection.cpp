@@ -53,7 +53,7 @@ Status dropCollection(OperationContext* opCtx,
                       const repl::OpTime& dropOpTime,
                       DropCollectionSystemCollectionMode systemCollectionMode) {
     if (!serverGlobalParams.quiet.load()) {
-        log() << "CMD: drop " << collectionName;
+        MONGO_BOOST_LOG << "CMD: drop " << collectionName;
     }
 
     return writeConflictRetry(opCtx, "drop", collectionName.ns(), [&] {

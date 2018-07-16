@@ -537,7 +537,7 @@ TEST_F(RemoteCommandRetrySchedulerTest,
         request,
         [&result,
          sharedCallbackData](const executor::TaskExecutor::RemoteCommandCallbackArgs& rcba) {
-            unittest::log() << "setting result to " << rcba.response.status;
+            unittest::MONGO_BOOST_LOG << "setting result to " << rcba.response.status;
             result = rcba.response.status;
         },
         std::move(policy));

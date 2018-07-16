@@ -278,7 +278,7 @@ Status MigrationChunkClonerSourceLegacy::awaitUntilCriticalSectionIsAppropriate(
 
         const std::size_t cloneLocsRemaining = _cloneLocs.size();
 
-        log() << "moveChunk data transfer progress: " << redact(res) << " mem used: " << _memoryUsed
+        MONGO_BOOST_LOG << "moveChunk data transfer progress: " << redact(res) << " mem used: " << _memoryUsed
               << " documents remaining to clone: " << cloneLocsRemaining;
 
         if (res["state"].String() == "steady") {
@@ -389,7 +389,7 @@ void MigrationChunkClonerSourceLegacy::onInsertOp(OperationContext* opCtx,
 
     BSONElement idElement = insertedDoc["_id"];
     if (idElement.eoo()) {
-        warning() << "logInsertOp got a document with no _id field, ignoring inserted document: "
+        MONGO_BOOST_WARNING << "logInsertOp got a document with no _id field, ignoring inserted document: "
                   << redact(insertedDoc);
         return;
     }
@@ -415,7 +415,7 @@ void MigrationChunkClonerSourceLegacy::onUpdateOp(OperationContext* opCtx,
 
     BSONElement idElement = updatedDoc["_id"];
     if (idElement.eoo()) {
-        warning() << "logUpdateOp got a document with no _id field, ignoring updatedDoc: "
+        MONGO_BOOST_WARNING << "logUpdateOp got a document with no _id field, ignoring updatedDoc: "
                   << redact(updatedDoc);
         return;
     }
@@ -441,7 +441,7 @@ void MigrationChunkClonerSourceLegacy::onDeleteOp(OperationContext* opCtx,
 
     BSONElement idElement = deletedDocId["_id"];
     if (idElement.eoo()) {
-        warning() << "logDeleteOp got a document with no _id field, ignoring deleted doc: "
+        MONGO_BOOST_WARNING << "logDeleteOp got a document with no _id field, ignoring deleted doc: "
                   << redact(deletedDocId);
         return;
     }

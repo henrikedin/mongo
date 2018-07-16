@@ -239,7 +239,7 @@ public:
 
         // Return an error if execution fails for any reason.
         if (PlanExecutor::FAILURE == state || PlanExecutor::DEAD == state) {
-            log() << "Plan executor error during distinct command: "
+            MONGO_BOOST_LOG << "Plan executor error during distinct command: "
                   << redact(PlanExecutor::statestr(state))
                   << ", stats: " << redact(Explain::getWinningPlanStats(executor.getValue().get()));
 

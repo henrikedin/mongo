@@ -130,12 +130,12 @@ void ProcessInfo::SystemInfo::collectSystemInfo() {
 
     int status = getSysctlByNameWithDefault("kern.version", string("unknown"), &osVersion);
     if (status != 0)
-        log() << "Unable to collect OS Version. (errno: " << status << " msg: " << strerror(status)
+        MONGO_BOOST_LOG << "Unable to collect OS Version. (errno: " << status << " msg: " << strerror(status)
               << ")";
 
     status = getSysctlByNameWithDefault("hw.machine_arch", string("unknown"), &cpuArch);
     if (status != 0)
-        log() << "Unable to collect Machine Architecture. (errno: " << status
+        MONGO_BOOST_LOG << "Unable to collect Machine Architecture. (errno: " << status
               << " msg: " << strerror(status) << ")";
     addrSize = cpuArch.find("64") != std::string::npos ? 64 : 32;
 
@@ -144,13 +144,13 @@ void ProcessInfo::SystemInfo::collectSystemInfo() {
     status = getSysctlByNameWithDefault("hw.physmem", defaultNum, &numBuffer);
     memSize = numBuffer;
     if (status != 0)
-        log() << "Unable to collect Physical Memory. (errno: " << status
+        MONGO_BOOST_LOG << "Unable to collect Physical Memory. (errno: " << status
               << " msg: " << strerror(status) << ")";
 
     status = getSysctlByNameWithDefault("hw.ncpu", defaultNum, &numBuffer);
     numCores = numBuffer;
     if (status != 0)
-        log() << "Unable to collect Number of CPUs. (errno: " << status
+        MONGO_BOOST_LOG << "Unable to collect Number of CPUs. (errno: " << status
               << " msg: " << strerror(status) << ")";
 
     pageSize = static_cast<unsigned long long>(sysconf(_SC_PAGESIZE));
@@ -171,7 +171,7 @@ bool ProcessInfo::blockCheckSupported() {
 bool ProcessInfo::blockInMemory(const void* start) {
     char x = 0;
     if (mincore(alignToStartOfPage(start), getPageSize(), &x)) {
-        log() << "mincore failed: " << errnoWithDescription();
+        MONGO_BOOST_LOG << "mincore failed: " << errnoWithDescription();
         return 1;
     }
     return x & 0x1;
@@ -181,7 +181,7 @@ bool ProcessInfo::pagesInMemory(const void* start, size_t numPages, vector<char>
     out->resize(numPages);
     // int mincore(const void *addr, size_t len, char *vec);
     if (mincore(alignToStartOfPage(start), numPages * getPageSize(), &(out->front()))) {
-        log() << "mincore failed: " << errnoWithDescription();
+        MONGO_BOOST_LOG << "mincore failed: " << errnoWithDescription();
         return false;
     }
     for (size_t i = 0; i < numPages; ++i) {

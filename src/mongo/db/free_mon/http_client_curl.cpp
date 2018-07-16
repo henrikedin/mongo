@@ -59,13 +59,13 @@ public:
     bool initialize() {
         CURLcode ret = curl_global_init(CURL_GLOBAL_ALL);
         if (ret != CURLE_OK) {
-            error() << "Failed to initialize CURL: " << static_cast<int64_t>(ret);
+            MONGO_BOOST_ERROR << "Failed to initialize CURL: " << static_cast<int64_t>(ret);
             return false;
         }
 
         curl_version_info_data* version_data = curl_version_info(CURLVERSION_NOW);
         if (!(version_data->features & CURL_VERSION_SSL)) {
-            error() << "Curl lacks SSL support, cannot continue";
+            MONGO_BOOST_ERROR << "Curl lacks SSL support, cannot continue";
             return false;
         }
 

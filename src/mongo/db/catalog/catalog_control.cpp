@@ -77,12 +77,12 @@ MinVisibleTimestampMap closeCatalog(OperationContext* opCtx) {
     LOG(1) << "closeCatalog: closing UUID catalog";
 
     // Close all databases.
-    log() << "closeCatalog: closing all databases";
+    MONGO_BOOST_LOG << "closeCatalog: closing all databases";
     constexpr auto reason = "closing databases for closeCatalog";
     DatabaseHolder::getDatabaseHolder().closeAll(opCtx, reason);
 
     // Close the storage engine's catalog.
-    log() << "closeCatalog: closing storage engine catalog";
+    MONGO_BOOST_LOG << "closeCatalog: closing storage engine catalog";
     opCtx->getServiceContext()->getStorageEngine()->closeCatalog(opCtx);
 
     reopenOnFailure.Dismiss();
@@ -93,11 +93,11 @@ void openCatalog(OperationContext* opCtx, const MinVisibleTimestampMap& minVisib
     invariant(opCtx->lockState()->isW());
 
     // Load the catalog in the storage engine.
-    log() << "openCatalog: loading storage engine catalog";
+    MONGO_BOOST_LOG << "openCatalog: loading storage engine catalog";
     auto storageEngine = opCtx->getServiceContext()->getStorageEngine();
     storageEngine->loadCatalog(opCtx);
 
-    log() << "openCatalog: reconciling catalog and idents";
+    MONGO_BOOST_LOG << "openCatalog: reconciling catalog and idents";
     auto indexesToRebuild = storageEngine->reconcileCatalogAndIdents(opCtx);
     fassert(40688, indexesToRebuild.getStatus());
 
@@ -156,7 +156,7 @@ void openCatalog(OperationContext* opCtx, const MinVisibleTimestampMap& minVisib
                                 << collNss.toString());
 
         for (const auto& indexName : entry.second.first) {
-            log() << "openCatalog: rebuilding index: collection: " << collNss.toString()
+            MONGO_BOOST_LOG << "openCatalog: rebuilding index: collection: " << collNss.toString()
                   << ", index: " << indexName;
         }
         fassert(40690,
@@ -165,7 +165,7 @@ void openCatalog(OperationContext* opCtx, const MinVisibleTimestampMap& minVisib
     }
 
     // Open all databases and repopulate the UUID catalog.
-    log() << "openCatalog: reopening all databases";
+    MONGO_BOOST_LOG << "openCatalog: reopening all databases";
     auto& uuidCatalog = UUIDCatalog::get(opCtx);
     std::vector<std::string> databasesToOpen;
     storageEngine->listDatabases(&databasesToOpen);
@@ -198,7 +198,7 @@ void openCatalog(OperationContext* opCtx, const MinVisibleTimestampMap& minVisib
             // If this is the oplog collection, re-establish the replication system's cached pointer
             // to the oplog.
             if (collNss.isOplog()) {
-                log() << "openCatalog: updating cached oplog pointer";
+                MONGO_BOOST_LOG << "openCatalog: updating cached oplog pointer";
                 repl::establishOplogCollectionForLogging(opCtx, collection);
             }
         }

@@ -58,7 +58,7 @@ TEST_F(DocumentSourceMatchTest, RedactSafePortion) {
             auto match = DocumentSourceMatch::create(fromjson(input), expCtx);
             ASSERT_BSONOBJ_EQ(match->redactSafePortion(), fromjson(safePortion));
         } catch (...) {
-            unittest::log() << "Problem with redactSafePortion() of: " << input;
+            unittest::MONGO_BOOST_LOG << "Problem with redactSafePortion() of: " << input;
             throw;
         }
     };

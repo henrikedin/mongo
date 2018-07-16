@@ -220,7 +220,7 @@ public:
             switch (*state) {
                 case PlanExecutor::FAILURE:
                     // Log an error message and then perform the same cleanup as DEAD.
-                    error() << "GetMore command executor error: " << PlanExecutor::statestr(*state)
+                    MONGO_BOOST_ERROR << "GetMore command executor error: " << PlanExecutor::statestr(*state)
                             << ", stats: " << redact(Explain::getWinningPlanStats(exec));
                 case PlanExecutor::DEAD: {
                     nextBatch->abandon();

@@ -254,7 +254,7 @@ CompareResult compareAllShardVersions(const CachedCollectionRoutingInfo& routing
             // Throws b/c shard constructor throws
             cachedShardVersion = getShardVersion(routingInfo, shardId);
         } catch (const DBException& ex) {
-            warning() << "could not lookup shard " << shardId
+            MONGO_BOOST_WARNING << "could not lookup shard " << shardId
                       << " in local cache, shard metadata may have changed"
                       << " or be unavailable" << causedBy(ex);
 

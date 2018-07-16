@@ -438,13 +438,13 @@ void printMongodHelp(const moe::OptionSection& options) {
 namespace {
 void sysRuntimeInfo() {
 #if defined(_SC_PAGE_SIZE)
-    log() << "  page size: " << (int)sysconf(_SC_PAGE_SIZE);
+    MONGO_BOOST_LOG << "  page size: " << (int)sysconf(_SC_PAGE_SIZE);
 #endif
 #if defined(_SC_PHYS_PAGES)
-    log() << "  _SC_PHYS_PAGES: " << sysconf(_SC_PHYS_PAGES);
+    MONGO_BOOST_LOG << "  _SC_PHYS_PAGES: " << sysconf(_SC_PHYS_PAGES);
 #endif
 #if defined(_SC_AVPHYS_PAGES)
-    log() << "  _SC_AVPHYS_PAGES: " << sysconf(_SC_AVPHYS_PAGES);
+    MONGO_BOOST_LOG << "  _SC_AVPHYS_PAGES: " << sysconf(_SC_AVPHYS_PAGES);
 #endif
 }
 }  // namespace
@@ -458,7 +458,7 @@ bool handlePreValidationMongodOptions(const moe::Environment& params,
     if (params.count("version") && params["version"].as<bool>() == true) {
         setPlainConsoleLogger();
         auto&& vii = VersionInfoInterface::instance();
-        log() << mongodVersion(vii);
+        MONGO_BOOST_LOG << mongodVersion(vii);
         vii.logBuildInfo();
         return false;
     }
@@ -469,7 +469,7 @@ bool handlePreValidationMongodOptions(const moe::Environment& params,
     }
 
     if (params.count("master") || params.count("slave")) {
-        severe() << "Master/slave replication is no longer supported";
+        MONGO_BOOST_SEVERE << "Master/slave replication is no longer supported";
         return false;
     }
 
@@ -875,7 +875,7 @@ Status storeMongodOptions(const moe::Environment& params) {
     if (params.count("replication.enableMajorityReadConcern")) {
         bool val = params["replication.enableMajorityReadConcern"].as<bool>();
         if (!val) {
-            warning() << "enableMajorityReadConcern startup parameter was supplied, but its value "
+            MONGO_BOOST_WARNING << "enableMajorityReadConcern startup parameter was supplied, but its value "
                          "was ignored; majority read concern cannot be disabled.";
         }
     }
@@ -985,10 +985,10 @@ Status storeMongodOptions(const moe::Environment& params) {
     // Check if we are 32 bit and have not explicitly specified any journaling options
     if (sizeof(void*) == 4 && !params.count("storage.journal.enabled")) {
         // trying to make this stand out more like startup warnings
-        log() << endl;
-        warning() << "32-bit servers don't have journaling enabled by default. "
+        MONGO_BOOST_LOG << endl;
+        MONGO_BOOST_WARNING << "32-bit servers don't have journaling enabled by default. "
                   << "Please use --journal if you want durability.";
-        log() << endl;
+        MONGO_BOOST_LOG << endl;
     }
 
     bool isClusterRoleShard = params.count("shardsvr");

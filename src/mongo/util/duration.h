@@ -125,7 +125,7 @@ inline ToDuration duration_cast(const stdx::chrono::duration<FromRep, FromPeriod
  * Use when logging or comparing to integers, to ensure that you're using
  * the units you intend.
  *
- * E.g., log() << durationCount<Seconds>(some duration) << " seconds";
+ * E.g., MONGO_BOOST_LOG << durationCount<Seconds>(some duration) << " seconds";
  */
 template <typename DOut, typename DIn>
 inline long long durationCount(DIn d) {

@@ -193,7 +193,7 @@ struct Cloner::Fun {
                 if (now - lastLog >= 60) {
                     // report progress
                     if (lastLog)
-                        log() << "clone " << to_collection << ' ' << numSeen;
+                        MONGO_BOOST_LOG << "clone " << to_collection << ' ' << numSeen;
                     lastLog = now;
                 }
                 opCtx->checkForInterrupt();
@@ -254,7 +254,7 @@ struct Cloner::Fun {
                 ss << "Cloner: found corrupt document in " << from_collection.toString() << ": "
                    << redact(status);
                 if (skipCorruptDocumentsWhenCloning.load()) {
-                    warning() << ss.ss.str() << "; skipping";
+                    MONGO_BOOST_WARNING << ss.ss.str() << "; skipping";
                     continue;
                 }
                 msgasserted(28531, ss);
@@ -273,7 +273,7 @@ struct Cloner::Fun {
                 Status status =
                     collection->insertDocument(opCtx, InsertStatement(doc), nullOpDebug, true);
                 if (!status.isOK() && status.code() != ErrorCodes::DuplicateKey) {
-                    error() << "error: exception cloning object in " << from_collection << ' '
+                    MONGO_BOOST_ERROR << "error: exception cloning object in " << from_collection << ' '
                             << redact(status) << " obj:" << redact(doc);
                     uassertStatusOK(status);
                 }
@@ -283,7 +283,7 @@ struct Cloner::Fun {
             });
 
             RARELY if (time(0) - saveLast > 60) {
-                log() << numSeen << " objects cloned so far from collection " << from_collection;
+                MONGO_BOOST_LOG << numSeen << " objects cloned so far from collection " << from_collection;
                 saveLast = time(0);
             }
         }
@@ -518,7 +518,7 @@ bool Cloner::copyCollection(OperationContext* opCtx,
 
     /* TODO : copyIndexes bool does not seem to be implemented! */
     if (!shouldCopyIndexes) {
-        log() << "ERROR copy collection shouldCopyIndexes not implemented? " << ns;
+        MONGO_BOOST_LOG << "ERROR copy collection shouldCopyIndexes not implemented? " << ns;
     }
 
     // indexes
@@ -827,7 +827,7 @@ Status Cloner::copyDb(OperationContext* opCtx,
     // now build the secondary indexes
     if (opts.syncIndexes) {
         for (auto&& params : createCollectionParams) {
-            log() << "copying indexes for: " << params.collectionInfo;
+            MONGO_BOOST_LOG << "copying indexes for: " << params.collectionInfo;
 
             const NamespaceString from_name(opts.fromDB, params.collectionName);
             const NamespaceString to_name(toDBName, params.collectionName);

@@ -108,7 +108,7 @@ void ReplSetDistLockManager::shutDown(OperationContext* opCtx) {
     UninterruptibleLockGuard noInterrupt(opCtx->lockState());
     auto status = _catalog->stopPing(opCtx, _processID);
     if (!status.isOK()) {
-        warning() << "error encountered while cleaning up distributed ping entry for " << _processID
+        MONGO_BOOST_WARNING << "error encountered while cleaning up distributed ping entry for " << _processID
                   << causedBy(redact(status));
     }
 }
@@ -135,12 +135,12 @@ void ReplSetDistLockManager::doTask() {
             auto pingStatus = _catalog->ping(opCtx.get(), _processID, Date_t::now());
 
             if (!pingStatus.isOK() && pingStatus != ErrorCodes::NotMaster) {
-                warning() << "pinging failed for distributed lock pinger" << causedBy(pingStatus);
+                MONGO_BOOST_WARNING << "pinging failed for distributed lock pinger" << causedBy(pingStatus);
             }
 
             const Milliseconds elapsed(elapsedSincelastPing.millis());
             if (elapsed > 10 * _pingInterval) {
-                warning() << "Lock pinger for proc: " << _processID << " was inactive for "
+                MONGO_BOOST_WARNING << "Lock pinger for proc: " << _processID << " was inactive for "
                           << elapsed << " ms";
             }
             elapsedSincelastPing.reset();
@@ -164,7 +164,7 @@ void ReplSetDistLockManager::doTask() {
                 }
 
                 if (!unlockStatus.isOK()) {
-                    warning() << "Failed to unlock lock with " << LocksType::lockID() << ": "
+                    MONGO_BOOST_WARNING << "Failed to unlock lock with " << LocksType::lockID() << ": "
                               << toUnlock.first << nameMessage << causedBy(unlockStatus);
                     queueUnlock(toUnlock.first, toUnlock.second);
                 } else {
@@ -263,7 +263,7 @@ StatusWith<bool> ReplSetDistLockManager::isLockExpired(OperationContext* opCtx,
     }
 
     if (configServerLocalTime < pingInfo->configLocalTime) {
-        warning() << "config server local time went backwards, from last seen: "
+        MONGO_BOOST_WARNING << "config server local time went backwards, from last seen: "
                   << pingInfo->configLocalTime << " to " << configServerLocalTime;
         return false;
     }
@@ -323,7 +323,7 @@ StatusWith<DistLockHandle> ReplSetDistLockManager::lockWithSessionID(OperationCo
         if (status.isOK()) {
             // Lock is acquired since findAndModify was able to successfully modify
             // the lock document.
-            log() << "distributed lock '" << name << "' acquired for '" << whyMessage.toString()
+            MONGO_BOOST_LOG << "distributed lock '" << name << "' acquired for '" << whyMessage.toString()
                   << "', ts : " << lockSessionID;
             return lockSessionID;
         }
@@ -452,7 +452,7 @@ StatusWith<DistLockHandle> ReplSetDistLockManager::tryLockWithLocalWriteConcern(
                                          DistLockCatalog::kLocalWriteConcern);
 
     if (lockStatus.isOK()) {
-        log() << "distributed lock '" << name << "' acquired for '" << whyMessage.toString()
+        MONGO_BOOST_LOG << "distributed lock '" << name << "' acquired for '" << whyMessage.toString()
               << "', ts : " << lockSessionID;
         return lockSessionID;
     }
@@ -493,7 +493,7 @@ void ReplSetDistLockManager::unlock(OperationContext* opCtx,
 void ReplSetDistLockManager::unlockAll(OperationContext* opCtx, const std::string& processID) {
     Status status = _catalog->unlockAll(opCtx, processID);
     if (!status.isOK()) {
-        warning() << "Error while trying to unlock existing distributed locks"
+        MONGO_BOOST_WARNING << "Error while trying to unlock existing distributed locks"
                   << causedBy(redact(status));
     }
 }

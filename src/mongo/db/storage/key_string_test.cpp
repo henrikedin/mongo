@@ -86,7 +86,7 @@ public:
             version = KeyString::Version::V1;
             base->run();
         } catch (...) {
-            log() << "exception while testing KeyString version "
+            MONGO_BOOST_LOG << "exception while testing KeyString version "
                   << mongo::KeyString::versionToString(version);
             throw;
         }
@@ -150,7 +150,7 @@ TEST_F(KeyStringTest, ActualBytesDouble) {
 
     BSONObj a = BSON("" << 5.5);
     KeyString ks(version, a, ALL_ASCENDING);
-    log() << KeyString::versionToString(version) << " size: " << ks.getSize() << " hex ["
+    MONGO_BOOST_LOG << KeyString::versionToString(version) << " size: " << ks.getSize() << " hex ["
           << toHex(ks.getBuffer(), ks.getSize()) << "]";
 
     ASSERT_EQUALS(10U, ks.getSize());
@@ -283,7 +283,7 @@ TEST_F(KeyStringTest, NumbersNearInt32Max) {
 
 TEST_F(KeyStringTest, DecimalNumbers) {
     if (version == KeyString::Version::V0) {
-        log() << "not testing DecimalNumbers for KeyString V0";
+        MONGO_BOOST_LOG << "not testing DecimalNumbers for KeyString V0";
         return;
     }
 
@@ -804,7 +804,7 @@ void testPermutation(KeyString::Version version,
                 BSONObj orderObj = orderings[k];
                 Ordering ordering = Ordering::make(orderObj);
                 if (debug)
-                    log() << "ordering: " << orderObj;
+                    MONGO_BOOST_LOG << "ordering: " << orderObj;
 
                 std::vector<BSONObj> elements = elementsOrig;
                 BSONObjComparator bsonCmp(orderObj,
@@ -815,7 +815,7 @@ void testPermutation(KeyString::Version version,
                 for (size_t i = 0; i < elements.size(); i++) {
                     const BSONObj& o1 = elements[i];
                     if (debug)
-                        log() << "\to1: " << o1;
+                        MONGO_BOOST_LOG << "\to1: " << o1;
                     ROUNDTRIP_ORDER(version, o1, ordering);
 
                     KeyString k1(version, o1, ordering);
@@ -828,7 +828,7 @@ void testPermutation(KeyString::Version version,
                     if (i + 1 < elements.size()) {
                         const BSONObj& o2 = elements[i + 1];
                         if (debug)
-                            log() << "\t\t o2: " << o2;
+                            MONGO_BOOST_LOG << "\t\t o2: " << o2;
                         KeyString k2(version, o2, ordering);
                         KeyString g2(version, BSON("g" << o2.firstElement()), ordering);
                         KeyString l2(version, BSON("l" << o2.firstElement()), ordering);
@@ -879,7 +879,7 @@ std::mt19937_64 seedGen(rd());
 // To be used by perf test for seeding, so that the entire test is repeatable in case of error.
 unsigned newSeed() {
     unsigned int seed = seedGen();  // Replace by the reported number to repeat test execution.
-    log() << "Initializing random number generator using seed " << seed;
+    MONGO_BOOST_LOG << "Initializing random number generator using seed " << seed;
     return seed;
 };
 
@@ -891,7 +891,7 @@ std::vector<BSONObj> thinElements(std::vector<BSONObj> elements,
     if (elements.size() <= maxElements)
         return elements;
 
-    log() << "only keeping " << maxElements << " of " << elements.size()
+    MONGO_BOOST_LOG << "only keeping " << maxElements << " of " << elements.size()
           << " elements using random selection";
     std::shuffle(elements.begin(), elements.end(), gen);
     elements.resize(maxElements);
@@ -938,7 +938,7 @@ TEST_F(KeyStringTest, AllPerm2Compare) {
         }
     }
 
-    log() << "AllPerm2Compare " << KeyString::versionToString(version)
+    MONGO_BOOST_LOG << "AllPerm2Compare " << KeyString::versionToString(version)
           << " size:" << elements.size();
 
     for (size_t i = 0; i < elements.size(); i++) {
@@ -1097,7 +1097,7 @@ TEST_F(KeyStringTest, NumberOrderLots) {
 
             if (a.compare(b) !=
                 compareNumbers(numbers[i].firstElement(), numbers[j].firstElement())) {
-                log() << numbers[i] << " " << numbers[j];
+                MONGO_BOOST_LOG << numbers[i] << " " << numbers[j];
             }
 
             ASSERT_EQUALS(a.compare(b),
@@ -1336,7 +1336,7 @@ void perfTest(KeyString::Version version, const Numbers& numbers) {
     auto minmax = std::minmax_element(
         numbers.begin(), numbers.end(), SimpleBSONObjComparator::kInstance.makeLessThan());
 
-    log() << 1E3 * micros / static_cast<double>(iters * numbers.size()) << " ns per "
+    MONGO_BOOST_LOG << 1E3 * micros / static_cast<double>(iters * numbers.size()) << " ns per "
           << mongo::KeyString::versionToString(version) << " roundtrip"
           << (kDebugBuild ? " (DEBUG BUILD!)" : "") << " min " << (*minmax.first)[""] << ", max"
           << (*minmax.second)[""];

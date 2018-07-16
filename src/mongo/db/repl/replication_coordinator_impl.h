@@ -456,7 +456,12 @@ private:
 
         const OpTime opTime;
         const WriteConcernOptions* writeConcern = nullptr;
+
+		friend std::ostream& operator<<(std::ostream& s, const Waiter& w);
     };
+
+	friend std::ostream& operator<<(std::ostream& s, const Waiter& w);
+
 
     // When ThreadWaiter gets notified, it will signal the conditional variable.
     //
@@ -1288,6 +1293,10 @@ private:
     // here so we can update our term to match as part of finishing stepdown.
     boost::optional<long long> _pendingTermUpdateDuringStepDown;  // (M)
 };
+
+inline std::ostream& operator<<(std::ostream& s, const ReplicationCoordinatorImpl::Waiter& w) {
+	return (s << w.toString());
+}
 
 }  // namespace repl
 }  // namespace mongo

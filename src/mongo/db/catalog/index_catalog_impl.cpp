@@ -154,7 +154,7 @@ Status IndexCatalogImpl::init(OperationContext* opCtx) {
     if (_unfinishedIndexes.size()) {
         // if there are left over indexes, we don't let anyone add/drop indexes
         // until someone goes and fixes them
-        log() << "found " << _unfinishedIndexes.size()
+        MONGO_BOOST_LOG << "found " << _unfinishedIndexes.size()
               << " index(es) that wasn't finished before shutdown";
     }
 
@@ -166,7 +166,7 @@ IndexCatalogEntry* IndexCatalogImpl::_setupInMemoryStructures(
     OperationContext* opCtx, std::unique_ptr<IndexDescriptor> descriptor, bool initFromDisk) {
     Status status = _isSpecOk(opCtx, descriptor->infoObj());
     if (!status.isOK() && status != ErrorCodes::IndexAlreadyExists) {
-        severe() << "Found an invalid index " << descriptor->infoObj() << " on the "
+        MONGO_BOOST_SEVERE << "Found an invalid index " << descriptor->infoObj() << " on the "
                  << _collection->ns().ns() << " collection: " << redact(status);
         fassertFailedNoTrace(28782);
     }
@@ -207,7 +207,7 @@ void IndexCatalogImpl::_checkMagic() const {
     if (ok()) {
         return;
     }
-    log() << "IndexCatalog::_magic wrong, is : " << _magic;
+    MONGO_BOOST_LOG << "IndexCatalog::_magic wrong, is : " << _magic;
     fassertFailed(17198);
 }
 
@@ -240,12 +240,12 @@ bool IndexCatalogImpl::_shouldOverridePlugin(OperationContext* opCtx,
 
     // RulesFor22
     if (!known) {
-        log() << "warning: can't find plugin [" << pluginName << "]";
+        MONGO_BOOST_LOG << "warning: can't find plugin [" << pluginName << "]";
         return true;
     }
 
     if (!IndexNames::existedBefore24(pluginName)) {
-        warning() << "Treating index " << keyPattern << " as ascending since "
+        MONGO_BOOST_WARNING << "Treating index " << keyPattern << " as ascending since "
                   << "it was created before 2.4 and '" << pluginName << "' "
                   << "was not a valid type at that time.";
         return true;
@@ -871,7 +871,7 @@ Status IndexCatalogImpl::_doesSpecConflictWithExisting(OperationContext* opCtx,
     if (numIndexesTotal(opCtx) >= _maxNumIndexesAllowed) {
         string s = str::stream() << "add index fails, too many indexes for "
                                  << _collection->ns().ns() << " key:" << key;
-        log() << s;
+        MONGO_BOOST_LOG << s;
         return Status(ErrorCodes::CannotCreateIndex, s);
     }
 
@@ -973,7 +973,7 @@ void IndexCatalogImpl::dropAllIndexes(OperationContext* opCtx,
         fassert(17336, _entries.size() == 1);
     } else {
         if (numIndexesTotal(opCtx) || numIndexesInCollectionCatalogEntry || _entries.size()) {
-            error() << "About to fassert - "
+            MONGO_BOOST_ERROR << "About to fassert - "
                     << " numIndexesTotal(): " << numIndexesTotal(opCtx)
                     << " numSystemIndexesEntries: " << numIndexesInCollectionCatalogEntry
                     << " _entries.size(): " << _entries.size()
@@ -1091,7 +1091,7 @@ void IndexCatalogImpl::_deleteIndexFromDisk(OperationContext* opCtx,
     if (status.code() == ErrorCodes::NamespaceNotFound) {
         // this is ok, as we may be partially through index creation
     } else if (!status.isOK()) {
-        warning() << "couldn't drop index " << indexName << " on collection: " << _collection->ns()
+        MONGO_BOOST_WARNING << "couldn't drop index " << indexName << " on collection: " << _collection->ns()
                   << " because of " << redact(status);
     }
 }
@@ -1148,14 +1148,14 @@ int IndexCatalogImpl::numIndexesReady(OperationContext* opCtx) const {
         // There is a potential inconistency where the index information in the collection catalog
         // entry and the index catalog differ. Log as much information as possible here.
         if (itIndexes.size() != completedIndexes.size()) {
-            log() << "index catalog reports: ";
+            MONGO_BOOST_LOG << "index catalog reports: ";
             for (IndexDescriptor* i : itIndexes) {
-                log() << "  index: " << i->toString();
+                MONGO_BOOST_LOG << "  index: " << i->toString();
             }
 
-            log() << "collection catalog reports: ";
+            MONGO_BOOST_LOG << "collection catalog reports: ";
             for (auto const& i : completedIndexes) {
-                log() << "  index: " << i;
+                MONGO_BOOST_LOG << "  index: " << i;
             }
 
             invariant(itIndexes.size() == completedIndexes.size(),
@@ -1454,7 +1454,7 @@ Status IndexCatalogImpl::_unindexRecord(OperationContext* opCtx,
     Status status = index->accessMethod()->remove(opCtx, obj, loc, options, &removed);
 
     if (!status.isOK()) {
-        log() << "Couldn't unindex record " << redact(obj) << " from collection "
+        MONGO_BOOST_LOG << "Couldn't unindex record " << redact(obj) << " from collection "
               << _collection->ns() << ". Status: " << redact(status);
     }
 

@@ -166,7 +166,7 @@ void FreeMonController::start(RegistrationType registrationType,
 
 void FreeMonController::stop() {
     // Stop the agent
-    log() << "Shutting down free monitoring";
+    MONGO_BOOST_LOG << "Shutting down free monitoring";
 
     {
         stdx::lock_guard<stdx::mutex> lock(_mutex);
@@ -197,7 +197,7 @@ void FreeMonController::turnCrankForTest(size_t countMessagesToIgnore) {
         invariant(_state == State::kStarted);
     }
 
-    log() << "Turning Crank: " << countMessagesToIgnore;
+    MONGO_BOOST_LOG << "Turning Crank: " << countMessagesToIgnore;
 
     _processor->turnCrankForTest(countMessagesToIgnore);
 }

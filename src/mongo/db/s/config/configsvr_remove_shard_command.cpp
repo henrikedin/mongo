@@ -113,7 +113,7 @@ public:
         if (!shardStatus.isOK()) {
             std::string msg(str::stream() << "Could not drop shard '" << target
                                           << "' because it does not exist");
-            log() << msg;
+            MONGO_BOOST_LOG << msg;
             uasserted(ErrorCodes::ShardNotFound, msg);
         }
         const auto& shard = shardStatus.getValue();

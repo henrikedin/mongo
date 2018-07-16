@@ -239,7 +239,7 @@ public:
 
     Future<FreeMonRegistrationResponse> sendRegistrationAsync(
         const FreeMonRegistrationRequest& req) final {
-        log() << "Sending Registration ...";
+        MONGO_BOOST_LOG << "Sending Registration ...";
 
         _registers.addAndFetch(1);
 
@@ -286,7 +286,7 @@ public:
 
 
     Future<FreeMonMetricsResponse> sendMetricsAsync(const FreeMonMetricsRequest& req) final {
-        log() << "Sending Metrics ...";
+        MONGO_BOOST_LOG << "Sending Metrics ...";
 
         _metrics.addAndFetch(1);
 

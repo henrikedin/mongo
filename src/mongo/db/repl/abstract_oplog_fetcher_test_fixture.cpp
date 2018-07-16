@@ -127,13 +127,13 @@ executor::RemoteCommandRequest AbstractOplogFetcherTest::processNetworkResponse(
 
     auto net = getNet();
     executor::NetworkInterfaceMock::InNetworkGuard guard(net);
-    unittest::log() << "scheduling response.";
+    unittest::MONGO_BOOST_LOG << "scheduling response.";
     auto request = net->scheduleSuccessfulResponse(response);
-    unittest::log() << "running network ops.";
+    unittest::MONGO_BOOST_LOG << "running network ops.";
     net->runReadyNetworkOperations();
-    unittest::log() << "checking for more requests";
+    unittest::MONGO_BOOST_LOG << "checking for more requests";
     ASSERT_EQUALS(expectReadyRequestsAfterProcessing, net->hasReadyRequests());
-    unittest::log() << "returning consumed request";
+    unittest::MONGO_BOOST_LOG << "returning consumed request";
     return request;
 }
 

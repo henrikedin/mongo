@@ -156,7 +156,7 @@ void shutdown(ServiceContext* srvContext) {
 
     setGlobalServiceContext(nullptr);
 
-    log(LogComponent::kControl) << "now exiting";
+    MONGO_BOOST_LOG_COMPONENT(LogComponent::kControl) << "now exiting";
 }
 
 
@@ -188,15 +188,13 @@ ServiceContext* initialize(const char* yaml_config) {
 
     {
         ProcessId pid = ProcessId::getCurrent();
-        LogstreamBuilder l = log(LogComponent::kControl);
-        l << "MongoDB starting : pid=" << pid << " port=" << serverGlobalParams.port
-          << " dbpath=" << storageGlobalParams.dbpath;
-
-        const bool is32bit = sizeof(int*) == 4;
-        l << (is32bit ? " 32" : " 64") << "-bit" << endl;
+		const bool is32bit = sizeof(int*) == 4;
+        //LogstreamBuilder l = MONGO_BOOST_LOG_COMPONENT(LogComponent::kControl);
+        MONGO_BOOST_LOG_COMPONENT(LogComponent::kControl) << "MongoDB starting : pid=" << pid << " port=" << serverGlobalParams.port
+          << " dbpath=" << storageGlobalParams.dbpath << (is32bit ? " 32" : " 64") << "-bit" << endl;
     }
 
-    DEV log(LogComponent::kControl) << "DEBUG build (which is slower)" << endl;
+    DEV MONGO_BOOST_LOG_COMPONENT(LogComponent::kControl) << "DEBUG build (which is slower)" << endl;
 
     initializeStorageEngine(serviceContext, StorageEngineInitFlags::kAllowNoLockFile);
 
@@ -213,7 +211,7 @@ ServiceContext* initialize(const char* yaml_config) {
 
             // Warn if field name matches non-active registered storage engine.
             if (isRegisteredStorageEngine(serviceContext, e.fieldName())) {
-                warning() << "Detected configuration for non-active storage engine "
+                MONGO_BOOST_WARNING << "Detected configuration for non-active storage engine "
                           << e.fieldName() << " when current storage engine is "
                           << storageGlobalParams.engine;
             }
@@ -259,7 +257,7 @@ ServiceContext* initialize(const char* yaml_config) {
         // accidentally buying into this behavior. New errors that are returned from the method
         // may or may not want to go through a clean shutdown, and they likely won't want the
         // program to return an exit code of `EXIT_NEED_DOWNGRADE`.
-        severe(LogComponent::kControl) << "** IMPORTANT: "
+		MONGO_BOOST_SEVERE_COMPONENT(LogComponent::kControl) << "** IMPORTANT: "
                                        << swNonLocalDatabases.getStatus().reason();
         invariant(swNonLocalDatabases == ErrorCodes::MustDowngrade);
         quickExit(EXIT_NEED_DOWNGRADE);
@@ -274,7 +272,7 @@ ServiceContext* initialize(const char* yaml_config) {
     }
 
     if (storageGlobalParams.upgrade) {
-        log() << "finished checking dbs";
+        MONGO_BOOST_LOG << "finished checking dbs";
         exitCleanly(EXIT_CLEAN);
     }
 

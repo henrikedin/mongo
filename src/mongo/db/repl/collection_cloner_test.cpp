@@ -1102,7 +1102,7 @@ TEST_F(CollectionClonerTest, CollectionClonerTransitionsToCompleteIfShutdownBefo
  */
 TEST_F(CollectionClonerTest, CollectionClonerCannotBeRestartedAfterPreviousFailure) {
     // First cloning attempt - fails while reading documents from source collection.
-    unittest::log() << "Starting first collection cloning attempt";
+    unittest::MONGO_BOOST_LOG << "Starting first collection cloning attempt";
     ASSERT_OK(collectionCloner->startup());
     ASSERT_TRUE(collectionCloner->isActive());
 
@@ -1151,7 +1151,7 @@ TEST_F(CollectionClonerTest, CollectionClonerCannotBeRestartedAfterPreviousFailu
     ASSERT_FALSE(collectionCloner->isActive());
 
     // Second cloning attempt - run to completion.
-    unittest::log() << "Starting second collection cloning attempt - startup() should fail";
+    unittest::MONGO_BOOST_LOG << "Starting second collection cloning attempt - startup() should fail";
     collectionStats = CollectionMockStats();
     setStatus(getDetectableErrorStatus());
 
@@ -1181,7 +1181,7 @@ TEST_F(CollectionClonerTest, CollectionClonerResetsOnCompletionCallbackFunctionA
                                             nss,
                                             options,
                                             [&result, sharedCallbackData](const Status& status) {
-                                                log() << "setting result to " << status;
+                                                MONGO_BOOST_LOG << "setting result to " << status;
                                                 result = status;
                                             },
                                             storageInterface.get(),

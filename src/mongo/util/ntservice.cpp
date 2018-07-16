@@ -108,38 +108,38 @@ void configureService(ServiceCallback serviceCallback,
 
     if (params.count("install")) {
         if (badOption != -1) {
-            log() << "--install cannot be used with --" << disallowedOptions[badOption];
+            MONGO_BOOST_LOG << "--install cannot be used with --" << disallowedOptions[badOption];
             quickExit(EXIT_BADOPTIONS);
         }
         if (!params.count("systemLog.destination") ||
             params["systemLog.destination"].as<std::string>() != "file") {
-            log() << "--install has to be used with a log file for server output";
+            MONGO_BOOST_LOG << "--install has to be used with a log file for server output";
             quickExit(EXIT_BADOPTIONS);
         }
         installService = true;
     }
     if (params.count("reinstall")) {
         if (badOption != -1) {
-            log() << "--reinstall cannot be used with --" << disallowedOptions[badOption];
+            MONGO_BOOST_LOG << "--reinstall cannot be used with --" << disallowedOptions[badOption];
             quickExit(EXIT_BADOPTIONS);
         }
         if (!params.count("systemLog.destination") ||
             params["systemLog.destination"].as<std::string>() != "file") {
-            log() << "--reinstall has to be used with a log file for server output";
+            MONGO_BOOST_LOG << "--reinstall has to be used with a log file for server output";
             quickExit(EXIT_BADOPTIONS);
         }
         reinstallService = true;
     }
     if (params.count("remove")) {
         if (badOption != -1) {
-            log() << "--remove cannot be used with --" << disallowedOptions[badOption];
+            MONGO_BOOST_LOG << "--remove cannot be used with --" << disallowedOptions[badOption];
             quickExit(EXIT_BADOPTIONS);
         }
         removeService = true;
     }
     if (params.count("service")) {
         if (badOption != -1) {
-            log() << "--service cannot be used with --" << disallowedOptions[badOption];
+            MONGO_BOOST_LOG << "--service cannot be used with --" << disallowedOptions[badOption];
             quickExit(EXIT_BADOPTIONS);
         }
         _startService = true;
@@ -147,7 +147,7 @@ void configureService(ServiceCallback serviceCallback,
 
     if (params.count("processManagement.windowsService.serviceName")) {
         if (badOption != -1) {
-            log() << "--serviceName cannot be used with --" << disallowedOptions[badOption];
+            MONGO_BOOST_LOG << "--serviceName cannot be used with --" << disallowedOptions[badOption];
             quickExit(EXIT_BADOPTIONS);
         }
         _serviceName = toWideString(
@@ -155,7 +155,7 @@ void configureService(ServiceCallback serviceCallback,
     }
     if (params.count("processManagement.windowsService.displayName")) {
         if (badOption != -1) {
-            log() << "--serviceDisplayName cannot be used with --" << disallowedOptions[badOption];
+            MONGO_BOOST_LOG << "--serviceDisplayName cannot be used with --" << disallowedOptions[badOption];
             quickExit(EXIT_BADOPTIONS);
         }
         windowsServiceDisplayName = toWideString(
@@ -163,7 +163,7 @@ void configureService(ServiceCallback serviceCallback,
     }
     if (params.count("processManagement.windowsService.description")) {
         if (badOption != -1) {
-            log() << "--serviceDescription cannot be used with --" << disallowedOptions[badOption];
+            MONGO_BOOST_LOG << "--serviceDescription cannot be used with --" << disallowedOptions[badOption];
             quickExit(EXIT_BADOPTIONS);
         }
         windowsServiceDescription = toWideString(
@@ -171,7 +171,7 @@ void configureService(ServiceCallback serviceCallback,
     }
     if (params.count("processManagement.windowsService.serviceUser")) {
         if (badOption != -1) {
-            log() << "--serviceUser cannot be used with --" << disallowedOptions[badOption];
+            MONGO_BOOST_LOG << "--serviceUser cannot be used with --" << disallowedOptions[badOption];
             quickExit(EXIT_BADOPTIONS);
         }
         windowsServiceUser = toWideString(
@@ -179,7 +179,7 @@ void configureService(ServiceCallback serviceCallback,
     }
     if (params.count("processManagement.windowsService.servicePassword")) {
         if (badOption != -1) {
-            log() << "--servicePassword cannot be used with --" << disallowedOptions[badOption];
+            MONGO_BOOST_LOG << "--servicePassword cannot be used with --" << disallowedOptions[badOption];
             quickExit(EXIT_BADOPTIONS);
         }
         windowsServicePassword = toWideString(
@@ -274,7 +274,7 @@ void installServiceOrDie(const wstring& serviceName,
                          const wstring& servicePassword,
                          const std::vector<std::string>& argv,
                          const bool reinstall) {
-    log() << "Trying to install Windows service '" << toUtf8String(serviceName) << "'";
+    MONGO_BOOST_LOG << "Trying to install Windows service '" << toUtf8String(serviceName) << "'";
 
     std::vector<std::string> serviceArgv = constructServiceArgv(argv);
 
@@ -287,7 +287,7 @@ void installServiceOrDie(const wstring& serviceName,
     SC_HANDLE schSCManager = ::OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
     if (schSCManager == NULL) {
         DWORD err = ::GetLastError();
-        log() << "Error connecting to the Service Control Manager: " << windows::GetErrMsg(err);
+        MONGO_BOOST_LOG << "Error connecting to the Service Control Manager: " << windows::GetErrMsg(err);
         quickExit(EXIT_NTSERVICE_ERROR);
     }
 
@@ -300,7 +300,7 @@ void installServiceOrDie(const wstring& serviceName,
         // Services MMC snap-ins.
         schService = ::OpenService(schSCManager, serviceName.c_str(), SERVICE_ALL_ACCESS);
         if (schService != NULL) {
-            log() << "There is already a service named '" << toUtf8String(serviceName)
+            MONGO_BOOST_LOG << "There is already a service named '" << toUtf8String(serviceName)
                   << (retryCount > 0 ? "', sleeping and retrying" : "', aborting");
             ::CloseServiceHandle(schService);
 
@@ -336,17 +336,17 @@ void installServiceOrDie(const wstring& serviceName,
                                   NULL);                      // user account password
     if (schService == NULL) {
         DWORD err = ::GetLastError();
-        log() << "Error creating service: " << windows::GetErrMsg(err);
+        MONGO_BOOST_LOG << "Error creating service: " << windows::GetErrMsg(err);
         ::CloseServiceHandle(schSCManager);
         quickExit(EXIT_NTSERVICE_ERROR);
     }
 
-    log() << "Service '" << toUtf8String(serviceName) << "' (" << toUtf8String(displayName)
+    MONGO_BOOST_LOG << "Service '" << toUtf8String(serviceName) << "' (" << toUtf8String(displayName)
           << ") installed with command line '" << commandLine << "'";
     string typeableName((serviceName.find(L' ') != wstring::npos)
                             ? "\"" + toUtf8String(serviceName) + "\""
                             : toUtf8String(serviceName));
-    log() << "Service can be started from the command line with 'net start " << typeableName << "'";
+    MONGO_BOOST_LOG << "Service can be started from the command line with 'net start " << typeableName << "'";
 
     bool serviceInstalled;
 
@@ -359,7 +359,7 @@ void installServiceOrDie(const wstring& serviceName,
             actualServiceUser = serviceUser;
         }
 
-        log() << "Setting service login credentials for user: " << toUtf8String(actualServiceUser);
+        MONGO_BOOST_LOG << "Setting service login credentials for user: " << toUtf8String(actualServiceUser);
         serviceInstalled = ::ChangeServiceConfig(schService,                 // service handle
                                                  SERVICE_NO_CHANGE,          // service type
                                                  SERVICE_NO_CHANGE,          // start type
@@ -372,7 +372,7 @@ void installServiceOrDie(const wstring& serviceName,
                                                  servicePassword.c_str(),  // user account password
                                                  NULL);                    // service display name
         if (!serviceInstalled) {
-            log() << "Setting service login failed, service has 'LocalService' permissions";
+            MONGO_BOOST_LOG << "Setting service login failed, service has 'LocalService' permissions";
         }
     }
 
@@ -410,7 +410,7 @@ void installServiceOrDie(const wstring& serviceName,
 
     } else {
 #endif
-        log() << "Could not set service description. Check the Windows Event Log for more details.";
+        MONGO_BOOST_LOG << "Could not set service description. Check the Windows Event Log for more details.";
     }
 
     // Set the pre-shutdown notification with a timeout of 10 minutes.
@@ -423,7 +423,7 @@ void installServiceOrDie(const wstring& serviceName,
         schService, SERVICE_CONFIG_PRESHUTDOWN_INFO, &servicePreshutdownInfo);
     if (!ret) {
         DWORD gle = ::GetLastError();
-        error() << "Failed to set timeout for pre-shutdown notification with error: "
+        MONGO_BOOST_ERROR << "Failed to set timeout for pre-shutdown notification with error: "
                 << errnoWithDescription(gle);
         serviceInstalled = false;
     }
@@ -436,18 +436,18 @@ void installServiceOrDie(const wstring& serviceName,
 }
 
 void removeServiceOrDie(const wstring& serviceName) {
-    log() << "Trying to remove Windows service '" << toUtf8String(serviceName) << "'";
+    MONGO_BOOST_LOG << "Trying to remove Windows service '" << toUtf8String(serviceName) << "'";
 
     SC_HANDLE schSCManager = ::OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS);
     if (schSCManager == NULL) {
         DWORD err = ::GetLastError();
-        log() << "Error connecting to the Service Control Manager: " << windows::GetErrMsg(err);
+        MONGO_BOOST_LOG << "Error connecting to the Service Control Manager: " << windows::GetErrMsg(err);
         quickExit(EXIT_NTSERVICE_ERROR);
     }
 
     SC_HANDLE schService = ::OpenService(schSCManager, serviceName.c_str(), SERVICE_ALL_ACCESS);
     if (schService == NULL) {
-        log() << "Could not find a service named '" << toUtf8String(serviceName) << "' to remove";
+        MONGO_BOOST_LOG << "Could not find a service named '" << toUtf8String(serviceName) << "' to remove";
         ::CloseServiceHandle(schSCManager);
         quickExit(EXIT_NTSERVICE_ERROR);
     }
@@ -456,7 +456,7 @@ void removeServiceOrDie(const wstring& serviceName) {
 
     // stop service if its running
     if (::ControlService(schService, SERVICE_CONTROL_STOP, &serviceStatus)) {
-        log() << "Service " << toUtf8String(serviceName)
+        MONGO_BOOST_LOG << "Service " << toUtf8String(serviceName)
               << " is currently running, stopping service";
         while (::QueryServiceStatus(schService, &serviceStatus)) {
             if (serviceStatus.dwCurrentState == SERVICE_STOP_PENDING) {
@@ -465,7 +465,7 @@ void removeServiceOrDie(const wstring& serviceName) {
                 break;
             }
         }
-        log() << "Service '" << toUtf8String(serviceName) << "' stopped";
+        MONGO_BOOST_LOG << "Service '" << toUtf8String(serviceName) << "' stopped";
     }
 
     bool serviceRemoved = ::DeleteService(schService);
@@ -474,9 +474,9 @@ void removeServiceOrDie(const wstring& serviceName) {
     ::CloseServiceHandle(schSCManager);
 
     if (serviceRemoved) {
-        log() << "Service '" << toUtf8String(serviceName) << "' removed";
+        MONGO_BOOST_LOG << "Service '" << toUtf8String(serviceName) << "' removed";
     } else {
-        log() << "Failed to remove service '" << toUtf8String(serviceName) << "'";
+        MONGO_BOOST_LOG << "Failed to remove service '" << toUtf8String(serviceName) << "'";
     }
 
     if (!serviceRemoved)
@@ -546,7 +546,7 @@ static void serviceStop() {
     // We periodically check if we are done exiting by polling at half of each wait interval
     while (exitedCleanly.wait_for(timeout.toSystemDuration()) != stdx::future_status::ready) {
         reportStatus(SERVICE_STOP_PENDING, kStopWaitHintMillis);
-        log() << "Service Stop is waiting for storage engine to finish shutdown";
+        MONGO_BOOST_LOG << "Service Stop is waiting for storage engine to finish shutdown";
     }
 }
 
@@ -571,7 +571,7 @@ static void WINAPI initService(DWORD argc, LPTSTR* argv) {
 static void serviceShutdown(const char* controlCodeName) {
     setThreadName("serviceShutdown");
 
-    log() << "got " << controlCodeName << " request from Windows Service Control Manager, "
+    MONGO_BOOST_LOG << "got " << controlCodeName << " request from Windows Service Control Manager, "
           << (globalInShutdownDeprecated() ? "already in shutdown"
                                            : "will terminate after current cmd ends");
 
@@ -617,7 +617,7 @@ void startService() {
         {const_cast<LPWSTR>(_serviceName.c_str()), (LPSERVICE_MAIN_FUNCTION)initService},
         {NULL, NULL}};
 
-    log() << "Trying to start Windows service '" << toUtf8String(_serviceName) << "'";
+    MONGO_BOOST_LOG << "Trying to start Windows service '" << toUtf8String(_serviceName) << "'";
     if (StartServiceCtrlDispatcherW(dispTable)) {
         quickExit(EXIT_CLEAN);
     } else {

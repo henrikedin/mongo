@@ -76,7 +76,7 @@ Status WiredTigerEngineRuntimeConfigParameter::setFromString(const std::string& 
                        << pos));
     }
 
-    log() << "Reconfiguring WiredTiger storage engine with config string: \"" << str << "\"";
+    MONGO_BOOST_LOG << "Reconfiguring WiredTiger storage engine with config string: \"" << str << "\"";
 
     int ret = _engine->reconfigure(str.c_str());
     if (ret != 0) {
@@ -85,7 +85,7 @@ Status WiredTigerEngineRuntimeConfigParameter::setFromString(const std::string& 
                                        << ret
                                        << "): "
                                        << wiredtiger_strerror(ret));
-        error() << result;
+        MONGO_BOOST_ERROR << result;
 
         return Status(ErrorCodes::BadValue, result);
     }

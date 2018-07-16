@@ -117,13 +117,13 @@ bool DataReplicatorExternalStateImpl::shouldStopFetching(
         // If OplogQueryMetadata was provided, its values were used to determine if we should
         // change sync sources.
         if (oqMetadata) {
-            log() << "Canceling oplog query due to OplogQueryMetadata. We have to choose a new "
+            MONGO_BOOST_LOG << "Canceling oplog query due to OplogQueryMetadata. We have to choose a new "
                      "sync source. Current source: "
                   << source << ", OpTime " << oqMetadata->getLastOpApplied()
                   << ", its sync source index:" << oqMetadata->getSyncSourceIndex();
 
         } else {
-            log() << "Canceling oplog query due to ReplSetMetadata. We have to choose a new sync "
+            MONGO_BOOST_LOG << "Canceling oplog query due to ReplSetMetadata. We have to choose a new sync "
                      "source. Current source: "
                   << source << ", OpTime " << replMetadata.getLastOpVisible()
                   << ", its sync source index:" << replMetadata.getSyncSourceIndex();

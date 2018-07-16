@@ -88,7 +88,7 @@ IndexAccessMethod* KVDatabaseCatalogEntry::getIndex(OperationContext* opCtx,
     if (IndexNames::ALLPATHS == type)
         return new AllPathsAccessMethod(index, sdi);
 
-    log() << "Can't find index for keyPattern " << desc->keyPattern();
+    MONGO_BOOST_LOG << "Can't find index for keyPattern " << desc->keyPattern();
     MONGO_UNREACHABLE;
 }
 }  // namespace mongo

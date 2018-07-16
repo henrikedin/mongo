@@ -316,7 +316,7 @@ void WiredTigerRecordStore::OplogStones::_calculateStones(OperationContext* opCt
     long long numRecords = _rs->numRecords(opCtx);
     long long dataSize = _rs->dataSize(opCtx);
 
-    log() << "The size storer reports that the oplog contains " << numRecords
+    MONGO_BOOST_LOG << "The size storer reports that the oplog contains " << numRecords
           << " records totaling to " << dataSize << " bytes";
 
     // Only use sampling to estimate where to place the oplog stones if the number of samples drawn
@@ -342,7 +342,7 @@ void WiredTigerRecordStore::OplogStones::_calculateStones(OperationContext* opCt
 }
 
 void WiredTigerRecordStore::OplogStones::_calculateStonesByScanning(OperationContext* opCtx) {
-    log() << "Scanning the oplog to determine where to place markers for truncation";
+    MONGO_BOOST_LOG << "Scanning the oplog to determine where to place markers for truncation";
 
     long long numRecords = 0;
     long long dataSize = 0;
@@ -379,7 +379,7 @@ void WiredTigerRecordStore::OplogStones::_calculateStonesBySampling(OperationCon
         if (!record) {
             // This shouldn't really happen unless the size storer values are far off from reality.
             // The collection is probably empty, but fall back to scanning the oplog just in case.
-            log() << "Failed to determine the earliest optime, falling back to scanning the oplog";
+            MONGO_BOOST_LOG << "Failed to determine the earliest optime, falling back to scanning the oplog";
             _calculateStonesByScanning(opCtx);
             return;
         }
@@ -393,20 +393,20 @@ void WiredTigerRecordStore::OplogStones::_calculateStonesBySampling(OperationCon
         if (!record) {
             // This shouldn't really happen unless the size storer values are far off from reality.
             // The collection is probably empty, but fall back to scanning the oplog just in case.
-            log() << "Failed to determine the latest optime, falling back to scanning the oplog";
+            MONGO_BOOST_LOG << "Failed to determine the latest optime, falling back to scanning the oplog";
             _calculateStonesByScanning(opCtx);
             return;
         }
         latestOpTime = Timestamp(record->id.repr());
     }
 
-    log() << "Sampling from the oplog between " << earliestOpTime.toStringPretty() << " and "
+    MONGO_BOOST_LOG << "Sampling from the oplog between " << earliestOpTime.toStringPretty() << " and "
           << latestOpTime.toStringPretty() << " to determine where to place markers for truncation";
 
     int64_t wholeStones = _rs->numRecords(opCtx) / estRecordsPerStone;
     int64_t numSamples = kRandomSamplesPerStone * _rs->numRecords(opCtx) / estRecordsPerStone;
 
-    log() << "Taking " << numSamples << " samples and assuming that each section of oplog contains"
+    MONGO_BOOST_LOG << "Taking " << numSamples << " samples and assuming that each section of oplog contains"
           << " approximately " << estRecordsPerStone << " records totaling to " << estBytesPerStone
           << " bytes";
 
@@ -425,7 +425,7 @@ void WiredTigerRecordStore::OplogStones::_calculateStonesBySampling(OperationCon
         if (!record) {
             // This shouldn't really happen unless the size storer values are far off from reality.
             // The collection is probably empty, but fall back to scanning the oplog just in case.
-            log() << "Failed to get enough random samples, falling back to scanning the oplog";
+            MONGO_BOOST_LOG << "Failed to get enough random samples, falling back to scanning the oplog";
             _calculateStonesByScanning(opCtx);
             return;
         }
@@ -439,7 +439,7 @@ void WiredTigerRecordStore::OplogStones::_calculateStonesBySampling(OperationCon
         int sampleIndex = kRandomSamplesPerStone * i - 1;
         RecordId lastRecord = oplogEstimates[sampleIndex];
 
-        log() << "Placing a marker at optime " << Timestamp(lastRecord.repr()).toStringPretty();
+        MONGO_BOOST_LOG << "Placing a marker at optime " << Timestamp(lastRecord.repr()).toStringPretty();
         OplogStones::Stone stone = {estRecordsPerStone, estBytesPerStone, lastRecord};
         _stones.push_back(stone);
     }
@@ -1116,7 +1116,7 @@ int64_t WiredTigerRecordStore::_cappedDeleteAsNeeded_inlock(OperationContext* op
 
             if (ret == ENOENT || ret == WT_NOTFOUND) {
                 // TODO we should remove this case once SERVER-17141 is resolved
-                log() << "Soft failure truncating capped collection. Will try again later.";
+                MONGO_BOOST_LOG << "Soft failure truncating capped collection. Will try again later.";
                 docsRemoved = 0;
             } else {
                 invariantWTOK(ret);
@@ -1130,7 +1130,7 @@ int64_t WiredTigerRecordStore::_cappedDeleteAsNeeded_inlock(OperationContext* op
     } catch (const WriteConflictException&) {
         delete opCtx->releaseRecoveryUnit();
         opCtx->setRecoveryUnit(realRecoveryUnit, realRUstate);
-        log() << "got conflict truncating capped, ignoring";
+        MONGO_BOOST_LOG << "got conflict truncating capped, ignoring";
         return 0;
     } catch (...) {
         delete opCtx->releaseRecoveryUnit();
@@ -1210,7 +1210,7 @@ void WiredTigerRecordStore::reclaimOplog(OperationContext* opCtx, Timestamp pers
             invariantWTOK(ret);
             RecordId firstRecord = getKey(cursor);
             if (firstRecord < _oplogStones->firstRecord || firstRecord > stone->lastRecord) {
-                warning() << "First oplog record " << firstRecord << " is not in truncation range ("
+                MONGO_BOOST_WARNING << "First oplog record " << firstRecord << " is not in truncation range ("
                           << _oplogStones->firstRecord << ", " << stone->lastRecord << ")";
             }
 
@@ -1234,7 +1234,7 @@ void WiredTigerRecordStore::reclaimOplog(OperationContext* opCtx, Timestamp pers
     LOG(1) << "Finished truncating the oplog, it now contains approximately "
            << _sizeInfo->numRecords.load() << " records totaling to " << _sizeInfo->dataSize.load()
            << " bytes";
-    log() << "WiredTiger record store oplog truncation finished in: " << timer.millis() << "ms";
+    MONGO_BOOST_LOG << "WiredTiger record store oplog truncation finished in: " << timer.millis() << "ms";
 }
 
 Status WiredTigerRecordStore::insertRecords(OperationContext* opCtx,
@@ -1540,14 +1540,14 @@ Status WiredTigerRecordStore::validate(OperationContext* opCtx,
                 << "This is a transient issue as the collection was actively "
                    "in use by other operations.";
 
-            warning() << msg;
+            MONGO_BOOST_WARNING << msg;
             results->warnings.push_back(msg);
         } else if (err) {
             std::string msg = str::stream() << "verify() returned " << wiredtiger_strerror(err)
                                             << ". "
                                             << "This indicates structural damage. "
                                             << "Not examining individual documents.";
-            error() << msg;
+            MONGO_BOOST_ERROR << msg;
             results->errors.push_back(msg);
             results->valid = false;
             return Status::OK();
@@ -1580,7 +1580,7 @@ Status WiredTigerRecordStore::validate(OperationContext* opCtx,
             }
             nInvalid++;
             results->valid = false;
-            log() << "document at location: " << record->id << " is corrupted";
+            MONGO_BOOST_LOG << "document at location: " << record->id << " is corrupted";
         }
     }
 
@@ -1848,7 +1848,7 @@ void WiredTigerRecordStore::cappedTruncateAfter(OperationContext* opCtx,
                                   truncTs.asULL());
         if (size < 0) {
             int e = errno;
-            error() << "error snprintf " << errnoWithDescription(e);
+            MONGO_BOOST_ERROR << "error snprintf " << errnoWithDescription(e);
             fassertFailedNoTrace(40662);
         }
 
@@ -1921,7 +1921,7 @@ boost::optional<Record> WiredTigerRecordStoreCursorBase::next() {
     }
 
     if (_forward && _lastReturnedId >= id) {
-        log() << "WTCursor::next -- c->next_key ( " << id
+        MONGO_BOOST_LOG << "WTCursor::next -- c->next_key ( " << id
               << ") was not greater than _lastReturnedId (" << _lastReturnedId
               << ") which is a bug.";
         // Force a retry of the operation from our last known position by acting as-if

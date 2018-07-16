@@ -72,7 +72,7 @@ Status MovePrimarySourceManager::clone(OperationContext* opCtx) {
     invariant(_state == kCreated);
     auto scopedGuard = MakeGuard([&] { cleanupOnError(opCtx); });
 
-    log() << "Moving " << _dbname << " primary from: " << _fromShard << " to: " << _toShard;
+    MONGO_BOOST_LOG << "Moving " << _dbname << " primary from: " << _fromShard << " to: " << _toShard;
 
     // Record start in changelog
     uassertStatusOK(Grid::get(opCtx)->catalogClient()->logChange(
@@ -172,7 +172,7 @@ Status MovePrimarySourceManager::enterCriticalSection(OperationContext* opCtx) {
                           << signalStatus.toString()};
     }
 
-    log() << "movePrimary successfully entered critical section";
+    MONGO_BOOST_LOG << "movePrimary successfully entered critical section";
 
     scopedGuard.Dismiss();
     return Status::OK();
@@ -219,7 +219,7 @@ Status MovePrimarySourceManager::commitOnConfig(OperationContext* opCtx) {
         // Need to get the latest optime in case the refresh request goes to a secondary --
         // otherwise the read won't wait for the write that _configsvrCommitMovePrimary may have
         // done
-        log() << "Error occurred while committing the movePrimary. Performing a majority write "
+        MONGO_BOOST_LOG << "Error occurred while committing the movePrimary. Performing a majority write "
                  "against the config server to obtain its latest optime"
               << causedBy(redact(commitStatus));
 
@@ -310,7 +310,7 @@ Status MovePrimarySourceManager::cleanStaleData(OperationContext* opCtx) {
         client.runCommand(_dbname.toString(), BSON("drop" << coll.coll()), dropCollResult);
         Status dropStatus = getStatusFromCommandResult(dropCollResult);
         if (!dropStatus.isOK()) {
-            log() << "failed to drop cloned collection " << coll << causedBy(redact(dropStatus));
+            MONGO_BOOST_LOG << "failed to drop cloned collection " << coll << causedBy(redact(dropStatus));
         }
     }
 
@@ -336,7 +336,7 @@ void MovePrimarySourceManager::cleanupOnError(OperationContext* opCtx) {
     } catch (const ExceptionForCat<ErrorCategory::NotMasterError>& ex) {
         BSONObjBuilder requestArgsBSON;
         _requestArgs.serialize(&requestArgsBSON);
-        warning() << "Failed to clean up movePrimary: " << redact(requestArgsBSON.obj())
+        MONGO_BOOST_WARNING << "Failed to clean up movePrimary: " << redact(requestArgsBSON.obj())
                   << "due to: " << redact(ex);
     }
 }

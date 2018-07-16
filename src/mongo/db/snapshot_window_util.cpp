@@ -108,7 +108,7 @@ void increaseTargetSnapshotWindowSize(OperationContext* opCtx) {
     // the window size.
     StorageEngine* engine = opCtx->getServiceContext()->getStorageEngine();
     if (engine && engine->isCacheUnderPressure(opCtx)) {
-        warning() << "Attempted to increase the time window of available snapshots for "
+        MONGO_BOOST_WARNING << "Attempted to increase the time window of available snapshots for "
                      "point-in-time operations (readConcern level 'snapshot' or transactions), but "
                      "the storage engine cache pressure, per the cachePressureThreshold setting of "
                      "'"
@@ -123,7 +123,7 @@ void increaseTargetSnapshotWindowSize(OperationContext* opCtx) {
 
     if (snapshotWindowParams.targetSnapshotHistoryWindowInSeconds.load() ==
         snapshotWindowParams.maxTargetSnapshotHistoryWindowInSeconds.load()) {
-        warning() << "Attempted to increase the time window of available snapshots for "
+        MONGO_BOOST_WARNING << "Attempted to increase the time window of available snapshots for "
                      "point-in-time operations (readConcern level 'snapshot' or transactions), but "
                      "maxTargetSnapshotHistoryWindowInSeconds has already been reached. If this "
                      "happens frequently, consider increasing the "

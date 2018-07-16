@@ -138,7 +138,7 @@ Status WiredTigerGlobalOptions::store(const moe::Environment& params,
     if (params.count("storage.wiredTiger.engineConfig.configString")) {
         wiredTigerGlobalOptions.engineConfig =
             params["storage.wiredTiger.engineConfig.configString"].as<std::string>();
-        log() << "Engine custom option: " << wiredTigerGlobalOptions.engineConfig;
+        MONGO_BOOST_LOG << "Engine custom option: " << wiredTigerGlobalOptions.engineConfig;
     }
 
     // WiredTiger collection options
@@ -149,7 +149,7 @@ Status WiredTigerGlobalOptions::store(const moe::Environment& params,
     if (params.count("storage.wiredTiger.collectionConfig.configString")) {
         wiredTigerGlobalOptions.collectionConfig =
             params["storage.wiredTiger.collectionConfig.configString"].as<std::string>();
-        log() << "Collection custom option: " << wiredTigerGlobalOptions.collectionConfig;
+        MONGO_BOOST_LOG << "Collection custom option: " << wiredTigerGlobalOptions.collectionConfig;
     }
 
     // WiredTiger index options
@@ -160,7 +160,7 @@ Status WiredTigerGlobalOptions::store(const moe::Environment& params,
     if (params.count("storage.wiredTiger.indexConfig.configString")) {
         wiredTigerGlobalOptions.indexConfig =
             params["storage.wiredTiger.indexConfig.configString"].as<std::string>();
-        log() << "Index custom option: " << wiredTigerGlobalOptions.indexConfig;
+        MONGO_BOOST_LOG << "Index custom option: " << wiredTigerGlobalOptions.indexConfig;
     }
 
     return Status::OK();

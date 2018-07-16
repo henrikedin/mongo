@@ -625,7 +625,7 @@ PlanExecutor::ExecState PlanExecutor::getNextImpl(Snapshotted<BSONObj>* objOut, 
             // Fall through to yield check at end of large conditional.
         } else if (PlanStage::IS_EOF == code) {
             if (MONGO_FAIL_POINT(planExecutorHangBeforeShouldWaitForInserts)) {
-                log() << "PlanExecutor - planExecutorHangBeforeShouldWaitForInserts fail point "
+                MONGO_BOOST_LOG << "PlanExecutor - planExecutorHangBeforeShouldWaitForInserts fail point "
                          "enabled. Blocking until fail point is disabled.";
                 MONGO_FAIL_POINT_PAUSE_WHILE_SET(planExecutorHangBeforeShouldWaitForInserts);
             }

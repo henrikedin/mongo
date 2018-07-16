@@ -64,7 +64,7 @@ TaskRunner::NextAction runSingleTask(const TaskRunner::Task& task,
     try {
         return task(opCtx, status);
     } catch (...) {
-        log() << "Unhandled exception in task runner: " << redact(exceptionToStatus());
+        MONGO_BOOST_LOG << "Unhandled exception in task runner: " << redact(exceptionToStatus());
     }
     return TaskRunner::NextAction::kCancel;
 }
@@ -229,7 +229,7 @@ Status TaskRunner::runSynchronousTask(SynchronousTask func, TaskRunner::NextActi
                 returnStatus = func(opCtx);
             } catch (...) {
                 returnStatus = exceptionToStatus();
-                error() << "Exception thrown in runSynchronousTask: " << redact(returnStatus);
+                MONGO_BOOST_ERROR << "Exception thrown in runSynchronousTask: " << redact(returnStatus);
             }
         }
 

@@ -198,13 +198,13 @@ void StorageEngineLockFile::clearPidAndUnlock() {
     if (!_lockFileHandle->isValid()) {
         return;
     }
-    log() << "shutdown: removing fs lock...";
+    MONGO_BOOST_LOG << "shutdown: removing fs lock...";
     // This ought to be an unlink(), but Eliot says the last
     // time that was attempted, there was a race condition
     // with StorageEngineLockFile::open().
     Status status = _truncateFile(_lockFileHandle->_handle);
     if (!status.isOK()) {
-        log() << "couldn't remove fs lock " << status.toString();
+        MONGO_BOOST_LOG << "couldn't remove fs lock " << status.toString();
     }
     CloseHandle(_lockFileHandle->_handle);
     _lockFileHandle->clear();

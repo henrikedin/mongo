@@ -83,7 +83,7 @@ void reportStatus(OperationContext* opCtx,
                                    ShardingCatalogClient::kMajorityWriteConcern)
             .status_with_transitional_ignore();
     } catch (const std::exception& e) {
-        log() << "Caught exception while reporting uptime: " << e.what();
+        MONGO_BOOST_LOG << "Caught exception while reporting uptime: " << e.what();
     }
 }
 
@@ -115,7 +115,7 @@ void ShardingUptimeReporter::startPeriodicThread() {
                                   ->getBalancerConfiguration()
                                   ->refreshAndCheck(opCtx.get());
                 if (!status.isOK()) {
-                    warning() << "failed to refresh mongos settings" << causedBy(status);
+                    MONGO_BOOST_WARNING << "failed to refresh mongos settings" << causedBy(status);
                 }
             }
 

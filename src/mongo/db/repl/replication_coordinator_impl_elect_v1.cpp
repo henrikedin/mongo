@@ -105,7 +105,7 @@ void ReplicationCoordinatorImpl::_startElectSelfV1_inlock(
             _topCoord->processLoseElection();
             return;
         default:
-            severe() << "Entered replica set election code while in illegal config state "
+            MONGO_BOOST_SEVERE << "Entered replica set election code while in illegal config state "
                      << int(_rsConfigState);
             fassertFailed(28641);
     }
@@ -129,7 +129,7 @@ void ReplicationCoordinatorImpl::_startElectSelfV1_inlock(
     const auto lastOpTime = _getMyLastAppliedOpTime_inlock();
 
     if (lastOpTime == OpTime()) {
-        log() << "not trying to elect self, "
+        MONGO_BOOST_LOG << "not trying to elect self, "
                  "do not yet have a complete set of data from any point in time";
         return;
     }
@@ -137,7 +137,7 @@ void ReplicationCoordinatorImpl::_startElectSelfV1_inlock(
     long long term = _topCoord->getTerm();
     int primaryIndex = -1;
 
-    log() << "conducting a dry run election to see if we could be elected. current term: " << term;
+    MONGO_BOOST_LOG << "conducting a dry run election to see if we could be elected. current term: " << term;
     _voteRequester.reset(new VoteRequester);
 
     // Only set primaryIndex if the primary's vote is required during the dry run.
@@ -170,7 +170,7 @@ void ReplicationCoordinatorImpl::_onDryRunComplete(long long originalTerm) {
     invariant(_voteRequester);
 
     if (_topCoord->getTerm() != originalTerm) {
-        log() << "not running for primary, we have been superseded already during dry run. "
+        MONGO_BOOST_LOG << "not running for primary, we have been superseded already during dry run. "
               << "original term: " << originalTerm << ", current term: " << _topCoord->getTerm();
         return;
     }
@@ -178,21 +178,21 @@ void ReplicationCoordinatorImpl::_onDryRunComplete(long long originalTerm) {
     const VoteRequester::Result endResult = _voteRequester->getResult();
 
     if (endResult == VoteRequester::Result::kInsufficientVotes) {
-        log() << "not running for primary, we received insufficient votes";
+        MONGO_BOOST_LOG << "not running for primary, we received insufficient votes";
         return;
     } else if (endResult == VoteRequester::Result::kStaleTerm) {
-        log() << "not running for primary, we have been superseded already";
+        MONGO_BOOST_LOG << "not running for primary, we have been superseded already";
         return;
     } else if (endResult == VoteRequester::Result::kPrimaryRespondedNo) {
-        log() << "not running for primary, the current primary responded no in the dry run";
+        MONGO_BOOST_LOG << "not running for primary, the current primary responded no in the dry run";
         return;
     } else if (endResult != VoteRequester::Result::kSuccessfullyElected) {
-        log() << "not running for primary, we received an unexpected problem";
+        MONGO_BOOST_LOG << "not running for primary, we received an unexpected problem";
         return;
     }
 
     long long newTerm = originalTerm + 1;
-    log() << "dry election run succeeded, running for election in term " << newTerm;
+    MONGO_BOOST_LOG << "dry election run succeeded, running for election in term " << newTerm;
     // Stepdown is impossible from this term update.
     TopologyCoordinator::UpdateTermResult updateTermResult;
     _updateTerm_inlock(newTerm, &updateTermResult);
@@ -236,12 +236,12 @@ void ReplicationCoordinatorImpl::_writeLastVoteForMyElection(
     }
 
     if (!status.isOK()) {
-        log() << "failed to store LastVote document when voting for myself: " << status;
+        MONGO_BOOST_LOG << "failed to store LastVote document when voting for myself: " << status;
         return;
     }
 
     if (_topCoord->getTerm() != lastVote.getTerm()) {
-        log() << "not running for primary, we have been superseded already while writing our last "
+        MONGO_BOOST_LOG << "not running for primary, we have been superseded already while writing our last "
                  "vote. election term: "
               << lastVote.getTerm() << ", current term: " << _topCoord->getTerm();
         return;
@@ -278,7 +278,7 @@ void ReplicationCoordinatorImpl::_onVoteRequestComplete(long long newTerm) {
     invariant(_voteRequester);
 
     if (_topCoord->getTerm() != newTerm) {
-        log() << "not becoming primary, we have been superseded already during election. "
+        MONGO_BOOST_LOG << "not becoming primary, we have been superseded already during election. "
               << "election term: " << newTerm << ", current term: " << _topCoord->getTerm();
         return;
     }
@@ -288,13 +288,13 @@ void ReplicationCoordinatorImpl::_onVoteRequestComplete(long long newTerm) {
 
     switch (endResult) {
         case VoteRequester::Result::kInsufficientVotes:
-            log() << "not becoming primary, we received insufficient votes";
+            MONGO_BOOST_LOG << "not becoming primary, we received insufficient votes";
             return;
         case VoteRequester::Result::kStaleTerm:
-            log() << "not becoming primary, we have been superseded already";
+            MONGO_BOOST_LOG << "not becoming primary, we have been superseded already";
             return;
         case VoteRequester::Result::kSuccessfullyElected:
-            log() << "election succeeded, assuming primary role in term " << _topCoord->getTerm();
+            MONGO_BOOST_LOG << "election succeeded, assuming primary role in term " << _topCoord->getTerm();
             break;
         case VoteRequester::Result::kPrimaryRespondedNo:
             // This is impossible because we would only require the primary's

@@ -270,7 +270,7 @@ KVCatalog::FeatureTracker::FeatureBits KVCatalog::FeatureTracker::getInfo(
     auto nonRepairableFeaturesStatus = bsonExtractTypedField(
         obj, kNonRepairableFeaturesFieldName, BSONType::NumberLong, &nonRepairableFeaturesElem);
     if (!nonRepairableFeaturesStatus.isOK()) {
-        error() << "error: exception extracting typed field with obj:" << redact(obj);
+        MONGO_BOOST_ERROR << "error: exception extracting typed field with obj:" << redact(obj);
         fassert(40111, nonRepairableFeaturesStatus);
     }
 
@@ -278,7 +278,7 @@ KVCatalog::FeatureTracker::FeatureBits KVCatalog::FeatureTracker::getInfo(
     auto repairableFeaturesStatus = bsonExtractTypedField(
         obj, kRepairableFeaturesFieldName, BSONType::NumberLong, &repairableFeaturesElem);
     if (!repairableFeaturesStatus.isOK()) {
-        error() << "error: exception extracting typed field with obj:" << redact(obj);
+        MONGO_BOOST_ERROR << "error: exception extracting typed field with obj:" << redact(obj);
         fassert(40112, repairableFeaturesStatus);
     }
 

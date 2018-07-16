@@ -869,7 +869,7 @@ State::~State() {
         try {
             dropTempCollections();
         } catch (...) {
-            error() << "Unable to drop temporary collection created by mapReduce: "
+            MONGO_BOOST_ERROR << "Unable to drop temporary collection created by mapReduce: "
                     << _config.tempNamespace << ". This collection will be removed automatically "
                                                 "the next time the server starts up. "
                     << exceptionToStatus();
@@ -1637,19 +1637,19 @@ public:
                 return false;
             }
         } catch (StaleConfigException& e) {
-            log() << "mr detected stale config, should retry" << redact(e);
+            MONGO_BOOST_LOG << "mr detected stale config, should retry" << redact(e);
             throw;
         }
         // TODO:  The error handling code for queries is v. fragile,
         // *requires* rethrow AssertionExceptions - should probably fix.
         catch (AssertionException& e) {
-            log() << "mr failed, removing collection" << redact(e);
+            MONGO_BOOST_LOG << "mr failed, removing collection" << redact(e);
             throw;
         } catch (std::exception& e) {
-            log() << "mr failed, removing collection" << causedBy(e);
+            MONGO_BOOST_LOG << "mr failed, removing collection" << causedBy(e);
             throw;
         } catch (...) {
-            log() << "mr failed for unknown reason, removing collection";
+            MONGO_BOOST_LOG << "mr failed for unknown reason, removing collection";
             throw;
         }
 

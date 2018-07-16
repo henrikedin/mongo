@@ -288,7 +288,7 @@ Status _applyOps(OperationContext* opCtx,
 
         ab.append(status.isOK());
         if (!status.isOK()) {
-            log() << "applyOps error applying: " << status;
+            MONGO_BOOST_LOG << "applyOps error applying: " << status;
             errors++;
         }
 

@@ -178,11 +178,11 @@ MultiIndexBlockImpl::~MultiIndexBlockImpl() {
         } catch (const DBException& e) {
             if (e.toStatus() == ErrorCodes::ExceededMemoryLimit)
                 continue;
-            error() << "Caught exception while cleaning up partially built indexes: " << redact(e);
+            MONGO_BOOST_ERROR << "Caught exception while cleaning up partially built indexes: " << redact(e);
         } catch (const std::exception& e) {
-            error() << "Caught exception while cleaning up partially built indexes: " << e.what();
+            MONGO_BOOST_ERROR << "Caught exception while cleaning up partially built indexes: " << e.what();
         } catch (...) {
-            error() << "Caught unknown exception while cleaning up partially built indexes.";
+            MONGO_BOOST_ERROR << "Caught unknown exception while cleaning up partially built indexes.";
         }
         fassertFailed(18644);
     }
@@ -279,9 +279,9 @@ StatusWith<std::vector<BSONObj>> MultiIndexBlockImpl::init(const std::vector<BSO
             index.options.getKeysMode = IndexAccessMethod::GetKeysMode::kRelaxConstraints;
         }
 
-        log() << "build index on: " << ns << " properties: " << descriptor->toString();
+        MONGO_BOOST_LOG << "build index on: " << ns << " properties: " << descriptor->toString();
         if (index.bulk)
-            log() << "\t building index using bulk method; build may temporarily use up to "
+            MONGO_BOOST_LOG << "\t building index using bulk method; build may temporarily use up to "
                   << eachIndexBuildMaxMemoryUsageBytes / 1024 / 1024 << " megabytes of RAM";
 
         index.filterExpression = index.block->getEntry()->getFilterExpression();
@@ -308,7 +308,7 @@ StatusWith<std::vector<BSONObj>> MultiIndexBlockImpl::init(const std::vector<BSO
     wunit.commit();
 
     if (MONGO_FAIL_POINT(crashAfterStartingIndexBuild)) {
-        log() << "Index build interrupted due to 'crashAfterStartingIndexBuild' failpoint. Exiting "
+        MONGO_BOOST_LOG << "Index build interrupted due to 'crashAfterStartingIndexBuild' failpoint. Exiting "
                  "after waiting for changes to become durable.";
         Locker::LockSnapshot lockInfo;
         _opCtx->lockState()->saveLockStateAndUnlock(&lockInfo);
@@ -324,7 +324,7 @@ void failPointHangDuringBuild(FailPoint* fp, StringData where, const BSONObj& do
     MONGO_FAIL_POINT_BLOCK(*fp, data) {
         int i = doc.getIntField("i");
         if (data.getData()["i"].numberInt() == i) {
-            log() << "Hanging " << where << " index build of i=" << i;
+            MONGO_BOOST_LOG << "Hanging " << where << " index build of i=" << i;
             MONGO_FAIL_POINT_PAUSE_WHILE_SET((*fp));
         }
     }
@@ -377,7 +377,7 @@ Status MultiIndexBlockImpl::insertAllDocumentsInCollection(std::set<RecordId>* d
 
             if (!(retries || PlanExecutor::ADVANCED == state) ||
                 MONGO_FAIL_POINT(slowBackgroundIndexBuild)) {
-                log() << "Hanging index build due to failpoint";
+                MONGO_BOOST_LOG << "Hanging index build due to failpoint";
                 invariant(_allowInterruption);
                 sleepmillis(1000);
                 continue;
@@ -449,7 +449,7 @@ Status MultiIndexBlockImpl::insertAllDocumentsInCollection(std::set<RecordId>* d
         Locker::LockSnapshot lockInfo;
         _opCtx->lockState()->saveLockStateAndUnlock(&lockInfo);
         while (MONGO_FAIL_POINT(hangAfterStartingIndexBuildUnlocked)) {
-            log() << "Hanging index build with no locks due to "
+            MONGO_BOOST_LOG << "Hanging index build with no locks due to "
                      "'hangAfterStartingIndexBuildUnlocked' failpoint";
             sleepmillis(1000);
         }
@@ -471,7 +471,7 @@ Status MultiIndexBlockImpl::insertAllDocumentsInCollection(std::set<RecordId>* d
     if (!ret.isOK())
         return ret;
 
-    log() << "build index done.  scanned " << n << " total records. " << t.seconds() << " secs";
+    MONGO_BOOST_LOG << "build index done.  scanned " << n << " total records. " << t.seconds() << " secs";
 
     return Status::OK();
 }

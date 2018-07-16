@@ -140,7 +140,7 @@ void profile(OperationContext* opCtx, NetworkOp op) {
             Database* const db = autoGetDb->getDb();
             if (!db) {
                 // Database disappeared
-                log() << "note: not profiling because db went away for "
+                MONGO_BOOST_LOG << "note: not profiling because db went away for "
                       << CurOp::get(opCtx)->getNS();
                 break;
             }
@@ -168,7 +168,7 @@ void profile(OperationContext* opCtx, NetworkOp op) {
             }
         }
     } catch (const AssertionException& assertionEx) {
-        warning() << "Caught Assertion while trying to profile " << networkOpToString(op)
+        MONGO_BOOST_WARNING << "Caught Assertion while trying to profile " << networkOpToString(op)
                   << " against " << CurOp::get(opCtx)->getNS() << ": " << redact(assertionEx);
     }
 }
@@ -190,7 +190,7 @@ Status createProfileCollection(OperationContext* opCtx, Database* db) {
     }
 
     // system.profile namespace doesn't exist; create it
-    log() << "Creating profile collection: " << dbProfilingNS;
+    MONGO_BOOST_LOG << "Creating profile collection: " << dbProfilingNS;
 
     CollectionOptions collectionOptions;
     collectionOptions.capped = true;

@@ -79,7 +79,7 @@ Status restoreMissingFeatureCompatibilityVersionDocument(OperationContext* opCtx
     // featureCompatibilityVersion document, does not exist, create it.
     Database* db = DatabaseHolder::getDatabaseHolder().get(opCtx, fcvNss.db());
     if (!db) {
-        log() << "Re-creating admin database that was dropped.";
+        MONGO_BOOST_LOG << "Re-creating admin database that was dropped.";
     }
     db = DatabaseHolder::getDatabaseHolder().openDb(opCtx, fcvNss.db());
     invariant(db);
@@ -87,7 +87,7 @@ Status restoreMissingFeatureCompatibilityVersionDocument(OperationContext* opCtx
     // If the server configuration collection, which contains the FCV document, does not exist, then
     // create it.
     if (!db->getCollection(opCtx, NamespaceString::kServerConfigurationNamespace)) {
-        log() << "Re-creating the server configuration collection (admin.system.version) that was "
+        MONGO_BOOST_LOG << "Re-creating the server configuration collection (admin.system.version) that was "
                  "dropped.";
         uassertStatusOK(
             createCollection(opCtx, fcvNss.db().toString(), BSON("create" << fcvNss.coll())));
@@ -102,7 +102,7 @@ Status restoreMissingFeatureCompatibilityVersionDocument(OperationContext* opCtx
                           fcvColl,
                           BSON("_id" << FeatureCompatibilityVersionParser::kParameterName),
                           featureCompatibilityVersion)) {
-        log() << "Re-creating featureCompatibilityVersion document that was deleted with version "
+        MONGO_BOOST_LOG << "Re-creating featureCompatibilityVersion document that was deleted with version "
               << FeatureCompatibilityVersionParser::kVersion40 << ".";
 
         BSONObj fcvObj = BSON("_id" << FeatureCompatibilityVersionParser::kParameterName
@@ -147,7 +147,7 @@ Status ensureAllCollectionsHaveUUIDs(OperationContext* opCtx,
                 const auto nssToDrop = coll->ns();
                 LOG(1) << "Attempting to drop invalid system collection " << nssToDrop;
                 if (coll->numRecords(opCtx)) {
-                    severe(LogComponent::kControl) << "Cannot drop non-empty collection "
+                    MONGO_BOOST_SEVERE_COMPONENT(LogComponent::kControl) << "Cannot drop non-empty collection "
                                                    << nssToDrop.ns();
                     exitCleanly(EXIT_NEED_DOWNGRADE);
                 }
@@ -207,7 +207,7 @@ void checkForCappedOplog(OperationContext* opCtx, Database* db) {
     invariant(opCtx->lockState()->isDbLockedForMode(oplogNss.db(), MODE_IS));
     Collection* oplogCollection = db->getCollection(opCtx, oplogNss);
     if (oplogCollection && !oplogCollection->isCapped()) {
-        severe() << "The oplog collection " << oplogNss
+        MONGO_BOOST_SEVERE << "The oplog collection " << oplogNss
                  << " is not capped; a capped oplog is a requirement for replication to function.";
         fassertFailedNoTrace(40115);
     }
@@ -218,12 +218,12 @@ void rebuildIndexes(OperationContext* opCtx, StorageEngine* storageEngine) {
         fassert(40593, storageEngine->reconcileCatalogAndIdents(opCtx));
 
     if (!indexesToRebuild.empty() && serverGlobalParams.indexBuildRetry) {
-        log() << "note: restart the server with --noIndexBuildRetry "
+        MONGO_BOOST_LOG << "note: restart the server with --noIndexBuildRetry "
               << "to skip index rebuilds";
     }
 
     if (!serverGlobalParams.indexBuildRetry) {
-        log() << "  not rebuilding interrupted indexes";
+        MONGO_BOOST_LOG << "  not rebuilding interrupted indexes";
         return;
     }
 
@@ -269,7 +269,7 @@ void rebuildIndexes(OperationContext* opCtx, StorageEngine* storageEngine) {
         auto dbCatalogEntry = storageEngine->getDatabaseCatalogEntry(opCtx, collNss.db());
         auto collCatalogEntry = dbCatalogEntry->getCollectionCatalogEntry(collNss.toString());
         for (const auto& indexName : entry.second.first) {
-            log() << "Rebuilding index. Collection: " << collNss << " Index: " << indexName;
+            MONGO_BOOST_LOG << "Rebuilding index. Collection: " << collNss << " Index: " << indexName;
         }
         fassert(40592,
                 rebuildIndexesOnCollection(
@@ -393,10 +393,10 @@ StatusWith<bool> repairDatabasesAndCheckVersion(OperationContext* opCtx) {
                 // current version of mongod with --repair and then proceed with normal startup.
                 status = {ErrorCodes::MustUpgrade, status.reason()};
             }
-            severe() << "Unable to start mongod due to an incompatibility with the data files and"
+            MONGO_BOOST_SEVERE << "Unable to start mongod due to an incompatibility with the data files and"
                         " this version of mongod: "
                      << redact(status);
-            severe() << "Please consult our documentation when trying to downgrade to a previous"
+            MONGO_BOOST_SEVERE << "Please consult our documentation when trying to downgrade to a previous"
                         " major release";
             quickExit(EXIT_NEED_UPGRADE);
             MONGO_UNREACHABLE;
@@ -417,7 +417,7 @@ StatusWith<bool> repairDatabasesAndCheckVersion(OperationContext* opCtx) {
                     auto swVersion =
                         FeatureCompatibilityVersionParser::parse(featureCompatibilityVersion);
                     if (!swVersion.isOK()) {
-                        severe() << swVersion.getStatus();
+                        MONGO_BOOST_SEVERE << swVersion.getStatus();
                         // Note this error path captures all cases of an FCV document existing,
                         // but with any value other than "4.0" or "4.2". This includes unexpected
                         // cases with no path forward such as the FCV value not being a string.
@@ -439,21 +439,21 @@ StatusWith<bool> repairDatabasesAndCheckVersion(OperationContext* opCtx) {
                     // warning.
                     if (version ==
                         ServerGlobalParams::FeatureCompatibility::Version::kUpgradingTo42) {
-                        log() << "** WARNING: A featureCompatibilityVersion upgrade did not "
+                        MONGO_BOOST_LOG << "** WARNING: A featureCompatibilityVersion upgrade did not "
                               << "complete. " << startupWarningsLog;
-                        log() << "**          The current featureCompatibilityVersion is "
+                        MONGO_BOOST_LOG << "**          The current featureCompatibilityVersion is "
                               << FeatureCompatibilityVersionParser::toString(version) << "."
                               << startupWarningsLog;
-                        log() << "**          To fix this, use the setFeatureCompatibilityVersion "
+                        MONGO_BOOST_LOG << "**          To fix this, use the setFeatureCompatibilityVersion "
                               << "command to resume upgrade to 4.2." << startupWarningsLog;
                     } else if (version == ServerGlobalParams::FeatureCompatibility::Version::
                                               kDowngradingTo40) {
-                        log() << "** WARNING: A featureCompatibilityVersion downgrade did not "
+                        MONGO_BOOST_LOG << "** WARNING: A featureCompatibilityVersion downgrade did not "
                               << "complete. " << startupWarningsLog;
-                        log() << "**          The current featureCompatibilityVersion is "
+                        MONGO_BOOST_LOG << "**          The current featureCompatibilityVersion is "
                               << FeatureCompatibilityVersionParser::toString(version) << "."
                               << startupWarningsLog;
-                        log() << "**          To fix this, use the setFeatureCompatibilityVersion "
+                        MONGO_BOOST_LOG << "**          To fix this, use the setFeatureCompatibilityVersion "
                               << "command to resume downgrade to 4.0." << startupWarningsLog;
                     }
                 }
@@ -478,17 +478,17 @@ StatusWith<bool> repairDatabasesAndCheckVersion(OperationContext* opCtx) {
                     continue;
                 }
 
-                log() << "Index " << index << " claims to be of type '" << plugin << "', "
+                MONGO_BOOST_LOG << "Index " << index << " claims to be of type '" << plugin << "', "
                       << "which is either invalid or did not exist before v2.4. "
                       << "See the upgrade section: "
                       << "http://dochub.mongodb.org/core/upgrade-2.4" << startupWarningsLog;
             }
 
             if (index["v"].isNumber() && index["v"].numberInt() == 0) {
-                log() << "WARNING: The index: " << index << " was created with the deprecated"
+                MONGO_BOOST_LOG << "WARNING: The index: " << index << " was created with the deprecated"
                       << " v:0 format.  This format will not be supported in a future release."
                       << startupWarningsLog;
-                log() << "\t To fix this, you need to rebuild this index."
+                MONGO_BOOST_LOG << "\t To fix this, you need to rebuild this index."
                       << " For instructions, see http://dochub.mongodb.org/core/rebuild-v0-indexes"
                       << startupWarningsLog;
             }
@@ -516,9 +516,9 @@ StatusWith<bool> repairDatabasesAndCheckVersion(OperationContext* opCtx) {
     // Fail to start up if there is no featureCompatibilityVersion document and there are non-local
     // databases present.
     if (!fcvDocumentExists && nonLocalDatabases) {
-        severe()
+		MONGO_BOOST_SEVERE
             << "Unable to start up mongod due to missing featureCompatibilityVersion document.";
-        severe() << "Please run with --repair to restore the document.";
+        MONGO_BOOST_SEVERE << "Please run with --repair to restore the document.";
         fassertFailedNoTrace(40652);
     }
 
@@ -547,7 +547,7 @@ void checkForIdIndexesAndDropPendingCollections(OperationContext* opCtx, Databas
 
         if (ns.isDropPendingNamespace()) {
             auto dropOpTime = fassert(40459, ns.getDropPendingNamespaceOpTime());
-            log() << "Found drop-pending namespace " << ns << " with drop optime " << dropOpTime;
+            MONGO_BOOST_LOG << "Found drop-pending namespace " << ns << " with drop optime " << dropOpTime;
             repl::DropPendingCollectionReaper::get(opCtx)->addDropPendingNamespace(dropOpTime, ns);
         }
 
@@ -561,9 +561,9 @@ void checkForIdIndexesAndDropPendingCollections(OperationContext* opCtx, Databas
         if (coll->getIndexCatalog()->findIdIndex(opCtx))
             continue;
 
-        log() << "WARNING: the collection '" << collectionName << "' lacks a unique index on _id."
+        MONGO_BOOST_LOG << "WARNING: the collection '" << collectionName << "' lacks a unique index on _id."
               << " This index is needed for replication to function properly" << startupWarningsLog;
-        log() << "\t To fix this, you need to create a unique index on _id."
+        MONGO_BOOST_LOG << "\t To fix this, you need to create a unique index on _id."
               << " See http://dochub.mongodb.org/core/build-replica-set-indexes"
               << startupWarningsLog;
     }

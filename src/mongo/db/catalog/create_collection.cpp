@@ -179,7 +179,7 @@ Status createCollectionForApplyOps(OperationContext* opCtx,
                     return Result(Status::OK());
 
                 if (currentName.isDropPendingNamespace()) {
-                    log() << "CMD: create " << newCollName
+                    MONGO_BOOST_LOG << "CMD: create " << newCollName
                           << " - existing collection with conflicting UUID " << uuid
                           << " is in a drop-pending state: " << currentName;
                     return Result(Status(ErrorCodes::NamespaceExists,
@@ -211,7 +211,7 @@ Status createCollectionForApplyOps(OperationContext* opCtx,
                     }
                     const auto& tmpName = tmpNameResult.getValue();
                     // It is ok to log this because this doesn't happen very frequently.
-                    log() << "CMD: create " << newCollName
+                    MONGO_BOOST_LOG << "CMD: create " << newCollName
                           << " - renaming existing collection with conflicting UUID " << uuid
                           << " to temporary collection " << tmpName;
                     Status status =

@@ -394,7 +394,7 @@ void CollectionCloner::_listIndexesCallback(const Fetcher::QueryResponseStatus& 
     auto&& documents = batchData.documents;
 
     if (documents.empty()) {
-        warning() << "No indexes found for collection " << _sourceNss.ns() << " while cloning from "
+        MONGO_BOOST_WARNING << "No indexes found for collection " << _sourceNss.ns() << " while cloning from "
                   << _source;
     }
 
@@ -447,7 +447,7 @@ void CollectionCloner::_beginCollectionCallback(const executor::TaskExecutor::Ca
         if (nss.empty() || _destNss.toString() == nss) {
             while (MONGO_FAIL_POINT(initialSyncHangCollectionClonerBeforeEstablishingCursor) &&
                    !_isShuttingDown()) {
-                log() << "initialSyncHangCollectionClonerBeforeEstablishingCursor fail point "
+                MONGO_BOOST_LOG << "initialSyncHangCollectionClonerBeforeEstablishingCursor fail point "
                          "enabled for "
                       << _destNss.toString() << ". Blocking until fail point is disabled.";
                 mongo::sleepsecs(1);
@@ -455,7 +455,7 @@ void CollectionCloner::_beginCollectionCallback(const executor::TaskExecutor::Ca
         }
     }
     if (!_idIndexSpec.isEmpty() && _options.autoIndexId == CollectionOptions::NO) {
-        warning()
+		MONGO_BOOST_WARNING
             << "Found the _id_ index spec but the collection specified autoIndexId of false on ns:"
             << this->_sourceNss;
     }
@@ -488,7 +488,7 @@ void CollectionCloner::_beginCollectionCallback(const executor::TaskExecutor::Ca
     MONGO_FAIL_POINT_BLOCK(initialSyncHangBeforeCollectionClone, options) {
         const BSONObj& data = options.getData();
         if (data["namespace"].String() == _destNss.ns()) {
-            log() << "initial sync - initialSyncHangBeforeCollectionClone fail point "
+            MONGO_BOOST_LOG << "initial sync - initialSyncHangBeforeCollectionClone fail point "
                      "enabled. Blocking until fail point is disabled.";
             while (MONGO_FAIL_POINT(initialSyncHangBeforeCollectionClone) && !_isShuttingDown()) {
                 mongo::sleepsecs(1);
@@ -704,7 +704,7 @@ void CollectionCloner::_handleARMResultsCallback(
         if (nss.empty() || _destNss.toString() == nss) {
             while (MONGO_FAIL_POINT(initialSyncHangCollectionClonerAfterHandlingBatchResponse) &&
                    !_isShuttingDown()) {
-                log() << "initialSyncHangCollectionClonerAfterHandlingBatchResponse fail point "
+                MONGO_BOOST_LOG << "initialSyncHangCollectionClonerAfterHandlingBatchResponse fail point "
                          "enabled for "
                       << _destNss.toString() << ". Blocking until fail point is disabled.";
                 mongo::sleepsecs(1);
@@ -757,17 +757,17 @@ void CollectionCloner::_verifyCollectionWasDropped(
                 auto response = CursorResponse::parseFromBSON(args.response.data);
                 if (response.getStatus().code() == ErrorCodes::NamespaceNotFound ||
                     (response.isOK() && response.getValue().getNSS().isDropPendingNamespace())) {
-                    log() << "CollectionCloner ns: '" << _sourceNss.ns() << "' uuid: UUID(\""
+                    MONGO_BOOST_LOG << "CollectionCloner ns: '" << _sourceNss.ns() << "' uuid: UUID(\""
                           << *_options.uuid << "\") stopped because collection was dropped.";
                     finalStatus = Status::OK();
                 } else if (!response.isOK()) {
-                    log() << "CollectionCloner received an unexpected error when verifying drop of "
+                    MONGO_BOOST_LOG << "CollectionCloner received an unexpected error when verifying drop of "
                              "ns: '"
                           << _sourceNss.ns() << "' uuid: UUID(\"" << *_options.uuid
                           << "\"), status " << response.getStatus();
                 }
             } else {
-                log() << "CollectionCloner is unable to verify drop of ns: '" << _sourceNss.ns()
+                MONGO_BOOST_LOG << "CollectionCloner is unable to verify drop of ns: '" << _sourceNss.ns()
                       << "' uuid: UUID(\"" << *_options.uuid << "\"), status "
                       << args.response.status;
             }
@@ -777,7 +777,7 @@ void CollectionCloner::_verifyCollectionWasDropped(
 
     auto status = _verifyCollectionDroppedScheduler->startup();
     if (!status.isOK()) {
-        log() << "CollectionCloner is unable to start verification of ns: '" << _sourceNss.ns()
+        MONGO_BOOST_LOG << "CollectionCloner is unable to start verification of ns: '" << _sourceNss.ns()
               << "' uuid: UUID(\"" << *_options.uuid << "\"), status " << status;
         // If we can't run the command, assume this wasn't a drop and just use the original error.
         onCompletionGuard->setResultAndCancelRemainingWork_inlock(lk, batchStatus);
@@ -797,7 +797,7 @@ void CollectionCloner::_insertDocumentsCallback(
     UniqueLock lk(_mutex);
     std::vector<BSONObj> docs;
     if (_documentsToInsert.size() == 0) {
-        warning() << "_insertDocumentsCallback, but no documents to insert for ns:" << _destNss;
+        MONGO_BOOST_WARNING << "_insertDocumentsCallback, but no documents to insert for ns:" << _destNss;
         if (lastBatch) {
             onCompletionGuard->setResultAndCancelRemainingWork_inlock(lk, Status::OK());
         }
@@ -819,7 +819,7 @@ void CollectionCloner::_insertDocumentsCallback(
         if (data["namespace"].String() == _destNss.ns() &&
             static_cast<int>(_stats.documentsCopied) >= data["numDocsToClone"].numberInt()) {
             lk.unlock();
-            log() << "initial sync - initialSyncHangDuringCollectionClone fail point "
+            MONGO_BOOST_LOG << "initial sync - initialSyncHangDuringCollectionClone fail point "
                      "enabled. Blocking until fail point is disabled.";
             while (MONGO_FAIL_POINT(initialSyncHangDuringCollectionClone) && !_isShuttingDown()) {
                 mongo::sleepsecs(1);
@@ -835,7 +835,7 @@ void CollectionCloner::_insertDocumentsCallback(
 }
 
 void CollectionCloner::_finishCallback(const Status& status) {
-    log() << "CollectionCloner ns:" << _destNss
+    MONGO_BOOST_LOG << "CollectionCloner ns:" << _destNss
           << " finished cloning with status: " << redact(status);
     // Copy the status so we can change it below if needed.
     auto finalStatus = status;
@@ -854,7 +854,7 @@ void CollectionCloner::_finishCallback(const Status& status) {
         if (finalStatus.isOK()) {
             const auto loaderStatus = _collLoader->commit();
             if (!loaderStatus.isOK()) {
-                warning() << "Failed to commit collection indexes " << _destNss.ns() << ": "
+                MONGO_BOOST_WARNING << "Failed to commit collection indexes " << _destNss.ns() << ": "
                           << redact(loaderStatus);
                 finalStatus = loaderStatus;
             }

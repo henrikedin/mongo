@@ -93,9 +93,9 @@ void NetworkInterfaceMock::_logQueues_inlock() const {
         if (queue.second->empty()) {
             continue;
         }
-        log() << "**** queue: " << queue.first << " ****";
+        MONGO_BOOST_LOG << "**** queue: " << queue.first << " ****";
         for (auto&& item : *queue.second) {
-            log() << "\t\t " << item.getDiagnosticString();
+            MONGO_BOOST_LOG << "\t\t " << item.getDiagnosticString();
         }
     }
 }

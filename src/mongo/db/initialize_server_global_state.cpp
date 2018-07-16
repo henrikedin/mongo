@@ -276,7 +276,7 @@ MONGO_INITIALIZER_GENERAL(ServerLogRedirection,
                 boost::system::error_code ec;
                 boost::filesystem::rename(absoluteLogpath, renameTarget, ec);
                 if (!ec) {
-                    log() << "log file \"" << absoluteLogpath << "\" exists; moved to \""
+                    MONGO_BOOST_LOG << "log file \"" << absoluteLogpath << "\" exists; moved to \""
                           << renameTarget << "\".";
                 } else {
                     return Status(ErrorCodes::FileRenameFailed,
@@ -307,7 +307,7 @@ MONGO_INITIALIZER_GENERAL(ServerLogRedirection,
                 std::make_unique<MessageEventDetailsEncoder>(), writer.getValue()));
 
         if (serverGlobalParams.logAppend && exists) {
-            log() << "***** SERVER RESTARTED *****";
+            MONGO_BOOST_LOG << "***** SERVER RESTARTED *****";
             Status status = logger::RotatableFileWriter::Use(writer.getValue()).status();
             if (!status.isOK())
                 return status;

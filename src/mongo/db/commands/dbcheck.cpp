@@ -204,7 +204,7 @@ protected:
             }
 
             if (_done) {
-                log() << "dbCheck terminated due to stepdown";
+                MONGO_BOOST_LOG << "dbCheck terminated due to stepdown";
                 return;
             }
         }

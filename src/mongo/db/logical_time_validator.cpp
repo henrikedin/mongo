@@ -195,7 +195,7 @@ bool LogicalTimeValidator::shouldGossipLogicalTime() {
 }
 
 void LogicalTimeValidator::resetKeyManagerCache() {
-    log() << "Resetting key manager cache";
+    MONGO_BOOST_LOG << "Resetting key manager cache";
     {
         stdx::lock_guard<stdx::mutex> keyManagerLock(_mutexKeyManager);
         invariant(_keyManager);
@@ -209,7 +209,7 @@ void LogicalTimeValidator::resetKeyManagerCache() {
 void LogicalTimeValidator::stopKeyManager() {
     stdx::lock_guard<stdx::mutex> keyManagerLock(_mutexKeyManager);
     if (_keyManager) {
-        log() << "Stopping key manager";
+        MONGO_BOOST_LOG << "Stopping key manager";
         _keyManager->stopMonitoring();
         _keyManager->clearCache();
 
@@ -217,7 +217,7 @@ void LogicalTimeValidator::stopKeyManager() {
         _lastSeenValidTime = SignedLogicalTime();
         _timeProofService.resetCache();
     } else {
-        log() << "Stopping key manager: no key manager exists.";
+        MONGO_BOOST_LOG << "Stopping key manager: no key manager exists.";
     }
 }
 

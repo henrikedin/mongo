@@ -107,7 +107,7 @@ void BSONObjBuilder::appendMinForType(StringData fieldName, int t) {
             appendCodeWScope(fieldName, "", BSONObj());
             return;
     };
-    log() << "type not supported for appendMinElementForType: " << t;
+    MONGO_BOOST_LOG << "type not supported for appendMinElementForType: " << t;
     uassert(10061, "type not supported for appendMinElementForType", false);
 }
 
@@ -176,7 +176,7 @@ void BSONObjBuilder::appendMaxForType(StringData fieldName, int t) {
             appendMinForType(fieldName, MaxKey);
             return;
     }
-    log() << "type not supported for appendMaxElementForType: " << t;
+    MONGO_BOOST_LOG << "type not supported for appendMaxElementForType: " << t;
     uassert(14853, "type not supported for appendMaxElementForType", false);
 }
 

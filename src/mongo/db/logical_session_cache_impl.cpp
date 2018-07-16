@@ -87,7 +87,7 @@ LogicalSessionCacheImpl::~LogicalSessionCacheImpl() {
     } catch (...) {
         // If we failed to join we might still be running a background thread,
         // log but swallow the error since there is no good way to recover.
-        severe() << "Failed to join background service thread";
+        MONGO_BOOST_SEVERE << "Failed to join background service thread";
     }
 }
 
@@ -175,14 +175,14 @@ void LogicalSessionCacheImpl::_periodicRefresh(Client* client) {
     try {
         _refresh(client);
     } catch (...) {
-        log() << "Failed to refresh session cache: " << exceptionToStatus();
+        MONGO_BOOST_LOG << "Failed to refresh session cache: " << exceptionToStatus();
     }
 }
 
 void LogicalSessionCacheImpl::_periodicReap(Client* client) {
     auto res = _reap(client);
     if (!res.isOK()) {
-        log() << "Failed to reap transaction table: " << res;
+        MONGO_BOOST_LOG << "Failed to reap transaction table: " << res;
     }
 
     return;
@@ -221,7 +221,7 @@ Status LogicalSessionCacheImpl::_reap(Client* client) {
 
         auto res = _sessionsColl->setupSessionsCollection(opCtx);
         if (!res.isOK()) {
-            log() << "Sessions collection is not set up; "
+            MONGO_BOOST_LOG << "Sessions collection is not set up; "
                   << "waiting until next sessions reap interval: " << res.reason();
             return Status::OK();
         }
@@ -284,7 +284,7 @@ void LogicalSessionCacheImpl::_refresh(Client* client) {
 
     auto res = _sessionsColl->setupSessionsCollection(opCtx);
     if (!res.isOK()) {
-        log() << "Sessions collection is not set up; "
+        MONGO_BOOST_LOG << "Sessions collection is not set up; "
               << "waiting until next sessions refresh interval: " << res.reason();
         return;
     }

@@ -118,7 +118,7 @@ public:
             // This should really be impossible because we check above that the top of the oplog is
             // strictly > appliedThrough. If this fails it represents a serious bug in either the
             // storage engine or query's implementation of OplogReplay.
-            severe() << "Couldn't find any entries in the oplog >= "
+            MONGO_BOOST_SEVERE << "Couldn't find any entries in the oplog >= "
                      << _oplogApplicationStartPoint.toBSON() << " which should be impossible.";
             fassertFailedNoTrace(40293);
         }
@@ -126,7 +126,7 @@ public:
         auto firstTimestampFound =
             fassert(40291, OpTime::parseFromOplogEntry(_cursor->nextSafe())).getTimestamp();
         if (firstTimestampFound != _oplogApplicationStartPoint) {
-            severe() << "Oplog entry at " << _oplogApplicationStartPoint.toBSON()
+            MONGO_BOOST_SEVERE << "Oplog entry at " << _oplogApplicationStartPoint.toBSON()
                      << " is missing; actual entry found is " << firstTimestampFound.toBSON();
             fassertFailedNoTrace(40292);
         }
@@ -205,7 +205,7 @@ ReplicationRecoveryImpl::ReplicationRecoveryImpl(StorageInterface* storageInterf
 void ReplicationRecoveryImpl::recoverFromOplog(OperationContext* opCtx,
                                                boost::optional<Timestamp> stableTimestamp) try {
     if (_consistencyMarkers->getInitialSyncFlag(opCtx)) {
-        log() << "No recovery needed. Initial sync flag set.";
+        MONGO_BOOST_LOG << "No recovery needed. Initial sync flag set.";
         return;  // Initial Sync will take over so no cleanup is needed.
     }
 
@@ -220,7 +220,7 @@ void ReplicationRecoveryImpl::recoverFromOplog(OperationContext* opCtx,
 
     const auto truncateAfterPoint = _consistencyMarkers->getOplogTruncateAfterPoint(opCtx);
     if (!truncateAfterPoint.isNull()) {
-        log() << "Removing unapplied entries starting at: " << truncateAfterPoint.toBSON();
+        MONGO_BOOST_LOG << "Removing unapplied entries starting at: " << truncateAfterPoint.toBSON();
         _truncateOplogTo(opCtx, truncateAfterPoint);
 
         // Clear the truncateAfterPoint so that we don't truncate the next batch of oplog entries
@@ -234,7 +234,7 @@ void ReplicationRecoveryImpl::recoverFromOplog(OperationContext* opCtx,
         topOfOplogSW.getStatus() == ErrorCodes::NamespaceNotFound) {
         // Oplog is empty. There are no oplog entries to apply, so we exit recovery and go into
         // initial sync.
-        log() << "No oplog entries to apply for recovery. Oplog is empty.";
+        MONGO_BOOST_LOG << "No oplog entries to apply for recovery. Oplog is empty.";
         return;
     }
     fassert(40290, topOfOplogSW);
@@ -266,7 +266,7 @@ void ReplicationRecoveryImpl::recoverFromOplog(OperationContext* opCtx,
         _recoverFromUnstableCheckpoint(opCtx, appliedThrough, topOfOplog);
     }
 } catch (...) {
-    severe() << "Caught exception during replication recovery: " << exceptionToStatus();
+    MONGO_BOOST_SEVERE << "Caught exception during replication recovery: " << exceptionToStatus();
     std::terminate();
 }
 
@@ -277,11 +277,11 @@ void ReplicationRecoveryImpl::_recoverFromStableTimestamp(OperationContext* opCt
     invariant(!stableTimestamp.isNull());
     invariant(!topOfOplog.isNull());
     const auto truncateAfterPoint = _consistencyMarkers->getOplogTruncateAfterPoint(opCtx);
-    log() << "Recovering from stable timestamp: " << stableTimestamp
+    MONGO_BOOST_LOG << "Recovering from stable timestamp: " << stableTimestamp
           << " (top of oplog: " << topOfOplog << ", appliedThrough: " << appliedThrough
           << ", TruncateAfter: " << truncateAfterPoint << ")";
 
-    log() << "Starting recovery oplog application at the stable timestamp: " << stableTimestamp;
+    MONGO_BOOST_LOG << "Starting recovery oplog application at the stable timestamp: " << stableTimestamp;
     _applyToEndOfOplog(opCtx, stableTimestamp, topOfOplog.getTimestamp());
 }
 
@@ -289,17 +289,17 @@ void ReplicationRecoveryImpl::_recoverFromUnstableCheckpoint(OperationContext* o
                                                              OpTime appliedThrough,
                                                              OpTime topOfOplog) {
     invariant(!topOfOplog.isNull());
-    log() << "Recovering from an unstable checkpoint (top of oplog: " << topOfOplog
+    MONGO_BOOST_LOG << "Recovering from an unstable checkpoint (top of oplog: " << topOfOplog
           << ", appliedThrough: " << appliedThrough << ")";
 
     if (appliedThrough.isNull()) {
         // The appliedThrough would be null if we shut down cleanly or crashed as a primary. Either
         // way we are consistent at the top of the oplog.
-        log() << "No oplog entries to apply for recovery. appliedThrough is null.";
+        MONGO_BOOST_LOG << "No oplog entries to apply for recovery. appliedThrough is null.";
     } else {
         // If the appliedThrough is not null, then we shut down uncleanly during secondary oplog
         // application and must apply from the appliedThrough to the top of the oplog.
-        log() << "Starting recovery oplog application at the appliedThrough: " << appliedThrough
+        MONGO_BOOST_LOG << "Starting recovery oplog application at the appliedThrough: " << appliedThrough
               << ", through the top of the oplog: " << topOfOplog;
         _applyToEndOfOplog(opCtx, appliedThrough.getTimestamp(), topOfOplog.getTimestamp());
     }
@@ -336,15 +336,15 @@ void ReplicationRecoveryImpl::_applyToEndOfOplog(OperationContext* opCtx,
     // Check if we have any unapplied ops in our oplog. It is important that this is done after
     // deleting the ragged end of the oplog.
     if (oplogApplicationStartPoint == topOfOplog) {
-        log() << "No oplog entries to apply for recovery. Start point is at the top of the oplog.";
+        MONGO_BOOST_LOG << "No oplog entries to apply for recovery. Start point is at the top of the oplog.";
         return;  // We've applied all the valid oplog we have.
     } else if (oplogApplicationStartPoint > topOfOplog) {
-        severe() << "Applied op " << oplogApplicationStartPoint.toBSON()
+        MONGO_BOOST_SEVERE << "Applied op " << oplogApplicationStartPoint.toBSON()
                  << " not found. Top of oplog is " << topOfOplog.toBSON() << '.';
         fassertFailedNoTrace(40313);
     }
 
-    log() << "Replaying stored operations from " << oplogApplicationStartPoint.toBSON()
+    MONGO_BOOST_LOG << "Replaying stored operations from " << oplogApplicationStartPoint.toBSON()
           << " (exclusive) to " << topOfOplog.toBSON() << " (inclusive).";
 
     OplogBufferLocalOplog oplogBuffer(oplogApplicationStartPoint);
@@ -455,7 +455,7 @@ void ReplicationRecoveryImpl::_truncateOplogTo(OperationContext* opCtx,
                 invariant(!oldestIDToDelete.isNull());
                 oplogCollection->cappedTruncateAfter(opCtx, oldestIDToDelete, /*inclusive=*/true);
             }
-            log() << "Replication recovery oplog truncation finished in: " << timer.millis()
+            MONGO_BOOST_LOG << "Replication recovery oplog truncation finished in: " << timer.millis()
                   << "ms";
             return;
         }
@@ -463,7 +463,7 @@ void ReplicationRecoveryImpl::_truncateOplogTo(OperationContext* opCtx,
         oldestIDToDelete = id;
     }
 
-    severe() << "Reached end of oplog looking for oplog entry before " << truncateTimestamp.toBSON()
+    MONGO_BOOST_SEVERE << "Reached end of oplog looking for oplog entry before " << truncateTimestamp.toBSON()
              << " but couldn't find any after looking through " << count << " entries.";
     fassertFailedNoTrace(40296);
 }

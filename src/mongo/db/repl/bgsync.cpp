@@ -199,12 +199,12 @@ void BackgroundSync::_run() {
             _runProducer();
         } catch (const DBException& e) {
             std::string msg(str::stream() << "sync producer problem: " << redact(e));
-            error() << msg;
+            MONGO_BOOST_ERROR << msg;
             _replCoord->setMyHeartbeatMessage(msg);
             sleepmillis(100);  // sleep a bit to keep from hammering this thread with temp. errors.
         } catch (const std::exception& e2) {
             // redact(std::exception&) doesn't work
-            severe() << "sync producer exception: " << redact(e2.what());
+            MONGO_BOOST_SEVERE << "sync producer exception: " << redact(e2.what());
             fassertFailed(28546);
         }
     }
@@ -241,7 +241,7 @@ void BackgroundSync::_runProducer() {
 void BackgroundSync::_produce() {
     if (MONGO_FAIL_POINT(stopReplProducer)) {
         // This log output is used in js tests so please leave it.
-        log() << "bgsync - stopReplProducer fail point "
+        MONGO_BOOST_LOG << "bgsync - stopReplProducer fail point "
                  "enabled. Blocking until fail point is disabled.";
 
         // TODO(SERVER-27120): Remove the return statement and uncomment the while loop.
@@ -291,7 +291,7 @@ void BackgroundSync::_produce() {
         const auto requiredOpTime = (minValidSaved > _lastOpTimeFetched) ? minValidSaved : OpTime();
         lastOpTimeFetched = _lastOpTimeFetched;
         if (!_syncSourceHost.empty()) {
-            log() << "Clearing sync source " << _syncSourceHost << " to choose a new one.";
+            MONGO_BOOST_LOG << "Clearing sync source " << _syncSourceHost << " to choose a new one.";
         }
         _syncSourceHost = HostAndPort();
         _syncSourceResolver = stdx::make_unique<SyncSourceResolver>(
@@ -321,9 +321,9 @@ void BackgroundSync::_produce() {
     if (syncSourceResp.syncSourceStatus == ErrorCodes::OplogStartMissing) {
         // All (accessible) sync sources were too stale.
         if (_replCoord->getMemberState().primary()) {
-            warning() << "Too stale to catch up.";
-            log() << "Our newest OpTime : " << lastOpTimeFetched;
-            log() << "Earliest OpTime available is " << syncSourceResp.earliestOpTimeSeen
+            MONGO_BOOST_WARNING << "Too stale to catch up.";
+            MONGO_BOOST_LOG << "Our newest OpTime : " << lastOpTimeFetched;
+            MONGO_BOOST_LOG << "Earliest OpTime available is " << syncSourceResp.earliestOpTimeSeen
                   << " from " << syncSourceResp.getSyncSource();
             _replCoord->abortCatchupIfNeeded().transitional_ignore();
             return;
@@ -341,19 +341,19 @@ void BackgroundSync::_produce() {
         auto opCtx = cc().makeOperationContext();
         Lock::GlobalWrite globalWriteLock(opCtx.get());
 
-        error() << "too stale to catch up -- entering maintenance mode";
-        log() << "Our newest OpTime : " << lastOpTimeFetched;
-        log() << "Earliest OpTime available is " << syncSourceResp.earliestOpTimeSeen;
-        log() << "See http://dochub.mongodb.org/core/resyncingaverystalereplicasetmember";
+        MONGO_BOOST_ERROR << "too stale to catch up -- entering maintenance mode";
+        MONGO_BOOST_LOG << "Our newest OpTime : " << lastOpTimeFetched;
+        MONGO_BOOST_LOG << "Earliest OpTime available is " << syncSourceResp.earliestOpTimeSeen;
+        MONGO_BOOST_LOG << "See http://dochub.mongodb.org/core/resyncingaverystalereplicasetmember";
 
         // Activate maintenance mode and transition to RECOVERING.
         auto status = _replCoord->setMaintenanceMode(true);
         if (!status.isOK()) {
-            warning() << "Failed to transition into maintenance mode: " << status;
+            MONGO_BOOST_WARNING << "Failed to transition into maintenance mode: " << status;
         }
         status = _replCoord->setFollowerMode(MemberState::RS_RECOVERING);
         if (!status.isOK()) {
-            warning() << "Failed to transition into " << MemberState(MemberState::RS_RECOVERING)
+            MONGO_BOOST_WARNING << "Failed to transition into " << MemberState(MemberState::RS_RECOVERING)
                       << ". Current state: " << _replCoord->getMemberState() << causedBy(status);
         }
         return;
@@ -367,18 +367,18 @@ void BackgroundSync::_produce() {
         // out of date. In that case we sleep for 1 second to reduce the amount we spin waiting
         // for our map to update.
         if (oldSource == source) {
-            log() << "Chose same sync source candidate as last time, " << source
+            MONGO_BOOST_LOG << "Chose same sync source candidate as last time, " << source
                   << ". Sleeping for 1 second to avoid immediately choosing a new sync source for "
                      "the same reason as last time.";
             sleepsecs(1);
         } else {
-            log() << "Changed sync source from "
+            MONGO_BOOST_LOG << "Changed sync source from "
                   << (oldSource.empty() ? std::string("empty") : oldSource.toString()) << " to "
                   << source;
         }
     } else {
         if (!syncSourceResp.isOK()) {
-            log() << "failed to find sync source, received error "
+            MONGO_BOOST_LOG << "failed to find sync source, received error "
                   << syncSourceResp.syncSourceStatus.getStatus();
         }
         // No sync source found.
@@ -392,11 +392,11 @@ void BackgroundSync::_produce() {
 
         _tooStale = false;
 
-        log() << "No longer too stale. Able to sync from " << source;
+        MONGO_BOOST_LOG << "No longer too stale. Able to sync from " << source;
 
         auto status = _replCoord->setMaintenanceMode(false);
         if (!status.isOK()) {
-            warning() << "Failed to leave maintenance mode: " << status;
+            MONGO_BOOST_WARNING << "Failed to leave maintenance mode: " << status;
         }
     }
 
@@ -466,7 +466,7 @@ void BackgroundSync::_produce() {
                   << oplogFetcher->getFindQuery_forTest()["filter"];
     auto scheduleStatus = oplogFetcher->startup();
     if (!scheduleStatus.isOK()) {
-        warning() << "unable to schedule fetcher to read remote oplog on " << source << ": "
+        MONGO_BOOST_WARNING << "unable to schedule fetcher to read remote oplog on " << source << ": "
                   << scheduleStatus;
         return;
     }
@@ -477,7 +477,7 @@ void BackgroundSync::_produce() {
     // If the background sync is stopped after the fetcher is started, we need to
     // re-evaluate our sync source and oplog common point.
     if (getState() != ProducerState::Running) {
-        log() << "Replication producer stopped after oplog fetcher finished returning a batch from "
+        MONGO_BOOST_LOG << "Replication producer stopped after oplog fetcher finished returning a batch from "
                  "our sync source.  Abandoning this batch of oplog entries and re-evaluating our "
                  "sync source.";
         return;
@@ -487,7 +487,7 @@ void BackgroundSync::_produce() {
         // This is bad because it means that our source
         // has not returned oplog entries in ascending ts order, and they need to be.
 
-        warning() << redact(fetcherReturnStatus);
+        MONGO_BOOST_WARNING << redact(fetcherReturnStatus);
         // Do not blacklist the server here, it will be blacklisted when we try to reuse it,
         // if it can't return a matching oplog start from the last fetch oplog ts field.
         return;
@@ -498,11 +498,11 @@ void BackgroundSync::_produce() {
             opCtx.get(), fetcherReturnStatus, source, syncSourceResp.rbid, storageInterface);
     } else if (fetcherReturnStatus == ErrorCodes::InvalidBSON) {
         Seconds blacklistDuration(60);
-        warning() << "Fetcher got invalid BSON while querying oplog. Blacklisting sync source "
+        MONGO_BOOST_WARNING << "Fetcher got invalid BSON while querying oplog. Blacklisting sync source "
                   << source << " for " << blacklistDuration << ".";
         _replCoord->blacklistSyncSource(source, Date_t::now() + blacklistDuration);
     } else if (!fetcherReturnStatus.isOK()) {
-        warning() << "Fetcher stopped querying remote oplog with error: "
+        MONGO_BOOST_WARNING << "Fetcher stopped querying remote oplog with error: "
                   << redact(fetcherReturnStatus);
     }
 }
@@ -561,7 +561,7 @@ void BackgroundSync::_runRollback(OperationContext* opCtx,
                                   int requiredRBID,
                                   StorageInterface* storageInterface) {
     if (_replCoord->getMemberState().primary()) {
-        warning() << "Rollback situation detected in catch-up mode. Aborting catch-up mode.";
+        MONGO_BOOST_WARNING << "Rollback situation detected in catch-up mode. Aborting catch-up mode.";
         _replCoord->abortCatchupIfNeeded().transitional_ignore();
         return;
     }
@@ -580,8 +580,8 @@ void BackgroundSync::_runRollback(OperationContext* opCtx,
         lastOpTimeFetched = _lastOpTimeFetched;
     }
 
-    log() << "Starting rollback due to " << redact(fetcherReturnStatus);
-    log() << "Replication commit point: " << _replCoord->getLastCommittedOpTime();
+    MONGO_BOOST_LOG << "Starting rollback due to " << redact(fetcherReturnStatus);
+    MONGO_BOOST_LOG << "Replication commit point: " << _replCoord->getLastCommittedOpTime();
 
     // TODO: change this to call into the Applier directly to block until the applier is
     // drained.
@@ -589,7 +589,7 @@ void BackgroundSync::_runRollback(OperationContext* opCtx,
     // Wait till all buffered oplog entries have drained and been applied.
     auto lastApplied = _replCoord->getMyLastAppliedOpTime();
     if (lastApplied != lastOpTimeFetched) {
-        log() << "Waiting for all operations from " << lastApplied << " until " << lastOpTimeFetched
+        MONGO_BOOST_LOG << "Waiting for all operations from " << lastApplied << " until " << lastOpTimeFetched
               << " to be applied before starting rollback.";
         while (lastOpTimeFetched > (lastApplied = _replCoord->getMyLastAppliedOpTime())) {
             sleepmillis(10);
@@ -601,7 +601,7 @@ void BackgroundSync::_runRollback(OperationContext* opCtx,
 
     if (MONGO_FAIL_POINT(rollbackHangBeforeStart)) {
         // This log output is used in js tests so please leave it.
-        log() << "rollback - rollbackHangBeforeStart fail point "
+        MONGO_BOOST_LOG << "rollback - rollbackHangBeforeStart fail point "
                  "enabled. Blocking until fail point is disabled.";
         while (MONGO_FAIL_POINT(rollbackHangBeforeStart) && !inShutdown()) {
             mongo::sleepsecs(1);
@@ -627,11 +627,11 @@ void BackgroundSync::_runRollback(OperationContext* opCtx,
 
     auto storageEngine = opCtx->getServiceContext()->getStorageEngine();
     if (!forceRollbackViaRefetch.load() && storageEngine->supportsRecoverToStableTimestamp()) {
-        log() << "Rollback using 'recoverToStableTimestamp' method.";
+        MONGO_BOOST_LOG << "Rollback using 'recoverToStableTimestamp' method.";
         _runRollbackViaRecoverToCheckpoint(
             opCtx, source, &localOplog, storageInterface, getConnection);
     } else {
-        log() << "Rollback using the 'rollbackViaRefetch' method.";
+        MONGO_BOOST_LOG << "Rollback using the 'rollbackViaRefetch' method.";
         _fallBackOnRollbackViaRefetch(opCtx, source, requiredRBID, &localOplog, getConnection);
     }
 
@@ -662,15 +662,15 @@ void BackgroundSync::_runRollbackViaRecoverToCheckpoint(
     _rollback = stdx::make_unique<RollbackImpl>(
         localOplog, &remoteOplog, storageInterface, _replicationProcess, _replCoord);
 
-    log() << "Scheduling rollback (sync source: " << source << ")";
+    MONGO_BOOST_LOG << "Scheduling rollback (sync source: " << source << ")";
     auto status = _rollback->runRollback(opCtx);
     if (status.isOK()) {
-        log() << "Rollback successful.";
+        MONGO_BOOST_LOG << "Rollback successful.";
     } else if (status == ErrorCodes::UnrecoverableRollbackError) {
-        severe() << "Rollback failed with unrecoverable error: " << status;
+        MONGO_BOOST_SEVERE << "Rollback failed with unrecoverable error: " << status;
         fassertFailedWithStatusNoTrace(50666, status);
     } else {
-        warning() << "Rollback failed with retryable error: " << status;
+        MONGO_BOOST_WARNING << "Rollback failed with retryable error: " << status;
     }
 }
 
@@ -696,7 +696,7 @@ HostAndPort BackgroundSync::getSyncTarget() const {
 
 void BackgroundSync::clearSyncTarget() {
     stdx::unique_lock<stdx::mutex> lock(_mutex);
-    log() << "Resetting sync source to empty, which was " << _syncSourceHost;
+    MONGO_BOOST_LOG << "Resetting sync source to empty, which was " << _syncSourceHost;
     _syncSourceHost = HostAndPort();
 }
 
@@ -704,14 +704,14 @@ void BackgroundSync::stop(bool resetLastFetchedOptime) {
     stdx::lock_guard<stdx::mutex> lock(_mutex);
 
     _state = ProducerState::Stopped;
-    log() << "Stopping replication producer";
+    MONGO_BOOST_LOG << "Stopping replication producer";
 
     _syncSourceHost = HostAndPort();
     if (resetLastFetchedOptime) {
         invariant(_oplogApplier->getBuffer()->isEmpty());
         _lastOpTimeFetched = OpTime();
         _lastFetchedHash = 0;
-        log() << "Resetting last fetched optimes in bgsync";
+        MONGO_BOOST_LOG << "Resetting last fetched optimes in bgsync";
     }
 
     if (_syncSourceResolver) {
@@ -740,7 +740,7 @@ void BackgroundSync::start(OperationContext* opCtx) {
         // If a node steps down during drain mode, then the buffer may not be empty at the beginning
         // of secondary state.
         if (!_oplogApplier->getBuffer()->isEmpty()) {
-            log() << "going to start syncing, but buffer is not empty";
+            MONGO_BOOST_LOG << "going to start syncing, but buffer is not empty";
         }
         _state = ProducerState::Running;
 
@@ -775,14 +775,14 @@ OpTimeWithHash BackgroundSync::_readLastAppliedOpTimeWithHash(OperationContext* 
             return OpTimeWithHash(0);
         }
     } catch (const DBException& ex) {
-        severe() << "Problem reading " << NamespaceString::kRsOplogNamespace.ns() << ": "
+        MONGO_BOOST_SEVERE << "Problem reading " << NamespaceString::kRsOplogNamespace.ns() << ": "
                  << redact(ex);
         fassertFailed(18904);
     }
     long long hash;
     auto status = bsonExtractIntegerField(oplogEntry, kHashFieldName, &hash);
     if (!status.isOK()) {
-        severe() << "Most recent entry in " << NamespaceString::kRsOplogNamespace.ns()
+        MONGO_BOOST_SEVERE << "Most recent entry in " << NamespaceString::kRsOplogNamespace.ns()
                  << " is missing or has invalid \"" << kHashFieldName
                  << "\" field. Oplog entry: " << redact(oplogEntry) << ": " << redact(status);
         fassertFailed(18902);

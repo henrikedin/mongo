@@ -196,7 +196,7 @@ Status initializeGlobalShardingState(OperationContext* opCtx,
 
     if (connPoolOptions.refreshRequirement <= connPoolOptions.refreshTimeout) {
         auto newRefreshTimeout = connPoolOptions.refreshRequirement - Milliseconds(1);
-        warning() << "ShardingTaskExecutorPoolRefreshRequirementMS ("
+        MONGO_BOOST_WARNING << "ShardingTaskExecutorPoolRefreshRequirementMS ("
                   << connPoolOptions.refreshRequirement
                   << ") set below ShardingTaskExecutorPoolRefreshTimeoutMS ("
                   << connPoolOptions.refreshTimeout
@@ -209,7 +209,7 @@ Status initializeGlobalShardingState(OperationContext* opCtx,
         connPoolOptions.refreshRequirement + connPoolOptions.refreshTimeout) {
         auto newHostTimeout =
             connPoolOptions.refreshRequirement + connPoolOptions.refreshTimeout + Milliseconds(1);
-        warning() << "ShardingTaskExecutorPoolHostTimeoutMS (" << connPoolOptions.hostTimeout
+        MONGO_BOOST_WARNING << "ShardingTaskExecutorPoolHostTimeoutMS (" << connPoolOptions.hostTimeout
                   << ") set below ShardingTaskExecutorPoolRefreshRequirementMS ("
                   << connPoolOptions.refreshRequirement
                   << ") + ShardingTaskExecutorPoolRefreshTimeoutMS ("
@@ -285,7 +285,7 @@ Status waitForShardRegistryReload(OperationContext* opCtx) {
             continue;
         } catch (const DBException& ex) {
             Status status = ex.toStatus();
-            warning()
+			MONGO_BOOST_WARNING
                 << "Error initializing sharding state, sleeping for 2 seconds and trying again"
                 << causedBy(status);
             sleepFor(kRetryInterval);

@@ -284,7 +284,7 @@ std::unique_ptr<Pipeline, PipelineDeleter> reparsePipeline(
 
     auto reparsedPipeline = Pipeline::parse(parseableSerialization, expCtx);
     if (!reparsedPipeline.isOK()) {
-        error() << "Aggregation command did not round trip through parsing and serialization "
+        MONGO_BOOST_ERROR << "Aggregation command did not round trip through parsing and serialization "
                    "correctly. Input pipeline: "
                 << Value(request.getPipeline()) << ", serialized pipeline: " << Value(serialized);
         fassertFailedWithStatusNoTrace(40175, reparsedPipeline.getStatus());

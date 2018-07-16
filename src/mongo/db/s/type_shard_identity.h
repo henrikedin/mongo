@@ -76,4 +76,9 @@ public:
     static BSONObj createConfigServerUpdateObject(const std::string& newConnString);
 };
 
+inline std::ostream& operator<<(std::ostream& s, const ShardIdentityType& sit) {
+	return (s << sit.toString());
+}
+
+
 }  // namespace mongo

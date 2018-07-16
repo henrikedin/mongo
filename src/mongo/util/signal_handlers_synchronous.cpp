@@ -246,17 +246,17 @@ void myInvalidParameterHandler(const wchar_t* expression,
                                const wchar_t* file,
                                unsigned int line,
                                uintptr_t pReserved) {
-    severe() << "Invalid parameter detected in function " << toUtf8String(function)
+    MONGO_BOOST_SEVERE << "Invalid parameter detected in function " << toUtf8String(function)
              << " File: " << toUtf8String(file) << " Line: " << line;
-    severe() << "Expression: " << toUtf8String(expression);
-    severe() << "immediate exit due to invalid parameter";
+    MONGO_BOOST_SEVERE << "Expression: " << toUtf8String(expression);
+    MONGO_BOOST_SEVERE << "immediate exit due to invalid parameter";
 
     abruptQuit(SIGABRT);
 }
 
 void myPureCallHandler() {
-    severe() << "Pure call handler invoked";
-    severe() << "immediate exit due to invalid pure call";
+    MONGO_BOOST_SEVERE << "Pure call handler invoked";
+    MONGO_BOOST_SEVERE << "immediate exit due to invalid pure call";
     abruptQuit(SIGABRT);
 }
 

@@ -57,7 +57,7 @@ public:
 
         // Used by tests to check if auth checks passed.
         result.append("info", "attempting to kill op");
-        log() << "going to kill op: " << opId;
+        MONGO_BOOST_LOG << "going to kill op: " << opId;
         KillOpCmdBase::killLocalOperation(opCtx, opId);
 
         // killOp always reports success once past the auth check.

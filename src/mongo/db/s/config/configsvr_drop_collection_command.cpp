@@ -67,7 +67,7 @@ auto staleExceptionRetry(OperationContext* opCtx, StringData opStr, F&& f) {
         try {
             return f();
         } catch (const ExceptionForCat<ErrorCategory::StaleShardVersionError>& ex) {
-            log() << "Attempt " << tries << " of " << opStr << " received StaleShardVersion error"
+            MONGO_BOOST_LOG << "Attempt " << tries << " of " << opStr << " received StaleShardVersion error"
                   << causedBy(ex);
 
             if (canRetry) {

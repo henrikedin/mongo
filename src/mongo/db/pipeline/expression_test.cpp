@@ -95,7 +95,7 @@ static void assertExpectedResults(
             ASSERT_VALUE_EQ(op.second, result);
             ASSERT_EQUALS(op.second.getType(), result.getType());
         } catch (...) {
-            log() << "failed with arguments: " << ImplicitValue::convertToValue(op.first);
+            MONGO_BOOST_LOG << "failed with arguments: " << ImplicitValue::convertToValue(op.first);
             throw;
         }
     }

@@ -24,7 +24,7 @@
 #include "macros.h"
 
 // Always-on checking
-#define CHECK(x)	if(x){}else LogMessageFatal(__FILE__, __LINE__).stream() << "Check failed: " #x
+#define CHECK(x)	if(x){}else BOOST_LOG_TRIVIAL(fatal) << "Check failed: " #x
 #define CHECK_LT(x, y)	CHECK((x) < (y))
 #define CHECK_GT(x, y)	CHECK((x) > (y))
 #define CHECK_LE(x, y)	CHECK((x) <= (y))
@@ -43,7 +43,7 @@
 #define DCHECK_GE(val1, val2) CHECK_GE(val1, val2)
 #define DCHECK_GT(val1, val2) CHECK_GT(val1, val2)
 #else
-#define DCHECK(x) if(x){}else LogMessageWarning(__FILE__, __LINE__).stream() << "Check failed: " #x
+#define DCHECK(x) if(x){}else BOOST_LOG_TRIVIAL(warning) << "Check failed: " #x
 #define DCHECK_LT(x, y)  DCHECK((x) < (y))
 #define DCHECK_GT(x, y)  DCHECK((x) > (y))
 #define DCHECK_LE(x, y)  DCHECK((x) <= (y))
@@ -53,10 +53,10 @@
 #endif
 
 #include "base/port.h"
-#define INFO LogMessageInfo().stream()
-#define WARN LogMessageWarning(__FILE__, __LINE__).stream()
-#define FATAL LogMessageFatal(__FILE__, __LINE__).stream()
-#define DFATAL LogMessageFatal(__FILE__, __LINE__).stream()
+#define INFO BOOST_LOG_TRIVIAL(info)
+#define WARN BOOST_LOG_TRIVIAL(warning)
+#define FATAL BOOST_LOG_TRIVIAL(fatal)
+#define DFATAL BOOST_LOG_TRIVIAL(fatal)
 
 // VLOG messages will be logged at debug level 5 with the S2 log component.
 #define S2LOG(x) x
@@ -65,44 +65,44 @@
     if (!(::mongo::logger::globalLogDomain())->shouldLog(::mongo::logger::LogComponent::kGeo, ::mongo::logger::LogSeverity::Debug(5))) {} \
     else ::mongo::logger::LogstreamBuilder(::mongo::logger::globalLogDomain(), ::mongo::getThreadName(), ::mongo::logger::LogSeverity::Debug(5), ::mongo::logger::LogComponent::kGeo)
 
-class LogMessageBase {
-public:
-    LogMessageBase(::mongo::logger::LogstreamBuilder builder);
-    LogMessageBase(::mongo::logger::LogstreamBuilder builder, const char* file, int line);
-    virtual ~LogMessageBase() { };
-    std::ostream& stream() { return _lsb.stream(); }
-protected:
-    // Fatal message will deconstruct it before abort to flush final message.
-    mongo::logger::LogstreamBuilder _lsb;
-private:
-    DISALLOW_COPY_AND_ASSIGN(LogMessageBase);
-};
-
-class LogMessageInfo : public LogMessageBase {
-public:
-    LogMessageInfo();
-    virtual ~LogMessageInfo() { };
-
-private:
-    DISALLOW_COPY_AND_ASSIGN(LogMessageInfo);
-};
-
-class LogMessageWarning : public LogMessageBase {
-public:
-    LogMessageWarning(const char* file, int line);
-    virtual ~LogMessageWarning() { };
-
-private:
-    DISALLOW_COPY_AND_ASSIGN(LogMessageWarning);
-};
-
-class LogMessageFatal : public LogMessageBase {
-public:
-    LogMessageFatal(const char* file, int line);
-    virtual ~LogMessageFatal();
-
-private:
-    DISALLOW_COPY_AND_ASSIGN(LogMessageFatal);
-};
+//class LogMessageBase {
+//public:
+//    LogMessageBase(::mongo::logger::LogstreamBuilder builder);
+//    LogMessageBase(::mongo::logger::LogstreamBuilder builder, const char* file, int line);
+//    virtual ~LogMessageBase() { };
+//    //std::ostream& stream() { return _lsb.stream(); }
+//protected:
+//    // Fatal message will deconstruct it before abort to flush final message.
+//    mongo::logger::LogstreamBuilder _lsb;
+//private:
+//    DISALLOW_COPY_AND_ASSIGN(LogMessageBase);
+//};
+//
+//class LogMessageInfo : public LogMessageBase {
+//public:
+//    LogMessageInfo();
+//    virtual ~LogMessageInfo() { };
+//
+//private:
+//    DISALLOW_COPY_AND_ASSIGN(LogMessageInfo);
+//};
+//
+//class LogMessageWarning : public LogMessageBase {
+//public:
+//    LogMessageWarning(const char* file, int line);
+//    virtual ~LogMessageWarning() { };
+//
+//private:
+//    DISALLOW_COPY_AND_ASSIGN(LogMessageWarning);
+//};
+//
+//class LogMessageFatal : public LogMessageBase {
+//public:
+//    LogMessageFatal(const char* file, int line);
+//    virtual ~LogMessageFatal();
+//
+//private:
+//    DISALLOW_COPY_AND_ASSIGN(LogMessageFatal);
+//};
 
 #endif  // BASE_LOGGING_H

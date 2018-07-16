@@ -72,7 +72,7 @@ Status WiredTigerBeginTxnBlock::setTimestamp(Timestamp readTimestamp, RoundToOld
                               (roundToOldest == RoundToOldest::kRound) ? "true" : "false");
     if (size < 0) {
         int e = errno;
-        error() << "error snprintf " << errnoWithDescription(e);
+        MONGO_BOOST_ERROR << "error snprintf " << errnoWithDescription(e);
         fassertFailedNoTrace(40664);
     }
     invariant(static_cast<std::size_t>(size) < sizeof(readTSConfigString));

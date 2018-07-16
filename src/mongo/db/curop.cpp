@@ -303,7 +303,7 @@ ProgressMeter& CurOp::setMessage_inlock(const char* msg,
                                         int secondsBetween) {
     if (progressMeterTotal) {
         if (_progressMeter.isActive()) {
-            error() << "old _message: " << redact(_message) << " new message:" << redact(msg);
+            MONGO_BOOST_ERROR << "old _message: " << redact(_message) << " new message:" << redact(msg);
             verify(!_progressMeter.isActive());
         }
         _progressMeter.reset(progressMeterTotal, secondsBetween);
@@ -362,7 +362,7 @@ bool CurOp::completeAndLogOperation(OperationContext* opCtx,
 
     if (shouldLogOp || (shouldSample && _debug.executionTimeMicros > slowMs * 1000LL)) {
         const auto lockerInfo = opCtx->lockState()->getLockerInfo();
-        log(component) << _debug.report(client, *this, (lockerInfo ? &lockerInfo->stats : nullptr));
+        MONGO_BOOST_LOG_COMPONENT(component) << _debug.report(client, *this, (lockerInfo ? &lockerInfo->stats : nullptr));
     }
 
     // Return 'true' if this operation should also be added to the profiler.

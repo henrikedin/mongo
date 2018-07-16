@@ -155,7 +155,7 @@ Variant getSysctlByName(const char* sysctlName) {
     } while (status == -1 && errno == ENOMEM);
     if (status == -1) {
         // unrecoverable error from sysctlbyname
-        log() << sysctlName << " unavailable";
+        MONGO_BOOST_LOG << sysctlName << " unavailable";
         return "";
     }
 
@@ -171,10 +171,10 @@ long long getSysctlByName<NumberVal>(const char* sysctlName) {
     long long value = 0;
     size_t len = sizeof(value);
     if (sysctlbyname(sysctlName, &value, &len, NULL, 0) < 0) {
-        log() << "Unable to resolve sysctl " << sysctlName << " (number) ";
+        MONGO_BOOST_LOG << "Unable to resolve sysctl " << sysctlName << " (number) ";
     }
     if (len > 8) {
-        log() << "Unable to resolve sysctl " << sysctlName << " as integer.  System returned "
+        MONGO_BOOST_LOG << "Unable to resolve sysctl " << sysctlName << " as integer.  System returned "
               << len << " bytes.";
     }
     return value;
@@ -224,7 +224,7 @@ bool ProcessInfo::blockCheckSupported() {
 bool ProcessInfo::blockInMemory(const void* start) {
     char x = 0;
     if (mincore(alignToStartOfPage(start), getPageSize(), &x)) {
-        log() << "mincore failed: " << errnoWithDescription();
+        MONGO_BOOST_LOG << "mincore failed: " << errnoWithDescription();
         return 1;
     }
     return x & 0x1;
@@ -233,7 +233,7 @@ bool ProcessInfo::blockInMemory(const void* start) {
 bool ProcessInfo::pagesInMemory(const void* start, size_t numPages, vector<char>* out) {
     out->resize(numPages);
     if (mincore(alignToStartOfPage(start), numPages * getPageSize(), &out->front())) {
-        log() << "mincore failed: " << errnoWithDescription();
+        MONGO_BOOST_LOG << "mincore failed: " << errnoWithDescription();
         return false;
     }
     for (size_t i = 0; i < numPages; ++i) {

@@ -95,7 +95,7 @@ std::unique_ptr<DBClientBase> ConnectionString::connect(StringData applicationNa
             // Double-checked lock, since this will never be active during normal operation
             auto replacementConn = _connectHook->connect(*this, errmsg, socketTimeout);
 
-            log() << "replacing connection to " << this->toString() << " with "
+            MONGO_BOOST_LOG << "replacing connection to " << this->toString() << " with "
                   << (replacementConn ? replacementConn->getServerAddress() : "(empty)");
 
             return replacementConn;

@@ -194,7 +194,7 @@ void generateBatch(int ntoreturn,
     switch (*state) {
         // Log an error message and then perform the same cleanup as DEAD.
         case PlanExecutor::FAILURE:
-            error() << "getMore executor error, stats: "
+            MONGO_BOOST_ERROR << "getMore executor error, stats: "
                     << redact(Explain::getWinningPlanStats(exec));
         case PlanExecutor::DEAD: {
             // We should always have a valid status object by this point.
@@ -634,7 +634,7 @@ std::string runQuery(OperationContext* opCtx,
 
     // Caller expects exceptions thrown in certain cases.
     if (PlanExecutor::FAILURE == state || PlanExecutor::DEAD == state) {
-        error() << "Plan executor error during find: " << PlanExecutor::statestr(state)
+        MONGO_BOOST_ERROR << "Plan executor error during find: " << PlanExecutor::statestr(state)
                 << ", stats: " << redact(Explain::getWinningPlanStats(exec.get()));
         uassertStatusOKWithContext(WorkingSetCommon::getMemberObjectStatus(obj),
                                    "Executor error during OP_QUERY find");

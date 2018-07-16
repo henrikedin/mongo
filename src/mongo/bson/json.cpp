@@ -49,7 +49,7 @@ using std::string;
 
 #if 0
 #define MONGO_JSON_DEBUG(message)                                                          \
-    log() << "JSON DEBUG @ " << __FILE__ << ":" << __LINE__ << " " << __FUNCTION__ << ": " \
+    MONGO_BOOST_LOG << "JSON DEBUG @ " << __FILE__ << ":" << __LINE__ << " " << __FUNCTION__ << ": " \
           << message << endl;
 #else
 #define MONGO_JSON_DEBUG(message)

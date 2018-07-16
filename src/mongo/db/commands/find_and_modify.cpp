@@ -117,7 +117,7 @@ boost::optional<BSONObj> advanceExecutor(OperationContext* opCtx,
     }
 
     if (PlanExecutor::FAILURE == state || PlanExecutor::DEAD == state) {
-        error() << "Plan executor error during findAndModify: " << PlanExecutor::statestr(state)
+        MONGO_BOOST_ERROR << "Plan executor error during findAndModify: " << PlanExecutor::statestr(state)
                 << ", stats: " << redact(Explain::getWinningPlanStats(exec));
 
         uassertStatusOKWithContext(WorkingSetCommon::getMemberObjectStatus(value),

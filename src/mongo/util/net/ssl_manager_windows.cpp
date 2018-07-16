@@ -380,7 +380,7 @@ SSLManagerWindows::SSLManagerWindows(const SSLParams& params, bool isServer)
         BOOLEAN enabled = FALSE;
         BCryptGetFipsAlgorithmMode(&enabled);
         if (!enabled) {
-            severe() << "FIPS modes is not enabled on the operating system.";
+            MONGO_BOOST_SEVERE << "FIPS modes is not enabled on the operating system.";
             fassertFailedNoTrace(50744);
         }
     }
@@ -495,7 +495,7 @@ int SSLManagerWindows::SSL_read(SSLConnectionInterface* connInterface, void* buf
                 return bytes_transferred;
             }
             default:
-                severe() << "Unexpected ASIO state: " << static_cast<int>(want);
+                MONGO_BOOST_SEVERE << "Unexpected ASIO state: " << static_cast<int>(want);
                 MONGO_UNREACHABLE;
         }
     }
@@ -539,7 +539,7 @@ int SSLManagerWindows::SSL_write(SSLConnectionInterface* connInterface, const vo
                 return bytes_transferred;
             }
             default:
-                severe() << "Unexpected ASIO state: " << static_cast<int>(want);
+                MONGO_BOOST_SEVERE << "Unexpected ASIO state: " << static_cast<int>(want);
                 MONGO_UNREACHABLE;
         }
     }
@@ -1202,7 +1202,7 @@ Status SSLManagerWindows::_loadCertificates(const SSLParams& params) {
 
     if (_sslCertificate || _sslClusterCertificate) {
         if (!params.sslCAFile.empty()) {
-            warning() << "Mixing certs from the system certificate store and PEM files. This may "
+            MONGO_BOOST_WARNING << "Mixing certs from the system certificate store and PEM files. This may "
                          "produced unexpected results.";
         }
 
@@ -1446,7 +1446,7 @@ Status SSLManagerWindows::_validateCertificate(PCCERT_CONTEXT cert,
 
         if ((FiletimeToULL(cert->pCertInfo->NotBefore) > currentTimeLong) ||
             (currentTimeLong > FiletimeToULL(cert->pCertInfo->NotAfter))) {
-            severe() << "The provided SSL certificate is expired or not yet valid.";
+            MONGO_BOOST_SEVERE << "The provided SSL certificate is expired or not yet valid.";
             fassertFailedNoTrace(50755);
         }
 
@@ -1608,14 +1608,14 @@ Status validatePeerCertificate(const std::string& remoteHost,
                 << " does not match " << certificateNames.str();
 
             if (allowInvalidCertificates) {
-                warning() << "SSL peer certificate validation failed ("
+                MONGO_BOOST_WARNING << "SSL peer certificate validation failed ("
                           << integerToHex(certChainPolicyStatus.dwError)
                           << "): " << errnoWithDescription(certChainPolicyStatus.dwError);
-                warning() << msg.ss.str();
+                MONGO_BOOST_WARNING << msg.ss.str();
                 *peerSubjectName = SSLX509Name();
                 return Status::OK();
             } else if (allowInvalidHostnames) {
-                warning() << msg.ss.str();
+                MONGO_BOOST_WARNING << msg.ss.str();
                 return Status::OK();
             } else {
                 return Status(ErrorCodes::SSLHandshakeFailed, msg);
@@ -1625,7 +1625,7 @@ Status validatePeerCertificate(const std::string& remoteHost,
             msg << "SSL peer certificate validation failed: ("
                 << integerToHex(certChainPolicyStatus.dwError) << ")"
                 << errnoWithDescription(certChainPolicyStatus.dwError);
-            error() << msg.ss.str();
+            MONGO_BOOST_ERROR << msg.ss.str();
             return Status(ErrorCodes::SSLHandshakeFailed, msg);
         }
     }
@@ -1645,12 +1645,12 @@ StatusWith<boost::optional<SSLPeerInfo>> SSLManagerWindows::parseAndValidatePeer
         if (_weakValidation) {
             // do not give warning if "no certificate" warnings are suppressed
             if (!_suppressNoCertificateWarning) {
-                warning() << "no SSL certificate provided by peer";
+                MONGO_BOOST_WARNING << "no SSL certificate provided by peer";
             }
             return {boost::none};
         } else {
             auto msg = "no SSL certificate provided by peer; connection rejected";
-            error() << msg;
+            MONGO_BOOST_ERROR << msg;
             return Status(ErrorCodes::SSLHandshakeFailed, msg);
         }
     }

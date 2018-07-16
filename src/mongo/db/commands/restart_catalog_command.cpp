@@ -113,12 +113,12 @@ public:
             repl::establishOplogCollectionForLogging(opCtx, oplog);
         });
 
-        log() << "Closing database catalog";
+        MONGO_BOOST_LOG << "Closing database catalog";
         auto state = catalog::closeCatalog(opCtx);
 
         restoreOplogPointerGuard.Dismiss();
 
-        log() << "Reopening database catalog";
+        MONGO_BOOST_LOG << "Reopening database catalog";
         catalog::openCatalog(opCtx, state);
 
         return true;

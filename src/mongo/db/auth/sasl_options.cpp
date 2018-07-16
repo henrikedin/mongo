@@ -99,7 +99,7 @@ Status addSASLOptions(moe::OptionSection* options) {
 
     Status ret = options->addSection(saslOptions);
     if (!ret.isOK()) {
-        log() << "Failed to add sasl option section: " << ret.toString();
+        MONGO_BOOST_LOG << "Failed to add sasl option section: " << ret.toString();
         return ret;
     }
 

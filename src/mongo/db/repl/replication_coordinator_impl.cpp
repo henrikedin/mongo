@@ -459,9 +459,9 @@ bool ReplicationCoordinatorImpl::_startLoadLocalConfig(OperationContext* opCtx) 
     StatusWith<LastVote> lastVote = _externalState->loadLocalLastVoteDocument(opCtx);
     if (!lastVote.isOK()) {
         if (lastVote.getStatus() == ErrorCodes::NoMatchingDocument) {
-            log() << "Did not find local voted for document at startup.";
+            MONGO_BOOST_LOG << "Did not find local voted for document at startup.";
         } else {
-            severe() << "Error loading local voted for document at startup; "
+            MONGO_BOOST_SEVERE << "Error loading local voted for document at startup; "
                      << lastVote.getStatus();
             fassertFailedNoTrace(40367);
         }
@@ -474,25 +474,25 @@ bool ReplicationCoordinatorImpl::_startLoadLocalConfig(OperationContext* opCtx) 
     auto status = _replicationProcess->refreshRollbackID(opCtx);
     if (!status.isOK()) {
         if (status == ErrorCodes::NamespaceNotFound) {
-            log() << "Did not find local Rollback ID document at startup. Creating one.";
+            MONGO_BOOST_LOG << "Did not find local Rollback ID document at startup. Creating one.";
             auto initializingStatus = _replicationProcess->initializeRollbackID(opCtx);
             fassert(40424, initializingStatus);
         } else {
-            severe() << "Error loading local Rollback ID document at startup; " << status;
+            MONGO_BOOST_SEVERE << "Error loading local Rollback ID document at startup; " << status;
             fassertFailedNoTrace(40428);
         }
     }
 
     StatusWith<BSONObj> cfg = _externalState->loadLocalConfigDocument(opCtx);
     if (!cfg.isOK()) {
-        log() << "Did not find local replica set configuration document at startup;  "
+        MONGO_BOOST_LOG << "Did not find local replica set configuration document at startup;  "
               << cfg.getStatus();
         return true;
     }
     ReplSetConfig localConfig;
     status = localConfig.initialize(cfg.getValue());
     if (!status.isOK()) {
-        error() << "Locally stored replica set configuration does not parse; See "
+        MONGO_BOOST_ERROR << "Locally stored replica set configuration does not parse; See "
                    "http://www.mongodb.org/dochub/core/recover-replica-set-from-invalid-config "
                    "for information on how to recover from this. Got \""
                 << status << "\" while parsing " << cfg.getValue();
@@ -536,12 +536,12 @@ void ReplicationCoordinatorImpl::_finishLoadLocalConfig(
     if (!myIndex.isOK()) {
         if (myIndex.getStatus() == ErrorCodes::NodeNotFound ||
             myIndex.getStatus() == ErrorCodes::DuplicateKey) {
-            warning() << "Locally stored replica set configuration does not have a valid entry "
+            MONGO_BOOST_WARNING << "Locally stored replica set configuration does not have a valid entry "
                          "for the current node; waiting for reconfig or remote heartbeat; Got \""
                       << myIndex.getStatus() << "\" while validating " << localConfig.toBSON();
             myIndex = StatusWith<int>(-1);
         } else {
-            error() << "Locally stored replica set configuration is invalid; See "
+            MONGO_BOOST_ERROR << "Locally stored replica set configuration is invalid; See "
                        "http://www.mongodb.org/dochub/core/recover-replica-set-from-invalid-config"
                        " for information on how to recover from this. Got \""
                     << myIndex.getStatus() << "\" while validating " << localConfig.toBSON();
@@ -550,7 +550,7 @@ void ReplicationCoordinatorImpl::_finishLoadLocalConfig(
     }
 
     if (localConfig.getReplSetName() != _settings.ourSetName()) {
-        warning() << "Local replica set configuration document reports set name of "
+        MONGO_BOOST_WARNING << "Local replica set configuration document reports set name of "
                   << localConfig.getReplSetName() << ", but command line reports "
                   << _settings.ourSetName() << "; waitng for reconfig or remote heartbeat";
         myIndex = StatusWith<int>(-1);
@@ -562,7 +562,7 @@ void ReplicationCoordinatorImpl::_finishLoadLocalConfig(
     OpTime lastOpTime;
     if (!isArbiter) {
         if (!lastOpTimeStatus.isOK()) {
-            warning() << "Failed to load timestamp of most recently applied operation: "
+            MONGO_BOOST_WARNING << "Failed to load timestamp of most recently applied operation: "
                       << lastOpTimeStatus.getStatus();
         } else {
             lastOpTime = lastOpTimeStatus.getValue();
@@ -639,7 +639,7 @@ void ReplicationCoordinatorImpl::_stopDataReplication(OperationContext* opCtx) {
             << "ReplicationCoordinatorImpl::_stopDataReplication calling InitialSyncer::shutdown.";
         const auto status = initialSyncerCopy->shutdown();
         if (!status.isOK()) {
-            warning() << "InitialSyncer shutdown failed: " << status;
+            MONGO_BOOST_WARNING << "InitialSyncer shutdown failed: " << status;
         }
         initialSyncerCopy.reset();
         // Do not return here, fall through.
@@ -667,7 +667,7 @@ void ReplicationCoordinatorImpl::_startDataReplication(OperationContext* opCtx,
 
     // Do initial sync.
     if (!_externalState->getTaskExecutor()) {
-        log() << "not running initial sync during test.";
+        MONGO_BOOST_LOG << "not running initial sync during test.";
         return;
     }
 
@@ -675,14 +675,14 @@ void ReplicationCoordinatorImpl::_startDataReplication(OperationContext* opCtx,
         {
             stdx::lock_guard<stdx::mutex> lock(_mutex);
             if (status == ErrorCodes::CallbackCanceled) {
-                log() << "Initial Sync has been cancelled: " << status.getStatus();
+                MONGO_BOOST_LOG << "Initial Sync has been cancelled: " << status.getStatus();
                 return;
             } else if (!status.isOK()) {
                 if (_inShutdown) {
-                    log() << "Initial Sync failed during shutdown due to " << status.getStatus();
+                    MONGO_BOOST_LOG << "Initial Sync failed during shutdown due to " << status.getStatus();
                     return;
                 } else {
-                    error() << "Initial sync failed, shutting down now. Restart the server "
+                    MONGO_BOOST_ERROR << "Initial sync failed, shutting down now. Restart the server "
                                "to attempt a new initial sync.";
                     fassertFailedWithStatusNoTrace(40088, status.getStatus());
                 }
@@ -728,7 +728,7 @@ void ReplicationCoordinatorImpl::_startDataReplication(OperationContext* opCtx,
         uassertStatusOK(initialSyncerCopy->startup(opCtx, numInitialSyncAttempts.load()));
     } catch (...) {
         auto status = exceptionToStatus();
-        log() << "Initial Sync failed to start: " << status;
+        MONGO_BOOST_LOG << "Initial Sync failed to start: " << status;
         if (ErrorCodes::CallbackCanceled == status || ErrorCodes::isShutdownError(status.code())) {
             return;
         }
@@ -740,13 +740,13 @@ void ReplicationCoordinatorImpl::startup(OperationContext* opCtx) {
     if (!isReplEnabled()) {
         if (ReplSettings::shouldRecoverFromOplogAsStandalone()) {
             if (!_storage->supportsRecoverToStableTimestamp(opCtx->getServiceContext())) {
-                severe() << "Cannot use 'recoverFromOplogAsStandalone' with a storage engine that "
+                MONGO_BOOST_SEVERE << "Cannot use 'recoverFromOplogAsStandalone' with a storage engine that "
                             "does not support recover to stable timestamp.";
                 fassertFailedNoTrace(50805);
             }
             auto recoveryTS = _storage->getRecoveryTimestamp(opCtx->getServiceContext());
             if (!recoveryTS || recoveryTS->isNull()) {
-                severe()
+				MONGO_BOOST_SEVERE
                     << "Cannot use 'recoverFromOplogAsStandalone' without a stable checkpoint.";
                 fassertFailedNoTrace(50806);
             }
@@ -755,7 +755,7 @@ void ReplicationCoordinatorImpl::startup(OperationContext* opCtx) {
             // for the recoveryTimestamp just like on replica set recovery.
             const auto stableTimestamp = boost::none;
             _replicationProcess->getReplicationRecovery()->recoverFromOplog(opCtx, stableTimestamp);
-            warning() << "Setting mongod to readOnly mode as a result of specifying "
+            MONGO_BOOST_WARNING << "Setting mongod to readOnly mode as a result of specifying "
                          "'recoverFromOplogAsStandalone'.";
             storageGlobalParams.readOnly = true;
         }
@@ -797,7 +797,7 @@ void ReplicationCoordinatorImpl::shutdown(OperationContext* opCtx) {
         return;
     }
 
-    log() << "shutting down replication subsystems";
+    MONGO_BOOST_LOG << "shutting down replication subsystems";
 
     // Used to shut down outside of the lock.
     std::shared_ptr<InitialSyncer> initialSyncerCopy;
@@ -806,7 +806,7 @@ void ReplicationCoordinatorImpl::shutdown(OperationContext* opCtx) {
         fassert(28533, !_inShutdown);
         _inShutdown = true;
         if (_rsConfigState == kConfigPreStart) {
-            warning() << "ReplicationCoordinatorImpl::shutdown() called before "
+            MONGO_BOOST_WARNING << "ReplicationCoordinatorImpl::shutdown() called before "
                          "startup() finished.  Shutting down without cleaning up the "
                          "replication system";
             return;
@@ -830,7 +830,7 @@ void ReplicationCoordinatorImpl::shutdown(OperationContext* opCtx) {
         LOG(1) << "ReplicationCoordinatorImpl::shutdown calling InitialSyncer::shutdown.";
         const auto status = initialSyncerCopy->shutdown();
         if (!status.isOK()) {
-            warning() << "InitialSyncer shutdown failed: " << status;
+            MONGO_BOOST_WARNING << "InitialSyncer shutdown failed: " << status;
         }
         initialSyncerCopy->join();
         initialSyncerCopy.reset();
@@ -965,7 +965,7 @@ void ReplicationCoordinatorImpl::signalDrainComplete(OperationContext* opCtx,
     _externalState->onDrainComplete(opCtx);
 
     if (MONGO_FAIL_POINT(transitionToPrimaryHangBeforeTakingGlobalExclusiveLock)) {
-        log() << "transition to primary - "
+        MONGO_BOOST_LOG << "transition to primary - "
                  "transitionToPrimaryHangBeforeTakingGlobalExclusiveLock fail point enabled. "
                  "Blocking until fail point is disabled.";
         while (MONGO_FAIL_POINT(transitionToPrimaryHangBeforeTakingGlobalExclusiveLock)) {
@@ -1001,7 +1001,7 @@ void ReplicationCoordinatorImpl::signalDrainComplete(OperationContext* opCtx,
 
         auto status = _topCoord->completeTransitionToPrimary(firstOpTime);
         if (status.code() == ErrorCodes::PrimarySteppedDown) {
-            log() << "Transition to primary failed" << causedBy(status);
+            MONGO_BOOST_LOG << "Transition to primary failed" << causedBy(status);
             return;
         }
         invariant(status);
@@ -1014,7 +1014,7 @@ void ReplicationCoordinatorImpl::signalDrainComplete(OperationContext* opCtx,
     // Update _canAcceptNonLocalWrites
     _updateMemberStateFromTopologyCoordinator_inlock(opCtx);
 
-    log() << "transition to primary complete; database writes are now permitted" << rsLog;
+    MONGO_BOOST_LOG << "transition to primary complete; database writes are now permitted" << rsLog;
     _drainFinishedCond.notify_all();
     _externalState->startNoopWriter(_getMyLastAppliedOpTime_inlock());
 }
@@ -1588,7 +1588,7 @@ Status ReplicationCoordinatorImpl::_awaitReplication_inlock(
                 // log state of replica set on timeout to help with diagnosis.
                 BSONObjBuilder progress;
                 _topCoord->fillMemberData(&progress);
-                log() << "Replication for failed WC: " << writeConcern.toBSON()
+                MONGO_BOOST_LOG << "Replication for failed WC: " << writeConcern.toBSON()
                       << ", waitInfo: " << waiter << ", opID: " << opCtx->getOpID()
                       << ", progress: " << progress.done();
             }
@@ -1684,7 +1684,7 @@ Status ReplicationCoordinatorImpl::stepDown(OperationContext* opCtx,
         lk.unlock();
 
         if (MONGO_FAIL_POINT(stepdownHangBeforePerformingPostMemberStateUpdateActions)) {
-            log() << "stepping down from primary - "
+            MONGO_BOOST_LOG << "stepping down from primary - "
                      "stepdownHangBeforePerformingPostMemberStateUpdateActions fail point enabled. "
                      "Blocking until fail point is disabled.";
             while (MONGO_FAIL_POINT(stepdownHangBeforePerformingPostMemberStateUpdateActions)) {
@@ -1780,13 +1780,13 @@ void ReplicationCoordinatorImpl::_performElectionHandoff() {
     auto candidateIndex = _topCoord->chooseElectionHandoffCandidate();
 
     if (candidateIndex < 0) {
-        log() << "Could not find node to hand off election to.";
+        MONGO_BOOST_LOG << "Could not find node to hand off election to.";
         return;
     }
 
     auto target = _rsConfig.getMemberAt(candidateIndex).getHostAndPort();
     executor::RemoteCommandRequest request(target, "admin", BSON("replSetStepUp" << 1), nullptr);
-    log() << "Handing off election to " << target;
+    MONGO_BOOST_LOG << "Handing off election to " << target;
 
     auto callbackHandleSW = _replExecutor->scheduleRemoteCommand(
         request, [target](const executor::TaskExecutor::RemoteCommandCallbackArgs& callbackData) {
@@ -1796,13 +1796,13 @@ void ReplicationCoordinatorImpl::_performElectionHandoff() {
                 LOG(1) << "replSetStepUp request to " << target << " succeeded with response -- "
                        << callbackData.response.data;
             } else {
-                log() << "replSetStepUp request to " << target << " failed due to " << status;
+                MONGO_BOOST_LOG << "replSetStepUp request to " << target << " failed due to " << status;
             }
         });
 
     auto callbackHandleStatus = callbackHandleSW.getStatus();
     if (!callbackHandleStatus.isOK()) {
-        error() << "Failed to schedule ReplSetStepUp request to " << target
+        MONGO_BOOST_ERROR << "Failed to schedule ReplSetStepUp request to " << target
                 << " for election handoff: " << callbackHandleStatus;
     }
 }
@@ -2105,7 +2105,7 @@ Status ReplicationCoordinatorImpl::setMaintenanceMode(bool activate) {
 
     int curMaintenanceCalls = _topCoord->getMaintenanceCount();
     if (activate) {
-        log() << "going into maintenance mode with " << curMaintenanceCalls
+        MONGO_BOOST_LOG << "going into maintenance mode with " << curMaintenanceCalls
               << " other maintenance mode tasks in progress" << rsLog;
         _topCoord->adjustMaintenanceCountBy(1);
     } else if (curMaintenanceCalls > 0) {
@@ -2113,10 +2113,10 @@ Status ReplicationCoordinatorImpl::setMaintenanceMode(bool activate) {
 
         _topCoord->adjustMaintenanceCountBy(-1);
 
-        log() << "leaving maintenance mode (" << curMaintenanceCalls - 1
+        MONGO_BOOST_LOG << "leaving maintenance mode (" << curMaintenanceCalls - 1
               << " other maintenance mode tasks ongoing)" << rsLog;
     } else {
-        warning() << "Attempted to leave maintenance mode but it is not currently active";
+        MONGO_BOOST_WARNING << "Attempted to leave maintenance mode but it is not currently active";
         return Status(ErrorCodes::OperationFailed, "already out of maintenance mode");
     }
 
@@ -2168,7 +2168,7 @@ Status ReplicationCoordinatorImpl::processReplSetFreeze(int secs, BSONObjBuilder
 Status ReplicationCoordinatorImpl::processReplSetReconfig(OperationContext* opCtx,
                                                           const ReplSetReconfigArgs& args,
                                                           BSONObjBuilder* resultObj) {
-    log() << "replSetReconfig admin command received from client; new config: "
+    MONGO_BOOST_LOG << "replSetReconfig admin command received from client; new config: "
           << args.newConfigObj;
 
     stdx::unique_lock<stdx::mutex> lk(_mutex);
@@ -2193,7 +2193,7 @@ Status ReplicationCoordinatorImpl::processReplSetReconfig(OperationContext* opCt
                           "Cannot run replSetReconfig because the node is currently updating "
                           "its configuration");
         default:
-            severe() << "Unexpected _rsConfigState " << int(_rsConfigState);
+            MONGO_BOOST_SEVERE << "Unexpected _rsConfigState " << int(_rsConfigState);
             fassertFailed(18914);
     }
 
@@ -2222,7 +2222,7 @@ Status ReplicationCoordinatorImpl::processReplSetReconfig(OperationContext* opCt
 
     Status status = newConfig.initialize(newConfigObj, oldConfig.getReplicaSetId());
     if (!status.isOK()) {
-        error() << "replSetReconfig got " << status << " while parsing " << newConfigObj;
+        MONGO_BOOST_ERROR << "replSetReconfig got " << status << " while parsing " << newConfigObj;
         return Status(ErrorCodes::InvalidReplicaSetConfig, status.reason());
         ;
     }
@@ -2230,34 +2230,34 @@ Status ReplicationCoordinatorImpl::processReplSetReconfig(OperationContext* opCt
         str::stream errmsg;
         errmsg << "Attempting to reconfigure a replica set with name " << newConfig.getReplSetName()
                << ", but command line reports " << _settings.ourSetName() << "; rejecting";
-        error() << std::string(errmsg);
+        MONGO_BOOST_ERROR << std::string(errmsg);
         return Status(ErrorCodes::InvalidReplicaSetConfig, errmsg);
     }
 
     StatusWith<int> myIndex = validateConfigForReconfig(
         _externalState.get(), oldConfig, newConfig, opCtx->getServiceContext(), args.force);
     if (!myIndex.isOK()) {
-        error() << "replSetReconfig got " << myIndex.getStatus() << " while validating "
+        MONGO_BOOST_ERROR << "replSetReconfig got " << myIndex.getStatus() << " while validating "
                 << newConfigObj;
         return Status(ErrorCodes::NewReplicaSetConfigurationIncompatible,
                       myIndex.getStatus().reason());
     }
 
-    log() << "replSetReconfig config object with " << newConfig.getNumMembers()
+    MONGO_BOOST_LOG << "replSetReconfig config object with " << newConfig.getNumMembers()
           << " members parses ok";
 
     if (!args.force) {
         status = checkQuorumForReconfig(
             _replExecutor.get(), newConfig, myIndex.getValue(), _topCoord->getTerm());
         if (!status.isOK()) {
-            error() << "replSetReconfig failed; " << status;
+            MONGO_BOOST_ERROR << "replSetReconfig failed; " << status;
             return status;
         }
     }
 
     status = _externalState->storeLocalConfigDocument(opCtx, newConfig.toBSON());
     if (!status.isOK()) {
-        error() << "replSetReconfig failed to store config document; " << status;
+        MONGO_BOOST_ERROR << "replSetReconfig failed to store config document; " << status;
         return status;
     }
 
@@ -2324,7 +2324,7 @@ void ReplicationCoordinatorImpl::_finishReplSetReconfig(
 Status ReplicationCoordinatorImpl::processReplSetInitiate(OperationContext* opCtx,
                                                           const BSONObj& configObj,
                                                           BSONObjBuilder* resultObj) {
-    log() << "replSetInitiate admin command received from client";
+    MONGO_BOOST_LOG << "replSetInitiate admin command received from client";
 
     const auto replEnabled = _settings.usingReplSets();
     stdx::unique_lock<stdx::mutex> lk(_mutex);
@@ -2349,26 +2349,26 @@ Status ReplicationCoordinatorImpl::processReplSetInitiate(OperationContext* opCt
     ReplSetConfig newConfig;
     Status status = newConfig.initializeForInitiate(configObj);
     if (!status.isOK()) {
-        error() << "replSet initiate got " << status << " while parsing " << configObj;
+        MONGO_BOOST_ERROR << "replSet initiate got " << status << " while parsing " << configObj;
         return Status(ErrorCodes::InvalidReplicaSetConfig, status.reason());
     }
     if (newConfig.getReplSetName() != _settings.ourSetName()) {
         str::stream errmsg;
         errmsg << "Attempting to initiate a replica set with name " << newConfig.getReplSetName()
                << ", but command line reports " << _settings.ourSetName() << "; rejecting";
-        error() << std::string(errmsg);
+        MONGO_BOOST_ERROR << std::string(errmsg);
         return Status(ErrorCodes::InvalidReplicaSetConfig, errmsg);
     }
 
     StatusWith<int> myIndex =
         validateConfigForInitiate(_externalState.get(), newConfig, opCtx->getServiceContext());
     if (!myIndex.isOK()) {
-        error() << "replSet initiate got " << myIndex.getStatus() << " while validating "
+        MONGO_BOOST_ERROR << "replSet initiate got " << myIndex.getStatus() << " while validating "
                 << configObj;
         return Status(ErrorCodes::InvalidReplicaSetConfig, myIndex.getStatus().reason());
     }
 
-    log() << "replSetInitiate config object with " << newConfig.getNumMembers()
+    MONGO_BOOST_LOG << "replSetInitiate config object with " << newConfig.getNumMembers()
           << " members parses ok";
 
     // In pv1, the TopologyCoordinator has not set the term yet. It will be set to kInitialTerm if
@@ -2380,13 +2380,13 @@ Status ReplicationCoordinatorImpl::processReplSetInitiate(OperationContext* opCt
         newConfig.getProtocolVersion() == 1 ? OpTime::kInitialTerm : OpTime::kUninitializedTerm);
 
     if (!status.isOK()) {
-        error() << "replSetInitiate failed; " << status;
+        MONGO_BOOST_ERROR << "replSetInitiate failed; " << status;
         return status;
     }
 
     status = _externalState->initializeReplSetStorage(opCtx, newConfig.toBSON());
     if (!status.isOK()) {
-        error() << "replSetInitiate failed to store config document or create the oplog; "
+        MONGO_BOOST_ERROR << "replSetInitiate failed to store config document or create the oplog; "
                 << status;
         return status;
     }
@@ -2553,7 +2553,7 @@ ReplicationCoordinatorImpl::_updateMemberStateFromTopologyCoordinator_inlock(
         _cancelPriorityTakeover_inlock();
     }
 
-    log() << "transition to " << newState << " from " << _memberState << rsLog;
+    MONGO_BOOST_LOG << "transition to " << newState << " from " << _memberState << rsLog;
     // Initializes the featureCompatibilityVersion to the latest value, because arbiters do not
     // receive the replicated version. This is to avoid bugs like SERVER-32639.
     if (newState.arbiter()) {
@@ -2623,13 +2623,13 @@ void ReplicationCoordinatorImpl::_performPostMemberStateUpdateAction(
             _startElectSelfV1(TopologyCoordinator::StartElectionReason::kElectionTimeout);
             break;
         default:
-            severe() << "Unknown post member state update action " << static_cast<int>(action);
+            MONGO_BOOST_SEVERE << "Unknown post member state update action " << static_cast<int>(action);
             fassertFailed(26010);
     }
 }
 
 void ReplicationCoordinatorImpl::CatchupState::start_inlock() {
-    log() << "Entering primary catch-up mode.";
+    MONGO_BOOST_LOG << "Entering primary catch-up mode.";
 
     // No catchup in single node replica set.
     if (_repl->_rsConfig.getNumMembers() == 1) {
@@ -2641,7 +2641,7 @@ void ReplicationCoordinatorImpl::CatchupState::start_inlock() {
 
     // When catchUpTimeoutMillis is 0, we skip doing catchup entirely.
     if (catchupTimeout == ReplSetConfig::kCatchUpDisabled) {
-        log() << "Skipping primary catchup since the catchup timeout is 0.";
+        MONGO_BOOST_LOG << "Skipping primary catchup since the catchup timeout is 0.";
         abort_inlock();
         return;
     }
@@ -2656,7 +2656,7 @@ void ReplicationCoordinatorImpl::CatchupState::start_inlock() {
         if (cbData.myHandle.isCanceled()) {
             return;
         }
-        log() << "Catchup timed out after becoming primary.";
+        MONGO_BOOST_LOG << "Catchup timed out after becoming primary.";
         abort_inlock();
     };
 
@@ -2669,7 +2669,7 @@ void ReplicationCoordinatorImpl::CatchupState::start_inlock() {
     auto timeoutDate = _repl->_replExecutor->now() + catchupTimeout;
     auto status = _repl->_replExecutor->scheduleWorkAt(timeoutDate, timeoutCB);
     if (!status.isOK()) {
-        log() << "Failed to schedule catchup timeout work.";
+        MONGO_BOOST_LOG << "Failed to schedule catchup timeout work.";
         abort_inlock();
         return;
     }
@@ -2679,7 +2679,7 @@ void ReplicationCoordinatorImpl::CatchupState::start_inlock() {
 void ReplicationCoordinatorImpl::CatchupState::abort_inlock() {
     invariant(_repl->_getMemberState_inlock().primary());
 
-    log() << "Exited primary catch-up mode.";
+    MONGO_BOOST_LOG << "Exited primary catch-up mode.";
     // Clean up its own members.
     if (_timeoutCbh) {
         _repl->_replExecutor->cancel(_timeoutCbh);
@@ -2703,7 +2703,7 @@ void ReplicationCoordinatorImpl::CatchupState::signalHeartbeatUpdate_inlock() {
 
     // We've caught up.
     if (*targetOpTime <= _repl->_getMyLastAppliedOpTime_inlock()) {
-        log() << "Caught up to the latest optime known via heartbeats after becoming primary.";
+        MONGO_BOOST_LOG << "Caught up to the latest optime known via heartbeats after becoming primary.";
         abort_inlock();
         return;
     }
@@ -2713,14 +2713,14 @@ void ReplicationCoordinatorImpl::CatchupState::signalHeartbeatUpdate_inlock() {
         return;
     }
 
-    log() << "Heartbeats updated catchup target optime to " << *targetOpTime;
+    MONGO_BOOST_LOG << "Heartbeats updated catchup target optime to " << *targetOpTime;
     if (_waiter) {
         _repl->_opTimeWaiterList.remove_inlock(_waiter.get());
     }
     auto targetOpTimeCB = [this, targetOpTime]() {
         // Double check the target time since stepdown may signal us too.
         if (*targetOpTime <= _repl->_getMyLastAppliedOpTime_inlock()) {
-            log() << "Caught up to the latest known optime successfully after becoming primary.";
+            MONGO_BOOST_LOG << "Caught up to the latest known optime successfully after becoming primary.";
             abort_inlock();
         }
     };
@@ -2772,12 +2772,12 @@ ReplicationCoordinatorImpl::_setCurrentRSConfig_inlock(OperationContext* opCtx,
     // Warn if this config has protocol version 0
     if (newConfig.getProtocolVersion() == 0 &&
         (!oldConfig.isInitialized() || oldConfig.getProtocolVersion() == 1)) {
-        log() << startupWarningsLog;
-        log() << "** WARNING: This replica set was configured with protocol version 0."
+        MONGO_BOOST_LOG << startupWarningsLog;
+        MONGO_BOOST_LOG << "** WARNING: This replica set was configured with protocol version 0."
               << startupWarningsLog;
-        log() << "**          This protocol version is deprecated and subject to be removed "
+        MONGO_BOOST_LOG << "**          This protocol version is deprecated and subject to be removed "
               << startupWarningsLog;
-        log() << "**          in a future version." << startupWarningsLog;
+        MONGO_BOOST_LOG << "**          in a future version." << startupWarningsLog;
     }
 
     // Warn if running --nojournal and writeConcernMajorityJournalDefault = false
@@ -2785,27 +2785,27 @@ ReplicationCoordinatorImpl::_setCurrentRSConfig_inlock(OperationContext* opCtx,
     if (storageEngine && !storageEngine->isDurable() &&
         (newConfig.getWriteConcernMajorityShouldJournal() &&
          (!oldConfig.isInitialized() || !oldConfig.getWriteConcernMajorityShouldJournal()))) {
-        log() << startupWarningsLog;
-        log() << "** WARNING: This replica set is running without journaling enabled but the "
+        MONGO_BOOST_LOG << startupWarningsLog;
+        MONGO_BOOST_LOG << "** WARNING: This replica set is running without journaling enabled but the "
               << startupWarningsLog;
-        log() << "**          writeConcernMajorityJournalDefault option to the replica set config "
+        MONGO_BOOST_LOG << "**          writeConcernMajorityJournalDefault option to the replica set config "
               << startupWarningsLog;
-        log() << "**          is set to true. The writeConcernMajorityJournalDefault "
+        MONGO_BOOST_LOG << "**          is set to true. The writeConcernMajorityJournalDefault "
               << startupWarningsLog;
-        log() << "**          option to the replica set config must be set to false "
+        MONGO_BOOST_LOG << "**          option to the replica set config must be set to false "
               << startupWarningsLog;
-        log() << "**          or w:majority write concerns will never complete."
+        MONGO_BOOST_LOG << "**          or w:majority write concerns will never complete."
               << startupWarningsLog;
-        log() << startupWarningsLog;
+        MONGO_BOOST_LOG << startupWarningsLog;
     }
 
-    log() << "New replica set config in use: " << _rsConfig.toBSON() << rsLog;
+    MONGO_BOOST_LOG << "New replica set config in use: " << _rsConfig.toBSON() << rsLog;
     _selfIndex = myIndex;
     if (_selfIndex >= 0) {
-        log() << "This node is " << _rsConfig.getMemberAt(_selfIndex).getHostAndPort()
+        MONGO_BOOST_LOG << "This node is " << _rsConfig.getMemberAt(_selfIndex).getHostAndPort()
               << " in the config";
     } else {
-        log() << "This node is not a member of the config";
+        MONGO_BOOST_LOG << "This node is not a member of the config";
     }
 
     _cancelCatchupTakeover_inlock();
@@ -2992,7 +2992,7 @@ void ReplicationCoordinatorImpl::resetLastOpTimesFromOplog(OperationContext* opC
     StatusWith<OpTime> lastOpTimeStatus = _externalState->loadLastOpTime(opCtx);
     OpTime lastOpTime;
     if (!lastOpTimeStatus.isOK()) {
-        warning() << "Failed to load timestamp of most recently applied operation; "
+        MONGO_BOOST_WARNING << "Failed to load timestamp of most recently applied operation; "
                   << lastOpTimeStatus.getStatus();
     } else {
         lastOpTime = lastOpTimeStatus.getValue();
@@ -3192,7 +3192,7 @@ Status ReplicationCoordinatorImpl::processReplSetRequestVotes(
 
         Status status = _externalState->storeLocalLastVoteDocument(opCtx, lastVote);
         if (!status.isOK()) {
-            error() << "replSetRequestVotes failed to store LastVote document; " << status;
+            MONGO_BOOST_ERROR << "replSetRequestVotes failed to store LastVote document; " << status;
             return status;
         }
     }
@@ -3372,7 +3372,7 @@ EventHandle ReplicationCoordinatorImpl::_updateTerm_inlock(
             _pendingTermUpdateDuringStepDown = term;
         }
         if (_topCoord->prepareForUnconditionalStepDown()) {
-            log() << "stepping down from primary, because a new term has begun: " << term;
+            MONGO_BOOST_LOG << "stepping down from primary, because a new term has begun: " << term;
             return _stepDownStart();
         } else {
             LOG(2) << "Updated term but not triggering stepdown because we are already in the "
@@ -3410,7 +3410,7 @@ bool ReplicationCoordinatorImpl::_updateCommittedSnapshot_inlock(
     // If we are in ROLLBACK state, do not set any new _currentCommittedSnapshot, as it will be
     // cleared at the end of rollback anyway.
     if (_memberState.rollback()) {
-        log() << "Not updating committed snapshot because we are in rollback";
+        MONGO_BOOST_LOG << "Not updating committed snapshot because we are in rollback";
         return false;
     }
     invariant(!newCommittedSnapshot.isNull());

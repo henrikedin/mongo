@@ -485,7 +485,7 @@ void DBClientBase::_auth(const BSONObj& params) {
 bool DBClientBase::authenticateInternalUser() {
     if (!isInternalAuthSet()) {
         if (!serverGlobalParams.quiet.load()) {
-            log() << "ERROR: No authentication parameters set for internal user";
+            MONGO_BOOST_LOG << "ERROR: No authentication parameters set for internal user";
         }
         return false;
     }
@@ -495,7 +495,7 @@ bool DBClientBase::authenticateInternalUser() {
         return true;
     } catch (const AssertionException& ex) {
         if (!serverGlobalParams.quiet.load()) {
-            log() << "can't authenticate to " << toString()
+            MONGO_BOOST_LOG << "can't authenticate to " << toString()
                   << " as internal user, error: " << ex.what();
         }
         return false;

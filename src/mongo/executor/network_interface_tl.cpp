@@ -88,7 +88,7 @@ void NetworkInterfaceTL::startup() {
     }
 
     if (!_tl) {
-        warning() << "No TransportLayer configured during NetworkInterface startup";
+        MONGO_BOOST_WARNING << "No TransportLayer configured during NetworkInterface startup";
         _ownedTransportLayer =
             transport::TransportLayerManager::makeAndStartDefaultEgressTransportLayer();
         _tl = _ownedTransportLayer.get();
@@ -181,7 +181,7 @@ Status NetworkInterfaceTL::startCommand(const TaskExecutor::CallbackHandle& cbHa
     }
 
     if (MONGO_FAIL_POINT(networkInterfaceDiscardCommandsBeforeAcquireConn)) {
-        log() << "Discarding command due to failpoint before acquireConn";
+        MONGO_BOOST_LOG << "Discarding command due to failpoint before acquireConn";
         std::move(state->mergedFuture)
             .getAsync([onFinish](StatusWith<RemoteCommandResponse> response) {
                 onFinish(RemoteCommandResponse(response.getStatus(), Milliseconds{0}));
@@ -440,7 +440,7 @@ Status NetworkInterfaceTL::setAlarm(Date_t when,
 
             auto nowVal = now();
             if (nowVal < when) {
-                warning() << "Alarm returned early. Expected at: " << when
+                MONGO_BOOST_WARNING << "Alarm returned early. Expected at: " << when
                           << ", fired at: " << nowVal;
                 const auto status = setAlarm(when, std::move(action), baton);
                 if ((!status.isOK()) && (status != ErrorCodes::ShutdownInProgress)) {
@@ -457,7 +457,7 @@ Status NetworkInterfaceTL::setAlarm(Date_t when,
                     _reactor->schedule(transport::Reactor::kPost, std::move(action));
                 }
             } else if (status != ErrorCodes::CallbackCanceled) {
-                warning() << "setAlarm() received an error: " << status;
+                MONGO_BOOST_WARNING << "setAlarm() received an error: " << status;
             }
         });
     return Status::OK();

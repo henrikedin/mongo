@@ -173,7 +173,7 @@ void _assertIteratorsEquivalent(It1 it1, It2 it2, int line) {
         }
 
     } catch (...) {
-        mongo::unittest::log() << "Failure from line " << line << " on iteration " << iteration
+        mongo::unittest::MONGO_BOOST_LOG << "Failure from line " << line << " on iteration " << iteration
                                << std::endl;
         throw;
     }

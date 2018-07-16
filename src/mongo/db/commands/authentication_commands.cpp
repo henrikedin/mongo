@@ -236,7 +236,7 @@ bool CmdAuthenticate::run(OperationContext* opCtx,
                           BSONObjBuilder& result) {
     if (!serverGlobalParams.quiet.load()) {
         mutablebson::Document cmdToLog(cmdObj, mutablebson::Document::kInPlaceDisabled);
-        log() << " authenticate db: " << dbname << " " << cmdToLog;
+        MONGO_BOOST_LOG << " authenticate db: " << dbname << " " << cmdToLog;
     }
     std::string mechanism = cmdObj.getStringField("mechanism");
     if (mechanism.empty()) {
@@ -265,7 +265,7 @@ bool CmdAuthenticate::run(OperationContext* opCtx,
     if (!status.isOK()) {
         if (!serverGlobalParams.quiet.load()) {
             auto const client = opCtx->getClient();
-            log() << "Failed to authenticate " << user
+            MONGO_BOOST_LOG << "Failed to authenticate " << user
                   << (client->hasRemote() ? (" from client " + client->getRemote().toString()) : "")
                   << " with mechanism " << mechanism << ": " << status;
         }

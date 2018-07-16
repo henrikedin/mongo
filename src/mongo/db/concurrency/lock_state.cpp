@@ -184,7 +184,7 @@ void LockerImpl::dump() const {
     }
     _lock.unlock();
 
-    log() << ss.str();
+    MONGO_BOOST_LOG << ss.str();
 }
 
 
@@ -757,7 +757,7 @@ LockResult LockerImpl::lockComplete(
         if (checkDeadlock) {
             DeadlockDetector wfg(globalLockManager, this);
             if (wfg.check().hasCycle()) {
-                warning() << "Deadlock found: " << wfg.toString();
+                MONGO_BOOST_WARNING << "Deadlock found: " << wfg.toString();
 
                 globalStats.recordDeadlock(resId, mode);
                 _stats.recordDeadlock(resId, mode);

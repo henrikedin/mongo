@@ -163,7 +163,7 @@ Status AuthorizationSessionImpl::addAndAuthorizeUser(OperationContext* opCtx,
     Status restrictionStatus =
         restrictionSet.validate(RestrictionEnvironment::get(*opCtx->getClient()));
     if (!restrictionStatus.isOK()) {
-        log() << "Failed to acquire user '" << userName
+        MONGO_BOOST_LOG << "Failed to acquire user '" << userName
               << "' because of unmet authentication restrictions: " << restrictionStatus.reason();
         return AuthorizationManager::authenticationFailedStatus;
     }
@@ -646,7 +646,7 @@ bool AuthorizationSessionImpl::isAuthorizedToCreateRole(
                 return true;
             }
         }
-        log() << "Not authorized to create the first role in the system '" << args.roleName
+        MONGO_BOOST_LOG << "Not authorized to create the first role in the system '" << args.roleName
               << "' using the localhost exception. The user needs to acquire the role through "
                  "external authentication first.";
     }
@@ -836,7 +836,7 @@ void AuthorizationSessionImpl::_refreshUserInfoAsNeeded(OperationContext* opCtx)
                         Status restrictionStatus = restrictionSet.validate(
                             RestrictionEnvironment::get(*opCtx->getClient()));
                         if (!restrictionStatus.isOK()) {
-                            log() << "Removed user " << name
+                            MONGO_BOOST_LOG << "Removed user " << name
                                   << " with unmet authentication restrictions from session cache of"
                                   << " user information. Restriction failed because: "
                                   << restrictionStatus.reason();
@@ -844,7 +844,7 @@ void AuthorizationSessionImpl::_refreshUserInfoAsNeeded(OperationContext* opCtx)
                             continue;
                         }
                     } catch (...) {
-                        log() << "Evaluating authentication restrictions for " << name
+                        MONGO_BOOST_LOG << "Evaluating authentication restrictions for " << name
                               << " resulted in an unknown exception. Removing user from the"
                               << " session cache.";
                         continue;
@@ -861,7 +861,7 @@ void AuthorizationSessionImpl::_refreshUserInfoAsNeeded(OperationContext* opCtx)
                     // User does not exist anymore; remove it from _authenticatedUsers.
                     fassert(17068, _authenticatedUsers.removeAt(it) == user);
                     authMan.releaseUser(user);
-                    log() << "Removed deleted user " << name
+                    MONGO_BOOST_LOG << "Removed deleted user " << name
                           << " from session cache of user information.";
                     continue;  // No need to advance "it" in this case.
                 }
@@ -869,7 +869,7 @@ void AuthorizationSessionImpl::_refreshUserInfoAsNeeded(OperationContext* opCtx)
                     // An auth subsystem has explicitly indicated a failure.
                     fassert(40555, _authenticatedUsers.removeAt(it) == user);
                     authMan.releaseUser(user);
-                    log() << "Removed user " << name
+                    MONGO_BOOST_LOG << "Removed user " << name
                           << " from session cache of user information because of refresh failure:"
                           << " '" << status << "'.";
                     continue;  // No need to advance "it" in this case.
@@ -877,7 +877,7 @@ void AuthorizationSessionImpl::_refreshUserInfoAsNeeded(OperationContext* opCtx)
                 default:
                     // Unrecognized error; assume that it's transient, and continue working with the
                     // out-of-date privilege data.
-                    warning() << "Could not fetch updated user privilege information for " << name
+                    MONGO_BOOST_WARNING << "Could not fetch updated user privilege information for " << name
                               << "; continuing to use old information.  Reason is "
                               << redact(status);
                     break;

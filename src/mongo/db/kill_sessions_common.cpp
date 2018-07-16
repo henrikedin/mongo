@@ -55,7 +55,7 @@ SessionKiller::Result killSessionsLocalKillOps(OperationContext* opCtx,
                 if (const KillAllSessionsByPattern* pattern = matcher.match(*lsid)) {
                     ScopedKillAllSessionsByPatternImpersonator impersonator(opCtx, *pattern);
 
-                    log() << "killing op: " << opCtxToKill->getOpID()
+                    MONGO_BOOST_LOG << "killing op: " << opCtxToKill->getOpID()
                           << " as part of killing session: " << lsid->toBSON();
 
                     opCtx->getServiceContext()->killOperation(opCtxToKill);

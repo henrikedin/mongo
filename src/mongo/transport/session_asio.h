@@ -121,7 +121,7 @@ public:
             cancelAsyncOperations();
             getSocket().shutdown(GenericSocket::shutdown_both, ec);
             if ((ec) && (ec != asio::error::not_connected)) {
-                error() << "Error shutting down socket: " << ec.message();
+                MONGO_BOOST_ERROR << "Error shutting down socket: " << ec.message();
             }
         }
     }
@@ -182,7 +182,7 @@ public:
         auto swPollEvents = pollASIOSocket(getSocket(), POLLIN, Milliseconds{0});
         if (!swPollEvents.isOK()) {
             if (swPollEvents != ErrorCodes::NetworkTimeout) {
-                warning() << "Failed to poll socket for connectivity check: "
+                MONGO_BOOST_WARNING << "Failed to poll socket for connectivity check: "
                           << swPollEvents.getStatus();
                 return false;
             }
@@ -197,7 +197,7 @@ public:
                 return true;
             } else if (size == -1) {
                 auto errDesc = errnoWithDescription(errno);
-                warning() << "Failed to check socket connectivity: " << errDesc;
+                MONGO_BOOST_WARNING << "Failed to check socket connectivity: " << errDesc;
             }
             // If size == 0 then we got disconnected and we should return false.
         }

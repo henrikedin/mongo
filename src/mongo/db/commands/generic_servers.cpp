@@ -337,7 +337,7 @@ void CmdShutdown::shutdownHelper(const BSONObj& cmdObj) {
         ::abort();
     }
 
-    log() << "terminating, shutdown command received " << cmdObj;
+    MONGO_BOOST_LOG << "terminating, shutdown command received " << cmdObj;
 
 #if defined(_WIN32)
     // Signal the ServiceMain thread to shutdown.

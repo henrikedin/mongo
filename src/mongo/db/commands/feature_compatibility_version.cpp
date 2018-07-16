@@ -155,7 +155,7 @@ void FeatureCompatibilityVersion::onInsertOrUpdate(OperationContext* opCtx, cons
         ? serverGlobalParams.featureCompatibility.getVersion() != newVersion
         : true;
     if (isDifferent) {
-        log() << "setting featureCompatibilityVersion to "
+        MONGO_BOOST_LOG << "setting featureCompatibilityVersion to "
               << FeatureCompatibilityVersionParser::toString(newVersion);
     }
 

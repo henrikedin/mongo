@@ -244,7 +244,7 @@ Status DBClientConnection::connect(const HostAndPort& serverAddress, StringData 
     auto validateStatus =
         rpc::validateWireVersion(WireSpec::instance().outgoing, swProtocolSet.getValue().version);
     if (!validateStatus.isOK()) {
-        warning() << "remote host has incompatible wire version: " << validateStatus;
+        MONGO_BOOST_WARNING << "remote host has incompatible wire version: " << validateStatus;
 
         return validateStatus;
     }

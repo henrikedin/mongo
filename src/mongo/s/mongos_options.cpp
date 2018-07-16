@@ -181,7 +181,7 @@ Status storeMongosOptions(const moe::Environment& params) {
     }
 
     if (params.count("noscripting") || params.count("security.javascriptEnabled")) {
-        warning() << "The Javascript enabled/disabled options are not supported for mongos. "
+        MONGO_BOOST_WARNING << "The Javascript enabled/disabled options are not supported for mongos. "
                      "(\"noscripting\" and/or \"security.javascriptEnabled\" are set.)";
     }
 
@@ -214,7 +214,7 @@ Status storeMongosOptions(const moe::Environment& params) {
     }
     if (!resolvedSomeSeedSever) {
         if (!hostbyname(configdbConnectionString.getValue().getSetName().c_str()).empty()) {
-            warning() << "The replica set name \""
+            MONGO_BOOST_WARNING << "The replica set name \""
                       << escape(configdbConnectionString.getValue().getSetName())
                       << "\" resolves as a host name, but none of the servers in the seed list do. "
                          "Did you reverse the replica set name and the seed list in "
@@ -228,7 +228,7 @@ Status storeMongosOptions(const moe::Environment& params) {
                          configdbConnectionString.getValue().getSetName()};
 
     if (mongosGlobalParams.configdbs.getServers().size() < 3) {
-        warning() << "Running a sharded cluster with fewer than 3 config servers should only be "
+        MONGO_BOOST_WARNING << "Running a sharded cluster with fewer than 3 config servers should only be "
                      "done for testing purposes and is not recommended for production.";
     }
 

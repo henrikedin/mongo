@@ -92,18 +92,18 @@ TempDir::TempDir(const std::string& namePrefix) {
 
     bool createdNewDirectory = boost::filesystem::create_directory(_path);
     if (!createdNewDirectory) {
-        error() << "unique path (" << _path << ") already existed";
+        MONGO_BOOST_ERROR << "unique path (" << _path << ") already existed";
         fassertFailed(17147);
     }
 
-    ::mongo::unittest::log() << "Created temporary directory: " << _path;
+    ::mongo::unittest::MONGO_BOOST_LOG << "Created temporary directory: " << _path;
 }
 
 TempDir::~TempDir() {
     try {
         boost::filesystem::remove_all(_path);
     } catch (const std::exception& e) {
-        warning() << "error encountered recursively deleting directory '" << _path
+        MONGO_BOOST_WARNING << "error encountered recursively deleting directory '" << _path
                   << "': " << e.what() << ". Ignoring and continuing.";
     }
 }

@@ -75,7 +75,7 @@ bool OplogReader::connect(const HostAndPort& host) {
         string errmsg;
         if (!_conn->connect(host, StringData(), errmsg) || !replAuthenticate(_conn.get())) {
             resetConnection();
-            error() << errmsg << endl;
+            MONGO_BOOST_ERROR << errmsg << endl;
             return false;
         }
         _conn->setTags(transport::Session::kKeepOpen);
@@ -86,7 +86,7 @@ bool OplogReader::connect(const HostAndPort& host) {
 
 void OplogReader::tailCheck() {
     if (cursor.get() && cursor->isDead()) {
-        log() << "old cursor isDead, will initiate a new one" << std::endl;
+        MONGO_BOOST_LOG << "old cursor isDead, will initiate a new one" << std::endl;
         resetCursor();
     }
 }

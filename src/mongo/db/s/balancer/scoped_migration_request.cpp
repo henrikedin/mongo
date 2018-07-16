@@ -143,7 +143,7 @@ StatusWith<ScopedMigrationRequest> ScopedMigrationRequest::writeMigration(
             MigrateInfo activeMigrateInfo = statusWithActiveMigration.getValue().toMigrateInfo();
             if (activeMigrateInfo.to != migrateInfo.to ||
                 activeMigrateInfo.from != migrateInfo.from) {
-                log() << "Failed to write document '" << redact(migrateInfo.toString())
+                MONGO_BOOST_LOG << "Failed to write document '" << redact(migrateInfo.toString())
                       << "' to config.migrations because there is already an active migration for"
                       << " that chunk: '" << redact(activeMigrateInfo.toString()) << "'."
                       << causedBy(redact(result));

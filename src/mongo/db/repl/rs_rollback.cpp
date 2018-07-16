@@ -196,7 +196,7 @@ Status FixUpInfo::recordDropTargetInfo(const BSONElement& dropTarget,
                                                "dropTarget UUID. Returned status: "
                                             << redact(dropTargetUUIDStatus.getStatus())
                                             << ", oplog entry: " << redact(obj);
-        error() << message;
+        MONGO_BOOST_ERROR << message;
         return dropTargetUUIDStatus.getStatus();
     }
     UUID dropTargetUUID = dropTargetUUIDStatus.getValue();
@@ -353,7 +353,7 @@ Status rollback_internal::updateFixUpInfoFromLocalOplogEntry(FixUpInfo& fixUpInf
                 string indexName;
                 auto status = bsonExtractStringField(obj, "index", &indexName);
                 if (!status.isOK()) {
-                    severe()
+					MONGO_BOOST_SEVERE
                         << "Missing index name in dropIndexes operation on rollback, document: "
                         << redact(oplogEntry.toBSON());
                     throw RSFatalException(
@@ -381,7 +381,7 @@ Status rollback_internal::updateFixUpInfoFromLocalOplogEntry(FixUpInfo& fixUpInf
                 string indexName;
                 auto status = bsonExtractStringField(obj, "name", &indexName);
                 if (!status.isOK()) {
-                    severe()
+					MONGO_BOOST_SEVERE
                         << "Missing index name in createIndexes operation on rollback, document: "
                         << redact(oplogEntry.toBSON());
                     throw RSFatalException(
@@ -425,7 +425,7 @@ Status rollback_internal::updateFixUpInfoFromLocalOplogEntry(FixUpInfo& fixUpInf
                 if (ns.empty()) {
                     std::string message = str::stream()
                         << "Collection name missing from oplog entry: " << redact(obj);
-                    log() << message;
+                    MONGO_BOOST_LOG << message;
                     return Status(ErrorCodes::UnrecoverableRollbackError, message);
                 }
 
@@ -505,7 +505,7 @@ Status rollback_internal::updateFixUpInfoFromLocalOplogEntry(FixUpInfo& fixUpInf
                     }
                     // Some collMod fields cannot be rolled back, such as the index field.
                     string message = "Cannot roll back a collMod command: ";
-                    severe() << message << redact(obj);
+                    MONGO_BOOST_SEVERE << message << redact(obj);
                     throw RSFatalException(message);
                 }
                 return Status::OK();
@@ -532,7 +532,7 @@ Status rollback_internal::updateFixUpInfoFromLocalOplogEntry(FixUpInfo& fixUpInf
                 if (first.type() != Array) {
                     std::string message = str::stream()
                         << "Expected applyOps argument to be an array; found " << redact(first);
-                    severe() << message;
+                    MONGO_BOOST_SEVERE << message;
                     return Status(ErrorCodes::UnrecoverableRollbackError, message);
                 }
                 for (const auto& subopElement : first.Array()) {
@@ -540,7 +540,7 @@ Status rollback_internal::updateFixUpInfoFromLocalOplogEntry(FixUpInfo& fixUpInf
                         std::string message = str::stream()
                             << "Expected applyOps operations to be of Object type, but found "
                             << redact(subopElement);
-                        severe() << message;
+                        MONGO_BOOST_SEVERE << message;
                         return Status(ErrorCodes::UnrecoverableRollbackError, message);
                     }
                     // In applyOps, the object contains an array of different oplog entries, we call
@@ -558,7 +558,7 @@ Status rollback_internal::updateFixUpInfoFromLocalOplogEntry(FixUpInfo& fixUpInf
             default: {
                 std::string message = str::stream() << "Can't roll back this command yet: "
                                                     << " cmdname = " << first.fieldName();
-                severe() << message << " document: " << redact(obj);
+                MONGO_BOOST_SEVERE << message << " document: " << redact(obj);
                 throw RSFatalException(message);
             }
         }
@@ -571,7 +571,7 @@ Status rollback_internal::updateFixUpInfoFromLocalOplogEntry(FixUpInfo& fixUpInf
     doc._id = oplogEntry.getIdElement();
     if (doc._id.eoo()) {
         std::string message = str::stream() << "Cannot roll back op with no _id. ns: " << nss.ns();
-        severe() << message << ", document: " << redact(oplogEntry.toBSON());
+        MONGO_BOOST_SEVERE << message << ", document: " << redact(oplogEntry.toBSON());
         throw RSFatalException(message);
     }
     fixUpInfo.docsToRefetch.insert(doc);
@@ -608,7 +608,7 @@ void checkRbidAndUpdateMinValid(OperationContext* opCtx,
     // RECOVERING state to SECONDARY state until we have reached the minValid oplog entry.
 
     OpTime minValid = fassert(40492, OpTime::parseFromOplogEntry(newMinValidDoc));
-    log() << "Setting minvalid to " << minValid;
+    MONGO_BOOST_LOG << "Setting minvalid to " << minValid;
 
     // This method is only used with storage engines that do not support recover to stable
     // timestamp. As a result, the timestamp on the 'appliedThrough' update does not matter.
@@ -619,7 +619,7 @@ void checkRbidAndUpdateMinValid(OperationContext* opCtx,
     if (MONGO_FAIL_POINT(rollbackHangThenFailAfterWritingMinValid)) {
 
         // This log output is used in jstests so please leave it.
-        log() << "rollback - rollbackHangThenFailAfterWritingMinValid fail point "
+        MONGO_BOOST_LOG << "rollback - rollbackHangThenFailAfterWritingMinValid fail point "
                  "enabled. Blocking until fail point is disabled.";
         while (MONGO_FAIL_POINT(rollbackHangThenFailAfterWritingMinValid)) {
             invariant(!globalInShutdownDeprecated());  // It is an error to shutdown while enabled.
@@ -642,14 +642,14 @@ void dropIndex(OperationContext* opCtx,
     auto indexDescriptor =
         indexCatalog->findIndexByName(opCtx, indexName, includeUnfinishedIndexes);
     if (!indexDescriptor) {
-        warning() << "Rollback failed to drop index " << indexName << " in " << nss.toString()
+        MONGO_BOOST_WARNING << "Rollback failed to drop index " << indexName << " in " << nss.toString()
                   << ": index not found.";
         return;
     }
     WriteUnitOfWork wunit(opCtx);
     auto status = indexCatalog->dropIndex(opCtx, indexDescriptor);
     if (!status.isOK()) {
-        severe() << "Rollback failed to drop index " << indexName << " in " << nss.toString()
+        MONGO_BOOST_SEVERE << "Rollback failed to drop index " << indexName << " in " << nss.toString()
                  << ": " << redact(status);
     }
     wunit.commit();
@@ -683,7 +683,7 @@ void rollbackCreateIndexes(OperationContext* opCtx, UUID uuid, std::set<std::str
     for (auto itIndex = indexNames.begin(); itIndex != indexNames.end(); itIndex++) {
         const string& indexName = *itIndex;
 
-        log() << "Dropping index in rollback for collection: " << nss << ", UUID: " << uuid
+        MONGO_BOOST_LOG << "Dropping index in rollback for collection: " << nss << ", UUID: " << uuid
               << ", index: " << indexName;
 
         dropIndex(opCtx, indexCatalog, indexName, nss);
@@ -724,7 +724,7 @@ void rollbackDropIndexes(OperationContext* opCtx,
         BSONObj updatedNssObj = updatedNss.obj();
         indexSpec = indexSpec.addField(updatedNssObj.firstElement());
 
-        log() << "Creating index in rollback for collection: " << nss << ", UUID: " << uuid
+        MONGO_BOOST_LOG << "Creating index in rollback for collection: " << nss << ", UUID: " << uuid
               << ", index: " << indexName;
 
         createIndexForApplyOps(opCtx, indexSpec, nss, {}, OplogApplication::Mode::kRecovering);
@@ -753,7 +753,7 @@ void dropCollection(OperationContext* opCtx,
         while (PlanExecutor::ADVANCED == (execState = exec->getNext(&curObj, NULL))) {
             auto status = removeSaver.goingToDelete(curObj);
             if (!status.isOK()) {
-                severe() << "Rolling back createCollection on " << nss
+                MONGO_BOOST_SEVERE << "Rolling back createCollection on " << nss
                          << " failed to write document to remove saver file: " << redact(status);
                 throw RSFatalException(
                     "Rolling back createCollection. Failed to write document to remove saver "
@@ -772,12 +772,12 @@ void dropCollection(OperationContext* opCtx,
             if (execState == PlanExecutor::FAILURE &&
                 WorkingSetCommon::isValidStatusMemberObject(curObj)) {
                 Status errorStatus = WorkingSetCommon::getMemberObjectStatus(curObj);
-                severe() << "Rolling back createCollection on " << nss << " failed with "
+                MONGO_BOOST_SEVERE << "Rolling back createCollection on " << nss << " failed with "
                          << redact(errorStatus) << ". A full resync is necessary.";
                 throw RSFatalException(
                     "Rolling back createCollection failed. A full resync is necessary.");
             } else {
-                severe() << "Rolling back createCollection on " << nss
+                MONGO_BOOST_SEVERE << "Rolling back createCollection on " << nss
                          << " failed. A full resync is necessary.";
                 throw RSFatalException(
                     "Rolling back createCollection failed. A full resync is necessary.");
@@ -809,7 +809,7 @@ void renameOutOfTheWay(OperationContext* opCtx, RenameCollectionInfo info, Datab
     // namespace.
     auto tmpNameResult = db->makeUniqueCollectionNamespace(opCtx, "rollback.tmp%%%%%");
     if (!tmpNameResult.isOK()) {
-        severe() << "Unable to generate temporary namespace to rename collection " << info.renameTo
+        MONGO_BOOST_SEVERE << "Unable to generate temporary namespace to rename collection " << info.renameTo
                  << " out of the way. " << tmpNameResult.getStatus().reason();
         throw RSFatalException(
             "Unable to generate temporary namespace to rename collection out of the way.");
@@ -827,7 +827,7 @@ void renameOutOfTheWay(OperationContext* opCtx, RenameCollectionInfo info, Datab
     auto renameStatus = renameCollectionForRollback(opCtx, tempNss, uuid);
 
     if (!renameStatus.isOK()) {
-        severe() << "Unable to rename collection " << info.renameTo << " out of the way to "
+        MONGO_BOOST_SEVERE << "Unable to rename collection " << info.renameTo << " out of the way to "
                  << tempNss;
         throw RSFatalException("Unable to rename collection out of the way");
     }
@@ -840,7 +840,7 @@ void rollbackRenameCollection(OperationContext* opCtx, UUID uuid, RenameCollecti
 
     auto dbName = info.renameFrom.db();
 
-    log() << "Attempting to rename collection with UUID: " << uuid << ", from: " << info.renameFrom
+    MONGO_BOOST_LOG << "Attempting to rename collection with UUID: " << uuid << ", from: " << info.renameFrom
           << ", to: " << info.renameTo;
     Lock::DBLock dbLock(opCtx, dbName, MODE_X);
     auto db = DatabaseHolder::getDatabaseHolder().openDb(opCtx, dbName);
@@ -860,7 +860,7 @@ void rollbackRenameCollection(OperationContext* opCtx, UUID uuid, RenameCollecti
         status = renameCollectionForRollback(opCtx, info.renameTo, uuid);
 
         if (!status.isOK()) {
-            severe() << "Rename collection failed to roll back twice. We were unable to rename "
+            MONGO_BOOST_SEVERE << "Rename collection failed to roll back twice. We were unable to rename "
                      << "collection " << info.renameFrom << " to " << info.renameTo << ". "
                      << status.toString();
             throw RSFatalException(
@@ -868,7 +868,7 @@ void rollbackRenameCollection(OperationContext* opCtx, UUID uuid, RenameCollecti
                 "the collection.");
         }
     } else if (!status.isOK()) {
-        severe() << "Unable to roll back renameCollection command: " << status.toString();
+        MONGO_BOOST_SEVERE << "Unable to roll back renameCollection command: " << status.toString();
         throw RSFatalException("Unable to rollback renameCollection command");
     }
 
@@ -885,7 +885,7 @@ Status _syncRollback(OperationContext* opCtx,
     invariant(!opCtx->lockState()->isLocked());
 
     FixUpInfo how;
-    log() << "Starting rollback. Sync source: " << rollbackSource.getSource() << rsLog;
+    MONGO_BOOST_LOG << "Starting rollback. Sync source: " << rollbackSource.getSource() << rsLog;
     how.rbid = rollbackSource.getRollbackId();
     uassert(
         40506, "Upstream node rolled back. Need to retry our rollback.", how.rbid == requiredRBID);
@@ -894,7 +894,7 @@ Status _syncRollback(OperationContext* opCtx,
     // UUID is not known at compile time, so the SessionCatalog needs to load the collection.
     how.transactionTableUUID = SessionCatalog::getTransactionTableUUID(opCtx);
 
-    log() << "Finding the Common Point";
+    MONGO_BOOST_LOG << "Finding the Common Point";
     try {
 
         auto processOperationForFixUp = [&how](const BSONObj& operation) {
@@ -931,7 +931,7 @@ Status _syncRollback(OperationContext* opCtx,
     OpTime lastCommittedOpTime = replCoord->getLastCommittedOpTime();
     OpTime committedSnapshot = replCoord->getCurrentCommittedSnapshotOpTime();
 
-    log() << "Rollback common point is " << commonPoint;
+    MONGO_BOOST_LOG << "Rollback common point is " << commonPoint;
 
     // Rollback common point should be >= the replication commit point.
     invariant(!replCoord->isV1ElectionProtocol() ||
@@ -954,7 +954,7 @@ Status _syncRollback(OperationContext* opCtx,
 
     if (MONGO_FAIL_POINT(rollbackHangBeforeFinish)) {
         // This log output is used in js tests so please leave it.
-        log() << "rollback - rollbackHangBeforeFinish fail point "
+        MONGO_BOOST_LOG << "rollback - rollbackHangBeforeFinish fail point "
                  "enabled. Blocking until fail point is disabled.";
         while (MONGO_FAIL_POINT(rollbackHangBeforeFinish)) {
             invariant(!globalInShutdownDeprecated());  // It is an error to shutdown while enabled.
@@ -981,7 +981,7 @@ void rollback_internal::syncFixUp(OperationContext* opCtx,
     // Fetches all the goodVersions of each document from the current sync source.
     unsigned long long numFetched = 0;
 
-    log() << "Starting refetching documents";
+    MONGO_BOOST_LOG << "Starting refetching documents";
 
     for (auto&& doc : fixUpInfo.docsToRefetch) {
         invariant(!doc._id.eoo());  // This is checked when we insert to the set.
@@ -1038,17 +1038,17 @@ void rollback_internal::syncFixUp(OperationContext* opCtx,
                 ex.code() == ErrorCodes::NamespaceNotFound)
                 continue;
 
-            log() << "Rollback couldn't re-fetch from uuid: " << uuid << " _id: " << redact(doc._id)
+            MONGO_BOOST_LOG << "Rollback couldn't re-fetch from uuid: " << uuid << " _id: " << redact(doc._id)
                   << ' ' << numFetched << '/' << fixUpInfo.docsToRefetch.size() << ": "
                   << redact(ex);
             throw;
         }
     }
 
-    log() << "Finished refetching documents. Total size of documents refetched: "
+    MONGO_BOOST_LOG << "Finished refetching documents. Total size of documents refetched: "
           << goodVersions.size();
 
-    log() << "Checking the RollbackID and updating the MinValid if necessary";
+    MONGO_BOOST_LOG << "Checking the RollbackID and updating the MinValid if necessary";
 
     checkRbidAndUpdateMinValid(opCtx, fixUpInfo.rbid, rollbackSource, replicationProcess);
 
@@ -1063,7 +1063,7 @@ void rollback_internal::syncFixUp(OperationContext* opCtx,
     // indexes.
     // We drop indexes before renaming collections so that if a collection name gets longer,
     // any indexes with names that are now too long will already be dropped.
-    log() << "Rolling back createIndexes commands.";
+    MONGO_BOOST_LOG << "Rolling back createIndexes commands.";
     for (auto it = fixUpInfo.indexesToDrop.begin(); it != fixUpInfo.indexesToDrop.end(); it++) {
 
         UUID uuid = it->first;
@@ -1072,7 +1072,7 @@ void rollback_internal::syncFixUp(OperationContext* opCtx,
         rollbackCreateIndexes(opCtx, uuid, indexNames);
     }
 
-    log() << "Dropping collections to roll back create operations";
+    MONGO_BOOST_LOG << "Dropping collections to roll back create operations";
 
     // Drops collections before updating individual documents. We drop these collections before
     // rolling back any other commands to prevent namespace collisions that may occur
@@ -1088,7 +1088,7 @@ void rollback_internal::syncFixUp(OperationContext* opCtx,
         invariant(!fixUpInfo.collectionsToResyncMetadata.count(uuid));
 
         NamespaceString nss = UUIDCatalog::get(opCtx).lookupNSSByUUID(uuid);
-        log() << "Dropping collection: " << nss << ", UUID: " << uuid;
+        MONGO_BOOST_LOG << "Dropping collection: " << nss << ", UUID: " << uuid;
         AutoGetDb dbLock(opCtx, nss.db(), MODE_X);
 
         Database* db = dbLock.getDb();
@@ -1100,7 +1100,7 @@ void rollback_internal::syncFixUp(OperationContext* opCtx,
     }
 
     // Rolling back renameCollection commands.
-    log() << "Rolling back renameCollection commands and collection drop commands.";
+    MONGO_BOOST_LOG << "Rolling back renameCollection commands and collection drop commands.";
 
     for (auto it = fixUpInfo.collectionsToRename.begin(); it != fixUpInfo.collectionsToRename.end();
          it++) {
@@ -1111,7 +1111,7 @@ void rollback_internal::syncFixUp(OperationContext* opCtx,
         rollbackRenameCollection(opCtx, uuid, info);
     }
 
-    log() << "Rolling back collections pending being dropped: Removing them from the list of "
+    MONGO_BOOST_LOG << "Rolling back collections pending being dropped: Removing them from the list of "
              "drop-pending collections in the DropPendingCollectionReaper.";
 
     // Roll back any drop-pending collections. This must be done first so that the collection
@@ -1137,7 +1137,7 @@ void rollback_internal::syncFixUp(OperationContext* opCtx,
         for (auto uuid : fixUpInfo.collectionsToResyncMetadata) {
             NamespaceString nss = UUIDCatalog::get(opCtx).lookupNSSByUUID(uuid);
 
-            log() << "Resyncing collection metadata for collection: " << nss << ", UUID: " << uuid;
+            MONGO_BOOST_LOG << "Resyncing collection metadata for collection: " << nss << ", UUID: " << uuid;
 
             Lock::DBLock dbLock(opCtx, nss.db(), MODE_X);
 
@@ -1157,7 +1157,7 @@ void rollback_internal::syncFixUp(OperationContext* opCtx,
                 // is rolled back upstream and we restart, we expect to still have the
                 // collection.
 
-                log() << nss.ns() << " not found on remote host, so we do not roll back collmod "
+                MONGO_BOOST_LOG << nss.ns() << " not found on remote host, so we do not roll back collmod "
                                      "operation. Instead, we will drop the collection soon.";
                 continue;
             }
@@ -1227,12 +1227,12 @@ void rollback_internal::syncFixUp(OperationContext* opCtx,
         // Since we read from the sync source to retrieve the metadata of the
         // collection, we must check if the sync source rolled back as well as update
         // minValid if necessary.
-        log() << "Rechecking the Rollback ID and minValid";
+        MONGO_BOOST_LOG << "Rechecking the Rollback ID and minValid";
         checkRbidAndUpdateMinValid(opCtx, fixUpInfo.rbid, rollbackSource, replicationProcess);
     }
 
     // Rolls back dropIndexes commands by re-creating the indexes that were dropped.
-    log() << "Rolling back dropIndexes commands.";
+    MONGO_BOOST_LOG << "Rolling back dropIndexes commands.";
     for (auto it = fixUpInfo.indexesToCreate.begin(); it != fixUpInfo.indexesToCreate.end(); it++) {
 
         UUID uuid = it->first;
@@ -1241,7 +1241,7 @@ void rollback_internal::syncFixUp(OperationContext* opCtx,
         rollbackDropIndexes(opCtx, uuid, indexNames);
     }
 
-    log() << "Deleting and updating documents to roll back insert, update and remove "
+    MONGO_BOOST_LOG << "Deleting and updating documents to roll back insert, update and remove "
              "operations";
     unsigned deletes = 0, updates = 0;
     time_t lastProgressUpdate = time(0);
@@ -1266,7 +1266,7 @@ void rollback_internal::syncFixUp(OperationContext* opCtx,
         for (const auto& idAndDoc : goodVersionsByDocID) {
             time_t now = time(0);
             if (now - lastProgressUpdate > progressUpdateGap) {
-                log() << deletes << " delete and " << updates
+                MONGO_BOOST_LOG << deletes << " delete and " << updates
                       << " update operations processed out of " << goodVersions.size()
                       << " total operations.";
                 lastProgressUpdate = now;
@@ -1293,7 +1293,7 @@ void rollback_internal::syncFixUp(OperationContext* opCtx,
                     if (found) {
                         auto status = removeSaver->goingToDelete(obj);
                         if (!status.isOK()) {
-                            severe() << "Rollback cannot write document in namespace " << nss.ns()
+                            MONGO_BOOST_SEVERE << "Rollback cannot write document in namespace " << nss.ns()
                                      << " to archive file: " << redact(status);
                             throw RSFatalException(str::stream()
                                                    << "Rollback cannot write document in namespace "
@@ -1301,7 +1301,7 @@ void rollback_internal::syncFixUp(OperationContext* opCtx,
                                                    << " to archive file.");
                         }
                     } else {
-                        error() << "Rollback cannot find object: " << pattern << " in namespace "
+                        MONGO_BOOST_ERROR << "Rollback cannot find object: " << pattern << " in namespace "
                                 << nss.ns();
                     }
                 }
@@ -1328,7 +1328,7 @@ void rollback_internal::syncFixUp(OperationContext* opCtx,
                                 const auto findOneStart = clock->now();
                                 RecordId loc = Helpers::findOne(opCtx, collection, pattern, false);
                                 if (clock->now() - findOneStart > Milliseconds(200))
-                                    warning() << "Roll back slow no _id index for " << nss.ns()
+                                    MONGO_BOOST_WARNING << "Roll back slow no _id index for " << nss.ns()
                                               << " perhaps?";
                                 // Would be faster but requires index:
                                 // RecordId loc = Helpers::findById(nsd, pattern);
@@ -1362,7 +1362,7 @@ void rollback_internal::syncFixUp(OperationContext* opCtx,
                                 // inconsistent. We rely on age-out to make these problems go away
                                 // eventually.
 
-                                warning() << "Ignoring failure to roll back change to capped "
+                                MONGO_BOOST_WARNING << "Ignoring failure to roll back change to capped "
                                           << "collection " << nss.ns() << " with _id "
                                           << redact(idAndDoc.first._id.toString(
                                                  /*includeFieldName*/ false))
@@ -1396,17 +1396,17 @@ void rollback_internal::syncFixUp(OperationContext* opCtx,
                     update(opCtx, ctx.db(), request);
                 }
             } catch (const DBException& e) {
-                log() << "Exception in rollback ns:" << nss.ns() << ' ' << pattern.toString() << ' '
+                MONGO_BOOST_LOG << "Exception in rollback ns:" << nss.ns() << ' ' << pattern.toString() << ' '
                       << redact(e) << " ndeletes:" << deletes;
                 throw;
             }
         }
     }
 
-    log() << "Rollback deleted " << deletes << " documents and updated " << updates
+    MONGO_BOOST_LOG << "Rollback deleted " << deletes << " documents and updated " << updates
           << " documents.";
 
-    log() << "Truncating the oplog at " << fixUpInfo.commonPoint.toString() << " ("
+    MONGO_BOOST_LOG << "Truncating the oplog at " << fixUpInfo.commonPoint.toString() << " ("
           << fixUpInfo.commonPointOurDiskloc << "), non-inclusive";
 
     // Cleans up the oplog.
@@ -1428,7 +1428,7 @@ void rollback_internal::syncFixUp(OperationContext* opCtx,
 
     Status status = getGlobalAuthorizationManager()->initialize(opCtx);
     if (!status.isOK()) {
-        severe() << "Failed to reinitialize auth data after rollback: " << redact(status);
+        MONGO_BOOST_SEVERE << "Failed to reinitialize auth data after rollback: " << redact(status);
         fassertFailedNoTrace(40496);
     }
 
@@ -1465,7 +1465,7 @@ Status syncRollback(OperationContext* opCtx,
     Status status = _syncRollback(
         opCtx, localOplog, rollbackSource, requiredRBID, replCoord, replicationProcess);
 
-    log() << "Rollback finished. The final minValid is: "
+    MONGO_BOOST_LOG << "Rollback finished. The final minValid is: "
           << replicationProcess->getConsistencyMarkers()->getMinValid(opCtx) << rsLog;
 
     return status;
@@ -1494,7 +1494,7 @@ void rollback(OperationContext* opCtx,
         Lock::GlobalWrite globalWrite(opCtx);
         auto status = replCoord->setFollowerMode(MemberState::RS_ROLLBACK);
         if (!status.isOK()) {
-            log() << "Cannot transition from " << replCoord->getMemberState().toString() << " to "
+            MONGO_BOOST_LOG << "Cannot transition from " << replCoord->getMemberState().toString() << " to "
                   << MemberState(MemberState::RS_ROLLBACK).toString() << causedBy(status);
             return;
         }
@@ -1508,7 +1508,7 @@ void rollback(OperationContext* opCtx,
         // WARNING: these statuses sometimes have location codes which are lost with uassertStatusOK
         // so we need to check here first.
         if (ErrorCodes::UnrecoverableRollbackError == status.code()) {
-            severe() << "Unable to complete rollback. A full resync may be needed: "
+            MONGO_BOOST_SEVERE << "Unable to complete rollback. A full resync may be needed: "
                      << redact(status);
             fassertFailedNoTrace(40507);
         }
@@ -1520,7 +1520,7 @@ void rollback(OperationContext* opCtx,
         // above.
         invariant(ex.code() != ErrorCodes::UnrecoverableRollbackError);
 
-        warning() << "Rollback cannot complete at this time (retrying later): " << redact(ex)
+        MONGO_BOOST_WARNING << "Rollback cannot complete at this time (retrying later): " << redact(ex)
                   << " appliedThrough= " << replCoord->getMyLastAppliedOpTime() << " minvalid= "
                   << replicationProcess->getConsistencyMarkers()->getMinValid(opCtx);
 
@@ -1544,7 +1544,7 @@ void rollback(OperationContext* opCtx,
     // then we must shut down to clear the in-memory ShardingState associated with the
     // shardIdentity document.
     if (ShardIdentityRollbackNotifier::get(opCtx)->didRollbackHappen()) {
-        severe() << "shardIdentity document rollback detected.  Shutting down to clear "
+        MONGO_BOOST_SEVERE << "shardIdentity document rollback detected.  Shutting down to clear "
                     "in-memory sharding state.  Restarting this process should safely return it "
                     "to a healthy state";
         fassertFailedNoTrace(40498);
@@ -1552,7 +1552,7 @@ void rollback(OperationContext* opCtx,
 
     auto status = replCoord->setFollowerMode(MemberState::RS_RECOVERING);
     if (!status.isOK()) {
-        severe() << "Failed to transition into " << MemberState(MemberState::RS_RECOVERING)
+        MONGO_BOOST_SEVERE << "Failed to transition into " << MemberState(MemberState::RS_RECOVERING)
                  << "; expected to be in state " << MemberState(MemberState::RS_ROLLBACK)
                  << "; found self in " << replCoord->getMemberState() << causedBy(status);
         fassertFailedNoTrace(40499);

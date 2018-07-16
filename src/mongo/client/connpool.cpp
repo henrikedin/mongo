@@ -268,7 +268,7 @@ public:
                 PoolForHost& p = _this->_pools[PoolKey(host, timeout)];
 
                 if (p.openConnections() >= _this->_maxInUse) {
-                    log() << "Too many in-use connections; waiting until there are fewer than "
+                    MONGO_BOOST_LOG << "Too many in-use connections; waiting until there are fewer than "
                           << _this->_maxInUse;
                     p.waitForFreeConnection(timeout, lk);
                 } else {
@@ -353,7 +353,7 @@ DBClientBase* DBConnectionPool::_finishCreate(const string& ident,
         throw;
     }
 
-    log() << "Successfully connected to " << ident << " (" << openConnections(ident, socketTimeout)
+    MONGO_BOOST_LOG << "Successfully connected to " << ident << " (" << openConnections(ident, socketTimeout)
           << " connections now open to " << ident << " with a " << socketTimeout
           << " second timeout)";
 

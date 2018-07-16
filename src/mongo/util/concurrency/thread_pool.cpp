@@ -60,12 +60,12 @@ ThreadPool::Options cleanUpOptions(ThreadPool::Options&& options) {
         options.threadNamePrefix = str::stream() << options.poolName << '-';
     }
     if (options.maxThreads < 1) {
-        severe() << "Tried to create pool " << options.poolName << " with a maximum of "
+        MONGO_BOOST_SEVERE << "Tried to create pool " << options.poolName << " with a maximum of "
                  << options.maxThreads << " but the maximum must be at least 1";
         fassertFailed(28702);
     }
     if (options.minThreads > options.maxThreads) {
-        severe() << "Tried to create pool " << options.poolName << " with a minimum of "
+        MONGO_BOOST_SEVERE << "Tried to create pool " << options.poolName << " with a minimum of "
                  << options.minThreads << " which is more than the configured maximum of "
                  << options.maxThreads;
         fassertFailed(28686);
@@ -85,7 +85,7 @@ ThreadPool::~ThreadPool() {
     }
 
     if (shutdownComplete != _state) {
-        severe() << "Failed to shutdown pool during destruction";
+        MONGO_BOOST_SEVERE << "Failed to shutdown pool during destruction";
         fassertFailed(28704);
     }
     invariant(_threads.empty());
@@ -95,7 +95,7 @@ ThreadPool::~ThreadPool() {
 void ThreadPool::startup() {
     stdx::lock_guard<stdx::mutex> lk(_mutex);
     if (_state != preStart) {
-        severe() << "Attempting to start pool " << _options.poolName
+        MONGO_BOOST_SEVERE << "Attempting to start pool " << _options.poolName
                  << ", but it has already started";
         fassertFailed(28698);
     }
@@ -133,7 +133,7 @@ void ThreadPool::join() {
         stdx::unique_lock<stdx::mutex> lk(_mutex);
         _join_inlock(&lk);
     } catch (...) {
-        severe() << "Exception escaped join in thread pool " << _options.poolName << ": "
+        MONGO_BOOST_SEVERE << "Exception escaped join in thread pool " << _options.poolName << ": "
                  << exceptionToStatus();
         std::terminate();
     }
@@ -150,7 +150,7 @@ void ThreadPool::_join_inlock(stdx::unique_lock<stdx::mutex>* lk) {
                 return true;
             case joining:
             case shutdownComplete:
-                severe() << "Attempted to join pool " << _options.poolName << " more than once";
+                MONGO_BOOST_SEVERE << "Attempted to join pool " << _options.poolName << " more than once";
                 fassertFailed(28700);
         }
         MONGO_UNREACHABLE;
@@ -246,7 +246,7 @@ void ThreadPool::_workerThreadBody(ThreadPool* pool, const std::string& threadNa
     try {
         pool->_consumeTasks();
     } catch (...) {
-        severe() << "Exception reached top of stack in thread pool " << poolName << ": "
+        MONGO_BOOST_SEVERE << "Exception reached top of stack in thread pool " << poolName << ": "
                  << exceptionToStatus();
         std::terminate();
     }
@@ -314,7 +314,7 @@ void ThreadPool::_consumeTasks() {
     --_numIdleThreads;
 
     if (_state != running) {
-        severe() << "State of pool " << _options.poolName << " is " << static_cast<int32_t>(_state)
+        MONGO_BOOST_SEVERE << "State of pool " << _options.poolName << " is " << static_cast<int32_t>(_state)
                  << ", but expected " << static_cast<int32_t>(running);
         fassertFailedNoTrace(28701);
     }
@@ -331,7 +331,7 @@ void ThreadPool::_consumeTasks() {
         _threads.pop_back();
         return;
     }
-    severe().stream() << "Could not find this thread, with id " << stdx::this_thread::get_id()
+	BOOST_LOG_TRIVIAL(fatal) << "Could not find this thread, with id " << stdx::this_thread::get_id()
                       << " in pool " << _options.poolName;
     fassertFailedNoTrace(28703);
 }
@@ -351,7 +351,7 @@ void ThreadPool::_doOneTask(stdx::unique_lock<stdx::mutex>* lk) {
             _poolIsIdle.notify_all();
         }
     } catch (...) {
-        severe() << "Exception escaped task in thread pool " << _options.poolName << ": "
+        MONGO_BOOST_SEVERE << "Exception escaped task in thread pool " << _options.poolName << ": "
                  << exceptionToStatus();
         std::terminate();
     }
@@ -385,7 +385,7 @@ void ThreadPool::_startWorkerThread_inlock() {
         _threads.emplace_back([this, threadName] { _workerThreadBody(this, threadName); });
         ++_numIdleThreads;
     } catch (const std::exception& ex) {
-        error() << "Failed to start " << threadName << "; " << _threads.size()
+        MONGO_BOOST_ERROR << "Failed to start " << threadName << "; " << _threads.size()
                 << " other thread(s) still running in pool " << _options.poolName
                 << "; caught exception: " << redact(ex.what());
     }

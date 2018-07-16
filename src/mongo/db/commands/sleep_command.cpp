@@ -83,7 +83,7 @@ public:
              const std::string& ns,
              const BSONObj& cmdObj,
              BSONObjBuilder& result) {
-        log() << "test only command sleep invoked";
+        MONGO_BOOST_LOG << "test only command sleep invoked";
         long long millis = 0;
 
         if (cmdObj["secs"] || cmdObj["millis"]) {

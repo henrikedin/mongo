@@ -261,7 +261,7 @@ private:
             exec = InternalPlanner::collectionScan(
                 opCtx, fullCollectionName, collection, PlanExecutor::NO_YIELD);
         } else {
-            log() << "can't find _id index for: " << fullCollectionName;
+            MONGO_BOOST_LOG << "can't find _id index for: " << fullCollectionName;
             return "no _id _index";
         }
 
@@ -277,7 +277,7 @@ private:
             n++;
         }
         if (PlanExecutor::IS_EOF != state) {
-            warning() << "error while hashing, db dropped? ns=" << fullCollectionName;
+            MONGO_BOOST_WARNING << "error while hashing, db dropped? ns=" << fullCollectionName;
             uasserted(34371,
                       "Plan executor error while running dbHash command: " +
                           WorkingSetCommon::toStatusString(c));

@@ -78,7 +78,7 @@ void startPeriodicThreadToDecreaseSnapshotHistoryCachePressure(ServiceContext* s
                 SnapshotWindowUtil::decreaseTargetSnapshotWindowSize(opCtx.get());
             } catch (const DBException& ex) {
                 if (!ErrorCodes::isShutdownError(ex.toStatus().code())) {
-                    warning() << "Periodic task to check for and decrease cache pressure caused by "
+                    MONGO_BOOST_WARNING << "Periodic task to check for and decrease cache pressure caused by "
                                  "maintaining too much snapshot history failed! Caused by: "
                               << ex.toStatus();
                 }

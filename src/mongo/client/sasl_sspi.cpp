@@ -208,12 +208,12 @@ int sspiClientMechNew(void* glob_context,
                 ss << fqdn << " ";
             }
             ss << "]";
-            warning() << ss.str();
+            MONGO_BOOST_WARNING << ss.str();
         }
         canonName = std::move(fqdns.back());
         fqdns.pop_back();
     } else if (saslSSPIGlobalParams.canonicalization != HostnameCanonicalizationMode::kNone) {
-        warning() << "Was unable to acquire an FQDN";
+        MONGO_BOOST_WARNING << "Was unable to acquire an FQDN";
     }
 
     pcctx->nameToken = toWideString(cparams->service) + L'/' + toWideString(canonName.c_str());

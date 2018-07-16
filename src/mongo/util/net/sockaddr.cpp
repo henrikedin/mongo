@@ -144,7 +144,7 @@ SockAddr::SockAddr(StringData target, int port, sa_family_t familyHint)
         // we were unsuccessful
         if (_hostOrIp != "0.0.0.0") {  // don't log if this as it is a
                                        // CRT construction and log() may not work yet.
-            log() << "getaddrinfo(\"" << _hostOrIp
+            MONGO_BOOST_LOG << "getaddrinfo(\"" << _hostOrIp
                   << "\") failed: " << getAddrInfoStrError(addrErr.first);
             _isValid = false;
             return;
@@ -174,7 +174,7 @@ std::vector<SockAddr> SockAddr::createAll(StringData target, int port, sa_family
 
     auto addrErr = resolveAddrInfo(hostOrIp, port, familyHint);
     if (addrErr.first) {
-        log() << "getaddrinfo(\"" << hostOrIp
+        MONGO_BOOST_LOG << "getaddrinfo(\"" << hostOrIp
               << "\") failed: " << getAddrInfoStrError(addrErr.first);
         return {};
     }

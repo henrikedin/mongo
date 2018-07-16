@@ -158,7 +158,7 @@ public:
         const auto toShard = [&]() {
             auto toShardStatus = shardRegistry->getShard(opCtx, to);
             if (!toShardStatus.isOK()) {
-                log() << "Could not move database '" << dbname << "' to shard '" << to
+                MONGO_BOOST_LOG << "Could not move database '" << dbname << "' to shard '" << to
                       << causedBy(toShardStatus.getStatus());
                 uassertStatusOKWithContext(
                     toShardStatus.getStatus(),

@@ -277,7 +277,7 @@ private:
             _hotel.checkOut();
 
             if ((i % (checkIns / 10)) == 0)
-                mongo::unittest::log() << "checked in " << i << " times..." << endl;
+                mongo::unittest::MONGO_BOOST_LOG << "checked in " << i << " times..." << endl;
         }
     }
 

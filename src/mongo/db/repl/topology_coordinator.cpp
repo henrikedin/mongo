@@ -208,7 +208,7 @@ HostAndPort TopologyCoordinator::chooseNewSyncSource(Date_t now,
         const auto& data = customArgs.getData();
         const auto hostAndPortElem = data["hostAndPort"];
         if (!hostAndPortElem) {
-            severe() << "'forceSyncSoureCandidate' parameter set with invalid host and port: "
+            MONGO_BOOST_SEVERE << "'forceSyncSoureCandidate' parameter set with invalid host and port: "
                      << data;
             fassertFailed(50835);
         }
@@ -216,7 +216,7 @@ HostAndPort TopologyCoordinator::chooseNewSyncSource(Date_t now,
         const auto hostAndPort = HostAndPort(hostAndPortElem.checkAndGetStringData());
         const int syncSourceIndex = _rsConfig.findMemberIndexByHostAndPort(hostAndPort);
         if (syncSourceIndex < 0) {
-            log() << "'forceSyncSourceCandidate' failed due to host and port not in "
+            MONGO_BOOST_LOG << "'forceSyncSourceCandidate' failed due to host and port not in "
                      "replica set config: "
                   << hostAndPort.toString();
             fassertFailed(50836);
@@ -224,14 +224,14 @@ HostAndPort TopologyCoordinator::chooseNewSyncSource(Date_t now,
 
 
         if (_memberIsBlacklisted(_rsConfig.getMemberAt(syncSourceIndex), now)) {
-            log() << "Cannot select a sync source because forced candidate is blacklisted: "
+            MONGO_BOOST_LOG << "Cannot select a sync source because forced candidate is blacklisted: "
                   << hostAndPort.toString();
             _syncSource = HostAndPort();
             return _syncSource;
         }
 
         _syncSource = _rsConfig.getMemberAt(syncSourceIndex).getHostAndPort();
-        log() << "choosing sync source candidate due to 'forceSyncSourceCandidate' parameter: "
+        MONGO_BOOST_LOG << "choosing sync source candidate due to 'forceSyncSourceCandidate' parameter: "
               << _syncSource;
         std::string msg(str::stream() << "syncing from: " << _syncSource.toString()
                                       << " by 'forceSyncSourceCandidate' parameter");
@@ -244,7 +244,7 @@ HostAndPort TopologyCoordinator::chooseNewSyncSource(Date_t now,
         invariant(_forceSyncSourceIndex < _rsConfig.getNumMembers());
         _syncSource = _rsConfig.getMemberAt(_forceSyncSourceIndex).getHostAndPort();
         _forceSyncSourceIndex = -1;
-        log() << "choosing sync source candidate by request: " << _syncSource;
+        MONGO_BOOST_LOG << "choosing sync source candidate by request: " << _syncSource;
         std::string msg(str::stream() << "syncing from: " << _syncSource.toString()
                                       << " by request");
         setMyHeartbeatMessage(now, msg);
@@ -255,7 +255,7 @@ HostAndPort TopologyCoordinator::chooseNewSyncSource(Date_t now,
     int needMorePings = (_memberData.size() - 1) * 2 - _getTotalPings();
 
     if (needMorePings > 0) {
-        OCCASIONALLY log() << "waiting for " << needMorePings
+        OCCASIONALLY MONGO_BOOST_LOG << "waiting for " << needMorePings
                            << " pings from other members before syncing";
         _syncSource = HostAndPort();
         return _syncSource;
@@ -282,7 +282,7 @@ HostAndPort TopologyCoordinator::chooseNewSyncSource(Date_t now,
             return _syncSource;
         } else {
             _syncSource = _currentPrimaryMember()->getHostAndPort();
-            log() << "chaining not allowed, choosing primary as sync source candidate: "
+            MONGO_BOOST_LOG << "chaining not allowed, choosing primary as sync source candidate: "
                   << _syncSource;
             std::string msg(str::stream() << "syncing from primary: " << _syncSource.toString());
             setMyHeartbeatMessage(now, msg);
@@ -419,7 +419,7 @@ HostAndPort TopologyCoordinator::chooseNewSyncSource(Date_t now,
         std::string msg("could not find member to sync from");
         // Only log when we had a valid sync source before
         if (!_syncSource.empty()) {
-            log() << msg << rsLog;
+            MONGO_BOOST_LOG << msg << rsLog;
         }
         setMyHeartbeatMessage(now, msg);
 
@@ -427,7 +427,7 @@ HostAndPort TopologyCoordinator::chooseNewSyncSource(Date_t now,
         return _syncSource;
     }
     _syncSource = _rsConfig.getMemberAt(closestIndex).getHostAndPort();
-    log() << "sync source candidate: " << _syncSource;
+    MONGO_BOOST_LOG << "sync source candidate: " << _syncSource;
     std::string msg(str::stream() << "syncing from: " << _syncSource.toString(), 0);
     setMyHeartbeatMessage(now, msg);
     return _syncSource;
@@ -536,7 +536,7 @@ void TopologyCoordinator::prepareSyncFromResponse(const HostAndPort& target,
     }
     const OpTime lastOpApplied = getMyLastAppliedOpTime();
     if (hbdata.getHeartbeatAppliedOpTime().getSecs() + 10 < lastOpApplied.getSecs()) {
-        warning() << "attempting to sync from " << target << ", but its latest opTime is "
+        MONGO_BOOST_WARNING << "attempting to sync from " << target << ", but its latest opTime is "
                   << hbdata.getHeartbeatAppliedOpTime().getSecs() << " and ours is "
                   << lastOpApplied.getSecs() << " so this may not work";
         response->append("warning",
@@ -562,7 +562,7 @@ Status TopologyCoordinator::prepareHeartbeatResponseV1(Date_t now,
     // Verify that replica set names match
     const std::string rshb = args.getSetName();
     if (ourSetName != rshb) {
-        log() << "replSet set names do not match, ours: " << ourSetName
+        MONGO_BOOST_LOG << "replSet set names do not match, ours: " << ourSetName
               << "; remote node's: " << rshb;
         return Status(ErrorCodes::InconsistentReplicaSetNames,
                       str::stream() << "Our set name of " << ourSetName << " does not match name "
@@ -746,11 +746,11 @@ HeartbeatResponseAction TopologyCoordinator::processHeartbeatResponse(
             }
             if (logger::globalLogDomain()->shouldLog(MongoLogDefaultComponent_component,
                                                      ::mongo::LogstreamBuilder::severityCast(2))) {
-                LogstreamBuilder lsb = log();
+                //LogstreamBuilder lsb = log();
                 if (_rsConfig.isInitialized()) {
-                    lsb << "Current config: " << _rsConfig.toBSON() << "; ";
+					MONGO_BOOST_LOG << "Current config: " << _rsConfig.toBSON() << "; ";
                 }
-                lsb << "Config in heartbeat: " << newConfig.toBSON();
+				MONGO_BOOST_LOG << "Config in heartbeat: " << newConfig.toBSON();
             }
         }
     }
@@ -876,7 +876,7 @@ HeartbeatResponseAction TopologyCoordinator::checkMemberTimeouts(Date_t now) {
         }
     }
     if (stepdown) {
-        log() << "can't see a majority of the set, relinquishing primary";
+        MONGO_BOOST_LOG << "can't see a majority of the set, relinquishing primary";
         return HeartbeatResponseAction::makeStepDownSelfAction(_selfIndex);
     }
     return HeartbeatResponseAction::makeNoAction();
@@ -1327,15 +1327,15 @@ void TopologyCoordinator::changeMemberState_forTest(const MemberState& newMember
             updateConfig(ReplSetConfig(), -1, Date_t());
             break;
         default:
-            severe() << "Cannot switch to state " << newMemberState;
+            MONGO_BOOST_SEVERE << "Cannot switch to state " << newMemberState;
             MONGO_UNREACHABLE;
     }
     if (getMemberState() != newMemberState.s) {
-        severe() << "Expected to enter state " << newMemberState << " but am now in "
+        MONGO_BOOST_SEVERE << "Expected to enter state " << newMemberState << " but am now in "
                  << getMemberState();
         MONGO_UNREACHABLE;
     }
-    log() << newMemberState;
+    MONGO_BOOST_LOG << newMemberState;
 }
 
 void TopologyCoordinator::setCurrentPrimary_forTest(int primaryIndex,
@@ -1707,13 +1707,13 @@ TopologyCoordinator::prepareFreezeResponse(Date_t now, int secs, BSONObjBuilder*
         std::string msg = str::stream()
             << "cannot freeze node when primary or running for election. state: "
             << (_role == TopologyCoordinator::Role::kLeader ? "Primary" : "Running-Election");
-        log() << msg;
+        MONGO_BOOST_LOG << msg;
         return Status(ErrorCodes::NotSecondary, msg);
     }
 
     if (secs == 0) {
         _stepDownUntil = now;
-        log() << "'unfreezing'";
+        MONGO_BOOST_LOG << "'unfreezing'";
         response->append("info", "unfreezing");
 
         if (_isElectableNodeInSingleNodeReplicaSet()) {
@@ -1729,7 +1729,7 @@ TopologyCoordinator::prepareFreezeResponse(Date_t now, int secs, BSONObjBuilder*
             response->append("warning", "you really want to freeze for only 1 second?");
 
         _stepDownUntil = std::max(_stepDownUntil, now + Seconds(secs));
-        log() << "'freezing' for " << secs << " seconds";
+        MONGO_BOOST_LOG << "'freezing' for " << secs << " seconds";
     }
 
     return PrepareFreezeResponseResult::kNoAction;
@@ -1822,9 +1822,9 @@ void TopologyCoordinator::updateConfig(const ReplSetConfig& newConfig, int selfI
 
     if (_role == Role::kLeader) {
         if (_selfIndex == -1) {
-            log() << "Could not remain primary because no longer a member of the replica set";
+            MONGO_BOOST_LOG << "Could not remain primary because no longer a member of the replica set";
         } else if (!_selfConfig().isElectable()) {
-            log() << " Could not remain primary because no longer electable";
+            MONGO_BOOST_LOG << " Could not remain primary because no longer electable";
         } else {
             // Don't stepdown if you don't have to.
             _currentPrimaryIndex = _selfIndex;
@@ -2007,7 +2007,7 @@ std::string TopologyCoordinator::_getUnelectableReasonString(const UnelectableRe
         ss << "node is not a member of a valid replica set configuration";
     }
     if (!hasWrittenToStream) {
-        severe() << "Invalid UnelectableReasonMask value 0x" << integerToHex(ur);
+        MONGO_BOOST_SEVERE << "Invalid UnelectableReasonMask value 0x" << integerToHex(ur);
         fassertFailed(26011);
     }
     ss << " (mask 0x" << integerToHex(ur) << ")";
@@ -2307,7 +2307,7 @@ void TopologyCoordinator::finishUnconditionalStepDown() {
                 // two other nodes think they are primary (asynchronously polled)
                 // -- wait for things to settle down.
                 remotePrimaryIndex = -1;
-                warning() << "two remote primaries (transiently)";
+                MONGO_BOOST_WARNING << "two remote primaries (transiently)";
                 break;
             }
             remotePrimaryIndex = itIndex;
@@ -2461,13 +2461,13 @@ bool TopologyCoordinator::shouldChangeSyncSource(
     // progress, return true.
 
     if (_selfIndex == -1) {
-        log() << "Not choosing new sync source because we are not in the config.";
+        MONGO_BOOST_LOG << "Not choosing new sync source because we are not in the config.";
         return false;
     }
 
     // If the user requested a sync source change, return true.
     if (_forceSyncSourceIndex != -1) {
-        log() << "Choosing new sync source because the user has requested to use "
+        MONGO_BOOST_LOG << "Choosing new sync source because the user has requested to use "
               << _rsConfig.getMemberAt(_forceSyncSourceIndex).getHostAndPort()
               << " as a sync source";
         return true;
@@ -2475,7 +2475,7 @@ bool TopologyCoordinator::shouldChangeSyncSource(
 
     if (_rsConfig.getProtocolVersion() == 1 &&
         replMetadata.getConfigVersion() != _rsConfig.getConfigVersion()) {
-        log() << "Choosing new sync source because the config version supplied by " << currentSource
+        MONGO_BOOST_LOG << "Choosing new sync source because the config version supplied by " << currentSource
               << ", " << replMetadata.getConfigVersion() << ", does not match ours, "
               << _rsConfig.getConfigVersion();
         return true;
@@ -2484,7 +2484,7 @@ bool TopologyCoordinator::shouldChangeSyncSource(
     const int currentSourceIndex = _rsConfig.findMemberIndexByHostAndPort(currentSource);
     // PV0 doesn't use metadata, we have to consult _rsConfig.
     if (currentSourceIndex == -1) {
-        log() << "Choosing new sync source because " << currentSource.toString()
+        MONGO_BOOST_LOG << "Choosing new sync source because " << currentSource.toString()
               << " is not in our config";
         return true;
     }
@@ -2531,12 +2531,12 @@ bool TopologyCoordinator::shouldChangeSyncSource(
         } else {
             logMessage << " (sync source does not know the primary)";
         }
-        log() << logMessage.str();
+        MONGO_BOOST_LOG << logMessage.str();
         return true;
     }
 
     if (MONGO_FAIL_POINT(disableMaxSyncSourceLagSecs)) {
-        log() << "disableMaxSyncSourceLagSecs fail point enabled - not checking the most recent "
+        MONGO_BOOST_LOG << "disableMaxSyncSourceLagSecs fail point enabled - not checking the most recent "
                  "OpTime, "
               << currentSourceOpTime.toString() << ", of our current sync source, " << currentSource
               << ", against the OpTimes of the other nodes in this replica set.";
@@ -2553,7 +2553,7 @@ bool TopologyCoordinator::shouldChangeSyncSource(
                 (candidateConfig.shouldBuildIndexes() || !_selfConfig().shouldBuildIndexes()) &&
                 it->getState().readable() && !_memberIsBlacklisted(candidateConfig, now) &&
                 goalSecs < it->getHeartbeatAppliedOpTime().getSecs()) {
-                log() << "Choosing new sync source because the most recent OpTime of our sync "
+                MONGO_BOOST_LOG << "Choosing new sync source because the most recent OpTime of our sync "
                          "source, "
                       << currentSource << ", is " << currentSourceOpTime.toString()
                       << " which is more than " << _options.maxSyncSourceLagSecs

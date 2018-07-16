@@ -209,7 +209,7 @@ public:
 
         // Remove the second field.
         md.setField("b", Value());
-        log() << md.peek().toString();
+        MONGO_BOOST_LOG << md.peek().toString();
         ASSERT_EQUALS(2U, md.peek().size());
         ASSERT(md.peek()["b"].missing());
         ASSERT_EQUALS("a", getNthField(md.peek(), 0).first.toString());
@@ -1633,7 +1633,7 @@ private:
         assertComparison(expectedResult, fromBson(a), fromBson(b));
     }
     void assertComparison(int expectedResult, const Value& a, const Value& b) {
-        mongo::unittest::log() << "testing " << a.toString() << " and " << b.toString();
+        mongo::unittest::MONGO_BOOST_LOG << "testing " << a.toString() << " and " << b.toString();
 
         // reflexivity
         ASSERT_EQUALS(0, cmp(a, a));

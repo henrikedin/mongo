@@ -84,4 +84,8 @@ private:
     std::string _sessionId;
 };
 
+inline std::ostream& operator<<(std::ostream& s, const MigrationSessionId& msi) {
+	return (s << msi.toString());
+}
+
 }  // namespace mongo

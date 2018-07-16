@@ -728,7 +728,7 @@ StatusWith<std::string> ShardingCatalogManager::addShard(
             return versionResponse.getValue().commandStatus;
         }
 
-        log() << "going to insert new entry for shard into config.shards: " << shardType.toString();
+        MONGO_BOOST_LOG << "going to insert new entry for shard into config.shards: " << shardType.toString();
 
         Status result = Grid::get(opCtx)->catalogClient()->insertConfigDocument(
             opCtx,
@@ -736,7 +736,7 @@ StatusWith<std::string> ShardingCatalogManager::addShard(
             shardType.toBSON(),
             ShardingCatalogClient::kLocalWriteConcern);
         if (!result.isOK()) {
-            log() << "error adding shard: " << shardType.toBSON() << " err: " << result.reason();
+            MONGO_BOOST_LOG << "error adding shard: " << shardType.toBSON() << " err: " << result.reason();
             return result;
         }
     }
@@ -754,7 +754,7 @@ StatusWith<std::string> ShardingCatalogManager::addShard(
                 true,
                 ShardingCatalogClient::kLocalWriteConcern);
             if (!status.isOK()) {
-                log() << "adding shard " << shardConnectionString.toString()
+                MONGO_BOOST_LOG << "adding shard " << shardConnectionString.toString()
                       << " even though could not add database " << dbName;
             }
         }
@@ -818,7 +818,7 @@ StatusWith<ShardDrainingStatus> ShardingCatalogManager::removeShard(OperationCon
     auto* const shardRegistry = Grid::get(opCtx)->shardRegistry();
 
     if (countStatus.getValue() == 0) {
-        log() << "going to start draining shard: " << name;
+        MONGO_BOOST_LOG << "going to start draining shard: " << name;
 
         auto updateStatus = Grid::get(opCtx)->catalogClient()->updateConfigDocument(
             opCtx,
@@ -828,7 +828,7 @@ StatusWith<ShardDrainingStatus> ShardingCatalogManager::removeShard(OperationCon
             false,
             ShardingCatalogClient::kLocalWriteConcern);
         if (!updateStatus.isOK()) {
-            log() << "error starting removeShard: " << name
+            MONGO_BOOST_LOG << "error starting removeShard: " << name
                   << causedBy(redact(updateStatus.getStatus()));
             return updateStatus.getStatus();
         }
@@ -872,7 +872,7 @@ StatusWith<ShardDrainingStatus> ShardingCatalogManager::removeShard(OperationCon
     }
 
     // Draining is done, now finish removing the shard.
-    log() << "going to remove shard: " << name;
+    MONGO_BOOST_LOG << "going to remove shard: " << name;
     audit::logRemoveShard(opCtx->getClient(), name);
 
     Status status = Grid::get(opCtx)->catalogClient()->removeConfigDocuments(
@@ -881,7 +881,7 @@ StatusWith<ShardDrainingStatus> ShardingCatalogManager::removeShard(OperationCon
         BSON(ShardType::name() << name),
         ShardingCatalogClient::kLocalWriteConcern);
     if (!status.isOK()) {
-        log() << "Error concluding removeShard operation on: " << name
+        MONGO_BOOST_LOG << "Error concluding removeShard operation on: " << name
               << "; err: " << status.reason();
         return status;
     }

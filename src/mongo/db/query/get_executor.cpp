@@ -772,7 +772,7 @@ StatusWith<unique_ptr<PlanExecutor, PlanExecutor::Deleter>> getExecutorDelete(
             uassert(12050, "cannot delete from system namespace", nss.isLegalClientSystemNS());
         }
         if (nss.isVirtualized()) {
-            log() << "cannot delete from a virtual collection: " << nss;
+            MONGO_BOOST_LOG << "cannot delete from a virtual collection: " << nss;
             uasserted(10100, "cannot delete from a virtual collection");
         }
     }
@@ -911,7 +911,7 @@ StatusWith<unique_ptr<PlanExecutor, PlanExecutor::Deleter>> getExecutorUpdate(
                 nss.isLegalClientSystemNS());
     }
     if (nss.isVirtualized()) {
-        log() << "cannot update a virtual collection: " << nss;
+        MONGO_BOOST_LOG << "cannot update a virtual collection: " << nss;
         uasserted(10155, "cannot update a virtual collection");
     }
 

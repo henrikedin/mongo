@@ -354,13 +354,13 @@ Status CollectionShardingState::waitForClean(OperationContext* opCtx,
 
             stillScheduled = css->trackOrphanedDataCleanup(orphanRange);
             if (!stillScheduled) {
-                log() << "Finished deleting " << nss.ns() << " range "
+                MONGO_BOOST_LOG << "Finished deleting " << nss.ns() << " range "
                       << redact(orphanRange.toString());
                 return Status::OK();
             }
         }
 
-        log() << "Waiting for deletion of " << nss.ns() << " range " << orphanRange;
+        MONGO_BOOST_LOG << "Waiting for deletion of " << nss.ns() << " range " << orphanRange;
 
         Status result = stillScheduled->waitStatus(opCtx);
         if (!result.isOK()) {

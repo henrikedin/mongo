@@ -89,7 +89,7 @@ int mongoeBenchMain(int argc, char* argv[], char** envp) {
 
     setupSignalHandlers();
 
-    log() << "MongoDB embedded benchRun application, for testing purposes only";
+    MONGO_BOOST_LOG << "MongoDB embedded benchRun application, for testing purposes only";
 
     try {
         optionenvironment::OptionSection startupOptions("Options");
@@ -99,7 +99,7 @@ int mongoeBenchMain(int argc, char* argv[], char** envp) {
             embedded_integration_helpers::parseCommandLineOptions(argc, argv, startupOptions));
         serviceContext = embedded::initialize(nullptr);
     } catch (const std::exception& ex) {
-        error() << ex.what();
+        MONGO_BOOST_ERROR << ex.what();
         return EXIT_BADOPTIONS;
     }
 
@@ -129,7 +129,7 @@ int mongoeBenchMain(int argc, char* argv[], char** envp) {
         sleepmillis(static_cast<long long>(seconds * 1000));
 
         BSONObj stats = BenchRunner::finish(runner.release());
-        log() << "stats: " << stats;
+        MONGO_BOOST_LOG << "stats: " << stats;
     }
 
     shutdown(EXIT_CLEAN);

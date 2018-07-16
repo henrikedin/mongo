@@ -88,7 +88,7 @@ PlanStage* buildStages(OperationContext* opCtx,
             const IndexScanNode* ixn = static_cast<const IndexScanNode*>(root);
 
             if (nullptr == collection) {
-                warning() << "Can't ixscan null namespace";
+                MONGO_BOOST_WARNING << "Can't ixscan null namespace";
                 return nullptr;
             }
 
@@ -311,7 +311,7 @@ PlanStage* buildStages(OperationContext* opCtx,
             const DistinctNode* dn = static_cast<const DistinctNode*>(root);
 
             if (nullptr == collection) {
-                warning() << "Can't distinct-scan null namespace";
+                MONGO_BOOST_WARNING << "Can't distinct-scan null namespace";
                 return nullptr;
             }
 
@@ -329,7 +329,7 @@ PlanStage* buildStages(OperationContext* opCtx,
             const CountScanNode* csn = static_cast<const CountScanNode*>(root);
 
             if (nullptr == collection) {
-                warning() << "Can't fast-count null namespace (collection null)";
+                MONGO_BOOST_WARNING << "Can't fast-count null namespace (collection null)";
                 return nullptr;
             }
 
@@ -374,7 +374,7 @@ PlanStage* buildStages(OperationContext* opCtx,
             mongoutils::str::stream ss;
             root->appendToString(&ss, 0);
             string nodeStr(ss);
-            warning() << "Can't build exec tree for node " << nodeStr << endl;
+            MONGO_BOOST_WARNING << "Can't build exec tree for node " << nodeStr << endl;
         }
     }
     return nullptr;

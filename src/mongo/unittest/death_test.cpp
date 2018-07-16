@@ -52,7 +52,7 @@
     do {                                                                \
         if (-1 == (EXPR)) {                                             \
             const int err = errno;                                      \
-            severe() << #EXPR " failed: " << errnoWithDescription(err); \
+            MONGO_BOOST_SEVERE << #EXPR " failed: " << errnoWithDescription(err); \
             invariantFailed("-1 != (" #EXPR ")", __FILE__, __LINE__);   \
         }                                                               \
     } while (false)
@@ -65,10 +65,10 @@ DeathTestImpl::DeathTestImpl(stdx::function<std::unique_ptr<Test>()> makeTest)
 
 void DeathTestImpl::_doTest() {
 #if defined(_WIN32)
-    log() << "Skipping death test on Windows";
+    MONGO_BOOST_LOG << "Skipping death test on Windows";
     return;
 #elif defined(__APPLE__) && (TARGET_OS_TV || TARGET_OS_WATCH)
-    log() << "Skipping death test on tvOS/watchOS";
+    MONGO_BOOST_LOG << "Skipping death test on tvOS/watchOS";
     return;
 #else
     int pipes[2];
@@ -94,7 +94,7 @@ void DeathTestImpl::_doTest() {
                 case EINTR:
                     continue;
                 default:
-                    severe() << "Unrecoverable error while waiting for " << child << ": "
+                    MONGO_BOOST_SEVERE << "Unrecoverable error while waiting for " << child << ": "
                              << errnoWithDescription(err);
                     MONGO_UNREACHABLE;
             }
@@ -125,7 +125,7 @@ void DeathTestImpl::_doTest() {
         auto test = _makeTest();
         test->run();
     } catch (const TestAssertionFailureException& tafe) {
-        log() << "Caught test exception while expecting death: " << tafe;
+        MONGO_BOOST_LOG << "Caught test exception while expecting death: " << tafe;
         // To fail the test, we must exit with a successful error code, because the parent process
         // is checking for the child to die with an exit code indicating an error.
         quickExit(EXIT_SUCCESS);

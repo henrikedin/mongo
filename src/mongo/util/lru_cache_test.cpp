@@ -143,7 +143,7 @@ const std::array<int, 7> kTestSizes{1, 2, 3, 4, 5, 10, 1000};
 using SizedTest = stdx::function<void(int)>;
 void runWithDifferentSizes(SizedTest test) {
     for (auto size : kTestSizes) {
-        mongo::unittest::log() << "\t\tTesting cache size of " << size;
+        mongo::unittest::MONGO_BOOST_LOG << "\t\tTesting cache size of " << size;
         test(size);
     }
 }

@@ -81,7 +81,7 @@ CleanupResult cleanupOrphanedData(OperationContext* opCtx,
         const auto css = CollectionShardingState::get(opCtx, ns);
         auto metadata = css->getMetadata(opCtx);
         if (!metadata->isSharded()) {
-            log() << "skipping orphaned data cleanup for " << ns.toString()
+            MONGO_BOOST_LOG << "skipping orphaned data cleanup for " << ns.toString()
                   << ", collection is not sharded";
             return CleanupResult_Done;
         }
@@ -93,7 +93,7 @@ CleanupResult cleanupOrphanedData(OperationContext* opCtx,
                                         << startingFromKey << " does not match shard key pattern "
                                         << keyPattern;
 
-                log() << *errMsg;
+                MONGO_BOOST_LOG << *errMsg;
                 return CleanupResult_Error;
             }
         } else {
@@ -125,7 +125,7 @@ CleanupResult cleanupOrphanedData(OperationContext* opCtx,
     LOG(1) << "Finished waiting for last " << ns.toString() << " orphan range cleanup";
 
     if (!result.isOK()) {
-        log() << redact(result.reason());
+        MONGO_BOOST_LOG << redact(result.reason());
         *errMsg = result.reason();
         return CleanupResult_Error;
     }

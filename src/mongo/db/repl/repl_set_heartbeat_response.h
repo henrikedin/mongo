@@ -205,5 +205,9 @@ private:
     long long _term = -1;
 };
 
+inline std::ostream& operator<<(std::ostream& s, const ReplSetHeartbeatResponse& heartbeat) {
+	return (s << heartbeat.toString());
+}
+
 }  // namespace repl
 }  // namespace mongo

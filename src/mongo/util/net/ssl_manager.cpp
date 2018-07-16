@@ -102,7 +102,7 @@ public:
               "disableNonSSLConnectionLogging",
               &sslGlobalParams.disableNonSSLConnectionLogging) {}
     Status validate(const bool& potentialNewValue) final {
-        warning() << "Option: disableNonSSLConnectionLogging is deprecated. Please use "
+        MONGO_BOOST_WARNING << "Option: disableNonSSLConnectionLogging is deprecated. Please use "
                   << "disableNonTLSConnectionLogging instead.";
         if (sslGlobalParams.disableNonSSLConnectionLoggingSet) {
             return Status(ErrorCodes::BadValue,

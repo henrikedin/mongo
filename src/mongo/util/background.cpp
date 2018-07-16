@@ -149,7 +149,7 @@ void BackgroundJob::jobBody() {
     try {
         run();
     } catch (const std::exception& e) {
-        error() << "backgroundjob " << threadName << " exception: " << redact(e.what());
+        MONGO_BOOST_ERROR << "backgroundjob " << threadName << " exception: " << redact(e.what());
         throw;
     }
 
@@ -335,9 +335,9 @@ void PeriodicTaskRunner::_runTask(PeriodicTask* const task) {
     try {
         task->taskDoWork();
     } catch (const std::exception& e) {
-        error() << "task: " << taskName << " failed: " << redact(e.what());
+        MONGO_BOOST_ERROR << "task: " << taskName << " failed: " << redact(e.what());
     } catch (...) {
-        error() << "task: " << taskName << " failed with unknown error";
+        MONGO_BOOST_ERROR << "task: " << taskName << " failed with unknown error";
     }
 
     const int ms = timer.millis();

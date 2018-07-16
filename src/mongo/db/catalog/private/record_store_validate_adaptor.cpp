@@ -198,7 +198,7 @@ void RecordStoreValidateAdaptor::traverseRecordStore(RecordStore* recordStore,
             }
             nInvalid++;
             results->valid = false;
-            log() << "document at location: " << record->id << " is corrupted";
+            MONGO_BOOST_LOG << "document at location: " << record->id << " is corrupted";
         }
 
         prevRecordId = record->id;

@@ -77,7 +77,7 @@ ServerParameterSet* ServerParameterSet::getGlobal() {
 void ServerParameterSet::add(ServerParameter* sp) {
     ServerParameter*& x = _map[sp->name()];
     if (x) {
-        severe() << "'" << x->name() << "' already exists in the server parameter set.";
+        MONGO_BOOST_SEVERE << "'" << x->name() << "' already exists in the server parameter set.";
         abort();
     }
     x = sp;

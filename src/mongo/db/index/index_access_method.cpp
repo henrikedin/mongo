@@ -178,8 +178,8 @@ void IndexAccessMethod::removeOneKey(OperationContext* opCtx,
         _newInterface->unindex(opCtx, key, loc, dupsAllowed);
         IndexKeyEntry indexEntry = IndexKeyEntry(key, loc);
     } catch (AssertionException& e) {
-        log() << "Assertion failure: _unindex failed " << _descriptor->indexNamespace();
-        log() << "Assertion failure: _unindex failed: " << redact(e) << "  key:" << key.toString()
+        MONGO_BOOST_LOG << "Assertion failure: _unindex failed " << _descriptor->indexNamespace();
+        MONGO_BOOST_LOG << "Assertion failure: _unindex failed: " << redact(e) << "  key:" << key.toString()
               << "  dl:" << loc;
         logContext();
     }

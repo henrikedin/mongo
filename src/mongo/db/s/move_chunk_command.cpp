@@ -59,7 +59,7 @@ namespace {
  */
 void uassertStatusOKWithWarning(const Status& status) {
     if (!status.isOK()) {
-        warning() << "Chunk move failed" << causedBy(redact(status));
+        MONGO_BOOST_WARNING << "Chunk move failed" << causedBy(redact(status));
         uassertStatusOK(status);
     }
 }

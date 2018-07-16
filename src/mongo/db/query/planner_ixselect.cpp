@@ -486,7 +486,7 @@ bool QueryPlannerIXSelect::_compatible(const BSONElement& keyPatternElt,
     } else if (IndexNames::GEO_HAYSTACK == indexedFieldType) {
         return false;
     } else {
-        warning() << "Unknown indexing for node " << node->toString() << " and field "
+        MONGO_BOOST_WARNING << "Unknown indexing for node " << node->toString() << " and field "
                   << keyPatternElt.toString();
         verify(0);
     }

@@ -242,7 +242,7 @@ FTDCFileManager::recoverInterimFile() {
     FTDCFileReader read;
     auto s = read.open(interimFile);
     if (!s.isOK()) {
-        log() << "Unclean full-time diagnostic data capture shutdown detected, found interim file, "
+        MONGO_BOOST_LOG << "Unclean full-time diagnostic data capture shutdown detected, found interim file, "
                  "but failed "
                  "to open it, some "
                  "metrics may have been lost. "
@@ -261,7 +261,7 @@ FTDCFileManager::recoverInterimFile() {
 
     // Warn if the interim file was corrupt or we had an unclean shutdown
     if (!m.isOK() || !docs.empty()) {
-        log() << "Unclean full-time diagnostic data capture shutdown detected, found interim file, "
+        MONGO_BOOST_LOG << "Unclean full-time diagnostic data capture shutdown detected, found interim file, "
                  "some "
                  "metrics may have been lost. "
               << m.getStatus();

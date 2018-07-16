@@ -51,14 +51,14 @@ bool is32bit() {
 
 void logProcessDetails() {
     auto&& vii = VersionInfoInterface::instance();
-    log() << mongodVersion(vii);
+    MONGO_BOOST_LOG << mongodVersion(vii);
     vii.logBuildInfo();
 
     printCommandLineOpts();
 }
 
 void logProcessDetailsForLogRotate(ServiceContext* serviceContext) {
-    log() << "pid=" << ProcessId::getCurrent() << " port=" << serverGlobalParams.port
+    MONGO_BOOST_LOG << "pid=" << ProcessId::getCurrent() << " port=" << serverGlobalParams.port
           << (is32bit() ? " 32" : " 64") << "-bit "
           << "host=" << getHostNameCached();
 
@@ -68,10 +68,10 @@ void logProcessDetailsForLogRotate(ServiceContext* serviceContext) {
         auto rsConfig = replCoord->getConfig();
 
         if (rsConfig.isInitialized()) {
-            log() << "Replica Set Config: " << rsConfig.toBSON();
-            log() << "Replica Set Member State: " << (replCoord->getMemberState()).toString();
+            MONGO_BOOST_LOG << "Replica Set Config: " << rsConfig.toBSON();
+            MONGO_BOOST_LOG << "Replica Set Member State: " << (replCoord->getMemberState()).toString();
         } else {
-            log() << "Node currently has no Replica Set Config.";
+            MONGO_BOOST_LOG << "Node currently has no Replica Set Config.";
         }
     }
 

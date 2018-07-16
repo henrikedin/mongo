@@ -71,14 +71,14 @@ void initializeStorageEngine(ServiceContext* service, const StorageEngineInitFla
     if (auto existingStorageEngine = StorageEngineMetadata::getStorageEngineForPath(dbpath)) {
         if (*existingStorageEngine == "mmapv1" ||
             (storageGlobalParams.engineSetByUser && storageGlobalParams.engine == "mmapv1")) {
-            log() << startupWarningsLog;
-            log() << "** WARNING: Support for MMAPV1 storage engine has been deprecated and will be"
+            MONGO_BOOST_LOG << startupWarningsLog;
+            MONGO_BOOST_LOG << "** WARNING: Support for MMAPV1 storage engine has been deprecated and will be"
                   << startupWarningsLog;
-            log() << "**          removed in version 4.2. Please plan to migrate to the wiredTiger"
+            MONGO_BOOST_LOG << "**          removed in version 4.2. Please plan to migrate to the wiredTiger"
                   << startupWarningsLog;
-            log() << "**          storage engine." << startupWarningsLog;
-            log() << "**          See http://dochub.mongodb.org/core/deprecated-mmapv1";
-            log() << startupWarningsLog;
+            MONGO_BOOST_LOG << "**          storage engine." << startupWarningsLog;
+            MONGO_BOOST_LOG << "**          See http://dochub.mongodb.org/core/deprecated-mmapv1";
+            MONGO_BOOST_LOG << startupWarningsLog;
         }
 
         if (storageGlobalParams.engineSetByUser) {
@@ -100,7 +100,7 @@ void initializeStorageEngine(ServiceContext* service, const StorageEngineInitFla
             }
         } else {
             // Otherwise set the active storage engine as the contents of the metadata file.
-            log() << "Detected data files in " << dbpath << " created by the '"
+            MONGO_BOOST_LOG << "Detected data files in " << dbpath << " created by the '"
                   << *existingStorageEngine << "' storage engine, so setting the active"
                   << " storage engine to '" << *existingStorageEngine << "'.";
             storageGlobalParams.engine = *existingStorageEngine;
@@ -115,15 +115,15 @@ void initializeStorageEngine(ServiceContext* service, const StorageEngineInitFla
                     << " storage engine explicitly, e.g. --storageEngine=mmapv1.",
                 isRegisteredStorageEngine(service, storageGlobalParams.engine));
     } else if (storageGlobalParams.engineSetByUser && storageGlobalParams.engine == "mmapv1") {
-        log() << startupWarningsLog;
-        log() << "** WARNING: You have explicitly specified 'MMAPV1' storage engine in your"
+        MONGO_BOOST_LOG << startupWarningsLog;
+        MONGO_BOOST_LOG << "** WARNING: You have explicitly specified 'MMAPV1' storage engine in your"
               << startupWarningsLog;
-        log() << "**          config file or as a command line option.  Support for the MMAPV1"
+        MONGO_BOOST_LOG << "**          config file or as a command line option.  Support for the MMAPV1"
               << startupWarningsLog;
-        log() << "**          storage engine has been deprecated and will be removed in"
+        MONGO_BOOST_LOG << "**          storage engine has been deprecated and will be removed in"
               << startupWarningsLog;
-        log() << "**          version 4.2. See http://dochub.mongodb.org/core/deprecated-mmapv1";
-        log() << startupWarningsLog;
+        MONGO_BOOST_LOG << "**          version 4.2. See http://dochub.mongodb.org/core/deprecated-mmapv1";
+        MONGO_BOOST_LOG << startupWarningsLog;
     }
 
     const StorageEngine::Factory* factory =
@@ -220,11 +220,11 @@ void createLockFile(ServiceContext* service) {
 
     if (wasUnclean) {
         if (storageGlobalParams.readOnly) {
-            severe() << "Attempted to open dbpath in readOnly mode, but the server was "
+            MONGO_BOOST_SEVERE << "Attempted to open dbpath in readOnly mode, but the server was "
                         "previously not shut down cleanly.";
             fassertFailedNoTrace(34416);
         }
-        warning() << "Detected unclean shutdown - " << lockFile->getFilespec() << " is not empty.";
+        MONGO_BOOST_WARNING << "Detected unclean shutdown - " << lockFile->getFilespec() << " is not empty.";
         startingAfterUncleanShutdown(service) = true;
     }
 }

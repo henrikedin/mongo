@@ -90,7 +90,7 @@ void killAllExpiredTransactions(OperationContext* opCtx) {
                     status == ErrorCodes::LockTimeout) {
                     LOG(1) << errmsg;
                 } else {
-                    warning() << errmsg;
+                    MONGO_BOOST_WARNING << errmsg;
                 }
             }
         });

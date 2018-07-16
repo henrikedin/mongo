@@ -74,7 +74,7 @@ void checkNS(OperationContext* opCtx, const std::list<std::string>& nsToCheck) {
         IndexCatalog* indexCatalog = collection->getIndexCatalog();
 
         if (collection->ns().isOplog() && indexCatalog->numIndexesTotal(opCtx) > 0) {
-            warning() << nss.ns() << " had illegal indexes, removing";
+            MONGO_BOOST_WARNING << nss.ns() << " had illegal indexes, removing";
             indexCatalog->dropAllIndexes(opCtx, true);
             continue;
         }
@@ -98,17 +98,17 @@ void checkNS(OperationContext* opCtx, const std::list<std::string>& nsToCheck) {
                 continue;
             }
 
-            log() << "found " << indexesToBuild.size() << " interrupted index build(s) on "
+            MONGO_BOOST_LOG << "found " << indexesToBuild.size() << " interrupted index build(s) on "
                   << nss.ns();
 
             if (firstTime) {
-                log() << "note: restart the server with --noIndexBuildRetry "
+                MONGO_BOOST_LOG << "note: restart the server with --noIndexBuildRetry "
                       << "to skip index rebuilds";
                 firstTime = false;
             }
 
             if (!serverGlobalParams.indexBuildRetry) {
-                log() << "  not rebuilding interrupted indexes";
+                MONGO_BOOST_LOG << "  not rebuilding interrupted indexes";
                 wunit.commit();
                 continue;
             }
@@ -125,8 +125,8 @@ void checkNS(OperationContext* opCtx, const std::list<std::string>& nsToCheck) {
             indexer.commit();
             wunit.commit();
         } catch (const DBException& e) {
-            error() << "Index rebuilding did not complete: " << redact(e);
-            log() << "note: restart the server with --noIndexBuildRetry to skip index rebuilds";
+            MONGO_BOOST_ERROR << "Index rebuilding did not complete: " << redact(e);
+            MONGO_BOOST_LOG << "note: restart the server with --noIndexBuildRetry to skip index rebuilds";
             // If anything went wrong, leave the indexes partially built so that we pick them up
             // again on restart.
             indexer.abortWithoutCleanup();
@@ -161,7 +161,7 @@ void restartInProgressIndexesFromLastShutdown(OperationContext* opCtx) {
         }
         checkNS(opCtx, collNames);
     } catch (const DBException& e) {
-        error() << "Index verification did not complete: " << redact(e);
+        MONGO_BOOST_ERROR << "Index verification did not complete: " << redact(e);
         fassertFailedNoTrace(18643);
     }
     LOG(1) << "checking complete";

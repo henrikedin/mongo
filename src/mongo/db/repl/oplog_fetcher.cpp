@@ -218,7 +218,7 @@ Status checkRemoteOplogStart(const Fetcher::Documents& documents,
         // should never happen.
         if (opTime.getTerm() != OpTime::kUninitializedTerm && hash != lastFetched.value &&
             opTime == lastFetched.opTime) {
-            severe() << "Hashes do not match but OpTimes do. " << message
+            MONGO_BOOST_SEVERE << "Hashes do not match but OpTimes do. " << message
                      << ". Source's GTE doc: " << redact(o);
             fassertFailedNoTrace(40634);
         }
@@ -413,7 +413,7 @@ StatusWith<BSONObj> OplogFetcher::_onSuccessfulBatch(const Fetcher::QueryRespons
 
     auto oqMetadataResult = parseOplogQueryMetadata(queryResponse);
     if (!oqMetadataResult.isOK()) {
-        error() << "invalid oplog query metadata from sync source " << _getSource() << ": "
+        MONGO_BOOST_ERROR << "invalid oplog query metadata from sync source " << _getSource() << ": "
                 << oqMetadataResult.getStatus() << ": " << queryResponse.otherFields.metadata;
         return oqMetadataResult.getStatus();
     }
@@ -461,7 +461,7 @@ StatusWith<BSONObj> OplogFetcher::_onSuccessfulBatch(const Fetcher::QueryRespons
         const auto& metadataObj = queryResponse.otherFields.metadata;
         auto metadataResult = rpc::ReplSetMetadata::readFromMetadata(metadataObj);
         if (!metadataResult.isOK()) {
-            error() << "invalid replication metadata from sync source " << _getSource() << ": "
+            MONGO_BOOST_ERROR << "invalid replication metadata from sync source " << _getSource() << ": "
                     << metadataResult.getStatus() << ": " << metadataObj;
             return metadataResult.getStatus();
         }

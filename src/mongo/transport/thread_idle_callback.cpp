@@ -54,7 +54,7 @@ void markThreadIdle() {
     try {
         threadIdleCallback();
     } catch (...) {
-        severe() << "Exception escaped from threadIdleCallback";
+        MONGO_BOOST_SEVERE << "Exception escaped from threadIdleCallback";
         fassertFailedNoTrace(28603);
     }
 }

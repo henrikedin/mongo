@@ -155,7 +155,7 @@ void incrementChunkOnInsertOrUpdate(OperationContext* opCtx,
     // explicitly, as opposed to first routed through mongos.
     BSONObj shardKey = shardKeyPattern.extractShardKeyFromDoc(document);
     if (shardKey.woCompare(BSONObj()) == 0) {
-        warning() << "inserting document " << document.toString() << " without shard key pattern "
+        MONGO_BOOST_WARNING << "inserting document " << document.toString() << " without shard key pattern "
                   << shardKeyPattern << " into a sharded collection";
         return;
     }
@@ -363,7 +363,7 @@ void ShardServerOpObserver::onDelete(OperationContext* opCtx,
                     uasserted(40070,
                               "cannot delete shardIdentity document while in --shardsvr mode");
                 } else {
-                    warning() << "Shard identity document rolled back.  Will shut down after "
+                    MONGO_BOOST_WARNING << "Shard identity document rolled back.  Will shut down after "
                                  "finishing rollback.";
                     ShardIdentityRollbackNotifier::get(opCtx)->recordThatRollbackHappened();
                 }
@@ -382,7 +382,7 @@ repl::OpTime ShardServerOpObserver::onDropCollection(OperationContext* opCtx,
 
         // Can't confirm whether there was a ShardIdentity document or not yet, so assume there was
         // one and shut down the process to clear the in-memory sharding state
-        warning() << "admin.system.version collection rolled back. Will shut down after finishing "
+        MONGO_BOOST_WARNING << "admin.system.version collection rolled back. Will shut down after finishing "
                      "rollback";
 
         ShardIdentityRollbackNotifier::get(opCtx)->recordThatRollbackHappened();

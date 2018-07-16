@@ -103,7 +103,7 @@ void networkWarnWithDescription(const Socket& socket, StringData call, int error
     }
 #endif
     auto ewd = errnoWithDescription(errorCode);
-    warning() << "Failed to connect to " << socket.remoteAddr().getAddr() << ":"
+    MONGO_BOOST_WARNING << "Failed to connect to " << socket.remoteAddr().getAddr() << ":"
               << socket.remoteAddr().getPort() << ", in(" << call << "), reason: " << ewd;
 }
 
@@ -117,10 +117,10 @@ void setSockTimeouts(int sock, double secs) {
     int status =
         setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, reinterpret_cast<char*>(&timeout), sizeof(DWORD));
     if (report && (status == SOCKET_ERROR))
-        log() << "unable to set SO_RCVTIMEO: " << errnoWithDescription(WSAGetLastError());
+        MONGO_BOOST_LOG << "unable to set SO_RCVTIMEO: " << errnoWithDescription(WSAGetLastError());
     status =
         setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, reinterpret_cast<char*>(&timeout), sizeof(DWORD));
-    DEV if (report && (status == SOCKET_ERROR)) log() << "unable to set SO_SNDTIMEO: "
+    DEV if (report && (status == SOCKET_ERROR)) MONGO_BOOST_LOG << "unable to set SO_SNDTIMEO: "
                                                       << errnoWithDescription(WSAGetLastError());
 #else
     struct timeval tv;
@@ -128,9 +128,9 @@ void setSockTimeouts(int sock, double secs) {
     tv.tv_usec = (int)((long long)(secs * 1000 * 1000) % (1000 * 1000));
     bool ok = setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (char*)&tv, sizeof(tv)) == 0;
     if (report && !ok)
-        log() << "unable to set SO_RCVTIMEO";
+        MONGO_BOOST_LOG << "unable to set SO_RCVTIMEO";
     ok = setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, (char*)&tv, sizeof(tv)) == 0;
-    DEV if (report && !ok) log() << "unable to set SO_SNDTIMEO";
+    DEV if (report && !ok) MONGO_BOOST_LOG << "unable to set SO_SNDTIMEO";
 #endif
 }
 
@@ -145,11 +145,11 @@ void disableNagle(int sock) {
 #endif
 
     if (setsockopt(sock, level, TCP_NODELAY, (char*)&x, sizeof(x)))
-        error() << "disableNagle failed: " << errnoWithDescription();
+        MONGO_BOOST_ERROR << "disableNagle failed: " << errnoWithDescription();
 
 #ifdef SO_KEEPALIVE
     if (setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, (char*)&x, sizeof(x)))
-        error() << "SO_KEEPALIVE failed: " << errnoWithDescription();
+        MONGO_BOOST_ERROR << "SO_KEEPALIVE failed: " << errnoWithDescription();
 #endif
 
     setSocketKeepAliveParams(sock);
@@ -167,7 +167,7 @@ SockAddr getLocalAddrForBoundSocketFd(int fd) {
     SockAddr result;
     int rc = getsockname(fd, result.raw(), &result.addressSize);
     if (rc != 0) {
-        warning() << "Could not resolve local address for socket with fd " << fd << ": "
+        MONGO_BOOST_WARNING << "Could not resolve local address for socket with fd " << fd << ": "
                   << getAddrInfoStrError(socketGetLastError());
         result = SockAddr();
     }
@@ -327,7 +327,7 @@ bool Socket::connect(SockAddr& remote) {
 #endif
             // No activity for the full duration of the timeout.
             if (pollReturn == 0) {
-                warning() << "Failed to connect to " << _remote.getAddr() << ":"
+                MONGO_BOOST_WARNING << "Failed to connect to " << _remote.getAddr() << ":"
                           << _remote.getPort() << " after " << connectTimeoutMillis
                           << " milliseconds, giving up.";
                 return false;
@@ -638,7 +638,7 @@ bool Socket::isStillConnected() {
         return true;
     } else if (nEvents < 0) {
         // Poll itself failed, this is weird, warn and log errno
-        warning() << "Socket poll() failed during connectivity check"
+        MONGO_BOOST_WARNING << "Socket poll() failed during connectivity check"
                   << " (idle " << idleTimeSecs << " secs,"
                   << " remote host " << remoteString() << ")" << causedBy(errnoWithDescription());
 
@@ -663,7 +663,7 @@ bool Socket::isStillConnected() {
 
         if (recvd < 0) {
             // An error occurred during recv, warn and log errno
-            warning() << "Socket recv() failed during connectivity check"
+            MONGO_BOOST_WARNING << "Socket recv() failed during connectivity check"
                       << " (idle " << idleTimeSecs << " secs,"
                       << " remote host " << remoteString() << ")"
                       << causedBy(errnoWithDescription());
@@ -671,13 +671,13 @@ bool Socket::isStillConnected() {
             // We got nonzero data from this socket, very weird?
             // Log and warn at runtime, log and abort at devtime
             // TODO: Dump the data to the log somehow?
-            error() << "Socket found pending " << recvd
+            MONGO_BOOST_ERROR << "Socket found pending " << recvd
                     << " bytes of data during connectivity check"
                     << " (idle " << idleTimeSecs << " secs,"
                     << " remote host " << remoteString() << ")";
             DEV {
                 std::string hex = hexdump(testBuf, recvd);
-                error() << "Hex dump of stale log data: " << hex;
+                MONGO_BOOST_ERROR << "Hex dump of stale log data: " << hex;
             }
             dassert(false);
         } else {
@@ -699,14 +699,14 @@ bool Socket::isStillConnected() {
     } else if (pollInfo.revents & POLLNVAL) {
         // Socket descriptor itself is weird
         // Log and warn at runtime, log and abort at devtime
-        error() << "Socket descriptor detected as invalid"
+        MONGO_BOOST_ERROR << "Socket descriptor detected as invalid"
                 << " (idle " << idleTimeSecs << " secs,"
                 << " remote host " << remoteString() << ")";
         dassert(false);
     } else {
         // Don't know what poll is saying here
         // Log and warn at runtime, log and abort at devtime
-        error() << "Socket had unknown event (" << static_cast<int>(pollInfo.revents) << ")"
+        MONGO_BOOST_ERROR << "Socket had unknown event (" << static_cast<int>(pollInfo.revents) << ")"
                 << " (idle " << idleTimeSecs << " secs,"
                 << " remote host " << remoteString() << ")";
         dassert(false);

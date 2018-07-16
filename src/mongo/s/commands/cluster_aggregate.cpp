@@ -311,7 +311,7 @@ std::vector<RemoteCursor> establishShardCursors(
     }
 
     if (MONGO_FAIL_POINT(clusterAggregateHangBeforeEstablishingShardCursors)) {
-        log() << "clusterAggregateHangBeforeEstablishingShardCursors fail point enabled.  Blocking "
+        MONGO_BOOST_LOG << "clusterAggregateHangBeforeEstablishingShardCursors fail point enabled.  Blocking "
                  "until fail point is disabled.";
         while (MONGO_FAIL_POINT(clusterAggregateHangBeforeEstablishingShardCursors)) {
             sleepsecs(1);

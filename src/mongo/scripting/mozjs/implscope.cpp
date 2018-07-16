@@ -157,7 +157,7 @@ void MozJSImplScope::_reportError(JSContext* cx, const char* message, JSErrorRep
             exceptionMsg = ss;
         } catch (const DBException& dbe) {
             exceptionMsg = "Unknown error occured while processing exception";
-            log() << exceptionMsg << ":" << dbe.toString() << ":" << message;
+            MONGO_BOOST_LOG << exceptionMsg << ":" << dbe.toString() << ":" << message;
         }
 
         scope->_status =
@@ -267,7 +267,7 @@ void MozJSImplScope::_gcCallback(JSRuntime* rt, JSGCStatus status, void* data) {
         return;
     }
 
-    log() << "MozJS GC " << (status == JSGC_BEGIN ? "prologue" : "epilogue") << " heap stats - "
+    MONGO_BOOST_LOG << "MozJS GC " << (status == JSGC_BEGIN ? "prologue" : "epilogue") << " heap stats - "
           << " total: " << mongo::sm::get_total_bytes() << " limit: " << mongo::sm::get_max_bytes();
 }
 
@@ -314,7 +314,7 @@ MozJSImplScope::MozRuntime::MozRuntime(const MozJSScriptEngine* engine) {
 
     const auto jsHeapLimit = engine->getJSHeapLimitMB();
     if (jsHeapLimit != 0 && jsHeapLimit < 10) {
-        warning() << "JavaScript may not be able to initialize with a heap limit less than 10MB.";
+        MONGO_BOOST_WARNING << "JavaScript may not be able to initialize with a heap limit less than 10MB.";
     }
     size_t mallocMemoryLimit = 1024ul * 1024 * jsHeapLimit;
     mongo::sm::reset(mallocMemoryLimit);
@@ -734,7 +734,7 @@ int MozJSImplScope::invoke(ScriptingFunction func,
         // must validate the handle because TerminateExecution may have
         // been thrown after the above checks
         if (out.isObject() && _nativeFunctionProto.instanceOf(out)) {
-            warning() << "storing native function as return value";
+            MONGO_BOOST_WARNING << "storing native function as return value";
             _lastRetIsNativeCode = true;
         } else {
             _lastRetIsNativeCode = false;
@@ -924,7 +924,7 @@ bool MozJSImplScope::_checkErrorState(bool success, bool reportError, bool asser
     _error = _status.reason();
 
     if (reportError)
-        error() << redact(_error);
+        MONGO_BOOST_ERROR << redact(_error);
 
     // Clear the status state
     auto status = std::move(_status);

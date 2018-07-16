@@ -99,7 +99,7 @@ public:
                      const string&,
                      const BSONObj& cmdObj,
                      BSONObjBuilder& result) {
-        log() << "replSetTest command received: " << cmdObj.toString();
+        MONGO_BOOST_LOG << "replSetTest command received: " << cmdObj.toString();
 
         auto replCoord = ReplicationCoordinator::get(getGlobalServiceContext());
 
@@ -116,7 +116,7 @@ public:
             status = bsonExtractIntegerField(cmdObj, "timeoutMillis", &timeoutMillis);
             uassertStatusOK(status);
             Milliseconds timeout(timeoutMillis);
-            log() << "replSetTest: waiting " << timeout << " for member state to become "
+            MONGO_BOOST_LOG << "replSetTest: waiting " << timeout << " for member state to become "
                   << expectedState;
 
             status = replCoord->waitForMemberState(expectedState, timeout);
@@ -128,7 +128,7 @@ public:
             auto status = bsonExtractIntegerField(cmdObj, "waitForDrainFinish", &timeoutMillis);
             uassertStatusOK(status);
             Milliseconds timeout(timeoutMillis);
-            log() << "replSetTest: waiting " << timeout << " for applier buffer to finish draining";
+            MONGO_BOOST_LOG << "replSetTest: waiting " << timeout << " for applier buffer to finish draining";
 
             status = replCoord->waitForDrainFinish(timeout);
 
@@ -311,7 +311,7 @@ public:
                 "no configuration specified. "
                 "Using a default configuration for the set";
             result.append("info2", noConfigMessage);
-            log() << "initiate : " << noConfigMessage;
+            MONGO_BOOST_LOG << "initiate : " << noConfigMessage;
 
             ReplicationCoordinatorExternalStateImpl externalState(
                 opCtx->getServiceContext(),
@@ -335,7 +335,7 @@ public:
             }
             b.appendArray("members", members.obj());
             configObj = b.obj();
-            log() << "created this configuration for initiation : " << configObj.toString();
+            MONGO_BOOST_LOG << "created this configuration for initiation : " << configObj.toString();
         }
 
         if (configObj.getField("version").eoo()) {
@@ -493,7 +493,7 @@ public:
             uassertStatusOK(status);
         }
 
-        log() << "Attempting to step down in response to replSetStepDown command";
+        MONGO_BOOST_LOG << "Attempting to step down in response to replSetStepDown command";
 
         status = ReplicationCoordinator::get(opCtx)->stepDown(
             opCtx, force, Seconds(secondaryCatchUpPeriodSecs), Seconds(stepDownForSecs));
@@ -690,12 +690,12 @@ public:
         Status status = ReplicationCoordinator::get(opCtx)->checkReplEnabledForCommand(&result);
         uassertStatusOK(status);
 
-        log() << "Received replSetStepUp request";
+        MONGO_BOOST_LOG << "Received replSetStepUp request";
 
         status = ReplicationCoordinator::get(opCtx)->stepUpIfEligible();
 
         if (!status.isOK()) {
-            log() << "replSetStepUp request failed" << causedBy(status);
+            MONGO_BOOST_LOG << "replSetStepUp request failed" << causedBy(status);
         }
 
         uassertStatusOK(status);
@@ -724,11 +724,11 @@ public:
                      BSONObjBuilder& result) override {
         Status status = ReplicationCoordinator::get(opCtx)->checkReplEnabledForCommand(&result);
         uassertStatusOK(status);
-        log() << "Received replSetAbortPrimaryCatchUp request";
+        MONGO_BOOST_LOG << "Received replSetAbortPrimaryCatchUp request";
 
         status = ReplicationCoordinator::get(opCtx)->abortCatchupIfNeeded();
         if (!status.isOK()) {
-            log() << "replSetAbortPrimaryCatchUp request failed" << causedBy(status);
+            MONGO_BOOST_LOG << "replSetAbortPrimaryCatchUp request failed" << causedBy(status);
         }
         uassertStatusOK(status);
         return true;

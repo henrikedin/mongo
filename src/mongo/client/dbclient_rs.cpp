@@ -157,7 +157,7 @@ ReplicaSetMonitorPtr DBClientReplicaSet::_getMonitor() {
 // This can't throw an exception because it is called in the destructor of ScopedDbConnection
 string DBClientReplicaSet::getServerAddress() const {
     if (!_rsm) {
-        warning() << "Trying to get server address for DBClientReplicaSet, but no "
+        MONGO_BOOST_WARNING << "Trying to get server address for DBClientReplicaSet, but no "
                      "ReplicaSetMonitor exists for "
                   << _setName;
         return str::stream() << _setName << "/";
@@ -362,7 +362,7 @@ void DBClientReplicaSet::_authConnection(DBClientConnection* conn) {
         try {
             conn->auth(i->second);
         } catch (const AssertionException&) {
-            warning() << "cached auth failed for set: " << _setName
+            MONGO_BOOST_WARNING << "cached auth failed for set: " << _setName
                       << " db: " << i->second[saslCommandUserDBFieldName].str()
                       << " user: " << i->second[saslCommandUserFieldName].str() << endl;
         }
@@ -375,7 +375,7 @@ void DBClientReplicaSet::logoutAll(DBClientConnection* conn) {
         try {
             conn->logout(i->first, response);
         } catch (const AssertionException& ex) {
-            warning() << "Failed to logout: " << conn->getServerAddress() << " on db: " << i->first
+            MONGO_BOOST_WARNING << "Failed to logout: " << conn->getServerAddress() << " on db: " << i->first
                       << causedBy(redact(ex));
         }
     }
@@ -819,7 +819,7 @@ bool DBClientReplicaSet::recv(Message& m, int lastRequestId) {
     try {
         return _lazyState._lastClient->recv(m, lastRequestId);
     } catch (DBException& e) {
-        log() << "could not receive data from " << _lazyState._lastClient->toString()
+        MONGO_BOOST_LOG << "could not receive data from " << _lazyState._lastClient->toString()
               << causedBy(redact(e));
         return false;
     }
@@ -869,7 +869,7 @@ void DBClientReplicaSet::checkResponse(const std::vector<BSONObj>& batch,
             } else if (_lazyState._lastClient == _master.get()) {
                 isntMaster();
             } else {
-                warning() << "passed " << redact(dataObj) << " but last rs client "
+                MONGO_BOOST_WARNING << "passed " << redact(dataObj) << " but last rs client "
                           << _lazyState._lastClient->toString() << " is not master or secondary"
                           << endl;
             }
@@ -878,7 +878,7 @@ void DBClientReplicaSet::checkResponse(const std::vector<BSONObj>& batch,
                 _lazyState._retries++;
                 *retry = true;
             } else {
-                log() << "too many retries (" << _lazyState._retries
+                MONGO_BOOST_LOG << "too many retries (" << _lazyState._retries
                       << "), could not get data from replica set" << endl;
             }
         }

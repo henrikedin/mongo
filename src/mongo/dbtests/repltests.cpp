@@ -194,7 +194,7 @@ protected:
     }
     void check(const BSONObj& expected, const BSONObj& got) const {
         if (expected.woCompare(got)) {
-            ::mongo::log() << "expected: " << expected.toString() << ", got: " << got.toString()
+            ::mongo::MONGO_BOOST_LOG << "expected: " << expected.toString() << ", got: " << got.toString()
                            << endl;
         }
         ASSERT_BSONOBJ_EQ(expected, got);
@@ -237,7 +237,7 @@ protected:
             OldClientContext ctx(&_opCtx, ns());
             for (vector<BSONObj>::iterator i = ops.begin(); i != ops.end(); ++i) {
                 if (0) {
-                    mongo::unittest::log() << "op: " << *i << endl;
+                    mongo::unittest::MONGO_BOOST_LOG << "op: " << *i << endl;
                 }
                 repl::UnreplicatedWritesBlock uwb(&_opCtx);
                 uassertStatusOK(applyOperation_inlock(
@@ -258,9 +258,9 @@ protected:
         }
 
         auto cursor = coll->getCursor(&_opCtx);
-        ::mongo::log() << "all for " << ns << endl;
+        ::mongo::MONGO_BOOST_LOG << "all for " << ns << endl;
         while (auto record = cursor->next()) {
-            ::mongo::log() << record->data.releaseToBson() << endl;
+            ::mongo::MONGO_BOOST_LOG << record->data.releaseToBson() << endl;
         }
     }
     // These deletes don't get logged.

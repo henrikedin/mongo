@@ -49,12 +49,12 @@ public:
     void startSession(transport::SessionHandle session) override {
         stdx::unique_lock<stdx::mutex> lk(_mutex);
         _sessions.push_back(std::move(session));
-        log() << "started session";
+        MONGO_BOOST_LOG << "started session";
         _cv.notify_one();
     }
 
     void endAllSessions(transport::Session::TagMask tags) override {
-        log() << "end all sessions";
+        MONGO_BOOST_LOG << "end all sessions";
         std::vector<transport::SessionHandle> old_sessions;
         {
             stdx::unique_lock<stdx::mutex> lock(_mutex);
@@ -103,10 +103,10 @@ public:
             Socket s;
             SockAddr sa{"localhost", _port, AF_INET};
             s.connect(sa);
-            log() << "connection: port " << _port;
+            MONGO_BOOST_LOG << "connection: port " << _port;
             stdx::unique_lock<stdx::mutex> lk(_mutex);
             _cv.wait(lk, [&] { return _stop; });
-            log() << "connection: Rx stop request";
+            MONGO_BOOST_LOG << "connection: Rx stop request";
         }};
     }
 
@@ -115,10 +115,10 @@ public:
             stdx::unique_lock<stdx::mutex> lk(_mutex);
             _stop = true;
         }
-        log() << "connection: Tx stop request";
+        MONGO_BOOST_LOG << "connection: Tx stop request";
         _cv.notify_one();
         _thr.join();
-        log() << "connection: stopped";
+        MONGO_BOOST_LOG << "connection: stopped";
     }
 
 private:
@@ -150,7 +150,7 @@ TEST(TransportLayerASIO, PortZeroConnect) {
     ASSERT_OK(tla.start());
     int port = tla.listenerPort();
     ASSERT_GT(port, 0);
-    log() << "TransportLayerASIO.listenerPort() is " << port;
+    MONGO_BOOST_LOG << "TransportLayerASIO.listenerPort() is " << port;
 
     SimpleConnectionThread connect_thread(port);
     sepu.waitForConnect();
@@ -213,17 +213,17 @@ public:
     TimeoutSyncSEP(Mode mode) : _mode(mode) {}
 
     void startSession(transport::SessionHandle session) override {
-        log() << "Accepted connection from " << session->remote();
+        MONGO_BOOST_LOG << "Accepted connection from " << session->remote();
         stdx::thread([ this, session = std::move(session) ]() mutable {
-            log() << "waiting for message";
+            MONGO_BOOST_LOG << "waiting for message";
             session->setTimeout(Milliseconds{500});
             auto status = session->sourceMessage().getStatus();
             if (_mode == kShouldTimeout) {
                 ASSERT_EQ(status, ErrorCodes::NetworkTimeout);
-                log() << "message timed out";
+                MONGO_BOOST_LOG << "message timed out";
             } else {
                 ASSERT_OK(status);
-                log() << "message received okay";
+                MONGO_BOOST_LOG << "message received okay";
             }
 
             session.reset();
@@ -308,9 +308,9 @@ TEST(TransportLayerASIO, SourceSyncTimeoutSucceeds) {
 class TimeoutSwitchModesSEP : public TimeoutSEP {
 public:
     void startSession(transport::SessionHandle session) override {
-        log() << "Accepted connection from " << session->remote();
+        MONGO_BOOST_LOG << "Accepted connection from " << session->remote();
         stdx::thread worker([ this, session = std::move(session) ]() mutable {
-            log() << "waiting for message";
+            MONGO_BOOST_LOG << "waiting for message";
             auto sourceMessage = [&] { return session->sourceMessage().getStatus(); };
 
             // the first message we source should time out.
@@ -318,13 +318,13 @@ public:
             ASSERT_EQ(sourceMessage(), ErrorCodes::NetworkTimeout);
             notifyComplete();
 
-            log() << "timed out successfully";
+            MONGO_BOOST_LOG << "timed out successfully";
 
             // get the session back in a known state with the timeout still in place
             ASSERT_OK(sourceMessage());
             notifyComplete();
 
-            log() << "waiting for message without a timeout";
+            MONGO_BOOST_LOG << "waiting for message without a timeout";
 
             // this should block and timeout the waitForComplete mutex, and the session should wait
             // for a while to make sure this isn't timing out and then send a message to unblock
@@ -333,7 +333,7 @@ public:
             ASSERT_OK(sourceMessage());
 
             notifyComplete();
-            log() << "ending test";
+            MONGO_BOOST_LOG << "ending test";
             session.reset();
         });
         worker.detach();

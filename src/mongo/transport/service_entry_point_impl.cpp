@@ -67,7 +67,7 @@ ServiceEntryPointImpl::ServiceEntryPointImpl(ServiceContext* svcCtx) : _svcCtx(s
     // If we asked for more connections than supported, inform the user.
     if (supportedMax < serverGlobalParams.maxConns &&
         serverGlobalParams.maxConns != DEFAULT_MAX_CONN) {
-        log() << " --maxConns too high, can only handle " << supportedMax;
+        MONGO_BOOST_LOG << " --maxConns too high, can only handle " << supportedMax;
     }
 
     _maxNumConnections = supportedMax;
@@ -103,14 +103,14 @@ void ServiceEntryPointImpl::startSession(transport::SessionHandle session) {
     // while holding it.
     if (connectionCount > _maxNumConnections) {
         if (!quiet) {
-            log() << "connection refused because too many open connections: " << connectionCount;
+            MONGO_BOOST_LOG << "connection refused because too many open connections: " << connectionCount;
         }
         return;
     }
 
     if (!quiet) {
         const auto word = (connectionCount == 1 ? " connection"_sd : " connections"_sd);
-        log() << "connection accepted from " << session->remote() << " #" << session->id() << " ("
+        MONGO_BOOST_LOG << "connection accepted from " << session->remote() << " #" << session->id() << " ("
               << connectionCount << word << " now open)";
     }
 
@@ -125,7 +125,7 @@ void ServiceEntryPointImpl::startSession(transport::SessionHandle session) {
         }
         _shutdownCondition.notify_one();
         const auto word = (connectionCount == 1 ? " connection"_sd : " connections"_sd);
-        log() << "end connection " << remote << " (" << connectionCount << word << " now open)";
+        MONGO_BOOST_LOG << "end connection " << remote << " (" << connectionCount << word << " now open)";
 
     });
 
@@ -168,16 +168,16 @@ bool ServiceEntryPointImpl::shutdown(Milliseconds timeout) {
     auto noWorkersLeft = [this] { return numOpenSessions() == 0; };
     while (timeSpent < timeout &&
            !_shutdownCondition.wait_for(lk, checkInterval.toSystemDuration(), noWorkersLeft)) {
-        log(LogComponent::kNetwork) << "shutdown: still waiting on " << numOpenSessions()
+        MONGO_BOOST_LOG_COMPONENT(LogComponent::kNetwork) << "shutdown: still waiting on " << numOpenSessions()
                                     << " active workers to drain... ";
         timeSpent += checkInterval;
     }
 
     bool result = noWorkersLeft();
     if (result) {
-        log(LogComponent::kNetwork) << "shutdown: no running workers found...";
+        MONGO_BOOST_LOG_COMPONENT(LogComponent::kNetwork) << "shutdown: no running workers found...";
     } else {
-        log(LogComponent::kNetwork) << "shutdown: exhausted grace period for" << numOpenSessions()
+        MONGO_BOOST_LOG_COMPONENT(LogComponent::kNetwork) << "shutdown: exhausted grace period for" << numOpenSessions()
                                     << " active workers to drain; continuing with shutdown... ";
     }
     return result;

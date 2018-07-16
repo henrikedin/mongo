@@ -82,7 +82,7 @@ public:
 
         BOOL ret = SymInitializeW(handle, symbolPath.c_str(), TRUE);
         if (ret == FALSE) {
-            error() << "Stack trace initialization failed, SymInitialize failed with error "
+            MONGO_BOOST_ERROR << "Stack trace initialization failed, SymInitialize failed with error "
                     << errnoWithDescription();
             return;
         }
@@ -256,7 +256,7 @@ void printWindowsStackTrace(CONTEXT& context, std::ostream& os) {
     stdx::lock_guard<SymbolHandler> lk(symbolHandler);
 
     if (!symbolHandler) {
-        error() << "Stack trace failed, symbol handler returned an invalid handle.";
+        MONGO_BOOST_ERROR << "Stack trace failed, symbol handler returned an invalid handle.";
         return;
     }
 
@@ -346,7 +346,7 @@ void printWindowsStackTrace(CONTEXT& context, std::ostream& os) {
 // Print error message from C runtime, then fassert
 int crtDebugCallback(int, char* originalMessage, int*) {
     StringData message(originalMessage);
-    log() << "*** C runtime error: " << message.substr(0, message.find('\n')) << ", terminating";
+    MONGO_BOOST_LOG << "*** C runtime error: " << message.substr(0, message.find('\n')) << ", terminating";
     fassertFailed(17006);
 }
 }

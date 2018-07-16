@@ -203,7 +203,7 @@ bool isAutoBalanceEnabled(OperationContext* opCtx,
 
     auto collStatus = Grid::get(opCtx)->catalogClient()->getCollection(opCtx, nss);
     if (!collStatus.isOK()) {
-        log() << "Auto-split for " << nss << " failed to load collection metadata"
+        MONGO_BOOST_LOG << "Auto-split for " << nss << " failed to load collection metadata"
               << causedBy(redact(collStatus.getStatus()));
         return false;
     }
@@ -244,7 +244,7 @@ void ChunkSplitter::onStepUp() {
     }
     _isPrimary = true;
 
-    // log() << "The ChunkSplitter has started and will accept autosplit tasks.";
+    // MONGO_BOOST_LOG << "The ChunkSplitter has started and will accept autosplit tasks.";
     // TODO: Re-enable this log line when auto split is actively running on shards.
 }
 
@@ -255,7 +255,7 @@ void ChunkSplitter::onStepDown() {
     }
     _isPrimary = false;
 
-    // log() << "The ChunkSplitter has stopped and will no longer run new autosplit tasks. Any "
+    // MONGO_BOOST_LOG << "The ChunkSplitter has stopped and will no longer run new autosplit tasks. Any "
     //       << "autosplit tasks that have already started will be allowed to finish.";
     // TODO: Re-enable this log when auto split is actively running on shards.
 }
@@ -368,7 +368,7 @@ void ChunkSplitter::_runAutosplit(ChunkSplitStateDriver chunkSplitStateDriver,
 
         const bool shouldBalance = isAutoBalanceEnabled(opCtx.get(), nss, balancerConfig);
 
-        log() << "autosplitted " << nss << " chunk: " << redact(chunk.toString()) << " into "
+        MONGO_BOOST_LOG << "autosplitted " << nss << " chunk: " << redact(chunk.toString()) << " into "
               << (splitPoints.size() + 1) << " parts (maxChunkSizeBytes " << maxChunkSizeBytes
               << ")"
               << (topChunkMinKey.isEmpty() ? "" : " (top chunk migration suggested" +
@@ -385,10 +385,10 @@ void ChunkSplitter::_runAutosplit(ChunkSplitStateDriver chunkSplitStateDriver,
         // top chunk.
         moveChunk(opCtx.get(), nss, topChunkMinKey);
     } catch (const DBException& ex) {
-        log() << "Unable to auto-split chunk " << redact(ChunkRange(min, max).toString())
+        MONGO_BOOST_LOG << "Unable to auto-split chunk " << redact(ChunkRange(min, max).toString())
               << " in nss " << nss << causedBy(redact(ex.toStatus()));
     } catch (const std::exception& e) {
-        log() << "caught exception while splitting chunk: " << redact(e.what());
+        MONGO_BOOST_LOG << "caught exception while splitting chunk: " << redact(e.what());
     }
 }
 

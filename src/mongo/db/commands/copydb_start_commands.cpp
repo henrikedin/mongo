@@ -129,7 +129,7 @@ public:
         BSONElement payloadElement;
         status = bsonExtractField(cmdObj, saslCommandPayloadFieldName, &payloadElement);
         if (!status.isOK()) {
-            log() << "Failed to extract payload: " << status;
+            MONGO_BOOST_LOG << "Failed to extract payload: " << status;
             return false;
         }
 

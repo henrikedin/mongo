@@ -178,7 +178,7 @@ Status doSaslStep(OperationContext* opCtx,
     StatusWith<std::string> swResponse = mechanism.step(opCtx, payload);
 
     if (!swResponse.isOK()) {
-        log() << "SASL " << mechanism.mechanismName() << " authentication failed for "
+        MONGO_BOOST_LOG << "SASL " << mechanism.mechanismName() << " authentication failed for "
               << mechanism.getPrincipalName() << " on " << mechanism.getAuthenticationDatabase()
               << " from client " << opCtx->getClient()->getRemote().toString() << " ; "
               << redact(swResponse.getStatus());
@@ -202,7 +202,7 @@ Status doSaslStep(OperationContext* opCtx,
         }
 
         if (!serverGlobalParams.quiet.load()) {
-            log() << "Successfully authenticated as principal " << mechanism.getPrincipalName()
+            MONGO_BOOST_LOG << "Successfully authenticated as principal " << mechanism.getPrincipalName()
                   << " on " << mechanism.getAuthenticationDatabase();
         }
     }

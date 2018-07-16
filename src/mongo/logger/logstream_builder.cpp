@@ -39,6 +39,8 @@
 #include "mongo/util/assert_util.h"  // TODO: remove apple dep for this in threadlocal.h
 #include "mongo/util/time_support.h"
 
+#include <boost/log/trivial.hpp>
+
 namespace mongo {
 
 namespace {
@@ -93,25 +95,25 @@ LogstreamBuilder::LogstreamBuilder(logger::MessageLogDomain* domain,
 }
 
 LogstreamBuilder::~LogstreamBuilder() {
-    if (_os) {
-        if (!_baseMessage.empty())
-            _baseMessage.push_back(' ');
-        _baseMessage += _os->str();
-        MessageEventEphemeral message(
-            Date_t::now(), _severity, _component, _contextName, _baseMessage);
-        message.setIsTruncatable(_isTruncatable);
-        _domain->append(message).transitional_ignore();
-        if (_tee) {
-            _os->str("");
-            logger::MessageEventDetailsEncoder teeEncoder;
-            teeEncoder.encode(message, *_os);
-            _tee->write(_os->str());
-        }
-        _os->str("");
-        if (_shouldCache && isThreadOstreamCacheInitialized && !threadOstreamCache) {
-            threadOstreamCache = std::move(_os);
-        }
-    }
+    //if (_os) {
+    //    if (!_baseMessage.empty())
+    //        _baseMessage.push_back(' ');
+    //    _baseMessage += _os->str();
+    //    MessageEventEphemeral message(
+    //        Date_t::now(), _severity, _component, _contextName, _baseMessage);
+    //    message.setIsTruncatable(_isTruncatable);
+    //    _domain->append(message).transitional_ignore();
+    //    if (_tee) {
+    //        _os->str("");
+    //        logger::MessageEventDetailsEncoder teeEncoder;
+    //        teeEncoder.encode(message, *_os);
+    //        _tee->write(_os->str());
+    //    }
+    //    _os->str("");
+    //    if (_shouldCache && isThreadOstreamCacheInitialized && !threadOstreamCache) {
+    //        threadOstreamCache = std::move(_os);
+    //    }
+    //}
 }
 
 void LogstreamBuilder::operator<<(Tee* tee) {

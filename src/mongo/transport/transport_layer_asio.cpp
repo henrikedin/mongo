@@ -205,7 +205,7 @@ public:
         try {
             _ioContext.run();
         } catch (...) {
-            severe() << "Uncaught exception in reactor: " << exceptionToStatus();
+            MONGO_BOOST_SEVERE << "Uncaught exception in reactor: " << exceptionToStatus();
             fassertFailed(40491);
         }
     }
@@ -217,7 +217,7 @@ public:
         try {
             _ioContext.run_for(time.toSystemDuration());
         } catch (...) {
-            severe() << "Uncaught exception in reactor: " << exceptionToStatus();
+            MONGO_BOOST_SEVERE << "Uncaught exception in reactor: " << exceptionToStatus();
             fassertFailed(50473);
         }
     }
@@ -639,7 +639,7 @@ Future<SessionHandle> TransportLayerASIO::asyncConnect(HostAndPort peer,
         })
         .getAsync([connector](Status connectResult) {
             if (MONGO_FAIL_POINT(transportLayerASIOasyncConnectTimesOut)) {
-                log() << "asyncConnectTimesOut fail point is active. simulating timeout.";
+                MONGO_BOOST_LOG << "asyncConnectTimesOut fail point is active. simulating timeout.";
                 return;
             }
 
@@ -686,14 +686,14 @@ Status TransportLayerASIO::setup() {
     for (auto& ip : listenAddrs) {
         std::error_code ec;
         if (ip.empty()) {
-            warning() << "Skipping empty bind address";
+            MONGO_BOOST_WARNING << "Skipping empty bind address";
             continue;
         }
 
         auto swAddrs =
             resolver.resolve(HostAndPort(ip, _listenerPort), _listenerOptions.enableIPv6);
         if (!swAddrs.isOK()) {
-            warning() << "Found no addresses for " << swAddrs.getStatus();
+            MONGO_BOOST_WARNING << "Found no addresses for " << swAddrs.getStatus();
             continue;
         }
         auto& addrs = swAddrs.getValue();
@@ -702,14 +702,14 @@ Status TransportLayerASIO::setup() {
 #ifndef _WIN32
             if (addr.family() == AF_UNIX) {
                 if (::unlink(addr.toString().c_str()) == -1 && errno != ENOENT) {
-                    error() << "Failed to unlink socket file " << addr.toString().c_str() << " "
+                    MONGO_BOOST_ERROR << "Failed to unlink socket file " << addr.toString().c_str() << " "
                             << errnoWithDescription(errno);
                     fassertFailedNoTrace(40486);
                 }
             }
 #endif
             if (addr.family() == AF_INET6 && !_listenerOptions.enableIPv6) {
-                error() << "Specified ipv6 bind address, but ipv6 is disabled";
+                MONGO_BOOST_ERROR << "Specified ipv6 bind address, but ipv6 is disabled";
                 fassertFailedNoTrace(40488);
             }
 
@@ -734,7 +734,7 @@ Status TransportLayerASIO::setup() {
             if (addr.family() == AF_UNIX) {
                 if (::chmod(addr.toString().c_str(), serverGlobalParams.unixSocketPermissions) ==
                     -1) {
-                    error() << "Failed to chmod socket file " << addr.toString().c_str() << " "
+                    MONGO_BOOST_ERROR << "Failed to chmod socket file " << addr.toString().c_str() << " "
                             << errnoWithDescription(errno);
                     fassertFailedNoTrace(40487);
                 }
@@ -819,7 +819,7 @@ Status TransportLayerASIO::start() {
             ssl = " ssl";
         }
 #endif
-        log() << "waiting for connections on port " << _listenerPort << ssl;
+        MONGO_BOOST_LOG << "waiting for connections on port " << _listenerPort << ssl;
     } else {
         invariant(_acceptors.empty());
     }
@@ -838,10 +838,10 @@ void TransportLayerASIO::shutdown() {
         auto& addr = acceptor.first;
         if (addr.getType() == AF_UNIX && !addr.isAnonymousUNIXSocket()) {
             auto path = addr.getAddr();
-            log() << "removing socket file: " << path;
+            MONGO_BOOST_LOG << "removing socket file: " << path;
             if (::unlink(path.c_str()) != 0) {
                 const auto ewd = errnoWithDescription();
-                warning() << "Unable to remove UNIX socket " << path << ": " << ewd;
+                MONGO_BOOST_WARNING << "Unable to remove UNIX socket " << path << ": " << ewd;
             }
         }
     }
@@ -877,7 +877,7 @@ void TransportLayerASIO::_acceptConnection(GenericAcceptor& acceptor) {
             return;
 
         if (ec) {
-            log() << "Error accepting new connection on "
+            MONGO_BOOST_LOG << "Error accepting new connection on "
                   << endpointToHostAndPort(acceptor.local_endpoint()) << ": " << ec.message();
             _acceptConnection(acceptor);
             return;
@@ -888,7 +888,7 @@ void TransportLayerASIO::_acceptConnection(GenericAcceptor& acceptor) {
                 new ASIOSession(this, std::move(peerSocket), true));
             _sep->startSession(std::move(session));
         } catch (const DBException& e) {
-            warning() << "Error accepting new connection " << e;
+            MONGO_BOOST_WARNING << "Error accepting new connection " << e;
         }
 
         _acceptConnection(acceptor);

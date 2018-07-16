@@ -408,19 +408,19 @@ void Fetcher::_sendKillCursors(const CursorId id, const NamespaceString& nss) {
     if (id) {
         auto logKillCursorsResult = [](const RemoteCommandCallbackArgs& args) {
             if (!args.response.isOK()) {
-                warning() << "killCursors command task failed: " << redact(args.response.status);
+                MONGO_BOOST_WARNING << "killCursors command task failed: " << redact(args.response.status);
                 return;
             }
             auto status = getStatusFromCommandResult(args.response.data);
             if (!status.isOK()) {
-                warning() << "killCursors command failed: " << redact(status);
+                MONGO_BOOST_WARNING << "killCursors command failed: " << redact(status);
             }
         };
         auto cmdObj = BSON("killCursors" << nss.coll() << "cursors" << BSON_ARRAY(id));
         auto scheduleResult = _executor->scheduleRemoteCommand(
             RemoteCommandRequest(_source, _dbname, cmdObj, nullptr), logKillCursorsResult);
         if (!scheduleResult.isOK()) {
-            warning() << "failed to schedule killCursors command: "
+            MONGO_BOOST_WARNING << "failed to schedule killCursors command: "
                       << redact(scheduleResult.getStatus());
         }
     }
