@@ -59,6 +59,8 @@
 #include "mongo/rpc/metadata/client_metadata_ismaster.h"
 #include "mongo/util/map_util.h"
 
+#include "mongo/logger/logger.h"
+
 namespace mongo {
 
 using std::unique_ptr;
@@ -226,6 +228,10 @@ public:
         /* currently request to arbiter is (somewhat arbitrarily) an ismaster request that is not
            authenticated.
         */
+
+		MONGO_BOOST_LOG_COMPONENT(::mongo::logger::LogComponent::kFTDC) << "log before crash";
+		invariant(false);
+
         if (cmdObj["forShell"].trueValue()) {
             LastError::get(opCtx->getClient()).disable();
         }

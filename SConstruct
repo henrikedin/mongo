@@ -1689,8 +1689,8 @@ elif env.TargetOSIs('windows'):
             'winmm.lib',
             'ws2_32.lib',
             'secur32.lib',
-            'libboost_log-vc140-mt-g-1_60.lib',
-            'libboost_thread-vc140-mt-g-1_60.lib',
+            'libboost_log-vc140-mt-gd-1_60.lib',
+            'libboost_thread-vc140-mt-gd-1_60.lib',
         ],
     )
 

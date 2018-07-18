@@ -33,6 +33,8 @@
 
 #include "mongo/base/init.h"
 
+#include <boost/core/null_deleter.hpp>
+
 #ifdef _WIN32
 #include <io.h>
 #endif
@@ -257,6 +259,14 @@ std::ostream& Console::out() {
     }
 #endif  // defined(_WIN32)
     return std::cout;
+}
+
+boost::shared_ptr<std::ostream> Console::create()
+{
+#if defined(_WIN32)
+	return boost::shared_ptr< std::ostream >(getWindowsOutputStream());
+#endif
+	return boost::shared_ptr< std::ostream >(&std::cout, boost::null_deleter());
 }
 
 }  // namespace mongo

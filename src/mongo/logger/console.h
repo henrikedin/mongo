@@ -31,6 +31,8 @@
 
 #include "mongo/stdx/mutex.h"
 
+#include <boost/shared_ptr.hpp>
+
 namespace mongo {
 
 /**
@@ -52,6 +54,8 @@ public:
     Console();
 
     std::ostream& out();
+
+	static boost::shared_ptr<std::ostream> create();
 
 private:
     stdx::unique_lock<stdx::mutex> _consoleLock;

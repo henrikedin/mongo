@@ -43,5 +43,9 @@ public:
     virtual void write(const std::string& str) = 0;
 };
 
+inline std::ostream& operator<<(std::ostream& s, Tee* tee) {
+	return s;
+}
+
 }  // namespace logger
 }  // namespace mongo

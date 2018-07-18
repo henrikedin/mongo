@@ -39,7 +39,17 @@
 #include "mongo/util/assert_util.h"  // TODO: remove apple dep for this in threadlocal.h
 #include "mongo/util/time_support.h"
 
-#include <boost/log/trivial.hpp>
+//#include <boost/log/trivial.hpp>
+#include <boost/log/sinks.hpp>
+#include <boost/log/expressions.hpp>
+#include <boost/make_shared.hpp>
+#include <boost/core/null_deleter.hpp>
+#include <boost/log/utility/setup/formatter_parser.hpp>
+#include <boost/log/attributes/function.hpp>
+#include "mongo/util/concurrency/thread_name.h"
+#include <boost/phoenix/bind.hpp>
+
+#include <fstream>
 
 namespace mongo {
 
@@ -134,3 +144,98 @@ void LogstreamBuilder::makeStream() {
 
 }  // namespace logger
 }  // namespace mongo
+
+/*
+BOOST_LOG_ATTRIBUTE_KEYWORD(a_severity, "Severity", mongo::logger::LogSeverity)
+typedef boost::log::sources::severity_channel_logger_mt<mongo::logger::LogSeverity, mongo::logger::LogComponent> logger_type;
+
+BOOST_LOG_INLINE_GLOBAL_LOGGER_INIT(my_logger, logger_type)
+{
+// Do something that needs to be done on logger initialization,
+// e.g. add a stop watch attribute.
+	boost::log::sources::severity_channel_logger_mt<mongo::logger::LogSeverity, mongo::logger::LogComponent> lg;
+//lg.add_attribute("StopWatch", boost::make_shared< attrs::timer >());
+// The initializing routine must return the logger instance
+
+	lg.add_attribute("TimeStamp", boost::log::attributes::make_function([]() {
+		return mongo::Date_t::now();
+	}));
+
+	lg.add_attribute("ThreadName", boost::log::attributes::make_function([]() {
+		return mongo::getThreadName();
+	}));
+	
+
+	return lg;
+}
+
+char severity_format(boost::log::value_ref< mongo::logger::LogSeverity > const& severity)
+{
+	// Check to see if the attribute value has been found
+	//if (severity)
+	//return boost::filesystem::path(filename.get()).filename().string();
+	//else
+	//return std::string();
+	return severity.get().toChar();
+};
+
+void severity_format2(boost::log::record_view const& record, boost::log::formatting_ostream& strm)
+{
+	// Check to see if the attribute value has been found
+	boost::log::value_ref< mongo::logger::LogSeverity, tag::a_severity > severity = record[a_severity];
+	if (severity)
+		strm << severity.get().toChar();
+};
+
+
+boost::log::sources::severity_channel_logger_mt<mongo::logger::LogSeverity, mongo::logger::LogComponent>& get_logger()
+{
+	//static boost::log::sources::severity_logger_mt<> logger;
+	
+	//return logger;
+	static bool first = true;
+	if (first)
+	{
+		//boost::log::register_simple_formatter_factory< severity_level, char >("Severity");
+		//boost::log::register_formatter_factory< mongo::logger::LogSeverity, char >("Severity");
+		//boost::log::core::get()->add_global_attribute("TimeStamp", boost::log::attributes::make_function([]() {
+		//	return mongo::Date_t::now();
+		//}));
+
+		typedef boost::log::sinks::asynchronous_sink< boost::log::sinks::text_ostream_backend > text_sink;
+		boost::shared_ptr< text_sink > sink = boost::make_shared< text_sink >();
+
+		//sink->locked_backend()->add_stream(
+		//	boost::make_shared< std::ofstream >("sample.log"));
+
+		sink->locked_backend()->add_stream(
+			boost::shared_ptr< std::ostream >(&std::cout, boost::null_deleter()));
+
+		sink->set_formatter
+		(
+			boost::log::expressions::stream
+			// line id will be written in hex, 8-digits, zero-filled
+			//<< std::hex << std::setw(8) << std::setfill('0') << boost::log::expressions::attr< unsigned int >("LineID")
+			//<< ": <" << logging::trivial::severity
+			
+			<< boost::log::expressions::attr< mongo::Date_t >("TimeStamp") << " "
+
+			//<< boost::log::expressions::attr< mongo::logger::LogSeverity >("Severity") << " "
+			//<< boost::phoenix::bind(&severity_format, boost::log::expressions::attr< mongo::logger::LogSeverity >("Severity")) << " "
+			<< boost::log::expressions::wrap_formatter(&severity_format2) << " "
+
+			<< boost::log::expressions::attr< mongo::logger::LogComponent >("Channel") << " ["
+			<< boost::log::expressions::attr< mongo::StringData >("ThreadName") << "] "
+			<< boost::log::expressions::smessage
+
+		);
+
+		boost::log::core::get()->add_sink(sink);
+
+		first = false;
+	}
+	return my_logger::get();
+	
+	// TODO: insert return statement here
+}
+*/

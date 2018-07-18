@@ -34,6 +34,8 @@
 #include "mongo/logger/rotatable_file_writer.h"
 #include "mongo/stdx/unordered_map.h"
 
+#include <boost/log/sources/severity_channel_logger.hpp>
+
 namespace mongo {
 namespace logger {
 
@@ -56,6 +58,11 @@ public:
     ComponentMessageLogDomain* getGlobalDomain() {
         return &_globalDomain;
     }
+
+	boost::log::sources::severity_channel_logger_mt<LogSeverity, LogComponent>&
+		getGlobalLogger() {
+		return _DefaultLogger;
+	}
 
     /**
      * Get the log domain with the given name, creating if needed.
@@ -81,12 +88,16 @@ public:
      */
     bool isDefaultConsoleAppenderAttached() const;
 
+	void StopAndFlush();
+
 private:
     typedef stdx::unordered_map<std::string, MessageLogDomain*> DomainsByNameMap;
 
     DomainsByNameMap _domains;
     ComponentMessageLogDomain _globalDomain;
     ComponentMessageLogDomain::AppenderHandle _defaultAppender;
+
+	boost::log::sources::severity_channel_logger_mt<LogSeverity, LogComponent> _DefaultLogger;
 };
 
 }  // namespace logger

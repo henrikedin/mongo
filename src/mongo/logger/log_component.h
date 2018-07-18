@@ -67,6 +67,7 @@ public:
         kNumLogComponents
     };
 
+	LogComponent() : _value(kDefault) {}
     /* implicit */ LogComponent(Value value) : _value(value) {}
 
     operator Value() const {

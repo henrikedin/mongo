@@ -53,3 +53,13 @@ inline ComponentMessageLogDomain* globalLogDomain() {
 
 }  // namespace logger
 }  // namespace mongo
+
+#define MONGO_BOOST_LOG_COMPONENT(component) BOOST_LOG_STREAM_CHANNEL_SEV(mongo::logger::globalLogManager()->getGlobalLogger(), component, mongo::logger::LogSeverity::Info())
+#define MONGO_BOOST_WARNING_COMPONENT(component) BOOST_LOG_STREAM_CHANNEL_SEV(mongo::logger::globalLogManager()->getGlobalLogger(), component, mongo::logger::LogSeverity::Warning())
+#define MONGO_BOOST_ERROR_COMPONENT(component) BOOST_LOG_STREAM_CHANNEL_SEV(mongo::logger::globalLogManager()->getGlobalLogger(), component, mongo::logger::LogSeverity::Error())
+#define MONGO_BOOST_SEVERE_COMPONENT(component) BOOST_LOG_STREAM_CHANNEL_SEV(mongo::logger::globalLogManager()->getGlobalLogger(), component, mongo::logger::LogSeverity::Severe())
+
+#define MONGO_BOOST_LOG BOOST_LOG_STREAM_CHANNEL_SEV(mongo::logger::globalLogManager()->getGlobalLogger(), ::MongoLogDefaultComponent_component, mongo::logger::LogSeverity::Info())
+#define MONGO_BOOST_WARNING BOOST_LOG_STREAM_CHANNEL_SEV(mongo::logger::globalLogManager()->getGlobalLogger(), ::MongoLogDefaultComponent_component, mongo::logger::LogSeverity::Warning())
+#define MONGO_BOOST_ERROR BOOST_LOG_STREAM_CHANNEL_SEV(mongo::logger::globalLogManager()->getGlobalLogger(), ::MongoLogDefaultComponent_component, mongo::logger::LogSeverity::Error())
+#define MONGO_BOOST_SEVERE BOOST_LOG_STREAM_CHANNEL_SEV(mongo::logger::globalLogManager()->getGlobalLogger(), ::MongoLogDefaultComponent_component, mongo::logger::LogSeverity::Severe())

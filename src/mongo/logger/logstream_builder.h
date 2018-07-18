@@ -42,6 +42,8 @@
 #include "mongo/util/exit_code.h"
 
 #include <boost/log/trivial.hpp>
+#include <boost/log/sources/global_logger_storage.hpp>
+#include <boost/log/sources/severity_channel_logger.hpp>
 
 namespace mongo {
 namespace logger {
@@ -257,12 +259,24 @@ private:
 }  // namespace logger
 }  // namespace mongo
 
-#define MONGO_BOOST_LOG_COMPONENT(component) BOOST_LOG_TRIVIAL(info)
-#define MONGO_BOOST_WARNING_COMPONENT(component) BOOST_LOG_TRIVIAL(warning)
-#define MONGO_BOOST_ERROR_COMPONENT(component) BOOST_LOG_TRIVIAL(error)
-#define MONGO_BOOST_SEVERE_COMPONENT(component) BOOST_LOG_TRIVIAL(fatal)
+//BOOST_LOG_INLINE_GLOBAL_LOGGER_INIT(my_logger, boost::log::sources::severity_logger_mt)
+//{
+//	// Do something that needs to be done on logger initialization,
+//	// e.g. add a stop watch attribute.
+//	boost::log::sources::severity_logger_mt< > lg;
+//	//lg.add_attribute("StopWatch", boost::make_shared< attrs::timer >());
+//	// The initializing routine must return the logger instance
+//	return lg;
+//}
 
-#define MONGO_BOOST_LOG BOOST_LOG_TRIVIAL(info)
-#define MONGO_BOOST_WARNING BOOST_LOG_TRIVIAL(warning)
-#define MONGO_BOOST_ERROR BOOST_LOG_TRIVIAL(error)
-#define MONGO_BOOST_SEVERE BOOST_LOG_TRIVIAL(fatal)
+//boost::log::sources::severity_channel_logger_mt<mongo::logger::LogSeverity, mongo::logger::LogComponent>& get_logger();
+
+//#define MONGO_BOOST_LOG_COMPONENT(component) BOOST_LOG_STREAM_CHANNEL_SEV(globalLogManager()->getDefaultLogger(), component, mongo::logger::LogSeverity::Info())
+//#define MONGO_BOOST_WARNING_COMPONENT(component) BOOST_LOG_STREAM_CHANNEL_SEV(get_logger(), component, mongo::logger::LogSeverity::Warning())
+//#define MONGO_BOOST_ERROR_COMPONENT(component) BOOST_LOG_STREAM_CHANNEL_SEV(get_logger(), component, mongo::logger::LogSeverity::Error())
+//#define MONGO_BOOST_SEVERE_COMPONENT(component) BOOST_LOG_STREAM_CHANNEL_SEV(get_logger(), component, mongo::logger::LogSeverity::Severe())
+//
+//#define MONGO_BOOST_LOG BOOST_LOG_STREAM_CHANNEL_SEV(get_logger(), ::MongoLogDefaultComponent_component, mongo::logger::LogSeverity::Info())
+//#define MONGO_BOOST_WARNING BOOST_LOG_STREAM_CHANNEL_SEV(get_logger(), ::MongoLogDefaultComponent_component, mongo::logger::LogSeverity::Warning())
+//#define MONGO_BOOST_ERROR BOOST_LOG_STREAM_CHANNEL_SEV(get_logger(), ::MongoLogDefaultComponent_component, mongo::logger::LogSeverity::Error())
+//#define MONGO_BOOST_SEVERE BOOST_LOG_STREAM_CHANNEL_SEV(get_logger(), ::MongoLogDefaultComponent_component, mongo::logger::LogSeverity::Severe())

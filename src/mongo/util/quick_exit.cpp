@@ -32,6 +32,8 @@
 
 #include "mongo/config.h"
 
+#include "mongo/logger/logger.h"
+
 #if defined(MONGO_CONFIG_HAVE_HEADER_UNISTD_H)
 #include <unistd.h>
 #endif
@@ -81,6 +83,8 @@ void quickExit(int code) {
     // RAII here - we never want to unlock this.
     if (quickExitMutex)
         quickExitMutex->lock();
+
+	logger::globalLogManager()->StopAndFlush();
 
 #if defined(MONGO_CPU_PROFILER)
     ::ProfilerStop();

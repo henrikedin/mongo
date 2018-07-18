@@ -229,6 +229,8 @@ void myTerminate() {
     printStackTrace(mallocFreeOStream);
     writeMallocFreeStreamToLog();
     breakpoint();
+
+	logger::globalLogManager()->StopAndFlush();
     endProcessWithSignal(SIGABRT);
 }
 
@@ -236,6 +238,8 @@ void abruptQuit(int signalNum) {
     MallocFreeOStreamGuard lk{};
     printSignalAndBacktrace(signalNum);
     breakpoint();
+
+	logger::globalLogManager()->StopAndFlush();
     endProcessWithSignal(signalNum);
 }
 
