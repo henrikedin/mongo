@@ -48,20 +48,6 @@ namespace logger {
 	namespace {
 		BOOST_LOG_ATTRIBUTE_KEYWORD(a_severity, "Severity", LogSeverity)
 
-		//class tee_formatter_factory :
-		//	public boost::log::basic_formatter_factory<char, Tee*>
-		//{
-		//public:
-		//	formatter_type create_formatter(boost::log::attribute_name const& name, args_map const& args)
-		//	{
-		//		args_map::const_iterator it = args.find("format");
-		//		if (it != args.end())
-		//			return boost::log::expressions::stream << boost::log::expressions::format_date_time<boost::posix_time::ptime>(boost::log::expressions::attr<Tee*>(name), it->second);
-		//		else
-		//			return boost::log::expressions::stream << boost::log::expressions::attr<boost::posix_time::ptime>(name);
-		//	}
-		//};
-
 		typedef boost::log::sinks::asynchronous_sink< boost::log::sinks::text_ostream_backend > async_text_sink;
 		boost::shared_ptr< async_text_sink > sink;
 
@@ -121,27 +107,24 @@ LogManager::LogManager() {
 
 	boost::log::core::get()->add_sink(debugsink);
 
-	//boost::shared_ptr< win_sink_t > winsink(new win_sink_t());
+	boost::shared_ptr< win_sink_t > winsink(new win_sink_t());
 
-	//winsink->set_formatter
-	//(
-	//	boost::log::expressions::format("%1%")
-	//	% boost::log::expressions::smessage
-	//);
+	winsink->set_formatter
+	(
+		boost::log::expressions::format("%1%")
+		% boost::log::expressions::smessage
+	);
 
-	//// We'll have to map our custom levels to the event log event types
-	//boost::log::sinks::event_log::custom_event_type_mapping< LogSeverity > mapping("Severity");
-	//mapping[LogSeverity::Info()] = boost::log::sinks::event_log::info;
-	//mapping[LogSeverity::Warning()] = boost::log::sinks::event_log::warning;
-	//mapping[LogSeverity::Error()] = boost::log::sinks::event_log::error;
+	// We'll have to map our custom levels to the event log event types
+	boost::log::sinks::event_log::custom_event_type_mapping< LogSeverity > mapping("Severity");
+	mapping[LogSeverity::Info()] = boost::log::sinks::event_log::info;
+	mapping[LogSeverity::Warning()] = boost::log::sinks::event_log::warning;
+	mapping[LogSeverity::Error()] = boost::log::sinks::event_log::error;
 
-	//winsink->locked_backend()->set_event_type_mapper(mapping);
+	winsink->locked_backend()->set_event_type_mapper(mapping);
 
-	//// Add the sink to the core
-	//boost::log::core::get()->add_sink(winsink);
-
-
-
+	// Add the sink to the core
+	boost::log::core::get()->add_sink(winsink);
 }
 
 LogManager::~LogManager() {
