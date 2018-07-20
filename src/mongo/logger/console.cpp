@@ -181,8 +181,8 @@ private:
 
 #ifdef MONGO_CONFIG_DEBUG_BUILD
         if (IsDebuggerPresent()) {
-            bufferWide[length] = L'\0';
-            ::OutputDebugStringW(bufferWide);
+            bufferWide[std::min(static_cast<size_t>(length), _bufferSize - 1)] = L'\0';
+            OutputDebugStringW(bufferWide);
         }
 #endif
 
