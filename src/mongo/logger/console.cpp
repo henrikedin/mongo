@@ -32,6 +32,7 @@
 #include <iostream>
 
 #include "mongo/base/init.h"
+#include "mongo/config.h"
 
 #ifdef _WIN32
 #include <io.h>
