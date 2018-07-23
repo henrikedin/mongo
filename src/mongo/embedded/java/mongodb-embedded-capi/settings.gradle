@@ -8,3 +8,5 @@
  */
 
 rootProject.name = 'mongodb-embedded-capi'
+include ':aar'
+include ':jar'

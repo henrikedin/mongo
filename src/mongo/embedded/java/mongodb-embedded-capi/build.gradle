@@ -6,27 +6,117 @@
  * user guide available at https://docs.gradle.org/4.8/userguide/java_library_plugin.html
  */
 
-plugins {
-    // Apply the java-library plugin to add support for Java Library
-    id 'java-library'
+import static org.gradle.util.CollectionUtils.single
+
+buildscript {
+    repositories {
+        //maven { url 'https://oss.sonatype.org/content/repositories/snapshots' }
+        jcenter()
+        mavenCentral()
+        google()
+        //maven { url "https://plugins.gradle.org/m2/" }
+        //mavenLocal()
+    }
+    dependencies {
+        //classpath 'org.kordamp.gradle:clirr-gradle-plugin:0.2.2'
+        //classpath 'com.netflix.nebula:gradle-extra-configurations-plugin:1.12.+'
+        classpath 'com.android.tools.build:gradle:3.1.2'
+        classpath 'com.bmuschko:gradle-nexus-plugin:2.2'
+        //classpath "gradle.plugin.com.github.spotbugs:spotbugs-gradle-plugin:1.6.1"
+    }
 }
 
-dependencies {
-    // This dependency is exported to consumers, that is to say found on their compile classpath.
-    api 'org.apache.commons:commons-math3:3.6.1'
+//apply plugin: 'java-library'
+//apply plugin: 'com.android.library'
+//apply plugin: 'com.bmuschko.nexus'
 
-    // This dependency is used internally, and not exposed to consumers on their own compile classpath.
-    implementation 'com.google.guava:guava:23.0'
+// plugins {
+//     // Apply the java-library plugin to add support for Java Library
+//     id 'java-library'
+// }
 
-    // Use JUnit test framework
-    //testImplementation 'junit:junit:4.12'
+allprojects {
+    group = 'org.mongodb'
+    version = '3.8.0-SNAPSHOT'
 
-    implementation "net.java.dev.jna:jna:4.5.1"
+    repositories {
+        google()
+        jcenter()
+    }
+
+    
 }
+
+// stuff {
+//     dependencies {
+//         implementation 'net.java.dev.jna:jna:4.5.1'
+//         api 'org.slf4j:slf4j-api:1.7.6'
+//     }
+// }
+
+// group = 'org.mongodb'
+// version = '3.8.0-SNAPSHOT'
+// sourceCompatibility = JavaVersion.VERSION_1_6
+// targetCompatibility = JavaVersion.VERSION_1_6
+
+
+
+// android {
+//     compileSdkVersion 28
+
+//     defaultConfig {
+//         minSdkVersion 21
+//         targetSdkVersion 28
+//         versionCode 1
+//         versionName "1.0"
+//     }
+
+//     buildTypes {
+//         release {
+//             minifyEnabled false
+//         }
+//     }
+
+// }
+
+// dependencies {
+//     // This dependency is exported to consumers, that is to say found on their compile classpath.
+//     api 'org.apache.commons:commons-math3:3.6.1'
+
+//     // This dependency is used internally, and not exposed to consumers on their own compile classpath.
+//     implementation 'com.google.guava:guava:23.0'
+
+//     // Use JUnit test framework
+//     //testImplementation 'junit:junit:4.12'
+
+//     implementation "net.java.dev.jna:jna:4.5.1"
+
+//     api 'org.slf4j:slf4j-api:1.7.6'
+// }
+
+// jar {
+//     manifest {
+//         instruction 'Automatic-Module-Name', 'org.mongodb.driver.embedded.client.capi'
+//         instruction 'Build-Version', '1.0 test'//getGitVersion()
+//         //instruction 'Import-Package',
+//         //        'com.mongodb.*'
+//     }
+// }
 
 // In this section you declare where to find the dependencies of your project
-repositories {
-    // Use jcenter for resolving your dependencies.
-    // You can declare any Maven/Ivy/file repository here.
-    jcenter()
-}
+// repositories {
+//     // Use jcenter for resolving your dependencies.
+//     // You can declare any Maven/Ivy/file repository here.
+//     //jcenter()
+//     mavenCentral()
+//     //maven { url 'https://oss.sonatype.org/content/repositories/snapshots' }
+//     //mavenLocal()
+// }
+
+// modifyPom {
+//     project {
+//         name 'MongoDB Embedded Driver C API'
+//         description 'The MongoDB Embedded Driver Native'
+//         url 'http://www.mongodb.org'
+//     }
+// }
