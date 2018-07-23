@@ -15,13 +15,14 @@ buildscript {
         mavenCentral()
         google()
         //maven { url "https://plugins.gradle.org/m2/" }
-        //mavenLocal()
+        mavenLocal()
     }
     dependencies {
         //classpath 'org.kordamp.gradle:clirr-gradle-plugin:0.2.2'
         //classpath 'com.netflix.nebula:gradle-extra-configurations-plugin:1.12.+'
         classpath 'com.android.tools.build:gradle:3.1.2'
         classpath 'com.bmuschko:gradle-nexus-plugin:2.2'
+        classpath 'digital.wup:android-maven-publish:3.6.2'
         //classpath "gradle.plugin.com.github.spotbugs:spotbugs-gradle-plugin:1.6.1"
     }
 }
@@ -29,6 +30,7 @@ buildscript {
 //apply plugin: 'java-library'
 //apply plugin: 'com.android.library'
 //apply plugin: 'com.bmuschko.nexus'
+//apply plugin: 'maven-publish'
 
 // plugins {
 //     // Apply the java-library plugin to add support for Java Library
@@ -37,11 +39,13 @@ buildscript {
 
 allprojects {
     group = 'org.mongodb'
-    version = '3.8.0-SNAPSHOT'
+    version = '4.0.0-SNAPSHOT'
+    //artifactId 'mongodb-embedded-capi'
 
     repositories {
         google()
         jcenter()
+        //mavenLocal()
     }
 
     

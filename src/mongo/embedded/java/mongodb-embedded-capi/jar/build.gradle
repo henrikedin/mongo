@@ -1,7 +1,9 @@
 apply plugin: 'java-library'
+apply plugin: 'maven-publish'
+//apply plugin: 'com.bmuschko.nexus'
 
-sourceCompatibility = JavaVersion.VERSION_1_6
-targetCompatibility = JavaVersion.VERSION_1_6
+sourceCompatibility = JavaVersion.VERSION_1_7
+targetCompatibility = JavaVersion.VERSION_1_7
 
 jar {
     sourceSets {
@@ -12,18 +14,21 @@ jar {
 
 }
 
-// configurations {
-//   compile.extendsFrom shared
-// }
+archivesBaseName = 'mongodb-embedded-capi'
 
 dependencies {
-    //implementation fileTree(dir: 'libs', include: ['*.jar'])
-
-    //implementation 'com.android.support:appcompat-v7:28.*'
-    //classpath 'com.android.tools.build:gradle:1.3.0'
-
     implementation 'net.java.dev.jna:jna:4.5.1'
     api 'org.slf4j:slf4j-api:1.7.6'
 }
 
+publishing {
+    publications {
+        maven(MavenPublication) {
+            //groupId = 'org.gradle.sample'
+            artifactId = 'mongodb-embedded-capi'
+            //version = '1.1'
 
+            from components.java
+        }
+    }
+}
