@@ -1,6 +1,6 @@
 apply plugin: 'com.android.library'
 apply plugin: 'digital.wup.android-maven-publish'
-//apply plugin: 'com.bmuschko.nexus'
+apply plugin: 'optional-base'
 
 android {
     compileSdkVersion 28
@@ -27,11 +27,9 @@ android {
 
 }
 
-archivesBaseName = 'mongodb-embedded-capi'
-
 dependencies {
-    implementation 'net.java.dev.jna:jna:4.5.1@aar'
-    api 'org.slf4j:slf4j-api:1.7.6'
+    implementation "net.java.dev.jna:jna:$jnaVersion@aar"
+    api 'org.slf4j:slf4j-api:1.7.6', optional
 }
 
 publishing {
@@ -39,44 +37,34 @@ publishing {
         mavenAar(MavenPublication) {
             from components.android
 
-            artifactId 'mongodb-embedded-capi'
+            artifactId getLibraryName()
+
+            pom {
+                name = pomName
+                description = pomDescription
+                url = pomUrl
+                licenses {
+                    license {
+                        name = pomLicenseName
+                        url = pomLicenseUrl
+                    }
+                }
+                scm {
+                    connection = pomScmConnection
+                    developerConnection = pomScmDevConnection
+                    url = pomScmUrl
+                }
+            }
         }
     }
+
+    repositories {
+        maven {
+            name = 'local'
+            url = "$buildDir/repo"
+        }
+    }
+
 }
-
-// task sourceJar(type: Jar) {
-//     from android.sourceSets.main.java.srcDirs
-//     classifier "source"
-// }
-
-// publishing {
-//     publications {
-//         bar(MavenPublication) {
-//             groupId 'com.foo'
-//             artifactId 'mongodb-embedded-capi'
-//             version '0.1'
-//             artifact(sourceJar)
-//             artifact("$buildDir/outputs/aar/mongodb-embedded-capi-release.aar")
-//             pom.withXml {
-//                 def dependenciesNode = asNode().appendNode('dependencies')
-//                 //Iterate over the compile dependencies (we don't want the test ones), adding a <dependency> node for each
-//                 configurations.compile.allDependencies.each {
-//                     if(it.group != null && (it.name != null || "unspecified".equals(it.name)) && it.version != null)
-//                     {
-//                         def dependencyNode = dependenciesNode.appendNode('dependency')
-//                         dependencyNode.appendNode('groupId', it.group)
-//                         dependencyNode.appendNode('artifactId', it.name)
-//                         dependencyNode.appendNode('version', it.version)
-//                     }
-//                 }
-//             }
-//         }
-//     }
-//     repositories {
-//         maven {
-//             url "$buildDir/repo"
-//         }
-//     }
-// }
 
 

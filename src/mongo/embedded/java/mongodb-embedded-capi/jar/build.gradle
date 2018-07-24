@@ -1,5 +1,7 @@
 apply plugin: 'java-library'
+apply plugin: 'osgi'
 apply plugin: 'maven-publish'
+apply plugin: 'optional-base'
 //apply plugin: 'com.bmuschko.nexus'
 
 sourceCompatibility = JavaVersion.VERSION_1_7
@@ -12,23 +14,61 @@ jar {
         }
     }
 
+    manifest {
+        instruction 'Automatic-Module-Name', 'org.mongodb.driver.embedded.client.capi'
+        instruction 'Build-Version', getGitVersion()
+        instruction 'Import-Package',
+                     'com.mongodb.*'
+    }
 }
 
-archivesBaseName = 'mongodb-embedded-capi'
+task sourcesJar(type: Jar) {
+    from sourceSets.main.allJava
+    classifier = 'sources'
+}
+
+task javadocJar(type: Jar) {
+    from javadoc
+    classifier = 'javadoc'
+}
 
 dependencies {
-    implementation 'net.java.dev.jna:jna:4.5.1'
-    api 'org.slf4j:slf4j-api:1.7.6'
+    implementation "net.java.dev.jna:jna:$jnaVersion"
+    api 'org.slf4j:slf4j-api:1.7.6', optional
 }
 
 publishing {
     publications {
         maven(MavenPublication) {
-            //groupId = 'org.gradle.sample'
-            artifactId = 'mongodb-embedded-capi'
-            //version = '1.1'
+            artifactId = getLibraryName()
 
             from components.java
+            artifact sourcesJar
+            artifact javadocJar
+
+            pom {
+                name = pomName
+                description = pomDescription
+                url = pomUrl
+                licenses {
+                    license {
+                        name = pomLicenseName
+                        url = pomLicenseUrl
+                    }
+                }
+                scm {
+                    connection = pomScmConnection
+                    developerConnection = pomScmDevConnection
+                    url = pomScmUrl
+                }
+            }
+        }
+    }
+
+    repositories {
+        maven {
+            name = 'local'
+            url = "$buildDir/repo"
         }
     }
 }
