@@ -23,6 +23,8 @@ import com.sun.jna.Pointer;
 
 import static java.lang.String.format;
 
+import java.util.Locale;
+
 class MongoEmbeddedLibraryImpl implements MongoEmbeddedLibrary {
     private static final Logger LOGGER = Loggers.getLogger();
     private static final LogCallback LOG_CALLBACK = new LogCallback();
@@ -66,7 +68,7 @@ class MongoEmbeddedLibraryImpl implements MongoEmbeddedLibrary {
         @Override
         public void log(final Pointer user_data, final CAPI.cstring message, final CAPI.cstring component, final CAPI.cstring context,
                         final int severity) {
-            String logMessage = format("%-9s [%s] %s", component.toString().toUpperCase(), context, message).trim();
+            String logMessage = format("%-9s [%s] %s", component.toString().toUpperCase(Locale.US), context, message).trim();
 
             if (severity < -2) {
                 LOGGER.error(logMessage);   // Severe/Fatal & Error messages
