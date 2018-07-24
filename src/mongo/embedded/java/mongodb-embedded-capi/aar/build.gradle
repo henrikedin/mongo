@@ -6,10 +6,8 @@ android {
     compileSdkVersion 28
 
     defaultConfig {
-        minSdkVersion 21
+        minSdkVersion 24
         targetSdkVersion 28
-        versionCode 1
-        versionName "1.0"
     }
 
     buildTypes {
@@ -24,7 +22,6 @@ android {
             java.srcDir '../src/main/java'
         }
     }
-
 }
 
 dependencies {
@@ -37,7 +34,7 @@ publishing {
         mavenAar(MavenPublication) {
             from components.android
 
-            artifactId getLibraryName()
+            artifactId = libraryName
 
             pom {
                 name = pomName
@@ -64,7 +61,6 @@ publishing {
             url = "$buildDir/repo"
         }
     }
-
 }
 
 

@@ -2,7 +2,6 @@ apply plugin: 'java-library'
 apply plugin: 'osgi'
 apply plugin: 'maven-publish'
 apply plugin: 'optional-base'
-//apply plugin: 'com.bmuschko.nexus'
 
 sourceCompatibility = JavaVersion.VERSION_1_7
 targetCompatibility = JavaVersion.VERSION_1_7
@@ -40,7 +39,7 @@ dependencies {
 publishing {
     publications {
         maven(MavenPublication) {
-            artifactId = getLibraryName()
+            artifactId = libraryName
 
             from components.java
             artifact sourcesJar
