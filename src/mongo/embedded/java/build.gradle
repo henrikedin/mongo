@@ -65,3 +65,7 @@ allprojects {
         //mavenLocal()
     }
 }
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}
