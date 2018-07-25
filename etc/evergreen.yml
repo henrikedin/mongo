@@ -3624,7 +3624,7 @@ tasks:
         aws_secret: ${aws_secret}
         remote_file: ${project}/embedded-sdk/embedded-sdk-ubuntu-1604-x86_64/${revision}/${version}.tgz
         bucket: mciuploads
-        local_file: "embedded-sdk-java-linux-x86_64.tgz"
+        local_file: "embedded-sdk-java-linux-x86-64.tgz"
     - command: s3.get
       params:
         aws_key: ${aws_key}
@@ -3645,13 +3645,15 @@ tasks:
 
             chmod +x gradlew
 
-            for arch in linux-x86_64 darwin ; do
-                tar zxvf ../../../../../embedded-sdk-java-$arch.tgz
-                mkdir -p jniLibs/com/mongodb/embedded/capi/internal/$arch
-                cp ./mongo-embedded-sdk-${version}/lib/*.so jniLibs/com/mongodb/embedded/capi/internal/$arch
-                cp ./mongo-embedded-sdk-${version}/lib/*.dylib jniLibs/com/mongodb/embedded/capi/internal/$arch
-                rm -rf ./mongo-embedded-sdk-${version}
-            done
+            tar zxvf ../../../../../embedded-sdk-java-linux-x86-64.tgz
+            mkdir -p jniLibs/com/mongodb/embedded/capi/internal/linux-x86-64
+            cp ./mongo-embedded-sdk-${version}/lib/*.so jniLibs/com/mongodb/embedded/capi/internal/linux-x86-64
+            rm -rf ./mongo-embedded-sdk-${version}
+
+            tar zxvf ../../../../../embedded-sdk-java-darwin.tgz
+            mkdir -p jniLibs/com/mongodb/embedded/capi/internal/darwin
+            cp ./mongo-embedded-sdk-${version}/lib/*.dylib jniLibs/com/mongodb/embedded/capi/internal/darwin
+            rm -rf ./mongo-embedded-sdk-${version}
 
             ./gradlew clean :jar:build :jar:publishMavenPublicationToLocalRepository
 

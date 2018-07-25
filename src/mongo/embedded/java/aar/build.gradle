@@ -54,7 +54,7 @@ android {
 }
 
 dependencies {
-    implementation "net.java.dev.jna:jna:$jnaVersion@aar"
+    api "net.java.dev.jna:jna:$jnaVersion@aar"
     api 'org.slf4j:slf4j-api:1.7.6', optional
 }
 

@@ -61,7 +61,7 @@ task javadocJar(type: Jar) {
 }
 
 dependencies {
-    implementation "net.java.dev.jna:jna:$jnaVersion"
+    api "net.java.dev.jna:jna:$jnaVersion"
     api 'org.slf4j:slf4j-api:1.7.6', optional
 }
 
