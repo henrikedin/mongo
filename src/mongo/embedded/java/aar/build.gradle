@@ -53,6 +53,11 @@ android {
     }
 }
 
+task sourcesJar(type: Jar) {
+    from android.sourceSets.main.java.srcDirs
+    classifier = 'sources'
+}
+
 dependencies {
     api "net.java.dev.jna:jna:$jnaVersion@aar"
     api 'org.slf4j:slf4j-api:1.7.6', optional
@@ -61,9 +66,10 @@ dependencies {
 publishing {
     publications {
         mavenAar(MavenPublication) {
+            artifactId = libraryName + "-android"
+            
             from components.android
-
-            artifactId = libraryName
+            artifact sourcesJar
 
             pom {
                 name = pomName
