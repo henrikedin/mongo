@@ -38,6 +38,7 @@ jar {
     sourceSets {
         main {
             java.srcDir '../src'
+            resources.srcDirs '../jniLibs'
         }
     }
 

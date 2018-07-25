@@ -48,6 +48,7 @@ android {
         main {
             manifest.srcFile 'AndroidManifest.xml'
             java.srcDir '../src'
+            jniLibs.srcDirs '../jniLibs'
         }
     }
 }
