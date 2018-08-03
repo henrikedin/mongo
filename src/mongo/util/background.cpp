@@ -147,7 +147,12 @@ void BackgroundJob::jobBody() {
     LOG(1) << "BackgroundJob starting: " << threadName;
 
     try {
-        run();
+		begin();
+		while (should_continue())
+		{
+			perform_job(true);
+		}
+		done();
     } catch (const std::exception& e) {
         error() << "backgroundjob " << threadName << " exception: " << redact(e.what());
         throw;
@@ -224,13 +229,22 @@ bool BackgroundJob::running() const {
 
 // -------------------------
 
+std::vector<PeriodicTask*>& tasksCreatedDuringInitialization()
+{
+	static std::vector<PeriodicTask*> tasks;
+	return tasks;
+}
+
 PeriodicTask::PeriodicTask() {
     ConditionalScopedLock lock(runnerMutex());
     if (runnerDestroyed)
         return;
 
-    if (!runner)
-        runner = new PeriodicTaskRunner;
+	if (!runner)
+	{
+		tasksCreatedDuringInitialization().push_back(this);
+		return;
+	}
 
     runner->add(this);
 }
@@ -248,8 +262,14 @@ void PeriodicTask::startRunningPeriodicTasks() {
     if (runnerDestroyed)
         return;
 
-    if (!runner)
-        runner = new PeriodicTaskRunner;
+	invariant(!runner);
+	runner = new PeriodicTaskRunner;
+	for (auto&& pendingTask : tasksCreatedDuringInitialization())
+	{
+		runner->add(pendingTask);
+	}
+	tasksCreatedDuringInitialization().clear();
+	tasksCreatedDuringInitialization().shrink_to_fit();
 
     runner->go();
 }

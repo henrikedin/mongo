@@ -1046,6 +1046,16 @@ env.Library(
 )
 
 env.Library(
+    target='periodic_runner_thread',
+    source=[
+        'periodic_runner_thread.cpp'
+    ],
+    LIBDEPS_PRIVATE=[
+        '$BUILD_DIR/mongo/base',
+    ]
+)
+
+env.Library(
     target="serveronly",
     source=[
         # DO NOT ADD ADDITIONAL FILES TO THIS LIST.
@@ -1092,6 +1102,7 @@ env.Library(
         "op_observer_d",
         "ops/write_ops_parsers",
         "pipeline/aggregation",
+        "periodic_runner_thread",
         "query_exec",
         "repair_database",
         "repl/bgsync",

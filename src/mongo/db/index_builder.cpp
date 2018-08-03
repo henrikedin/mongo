@@ -117,7 +117,7 @@ std::string IndexBuilder::name() const {
     return _name;
 }
 
-void IndexBuilder::run() {
+void IndexBuilder::init() {
     Client::initThread(name().c_str());
     LOG(2) << "IndexBuilder building index " << _index;
 

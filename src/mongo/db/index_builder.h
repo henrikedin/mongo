@@ -71,7 +71,10 @@ public:
                  Timestamp initIndexTs = Timestamp::min());
     virtual ~IndexBuilder();
 
-    virtual void run();
+	void begin() override;
+	bool should_continue() override { return false; }
+	void perform_job(bool running_in_thread) override {}
+	void done() override {}
 
     /**
      * name of the builder, not the index

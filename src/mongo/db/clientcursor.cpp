@@ -260,19 +260,34 @@ public:
         return "ClientCursorMonitor";
     }
 
-    void run() {
-        Client::initThread("clientcursormon");
-        while (!globalInShutdownDeprecated()) {
-            {
-                const ServiceContext::UniqueOperationContext opCtx = cc().makeOperationContext();
-                auto now = opCtx->getServiceContext()->getPreciseClockSource()->now();
-                cursorStatsTimedOut.increment(
-                    CursorManager::timeoutCursorsGlobal(opCtx.get(), now));
-            }
-            MONGO_IDLE_THREAD_BLOCK;
-            sleepsecs(getClientCursorMonitorFrequencySecs());
-        }
-    }
+	void begin() override
+	{
+		Client::initThread("clientcursormon");
+	}
+
+	bool should_continue() override
+	{
+		return !globalInShutdownDeprecated();
+	}
+
+	void perform_job(bool running_in_thread)
+	{
+		const ServiceContext::UniqueOperationContext opCtx = cc().makeOperationContext();
+		auto now = opCtx->getServiceContext()->getPreciseClockSource()->now();
+		cursorStatsTimedOut.increment(
+			CursorManager::timeoutCursorsGlobal(opCtx.get(), now));
+
+		if (running_in_thread)
+		{
+			MONGO_IDLE_THREAD_BLOCK;
+			sleepsecs(getClientCursorMonitorFrequencySecs());
+		}
+	}
+
+	void done() override
+	{
+
+	}
 };
 
 // Only one instance of the ClientCursorMonitor exists

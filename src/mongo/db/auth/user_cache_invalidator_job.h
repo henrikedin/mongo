@@ -50,7 +50,11 @@ public:
 
 protected:
     virtual std::string name() const;
-    virtual void run();
+
+	void begin() override;
+	bool should_continue() override;
+	void perform_job(bool running_in_thread) override;
+	void done() override;
 
 private:
     AuthorizationManager* _authzManager;

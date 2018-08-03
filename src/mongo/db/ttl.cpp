@@ -88,37 +88,42 @@ public:
 
     static std::string secondsExpireField;
 
-    virtual void run() {
-        Client::initThread(name().c_str());
-        AuthorizationSession::get(cc())->grantInternalAuthorization();
+	void begin() override
+	{
+		Client::initThread(name().c_str());
+		AuthorizationSession::get(cc())->grantInternalAuthorization();
+	}
+	bool should_continue() override { return !globalInShutdownDeprecated(); }
+	void perform_job(bool running_in_thread) override 
+	{
+		if (running_in_thread)
+		{
+			MONGO_IDLE_THREAD_BLOCK;
+			sleepsecs(ttlMonitorSleepSecs.load());
+		}
 
-        while (!globalInShutdownDeprecated()) {
-            {
-                MONGO_IDLE_THREAD_BLOCK;
-                sleepsecs(ttlMonitorSleepSecs.load());
-            }
+		LOG(3) << "thread awake";
 
-            LOG(3) << "thread awake";
+		if (!ttlMonitorEnabled.load()) {
+			LOG(1) << "disabled";
+			return;
+		}
 
-            if (!ttlMonitorEnabled.load()) {
-                LOG(1) << "disabled";
-                continue;
-            }
+		if (lockedForWriting()) {
+			// Note: this is not perfect as you can go into fsync+lock between this and actually
+			// doing the delete later.
+			LOG(3) << "locked for writing";
+			return;
+		}
 
-            if (lockedForWriting()) {
-                // Note: this is not perfect as you can go into fsync+lock between this and actually
-                // doing the delete later.
-                LOG(3) << "locked for writing";
-                continue;
-            }
-
-            try {
-                doTTLPass();
-            } catch (const WriteConflictException&) {
-                LOG(1) << "got WriteConflictException";
-            }
-        }
-    }
+		try {
+			doTTLPass();
+		}
+		catch (const WriteConflictException&) {
+			LOG(1) << "got WriteConflictException";
+		}
+	}
+	void done() override {}
 
 private:
     void doTTLPass() {

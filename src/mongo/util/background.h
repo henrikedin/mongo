@@ -78,7 +78,10 @@ protected:
      *   to the BackgroundJob's thread being finished, as if run() returned.
      *
      */
-    virtual void run() = 0;
+	virtual void begin() = 0;
+	virtual bool should_continue() = 0;
+	virtual void perform_job(bool running_in_thread) = 0;
+	virtual void done() = 0;
 
 public:
     enum State { NotStarted, Running, Done };
