@@ -32,7 +32,7 @@
 // Should be fixed inside mongoc.h
 #include <inttypes.h>
 #include <mongo/embedded/capi.h>
-#include <mongoc.h>
+#include <mongoc/mongoc.h>
 
 #ifdef __cplusplus
 extern "C" {

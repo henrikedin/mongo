@@ -148,7 +148,18 @@ if not hygienic:
 if not env['MONGO_HAVE_LIBMONGOC']:
     Return()
 
-env.Library(
+transportEnv = env.Clone()
+syslibs = []
+# No other SYSLIBDEPS than mongoc and bson are allowed in this library.
+if transportEnv['MONGO_HAVE_LIBMONGOC_FRAMEWORK']:
+    transportEnv.Append(FRAMEWORKS = 'bson')
+    transportEnv.Append(FRAMEWORKS = 'mongoc')
+else:
+    syslibs = [
+        'mongoc-1.0',
+        'bson-1.0',
+    ]
+transportEnv.Library(
     target='mongo_embedded_mongoc_client',
     source=[
         'mongoc_client.cpp',
@@ -157,11 +168,7 @@ env.Library(
         # No LIBDEPS or LIBDEPS_PRIVATE to mongo libraries are allowed in this library. They would get duplicated in mongo_embedded_capi.
         'mongo_embedded_capi',
     ],
-    SYSLIBDEPS=[
-        # No other SYSLIBDEPS than mongoc and bson are allowed in this library.
-        'mongoc-1.0',
-        'bson-1.0',
-    ],
+    SYSLIBDEPS=syslibs,
     INSTALL_ALIAS=[
         'mobile-dev',
     ],

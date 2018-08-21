@@ -690,6 +690,14 @@ env_vars.Add('CXXFLAGS',
 env_vars.Add('ENV',
     help='Sets the environment for subprocesses')
 
+env_vars.Add('FRAMEWORKS',
+    help='Sets the framework path',
+    converter=variable_shlex_converter)
+
+env_vars.Add('FRAMEWORKPATH',
+    help='Sets the framework path',
+    converter=variable_shlex_converter)
+
 env_vars.Add('HOST_ARCH',
     help='Sets the native architecture of the compiler',
     converter=variable_arch_converter,
@@ -3306,7 +3314,7 @@ def doConfigure(myenv):
  
     def CheckMongoCMinVersion(context):
         compile_test_body = textwrap.dedent("""
-        #include <mongoc.h>
+        #include <mongoc/mongoc.h>
 
         #if !MONGOC_CHECK_VERSION(1,10,0)
         #error
@@ -3319,9 +3327,32 @@ def doConfigure(myenv):
         return result
 
     conf.AddTest('CheckMongoCMinVersion', CheckMongoCMinVersion)
+    
+    if env.TargetOSIs('darwin'):
+        def CheckMongoCFramework(context):
+            context.Message("Checking for mongoc_get_major_version() in darwin framework mongoc...")
+            test_body = """
+            #include <mongoc/mongoc.h>
+
+            int main() {
+                mongoc_get_major_version();
+
+                return EXIT_SUCCESS;
+            }
+            """
+
+            lastFRAMEWORKS = context.env['FRAMEWORKS']
+            context.env.Append(FRAMEWORKS = 'mongoc')
+            result = context.TryLink(textwrap.dedent(test_body), ".c")
+            context.Result(result)
+            context.env['FRAMEWORKS'] = lastFRAMEWORKS
+            return result
+        
+        conf.AddTest('CheckMongoCFramework', CheckMongoCFramework)
 
     mongoc_mode = get_option('use-system-mongo-c')
     conf.env['MONGO_HAVE_LIBMONGOC'] = False
+    conf.env['MONGO_HAVE_LIBMONGOC_FRAMEWORK'] = False
     if mongoc_mode != 'off':
         conf.env['MONGO_HAVE_LIBMONGOC'] = conf.CheckLibWithHeader(
                 ["mongoc-1.0"],
@@ -3329,6 +3360,9 @@ def doConfigure(myenv):
                 "C",
                 "mongoc_get_major_version();",
                 autoadd=False )
+        if not conf.env['MONGO_HAVE_LIBMONGOC'] and env.TargetOSIs('darwin'):
+            conf.env['MONGO_HAVE_LIBMONGOC_FRAMEWORK'] = conf.CheckMongoCFramework()
+            conf.env['MONGO_HAVE_LIBMONGOC'] = conf.env['MONGO_HAVE_LIBMONGOC_FRAMEWORK']
         if not conf.env['MONGO_HAVE_LIBMONGOC'] and mongoc_mode == 'on':
             myenv.ConfError("Failed to find the required C driver headers")
         if conf.env['MONGO_HAVE_LIBMONGOC'] and not conf.CheckMongoCMinVersion():
