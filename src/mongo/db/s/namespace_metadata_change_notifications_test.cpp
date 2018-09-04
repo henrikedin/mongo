@@ -55,7 +55,7 @@ TEST_F(NamespaceMetadataChangeNotificationsTest, WaitForNotify) {
     auto scopedNotif = notifications.createNotification(kNss);
 
     {
-        auto opCtx = client()->makeOperationContext();
+        auto opCtx = getClient()->makeOperationContext();
         opCtx->setDeadlineAfterNowBy(Milliseconds{0}, ErrorCodes::ExceededTimeLimit);
         ASSERT_THROWS_CODE(
             scopedNotif.get(opCtx.get()), AssertionException, ErrorCodes::ExceededTimeLimit);
@@ -74,7 +74,7 @@ TEST_F(NamespaceMetadataChangeNotificationsTest, GiveUpWaitingForNotify) {
 
     {
         auto scopedNotif = notifications.createNotification(kNss);
-        auto opCtx = client()->makeOperationContext();
+        auto opCtx = getClient()->makeOperationContext();
         opCtx->setDeadlineAfterNowBy(Milliseconds{0}, ErrorCodes::ExceededTimeLimit);
         ASSERT_THROWS_CODE(
             scopedNotif.get(opCtx.get()), AssertionException, ErrorCodes::ExceededTimeLimit);
@@ -90,7 +90,7 @@ TEST_F(NamespaceMetadataChangeNotificationsTest, MoveConstructionWaitForNotify) 
     auto movedScopedNotif = std::move(scopedNotif);
 
     {
-        auto opCtx = client()->makeOperationContext();
+        auto opCtx = getClient()->makeOperationContext();
         opCtx->setDeadlineAfterNowBy(Milliseconds{0}, ErrorCodes::ExceededTimeLimit);
         ASSERT_THROWS_CODE(
             movedScopedNotif.get(opCtx.get()), AssertionException, ErrorCodes::ExceededTimeLimit);
