@@ -54,24 +54,11 @@ namespace {
 
 class KVStorageEngineTest : public ServiceContextMongoDTest {
 public:
-    enum class RepairAction { kNoRepair, kRepair };
-
     KVStorageEngineTest() : KVStorageEngineTest(RepairAction::kNoRepair) {}
 
-    KVStorageEngineTest(RepairAction repair) {
-        KVStorageEngineOptions options;
-        options.forRepair = (repair == RepairAction::kRepair);
-        _storageEngine.reset(new KVStorageEngine(new EphemeralForTestEngine(), options));
-    }
-
-    void setUp() final {
-        _serviceContext.setUp();
-    }
-
-    void tearDown() final {
-        _storageEngine->cleanShutdown();
-        _serviceContext.tearDown();
-    }
+    KVStorageEngineTest(RepairAction repair) 
+		: ServiceContextMongoDTest("ephemeralForTest", repair),
+		_storageEngine(checked_cast<KVStorageEngine*>(getServiceContext()->getStorageEngine())) {}
 
     /**
      * Create a collection in the catalog and in the KVEngine. Return the storage engine's `ident`.

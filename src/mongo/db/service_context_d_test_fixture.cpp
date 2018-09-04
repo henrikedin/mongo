@@ -51,11 +51,16 @@ namespace mongo {
 ServiceContextMongoDTest::ServiceContextMongoDTest()
     : ServiceContextMongoDTest("ephemeralForTest") {}
 
-ServiceContextMongoDTest::ServiceContextMongoDTest(std::string engine) {
+ServiceContextMongoDTest::ServiceContextMongoDTest(std::string engine)
+	: ServiceContextMongoDTest(engine, RepairAction::kNoRepair) {}
+
+ServiceContextMongoDTest::ServiceContextMongoDTest(std::string engine, RepairAction repair) {
 
     _stashedStorageParams.engine = std::exchange(storageGlobalParams.engine, std::move(engine));
     _stashedStorageParams.engineSetByUser =
         std::exchange(storageGlobalParams.engineSetByUser, true);
+	_stashedStorageParams.repair =
+		std::exchange(storageGlobalParams.repair, (repair == RepairAction::kRepair));
 
     auto const serviceContext = getServiceContext();
     serviceContext->setServiceEntryPoint(std::make_unique<ServiceEntryPointMongod>(serviceContext));
@@ -81,11 +86,12 @@ ServiceContextMongoDTest::~ServiceContextMongoDTest() {
     {
         auto opCtx = getClient()->makeOperationContext();
         Lock::GlobalLock glk(opCtx.get(), MODE_X);
-        catalog::closeCatalog(opCtx.get());
+		DatabaseHolder::getDatabaseHolder().closeAll(opCtx.get(), "all databases dropped");
     }
     shutdownGlobalStorageEngineCleanly(getGlobalServiceContext());
     std::swap(storageGlobalParams.engine, _stashedStorageParams.engine);
     std::swap(storageGlobalParams.engineSetByUser, _stashedStorageParams.engineSetByUser);
+	std::swap(storageGlobalParams.repair, _stashedStorageParams.repair);
 }
 
 }  // namespace mongo
