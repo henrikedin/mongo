@@ -30,6 +30,7 @@ apply plugin: 'java-library'
 apply plugin: 'osgi'
 apply plugin: 'maven-publish'
 apply plugin: 'optional-base'
+apply plugin: 'com.jfrog.bintray'
 
 sourceCompatibility = JavaVersion.VERSION_1_7
 targetCompatibility = JavaVersion.VERSION_1_7
@@ -97,6 +98,32 @@ publishing {
         maven {
             name = 'local'
             url = "$buildDir/repo"
+        }
+    }
+}
+
+bintray {
+    dryRun = true
+    //publish = false
+
+    user = System.getenv('BINTRAY_USER')
+    key = System.getenv('BINTRAY_KEY')
+
+    publications = ['maven']
+
+    pkg {
+        repo = 'MongoDB'
+        name = "$group:$libraryName"
+        userOrg = 'mongodb'
+        licenses = ['Apache-2.0']
+        vcsUrl = pomScmConnection
+        githubRepo = 'mongodb/mongo'
+        githubReleaseNotesFile = 'README.md'
+        websiteUrl = pomUrl
+        publicDownloadNumbers = true
+
+        version {
+            name = getGitVersion()
         }
     }
 }
