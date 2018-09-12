@@ -3767,7 +3767,9 @@ tasks:
                 rm -rf ./mongo-embedded-sdk-${version}
             done
 
-            ./gradlew clean :aar:build :aar:publishMavenAarPublicationToLocalRepository
+            export BINTRAY_USER=henrikedin-mdb
+            export BINTRAY_KEY=c297f5f61558b096f1c1d99d4077bc5f41eafa5b
+            ./gradlew -PversionOverride="4.0.0-dev" clean :aar:build :aar:bintrayUpload --info
 
             mkdir -p ../../../../build/mongo-embedded-sdk-${version}/android
             cp -r aar/build/repo/* ../../../../build/mongo-embedded-sdk-${version}/android
@@ -3869,7 +3871,9 @@ tasks:
             cp ./mongo-embedded-sdk-${version}/lib/*.dylib jniLibs/darwin
             rm -rf ./mongo-embedded-sdk-${version}
 
-            ./gradlew clean :jar:build :jar:publishMavenPublicationToLocalRepository
+            export BINTRAY_USER=henrikedin-mdb
+            export BINTRAY_KEY=c297f5f61558b096f1c1d99d4077bc5f41eafa5b
+            ./gradlew -PversionOverride="4.0.0-dev" clean :jar:build :jar:bintrayUpload --info
 
             mkdir -p ../../../../build/mongo-embedded-sdk-${version}/java
             cp -r jar/build/repo/* ../../../../build/mongo-embedded-sdk-${version}/java

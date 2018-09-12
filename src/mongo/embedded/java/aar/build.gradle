@@ -93,8 +93,8 @@ publishing {
 }
 
 bintray {
-    dryRun = true
-    //publish = false
+    //dryRun = true
+    publish = false
 
     user = System.getenv('BINTRAY_USER')
     key = System.getenv('BINTRAY_KEY')
@@ -108,7 +108,7 @@ bintray {
         licenses = ['Apache-2.0']
         vcsUrl = pomScmConnection
         githubRepo = 'mongodb/mongo'
-        githubReleaseNotesFile = 'README.md'
+        githubReleaseNotesFile = 'README'
         websiteUrl = pomUrl
         publicDownloadNumbers = true
 
