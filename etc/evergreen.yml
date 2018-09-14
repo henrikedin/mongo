@@ -3617,6 +3617,13 @@ tasks:
           VERSION=${version}
           WORKDIR=${workdir}
 
+          echo ${workdir}
+          echo $WORKDIR
+          cygpath -u "${workdir}"
+          cygpath -w "${workdir}"
+          cygpath -m "${workdir}"
+          echo $(cygpath -u "${workdir}")
+
           rm -rf mongo-c-driver
 
           git clone --branch r1.13 --depth 1 https://github.com/mongodb/mongo-c-driver.git
@@ -3624,9 +3631,14 @@ tasks:
 
           trap "cat CMakeFiles/CMakeOutput.log" EXIT
           export ${compile_env|}
-          ${cmake_path|/opt/cmake/bin/cmake} -DCMAKE_INSTALL_PREFIX=$WORKDIR/src/build/mongo-embedded-sdk-$VERSION-tmp -DENABLE_SHM_COUNTERS=OFF -DENABLE_SNAPPY=OFF -DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF -DENABLE_ZLIB=OFF -DENABLE_SSL=OFF -DENABLE_SASL=OFF -DENABLE_TESTS=OFF -DENABLE_SRV=OFF -DENABLE_EXAMPLES=OFF -DENABLE_STATIC=OFF ${cdriver_cmake_flags}
-          make install VERBOSE=1
-          mv $WORKDIR/src/build/mongo-embedded-sdk-$VERSION-tmp $WORKDIR/src/build/mongo-embedded-sdk-$VERSION
+          ${cmake_path|/opt/cmake/bin/cmake} -DCMAKE_INSTALL_PREFIX=src/build/mongo-embedded-sdk-$VERSION-tmp -DENABLE_SHM_COUNTERS=OFF -DENABLE_SNAPPY=OFF -DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF -DENABLE_ZLIB=OFF -DENABLE_SSL=OFF -DENABLE_SASL=OFF -DENABLE_TESTS=OFF -DENABLE_SRV=OFF -DENABLE_EXAMPLES=OFF -DENABLE_STATIC=OFF ${cdriver_cmake_flags}
+          ${make_path|make install VERBOSE=1}
+          #/cygdrive/c/cmake/bin/cmake -DCMAKE_INSTALL_PREFIX=$WORKDIR/src/build/mongo-embedded-sdk-$VERSION-tmp -DENABLE_SHM_COUNTERS=OFF -DENABLE_SNAPPY=OFF -DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF -DENABLE_ZLIB=OFF -DENABLE_SSL=OFF -DENABLE_SASL=OFF -DENABLE_TESTS=OFF -DENABLE_SRV=OFF -DENABLE_EXAMPLES=OFF -DENABLE_STATIC=OFF ${cdriver_cmake_flags}
+          #${make_path|make install VERBOSE=1}
+          #cmake_path: /cygdrive/c/cmake/bin/cmake
+          #"/cygdrive/c/Program Files (x86)/MSBuild/14.0/Bin/MSBuild.exe" /p:Configuration=RelWithDebInfo ALL_BUILD.vcxproj
+          #"/cygdrive/c/Program Files (x86)/MSBuild/14.0/Bin/MSBuild.exe" /p:Confcdiguration=RelWithDebInfo INSTALL.vcxproj
+          mv src/build/mongo-embedded-sdk-$VERSION-tmp ../mongo-embedded-sdk-$VERSION
 
 - name: embedded_sdk_install_dev
   commands:
@@ -3644,7 +3656,8 @@ tasks:
           --use-system-mongo-c=on
           --wiredtiger=off
           --allocator=system
-          CPPPATH='$BUILD_ROOT/mongo-embedded-sdk-$MONGO_VERSION/include/libbson-1.0 $BUILD_ROOT/mongo-embedded-sdk-$MONGO_VERSION/include/libmongoc-1.0'
+          CPPPATH='../mongo-embedded-sdk-$MONGO_VERSION/include/libbson-1.0 ../mongo-embedded-sdk-$MONGO_VERSION/include/libmongoc-1.0'
+          VERBOSE=1
         task_compile_flags_extra: >-
           --link-model=dynamic-sdk
 
@@ -10471,6 +10484,33 @@ buildvariants:
         -DCMAKE_C_COMPILER=/opt/mongodbtoolchain/v2/bin/gcc
         -DCMAKE_CXX_COMPILER=/opt/mongodbtoolchain/v2/bin/g++
         -DCMAKE_C_FLAGS="-flto"
+        -DCMAKE_INSTALL_RPATH=\$ORIGIN/../lib
+    disable_unit_tests: true
+    enable_embedded_tests: native
+    dump_scons_config_on_failure: true
+  tasks:
+  - name: embedded_sdk_build_and_test
+
+- name: embedded-sdk-windows-2k8-x86_64
+  display_name: "Embedded SDK - Windows 2008R2 x86_64"
+  run_on:
+  - windows-64-vs2015-small
+  batchtime: 1440 # 1 day
+  expansions:
+    exe: ".exe"
+    python: python
+    test_flags: --excludeWithAnyTags=uses_transactions
+    cmake_path: "/cygdrive/c/cmake/bin/cmake"
+    make_path: >-
+      "/cygdrive/c/Program Files (x86)/MSBuild/14.0/Bin/MSBuild.exe"
+      /p:Configuration=RelWithDebInfo 
+      INSTALL.vcxproj
+    # We need --allocator=system here to work around SERVER-XXXXX
+    compile_flags: >-
+      -j$(grep -c ^processor /proc/cpuinfo)
+      LIBPATH="\$BUILD_ROOT/mongo-embedded-sdk-\$MONGO_VERSION/lib"
+    cdriver_cmake_flags: >-
+        -DCMAKE_BUILD_TYPE=RelWithDebInfo
         -DCMAKE_INSTALL_RPATH=\$ORIGIN/../lib
     disable_unit_tests: true
     enable_embedded_tests: native
