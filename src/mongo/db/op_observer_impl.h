@@ -115,6 +115,30 @@ public:
     void onTransactionAbort(OperationContext* opCtx) override;
     void onReplicationRollback(OperationContext* opCtx,
                                const RollbackObserverInfo& rbInfo) override;
+
+protected:
+	virtual void shardObserveAboutToDelete(OperationContext* opCtx,
+		NamespaceString const& nss,
+		BSONObj const& doc)
+	{}
+	virtual void shardObserveInsertOp(OperationContext* opCtx,
+		const NamespaceString nss,
+		const BSONObj& insertedDoc,
+		const repl::OpTime& opTime,
+		const bool fromMigrate)
+	{}
+	virtual void shardObserveUpdateOp(OperationContext* opCtx,
+		const NamespaceString nss,
+		const BSONObj& updatedDoc,
+		const repl::OpTime& opTime,
+		const repl::OpTime& prePostImageOpTime)
+	{}
+	virtual void shardObserveDeleteOp(OperationContext* opCtx,
+		const NamespaceString nss,
+		const BSONObj& documentKey,
+		const repl::OpTime& opTime,
+		const repl::OpTime& preImageOpTime)
+	{}
 };
 
 }  // namespace mongo

@@ -94,6 +94,19 @@ env.Library(
 )
 
 env.Library(
+    target='op_observer_sharding_impl',
+    source=[
+        'op_observer_sharding_impl.cpp',
+    ],
+    LIBDEPS=[
+        '$BUILD_DIR/mongo/db/op_observer_impl',
+    ],
+    LIBDEPS_PRIVATE=[
+        'sharding_runtime_d',
+    ],
+)
+
+env.Library(
     target='chunk_splitter',
     source=[
         'chunk_split_state_driver.cpp',

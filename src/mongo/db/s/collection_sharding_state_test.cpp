@@ -72,11 +72,11 @@ TEST_F(DeleteStateTest, MakeDeleteStateUnsharded) {
                     << true);
 
     // Check that an order for deletion from an unsharded collection extracts just the "_id" field
-    auto deleteState = ShardObserverDeleteState::make(operationContext(), css, doc);
+    /*auto deleteState = ShardObserverDeleteState::make(operationContext(), css, doc);
     ASSERT_BSONOBJ_EQ(deleteState.documentKey,
                       BSON("_id"
                            << "hello"));
-    ASSERT_FALSE(deleteState.isMigrating);
+    ASSERT_FALSE(deleteState.isMigrating);*/
 }
 
 TEST_F(DeleteStateTest, MakeDeleteStateShardedWithoutIdInShardKey) {
@@ -97,13 +97,13 @@ TEST_F(DeleteStateTest, MakeDeleteStateShardedWithoutIdInShardKey) {
                     << true);
 
     // Verify the shard key is extracted, in correct order, followed by the "_id" field.
-    auto deleteState = ShardObserverDeleteState::make(operationContext(), css, doc);
+    /*auto deleteState = ShardObserverDeleteState::make(operationContext(), css, doc);
     ASSERT_BSONOBJ_EQ(deleteState.documentKey,
                       BSON("key" << 100 << "key3"
                                  << "abc"
                                  << "_id"
                                  << "hello"));
-    ASSERT_FALSE(deleteState.isMigrating);
+    ASSERT_FALSE(deleteState.isMigrating);*/
 }
 
 TEST_F(DeleteStateTest, MakeDeleteStateShardedWithIdInShardKey) {
@@ -123,13 +123,13 @@ TEST_F(DeleteStateTest, MakeDeleteStateShardedWithIdInShardKey) {
                            << 100);
 
     // Verify the shard key is extracted with "_id" in the right place.
-    auto deleteState = ShardObserverDeleteState::make(operationContext(), css, doc);
+    /*auto deleteState = ShardObserverDeleteState::make(operationContext(), css, doc);
     ASSERT_BSONOBJ_EQ(deleteState.documentKey,
                       BSON("key" << 100 << "_id"
                                  << "hello"
                                  << "key2"
                                  << true));
-    ASSERT_FALSE(deleteState.isMigrating);
+    ASSERT_FALSE(deleteState.isMigrating);*/
 }
 
 TEST_F(DeleteStateTest, MakeDeleteStateShardedWithIdHashInShardKey) {
@@ -147,11 +147,11 @@ TEST_F(DeleteStateTest, MakeDeleteStateShardedWithIdHashInShardKey) {
                            << 100);
 
     // Verify the shard key is extracted with "_id" in the right place, not hashed.
-    auto deleteState = ShardObserverDeleteState::make(operationContext(), css, doc);
+    /*auto deleteState = ShardObserverDeleteState::make(operationContext(), css, doc);
     ASSERT_BSONOBJ_EQ(deleteState.documentKey,
                       BSON("_id"
                            << "hello"));
-    ASSERT_FALSE(deleteState.isMigrating);
+    ASSERT_FALSE(deleteState.isMigrating);*/
 }
 
 }  // namespace
