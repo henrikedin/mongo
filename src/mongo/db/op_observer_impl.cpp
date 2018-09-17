@@ -63,6 +63,7 @@ namespace {
 
 MONGO_FAIL_POINT_DEFINE(failCollectionUpdates);
 
+const auto getDocumentKey = OperationContext::declareDecoration<BSONObj>();
 const auto getDeleteState = OperationContext::declareDecoration<ShardObserverDeleteState>();
 
 repl::OpTime logOperation(OperationContext* opCtx,
@@ -273,12 +274,12 @@ OpTimeBundle replLogDelete(OperationContext* opCtx,
         oplogLink.preImageOpTime = noteOplog;
     }
 
-    auto& deleteState = getDeleteState(opCtx);
+	auto& documentKey = getDocumentKey(opCtx);
     opTimes.writeOpTime = logOperation(opCtx,
                                        "d",
                                        nss,
                                        uuid,
-                                       deleteState.documentKey,
+                                       documentKey,
                                        nullptr,
                                        fromMigrate,
                                        opTimes.wallClockTime,
@@ -502,6 +503,8 @@ void OpObserverImpl::onUpdate(OperationContext* opCtx, const OplogUpdateEntryArg
 void OpObserverImpl::aboutToDelete(OperationContext* opCtx,
                                    NamespaceString const& nss,
                                    BSONObj const& doc) {
+	auto metadata = CollectionShardingState::get(opCtx, nss)->getMetadata(opCtx);
+	getDocumentKey(opCtx) = metadata->extractDocumentKey(doc).getOwned();
     getDeleteState(opCtx) =
         ShardObserverDeleteState::make(opCtx, CollectionShardingRuntime::get(opCtx, nss), doc);
 }
@@ -512,15 +515,16 @@ void OpObserverImpl::onDelete(OperationContext* opCtx,
                               StmtId stmtId,
                               bool fromMigrate,
                               const boost::optional<BSONObj>& deletedDoc) {
-    auto& deleteState = getDeleteState(opCtx);
-    invariant(!deleteState.documentKey.isEmpty());
+    auto& documentKey = getDocumentKey(opCtx);
+	auto& deleteState = getDeleteState(opCtx);
+    invariant(!documentKey.isEmpty());
     auto txnParticipant = TransactionParticipant::get(opCtx);
     const bool inMultiDocumentTransaction = txnParticipant && opCtx->writesAreReplicated() &&
         txnParticipant->inMultiDocumentTransaction();
     OpTimeBundle opTime;
     if (inMultiDocumentTransaction) {
         auto operation = OplogEntry::makeDeleteOperation(
-            nss, uuid, deletedDoc ? deletedDoc.get() : deleteState.documentKey);
+            nss, uuid, deletedDoc ? deletedDoc.get() : documentKey);
         txnParticipant->addTransactionOperation(opCtx, operation);
     } else {
         Session* const session = OperationContextSession::get(opCtx);
@@ -535,7 +539,7 @@ void OpObserverImpl::onDelete(OperationContext* opCtx,
     }
 
     AuthorizationManager::get(opCtx->getServiceContext())
-        ->logOp(opCtx, "d", nss, deleteState.documentKey, nullptr);
+        ->logOp(opCtx, "d", nss, documentKey, nullptr);
 
     if (nss != NamespaceString::kSessionTransactionsTableNamespace) {
         if (!fromMigrate) {
@@ -550,13 +554,13 @@ void OpObserverImpl::onDelete(OperationContext* opCtx,
     } else if (nss.coll() == DurableViewCatalog::viewsCollectionName()) {
         DurableViewCatalog::onExternalChange(opCtx, nss);
     } else if (nss.isServerConfigurationCollection()) {
-        auto _id = deleteState.documentKey["_id"];
+        auto _id = documentKey["_id"];
         if (_id.type() == BSONType::String &&
             _id.String() == FeatureCompatibilityVersionParser::kParameterName)
             uasserted(40670, "removing FeatureCompatibilityVersion document is not allowed");
     } else if (nss == NamespaceString::kSessionTransactionsTableNamespace &&
                !opTime.writeOpTime.isNull()) {
-        SessionCatalog::get(opCtx)->invalidateSessions(opCtx, deleteState.documentKey);
+        SessionCatalog::get(opCtx)->invalidateSessions(opCtx, documentKey);
     }
 }
 
