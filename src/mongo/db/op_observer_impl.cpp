@@ -48,7 +48,8 @@
 #include "mongo/db/repl/oplog.h"
 #include "mongo/db/repl/oplog_entry_gen.h"
 #include "mongo/db/repl/replication_coordinator.h"
-#include "mongo/db/s/shard_server_op_observer.h"
+//#include "mongo/db/s/shard_server_op_observer.h"
+#include "mongo/db/s/collection_sharding_state.h"
 #include "mongo/db/server_options.h"
 #include "mongo/db/session_catalog.h"
 #include "mongo/db/transaction_participant.h"
@@ -64,7 +65,7 @@ namespace {
 MONGO_FAIL_POINT_DEFINE(failCollectionUpdates);
 
 const auto getDocumentKey = OperationContext::declareDecoration<BSONObj>();
-const auto getDeleteState = OperationContext::declareDecoration<ShardObserverDeleteState>();
+//const auto getDeleteState = OperationContext::declareDecoration<ShardObserverDeleteState>();
 
 repl::OpTime logOperation(OperationContext* opCtx,
                           const char* opstr,
@@ -401,7 +402,7 @@ void OpObserverImpl::onInserts(OperationContext* opCtx,
             opCtx, nss, session, stmtIdsWritten, lastOpTime, lastWriteDate, boost::none);
     }
 
-    auto* const css = (nss == NamespaceString::kSessionTransactionsTableNamespace || fromMigrate)
+    /*auto* const css = (nss == NamespaceString::kSessionTransactionsTableNamespace || fromMigrate)
         ? nullptr
         : CollectionShardingRuntime::get(opCtx, nss);
 
@@ -413,7 +414,7 @@ void OpObserverImpl::onInserts(OperationContext* opCtx,
             auto opTime = opTimeList.empty() ? repl::OpTime() : opTimeList[index];
             shardObserveInsertOp(opCtx, css, it->doc, opTime);
         }
-    }
+    }*/
 
     if (nss.coll() == "system.js") {
         Scope::storedFuncMod(opCtx);
@@ -475,7 +476,7 @@ void OpObserverImpl::onUpdate(OperationContext* opCtx, const OplogUpdateEntryArg
     AuthorizationManager::get(opCtx->getServiceContext())
         ->logOp(opCtx, "u", args.nss, args.updateArgs.update, &args.updateArgs.criteria);
 
-    if (args.nss != NamespaceString::kSessionTransactionsTableNamespace) {
+    /*if (args.nss != NamespaceString::kSessionTransactionsTableNamespace) {
         if (!args.updateArgs.fromMigrate) {
             auto* const css = CollectionShardingRuntime::get(opCtx, args.nss);
             shardObserveUpdateOp(opCtx,
@@ -484,7 +485,7 @@ void OpObserverImpl::onUpdate(OperationContext* opCtx, const OplogUpdateEntryArg
                                  opTime.writeOpTime,
                                  opTime.prePostImageOpTime);
         }
-    }
+    }*/
 
     if (args.nss.coll() == "system.js") {
         Scope::storedFuncMod(opCtx);
@@ -505,8 +506,8 @@ void OpObserverImpl::aboutToDelete(OperationContext* opCtx,
                                    BSONObj const& doc) {
 	auto metadata = CollectionShardingState::get(opCtx, nss)->getMetadata(opCtx);
 	getDocumentKey(opCtx) = metadata->extractDocumentKey(doc).getOwned();
-    getDeleteState(opCtx) =
-        ShardObserverDeleteState::make(opCtx, CollectionShardingRuntime::get(opCtx, nss), doc);
+    /*getDeleteState(opCtx) =
+        ShardObserverDeleteState::make(opCtx, CollectionShardingRuntime::get(opCtx, nss), doc);*/
 }
 
 void OpObserverImpl::onDelete(OperationContext* opCtx,
@@ -516,7 +517,7 @@ void OpObserverImpl::onDelete(OperationContext* opCtx,
                               bool fromMigrate,
                               const boost::optional<BSONObj>& deletedDoc) {
     auto& documentKey = getDocumentKey(opCtx);
-	auto& deleteState = getDeleteState(opCtx);
+	//auto& deleteState = getDeleteState(opCtx);
     invariant(!documentKey.isEmpty());
     auto txnParticipant = TransactionParticipant::get(opCtx);
     const bool inMultiDocumentTransaction = txnParticipant && opCtx->writesAreReplicated() &&
@@ -541,13 +542,13 @@ void OpObserverImpl::onDelete(OperationContext* opCtx,
     AuthorizationManager::get(opCtx->getServiceContext())
         ->logOp(opCtx, "d", nss, documentKey, nullptr);
 
-    if (nss != NamespaceString::kSessionTransactionsTableNamespace) {
+    /*if (nss != NamespaceString::kSessionTransactionsTableNamespace) {
         if (!fromMigrate) {
             auto* const css = CollectionShardingRuntime::get(opCtx, nss);
             shardObserveDeleteOp(
                 opCtx, css, deleteState, opTime.writeOpTime, opTime.prePostImageOpTime);
         }
-    }
+    }*/
 
     if (nss.coll() == "system.js") {
         Scope::storedFuncMod(opCtx);
