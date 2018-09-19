@@ -48,7 +48,6 @@
 #include "mongo/db/repl/oplog.h"
 #include "mongo/db/repl/oplog_entry_gen.h"
 #include "mongo/db/repl/replication_coordinator.h"
-//#include "mongo/db/s/shard_server_op_observer.h"
 #include "mongo/db/s/collection_sharding_state.h"
 #include "mongo/db/server_options.h"
 #include "mongo/db/session_catalog.h"
@@ -408,18 +407,10 @@ void OpObserverImpl::onInserts(OperationContext* opCtx,
             opCtx, nss, session, stmtIdsWritten, lastOpTime, lastWriteDate, boost::none);
     }
 
-    /*auto* const css = (nss == NamespaceString::kSessionTransactionsTableNamespace || fromMigrate)
-        ? nullptr
-        : CollectionShardingRuntime::get(opCtx, nss);*/
-
     size_t index = 0;
     for (auto it = first; it != last; it++, index++) {
         AuthorizationManager::get(opCtx->getServiceContext())
             ->logOp(opCtx, "i", nss, it->doc, nullptr);
-        /*if (css) {
-            auto opTime = opTimeList.empty() ? repl::OpTime() : opTimeList[index];
-            shardObserveInsertOp(opCtx, css, it->doc, opTime);
-        }*/
         auto opTime = opTimeList.empty() ? repl::OpTime() : opTimeList[index];
         shardObserveInsertOp(opCtx, nss, it->doc, opTime, fromMigrate);
     }
@@ -486,7 +477,6 @@ void OpObserverImpl::onUpdate(OperationContext* opCtx, const OplogUpdateEntryArg
 
     if (args.nss != NamespaceString::kSessionTransactionsTableNamespace) {
         if (!args.updateArgs.fromMigrate) {
-            // auto* const css = CollectionShardingRuntime::get(opCtx, args.nss);
             shardObserveUpdateOp(opCtx,
                                  args.nss,
                                  args.updateArgs.updatedDoc,
