@@ -60,64 +60,66 @@
 //#include "mongo/util/fail_point_service.h"
 
 namespace mongo {
-	namespace {
-		const auto getIsMigrating = OperationContext::declareDecoration<bool>();
-	}
+namespace {
+const auto getIsMigrating = OperationContext::declareDecoration<bool>();
+}
 
-	void OpObserverShardingImpl::shardObserveAboutToDelete(OperationContext* opCtx,
-		NamespaceString const& nss,
-		BSONObj const& docToDelete)
-	{
-		auto css = CollectionShardingRuntime::get(opCtx, nss);
-		auto msm = MigrationSourceManager::get(css);
-		getIsMigrating(opCtx) = msm && msm->getCloner()->isDocumentInMigratingChunk(docToDelete);
-	}
+bool OpObserverShardingImpl::isMigrating(OperationContext* opCtx,
+                                         NamespaceString const& nss,
+                                         BSONObj const& docToDelete) {
+    auto css = CollectionShardingRuntime::get(opCtx, nss);
+    auto msm = MigrationSourceManager::get(css);
+    return msm && msm->getCloner()->isDocumentInMigratingChunk(docToDelete);
+}
 
-	void OpObserverShardingImpl::shardObserveInsertOp(OperationContext* opCtx,
-		const NamespaceString nss,
-		const BSONObj& insertedDoc,
-		const repl::OpTime& opTime,
-		const bool fromMigrate)
-	{
-		auto* const css = (nss == NamespaceString::kSessionTransactionsTableNamespace || fromMigrate)
-			? nullptr
-			: CollectionShardingRuntime::get(opCtx, nss);
-		if (css) {
-			css->checkShardVersionOrThrow(opCtx);
-			auto msm = MigrationSourceManager::get(css);
-			if (msm) {
-				msm->getCloner()->onInsertOp(opCtx, insertedDoc, opTime);
-			}
-		}
-	}
+void OpObserverShardingImpl::shardObserveAboutToDelete(OperationContext* opCtx,
+                                                       NamespaceString const& nss,
+                                                       BSONObj const& docToDelete) {
+    getIsMigrating(opCtx) = isMigrating(opCtx, nss, docToDelete);
+}
 
-	void OpObserverShardingImpl::shardObserveUpdateOp(OperationContext* opCtx,
-		const NamespaceString nss,
-		const BSONObj& updatedDoc,
-		const repl::OpTime& opTime,
-		const repl::OpTime& prePostImageOpTime)
-	{
-		auto* const css = CollectionShardingRuntime::get(opCtx, nss);
-		css->checkShardVersionOrThrow(opCtx);
-		auto msm = MigrationSourceManager::get(css);
-		if (msm) {
-		    msm->getCloner()->onUpdateOp(opCtx, updatedDoc, opTime, prePostImageOpTime);
-		}
-	}
+void OpObserverShardingImpl::shardObserveInsertOp(OperationContext* opCtx,
+                                                  const NamespaceString nss,
+                                                  const BSONObj& insertedDoc,
+                                                  const repl::OpTime& opTime,
+                                                  const bool fromMigrate) {
+    auto* const css = (nss == NamespaceString::kSessionTransactionsTableNamespace || fromMigrate)
+        ? nullptr
+        : CollectionShardingRuntime::get(opCtx, nss);
+    if (css) {
+        css->checkShardVersionOrThrow(opCtx);
+        auto msm = MigrationSourceManager::get(css);
+        if (msm) {
+            msm->getCloner()->onInsertOp(opCtx, insertedDoc, opTime);
+        }
+    }
+}
 
-	void OpObserverShardingImpl::shardObserveDeleteOp(OperationContext* opCtx,
-		const NamespaceString nss,
-		const BSONObj& documentKey,
-		const repl::OpTime& opTime,
-		const repl::OpTime& preImageOpTime)
-	{
-		auto& isMigrating = getIsMigrating(opCtx);
-		auto* const css = CollectionShardingRuntime::get(opCtx, nss);
-		css->checkShardVersionOrThrow(opCtx);
-		auto msm = MigrationSourceManager::get(css);
-		if (msm && isMigrating) {
-		    msm->getCloner()->onDeleteOp(opCtx, documentKey, opTime, preImageOpTime);
-		}
-	}
+void OpObserverShardingImpl::shardObserveUpdateOp(OperationContext* opCtx,
+                                                  const NamespaceString nss,
+                                                  const BSONObj& updatedDoc,
+                                                  const repl::OpTime& opTime,
+                                                  const repl::OpTime& prePostImageOpTime) {
+    auto* const css = CollectionShardingRuntime::get(opCtx, nss);
+    css->checkShardVersionOrThrow(opCtx);
+    auto msm = MigrationSourceManager::get(css);
+    if (msm) {
+        msm->getCloner()->onUpdateOp(opCtx, updatedDoc, opTime, prePostImageOpTime);
+    }
+}
+
+void OpObserverShardingImpl::shardObserveDeleteOp(OperationContext* opCtx,
+                                                  const NamespaceString nss,
+                                                  const BSONObj& documentKey,
+                                                  const repl::OpTime& opTime,
+                                                  const repl::OpTime& preImageOpTime) {
+    auto& isMigrating = getIsMigrating(opCtx);
+    auto* const css = CollectionShardingRuntime::get(opCtx, nss);
+    css->checkShardVersionOrThrow(opCtx);
+    auto msm = MigrationSourceManager::get(css);
+    if (msm && isMigrating) {
+        msm->getCloner()->onDeleteOp(opCtx, documentKey, opTime, preImageOpTime);
+    }
+}
 
 }  // namespace mongo

@@ -116,29 +116,30 @@ public:
     void onReplicationRollback(OperationContext* opCtx,
                                const RollbackObserverInfo& rbInfo) override;
 
+    // Contains the fields of the document that are in the collection's shard key, and "_id".
+    static BSONObj getDocumentKey(OperationContext* opCtx,
+                                  NamespaceString const& nss,
+                                  BSONObj const& doc);
+
 protected:
-	virtual void shardObserveAboutToDelete(OperationContext* opCtx,
-		NamespaceString const& nss,
-		BSONObj const& doc)
-	{}
-	virtual void shardObserveInsertOp(OperationContext* opCtx,
-		const NamespaceString nss,
-		const BSONObj& insertedDoc,
-		const repl::OpTime& opTime,
-		const bool fromMigrate)
-	{}
-	virtual void shardObserveUpdateOp(OperationContext* opCtx,
-		const NamespaceString nss,
-		const BSONObj& updatedDoc,
-		const repl::OpTime& opTime,
-		const repl::OpTime& prePostImageOpTime)
-	{}
-	virtual void shardObserveDeleteOp(OperationContext* opCtx,
-		const NamespaceString nss,
-		const BSONObj& documentKey,
-		const repl::OpTime& opTime,
-		const repl::OpTime& preImageOpTime)
-	{}
+    virtual void shardObserveAboutToDelete(OperationContext* opCtx,
+                                           NamespaceString const& nss,
+                                           BSONObj const& doc) {}
+    virtual void shardObserveInsertOp(OperationContext* opCtx,
+                                      const NamespaceString nss,
+                                      const BSONObj& insertedDoc,
+                                      const repl::OpTime& opTime,
+                                      const bool fromMigrate) {}
+    virtual void shardObserveUpdateOp(OperationContext* opCtx,
+                                      const NamespaceString nss,
+                                      const BSONObj& updatedDoc,
+                                      const repl::OpTime& opTime,
+                                      const repl::OpTime& prePostImageOpTime) {}
+    virtual void shardObserveDeleteOp(OperationContext* opCtx,
+                                      const NamespaceString nss,
+                                      const BSONObj& documentKey,
+                                      const repl::OpTime& opTime,
+                                      const repl::OpTime& preImageOpTime) {}
 };
 
 }  // namespace mongo
