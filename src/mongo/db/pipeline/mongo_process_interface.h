@@ -35,6 +35,7 @@
 #include <string>
 #include <vector>
 
+#include "mongo/base/shim.h"
 #include "mongo/client/dbclient_base.h"
 #include "mongo/db/collection_index_usage_tracker.h"
 #include "mongo/db/generic_cursor.h"
@@ -67,6 +68,8 @@ public:
     enum class CurrentOpLocalOpsMode { kLocalMongosOps, kRemoteShardOps };
     enum class CurrentOpSessionsMode { kIncludeIdle, kExcludeIdle };
     enum class CurrentOpCursorMode { kIncludeCursors, kExcludeCursors };
+
+	static MONGO_DECLARE_SHIM((OperationContext* opCtx)->std::shared_ptr<MongoProcessInterface>) create;
 
     struct MakePipelineOptions {
         MakePipelineOptions(){};

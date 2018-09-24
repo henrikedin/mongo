@@ -1168,6 +1168,16 @@ env.Library(
 )
 
 env.Library(
+    target="process_interface_factory_mongod",
+    source=[
+        "process_interface_factory_mongod.cpp",
+    ],
+    LIBDEPS_PRIVATE=[
+        '$BUILD_DIR/mongo/db/pipeline/process_interface_sharding',
+    ],
+)
+
+env.Library(
     target='logical_session_id',
     source=[
         'logical_session_id.cpp',
