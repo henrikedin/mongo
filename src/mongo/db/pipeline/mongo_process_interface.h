@@ -69,7 +69,8 @@ public:
     enum class CurrentOpSessionsMode { kIncludeIdle, kExcludeIdle };
     enum class CurrentOpCursorMode { kIncludeCursors, kExcludeCursors };
 
-	static MONGO_DECLARE_SHIM((OperationContext* opCtx)->std::shared_ptr<MongoProcessInterface>) create;
+    static MONGO_DECLARE_SHIM(
+        (OperationContext * opCtx)->std::shared_ptr<MongoProcessInterface>) create;
 
     struct MakePipelineOptions {
         MakePipelineOptions(){};

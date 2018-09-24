@@ -34,10 +34,10 @@
 
 namespace mongo {
 
-MONGO_REGISTER_SHIM(MongoProcessInterface::create)(OperationContext* opCtx)->std::shared_ptr<MongoProcessInterface> {
-	return ShardingState::get(opCtx)->enabled()
-	? std::make_shared<MongoInterfaceShardServer>(opCtx)
-	: std::make_shared<MongoInterfaceStandalone>(opCtx);
+MONGO_REGISTER_SHIM(MongoProcessInterface::create)
+(OperationContext* opCtx)->std::shared_ptr<MongoProcessInterface> {
+    return ShardingState::get(opCtx)->enabled() ? std::make_shared<MongoInterfaceShardServer>(opCtx)
+                                                : std::make_shared<MongoInterfaceStandalone>(opCtx);
 }
 
 }  // namespace mongo

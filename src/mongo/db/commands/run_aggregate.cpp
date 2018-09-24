@@ -328,7 +328,7 @@ boost::intrusive_ptr<ExpressionContext> makeExpressionContext(
         new ExpressionContext(opCtx,
                               request,
                               std::move(collator),
-			MongoProcessInterface::create(opCtx),
+                              MongoProcessInterface::create(opCtx),
                               uassertStatusOK(resolveInvolvedNamespaces(opCtx, request)),
                               uuid);
     expCtx->tempDir = storageGlobalParams.dbpath + "/_tmp";

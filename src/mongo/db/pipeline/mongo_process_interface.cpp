@@ -32,6 +32,6 @@
 
 namespace mongo {
 
-	MONGO_DEFINE_SHIM(MongoProcessInterface::create);
-	
+MONGO_DEFINE_SHIM(MongoProcessInterface::create);
+
 }  // namespace mongo

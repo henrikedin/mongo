@@ -40,9 +40,9 @@ namespace mongo {
  */
 class MongoInterfaceStandalone : public MongoProcessCommon {
 public:
-    //static std::shared_ptr<MongoProcessInterface> create(OperationContext* opCtx);
+    // static std::shared_ptr<MongoProcessInterface> create(OperationContext* opCtx);
 
-	MongoInterfaceStandalone(OperationContext* opCtx);
+    MongoInterfaceStandalone(OperationContext* opCtx);
 
     virtual ~MongoInterfaceStandalone() = default;
 
@@ -50,14 +50,14 @@ public:
     DBClientBase* directClient() final;
     bool isSharded(OperationContext* opCtx, const NamespaceString& nss) final;
     void insert(const boost::intrusive_ptr<ExpressionContext>& expCtx,
-                        const NamespaceString& ns,
-                        std::vector<BSONObj>&& objs) override;
+                const NamespaceString& ns,
+                std::vector<BSONObj>&& objs) override;
     void update(const boost::intrusive_ptr<ExpressionContext>& expCtx,
-                        const NamespaceString& ns,
-                        std::vector<BSONObj>&& queries,
-                        std::vector<BSONObj>&& updates,
-                        bool upsert,
-                        bool multi) override;
+                const NamespaceString& ns,
+                std::vector<BSONObj>&& queries,
+                std::vector<BSONObj>&& updates,
+                bool upsert,
+                bool multi) override;
     CollectionIndexUsageMap getIndexStats(OperationContext* opCtx, const NamespaceString& ns) final;
     void appendLatencyStats(OperationContext* opCtx,
                             const NamespaceString& nss,

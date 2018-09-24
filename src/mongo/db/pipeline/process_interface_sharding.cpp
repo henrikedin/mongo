@@ -149,69 +149,69 @@ bool supportsUniqueKey(const boost::intrusive_ptr<ExpressionContext>& expCtx,
 }  // namespace
 
 std::pair<std::vector<FieldPath>, bool> MongoInterfaceShardServer::collectDocumentKeyFields(
-	OperationContext* opCtx, NamespaceStringOrUUID nssOrUUID) const {
-	
-	if (serverGlobalParams.clusterRole != ClusterRole::ShardServer) {
-		return{ { "_id" }, false };  // Nothing is sharded.
-	}
+    OperationContext* opCtx, NamespaceStringOrUUID nssOrUUID) const {
 
-	boost::optional<UUID> uuid;
-	NamespaceString nss;
-	if (nssOrUUID.uuid()) {
-		uuid = *(nssOrUUID.uuid());
-		nss = UUIDCatalog::get(opCtx).lookupNSSByUUID(*uuid);
-		// An empty namespace indicates that the collection has been dropped. Treat it as unsharded
-		// and mark the fields as final.
-		if (nss.isEmpty()) {
-			return {{"_id"}, true};
-		}
-	} else if (nssOrUUID.nss()) {
-		nss = *(nssOrUUID.nss());
-	}
+    if (serverGlobalParams.clusterRole != ClusterRole::ShardServer) {
+        return {{"_id"}, false};  // Nothing is sharded.
+    }
 
-	// Before taking a collection lock to retrieve the shard key fields, consult the catalog cache
-	// to determine whether the collection is sharded in the first place.
-	auto catalogCache = Grid::get(opCtx)->catalogCache();
+    boost::optional<UUID> uuid;
+    NamespaceString nss;
+    if (nssOrUUID.uuid()) {
+        uuid = *(nssOrUUID.uuid());
+        nss = UUIDCatalog::get(opCtx).lookupNSSByUUID(*uuid);
+        // An empty namespace indicates that the collection has been dropped. Treat it as unsharded
+        // and mark the fields as final.
+        if (nss.isEmpty()) {
+            return {{"_id"}, true};
+        }
+    } else if (nssOrUUID.nss()) {
+        nss = *(nssOrUUID.nss());
+    }
 
-	const bool collectionIsSharded = catalogCache && [&]() {
-		auto routingInfo = catalogCache->getCollectionRoutingInfo(opCtx, nss);
-		return routingInfo.isOK() && routingInfo.getValue().cm();
-	}();
+    // Before taking a collection lock to retrieve the shard key fields, consult the catalog cache
+    // to determine whether the collection is sharded in the first place.
+    auto catalogCache = Grid::get(opCtx)->catalogCache();
 
-	// Collection exists and is not sharded, mark as not final.
-	if (!collectionIsSharded) {
-		return {{"_id"}, false};
-	}
+    const bool collectionIsSharded = catalogCache && [&]() {
+        auto routingInfo = catalogCache->getCollectionRoutingInfo(opCtx, nss);
+        return routingInfo.isOK() && routingInfo.getValue().cm();
+    }();
 
-	auto scm = [opCtx, &nss]() -> ScopedCollectionMetadata {
-		AutoGetCollection autoColl(opCtx, nss, MODE_IS);
-		return CollectionShardingState::get(opCtx, nss)->getMetadata(opCtx);
-	}();
+    // Collection exists and is not sharded, mark as not final.
+    if (!collectionIsSharded) {
+        return {{"_id"}, false};
+    }
 
-	// If the UUID is set in 'nssOrUuid', check that the UUID in the ScopedCollectionMetadata
-	// matches. Otherwise, this implies that the collection has been dropped and recreated as
-	// sharded.
-	if (!scm->isSharded() || (uuid && !scm->uuidMatches(*uuid))) {
-		return {{"_id"}, false};
-	}
+    auto scm = [opCtx, &nss]() -> ScopedCollectionMetadata {
+        AutoGetCollection autoColl(opCtx, nss, MODE_IS);
+        return CollectionShardingState::get(opCtx, nss)->getMetadata(opCtx);
+    }();
 
-	// Unpack the shard key.
-	std::vector<FieldPath> result;
-	bool gotId = false;
-	for (auto& field : scm->getKeyPatternFields()) {
-		result.emplace_back(field->dottedField());
-		gotId |= (result.back().fullPath() == "_id");
-	}
-	if (!gotId) {  // If not part of the shard key, "_id" comes last.
-		result.emplace_back("_id");
-	}
-	// Collection is now sharded so the document key fields will never change, mark as final.
-	return {result, true};
+    // If the UUID is set in 'nssOrUuid', check that the UUID in the ScopedCollectionMetadata
+    // matches. Otherwise, this implies that the collection has been dropped and recreated as
+    // sharded.
+    if (!scm->isSharded() || (uuid && !scm->uuidMatches(*uuid))) {
+        return {{"_id"}, false};
+    }
+
+    // Unpack the shard key.
+    std::vector<FieldPath> result;
+    bool gotId = false;
+    for (auto& field : scm->getKeyPatternFields()) {
+        result.emplace_back(field->dottedField());
+        gotId |= (result.back().fullPath() == "_id");
+    }
+    if (!gotId) {  // If not part of the shard key, "_id" comes last.
+        result.emplace_back("_id");
+    }
+    // Collection is now sharded so the document key fields will never change, mark as final.
+    return {result, true};
 }
 
 void MongoInterfaceShardServer::insert(const boost::intrusive_ptr<ExpressionContext>& expCtx,
-                                        const NamespaceString& ns,
-                                        std::vector<BSONObj>&& objs) {
+                                       const NamespaceString& ns,
+                                       std::vector<BSONObj>&& objs) {
     BatchedCommandResponse response;
     BatchWriteExecStats stats;
 
@@ -225,11 +225,11 @@ void MongoInterfaceShardServer::insert(const boost::intrusive_ptr<ExpressionCont
 }
 
 void MongoInterfaceShardServer::update(const boost::intrusive_ptr<ExpressionContext>& expCtx,
-                                        const NamespaceString& ns,
-                                        std::vector<BSONObj>&& queries,
-                                        std::vector<BSONObj>&& updates,
-                                        bool upsert,
-                                        bool multi) {
+                                       const NamespaceString& ns,
+                                       std::vector<BSONObj>&& queries,
+                                       std::vector<BSONObj>&& updates,
+                                       bool upsert,
+                                       bool multi) {
     BatchedCommandResponse response;
     BatchWriteExecStats stats;
     ClusterWriter::write(expCtx->opCtx,

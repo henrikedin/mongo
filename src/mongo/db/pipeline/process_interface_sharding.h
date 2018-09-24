@@ -29,8 +29,8 @@
 #pragma once
 
 #include "mongo/db/dbdirectclient.h"
-#include "mongo/db/pipeline/process_interface_standalone.h"
 #include "mongo/db/pipeline/pipeline.h"
+#include "mongo/db/pipeline/process_interface_standalone.h"
 
 namespace mongo {
 
@@ -41,8 +41,8 @@ class MongoInterfaceShardServer final : public MongoInterfaceStandalone {
 public:
     using MongoInterfaceStandalone::MongoInterfaceStandalone;
 
-	std::pair<std::vector<FieldPath>, bool> collectDocumentKeyFields(
-		OperationContext* opCtx, NamespaceStringOrUUID nssOrUUID) const final;
+    std::pair<std::vector<FieldPath>, bool> collectDocumentKeyFields(
+        OperationContext* opCtx, NamespaceStringOrUUID nssOrUUID) const final;
 
     /**
      * Inserts the documents 'objs' into the namespace 'ns' using the ClusterWriter for locking,

@@ -165,8 +165,8 @@ bool MongoInterfaceStandalone::isSharded(OperationContext* opCtx, const Namespac
 }
 
 void MongoInterfaceStandalone::insert(const boost::intrusive_ptr<ExpressionContext>& expCtx,
-                             const NamespaceString& ns,
-                             std::vector<BSONObj>&& objs) {
+                                      const NamespaceString& ns,
+                                      std::vector<BSONObj>&& objs) {
     auto writeResults = performInserts(
         expCtx->opCtx, buildInsertOp(ns, std::move(objs), expCtx->bypassDocumentValidation));
 
@@ -176,11 +176,11 @@ void MongoInterfaceStandalone::insert(const boost::intrusive_ptr<ExpressionConte
 }
 
 void MongoInterfaceStandalone::update(const boost::intrusive_ptr<ExpressionContext>& expCtx,
-                             const NamespaceString& ns,
-                             std::vector<BSONObj>&& queries,
-                             std::vector<BSONObj>&& updates,
-                             bool upsert,
-                             bool multi) {
+                                      const NamespaceString& ns,
+                                      std::vector<BSONObj>&& queries,
+                                      std::vector<BSONObj>&& updates,
+                                      bool upsert,
+                                      bool multi) {
     auto writeResults = performUpdates(expCtx->opCtx,
                                        buildUpdateOp(ns,
                                                      std::move(queries),
@@ -195,7 +195,7 @@ void MongoInterfaceStandalone::update(const boost::intrusive_ptr<ExpressionConte
 }
 
 CollectionIndexUsageMap MongoInterfaceStandalone::getIndexStats(OperationContext* opCtx,
-                                                       const NamespaceString& ns) {
+                                                                const NamespaceString& ns) {
     AutoGetCollectionForReadCommand autoColl(opCtx, ns);
 
     Collection* collection = autoColl.getCollection();
@@ -208,22 +208,22 @@ CollectionIndexUsageMap MongoInterfaceStandalone::getIndexStats(OperationContext
 }
 
 void MongoInterfaceStandalone::appendLatencyStats(OperationContext* opCtx,
-                                         const NamespaceString& nss,
-                                         bool includeHistograms,
-                                         BSONObjBuilder* builder) const {
+                                                  const NamespaceString& nss,
+                                                  bool includeHistograms,
+                                                  BSONObjBuilder* builder) const {
     Top::get(opCtx->getServiceContext()).appendLatencyStats(nss.ns(), includeHistograms, builder);
 }
 
 Status MongoInterfaceStandalone::appendStorageStats(OperationContext* opCtx,
-                                           const NamespaceString& nss,
-                                           const BSONObj& param,
-                                           BSONObjBuilder* builder) const {
+                                                    const NamespaceString& nss,
+                                                    const BSONObj& param,
+                                                    BSONObjBuilder* builder) const {
     return appendCollectionStorageStats(opCtx, nss, param, builder);
 }
 
 Status MongoInterfaceStandalone::appendRecordCount(OperationContext* opCtx,
-                                          const NamespaceString& nss,
-                                          BSONObjBuilder* builder) const {
+                                                   const NamespaceString& nss,
+                                                   BSONObjBuilder* builder) const {
     return appendCollectionRecordCount(opCtx, nss, builder);
 }
 
@@ -334,7 +334,7 @@ std::string MongoInterfaceStandalone::getShardName(OperationContext* opCtx) cons
 
 std::pair<std::vector<FieldPath>, bool> MongoInterfaceStandalone::collectDocumentKeyFields(
     OperationContext* opCtx, NamespaceStringOrUUID nssOrUUID) const {
-	return{ { "_id" }, false };  // Nothing is sharded.
+    return {{"_id"}, false};  // Nothing is sharded.
 }
 
 std::vector<GenericCursor> MongoInterfaceStandalone::getIdleCursors(
@@ -448,9 +448,8 @@ bool MongoInterfaceStandalone::uniqueKeyIsSupportedByIndex(
     return false;
 }
 
-BSONObj MongoInterfaceStandalone::_reportCurrentOpForClient(OperationContext* opCtx,
-                                                   Client* client,
-                                                   CurrentOpTruncateMode truncateOps) const {
+BSONObj MongoInterfaceStandalone::_reportCurrentOpForClient(
+    OperationContext* opCtx, Client* client, CurrentOpTruncateMode truncateOps) const {
     BSONObjBuilder builder;
 
     CurOp::reportCurrentOpForClient(
@@ -474,8 +473,8 @@ BSONObj MongoInterfaceStandalone::_reportCurrentOpForClient(OperationContext* op
 }
 
 void MongoInterfaceStandalone::_reportCurrentOpsForIdleSessions(OperationContext* opCtx,
-                                                       CurrentOpUserMode userMode,
-                                                       std::vector<BSONObj>* ops) const {
+                                                                CurrentOpUserMode userMode,
+                                                                std::vector<BSONObj>* ops) const {
     auto sessionCatalog = SessionCatalog::get(opCtx);
 
     const bool authEnabled =

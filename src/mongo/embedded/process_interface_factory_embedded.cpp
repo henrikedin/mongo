@@ -32,7 +32,8 @@
 
 namespace mongo {
 
-MONGO_REGISTER_SHIM(MongoProcessInterface::create)(OperationContext* opCtx)->std::shared_ptr<MongoProcessInterface> {
+MONGO_REGISTER_SHIM(MongoProcessInterface::create)
+(OperationContext* opCtx)->std::shared_ptr<MongoProcessInterface> {
     return std::make_shared<MongoInterfaceStandalone>(opCtx);
 }
 
