@@ -330,6 +330,7 @@ env.Library(
         'db/startup_warnings_mongod',
         'db/storage/backup_cursor_hooks',
         'db/system_index',
+        'db/transaction_coordinator_factory_mongod',
         'db/ttl_d',
         'executor/network_interface_factory',
         'mongod_options_init',
