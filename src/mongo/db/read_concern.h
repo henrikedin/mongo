@@ -28,6 +28,10 @@
 
 #pragma once
 
+#include "mongo/base/shim.h"
+#include "mongo/base/status.h"
+#include "mongo/db/logical_time.h"
+
 namespace mongo {
 
 class BSONObj;
@@ -55,5 +59,9 @@ Status waitForReadConcern(OperationContext* opCtx,
  * current primary is still the true primary of the replica set.
  */
 Status waitForLinearizableReadConcern(OperationContext* opCtx);
+
+extern MONGO_DECLARE_SHIM(
+    (OperationContext * opCtx, LogicalTime clusterTime, LogicalTime lastAppliedOpTime)->Status)
+    attemptAppendOpLogNoteSharding;
 
 }  // namespace mongo

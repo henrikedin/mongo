@@ -951,9 +951,20 @@ env.Library(
         "storage/storage_options",
     ],
     LIBDEPS_PRIVATE=[
-        "$BUILD_DIR/mongo/s/grid",
         "catalog_raii",
         "commands/server_status_core",
+        "s/sharding_api_d",
+    ],
+)
+
+env.Library(
+    target="rw_concern_sharding",
+    source=[
+        "rw_concern_sharding.cpp",
+    ],
+    LIBDEPS_PRIVATE=[
+        "$BUILD_DIR/mongo/s/grid",
+        "repl/repl_coordinator_interface",
         "s/sharding_api_d",
     ],
 )

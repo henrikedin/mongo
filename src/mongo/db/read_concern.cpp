@@ -32,76 +32,23 @@
 
 #include "mongo/db/read_concern.h"
 
-#include "mongo/base/status.h"
-#include "mongo/base/status_with.h"
-#include "mongo/db/commands.h"
 #include "mongo/db/concurrency/d_concurrency.h"
 #include "mongo/db/concurrency/write_conflict_exception.h"
-#include "mongo/db/curop.h"
 #include "mongo/db/logical_clock.h"
 #include "mongo/db/op_observer.h"
-#include "mongo/db/operation_context.h"
 #include "mongo/db/repl/read_concern_args.h"
 #include "mongo/db/repl/repl_client_info.h"
 #include "mongo/db/repl/replication_coordinator.h"
-#include "mongo/db/s/sharding_state.h"
 #include "mongo/db/server_options.h"
 #include "mongo/db/server_parameters.h"
 #include "mongo/db/transaction_participant.h"
-#include "mongo/s/client/shard_registry.h"
-#include "mongo/s/grid.h"
 #include "mongo/util/log.h"
 
 namespace mongo {
+
+MONGO_DEFINE_SHIM(attemptAppendOpLogNoteSharding);
+
 namespace {
-
-/**
- *  Synchronize writeRequests
- */
-
-class WriteRequestSynchronizer;
-const auto getWriteRequestsSynchronizer =
-    ServiceContext::declareDecoration<WriteRequestSynchronizer>();
-
-class WriteRequestSynchronizer {
-public:
-    WriteRequestSynchronizer() = default;
-
-    /**
-     * Returns a tuple <false, existingWriteRequest> if it can  find the one that happened after or
-     * at clusterTime.
-     * Returns a tuple <true, newWriteRequest> otherwise.
-     */
-    std::tuple<bool, std::shared_ptr<Notification<Status>>> getOrCreateWriteRequest(
-        LogicalTime clusterTime) {
-        stdx::unique_lock<stdx::mutex> lock(_mutex);
-        auto lastEl = _writeRequests.rbegin();
-        if (lastEl != _writeRequests.rend() && lastEl->first >= clusterTime.asTimestamp()) {
-            return std::make_tuple(false, lastEl->second);
-        } else {
-            auto newWriteRequest = std::make_shared<Notification<Status>>();
-            _writeRequests[clusterTime.asTimestamp()] = newWriteRequest;
-            return std::make_tuple(true, newWriteRequest);
-        }
-    }
-
-    /**
-     * Erases writeRequest that happened at clusterTime
-     */
-    void deleteWriteRequest(LogicalTime clusterTime) {
-        stdx::unique_lock<stdx::mutex> lock(_mutex);
-        auto el = _writeRequests.find(clusterTime.asTimestamp());
-        invariant(el != _writeRequests.end());
-        invariant(el->second);
-        el->second.reset();
-        _writeRequests.erase(el);
-    }
-
-private:
-    stdx::mutex _mutex;
-    std::map<Timestamp, std::shared_ptr<Notification<Status>>> _writeRequests;
-};
-
 
 MONGO_EXPORT_SERVER_PARAMETER(waitForSecondaryBeforeNoopWriteMS, int, 10);
 
@@ -111,8 +58,6 @@ MONGO_EXPORT_SERVER_PARAMETER(waitForSecondaryBeforeNoopWriteMS, int, 10);
 Status makeNoopWriteIfNeeded(OperationContext* opCtx, LogicalTime clusterTime) {
     repl::ReplicationCoordinator* const replCoord = repl::ReplicationCoordinator::get(opCtx);
     invariant(replCoord->isReplEnabled());
-
-    auto& writeRequests = getWriteRequestsSynchronizer(opCtx->getClient()->getServiceContext());
 
     auto lastAppliedOpTime = LogicalTime(replCoord->getMyLastAppliedOpTime().getTimestamp());
 
@@ -129,75 +74,7 @@ Status makeNoopWriteIfNeeded(OperationContext* opCtx, LogicalTime clusterTime) {
         }
     }
 
-    auto status = Status::OK();
-    int remainingAttempts = 3;
-    // this loop addresses the case when two or more threads need to advance the opLog time but the
-    // one that waits for the notification gets the later clusterTime, so when the request finishes
-    // it needs to be repeated with the later time.
-    while (clusterTime > lastAppliedOpTime) {
-        auto shardingState = ShardingState::get(opCtx);
-        // standalone replica set, so there is no need to advance the OpLog on the primary.
-        if (!shardingState->enabled()) {
-            return Status::OK();
-        }
-
-        auto myShard = Grid::get(opCtx)->shardRegistry()->getShard(opCtx, shardingState->shardId());
-        if (!myShard.isOK()) {
-            return myShard.getStatus();
-        }
-
-        if (!remainingAttempts--) {
-            std::stringstream ss;
-            ss << "Requested clusterTime " << clusterTime.toString()
-               << " is greater than the last primary OpTime: " << lastAppliedOpTime.toString()
-               << " no retries left";
-            return Status(ErrorCodes::InternalError, ss.str());
-        }
-
-        auto myWriteRequest = writeRequests.getOrCreateWriteRequest(clusterTime);
-        if (std::get<0>(myWriteRequest)) {  // Its a new request
-            try {
-                LOG(2) << "New appendOplogNote request on clusterTime: " << clusterTime.toString()
-                       << " remaining attempts: " << remainingAttempts;
-                auto swRes = myShard.getValue()->runCommand(
-                    opCtx,
-                    ReadPreferenceSetting(ReadPreference::PrimaryOnly),
-                    "admin",
-                    BSON("appendOplogNote" << 1 << "maxClusterTime" << clusterTime.asTimestamp()
-                                           << "data"
-                                           << BSON("noop write for afterClusterTime read concern"
-                                                   << 1)),
-                    Shard::RetryPolicy::kIdempotent);
-                status = swRes.getStatus();
-                std::get<1>(myWriteRequest)->set(status);
-                writeRequests.deleteWriteRequest(clusterTime);
-            } catch (const DBException& ex) {
-                status = ex.toStatus();
-                // signal the writeRequest to unblock waiters
-                std::get<1>(myWriteRequest)->set(status);
-                writeRequests.deleteWriteRequest(clusterTime);
-            }
-        } else {
-            LOG(2) << "Join appendOplogNote request on clusterTime: " << clusterTime.toString()
-                   << " remaining attempts: " << remainingAttempts;
-            try {
-                status = std::get<1>(myWriteRequest)->get(opCtx);
-            } catch (const DBException& ex) {
-                return ex.toStatus();
-            }
-        }
-        // If the write status is ok need to wait for the oplog to replicate.
-        if (status.isOK()) {
-            return status;
-        }
-        lastAppliedOpTime = LogicalTime(replCoord->getMyLastAppliedOpTime().getTimestamp());
-    }
-    // This is when the noop write failed but the opLog caught up to clusterTime by replicating.
-    if (!status.isOK()) {
-        LOG(1) << "Reached clusterTime " << lastAppliedOpTime.toString()
-               << " but failed noop write due to " << status.toString();
-    }
-    return Status::OK();
+    return attemptAppendOpLogNoteSharding(opCtx, clusterTime, lastAppliedOpTime);
 }
 }  // namespace
 

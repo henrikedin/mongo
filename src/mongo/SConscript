@@ -322,6 +322,7 @@ env.Library(
         'db/repl/repl_set_commands',
         'db/repl/storage_interface_impl',
         'db/repl/topology_coordinator',
+        'db/rw_concern_sharding',
         'db/s/balancer',
         'db/s/op_observer_sharding_impl',
         'db/s/sharding_runtime_d',

@@ -36,6 +36,7 @@ env.Library(
         'periodic_runner_embedded.cpp',
         'process_interface_factory_embedded.cpp',
         'replication_coordinator_embedded.cpp',
+        'rw_concern_embedded.cpp',
         'service_entry_point_embedded.cpp',
     ],
     LIBDEPS=[
