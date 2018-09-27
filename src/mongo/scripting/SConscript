@@ -156,6 +156,7 @@ if usemozjs:
         ],
         LIBDEPS_PRIVATE=[
             '$BUILD_DIR/third_party/shim_mozjs',
+            '$BUILD_DIR/mongo/client/clientdriver_network',
         ],
     )
 else:
