@@ -262,6 +262,9 @@ i18nEnv.Library(
     LIBDEPS=[
         'icu_common',
     ],
+    LIBDEPS_TAGS=[
+        'init-no-global-side-effects',
+    ]
 )
 
 commonEnv = env.Clone()
@@ -459,6 +462,9 @@ commonEnv.Library(
     LIBDEPS=[
         'icu_data',
     ],
+    LIBDEPS_TAGS=[
+        'init-no-global-side-effects',
+    ]
 )
 
 env.Library(
@@ -466,4 +472,7 @@ env.Library(
     source=[
         'stubdata/stubdata.c',
     ],
+    LIBDEPS_TAGS=[
+        'init-no-global-side-effects',
+    ]
 )

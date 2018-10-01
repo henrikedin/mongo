@@ -10,5 +10,8 @@ env.Library(
     target='sqlite3',
     source=[
         'sqlite/sqlite3.c'
-        ],
-    )
+    ],
+    LIBDEPS_TAGS=[
+        'init-no-global-side-effects',
+    ],
+)

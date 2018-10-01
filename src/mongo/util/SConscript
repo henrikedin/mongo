@@ -564,6 +564,7 @@ env.Library(
         "$BUILD_DIR/mongo/db/log_process_details",
         "$BUILD_DIR/mongo/db/service_context",
         "$BUILD_DIR/mongo/db/server_options_core",
+        "$BUILD_DIR/mongo/embedded/embedded",
     ],
 )
 
@@ -803,7 +804,7 @@ icuEnv.Library(
     LIBDEPS_PRIVATE=[
         '$BUILD_DIR/mongo/base',
         '$BUILD_DIR/third_party/shim_icu',
-    ],
+    ]
 )
 
 icuEnv.Library(
@@ -816,6 +817,9 @@ icuEnv.Library(
         '$BUILD_DIR/mongo/base',
         '$BUILD_DIR/third_party/shim_icu',
     ],
+    LIBDEPS_TAGS=[
+        'init-no-global-side-effects',
+    ]
 )
 
 icuEnv.CppUnitTest(

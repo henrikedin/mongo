@@ -124,7 +124,7 @@ env.Library(
         'util/log.cpp',
         'util/platform_init.cpp',
         'util/shell_exec.cpp',
-        'util/signal_handlers_synchronous.cpp',
+        #'util/signal_handlers_synchronous.cpp',
         'util/stacktrace.cpp',
         'util/stacktrace_${TARGET_OS_FAMILY}.cpp',
         'util/startup_test.cpp',
