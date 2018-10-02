@@ -4117,6 +4117,10 @@ tasks:
 
           tar --exclude "*/*.tgz" -zcvf mongo-embedded-sdk-${version}.tgz ./*OS
 
+          tar --exclude "*/*.tgz" -zcvf mongo-embedded-sdk-${version}-mongoc.tgz ./*OS/Frameworks/bson.framework ./*OS/Frameworks/mongoc.framework
+          tar --exclude "*/*.tgz" -zcvf mongo-embedded-sdk-${version}-mongo-embedded.tgz ./*OS/Frameworks/mongo_embedded.framework
+          tar --exclude "*/*.tgz" -zcvf mongo-embedded-sdk-${version}-mongoc-embedded.tgz ./*OS/Frameworks/mongoc_embedded.framework
+
     - command: s3.put
       params:
         aws_key: ${aws_key}
@@ -4128,6 +4132,39 @@ tasks:
         content_type: application/tar
         display_name: "Embedded SDK Tar Archive"
 
+    - command: s3.put
+      params:
+        aws_key: ${aws_key}
+        aws_secret: ${aws_secret}
+        local_file: "mongo-embedded-sdk-${version}-mongoc.tgz"
+        remote_file: "${project}/embedded-sdk/mongoc-apple-multiarch/${revision}/${version}.tgz"
+        bucket: mciuploads
+        permissions: public-read
+        content_type: application/tar
+        display_name: "MongoDB C Driver Tar Archive"
+
+    - command: s3.put
+      params:
+        aws_key: ${aws_key}
+        aws_secret: ${aws_secret}
+        local_file: "mongo-embedded-sdk-${version}-mongo-embedded.tgz"
+        remote_file: "${project}/embedded-sdk/mongo-embedded-apple-multiarch/${revision}/${version}.tgz"
+        bucket: mciuploads
+        permissions: public-read
+        content_type: application/tar
+        display_name: "MongoDB Embedded Tar Archive"
+
+    - command: s3.put
+      params:
+        aws_key: ${aws_key}
+        aws_secret: ${aws_secret}
+        local_file: "mongo-embedded-sdk-${version}-mongoc-embedded.tgz"
+        remote_file: "${project}/embedded-sdk/mongoc-embedded-apple-multiarch/${revision}/${version}.tgz"
+        bucket: mciuploads
+        permissions: public-read
+        content_type: application/tar
+        display_name: "MongoDB Embedded C Driver Transport Tar Archive"
+
     # If this is a patch build, blow away the file so our subsequent and optional s3.put
     # doesn't run. That way, we won't overwrite the latest part in our patches.
     - command: shell.exec
@@ -4138,6 +4175,9 @@ tasks:
 
           if [ "${is_patch}" = "true" ]; then
             rm -f mongo-embedded-sdk-${version}.tgz
+            rm -f mongo-embedded-sdk-${version}-mongoc.tgz
+            rm -f mongo-embedded-sdk-${version}-mongo-embedded.tgz
+            rm -f mongo-embedded-sdk-${version}-mongoc-embedded.tgz
           fi
 
     # A second put, this time to -latest, to give devs a reasonable
@@ -4150,6 +4190,42 @@ tasks:
         aws_secret: ${aws_secret}
         local_file: "mongo-embedded-sdk-${version}.tgz"
         remote_file: ${project}/embedded-sdk/${build_variant}-latest.tgz
+        bucket: mciuploads
+        permissions: public-read
+        content_type: application/tar
+
+    - command: s3.put
+      params:
+        visibility: none
+        optional: true
+        aws_key: ${aws_key}
+        aws_secret: ${aws_secret}
+        local_file: "mongo-embedded-sdk-${version}-mongoc.tgz"
+        remote_file: ${project}/embedded-sdk/${build_variant}-mongoc-latest.tgz
+        bucket: mciuploads
+        permissions: public-read
+        content_type: application/tar
+
+    - command: s3.put
+      params:
+        visibility: none
+        optional: true
+        aws_key: ${aws_key}
+        aws_secret: ${aws_secret}
+        local_file: "mongo-embedded-sdk-${version}-mongo-embedded.tgz"
+        remote_file: ${project}/embedded-sdk/${build_variant}-mongo-embedded-latest.tgz
+        bucket: mciuploads
+        permissions: public-read
+        content_type: application/tar
+
+    - command: s3.put
+      params:
+        visibility: none
+        optional: true
+        aws_key: ${aws_key}
+        aws_secret: ${aws_secret}
+        local_file: "mongo-embedded-sdk-${version}-mongoc-embedded.tgz"
+        remote_file: ${project}/embedded-sdk/${build_variant}-mongoc-embedded-latest.tgz
         bucket: mciuploads
         permissions: public-read
         content_type: application/tar
