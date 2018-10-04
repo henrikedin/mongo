@@ -3649,7 +3649,7 @@ tasks:
 
           trap "cat CMakeFiles/CMakeOutput.log" EXIT
           export ${compile_env|}
-          ${cmake_path|/opt/cmake/bin/cmake} -DCMAKE_INSTALL_PREFIX=$WORKDIR/src/build/mongo-embedded-sdk-$VERSION-tmp -DENABLE_SHM_COUNTERS=OFF -DENABLE_SNAPPY=OFF -DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF -DENABLE_ZLIB=OFF -DENABLE_SASL=OFF -DENABLE_TESTS=OFF -DENABLE_EXAMPLES=OFF -DENABLE_STATIC=OFF ${cdriver_cmake_flags}
+          ${cmake_path|/opt/cmake/bin/cmake} -DCMAKE_INSTALL_PREFIX=$WORKDIR/src/build/mongo-embedded-sdk-$VERSION-tmp -DENABLE_SHM_COUNTERS=OFF -DENABLE_SNAPPY=OFF -DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF -DENABLE_TESTS=OFF -DENABLE_EXAMPLES=OFF -DENABLE_STATIC=OFF ${cdriver_cmake_flags}
           make install VERBOSE=1
           mv $WORKDIR/src/build/mongo-embedded-sdk-$VERSION-tmp $WORKDIR/src/build/mongo-embedded-sdk-$VERSION
 
@@ -4027,6 +4027,8 @@ tasks:
 - name: embedded_sdk_multiarch_apple_package
   depends_on:
     - name: embedded_sdk_s3_put
+      variant: embedded-sdk-macosx-10.10
+    - name: embedded_sdk_s3_put
       variant: embedded-sdk-iphoneos-10.2
     - name: embedded_sdk_s3_put
       variant: embedded-sdk-iphonesimulator-10.2
@@ -4046,6 +4048,14 @@ tasks:
     - func: "set up credentials"
     - func: "generate compile expansions"
     - func: "apply compile expansions"
+
+    - command: s3.get
+      params:
+        aws_key: ${aws_key}
+        aws_secret: ${aws_secret}
+        remote_file: ${project}/embedded-sdk/embedded-sdk-macosx-10.10/${revision}/${version}.tgz
+        bucket: mciuploads
+        local_file: "MacOS/embedded-sdk.tgz"
 
     - command: s3.get
       params:
@@ -10631,6 +10641,7 @@ buildvariants:
         -DENABLE_APPLE_FRAMEWORK=ON
         -DCMAKE_INSTALL_BINDIR=Frameworks
         -DENABLE_SSL=DARWIN
+        -DENABLE_ZLIB=BUNDLED
         -DCMAKE_SYSTEM_PROCESSOR=x86_64
         -DCMAKE_C_FLAGS="-arch x86_64 -mmacosx-version-min=10.10 -flto"
         -DCMAKE_SHARED_LINKER_FLAGS="-arch x86_64 -mmacosx-version-min=10.10 -flto"
@@ -10660,7 +10671,10 @@ buildvariants:
         -DCMAKE_OSX_SYSROOT="$(xcrun --sdk iphoneos --show-sdk-path)"
         -DENABLE_APPLE_FRAMEWORK=ON
         -DCMAKE_INSTALL_BINDIR=Frameworks
-        -DENABLE_SSL=DARWIN
+        -DENABLE_SSL=OFF
+        -DENABLE_SASL=OFF
+        -DENABLE_ZLIB=OFF
+        -DENABLE_SNAPPY=OFF
         -DCMAKE_C_FLAGS="-arch arm64 -fembed-bitcode -miphoneos-version-min=10.2 -flto"
         -DCMAKE_SHARED_LINKER_FLAGS="-arch arm64 -fembed-bitcode -miphoneos-version-min=10.2 -flto"
     disable_unit_tests: true
@@ -10686,10 +10700,12 @@ buildvariants:
         -DCMAKE_BUILD_TYPE=RelWithDebInfo
         -DTHREADS_PTHREAD_ARG=2
         -DCMAKE_OSX_SYSROOT="$(xcrun --sdk iphonesimulator --show-sdk-path)"
-        -DCMAKE_FRAMEWORK_PATH="$(xcrun --sdk iphonesimulator --show-sdk-path)/System/Library/Frameworks"
         -DENABLE_APPLE_FRAMEWORK=ON
         -DCMAKE_INSTALL_BINDIR=Frameworks
-        -DENABLE_SSL=DARWIN
+        -DENABLE_SSL=OFF
+        -DENABLE_SASL=OFF
+        -DENABLE_ZLIB=OFF
+        -DENABLE_SNAPPY=OFF
         -DCMAKE_C_FLAGS="-arch x86_64 -fembed-bitcode -miphoneos-version-min=10.2 -flto"
         -DCMAKE_SHARED_LINKER_FLAGS="-arch x86_64 -fembed-bitcode -miphoneos-version-min=10.2 -flto"
     disable_unit_tests: true
@@ -10720,7 +10736,10 @@ buildvariants:
         -DCMAKE_OSX_SYSROOT="$(xcrun --sdk appletvos --show-sdk-path)"
         -DENABLE_APPLE_FRAMEWORK=ON
         -DCMAKE_INSTALL_BINDIR=Frameworks
-        -DENABLE_SSL=DARWIN
+        -DENABLE_SSL=OFF
+        -DENABLE_SASL=OFF
+        -DENABLE_ZLIB=OFF
+        -DENABLE_SNAPPY=OFF
         -DCMAKE_C_FLAGS="-arch arm64 -fembed-bitcode -mtvos-version-min=10.2 -flto"
         -DCMAKE_SHARED_LINKER_FLAGS="-arch arm64 -fembed-bitcode -mtvos-version-min=10.2 -flto"
     disable_unit_tests: true
@@ -10748,7 +10767,10 @@ buildvariants:
         -DCMAKE_OSX_SYSROOT="$(xcrun --sdk appletvsimulator --show-sdk-path)"
         -DENABLE_APPLE_FRAMEWORK=ON
         -DCMAKE_INSTALL_BINDIR=Frameworks
-        -DENABLE_SSL=DARWIN
+        -DENABLE_SSL=OFF
+        -DENABLE_SASL=OFF
+        -DENABLE_ZLIB=OFF
+        -DENABLE_SNAPPY=OFF
         -DCMAKE_C_FLAGS="-arch x86_64 -fembed-bitcode -mtvos-version-min=10.2 -flto"
         -DCMAKE_SHARED_LINKER_FLAGS="-arch x86_64 -fembed-bitcode -mtvos-version-min=10.2 -flto"
     disable_unit_tests: true
@@ -10779,7 +10801,10 @@ buildvariants:
         -DCMAKE_OSX_SYSROOT="$(xcrun --sdk watchos --show-sdk-path)"
         -DENABLE_APPLE_FRAMEWORK=ON
         -DCMAKE_INSTALL_BINDIR=Frameworks
-        -DENABLE_SSL=DARWIN
+        -DENABLE_SSL=OFF
+        -DENABLE_SASL=OFF
+        -DENABLE_ZLIB=OFF
+        -DENABLE_SNAPPY=OFF
         -DCMAKE_C_FLAGS="-arch armv7k -fembed-bitcode -mwatchos-version-min=4.2 -flto"
         -DCMAKE_SHARED_LINKER_FLAGS="-arch armv7k -fembed-bitcode -mwatchos-version-min=4.2 -flto"
     disable_unit_tests: true
@@ -10807,7 +10832,10 @@ buildvariants:
         -DCMAKE_OSX_SYSROOT="$(xcrun --sdk watchsimulator --show-sdk-path)"
         -DENABLE_APPLE_FRAMEWORK=ON
         -DCMAKE_INSTALL_BINDIR=Frameworks
-        -DENABLE_SSL=DARWIN
+        -DENABLE_SSL=OFF
+        -DENABLE_SASL=OFF
+        -DENABLE_ZLIB=OFF
+        -DENABLE_SNAPPY=OFF
         -DCMAKE_C_FLAGS="-arch i386 -fembed-bitcode -mwatchos-version-min=4.2 -flto"
         -DCMAKE_SHARED_LINKER_FLAGS="-arch i386 -fembed-bitcode -mwatchos-version-min=4.2 -flto"
     disable_unit_tests: true
@@ -10880,7 +10908,6 @@ buildvariants:
         -DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=ONLY
         -DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER
         -DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY
-        -DENABLE_SSL=OPENSSL
         -DCMAKE_C_FLAGS="-flto"
         -DCMAKE_SHARED_LINKER_FLAGS="-flto"
         -DCMAKE_INSTALL_RPATH=\$ORIGIN/../lib
@@ -10922,7 +10949,6 @@ buildvariants:
         -DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=ONLY
         -DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER
         -DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY
-        -DENABLE_SSL=OPENSSL
         -DCMAKE_C_FLAGS="-flto"
         -DCMAKE_SHARED_LINKER_FLAGS="-flto"
         -DCMAKE_INSTALL_RPATH=\$ORIGIN/../lib
@@ -10964,7 +10990,6 @@ buildvariants:
         -DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=ONLY
         -DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER
         -DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY
-        -DENABLE_SSL=OPENSSL
         -DCMAKE_C_FLAGS="-flto"
         -DCMAKE_SHARED_LINKER_FLAGS="-flto"
         -DCMAKE_INSTALL_RPATH=\$ORIGIN/../lib
