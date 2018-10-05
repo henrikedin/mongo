@@ -4254,6 +4254,8 @@ tasks:
           cat mongo_embedded.podspec
           cat mongoc_embedded.podspec
 
+          sudo gem install cocoapods
+
 - name: compile_benchmarks
   depends_on: []
   commands:
@@ -10908,6 +10910,8 @@ buildvariants:
         -DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=ONLY
         -DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER
         -DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY
+        -DENABLE_ZLIB=OFF
+        -DENABLE_SRV=OFF
         -DCMAKE_C_FLAGS="-flto"
         -DCMAKE_SHARED_LINKER_FLAGS="-flto"
         -DCMAKE_INSTALL_RPATH=\$ORIGIN/../lib
@@ -10949,6 +10953,8 @@ buildvariants:
         -DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=ONLY
         -DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER
         -DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY
+        -DENABLE_ZLIB=OFF
+        -DENABLE_SRV=OFF
         -DCMAKE_C_FLAGS="-flto"
         -DCMAKE_SHARED_LINKER_FLAGS="-flto"
         -DCMAKE_INSTALL_RPATH=\$ORIGIN/../lib
@@ -10990,6 +10996,8 @@ buildvariants:
         -DCMAKE_FIND_ROOT_PATH_MODE_PACKAGE=ONLY
         -DCMAKE_FIND_ROOT_PATH_MODE_PROGRAM=NEVER
         -DCMAKE_FIND_ROOT_PATH_MODE_INCLUDE=ONLY
+        -DENABLE_ZLIB=OFF
+        -DENABLE_SRV=OFF
         -DCMAKE_C_FLAGS="-flto"
         -DCMAKE_SHARED_LINKER_FLAGS="-flto"
         -DCMAKE_INSTALL_RPATH=\$ORIGIN/../lib
