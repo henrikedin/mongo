@@ -4254,7 +4254,7 @@ tasks:
           cat mongo_embedded.podspec
           cat mongoc_embedded.podspec
 
-          sudo gem install cocoapods
+          #sudo gem install cocoapods
 
 - name: compile_benchmarks
   depends_on: []
