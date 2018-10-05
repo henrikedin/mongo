@@ -42,14 +42,15 @@ Pod::Spec.new do |s|
   s.license      = "GNU Affero General Public License v3.0"
   # s.license      = { :type => "MIT", :file => "FILE_LICENSE" }
 
-  s.platform     = :ios, :watchos, :tvos
-  s.ios.deployment_target = "10.2"
-  s.watchos.deployment_target = "4.3"
-  s.tvos.deployment_target = "10.2"
+  s.platform     = :ios, :osx, :watchos, :tvos
+  s.ios.deployment_target = "8.0"
+  s.osx.deployment_target = "10.6"
+  s.watchos.deployment_target = "2.0"
+  s.tvos.deployment_target = "9.0"
 
   s.source       = { :http => "https://s3.amazonaws.com/mciuploads/mongodb-mongo-master/embedded-sdk/embedded-sdk-apple-multiarch-mongoc-latest.tgz" }
-  s.pod_target_xcconfig = { 'VALID_ARCHS' => 'arm64 x86_64' }
   s.ios.vendored_frameworks = "iPhoneOS/Frameworks/bson.framework", "iPhoneOS/Frameworks/mongoc.framework"
+  s.osx.vendored_frameworks = "MacOS/Frameworks/bson.framework", "MacOS/Frameworks/mongoc.framework"
   s.watchos.vendored_frameworks = "WatchOS/Frameworks/bson.framework", "WatchOS/Frameworks/mongoc.framework"
   s.tvos.vendored_frameworks = "AppleTVOS/Frameworks/bson.framework", "AppleTVOS/Frameworks/mongoc.framework"
 
