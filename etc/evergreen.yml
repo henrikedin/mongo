@@ -3652,6 +3652,7 @@ tasks:
           export ${compile_env|}
           ${cmake_path|/opt/cmake/bin/cmake} -DCMAKE_INSTALL_PREFIX=$WORKDIR/src/build/mongo-embedded-sdk-$VERSION-tmp -DENABLE_SHM_COUNTERS=OFF -DENABLE_SNAPPY=OFF -DENABLE_AUTOMATIC_INIT_AND_CLEANUP=OFF -DENABLE_TESTS=OFF -DENABLE_EXAMPLES=OFF -DENABLE_STATIC=OFF ${cdriver_cmake_flags}
           make install VERBOSE=1
+          cp COPYING $WORKDIR/src/build/mongo-embedded-sdk-$VERSION-tmp
           mv $WORKDIR/src/build/mongo-embedded-sdk-$VERSION-tmp $WORKDIR/src/build/mongo-embedded-sdk-$VERSION
 
 - name: embedded_sdk_install_dev
@@ -4114,7 +4115,7 @@ tasks:
 
           for directory in *OS *Simulator; do
               pushd $directory
-              tar --include "*/Frameworks*" --include "*/LICENSE*" --strip-components=1 -xf ./embedded-sdk.tgz
+              tar --include "*/Frameworks*" --include "*/LICENSE*" --include "COPYING" --strip-components=1 -xf ./embedded-sdk.tgz
               popd
           done
 
@@ -4128,7 +4129,7 @@ tasks:
 
           tar --exclude "*/*.tgz" -zcvf mongo-embedded-sdk-${version}.tgz ./*OS
 
-          tar --exclude "*/*.tgz" -zcvf mongo-embedded-sdk-${version}-mongoc.tgz ./*OS/Frameworks/bson.framework ./*OS/Frameworks/mongoc.framework
+          tar --exclude "*/*.tgz" -zcvf mongo-embedded-sdk-${version}-mongoc.tgz ./*OS/Frameworks/bson.framework ./*OS/Frameworks/mongoc.framework COPYING
           tar --exclude "*/*.tgz" -zcvf mongo-embedded-sdk-${version}-mongo-embedded.tgz ./*OS/Frameworks/mongo_embedded.framework
           tar --exclude "*/*.tgz" -zcvf mongo-embedded-sdk-${version}-mongoc-embedded.tgz ./*OS/Frameworks/mongoc_embedded.framework
 
