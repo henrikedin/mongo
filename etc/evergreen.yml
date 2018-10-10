@@ -10636,15 +10636,15 @@ buildvariants:
       --lto
     cdriver_cmake_flags: >-
         -DCMAKE_BUILD_TYPE=RelWithDebInfo
-        -DTHREADS_PTHREAD_ARG=2
         -DCMAKE_OSX_SYSROOT="$(xcrun --sdk macosx --show-sdk-path)"
+        -DCMAKE_OSX_ARCHITECTURES=x86_64
+        -DCMAKE_OSX_DEPLOYMENT_TARGET=10.10
         -DENABLE_APPLE_FRAMEWORK=ON
         -DCMAKE_INSTALL_BINDIR=Frameworks
         -DENABLE_SSL=DARWIN
         -DENABLE_ZLIB=BUNDLED
-        -DCMAKE_SYSTEM_PROCESSOR=x86_64
-        -DCMAKE_C_FLAGS="-arch x86_64 -mmacosx-version-min=10.10 -flto"
-        -DCMAKE_SHARED_LINKER_FLAGS="-arch x86_64 -mmacosx-version-min=10.10 -flto"
+        -DCMAKE_C_FLAGS="-flto"
+        -DCMAKE_SHARED_LINKER_FLAGS="-flto"
     disable_unit_tests: true
     enable_embedded_tests: native
     dump_scons_config_on_failure: true
@@ -10667,16 +10667,17 @@ buildvariants:
       --lto
     cdriver_cmake_flags: >-
         -DCMAKE_BUILD_TYPE=RelWithDebInfo
-        -DTHREADS_PTHREAD_ARG=2
         -DCMAKE_OSX_SYSROOT="$(xcrun --sdk iphoneos --show-sdk-path)"
+        -DCMAKE_OSX_ARCHITECTURES=arm64
+        -DCMAKE_OSX_DEPLOYMENT_TARGET=10.2
         -DENABLE_APPLE_FRAMEWORK=ON
         -DCMAKE_INSTALL_BINDIR=Frameworks
         -DENABLE_SSL=OFF
         -DENABLE_SASL=OFF
         -DENABLE_ZLIB=OFF
         -DENABLE_SNAPPY=OFF
-        -DCMAKE_C_FLAGS="-arch arm64 -fembed-bitcode -miphoneos-version-min=10.2 -flto"
-        -DCMAKE_SHARED_LINKER_FLAGS="-arch arm64 -fembed-bitcode -miphoneos-version-min=10.2 -flto"
+        -DCMAKE_C_FLAGS="-fembed-bitcode -flto"
+        -DCMAKE_SHARED_LINKER_FLAGS="-fembed-bitcode -flto"
     disable_unit_tests: true
     dump_scons_config_on_failure: true
   tasks:
@@ -10698,16 +10699,17 @@ buildvariants:
       --lto
     cdriver_cmake_flags: >-
         -DCMAKE_BUILD_TYPE=RelWithDebInfo
-        -DTHREADS_PTHREAD_ARG=2
         -DCMAKE_OSX_SYSROOT="$(xcrun --sdk iphonesimulator --show-sdk-path)"
+        -DCMAKE_OSX_ARCHITECTURES=x86_64
+        -DCMAKE_OSX_DEPLOYMENT_TARGET=10.2
         -DENABLE_APPLE_FRAMEWORK=ON
         -DCMAKE_INSTALL_BINDIR=Frameworks
         -DENABLE_SSL=OFF
         -DENABLE_SASL=OFF
         -DENABLE_ZLIB=OFF
         -DENABLE_SNAPPY=OFF
-        -DCMAKE_C_FLAGS="-arch x86_64 -fembed-bitcode -miphoneos-version-min=10.2 -flto"
-        -DCMAKE_SHARED_LINKER_FLAGS="-arch x86_64 -fembed-bitcode -miphoneos-version-min=10.2 -flto"
+        -DCMAKE_C_FLAGS="-fembed-bitcode -flto"
+        -DCMAKE_SHARED_LINKER_FLAGS="-fembed-bitcode -flto"
     disable_unit_tests: true
     enable_embedded_tests: ios_tvos_simulator
     ios_sim_device: iPhone-7
@@ -10732,16 +10734,17 @@ buildvariants:
       --lto
     cdriver_cmake_flags: >-
         -DCMAKE_BUILD_TYPE=RelWithDebInfo
-        -DTHREADS_PTHREAD_ARG=2
         -DCMAKE_OSX_SYSROOT="$(xcrun --sdk appletvos --show-sdk-path)"
+        -DCMAKE_OSX_ARCHITECTURES=arm64
+        -DCMAKE_OSX_DEPLOYMENT_TARGET=10.2
         -DENABLE_APPLE_FRAMEWORK=ON
         -DCMAKE_INSTALL_BINDIR=Frameworks
         -DENABLE_SSL=OFF
         -DENABLE_SASL=OFF
         -DENABLE_ZLIB=OFF
         -DENABLE_SNAPPY=OFF
-        -DCMAKE_C_FLAGS="-arch arm64 -fembed-bitcode -mtvos-version-min=10.2 -flto"
-        -DCMAKE_SHARED_LINKER_FLAGS="-arch arm64 -fembed-bitcode -mtvos-version-min=10.2 -flto"
+        -DCMAKE_C_FLAGS="-fembed-bitcode -flto"
+        -DCMAKE_SHARED_LINKER_FLAGS="-fembed-bitcode -flto"
     disable_unit_tests: true
     dump_scons_config_on_failure: true
   tasks:
@@ -10763,16 +10766,17 @@ buildvariants:
       --lto
     cdriver_cmake_flags: >-
         -DCMAKE_BUILD_TYPE=RelWithDebInfo
-        -DTHREADS_PTHREAD_ARG=2
         -DCMAKE_OSX_SYSROOT="$(xcrun --sdk appletvsimulator --show-sdk-path)"
+        -DCMAKE_OSX_ARCHITECTURES=x86_64
+        -DCMAKE_OSX_DEPLOYMENT_TARGET=10.2
         -DENABLE_APPLE_FRAMEWORK=ON
         -DCMAKE_INSTALL_BINDIR=Frameworks
         -DENABLE_SSL=OFF
         -DENABLE_SASL=OFF
         -DENABLE_ZLIB=OFF
         -DENABLE_SNAPPY=OFF
-        -DCMAKE_C_FLAGS="-arch x86_64 -fembed-bitcode -mtvos-version-min=10.2 -flto"
-        -DCMAKE_SHARED_LINKER_FLAGS="-arch x86_64 -fembed-bitcode -mtvos-version-min=10.2 -flto"
+        -DCMAKE_C_FLAGS="-fembed-bitcode -flto"
+        -DCMAKE_SHARED_LINKER_FLAGS="-fembed-bitcode -flto"
     disable_unit_tests: true
     enable_embedded_tests: ios_tvos_simulator
     ios_sim_device: Apple-TV-1080p
@@ -10797,16 +10801,17 @@ buildvariants:
       --lto
     cdriver_cmake_flags: >-
         -DCMAKE_BUILD_TYPE=RelWithDebInfo
-        -DTHREADS_PTHREAD_ARG=2
         -DCMAKE_OSX_SYSROOT="$(xcrun --sdk watchos --show-sdk-path)"
+        -DCMAKE_OSX_ARCHITECTURES=armv7k
+        -DCMAKE_OSX_DEPLOYMENT_TARGET=4.2
         -DENABLE_APPLE_FRAMEWORK=ON
         -DCMAKE_INSTALL_BINDIR=Frameworks
         -DENABLE_SSL=OFF
         -DENABLE_SASL=OFF
         -DENABLE_ZLIB=OFF
         -DENABLE_SNAPPY=OFF
-        -DCMAKE_C_FLAGS="-arch armv7k -fembed-bitcode -mwatchos-version-min=4.2 -flto"
-        -DCMAKE_SHARED_LINKER_FLAGS="-arch armv7k -fembed-bitcode -mwatchos-version-min=4.2 -flto"
+        -DCMAKE_C_FLAGS="-fembed-bitcode -flto"
+        -DCMAKE_SHARED_LINKER_FLAGS="-fembed-bitcode -flto"
     disable_unit_tests: true
     dump_scons_config_on_failure: true
   tasks:
@@ -10828,16 +10833,17 @@ buildvariants:
       --lto
     cdriver_cmake_flags: >-
         -DCMAKE_BUILD_TYPE=RelWithDebInfo
-        -DTHREADS_PTHREAD_ARG=2
         -DCMAKE_OSX_SYSROOT="$(xcrun --sdk watchsimulator --show-sdk-path)"
+        -DCMAKE_OSX_ARCHITECTURES=i386
+        -DCMAKE_OSX_DEPLOYMENT_TARGET=4.2
         -DENABLE_APPLE_FRAMEWORK=ON
         -DCMAKE_INSTALL_BINDIR=Frameworks
         -DENABLE_SSL=OFF
         -DENABLE_SASL=OFF
         -DENABLE_ZLIB=OFF
         -DENABLE_SNAPPY=OFF
-        -DCMAKE_C_FLAGS="-arch i386 -fembed-bitcode -mwatchos-version-min=4.2 -flto"
-        -DCMAKE_SHARED_LINKER_FLAGS="-arch i386 -fembed-bitcode -mwatchos-version-min=4.2 -flto"
+        -DCMAKE_C_FLAGS="-fembed-bitcode -flto"
+        -DCMAKE_SHARED_LINKER_FLAGS="-fembed-bitcode -flto"
     disable_unit_tests: true
     enable_embedded_tests: ios_tvos_simulator
     ios_sim_device: Apple-Watch-Series-3-42mm
@@ -10901,7 +10907,6 @@ buildvariants:
         -DCMAKE_BUILD_TYPE=RelWithDebInfo
         -DANDROID_NATIVE_API_LEVEL=21
         -DANDROID_ABI=armeabi-v7a
-        -DTHREADS_PTHREAD_ARG=2
         -DCMAKE_TOOLCHAIN_FILE=$WORKDIR/android_sdk/ndk-bundle/build/cmake/android.toolchain.cmake
         -DCMAKE_FIND_ROOT_PATH="$WORKDIR/android_toolchain-arm-21;$WORKDIR/src/build/mongo-embedded-sdk-$VERSION-tmp"
         -DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=ONLY
@@ -10944,7 +10949,6 @@ buildvariants:
         -DCMAKE_BUILD_TYPE=RelWithDebInfo
         -DANDROID_NATIVE_API_LEVEL=21
         -DANDROID_ABI=arm64-v8a
-        -DTHREADS_PTHREAD_ARG=2
         -DCMAKE_TOOLCHAIN_FILE=$WORKDIR/android_sdk/ndk-bundle/build/cmake/android.toolchain.cmake
         -DCMAKE_FIND_ROOT_PATH="$WORKDIR/android_toolchain-arm64-21;$WORKDIR/src/build/mongo-embedded-sdk-$VERSION-tmp"
         -DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=ONLY
@@ -10987,7 +10991,6 @@ buildvariants:
         -DCMAKE_BUILD_TYPE=RelWithDebInfo
         -DANDROID_NATIVE_API_LEVEL=21
         -DANDROID_ABI=x86_64
-        -DTHREADS_PTHREAD_ARG=2
         -DCMAKE_TOOLCHAIN_FILE=$WORKDIR/android_sdk/ndk-bundle/build/cmake/android.toolchain.cmake
         -DCMAKE_FIND_ROOT_PATH="$WORKDIR/android_toolchain-x86_64-21;$WORKDIR/src/build/mongo-embedded-sdk-$VERSION-tmp"
         -DCMAKE_FIND_ROOT_PATH_MODE_LIBRARY=ONLY
