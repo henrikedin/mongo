@@ -33,14 +33,14 @@ Pod::Spec.new do |s|
   s.summary      = "MongoDB Embedded C Driver Transport"
 
   s.description  = <<-DESC
-    MongoDB Embedded C Driver Transport
+    Library providing a client usable by the regular MongoDB C Driver that communicates with the MongoDB Embedded local storage.
                    DESC
 
   s.homepage     = "https://www.mongodb.com"
-  s.author       = { "" => "" }
+  s.author       = { "MongoDB, Inc" => "info@mongodb.com" }
 
   s.license      = "GNU Affero General Public License v3.0"
-  # s.license      = { :type => "MIT", :file => "FILE_LICENSE" }
+  # s.license      = { :type => "AGPLv3", :file => "FILE_LICENSE" }
 
   s.platform     = :ios, :watchos, :tvos
   s.ios.deployment_target = "10.2"
