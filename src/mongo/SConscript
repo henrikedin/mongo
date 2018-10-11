@@ -136,6 +136,9 @@ env.Library(
         'util/timer.cpp',
         'util/uuid.cpp',
         'util/version.cpp',
+        '$BUILD_DIR/absl/hash/internal/city.cc',
+        '$BUILD_DIR/absl/hash/internal/hash.cc',
+        '$BUILD_DIR/absl/container/internal/raw_hash_set.cc',
     ],
     # NOTE: This library *must not* depend on any libraries than
     # the ones declared here. Do not add to this list.

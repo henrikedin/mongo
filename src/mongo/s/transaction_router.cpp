@@ -418,7 +418,7 @@ void TransactionRouter::_clearPendingParticipants() {
 
     // If participants were created by an earlier command, the coordinator must be one of them.
     invariant(_coordinatorId);
-    invariant(_participants.count(*_coordinatorId) == 1);
+    invariant(_participants.count(_coordinatorId->toString()) == 1);
 }
 
 bool TransactionRouter::_canContinueOnStaleShardOrDbError(StringData cmdName) const {
@@ -652,7 +652,7 @@ Shard::CommandResponse TransactionRouter::_commitMultiShardTransaction(Operation
     coordinateCommitCmd.setDbName("admin");
     coordinateCommitCmd.setParticipants(participantList);
 
-    auto coordinatorIter = _participants.find(*_coordinatorId);
+    auto coordinatorIter = _participants.find(_coordinatorId->toString());
     invariant(coordinatorIter != _participants.end());
 
     return uassertStatusOK(coordinatorShard->runCommandWithFixedRetryAttempts(

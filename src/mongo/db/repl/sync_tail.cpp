@@ -502,13 +502,13 @@ public:
     };
 
     CollectionProperties getCollectionProperties(OperationContext* opCtx,
-                                                 const StringMapTraits::HashedKey& ns) {
+                                                 const StringData& ns) {
         auto it = _cache.find(ns);
         if (it != _cache.end()) {
             return it->second;
         }
 
-        auto collProperties = getCollectionPropertiesImpl(opCtx, ns.key());
+        auto collProperties = getCollectionPropertiesImpl(opCtx, ns);
         _cache[ns] = collProperties;
         return collProperties;
     }
@@ -571,7 +571,7 @@ void fillWriterVectors(OperationContext* opCtx,
         }
 
         if (op.isCrudOpType()) {
-            auto collProperties = collPropertiesCache.getCollectionProperties(opCtx, hashedNs);
+            auto collProperties = collPropertiesCache.getCollectionProperties(opCtx, hashedNs.key());
 
             // For doc locking engines, include the _id of the document in the hash so we get
             // parallelism even if all writes are to a single collection.

@@ -38,6 +38,8 @@
 #include "mongo/util/assert_util.h"
 #include "mongo/util/unordered_fast_key_table.h"
 
+#include "absl/container/flat_hash_map.h"
+
 namespace mongo {
 
 struct StringMapTraits {
@@ -82,10 +84,13 @@ struct StringMapTraits {
     };
 };
 
+//template <typename V>
+//using StringMap = UnorderedFastKeyTable<StringData,   // K_L
+//                                        std::string,  // K_S
+//                                        V,
+//                                        StringMapTraits>;
+
 template <typename V>
-using StringMap = UnorderedFastKeyTable<StringData,   // K_L
-                                        std::string,  // K_S
-                                        V,
-                                        StringMapTraits>;
+using StringMap = absl::flat_hash_map<std::string, V>;
 
 }  // namespace mongo

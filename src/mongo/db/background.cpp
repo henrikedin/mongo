@@ -98,7 +98,7 @@ void BgInfo::awaitNoBgOps(stdx::unique_lock<stdx::mutex>& lk) {
 }
 
 void recordBeginAndInsert(BgInfoMap* bgiMap, StringData key) {
-    std::shared_ptr<BgInfo>& bgInfo = bgiMap->get(key);
+    std::shared_ptr<BgInfo>& bgInfo = bgiMap->try_emplace(key).first->second;
     if (!bgInfo)
         bgInfo.reset(new BgInfo);
     bgInfo->recordBegin();

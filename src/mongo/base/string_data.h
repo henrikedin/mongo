@@ -44,6 +44,8 @@
 #include "mongo/util/invariant.h"
 #undef MONGO_INCLUDE_INVARIANT_H_WHITELISTED
 
+#include "absl/strings/string_view.h"
+
 namespace mongo {
 
 /**
@@ -69,6 +71,8 @@ public:
 
     // Iterator type
     using const_iterator = const char*;
+
+	operator absl::string_view() const { return absl::string_view(rawData(), size()); }
 
     /** Constructs an empty StringData. */
     constexpr StringData() = default;
@@ -192,6 +196,12 @@ public:
         return rawData() + size();
     }
 
+// Converts to `std::basic_string`.
+	explicit operator std::string() const {
+		if (!rawData()) return{};
+		return std::string(rawData(), size());
+	}
+	
 private:
     const char* _data = nullptr;  // is not guaranted to be null terminated (see "notes" above)
     size_t _size = 0;             // 'size' does not include the null terminator

@@ -84,7 +84,7 @@ void Top::record(OperationContext* opCtx,
     if (ns[0] == '?')
         return;
 
-    auto hashedNs = UsageMap::HashedKey(ns);
+    //auto hashedNs = UsageMap::HashedKey(ns);
     stdx::lock_guard<SimpleMutex> lk(_lock);
 
     if ((command || logicalOp == LogicalOp::opQuery) &&
@@ -93,7 +93,7 @@ void Top::record(OperationContext* opCtx,
         return;
     }
 
-    CollectionData& coll = _usage[hashedNs];
+    CollectionData& coll = _usage[ns];
     _record(opCtx, coll, logicalOp, lockType, micros, readWriteType);
 }
 
@@ -202,10 +202,10 @@ void Top::_appendStatsEntry(BSONObjBuilder& b, const char* statsName, const Usag
 }
 
 void Top::appendLatencyStats(StringData ns, bool includeHistograms, BSONObjBuilder* builder) {
-    auto hashedNs = UsageMap::HashedKey(ns);
+    //auto hashedNs = UsageMap::HashedKey(ns);
     stdx::lock_guard<SimpleMutex> lk(_lock);
     BSONObjBuilder latencyStatsBuilder;
-    _usage[hashedNs].opLatencyHistogram.append(includeHistograms, &latencyStatsBuilder);
+    _usage[ns].opLatencyHistogram.append(includeHistograms, &latencyStatsBuilder);
     builder->append("ns", ns);
     builder->append("latencyStats", latencyStatsBuilder.obj());
 }
