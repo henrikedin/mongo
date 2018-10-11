@@ -37,15 +37,15 @@ Pod::Spec.new do |s|
                    DESC
 
   s.homepage     = "https://www.mongodb.com"
-  s.author       = { "MongoDB, Inc" => "info@mongodb.com" }
+  s.author       = { "MongoDB, Inc" => "cocoapods@mongodb.com" }
 
-  s.license      = { :type => "Apache", :file => "COPYING" }
+  s.license      = { :type => "APACHE", :file => "COPYING" }
 
   s.platform     = :ios, :osx, :watchos, :tvos
-  s.ios.deployment_target = "8.0"
-  s.osx.deployment_target = "10.6"
-  s.watchos.deployment_target = "2.0"
-  s.tvos.deployment_target = "9.0"
+  s.ios.deployment_target = "10.2"
+  s.osx.deployment_target = "10.10"
+  s.watchos.deployment_target = "4.3"
+  s.tvos.deployment_target = "10.2"
 
   s.source       = { :http => "https://s3.amazonaws.com/mciuploads/mongodb-mongo-master/embedded-sdk/embedded-sdk-apple-multiarch-mongoc-latest.tgz" }
   s.ios.vendored_frameworks = "iPhoneOS/Frameworks/bson.framework", "iPhoneOS/Frameworks/mongoc.framework"

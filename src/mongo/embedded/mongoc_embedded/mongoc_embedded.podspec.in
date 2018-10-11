@@ -37,7 +37,7 @@ Pod::Spec.new do |s|
                    DESC
 
   s.homepage     = "https://www.mongodb.com"
-  s.author       = { "MongoDB, Inc" => "info@mongodb.com" }
+  s.author       = { "MongoDB, Inc" => "cocoapods@mongodb.com" }
 
   s.license      = "GNU Affero General Public License v3.0"
   # s.license      = { :type => "AGPLv3", :file => "FILE_LICENSE" }

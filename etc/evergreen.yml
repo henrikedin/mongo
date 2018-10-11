@@ -4115,7 +4115,8 @@ tasks:
 
           for directory in *OS *Simulator; do
               pushd $directory
-              tar --include "*/Frameworks*" --include "*/LICENSE*" --include "COPYING" --strip-components=1 -xf ./embedded-sdk.tgz
+              tar --include "*/Frameworks*" --include "*/LICENSE*" --include "*/COPYING" --strip-components=1 -xf ./embedded-sdk.tgz
+              cp ./COPYING ../COPYING
               popd
           done
 
@@ -4129,7 +4130,7 @@ tasks:
 
           tar --exclude "*/*.tgz" -zcvf mongo-embedded-sdk-${version}.tgz ./*OS
 
-          tar --exclude "*/*.tgz" -zcvf mongo-embedded-sdk-${version}-mongoc.tgz ./*OS/Frameworks/bson.framework ./*OS/Frameworks/mongoc.framework COPYING
+          tar --exclude "*/*.tgz" -zcvf mongo-embedded-sdk-${version}-mongoc.tgz ./*OS/Frameworks/bson.framework ./*OS/Frameworks/mongoc.framework ./COPYING
           tar --exclude "*/*.tgz" -zcvf mongo-embedded-sdk-${version}-mongo-embedded.tgz ./*OS/Frameworks/mongo_embedded.framework
           tar --exclude "*/*.tgz" -zcvf mongo-embedded-sdk-${version}-mongoc-embedded.tgz ./*OS/Frameworks/mongoc_embedded.framework
 
