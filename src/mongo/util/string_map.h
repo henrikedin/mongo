@@ -242,14 +242,14 @@ private:
 };
 
 namespace mongo {
-//template <typename V>
-//using StringMap = UnorderedFastKeyTable<StringData,   // K_L
-//                                        std::string,  // K_S
-//                                        V,
-//                                        StringMapTraits>;
-
 template <typename V>
-using StringMap = mongo_bytell_hash_map<StringData, std::string, V, StorageConverter<V>, StringDataHash>;
+using StringMap = UnorderedFastKeyTable<StringData,   // K_L
+                                        std::string,  // K_S
+                                        V,
+                                        StringMapTraits>;
+
+//template <typename V>
+//using StringMap = mongo_bytell_hash_map<StringData, std::string, V, StorageConverter<V>, StringDataHash>;
 
 struct A
 {

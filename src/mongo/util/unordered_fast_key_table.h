@@ -236,15 +236,21 @@ public:
         return _area.capacity();
     }
 
+private:
     V& operator[](const HashedKey& key) {
         return get(key);
     }
+
+public:
     V& operator[](const K_L& key) {
         return get(key);
     }
 
+private:
     V& get(const HashedKey& key);
-    V& get(const K_L& key) {
+
+public:
+	V& get(const K_L& key) {
         return get(HashedKey(key));
     }
 
@@ -255,7 +261,10 @@ public:
     /**
      * @return number of elements removed
      */
+private:
     size_t erase(const HashedKey& key);
+
+public:
     size_t erase(const K_L& key) {
         if (empty())
             return 0;  // Don't waste time hashing.
@@ -351,11 +360,13 @@ public:
         return const_iterator(&_area, _area.find(HashedKey(key), nullptr));
     }
 
+private:
     const_iterator find(const HashedKey& key) const {
         if (empty())
             return end();
         return const_iterator(&_area, _area.find(key, nullptr));
     }
+public:
 
     iterator find(const K_L& key) {
         if (empty())
@@ -363,24 +374,28 @@ public:
         return iterator(&_area, _area.find(HashedKey(key), nullptr));
     }
 
+private:
     iterator find(const HashedKey& key) {
         if (empty())
             return end();
         return iterator(&_area, _area.find(key, nullptr));
     }
 
+public:
     size_t count(const K_L& key) const {
         if (empty())
             return 0;  // Don't waste time hashing.
         return _area.find(HashedKey(key), nullptr) != -1;
     }
 
+private:
     size_t count(const HashedKey& key) const {
         if (empty())
             return 0;
         return _area.find(key, nullptr) != -1;
     }
 
+public:
     const_iterator begin() const {
         return const_iterator(&_area);
     }
@@ -405,9 +420,11 @@ public:
         return const_iterator();
     }
 
+private:
     template <typename... Args>
     std::pair<iterator, bool> try_emplace(const HashedKey& key, Args&&... args);
 
+public:
     template <typename... Args>
     std::pair<iterator, bool> try_emplace(const K_L& key, Args&&... args) {
         return try_emplace(HashedKey(key), std::forward<Args>(args)...);
