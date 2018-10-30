@@ -90,7 +90,20 @@ struct StringMapTraits {
 //                                        V,
 //                                        StringMapTraits>;
 
+struct absl_string_hasher
+{
+	std::size_t operator()(const StringData& sd)
+	{
+		return 0ULL;
+	}
+
+	std::size_t operator()(const std::string& s)
+	{
+		return 0ULL;
+	}
+};
+
 template <typename V>
-using StringMap = absl::flat_hash_map<std::string, V>;
+using StringMap = absl::flat_hash_map<std::string, V, absl_string_hasher>;
 
 }  // namespace mongo
