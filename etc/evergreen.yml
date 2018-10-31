@@ -4186,12 +4186,12 @@ tasks:
           set -o errexit
           set -o verbose
 
-          if [ "${is_patch}" = "true" ]; then
-            rm -f mongo-embedded-sdk-${version}.tgz
-            rm -f mongo-embedded-sdk-${version}-mongo-c-driver.tgz
-            rm -f mongo-embedded-sdk-${version}-mongo-embedded.tgz
-            rm -f mongo-embedded-sdk-${version}-mongoc-embedded.tgz
-          fi
+          #if [ "${is_patch}" = "true" ]; then
+          #  rm -f mongo-embedded-sdk-${version}.tgz
+          #  rm -f mongo-embedded-sdk-${version}-mongo-c-driver.tgz
+          #  rm -f mongo-embedded-sdk-${version}-mongo-embedded.tgz
+          #  rm -f mongo-embedded-sdk-${version}-mongoc-embedded.tgz
+          #fi
 
     # A second put, this time to -latest, to give devs a reasonable
     # way to get the most recent build.
@@ -4202,7 +4202,7 @@ tasks:
         aws_key: ${aws_key}
         aws_secret: ${aws_secret}
         local_file: "mongo-embedded-sdk-${version}.tgz"
-        remote_file: ${project}/embedded-sdk/mongo-${build_variant}-latest.tgz
+        remote_file: ${project}/embedded-sdk/mongo-${build_variant}-r4.0.3-107-g0b0aac7.tgz
         bucket: mciuploads
         permissions: public-read
         content_type: application/tar
@@ -4214,7 +4214,7 @@ tasks:
         aws_key: ${aws_key}
         aws_secret: ${aws_secret}
         local_file: "mongo-embedded-sdk-${version}-mongo-c-driver.tgz"
-        remote_file: ${project}/embedded-sdk/mongo-c-driver-cocoapod-latest.tgz
+        remote_file: ${project}/embedded-sdk/mongo-c-driver-1.13.0-r4.0.3-107-g0b0aac7.tgz
         bucket: mciuploads
         permissions: public-read
         content_type: application/tar
@@ -4226,7 +4226,7 @@ tasks:
         aws_key: ${aws_key}
         aws_secret: ${aws_secret}
         local_file: "mongo-embedded-sdk-${version}-mongo-embedded.tgz"
-        remote_file: ${project}/embedded-sdk/mongo-embedded-cocoapod-latest.tgz
+        remote_file: ${project}/embedded-sdk/mongo-embedded-r4.0.3-107-g0b0aac7.tgz
         bucket: mciuploads
         permissions: public-read
         content_type: application/tar
@@ -4238,7 +4238,7 @@ tasks:
         aws_key: ${aws_key}
         aws_secret: ${aws_secret}
         local_file: "mongo-embedded-sdk-${version}-mongoc-embedded.tgz"
-        remote_file: ${project}/embedded-sdk/mongoc-embedded-cocoapod-latest.tgz
+        remote_file: ${project}/embedded-sdk/mongoc-embedded-r4.0.3-107-g0b0aac7.tgz
         bucket: mciuploads
         permissions: public-read
         content_type: application/tar
