@@ -995,7 +995,7 @@ Status parseItemsAndAdditionalItems(StringMap<BSONElement>* keywordMap,
                                     InternalSchemaTypeExpression* typeExpr,
                                     AndMatchExpression* andExpr) {
     boost::optional<long long> startIndexForAdditionalItems;
-    if (auto itemsElt = keywordMap->try_emplace(kSchemaItemsKeyword).first->second) {
+    if (auto itemsElt = (*keywordMap)[kSchemaItemsKeyword]) {
         auto index = parseItems(path, itemsElt, ignoreUnknownKeywords, typeExpr, andExpr);
         if (!index.isOK()) {
             return index.getStatus();
@@ -1003,7 +1003,7 @@ Status parseItemsAndAdditionalItems(StringMap<BSONElement>* keywordMap,
         startIndexForAdditionalItems = index.getValue();
     }
 
-    if (auto additionalItemsElt = keywordMap->try_emplace(kSchemaAdditionalItemsKeyword).first->second) {
+    if (auto additionalItemsElt = (*keywordMap)[kSchemaAdditionalItemsKeyword]) {
         return parseAdditionalItems(path,
                                     additionalItemsElt,
                                     startIndexForAdditionalItems,
@@ -1029,7 +1029,7 @@ Status translateLogicalKeywords(StringMap<BSONElement>* keywordMap,
                                 StringData path,
                                 AndMatchExpression* andExpr,
                                 bool ignoreUnknownKeywords) {
-    if (auto allOfElt = keywordMap->try_emplace(kSchemaAllOfKeyword).first->second) {
+    if (auto allOfElt = (*keywordMap)[kSchemaAllOfKeyword]) {
         auto allOfExpr =
             parseLogicalKeyword<AndMatchExpression>(path, allOfElt, ignoreUnknownKeywords);
         if (!allOfExpr.isOK()) {
@@ -1038,7 +1038,7 @@ Status translateLogicalKeywords(StringMap<BSONElement>* keywordMap,
         andExpr->add(allOfExpr.getValue().release());
     }
 
-    if (auto anyOfElt = keywordMap->try_emplace(kSchemaAnyOfKeyword).first->second) {
+    if (auto anyOfElt = (*keywordMap)[kSchemaAnyOfKeyword]) {
         auto anyOfExpr =
             parseLogicalKeyword<OrMatchExpression>(path, anyOfElt, ignoreUnknownKeywords);
         if (!anyOfExpr.isOK()) {
@@ -1047,7 +1047,7 @@ Status translateLogicalKeywords(StringMap<BSONElement>* keywordMap,
         andExpr->add(anyOfExpr.getValue().release());
     }
 
-    if (auto oneOfElt = keywordMap->try_emplace(kSchemaOneOfKeyword).first->second) {
+    if (auto oneOfElt = (*keywordMap)[kSchemaOneOfKeyword]) {
         auto oneOfExpr = parseLogicalKeyword<InternalSchemaXorMatchExpression>(
             path, oneOfElt, ignoreUnknownKeywords);
         if (!oneOfExpr.isOK()) {
@@ -1056,7 +1056,7 @@ Status translateLogicalKeywords(StringMap<BSONElement>* keywordMap,
         andExpr->add(oneOfExpr.getValue().release());
     }
 
-    if (auto notElt = keywordMap->try_emplace(kSchemaNotKeyword).first->second) {
+    if (auto notElt = (*keywordMap)[kSchemaNotKeyword]) {
         if (notElt.type() != BSONType::Object) {
             return {ErrorCodes::TypeMismatch,
                     str::stream() << "$jsonSchema keyword '" << kSchemaNotKeyword
@@ -1073,7 +1073,7 @@ Status translateLogicalKeywords(StringMap<BSONElement>* keywordMap,
         andExpr->add(notMatchExpr.release());
     }
 
-    if (auto enumElt = keywordMap->try_emplace(kSchemaEnumKeyword).first->second) {
+    if (auto enumElt = (*keywordMap)[kSchemaEnumKeyword]) {
         auto enumExpr = parseEnum(path, enumElt);
         if (!enumExpr.isOK()) {
             return enumExpr.getStatus();
@@ -1100,7 +1100,7 @@ Status translateArrayKeywords(StringMap<BSONElement>* keywordMap,
                               bool ignoreUnknownKeywords,
                               InternalSchemaTypeExpression* typeExpr,
                               AndMatchExpression* andExpr) {
-    if (auto minItemsElt = keywordMap->try_emplace(kSchemaMinItemsKeyword).first->second) {
+    if (auto minItemsElt = (*keywordMap)[kSchemaMinItemsKeyword]) {
         auto minItemsExpr = parseLength<InternalSchemaMinItemsMatchExpression>(
             path, minItemsElt, typeExpr, BSONType::Array);
         if (!minItemsExpr.isOK()) {
@@ -1109,7 +1109,7 @@ Status translateArrayKeywords(StringMap<BSONElement>* keywordMap,
         andExpr->add(minItemsExpr.getValue().release());
     }
 
-    if (auto maxItemsElt = keywordMap->try_emplace(kSchemaMaxItemsKeyword).first->second) {
+    if (auto maxItemsElt = (*keywordMap)[kSchemaMaxItemsKeyword]) {
         auto maxItemsExpr = parseLength<InternalSchemaMaxItemsMatchExpression>(
             path, maxItemsElt, typeExpr, BSONType::Array);
         if (!maxItemsExpr.isOK()) {
@@ -1118,7 +1118,7 @@ Status translateArrayKeywords(StringMap<BSONElement>* keywordMap,
         andExpr->add(maxItemsExpr.getValue().release());
     }
 
-    if (auto uniqueItemsElt = keywordMap->try_emplace(kSchemaUniqueItemsKeyword).first->second) {
+    if (auto uniqueItemsElt = (*keywordMap)[kSchemaUniqueItemsKeyword]) {
         auto uniqueItemsExpr = parseUniqueItems(uniqueItemsElt, path, typeExpr);
         if (!uniqueItemsExpr.isOK()) {
             return uniqueItemsExpr.getStatus();
@@ -1148,7 +1148,7 @@ Status translateObjectKeywords(StringMap<BSONElement>* keywordMap,
                                AndMatchExpression* andExpr,
                                bool ignoreUnknownKeywords) {
     boost::container::flat_set<StringData> requiredProperties;
-    if (auto requiredElt = keywordMap->try_emplace(kSchemaRequiredKeyword).first->second) {
+    if (auto requiredElt = (*keywordMap)[kSchemaRequiredKeyword]) {
         auto requiredStatus = parseRequired(requiredElt);
         if (!requiredStatus.isOK()) {
             return requiredStatus.getStatus();
@@ -1156,7 +1156,7 @@ Status translateObjectKeywords(StringMap<BSONElement>* keywordMap,
         requiredProperties = std::move(requiredStatus.getValue());
     }
 
-    if (auto propertiesElt = keywordMap->try_emplace(kSchemaPropertiesKeyword).first->second) {
+    if (auto propertiesElt = (*keywordMap)[kSchemaPropertiesKeyword]) {
         auto propertiesExpr = parseProperties(
             path, propertiesElt, typeExpr, requiredProperties, ignoreUnknownKeywords);
         if (!propertiesExpr.isOK()) {
@@ -1166,9 +1166,9 @@ Status translateObjectKeywords(StringMap<BSONElement>* keywordMap,
     }
 
     {
-        auto propertiesElt = keywordMap->try_emplace(kSchemaPropertiesKeyword).first->second;
-        auto patternPropertiesElt = keywordMap->try_emplace(kSchemaPatternPropertiesKeyword).first->second;
-        auto additionalPropertiesElt = keywordMap->try_emplace(kSchemaAdditionalPropertiesKeyword).first->second;
+        auto propertiesElt = (*keywordMap)[kSchemaPropertiesKeyword];
+        auto patternPropertiesElt = (*keywordMap)[kSchemaPatternPropertiesKeyword];
+        auto additionalPropertiesElt = (*keywordMap)[kSchemaAdditionalPropertiesKeyword];
 
         if (patternPropertiesElt || additionalPropertiesElt) {
             auto allowedPropertiesExpr = parseAllowedProperties(path,
@@ -1192,7 +1192,7 @@ Status translateObjectKeywords(StringMap<BSONElement>* keywordMap,
         andExpr->add(requiredExpr.getValue().release());
     }
 
-    if (auto minPropertiesElt = keywordMap->try_emplace(kSchemaMinPropertiesKeyword).first->second) {
+    if (auto minPropertiesElt = (*keywordMap)[kSchemaMinPropertiesKeyword]) {
         auto minPropExpr = parseNumProperties<InternalSchemaMinPropertiesMatchExpression>(
             path, minPropertiesElt, typeExpr);
         if (!minPropExpr.isOK()) {
@@ -1201,7 +1201,7 @@ Status translateObjectKeywords(StringMap<BSONElement>* keywordMap,
         andExpr->add(minPropExpr.getValue().release());
     }
 
-    if (auto maxPropertiesElt = keywordMap->try_emplace(kSchemaMaxPropertiesKeyword).first->second) {
+    if (auto maxPropertiesElt = (*keywordMap)[kSchemaMaxPropertiesKeyword]) {
         auto maxPropExpr = parseNumProperties<InternalSchemaMaxPropertiesMatchExpression>(
             path, maxPropertiesElt, typeExpr);
         if (!maxPropExpr.isOK()) {
@@ -1210,7 +1210,7 @@ Status translateObjectKeywords(StringMap<BSONElement>* keywordMap,
         andExpr->add(maxPropExpr.getValue().release());
     }
 
-    if (auto dependenciesElt = keywordMap->try_emplace(kSchemaDependenciesKeyword).first->second) {
+    if (auto dependenciesElt = (*keywordMap)[kSchemaDependenciesKeyword]) {
         auto dependenciesExpr = parseDependencies(path, dependenciesElt, ignoreUnknownKeywords);
         if (!dependenciesExpr.isOK()) {
             return dependenciesExpr.getStatus();
@@ -1239,7 +1239,7 @@ Status translateScalarKeywords(StringMap<BSONElement>* keywordMap,
                                InternalSchemaTypeExpression* typeExpr,
                                AndMatchExpression* andExpr) {
     // String keywords.
-    if (auto patternElt = keywordMap->try_emplace(kSchemaPatternKeyword).first->second) {
+    if (auto patternElt = (*keywordMap)[kSchemaPatternKeyword]) {
         auto patternExpr = parsePattern(path, patternElt, typeExpr);
         if (!patternExpr.isOK()) {
             return patternExpr.getStatus();
@@ -1247,7 +1247,7 @@ Status translateScalarKeywords(StringMap<BSONElement>* keywordMap,
         andExpr->add(patternExpr.getValue().release());
     }
 
-    if (auto maxLengthElt = keywordMap->try_emplace(kSchemaMaxLengthKeyword).first->second) {
+    if (auto maxLengthElt = (*keywordMap)[kSchemaMaxLengthKeyword]) {
         auto maxLengthExpr = parseLength<InternalSchemaMaxLengthMatchExpression>(
             path, maxLengthElt, typeExpr, BSONType::String);
         if (!maxLengthExpr.isOK()) {
@@ -1256,7 +1256,7 @@ Status translateScalarKeywords(StringMap<BSONElement>* keywordMap,
         andExpr->add(maxLengthExpr.getValue().release());
     }
 
-    if (auto minLengthElt = keywordMap->try_emplace(kSchemaMinLengthKeyword).first->second) {
+    if (auto minLengthElt = (*keywordMap)[kSchemaMinLengthKeyword]) {
         auto minLengthExpr = parseLength<InternalSchemaMinLengthMatchExpression>(
             path, minLengthElt, typeExpr, BSONType::String);
         if (!minLengthExpr.isOK()) {
@@ -1266,7 +1266,7 @@ Status translateScalarKeywords(StringMap<BSONElement>* keywordMap,
     }
 
     // Numeric keywords.
-    if (auto multipleOfElt = keywordMap->try_emplace(kSchemaMultipleOfKeyword).first->second) {
+    if (auto multipleOfElt = (*keywordMap)[kSchemaMultipleOfKeyword]) {
         auto multipleOfExpr = parseMultipleOf(path, multipleOfElt, typeExpr);
         if (!multipleOfExpr.isOK()) {
             return multipleOfExpr.getStatus();
@@ -1274,9 +1274,9 @@ Status translateScalarKeywords(StringMap<BSONElement>* keywordMap,
         andExpr->add(multipleOfExpr.getValue().release());
     }
 
-    if (auto maximumElt = keywordMap->try_emplace(kSchemaMaximumKeyword).first->second) {
+    if (auto maximumElt = (*keywordMap)[kSchemaMaximumKeyword]) {
         bool isExclusiveMaximum = false;
-        if (auto exclusiveMaximumElt = keywordMap->try_emplace(kSchemaExclusiveMaximumKeyword).first->second) {
+        if (auto exclusiveMaximumElt = (*keywordMap)[kSchemaExclusiveMaximumKeyword]) {
             if (!exclusiveMaximumElt.isBoolean()) {
                 return {Status(ErrorCodes::TypeMismatch,
                                str::stream() << "$jsonSchema keyword '"
@@ -1291,7 +1291,7 @@ Status translateScalarKeywords(StringMap<BSONElement>* keywordMap,
             return maxExpr.getStatus();
         }
         andExpr->add(maxExpr.getValue().release());
-    } else if (keywordMap->try_emplace(kSchemaExclusiveMaximumKeyword).first->second) {
+    } else if ((*keywordMap)[kSchemaExclusiveMaximumKeyword]) {
         // If "exclusiveMaximum" is present, "maximum" must also be present.
         return {ErrorCodes::FailedToParse,
                 str::stream() << "$jsonSchema keyword '" << kSchemaMaximumKeyword
@@ -1300,9 +1300,9 @@ Status translateScalarKeywords(StringMap<BSONElement>* keywordMap,
                               << " is present"};
     }
 
-    if (auto minimumElt = keywordMap->try_emplace(kSchemaMinimumKeyword).first->second) {
+    if (auto minimumElt = (*keywordMap)[kSchemaMinimumKeyword]) {
         bool isExclusiveMinimum = false;
-        if (auto exclusiveMinimumElt = keywordMap->try_emplace(kSchemaExclusiveMinimumKeyword).first->second) {
+        if (auto exclusiveMinimumElt = (*keywordMap)[kSchemaExclusiveMinimumKeyword]) {
             if (!exclusiveMinimumElt.isBoolean()) {
                 return {ErrorCodes::TypeMismatch,
                         str::stream() << "$jsonSchema keyword '" << kSchemaExclusiveMinimumKeyword
@@ -1316,7 +1316,7 @@ Status translateScalarKeywords(StringMap<BSONElement>* keywordMap,
             return minExpr.getStatus();
         }
         andExpr->add(minExpr.getValue().release());
-    } else if (keywordMap->try_emplace(kSchemaExclusiveMinimumKeyword).first->second) {
+    } else if ((*keywordMap)[kSchemaExclusiveMinimumKeyword]) {
         // If "exclusiveMinimum" is present, "minimum" must also be present.
         return {ErrorCodes::FailedToParse,
                 str::stream() << "$jsonSchema keyword '" << kSchemaMinimumKeyword
@@ -1334,7 +1334,7 @@ Status translateScalarKeywords(StringMap<BSONElement>* keywordMap,
  *  - title
  */
 Status validateMetadataKeywords(StringMap<BSONElement>* keywordMap) {
-    if (auto descriptionElem = keywordMap->try_emplace(kSchemaDescriptionKeyword).first->second) {
+    if (auto descriptionElem = (*keywordMap)[kSchemaDescriptionKeyword]) {
         if (descriptionElem.type() != BSONType::String) {
             return Status(ErrorCodes::TypeMismatch,
                           str::stream() << "$jsonSchema keyword '" << kSchemaDescriptionKeyword
@@ -1342,7 +1342,7 @@ Status validateMetadataKeywords(StringMap<BSONElement>* keywordMap) {
         }
     }
 
-    if (auto titleElem = keywordMap->try_emplace(kSchemaTitleKeyword).first->second) {
+    if (auto titleElem = (*keywordMap)[kSchemaTitleKeyword]) {
         if (titleElem.type() != BSONType::String) {
             return Status(ErrorCodes::TypeMismatch,
                           str::stream() << "$jsonSchema keyword '" << kSchemaTitleKeyword

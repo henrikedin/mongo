@@ -92,18 +92,30 @@ struct StringMapTraits {
 
 struct absl_string_hasher
 {
-	std::size_t operator()(const StringData& sd)
+	using is_transparent = void;
+	std::size_t operator()(const StringData& sd) const
 	{
-		return 0ULL;
+		return absl::container_internal::hash_default_hash<absl::string_view>()(absl::string_view(sd.rawData(), sd.size()));
 	}
-
-	std::size_t operator()(const std::string& s)
+	std::size_t operator()(const std::string& s) const
 	{
-		return 0ULL;
+		return operator()(StringData(s));;
+	}
+	std::size_t operator()(const char* s) const
+	{
+		return operator()(StringData(s));
+	}
+};
+
+// Supports heterogeneous lookup for string-like elements.
+struct absl_string_hash_eq {
+	using is_transparent = void;
+	bool operator()(StringData lhs, StringData rhs) const {
+		return lhs == rhs;
 	}
 };
 
 template <typename V>
-using StringMap = absl::flat_hash_map<std::string, V, absl_string_hasher>;
+using StringMap = absl::flat_hash_map<std::string, V, absl_string_hasher, absl_string_hash_eq>;
 
 }  // namespace mongo

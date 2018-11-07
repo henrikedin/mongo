@@ -72,7 +72,7 @@ public:
     // Iterator type
     using const_iterator = const char*;
 
-	operator absl::string_view() const { return absl::string_view(rawData(), size()); }
+	//operator absl::string_view() const { return absl::string_view(rawData(), size()); }
 
     /** Constructs an empty StringData. */
     constexpr StringData() = default;
