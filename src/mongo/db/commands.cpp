@@ -675,8 +675,8 @@ void CommandRegistry::registerCommand(Command* command, StringData name, StringD
             continue;
         }
 
-		auto result = _commands.try_emplace(key, command);
-		invariant(result.second, str::stream() << "command name collision: " << key);
+        auto result = _commands.try_emplace(key, command);
+        invariant(result.second, str::stream() << "command name collision: " << key);
     }
 }
 
