@@ -5,10 +5,6 @@ env = env.Clone()
 
 env.InjectThirdPartyIncludePaths(libraries=['abseil-cpp'])
 
-if env.TargetOSIs('windows'):
-    # C4309: 'argument': truncation of constant value
-    env.Append(CCFLAGS=['/wd4309'])
-
 env.Library(
     target="absl_hash",
     source=[

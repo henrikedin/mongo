@@ -400,7 +400,7 @@ struct GroupSse2Impl {
   }
 
   void ConvertSpecialToEmptyAndFullToDeleted(ctrl_t* dst) const {
-    auto msbs = _mm_set1_epi8(0x80);
+    auto msbs = _mm_set1_epi8('\x80');
     auto x126 = _mm_set1_epi8(126);
 #if SWISSTABLE_HAVE_SSSE3
     auto res = _mm_or_si128(_mm_shuffle_epi8(x126, ctrl), msbs);

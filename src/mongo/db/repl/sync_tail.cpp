@@ -502,7 +502,7 @@ public:
     };
 
     CollectionProperties getCollectionProperties(OperationContext* opCtx,
-                                                 const StringMapTraits::HashedKey& ns) {
+												 const AbslHashedStringDataKey& ns) {
         auto it = _cache.find(ns);
         if (it != _cache.end()) {
             return it->second;
@@ -558,8 +558,8 @@ void fillWriterVectors(OperationContext* opCtx,
     CachedCollectionProperties collPropertiesCache;
 
     for (auto&& op : *ops) {
-        StringMapTraits::HashedKey hashedNs(op.getNss().ns());
-        uint32_t hash = hashedNs.hash();
+		auto hashedNs = AbslStringDataHasher().hashed_key(op.getNss().ns());
+		uint32_t hash = (hashedNs.hash() >> 32) ^ static_cast<uint32_t>(hashedNs.hash());
 
         // We need to track all types of ops, including type 'n' (these are generated from chunk
         // migrations).

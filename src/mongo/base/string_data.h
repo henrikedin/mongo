@@ -104,6 +104,12 @@ public:
      */
     constexpr friend StringData operator"" _sd(const char* c, std::size_t len);
 
+	// Converts to `std::basic_string`.
+	explicit operator std::string() const {
+		if (!rawData()) return{};
+		return std::string(rawData(), size());
+	}
+
     /**
      * Constructs a StringData with begin and end iterators. begin points to the beginning of the
      * string. end points to the position past the end of the string. In a null-terminated string,

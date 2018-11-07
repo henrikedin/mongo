@@ -34,6 +34,8 @@
 
 #include <third_party/murmurhash3/MurmurHash3.h>
 
+#include <absl/container/flat_hash_map.h>
+
 #include "mongo/base/string_data.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/unordered_fast_key_table.h"
@@ -82,10 +84,87 @@ struct StringMapTraits {
     };
 };
 
+//template <typename V>
+//using StringMap = UnorderedFastKeyTable<StringData,   // K_L
+//                                        std::string,  // K_S
+//                                        V,
+//                                        StringMapTraits>;
+
+struct AbslHashedStringDataKey
+{
+public:
+	AbslHashedStringDataKey(StringData sd, std::size_t hash)
+		:sd_(sd)
+		,hash_(hash)
+	{
+	}
+
+	// Converts to `std::basic_string`.
+	explicit operator std::string() const {
+		return sd_.toString();
+	}
+
+	StringData key() const
+	{
+		return sd_;
+	}
+
+	std::size_t hash() const
+	{
+		return hash_;
+	}
+
+private:
+	StringData sd_;
+	std::size_t hash_;
+};
+
+struct AbslStringDataHasher
+{
+	using is_transparent = void;
+	std::size_t operator()(const StringData& sd) const
+	{
+		return absl::container_internal::hash_default_hash<absl::string_view>()(absl::string_view(sd.rawData(), sd.size()));
+	}
+	std::size_t operator()(const std::string& s) const
+	{
+		return operator()(StringData(s));;
+	}
+	std::size_t operator()(const char* s) const
+	{
+		return operator()(StringData(s));
+	}
+	std::size_t operator()(const AbslHashedStringDataKey& key) const
+	{
+		return key.hash();
+	}
+
+	AbslHashedStringDataKey hashed_key(StringData sd)
+	{
+		return AbslHashedStringDataKey(sd, operator()(sd));
+	}
+};
+
+// Supports heterogeneous lookup for string-like elements.
+struct AbslStringDataEq {
+	using is_transparent = void;
+	bool operator()(StringData lhs, StringData rhs) const {
+		return lhs == rhs;
+	}
+	bool operator()(AbslHashedStringDataKey lhs, StringData rhs) const {
+		return lhs.key() == rhs;
+	}
+	bool operator()(StringData lhs, AbslHashedStringDataKey rhs) const {
+		return lhs == rhs.key();
+	}
+	bool operator()(AbslHashedStringDataKey lhs, AbslHashedStringDataKey rhs) const {
+		return lhs.key() == rhs.key();
+	}
+};
+
+
+
 template <typename V>
-using StringMap = UnorderedFastKeyTable<StringData,   // K_L
-                                        std::string,  // K_S
-                                        V,
-                                        StringMapTraits>;
+using StringMap = absl::flat_hash_map<std::string, V, AbslStringDataHasher, AbslStringDataEq>;
 
 }  // namespace mongo
