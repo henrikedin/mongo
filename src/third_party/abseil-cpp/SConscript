@@ -1,0 +1,28 @@
+Import("env")
+Import("has_option")
+
+env = env.Clone()
+
+env.InjectThirdPartyIncludePaths(libraries=['abseil-cpp'])
+
+if env.TargetOSIs('windows'):
+    # C4309: 'argument': truncation of constant value
+    env.Append(CCFLAGS=['/wd4309'])
+
+env.Library(
+    target="absl_hash",
+    source=[
+        "absl/hash/internal/city.cc",
+        "absl/hash/internal/hash.cc",
+    ]
+)
+
+env.Library(
+    target="absl_container",
+    source=[
+        "absl/container/internal/raw_hash_set.cc",
+    ],
+    LIBDEPS=[
+        "absl_hash",
+    ]
+)

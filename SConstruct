@@ -322,6 +322,11 @@ add_option('system-boost-lib-search-suffixes',
     help='Comma delimited sequence of boost library suffixes to search',
 )
 
+add_option('use-system-abseil-cpp',
+    help='use system version of abseil-cpp libraries',
+    nargs=0,
+)
+
 add_option('use-system-boost',
     help='use system version of boost libraries',
     nargs=0,
