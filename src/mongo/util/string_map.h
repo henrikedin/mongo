@@ -33,6 +33,7 @@
 #pragma once
 
 #include <absl/container/flat_hash_map.h>
+#include <absl/container/flat_hash_set.h>
 
 #include "mongo/base/string_data.h"
 #include "mongo/util/assert_util.h"
@@ -113,5 +114,7 @@ struct AbslStringDataEq {
 
 template <typename V>
 using StringMap = absl::flat_hash_map<std::string, V, AbslStringDataHasher, AbslStringDataEq>;
+
+using StringSet = absl::flat_hash_set<std::string, AbslStringDataHasher, AbslStringDataEq>;
 
 }  // namespace mongo
