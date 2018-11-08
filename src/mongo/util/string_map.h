@@ -40,6 +40,8 @@
 
 namespace mongo {
 
+// Type that bundles a hashed key with the actual string so hashing can be performed outside of
+// insert call by using heterogeneous lookup.
 struct AbslHashedStringDataKey {
 public:
     AbslHashedStringDataKey(StringData sd, std::size_t hash) : sd_(sd), hash_(hash) {}
@@ -62,6 +64,7 @@ private:
     std::size_t hash_;
 };
 
+// Hasher to support heterogeneous lookup for StringData and string-like elements.
 struct AbslStringDataHasher {
     using is_transparent = void;
     std::size_t operator()(const StringData& sd) const {
@@ -83,7 +86,6 @@ struct AbslStringDataHasher {
     }
 };
 
-// Supports heterogeneous lookup for string-like elements.
 struct AbslStringDataEq {
     using is_transparent = void;
     bool operator()(StringData lhs, StringData rhs) const {
