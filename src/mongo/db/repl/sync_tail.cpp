@@ -559,7 +559,10 @@ void fillWriterVectors(OperationContext* opCtx,
 
     for (auto&& op : *ops) {
         auto hashedNs = AbslStringDataHasher().hashed_key(op.getNss().ns());
-        uint32_t hash = (hashedNs.hash() >> 32) ^ static_cast<uint32_t>(hashedNs.hash());
+        // Reduce the hash from 64bit down to 32bit, just to allow combinations with murmur3 later
+        // on. Bit depth not important, we end up just doing integer modulo with this in the end.
+        // The hash function should provide entropy in the lower bits as it's used in hash tables.
+        uint32_t hash = static_cast<uint32_t>(hashedNs.hash());
 
         // We need to track all types of ops, including type 'n' (these are generated from chunk
         // migrations).
