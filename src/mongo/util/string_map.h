@@ -70,7 +70,6 @@ struct AbslStringDataHasher {
     }
     std::size_t operator()(const std::string& s) const {
         return operator()(StringData(s));
-        ;
     }
     std::size_t operator()(const char* s) const {
         return operator()(StringData(s));
