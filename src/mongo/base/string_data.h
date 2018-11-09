@@ -108,7 +108,7 @@ public:
     explicit operator std::string() const {
         if (!rawData())
             return {};
-        return std::string(rawData(), size());
+        return {rawData(), size()};
     }
 
     /**

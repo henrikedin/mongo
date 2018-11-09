@@ -2674,6 +2674,9 @@ def doConfigure(myenv):
         elif using_lsan:
             myenv.FatalError("Using the leak sanitizer requires a valid symbolizer")
 
+        if using_asan:
+            myenv.Append(CCFLAGS=['-DADDRESS_SANITIZER'])
+
         if using_tsan:
             tsan_options += "suppressions=\"%s\" " % myenv.File("#etc/tsan.suppressions").abspath
             myenv['ENV']['TSAN_OPTIONS'] = tsan_options

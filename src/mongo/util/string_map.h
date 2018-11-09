@@ -44,39 +44,47 @@ namespace mongo {
 // insert call by using heterogeneous lookup.
 struct AbslHashedStringDataKey {
 public:
-    AbslHashedStringDataKey(StringData sd, std::size_t hash) : sd_(sd), hash_(hash) {}
+    explicit AbslHashedStringDataKey(StringData sd, std::size_t hash) : _sd(sd), _hash(hash) {}
 
     // Converts to `std::basic_string`.
     explicit operator std::string() const {
-        return sd_.toString();
+        return _sd.toString();
     }
 
     StringData key() const {
-        return sd_;
+        return _sd;
     }
 
     std::size_t hash() const {
-        return hash_;
+        return _hash;
     }
 
 private:
-    StringData sd_;
-    std::size_t hash_;
+    StringData _sd;
+    std::size_t _hash;
 };
 
 // Hasher to support heterogeneous lookup for StringData and string-like elements.
 struct AbslStringDataHasher {
+    // This using directive activates heterogeneous lookup in the hash table
     using is_transparent = void;
+
     std::size_t operator()(const StringData& sd) const {
+        // Absl doesn't expose a stable API to do this, so this might need to be changed during
+        // upgrades. This is to make sure we end up doing string hashing with the absl default
+        // hasher even though we're using mongo::StringData.
         return absl::container_internal::hash_default_hash<absl::string_view>()(
             absl::string_view(sd.rawData(), sd.size()));
     }
+
     std::size_t operator()(const std::string& s) const {
         return operator()(StringData(s));
     }
+
     std::size_t operator()(const char* s) const {
         return operator()(StringData(s));
     }
+
     std::size_t operator()(const AbslHashedStringDataKey& key) const {
         return key.hash();
     }
@@ -87,16 +95,21 @@ struct AbslStringDataHasher {
 };
 
 struct AbslStringDataEq {
+    // This using directive activates heterogeneous lookup in the hash table
     using is_transparent = void;
+
     bool operator()(StringData lhs, StringData rhs) const {
         return lhs == rhs;
     }
+
     bool operator()(AbslHashedStringDataKey lhs, StringData rhs) const {
         return lhs.key() == rhs;
     }
+
     bool operator()(StringData lhs, AbslHashedStringDataKey rhs) const {
         return lhs == rhs.key();
     }
+
     bool operator()(AbslHashedStringDataKey lhs, AbslHashedStringDataKey rhs) const {
         return lhs.key() == rhs.key();
     }

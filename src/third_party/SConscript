@@ -38,7 +38,7 @@ if not use_system_version_of_library('boost'):
 
 if not use_system_version_of_library('abseil-cpp'):
     thirdPartyIncludePathList.append(
-        ('abseil-cpp', '#/src/third_party/abseil-cpp'))
+        ('abseil-cpp', '#/src/third_party/abseil-cpp-master/abseil-cpp'))
 
 if not use_system_version_of_library('snappy'):
     thirdPartyIncludePathList.append(
@@ -190,7 +190,7 @@ if use_system_version_of_library("abseil-cpp"):
             env['LIBDEPS_ABSL_HASH_SYSLIBDEP'],
         ])
 else:
-    abseilDirectory = 'abseil-cpp'
+    abseilDirectory = 'abseil-cpp-master'
     abseilEnv = env.Clone()
     abseilEnv.InjectThirdPartyIncludePaths(libraries=['abseil-cpp'])
     abseilEnv.SConscript(abseilDirectory + '/SConscript', exports={ 'env' : abseilEnv })
