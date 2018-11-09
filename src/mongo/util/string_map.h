@@ -69,12 +69,9 @@ struct AbslStringDataHasher {
     // This using directive activates heterogeneous lookup in the hash table
     using is_transparent = void;
 
-    std::size_t operator()(const StringData& sd) const {
-        // Absl doesn't expose a stable API to do this, so this might need to be changed during
-        // upgrades. This is to make sure we end up doing string hashing with the absl default
-        // hasher even though we're using mongo::StringData.
-        return absl::container_internal::hash_default_hash<absl::string_view>()(
-            absl::string_view(sd.rawData(), sd.size()));
+    std::size_t operator()(StringData sd) const {
+        // Use the default absl string hasher.
+		return absl::Hash<absl::string_view>{}(absl::string_view(sd.rawData(), sd.size()));
     }
 
     std::size_t operator()(const std::string& s) const {
@@ -85,7 +82,7 @@ struct AbslStringDataHasher {
         return operator()(StringData(s));
     }
 
-    std::size_t operator()(const AbslHashedStringDataKey& key) const {
+    std::size_t operator()(AbslHashedStringDataKey key) const {
         return key.hash();
     }
 

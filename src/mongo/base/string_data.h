@@ -104,11 +104,10 @@ public:
      */
     constexpr friend StringData operator"" _sd(const char* c, std::size_t len);
 
-    // Converts to `std::basic_string`.
     explicit operator std::string() const {
         if (!rawData())
             return {};
-        return {rawData(), size()};
+        return std::string(rawData(), size());
     }
 
     /**

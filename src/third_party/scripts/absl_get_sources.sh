@@ -1,5 +1,5 @@
 #!/bin/bash
-# This script downloads and imports an unstable revision of ASIO.
+# This script downloads and imports a revision of abseil-cpp.
 # It can be run on Linux, Mac OS X or Windows WSL.
 # Actual integration into the build system is not done by this script.
 #

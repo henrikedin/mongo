@@ -773,8 +773,6 @@ class CityHashState : public HashStateBase<CityHashState> {
   }
 
   ABSL_ATTRIBUTE_ALWAYS_INLINE static uint64_t Mix(uint64_t state, uint64_t v) {
-    using MultType =
-        absl::conditional_t<sizeof(size_t) == 4, uint64_t, uint128>;
 #if !defined(_MSC_VER) || !defined(_WIN64)
     using MultType =
         absl::conditional_t<sizeof(size_t) == 4, uint64_t, uint128>;
