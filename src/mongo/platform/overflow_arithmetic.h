@@ -34,6 +34,7 @@
 
 #ifdef _MSC_VER
 #include <safeint.h>
+#include <intrin.h>
 #endif
 
 namespace mongo {
