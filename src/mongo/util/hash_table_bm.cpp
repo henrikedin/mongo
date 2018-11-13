@@ -28,13 +28,13 @@
  *    it in the license file.
  */
 
-#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::logger::LogComponent::kDefault
-
 #include "mongo/platform/basic.h"
 
 #include "mongo/util/string_map.h"
 #include "mongo/util/unordered_fast_key_table.h"
 
+#include <absl/container/flat_hash_map.h>
+#include <absl/strings/string_view.h>
 #include <algorithm>
 #include <benchmark/benchmark.h>
 #include <memory>
@@ -45,6 +45,8 @@
 
 namespace mongo {
 namespace {
+
+	constexpr uint32_t MaxContainerSize = 1000000;
 
 	template<typename K>
 	struct UnorderedFastKeyTableBasicTraits {
@@ -84,51 +86,89 @@ namespace {
 		};
 	};
 
-	using StdUnorderedInt = std::unordered_map<unsigned int, bool>;
+	using StdUnorderedInt = std::unordered_map<uint32_t, bool>;
 	using StdUnorderedString = std::unordered_map<std::string, bool>;
 
-	using MongoUnorderedFastKeyTableInt = UnorderedFastKeyTable<unsigned int, unsigned int, bool, UnorderedFastKeyTableBasicTraits<unsigned int>>;
+	using MongoUnorderedFastKeyTableInt = UnorderedFastKeyTable<uint32_t, uint32_t, bool, UnorderedFastKeyTableBasicTraits<uint32_t>>;
 	using MongoUnorderedFastKeyTableString = StringMap<bool>;
 
+	using AbslFlatHashMapInt = absl::flat_hash_map<uint32_t, bool>;
+	using AbslFlatHashMapString = absl::flat_hash_map<std::string, bool>;
+
+	template<typename>
+	struct is_unordered_fast_key_table : std::false_type {};
+
+	template<typename K_L, typename K_S, typename V, typename Traits>
+	struct is_unordered_fast_key_table<UnorderedFastKeyTable<K_L, K_S, V, Traits>> : std::true_type {};
+
+	template<typename>
+	struct is_absl_flat_hash_map : std::false_type {};
+
+	template<typename K, typename V, typename Hash, typename Eq, typename Allocator>
+	struct is_absl_flat_hash_map<absl::flat_hash_map<K, V, Hash, Eq, Allocator>> : std::true_type {};
+
 	template <class T>
-	typename std::enable_if<std::is_same<T, StdUnorderedInt>::value, float>::type
+	typename std::enable_if<!is_unordered_fast_key_table<T>::value, float>::type
 		getLoadFactor(const T& container)
 	{
 		return container.load_factor();
 	}
 
 	template <class T>
-	typename std::enable_if<std::is_same<T, StdUnorderedString>::value, float>::type
-		getLoadFactor(const T& container)
-	{
-		return container.load_factor();
-	}
-
-	template <class T>
-	typename std::enable_if<std::is_same<T, MongoUnorderedFastKeyTableInt>::value, float>::type
+	typename std::enable_if<is_unordered_fast_key_table<T>::value, float>::type
 		getLoadFactor(const T& container)
 	{
 		return container.empty() ? 0.0f : (float)container.size() / container.capacity();
 	}
 
-	template <class T>
-	typename std::enable_if<std::is_same<T, MongoUnorderedFastKeyTableString>::value, float>::type
-		getLoadFactor(const T& container)
+	constexpr uint32_t default_seed = 34862;
+	constexpr uint32_t other_seed = 76453;
+
+	template <class Generator>
+	class BaseGenerator
 	{
-		return container.empty() ? 0.0f : (float)container.size() / container.capacity();
-	}
+	public:
+		template <typename K>
+		K generate();
 
+		template <>
+		uint32_t generate<uint32_t>()
+		{
+			return generate_integer();
+		}
 
-	constexpr unsigned int default_seed = 34862;
-	constexpr unsigned int other_seed = 76453;
+		template <>
+		StringData generate<StringData>()
+		{
+			return generateStringData(generate<uint32_t>());
+		}
 
-	struct BaseGenerator
-	{
-		StringData generateStringData(unsigned int i)
+		template <>
+		absl::string_view generate<absl::string_view>()
+		{
+			StringData sd = generateStringData(generate<uint32_t>());
+			return absl::string_view(sd.rawData(), sd.size());
+		}
+
+		template <>
+		std::string generate<std::string>()
+		{
+			return generate<StringData>().toString();
+		}
+
+	private:
+		uint32_t generate_integer()
+		{
+			return static_cast<Generator*>(this)->generate_integer();
+		}
+
+		StringData generateStringData(uint32_t i)
 		{
 			if (!_mem.get())
 			{
-				_mem = std::unique_ptr<char[]>(new char[1000000000]);
+				// Use a very large buffer to store string keys contiguously so fetching the key memory doesn't interfere with the actual test. 
+				// We create strings from 32bit integers, so they will have a maximum length of 10
+				_mem = std::make_unique<char[]>(MaxContainerSize * 10);
 				_current = _mem.get();
 			}
 			StringData sd(itoa(i, _current, 10));
@@ -140,60 +180,32 @@ namespace {
 		char* _current{ nullptr };
 	};
 
-	struct Sequence : private BaseGenerator
+	class Sequence : public BaseGenerator<Sequence>
 	{
-		template <typename K>
-		K generate();
-
-		template <>
-		unsigned int generate<unsigned int>()
+	public:
+		uint32_t generate_integer()
 		{
 			return ++_state;
 		}
-
-		template <>
-		StringData generate<StringData>()
-		{
-			return generateStringData(generate<unsigned int>());
-		}
-
-		template <>
-		std::string generate<std::string>()
-		{
-			return generate<StringData>().toString();
-		}
-
-		unsigned int _state{ 0 };
+		
+	private:
+		uint32_t _state{ 0 };
 	};
 
-	template <unsigned int Seed>
-	struct UniformDistribution : private BaseGenerator
+	template <uint32_t Seed>
+	class UniformDistribution : public BaseGenerator<UniformDistribution<Seed>>
 	{
+	public:
 		UniformDistribution()
 			: _gen(Seed) {}
 
-		template <typename K>
-		K generate();
-
-		template <>
-		unsigned int generate<unsigned int>()
+		uint32_t generate_integer()
 		{
 			return _dist(_gen);
 		}
 
-		template <>
-		StringData generate<StringData>()
-		{
-			return generateStringData(generate<unsigned int>());
-		}
-
-		template <>
-		std::string generate<std::string>()
-		{
-			return generate<StringData>().toString();
-		}
-
-		std::uniform_int_distribution<unsigned int> _dist;
+	private:
+		std::uniform_int_distribution<uint32_t> _dist;
 		std::mt19937 _gen;
 	};
 
@@ -214,6 +226,7 @@ void LookupTest(benchmark::State& state) {
 	{
 		lookup_keys.push_back(lookup_gen.generate<K>());
 	}
+	// Make sure we don't do the lookup in the same order as insert.
 	std::shuffle(lookup_keys.begin(), lookup_keys.end(), std::default_random_engine(default_seed+other_seed));
 	
 	int i = 0;
@@ -227,7 +240,7 @@ void LookupTest(benchmark::State& state) {
 	}
 
 	state.counters["size"] = state.range(0);
-	state.counters["lf"] = getLoadFactor(container);
+	state.counters["load_factor"] = getLoadFactor(container);
 }
 
 template <class Container, typename K, class StorageGenerator>
@@ -240,7 +253,6 @@ void InsertTest(benchmark::State& state) {
 	{
 		insert_keys.push_back(storage_gen.generate<K>());
 	}
-	std::shuffle(insert_keys.begin(), insert_keys.end(), std::default_random_engine(default_seed + other_seed));
 
 	int i = 0;
 	Container container;
@@ -251,6 +263,7 @@ void InsertTest(benchmark::State& state) {
 		{
 			i = 0;
 
+			// Reset the container when we've reached the desired size, pause timing while we destruct
 			state.PauseTiming();
 			{
 				Container swap_container;
@@ -265,56 +278,68 @@ void InsertTest(benchmark::State& state) {
 
 template <class Container>
 void BM_SuccessfulLookup(benchmark::State& state) {
-	LookupTest<Container, Container::key_type, UniformDistribution<default_seed>, UniformDistribution<default_seed>>(state);
+	// Template conditional magic, I want to switch out the key type if storage is std::string AND the container is absl.
+	LookupTest<Container, std::conditional<std::is_same<Container::key_type, std::string>::value, std::conditional<is_absl_flat_hash_map<Container>::value, absl::string_view, std::string>::type, Container::key_type>::type, UniformDistribution<default_seed>, UniformDistribution<default_seed>>(state);
 }
 
 template <class Container>
 void BM_UnsuccessfulLookup(benchmark::State& state) {
-	LookupTest<Container, Container::key_type, UniformDistribution<default_seed>, UniformDistribution<other_seed>>(state);
+	LookupTest<Container, std::conditional<std::is_same<Container::key_type, std::string>::value, std::conditional<is_absl_flat_hash_map<Container>::value, absl::string_view, std::string>::type, Container::key_type>::type, UniformDistribution<default_seed>, UniformDistribution<other_seed>>(state);
 }
 
 template <class Container>
 void BM_UnsuccessfulLookupSeq(benchmark::State& state) {
-	LookupTest<Container, Container::key_type, Sequence, UniformDistribution<default_seed>>(state);
+	LookupTest<Container, std::conditional<std::is_same<Container::key_type, std::string>::value, std::conditional<is_absl_flat_hash_map<Container>::value, absl::string_view, std::string>::type, Container::key_type>::type, Sequence, UniformDistribution<default_seed>>(state);
 }
 
 template <class Container>
 void BM_Insert(benchmark::State& state) {
-	InsertTest<Container, Container::key_type, UniformDistribution<default_seed>>(state);
+	InsertTest<Container, std::conditional<std::is_same<Container::key_type, std::string>::value, std::conditional<is_absl_flat_hash_map<Container>::value, absl::string_view, std::string>::type, Container::key_type>::type, UniformDistribution<default_seed>>(state);
 }
 
-template <unsigned int Start = 0>
+template <uint32_t Start = 0>
 static void Range(benchmark::internal::Benchmark* b) {
-	unsigned int n0 = Start, n1 = 1000000;
-	double       fdn = 0.02;
-	for (unsigned int n = n0; n <= n1; n += std::max(1u, (unsigned int)(n*fdn))) {
+	uint32_t n0 = Start, n1 = MaxContainerSize;
+	double       fdn = 0.01;
+	for (uint32_t n = n0; n <= n1; n += std::max(1u, static_cast<uint32_t>(n*fdn))) {
 		b->Arg(n);
 	}
 }
 
+
+// Integer key tests
 BENCHMARK_TEMPLATE(BM_SuccessfulLookup, StdUnorderedInt)->Apply(Range);
 BENCHMARK_TEMPLATE(BM_SuccessfulLookup, MongoUnorderedFastKeyTableInt)->Apply(Range);
+BENCHMARK_TEMPLATE(BM_SuccessfulLookup, AbslFlatHashMapInt)->Apply(Range);
 
 BENCHMARK_TEMPLATE(BM_UnsuccessfulLookup, StdUnorderedInt)->Apply(Range);
 BENCHMARK_TEMPLATE(BM_UnsuccessfulLookup, MongoUnorderedFastKeyTableInt)->Apply(Range);
+BENCHMARK_TEMPLATE(BM_UnsuccessfulLookup, AbslFlatHashMapInt)->Apply(Range);
 
 BENCHMARK_TEMPLATE(BM_UnsuccessfulLookupSeq, StdUnorderedInt)->Apply(Range);
 BENCHMARK_TEMPLATE(BM_UnsuccessfulLookupSeq, MongoUnorderedFastKeyTableInt)->Apply(Range);
+BENCHMARK_TEMPLATE(BM_UnsuccessfulLookupSeq, AbslFlatHashMapInt)->Apply(Range);
 
 BENCHMARK_TEMPLATE(BM_Insert, StdUnorderedInt)->Apply(Range<1>);
 BENCHMARK_TEMPLATE(BM_Insert, MongoUnorderedFastKeyTableInt)->Apply(Range<1>);
+BENCHMARK_TEMPLATE(BM_Insert, AbslFlatHashMapInt)->Apply(Range<1>);
 
+// String key tests
 BENCHMARK_TEMPLATE(BM_SuccessfulLookup, StdUnorderedString)->Apply(Range);
 BENCHMARK_TEMPLATE(BM_SuccessfulLookup, MongoUnorderedFastKeyTableString)->Apply(Range);
+BENCHMARK_TEMPLATE(BM_SuccessfulLookup, AbslFlatHashMapString)->Apply(Range);
 
 BENCHMARK_TEMPLATE(BM_UnsuccessfulLookup, StdUnorderedString)->Apply(Range);
 BENCHMARK_TEMPLATE(BM_UnsuccessfulLookup, MongoUnorderedFastKeyTableString)->Apply(Range);
+BENCHMARK_TEMPLATE(BM_UnsuccessfulLookup, AbslFlatHashMapString)->Apply(Range);
 
 BENCHMARK_TEMPLATE(BM_UnsuccessfulLookupSeq, StdUnorderedString)->Apply(Range);
 BENCHMARK_TEMPLATE(BM_UnsuccessfulLookupSeq, MongoUnorderedFastKeyTableString)->Apply(Range);
+BENCHMARK_TEMPLATE(BM_UnsuccessfulLookupSeq, AbslFlatHashMapString)->Apply(Range);
 
 BENCHMARK_TEMPLATE(BM_Insert, StdUnorderedString)->Apply(Range<1>);
 BENCHMARK_TEMPLATE(BM_Insert, MongoUnorderedFastKeyTableString)->Apply(Range<1>);
+BENCHMARK_TEMPLATE(BM_Insert, AbslFlatHashMapString)->Apply(Range<1>);
 
 }  // namespace
 }  // namespace mongo
