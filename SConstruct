@@ -322,6 +322,11 @@ add_option('system-boost-lib-search-suffixes',
     help='Comma delimited sequence of boost library suffixes to search',
 )
 
+add_option('use-system-abseil-cpp',
+    help='use system version of abseil-cpp libraries',
+    nargs=0,
+)
+
 add_option('use-system-boost',
     help='use system version of boost libraries',
     nargs=0,
@@ -2668,6 +2673,9 @@ def doConfigure(myenv):
             tsan_options = "external_symbolizer_path=\"%s\" " % llvm_symbolizer
         elif using_lsan:
             myenv.FatalError("Using the leak sanitizer requires a valid symbolizer")
+
+        if using_asan:
+            myenv.AppendUnique(CCFLAGS=['-DADDRESS_SANITIZER'])
 
         if using_tsan:
             tsan_options += "suppressions=\"%s\" " % myenv.File("#etc/tsan.suppressions").abspath
