@@ -42,268 +42,279 @@
 #include <unordered_map>
 
 
-
 namespace mongo {
 namespace {
 
-	constexpr uint32_t MaxContainerSize = 1000000;
+constexpr uint32_t MaxContainerSize = 1000000;
 
-	template<typename K>
-	struct UnorderedFastKeyTableBasicTraits {
-		static K hash(K a) {
-			return a;
-		}
+template <typename K>
+struct UnorderedFastKeyTableBasicTraits {
+    static K hash(K a) {
+        return a;
+    }
 
-		static bool equals(K a, K b) {
-			return a == b;
-		}
+    static bool equals(K a, K b) {
+        return a == b;
+    }
 
-		static K toStorage(K s) {
-			return s;
-		}
+    static K toStorage(K s) {
+        return s;
+    }
 
-		static K toLookup(K s) {
-			return s;
-		}
+    static K toLookup(K s) {
+        return s;
+    }
 
-		class HashedKey {
-		public:
-			explicit HashedKey(K key = 0) : _key(key) {}
+    class HashedKey {
+    public:
+        explicit HashedKey(K key = 0) : _key(key) {}
 
-			HashedKey(K key, uint32_t hash) : _key(key) {
-			}
+        HashedKey(K key, uint32_t hash) : _key(key) {}
 
-			K key() const {
-				return _key;
-			}
+        K key() const {
+            return _key;
+        }
 
-			uint32_t hash() const {
-				return _key;
-			}
+        uint32_t hash() const {
+            return _key;
+        }
 
-		private:
-			K _key;
-		};
-	};
+    private:
+        K _key;
+    };
+};
 
-	using StdUnorderedInt = std::unordered_map<uint32_t, bool>;
-	using StdUnorderedString = std::unordered_map<std::string, bool>;
+using StdUnorderedInt = std::unordered_map<uint32_t, bool>;
+using StdUnorderedString = std::unordered_map<std::string, bool>;
 
-	using MongoUnorderedFastKeyTableInt = UnorderedFastKeyTable<uint32_t, uint32_t, bool, UnorderedFastKeyTableBasicTraits<uint32_t>>;
-	using MongoUnorderedFastKeyTableString = StringMap<bool>;
+using MongoUnorderedFastKeyTableInt =
+    UnorderedFastKeyTable<uint32_t, uint32_t, bool, UnorderedFastKeyTableBasicTraits<uint32_t>>;
+using MongoUnorderedFastKeyTableString = StringMap<bool>;
 
-	using AbslFlatHashMapInt = absl::flat_hash_map<uint32_t, bool>;
-	using AbslFlatHashMapString = absl::flat_hash_map<std::string, bool>;
+using AbslFlatHashMapInt = absl::flat_hash_map<uint32_t, bool>;
+using AbslFlatHashMapString = absl::flat_hash_map<std::string, bool>;
 
-	template<typename>
-	struct is_unordered_fast_key_table : std::false_type {};
+template <typename>
+struct is_unordered_fast_key_table : std::false_type {};
 
-	template<typename K_L, typename K_S, typename V, typename Traits>
-	struct is_unordered_fast_key_table<UnorderedFastKeyTable<K_L, K_S, V, Traits>> : std::true_type {};
+template <typename K_L, typename K_S, typename V, typename Traits>
+struct is_unordered_fast_key_table<UnorderedFastKeyTable<K_L, K_S, V, Traits>> : std::true_type {};
 
-	template<typename>
-	struct is_absl_flat_hash_map : std::false_type {};
+template <typename>
+struct is_absl_flat_hash_map : std::false_type {};
 
-	template<typename K, typename V, typename Hash, typename Eq, typename Allocator>
-	struct is_absl_flat_hash_map<absl::flat_hash_map<K, V, Hash, Eq, Allocator>> : std::true_type {};
+template <typename K, typename V, typename Hash, typename Eq, typename Allocator>
+struct is_absl_flat_hash_map<absl::flat_hash_map<K, V, Hash, Eq, Allocator>> : std::true_type {};
 
-	template <class T>
-	typename std::enable_if<!is_unordered_fast_key_table<T>::value, float>::type
-		getLoadFactor(const T& container)
-	{
-		return container.load_factor();
-	}
+template <class T>
+typename std::enable_if<!is_unordered_fast_key_table<T>::value, float>::type getLoadFactor(
+    const T& container) {
+    return container.load_factor();
+}
 
-	template <class T>
-	typename std::enable_if<is_unordered_fast_key_table<T>::value, float>::type
-		getLoadFactor(const T& container)
-	{
-		return container.empty() ? 0.0f : (float)container.size() / container.capacity();
-	}
+template <class T>
+typename std::enable_if<is_unordered_fast_key_table<T>::value, float>::type getLoadFactor(
+    const T& container) {
+    return container.empty() ? 0.0f : (float)container.size() / container.capacity();
+}
 
-	constexpr uint32_t default_seed = 34862;
-	constexpr uint32_t other_seed = 76453;
+constexpr uint32_t default_seed = 34862;
+constexpr uint32_t other_seed = 76453;
 
-	template <class Generator>
-	class BaseGenerator
-	{
-	public:
-		template <typename K>
-		K generate();
+template <class Generator>
+class BaseGenerator {
+public:
+    template <typename K>
+    K generate();
 
-		template <>
-		uint32_t generate<uint32_t>()
-		{
-			return generate_integer();
-		}
+    template <>
+    uint32_t generate<uint32_t>() {
+        return generate_integer();
+    }
 
-		template <>
-		StringData generate<StringData>()
-		{
-			return generateStringData(generate<uint32_t>());
-		}
+    template <>
+    StringData generate<StringData>() {
+        return generateStringData(generate<uint32_t>());
+    }
 
-		template <>
-		absl::string_view generate<absl::string_view>()
-		{
-			StringData sd = generateStringData(generate<uint32_t>());
-			return absl::string_view(sd.rawData(), sd.size());
-		}
+    template <>
+    absl::string_view generate<absl::string_view>() {
+        StringData sd = generateStringData(generate<uint32_t>());
+        return absl::string_view(sd.rawData(), sd.size());
+    }
 
-		template <>
-		std::string generate<std::string>()
-		{
-			return generate<StringData>().toString();
-		}
+    template <>
+    std::string generate<std::string>() {
+        return generate<StringData>().toString();
+    }
 
-	private:
-		uint32_t generate_integer()
-		{
-			return static_cast<Generator*>(this)->generate_integer();
-		}
+private:
+    uint32_t generate_integer() {
+        return static_cast<Generator*>(this)->generate_integer();
+    }
 
-		StringData generateStringData(uint32_t i)
-		{
-			if (!_mem.get())
-			{
-				// Use a very large buffer to store string keys contiguously so fetching the key memory doesn't interfere with the actual test. 
-				// We create strings from 32bit integers, so they will have a maximum length of 10
-				_mem = std::make_unique<char[]>(MaxContainerSize * 10);
-				_current = _mem.get();
-			}
-			StringData sd(itoa(i, _current, 10));
-			_current += sd.size();
-			return sd;
-		}
+    StringData generateStringData(uint32_t i) {
+        if (!_mem.get()) {
+            // Use a very large buffer to store string keys contiguously so fetching the key memory
+            // doesn't interfere with the actual test.
+            // We create strings from 32bit integers, so they will have a maximum length of 10
+            _mem = std::make_unique<char[]>(MaxContainerSize * 10);
+            _current = _mem.get();
+        }
+        StringData sd(itoa(i, _current, 10));
+        _current += sd.size();
+        return sd;
+    }
 
-		std::unique_ptr<char[]> _mem{ nullptr };
-		char* _current{ nullptr };
-	};
+    std::unique_ptr<char[]> _mem{nullptr};
+    char* _current{nullptr};
+};
 
-	class Sequence : public BaseGenerator<Sequence>
-	{
-	public:
-		uint32_t generate_integer()
-		{
-			return ++_state;
-		}
-		
-	private:
-		uint32_t _state{ 0 };
-	};
+class Sequence : public BaseGenerator<Sequence> {
+public:
+    uint32_t generate_integer() {
+        return ++_state;
+    }
 
-	template <uint32_t Seed>
-	class UniformDistribution : public BaseGenerator<UniformDistribution<Seed>>
-	{
-	public:
-		UniformDistribution()
-			: _gen(Seed) {}
+private:
+    uint32_t _state{0};
+};
 
-		uint32_t generate_integer()
-		{
-			return _dist(_gen);
-		}
+template <uint32_t Seed>
+class UniformDistribution : public BaseGenerator<UniformDistribution<Seed>> {
+public:
+    UniformDistribution() : _gen(Seed) {}
 
-	private:
-		std::uniform_int_distribution<uint32_t> _dist;
-		std::mt19937 _gen;
-	};
+    uint32_t generate_integer() {
+        return _dist(_gen);
+    }
+
+private:
+    std::uniform_int_distribution<uint32_t> _dist;
+    std::mt19937 _gen;
+};
 
 template <class Container, class K, class StorageGenerator, class LookupGenerator>
 void LookupTest(benchmark::State& state) {
-	Container container;
-	StorageGenerator storage_gen;
+    Container container;
+    StorageGenerator storage_gen;
 
-	const int num = state.range(0) + 1;
-	for (int i = num-1; i; --i)
-	{
-		container[storage_gen.generate<K>()];
-	}
+    const int num = state.range(0) + 1;
+    for (int i = num - 1; i; --i) {
+        container[storage_gen.generate<K>()];
+    }
 
-	std::vector<K> lookup_keys;
-	LookupGenerator lookup_gen;
-	for (int i = num; i; --i)
-	{
-		lookup_keys.push_back(lookup_gen.generate<K>());
-	}
-	// Make sure we don't do the lookup in the same order as insert.
-	std::shuffle(lookup_keys.begin(), lookup_keys.end(), std::default_random_engine(default_seed+other_seed));
-	
-	int i = 0;
-	for (auto _ : state) {
-		benchmark::ClobberMemory();
-		benchmark::DoNotOptimize(container.find(lookup_keys[i++]));
-		if (i == num)
-		{
-			i = 0;
-		}
-	}
+    std::vector<K> lookup_keys;
+    LookupGenerator lookup_gen;
+    for (int i = num; i; --i) {
+        lookup_keys.push_back(lookup_gen.generate<K>());
+    }
+    // Make sure we don't do the lookup in the same order as insert.
+    std::shuffle(lookup_keys.begin(),
+                 lookup_keys.end(),
+                 std::default_random_engine(default_seed + other_seed));
 
-	state.counters["size"] = state.range(0);
-	state.counters["load_factor"] = getLoadFactor(container);
+    int i = 0;
+    for (auto _ : state) {
+        benchmark::ClobberMemory();
+        benchmark::DoNotOptimize(container.find(lookup_keys[i++]));
+        if (i == num) {
+            i = 0;
+        }
+    }
+
+    state.counters["size"] = state.range(0);
+    state.counters["load_factor"] = getLoadFactor(container);
 }
 
 template <class Container, typename K, class StorageGenerator>
 void InsertTest(benchmark::State& state) {
-	std::vector<K> insert_keys;
-	StorageGenerator storage_gen;
+    std::vector<K> insert_keys;
+    StorageGenerator storage_gen;
 
-	const int num = state.range(0);
-	for (int i = num; i; --i)
-	{
-		insert_keys.push_back(storage_gen.generate<K>());
-	}
+    const int num = state.range(0);
+    for (int i = num; i; --i) {
+        insert_keys.push_back(storage_gen.generate<K>());
+    }
 
-	int i = 0;
-	Container container;
-	for (auto _ : state) {
-		benchmark::ClobberMemory();
-		benchmark::DoNotOptimize(container[insert_keys[i++]]);
-		if (i == num)
-		{
-			i = 0;
+    int i = 0;
+    Container container;
+    for (auto _ : state) {
+        benchmark::ClobberMemory();
+        benchmark::DoNotOptimize(container[insert_keys[i++]]);
+        if (i == num) {
+            i = 0;
 
-			// Reset the container when we've reached the desired size, pause timing while we destruct
-			state.PauseTiming();
-			{
-				Container swap_container;
-				std::swap(container, swap_container);
-			}
-			state.ResumeTiming();
-		}
-	}
+            // Reset the container when we've reached the desired size, pause timing while we
+            // destruct
+            state.PauseTiming();
+            {
+                Container swap_container;
+                std::swap(container, swap_container);
+            }
+            state.ResumeTiming();
+        }
+    }
 
-	state.counters["size"] = state.range(0);
+    state.counters["size"] = state.range(0);
 }
 
 template <class Container>
 void BM_SuccessfulLookup(benchmark::State& state) {
-	// Template conditional magic, I want to switch out the key type if storage is std::string AND the container is absl.
-	LookupTest<Container, std::conditional<std::is_same<Container::key_type, std::string>::value, std::conditional<is_absl_flat_hash_map<Container>::value, absl::string_view, std::string>::type, Container::key_type>::type, UniformDistribution<default_seed>, UniformDistribution<default_seed>>(state);
+    // Template conditional magic, I want to switch out the key type if storage is std::string AND
+    // the container is absl.
+    LookupTest<Container,
+               std::conditional<std::is_same<Container::key_type, std::string>::value,
+                                std::conditional<is_absl_flat_hash_map<Container>::value,
+                                                 absl::string_view,
+                                                 std::string>::type,
+                                Container::key_type>::type,
+               UniformDistribution<default_seed>,
+               UniformDistribution<default_seed>>(state);
 }
 
 template <class Container>
 void BM_UnsuccessfulLookup(benchmark::State& state) {
-	LookupTest<Container, std::conditional<std::is_same<Container::key_type, std::string>::value, std::conditional<is_absl_flat_hash_map<Container>::value, absl::string_view, std::string>::type, Container::key_type>::type, UniformDistribution<default_seed>, UniformDistribution<other_seed>>(state);
+    LookupTest<Container,
+               std::conditional<std::is_same<Container::key_type, std::string>::value,
+                                std::conditional<is_absl_flat_hash_map<Container>::value,
+                                                 absl::string_view,
+                                                 std::string>::type,
+                                Container::key_type>::type,
+               UniformDistribution<default_seed>,
+               UniformDistribution<other_seed>>(state);
 }
 
 template <class Container>
 void BM_UnsuccessfulLookupSeq(benchmark::State& state) {
-	LookupTest<Container, std::conditional<std::is_same<Container::key_type, std::string>::value, std::conditional<is_absl_flat_hash_map<Container>::value, absl::string_view, std::string>::type, Container::key_type>::type, Sequence, UniformDistribution<default_seed>>(state);
+    LookupTest<Container,
+               std::conditional<std::is_same<Container::key_type, std::string>::value,
+                                std::conditional<is_absl_flat_hash_map<Container>::value,
+                                                 absl::string_view,
+                                                 std::string>::type,
+                                Container::key_type>::type,
+               Sequence,
+               UniformDistribution<default_seed>>(state);
 }
 
 template <class Container>
 void BM_Insert(benchmark::State& state) {
-	InsertTest<Container, std::conditional<std::is_same<Container::key_type, std::string>::value, std::conditional<is_absl_flat_hash_map<Container>::value, absl::string_view, std::string>::type, Container::key_type>::type, UniformDistribution<default_seed>>(state);
+    InsertTest<Container,
+               std::conditional<std::is_same<Container::key_type, std::string>::value,
+                                std::conditional<is_absl_flat_hash_map<Container>::value,
+                                                 absl::string_view,
+                                                 std::string>::type,
+                                Container::key_type>::type,
+               UniformDistribution<default_seed>>(state);
 }
 
 template <uint32_t Start = 0>
 static void Range(benchmark::internal::Benchmark* b) {
-	uint32_t n0 = Start, n1 = MaxContainerSize;
-	double       fdn = 0.01;
-	for (uint32_t n = n0; n <= n1; n += std::max(1u, static_cast<uint32_t>(n*fdn))) {
-		b->Arg(n);
-	}
+    uint32_t n0 = Start, n1 = MaxContainerSize;
+    double fdn = 0.01;
+    for (uint32_t n = n0; n <= n1; n += std::max(1u, static_cast<uint32_t>(n * fdn))) {
+        b->Arg(n);
+    }
 }
 
 
