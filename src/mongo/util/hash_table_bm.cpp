@@ -121,37 +121,13 @@ typename std::enable_if<is_unordered_fast_key_table<T>::value, float>::type getL
 constexpr uint32_t default_seed = 34862;
 constexpr uint32_t other_seed = 76453;
 
-template <class Generator>
 class BaseGenerator {
 public:
     template <typename K>
     K generate();
 
-    template <>
-    uint32_t generate<uint32_t>() {
-        return generate_integer();
-    }
-
-    template <>
-    StringData generate<StringData>() {
-        return generateStringData(generate<uint32_t>());
-    }
-
-    template <>
-    absl::string_view generate<absl::string_view>() {
-        StringData sd = generateStringData(generate<uint32_t>());
-        return absl::string_view(sd.rawData(), sd.size());
-    }
-
-    template <>
-    std::string generate<std::string>() {
-        return generate<StringData>().toString();
-    }
-
 private:
-    uint32_t generate_integer() {
-        return static_cast<Generator*>(this)->generate_integer();
-    }
+	virtual uint32_t generate_integer() = 0;
 
     StringData generateStringData(uint32_t i) {
         if (!_mem.get()) {
@@ -161,7 +137,8 @@ private:
             _mem = std::make_unique<char[]>(MaxContainerSize * 10);
             _current = _mem.get();
         }
-        StringData sd(itoa(i, _current, 10));
+		sprintf(_current, "%u", i);
+        StringData sd(_current);
         _current += sd.size();
         return sd;
     }
@@ -170,26 +147,46 @@ private:
     char* _current{nullptr};
 };
 
-class Sequence : public BaseGenerator<Sequence> {
-public:
-    uint32_t generate_integer() {
-        return ++_state;
-    }
+template <>
+uint32_t BaseGenerator::generate<uint32_t>() {
+	return generate_integer();
+}
 
+template <>
+StringData BaseGenerator::generate<StringData>() {
+	return generateStringData(generate<uint32_t>());
+}
+
+template <>
+absl::string_view BaseGenerator::generate<absl::string_view>() {
+	StringData sd = generateStringData(generate<uint32_t>());
+	return absl::string_view(sd.rawData(), sd.size());
+}
+
+template <>
+std::string BaseGenerator::generate<std::string>() {
+	return generate<StringData>().toString();
+}
+
+class Sequence : public BaseGenerator {
 private:
+	uint32_t generate_integer() override {
+		return ++_state;
+	}
+
     uint32_t _state{0};
 };
 
 template <uint32_t Seed>
-class UniformDistribution : public BaseGenerator<UniformDistribution<Seed>> {
+class UniformDistribution : public BaseGenerator {
 public:
     UniformDistribution() : _gen(Seed) {}
 
-    uint32_t generate_integer() {
-        return _dist(_gen);
-    }
-
 private:
+	uint32_t generate_integer() override {
+		return _dist(_gen);
+	}
+
     std::uniform_int_distribution<uint32_t> _dist;
     std::mt19937 _gen;
 };
