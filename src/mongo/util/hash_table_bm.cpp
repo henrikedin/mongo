@@ -194,20 +194,20 @@ private:
     std::mt19937 _gen;
 };
 
-template <class Container, class K, class StorageGenerator, class LookupGenerator>
+template <class Container, class LookupKey, class StorageGenerator, class LookupGenerator>
 void LookupTest(benchmark::State& state) {
     Container container;
     StorageGenerator storage_gen;
 
     const int num = state.range(0) + 1;
     for (int i = num - 1; i; --i) {
-        container[storage_gen.generate<K>()];
+        container[storage_gen.generate<LookupKey>()];
     }
 
-    std::vector<K> lookup_keys;
+    std::vector<LookupKey> lookup_keys;
     LookupGenerator lookup_gen;
     for (int i = num; i; --i) {
-        lookup_keys.push_back(lookup_gen.generate<K>());
+        lookup_keys.push_back(lookup_gen.generate<LookupKey>());
     }
     // Make sure we don't do the lookup in the same order as insert.
     std::shuffle(lookup_keys.begin(),
@@ -227,14 +227,14 @@ void LookupTest(benchmark::State& state) {
     state.counters["load_factor"] = getLoadFactor(container);
 }
 
-template <class Container, typename K, class StorageGenerator>
+template <class Container, class LookupKey, class StorageGenerator>
 void InsertTest(benchmark::State& state) {
-    std::vector<K> insert_keys;
+    std::vector<LookupKey> insert_keys;
     StorageGenerator storage_gen;
 
     const int num = state.range(0);
     for (int i = num; i; --i) {
-        insert_keys.push_back(storage_gen.generate<K>());
+        insert_keys.push_back(storage_gen.generate<LookupKey>());
     }
 
     int i = 0;
