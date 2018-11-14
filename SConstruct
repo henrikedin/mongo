@@ -1556,6 +1556,10 @@ if debugBuild:
 else:
     env.AppendUnique( CPPDEFINES=[ 'NDEBUG' ] )
 
+# Let abseil know it doesn't need to deal with throwing allocators
+# https://github.com/abseil/abseil-cpp/blob/a4c3ffff11eec0ee45742f915c255e9f870b7e0f/absl/memory/memory.h#L625-L643
+env.AppendUnique( CPPDEFINES=[ 'ABSL_ALLOCATOR_NOTHROW' ] )
+
 if env.TargetOSIs('linux'):
     env.Append( LIBS=["m"] )
     if not env.TargetOSIs('android'):
