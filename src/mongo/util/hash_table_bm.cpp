@@ -106,6 +106,16 @@ struct is_absl_flat_hash_map : std::false_type {};
 template <typename K, typename V, typename Hash, typename Eq, typename Allocator>
 struct is_absl_flat_hash_map<absl::flat_hash_map<K, V, Hash, Eq, Allocator>> : std::true_type {};
 
+template <typename Container>
+struct lookup_t
+{
+	using type = typename std::conditional<std::is_same<typename Container::key_type, std::string>::value,
+		typename std::conditional<is_absl_flat_hash_map<Container>::value,
+		absl::string_view,
+		std::string>::type,
+		typename Container::key_type>::type;
+};
+
 template <class T>
 typename std::enable_if<!is_unordered_fast_key_table<T>::value, float>::type getLoadFactor(
     const T& container) {
@@ -198,13 +208,13 @@ void LookupTest(benchmark::State& state) {
 
     const int num = state.range(0) + 1;
     for (int i = num - 1; i; --i) {
-        container[storage_gen.generate<LookupKey>()];
+        container[storage_gen.template generate<LookupKey>()];
     }
 
     std::vector<LookupKey> lookup_keys;
     LookupGenerator lookup_gen;
     for (int i = num; i; --i) {
-        lookup_keys.push_back(lookup_gen.generate<LookupKey>());
+        lookup_keys.push_back(lookup_gen.template generate<LookupKey>());
     }
     // Make sure we don't do the lookup in the same order as insert.
     std::shuffle(lookup_keys.begin(),
@@ -231,7 +241,7 @@ void InsertTest(benchmark::State& state) {
 
     const int num = state.range(0);
     for (int i = num; i; --i) {
-        insert_keys.push_back(storage_gen.generate<LookupKey>());
+        insert_keys.push_back(storage_gen.template generate<LookupKey>());
     }
 
     int i = 0;
@@ -261,11 +271,7 @@ void BM_SuccessfulLookup(benchmark::State& state) {
     // Template conditional magic, I want to switch out the key type if storage is std::string AND
     // the container is absl.
     LookupTest<Container,
-               std::conditional<std::is_same<Container::key_type, std::string>::value,
-                                std::conditional<is_absl_flat_hash_map<Container>::value,
-                                                 absl::string_view,
-                                                 std::string>::type,
-                                Container::key_type>::type,
+		typename lookup_t<Container>::type,
                UniformDistribution<default_seed>,
                UniformDistribution<default_seed>>(state);
 }
@@ -273,11 +279,7 @@ void BM_SuccessfulLookup(benchmark::State& state) {
 template <class Container>
 void BM_UnsuccessfulLookup(benchmark::State& state) {
     LookupTest<Container,
-               std::conditional<std::is_same<Container::key_type, std::string>::value,
-                                std::conditional<is_absl_flat_hash_map<Container>::value,
-                                                 absl::string_view,
-                                                 std::string>::type,
-                                Container::key_type>::type,
+		typename lookup_t<Container>::type,
                UniformDistribution<default_seed>,
                UniformDistribution<other_seed>>(state);
 }
@@ -285,11 +287,7 @@ void BM_UnsuccessfulLookup(benchmark::State& state) {
 template <class Container>
 void BM_UnsuccessfulLookupSeq(benchmark::State& state) {
     LookupTest<Container,
-               std::conditional<std::is_same<Container::key_type, std::string>::value,
-                                std::conditional<is_absl_flat_hash_map<Container>::value,
-                                                 absl::string_view,
-                                                 std::string>::type,
-                                Container::key_type>::type,
+		typename lookup_t<Container>::type,
                Sequence,
                UniformDistribution<default_seed>>(state);
 }
@@ -297,11 +295,7 @@ void BM_UnsuccessfulLookupSeq(benchmark::State& state) {
 template <class Container>
 void BM_Insert(benchmark::State& state) {
     InsertTest<Container,
-               std::conditional<std::is_same<Container::key_type, std::string>::value,
-                                std::conditional<is_absl_flat_hash_map<Container>::value,
-                                                 absl::string_view,
-                                                 std::string>::type,
-                                Container::key_type>::type,
+		typename lookup_t<Container>::type,
                UniformDistribution<default_seed>>(state);
 }
 
