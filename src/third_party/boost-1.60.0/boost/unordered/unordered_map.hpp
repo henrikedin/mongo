@@ -84,7 +84,7 @@ namespace unordered
 
         // constructors
 
-        explicit unordered_map(
+        unordered_map(
                 size_type = boost::unordered::detail::default_bucket_count,
                 const hasher& = hasher(),
                 const key_equal& = key_equal(),
