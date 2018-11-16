@@ -209,6 +209,7 @@ MOZ_ReportCrash(const char* aStr, const char* aFilename, int aLine)
     * by MSVC, so doing it this way reduces complexity.)
     */
 
+#include <intrin.h>
 __declspec(noreturn) __inline void MOZ_NoReturn() {}
 
 #  ifdef __cplusplus
