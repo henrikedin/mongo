@@ -15668,6 +15668,8 @@ buildvariants:
   display_name: "Windows VS2017 Canary C++14 Builder"
   run_on:
   - windows-64-vs2017-compile
+  modules:
+  - enterprise
   expansions:
     platform_decompress: unzip
     exe: ".exe"
@@ -15708,6 +15710,8 @@ buildvariants:
   display_name: "Windows VS2017 Canary C++17 Builder"
   run_on:
   - windows-64-vs2017-compile
+  modules:
+  - enterprise
   expansions:
     platform_decompress: unzip
     exe: ".exe"
