@@ -54,6 +54,10 @@
                                   pipeline: x.options.pipeline
                               };
                           }));
+    // Sort result so we can compare it with expectedViews
+    listedViews.sort(function(a, b) {
+        return a._id < b._id ? -1 : a._id > b._id ? 1 : 0;
+    });
     assert.eq(listedViews, expectedViews, "persisted view definitions not correctly loaded");
 
     // Insert an invalid view definition directly into system.views to bypass normal validation.
