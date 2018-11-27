@@ -46,7 +46,6 @@ struct AbslHashedStringDataKey {
 public:
     explicit AbslHashedStringDataKey(StringData sd, std::size_t hash) : _sd(sd), _hash(hash) {}
 
-    // Converts to `std::basic_string`.
     explicit operator std::string() const {
         return _sd.toString();
     }
