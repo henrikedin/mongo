@@ -1280,7 +1280,7 @@ TEST_F(TransactionRouterTest, ImplicitAbortForMultipleParticipants) {
         launchAsync([&] { return txnRouter->implicitlyAbortTransaction(operationContext()); });
 
     std::map<HostAndPort, boost::optional<bool>> targets = {{hostAndPort1, true},
-															{hostAndPort2, {}}};
+                                                            {hostAndPort2, {}}};
 
     while (!targets.empty()) {
         onCommandForPoolExecutor([&](const RemoteCommandRequest& request) {
