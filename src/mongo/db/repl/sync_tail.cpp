@@ -616,7 +616,7 @@ void fillWriterVectors(OperationContext* opCtx,
         }
 
         auto& writer = (*writerVectors)[hash % numWriters];
-        if (writer.capacity() == 0) {
+        if (writer.empty()) {
             writer.reserve(8);  // Skip a few growth rounds
         }
         writer.push_back(&op);
