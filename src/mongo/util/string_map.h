@@ -42,9 +42,9 @@ namespace mongo {
 
 // Type that bundles a hashed key with the actual string so hashing can be performed outside of
 // insert call by using heterogeneous lookup.
-struct AbslHashedStringDataKey {
+struct StringMapHashedKey {
 public:
-    explicit AbslHashedStringDataKey(StringData sd, std::size_t hash) : _sd(sd), _hash(hash) {}
+    explicit StringMapHashedKey(StringData sd, std::size_t hash) : _sd(sd), _hash(hash) {}
 
     explicit operator std::string() const {
         return _sd.toString();
@@ -64,7 +64,7 @@ private:
 };
 
 // Hasher to support heterogeneous lookup for StringData and string-like elements.
-struct AbslStringDataHasher {
+struct StringMapHasher {
     // This using directive activates heterogeneous lookup in the hash table
     using is_transparent = void;
 
@@ -81,16 +81,16 @@ struct AbslStringDataHasher {
         return operator()(StringData(s));
     }
 
-    std::size_t operator()(AbslHashedStringDataKey key) const {
+    std::size_t operator()(StringMapHashedKey key) const {
         return key.hash();
     }
 
-    AbslHashedStringDataKey hashed_key(StringData sd) {
-        return AbslHashedStringDataKey(sd, operator()(sd));
+    StringMapHashedKey hashed_key(StringData sd) {
+        return StringMapHashedKey(sd, operator()(sd));
     }
 };
 
-struct AbslStringDataEq {
+struct StringMapEq {
     // This using directive activates heterogeneous lookup in the hash table
     using is_transparent = void;
 
@@ -98,22 +98,22 @@ struct AbslStringDataEq {
         return lhs == rhs;
     }
 
-    bool operator()(AbslHashedStringDataKey lhs, StringData rhs) const {
+    bool operator()(StringMapHashedKey lhs, StringData rhs) const {
         return lhs.key() == rhs;
     }
 
-    bool operator()(StringData lhs, AbslHashedStringDataKey rhs) const {
+    bool operator()(StringData lhs, StringMapHashedKey rhs) const {
         return lhs == rhs.key();
     }
 
-    bool operator()(AbslHashedStringDataKey lhs, AbslHashedStringDataKey rhs) const {
+    bool operator()(StringMapHashedKey lhs, StringMapHashedKey rhs) const {
         return lhs.key() == rhs.key();
     }
 };
 
 template <typename V>
-using StringMap = absl::flat_hash_map<std::string, V, AbslStringDataHasher, AbslStringDataEq>;
+using StringMap = absl::flat_hash_map<std::string, V, StringMapHasher, StringMapEq>;
 
-using StringSet = absl::flat_hash_set<std::string, AbslStringDataHasher, AbslStringDataEq>;
+using StringSet = absl::flat_hash_set<std::string, StringMapHasher, StringMapEq>;
 
 }  // namespace mongo

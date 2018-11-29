@@ -30,6 +30,9 @@
 
 #include "mongo/platform/basic.h"
 
+#include <map>
+#include <set>
+
 #include "mongo/client/remote_command_targeter_mock.h"
 #include "mongo/db/logical_clock.h"
 #include "mongo/db/repl/read_concern_args.h"
@@ -38,9 +41,6 @@
 #include "mongo/s/transaction_router.h"
 #include "mongo/unittest/death_test.h"
 #include "mongo/unittest/unittest.h"
-
-#include <map>
-#include <set>
 
 namespace mongo {
 namespace {
@@ -691,11 +691,10 @@ TEST_F(TransactionRouterTest, SendCoordinateCommitForMultipleParticipants) {
         auto participantElements = request.cmdObj["participants"].Array();
         ASSERT_EQ(expectedParticipants.size(), participantElements.size());
 
-        for (std::size_t i = 0; i < participantElements.size(); i++) {
-            auto participantElement = participantElements[i]["shardId"].valuestr();
-            auto expectedParticipant = expectedParticipants.find(participantElement);
-            ASSERT(expectedParticipant != expectedParticipants.end());
-            expectedParticipants.erase(participantElement);
+        for (const auto& element : participantElements) {
+            auto shardId = element["shardId"].valuestr();
+            ASSERT_EQ(1, expectedParticipants.count(shardId));
+            expectedParticipants.erase(shardId);
         }
 
         checkSessionDetails(request.cmdObj, lsid, txnNum, true);
@@ -1144,7 +1143,7 @@ TEST_F(TransactionRouterTest, AbortForMultipleParticipants) {
     auto future = launchAsync([&] { return txnRouter->abortTransaction(operationContext()); });
 
     std::map<HostAndPort, boost::optional<bool>> targets = {{hostAndPort1, true},
-                                                            {hostAndPort2, boost::none}};
+                                                            {hostAndPort2, {}}};
 
     while (!targets.empty()) {
         onCommandForPoolExecutor([&](const RemoteCommandRequest& request) {
@@ -1281,7 +1280,7 @@ TEST_F(TransactionRouterTest, ImplicitAbortForMultipleParticipants) {
         launchAsync([&] { return txnRouter->implicitlyAbortTransaction(operationContext()); });
 
     std::map<HostAndPort, boost::optional<bool>> targets = {{hostAndPort1, true},
-                                                            {hostAndPort2, boost::none}};
+															{hostAndPort2, {}}};
 
     while (!targets.empty()) {
         onCommandForPoolExecutor([&](const RemoteCommandRequest& request) {
