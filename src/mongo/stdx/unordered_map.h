@@ -47,12 +47,8 @@ using ::boost::unordered_multimap;  // NOLINT
 using ::std::unordered_multimap;  // NOLINT
 #endif
 
-template <class Key,
-          class Value,
-          class Hash = absl::container_internal::hash_default_hash<Key>,
-          class Eq = absl::container_internal::hash_default_eq<Key>,
-          class Alloc = std::allocator<std::pair<const Key, Value>>>
-using unordered_map = absl::node_hash_map<Key, Value, Hash, Eq, Alloc>;
+template <class Key, class Value, typename... Args>
+using unordered_map = absl::node_hash_map<Key, Value, Args...>;
 
 }  // namespace stdx
 }  // namespace mongo

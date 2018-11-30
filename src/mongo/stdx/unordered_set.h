@@ -47,11 +47,8 @@ using ::boost::unordered_multiset;  // NOLINT
 using ::std::unordered_multiset;  // NOLINT
 #endif
 
-template <class T,
-          class Hash = absl::container_internal::hash_default_hash<T>,
-          class Eq = absl::container_internal::hash_default_eq<T>,
-          class Alloc = std::allocator<T>>
-using unordered_set = absl::node_hash_set<T, Hash, Eq, Alloc>;
+template <class T, typename... Args>
+using unordered_set = absl::node_hash_set<T, Args...>;
 
 }  // namespace stdx
 }  // namespace mongo
