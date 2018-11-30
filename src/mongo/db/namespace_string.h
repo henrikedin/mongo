@@ -211,12 +211,6 @@ public:
         return _ns.empty();
     }
 
-    struct Hasher {
-        size_t operator()(const NamespaceString& nss) const {
-            return std::hash<std::string>()(nss._ns);
-        }
-    };
-
     //
     // The following methods assume isValid() is true for this NamespaceString.
     //
@@ -452,6 +446,11 @@ public:
         return a.ns() >= b.ns();
     }
 
+    template <typename H>
+    friend H AbslHashValue(H h, const NamespaceString& nss) {
+        return H::combine(std::move(h), nss._ns);
+    }
+
 private:
     std::string _ns;
     size_t _dotIndex;
@@ -615,13 +614,3 @@ inline bool NamespaceString::validCollectionName(StringData coll) {
 }
 
 }  // namespace mongo
-
-MONGO_HASH_NAMESPACE_START
-template <>
-struct hash<mongo::NamespaceString> {
-    size_t operator()(const mongo::NamespaceString& nss) const {
-        mongo::NamespaceString::Hasher hasher;
-        return hasher(nss);
-    }
-};
-MONGO_HASH_NAMESPACE_END

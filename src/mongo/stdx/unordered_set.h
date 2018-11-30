@@ -36,16 +36,22 @@
 #include <unordered_set>
 #endif
 
+#include <absl/container/node_hash_set.h>
+
 namespace mongo {
 namespace stdx {
 
 #if defined(_WIN32)
-using ::boost::unordered_set;       // NOLINT
 using ::boost::unordered_multiset;  // NOLINT
 #else
-using ::std::unordered_set;       // NOLINT
 using ::std::unordered_multiset;  // NOLINT
 #endif
+
+template <class T,
+          class Hash = absl::container_internal::hash_default_hash<T>,
+          class Eq = absl::container_internal::hash_default_eq<T>,
+          class Alloc = std::allocator<T>>
+using unordered_set = absl::node_hash_set<T, Hash, Eq, Alloc>;
 
 }  // namespace stdx
 }  // namespace mongo

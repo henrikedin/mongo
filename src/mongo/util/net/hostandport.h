@@ -154,6 +154,11 @@ struct HostAndPort {
         return _port >= 0;
     }
 
+    template <typename H>
+    friend H AbslHashValue(H h, const HostAndPort& hostAndPort) {
+        return H::combine(std::move(h), hostAndPort.host(), hostAndPort.port());
+    }
+
 private:
     boost::optional<SockAddr> _addr;
     std::string _host;
@@ -166,12 +171,3 @@ template <typename Allocator>
 StringBuilderImpl<Allocator>& operator<<(StringBuilderImpl<Allocator>& os, const HostAndPort& hp);
 
 }  // namespace mongo
-
-MONGO_HASH_NAMESPACE_START
-
-template <>
-struct hash<mongo::HostAndPort> {
-    size_t operator()(const mongo::HostAndPort& host) const;
-};
-
-MONGO_HASH_NAMESPACE_END

@@ -36,16 +36,23 @@
 #include <unordered_map>
 #endif
 
+#include <absl/container/node_hash_map.h>
+
 namespace mongo {
 namespace stdx {
 
 #if defined(_WIN32)
-using ::boost::unordered_map;       // NOLINT
 using ::boost::unordered_multimap;  // NOLINT
 #else
-using ::std::unordered_map;       // NOLINT
 using ::std::unordered_multimap;  // NOLINT
 #endif
+
+template <class Key,
+          class Value,
+          class Hash = absl::container_internal::hash_default_hash<Key>,
+          class Eq = absl::container_internal::hash_default_eq<Key>,
+          class Alloc = std::allocator<std::pair<const Key, Value>>>
+using unordered_map = absl::node_hash_map<Key, Value, Hash, Eq, Alloc>;
 
 }  // namespace stdx
 }  // namespace mongo

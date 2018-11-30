@@ -94,6 +94,11 @@ public:
         return getFullName();
     }
 
+    template <typename H>
+    friend H AbslHashValue(H h, const RoleName& rname) {
+        return H::combine(std::move(h), rname.getFullName());
+    }
+
 private:
     std::string _fullName;  // The full name, stored as a string.  "role@db".
     size_t _splitPoint;     // The index of the "@" separating the role and db name parts.
@@ -174,16 +179,6 @@ private:
 };
 
 }  // namespace mongo
-
-// Define hash function for RoleNames so they can be keys in stdx::unordered_map
-MONGO_HASH_NAMESPACE_START
-template <>
-struct hash<mongo::RoleName> {
-    size_t operator()(const mongo::RoleName& rname) const {
-        return hash<std::string>()(rname.getFullName());
-    }
-};
-MONGO_HASH_NAMESPACE_END
 
 namespace mongo {
 
