@@ -351,7 +351,7 @@ public:
 
         stdx::unordered_set<std::string> observedFields;
         for (const auto& field : result) {
-            ASSERT(observedFields.find(field) == observedFields.end());
+            ASSERT(observedFields.find(std::string(field)) == observedFields.end());
             observedFields.insert(field);
         }
     }
