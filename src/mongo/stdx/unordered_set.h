@@ -38,6 +38,8 @@
 
 #include <absl/container/node_hash_set.h>
 
+#include "mongo/stdx/trusted_hasher.h"
+
 namespace mongo {
 namespace stdx {
 
@@ -47,8 +49,11 @@ using ::boost::unordered_multiset;  // NOLINT
 using ::std::unordered_multiset;  // NOLINT
 #endif
 
-template <class T, typename... Args>
-using unordered_set = absl::node_hash_set<T, Args...>;
+template <class Key, class Hasher = default_hasher<Key>, typename... Args>
+using unordered_set = absl::node_hash_set<
+    Key,
+    std::conditional_t<IsTrustedHasher<Hasher, Key>::value, Hasher, UntrustedHasher<Hasher, Key>>,
+    Args...>;
 
 }  // namespace stdx
 }  // namespace mongo
