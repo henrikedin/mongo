@@ -220,6 +220,11 @@ public:
 
     std::string toString() const;
 
+    template <typename H>
+    friend H AbslHashValue(H h, const ResourceId& resource) {
+        return H::combine(std::move(h), resource._fullHash);
+    }
+
 private:
     /**
      * The top 'resourceTypeBits' bits of '_fullHash' represent the resource type,
@@ -459,13 +464,3 @@ struct LockRequest {
 const char* lockRequestStatusName(LockRequest::Status status);
 
 }  // namespace mongo
-
-
-MONGO_HASH_NAMESPACE_START
-template <>
-struct hash<mongo::ResourceId> {
-    size_t operator()(const mongo::ResourceId& resource) const {
-        return resource;
-    }
-};
-MONGO_HASH_NAMESPACE_END

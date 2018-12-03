@@ -36,15 +36,15 @@
 #endif
 
 #if defined(_WIN32)
-#define MONGO_HASH_NAMESPACE_START namespace boost {
+#define MONGO_MULTIMAP_HASH_NAMESPACE_START namespace boost {
 #else
-#define MONGO_HASH_NAMESPACE_START namespace std {
+#define MONGO_MULTIMAP_HASH_NAMESPACE_START namespace std {
 #endif
 
-#define MONGO_HASH_NAMESPACE_END }
+#define MONGO_MULTIMAP_HASH_NAMESPACE_END }
 
 #if defined(_WIN32)
-#define MONGO_HASH_NAMESPACE boost
+#define MONGO_MULTIMAP_HASH_NAMESPACE boost
 #else
-#define MONGO_HASH_NAMESPACE std
+#define MONGO_MULTIMAP_HASH_NAMESPACE std
 #endif
