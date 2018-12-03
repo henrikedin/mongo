@@ -47,8 +47,29 @@ using ::boost::unordered_multimap;  // NOLINT
 using ::std::unordered_multimap;  // NOLINT
 #endif
 
-template <class Key, class Value, typename... Args>
-using unordered_map = absl::node_hash_map<Key, Value, Args...>;
+template <typename Hasher, typename Key>
+struct IsTrustedHasher : std::is_same<Hasher, absl::container_internal::hash_default_hash<Key>> {};
+
+template <class Hasher, class Key>
+struct UntrustedHasher {
+    UntrustedHasher(const Hasher& hasher = Hasher()) : _hasher(hasher) {}
+    std::size_t operator()(const Key& k) const {
+        return absl::Hash<std::size_t>{}(_hasher(k));
+    }
+
+private:
+    Hasher _hasher;
+};
+
+template <class Key,
+          class Value,
+          class Hasher = absl::container_internal::hash_default_hash<Key>,
+          typename... Args>
+using unordered_map = absl::node_hash_map<
+    Key,
+    Value,
+    std::conditional_t<IsTrustedHasher<Hasher, Key>::value, Hasher, UntrustedHasher<Hasher, Key>>,
+    Args...>;
 
 }  // namespace stdx
 }  // namespace mongo
