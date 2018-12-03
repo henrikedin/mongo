@@ -693,7 +693,7 @@ TEST_F(TransactionRouterTest, SendCoordinateCommitForMultipleParticipants) {
 
         for (const auto& element : participantElements) {
             auto shardId = element["shardId"].valuestr();
-            ASSERT_EQ(1, expectedParticipants.count(shardId));
+            ASSERT_EQ(1ull, expectedParticipants.count(shardId));
             expectedParticipants.erase(shardId);
         }
 
