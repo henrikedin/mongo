@@ -73,6 +73,87 @@ sortDoc = function(doc) {
     return newDoc;
 };
 
+sortDocRecursive = function(doc) {
+
+    // Helper to sort the elements of the array
+    var sortElementsOfArray = function(arr) {
+        var newArr = [];
+        if (!arr || arr.constructor != Array)
+            return arr;
+        for (var i = 0; i < arr.length; i++) {
+            newArr.push(sortDocField(arr[i]));
+        }
+
+        function recursiveSort() {
+            sorter = function(a, b) {
+
+                var fields = Object.keys(a);
+                for (var i = 0; i < fields.length; i++) {
+                    var field = fields[i];
+                    if (!b.hasOwnProperty(field))
+                        return -1;
+                    if (a[field].constructor != b[field].constructor)
+                        return -1;
+
+                    let val = 0;
+                    if (a[field].constructor == Object || a[field].constructor == Array) {
+                        val = sorter(a[field], b[field]);
+                    } else if (a[field] > b[field]) {
+                        val = 1;
+                    } else if (a[field] < b[field]) {
+                        val = -1;
+                    }
+                    if (val !== 0)
+                        return val;
+                }
+
+                return 0;
+            };
+
+            return sorter;
+        }
+
+        // newArr.sort(predicateBy(prop));
+        newArr.sort(recursiveSort());
+        // print(tojson(newArr))
+
+        return newArr;
+    };
+
+    // not a container we can sort
+    if (!(doc instanceof Object))
+        return doc;
+
+    // if it an array, sort the elements
+    if (doc.constructor == Array)
+        return sortElementsOfArray(doc);
+
+    var newDoc = {};
+    var fields = Object.keys(doc);
+    if (fields.length > 0) {
+        fields.sort();
+        for (var i = 0; i < fields.length; i++) {
+            var field = fields[i];
+            if (doc.hasOwnProperty(field)) {
+                var tmp = doc[field];
+
+                if (tmp) {
+                    // Sort recursively for Arrays and Objects (including bson ones)
+                    if (tmp.constructor == Array)
+                        tmp = sortElementsOfArray(tmp);
+                    else if (tmp._bson || tmp.constructor == Object)
+                        tmp = sortDocRecursive(tmp);
+                }
+                newDoc[field] = tmp;
+            }
+        }
+    } else {
+        newDoc = doc;
+    }
+
+    return newDoc;
+};
+
 /*
  * This function transforms a given function, 'func', into a function 'safeFunc',
  * where 'safeFunc' matches the behavior of 'func', except that it returns false
@@ -255,6 +336,14 @@ assert = (function() {
                 failAssertion();
             }
         }
+    };
+
+    /**
+     * Throws if the two arrays do not have the same members, in any order. Applies to all nested
+     * arrays.
+     */
+    assert.sameMembersNested = function(aArr, bArr, msg) {
+        assert.eq(sortDocRecursive(aArr), sortDocRecursive(bArr));
     };
 
     assert.eq.automsg = function(a, b) {

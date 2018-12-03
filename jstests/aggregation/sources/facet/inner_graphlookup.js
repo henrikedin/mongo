@@ -32,12 +32,12 @@
     };
     const normalResults = graphColl.aggregate([graphLookupStage]).toArray();
     const facetedResults = graphColl.aggregate([{$facet: {nested: [graphLookupStage]}}]).toArray();
-    assert.eq(facetedResults, [{nested: normalResults}]);
+    assert.sameMembersNested(facetedResults, [{nested: normalResults}]);
 
     const normalResultsUnwound =
         graphColl.aggregate([graphLookupStage, {$unwind: "$connected"}]).toArray();
     const facetedResultsUnwound =
         graphColl.aggregate([{$facet: {nested: [graphLookupStage, {$unwind: "$connected"}]}}])
             .toArray();
-    assert.eq(facetedResultsUnwound, [{nested: normalResultsUnwound}]);
+    assert.sameMembersNested(facetedResultsUnwound, [{nested: normalResultsUnwound}]);
 }());
