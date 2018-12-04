@@ -81,7 +81,7 @@ sortDocRecursive = function(doc) {
         if (!arr || arr.constructor != Array)
             return arr;
         for (var i = 0; i < arr.length; i++) {
-            newArr.push(sortDocField(arr[i]));
+            newArr.push(sortDocRecursive(arr[i]));
         }
 
         function recursiveSort() {
@@ -113,9 +113,7 @@ sortDocRecursive = function(doc) {
             return sorter;
         }
 
-        // newArr.sort(predicateBy(prop));
         newArr.sort(recursiveSort());
-        // print(tojson(newArr))
 
         return newArr;
     };

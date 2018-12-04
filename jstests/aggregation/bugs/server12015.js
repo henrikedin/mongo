@@ -43,7 +43,7 @@ load("jstests/aggregation/extras/utils.js");  // For orderedArrayEq.
                        resultsWithoutIndex: resultsWithoutIndex
                    }));
         } else {
-            assert.eq(resultsWithIndex, resultsWithoutIndex);
+            assert.sameMembers(resultsWithIndex, resultsWithoutIndex);
         }
     }
 
