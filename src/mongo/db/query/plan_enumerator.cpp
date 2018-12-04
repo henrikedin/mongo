@@ -847,14 +847,14 @@ void PlanEnumerator::enumerateOneIndex(
     // certain predicates cannot be combined/compounded. We determine which predicates can be
     // combined/compounded using path-level multikey info, if available.
 
-	std::vector<std::pair<IndexID, std::vector<MatchExpression*>>> idxToFirst;
-	std::vector<std::pair<IndexID, std::vector<MatchExpression*>>> idxToNotFirst;
+	std::map<IndexID, std::vector<MatchExpression*>> idxToFirst;
+	std::map<IndexID, std::vector<MatchExpression*>> idxToNotFirst;
 
 	for (auto&& elem : idxToFirst2)
-		idxToFirst.push_back(elem);
+		idxToFirst.insert(elem);
 
 	for (auto&& elem : idxToNotFirst2)
-		idxToNotFirst.push_back(elem);
+		idxToNotFirst.insert(elem);
 
     // First, add the state of using each subnode.
     for (size_t i = 0; i < subnodes.size(); ++i) {
