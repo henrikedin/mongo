@@ -207,9 +207,7 @@ BENCHMARK(BM_test)->Unit(benchmark::kMillisecond);
 #define BENCHMARK_NOEXCEPT_OP(x) noexcept(x)
 #elif defined(_MSC_VER) && !defined(__clang__)
 #define BENCHMARK_UNUSED
-// MONGO HACK: SERVER-32908 work around old MSVC bug, which was fixed as of MSVC 1913.
-// See discussion here for more detail: https://github.com/google/benchmark/pull/493
-#define BENCHMARK_ALWAYS_INLINE
+#define BENCHMARK_ALWAYS_INLINE __forceinline
 #if _MSC_VER >= 1900
 #define BENCHMARK_NOEXCEPT noexcept
 #define BENCHMARK_NOEXCEPT_OP(x) noexcept(x)
