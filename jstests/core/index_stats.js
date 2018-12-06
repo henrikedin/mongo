@@ -113,7 +113,7 @@
 
     // Run explain to determine which indexes would be used for this query. Note that index
     // access counters are not incremented for explain execution.
-    var explain = col.find({a: 2, b: 2}).explain("queryPlanner");
+    var explain = col.find({a: 2, b: 2}).hint("a_1").explain("queryPlanner");
     var indexNameList = getIndexNamesForWinningPlan(explain);
     assert.gte(indexNameList.length, 1);
 
@@ -129,7 +129,7 @@
     }
 
     // Run the query again without explain to increment index access counters.
-    col.findOne({a: 2, b: 2});
+    assert.eq(col.find({a: 2, b: 2}).limit(1).hint("a_1").itcount(), 1);
     // Check all indexes for proper count.
     assert.eq(countA, getUsageCount("a_1"));
     assert.eq(countB, getUsageCount("b_1_c_1"));
