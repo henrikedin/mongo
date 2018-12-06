@@ -451,8 +451,8 @@ private:
      * 'andAssignment'. The predicates in 'outsidePreds' are considered for OrPushdownTags.
      */
     void enumerateOneIndex(
-        const IndexToPredMap& idxToFirst2,
-        const IndexToPredMap& idxToNotFirst2,
+        IndexToPredMap idxToFirst,
+        IndexToPredMap idxToNotFirst,
         const std::vector<MemoID>& subnodes,
         const stdx::unordered_map<MatchExpression*, OutsidePredRoute>& outsidePreds,
         AndAssignment* andAssignment);

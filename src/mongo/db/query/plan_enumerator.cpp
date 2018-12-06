@@ -33,7 +33,6 @@
 #include "mongo/db/query/plan_enumerator.h"
 
 #include <set>
-#include <map>
 
 #include "mongo/db/query/index_tag.h"
 #include "mongo/db/query/indexability.h"
@@ -267,7 +266,8 @@ PlanEnumerator::PlanEnumerator(const PlanEnumeratorParams& params)
       _intersectLimit(params.maxIntersectPerAnd) {}
 
 PlanEnumerator::~PlanEnumerator() {
-    for (auto it = _memo.begin(); it != _memo.end(); ++it) {
+    typedef stdx::unordered_map<MemoID, NodeAssignment*> MemoMap;
+    for (MemoMap::iterator it = _memo.begin(); it != _memo.end(); ++it) {
         delete it->second;
     }
 }
@@ -339,7 +339,7 @@ string PlanEnumerator::NodeAssignment::toString() const {
 }
 
 PlanEnumerator::MemoID PlanEnumerator::memoIDForNode(MatchExpression* node) {
-    auto it = _nodeToId.find(node);
+    stdx::unordered_map<MatchExpression*, MemoID>::iterator it = _nodeToId.find(node);
 
     if (_nodeToId.end() == it) {
         error() << "Trying to look up memo entry for node, none found.";
@@ -835,8 +835,8 @@ void PlanEnumerator::markTraversedThroughElemMatchObj(PrepMemoContext* context) 
 }
 
 void PlanEnumerator::enumerateOneIndex(
-    const IndexToPredMap& idxToFirst2,
-    const IndexToPredMap& idxToNotFirst2,
+    IndexToPredMap idxToFirst,
+    IndexToPredMap idxToNotFirst,
     const vector<MemoID>& subnodes,
     const stdx::unordered_map<MatchExpression*, OutsidePredRoute>& outsidePreds,
     AndAssignment* andAssignment) {
@@ -846,15 +846,6 @@ void PlanEnumerator::enumerateOneIndex(
     // predicates that can use the key pattern to the index. However, if the index is multikey,
     // certain predicates cannot be combined/compounded. We determine which predicates can be
     // combined/compounded using path-level multikey info, if available.
-
-	std::vector<std::pair<IndexID, std::vector<MatchExpression*>>> idxToFirst;
-	std::vector<std::pair<IndexID, std::vector<MatchExpression*>>> idxToNotFirst;
-
-	for (auto&& elem : idxToFirst2)
-		idxToFirst.push_back(elem);
-
-	for (auto&& elem : idxToNotFirst2)
-		idxToNotFirst.push_back(elem);
 
     // First, add the state of using each subnode.
     for (size_t i = 0; i < subnodes.size(); ++i) {
@@ -888,7 +879,7 @@ void PlanEnumerator::enumerateOneIndex(
     }
 
     // For each FIRST, we assign predicates to it.
-    for (auto it = idxToFirst.begin(); it != idxToFirst.end(); ++it) {
+    for (IndexToPredMap::const_iterator it = idxToFirst.begin(); it != idxToFirst.end(); ++it) {
         const IndexEntry& thisIndex = (*_indices)[it->first];
 
         if (thisIndex.multikey && !thisIndex.multikeyPaths.empty()) {
@@ -940,7 +931,7 @@ void PlanEnumerator::enumerateOneIndex(
 
                 // If there are any preds that could possibly be compounded with this
                 // index...
-                auto compIt = idxToNotFirst.find(indexAssign.index);
+                IndexToPredMap::const_iterator compIt = idxToNotFirst.find(indexAssign.index);
                 if (compIt != idxToNotFirst.end()) {
                     const vector<MatchExpression*>& couldCompound = compIt->second;
                     vector<MatchExpression*> toCompound;
@@ -980,7 +971,7 @@ void PlanEnumerator::enumerateOneIndex(
 
             // Find everything that could use assign.index but isn't a pred over
             // the first field of that index.
-            auto compIt = idxToNotFirst.find(indexAssign.index);
+            IndexToPredMap::const_iterator compIt = idxToNotFirst.find(indexAssign.index);
             if (compIt != idxToNotFirst.end()) {
                 for (auto pred : compIt->second) {
                     assignPredicate(outsidePreds, pred, getPosition(thisIndex, pred), &indexAssign);
