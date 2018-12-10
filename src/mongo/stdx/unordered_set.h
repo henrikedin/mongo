@@ -38,9 +38,7 @@ namespace mongo {
 namespace stdx {
 
 template <class Key, class Hasher = default_hasher<Key>, typename... Args>
-using unordered_set = absl::node_hash_set<
-    Key, EnsureTrustedHasher<Hasher, Key>,
-    Args...>;
+using unordered_set = absl::node_hash_set<Key, EnsureTrustedHasher<Hasher, Key>, Args...>;
 
 }  // namespace stdx
 }  // namespace mongo
