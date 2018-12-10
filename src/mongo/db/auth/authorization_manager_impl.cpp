@@ -439,10 +439,11 @@ Status AuthorizationManagerImpl::_initializeUserFromPrivilegeDocument(User* user
     std::string userName = parser.extractUserNameFromUserDocument(privDoc);
     if (userName != user->getName().getUser()) {
         return Status(ErrorCodes::BadValue,
-                      mongoutils::str::stream()
-                          << "User name from privilege document \"" << userName
-                          << "\" doesn't match name of provided User \""
-                          << user->getName().getUser() << "\"");
+                      mongoutils::str::stream() << "User name from privilege document \""
+                                                << userName
+                                                << "\" doesn't match name of provided User \""
+                                                << user->getName().getUser()
+                                                << "\"");
     }
 
     Status status = parser.initializeUserCredentialsFromUserDocument(user, privDoc);
@@ -598,7 +599,8 @@ StatusWith<UserHandle> AuthorizationManagerImpl::_acquireUserSlowPath(CacheGuard
             case schemaVersion24:
                 status = Status(ErrorCodes::AuthSchemaIncompatible,
                                 mongoutils::str::stream()
-                                    << "Authorization data schema version " << schemaVersion24
+                                    << "Authorization data schema version "
+                                    << schemaVersion24
                                     << " not supported after MongoDB version 2.6.");
                 break;
         }

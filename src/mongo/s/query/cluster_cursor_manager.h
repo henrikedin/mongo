@@ -703,4 +703,4 @@ private:
     size_t _cursorsTimedOut = 0;
 };
 
-}  // namespace mongo
+}  // namespace
