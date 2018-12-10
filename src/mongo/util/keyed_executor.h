@@ -73,7 +73,7 @@ namespace mongo {
  * be effected by ceasing to queue new work, running tasks which can fail early and waiting on
  * onAllCurrentTasksDrained.
  */
-template <typename Key, typename Hasher = stdx::default_hasher<Key>, typename... MapArgs>
+template <typename Key, typename Hasher = DefaultHasher<Key>, typename... MapArgs>
 class KeyedExecutor {
     // We hold a deque per key.  Each entry in the deque represents a task we'll eventually execute
     // and a list of callers who need to be notified after it completes.

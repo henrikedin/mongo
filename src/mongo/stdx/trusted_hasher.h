@@ -38,17 +38,18 @@
  * hash functions. If you know your hash function is good and can be trusted you get mark it as
  * trusted by specializing a template like this:
  *
- * template <>
- * struct IsTrustedHasher<YourHash, YourKey> : std::true_type {};
+ * namespace mongo {
+ *     template <>
+ *     struct IsTrustedHasher<YourHash, YourKey> : std::true_type {};
+ * }
  */
 
 namespace mongo {
-namespace stdx {
 template <class Key>
-using default_hasher = absl::container_internal::hash_default_hash<Key>;
+using DefaultHasher = absl::container_internal::hash_default_hash<Key>;
 
 template <typename Hasher, typename Key>
-struct IsTrustedHasher : std::is_same<Hasher, default_hasher<Key>> {};
+struct IsTrustedHasher : std::is_same<Hasher, DefaultHasher<Key>> {};
 
 template <class Hasher, class Key>
 struct UntrustedHasher {
@@ -65,5 +66,4 @@ template <typename Hasher, typename Key>
 using EnsureTrustedHasher =
     std::conditional_t<IsTrustedHasher<Hasher, Key>::value, Hasher, UntrustedHasher<Hasher, Key>>;
 
-}  // namespace stdx
 }  // namespace mongo

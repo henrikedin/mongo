@@ -37,7 +37,7 @@
 namespace mongo {
 namespace stdx {
 
-template <class Key, class Value, class Hasher = default_hasher<Key>, typename... Args>
+template <class Key, class Value, class Hasher = DefaultHasher<Key>, typename... Args>
 using unordered_map = absl::node_hash_map<Key, Value, EnsureTrustedHasher<Hasher, Key>, Args...>;
 
 }  // namespace stdx
