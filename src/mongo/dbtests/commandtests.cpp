@@ -349,7 +349,7 @@ public:
         bool ok = db.runCommand(nsDb(), BSON("rolesInfo" << 1), result);
         ASSERT(ok);
 
-        stdx::unordered_set<std::string> observedFields;
+        StringSet observedFields;
         for (const auto& field : result) {
             ASSERT(observedFields.find(field.fieldNameStringData()) == observedFields.end());
             observedFields.insert(field);
