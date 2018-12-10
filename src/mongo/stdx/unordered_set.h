@@ -30,9 +30,9 @@
 
 #pragma once
 
-#include <absl/container/node_hash_set.h>
-
 #include "mongo/stdx/trusted_hasher.h"
+
+#include <absl/container/node_hash_set.h>
 
 namespace mongo {
 namespace stdx {

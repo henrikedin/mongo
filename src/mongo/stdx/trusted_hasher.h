@@ -29,6 +29,10 @@
 
 #pragma once
 
+// This file depends on internal implementation details in abseil. In a library upgrade you may have
+// to re-write this file significantly.
+#include <absl/container/internal/hash_function_defaults.h>
+
 /**
  * To be safe we let abseil hash the produced hash one more time to protect ourselves against bad
  * hash functions. If you know your hash function is good and can be trusted you get mark it as
