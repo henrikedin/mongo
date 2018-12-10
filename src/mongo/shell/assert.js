@@ -1,13 +1,13 @@
 doassert = function(msg, obj) {
     // eval if msg is a function
-    if (typeof(msg) == "function")
+    if (typeof (msg) == "function")
         msg = msg();
 
-    if (typeof(msg) == "object")
+    if (typeof (msg) == "object")
         msg = tojson(msg);
 
     if (jsTest.options().traceExceptions) {
-        if (typeof(msg) == "string" && msg.indexOf("assert") == 0)
+        if (typeof (msg) == "string" && msg.indexOf("assert") == 0)
             print(msg);
         else
             print("assert: " + msg);
@@ -27,7 +27,6 @@ doassert = function(msg, obj) {
 
 // Sort doc/obj fields and return new sorted obj
 sortDoc = function(doc) {
-
     // Helper to sort the elements of the array
     var sortElementsOfArray = function(arr) {
         var newArr = [];
@@ -74,7 +73,6 @@ sortDoc = function(doc) {
 };
 
 sortDocRecursive = function(doc) {
-
     // Helper to sort the elements of the array
     var sortElementsOfArray = function(arr) {
         var newArr = [];
@@ -86,7 +84,6 @@ sortDocRecursive = function(doc) {
 
         function recursiveSort() {
             sorter = function(a, b) {
-
                 var fields = Object.keys(a);
                 for (var i = 0; i < fields.length; i++) {
                     var field = fields[i];
@@ -405,7 +402,7 @@ assert = (function() {
         var msgPrefix = "assert.soon failed: " + func;
 
         if (msg) {
-            if (typeof(msg) != "function") {
+            if (typeof (msg) != "function") {
                 msgPrefix = "assert.soon failed, msg";
             }
         }
@@ -415,7 +412,7 @@ assert = (function() {
         interval = interval || 200;
         var last;
         while (1) {
-            if (typeof(func) == "string") {
+            if (typeof (func) == "string") {
                 if (eval(func))
                     return;
             } else {
@@ -505,7 +502,7 @@ assert = (function() {
 
         var start = new Date();
         timeout = timeout || 30000;
-        if (typeof(f) == "string") {
+        if (typeof (f) == "string") {
             res = eval(f);
         } else {
             res = f();
@@ -1016,7 +1013,6 @@ assert = (function() {
     };
 
     assert.gleOK = function(res, msg) {
-
         var errMsg = null;
 
         if (!res) {
@@ -1037,7 +1033,7 @@ assert = (function() {
     assert.gleSuccess = function(dbOrGLEDoc, msg) {
         var gle = dbOrGLEDoc instanceof DB ? dbOrGLEDoc.getLastErrorObj() : dbOrGLEDoc;
         if (gle.err) {
-            if (typeof(msg) == "function")
+            if (typeof (msg) == "function")
                 msg = msg(gle);
             doassert(_buildAssertionMessage(msg, "getLastError not null: " + tojson(gle)), gle);
         }
@@ -1047,7 +1043,7 @@ assert = (function() {
     assert.gleError = function(dbOrGLEDoc, msg) {
         var gle = dbOrGLEDoc instanceof DB ? dbOrGLEDoc.getLastErrorObj() : dbOrGLEDoc;
         if (!gle.err) {
-            if (typeof(msg) == "function")
+            if (typeof (msg) == "function")
                 msg = msg(gle);
             doassert(_buildAssertionMessage(msg, "getLastError is null: " + tojson(gle)));
         }
@@ -1056,7 +1052,7 @@ assert = (function() {
     assert.gleErrorCode = function(dbOrGLEDoc, code, msg) {
         var gle = dbOrGLEDoc instanceof DB ? dbOrGLEDoc.getLastErrorObj() : dbOrGLEDoc;
         if (!gle.err || gle.code != code) {
-            if (typeof(msg) == "function")
+            if (typeof (msg) == "function")
                 msg = msg(gle);
             doassert(_buildAssertionMessage(
                 msg,
@@ -1067,7 +1063,7 @@ assert = (function() {
     assert.gleErrorRegex = function(dbOrGLEDoc, regex, msg) {
         var gle = dbOrGLEDoc instanceof DB ? dbOrGLEDoc.getLastErrorObj() : dbOrGLEDoc;
         if (!gle.err || !regex.test(gle.err)) {
-            if (typeof(msg) == "function")
+            if (typeof (msg) == "function")
                 msg = msg(gle);
             doassert(_buildAssertionMessage(
                 msg,
