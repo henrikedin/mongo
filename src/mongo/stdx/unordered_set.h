@@ -30,12 +30,6 @@
 
 #pragma once
 
-#if defined(_WIN32)
-#include <boost/unordered_set.hpp>
-#else
-#include <unordered_set>
-#endif
-
 #include <absl/container/node_hash_set.h>
 
 #include "mongo/stdx/trusted_hasher.h"
@@ -43,16 +37,9 @@
 namespace mongo {
 namespace stdx {
 
-#if defined(_WIN32)
-using ::boost::unordered_multiset;  // NOLINT
-#else
-using ::std::unordered_multiset;  // NOLINT
-#endif
-
 template <class Key, class Hasher = default_hasher<Key>, typename... Args>
 using unordered_set = absl::node_hash_set<
-    Key,
-    std::conditional_t<IsTrustedHasher<Hasher, Key>::value, Hasher, UntrustedHasher<Hasher, Key>>,
+    Key, EnsureTrustedHasher<Hasher, Key>,
     Args...>;
 
 }  // namespace stdx

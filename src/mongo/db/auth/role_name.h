@@ -40,7 +40,6 @@
 #include "mongo/base/string_data.h"
 #include "mongo/bson/bsonelement.h"
 #include "mongo/bson/bsonobjbuilder.h"
-#include "mongo/platform/hash_namespace.h"
 #include "mongo/util/assert_util.h"
 
 namespace mongo {

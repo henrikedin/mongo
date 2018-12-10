@@ -38,8 +38,6 @@
 #include <unistd.h>
 #endif
 
-#include "mongo/platform/hash_namespace.h"
-
 namespace mongo {
 
 #ifdef _WIN32

@@ -36,7 +36,6 @@
 #include <boost/optional.hpp>
 
 #include "mongo/bson/util/builder.h"
-#include "mongo/platform/hash_namespace.h"
 #include "mongo/util/net/sockaddr.h"
 
 namespace mongo {

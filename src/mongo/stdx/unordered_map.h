@@ -30,12 +30,6 @@
 
 #pragma once
 
-#if defined(_WIN32)
-#include <boost/unordered_map.hpp>
-#else
-#include <unordered_map>
-#endif
-
 #include <absl/container/node_hash_map.h>
 
 #include "mongo/stdx/trusted_hasher.h"
@@ -43,17 +37,10 @@
 namespace mongo {
 namespace stdx {
 
-#if defined(_WIN32)
-using ::boost::unordered_multimap;  // NOLINT
-#else
-using ::std::unordered_multimap;  // NOLINT
-#endif
-
 template <class Key, class Value, class Hasher = default_hasher<Key>, typename... Args>
 using unordered_map = absl::node_hash_map<
     Key,
-    Value,
-    std::conditional_t<IsTrustedHasher<Hasher, Key>::value, Hasher, UntrustedHasher<Hasher, Key>>,
+    Value, EnsureTrustedHasher<Hasher, Key>,
     Args...>;
 
 }  // namespace stdx

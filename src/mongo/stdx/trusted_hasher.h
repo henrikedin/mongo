@@ -56,5 +56,10 @@ struct UntrustedHasher {
 private:
     Hasher _hasher;
 };
+
+template <typename Hasher, typename Key>
+using EnsureTrustedHasher =
+    std::conditional_t<IsTrustedHasher<Hasher, Key>::value, Hasher, UntrustedHasher<Hasher, Key>>;
+
 }  // namespace stdx
 }  // namespace mongo

@@ -40,7 +40,6 @@
 #include "mongo/base/string_data.h"
 #include "mongo/executor/remote_command_request.h"
 #include "mongo/executor/remote_command_response.h"
-#include "mongo/platform/hash_namespace.h"
 #include "mongo/stdx/condition_variable.h"
 #include "mongo/stdx/functional.h"
 #include "mongo/transport/baton.h"

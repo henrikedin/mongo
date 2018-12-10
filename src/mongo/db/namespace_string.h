@@ -38,7 +38,6 @@
 #include "mongo/base/status_with.h"
 #include "mongo/base/string_data.h"
 #include "mongo/db/repl/optime.h"
-#include "mongo/platform/hash_namespace.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/uuid.h"
 
