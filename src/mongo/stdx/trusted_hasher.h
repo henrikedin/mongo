@@ -52,18 +52,15 @@ template <typename Hasher, typename Key>
 struct IsTrustedHasher : std::is_same<Hasher, DefaultHasher<Key>> {};
 
 template <class Hasher, class Key>
-struct UntrustedHasher {
-    UntrustedHasher(const Hasher& hasher = Hasher()) : _hasher(hasher) {}
+struct HashImprover : private Hasher {
+    HashImprover(const Hasher& hasher = Hasher()) : Hasher(hasher) {}
     std::size_t operator()(const Key& k) const {
-        return absl::Hash<std::size_t>{}(_hasher(k));
+        return absl::Hash<std::size_t>{}(Hasher::operator()(k));
     }
-
-private:
-    Hasher _hasher;
 };
 
 template <typename Hasher, typename Key>
 using EnsureTrustedHasher =
-    std::conditional_t<IsTrustedHasher<Hasher, Key>::value, Hasher, UntrustedHasher<Hasher, Key>>;
+    std::conditional_t<IsTrustedHasher<Hasher, Key>::value, Hasher, HashImprover<Hasher, Key>>;
 
 }  // namespace mongo
