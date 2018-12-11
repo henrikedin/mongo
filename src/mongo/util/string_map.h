@@ -32,88 +32,60 @@
 
 #pragma once
 
-#include <absl/container/flat_hash_map.h>
-#include <absl/container/flat_hash_set.h>
+#include <third_party/murmurhash3/MurmurHash3.h>
 
 #include "mongo/base/string_data.h"
 #include "mongo/util/assert_util.h"
+#include "mongo/util/unordered_fast_key_table.h"
 
 namespace mongo {
 
-// Type that bundles a hashed key with the actual string so hashing can be performed outside of
-// insert call by using heterogeneous lookup.
-struct StringMapHashedKey {
-public:
-    explicit StringMapHashedKey(StringData sd, std::size_t hash) : _sd(sd), _hash(hash) {}
-
-    explicit operator std::string() const {
-        return _sd.toString();
+struct StringMapTraits {
+    static uint32_t hash(StringData a) {
+        uint32_t hash;
+        MurmurHash3_x86_32(a.rawData(), a.size(), 0, &hash);
+        return hash;
     }
 
-    StringData key() const {
-        return _sd;
+    static bool equals(StringData a, StringData b) {
+        return a == b;
     }
 
-    std::size_t hash() const {
-        return _hash;
+    static std::string toStorage(StringData s) {
+        return s.toString();
     }
 
-private:
-    StringData _sd;
-    std::size_t _hash;
-};
-
-// Hasher to support heterogeneous lookup for StringData and string-like elements.
-struct StringMapHasher {
-    // This using directive activates heterogeneous lookup in the hash table
-    using is_transparent = void;
-
-    std::size_t operator()(StringData sd) const {
-        // Use the default absl string hasher.
-        return absl::Hash<absl::string_view>{}(absl::string_view(sd.rawData(), sd.size()));
+    static StringData toLookup(const std::string& s) {
+        return StringData(s);
     }
 
-    std::size_t operator()(const std::string& s) const {
-        return operator()(StringData(s));
-    }
+    class HashedKey {
+    public:
+        explicit HashedKey(StringData key = "") : _key(key), _hash(StringMapTraits::hash(_key)) {}
 
-    std::size_t operator()(const char* s) const {
-        return operator()(StringData(s));
-    }
+        HashedKey(StringData key, uint32_t hash) : _key(key), _hash(hash) {
+            // If you claim to know the hash, it better be correct.
+            dassert(_hash == StringMapTraits::hash(_key));
+        }
 
-    std::size_t operator()(StringMapHashedKey key) const {
-        return key.hash();
-    }
+        const StringData& key() const {
+            return _key;
+        }
 
-    StringMapHashedKey hashed_key(StringData sd) {
-        return StringMapHashedKey(sd, operator()(sd));
-    }
-};
+        uint32_t hash() const {
+            return _hash;
+        }
 
-struct StringMapEq {
-    // This using directive activates heterogeneous lookup in the hash table
-    using is_transparent = void;
-
-    bool operator()(StringData lhs, StringData rhs) const {
-        return lhs == rhs;
-    }
-
-    bool operator()(StringMapHashedKey lhs, StringData rhs) const {
-        return lhs.key() == rhs;
-    }
-
-    bool operator()(StringData lhs, StringMapHashedKey rhs) const {
-        return lhs == rhs.key();
-    }
-
-    bool operator()(StringMapHashedKey lhs, StringMapHashedKey rhs) const {
-        return lhs.key() == rhs.key();
-    }
+    private:
+        StringData _key;
+        uint32_t _hash;
+    };
 };
 
 template <typename V>
-using StringMap = absl::flat_hash_map<std::string, V, StringMapHasher, StringMapEq>;
-
-using StringSet = absl::flat_hash_set<std::string, StringMapHasher, StringMapEq>;
+using StringMap = UnorderedFastKeyTable<StringData,   // K_L
+                                        std::string,  // K_S
+                                        V,
+                                        StringMapTraits>;
 
 }  // namespace mongo

@@ -30,9 +30,6 @@
 
 #include "mongo/platform/basic.h"
 
-#include <map>
-#include <set>
-
 #include "mongo/client/remote_command_targeter_mock.h"
 #include "mongo/db/logical_clock.h"
 #include "mongo/db/repl/read_concern_args.h"
@@ -687,15 +684,11 @@ TEST_F(TransactionRouterTest, SendCoordinateCommitForMultipleParticipants) {
         auto cmdName = request.cmdObj.firstElement().fieldNameStringData();
         ASSERT_EQ(cmdName, "coordinateCommitTransaction");
 
-        std::set<std::string> expectedParticipants = {shard1.toString(), shard2.toString()};
         auto participantElements = request.cmdObj["participants"].Array();
-        ASSERT_EQ(expectedParticipants.size(), participantElements.size());
+        ASSERT_EQ(2u, participantElements.size());
 
-        for (const auto& element : participantElements) {
-            auto shardId = element["shardId"].valuestr();
-            ASSERT_EQ(1ull, expectedParticipants.count(shardId));
-            expectedParticipants.erase(shardId);
-        }
+        ASSERT_BSONOBJ_EQ(BSON("shardId" << shard1.toString()), participantElements.front().Obj());
+        ASSERT_BSONOBJ_EQ(BSON("shardId" << shard2.toString()), participantElements.back().Obj());
 
         checkSessionDetails(request.cmdObj, lsid, txnNum, true);
 
@@ -1142,24 +1135,29 @@ TEST_F(TransactionRouterTest, AbortForMultipleParticipants) {
 
     auto future = launchAsync([&] { return txnRouter->abortTransaction(operationContext()); });
 
-    std::map<HostAndPort, boost::optional<bool>> targets = {{hostAndPort1, true},
-                                                            {hostAndPort2, {}}};
+    onCommandForPoolExecutor([&](const RemoteCommandRequest& request) {
+        ASSERT_EQ(hostAndPort1, request.target);
+        ASSERT_EQ("admin", request.dbname);
 
-    while (!targets.empty()) {
-        onCommandForPoolExecutor([&](const RemoteCommandRequest& request) {
-            auto target = targets.find(request.target);
-            ASSERT(target != targets.end());
-            ASSERT_EQ("admin", request.dbname);
+        auto cmdName = request.cmdObj.firstElement().fieldNameStringData();
+        ASSERT_EQ(cmdName, "abortTransaction");
 
-            auto cmdName = request.cmdObj.firstElement().fieldNameStringData();
-            ASSERT_EQ(cmdName, "abortTransaction");
+        checkSessionDetails(request.cmdObj, lsid, txnNum, true);
 
-            checkSessionDetails(request.cmdObj, lsid, txnNum, target->second);
+        return BSON("ok" << 1);
+    });
 
-            targets.erase(request.target);
-            return BSON("ok" << 1);
-        });
-    }
+    onCommandForPoolExecutor([&](const RemoteCommandRequest& request) {
+        ASSERT_EQ(hostAndPort2, request.target);
+        ASSERT_EQ("admin", request.dbname);
+
+        auto cmdName = request.cmdObj.firstElement().fieldNameStringData();
+        ASSERT_EQ(cmdName, "abortTransaction");
+
+        checkSessionDetails(request.cmdObj, lsid, txnNum, boost::none);
+
+        return BSON("ok" << 1);
+    });
 
     auto response = future.timed_get(kFutureTimeout);
     ASSERT_FALSE(response.empty());
@@ -1279,24 +1277,29 @@ TEST_F(TransactionRouterTest, ImplicitAbortForMultipleParticipants) {
     auto future =
         launchAsync([&] { return txnRouter->implicitlyAbortTransaction(operationContext()); });
 
-    std::map<HostAndPort, boost::optional<bool>> targets = {{hostAndPort1, true},
-                                                            {hostAndPort2, {}}};
+    onCommandForPoolExecutor([&](const RemoteCommandRequest& request) {
+        ASSERT_EQ(hostAndPort1, request.target);
+        ASSERT_EQ("admin", request.dbname);
 
-    while (!targets.empty()) {
-        onCommandForPoolExecutor([&](const RemoteCommandRequest& request) {
-            auto target = targets.find(request.target);
-            ASSERT(target != targets.end());
-            ASSERT_EQ("admin", request.dbname);
+        auto cmdName = request.cmdObj.firstElement().fieldNameStringData();
+        ASSERT_EQ(cmdName, "abortTransaction");
 
-            auto cmdName = request.cmdObj.firstElement().fieldNameStringData();
-            ASSERT_EQ(cmdName, "abortTransaction");
+        checkSessionDetails(request.cmdObj, lsid, txnNum, true);
 
-            checkSessionDetails(request.cmdObj, lsid, txnNum, target->second);
+        return BSON("ok" << 1);
+    });
 
-            targets.erase(request.target);
-            return BSON("ok" << 1);
-        });
-    }
+    onCommandForPoolExecutor([&](const RemoteCommandRequest& request) {
+        ASSERT_EQ(hostAndPort2, request.target);
+        ASSERT_EQ("admin", request.dbname);
+
+        auto cmdName = request.cmdObj.firstElement().fieldNameStringData();
+        ASSERT_EQ(cmdName, "abortTransaction");
+
+        checkSessionDetails(request.cmdObj, lsid, txnNum, boost::none);
+
+        return BSON("ok" << 1);
+    });
 
     future.timed_get(kFutureTimeout);
 }

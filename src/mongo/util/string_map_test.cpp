@@ -41,7 +41,7 @@ namespace {
 using namespace mongo;
 
 TEST(StringMapTest, Hash1) {
-    StringSet::hasher hash;
+    auto hash = StringMapTraits::hash;
     ASSERT_EQUALS(hash(""), hash(""));
     ASSERT_EQUALS(hash("a"), hash("a"));
     ASSERT_EQUALS(hash("abc"), hash("abc"));
@@ -61,7 +61,7 @@ TEST(StringMapTest, Hash1) {
     ASSERT_FALSE(equals((b), (a)));
 
 TEST(StringMapTest, Equals1) {
-    StringSet::key_equal equals;
+    auto equals = StringMapTraits::equals;
 
     equalsBothWays("", "");
     equalsBothWays("a", "a");

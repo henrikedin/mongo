@@ -54,8 +54,7 @@
                                   pipeline: x.options.pipeline
                               };
                           }));
-    assert.sameMembers(
-        listedViews, expectedViews, "persisted view definitions not correctly loaded");
+    assert.eq(listedViews, expectedViews, "persisted view definitions not correctly loaded");
 
     // Insert an invalid view definition directly into system.views to bypass normal validation.
     assert.writeOK(viewsDB.system.views.insert({_id: "badView", pipeline: "badType"}));

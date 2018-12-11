@@ -509,7 +509,7 @@ public:
     };
 
     CollectionProperties getCollectionProperties(OperationContext* opCtx,
-                                                 const StringMapHashedKey& ns) {
+                                                 const StringMapTraits::HashedKey& ns) {
         auto it = _cache.find(ns);
         if (it != _cache.end()) {
             return it->second;
@@ -565,11 +565,8 @@ void fillWriterVectors(OperationContext* opCtx,
     CachedCollectionProperties collPropertiesCache;
 
     for (auto&& op : *ops) {
-        auto hashedNs = StringMapHasher().hashed_key(op.getNss().ns());
-        // Reduce the hash from 64bit down to 32bit, just to allow combinations with murmur3 later
-        // on. Bit depth not important, we end up just doing integer modulo with this in the end.
-        // The hash function should provide entropy in the lower bits as it's used in hash tables.
-        uint32_t hash = static_cast<uint32_t>(hashedNs.hash());
+        StringMapTraits::HashedKey hashedNs(op.getNss().ns());
+        uint32_t hash = hashedNs.hash();
 
         // We need to track all types of ops, including type 'n' (these are generated from chunk
         // migrations).
