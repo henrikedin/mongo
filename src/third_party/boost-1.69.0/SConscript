@@ -4,6 +4,9 @@ Import("env")
 
 env = env.Clone()
 
+if env.TargetOSIs('posix'):
+    env.AppendUnique(CXXFLAGS=['-Wno-overloaded-virtual'])
+
 env.Library('boost_system', ['libs/system/src/error_code.cpp'])
 
 env.Library('boost_filesystem', [
