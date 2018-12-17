@@ -4,7 +4,9 @@ Import("env")
 
 env = env.Clone()
 
-if env.TargetOSIs('posix'):
+# GCC emits a warning on both v2 and v3 toolchains when compiling filesystem. 
+# We should check if this is still needed when doing boost upgrades in the future.
+if env.ToolchainIs('GCC'):
     env.AppendUnique(CXXFLAGS=['-Wno-overloaded-virtual'])
 
 env.Library('boost_system', ['libs/system/src/error_code.cpp'])
