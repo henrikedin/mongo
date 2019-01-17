@@ -1010,10 +1010,10 @@ class TCMallocImplementation : public MallocExtension {
   virtual void SizeClasses(void* arg, SizeClassFunction func) {
     TCMallocStats global_stats;
     base::MallocSizeClass stats;
-    uint64_t class_count[kNumClasses];
+    uint64_t class_count[kClassSizesMax];
     ExtractStats(&global_stats, class_count, NULL, NULL);
 
-    for (int cl = 0; cl < kNumClasses; cl++) {
+    for (int cl = 0; cl < Static::num_size_classes(); cl++) {
       uint64_t central_objs = Static::central_cache()[cl].length();
       uint64_t transfer_objs = Static::central_cache()[cl].tc_length();
       uint64_t num_spans = Static::central_cache()[cl].spans();
