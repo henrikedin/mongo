@@ -455,7 +455,7 @@ void ThreadCache::BecomeTemporarilyIdle() {
     // algorithm for max_size_; this avoids requesting more and more
     // memory from the central freelist due to frequent calls.
     for (size_t cl = 0; cl < Static::num_size_classes(); ++cl) {
-        heap->list_[cl].Init(Static::sizemap()->class_to_size(cl));
+      heap->list_[cl].Init(Static::sizemap()->class_to_size(cl));
     }
 
     // Re-calculate the Thread Cache max size if we have a non-default size.
