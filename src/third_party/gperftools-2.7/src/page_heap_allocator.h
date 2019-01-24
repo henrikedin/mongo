@@ -109,6 +109,9 @@ class PageHeapAllocator {
   int inuse_;
 };
 
+template <class T>
+const int PageHeapAllocator<T>::kAllocIncrement;
+
 // STL-compatible allocator which forwards allocations to a PageHeapAllocator.
 //
 // Like PageHeapAllocator, this requires external synchronization. To avoid multiple

@@ -40,6 +40,9 @@
 
 namespace tcmalloc {
 
+#define LX(x) LogItem(x).setLabel(#x)
+#define LOG(...) Log(kLog, __FILE__, __LINE__, __VA_ARGS__);
+
 // Define the maximum number of object per classe type to transfer between
 // thread and central caches.
 static int32 FLAGS_tcmalloc_transfer_num_objects;
@@ -119,6 +122,15 @@ int SizeMap::NumMoveSize(size_t size) {
   return num;
 }
 
+static size_t NaturalAlignment(size_t x) {
+  if (x == 0)
+    return kMinAlign;
+  for (size_t n = 1;; n <<= 1) {
+    if ((x & n) == n)
+      return n < kMinAlign ? kMinAlign : n;
+  }
+}
+
 // Initialize the mapping arrays
 void SizeMap::Init() {
   InitTCMallocTransferNumObjects();
@@ -135,7 +147,8 @@ void SizeMap::Init() {
 
   // Compute the size classes we want to use
   int sc = 1;   // Next size class to assign
-  size_t potential_merge_sizes[kMaxSize];
+  const size_t kMergeDepth = 16; // we only use 3 of these, but they're cheap.
+  size_t potential_merge_sizes[kMergeDepth];
   int potential_merge_count = 0;
   int alignment = kAlignment;
   CHECK_CONDITION(kAlignment <= kMinAlign);
@@ -158,9 +171,12 @@ void SizeMap::Init() {
     } while ((span_size / size) < min_objects_per_span);
     const size_t my_pages = span_size >> kPageShift;
 
+    LOG("======== evaluating", LX(size), "========");
+
     bool merge = (potential_merge_count != 0);
+
     for (int i = 0; i < potential_merge_count; i++) {
-      // See if we can merge this into the previous class(es) without
+      // See if we can merge this into the previous classes without
       // the fragmentation of any of them going over 12.5%.
       int objects_per_span = span_size / size;
       size_t waste = span_size - (potential_merge_sizes[i] * objects_per_span);
@@ -171,22 +187,91 @@ void SizeMap::Init() {
     if (merge) {
       // Adjust last class to include this size
       class_to_size_[sc-1] = size;
+      CHECK_CONDITION(potential_merge_count < kMergeDepth);
       potential_merge_sizes[potential_merge_count++] = size;
+
+      LOG("expanded merge candidate into", size);
+      for (int i = 0; i < potential_merge_count; ++i) {
+        LOG("  [", i, "]:", potential_merge_sizes[i]);
+      }
+
       continue;
+    }
+
+    {
+      bool dirty = true;
+      while (dirty && (potential_merge_count > 0)) {
+        dirty = false;
+        LOG("resolving", LX(sc), LX(class_to_size_[sc-1]));
+        for (int i = 0; i < potential_merge_count; ++i) {
+          LOG("  [", i, "]:", potential_merge_sizes[i]);
+        }
+
+        for (int i = 0; i < potential_merge_count; ++i) {
+          size_t prev_size = potential_merge_sizes[i];
+          if (NaturalAlignment(size) < NaturalAlignment(prev_size)) {
+            // We must split the merge candidate here.
+            LOG("merge", LX(prev_size), "into", LX(size), "would reduce alignment at", LX(i));
+
+            class_to_size_[sc - 1] = prev_size;
+
+            if (i > 0) {
+              // shift everything in potential_merge_sizes down by the size of this merge.
+              size_t pop = i;
+              LOG("popping", pop, "elements from front of merge queue");
+              {
+                LOG("pre-shift", LX(potential_merge_count));
+                for (int i = 0; i < potential_merge_count; ++i) {
+                  LOG("  [", i, "]:", potential_merge_sizes[i]);
+                }
+                {
+                  size_t remainder = potential_merge_count - pop;
+                  int rd = pop;
+                  for (potential_merge_count = 0; remainder--; ) {
+                    potential_merge_sizes[potential_merge_count++] = potential_merge_sizes[rd++];
+                  }
+                }
+                LOG("post-shift", LX(potential_merge_count));
+                for (int i = 0; i < potential_merge_count; ++i) {
+                  LOG("  [", i, "]:", potential_merge_sizes[i]);
+                }
+              }
+
+              class_to_pages_[sc] = my_pages;
+              class_to_size_[sc] = potential_merge_sizes[potential_merge_count - 1];
+              sc++;
+
+              dirty = true;
+            }
+            break;
+          }
+        }
+      }
+      if (potential_merge_count == 0) {
+        merge = false;
+      }
     }
 
     potential_merge_sizes[0] = size;
     potential_merge_count = 1;
+
     // Add new class
+    CHECK_CONDITION(sc < kClassSizesMax);
     class_to_pages_[sc] = my_pages;
     class_to_size_[sc] = size;
     sc++;
   }
   num_size_classes = sc;
-  if (sc > kClassSizesMax) {
+  if (sc >= kClassSizesMax) {
     Log(kCrash, __FILE__, __LINE__,
         "too many size classes: (found vs. max)", sc, kClassSizesMax);
   }
+
+  for (int i = 0; i < num_size_classes; ++i) {
+    Log(kLog, __FILE__, __LINE__, i, class_to_size_[i]);
+  }
+
+  exit(0);
 
   // Initialize the mapping arrays
   int next_size = 0;

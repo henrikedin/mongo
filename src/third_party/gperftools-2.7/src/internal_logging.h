@@ -78,6 +78,7 @@ class LogItem {
   LogItem(unsigned long v)      : tag_(kUnsigned) { u_.unum = v; }
   LogItem(unsigned long long v) : tag_(kUnsigned) { u_.unum = v; }
   LogItem(const void* v)        : tag_(kPtr)      { u_.ptr = v; }
+  LogItem& setLabel(const char* s) { label = s; return *this; }
  private:
   friend class Logger;
   enum Tag {
@@ -94,11 +95,17 @@ class LogItem {
     int64_t snum;
     uint64_t unum;
   } u_;
+  const char* label = nullptr;
 };
 
-extern PERFTOOLS_DLL_DECL void Log(LogMode mode, const char* filename, int line,
-                LogItem a, LogItem b = LogItem(),
-                LogItem c = LogItem(), LogItem d = LogItem());
+extern PERFTOOLS_DLL_DECL void LogArray(LogMode mode, const char* filename, int line,
+                                        const LogItem* items, size_t numItems);
+
+template <typename... Ts>
+void Log(LogMode mode, const char* filename, int line, const Ts&... objs) {
+    const LogItem items[] = {LogItem(objs)...};
+    LogArray(mode, filename, line, items, sizeof...(Ts));
+}
 
 // Tests can override this function to collect logging messages.
 extern PERFTOOLS_DLL_DECL void (*log_message_writer)(const char* msg, int length);

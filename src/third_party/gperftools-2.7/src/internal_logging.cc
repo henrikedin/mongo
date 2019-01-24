@@ -73,19 +73,19 @@ class Logger {
   char buf_[kBufSize];
 };
 
-void Log(LogMode mode, const char* filename, int line,
-         LogItem a, LogItem b, LogItem c, LogItem d) {
+
+void LogArray(LogMode mode, const char* filename, int line,
+              const LogItem* items, size_t numItems) {
   Logger state;
   state.p_ = state.buf_;
   state.end_ = state.buf_ + sizeof(state.buf_);
-  state.AddStr(filename, strlen(filename))
+  bool ok = state.AddStr(filename, strlen(filename))
       && state.AddStr(":", 1)
       && state.AddNum(line, 10)
-      && state.AddStr("]", 1)
-      && state.Add(a)
-      && state.Add(b)
-      && state.Add(c)
-      && state.Add(d);
+      && state.AddStr("]", 1);
+  while (ok && numItems--) {
+    ok = state.Add(*items++);
+  }
 
   // Teminate with newline
   if (state.p_ >= state.end_) {
@@ -123,6 +123,11 @@ bool Logger::Add(const LogItem& item) {
   if (p_ < end_) {
     *p_ = ' ';
     p_++;
+  }
+
+  if (item.label) {
+      if (!(AddStr(item.label, strlen(item.label)) &&
+            AddStr(":", 1))) return false;
   }
 
   switch (item.tag_) {
