@@ -168,7 +168,7 @@ void SizeMap::Init() {
         merge = false;
     }
 
-    if (merge) {
+    if (merge && size != 1664) {
       // Adjust last class to include this size
       class_to_size_[sc-1] = size;
       potential_merge_sizes[potential_merge_count++] = size;
