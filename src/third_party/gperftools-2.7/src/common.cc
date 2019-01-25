@@ -213,9 +213,9 @@ void SizeMap::Init() {
             // We must split the merge candidate here.
             LOG("merge", LX(prev_size), "into", LX(size), "would reduce alignment at", LX(i));
 
-            class_to_size_[sc - 1] = prev_size;
+            class_to_size_[sc-1] = prev_size;
 
-            if (i > 0) {
+            if (i > 1) {
               // shift everything in potential_merge_sizes down by the size of this merge.
               size_t pop = i;
               LOG("popping", pop, "elements from front of merge queue");
