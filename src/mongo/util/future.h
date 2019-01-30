@@ -1719,12 +1719,15 @@ using FutureContinuationResult =
 
 template <typename T>
 inline Future<T> Promise<T>::getFuture() noexcept {
+    using namespace future_details;
     _sharedState->threadUnsafeIncRefCountTo(2);
-    return Future<T>(boost::intrusive_ptr<SharedState<T>>(_sharedState.get(), /*add ref*/ false));
+    return Future<T>(
+        boost::intrusive_ptr<SharedState<T>>(_sharedState.get(), /*add ref*/ false));
 }
 
 template <typename T>
 inline void Promise<T>::setFrom(Future<T>&& future) noexcept {
+    using namespace future_details;
     setImpl([&](boost::intrusive_ptr<SharedState<T>>&& sharedState) {
         future.propagateResultTo(sharedState.get());
     });
@@ -1743,6 +1746,7 @@ template <typename T>
 
 template <typename T>
     inline SharedSemiFuture<T> Future<T>::share() && noexcept {
+    using namespace future_details;
     if (!_immediate)
         return SharedSemiFuture<T>(std::move(_shared));
 
