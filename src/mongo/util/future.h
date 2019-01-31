@@ -1710,8 +1710,8 @@ inline auto makePromiseFuture() {
  * FutureContinuationResult<std::function<int(bool)>, NotBool> SFINAE-safe substitution failure.
  */
 template <typename Func, typename... Args>
-using FutureContinuationResult =
-    typename future_details::FutureContinuationResultImpl<std::result_of_t<Func(Args&&...)>>::type;
+using FutureContinuationResult = typename future_details::FutureContinuationResultImpl<
+    std::invoke_result_t<Func, Args&&...>>::type;
 
 //
 // Implementations of methods that couldn't be defined in the class due to ordering requirements.

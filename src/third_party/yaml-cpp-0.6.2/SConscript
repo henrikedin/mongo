@@ -9,6 +9,9 @@ try:
 except ValueError:
     pass
 
+if env.ToolchainIs('msvc'):
+    env.Append(CPPDEFINES=["_SILENCE_CXX17_ITERATOR_BASE_CLASS_DEPRECATION_WARNING"])
+
 env.Library("yaml",
             [
              "src/binary.cpp",

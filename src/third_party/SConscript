@@ -24,6 +24,7 @@ thirdPartyIncludePathList = [
     ('s2', '#/src/third_party/s2'),
     ('timelib', '#/src/third_party/timelib' + timelibSuffix),
 ]
+thirdPartyDefineList = []
 
 if not use_system_version_of_library('tcmalloc'):
     thirdPartyIncludePathList.append(
@@ -97,6 +98,9 @@ if wiredtiger and not use_system_version_of_library('wiredtiger'):
 if not use_system_version_of_library('yaml'):
     thirdPartyIncludePathList.append(
         ('yaml', '#/src/third_party/yaml-cpp' + yamlSuffix + '/include'))
+    
+    if env.ToolchainIs('msvc'):
+        thirdPartyDefineList.append(('yaml', '_SILENCE_CXX17_ITERATOR_BASE_CLASS_DEPRECATION_WARNING'))
 
 if not use_system_version_of_library('asio'):
     thirdPartyIncludePathList.append(
@@ -118,6 +122,8 @@ def injectAllThirdPartyIncludePaths(thisEnv):
 def injectThirdPartyIncludePaths(thisEnv, libraries):
     thisEnv.PrependUnique(CPPPATH=[
         entry[1] for entry in thirdPartyIncludePathList if entry[0] in libraries])
+    thisEnv.PrependUnique(CPPDEFINES=[
+        entry[1] for entry in thirdPartyDefineList if entry[0] in libraries])
 
 env.AddMethod(injectAllThirdPartyIncludePaths, 'InjectAllThirdPartyIncludePaths')
 env.AddMethod(injectThirdPartyIncludePaths, 'InjectThirdPartyIncludePaths')
