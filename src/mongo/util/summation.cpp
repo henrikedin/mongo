@@ -42,8 +42,8 @@ void DoubleDoubleSummation::addLong(long long x) {
     int64_t high = x / (1ll << 32) * (1ll << 32);
     int64_t low = x - high;
     dassert(high + low == x && 1.0 * high == high && 1.0 * low == low);
-    addDouble(low);
-    addDouble(high);
+    addDouble(static_cast<double>(low));
+    addDouble(static_cast<double>(high));
 }
 
 /**

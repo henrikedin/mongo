@@ -150,7 +150,7 @@ public:
 
     // How many fields do we index / are in the key pattern?
     int getNumFields() const {
-        return _numFields;
+        return static_cast<int>(_numFields);
     }
 
     //

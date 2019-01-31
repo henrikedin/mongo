@@ -14,7 +14,7 @@ char* Varint::Encode32(char* sptr, uint32 v) {
 
 char* Varint::Encode64(char* sptr, uint64 v) {
   if (v < (1u << 28)) {
-    return Varint::Encode32(sptr, v);
+    return Varint::Encode32(sptr, static_cast<uint32>(v));
   } else {
     // Operate on characters as unsigneds
     unsigned char* ptr = reinterpret_cast<unsigned char*>(sptr);

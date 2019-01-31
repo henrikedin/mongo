@@ -177,7 +177,7 @@ double SafeNum::getDouble(const SafeNum& snum) {
         case NumberInt:
             return snum._value.int32Val;
         case NumberLong:
-            return snum._value.int64Val;
+            return static_cast<double>(snum._value.int64Val);
         case NumberDouble:
             return snum._value.doubleVal;
         case NumberDecimal:

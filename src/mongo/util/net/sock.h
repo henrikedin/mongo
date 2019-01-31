@@ -153,7 +153,7 @@ public:
         return _bytesOut;
     }
     int rawFD() const {
-        return _fd;
+        return static_cast<int>(_fd);
     }
 
     /**
@@ -162,7 +162,7 @@ public:
      * thread immediately after the thread creates the Sock, so it doesn't need to be thread-safe.
      */
     int stealSD() {
-        int tmp = _fd;
+        int tmp = static_cast<int>(_fd);
         _fd = -1;
         return tmp;
     }

@@ -163,12 +163,12 @@ private:
 
     bool flushToConsole() {
         std::ptrdiff_t n = pptr() - pbase();
-        pbump(-n);
+        pbump(static_cast<int>(-n));
 
         // convert multi-byte buffer to wide characters and output using WriteConsoleW
 
         wchar_t bufferWide[_bufferSize];
-        int length = MultiByteToWideChar(CP_UTF8, 0, _buffer, n, bufferWide, _bufferSize);
+        int length = MultiByteToWideChar(CP_UTF8, 0, _buffer, static_cast<int>(n), bufferWide, _bufferSize);
         const wchar_t* unwrittenBegin = bufferWide;
         int unwrittenCount = length;  // m holds number of unwritten wide characters in buffer
 

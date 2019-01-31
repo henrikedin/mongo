@@ -202,11 +202,11 @@ inline void Encoder::Ensure(int N) {
 }
 
 inline int Encoder::length() const {
-  return (buf_ - orig_);
+  return static_cast<int>(buf_ - orig_);
 }
 
 inline int Encoder::avail() const {
-  return (limit_ - buf_);
+    return static_cast<int>(limit_ - buf_);
 }
 
 inline void Encoder::putn(const void* src, int n) {
@@ -222,7 +222,7 @@ inline void Encoder::putcn(const void* src, int c, int n) {
 }
 
 inline void Encoder::puts(const void* src) {
-  putcn(src, '\0', limit_ - buf_);
+  putcn(src, '\0', static_cast<int>(limit_ - buf_));
 }
 
 inline void Encoder::puts_without_null(const char* mem) {
@@ -263,11 +263,11 @@ inline void Decoder::reset(const void* b, int maxn) {
 }
 
 inline int Decoder::pos() const {
-  return (buf_ - orig_);
+  return static_cast<int>(buf_ - orig_);
 }
 
 inline int Decoder::avail() const {
-  return (limit_ - buf_);
+    return static_cast<int>(limit_ - buf_);
 }
 
 inline void Decoder::getn(void* dst, int n) {
@@ -286,7 +286,7 @@ inline void Decoder::getcn(void* dst, int c, int n) {
 }
 
 inline void Decoder::gets(void* dst, int n) {
-  int len = min<int>((n - 1), (limit_ - buf_));
+  int len = min<int>((n - 1), static_cast<int>(limit_ - buf_));
   (reinterpret_cast<char *>(dst))[len] = '\0';
   getcn(dst, '\0', len);
 }

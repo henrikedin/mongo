@@ -215,7 +215,7 @@ public:
     uint32_t getBiasedExponent() const {
         const uint64_t combo = _getCombinationField();
         if (combo < kCombinationNonCanonical)
-            return combo >> 3;
+            return static_cast<uint32_t>(combo >> 3);
 
         return combo >= kCombinationInfinity
             ? kMaxBiasedExponent + 1           // NaN or Inf

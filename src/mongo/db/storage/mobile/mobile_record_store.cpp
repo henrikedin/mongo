@@ -100,7 +100,7 @@ public:
         _savedId = RecordId(recId);
         // The data returned from sqlite3_column_blob is only valid until the next call to
         // sqlite3_step. Using getOwned copies the buffer so the data is not invalidated.
-        return {{_savedId, RecordData(static_cast<const char*>(data), dataSize).getOwned()}};
+        return {{_savedId, RecordData(static_cast<const char*>(data), static_cast<int>(dataSize)).getOwned()}};
     }
 
     boost::optional<Record> seekExact(const RecordId& id) final {

@@ -696,13 +696,13 @@ long long getNewOplogSizeBytes(OperationContext* opCtx, const ReplSettings& repl
     if (opCtx->getClient()->getServiceContext()->getStorageEngine()->isEphemeral()) {
         // in memory: 50MB minimum size
         lowerBound = 50LL * 1024 * 1024;
-        bytes = pi.getMemSizeMB() * 1024 * 1024;
+        bytes = static_cast<double>(pi.getMemSizeMB() * 1024 * 1024);
         LOG(3) << "Ephemeral storage system; lowerBound: " << lowerBound << " bytes, " << bytes
                << " bytes total memory";
     } else {
         // disk: 990MB minimum size
         lowerBound = 990LL * 1024 * 1024;
-        bytes = File::freeSpace(storageGlobalParams.dbpath);  //-1 if call not supported.
+        bytes = static_cast<double>(File::freeSpace(storageGlobalParams.dbpath));  //-1 if call not supported.
         LOG(3) << "Disk storage system; lowerBound: " << lowerBound << " bytes, " << bytes
                << " bytes free space on device";
     }

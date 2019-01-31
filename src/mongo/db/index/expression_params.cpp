@@ -179,11 +179,11 @@ void ExpressionParams::initialize2dsphereParams(const BSONObj& infoObj,
     uassertStatusOK(status);
 
     // This is advisory.
-    out->maxCellsInCovering = maxCellsInCovering;
+    out->maxCellsInCovering = static_cast<int>(maxCellsInCovering);
 
     // These are not advisory.
-    out->finestIndexedLevel = finestIndexedLevel;
-    out->coarsestIndexedLevel = coarsestIndexedLevel;
+    out->finestIndexedLevel = static_cast<int>(finestIndexedLevel);
+    out->coarsestIndexedLevel = static_cast<int>(coarsestIndexedLevel);
 
     uassert(16747, "coarsestIndexedLevel must be >= 0", out->coarsestIndexedLevel >= 0);
     uassert(16748, "finestIndexedLevel must be <= 30", out->finestIndexedLevel <= 30);

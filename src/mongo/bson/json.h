@@ -476,7 +476,7 @@ private:
 
 public:
     inline int offset() {
-        return (_input - _buf);
+        return static_cast<int>(_input - _buf);
     }
 
 private:

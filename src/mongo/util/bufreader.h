@@ -91,12 +91,12 @@ public:
 
     /** return current offset into buffer */
     unsigned offset() const {
-        return _pos - _start;
+        return static_cast<unsigned>(_pos - _start);
     }
 
     /** return remaining bytes */
     unsigned remaining() const {
-        return _end - _pos;
+        return static_cast<unsigned>(_end - _pos);
     }
 
     /** back up by nbytes */

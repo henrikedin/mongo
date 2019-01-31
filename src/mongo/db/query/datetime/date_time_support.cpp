@@ -430,12 +430,12 @@ Date_t TimeZone::createFromIso8601DateParts(long long isoYear,
 }
 
 TimeZone::DateParts::DateParts(const timelib_time& timelib_time, Date_t date)
-    : year(timelib_time.y),
-      month(timelib_time.m),
-      dayOfMonth(timelib_time.d),
-      hour(timelib_time.h),
-      minute(timelib_time.i),
-      second(timelib_time.s) {
+    : year(static_cast<int>(timelib_time.y)),
+      month(static_cast<int>(timelib_time.m)),
+      dayOfMonth(static_cast<int>(timelib_time.d)),
+      hour(static_cast<int>(timelib_time.h)),
+      minute(static_cast<int>(timelib_time.i)),
+      second(static_cast<int>(timelib_time.s)) {
     const int ms = date.toMillisSinceEpoch() % 1000LL;
     // Add 1000 since dates before 1970 would have negative milliseconds.
     millisecond = ms >= 0 ? ms : 1000 + ms;

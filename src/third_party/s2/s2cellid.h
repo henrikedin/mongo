@@ -350,7 +350,7 @@ inline bool S2CellId::is_valid() const {
 }
 
 inline int S2CellId::face() const {
-  return id_ >> kPosBits;
+    return static_cast<int> (id_ >> kPosBits);
 }
 
 inline uint64 S2CellId::pos() const {

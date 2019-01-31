@@ -235,19 +235,19 @@ size_t copyString32to8counted(UChar8* dest8,
         while (charCount-- && *source32 && outputUTF8ByteCount < reducedBufferSize) {
             UChar32 c = *source32++;
             if (c <= 0x7F) {
-                *dest8++ = c;
+                *dest8++ = static_cast<UChar8>(c);
                 outputUTF8ByteCount += 1;
             } else if (c <= 0x7FF) {
-                *dest8++ = 0xC0 | (c >> 6);
+                *dest8++ = 0xC0 | static_cast<UChar8>(c >> 6);
                 *dest8++ = 0x80 | (0x3F & c);
                 outputUTF8ByteCount += 2;
             } else if (c <= 0xFFFF) {
-                *dest8++ = 0xE0 | (c >> 12);
+                *dest8++ = 0xE0 | static_cast<UChar8>(c >> 12);
                 *dest8++ = 0x80 | (0x3F & (c >> 6));
                 *dest8++ = 0x80 | (0x3F & c);
                 outputUTF8ByteCount += 3;
             } else if (c <= 0x1FFFFF) {
-                *dest8++ = 0xF0 | (c >> 18);
+                *dest8++ = 0xF0 | static_cast<UChar8>(c >> 18);
                 *dest8++ = 0x80 | (0x3F & (c >> 12));
                 *dest8++ = 0x80 | (0x3F & (c >> 6));
                 *dest8++ = 0x80 | (0x3F & c);

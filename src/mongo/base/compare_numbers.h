@@ -86,7 +86,7 @@ inline int compareLongToDouble(long long lhs, double rhs) {
     // Additionally, doubles outside of this range can't have a fractional component.
     static const long long kEndOfPreciseDoubles = 1ll << 53;
     if (lhs <= kEndOfPreciseDoubles && lhs >= -kEndOfPreciseDoubles) {
-        return compareDoubles(lhs, rhs);
+        return compareDoubles(static_cast<double>(lhs), static_cast<double>(rhs));
     }
 
     // Large magnitude doubles (including +/- Inf) are strictly > or < all Longs.
@@ -99,7 +99,7 @@ inline int compareLongToDouble(long long lhs, double rhs) {
     // Remaining Doubles can have their integer component precisely represented as long longs.
     // If they have a fractional component, they must be strictly > or < lhs even after
     // truncation of the fractional component since low-magnitude lhs were handled above.
-    return compareLongs(lhs, rhs);
+    return compareLongs(static_cast<long long>(lhs), static_cast<long long>(rhs));
 }
 
 inline int compareDoubleToLong(double lhs, long long rhs) {

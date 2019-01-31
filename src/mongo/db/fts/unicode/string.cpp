@@ -257,7 +257,7 @@ StringData String::caseFoldAndStripDiacritics(StackBufBuilder* buffer,
         appendUtf8Codepoint(codepoint, &outputIt);
     }
 
-    buffer->setlen(outputIt - buffer->buf());
+    buffer->setlen(static_cast<int>(outputIt - buffer->buf()));
     return {buffer->buf(), size_t(buffer->len())};
 }
 

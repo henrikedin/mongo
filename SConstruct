@@ -1635,7 +1635,7 @@ elif env.TargetOSIs('windows'):
         # C4244: 'conversion' conversion from 'type1' to 'type2',
         # possible loss of data. An integer type is converted to a
         # smaller integer type.
-        "/wd4244",
+        #"/wd4244",
 
         # C4267: 'var' : conversion from 'size_t' to 'type', possible
         # loss of data. When compiling with /Wp64, or when compiling
@@ -2199,6 +2199,8 @@ def doConfigure(myenv):
     if myenv.ToolchainIs('clang', 'gcc'):
         # This warning was added in g++-4.8.
         AddToCCFLAGSIfSupported(myenv, '-Wno-unused-local-typedefs')
+        AddToCCFLAGSIfSupported(myenv, '-Wconversion')
+         
 
         # Clang likes to warn about unused functions, which seems a tad aggressive and breaks
         # -Werror, which we want to be able to use.
@@ -3339,7 +3341,7 @@ def doConfigure(myenv):
             x.exchange(y);
             if (x.compare_exchange_strong(y, x) && x.is_lock_free())
                 return 0;
-            return x.load();
+            return static_cast<int>(x.load());
         }}
         """.format(base_type)
 

@@ -149,7 +149,7 @@ public:
         const auto size = prefix.objsize();
         const char* const firstByte = prefix.objdata();
         auto buf = prefix.releaseSharedBuffer().constCast();
-        _offset = firstByte - buf.get();
+        _offset = static_cast<int>(firstByte - buf.get());
         _b.useSharedBuffer(std::move(buf));
         _b.setlen(_offset + size - 1);  // Position right before prefix's EOO byte.
         _b.reserveBytes(1);             // Reserve room for our EOO byte.

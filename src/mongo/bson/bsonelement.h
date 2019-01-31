@@ -803,7 +803,7 @@ inline double BSONElement::numberDouble() const {
         case NumberInt:
             return _numberInt();
         case NumberLong:
-            return _numberLong();
+            return static_cast<double>(_numberLong());
         case NumberDecimal:
             return _numberDecimal().toDouble();
         default:

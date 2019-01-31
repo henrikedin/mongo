@@ -68,9 +68,9 @@ public:
      * the high-order 4 bytes of "v" for the "secs" field and the low-order 4 bytes for the "i"
      * field.
      */
-    explicit Timestamp(unsigned long long v) : Timestamp(v >> 32, v) {}
+    explicit Timestamp(unsigned long long v) : Timestamp(v >> 32, static_cast<unsigned>(v)) {}
 
-    Timestamp(Seconds s, unsigned increment) : Timestamp(s.count(), increment) {}
+    Timestamp(Seconds s, unsigned increment) : Timestamp(static_cast<unsigned>(s.count()), increment) {}
 
     Timestamp(unsigned a, unsigned b) : i(b), secs(a) {}
 

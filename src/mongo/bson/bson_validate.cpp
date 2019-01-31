@@ -330,7 +330,7 @@ Status validateBSONIterative(Buffer* buffer) {
 
                 frames.push_back(ValidationObjectFrame());
                 curr = &frames.back();
-                curr->setStartPosition(buffer->position());
+                curr->setStartPosition(static_cast<int>(buffer->position()));
                 curr->setIsCodeWithScope(false);
                 if (!buffer->readNumber<int>(&curr->expectedSize)) {
                     return makeError("bson size is larger than buffer size", idElem, StringData());
@@ -365,7 +365,7 @@ Status validateBSONIterative(Buffer* buffer) {
                 break;
             }
             case ValidationState::EndObj: {
-                int actualLength = buffer->position() - curr->startPosition();
+                int actualLength = static_cast<int>(buffer->position() - curr->startPosition());
                 if (actualLength != curr->expectedSize) {
                     return makeError(
                         "bson length doesn't match what we found", idElem, StringData());
@@ -385,7 +385,7 @@ Status validateBSONIterative(Buffer* buffer) {
             case ValidationState::BeginCodeWScope: {
                 frames.push_back(ValidationObjectFrame());
                 curr = &frames.back();
-                curr->setStartPosition(buffer->position());
+                curr->setStartPosition(static_cast<int>(buffer->position()));
                 curr->setIsCodeWithScope(true);
                 if (!buffer->readNumber<int>(&curr->expectedSize))
                     return makeError("invalid bson CodeWScope size", idElem, StringData());
