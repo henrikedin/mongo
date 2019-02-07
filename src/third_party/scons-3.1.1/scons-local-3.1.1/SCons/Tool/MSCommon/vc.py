@@ -314,7 +314,8 @@ def find_vc_pdir_vswhere(msvc_version):
     vswhere_cmd = [vswhere_path,
                    '-products', '*',
                    '-version', vswhere_version,
-                   '-property', 'installationPath']
+                   '-property', 'installationPath',
+                   '-prerelease']
 
     #TODO PY27 cannot use Popen as context manager
     # try putting it back to the old way for now
