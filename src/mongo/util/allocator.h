@@ -52,5 +52,6 @@ void* mongoRealloc(void* ptr, size_t size);
  * Wrapper around std::free().
  */
 void mongoFree(void* ptr);
+void mongoFree(void* ptr, size_t size);
 
 }  // namespace mongo

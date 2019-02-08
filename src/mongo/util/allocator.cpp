@@ -36,14 +36,14 @@
 
 #include "mongo/util/signal_handlers_synchronous.h"
 
-#if defined(MONGO_HAVE_GPERFTOOLS) 
+#if defined(MONGO_USE_GPERFTOOLS)
 #include <gperftools/tcmalloc.h>
 #endif
 
 namespace mongo {
 
 void* mongoMalloc(size_t size) {
-#if defined(MONGO_HAVE_GPERFTOOLS) 
+#if defined(MONGO_USE_GPERFTOOLS) 
     void* x = tc_malloc(size);
 #else
 	void* x = std::malloc(size);
@@ -55,7 +55,7 @@ void* mongoMalloc(size_t size) {
 }
 
 void* mongoRealloc(void* ptr, size_t size) {
-#if defined(MONGO_HAVE_GPERFTOOLS)
+#if defined(MONGO_USE_GPERFTOOLS)
     void* x = tc_realloc(ptr, size);
 #else
     void* x = std::realloc(ptr, size);
@@ -67,10 +67,18 @@ void* mongoRealloc(void* ptr, size_t size) {
 }
 
 void mongoFree(void* ptr) {
-#if defined(MONGO_HAVE_GPERFTOOLS)
+#if defined(MONGO_USE_GPERFTOOLS)
     tc_free(ptr);
 #else
     std::free(ptr);
+#endif
+}
+
+void mongoFree(void* ptr, size_t size) {
+#if defined(MONGO_USE_GPERFTOOLS)
+    tc_free_sized(ptr, size);
+#else
+    mongoFree(ptr);
 #endif
 }
 

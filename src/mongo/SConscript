@@ -52,7 +52,7 @@ allocatorEnv = env.Clone()
 if allocatorEnv['MONGO_ALLOCATOR'] == 'tcmalloc':
     allocatorEnv.Append(
             CPPDEFINES=[
-                'MONGO_HAVE_GPERFTOOLS',
+                'MONGO_USE_GPERFTOOLS',
             ]
         )
 
