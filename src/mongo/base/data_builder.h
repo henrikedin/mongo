@@ -57,7 +57,7 @@ class DataBuilder {
      */
     struct FreeBuf {
         void operator()(char* buf) {
-            std::free(buf);
+            mongoFree(buf);
         }
     };
 

@@ -115,7 +115,7 @@ public:
 #pragma warning(push)
 #pragma warning(disable : 4291)
     void operator delete(void* ptr) {
-        free(ptr);
+        mongoFree(ptr);
     }
 #pragma warning(pop)
 

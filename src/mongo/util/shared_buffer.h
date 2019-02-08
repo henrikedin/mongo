@@ -116,7 +116,7 @@ private:
                 // We placement new'ed a Holder in takeOwnership above,
                 // so we must destroy the object here.
                 h->~Holder();
-                free(h);
+                mongoFree(h);
             }
         }
 
