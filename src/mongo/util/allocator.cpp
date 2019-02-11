@@ -43,10 +43,10 @@
 namespace mongo {
 
 void* mongoMalloc(size_t size) {
-#if defined(MONGO_USE_GPERFTOOLS) 
+#if defined(MONGO_USE_GPERFTOOLS)
     void* x = tc_malloc(size);
 #else
-	void* x = std::malloc(size);
+    void* x = std::malloc(size);
 #endif
     if (x == NULL) {
         reportOutOfMemoryErrorAndExit();

@@ -59,25 +59,25 @@ class DataBuilder {
         FreeBuf() : _capacity(0) {}
         FreeBuf(size_t capacity) : _capacity(capacity) {}
 
-		FreeBuf(FreeBuf&& other) : _capacity(other._capacity) {
+        FreeBuf(FreeBuf&& other) : _capacity(other._capacity) {
             other._capacity = 0;
-		}
+        }
 
-		FreeBuf& operator=(FreeBuf&& other) {
+        FreeBuf& operator=(FreeBuf&& other) {
             _capacity = other._capacity;
             other._capacity = 0;
             return *this;
-		}
+        }
 
-		void operator()(char* buf) {
+        void operator()(char* buf) {
             mongoFree(buf, _capacity);
         }
 
-		size_t capacity() const {
+        size_t capacity() const {
             return _capacity;
         }
 
-	private:
+    private:
         size_t _capacity;
     };
 
@@ -197,10 +197,12 @@ public:
 
         auto ptr = _buf.release();
 
-        _buf = std::unique_ptr<char, FreeBuf>(static_cast<char*>(mongoRealloc(ptr, newSize)), FreeBuf(newSize));
+        _buf = std::unique_ptr<char, FreeBuf>(static_cast<char*>(mongoRealloc(ptr, newSize)),
+                                              FreeBuf(newSize));
 
         // If we downsized, truncate. If we upsized keep the old size
-        _unwrittenSpaceCursor = {_buf.get() + std::min(oldSize, capacity()), _buf.get() + capacity()};
+        _unwrittenSpaceCursor = {_buf.get() + std::min(oldSize, capacity()),
+                                 _buf.get() + capacity()};
     }
 
     /**
