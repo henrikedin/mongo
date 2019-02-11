@@ -115,7 +115,7 @@ public:
 #pragma warning(push)
 #pragma warning(disable : 4291)
     void operator delete(void* ptr) {
-        mongoFree(ptr);
+        mongoFree(ptr, bytesRequiredForSize(reinterpret_cast<RCString*>(ptr)->size()));
     }
 #pragma warning(pop)
 
@@ -124,6 +124,10 @@ private:
     RCString(){};
     void* operator new(size_t objSize, size_t realSize) {
         return mongoMalloc(realSize);
+    }
+
+    static size_t bytesRequiredForSize(int size) {
+        return sizeof(RCString) + size + 1;
     }
 
     int _size;  // does NOT include trailing NUL byte.
