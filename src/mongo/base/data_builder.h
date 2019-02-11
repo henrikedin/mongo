@@ -56,7 +56,7 @@ class DataBuilder {
      * The dtor type used in the unique_ptr which holds the buffer
      */
     struct BufDeleter {
-        BufDeleter() = default;
+        BufDeleter() : _capacity(0) {}
         explicit BufDeleter(size_t capacity) : _capacity(capacity) {}
 
         BufDeleter(BufDeleter&& other) : _capacity(other._capacity) {
@@ -78,7 +78,7 @@ class DataBuilder {
         }
 
     private:
-        size_t _capacity{0};
+        size_t _capacity;
     };
 
     static const std::size_t kInitialBufferSize = 64;
