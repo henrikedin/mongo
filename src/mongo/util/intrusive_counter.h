@@ -115,6 +115,10 @@ public:
 #pragma warning(push)
 #pragma warning(disable : 4291)
     void operator delete(void* ptr) {
+        // Accessing ptr here is technically undefined behavior, but the toolchains we use + UBSAN
+        // are okay with it.
+        // TODO When we are on C++20, this should change and use a destroying delete function.
+        // See https://jira.mongodb.org/browse/SERVER-39506
         mongoFree(ptr, bytesRequiredForSize(reinterpret_cast<RCString*>(ptr)->size()));
     }
 #pragma warning(pop)
@@ -127,7 +131,7 @@ private:
     }
 
     static size_t bytesRequiredForSize(int size) {
-        return sizeof(RCString) + size + 1;
+        return sizeof(RCString) + size;
     }
 
     int _size;  // does NOT include trailing NUL byte.
