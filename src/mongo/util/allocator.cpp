@@ -78,7 +78,7 @@ void mongoFree(void* ptr, size_t size) {
 #if defined(MONGO_USE_GPERFTOOLS)
     tc_free_sized(ptr, size);
 #else
-    mongoFree(ptr);
+    std::free(ptr);
 #endif
 }
 

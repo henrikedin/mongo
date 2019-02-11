@@ -130,7 +130,7 @@ private:
         return mongoMalloc(realSize);
     }
 
-    static size_t bytesRequiredForSize(int size) {
+    static size_t bytesRequiredForSize(size_t size) {
         return sizeof(RCString) + size;
     }
 

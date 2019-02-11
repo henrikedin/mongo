@@ -55,21 +55,21 @@ class DataBuilder {
     /**
      * The dtor type used in the unique_ptr which holds the buffer
      */
-    struct FreeBuf {
-        FreeBuf() : _capacity(0) {}
-        FreeBuf(size_t capacity) : _capacity(capacity) {}
+    struct BufDeleter {
+        BufDeleter() = default;
+        explicit BufDeleter(size_t capacity) : _capacity(capacity) {}
 
-        FreeBuf(FreeBuf&& other) : _capacity(other._capacity) {
+        BufDeleter(BufDeleter&& other) : _capacity(other._capacity) {
             other._capacity = 0;
         }
 
-        FreeBuf& operator=(FreeBuf&& other) {
+        BufDeleter& operator=(BufDeleter&& other) {
             _capacity = other._capacity;
             other._capacity = 0;
             return *this;
         }
 
-        void operator()(char* buf) {
+        void operator()(char* buf) const {
             mongoFree(buf, _capacity);
         }
 
@@ -78,7 +78,7 @@ class DataBuilder {
         }
 
     private:
-        size_t _capacity;
+        size_t _capacity{0};
     };
 
     static const std::size_t kInitialBufferSize = 64;
@@ -197,8 +197,8 @@ public:
 
         auto ptr = _buf.release();
 
-        _buf = std::unique_ptr<char, FreeBuf>(static_cast<char*>(mongoRealloc(ptr, newSize)),
-                                              FreeBuf(newSize));
+        _buf = std::unique_ptr<char, BufDeleter>(static_cast<char*>(mongoRealloc(ptr, newSize)),
+                                                 BufDeleter(newSize));
 
         // If we downsized, truncate. If we upsized keep the old size
         _unwrittenSpaceCursor = {_buf.get() + std::min(oldSize, capacity()),
@@ -213,7 +213,9 @@ public:
     void reserve(std::size_t needed) {
         std::size_t oldSize = size();
 
-        std::size_t newSize = capacity() ? capacity() : kInitialBufferSize;
+        std::size_t newSize = capacity();
+        if (newSize == 0)
+            newSize = kInitialBufferSize;
 
         while ((newSize < oldSize) || (newSize - oldSize < needed)) {
             // growth factor of about 1.5
@@ -238,7 +240,7 @@ public:
      * Release the buffer. After this the builder is left in the default
      * constructed state.
      */
-    std::unique_ptr<char, FreeBuf> release() {
+    std::unique_ptr<char, BufDeleter> release() {
         auto buf = std::move(_buf);
 
         *this = DataBuilder{};
@@ -271,7 +273,7 @@ private:
         }
     }
 
-    std::unique_ptr<char, FreeBuf> _buf;
+    std::unique_ptr<char, BufDeleter> _buf;
     DataRangeCursor _unwrittenSpaceCursor = {nullptr, nullptr};
 };
 
