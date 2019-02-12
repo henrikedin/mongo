@@ -560,6 +560,7 @@ extern int __wt_realloc_aligned(WT_SESSION_IMPL *session, size_t *bytes_allocate
 extern int __wt_memdup(WT_SESSION_IMPL *session, const void *str, size_t len, void *retp) WT_GCC_FUNC_DECL_ATTRIBUTE((warn_unused_result));
 extern int __wt_strndup(WT_SESSION_IMPL *session, const void *str, size_t len, void *retp) WT_GCC_FUNC_DECL_ATTRIBUTE((warn_unused_result));
 extern void __wt_free_int(WT_SESSION_IMPL *session, const void *p_arg) WT_GCC_FUNC_DECL_ATTRIBUTE((visibility("default")));
+extern void __wt_free_int_sized(WT_SESSION_IMPL* session, const void* p_arg, size_t size) WT_GCC_FUNC_DECL_ATTRIBUTE((visibility("default")));
 extern int __wt_errno(void) WT_GCC_FUNC_DECL_ATTRIBUTE((warn_unused_result));
 extern const char *__wt_strerror(WT_SESSION_IMPL *session, int error, char *errbuf, size_t errlen);
 extern int __wt_ext_map_windows_error(WT_EXTENSION_API *wt_api, WT_SESSION *wt_session, uint32_t windows_error) WT_GCC_FUNC_DECL_ATTRIBUTE((warn_unused_result));

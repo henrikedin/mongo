@@ -22,6 +22,9 @@
 #define	realloc 		tc_realloc
 #define	posix_memalign 		tc_posix_memalign
 #define	free 			tc_free
+#define free_sized		tc_free_sized
+#else
+#define free_sized(p, size) free(p)
 #endif
 
 /*
@@ -325,4 +328,34 @@ __wt_free_int(WT_SESSION_IMPL *session, const void *p_arg)
 		WT_STAT_CONN_INCR(session, memory_free);
 
 	free(p);
+}
+
+/*
+ * __wt_free_int --
+ *	ANSI free function.
+ */
+void __wt_free_int_sized(WT_SESSION_IMPL* session, const void* p_arg, size_t size)
+    WT_GCC_FUNC_ATTRIBUTE((visibility("default"))) {
+    void* p;
+
+    p = *(void**)p_arg;
+    if (p == NULL) /* ANSI C free semantics */
+        return;
+
+    /*
+     * If there's a serialization bug we might race with another thread.
+     * We can't avoid the race (and we aren't willing to flush memory),
+     * but we minimize the window by clearing the free address, hoping a
+     * racing thread will see, and won't free, a NULL pointer.
+     */
+    *(void**)p_arg = NULL;
+
+    /*
+     * !!!
+     * This function MUST handle a NULL WT_SESSION_IMPL handle.
+     */
+    if (session != NULL)
+        WT_STAT_CONN_INCR(session, memory_free);
+
+    free_sized(p, size);
 }

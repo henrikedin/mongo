@@ -412,7 +412,7 @@ __free_update(WT_SESSION_IMPL *session,
 				__wt_free_update_list(session, *updp);
 
 	/* Free the update array. */
-	__wt_free(session, update_head);
+    __wt_free_sized(session, update_head, WT_UPDATE_MEMSIZE(*update_head));
 }
 
 /*
@@ -427,6 +427,6 @@ __wt_free_update_list(WT_SESSION_IMPL *session, WT_UPDATE *upd)
 
 	for (; upd != NULL; upd = next) {
 		next = upd->next;
-		__wt_free(session, upd);
+        __wt_free_sized(session, upd, WT_UPDATE_MEMSIZE(upd));
 	}
 }

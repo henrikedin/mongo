@@ -119,6 +119,12 @@
 	if (*(void **)__p != NULL)					\
 		__wt_free_int(session, __p);				\
 } while (0)
+#define __wt_free_sized(session, p, size)            \
+    do {                                 \
+        void* __p = &(p);                \
+        if (*(void**)__p != NULL)        \
+            __wt_free_int_sized(session, __p, size); \
+    } while (0)
 #ifdef HAVE_DIAGNOSTIC
 #define	__wt_overwrite_and_free(session, p) do {			\
 	memset(p, WT_DEBUG_BYTE, sizeof(*(p)));				\
