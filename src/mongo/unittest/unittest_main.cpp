@@ -108,5 +108,10 @@ int main(int argc, char** argv, char** envp) {
         return EXIT_SUCCESS;
     }
 
-    return ::mongo::unittest::Suite::run(suites, filter, repeat);
+    auto result = ::mongo::unittest::Suite::run(suites, filter, repeat);
+
+    ret = ::mongo::runGlobalDeinitializers();
+    uassertStatusOKWithContext(ret, "Global deinitilization failed");
+
+    return result;
 }

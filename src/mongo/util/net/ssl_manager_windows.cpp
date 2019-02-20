@@ -326,6 +326,7 @@ private:
     std::array<PCCERT_CONTEXT, 1> _clientCertificates;
     std::array<PCCERT_CONTEXT, 1> _serverCertificates;
 
+public:
     /* _clientEngine represents the CA to use when acting as a client
      * and validating remotes during outbound connections.
      * This comes from, in order, --tlsCAFile, or the system CA.
@@ -339,18 +340,34 @@ private:
      */
     CAEngine _serverEngine;
 
+private:
     UniqueCertificate _sslCertificate;
     UniqueCertificate _sslClusterCertificate;
 };
 
-MONGO_INITIALIZER_WITH_PREREQUISITES(SSLManager, ("EndStartupOptionHandling"))
-(InitializerContext*) {
-    if (!isSSLServer || (sslGlobalParams.sslMode.load() != SSLParams::SSLMode_disabled)) {
-        theSSLManager = new SSLManagerWindows(sslGlobalParams, isSSLServer);
-    }
-
-    return Status::OK();
-}
+GlobalInitializerRegisterer sslManagerInitializer(
+    "SSLManager",
+    {"EndStartupOptionHandling"},
+    {},
+    [](InitializerContext*) {
+        if (!isSSLServer || (sslGlobalParams.sslMode.load() != SSLParams::SSLMode_disabled)) {
+            theSSLManager = new SSLManagerWindows(sslGlobalParams, isSSLServer);
+        }
+        return Status::OK();
+    },
+    [](DeinitializerContext* context) {
+		if (theSSLManager)
+		{
+            auto sslWin = static_cast<SSLManagerWindows*>(theSSLManager);
+            CertFreeCertificateChainEngine(sslWin->_clientEngine.user);
+            CertFreeCertificateChainEngine(sslWin->_clientEngine.machine);
+            CertFreeCertificateChainEngine(sslWin->_serverEngine.user);
+            CertFreeCertificateChainEngine(sslWin->_serverEngine.machine);
+            
+		}
+        
+        return Status::OK();
+    });
 
 SSLConnectionWindows::SSLConnectionWindows(SCHANNEL_CRED* cred,
                                            Socket* sock,
