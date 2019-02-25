@@ -78,12 +78,14 @@ else
     PAGE_SIZE_KB=4
     MAX_SIZE_KB=16
 fi
+TRANSFER_SIZE_KB=8
 
 env PATH=/opt/mongodbtoolchain/v3/bin:$PATH \
     ./configure \
     --enable-tcmalloc-aggressive-merge \
     --with-tcmalloc-pagesize=$PAGE_SIZE_KB \
-    --with-tcmalloc-maxsize=$MAX_SIZE_KB
+    --with-tcmalloc-maxsize=$MAX_SIZE_KB \
+    --enable-tcmalloc-target-transfer-kb=$TRANSFER_SIZE_KB
 
 # Do a deep copy if this is the first time
 if [ ! -d $DEST_DIR ]; then
