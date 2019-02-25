@@ -29,6 +29,7 @@
 
 #pragma once
 
+#include <algorithm>
 #include <iosfwd>
 #include <string>
 
@@ -84,17 +85,12 @@ public:
 
     /**
      * Returns a StringData naming this security level.
-     *
-     * Not all levels are uniquely named.  Debug(N) is named "debug", regardless of "N",
-     * e.g.
      */
     StringData toStringData() const;
 
     /**
      * Returns a single capital letter naming this severity level.
      * Equivalent to upper-case of first letter of toStringData() result.
-     *
-     * Not all levels are uniquely named.
      */
     char toChar() const;
 

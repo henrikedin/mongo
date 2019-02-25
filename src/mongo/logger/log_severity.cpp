@@ -42,12 +42,36 @@ constexpr auto severeSeverityString = "SEVERE"_sd;
 constexpr auto errorSeverityString = "ERROR"_sd;
 constexpr auto warningSeverityString = "warning"_sd;
 constexpr auto infoSeverityString = "info"_sd;
-constexpr auto debugSeverityString = "debug"_sd;
+constexpr auto debug1SeverityString = "debug1"_sd;
+constexpr auto debug2SeverityString = "debug2"_sd;
+constexpr auto debug3SeverityString = "debug3"_sd;
+constexpr auto debug4SeverityString = "debug4"_sd;
+constexpr auto debug5SeverityString = "debug5"_sd;
+constexpr auto debug6SeverityString = "debug6"_sd;
+constexpr auto debug7SeverityString = "debug7"_sd;
+constexpr auto debug8SeverityString = "debug8"_sd;
+constexpr auto debug9SeverityString = "debug9"_sd;
 }  // namespace
 
 StringData LogSeverity::toStringData() const {
-    if (_severity > 0)
-        return debugSeverityString;
+    if (_severity == 1)
+        return debug1SeverityString;
+    if (_severity == 2)
+        return debug2SeverityString;
+    if (_severity == 3)
+        return debug3SeverityString;
+    if (_severity == 4)
+        return debug4SeverityString;
+    if (_severity == 5)
+        return debug5SeverityString;
+    if (_severity == 6)
+        return debug6SeverityString;
+    if (_severity == 7)
+        return debug7SeverityString;
+    if (_severity == 8)
+        return debug8SeverityString;
+    if (_severity == 9)
+        return debug9SeverityString;
     if (*this == LogSeverity::Severe())
         return severeSeverityString;
     if (*this == LogSeverity::Error())
@@ -62,8 +86,24 @@ StringData LogSeverity::toStringData() const {
 }
 
 char LogSeverity::toChar() const {
-    if (_severity > 0)
-        return 'D';
+    if (_severity == 1)
+        return '1';
+    if (_severity == 2)
+        return '2';
+    if (_severity == 3)
+        return '3';
+    if (_severity == 4)
+        return '4';
+    if (_severity == 5)
+        return '5';
+    if (_severity == 6)
+        return '6';
+    if (_severity == 7)
+        return '7';
+    if (_severity == 8)
+        return '8';
+    if (_severity == 9)
+        return '9';
     // 'S' might be confused with "Success"
     // Return 'F' to imply Fatal instead.
     if (*this == LogSeverity::Severe())

@@ -31,6 +31,10 @@
 
 namespace mongo {
 namespace logger {
+namespace {
+constexpr int maxSeverity = -4;
+constexpr int minSeverity = 9;
+}  // namespace
 
 LogSeverity LogSeverity::Severe() {
     return LogSeverity(-4);
@@ -48,21 +52,21 @@ LogSeverity LogSeverity::Log() {
     return LogSeverity(0);
 }
 LogSeverity LogSeverity::Debug(int debugLevel) {
-    return LogSeverity(debugLevel);
+    return LogSeverity(std::clamp(debugLevel, maxSeverity, minSeverity));
 }
 
 LogSeverity LogSeverity::cast(int ll) {
-    return LogSeverity(ll);
+    return LogSeverity(std::clamp(ll, maxSeverity, minSeverity));
 }
 
 int LogSeverity::toInt() const {
     return _severity;
 }
 LogSeverity LogSeverity::moreSevere() const {
-    return LogSeverity(_severity - 1);
+    return LogSeverity(std::max(_severity - 1, maxSeverity));
 }
 LogSeverity LogSeverity::lessSevere() const {
-    return LogSeverity(_severity + 1);
+    return LogSeverity(std::min(_severity + 1, minSeverity));
 }
 
 bool LogSeverity::operator==(LogSeverity other) const {
