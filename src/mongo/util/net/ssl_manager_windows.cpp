@@ -338,18 +338,30 @@ private:
      */
     CAEngine _serverEngine;
 
+private:
     UniqueCertificate _sslCertificate;
     UniqueCertificate _sslClusterCertificate;
 };
 
-MONGO_INITIALIZER_WITH_PREREQUISITES(SSLManager, ("EndStartupOptionHandling"))
-(InitializerContext*) {
-    if (!isSSLServer || (sslGlobalParams.sslMode.load() != SSLParams::SSLMode_disabled)) {
-        theSSLManager = new SSLManagerWindows(sslGlobalParams, isSSLServer);
-    }
-
-    return Status::OK();
-}
+GlobalInitializerRegisterer sslManagerInitializer(
+    "SSLManager",
+    {"EndStartupOptionHandling"},
+    {},
+    [](InitializerContext*) {
+        if (!isSSLServer || (sslGlobalParams.sslMode.load() != SSLParams::SSLMode_disabled)) {
+            theSSLManager = new SSLManagerWindows(sslGlobalParams, isSSLServer);
+        }
+        return Status::OK();
+    },
+    [](DeinitializerContext* context) {
+		if (theSSLManager)
+		{
+            delete theSSLManager;
+            theSSLManager = nullptr;
+		}
+        
+        return Status::OK();
+    });
 
 SSLConnectionWindows::SSLConnectionWindows(SCHANNEL_CRED* cred,
                                            Socket* sock,
