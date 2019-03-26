@@ -102,7 +102,9 @@ int main(int argc, char** argv, char** envp) {
     auto result = ::mongo::unittest::Suite::run(suites, filter, repeat);
 
     ret = ::mongo::runGlobalDeinitializers();
-    uassertStatusOKWithContext(ret, "Global deinitilization failed");
+    if (!ret.isOK()) {
+        std::cerr << "Global deinitilization failed";
+    }
 
     return result;
 }
