@@ -63,8 +63,10 @@ class DataBuilder {
         }
 
         BufDeleter& operator=(BufDeleter&& other) {
-            _capacity = other._capacity;
-            other._capacity = 0;
+            if (this != &other) {
+                _capacity = other._capacity;
+                other._capacity = 0;
+            }
             return *this;
         }
 
