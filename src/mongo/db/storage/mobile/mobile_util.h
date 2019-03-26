@@ -64,4 +64,10 @@ void validateLogAndAppendError(ValidateResults* results, const std::string& errM
  */
 void doValidate(OperationContext* opCtx, ValidateResults* results);
 
+/**
+ * Sets the SQLite Pragmas that we want (https://www.sqlite.org/pragma.html)
+ * These should generally improve behavior, performance, and resource usage
+ */
+void configureSession(sqlite3* session);
+
 }  // namespace mongo

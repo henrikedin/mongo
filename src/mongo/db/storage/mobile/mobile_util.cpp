@@ -34,6 +34,7 @@
 
 #include <sqlite3.h>
 
+#include "mongo/db/storage/mobile/mobile_global_options.h"
 #include "mongo/db/storage/mobile/mobile_recovery_unit.h"
 #include "mongo/db/storage/mobile/mobile_sqlite_statement.h"
 #include "mongo/db/storage/mobile/mobile_util.h"
@@ -178,6 +179,27 @@ void doValidate(OperationContext* opCtx, ValidateResults* results) {
         // SQLite statement may fail to prepare or execute correctly if the file is corrupted.
         std::string errMsg = "database file is corrupt - " + e.toString();
         validateLogAndAppendError(results, errMsg);
+    }
+}
+
+void configureSession(sqlite3* session) {
+    for (auto it : {std::string("journal_mode = WAL"),
+                    "synchronous = " + std::to_string(mobileGlobalOptions.mobileDurabilityLevel),
+                    std::string("fullfsync = 1"),
+                    // Allow for periodic calls to purge deleted records and prune db size on disk
+                    // Still requires manual vacuum calls using `PRAGMA incremental_vacuum(N);`
+                    std::string("auto_vacuum = incremental"),
+                    std::string("foreign_keys = 0"),
+                    "cache_size = -" + std::to_string(mobileGlobalOptions.mobileCacheSizeKB),
+                    "mmap_size = " + std::to_string(mobileGlobalOptions.mobileMmapSizeKB * 1024),
+                    "journal_size_limit = " +
+                        std::to_string(mobileGlobalOptions.mobileJournalSizeLimitKB * 1024)}) {
+        std::string execPragma = "PRAGMA " + it + ";";
+        char* errMsg = NULL;
+        std::int32_t status = sqlite3_exec(session, execPragma.c_str(), NULL, NULL, &errMsg);
+        checkStatus(status, SQLITE_OK, "sqlite3_exec", errMsg);
+        sqlite3_free(errMsg);
+        LOG(MOBILE_LOG_LEVEL_LOW) << "MobileSE session configuration: " << execPragma;
     }
 }
 

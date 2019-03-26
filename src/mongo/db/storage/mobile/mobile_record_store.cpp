@@ -303,6 +303,10 @@ Status MobileRecordStore::insertRecords(OperationContext* opCtx,
     // Inserts record into SQLite table (or replaces if duplicate record id).
     MobileSession* session = MobileRecoveryUnit::get(opCtx)->getSession(opCtx, false);
 
+    std::string insertQuery =
+        "INSERT OR REPLACE INTO \"" + _ident + "\"(rec_id, data) VALUES(?, ?);";
+    SqliteStatement insertStmt(*session, insertQuery);
+
     for (auto& record : *inOutRecords) {
         const auto data = record.data.data();
         const auto len = record.data.size();
@@ -310,15 +314,13 @@ Status MobileRecordStore::insertRecords(OperationContext* opCtx,
         _changeNumRecs(opCtx, 1);
         _changeDataSize(opCtx, len);
 
-        std::string insertQuery =
-            "INSERT OR REPLACE INTO \"" + _ident + "\"(rec_id, data) VALUES(?, ?);";
-        SqliteStatement insertStmt(*session, insertQuery);
         RecordId recId = _nextId();
         insertStmt.bindInt(0, recId.repr());
         insertStmt.bindBlob(1, data, len);
         insertStmt.step(SQLITE_DONE);
 
         record.id = recId;
+        insertStmt.reset();
     }
 
     return Status::OK();

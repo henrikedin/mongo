@@ -70,32 +70,9 @@ MobileKVEngine::MobileKVEngine(const std::string& path,
     // Guarantees that sqlite3_close() will be called when the function returns.
     ON_BLOCK_EXIT([&initSession] { sqlite3_close(initSession); });
 
-    // Set all of our SQLite pragmas (https://www.sqlite.org/pragma.html)
-    // These should generally improve behavior, performance, and resource usage
-    {
-        for (auto it :
-             {std::string("journal_mode = WAL"),
-              "synchronous = " + std::to_string(durabilityLevel),
-              std::string("fullfsync = 1"),
-              // Allow for periodic calls to purge deleted records and prune db size on disk
-              // Still requires manual vacuum calls using `PRAGMA incremental_vacuum(N);`
-              std::string("auto_vacuum = incremental"),
-              "cache_size = -" + std::to_string(cacheSizeKB),
-              "mmap_size = " + std::to_string(mmapSizeKB * 1024),
-              "journal_size_limit = " + std::to_string(journalSizeLimitKB * 1024)}) {
-            std::string execPragma = "PRAGMA " + it + ";";
-            char* errMsg = NULL;
-            std::int32_t status =
-                sqlite3_exec(initSession, execPragma.c_str(), NULL, NULL, &errMsg);
-            checkStatus(status, SQLITE_OK, "sqlite3_exec", errMsg);
-            sqlite3_free(errMsg);
-            LOG(MOBILE_LOG_LEVEL_LOW) << "MobileSE configuration: " << execPragma;
-        }
+    configureSession(initSession);
 
-        LOG(MOBILE_LOG_LEVEL_LOW) << "MobileSE: Completed all SQLite database configuration";
-    }
-
-    // Check and enforce WAL mode
+    // Check and ensure that WAL mode is working as expected
     // This is not something that we want to be configurable
     {
         sqlite3_stmt* stmt;
@@ -115,7 +92,7 @@ MobileKVEngine::MobileKVEngine(const std::string& path,
         LOG(MOBILE_LOG_LEVEL_LOW) << "MobileSE: Confirmed SQLite database opened in WAL mode";
     }
 
-    // Check and enforce the synchronous mode
+    // Check and ensure that synchronous mode is working as expected
     {
         sqlite3_stmt* stmt;
         status = sqlite3_prepare_v2(initSession, "PRAGMA synchronous;", -1, &stmt, NULL);
@@ -134,8 +111,9 @@ MobileKVEngine::MobileKVEngine(const std::string& path,
                                   << "set to: " << durabilityLevel;
     }
 
-    // Check and enforce that we are using the F_FULLFSYNC fcntl on darwin kernels
+    // Check and ensure that we were able to set the F_FULLFSYNC fcntl on darwin kernels
     // This prevents data corruption as fsync doesn't work as expected
+    // This is not something that we want to be configurable
     {
         sqlite3_stmt* stmt;
         status = sqlite3_prepare_v2(initSession, "PRAGMA fullfsync;", -1, &stmt, NULL);

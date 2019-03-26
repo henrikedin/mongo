@@ -126,6 +126,29 @@ void MobileRecoveryUnit::abortUnitOfWork() {
     _abort();
 }
 
+bool MobileRecoveryUnit::waitUntilDurable() {
+    if (_session && _session.get()->getSession() && !_inUnitOfWork) {
+        RECOVERY_UNIT_TRACE() << "waitUntilDurable called, attempting to perform a checkpoint";
+        int framesInWAL = 0;
+        int checkpointedFrames = 0;
+        // Use PASSIVE mode in order to avoid invariant failures when
+        // used with mongod (e.g. for testing)
+        sqlite3_wal_checkpoint_v2(_session.get()->getSession(),
+                                  NULL,
+                                  SQLITE_CHECKPOINT_PASSIVE,
+                                  &framesInWAL,
+                                  &checkpointedFrames);
+        // Don't check and assert on a specific status here as when the SE is
+        // used with multiple connections we can get back SQLITE_LOCKED
+        RECOVERY_UNIT_TRACE() << "Checkpointed " << checkpointedFrames << " of the " << framesInWAL
+                              << " total frames in the WAL";
+    } else {
+        RECOVERY_UNIT_TRACE() << "No checkpoint atempted -- no valid session";
+    }
+
+    return true;
+}
+
 void MobileRecoveryUnit::abandonSnapshot() {
     invariant(!_inUnitOfWork);
     if (_active) {
