@@ -62,13 +62,17 @@ public:
            bool forward)
         : _opCtx(opCtx), _forward(forward) {
 
-        str::stream cursorQuery;
-        cursorQuery << "SELECT rec_id, data from \"" << ident << "\" "
-                    << "WHERE rec_id " << (forward ? '>' : '<') << " ? "
-                    << "ORDER BY rec_id " << (forward ? "ASC" : "DESC") << ';';
-
         MobileSession* session = MobileRecoveryUnit::get(_opCtx)->getSession(_opCtx);
-        _stmt = stdx::make_unique<SqliteStatement>(*session, cursorQuery);
+        _stmt = stdx::make_unique<SqliteStatement>(*session,
+                                                   "SELECT rec_id, data from \"",
+                                                   ident,
+                                                   "\" ",
+                                                   "WHERE rec_id ",
+                                                   (forward ? ">" : "<"),
+                                                   " ? ",
+                                                   "ORDER BY rec_id ",
+                                                   (forward ? "ASC" : "DESC"),
+                                                   ";");
 
         _startIdNum = (forward ? RecordId::min().repr() : RecordId::max().repr());
         _savedId = RecordId(_startIdNum);
@@ -196,8 +200,7 @@ MobileRecordStore::MobileRecordStore(OperationContext* opCtx,
 
     // Determines the nextId to be used for a new record.
     MobileSession* session = MobileRecoveryUnit::get(opCtx)->getSession(opCtx);
-    std::string maxRecIdQuery = "SELECT IFNULL(MAX(rec_id), 0) FROM \"" + _ident + "\";";
-    SqliteStatement maxRecIdStmt(*session, maxRecIdQuery);
+    SqliteStatement maxRecIdStmt(*session, "SELECT IFNULL(MAX(rec_id), 0) FROM \"", _ident, "\";");
 
     maxRecIdStmt.step(SQLITE_ROW);
 
@@ -219,8 +222,8 @@ void MobileRecordStore::_initDataSizeIfNeeded_inlock(OperationContext* opCtx) co
     }
 
     MobileSession* session = MobileRecoveryUnit::get(opCtx)->getSession(opCtx);
-    std::string dataSizeQuery = "SELECT IFNULL(SUM(LENGTH(data)), 0) FROM \"" + _ident + "\";";
-    SqliteStatement dataSizeStmt(*session, dataSizeQuery);
+    SqliteStatement dataSizeStmt(
+        *session, "SELECT IFNULL(SUM(LENGTH(data)), 0) FROM \"", _ident, "\";");
 
     dataSizeStmt.step(SQLITE_ROW);
     int64_t dataSize = dataSizeStmt.getColInt(0);
@@ -241,8 +244,7 @@ void MobileRecordStore::_initNumRecsIfNeeded_inlock(OperationContext* opCtx) con
     }
 
     MobileSession* session = MobileRecoveryUnit::get(opCtx)->getSession(opCtx);
-    std::string numRecordsQuery = "SELECT COUNT(*) FROM \"" + _ident + "\";";
-    SqliteStatement numRecordsStmt(*session, numRecordsQuery);
+    SqliteStatement numRecordsStmt(*session, "SELECT COUNT(*) FROM \"", _ident, "\";");
 
     numRecordsStmt.step(SQLITE_ROW);
 
@@ -262,8 +264,7 @@ bool MobileRecordStore::findRecord(OperationContext* opCtx,
                                    const RecordId& recId,
                                    RecordData* rd) const {
     MobileSession* session = MobileRecoveryUnit::get(opCtx)->getSession(opCtx);
-    std::string sqlQuery = "SELECT data FROM \"" + _ident + "\" WHERE rec_id = ?;";
-    SqliteStatement stmt(*session, sqlQuery);
+    SqliteStatement stmt(*session, "SELECT data FROM \"", _ident, "\" WHERE rec_id = ?;");
 
     stmt.bindInt(0, recId.repr());
 
@@ -281,9 +282,9 @@ bool MobileRecordStore::findRecord(OperationContext* opCtx,
 
 void MobileRecordStore::deleteRecord(OperationContext* opCtx, const RecordId& recId) {
     MobileSession* session = MobileRecoveryUnit::get(opCtx)->getSession(opCtx, false);
-    std::string dataSizeQuery =
-        "SELECT IFNULL(LENGTH(data), 0) FROM \"" + _ident + "\" WHERE rec_id = ?;";
-    SqliteStatement dataSizeStmt(*session, dataSizeQuery);
+
+    SqliteStatement dataSizeStmt(
+        *session, "SELECT IFNULL(LENGTH(data), 0) FROM \"", _ident, "\" WHERE rec_id = ?;");
     dataSizeStmt.bindInt(0, recId.repr());
     dataSizeStmt.step(SQLITE_ROW);
 
@@ -291,8 +292,7 @@ void MobileRecordStore::deleteRecord(OperationContext* opCtx, const RecordId& re
     _changeNumRecs(opCtx, -1);
     _changeDataSize(opCtx, -dataSizeBefore);
 
-    std::string deleteQuery = "DELETE FROM \"" + _ident + "\" WHERE rec_id = ?;";
-    SqliteStatement deleteStmt(*session, deleteQuery);
+    SqliteStatement deleteStmt(*session, "DELETE FROM \"", _ident, "\" WHERE rec_id = ?;");
     deleteStmt.bindInt(0, recId.repr());
     deleteStmt.step(SQLITE_DONE);
 }
@@ -303,9 +303,8 @@ Status MobileRecordStore::insertRecords(OperationContext* opCtx,
     // Inserts record into SQLite table (or replaces if duplicate record id).
     MobileSession* session = MobileRecoveryUnit::get(opCtx)->getSession(opCtx, false);
 
-    std::string insertQuery =
-        "INSERT OR REPLACE INTO \"" + _ident + "\"(rec_id, data) VALUES(?, ?);";
-    SqliteStatement insertStmt(*session, insertQuery);
+    SqliteStatement insertStmt(
+        *session, "INSERT OR REPLACE INTO \"", _ident, "\"(rec_id, data) VALUES(?, ?);");
 
     for (auto& record : *inOutRecords) {
         const auto data = record.data.data();
@@ -355,17 +354,17 @@ Status MobileRecordStore::updateRecord(OperationContext* opCtx,
                                        const char* data,
                                        int len) {
     MobileSession* session = MobileRecoveryUnit::get(opCtx)->getSession(opCtx, false);
-    std::string dataSizeQuery =
-        "SELECT IFNULL(LENGTH(data), 0) FROM \"" + _ident + "\" WHERE rec_id = ?;";
-    SqliteStatement dataSizeStmt(*session, dataSizeQuery);
+
+    SqliteStatement dataSizeStmt(
+        *session, "SELECT IFNULL(LENGTH(data), 0) FROM \"", _ident, "\" WHERE rec_id = ?;");
     dataSizeStmt.bindInt(0, recId.repr());
     dataSizeStmt.step(SQLITE_ROW);
 
     int64_t dataSizeBefore = dataSizeStmt.getColInt(0);
     _changeDataSize(opCtx, -dataSizeBefore + len);
 
-    std::string updateQuery = "UPDATE \"" + _ident + "\" SET data = ? " + "WHERE rec_id = ?;";
-    SqliteStatement updateStmt(*session, updateQuery);
+    SqliteStatement updateStmt(
+        *session, "UPDATE \"", _ident, "\" SET data = ? ", "WHERE rec_id = ?;");
     updateStmt.bindBlob(0, data, len);
     updateStmt.bindInt(1, recId.repr());
     updateStmt.step(SQLITE_DONE);

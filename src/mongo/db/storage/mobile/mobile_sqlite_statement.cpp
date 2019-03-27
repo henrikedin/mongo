@@ -51,14 +51,6 @@ namespace mongo {
 
 AtomicWord<long long> SqliteStatement::_nextID(0);
 
-SqliteStatement::SqliteStatement(const MobileSession& session, const std::string& sqlQuery) {
-    // Increment the global instance count and assign this instance an id.
-    _id = _nextID.addAndFetch(1);
-    _sqlQuery = sqlQuery;
-
-    prepare(session);
-}
-
 void SqliteStatement::finalize() {
     if (!_stmt) {
         return;

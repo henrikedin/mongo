@@ -232,7 +232,7 @@ Status MobileKVEngine::dropIdent(OperationContext* opCtx, StringData ident) {
     std::string dropQuery = "DROP TABLE IF EXISTS \"" + ident + "\";";
 
     try {
-        SqliteStatement::execQuery(session, dropQuery.c_str());
+        SqliteStatement::execQuery(session, dropQuery);
     } catch (const WriteConflictException&) {
         // It is possible that this drop fails because of transaction running in parallel.
         // We pretend that it succeeded, queue it for now and keep retrying later.
@@ -252,8 +252,7 @@ int64_t MobileKVEngine::getIdentSize(OperationContext* opCtx, StringData ident) 
     MobileSession* session = MobileRecoveryUnit::get(opCtx)->getSession(opCtx);
 
     // Get key-value column names.
-    std::string colNameQuery = "PRAGMA table_info(\"" + ident + "\")";
-    SqliteStatement colNameStmt(*session, colNameQuery);
+    SqliteStatement colNameStmt(*session, "PRAGMA table_info(\"", ident, "\")");
 
     colNameStmt.step(SQLITE_ROW);
     std::string keyColName(static_cast<const char*>(colNameStmt.getColText(1)));
@@ -262,10 +261,15 @@ int64_t MobileKVEngine::getIdentSize(OperationContext* opCtx, StringData ident) 
     colNameStmt.step(SQLITE_DONE);
 
     // Get total data size of key-value columns.
-    str::stream dataSizeQuery;
-    dataSizeQuery << "SELECT IFNULL(SUM(LENGTH(" << keyColName << ")), 0) + "
-                  << "IFNULL(SUM(LENGTH(" << valueColName << ")), 0) FROM \"" << ident + "\";";
-    SqliteStatement dataSizeStmt(*session, dataSizeQuery);
+    SqliteStatement dataSizeStmt(*session,
+                                 "SELECT IFNULL(SUM(LENGTH(",
+                                 keyColName,
+                                 ")), 0) + ",
+                                 "IFNULL(SUM(LENGTH(",
+                                 valueColName,
+                                 ")), 0) FROM \"",
+                                 ident,
+                                 "\";");
 
     dataSizeStmt.step(SQLITE_ROW);
     return dataSizeStmt.getColInt(0);
@@ -274,8 +278,8 @@ int64_t MobileKVEngine::getIdentSize(OperationContext* opCtx, StringData ident) 
 bool MobileKVEngine::hasIdent(OperationContext* opCtx, StringData ident) const {
     MobileSession* session = MobileRecoveryUnit::get(opCtx)->getSession(opCtx);
 
-    std::string findTableQuery = "SELECT * FROM sqlite_master WHERE type='table' AND name = ?;";
-    SqliteStatement findTableStmt(*session, findTableQuery);
+    SqliteStatement findTableStmt(*session,
+                                  "SELECT * FROM sqlite_master WHERE type='table' AND name = ?;");
     findTableStmt.bindText(0, ident.rawData(), ident.size());
 
     int status = findTableStmt.step();
@@ -290,8 +294,8 @@ bool MobileKVEngine::hasIdent(OperationContext* opCtx, StringData ident) const {
 std::vector<std::string> MobileKVEngine::getAllIdents(OperationContext* opCtx) const {
     std::vector<std::string> idents;
     MobileSession* session = MobileRecoveryUnit::get(opCtx)->getSession(opCtx);
-    std::string getTablesQuery = "SELECT name FROM sqlite_master WHERE type='table';";
-    SqliteStatement getTablesStmt(*session, getTablesQuery);
+
+    SqliteStatement getTablesStmt(*session, "SELECT name FROM sqlite_master WHERE type='table';");
 
     int status;
     while ((status = getTablesStmt.step()) == SQLITE_ROW) {

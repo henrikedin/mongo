@@ -152,9 +152,8 @@ void validateLogAndAppendError(ValidateResults* results, const std::string& errM
 
 void doValidate(OperationContext* opCtx, ValidateResults* results) {
     MobileSession* session = MobileRecoveryUnit::get(opCtx)->getSession(opCtx);
-    std::string validateQuery = "PRAGMA integrity_check;";
     try {
-        SqliteStatement validateStmt(*session, validateQuery);
+        SqliteStatement validateStmt(*session, "PRAGMA integrity_check;");
 
         int status;
         // By default, the integrity check returns the first 100 errors found.

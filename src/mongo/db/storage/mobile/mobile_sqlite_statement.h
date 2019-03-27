@@ -46,7 +46,8 @@ public:
     /**
      * Creates and prepares a SQLite statement.
      */
-    SqliteStatement(const MobileSession& session, const std::string& sqlQuery);
+    template <class... Args>
+    SqliteStatement(const MobileSession& session, Args&&... args);
 
     /**
      * Finalizes the prepared statement.
@@ -139,4 +140,53 @@ private:
     // code returned matches the finalize error code, if there is any.
     int _exceptionStatus = SQLITE_OK;
 };
+
+namespace detail {
+// Most of the strings we build statements with are static strings so we can calculate their length
+// during compile time.
+template <typename T, std::size_t N>
+constexpr std::size_t stringLength(const T (&)[N]) {
+    return N;
+}
+
+inline std::size_t stringLength(const char* str) {
+    return strlen(str);
+}
+
+inline std::size_t stringLength(const StringData& sd) {
+    return sd.size();
+}
+
+inline std::size_t stringLength(const std::string& str) {
+    return str.size();
+}
+
+template <typename T>
+void stringAppend(std::string& str, T&& element) {
+    str.append(std::forward<T>(element));
+}
+
+template <>
+inline void stringAppend(std::string& str, StringData& sd) {
+    str.append(sd.rawData(), sd.size());
+}
+
+template <>
+inline void stringAppend(std::string& str, const StringData& sd) {
+    str.append(sd.rawData(), sd.size());
+}
+}  // namespace detail
+
+template <class... Args>
+SqliteStatement::SqliteStatement(const MobileSession& session, Args&&... args) {
+    // Increment the global instance count and assign this instance an id.
+    _id = _nextID.addAndFetch(1);
+
+    // Reserve the size we need once to avoid any additional allocations
+    _sqlQuery.reserve((detail::stringLength(std::forward<Args>(args)) + ...));
+    (detail::stringAppend(_sqlQuery, std::forward<Args>(args)), ...);
+
+    prepare(session);
+}
+
 }  // namespace mongo
