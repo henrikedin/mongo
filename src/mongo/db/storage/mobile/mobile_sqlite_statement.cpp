@@ -42,6 +42,10 @@
 #include "mongo/util/scopeguard.h"
 
 #define SQLITE_STMT_TRACE() LOG(MOBILE_TRACE_LEVEL) << "MobileSE: SQLite Stmt ID:" << _id << " "
+#define SQLITE_STMT_TRACE_ENABLED()                 \
+    (::mongo::logger::globalLogDomain()->shouldLog( \
+        MongoLogDefaultComponent_component,         \
+        ::mongo::LogstreamBuilder::severityCast(MOBILE_TRACE_LEVEL)))
 
 namespace mongo {
 
@@ -119,9 +123,11 @@ int SqliteStatement::step(int desiredStatus) {
         checkStatus(status, desiredStatus, "sqlite3_step");
     }
 
-    char* full_stmt = sqlite3_expanded_sql(_stmt);
-    SQLITE_STMT_TRACE() << sqliteStatusToStr(status) << " - on stepping: " << full_stmt;
-    sqlite3_free(full_stmt);
+    if (SQLITE_STMT_TRACE_ENABLED()) {
+        char* full_stmt = sqlite3_expanded_sql(_stmt);
+        SQLITE_STMT_TRACE() << sqliteStatusToStr(status) << " - on stepping: " << full_stmt;
+        sqlite3_free(full_stmt);
+    }
 
     return status;
 }
