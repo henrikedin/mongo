@@ -144,20 +144,23 @@ private:
 namespace detail {
 // Most of the strings we build statements with are static strings so we can calculate their length
 // during compile time.
-template <typename T, std::size_t N>
-constexpr std::size_t stringLength(const T (&)[N]) {
-    return N;
+// Arrays decay to pointer in overload resolution, force that to not happen by providing true_type
+// as second argument if array
+template <std::size_t N>
+constexpr std::size_t stringLength(char const (&)[N], std::true_type) {
+    // Omit the null terminator, will added back when we call reserve later
+    return N - 1;
 }
 
-inline std::size_t stringLength(const char* str) {
+inline std::size_t stringLength(const char* str, std::false_type) {
     return strlen(str);
 }
 
-inline std::size_t stringLength(const StringData& sd) {
+inline std::size_t stringLength(const StringData& sd, std::false_type) {
     return sd.size();
 }
 
-inline std::size_t stringLength(const std::string& str) {
+inline std::size_t stringLength(const std::string& str, std::false_type) {
     return str.size();
 }
 
@@ -183,7 +186,10 @@ SqliteStatement::SqliteStatement(const MobileSession& session, Args&&... args) {
     _id = _nextID.addAndFetch(1);
 
     // Reserve the size we need once to avoid any additional allocations
-    _sqlQuery.reserve((detail::stringLength(std::forward<Args>(args)) + ...));
+    _sqlQuery.reserve((detail::stringLength(std::forward<Args>(args),
+                                            std::is_array<std::remove_reference_t<Args>>()) +
+                       ...) +
+                      1);
     (detail::stringAppend(_sqlQuery, std::forward<Args>(args)), ...);
 
     prepare(session);
