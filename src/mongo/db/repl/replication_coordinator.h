@@ -242,13 +242,13 @@ public:
      * The result of this function should be consistent with canAcceptWritesForDatabase()
      * for the database the namespace refers to, with additional checks on the collection.
      */
-    virtual bool canAcceptWritesFor(OperationContext* opCtx, const NamespaceString& ns) = 0;
+    virtual bool canAcceptWritesFor(OperationContext* opCtx, const NamespaceStringRef& ns) = 0;
 
     /**
      * Version which does not check for the RSTL.  Do not use in new code. Without the RSTL held,
      * the return value may be inaccurate by the time the function returns.
      */
-    virtual bool canAcceptWritesFor_UNSAFE(OperationContext* opCtx, const NamespaceString& ns) = 0;
+    virtual bool canAcceptWritesFor_UNSAFE(OperationContext* opCtx, const NamespaceStringRef& ns) = 0;
 
     /**
      * Checks if the current replica set configuration can satisfy the given write concern.
@@ -286,7 +286,7 @@ public:
      * and an errorcode indicating why the node cannot if it cannot.
      */
     virtual Status checkCanServeReadsFor(OperationContext* opCtx,
-                                         const NamespaceString& ns,
+                                         const NamespaceStringRef& ns,
                                          bool slaveOk) = 0;
 
     /**
@@ -294,7 +294,7 @@ public:
      * the return value may be inaccurate by the time the function returns.
      */
     virtual Status checkCanServeReadsFor_UNSAFE(OperationContext* opCtx,
-                                                const NamespaceString& ns,
+                                                const NamespaceStringRef& ns,
                                                 bool slaveOk) = 0;
 
     /**
@@ -304,7 +304,7 @@ public:
      * and we need to enforce the constraints for it.
      */
     virtual bool shouldRelaxIndexConstraints(OperationContext* opCtx,
-                                             const NamespaceString& ns) = 0;
+                                             const NamespaceStringRef& ns) = 0;
 
     /**
      * Updates our internal tracking of the last OpTime applied to this node. Also updates our

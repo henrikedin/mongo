@@ -77,23 +77,23 @@ bool ReplicationCoordinatorEmbedded::canAcceptWritesForDatabase_UNSAFE(Operation
 }
 
 bool ReplicationCoordinatorEmbedded::canAcceptWritesFor(OperationContext* opCtx,
-                                                        const NamespaceString& ns) {
+                                                        const NamespaceStringRef& ns) {
     return true;
 }
 
 bool ReplicationCoordinatorEmbedded::canAcceptWritesFor_UNSAFE(OperationContext* opCtx,
-                                                               const NamespaceString& ns) {
+                                                               const NamespaceStringRef& ns) {
     return true;
 }
 
 Status ReplicationCoordinatorEmbedded::checkCanServeReadsFor(OperationContext* opCtx,
-                                                             const NamespaceString& ns,
+                                                             const NamespaceStringRef& ns,
                                                              bool slaveOk) {
     return Status::OK();
 }
 
 Status ReplicationCoordinatorEmbedded::checkCanServeReadsFor_UNSAFE(OperationContext* opCtx,
-                                                                    const NamespaceString& ns,
+                                                                    const NamespaceStringRef& ns,
                                                                     bool slaveOk) {
     return Status::OK();
 }
@@ -107,7 +107,7 @@ bool ReplicationCoordinatorEmbedded::isInPrimaryOrSecondaryState_UNSAFE() const 
 }
 
 bool ReplicationCoordinatorEmbedded::shouldRelaxIndexConstraints(OperationContext* opCtx,
-                                                                 const NamespaceString& ns) {
+                                                                 const NamespaceStringRef& ns) {
     return false;
 }
 

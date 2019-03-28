@@ -104,9 +104,9 @@ public:
 
     virtual bool canAcceptWritesForDatabase_UNSAFE(OperationContext* opCtx, StringData dbName);
 
-    bool canAcceptWritesFor(OperationContext* opCtx, const NamespaceString& ns) override;
+    bool canAcceptWritesFor(OperationContext* opCtx, const NamespaceStringRef& ns) override;
 
-    bool canAcceptWritesFor_UNSAFE(OperationContext* opCtx, const NamespaceString& ns) override;
+    bool canAcceptWritesFor_UNSAFE(OperationContext* opCtx, const NamespaceStringRef& ns) override;
 
     virtual Status checkIfWriteConcernCanBeSatisfied(const WriteConcernOptions& writeConcern) const;
 
@@ -117,13 +117,13 @@ public:
         const std::vector<HostAndPort>& commitReadyMembers) const;
 
     virtual Status checkCanServeReadsFor(OperationContext* opCtx,
-                                         const NamespaceString& ns,
+                                         const NamespaceStringRef& ns,
                                          bool slaveOk);
     virtual Status checkCanServeReadsFor_UNSAFE(OperationContext* opCtx,
-                                                const NamespaceString& ns,
+                                                const NamespaceStringRef& ns,
                                                 bool slaveOk);
 
-    virtual bool shouldRelaxIndexConstraints(OperationContext* opCtx, const NamespaceString& ns);
+    virtual bool shouldRelaxIndexConstraints(OperationContext* opCtx, const NamespaceStringRef& ns);
 
     virtual void setMyLastAppliedOpTimeAndWallTime(const OpTimeAndWallTime& opTimeAndWallTime);
     virtual void setMyLastDurableOpTimeAndWallTime(const OpTimeAndWallTime& opTimeAndWallTime);

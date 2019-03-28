@@ -165,31 +165,31 @@ bool ReplicationCoordinatorMock::canAcceptWritesForDatabase_UNSAFE(OperationCont
 }
 
 bool ReplicationCoordinatorMock::canAcceptWritesFor(OperationContext* opCtx,
-                                                    const NamespaceString& ns) {
+                                                    const NamespaceStringRef& ns) {
     // TODO
     return canAcceptWritesForDatabase(opCtx, ns.db());
 }
 
 bool ReplicationCoordinatorMock::canAcceptWritesFor_UNSAFE(OperationContext* opCtx,
-                                                           const NamespaceString& ns) {
+                                                           const NamespaceStringRef& ns) {
     return canAcceptWritesFor(opCtx, ns);
 }
 
 Status ReplicationCoordinatorMock::checkCanServeReadsFor(OperationContext* opCtx,
-                                                         const NamespaceString& ns,
+                                                         const NamespaceStringRef& ns,
                                                          bool slaveOk) {
     // TODO
     return Status::OK();
 }
 
 Status ReplicationCoordinatorMock::checkCanServeReadsFor_UNSAFE(OperationContext* opCtx,
-                                                                const NamespaceString& ns,
+                                                                const NamespaceStringRef& ns,
                                                                 bool slaveOk) {
     return checkCanServeReadsFor(opCtx, ns, slaveOk);
 }
 
 bool ReplicationCoordinatorMock::shouldRelaxIndexConstraints(OperationContext* opCtx,
-                                                             const NamespaceString& ns) {
+                                                             const NamespaceStringRef& ns) {
     return !canAcceptWritesFor(opCtx, ns);
 }
 

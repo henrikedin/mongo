@@ -69,17 +69,17 @@ public:
     bool canAcceptWritesForDatabase(OperationContext* opCtx, StringData dbName) override;
     bool canAcceptWritesForDatabase_UNSAFE(OperationContext* opCtx, StringData dbName) override;
 
-    bool canAcceptWritesFor(OperationContext* opCtx, const NamespaceString& ns) override;
-    bool canAcceptWritesFor_UNSAFE(OperationContext* opCtx, const NamespaceString& ns) override;
+    bool canAcceptWritesFor(OperationContext* opCtx, const NamespaceStringRef& ns) override;
+    bool canAcceptWritesFor_UNSAFE(OperationContext* opCtx, const NamespaceStringRef& ns) override;
 
     Status checkCanServeReadsFor(OperationContext* opCtx,
-                                 const NamespaceString& ns,
+                                 const NamespaceStringRef& ns,
                                  bool slaveOk) override;
     Status checkCanServeReadsFor_UNSAFE(OperationContext* opCtx,
-                                        const NamespaceString& ns,
+                                        const NamespaceStringRef& ns,
                                         bool slaveOk) override;
 
-    bool shouldRelaxIndexConstraints(OperationContext* opCtx, const NamespaceString& ns) override;
+    bool shouldRelaxIndexConstraints(OperationContext* opCtx, const NamespaceStringRef& ns) override;
 
     WriteConcernOptions getGetLastErrorDefault() override;
 

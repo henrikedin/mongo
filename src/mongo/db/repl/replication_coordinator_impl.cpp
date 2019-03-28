@@ -2126,13 +2126,13 @@ bool ReplicationCoordinatorImpl::canAcceptWritesForDatabase_UNSAFE(OperationCont
 }
 
 bool ReplicationCoordinatorImpl::canAcceptWritesFor(OperationContext* opCtx,
-                                                    const NamespaceString& ns) {
+                                                    const NamespaceStringRef& ns) {
     invariant(opCtx->lockState()->isRSTLLocked());
     return canAcceptWritesFor_UNSAFE(opCtx, ns);
 }
 
 bool ReplicationCoordinatorImpl::canAcceptWritesFor_UNSAFE(OperationContext* opCtx,
-                                                           const NamespaceString& ns) {
+                                                           const NamespaceStringRef& ns) {
     StringData dbName = ns.db();
     bool canWriteToDB = canAcceptWritesForDatabase_UNSAFE(opCtx, dbName);
 
@@ -2161,14 +2161,14 @@ bool ReplicationCoordinatorImpl::canAcceptWritesFor_UNSAFE(OperationContext* opC
 }
 
 Status ReplicationCoordinatorImpl::checkCanServeReadsFor(OperationContext* opCtx,
-                                                         const NamespaceString& ns,
+                                                         const NamespaceStringRef& ns,
                                                          bool slaveOk) {
     invariant(opCtx->lockState()->isRSTLLocked());
     return checkCanServeReadsFor_UNSAFE(opCtx, ns, slaveOk);
 }
 
 Status ReplicationCoordinatorImpl::checkCanServeReadsFor_UNSAFE(OperationContext* opCtx,
-                                                                const NamespaceString& ns,
+                                                                const NamespaceStringRef& ns,
                                                                 bool slaveOk) {
     auto client = opCtx->getClient();
     bool isPrimaryOrSecondary = _readWriteAbility->canServeNonLocalReads_UNSAFE();
@@ -2221,7 +2221,7 @@ bool ReplicationCoordinatorImpl::isInPrimaryOrSecondaryState_UNSAFE() const {
 }
 
 bool ReplicationCoordinatorImpl::shouldRelaxIndexConstraints(OperationContext* opCtx,
-                                                             const NamespaceString& ns) {
+                                                             const NamespaceStringRef& ns) {
     return !canAcceptWritesFor(opCtx, ns);
 }
 
