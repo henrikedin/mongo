@@ -132,11 +132,6 @@ NamespaceString NamespaceString::makeCollectionlessAggregateNSS(StringData dbnam
     return nss;
 }
 
-std::string NamespaceString::getSisterNS(StringData local) const {
-    verify(local.size() && local[0] != '.');
-    return db().toString() + "." + local.toString();
-}
-
 bool NamespaceString::isDropPendingNamespace() const {
     return coll().startsWith(dropPendingNSPrefix);
 }

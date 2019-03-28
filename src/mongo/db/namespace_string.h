@@ -45,7 +45,8 @@ namespace mongo {
 
 const size_t MaxDatabaseNameLen = 128;  // max str len for the db name, including null char
 
-class NamespaceString {
+template <typename T>
+class NamespaceStringBase {
 public:
     // Reserved system namespaces
 
@@ -64,97 +65,6 @@ public:
     // Prefix for orphan collections
     static constexpr StringData kOrphanCollectionPrefix = "orphan."_sd;
     static constexpr StringData kOrphanCollectionDb = "local"_sd;
-
-    // Namespace for storing configuration data, which needs to be replicated if the server is
-    // running as a replica set. Documents in this collection should represent some configuration
-    // state of the server, which needs to be recovered/consulted at startup. Each document in this
-    // namespace should have its _id set to some string, which meaningfully describes what it
-    // represents. For example, 'shardIdentity' and 'featureCompatibilityVersion'.
-    static const NamespaceString kServerConfigurationNamespace;
-
-    // Namespace for storing the logical sessions information
-    static const NamespaceString kLogicalSessionsNamespace;
-
-    // Namespace for storing the transaction information for each session
-    static const NamespaceString kSessionTransactionsTableNamespace;
-
-    // Name for a shard's collections metadata collection, each document of which indicates the
-    // state of a specific collection
-    static const NamespaceString kShardConfigCollectionsNamespace;
-
-    // Name for a shard's databases metadata collection, each document of which indicates the state
-    // of a specific database
-    static const NamespaceString kShardConfigDatabasesNamespace;
-
-    // Name for causal consistency's key collection.
-    static const NamespaceString kSystemKeysNamespace;
-
-    // Namespace of the the oplog collection.
-    static const NamespaceString kRsOplogNamespace;
-
-    // Namespace for storing the persisted state of transaction coordinators.
-    static const NamespaceString kTransactionCoordinatorsNamespace;
-
-    // Namespace for replica set configuration settings.
-    static const NamespaceString kSystemReplSetNamespace;
-
-    // Namespace for index build entries.
-    static const NamespaceString kIndexBuildEntryNamespace;
-
-    /**
-     * Constructs an empty NamespaceString.
-     */
-    NamespaceString() : _ns(), _dotIndex(std::string::npos) {}
-
-    /**
-     * Constructs a NamespaceString from the fully qualified namespace named in "ns".
-     */
-    explicit NamespaceString(StringData ns) {
-        _ns = ns.toString();  // copy to our buffer
-        _dotIndex = _ns.find('.');
-        uassert(ErrorCodes::InvalidNamespace,
-                "namespaces cannot have embedded null characters",
-                _ns.find('\0') == std::string::npos);
-    }
-
-    /**
-     * Constructs a NamespaceString for the given database and collection names.
-     * "dbName" must not contain a ".", and "collectionName" must not start with one.
-     */
-    NamespaceString(StringData dbName, StringData collectionName)
-        : _ns(dbName.size() + collectionName.size() + 1, '\0') {
-        uassert(ErrorCodes::InvalidNamespace,
-                "'.' is an invalid character in a database name",
-                dbName.find('.') == std::string::npos);
-        uassert(ErrorCodes::InvalidNamespace,
-                "Collection names cannot start with '.'",
-                collectionName.empty() || collectionName[0] != '.');
-
-        std::string::iterator it = std::copy(dbName.begin(), dbName.end(), _ns.begin());
-        *it = '.';
-        ++it;
-        it = std::copy(collectionName.begin(), collectionName.end(), it);
-        _dotIndex = dbName.size();
-
-        dassert(it == _ns.end());
-        dassert(_ns[_dotIndex] == '.');
-
-        uassert(ErrorCodes::InvalidNamespace,
-                "namespaces cannot have embedded null characters",
-                _ns.find('\0') == std::string::npos);
-    }
-
-    /**
-     * Constructs the namespace '<dbName>.$cmd.aggregate', which we use as the namespace for
-     * aggregation commands with the format {aggregate: 1}.
-     */
-    static NamespaceString makeCollectionlessAggregateNSS(StringData dbName);
-
-    /**
-     * Constructs a NamespaceString representing a listCollections namespace. The format for this
-     * namespace is "<dbName>.$cmd.listCollections".
-     */
-    static NamespaceString makeListCollectionsNSS(StringData dbName);
 
     /**
      * Note that these values are derived from the mmap_v1 implementation and that is the only
@@ -276,13 +186,6 @@ public:
     }
 
     /**
-     * Returns whether a namespace is replicated, based only on its string value. One notable
-     * omission is that map reduce `tmp.mr` collections may or may not be replicated. Callers must
-     * decide how to handle that case separately.
-     */
-    bool isReplicated() const;
-
-    /**
      * The namespace associated with some ClientCursors does not correspond to a particular
      * namespace. For example, this is true for listCollections cursors and $currentOp agg cursors.
      * Returns true if the namespace string is for a "collectionless" cursor.
@@ -290,43 +193,6 @@ public:
     bool isCollectionlessCursorNamespace() const {
         return coll().startsWith("$cmd."_sd);
     }
-
-    bool isCollectionlessAggregateNS() const;
-    bool isListCollectionsCursorNS() const;
-
-    /**
-     * Returns true if a client can modify this namespace even though it is under ".system."
-     * For example <dbname>.system.users is ok for regular clients to update.
-     */
-    bool isLegalClientSystemNS() const;
-
-    /**
-     * Returns true if this namespace refers to a drop-pending collection.
-     */
-    bool isDropPendingNamespace() const;
-
-    /**
-     * Returns the drop-pending namespace name for this namespace, provided the given optime.
-     *
-     * Example:
-     *     test.foo -> test.system.drop.<timestamp seconds>i<timestamp increment>t<term>.foo
-     *
-     * Original collection name may be truncated so that the generated namespace length does not
-     * exceed MaxNsCollectionLen.
-     */
-    NamespaceString makeDropPendingNamespace(const repl::OpTime& opTime) const;
-
-    /**
-     * Returns the optime used to generate the drop-pending namespace.
-     * Returns an error if this namespace is not drop-pending.
-     */
-    StatusWith<repl::OpTime> getDropPendingNamespaceOpTime() const;
-
-    /**
-     * Checks if this namespace is valid as a target namespace for a rename operation, given
-     * the length of the longest index name in the source collection.
-     */
-    Status checkLengthForRename(const std::string::size_type longestIndexNameLength) const;
 
     /**
      * Returns true if the namespace is valid. Special namespaces for internal use are considered as
@@ -340,15 +206,6 @@ public:
      * NamespaceString("foo.bar").getSisterNS("blah") returns "foo.blah".
      */
     std::string getSisterNS(StringData local) const;
-
-    NamespaceString getCommandNS() const {
-        return {db(), "$cmd"};
-    }
-
-    /**
-     * Returns index namespace for an index in this collection namespace.
-     */
-    NamespaceString makeIndexNamespace(StringData indexName) const;
 
     /**
      * @return true if ns is 'normal'.  A "$" is used for namespaces holding index data,
@@ -422,6 +279,158 @@ public:
      */
     static bool validCollectionName(StringData coll);
 
+protected:
+    NamespaceStringBase(const T& ns, size_t dotIndex) : _ns(ns), _dotIndex(dotIndex) {}
+
+    T _ns;
+    size_t _dotIndex;
+};
+
+class NamespaceString : public NamespaceStringBase<std::string> {
+public:
+    // Namespace for storing configuration data, which needs to be replicated if the server is
+    // running as a replica set. Documents in this collection should represent some configuration
+    // state of the server, which needs to be recovered/consulted at startup. Each document in this
+    // namespace should have its _id set to some string, which meaningfully describes what it
+    // represents. For example, 'shardIdentity' and 'featureCompatibilityVersion'.
+    static const NamespaceString kServerConfigurationNamespace;
+
+    // Namespace for storing the logical sessions information
+    static const NamespaceString kLogicalSessionsNamespace;
+
+    // Namespace for storing the transaction information for each session
+    static const NamespaceString kSessionTransactionsTableNamespace;
+
+    // Name for a shard's collections metadata collection, each document of which indicates the
+    // state of a specific collection
+    static const NamespaceString kShardConfigCollectionsNamespace;
+
+    // Name for a shard's databases metadata collection, each document of which indicates the state
+    // of a specific database
+    static const NamespaceString kShardConfigDatabasesNamespace;
+
+    // Name for causal consistency's key collection.
+    static const NamespaceString kSystemKeysNamespace;
+
+    // Namespace of the the oplog collection.
+    static const NamespaceString kRsOplogNamespace;
+
+    // Namespace for storing the persisted state of transaction coordinators.
+    static const NamespaceString kTransactionCoordinatorsNamespace;
+
+    // Namespace for replica set configuration settings.
+    static const NamespaceString kSystemReplSetNamespace;
+
+    // Namespace for index build entries.
+    static const NamespaceString kIndexBuildEntryNamespace;
+
+    /**
+     * Constructs the namespace '<dbName>.$cmd.aggregate', which we use as the namespace for
+     * aggregation commands with the format {aggregate: 1}.
+     */
+    static NamespaceString makeCollectionlessAggregateNSS(StringData dbName);
+
+    /**
+     * Constructs a NamespaceString representing a listCollections namespace. The format for this
+     * namespace is "<dbName>.$cmd.listCollections".
+     */
+    static NamespaceString makeListCollectionsNSS(StringData dbName);
+
+    /**
+     * Constructs an empty NamespaceString.
+     */
+    NamespaceString() : NamespaceStringBase(std::string(), std::string::npos) {}
+
+    /**
+     * Constructs a NamespaceString from the fully qualified namespace named in "ns".
+     */
+    explicit NamespaceString(StringData ns) : NamespaceStringBase(ns.toString(), _ns.find('.')) {
+        uassert(ErrorCodes::InvalidNamespace,
+                "namespaces cannot have embedded null characters",
+                _ns.find('\0') == std::string::npos);
+    }
+
+    /**
+     * Constructs a NamespaceString for the given database and collection names.
+     * "dbName" must not contain a ".", and "collectionName" must not start with one.
+     */
+    NamespaceString(StringData dbName, StringData collectionName)
+        : NamespaceStringBase(std::string(dbName.size() + collectionName.size() + 1, '\0'),
+                              std::string::npos) {
+        uassert(ErrorCodes::InvalidNamespace,
+                "'.' is an invalid character in a database name",
+                dbName.find('.') == std::string::npos);
+        uassert(ErrorCodes::InvalidNamespace,
+                "Collection names cannot start with '.'",
+                collectionName.empty() || collectionName[0] != '.');
+
+        std::string::iterator it = std::copy(dbName.begin(), dbName.end(), _ns.begin());
+        *it = '.';
+        ++it;
+        it = std::copy(collectionName.begin(), collectionName.end(), it);
+        _dotIndex = dbName.size();
+
+        dassert(it == _ns.end());
+        dassert(_ns[_dotIndex] == '.');
+
+        uassert(ErrorCodes::InvalidNamespace,
+                "namespaces cannot have embedded null characters",
+                _ns.find('\0') == std::string::npos);
+    }
+
+	/**
+     * Returns whether a namespace is replicated, based only on its string value. One notable
+     * omission is that map reduce `tmp.mr` collections may or may not be replicated. Callers must
+     * decide how to handle that case separately.
+     */
+    bool isReplicated() const;
+
+	bool isCollectionlessAggregateNS() const;
+    bool isListCollectionsCursorNS() const;
+
+    /**
+     * Returns true if a client can modify this namespace even though it is under ".system."
+     * For example <dbname>.system.users is ok for regular clients to update.
+     */
+    bool isLegalClientSystemNS() const;
+
+    /**
+     * Returns true if this namespace refers to a drop-pending collection.
+     */
+    bool isDropPendingNamespace() const;
+
+    /**
+     * Returns the optime used to generate the drop-pending namespace.
+     * Returns an error if this namespace is not drop-pending.
+     */
+    StatusWith<repl::OpTime> getDropPendingNamespaceOpTime() const;
+
+    /**
+     * Checks if this namespace is valid as a target namespace for a rename operation, given
+     * the length of the longest index name in the source collection.
+     */
+    Status checkLengthForRename(const std::string::size_type longestIndexNameLength) const;
+
+    /**
+     * Returns the drop-pending namespace name for this namespace, provided the given optime.
+     *
+     * Example:
+     *     test.foo -> test.system.drop.<timestamp seconds>i<timestamp increment>t<term>.foo
+     *
+     * Original collection name may be truncated so that the generated namespace length does not
+     * exceed MaxNsCollectionLen.
+     */
+    NamespaceString makeDropPendingNamespace(const repl::OpTime& opTime) const;
+
+    NamespaceString getCommandNS() const {
+        return {db(), "$cmd"};
+    }
+
+    /**
+     * Returns index namespace for an index in this collection namespace.
+     */
+    NamespaceString makeIndexNamespace(StringData indexName) const;
+
     // Relops among `NamespaceString`.
     friend bool operator==(const NamespaceString& a, const NamespaceString& b) {
         return a.ns() == b.ns();
@@ -446,22 +455,17 @@ public:
     friend H AbslHashValue(H h, const NamespaceString& nss) {
         return H::combine(std::move(h), nss._ns);
     }
-
-private:
-    std::string _ns;
-    size_t _dotIndex;
 };
 
-class NamespaceStringRef {
+class NamespaceStringRef : public NamespaceStringBase<const std::string&> {
 public:
     /**
      * Constructs a NamespaceString from the fully qualified namespace named in "ns".
      */
-    NamespaceStringRef(NamespaceString const& ns) : _ns(ns.ns()), _dotIndex(ns.dotIndex()) {
-    }
+    NamespaceStringRef(NamespaceString const& ns)
+        : NamespaceStringBase(ns.ns(), ns.dotIndex()) {}
 
-    explicit NamespaceStringRef(std::string const& ns) : _ns(ns) {
-        _dotIndex = _ns.find('.');
+    explicit NamespaceStringRef(std::string const& ns) : NamespaceStringBase(ns, ns.find('.')) {
         uassert(ErrorCodes::InvalidNamespace,
                 "namespaces cannot have embedded null characters",
                 _ns.find('\0') == std::string::npos);
@@ -470,169 +474,172 @@ public:
     NamespaceStringRef(const NamespaceStringRef&) = delete;
     NamespaceStringRef(NamespaceStringRef&&) = delete;
 
-    StringData db() const {
-        return _dotIndex == std::string::npos ? _ns : StringData(_ns.data(), _dotIndex);
-    }
+    // StringData db() const {
+    //    return _dotIndex == std::string::npos ? _ns : StringData(_ns.data(), _dotIndex);
+    //}
 
-    StringData coll() const {
-        return _dotIndex == std::string::npos
-            ? StringData()
-            : StringData(_ns.c_str() + _dotIndex + 1, _ns.size() - 1 - _dotIndex);
-    }
+    // StringData coll() const {
+    //    return _dotIndex == std::string::npos
+    //        ? StringData()
+    //        : StringData(_ns.c_str() + _dotIndex + 1, _ns.size() - 1 - _dotIndex);
+    //}
 
-    const std::string& ns() const {
-        return _ns;
-    }
+    // const std::string& ns() const {
+    //    return _ns;
+    //}
 
-    const std::string& toString() const {
-        return ns();
-    }
+    // const std::string& toString() const {
+    //    return ns();
+    //}
 
-    size_t size() const {
-        return _ns.size();
-    }
+    // size_t size() const {
+    //    return _ns.size();
+    //}
 
-    bool isEmpty() const {
-        return _ns.empty();
-    }
+    // bool isEmpty() const {
+    //    return _ns.empty();
+    //}
 
-    //
-    // The following methods assume isValid() is true for this NamespaceString.
-    //
+    ////
+    //// The following methods assume isValid() is true for this NamespaceString.
+    ////
 
-    bool isHealthlog() const {
-        return isLocal() && coll() == "system.healthlog";
-    }
-    bool isSystem() const {
-        return coll().startsWith("system.");
-    }
-    bool isAdminDB() const {
-        return db() == NamespaceString::kAdminDb;
-    }
-    bool isLocal() const {
-        return db() == NamespaceString::kLocalDb;
-    }
-    bool isSystemDotProfile() const {
-        return coll() == "system.profile";
-    }
-    bool isSystemDotViews() const {
-        return coll() == NamespaceString::kSystemDotViewsCollectionName;
-    }
-    bool isServerConfigurationCollection() const {
-        return (db() == NamespaceString::kAdminDb) && (coll() == "system.version");
-    }
-    bool isConfigDB() const {
-        return db() == NamespaceString::kConfigDb;
-    }
-    bool isCommand() const {
-        return coll() == "$cmd";
-    }
-    bool isOplog() const {
-        return NamespaceString::oplog(_ns);
-    }
-    bool isSpecial() const {
-        return NamespaceString::special(_ns);
-    }
-    bool isOnInternalDb() const {
-        if (db() == NamespaceString::kAdminDb)
-            return true;
-        if (db() == NamespaceString::kLocalDb)
-            return true;
-        if (db() == NamespaceString::kConfigDb)
-            return true;
-        return false;
-    }
-    bool isNormal() const {
-        return NamespaceString::normal(_ns);
-    }
-    bool isOrphanCollection() const {
-        return db() == NamespaceString::kOrphanCollectionDb &&
-            coll().startsWith(NamespaceString::kOrphanCollectionPrefix);
-    }
+    // bool isHealthlog() const {
+    //    return isLocal() && coll() == "system.healthlog";
+    //}
+    // bool isSystem() const {
+    //    return coll().startsWith("system.");
+    //}
+    // bool isAdminDB() const {
+    //    return db() == NamespaceString::kAdminDb;
+    //}
+    // bool isLocal() const {
+    //    return db() == NamespaceString::kLocalDb;
+    //}
+    // bool isSystemDotProfile() const {
+    //    return coll() == "system.profile";
+    //}
+    // bool isSystemDotViews() const {
+    //    return coll() == NamespaceString::kSystemDotViewsCollectionName;
+    //}
+    // bool isServerConfigurationCollection() const {
+    //    return (db() == NamespaceString::kAdminDb) && (coll() == "system.version");
+    //}
+    // bool isConfigDB() const {
+    //    return db() == NamespaceString::kConfigDb;
+    //}
+    // bool isCommand() const {
+    //    return coll() == "$cmd";
+    //}
+    // bool isOplog() const {
+    //    return NamespaceString::oplog(_ns);
+    //}
+    // bool isSpecial() const {
+    //    return NamespaceString::special(_ns);
+    //}
+    // bool isOnInternalDb() const {
+    //    if (db() == NamespaceString::kAdminDb)
+    //        return true;
+    //    if (db() == NamespaceString::kLocalDb)
+    //        return true;
+    //    if (db() == NamespaceString::kConfigDb)
+    //        return true;
+    //    return false;
+    //}
+    // bool isNormal() const {
+    //    return NamespaceString::normal(_ns);
+    //}
+    // bool isOrphanCollection() const {
+    //    return db() == NamespaceString::kOrphanCollectionDb &&
+    //        coll().startsWith(NamespaceString::kOrphanCollectionPrefix);
+    //}
 
-    /**
-     * Returns whether the NamespaceString references a special collection that cannot be used for
-     * generic data storage.
-     */
-    bool isVirtualized() const {
-        return NamespaceString::virtualized(_ns);
-    }
+    ///**
+    // * Returns whether the NamespaceString references a special collection that cannot be used for
+    // * generic data storage.
+    // */
+    // bool isVirtualized() const {
+    //    return NamespaceString::virtualized(_ns);
+    //}
 
-    /**
-     * Returns whether a namespace is replicated, based only on its string value. One notable
-     * omission is that map reduce `tmp.mr` collections may or may not be replicated. Callers must
-     * decide how to handle that case separately.
-     */
-    bool isReplicated() const;
+    ///**
+    // * Returns whether a namespace is replicated, based only on its string value. One notable
+    // * omission is that map reduce `tmp.mr` collections may or may not be replicated. Callers must
+    // * decide how to handle that case separately.
+    // */
+    // bool isReplicated() const;
 
-    /**
-     * The namespace associated with some ClientCursors does not correspond to a particular
-     * namespace. For example, this is true for listCollections cursors and $currentOp agg cursors.
-     * Returns true if the namespace string is for a "collectionless" cursor.
-     */
-    bool isCollectionlessCursorNamespace() const {
-        return coll().startsWith("$cmd."_sd);
-    }
+    ///**
+    // * The namespace associated with some ClientCursors does not correspond to a particular
+    // * namespace. For example, this is true for listCollections cursors and $currentOp agg
+    // cursors.
+    // * Returns true if the namespace string is for a "collectionless" cursor.
+    // */
+    // bool isCollectionlessCursorNamespace() const {
+    //    return coll().startsWith("$cmd."_sd);
+    //}
 
-    bool isCollectionlessAggregateNS() const;
-    bool isListCollectionsCursorNS() const;
+    // bool isCollectionlessAggregateNS() const;
+    // bool isListCollectionsCursorNS() const;
 
-    /**
-     * Returns true if a client can modify this namespace even though it is under ".system."
-     * For example <dbname>.system.users is ok for regular clients to update.
-     */
-    bool isLegalClientSystemNS() const;
+    ///**
+    // * Returns true if a client can modify this namespace even though it is under ".system."
+    // * For example <dbname>.system.users is ok for regular clients to update.
+    // */
+    // bool isLegalClientSystemNS() const;
 
-    /**
-     * Returns true if this namespace refers to a drop-pending collection.
-     */
-    bool isDropPendingNamespace() const;
+    ///**
+    // * Returns true if this namespace refers to a drop-pending collection.
+    // */
+    // bool isDropPendingNamespace() const;
 
-    /**
-     * Returns the drop-pending namespace name for this namespace, provided the given optime.
-     *
-     * Example:
-     *     test.foo -> test.system.drop.<timestamp seconds>i<timestamp increment>t<term>.foo
-     *
-     * Original collection name may be truncated so that the generated namespace length does not
-     * exceed MaxNsCollectionLen.
-     */
-    NamespaceString makeDropPendingNamespace(const repl::OpTime& opTime) const;
+    ///**
+    // * Returns the drop-pending namespace name for this namespace, provided the given optime.
+    // *
+    // * Example:
+    // *     test.foo -> test.system.drop.<timestamp seconds>i<timestamp increment>t<term>.foo
+    // *
+    // * Original collection name may be truncated so that the generated namespace length does not
+    // * exceed MaxNsCollectionLen.
+    // */
+    // NamespaceString makeDropPendingNamespace(const repl::OpTime& opTime) const;
 
-    /**
-     * Returns the optime used to generate the drop-pending namespace.
-     * Returns an error if this namespace is not drop-pending.
-     */
-    StatusWith<repl::OpTime> getDropPendingNamespaceOpTime() const;
+    ///**
+    // * Returns the optime used to generate the drop-pending namespace.
+    // * Returns an error if this namespace is not drop-pending.
+    // */
+    // StatusWith<repl::OpTime> getDropPendingNamespaceOpTime() const;
 
-    /**
-     * Checks if this namespace is valid as a target namespace for a rename operation, given
-     * the length of the longest index name in the source collection.
-     */
-    Status checkLengthForRename(const std::string::size_type longestIndexNameLength) const;
+    ///**
+    // * Checks if this namespace is valid as a target namespace for a rename operation, given
+    // * the length of the longest index name in the source collection.
+    // */
+    // Status checkLengthForRename(const std::string::size_type longestIndexNameLength) const;
 
-    /**
-     * Returns true if the namespace is valid. Special namespaces for internal use are considered as
-     * valid.
-     */
-    bool isValid() const {
-        return NamespaceString::validDBName(db(), NamespaceString::DollarInDbNameBehavior::Allow) &&
-            !coll().empty();
-    }
+    ///**
+    // * Returns true if the namespace is valid. Special namespaces for internal use are considered
+    // as
+    // * valid.
+    // */
+    // bool isValid() const {
+    //    return NamespaceString::validDBName(db(), NamespaceString::DollarInDbNameBehavior::Allow)
+    //    &&
+    //        !coll().empty();
+    //}
 
-    /**
-     * NamespaceString("foo.bar").getSisterNS("blah") returns "foo.blah".
-     */
-    std::string getSisterNS(StringData local) const;
+    ///**
+    // * NamespaceString("foo.bar").getSisterNS("blah") returns "foo.blah".
+    // */
+    // std::string getSisterNS(StringData local) const;
 
-    NamespaceString getCommandNS() const {
-        return {db(), "$cmd"};
-    }
+    // NamespaceString getCommandNS() const {
+    //    return {db(), "$cmd"};
+    //}
 
-    /**
-     * Returns index namespace for an index in this collection namespace.
-     */
-    NamespaceString makeIndexNamespace(StringData indexName) const;
+    ///**
+    // * Returns index namespace for an index in this collection namespace.
+    // */
+    // NamespaceString makeIndexNamespace(StringData indexName) const;
 
     // Relops among `NamespaceString`.
     friend bool operator==(const NamespaceStringRef& a, const NamespaceStringRef& b) {
@@ -654,9 +661,9 @@ public:
     //    return a.ns() >= b.ns();
     //}
 
-private:
-    std::string const& _ns;
-    size_t _dotIndex;
+    // private:
+    //    std::string const& _ns;
+    //    size_t _dotIndex;
 };
 
 /**
@@ -756,7 +763,8 @@ inline bool nsIsDbOnly(StringData ns) {
     return false;
 }
 
-inline bool NamespaceString::validDBName(StringData db, DollarInDbNameBehavior behavior) {
+template <typename T>
+bool NamespaceStringBase<T>::validDBName(StringData db, DollarInDbNameBehavior behavior) {
     if (db.size() == 0 || db.size() >= 64)
         return false;
 
@@ -790,7 +798,8 @@ inline bool NamespaceString::validDBName(StringData db, DollarInDbNameBehavior b
     return true;
 }
 
-inline bool NamespaceString::validCollectionComponent(StringData ns) {
+template <typename T>
+bool NamespaceStringBase<T>::validCollectionComponent(StringData ns) {
     size_t idx = ns.find('.');
     if (idx == std::string::npos)
         return false;
@@ -798,7 +807,8 @@ inline bool NamespaceString::validCollectionComponent(StringData ns) {
     return validCollectionName(ns.substr(idx + 1)) || oplog(ns);
 }
 
-inline bool NamespaceString::validCollectionName(StringData coll) {
+template <typename T>
+bool NamespaceStringBase<T>::validCollectionName(StringData coll) {
     if (coll.empty())
         return false;
 
@@ -816,6 +826,12 @@ inline bool NamespaceString::validCollectionName(StringData coll) {
     }
 
     return true;
+}
+
+template <typename T>
+std::string NamespaceStringBase<T>::getSisterNS(StringData local) const {
+    verify(local.size() && local[0] != '.');
+    return db().toString() + "." + local.toString();
 }
 
 }  // namespace mongo
