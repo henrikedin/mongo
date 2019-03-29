@@ -231,15 +231,15 @@ Status ParsedProjection::make(OperationContext* opCtx,
                               "Cannot specify positional operator and $elemMatch.");
             }
 
-            std::string after = mongoutils::str::after(elem.fieldName(), ".$");
-            if (mongoutils::str::contains(after, ".$")) {
+            StringData after = mongoutils::str::after(elem.fieldName(), ".$");
+            if (after.find(".$"_sd) != std::string::npos) {
                 mongoutils::str::stream ss;
                 ss << "Positional projection '" << elem.fieldName() << "' contains "
                    << "the positional operator more than once.";
                 return Status(ErrorCodes::BadValue, ss);
             }
 
-            std::string matchfield = mongoutils::str::before(elem.fieldName(), '.');
+            StringData matchfield = mongoutils::str::before(elem.fieldName(), '.');
             if (query && !_hasPositionalOperatorMatch(query, matchfield)) {
                 mongoutils::str::stream ss;
                 ss << "Positional projection '" << elem.fieldName() << "' does not "
@@ -390,7 +390,7 @@ bool ParsedProjection::_isPositionalOperator(const char* fieldName) {
 
 // static
 bool ParsedProjection::_hasPositionalOperatorMatch(const MatchExpression* const query,
-                                                   const std::string& matchfield) {
+                                                   StringData matchfield) {
     if (query->getCategory() == MatchExpression::MatchCategory::kLogical) {
         for (unsigned int i = 0; i < query->numChildren(); ++i) {
             if (_hasPositionalOperatorMatch(query->getChild(i), matchfield)) {
@@ -406,7 +406,7 @@ bool ParsedProjection::_hasPositionalOperatorMatch(const MatchExpression* const 
         if (!pathRawData) {
             return false;
         }
-        std::string pathPrefix = mongoutils::str::before(pathRawData, '.');
+        StringData pathPrefix = mongoutils::str::before(pathRawData, '.');
         return pathPrefix == matchfield;
     }
     return false;

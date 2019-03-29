@@ -128,24 +128,27 @@ inline bool equals(const char* a, const char* b) {
     return strcmp(a, b) == 0;
 }
 
-/** find char x, and return rest of std::string thereafter, or "" if not found */
+/** find char x, and return rest of std::string thereafter, or mongo::StringData() if not found */
 inline const char* after(const char* s, char x) {
     const char* p = strchr(s, x);
     return (p != 0) ? p + 1 : "";
 }
-inline std::string after(const std::string& s, char x) {
+inline mongo::StringData after(const std::string& s, char x) {
     const char* p = strchr(s.c_str(), x);
-    return (p != 0) ? std::string(p + 1) : "";
+    auto offset = p + 1 - s.c_str();
+    return (p != 0) ? mongo::StringData(p + 1, s.size() - offset) : mongo::StringData();
 }
 
-/** find std::string x, and return rest of std::string thereafter, or "" if not found */
+/** find std::string x, and return rest of std::string thereafter, or mongo::StringData() if not found */
 inline const char* after(const char* s, const char* x) {
     const char* p = strstr(s, x);
     return (p != 0) ? p + strlen(x) : "";
 }
-inline std::string after(const std::string& s, const std::string& x) {
+inline mongo::StringData after(const std::string& s, const std::string& x) {
     const char* p = strstr(s.c_str(), x.c_str());
-    return (p != 0) ? std::string(p + x.size()) : "";
+    auto offset = p + x.size() - s.c_str();
+    return (p != 0) ? mongo::StringData(p + x.size(), s.size() - offset)
+                    : mongo::StringData();
 }
 
 /** @return true if s contains x
@@ -160,15 +163,15 @@ inline bool contains(const std::string& s, char x) {
 }
 
 /** @return everything before the character x, else entire std::string */
-inline std::string before(const std::string& s, char x) {
+inline mongo::StringData before(const std::string& s, char x) {
     const char* p = strchr(s.c_str(), x);
-    return (p != 0) ? s.substr(0, p - s.c_str()) : s;
+    return (p != 0) ? mongo::StringData(s.c_str(), p - s.c_str()) : mongo::StringData(s);
 }
 
 /** @return everything before the std::string x, else entire std::string */
-inline std::string before(const std::string& s, const std::string& x) {
+inline mongo::StringData before(const std::string& s, const std::string& x) {
     const char* p = strstr(s.c_str(), x.c_str());
-    return (p != 0) ? s.substr(0, p - s.c_str()) : s;
+    return (p != 0) ? mongo::StringData(s.c_str(), p - s.c_str()) : mongo::StringData(s);
 }
 
 /** check if if strings share a common starting prefix
@@ -208,29 +211,29 @@ inline unsigned toUnsigned(const std::string& a) {
     and R is empty.
     @return true if char found
 */
-inline bool splitOn(const std::string& s, char c, std::string& L, std::string& R) {
+inline bool splitOn(const std::string& s, char c, mongo::StringData& L, mongo::StringData& R) {
     const char* start = s.c_str();
     const char* p = strchr(start, c);
     if (p == 0) {
-        L = s;
-        R.clear();
+        L = mongo::StringData(s);
+        R = mongo::StringData();
         return false;
     }
-    L = std::string(start, p - start);
-    R = std::string(p + 1);
+    L = mongo::StringData(start, p - start);
+    R = mongo::StringData(p + 1, s.size() - (s.c_str() - (p + 1)));
     return true;
 }
 /** split scanning reverse direction. Splits ONCE ONLY. */
-inline bool rSplitOn(const std::string& s, char c, std::string& L, std::string& R) {
+inline bool rSplitOn(const std::string& s, char c, mongo::StringData& L, mongo::StringData& R) {
     const char* start = s.c_str();
     const char* p = strrchr(start, c);
     if (p == 0) {
-        L = s;
-        R.clear();
+        L = mongo::StringData(s);
+        R = mongo::StringData();
         return false;
     }
-    L = std::string(start, p - start);
-    R = std::string(p + 1);
+    L = mongo::StringData(start, p - start);
+    R = mongo::StringData(p + 1, s.size() - (s.c_str() - (p + 1)));
     return true;
 }
 
@@ -244,11 +247,11 @@ inline unsigned count(const std::string& s, char c) {
 }
 
 /** trim leading spaces. spaces only, not tabs etc. */
-inline std::string ltrim(const std::string& s) {
+inline mongo::StringData ltrim(const std::string& s) {
     const char* p = s.c_str();
     while (*p == ' ')
         p++;
-    return p;
+    return mongo::StringData(p, s.size() - (p - s.c_str()));
 }
 
 /**

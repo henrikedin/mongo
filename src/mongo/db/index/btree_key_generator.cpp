@@ -88,7 +88,8 @@ BSONElement BtreeKeyGenerator::_extractNextElement(const BSONObj& obj,
                                                    const PositionalPathInfo& positionalInfo,
                                                    const char** field,
                                                    bool* arrayNestedArray) const {
-    std::string firstField = mongoutils::str::before(*field, '.');
+
+    StringData firstField = mongoutils::str::before(*field, '.');
     bool haveObjField = !obj.getField(firstField).eoo();
     BSONElement arrField = positionalInfo.positionallyIndexedElt;
 
