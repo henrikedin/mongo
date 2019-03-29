@@ -248,7 +248,8 @@ public:
      * Version which does not check for the RSTL.  Do not use in new code. Without the RSTL held,
      * the return value may be inaccurate by the time the function returns.
      */
-    virtual bool canAcceptWritesFor_UNSAFE(OperationContext* opCtx, const NamespaceStringRef& ns) = 0;
+    virtual bool canAcceptWritesFor_UNSAFE(OperationContext* opCtx,
+                                           const NamespaceStringRef& ns) = 0;
 
     /**
      * Checks if the current replica set configuration can satisfy the given write concern.
