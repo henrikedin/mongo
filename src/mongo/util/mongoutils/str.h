@@ -139,7 +139,8 @@ inline mongo::StringData after(const std::string& s, char x) {
     return (p != 0) ? mongo::StringData(p + 1, s.size() - offset) : mongo::StringData();
 }
 
-/** find std::string x, and return rest of std::string thereafter, or mongo::StringData() if not found */
+/** find std::string x, and return rest of std::string thereafter, or mongo::StringData() if not
+ * found */
 inline const char* after(const char* s, const char* x) {
     const char* p = strstr(s, x);
     return (p != 0) ? p + strlen(x) : "";
@@ -147,8 +148,7 @@ inline const char* after(const char* s, const char* x) {
 inline mongo::StringData after(const std::string& s, const std::string& x) {
     const char* p = strstr(s.c_str(), x.c_str());
     auto offset = p + x.size() - s.c_str();
-    return (p != 0) ? mongo::StringData(p + x.size(), s.size() - offset)
-                    : mongo::StringData();
+    return (p != 0) ? mongo::StringData(p + x.size(), s.size() - offset) : mongo::StringData();
 }
 
 /** @return true if s contains x
