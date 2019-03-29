@@ -49,7 +49,7 @@ using std::vector;
 
 std::string getPathPrefix(std::string path) {
     if (mongoutils::str::contains(path, '.')) {
-        return mongoutils::str::before(path, '.');
+        return mongoutils::str::before(path, '.').toString();
     } else {
         return path;
     }
