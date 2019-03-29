@@ -220,7 +220,7 @@ inline bool splitOn(const std::string& s, char c, mongo::StringData& L, mongo::S
         return false;
     }
     L = mongo::StringData(start, p - start);
-    R = mongo::StringData(p + 1, s.size() - (s.c_str() - (p + 1)));
+    R = mongo::StringData(p + 1, s.size() - (p + 1 - s.c_str()));
     return true;
 }
 /** split scanning reverse direction. Splits ONCE ONLY. */
@@ -233,7 +233,7 @@ inline bool rSplitOn(const std::string& s, char c, mongo::StringData& L, mongo::
         return false;
     }
     L = mongo::StringData(start, p - start);
-    R = mongo::StringData(p + 1, s.size() - (s.c_str() - (p + 1)));
+    R = mongo::StringData(p + 1, s.size() - (p + 1 - s.c_str()));
     return true;
 }
 
