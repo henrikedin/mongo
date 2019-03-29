@@ -240,11 +240,19 @@ std::ostream& operator<<(std::ostream& stream, const NamespaceString& nss) {
     return stream << nss.toString();
 }
 
+std::ostream& operator<<(std::ostream& stream, const NamespaceStringRef& nss) {
+    return stream << nss.toString();
+}
+
 std::ostream& operator<<(std::ostream& stream, const NamespaceStringOrUUID& nsOrUUID) {
     return stream << nsOrUUID.toString();
 }
 
 StringBuilder& operator<<(StringBuilder& builder, const NamespaceString& nss) {
+    return builder << nss.toString();
+}
+
+StringBuilder& operator<<(StringBuilder& builder, const NamespaceStringRef& nss) {
     return builder << nss.toString();
 }
 

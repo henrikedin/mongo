@@ -512,8 +512,10 @@ private:
 };
 
 std::ostream& operator<<(std::ostream& stream, const NamespaceString& nss);
+std::ostream& operator<<(std::ostream& stream, const NamespaceStringRef& nss);
 std::ostream& operator<<(std::ostream& stream, const NamespaceStringOrUUID& nsOrUUID);
 StringBuilder& operator<<(StringBuilder& builder, const NamespaceString& nss);
+StringBuilder& operator<<(StringBuilder& builder, const NamespaceStringRef& nss);
 StringBuilder& operator<<(StringBuilder& builder, const NamespaceStringOrUUID& nsOrUUID);
 
 /**
