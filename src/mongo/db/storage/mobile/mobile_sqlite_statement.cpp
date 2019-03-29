@@ -84,6 +84,12 @@ SqliteStatement::~SqliteStatement() {
     if (_sqlQuerySize > MAX_FIXED_SIZE) {
         delete[] _sqlQuery.dynamic;
     }
+
+    static_assert(
+        sizeof(SqliteStatement) ==
+            sizeof(std::aligned_storage_t<sizeof(SqliteStatement), alignof(SqliteStatement)>),
+        "expected size to be exactly its aligned storage size to not waste memory, "
+        "adjust MAX_FIXED_SIZE to make this true");
 }
 
 void SqliteStatement::bindInt(int paramIndex, int64_t intValue) {
