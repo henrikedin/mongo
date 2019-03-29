@@ -131,6 +131,7 @@ public:
     uint64_t _id;
 
 private:
+    // Static memory that fits short SQL statements to avoid a temporary memory allocation
     static constexpr size_t MAX_FIXED_SIZE = 96;
     const char* getSqlQuery() const {
         return _sqlQuerySize > MAX_FIXED_SIZE ? _sqlQuery.dynamic : _sqlQuery.fixed;
@@ -147,7 +148,7 @@ private:
     std::size_t _sqlQuerySize;
     union {
         char fixed[MAX_FIXED_SIZE];
-        const char* dynamic;
+        char* dynamic;
     } _sqlQuery;
 };
 
@@ -207,11 +208,13 @@ SqliteStatement::SqliteStatement(const MobileSession& session, Args&&... args) {
                      ...) +
         1;
 
+    // Allocate dynamic buffer if fixed is not large enough
     if (_sqlQuerySize > MAX_FIXED_SIZE) {
         _sqlQuery.dynamic = new char[_sqlQuerySize];
     }
     char* buffer = const_cast<char*>(getSqlQuery());
 
+    // Copy all substrings into buffer for SQL statement
     (detail::stringAppend(
          buffer, std::forward<Args>(args), std::is_array<std::remove_reference_t<Args>>()),
      ...);
