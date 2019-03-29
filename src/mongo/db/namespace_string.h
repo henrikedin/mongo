@@ -280,6 +280,11 @@ public:
     static bool validCollectionName(StringData coll);
 
 protected:
+    NamespaceStringBase(T&& ns) : _ns(std::forward<T>(ns)), _dotIndex(_ns.find('.')) {
+        uassert(ErrorCodes::InvalidNamespace,
+                "namespaces cannot have embedded null characters",
+                _ns.find('\0') == std::string::npos);
+    }
     NamespaceStringBase(T&& ns, size_t dotIndex) : _ns(std::forward<T>(ns)), _dotIndex(dotIndex) {}
 
     T _ns;
@@ -344,11 +349,7 @@ public:
     /**
      * Constructs a NamespaceString from the fully qualified namespace named in "ns".
      */
-    explicit NamespaceString(StringData ns) : NamespaceStringBase(ns.toString(), _ns.find('.')) {
-        uassert(ErrorCodes::InvalidNamespace,
-                "namespaces cannot have embedded null characters",
-                _ns.find('\0') == std::string::npos);
-    }
+    explicit NamespaceString(StringData ns) : NamespaceStringBase(ns.toString()) {}
 
     /**
      * Constructs a NamespaceString for the given database and collection names.
@@ -378,14 +379,14 @@ public:
                 _ns.find('\0') == std::string::npos);
     }
 
-	/**
+    /**
      * Returns whether a namespace is replicated, based only on its string value. One notable
      * omission is that map reduce `tmp.mr` collections may or may not be replicated. Callers must
      * decide how to handle that case separately.
      */
     bool isReplicated() const;
 
-	bool isCollectionlessAggregateNS() const;
+    bool isCollectionlessAggregateNS() const;
     bool isListCollectionsCursorNS() const;
 
     /**
@@ -459,14 +460,9 @@ public:
 
 class NamespaceStringRef : public NamespaceStringBase<const std::string&> {
 public:
-    NamespaceStringRef(NamespaceString const& ns)
-        : NamespaceStringBase(ns.ns(), ns.dotIndex()) {}
+    NamespaceStringRef(NamespaceString const& ns) : NamespaceStringBase(ns.ns(), ns.dotIndex()) {}
 
-    explicit NamespaceStringRef(std::string const& ns) : NamespaceStringBase(ns, ns.find('.')) {
-        uassert(ErrorCodes::InvalidNamespace,
-                "namespaces cannot have embedded null characters",
-                _ns.find('\0') == std::string::npos);
-    }
+    explicit NamespaceStringRef(std::string const& ns) : NamespaceStringBase(ns) {}
 
     NamespaceStringRef(const NamespaceStringRef&) = delete;
     NamespaceStringRef(NamespaceStringRef&&) = delete;

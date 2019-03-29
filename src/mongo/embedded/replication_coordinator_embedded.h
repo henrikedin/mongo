@@ -79,7 +79,8 @@ public:
                                         const NamespaceStringRef& ns,
                                         bool slaveOk) override;
 
-    bool shouldRelaxIndexConstraints(OperationContext* opCtx, const NamespaceStringRef& ns) override;
+    bool shouldRelaxIndexConstraints(OperationContext* opCtx,
+                                     const NamespaceStringRef& ns) override;
 
     WriteConcernOptions getGetLastErrorDefault() override;
 
