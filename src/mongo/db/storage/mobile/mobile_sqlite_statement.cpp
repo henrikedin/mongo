@@ -55,7 +55,7 @@ void SqliteStatement::finalize() {
     if (!_stmt) {
         return;
     }
-    SQLITE_STMT_TRACE() << "Finalize: " << _sqlQuery;
+    SQLITE_STMT_TRACE() << "Finalize: " << getSqlQuery();
 
     int status = sqlite3_finalize(_stmt);
     fassert(37053, status == _exceptionStatus);
@@ -63,16 +63,16 @@ void SqliteStatement::finalize() {
 }
 
 void SqliteStatement::prepare(const MobileSession& session) {
-    SQLITE_STMT_TRACE() << "Preparing: " << _sqlQuery;
+    SQLITE_STMT_TRACE() << "Preparing: " << getSqlQuery();
 
-    int status = sqlite3_prepare_v2(
-        session.getSession(), _sqlQuery.c_str(), _sqlQuery.length() + 1, &_stmt, NULL);
+    int status =
+        sqlite3_prepare_v2(session.getSession(), getSqlQuery(), _sqlQuerySize, &_stmt, NULL);
     if (status == SQLITE_BUSY) {
         SQLITE_STMT_TRACE() << "Throwing writeConflictException, "
-                            << "SQLITE_BUSY while preparing: " << _sqlQuery;
+                            << "SQLITE_BUSY while preparing: " << getSqlQuery();
         throw WriteConflictException();
     } else if (status != SQLITE_OK) {
-        SQLITE_STMT_TRACE() << "Error while preparing: " << _sqlQuery;
+        SQLITE_STMT_TRACE() << "Error while preparing: " << getSqlQuery();
         std::string errMsg = "sqlite3_prepare_v2 failed: ";
         errMsg += sqlite3_errstr(status);
         uasserted(ErrorCodes::UnknownError, errMsg);
@@ -81,6 +81,9 @@ void SqliteStatement::prepare(const MobileSession& session) {
 
 SqliteStatement::~SqliteStatement() {
     finalize();
+    if (_sqlQuerySize > MAX_FIXED_SIZE) {
+        delete[] _sqlQuery.dynamic;
+    }
 }
 
 void SqliteStatement::bindInt(int paramIndex, int64_t intValue) {

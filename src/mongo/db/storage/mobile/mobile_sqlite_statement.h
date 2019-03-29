@@ -131,14 +131,24 @@ public:
     uint64_t _id;
 
 private:
+    static constexpr size_t MAX_FIXED_SIZE = 96;
+    const char* getSqlQuery() const {
+        return _sqlQuerySize > MAX_FIXED_SIZE ? _sqlQuery.dynamic : _sqlQuery.fixed;
+    }
+
     static AtomicWord<long long> _nextID;
     sqlite3_stmt* _stmt;
-    std::string _sqlQuery;
 
     // If the most recent call to sqlite3_step on this statement returned an error, the error is
     // returned again when the statement is finalized. This is used to verify that the last error
     // code returned matches the finalize error code, if there is any.
     int _exceptionStatus = SQLITE_OK;
+
+    std::size_t _sqlQuerySize;
+    union {
+        char fixed[MAX_FIXED_SIZE];
+        const char* dynamic;
+    } _sqlQuery;
 };
 
 namespace detail {
@@ -164,19 +174,25 @@ inline std::size_t stringLength(const std::string& str, std::false_type) {
     return str.size();
 }
 
-template <typename T>
-void stringAppend(std::string& str, T&& element) {
-    str.append(std::forward<T>(element));
+template <std::size_t N>
+constexpr void stringAppend(char*& dest, char const (&str)[N], std::true_type) {
+    auto bytes = N - 1;
+    memcpy(dest, str, bytes);
+    dest = dest + bytes;
 }
 
-template <>
-inline void stringAppend(std::string& str, StringData& sd) {
-    str.append(sd.rawData(), sd.size());
+inline void stringAppend(char*& dest, const char* str, std::false_type) {
+    dest = strcpy(dest, str) - 1;
 }
 
-template <>
-inline void stringAppend(std::string& str, const StringData& sd) {
-    str.append(sd.rawData(), sd.size());
+inline void stringAppend(char*& dest, const StringData& sd, std::false_type) {
+    memcpy(dest, sd.rawData(), sd.size());
+    dest += sd.size();
+}
+
+inline void stringAppend(char*& dest, const std::string& str, std::false_type) {
+    memcpy(dest, str.c_str(), str.size());
+    dest += str.size();
 }
 }  // namespace detail
 
@@ -186,11 +202,20 @@ SqliteStatement::SqliteStatement(const MobileSession& session, Args&&... args) {
     _id = _nextID.addAndFetch(1);
 
     // Reserve the size we need once to avoid any additional allocations
-    _sqlQuery.reserve((detail::stringLength(std::forward<Args>(args),
-                                            std::is_array<std::remove_reference_t<Args>>()) +
-                       ...) +
-                      1);
-    (detail::stringAppend(_sqlQuery, std::forward<Args>(args)), ...);
+    _sqlQuerySize = (detail::stringLength(std::forward<Args>(args),
+                                          std::is_array<std::remove_reference_t<Args>>()) +
+                     ...) +
+        1;
+
+    if (_sqlQuerySize > MAX_FIXED_SIZE) {
+        _sqlQuery.dynamic = new char[_sqlQuerySize];
+    }
+    char* buffer = const_cast<char*>(getSqlQuery());
+
+    (detail::stringAppend(
+         buffer, std::forward<Args>(args), std::is_array<std::remove_reference_t<Args>>()),
+     ...);
+    *buffer = '\0';
 
     prepare(session);
 }
