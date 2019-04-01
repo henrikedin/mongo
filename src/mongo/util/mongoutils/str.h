@@ -163,6 +163,12 @@ inline bool contains(const std::string& s, char x) {
 }
 
 /** @return everything before the character x, else entire std::string */
+inline mongo::StringData before(const char* s, char x) {
+    const char* p = strchr(s, x);
+    return (p != 0) ? mongo::StringData(s, p - s) : mongo::StringData(s);
+}
+
+/** @return everything before the character x, else entire std::string */
 inline mongo::StringData before(const std::string& s, char x) {
     const char* p = strchr(s.c_str(), x);
     return (p != 0) ? mongo::StringData(s.c_str(), p - s.c_str()) : mongo::StringData(s);
