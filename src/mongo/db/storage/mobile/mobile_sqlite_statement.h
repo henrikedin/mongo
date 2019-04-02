@@ -183,7 +183,7 @@ constexpr void stringAppend(char*& dest, char const (&str)[N], std::true_type) {
 }
 
 inline void stringAppend(char*& dest, const char* str, std::false_type) {
-    dest = strcpy(dest, str) - 1;
+    dest = strcpy(dest, str);
 }
 
 inline void stringAppend(char*& dest, const StringData& sd, std::false_type) {
