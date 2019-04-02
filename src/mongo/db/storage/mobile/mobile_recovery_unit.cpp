@@ -133,11 +133,13 @@ bool MobileRecoveryUnit::waitUntilDurable() {
         int checkpointedFrames = 0;
         // Use PASSIVE mode in order to avoid invariant failures when
         // used with mongod (e.g. for testing)
-        sqlite3_wal_checkpoint_v2(_session.get()->getSession(),
+        int ret = sqlite3_wal_checkpoint_v2(_session.get()->getSession(),
                                   NULL,
                                   SQLITE_CHECKPOINT_PASSIVE,
                                   &framesInWAL,
                                   &checkpointedFrames);
+        checkStatus(ret, SQLITE_OK, "sqlite3_wal_checkpoint_v2");
+        fassert(51160, framesInWAL != -1 && checkpointedFrames != -1);
         // Don't check and assert on a specific status here as when the SE is
         // used with multiple connections we can get back SQLITE_LOCKED
         RECOVERY_UNIT_TRACE() << "Checkpointed " << checkpointedFrames << " of the " << framesInWAL
