@@ -31,6 +31,9 @@
 
 #include <cstdlib>
 
+#include "mongo/stdx/mutex.h"
+#include "mongo/stdx/unordered_map.h"
+#include "mongo/util/assert_util.h"
 #include "mongo/util/signal_handlers_synchronous.h"
 
 #if defined(MONGO_USE_GPERFTOOLS_TCMALLOC)
@@ -39,9 +42,24 @@
 
 namespace mongo {
 
+stdx::mutex& alloc_mutex() {
+    static stdx::mutex am;
+    return am;
+}
+
+stdx::unordered_map<void*, size_t>& alloc_map() {
+static stdx::unordered_map<void*, size_t> am;
+return am;
+}
+
 void* mongoMalloc(size_t size) {
 #if defined(MONGO_USE_GPERFTOOLS_TCMALLOC)
     void* x = tc_malloc(size);
+    {
+        stdx::lock_guard lk(alloc_mutex());
+        alloc_map()[x] = size;
+    }
+
 #else
     void* x = std::malloc(size);
 #endif
@@ -54,6 +72,11 @@ void* mongoMalloc(size_t size) {
 void* mongoRealloc(void* ptr, size_t size) {
 #if defined(MONGO_USE_GPERFTOOLS_TCMALLOC)
     void* x = tc_realloc(ptr, size);
+    {
+        stdx::lock_guard lk(alloc_mutex());
+        alloc_map().erase(ptr);
+        alloc_map()[x] = size;
+    }
 #else
     void* x = std::realloc(ptr, size);
 #endif
@@ -66,6 +89,10 @@ void* mongoRealloc(void* ptr, size_t size) {
 void mongoFree(void* ptr) {
 #if defined(MONGO_USE_GPERFTOOLS_TCMALLOC)
     tc_free(ptr);
+    {
+        stdx::lock_guard lk(alloc_mutex());
+        alloc_map().erase(ptr);
+    }
 #else
     std::free(ptr);
 #endif
@@ -73,6 +100,17 @@ void mongoFree(void* ptr) {
 
 void mongoFree(void* ptr, size_t size) {
 #if defined(MONGO_USE_GPERFTOOLS_TCMALLOC)
+    size_t alloc_size;
+    {
+        stdx::lock_guard lk(alloc_mutex());
+        alloc_size = alloc_map().at(ptr);
+        fassert(51163, alloc_size == size);
+        alloc_map().erase(ptr);
+    }
+
+	//size_t tcmalloc_size = tc_malloc_size(ptr);
+    //fassert(51164, tcmalloc_size == 0 || tcmalloc_size == size);
+
     tc_free_sized(ptr, size);
 #else
     std::free(ptr);
