@@ -111,7 +111,10 @@ void mongoFree(void* ptr, size_t size) {
 	//size_t tcmalloc_size = tc_malloc_size(ptr);
     //fassert(51164, tcmalloc_size == 0 || tcmalloc_size == size);
 
-    tc_free_sized(ptr, size);
+	if (size < 4096) 
+		tc_free_sized(ptr, size);
+    else
+		tc_free(ptr);
 #else
     std::free(ptr);
 #endif
