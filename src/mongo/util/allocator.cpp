@@ -104,12 +104,9 @@ void mongoFree(void* ptr, size_t size) {
     {
         stdx::lock_guard lk(alloc_mutex());
         alloc_size = alloc_map().at(ptr);
-        fassert(51163, alloc_size == size);
+        fassert(51176, alloc_size == size);
         alloc_map().erase(ptr);
     }
-
-	//size_t tcmalloc_size = tc_malloc_size(ptr);
-    //fassert(51164, tcmalloc_size == 0 || tcmalloc_size == size);
 
 	if (size < 4096) 
 		tc_free_sized(ptr, size);
