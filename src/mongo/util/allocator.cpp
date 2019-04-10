@@ -103,7 +103,9 @@ void mongoFree(void* ptr, size_t size) {
     size_t alloc_size;
     {
         stdx::lock_guard lk(alloc_mutex());
-        alloc_size = alloc_map().at(ptr);
+        auto it = alloc_map().find(ptr);
+        fassert(51177, it != alloc_map().end());
+        alloc_size = it->second;
         fassert(51176, alloc_size == size);
         alloc_map().erase(ptr);
     }
