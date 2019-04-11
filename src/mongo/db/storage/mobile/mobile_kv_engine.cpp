@@ -51,86 +51,67 @@
 #include "mongo/util/scopeguard.h"
 
 namespace mongo {
+namespace {
+int64_t queryPragmaInt(const MobileSession& session, StringData pragma) {
+    SqliteStatement stmt(session, "PRAGMA ", pragma, ";");
+    stmt.step(SQLITE_ROW);
+    return stmt.getColInt(0);
+}
 
-class MobileSession;
-class SqliteStatement;
+std::string queryPragmaStr(const MobileSession& session, StringData pragma) {
+    SqliteStatement stmt(session, "PRAGMA ", pragma, ";");
+    stmt.step(SQLITE_ROW);
+    return stmt.getColText(0);
+}
+}  // namespace
 
-MobileKVEngine::MobileKVEngine(const std::string& path, const embedded::MobileOptions& options)
+MobileKVEngine::MobileKVEngine(const std::string& path,
+                               const embedded::MobileOptions& options,
+                               ServiceContext* serviceContext)
     : _options(options) {
     _initDBPath(path);
 
-    // Initialize the database to be in WAL mode.
-    sqlite3* initSession;
-    int status = sqlite3_open(_path.c_str(), &initSession);
-    embedded::checkStatus(status, SQLITE_OK, "sqlite3_open");
-
-    // Guarantees that sqlite3_close() will be called when the function returns.
-    ON_BLOCK_EXIT([&initSession] { sqlite3_close(initSession); });
-
-    embedded::configureSession(initSession, _options);
-
-    // Check and ensure that WAL mode is working as expected
-    // This is not something that we want to be configurable
-    {
-        sqlite3_stmt* stmt;
-        status = sqlite3_prepare_v2(initSession, "PRAGMA journal_mode;", -1, &stmt, NULL);
-        embedded::checkStatus(status, SQLITE_OK, "sqlite3_prepare_v2");
-
-        status = sqlite3_step(stmt);
-        embedded::checkStatus(status, SQLITE_ROW, "sqlite3_step");
-
-        // Pragma returns current mode in SQLite, ensure it is "wal" mode.
-        const void* colText = sqlite3_column_text(stmt, 0);
-        const char* mode = reinterpret_cast<const char*>(colText);
-        fassert(37001, !strcmp(mode, "wal"));
-        status = sqlite3_finalize(stmt);
-        embedded::checkStatus(status, SQLITE_OK, "sqlite3_finalize");
-
-        LOG(MOBILE_LOG_LEVEL_LOW) << "MobileSE: Confirmed SQLite database opened in WAL mode";
-    }
-
-    // Check and ensure that synchronous mode is working as expected
-    {
-        sqlite3_stmt* stmt;
-        status = sqlite3_prepare_v2(initSession, "PRAGMA synchronous;", -1, &stmt, NULL);
-        embedded::checkStatus(status, SQLITE_OK, "sqlite3_prepare_v2");
-
-        status = sqlite3_step(stmt);
-        embedded::checkStatus(status, SQLITE_ROW, "sqlite3_step");
-
-        // Pragma returns current "synchronous" setting
-        std::uint32_t sync_val = sqlite3_column_int(stmt, 0);
-        fassert(50869, sync_val == _options.mobileDurabilityLevel);
-        status = sqlite3_finalize(stmt);
-        embedded::checkStatus(status, SQLITE_OK, "sqlite3_finalize");
-
-        LOG(MOBILE_LOG_LEVEL_LOW) << "MobileSE: Confirmed SQLite database has synchronous "
-                                  << "set to: " << _options.mobileDurabilityLevel;
-    }
-
-    // Check and ensure that we were able to set the F_FULLFSYNC fcntl on darwin kernels
-    // This prevents data corruption as fsync doesn't work as expected
-    // This is not something that we want to be configurable
-    {
-        sqlite3_stmt* stmt;
-        status = sqlite3_prepare_v2(initSession, "PRAGMA fullfsync;", -1, &stmt, NULL);
-        embedded::checkStatus(status, SQLITE_OK, "sqlite3_prepare_v2");
-
-        status = sqlite3_step(stmt);
-        embedded::checkStatus(status, SQLITE_ROW, "sqlite3_step");
-
-        // Pragma returns current fullsync setting, ensure it is enabled.
-        int fullfsync_val = sqlite3_column_int(stmt, 0);
-        fassert(50868, fullfsync_val == 1);
-        status = sqlite3_finalize(stmt);
-        embedded::checkStatus(status, SQLITE_OK, "sqlite3_finalize");
-
-        LOG(MOBILE_LOG_LEVEL_LOW) << "MobileSE: Confirmed SQLite database is set to fsync "
-                                  << "with F_FULLFSYNC if the platform supports it (currently"
-                                  << " only darwin kernels). Value: " << fullfsync_val;
-    }
-
     _sessionPool.reset(new MobileSessionPool(_path, _options));
+
+    auto session =
+        _sessionPool->getSession(nullptr);  // nullptr is OK here, there's no other sessions around
+
+    fassert(37001, queryPragmaStr(*session, "journal_mode"_sd) == "wal");
+    LOG(MOBILE_LOG_LEVEL_LOW) << "MobileSE: Confirmed SQLite database opened in WAL mode";
+
+    fassert(50869, queryPragmaInt(*session, "synchronous"_sd) == _options.mobileDurabilityLevel);
+    LOG(MOBILE_LOG_LEVEL_LOW) << "MobileSE: Confirmed SQLite database has synchronous set to: "
+                              << _options.mobileDurabilityLevel;
+
+    fassert(50868, queryPragmaInt(*session, "fullfsync"_sd) == 1);
+    LOG(MOBILE_LOG_LEVEL_LOW) << "MobileSE: Confirmed SQLite database is set to fsync with "
+                                 "F_FULLFSYNC if the platform supports it (currently only darwin "
+                                 "kernels). Value: 1";
+
+    _vacuumJob = serviceContext->getPeriodicRunner()->makeJob(
+        PeriodicRunner::PeriodicJob("SQLiteVacuumJob",
+                                    [this](Client* client) { maybeVacuum(client); },
+                                    Minutes(options.vacuumCheckIntervalMinutes)));
+    _vacuumJob->start();
+}
+
+void MobileKVEngine::cleanShutdown() {
+    maybeVacuum(Client::getCurrent());
+}
+
+void MobileKVEngine::maybeVacuum(Client* client) {
+    OperationContext* opCtx = client->getOperationContext();
+    auto session = _sessionPool->getSession(opCtx);
+    constexpr int kPageSize = 4096;  // SQLite default
+    auto pageCount = queryPragmaInt(*session, "page_count"_sd);
+    auto freelistCount = queryPragmaInt(*session, "freelist_count"_sd);
+    LOG(MOBILE_LOG_LEVEL_LOW) << "MobileSE: Evaluating if we need to vacuum. page_count = "
+                              << pageCount << ", freelist_count = " << freelistCount;
+    if ((pageCount > 0 && (float)freelistCount / pageCount >= _options.vacuumFreePageRatio) ||
+        (freelistCount * kPageSize >= _options.vacuumFreeSizeMB * 1024 * 1024)) {
+        LOG(MOBILE_LOG_LEVEL_LOW) << "MobileSE: Performing incremental vacuum";
+        SqliteStatement::execQuery(session.get(), "PRAGMA incremental_vacuum;");
+    }
 }
 
 void MobileKVEngine::_initDBPath(const std::string& path) {
@@ -252,9 +233,9 @@ int64_t MobileKVEngine::getIdentSize(OperationContext* opCtx, StringData ident) 
     SqliteStatement colNameStmt(*session, "PRAGMA table_info(\"", ident, "\")");
 
     colNameStmt.step(SQLITE_ROW);
-    std::string keyColName(static_cast<const char*>(colNameStmt.getColText(1)));
+    std::string keyColName(colNameStmt.getColText(1));
     colNameStmt.step(SQLITE_ROW);
-    std::string valueColName(static_cast<const char*>(colNameStmt.getColText(1)));
+    std::string valueColName(colNameStmt.getColText(1));
     colNameStmt.step(SQLITE_DONE);
 
     // Get total data size of key-value columns.

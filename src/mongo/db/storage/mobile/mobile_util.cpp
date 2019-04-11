@@ -159,7 +159,7 @@ void doValidate(OperationContext* opCtx, ValidateResults* results) {
         int status;
         // By default, the integrity check returns the first 100 errors found.
         while ((status = validateStmt.step()) == SQLITE_ROW) {
-            std::string errMsg(reinterpret_cast<const char*>(validateStmt.getColText(0)));
+            std::string errMsg(validateStmt.getColText(0));
 
             if (errMsg == "ok") {
                 // If the first message returned is "ok", the integrity check passed without
