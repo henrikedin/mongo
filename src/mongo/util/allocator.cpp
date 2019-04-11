@@ -89,6 +89,7 @@ void* mongoRealloc(void* ptr, size_t size) {
 void mongoFree(void* ptr) {
 #if defined(MONGO_USE_GPERFTOOLS_TCMALLOC)
     tc_free(ptr);
+    if (ptr)
     {
         stdx::lock_guard lk(alloc_mutex());
         alloc_map().erase(ptr);
@@ -101,6 +102,7 @@ void mongoFree(void* ptr) {
 void mongoFree(void* ptr, size_t size) {
 #if defined(MONGO_USE_GPERFTOOLS_TCMALLOC)
     size_t alloc_size;
+    if (ptr)
     {
         stdx::lock_guard lk(alloc_mutex());
         auto it = alloc_map().find(ptr);
