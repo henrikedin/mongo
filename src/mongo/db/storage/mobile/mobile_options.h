@@ -27,27 +27,29 @@
  *    it in the license file.
  */
 
-#include "mongo/platform/basic.h"
+#pragma once
 
-#include "mongo/util/options_parser/startup_option_init.h"
+#include <string>
 
-#include <iostream>
-
-#include "mongo/db/storage/mobile/mobile_global_options.h"
-#include "mongo/util/exit_code.h"
-#include "mongo/util/options_parser/startup_options.h"
-
-namespace moe = mongo::optionenvironment;
+#include "mongo/base/status.h"
+#include "mongo/util/options_parser/environment.h"
 
 namespace mongo {
+namespace embedded {
 
-MONGO_STARTUP_OPTIONS_STORE(MobileOptions)(InitializerContext* context) {
-    Status ret = mobileGlobalOptions.store(moe::startupOptionsParsed);
-    if (!ret.isOK()) {
-        std::cerr << ret.toString() << std::endl;
-        std::cerr << "try '" << context->args()[0] << " --help' for more information" << std::endl;
-        ::_exit(EXIT_BADOPTIONS);
-    }
-    return Status::OK();
-}
+struct MobileOptions {
+    // Initialize to broken nonsense defaults, the real ones are in IDL
+    uint32_t mobileDurabilityLevel = 0;
+    uint32_t mobileCacheSizeKB = 0;
+    uint32_t mobileMmapSizeKB = 0;
+    uint32_t mobileJournalSizeLimitKB = 0;
+
+    double vacuumFreePageRatio = 0.0;
+    uint32_t vacuumFreeSizeMB = 0;
+    uint32_t vacuumCheckIntervalMinutes = 0;
+};
+
+extern MobileOptions mobileGlobalOptions;
+
+}  // namespace embedded
 }  // namespace mongo
