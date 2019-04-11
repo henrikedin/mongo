@@ -33,6 +33,7 @@
 
 #include "mongo/db/storage/journal_listener.h"
 #include "mongo/db/storage/kv/kv_engine.h"
+#include "mongo/db/storage/mobile/mobile_options.h"
 #include "mongo/db/storage/mobile/mobile_session_pool.h"
 #include "mongo/stdx/mutex.h"
 #include "mongo/util/string_map.h"
@@ -43,11 +44,7 @@ class JournalListener;
 
 class MobileKVEngine : public KVEngine {
 public:
-    MobileKVEngine(const std::string& path,
-                   std::uint32_t durabilityLevel,
-                   std::uint32_t cacheSizeKB,
-                   std::uint32_t mmapSizeKB,
-                   std::uint32_t journalSizeLimitKB);
+    MobileKVEngine(const std::string& path, const embedded::MobileOptions& options);
 
     RecoveryUnit* newRecoveryUnit() override;
 
@@ -147,6 +144,7 @@ private:
     JournalListener* _journalListener = &NoOpJournalListener::instance;
 
     std::string _path;
+    embedded::MobileOptions _options;
 };
 
 }  // namespace mongo

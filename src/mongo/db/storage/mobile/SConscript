@@ -16,9 +16,8 @@ env.Library(
         'mobile_session_pool.cpp',
         'mobile_sqlite_statement.cpp',
         'mobile_util.cpp',
-        'mobile_global_options.cpp',
-        'mobile_options_init.cpp',
-        env.Idlc('mobile_global_options.idl')[0],
+        'mobile_options.cpp',
+        env.Idlc('mobile_options.idl')[0],
         ],
     LIBDEPS=[
         '$BUILD_DIR/mongo/base',

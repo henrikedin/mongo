@@ -55,11 +55,8 @@ namespace mongo {
 class MobileSession;
 class SqliteStatement;
 
-MobileKVEngine::MobileKVEngine(const std::string& path,
-                               std::uint32_t durabilityLevel,
-                               std::uint32_t cacheSizeKB,
-                               std::uint32_t mmapSizeKB,
-                               std::uint32_t journalSizeLimitKB) {
+MobileKVEngine::MobileKVEngine(const std::string& path, const embedded::MobileOptions& options)
+    : _options(options) {
     _initDBPath(path);
 
     // Initialize the database to be in WAL mode.
@@ -70,7 +67,7 @@ MobileKVEngine::MobileKVEngine(const std::string& path,
     // Guarantees that sqlite3_close() will be called when the function returns.
     ON_BLOCK_EXIT([&initSession] { sqlite3_close(initSession); });
 
-    embedded::configureSession(initSession);
+    embedded::configureSession(initSession, _options);
 
     // Check and ensure that WAL mode is working as expected
     // This is not something that we want to be configurable
@@ -103,12 +100,12 @@ MobileKVEngine::MobileKVEngine(const std::string& path,
 
         // Pragma returns current "synchronous" setting
         std::uint32_t sync_val = sqlite3_column_int(stmt, 0);
-        fassert(50869, sync_val == durabilityLevel);
+        fassert(50869, sync_val == _options.mobileDurabilityLevel);
         status = sqlite3_finalize(stmt);
         embedded::checkStatus(status, SQLITE_OK, "sqlite3_finalize");
 
         LOG(MOBILE_LOG_LEVEL_LOW) << "MobileSE: Confirmed SQLite database has synchronous "
-                                  << "set to: " << durabilityLevel;
+                                  << "set to: " << _options.mobileDurabilityLevel;
     }
 
     // Check and ensure that we were able to set the F_FULLFSYNC fcntl on darwin kernels
@@ -133,7 +130,7 @@ MobileKVEngine::MobileKVEngine(const std::string& path,
                                   << " only darwin kernels). Value: " << fullfsync_val;
     }
 
-    _sessionPool.reset(new MobileSessionPool(_path));
+    _sessionPool.reset(new MobileSessionPool(_path, _options));
 }
 
 void MobileKVEngine::_initDBPath(const std::string& path) {
