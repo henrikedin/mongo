@@ -195,7 +195,7 @@ void configureSession(sqlite3* session, const MobileOptions& options) {
     executePragma("journal_mode"_sd, "WAL"_sd);
 
     // synchronous = NORMAL(1) is recommended with WAL, but we allow it to be overriden
-    executePragma("synchronous"_sd, std::to_string(options.mobileDurabilityLevel));
+    executePragma("synchronous"_sd, std::to_string(options.durabilityLevel));
 
     // Set full fsync on OSX (only supported there) to ensure durability
     executePragma("fullfsync"_sd, "1"_sd);
@@ -207,9 +207,9 @@ void configureSession(sqlite3* session, const MobileOptions& options) {
     // Cache size described as KB should be set as negative number
     // https://sqlite.org/pragma.html#pragma_cache_size
     executePragma("cache_size"_sd,
-                  std::to_string(-static_cast<int32_t>(options.mobileCacheSizeKB)));
-    executePragma("mmap_size"_sd, std::to_string(options.mobileMmapSizeKB * 1024));
-    executePragma("journal_size_limit"_sd, std::to_string(options.mobileJournalSizeLimitKB * 1024));
+                  std::to_string(-static_cast<int32_t>(options.cacheSizeKB)));
+    executePragma("mmap_size"_sd, std::to_string(options.mmapSizeKB * 1024));
+    executePragma("journal_size_limit"_sd, std::to_string(options.journalSizeLimitKB * 1024));
 }
 
 }  // namespace embedded

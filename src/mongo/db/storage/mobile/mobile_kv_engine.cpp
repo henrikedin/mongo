@@ -37,6 +37,7 @@
 #include <memory>
 #include <vector>
 
+#include "mongo/db/concurrency/d_concurrency.h"
 #include "mongo/db/concurrency/write_conflict_exception.h"
 #include "mongo/db/index/index_descriptor.h"
 #include "mongo/db/storage/mobile/mobile_index.h"
@@ -79,9 +80,9 @@ MobileKVEngine::MobileKVEngine(const std::string& path,
     fassert(37001, queryPragmaStr(*session, "journal_mode"_sd) == "wal");
     LOG(MOBILE_LOG_LEVEL_LOW) << "MobileSE: Confirmed SQLite database opened in WAL mode";
 
-    fassert(50869, queryPragmaInt(*session, "synchronous"_sd) == _options.mobileDurabilityLevel);
+    fassert(50869, queryPragmaInt(*session, "synchronous"_sd) == _options.durabilityLevel);
     LOG(MOBILE_LOG_LEVEL_LOW) << "MobileSE: Confirmed SQLite database has synchronous set to: "
-                              << _options.mobileDurabilityLevel;
+                              << _options.durabilityLevel;
 
     fassert(50868, queryPragmaInt(*session, "fullfsync"_sd) == 1);
     LOG(MOBILE_LOG_LEVEL_LOW) << "MobileSE: Confirmed SQLite database is set to fsync with "
@@ -110,6 +111,7 @@ void MobileKVEngine::maybeVacuum(Client* client) {
     if ((pageCount > 0 && (float)freelistCount / pageCount >= _options.vacuumFreePageRatio) ||
         (freelistCount * kPageSize >= _options.vacuumFreeSizeMB * 1024 * 1024)) {
         LOG(MOBILE_LOG_LEVEL_LOW) << "MobileSE: Performing incremental vacuum";
+        Lock::GlobalLock lk(opCtx, MODE_X);
         SqliteStatement::execQuery(session.get(), "PRAGMA incremental_vacuum;");
     }
 }

@@ -39,10 +39,10 @@ namespace embedded {
 
 struct MobileOptions {
     // Initialize to broken nonsense defaults, the real ones are in IDL
-    uint32_t mobileDurabilityLevel = 0;
-    uint32_t mobileCacheSizeKB = 0;
-    uint32_t mobileMmapSizeKB = 0;
-    uint32_t mobileJournalSizeLimitKB = 0;
+    uint32_t durabilityLevel = 0;
+    uint32_t cacheSizeKB = 0;
+    uint32_t mmapSizeKB = 0;
+    uint32_t journalSizeLimitKB = 0;
 
     double vacuumFreePageRatio = 0.0;
     uint32_t vacuumFreeSizeMB = 0;

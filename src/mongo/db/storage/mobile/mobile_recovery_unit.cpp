@@ -135,7 +135,7 @@ bool MobileRecoveryUnit::waitUntilDurable() {
     // before going down but our powercycle test bench require it. Therefore make sure embedded does
     // not call this (by disabling writeConcern j:true) but allow it when this is used inside
     // mongod.
-    if (_sessionPool->getOptions().mobileDurabilityLevel < 2) {
+    if (_sessionPool->getOptions().durabilityLevel < 2) {
         OperationContext* opCtx = Client::getCurrent()->getOperationContext();
         _ensureSession(opCtx);
         RECOVERY_UNIT_TRACE() << "waitUntilDurable called, attempting to perform a checkpoint";
