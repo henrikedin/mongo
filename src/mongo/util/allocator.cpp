@@ -57,9 +57,10 @@ return am;
 
 void* mongoMalloc(size_t size) {
 #if defined(MONGO_USE_GPERFTOOLS_TCMALLOC)
+    void* x;
     {
         stdx::lock_guard lk(alloc_mutex());
-        void* x = tc_malloc(size);
+        x = tc_malloc(size);
         alloc_map()[x] = size;
     }
 
@@ -74,13 +75,13 @@ void* mongoMalloc(size_t size) {
 
 void* mongoRealloc(void* ptr, size_t size) {
 #if defined(MONGO_USE_GPERFTOOLS_TCMALLOC)
+    void* x;
     {
         stdx::lock_guard lk(alloc_mutex());
         alloc_map().erase(ptr);
 
-		void* x = tc_realloc(ptr, size);
+		x = tc_realloc(ptr, size);
 
-        stdx::lock_guard lk(alloc_mutex());
         alloc_map()[x] = size;
     }
 #else
