@@ -295,7 +295,7 @@ std::vector<std::string> MobileKVEngine::getAllIdents(OperationContext* opCtx) c
 
     int status;
     while ((status = getTablesStmt.step()) == SQLITE_ROW) {
-        std::string tableName(reinterpret_cast<const char*>(getTablesStmt.getColText(0)));
+        std::string tableName(getTablesStmt.getColText(0));
         idents.push_back(tableName);
     }
     embedded::checkStatus(status, SQLITE_DONE, "sqlite3_step");
