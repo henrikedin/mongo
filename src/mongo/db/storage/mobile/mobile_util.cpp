@@ -206,8 +206,7 @@ void configureSession(sqlite3* session, const MobileOptions& options) {
     // Set some additional internal sizes for this session
     // Cache size described as KB should be set as negative number
     // https://sqlite.org/pragma.html#pragma_cache_size
-    executePragma("cache_size"_sd,
-                  std::to_string(-static_cast<int32_t>(options.cacheSizeKB)));
+    executePragma("cache_size"_sd, std::to_string(-static_cast<int32_t>(options.cacheSizeKB)));
     executePragma("mmap_size"_sd, std::to_string(options.mmapSizeKB * 1024));
     executePragma("journal_size_limit"_sd, std::to_string(options.journalSizeLimitKB * 1024));
 }

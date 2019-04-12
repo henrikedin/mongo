@@ -45,6 +45,19 @@ if mobile_se:
         '$BUILD_DIR/mongo/mongod',
         '$BUILD_DIR/mongo/dbtests/dbtest',
         ]
+        
+    env.Library(
+        target='mobile_options_mongod',
+        source=[
+            'mobile_options_mongod.cpp',
+            ],
+        PROGDEPS_DEPENDENTS=serveronlyProgDepsDependents,
+        LIBDEPS=[
+            '$BUILD_DIR/mongo/util/options_parser/options_parser',
+            ],
+        LIBDEPS_PRIVATE=[
+        ],
+    )
 
 env.Library(
     target='storage_mobile',

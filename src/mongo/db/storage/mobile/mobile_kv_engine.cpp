@@ -38,6 +38,7 @@
 #include <vector>
 
 #include "mongo/db/concurrency/d_concurrency.h"
+#include "mongo/db/concurrency/lock_state.h"
 #include "mongo/db/concurrency/write_conflict_exception.h"
 #include "mongo/db/index/index_descriptor.h"
 #include "mongo/db/storage/mobile/mobile_index.h"
@@ -91,7 +92,10 @@ MobileKVEngine::MobileKVEngine(const std::string& path,
 
     _vacuumJob = serviceContext->getPeriodicRunner()->makeJob(
         PeriodicRunner::PeriodicJob("SQLiteVacuumJob",
-                                    [this](Client* client) { maybeVacuum(client); },
+                                    [this](Client* client) {
+                                        client->getServiceContext()->waitForStartupComplete();
+                                        maybeVacuum(client);
+                                    },
                                     Minutes(options.vacuumCheckIntervalMinutes)));
     _vacuumJob->start();
 }
@@ -101,7 +105,14 @@ void MobileKVEngine::cleanShutdown() {
 }
 
 void MobileKVEngine::maybeVacuum(Client* client) {
+    ServiceContext::UniqueOperationContext opCtxUPtr;
     OperationContext* opCtx = client->getOperationContext();
+    if (!opCtx) {
+        opCtxUPtr = client->makeOperationContext();
+        opCtxUPtr->swapLockState(stdx::make_unique<LockerImpl>());
+        opCtx = opCtxUPtr.get();
+    }
+
     auto session = _sessionPool->getSession(opCtx);
     constexpr int kPageSize = 4096;  // SQLite default
     auto pageCount = queryPragmaInt(*session, "page_count"_sd);
