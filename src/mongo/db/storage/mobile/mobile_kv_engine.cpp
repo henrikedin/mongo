@@ -101,7 +101,12 @@ MobileKVEngine::MobileKVEngine(const std::string& path,
 }
 
 void MobileKVEngine::cleanShutdown() {
-    maybeVacuum(Client::getCurrent());
+    try {
+        maybeVacuum(Client::getCurrent());
+    } catch (const std::exception& e) {
+        LOG(MOBILE_LOG_LEVEL_LOW)
+            << "MobileSE: Exception while doing vacuum at shutdown, surpressing. " << e.what();
+    }
 }
 
 void MobileKVEngine::maybeVacuum(Client* client) {
