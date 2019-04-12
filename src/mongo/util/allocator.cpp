@@ -27,6 +27,8 @@
  *    it in the license file.
  */
 
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::logger::LogComponent::kDefault
+
 #include "mongo/platform/basic.h"
 
 #include <cstdlib>
@@ -35,6 +37,7 @@
 #include "mongo/stdx/unordered_map.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/signal_handlers_synchronous.h"
+#include "mongo/util/log.h"
 
 #if defined(MONGO_USE_GPERFTOOLS_TCMALLOC)
 #include <gperftools/tcmalloc.h>
@@ -71,10 +74,13 @@ void* mongoMalloc(size_t size) {
 
 void* mongoRealloc(void* ptr, size_t size) {
 #if defined(MONGO_USE_GPERFTOOLS_TCMALLOC)
-    void* x = tc_realloc(ptr, size);
     {
         stdx::lock_guard lk(alloc_mutex());
         alloc_map().erase(ptr);
+    }
+    void* x = tc_realloc(ptr, size);
+    {
+        stdx::lock_guard lk(alloc_mutex());
         alloc_map()[x] = size;
     }
 #else
@@ -88,12 +94,11 @@ void* mongoRealloc(void* ptr, size_t size) {
 
 void mongoFree(void* ptr) {
 #if defined(MONGO_USE_GPERFTOOLS_TCMALLOC)
-    tc_free(ptr);
-    if (ptr)
-    {
+    if (ptr) {
         stdx::lock_guard lk(alloc_mutex());
         alloc_map().erase(ptr);
     }
+    tc_free(ptr);
 #else
     std::free(ptr);
 #endif
@@ -106,9 +111,13 @@ void mongoFree(void* ptr, size_t size) {
     {
         stdx::lock_guard lk(alloc_mutex());
         auto it = alloc_map().find(ptr);
-        fassert(51177, it != alloc_map().end());
+		if (it == alloc_map().end())
+		{
+            error() << "Trying to free address 0x" << std::hex << ptr << " that we havent allocated?";
+            fassert(51179, false);
+		}
         alloc_size = it->second;
-        fassert(51176, alloc_size == size);
+        fassert(51178, alloc_size == size);
         alloc_map().erase(ptr);
     }
 
