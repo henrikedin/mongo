@@ -57,9 +57,9 @@ return am;
 
 void* mongoMalloc(size_t size) {
 #if defined(MONGO_USE_GPERFTOOLS_TCMALLOC)
-    void* x = tc_malloc(size);
     {
         stdx::lock_guard lk(alloc_mutex());
+        void* x = tc_malloc(size);
         alloc_map()[x] = size;
     }
 
@@ -77,9 +77,9 @@ void* mongoRealloc(void* ptr, size_t size) {
     {
         stdx::lock_guard lk(alloc_mutex());
         alloc_map().erase(ptr);
-    }
-    void* x = tc_realloc(ptr, size);
-    {
+
+		void* x = tc_realloc(ptr, size);
+
         stdx::lock_guard lk(alloc_mutex());
         alloc_map()[x] = size;
     }
@@ -94,8 +94,8 @@ void* mongoRealloc(void* ptr, size_t size) {
 
 void mongoFree(void* ptr) {
 #if defined(MONGO_USE_GPERFTOOLS_TCMALLOC)
-    if (ptr) {
-        stdx::lock_guard lk(alloc_mutex());
+    stdx::lock_guard lk(alloc_mutex());
+    if (ptr) {    
         alloc_map().erase(ptr);
     }
     tc_free(ptr);
@@ -119,12 +119,12 @@ void mongoFree(void* ptr, size_t size) {
         alloc_size = it->second;
         fassert(51178, alloc_size == size);
         alloc_map().erase(ptr);
-    }
 
-	if (size < 4096) 
-		tc_free_sized(ptr, size);
-    else
-		tc_free(ptr);
+		if (size < 4096)
+            tc_free_sized(ptr, size);
+        else
+            tc_free(ptr);
+    }
 #else
     std::free(ptr);
 #endif
