@@ -114,10 +114,10 @@ void MobileKVEngine::maybeVacuum(Client* client) {
     OperationContext* opCtx = client->getOperationContext();
     if (!opCtx) {
         opCtxUPtr = client->makeOperationContext();
-        opCtxUPtr->swapLockState(stdx::make_unique<LockerImpl>());
         opCtx = opCtxUPtr.get();
     }
 
+	Lock::GlobalLock lk_outer(opCtx, MODE_S);
     auto session = _sessionPool->getSession(opCtx);
     constexpr int kPageSize = 4096;  // SQLite default
     auto pageCount = queryPragmaInt(*session, "page_count"_sd);
