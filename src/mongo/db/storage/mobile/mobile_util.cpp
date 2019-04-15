@@ -182,17 +182,22 @@ void doValidate(OperationContext* opCtx, ValidateResults* results) {
     }
 }
 
-void configureSession(sqlite3* session) {
-    auto executePragma = [session](auto pragma, auto value) {
-        SqliteStatement::execQuery(session, "PRAGMA ", pragma, " = ", value, ";");
+void configureSession(sqlite3* session,
+                      bool isEngineInit,
+                      const MobileOptions& options) {
+    auto executePragma = [&session](auto pragma, auto value) {
+        SqliteStatement::execQuery(&session, "PRAGMA ", pragma, " = ", value, ";");
         LOG(MOBILE_LOG_LEVEL_LOW) << "MobileSE session configuration: " << pragma << " = " << value;
     };
-    // We don't manually use VACUUM so set incremental(2) mode to reclaim space
-    // This need to be set the first thing we do, before any internal tables are created.
-    executePragma("auto_vacuum"_sd, "incremental"_sd);
 
-    // Set SQLite in Write-Ahead Logging mode. https://sqlite.org/wal.html
-    executePragma("journal_mode"_sd, "WAL"_sd);
+    if (isEngineInit) {
+        // We don't manually use VACUUM so set incremental(2) mode to reclaim space
+        // This need to be set the first thing we do, before any internal tables are created.
+        executePragma("auto_vacuum"_sd, "incremental"_sd);
+
+        // Set SQLite in Write-Ahead Logging mode. https://sqlite.org/wal.html
+        executePragma("journal_mode"_sd, "WAL"_sd);
+	}
 
     // synchronous = NORMAL(1) is recommended with WAL, but we allow it to be overriden
     executePragma("synchronous"_sd, std::to_string(mobileGlobalOptions.mobileDurabilityLevel));

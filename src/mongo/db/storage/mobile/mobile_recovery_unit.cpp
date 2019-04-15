@@ -235,6 +235,7 @@ void MobileRecoveryUnit::_txnOpen(OperationContext* opCtx, bool readOnly) {
             opCtx->lockState()->dump();
             invariant(!"Writing without an exclusive lock");
         }
+        _session->configureIfNeeded();
         SqliteStatement::execQuery(_session.get(), "BEGIN EXCLUSIVE");
     }
 

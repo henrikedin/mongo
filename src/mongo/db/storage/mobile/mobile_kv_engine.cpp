@@ -67,8 +67,8 @@ MobileKVEngine::MobileKVEngine(const std::string& path,
     int status = sqlite3_open(_path.c_str(), &initSession);
     embedded::checkStatus(status, SQLITE_OK, "sqlite3_open");
 
-    // Guarantees that sqlite3_close() will be called when the function returns.
-    ON_BLOCK_EXIT([&initSession] { sqlite3_close(initSession); });
+    auto session =
+        _sessionPool->getSession(nullptr);  // nullptr is OK here, there's no other sessions around
 
     embedded::configureSession(initSession);
 

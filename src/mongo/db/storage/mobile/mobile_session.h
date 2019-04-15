@@ -45,7 +45,14 @@ class MobileSession final {
     MobileSession& operator=(const MobileSession&) = delete;
 
 public:
-    MobileSession(sqlite3* session, MobileSessionPool* sessionPool);
+	enum class ConfigureState
+	{
+		kConfigured,
+		kFullConfigureNeeded,
+		kPartialConfigureNeeded
+	};
+
+    MobileSession(sqlite3* session, MobileSessionPool* sessionPool, ConfigureState configureState);
 
     ~MobileSession();
 
@@ -54,8 +61,11 @@ public:
      */
     sqlite3* getSession() const;
 
+	void configureIfNeeded();
+
 private:
     sqlite3* _session;
     MobileSessionPool* _sessionPool;
+    ConfigureState _configureState;
 };
 }  // namespace mongo

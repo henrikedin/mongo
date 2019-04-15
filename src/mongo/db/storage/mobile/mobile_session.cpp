@@ -33,11 +33,14 @@
 
 #include "mongo/db/storage/mobile/mobile_session.h"
 #include "mongo/db/storage/mobile/mobile_session_pool.h"
+#include "mongo/db/storage/mobile/mobile_util.h"
 
 namespace mongo {
 
-MobileSession::MobileSession(sqlite3* session, MobileSessionPool* sessionPool)
-    : _session(session), _sessionPool(sessionPool) {}
+MobileSession::MobileSession(sqlite3* session,
+                             MobileSessionPool* sessionPool,
+                             ConfigureState configureState)
+    : _session(session), _sessionPool(sessionPool), _configureState(configureState) {}
 
 MobileSession::~MobileSession() {
     // Releases this session back to the session pool.
@@ -47,4 +50,14 @@ MobileSession::~MobileSession() {
 sqlite3* MobileSession::getSession() const {
     return _session;
 }
+
+void MobileSession::configureIfNeeded() {
+    if (_configureState != ConfigureState::kConfigured)
+	{
+        embedded::configureSession(
+            *this, _configureState == ConfigureState::kFullConfigureNeeded, _sessionPool->getOptions());
+        _configureState = ConfigureState::kConfigured;
+	}
+}
+
 }  // namespace mongo

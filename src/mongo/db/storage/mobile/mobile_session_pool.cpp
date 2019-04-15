@@ -112,7 +112,7 @@ std::unique_ptr<MobileSession> MobileSessionPool::getSession(OperationContext* o
     // Checks if there is an open session available.
     if (!_sessions.empty()) {
         sqlite3* session = _popSession_inlock();
-        return stdx::make_unique<MobileSession>(session, this);
+        return stdx::make_unique<MobileSession>(session, this, MobileSession::ConfigureState::kConfigured);
     }
 
     // Checks if a new session can be opened.
@@ -120,9 +120,12 @@ std::unique_ptr<MobileSession> MobileSessionPool::getSession(OperationContext* o
         sqlite3* session;
         int status = sqlite3_open(_path.c_str(), &session);
         embedded::checkStatus(status, SQLITE_OK, "sqlite3_open");
-        embedded::configureSession(session);
         _curPoolSize++;
-        return stdx::make_unique<MobileSession>(session, this);
+        return stdx::make_unique<MobileSession>(
+            session,
+            this,
+            _curPoolSize == 1 ? MobileSession::ConfigureState::kFullConfigureNeeded
+                              : MobileSession::ConfigureState::kPartialConfigureNeeded);
     }
 
     // There are no open sessions available and the maxPoolSize has been reached.
@@ -131,7 +134,8 @@ std::unique_ptr<MobileSession> MobileSessionPool::getSession(OperationContext* o
         _releasedSessionNotifier, lk, [&] { return !_sessions.empty(); });
 
     sqlite3* session = _popSession_inlock();
-    return stdx::make_unique<MobileSession>(session, this);
+    return stdx::make_unique<MobileSession>(
+        session, this, MobileSession::ConfigureState::kConfigured);
 }
 
 void MobileSessionPool::releaseSession(MobileSession* session) {
@@ -168,7 +172,9 @@ void MobileSessionPool::shutDown() {
 
         int status = sqlite3_open(_path.c_str(), &session);
         embedded::checkStatus(status, SQLITE_OK, "sqlite3_open");
-        std::unique_ptr<MobileSession> mobSession = stdx::make_unique<MobileSession>(session, this);
+        std::unique_ptr<MobileSession> mobSession = stdx::make_unique<MobileSession>(
+            session, this, MobileSession::ConfigureState::kFullConfigureNeeded);
+        mobSession->configureIfNeeded();
         LOG(MOBILE_LOG_LEVEL_LOW) << "MobileSE: Executing queued drops at shutdown";
         failedDropsQueue.execAndDequeueAllOps(mobSession.get());
         sqlite3_close(session);

@@ -69,7 +69,7 @@ void doValidate(OperationContext* opCtx, ValidateResults* results);
  * Sets the SQLite Pragmas that we want (https://www.sqlite.org/pragma.html)
  * These should generally improve behavior, performance, and resource usage
  */
-void configureSession(sqlite3* session);
+void configureSession(sqlite3* session, const MobileOptions& options, bool isEngineInit);
 
 }  // namespace embedded
 }  // namespace mongo
