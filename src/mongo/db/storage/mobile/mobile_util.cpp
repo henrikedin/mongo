@@ -183,10 +183,9 @@ void doValidate(OperationContext* opCtx, ValidateResults* results) {
 }
 
 void configureSession(sqlite3* session,
-                      bool isEngineInit,
-                      const MobileOptions& options) {
-    auto executePragma = [&session](auto pragma, auto value) {
-        SqliteStatement::execQuery(&session, "PRAGMA ", pragma, " = ", value, ";");
+                      bool isEngineInit) {
+    auto executePragma = [session](auto pragma, auto value) {
+        SqliteStatement::execQuery(session, "PRAGMA ", pragma, " = ", value, ";");
         LOG(MOBILE_LOG_LEVEL_LOW) << "MobileSE session configuration: " << pragma << " = " << value;
     };
 

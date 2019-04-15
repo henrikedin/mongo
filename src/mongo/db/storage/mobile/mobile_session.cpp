@@ -54,8 +54,8 @@ sqlite3* MobileSession::getSession() const {
 void MobileSession::configureIfNeeded() {
     if (_configureState != ConfigureState::kConfigured)
 	{
-        embedded::configureSession(
-            *this, _configureState == ConfigureState::kFullConfigureNeeded, _sessionPool->getOptions());
+        embedded::configureSession(_session,
+                                   _configureState == ConfigureState::kFullConfigureNeeded);
         _configureState = ConfigureState::kConfigured;
 	}
 }

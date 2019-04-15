@@ -67,10 +67,7 @@ MobileKVEngine::MobileKVEngine(const std::string& path,
     int status = sqlite3_open(_path.c_str(), &initSession);
     embedded::checkStatus(status, SQLITE_OK, "sqlite3_open");
 
-    auto session =
-        _sessionPool->getSession(nullptr);  // nullptr is OK here, there's no other sessions around
-
-    embedded::configureSession(initSession);
+    embedded::configureSession(initSession, true);
 
     // Check and ensure that WAL mode is working as expected
     // This is not something that we want to be configurable
