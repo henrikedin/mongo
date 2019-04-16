@@ -90,19 +90,22 @@ MobileKVEngine::MobileKVEngine(const std::string& path,
                                  "F_FULLFSYNC if the platform supports it (currently only darwin "
                                  "kernels). Value: 1";
 
-    _vacuumJob = serviceContext->getPeriodicRunner()->makeJob(
-        PeriodicRunner::PeriodicJob("SQLiteVacuumJob",
-                                    [this](Client* client) {
-                                        client->getServiceContext()->waitForStartupComplete();
-                                        maybeVacuum(client);
-                                    },
-                                    Minutes(options.vacuumCheckIntervalMinutes)));
-    _vacuumJob->start();
+    if (!_options.disableVacuumJob) {
+        _vacuumJob = serviceContext->getPeriodicRunner()->makeJob(
+            PeriodicRunner::PeriodicJob("SQLiteVacuumJob",
+                                        [this](Client* client) {
+                                            client->getServiceContext()->waitForStartupComplete();
+                                            maybeVacuum(client);
+                                        },
+                                        Minutes(options.vacuumCheckIntervalMinutes)));
+        _vacuumJob->start();
+    }
 }
 
 void MobileKVEngine::cleanShutdown() {
     try {
-        maybeVacuum(Client::getCurrent());
+        if (!_options.disableVacuumJob)
+            maybeVacuum(Client::getCurrent());
     } catch (const std::exception& e) {
         LOG(MOBILE_LOG_LEVEL_LOW)
             << "MobileSE: Exception while doing vacuum at shutdown, surpressing. " << e.what();
@@ -117,16 +120,24 @@ void MobileKVEngine::maybeVacuum(Client* client) {
         opCtx = opCtxUPtr.get();
     }
 
-	Lock::GlobalLock lk_outer(opCtx, MODE_S);
-    auto session = _sessionPool->getSession(opCtx);
+    std::unique_ptr<MobileSession> session;
+    int64_t pageCount;
+    int64_t freelistCount;
+    {
+        // We cannot start a new session if another threads holds an exclusive lock
+        Lock::GlobalLock lk(opCtx, MODE_S);
+        session = _sessionPool->getSession(opCtx);
+        pageCount = queryPragmaInt(*session, "page_count"_sd);
+        freelistCount = queryPragmaInt(*session, "freelist_count"_sd);
+    }
+
     constexpr int kPageSize = 4096;  // SQLite default
-    auto pageCount = queryPragmaInt(*session, "page_count"_sd);
-    auto freelistCount = queryPragmaInt(*session, "freelist_count"_sd);
     LOG(MOBILE_LOG_LEVEL_LOW) << "MobileSE: Evaluating if we need to vacuum. page_count = "
                               << pageCount << ", freelist_count = " << freelistCount;
     if ((pageCount > 0 && (float)freelistCount / pageCount >= _options.vacuumFreePageRatio) ||
         (freelistCount * kPageSize >= _options.vacuumFreeSizeMB * 1024 * 1024)) {
         LOG(MOBILE_LOG_LEVEL_LOW) << "MobileSE: Performing incremental vacuum";
+        // Data will we moved on the file system, take an exclusive lock
         Lock::GlobalLock lk(opCtx, MODE_X);
         SqliteStatement::execQuery(session.get(), "PRAGMA incremental_vacuum;");
     }
@@ -241,8 +252,8 @@ Status MobileKVEngine::dropIdent(OperationContext* opCtx, StringData ident) {
 }
 
 /**
- * Note: this counts the total number of bytes in the key and value columns, not the actual number
- * of bytes on disk used by this ident.
+ * Note: this counts the total number of bytes in the key and value columns, not the actual
+ * number of bytes on disk used by this ident.
  */
 int64_t MobileKVEngine::getIdentSize(OperationContext* opCtx, StringData ident) {
     MobileSession* session = MobileRecoveryUnit::get(opCtx)->getSession(opCtx);

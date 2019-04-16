@@ -47,6 +47,10 @@ struct MobileOptions {
     double vacuumFreePageRatio = 0.0;
     uint32_t vacuumFreeSizeMB = 0;
     uint32_t vacuumCheckIntervalMinutes = 0;
+
+    // This setting is not available for users to configure. Just meant to be able to disable this
+    // feature in certain unit tests.
+    bool disableVacuumJob = false;
 };
 
 extern MobileOptions mobileGlobalOptions;
