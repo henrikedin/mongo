@@ -379,14 +379,23 @@ def setup_environment(env, emitting_shared=False):
         result = []
         libs = get_libdeps(source, target, env, for_signature)
         for lib in libs:
+            if env.TargetOSIs('windows'):
+                path, file = os.path.split(str(lib))
+                base, ext = os.path.splitext(file)
+                if ext == env.subst('$SHLIBSUFFIX'):
+                    ext = env.subst('$LIBSUFFIX')
+                    base = env.subst('$LIBPREFIX') + base[len(env.subst('$SHLIBPREFIX')):]
+                linklib = os.path.join(path, base + ext)
+            else:
+                linklib = str(lib)
             if 'init-no-global-side-effects' in env.Entry(lib).get_env().get('LIBDEPS_TAGS', []):
-                result.append(str(lib))
+                result.append(str(linklib))
             else:
                 result.extend(
                     env.subst(
                         '$LINK_WHOLE_ARCHIVE_LIB_START'
                         '$TARGET'
-                        '$LINK_WHOLE_ARCHIVE_LIB_END', target=lib).split())
+                        '$LINK_WHOLE_ARCHIVE_LIB_END', target=str(linklib)).split())
         return result
 
     env['_LIBDEPS_LIBS_WITH_TAGS'] = expand_libdeps_with_extraction_flags
