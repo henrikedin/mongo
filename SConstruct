@@ -1623,11 +1623,11 @@ elif env.TargetOSIs('windows'):
         print("NOTE: Tool configuration did not find 'cl' compiler, falling back to os environment")
         env['ENV'] = dict(os.environ)
 
-    env.Append(CPPDEFINES=[
-    # This tells the Windows compiler not to link against the .lib files
-    # and to use boost as a bunch of header-only libraries
-        "BOOST_ALL_NO_LIB",
-    ])
+    #env.Append(CPPDEFINES=[
+    ## This tells the Windows compiler not to link against the .lib files
+    ## and to use boost as a bunch of header-only libraries
+    #    "BOOST_ALL_NO_LIB",
+    #])
 
     env.Append( CPPDEFINES=[ "_UNICODE" ] )
     env.Append( CPPDEFINES=[ "UNICODE" ] )
