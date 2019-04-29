@@ -116,7 +116,7 @@ static bool forkServer() {
         verify(signal(SIGUSR2, launchSignal) != SIG_ERR);
 
         cout << "about to fork child process, waiting until server is ready for connections."
-             << endl;
+             /*<< endl*/;
 
         pid_t child1 = fork();
         if (child1 == -1) {
@@ -133,11 +133,11 @@ static bool forkServer() {
             if (WIFEXITED(pstat)) {
                 if (WEXITSTATUS(pstat)) {
                     cout << "ERROR: child process failed, exited with error number "
-                         << WEXITSTATUS(pstat) << endl
+                         << WEXITSTATUS(pstat) /*<< endl*/
                          << "To see additional information in this output, start without "
-                         << "the \"--fork\" option." << endl;
+                         << "the \"--fork\" option." /*<< endl*/;
                 } else {
-                    cout << "child process started successfully, parent exiting" << endl;
+                    cout << "child process started successfully, parent exiting" /*<< endl*/;
                 }
 
                 quickExit(WEXITSTATUS(pstat));
@@ -147,7 +147,7 @@ static bool forkServer() {
         }
 
         if (chdir("/") < 0) {
-            cout << "Cant chdir() while forking server process: " << strerror(errno) << endl;
+            cout << "Cant chdir() while forking server process: " << strerror(errno) /*<< endl*/;
             quickExit(-1);
         }
         setsid();
@@ -161,7 +161,7 @@ static bool forkServer() {
         } else if (child2) {
             // this is run in the middle process
             int pstat;
-            cout << "forked process: " << child2 << endl;
+            cout << "forked process: " << child2 /*<< endl*/;
             if (waitpid(child2, &pstat, 0) == pid_t{-1}) {
                 perror("waitpid");
                 quickExit(-1);
@@ -179,20 +179,20 @@ static bool forkServer() {
         FILE* f = freopen("/dev/null", "w", stdout);
         if (f == NULL) {
             cout << "Cant reassign stdout while forking server process: " << strerror(errno)
-                 << endl;
+                 /*<< endl*/;
             return false;
         }
 
         f = freopen("/dev/null", "w", stderr);
         if (f == NULL) {
             cout << "Cant reassign stderr while forking server process: " << strerror(errno)
-                 << endl;
+                 /*<< endl*/;
             return false;
         }
 
         f = freopen("/dev/null", "r", stdin);
         if (f == NULL) {
-            cout << "Cant reassign stdin while forking server process: " << strerror(errno) << endl;
+            cout << "Cant reassign stdin while forking server process: " << strerror(errno) /*<< endl*/;
             return false;
         }
     }
@@ -363,7 +363,7 @@ MONGO_INITIALIZER_WITH_PREREQUISITES(MungeUmask, ("EndStartupOptionHandling"))
 bool initializeServerGlobalState(ServiceContext* service) {
 #ifndef _WIN32
     if (!serverGlobalParams.noUnixSocket && !fs::is_directory(serverGlobalParams.socket)) {
-        cout << serverGlobalParams.socket << " must be a directory" << endl;
+        cout << serverGlobalParams.socket << " must be a directory" /*<< endl*/;
         return false;
     }
 #endif

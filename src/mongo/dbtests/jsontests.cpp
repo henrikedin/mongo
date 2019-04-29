@@ -604,7 +604,7 @@ public:
 
         BSONObj o = b.obj();
         o.jsonString();
-        // cout << o.jsonString() << endl;
+        // cout << o.jsonString() /*<< endl*/;
     }
 };
 
@@ -632,12 +632,12 @@ private:
         const bool bad = expected.woCompare(actual);
         if (bad) {
             ::mongo::log() << "want:" << expected.jsonString() << " size: " << expected.objsize()
-                           << endl;
+                           /*<< endl*/;
             ::mongo::log() << "got :" << actual.jsonString() << " size: " << actual.objsize()
-                           << endl;
-            ::mongo::log() << expected.hexDump() << endl;
-            ::mongo::log() << actual.hexDump() << endl;
-            ::mongo::log() << msg << endl;
+                           /*<< endl*/;
+            ::mongo::log() << expected.hexDump() /*<< endl*/;
+            ::mongo::log() << actual.hexDump() /*<< endl*/;
+            ::mongo::log() << msg /*<< endl*/;
             ::mongo::log() << "orig json:" << this->json();
         }
         ASSERT(!bad);

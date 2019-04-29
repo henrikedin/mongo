@@ -97,13 +97,13 @@ public:
         if (!broke)
             return;
 
-        cout << s << endl;
+        cout << s /*<< endl*/;
         for (int i = 0; i < len; i++)
             cout << hex << (data[i] & 0xFF) << dec << " ";
-        cout << endl;
+        cout /*<< endl*/;
         for (int i = 0; i < len; i++)
             cout << hex << (out[i] & 0xFF) << dec << " ";
-        cout << endl;
+        cout /*<< endl*/;
 
         ASSERT(0);
     }

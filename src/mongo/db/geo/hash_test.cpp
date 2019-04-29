@@ -96,10 +96,10 @@ bool unhash_fast_and_slow_match(string hash) {
     bool match = (fastX == slowX && fastY == slowY);
     if (!match) {
         std::bitset<32> fastXBits(fastX), fastYBits(fastY), slowXBits(slowX), slowYBits(slowY);
-        cout << "unhash_fast's x: " << splitBinStr(fastXBits.to_string()) << endl;
-        cout << "unhash_slow's x: " << splitBinStr(slowXBits.to_string()) << endl;
-        cout << "unhash_fast's y: " << splitBinStr(fastYBits.to_string()) << endl;
-        cout << "unhash_slow's y: " << splitBinStr(slowYBits.to_string()) << endl;
+        cout << "unhash_fast's x: " << splitBinStr(fastXBits.to_string()) /*<< endl*/;
+        cout << "unhash_slow's x: " << splitBinStr(slowXBits.to_string()) /*<< endl*/;
+        cout << "unhash_fast's y: " << splitBinStr(fastYBits.to_string()) /*<< endl*/;
+        cout << "unhash_slow's y: " << splitBinStr(slowYBits.to_string()) /*<< endl*/;
     }
 
     return match;

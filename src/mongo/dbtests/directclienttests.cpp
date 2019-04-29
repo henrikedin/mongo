@@ -81,9 +81,9 @@ public:
                                    << 1
                                    << "inc"
                                    << true);
-                // cout << cmd.toString() << endl;
+                // cout << cmd.toString() /*<< endl*/;
                 bool ok = client.runCommand("a", cmd, info);
-                // cout << info.toString() << endl;
+                // cout << info.toString() /*<< endl*/;
                 verify(ok);
             }
 

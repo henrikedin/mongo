@@ -179,7 +179,7 @@ Future<void> asyncSaslConversation(auth::RunCommandHook runCommand,
     if (!status.isOK())
         return status;
 
-    LOG(saslLogLevel) << "sasl client input: " << base64::encode(payload) << endl;
+    LOG(saslLogLevel) << "sasl client input: " << base64::encode(payload) /*<< endl*/;
 
     // Create new payload for our response
     std::string responsePayload;
@@ -187,7 +187,7 @@ Future<void> asyncSaslConversation(auth::RunCommandHook runCommand,
     if (!status.isOK())
         return status;
 
-    LOG(saslLogLevel) << "sasl client output: " << base64::encode(responsePayload) << endl;
+    LOG(saslLogLevel) << "sasl client output: " << base64::encode(responsePayload) /*<< endl*/;
 
     // Build command using our new payload and conversationId
     BSONObjBuilder commandBuilder;

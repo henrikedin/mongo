@@ -42,11 +42,10 @@
         ::mongo::logger::LogstreamBuilder(::mongo::logger::globalLogDomain(),                  \
                                           ::mongo::getThreadName(),                            \
                                           ::mongo::logger::LogSeverity::Log())                 \
-            << "caught exception (" << e.what() << ") in destructor (" << __FUNCTION__ << ")"  \
-            << std::endl;                                                                      \
+            << "caught exception (" << e.what() << ") in destructor (" << __FUNCTION__ << ")"; \
     } catch (...) {                                                                            \
         ::mongo::logger::LogstreamBuilder(::mongo::logger::globalLogDomain(),                  \
                                           ::mongo::getThreadName(),                            \
                                           ::mongo::logger::LogSeverity::Log())                 \
-            << "caught unknown exception in destructor (" << __FUNCTION__ << ")" << std::endl; \
+            << "caught unknown exception in destructor (" << __FUNCTION__ << ")";              \
     }

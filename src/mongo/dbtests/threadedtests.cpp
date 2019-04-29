@@ -181,10 +181,10 @@ private:
     virtual void validate() {
         if (once++ == 0) {
             // <= 1.35 we use a different rwmutex impl so worth noting
-            cout << "Boost version : " << BOOST_VERSION << endl;
+            cout << "Boost version : " << BOOST_VERSION /*<< endl*/;
         }
         cout << typeid(whichmutex).name() << " Slack useful work fraction: " << ((double)a) / b
-             << " locks:" << locks << endl;
+             << " locks:" << locks /*<< endl*/;
     }
     void watch() {
         while (1) {
@@ -278,7 +278,7 @@ private:
             _hotel.checkOut();
 
             if ((i % (checkIns / 10)) == 0)
-                mongo::unittest::log() << "checked in " << i << " times..." << endl;
+                mongo::unittest::log() << "checked in " << i << " times..." /*<< endl*/;
         }
     }
 

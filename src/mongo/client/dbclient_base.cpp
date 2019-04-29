@@ -840,7 +840,7 @@ void DBClientBase::dropIndex(const string& ns, const string& indexName) {
     if (!runCommand(nsToDatabase(ns),
                     BSON("dropIndexes" << nsToCollectionSubstring(ns) << "index" << indexName),
                     info)) {
-        LOG(_logLevel) << "dropIndex failed: " << info << endl;
+        LOG(_logLevel) << "dropIndex failed: " << info;
         uassert(10007, "dropIndex failed", 0);
     }
 }

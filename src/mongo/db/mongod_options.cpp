@@ -627,10 +627,10 @@ Status storeMongodOptions(const moe::Environment& params) {
     // Check if we are 32 bit and have not explicitly specified any journaling options
     if (sizeof(void*) == 4 && !params.count("storage.journal.enabled")) {
         // trying to make this stand out more like startup warnings
-        log() << endl;
+        log() /*<< endl*/;
         warning() << "32-bit servers don't have journaling enabled by default. "
                   << "Please use --journal if you want durability.";
-        log() << endl;
+        log() /*<< endl*/;
     }
 
     bool isClusterRoleShard = params.count("shardsvr");

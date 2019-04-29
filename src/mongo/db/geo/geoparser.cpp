@@ -114,7 +114,7 @@ static Status coordToPoint(double lng, double lat, S2Point* out) {
     // This shouldn't happen since we should only have valid lng/lats.
     if (!ll.is_valid()) {
         std::stringstream ss;
-        ss << "coords invalid after normalization, lng = " << lng << " lat = " << lat << endl;
+        ss << "coords invalid after normalization, lng = " << lng << " lat = " << lat /*<< endl*/;
         uasserted(17125, ss.str());
     }
     *out = ll.ToPoint();

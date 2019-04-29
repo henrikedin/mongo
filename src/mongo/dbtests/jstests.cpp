@@ -689,9 +689,9 @@ public:
         out = s->getObject("b");
         ASSERT_EQUALS(mongo::NumberLong, out.firstElement().type());
         if (val != out.firstElement().numberLong()) {
-            cout << val << endl;
-            cout << out.firstElement().numberLong() << endl;
-            cout << out.toString() << endl;
+            cout << val /*<< endl*/;
+            cout << out.firstElement().numberLong() /*<< endl*/;
+            cout << out.toString() /*<< endl*/;
             ASSERT_EQUALS(val, out.firstElement().numberLong());
         }
 
@@ -779,9 +779,9 @@ public:
         out = s->getObject("b");
         ASSERT_EQUALS(mongo::NumberLong, out.firstElement().type());
         if (val != out.firstElement().numberLong()) {
-            cout << val << endl;
-            cout << out.firstElement().numberLong() << endl;
-            cout << out.toString() << endl;
+            cout << val /*<< endl*/;
+            cout << out.firstElement().numberLong() /*<< endl*/;
+            cout << out.toString() /*<< endl*/;
             ASSERT_EQUALS(val, out.firstElement().numberLong());
         }
 
@@ -1089,11 +1089,11 @@ public:
     void pp(const char* s, BSONElement e) {
         int len;
         const char* data = e.binData(len);
-        cout << s << ":" << e.binDataType() << "\t" << len << endl;
+        cout << s << ":" << e.binDataType() << "\t" << len /*<< endl*/;
         cout << "\t";
         for (int i = 0; i < len; i++)
             cout << (int)(data[i]) << " ";
-        cout << endl;
+        cout /*<< endl*/;
     }
 
     void run() {
@@ -1176,7 +1176,7 @@ public:
             s->invoke(f, &empty, &start);
             ASSERT_EQUALS(11, s->getNumber("__returnValue"));
         }
-        // cout << "speed1: " << ( n / t.millis() ) << " ops/ms" << endl;
+        // cout << "speed1: " << ( n / t.millis() ) << " ops/ms" /*<< endl*/;
     }
 };
 

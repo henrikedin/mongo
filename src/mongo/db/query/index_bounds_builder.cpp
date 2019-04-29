@@ -1043,8 +1043,8 @@ void IndexBoundsBuilder::alignBounds(IndexBounds* bounds, const BSONObj& kp, int
     }
 
     if (!bounds->isValidFor(kp, scanDir)) {
-        log() << "INVALID BOUNDS: " << redact(bounds->toString()) << endl
-              << "kp = " << redact(kp) << endl
+        log() << "INVALID BOUNDS: " << redact(bounds->toString()) /*<< endl*/
+              << "kp = " << redact(kp) /*<< endl*/
               << "scanDir = " << scanDir;
         MONGO_UNREACHABLE;
     }

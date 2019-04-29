@@ -266,7 +266,7 @@ public:
             TimingBase<M>::dotime(BSON("x" << BSON("$all" << BSON_ARRAY(5))), BSON("x" << 5));
 
         cout << "AllTiming " << demangleName(typeid(M)) << " normal: " << normal << " all: " << all
-             << endl;
+             /*<< endl*/;
     }
 };
 

@@ -467,12 +467,12 @@ void DBClientConnection::_checkConnection() {
     // Don't hammer reconnects, backoff if needed
     sleepFor(_autoReconnectBackoff.nextSleep());
 
-    LOG(_logLevel) << "trying reconnect to " << toString() << endl;
+    LOG(_logLevel) << "trying reconnect to " << toString() /*<< endl*/;
     string errmsg;
     auto connectStatus = connect(_serverAddress, _applicationName);
     if (!connectStatus.isOK()) {
         _markFailed(kSetFlag);
-        LOG(_logLevel) << "reconnect " << toString() << " failed " << errmsg << endl;
+        LOG(_logLevel) << "reconnect " << toString() << " failed " << errmsg /*<< endl*/;
         if (connectStatus == ErrorCodes::IncompatibleCatalogManager) {
             uassertStatusOK(connectStatus);  // Will always throw
         } else {
@@ -480,7 +480,7 @@ void DBClientConnection::_checkConnection() {
         }
     }
 
-    LOG(_logLevel) << "reconnect " << toString() << " ok" << endl;
+    LOG(_logLevel) << "reconnect " << toString() << " ok" /*<< endl*/;
     if (_internalAuthOnReconnect) {
         uassertStatusOK(authenticateInternalUser());
     } else {
@@ -490,8 +490,7 @@ void DBClientConnection::_checkConnection() {
             } catch (ExceptionFor<ErrorCodes::AuthenticationFailed>& ex) {
                 LOG(_logLevel) << "reconnect: auth failed "
                                << kv.second[auth::getSaslCommandUserDBFieldName()]
-                               << kv.second[auth::getSaslCommandUserFieldName()] << ' ' << ex.what()
-                               << std::endl;
+                               << kv.second[auth::getSaslCommandUserFieldName()] << ' ' << ex.what();
             }
         }
     }

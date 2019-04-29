@@ -370,7 +370,7 @@ void DBClientReplicaSet::_authConnection(DBClientConnection* conn) {
         } catch (const AssertionException&) {
             warning() << "cached auth failed for set: " << _setName
                       << " db: " << i->second[saslCommandUserDBFieldName].str()
-                      << " user: " << i->second[saslCommandUserFieldName].str() << endl;
+                      << " user: " << i->second[saslCommandUserFieldName].str() /*<< endl*/;
         }
     }
 }
@@ -541,7 +541,7 @@ unique_ptr<DBClientCursor> DBClientReplicaSet::query(const NamespaceStringOrUUID
                << ", lastTagged : " << (_lastSlaveOkConn.get() != NULL
                                             ? _lastSlaveOkConn->getServerAddress()
                                             : "[not cached]")
-               << ")" << endl;
+               << ")" /*<< endl*/;
 
         string lastNodeErrMsg;
 
@@ -574,7 +574,7 @@ unique_ptr<DBClientCursor> DBClientReplicaSet::query(const NamespaceStringOrUUID
         uasserted(16370, assertMsg.str());
     }
 
-    LOG(3) << "dbclient_rs query to primary node in " << _getMonitor()->getName() << endl;
+    LOG(3) << "dbclient_rs query to primary node in " << _getMonitor()->getName() /*<< endl*/;
 
     return checkMaster()->query(
         nsOrUuid, query, nToReturn, nToSkip, fieldsToReturn, queryOptions, batchSize);
@@ -593,7 +593,7 @@ BSONObj DBClientReplicaSet::findOne(const string& ns,
                << ", lastTagged : " << (_lastSlaveOkConn.get() != NULL
                                             ? _lastSlaveOkConn->getServerAddress()
                                             : "[not cached]")
-               << ")" << endl;
+               << ")" /*<< endl*/;
 
         string lastNodeErrMsg;
 
@@ -623,7 +623,7 @@ BSONObj DBClientReplicaSet::findOne(const string& ns,
         uasserted(16379, assertMsg.str());
     }
 
-    LOG(3) << "dbclient_rs findOne to primary node in " << _getMonitor()->getName() << endl;
+    LOG(3) << "dbclient_rs findOne to primary node in " << _getMonitor()->getName() /*<< endl*/;
 
     return checkMaster()->findOne(ns, query, fieldsToReturn, queryOptions);
 }
@@ -713,7 +713,7 @@ DBClientConnection* DBClientReplicaSet::selectNodeUsingTags(
     if (monitor->isPrimary(selectedNode)) {
         checkMaster();
 
-        LOG(3) << "dbclient_rs selecting primary node " << selectedNode << endl;
+        LOG(3) << "dbclient_rs selecting primary node " << selectedNode /*<< endl*/;
 
         _lastSlaveOkConn = _master;
 
@@ -747,7 +747,7 @@ DBClientConnection* DBClientReplicaSet::selectNodeUsingTags(
         // Mongos pooled connections are authenticated through ShardingConnectionHook::onCreate()
     }
 
-    LOG(3) << "dbclient_rs selecting node " << _lastSlaveOkHost << endl;
+    LOG(3) << "dbclient_rs selecting node " << _lastSlaveOkHost /*<< endl*/;
 
     return _lastSlaveOkConn.get();
 }
@@ -772,7 +772,7 @@ void DBClientReplicaSet::say(Message& toSend, bool isRetry, string* actualServer
                    << ", lastTagged : " << (_lastSlaveOkConn.get() != NULL
                                                 ? _lastSlaveOkConn->getServerAddress()
                                                 : "[not cached]")
-                   << ")" << endl;
+                   << ")" /*<< endl*/;
 
             string lastNodeErrMsg;
 
@@ -817,7 +817,7 @@ void DBClientReplicaSet::say(Message& toSend, bool isRetry, string* actualServer
         }
     }
 
-    LOG(3) << "dbclient_rs say to primary node in " << _getMonitor()->getName() << endl;
+    LOG(3) << "dbclient_rs say to primary node in " << _getMonitor()->getName() /*<< endl*/;
 
     DBClientConnection* master = checkMaster();
     if (actualServer)
@@ -892,7 +892,7 @@ void DBClientReplicaSet::checkResponse(const std::vector<BSONObj>& batch,
             } else {
                 warning() << "passed " << redact(dataObj) << " but last rs client "
                           << _lazyState._lastClient->toString() << " is not master or secondary"
-                          << endl;
+                          /*<< endl*/;
             }
 
             if (_lazyState._retries < static_cast<int>(MAX_RETRY)) {
@@ -900,7 +900,7 @@ void DBClientReplicaSet::checkResponse(const std::vector<BSONObj>& batch,
                 *retry = true;
             } else {
                 log() << "too many retries (" << _lazyState._retries
-                      << "), could not get data from replica set" << endl;
+                      << "), could not get data from replica set" /*<< endl*/;
             }
         }
     } else if (_lazyState._lastOp == dbQuery) {
@@ -1003,7 +1003,7 @@ bool DBClientReplicaSet::call(Message& toSend,
                    << ", lastTagged : " << (_lastSlaveOkConn.get() != NULL
                                                 ? _lastSlaveOkConn->getServerAddress()
                                                 : "[not cached]")
-                   << ")" << endl;
+                   << ")" /*<< endl*/;
 
             for (size_t retry = 0; retry < MAX_RETRY; retry++) {
                 try {
@@ -1033,7 +1033,7 @@ bool DBClientReplicaSet::call(Message& toSend,
         }
     }
 
-    LOG(3) << "dbclient_rs call to primary node in " << _getMonitor()->getName() << endl;
+    LOG(3) << "dbclient_rs call to primary node in " << _getMonitor()->getName() /*<< endl*/;
 
     DBClientConnection* m = checkMaster();
     if (actualServer)
