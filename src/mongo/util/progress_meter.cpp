@@ -78,7 +78,6 @@ bool ProgressMeter::hit(int n) {
         if (!_units.empty()) {
             out << " (" << _units << ")";
         }
-        out << std::endl;
     }
     _lastTime = t;
     return true;

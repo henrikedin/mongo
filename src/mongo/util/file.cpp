@@ -178,7 +178,7 @@ void File::write(fileofs o, const char* data, unsigned len) {
         DWORD dosError = GetLastError();
         log() << "In File::write(), SetFilePointerEx for '" << _name
               << "' tried to set the file pointer to " << o << " but failed with "
-              << errnoWithDescription(dosError) << std::endl;
+              << errnoWithDescription(dosError) ;
         return;
     }
     DWORD bytesWritten;
@@ -281,7 +281,7 @@ void File::truncate(fileofs size) {
         _bad = true;
         log() << "In File::truncate(), ftruncate for '" << _name
               << "' tried to set the file pointer to " << size << " but failed with "
-              << errnoWithDescription() << std::endl;
+              << errnoWithDescription() ;
         return;
     }
 }

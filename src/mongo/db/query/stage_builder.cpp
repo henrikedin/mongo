@@ -392,7 +392,7 @@ PlanStage* buildStages(OperationContext* opCtx,
             str::stream ss;
             root->appendToString(&ss, 0);
             string nodeStr(ss);
-            warning() << "Can't build exec tree for node " << nodeStr << endl;
+            warning() << "Can't build exec tree for node " << nodeStr ;
         }
     }
     return nullptr;

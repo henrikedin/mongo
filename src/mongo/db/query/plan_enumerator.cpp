@@ -359,7 +359,7 @@ unique_ptr<MatchExpression> PlanEnumerator::getNext() {
     tagForSort(tree.get());
 
     _root->resetTag();
-    LOG(5) << "Enumerator: memo just before moving:" << endl << dumpMemo();
+    LOG(5) << "Enumerator: memo just before moving:"  << dumpMemo();
     _done = nextMemo(memoIDForNode(_root));
     return tree;
 }

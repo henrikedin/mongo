@@ -659,7 +659,7 @@ WiredTigerRecordStore::WiredTigerRecordStore(WiredTigerKVEngine* kvEngine,
                                .getStatus();
 
     if (!versionStatus.isOK()) {
-        std::cout << " Version: " << versionStatus.reason() << std::endl;
+        std::cout << " Version: " << versionStatus.reason() ;
         if (versionStatus.code() == ErrorCodes::FailedToParse) {
             uasserted(28548, versionStatus.reason());
         } else {

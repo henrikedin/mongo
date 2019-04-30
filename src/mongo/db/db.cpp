@@ -297,10 +297,10 @@ ExitCode _initAndListen(int listenPort) {
           << " dbpath=" << storageGlobalParams.dbpath;
 
         const bool is32bit = sizeof(int*) == 4;
-        l << (is32bit ? " 32" : " 64") << "-bit host=" << getHostNameCached() << endl;
+        l << (is32bit ? " 32" : " 64") << "-bit host=" << getHostNameCached() ;
     }
 
-    DEV log(LogComponent::kControl) << "DEBUG build (which is slower)" << endl;
+    DEV log(LogComponent::kControl) << "DEBUG build (which is slower)" ;
 
 #if defined(_WIN32)
     VersionInfoInterface::instance().logTargetMinOS();

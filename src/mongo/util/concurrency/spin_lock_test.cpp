@@ -106,7 +106,7 @@ TEST(Concurrency, ConcurrentIncs) {
     }
 
     int ms = timer.millis();
-    mongo::unittest::log() << "spinlock ConcurrentIncs time: " << ms << std::endl;
+    mongo::unittest::log() << "spinlock ConcurrentIncs time: " << ms ;
 
     ASSERT_EQUALS(counter, threads * incs);
 }

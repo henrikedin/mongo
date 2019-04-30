@@ -224,10 +224,10 @@ ServiceContext* initialize(const char* yaml_config) {
           << " dbpath=" << storageGlobalParams.dbpath;
 
         const bool is32bit = sizeof(int*) == 4;
-        l << (is32bit ? " 32" : " 64") << "-bit" << endl;
+        l << (is32bit ? " 32" : " 64") << "-bit" ;
     }
 
-    DEV log(LogComponent::kControl) << "DEBUG build (which is slower)" << endl;
+    DEV log(LogComponent::kControl) << "DEBUG build (which is slower)" ;
 
     // The periodic runner is required by the storage engine to be running beforehand.
     auto periodicRunner = std::make_unique<PeriodicRunnerEmbedded>(

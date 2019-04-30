@@ -301,9 +301,9 @@ void Suite::add(const std::string& name, const TestFunction& testFn) {
 }
 
 Result* Suite::run(const std::string& filter, int runsPerTest) {
-    LOG(1) << "\t about to setupTests" << std::endl;
+    LOG(1) << "\t about to setupTests" ;
     setupTests();
-    LOG(1) << "\t done setupTests" << std::endl;
+    LOG(1) << "\t done setupTests" ;
 
     Timer timer;
     Result* r = new Result(_name);
@@ -312,7 +312,7 @@ Result* Suite::run(const std::string& filter, int runsPerTest) {
     for (const auto& tc : _tests) {
         if (filter.size() && tc->getName().find(filter) == std::string::npos) {
             LOG(1) << "\t skipping test: " << tc->getName() << " because doesn't match filter"
-                   << std::endl;
+                   ;
             continue;
         }
 
@@ -359,7 +359,7 @@ Result* Suite::run(const std::string& filter, int runsPerTest) {
 
     r->_millis = timer.millis();
 
-    log() << "\t DONE running tests" << std::endl;
+    log() << "\t DONE running tests" ;
 
     return r;
 }
@@ -373,7 +373,7 @@ int Suite::run(const std::vector<std::string>& suites, const std::string& filter
     for (unsigned int i = 0; i < suites.size(); i++) {
         if (_allSuites().count(suites[i]) == 0) {
             log() << "invalid test suite [" << suites[i] << "], use --list to see valid names"
-                  << std::endl;
+                  ;
             return EXIT_FAILURE;
         }
     }
@@ -392,11 +392,11 @@ int Suite::run(const std::vector<std::string>& suites, const std::string& filter
         std::shared_ptr<Suite>& s = _allSuites()[name];
         fassert(16145, s != NULL);
 
-        log() << "going to run suite: " << name << std::endl;
+        log() << "going to run suite: " << name ;
         results.emplace_back(s->run(filter, runsPerTest));
     }
 
-    log() << "**************************************************" << std::endl;
+    log() << "**************************************************" ;
 
     int rc = 0;
 
@@ -433,7 +433,7 @@ int Suite::run(const std::vector<std::string>& suites, const std::string& filter
 
     // summary
     if (!totals._fails.empty()) {
-        log() << "Failing tests:" << std::endl;
+        log() << "Failing tests:" ;
         for (const std::string& s : totals._fails) {
             log() << "\t " << s << " Failed";
         }

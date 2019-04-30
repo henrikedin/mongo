@@ -44,8 +44,8 @@ namespace mongo {
 MONGO_STARTUP_OPTIONS_STORE(WiredTigerOptions)(InitializerContext* context) {
     Status ret = wiredTigerGlobalOptions.store(moe::startupOptionsParsed);
     if (!ret.isOK()) {
-        std::cerr << ret.toString() << std::endl;
-        std::cerr << "try '" << context->args()[0] << " --help' for more information" << std::endl;
+        std::cerr << ret.toString() ;
+        std::cerr << "try '" << context->args()[0] << " --help' for more information" ;
         ::_exit(EXIT_BADOPTIONS);
     }
     return Status::OK();

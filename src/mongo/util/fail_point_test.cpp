@@ -188,7 +188,7 @@ private:
                 // printed out properly
                 if (data["a"].numberInt() != 44) {
                     mongo::error() << "blockTask thread detected anomaly"
-                                   << " - data: " << data << std::endl;
+                                   << " - data: " << data ;
                     ASSERT(false);
                 }
             }
@@ -207,7 +207,7 @@ private:
 
                     if (data["a"].numberInt() != 44) {
                         mongo::error() << "blockWithExceptionTask thread detected anomaly"
-                                       << " - data: " << data << std::endl;
+                                       << " - data: " << data ;
                         ASSERT(false);
                     }
 

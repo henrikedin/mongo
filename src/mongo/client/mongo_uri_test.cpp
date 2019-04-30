@@ -88,9 +88,9 @@ void compareOptions(size_t lineNumber,
                             << ")=" << options[i].second << "\" doesn't equal: \"tolower("
                             << expectedOptions[i].first.original()
                             << ")=" << expectedOptions[i].second << "\""
-                            << " data on line: " << lineNumber << std::endl;
+                            << " data on line: " << lineNumber ;
             std::cerr << "Failing URI: \"" << uri << "\""
-                      << " data on line: " << lineNumber << std::endl;
+                      << " data on line: " << lineNumber ;
             ASSERT(false);
         }
     }

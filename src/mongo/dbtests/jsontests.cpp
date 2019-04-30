@@ -632,12 +632,12 @@ private:
         const bool bad = expected.woCompare(actual);
         if (bad) {
             ::mongo::log() << "want:" << expected.jsonString() << " size: " << expected.objsize()
-                           << endl;
+                           ;
             ::mongo::log() << "got :" << actual.jsonString() << " size: " << actual.objsize()
-                           << endl;
-            ::mongo::log() << expected.hexDump() << endl;
-            ::mongo::log() << actual.hexDump() << endl;
-            ::mongo::log() << msg << endl;
+                           ;
+            ::mongo::log() << expected.hexDump() ;
+            ::mongo::log() << actual.hexDump() ;
+            ::mongo::log() << msg ;
             ::mongo::log() << "orig json:" << this->json();
         }
         ASSERT(!bad);

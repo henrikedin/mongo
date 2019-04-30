@@ -205,7 +205,7 @@ void _assertIteratorsEquivalent(It1 it1, It2 it2, int line) {
         it2->closeSource();
     } catch (...) {
         mongo::unittest::log() << "Failure from line " << line << " on iteration " << iteration
-                               << std::endl;
+                               ;
         it1->closeSource();
         it2->closeSource();
         throw;

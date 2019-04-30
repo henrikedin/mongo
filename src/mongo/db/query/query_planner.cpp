@@ -477,9 +477,9 @@ StatusWith<std::unique_ptr<QuerySolution>> QueryPlanner::planFromCache(
     // Create a copy of the expression tree.  We use cachedSoln to annotate this with indices.
     unique_ptr<MatchExpression> clone = query.root()->shallowClone();
 
-    LOG(5) << "Tagging the match expression according to cache data: " << endl
-           << "Filter:" << endl
-           << redact(clone->debugString()) << "Cache data:" << endl
+    LOG(5) << "Tagging the match expression according to cache data: " << '\n'
+           << "Filter:" << '\n'
+           << redact(clone->debugString()) << "Cache data:" << '\n'
            << redact(winnerCacheData.toString());
 
     stdx::unordered_set<string> fields;
@@ -505,7 +505,7 @@ StatusWith<std::unique_ptr<QuerySolution>> QueryPlanner::planFromCache(
     // The MatchExpression tree is in canonical order. We must order the nodes for access planning.
     prepareForAccessPlanning(clone.get());
 
-    LOG(5) << "Tagged tree:" << endl << redact(clone->debugString());
+    LOG(5) << "Tagged tree:" << '\n' << redact(clone->debugString());
 
     // Use the cached index assignments to build solnRoot.
     std::unique_ptr<QuerySolutionNode> solnRoot(QueryPlannerAccess::buildIndexedDataAccess(
@@ -531,10 +531,10 @@ StatusWith<std::unique_ptr<QuerySolution>> QueryPlanner::planFromCache(
 // static
 StatusWith<std::vector<std::unique_ptr<QuerySolution>>> QueryPlanner::plan(
     const CanonicalQuery& query, const QueryPlannerParams& params) {
-    LOG(5) << "Beginning planning..." << endl
-           << "=============================" << endl
-           << "Options = " << optionString(params.options) << endl
-           << "Canonical query:" << endl
+    LOG(5) << "Beginning planning..." << '\n'
+           << "=============================" << '\n'
+           << "Options = " << optionString(params.options) << '\n'
+           << "Canonical query:" << '\n'
            << redact(query.toString()) << "=============================";
 
     std::vector<std::unique_ptr<QuerySolution>> out;
@@ -716,7 +716,7 @@ StatusWith<std::vector<std::unique_ptr<QuerySolution>>> QueryPlanner::plan(
     }
 
     // query.root() is now annotated with RelevantTag(s).
-    LOG(5) << "Rated tree:" << endl << redact(query.root()->debugString());
+    LOG(5) << "Rated tree:" << '\n' << redact(query.root()->debugString());
 
     // If there is a GEO_NEAR it must have an index it can use directly.
     const MatchExpression* gnNode = NULL;
@@ -782,7 +782,7 @@ StatusWith<std::vector<std::unique_ptr<QuerySolution>>> QueryPlanner::plan(
 
         unique_ptr<MatchExpression> nextTaggedTree;
         while ((nextTaggedTree = isp.getNext()) && (out.size() < params.maxIndexedSolutions)) {
-            LOG(5) << "About to build solntree from tagged tree:" << endl
+            LOG(5) << "About to build solntree from tagged tree:" << '\n'
                    << redact(nextTaggedTree->debugString());
 
             // Store the plan cache index tree before calling prepareForAccessingPlanning(), so that
@@ -812,7 +812,7 @@ StatusWith<std::vector<std::unique_ptr<QuerySolution>>> QueryPlanner::plan(
 
             auto soln = QueryPlannerAnalysis::analyzeDataAccess(query, params, std::move(solnRoot));
             if (soln) {
-                LOG(5) << "Planner: adding solution:" << endl << redact(soln->toString());
+                LOG(5) << "Planner: adding solution:" << '\n' << redact(soln->toString());
                 if (statusWithCacheData.isOK()) {
                     SolutionCacheData* scd = new SolutionCacheData();
                     scd->tree = std::move(cacheData);
@@ -999,7 +999,7 @@ StatusWith<std::vector<std::unique_ptr<QuerySolution>>> QueryPlanner::plan(
     if (possibleToCollscan && (collscanRequested || collscanNeeded)) {
         auto collscan = buildCollscanSoln(query, isTailable, params);
         if (collscan) {
-            LOG(5) << "Planner: outputting a collscan:" << endl << redact(collscan->toString());
+            LOG(5) << "Planner: outputting a collscan:" << '\n' << redact(collscan->toString());
             SolutionCacheData* scd = new SolutionCacheData();
             scd->solnType = SolutionCacheData::COLLSCAN_SOLN;
             collscan->cacheData.reset(scd);
