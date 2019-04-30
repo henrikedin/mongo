@@ -122,7 +122,7 @@ public:
 // Tests that logging while in the midst of logging produces two distinct log messages, with the
 // inner log message appearing before the outer.
 TEST_F(LogTestUnadornedEncoder, LogstreamBuilderReentrance) {
-    log() << "Logging A() -- " << A() << " -- done!" << std::endl;
+    log() << "Logging A() -- " << A() << " -- done!" /*<< std::endl*/;
     ASSERT_EQUALS(2U, _logLines.size());
     ASSERT_EQUALS(std::string("Golly!\n"), _logLines[0]);
     ASSERT_EQUALS(std::string("Logging A() -- Golly! -- done!\n"), _logLines[1]);
@@ -435,7 +435,7 @@ TEST_F(LogTestDetailsEncoder, ) {
 
     // Non-default log component short name should appear in detailed log line.
     _logLines.clear();
-    MONGO_LOG_COMPONENT(0, componentA) << "This is logged";
+    MONGO_LOG_COMPONENT(0, componentA) << "This is logged"; 
     ASSERT_EQUALS(1U, _logLines.size());
     ASSERT_NOT_EQUALS(_logLines[0].find(componentA.getNameForLog().toString()), std::string::npos);
 

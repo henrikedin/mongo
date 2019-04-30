@@ -41,9 +41,36 @@
 #include "mongo/util/assert_util.h"  // TODO: remove apple dep for this in threadlocal.h
 #include "mongo/util/time_support.h"
 
+#include <boost/log/attributes/function.hpp>
+#include <boost/log/sources/severity_channel_logger.hpp>
+
 namespace mongo {
 
 namespace {
+
+class log_source {
+public:
+    log_source() {
+        logger.add_attribute("TimeStamp", boost::log::attributes::make_function([]() {
+                                 return std::string("time_stamp");
+                             }));
+
+        logger.add_attribute("ThreadName", boost::log::attributes::make_function([]() {
+                                 return std::string("thread_name");
+                             }));
+    }
+    auto& get() {
+        return logger;
+    }
+
+private:
+    boost::log::sources::severity_channel_logger<logger::LogSeverity, logger::LogComponent> logger;
+};
+
+log_source& threadLogSource() {
+    thread_local log_source lg;
+    return lg;
+}
 
 /// This flag indicates whether the system providing a per-thread cache of ostringstreams
 /// for use by LogstreamBuilder instances is initialized and ready for use.  Until this
@@ -80,49 +107,58 @@ LogstreamBuilder::LogstreamBuilder(MessageLogDomain* domain,
                                    LogSeverity severity,
                                    LogComponent component,
                                    bool shouldCache)
-    : _domain(domain),
+    : _rec(threadLogSource().get().open_record((::boost::log::keywords::channel = component,
+                                              ::boost::log::keywords::severity = severity)))
+      /*_domain(domain),
       _contextName(contextName.toString()),
       _severity(std::move(severity)),
       _component(std::move(component)),
       _tee(nullptr),
-      _shouldCache(shouldCache) {}
+      _shouldCache(shouldCache) {*/
+{
+    if (_rec)
+        _recStream = std::make_unique<boost::log::record_ostream>(_rec);
+}
 
 LogstreamBuilder::~LogstreamBuilder() {
-    if (_os) {
-        if (!_baseMessage.empty())
-            _baseMessage.push_back(' ');
-        _baseMessage += _os->str();
-        MessageEventEphemeral message(
-            Date_t::now(), _severity, _component, _contextName, _baseMessage);
-        message.setIsTruncatable(_isTruncatable);
-        _domain->append(message).transitional_ignore();
-        if (_tee) {
-            _os->str("");
-            logger::MessageEventDetailsEncoder teeEncoder;
-            teeEncoder.encode(message, *_os);
-            _tee->write(_os->str());
-        }
-        _os->str("");
-        if (_shouldCache && isThreadOstreamCacheInitialized && !threadOstreamCache) {
-            threadOstreamCache = std::move(_os);
-        }
+    //if (_os) {
+    //    if (!_baseMessage.empty())
+    //        _baseMessage.push_back(' ');
+    //    _baseMessage += _os->str();
+    //    MessageEventEphemeral message(
+    //        Date_t::now(), _severity, _component, _contextName, _baseMessage);
+    //    message.setIsTruncatable(_isTruncatable);
+    //    _domain->append(message).transitional_ignore();
+    //    if (_tee) {
+    //        _os->str("");
+    //        logger::MessageEventDetailsEncoder teeEncoder;
+    //        teeEncoder.encode(message, *_os);
+    //        _tee->write(_os->str());
+    //    }
+    //    _os->str("");
+    //    if (_shouldCache && isThreadOstreamCacheInitialized && !threadOstreamCache) {
+    //        threadOstreamCache = std::move(_os);
+    //    }
+    //}
+    if (_rec) {
+        threadLogSource().get().push_record(boost::move(_rec));
     }
 }
 
 void LogstreamBuilder::operator<<(Tee* tee) {
     makeStream();  // Adding a Tee counts for purposes of deciding to make a log message.
     // TODO: dassert(!_tee);
-    _tee = tee;
+    //_tee = tee;
 }
 
 void LogstreamBuilder::makeStream() {
-    if (!_os) {
+    /*if (!_os) {
         if (_shouldCache && isThreadOstreamCacheInitialized && threadOstreamCache) {
             _os = std::move(threadOstreamCache);
         } else {
             _os = stdx::make_unique<std::ostringstream>();
         }
-    }
+    }*/
 }
 
 }  // namespace logger

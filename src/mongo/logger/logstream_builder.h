@@ -42,6 +42,9 @@
 #include "mongo/stdx/chrono.h"
 #include "mongo/util/exit_code.h"
 
+#include <boost/log/core/record.hpp>
+#include <boost/log/sources/record_ostream.hpp>
+
 namespace mongo {
 namespace logger {
 
@@ -99,43 +102,57 @@ public:
      * Sets an optional prefix for the message.
      */
     LogstreamBuilder& setBaseMessage(const std::string& baseMessage) {
-        _baseMessage = baseMessage;
+        //_baseMessage = baseMessage;
         return *this;
     }
 
     LogstreamBuilder& setIsTruncatable(bool isTruncatable) {
-        _isTruncatable = isTruncatable;
+        //_isTruncatable = isTruncatable;
         return *this;
     }
 
     std::ostream& stream() {
-        if (!_os)
+        /*if (!_os)
             makeStream();
-        return *_os;
+        return *_os;*/
+        return std::cout;
     }
 
     LogstreamBuilder& operator<<(const char* x) {
-        stream() << x;
+		if (_rec)
+		{
+            (*_recStream) << x;
+		}
         return *this;
     }
     LogstreamBuilder& operator<<(const std::string& x) {
-        stream() << x;
+        if (_rec) {
+            (*_recStream) << x;
+        }
         return *this;
     }
     LogstreamBuilder& operator<<(StringData x) {
-        stream() << x;
+        if (_rec) {
+            (*_recStream) << x;
+        }
         return *this;
     }
     LogstreamBuilder& operator<<(char* x) {
-        stream() << x;
+        if (_rec) {
+            (*_recStream) << x;
+        }
         return *this;
     }
     LogstreamBuilder& operator<<(char x) {
-        stream() << x;
+        if (_rec) {
+            (*_recStream) << x;
+        }
         return *this;
     }
     LogstreamBuilder& operator<<(int x) {
-        stream() << x;
+        if (_rec) {
+            (*_recStream) << x;
+        }
         return *this;
     }
     LogstreamBuilder& operator<<(ExitCode x) {
@@ -143,23 +160,33 @@ public:
         return *this;
     }
     LogstreamBuilder& operator<<(long x) {
-        stream() << x;
+        if (_rec) {
+            (*_recStream) << x;
+        }
         return *this;
     }
     LogstreamBuilder& operator<<(unsigned long x) {
-        stream() << x;
+        if (_rec) {
+            (*_recStream) << x;
+        }
         return *this;
     }
     LogstreamBuilder& operator<<(unsigned x) {
-        stream() << x;
+        if (_rec) {
+            (*_recStream) << x;
+        }
         return *this;
     }
     LogstreamBuilder& operator<<(unsigned short x) {
-        stream() << x;
+        if (_rec) {
+            (*_recStream) << x;
+        }
         return *this;
     }
     LogstreamBuilder& operator<<(double x) {
-        stream() << x;
+        if (_rec) {
+            (*_recStream) << x;
+        }
         return *this;
     }
     LogstreamBuilder& operator<<(void* x) {
@@ -171,48 +198,59 @@ public:
         return *this;
     }
     LogstreamBuilder& operator<<(long long x) {
-        stream() << x;
+        if (_rec) {
+            (*_recStream) << x;
+        }
         return *this;
     }
     LogstreamBuilder& operator<<(unsigned long long x) {
-        stream() << x;
+        if (_rec) {
+            (*_recStream) << x;
+        }
         return *this;
     }
     LogstreamBuilder& operator<<(bool x) {
-        stream() << x;
+        if (_rec) {
+            (*_recStream) << x;
+        }
         return *this;
     }
 
     template <typename Period>
     LogstreamBuilder& operator<<(const Duration<Period>& d) {
-        stream() << d;
+        if (_rec)
+			(*_recStream) << d;
+
         return *this;
     }
 
     LogstreamBuilder& operator<<(BSONType t) {
-        stream() << typeName(t);
+        if (_rec)
+            (*_recStream) << typeName(t);
         return *this;
     }
 
     LogstreamBuilder& operator<<(ErrorCodes::Error ec) {
-        stream() << ErrorCodes::errorString(ec);
+        if (_rec)
+            (*_recStream) << ErrorCodes::errorString(ec);
         return *this;
     }
 
     template <typename T>
     LogstreamBuilder& operator<<(const T& x) {
-        stream() << x.toString();
+        if (_rec)
+            (*_recStream) << x.toString();
         return *this;
     }
 
     /*LogstreamBuilder& operator<<(std::ostream& (*manip)(std::ostream&)) {
         stream() << manip;
         return *this;
-    }
+    }*/
     LogstreamBuilder& operator<<(std::ios_base& (*manip)(std::ios_base&)) {
         stream() << manip;
         return *this;
-    }*/
+    }
 
     template <typename OptionalType>
     LogstreamBuilder& operator<<(const boost::optional<OptionalType>& optional) {
@@ -233,7 +271,10 @@ public:
 private:
     void makeStream();
 
-    MessageLogDomain* _domain;
+    boost::log::record _rec;
+    std::unique_ptr<boost::log::record_ostream> _recStream;
+
+   /* MessageLogDomain* _domain;
     std::string _contextName;
     LogSeverity _severity;
     LogComponent _component;
@@ -241,7 +282,7 @@ private:
     std::unique_ptr<std::ostringstream> _os;
     Tee* _tee;
     bool _isTruncatable = true;
-    bool _shouldCache;
+    bool _shouldCache;*/
 };
 
 
