@@ -953,7 +953,7 @@ def printLocalInfo():
 
 printLocalInfo()
 
-boostLibs = [ "filesystem", "program_options", "system", "iostreams" ]
+boostLibs = [ "filesystem", "program_options", "system", "iostreams", "thread", "log_setup", "log" ]
 
 onlyServer = len( COMMAND_LINE_TARGETS ) == 0 or ( len( COMMAND_LINE_TARGETS ) == 1 and str( COMMAND_LINE_TARGETS[0] ) in [ "mongod" , "mongos" , "test" ] )
 
@@ -3288,6 +3288,10 @@ def doConfigure(myenv):
         CPPDEFINES=[
             "BOOST_SYSTEM_NO_DEPRECATED",
             "BOOST_MATH_NO_LONG_DOUBLE_MATH_FUNCTIONS",
+            "BOOST_LOG_WITHOUT_SETTINGS_PARSERS",
+            "BOOST_LOG_WITHOUT_DEFAULT_FACTORIES",
+            "BOOST_LOG_USE_STD_REGEX",
+            "BOOST_LOG_WITHOUT_IPC",
             "BOOST_ENABLE_ASSERT_DEBUG_HANDLER",
             "ABSL_FORCE_ALIGNED_ACCESS",
         ]

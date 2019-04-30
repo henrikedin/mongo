@@ -273,6 +273,8 @@ else:
             boostDirectory + '/boost_filesystem',
             boostDirectory + '/boost_system',
             boostDirectory + '/boost_iostreams',
+            boostDirectory + '/boost_log_setup',
+            boostDirectory + '/boost_log',
         ])
 
 boostEnv.Library(
