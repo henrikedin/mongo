@@ -94,7 +94,7 @@ bool OplogReader::connect(const HostAndPort& host) {
 
 void OplogReader::tailCheck() {
     if (cursor.get() && cursor->isDead()) {
-        log() << "old cursor isDead, will initiate a new one";
+        log() << "old cursor isDead, will initiate a new one" << std::endl;
         resetCursor();
     }
 }

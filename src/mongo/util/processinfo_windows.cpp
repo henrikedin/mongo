@@ -379,7 +379,7 @@ bool ProcessInfo::blockInMemory(const void* start) {
                 if (wiex[i].BasicInfo.FaultingPc == 0) break;
                 cout << "faulting pc = " << wiex[i].BasicInfo.FaultingPc <<
                     " address = " << wiex[i].BasicInfo.FaultingVa <<
-                    " thread id = " << wiex[i].FaultingThreadId /*<< endl*/;
+                    " thread id = " << wiex[i].FaultingThreadId << endl;
             }
         }
 #endif

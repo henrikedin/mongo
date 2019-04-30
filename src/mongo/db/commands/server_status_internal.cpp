@@ -60,7 +60,7 @@ void MetricTree::_add(const string& path, ServerStatusMetric* metric) {
 
     string myLevel = path.substr(0, idx);
     if (_metrics.count(myLevel) > 0) {
-        cerr << "metric conflict on: " << myLevel /*<< endl*/;
+        cerr << "metric conflict on: " << myLevel << endl;
         fassertFailed(16461);
     }
 

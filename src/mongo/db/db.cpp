@@ -297,10 +297,10 @@ ExitCode _initAndListen(int listenPort) {
           << " dbpath=" << storageGlobalParams.dbpath;
 
         const bool is32bit = sizeof(int*) == 4;
-        l << (is32bit ? " 32" : " 64") << "-bit host=" << getHostNameCached() /*<< endl*/;
+        l << (is32bit ? " 32" : " 64") << "-bit host=" << getHostNameCached() << endl;
     }
 
-    DEV log(LogComponent::kControl) << "DEBUG build (which is slower)" /*<< endl*/;
+    DEV log(LogComponent::kControl) << "DEBUG build (which is slower)" << endl;
 
 #if defined(_WIN32)
     VersionInfoInterface::instance().logTargetMinOS();
@@ -392,12 +392,12 @@ ExitCode _initAndListen(int listenPort) {
 
     {
         std::stringstream ss;
-        ss /*<< endl*/;
-        ss << "*********************************************************************" /*<< endl*/;
-        ss << " ERROR: dbpath (" << storageGlobalParams.dbpath << ") does not exist." /*<< endl*/;
-        ss << " Create this directory or give existing directory in --dbpath." /*<< endl*/;
-        ss << " See http://dochub.mongodb.org/core/startingandstoppingmongo" /*<< endl*/;
-        ss << "*********************************************************************" /*<< endl*/;
+        ss << endl;
+        ss << "*********************************************************************" << endl;
+        ss << " ERROR: dbpath (" << storageGlobalParams.dbpath << ") does not exist." << endl;
+        ss << " Create this directory or give existing directory in --dbpath." << endl;
+        ss << " See http://dochub.mongodb.org/core/startingandstoppingmongo" << endl;
+        ss << "*********************************************************************" << endl;
         uassert(10296, ss.str().c_str(), boost::filesystem::exists(storageGlobalParams.dbpath));
     }
 
@@ -717,18 +717,18 @@ void startupConfigActions(const std::vector<std::string>& args) {
         const auto command = moe::startupOptionsParsed["command"].as<std::vector<std::string>>();
 
         if (command[0].compare("dbpath") == 0) {
-            std::cout << storageGlobalParams.dbpath /*<< endl*/;
+            std::cout << storageGlobalParams.dbpath << endl;
             quickExit(EXIT_SUCCESS);
         }
 
         if (command[0].compare("run") != 0) {
-            std::cout << "Invalid command: " << command[0] /*<< endl*/;
+            std::cout << "Invalid command: " << command[0] << endl;
             printMongodHelp(moe::startupOptions);
             quickExit(EXIT_FAILURE);
         }
 
         if (command.size() > 1) {
-            std::cout << "Too many parameters to 'run' command" /*<< endl*/;
+            std::cout << "Too many parameters to 'run' command" << endl;
             printMongodHelp(moe::startupOptions);
             quickExit(EXIT_FAILURE);
         }
@@ -764,7 +764,7 @@ void startupConfigActions(const std::vector<std::string>& args) {
                     failed = true;
             } catch (const std::exception& e) {
                 std::cerr << "Error reading pid from lock file [" << name << "]: " << e.what()
-                          /*<< endl*/;
+                          << endl;
                 failed = true;
             }
         }
@@ -775,11 +775,11 @@ void startupConfigActions(const std::vector<std::string>& args) {
             quickExit(EXIT_FAILURE);
         }
 
-        std::cout << "killing process with pid: " << pid /*<< endl*/;
+        std::cout << "killing process with pid: " << pid << endl;
         int ret = kill(pid, SIGTERM);
         if (ret) {
             int e = errno;
-            std::cerr << "failed to kill process: " << errnoWithDescription(e) /*<< endl*/;
+            std::cerr << "failed to kill process: " << errnoWithDescription(e) << endl;
             quickExit(EXIT_FAILURE);
         }
 

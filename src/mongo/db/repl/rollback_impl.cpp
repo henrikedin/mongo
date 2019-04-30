@@ -1230,9 +1230,9 @@ void RollbackImpl::_summarizeRollback(OperationContext* opCtx) const {
     if (_rollbackStats.stableTimestamp) {
         log() << "\tstable timestamp: " << *_rollbackStats.stableTimestamp;
     }
-    log() << "\tshard identity document rolled back: " /*<< std::boolalpha*/
+    log() << "\tshard identity document rolled back: " << std::boolalpha
           << _observerInfo.shardIdentityRolledBack;
-    log() << "\tconfig server config version document rolled back: " /*<< std::boolalpha*/
+    log() << "\tconfig server config version document rolled back: " << std::boolalpha
           << _observerInfo.configServerConfigVersionRolledBack;
     log() << "\taffected sessions: " << (_observerInfo.rollbackSessionIds.empty() ? "none" : "");
     for (const auto& sessionId : _observerInfo.rollbackSessionIds) {

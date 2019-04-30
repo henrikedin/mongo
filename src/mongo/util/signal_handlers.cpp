@@ -195,7 +195,7 @@ void signalProcessingThread(LogFileStatus rotate) {
             default:
                 // interrupt/terminate signal
                 log() << "got signal " << actualSignal << " (" << strsignal(actualSignal)
-                      << "), will terminate after current cmd ends" /*<< endl*/;
+                      << "), will terminate after current cmd ends" << endl;
                 exitCleanly(EXIT_CLEAN);
                 break;
         }

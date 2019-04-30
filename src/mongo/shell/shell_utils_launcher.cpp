@@ -246,9 +246,9 @@ void ProgramOutputMultiplexer::appendLine(int port,
     boost::iostreams::tee_device<std::ostream, std::stringstream> teeDevice(cout, _buffer);
     boost::iostreams::stream<decltype(teeDevice)> teeStream(teeDevice);
     if (port > 0) {
-        teeStream << name << port << "| " << line /*<< endl*/;
+        teeStream << name << port << "| " << line << endl;
     } else {
-        teeStream << name << pid << "| " << line /*<< endl*/;
+        teeStream << name << pid << "| " << line << endl;
     }
 }
 
@@ -661,7 +661,7 @@ void ProgramRunner::launchProcess(int child_stdout) {
     if (nativePid == -1) {
         // Fork failed so it is time for the process to exit
         const auto ewd = errnoWithDescription();
-        cout << "ProgramRunner is unable to fork child process: " << ewd /*<< endl*/;
+        cout << "ProgramRunner is unable to fork child process: " << ewd << endl;
         fassertFailed(34363);
     }
 
@@ -939,7 +939,7 @@ inline void kill_wrapper(ProcessId pid, int sig, int port, const BSONObj& opt) {
                     conn.auth("admin", authObj["user"].String(), authObj["pwd"].String(), errMsg);
 
                     if (!errMsg.empty()) {
-                        cout << "Failed to authenticate before shutdown: " << errMsg /*<< endl*/;
+                        cout << "Failed to authenticate before shutdown: " << errMsg << endl;
                     }
                 }
 

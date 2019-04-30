@@ -114,7 +114,7 @@ Status setParsedOpts(const moe::Environment& params) {
 }  // namespace
 
 void printCommandLineOpts() {
-    log() << "options: " << serverGlobalParams.parsedOpts /*<< endl*/;
+    log() << "options: " << serverGlobalParams.parsedOpts << endl;
 }
 
 Status validateServerOptions(const moe::Environment& params) {

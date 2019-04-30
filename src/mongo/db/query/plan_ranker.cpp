@@ -92,7 +92,7 @@ size_t PlanRanker::pickBestPlan(const vector<CandidatePlan>& candidates, PlanRan
 
     // Compute score for each tree.  Record the best.
     for (size_t i = 0; i < statTrees.size(); ++i) {
-        LOG(5) << "Scoring plan " << i << ":" /*<< endl*/
+        LOG(5) << "Scoring plan " << i << ":" << endl
                << redact(candidates[i].solution->toString()) << "Stats:\n"
                << redact(Explain::statsToBSON(*statTrees[i]).jsonString(Strict, true));
         LOG(2) << "Scoring query plan: " << Explain::getPlanSummary(candidates[i].root)

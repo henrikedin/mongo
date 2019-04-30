@@ -71,7 +71,8 @@ void AuthzSessionExternalStateServerCommon::_checkShouldAllowLocalhost(Operation
     if (_allowLocalhost) {
         std::call_once(checkShouldAllowLocalhostOnceFlag, []() {
             log() << "note: no users configured in admin.system.users, allowing localhost "
-                     "access";
+                     "access"
+                  << std::endl;
         });
     }
 }

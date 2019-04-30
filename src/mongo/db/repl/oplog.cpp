@@ -708,7 +708,7 @@ void createOplog(OperationContext* opCtx,
                 stringstream ss;
                 ss << "cmdline oplogsize (" << n << ") different than existing (" << o
                    << ") see: http://dochub.mongodb.org/core/increase-oplog";
-                log() << ss.str() /*<< endl*/;
+                log() << ss.str() << endl;
                 uasserted(13257, ss.str());
             }
         }
@@ -721,8 +721,8 @@ void createOplog(OperationContext* opCtx,
     /* create an oplog collection, if it doesn't yet exist. */
     const auto sz = getNewOplogSizeBytes(opCtx, replSettings);
 
-    log() << "******" /*<< endl*/;
-    log() << "creating replication oplog of size: " << (int)(sz / (1024 * 1024)) << "MB..." /*<< endl*/;
+    log() << "******" << endl;
+    log() << "creating replication oplog of size: " << (int)(sz / (1024 * 1024)) << "MB..." << endl;
 
     CollectionOptions options;
     options.capped = true;
@@ -743,7 +743,7 @@ void createOplog(OperationContext* opCtx,
     StorageEngine* storageEngine = service->getStorageEngine();
     storageEngine->flushAllFiles(opCtx, true);
 
-    log() << "******" /*<< endl*/;
+    log() << "******" << endl;
 }
 
 void createOplog(OperationContext* opCtx) {

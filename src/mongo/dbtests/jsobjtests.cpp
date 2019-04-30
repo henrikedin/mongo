@@ -163,7 +163,7 @@ FieldCompareResult compareDottedFieldNames(const string& l,
             return LEFT_SUBFIELD;
     }
 
-    log() << "compareDottedFieldNames ERROR  l: " << l << " r: " << r << "  TOO MANY LOOPS" /*<< endl*/;
+    log() << "compareDottedFieldNames ERROR  l: " << l << " r: " << r << "  TOO MANY LOOPS" << endl;
     verify(0);
     return SAME;  // will never get here
 }
@@ -667,7 +667,7 @@ public:
             b.append("field", x, 4);
             b.append("z", true);
             BSONObj B = b.obj();
-            // cout << B.toString() /*<< endl*/;
+            // cout << B.toString() << endl;
 
             BSONObjBuilder a;
             const char xx[] = {'a', 0, 'c', 0};
@@ -1503,7 +1503,7 @@ public:
         if (got == wanted)
             return;
         cout << " order: " << order << " l: " << l << "r: " << r << " wanted: " << wanted
-             << " got: " << got /*<< endl*/;
+             << " got: " << got << endl;
     }
 
     void lt(BSONObj order, BSONObj l, BSONObj r) {
@@ -1719,7 +1719,7 @@ public:
                     l += strlen(j.next().fieldName());
             }
             // unsigned long long tm = t.micros();
-            // cout << "time: " << tm /*<< endl*/;
+            // cout << "time: " << tm << endl;
         }
 
         BSONObj o2 = BSON("2"
@@ -1884,7 +1884,7 @@ public:
         BSONElement a = x["a"];
         BSONElement b = x["b"];
         BSONElement c = x["c"];
-        // cout << "c: " << c /*<< endl*/;
+        // cout << "c: " << c << endl;
         ASSERT(a.woCompare(b) != 0);
         ASSERT(a.woCompare(b, false) == 0);
 

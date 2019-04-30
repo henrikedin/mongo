@@ -178,7 +178,7 @@ void File::write(fileofs o, const char* data, unsigned len) {
         DWORD dosError = GetLastError();
         log() << "In File::write(), SetFilePointerEx for '" << _name
               << "' tried to set the file pointer to " << o << " but failed with "
-              << errnoWithDescription(dosError) /*<< std::endl*/;
+              << errnoWithDescription(dosError) << std::endl;
         return;
     }
     DWORD bytesWritten;

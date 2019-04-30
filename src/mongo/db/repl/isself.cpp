@@ -119,7 +119,8 @@ std::vector<std::string> getAddrsForHost(const std::string& iporhost,
     int err = getaddrinfo(iporhost.c_str(), portNum.c_str(), &hints, &addrs);
 
     if (err) {
-        warning() << "getaddrinfo(\"" << iporhost << "\") failed: " << stringifyError(err);
+        warning() << "getaddrinfo(\"" << iporhost << "\") failed: " << stringifyError(err)
+                  << std::endl;
         return out;
     }
 
@@ -133,7 +134,7 @@ std::vector<std::string> getAddrsForHost(const std::string& iporhost,
             err = getnameinfo(
                 addr->ai_addr, addr->ai_addrlen, host, NI_MAXHOST, NULL, 0, NI_NUMERICHOST);
             if (err) {
-                warning() << "getnameinfo() failed: " << stringifyError(err);
+                warning() << "getnameinfo() failed: " << stringifyError(err) << std::endl;
                 continue;
             }
             out.push_back(host);
@@ -209,7 +210,7 @@ bool isSelf(const HostAndPort& hostAndPort, ServiceContext* const ctx) {
 
         return me;
     } catch (const std::exception& e) {
-        warning() << "couldn't check isSelf (" << hostAndPort << ") " << e.what();
+        warning() << "couldn't check isSelf (" << hostAndPort << ") " << e.what() << std::endl;
     }
 
     return false;
@@ -288,7 +289,7 @@ std::vector<std::string> getBoundAddrs(const bool ipv6enabled) {
     }
 
     if (err != NO_ERROR) {
-        warning() << "GetAdaptersAddresses() failed: " << errnoWithDescription(err);
+        warning() << "GetAdaptersAddresses() failed: " << errnoWithDescription(err) << std::endl;
         return out;
     }
 
@@ -306,7 +307,8 @@ std::vector<std::string> getBoundAddrs(const bool ipv6enabled) {
                 boost::asio::detail::socket_ops::inet_ntop(
                     AF_INET, &(sock->sin_addr), addrstr, INET_ADDRSTRLEN, 0, ec);
                 if (ec) {
-                    warning() << "inet_ntop failed during IPv4 address conversion: " << ec.message();
+                    warning() << "inet_ntop failed during IPv4 address conversion: " << ec.message()
+                              << std::endl;
                     continue;
                 }
                 out.push_back(addrstr);
@@ -318,7 +320,8 @@ std::vector<std::string> getBoundAddrs(const bool ipv6enabled) {
                 boost::asio::detail::socket_ops::inet_ntop(
                     AF_INET6, &(sock->sin6_addr), addrstr, INET6_ADDRSTRLEN, 0, ec);
                 if (ec) {
-                    warning() << "inet_ntop failed during IPv6 address conversion: " << ec.message();
+                    warning() << "inet_ntop failed during IPv6 address conversion: " << ec.message()
+                              << std::endl;
                     continue;
                 }
                 out.push_back(addrstr);

@@ -224,10 +224,10 @@ ServiceContext* initialize(const char* yaml_config) {
           << " dbpath=" << storageGlobalParams.dbpath;
 
         const bool is32bit = sizeof(int*) == 4;
-        l << (is32bit ? " 32" : " 64") << "-bit" /*<< endl*/;
+        l << (is32bit ? " 32" : " 64") << "-bit" << endl;
     }
 
-    DEV log(LogComponent::kControl) << "DEBUG build (which is slower)" /*<< endl*/;
+    DEV log(LogComponent::kControl) << "DEBUG build (which is slower)" << endl;
 
     // The periodic runner is required by the storage engine to be running beforehand.
     auto periodicRunner = std::make_unique<PeriodicRunnerEmbedded>(
@@ -260,12 +260,12 @@ ServiceContext* initialize(const char* yaml_config) {
 
     {
         std::stringstream ss;
-        ss /*<< endl*/;
-        ss << "*********************************************************************" /*<< endl*/;
-        ss << " ERROR: dbpath (" << storageGlobalParams.dbpath << ") does not exist." /*<< endl*/;
-        ss << " Create this directory or give existing directory in --dbpath." /*<< endl*/;
-        ss << " See http://dochub.mongodb.org/core/startingandstoppingmongo" /*<< endl*/;
-        ss << "*********************************************************************" /*<< endl*/;
+        ss << endl;
+        ss << "*********************************************************************" << endl;
+        ss << " ERROR: dbpath (" << storageGlobalParams.dbpath << ") does not exist." << endl;
+        ss << " Create this directory or give existing directory in --dbpath." << endl;
+        ss << " See http://dochub.mongodb.org/core/startingandstoppingmongo" << endl;
+        ss << "*********************************************************************" << endl;
         uassert(50677, ss.str().c_str(), boost::filesystem::exists(storageGlobalParams.dbpath));
     }
 

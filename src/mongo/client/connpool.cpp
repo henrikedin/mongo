@@ -136,7 +136,7 @@ void PoolForHost::reportBadConnectionAt(uint64_t microSec) {
         _minValidCreationTimeMicroSec = microSec;
         logNoCache() << "Detected bad connection created at " << _minValidCreationTimeMicroSec
                      << " microSec, clearing pool for " << _hostName << " of " << openConnections()
-                     << " connections" /*<< endl*/;
+                     << " connections" << endl;
         clear();
     }
 }
@@ -456,7 +456,7 @@ void DBConnectionPool::flush() {
 
 void DBConnectionPool::clear() {
     stdx::lock_guard<stdx::mutex> L(_mutex);
-    LOG(2) << "Removing connections on all pools owned by " << _name /*<< endl*/;
+    LOG(2) << "Removing connections on all pools owned by " << _name << endl;
     for (PoolMap::iterator iter = _pools.begin(); iter != _pools.end(); ++iter) {
         iter->second.clear();
     }
@@ -464,7 +464,7 @@ void DBConnectionPool::clear() {
 
 void DBConnectionPool::removeHost(const string& host) {
     stdx::lock_guard<stdx::mutex> L(_mutex);
-    LOG(2) << "Removing connections from all pools for host: " << host /*<< endl*/;
+    LOG(2) << "Removing connections from all pools for host: " << host << endl;
     for (PoolMap::iterator i = _pools.begin(); i != _pools.end(); ++i) {
         const string& poolHost = i->first.ident;
         if (!serverNameCompare()(host, poolHost) && !serverNameCompare()(poolHost, host)) {
@@ -660,7 +660,7 @@ ScopedDbConnection::~ScopedDbConnection() {
         } else {
             /* see done() comments above for why we log this line */
             logNoCache() << "scoped connection to " << _conn->getServerAddress()
-                         << " not being returned to the pool" /*<< endl*/;
+                         << " not being returned to the pool" << endl;
             kill();
         }
     }

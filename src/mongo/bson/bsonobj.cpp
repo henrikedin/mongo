@@ -439,7 +439,7 @@ Status BSONObj::storageValidEmbedded() const {
 
 void BSONObj::dump() const {
     LogstreamBuilder builder = log();
-    //builder << std::hex;
+    builder << std::hex;
     const char* p = objdata();
     for (int i = 0; i < objsize(); i++) {
         builder << i << '\t' << (0xff & ((unsigned)*p));

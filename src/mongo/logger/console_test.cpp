@@ -84,13 +84,13 @@ TEST(ConsoleTest, testUtf8) {
             size_t padLength = bufferSize - prefixLength;
             string padding(padLength - description.length(), '.');
             string line = description + padding + data[i].utf8CodePoint;
-            out << line /*<< endl*/;
+            out << line << endl;
         }
     }
 
     // check if out is std::cout
     out << "ConsoleTest::testUtf8 - Console::out() is using "
-        << (out.rdbuf() == cout.rdbuf() ? "std::cout" : "custom output stream") /*<< endl*/;
+        << (out.rdbuf() == cout.rdbuf() ? "std::cout" : "custom output stream") << endl;
 }
 
 }  // namespace

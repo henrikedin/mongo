@@ -1448,7 +1448,7 @@ public:
             fast = t.micros();
         }
 
-        std::cout << "HelperTest  slow:" << slow << " fast:" << fast /*<< endl*/;
+        std::cout << "HelperTest  slow:" << slow << " fast:" << fast << endl;
     }
 };
 

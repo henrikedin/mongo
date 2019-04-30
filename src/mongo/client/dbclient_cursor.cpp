@@ -183,12 +183,12 @@ bool DBClientCursor::init() {
     Message reply;
     if (!_client->call(toSend, reply, false, &_originalHost)) {
         // log msg temp?
-        log() << "DBClientCursor::init call() failed" /*<< endl*/;
+        log() << "DBClientCursor::init call() failed" << endl;
         return false;
     }
     if (reply.empty()) {
         // log msg temp?
-        log() << "DBClientCursor::init message from call() was empty" /*<< endl*/;
+        log() << "DBClientCursor::init message from call() was empty" << endl;
         return false;
     }
     dataReceived(reply);
@@ -214,9 +214,9 @@ bool DBClientCursor::initLazyFinish(bool& retry) {
     // If we get a bad response, return false
     if (!recvd || reply.empty()) {
         if (!recvd)
-            log() << "DBClientCursor::init lazy say() failed" /*<< endl*/;
+            log() << "DBClientCursor::init lazy say() failed" << endl;
         if (reply.empty())
-            log() << "DBClientCursor::init message from say() was empty" /*<< endl*/;
+            log() << "DBClientCursor::init message from say() was empty" << endl;
 
         _client->checkResponse({}, true, &retry, &_lazyHost);
 
