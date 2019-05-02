@@ -36,6 +36,7 @@
 #include "mongo/base/init.h"
 #include "mongo/base/status.h"
 #include "mongo/logger/message_event_utf8_encoder.h"
+#include "mongo/logger/log_source.h"
 #include "mongo/logger/tee.h"
 #include "mongo/stdx/memory.h"
 #include "mongo/util/assert_util.h"  // TODO: remove apple dep for this in threadlocal.h
@@ -51,20 +52,21 @@ namespace {
 class log_source {
 public:
     log_source() {
-        logger.add_attribute("TimeStamp", boost::log::attributes::make_function([]() {
+        /*lg.add_attribute("TimeStamp", boost::log::attributes::make_function([]() {
                                  return std::string("time_stamp");
                              }));
 
-        logger.add_attribute("ThreadName", boost::log::attributes::make_function([]() {
+        lg.add_attribute("ThreadName", boost::log::attributes::make_function([]() {
                                  return std::string("thread_name");
-                             }));
+                             }));*/
     }
     auto& get() {
-        return logger;
+        return lg;
     }
 
 private:
-    boost::log::sources::severity_channel_logger<logger::LogSeverity, logger::LogComponent> logger;
+    //boost::log::sources::severity_channel_logger<logger::LogSeverity, logger::LogComponent> logger;
+    logger::logger lg;
 };
 
 log_source& threadLogSource() {
@@ -107,8 +109,7 @@ LogstreamBuilder::LogstreamBuilder(MessageLogDomain* domain,
                                    LogSeverity severity,
                                    LogComponent component,
                                    bool shouldCache)
-    : _rec(threadLogSource().get().open_record((::boost::log::keywords::channel = component,
-                                              ::boost::log::keywords::severity = severity)))
+    : _rec(threadLogSource().get().open_record(severity, component))
       /*_domain(domain),
       _contextName(contextName.toString()),
       _severity(std::move(severity)),

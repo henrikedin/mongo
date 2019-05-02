@@ -56,8 +56,43 @@ using namespace mongo::logger;
 namespace mongo {
 namespace {
 
-typedef LogTest<MessageEventDetailsEncoder> LogTestDetailsEncoder;
-typedef LogTest<MessageEventUnadornedEncoder> LogTestUnadornedEncoder;
+//void severity_formatter(boost::log::record_view const& record,
+//                        boost::log::formatting_ostream& strm) {
+//    // Check to see if the attribute value has been found
+//    boost::log::value_ref<mongo::logger::LogSeverity, tag::a_severity> severity =
+//        record[a_severity];
+//    strm << severity.get().toChar();
+//};
+
+struct plain_formatter {
+public:
+	void operator()(boost::log::record_view const& rec, boost::log::formatting_ostream& strm)
+	{
+        strm << rec[boost::log::expressions::smessage];
+	}
+};
+
+struct details_formatter {
+public:
+    void operator()(boost::log::record_view const& rec, boost::log::formatting_ostream& strm) {
+        strm << boost::log::extract<Date_t>("TimeStamp", rec) << " "
+             << boost::log::extract<LogSeverity>("Severity", rec).get().toStringDataCompact() << " "
+             << boost::log::extract<LogComponent>("Channel", rec) << " ["
+             << boost::log::extract<StringData>("ThreadName", rec) << "] "
+			 << rec[boost::log::expressions::smessage];
+
+		//boost::log::expressions::stream
+
+  //          << boost::log::expressions::attr<mongo::Date_t>("TimeStamp") << " "
+  //          << boost::log::expressions::wrap_formatter(&severity_formatter) << " "
+  //          << boost::log::expressions::attr<mongo::logger::LogComponent>("Channel") << " ["
+  //          << boost::log::expressions::attr<mongo::StringData>("ThreadName") << "] "
+  //          << boost::log::expressions::smessage
+    }
+};
+
+typedef LogTest<details_formatter> LogTestDetailsEncoder;
+typedef LogTest<plain_formatter> LogTestUnadornedEncoder;
 
 TEST_F(LogTestUnadornedEncoder, logContext) {
     logContext("WHA!");
@@ -114,7 +149,7 @@ TEST_F(LogTestUnadornedEncoder, DetachAppender) {
 class A {
 public:
     std::string toString() const {
-        log() << "Golly!\n";
+        log() << "Golly!";
         return "Golly!";
     }
 };
@@ -124,8 +159,8 @@ public:
 TEST_F(LogTestUnadornedEncoder, LogstreamBuilderReentrance) {
     log() << "Logging A() -- " << A() << " -- done!";
     ASSERT_EQUALS(2U, _logLines.size());
-    ASSERT_EQUALS(std::string("Golly!\n"), _logLines[0]);
-    ASSERT_EQUALS(std::string("Logging A() -- Golly! -- done!\n"), _logLines[1]);
+    ASSERT_EQUALS(std::string("Golly!"), _logLines[0]);
+    ASSERT_EQUALS(std::string("Logging A() -- Golly! -- done!"), _logLines[1]);
 }
 
 //
@@ -155,28 +190,28 @@ TEST_F(LogTestUnadornedEncoder, MongoLogMacroNoFileScopeLogComponent) {
     LOG(2) << "This is logged";
     LOG(3) << "This is not logged";
     ASSERT_EQUALS(1U, _logLines.size());
-    ASSERT_EQUALS(std::string("This is logged\n"), _logLines[0]);
+    ASSERT_EQUALS(std::string("This is logged"), _logLines[0]);
 
     // MONGO_LOG_COMPONENT
     _logLines.clear();
     MONGO_LOG_COMPONENT(2, componentA) << "This is logged";
     MONGO_LOG_COMPONENT(3, componentA) << "This is not logged";
     ASSERT_EQUALS(1U, _logLines.size());
-    ASSERT_EQUALS(std::string("This is logged\n"), _logLines[0]);
+    ASSERT_EQUALS(std::string("This is logged"), _logLines[0]);
 
     // MONGO_LOG_COMPONENT2
     _logLines.clear();
     MONGO_LOG_COMPONENT2(2, componentA, componentB) << "This is logged";
     MONGO_LOG_COMPONENT2(3, componentA, componentB) << "This is not logged";
     ASSERT_EQUALS(1U, _logLines.size());
-    ASSERT_EQUALS(std::string("This is logged\n"), _logLines[0]);
+    ASSERT_EQUALS(std::string("This is logged"), _logLines[0]);
 
     // MONGO_LOG_COMPONENT3
     _logLines.clear();
     MONGO_LOG_COMPONENT3(2, componentA, componentB, componentC) << "This is logged";
     MONGO_LOG_COMPONENT3(3, componentA, componentB, componentC) << "This is not logged";
     ASSERT_EQUALS(1U, _logLines.size());
-    ASSERT_EQUALS(std::string("This is logged\n"), _logLines[0]);
+    ASSERT_EQUALS(std::string("This is logged"), _logLines[0]);
 }
 
 //
@@ -382,8 +417,7 @@ void testEncodedLogLine(const MessageEventEphemeral& event, const std::string& e
     std::string s = os.str();
     if (s.find(expectedSubstring) == std::string::npos) {
         FAIL(str::stream() << "encoded log line does not contain substring \"" << expectedSubstring
-                           << "\". log line: "
-                           << s);
+                           << "\". log line: " << s);
     }
 }
 
@@ -435,7 +469,7 @@ TEST_F(LogTestDetailsEncoder, ) {
 
     // Non-default log component short name should appear in detailed log line.
     _logLines.clear();
-    MONGO_LOG_COMPONENT(0, componentA) << "This is logged"; 
+    MONGO_LOG_COMPONENT(0, componentA) << "This is logged";
     ASSERT_EQUALS(1U, _logLines.size());
     ASSERT_NOT_EQUALS(_logLines[0].find(componentA.getNameForLog().toString()), std::string::npos);
 
