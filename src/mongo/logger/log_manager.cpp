@@ -33,6 +33,7 @@
 
 #include "mongo/logger/console_appender.h"
 #include "mongo/logger/text_formatter.h"
+#include "mongo/logger/json_formatter.h"
 #include "mongo/logger/message_event_utf8_encoder.h"
 #include "mongo/logger/severity_filter.h"
 
@@ -51,7 +52,7 @@ LogManager::LogManager() {
     auto console_sink = boost::make_shared<console_sink_t>();
 
 	console_sink->set_filter(SeverityFilter());
-    console_sink->set_formatter(TextFormatter());
+    console_sink->set_formatter(JsonFormatter());
 
     console_sink->locked_backend()->add_stream(
         boost::shared_ptr<std::ostream>(&std::cout, boost::null_deleter()));
