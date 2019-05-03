@@ -35,8 +35,8 @@
 
 #include "mongo/base/init.h"
 #include "mongo/base/status.h"
-#include "mongo/logger/message_event_utf8_encoder.h"
 #include "mongo/logger/log_source.h"
+#include "mongo/logger/message_event_utf8_encoder.h"
 #include "mongo/logger/tee.h"
 #include "mongo/stdx/memory.h"
 #include "mongo/util/assert_util.h"  // TODO: remove apple dep for this in threadlocal.h
@@ -65,7 +65,8 @@ public:
     }
 
 private:
-    //boost::log::sources::severity_channel_logger<logger::LogSeverity, logger::LogComponent> logger;
+    // boost::log::sources::severity_channel_logger<logger::LogSeverity, logger::LogComponent>
+    // logger;
     logger::logger lg;
 };
 
@@ -110,19 +111,19 @@ LogstreamBuilder::LogstreamBuilder(MessageLogDomain* domain,
                                    LogComponent component,
                                    bool shouldCache)
     : _rec(threadLogSource().get().open_record(severity, component))
-      /*_domain(domain),
-      _contextName(contextName.toString()),
-      _severity(std::move(severity)),
-      _component(std::move(component)),
-      _tee(nullptr),
-      _shouldCache(shouldCache) {*/
+/*_domain(domain),
+_contextName(contextName.toString()),
+_severity(std::move(severity)),
+_component(std::move(component)),
+_tee(nullptr),
+_shouldCache(shouldCache) {*/
 {
     if (_rec)
         _recStream = std::make_unique<boost::log::record_ostream>(_rec);
 }
 
 LogstreamBuilder::~LogstreamBuilder() {
-    //if (_os) {
+    // if (_os) {
     //    if (!_baseMessage.empty())
     //        _baseMessage.push_back(' ');
     //    _baseMessage += _os->str();

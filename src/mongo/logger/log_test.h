@@ -38,6 +38,7 @@
 #include "mongo/logger/log_severity.h"
 #include "mongo/logger/logger.h"
 #include "mongo/logger/message_log_domain.h"
+#include "mongo/logger/severity_filter.h"
 #include "mongo/unittest/unittest.h"
 
 #include <boost/log/core.hpp>
@@ -67,25 +68,23 @@ private:
     };
 
 public:
-    LogTest() {
+    LogTest() : _severityOld(globalLogDomain()->getMinimumLogSeverity()) {
         _sink = boost::make_shared<boost::log::sinks::synchronous_sink<LogTestBackend>>(
             boost::make_shared<LogTestBackend>(this));
         _sink->set_formatter(Formatter());
-        _sink->set_filter([](boost::log::attribute_value_set const& attrs)
-		{ 
-			return boost::log::extract<LogSeverity>("Severity", attrs) == LogSeverity::Log();
-		});
+        _sink->set_filter(SeverityFilter());
         boost::log::core::get()->add_sink(_sink);
     }
 
     virtual ~LogTest() {
         boost::log::core::get()->remove_sink(_sink);
+        globalLogDomain()->setMinimumLoggedSeverity(_severityOld);
     }
 
 protected:
     boost::shared_ptr<boost::log::sinks::synchronous_sink<LogTestBackend>> _sink;
     std::vector<std::string> _logLines;
-    // LogSeverity _severityOld;
+    LogSeverity _severityOld;
 
 private:
     // class LogTestAppender : public MessageLogDomain::EventAppender {

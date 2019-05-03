@@ -36,6 +36,7 @@
 #include <boost/log/sources/basic_logger.hpp>
 #include <boost/log/sources/threading_models.hpp>
 
+#include "mongo/logger/attributes.h"
 #include "mongo/logger/log_component.h"
 #include "mongo/logger/log_severity.h"
 
@@ -148,16 +149,13 @@ private:
 public:
     logger() : _severity(LogSeverity::Log()), _component(LogComponent::kDefault)
 	{
-        add_attribute_unlocked("Severity", _severity);
-
-        add_attribute_unlocked(
-            "Channel", _component);
-
-        add_attribute_unlocked("TimeStamp",
+        add_attribute_unlocked(attributes::severity, _severity);
+        add_attribute_unlocked(attributes::component, _component);
+        add_attribute_unlocked(attributes::time_stamp,
                                boost::log::attributes::make_function([]() { return Date_t::now(); }));
-
-        add_attribute_unlocked(
-            "ThreadName", boost::log::attributes::make_function([]() { return getThreadName(); }));
+        add_attribute_unlocked(attributes::thread_name, boost::log::attributes::make_function([]() {
+                                   return getThreadName();
+                               }));
     }
 
     boost::log::record open_record(LogSeverity severity, LogComponent component) {

@@ -38,6 +38,7 @@
 #include <vector>
 
 #include "mongo/logger/appender.h"
+#include "mongo/logger/text_formatter.h"
 #include "mongo/logger/encoder.h"
 #include "mongo/logger/log_component.h"
 #include "mongo/logger/log_component_settings.h"
@@ -56,7 +57,7 @@ using namespace mongo::logger;
 namespace mongo {
 namespace {
 
-//void severity_formatter(boost::log::record_view const& record,
+// void severity_formatter(boost::log::record_view const& record,
 //                        boost::log::formatting_ostream& strm) {
 //    // Check to see if the attribute value has been found
 //    boost::log::value_ref<mongo::logger::LogSeverity, tag::a_severity> severity =
@@ -66,32 +67,12 @@ namespace {
 
 struct plain_formatter {
 public:
-	void operator()(boost::log::record_view const& rec, boost::log::formatting_ostream& strm)
-	{
-        strm << rec[boost::log::expressions::smessage];
-	}
-};
-
-struct details_formatter {
-public:
     void operator()(boost::log::record_view const& rec, boost::log::formatting_ostream& strm) {
-        strm << boost::log::extract<Date_t>("TimeStamp", rec) << " "
-             << boost::log::extract<LogSeverity>("Severity", rec).get().toStringDataCompact() << " "
-             << boost::log::extract<LogComponent>("Channel", rec) << " ["
-             << boost::log::extract<StringData>("ThreadName", rec) << "] "
-			 << rec[boost::log::expressions::smessage];
-
-		//boost::log::expressions::stream
-
-  //          << boost::log::expressions::attr<mongo::Date_t>("TimeStamp") << " "
-  //          << boost::log::expressions::wrap_formatter(&severity_formatter) << " "
-  //          << boost::log::expressions::attr<mongo::logger::LogComponent>("Channel") << " ["
-  //          << boost::log::expressions::attr<mongo::StringData>("ThreadName") << "] "
-  //          << boost::log::expressions::smessage
+        strm << rec[boost::log::expressions::smessage];
     }
 };
 
-typedef LogTest<details_formatter> LogTestDetailsEncoder;
+typedef LogTest<TextFormatter> LogTestDetailsEncoder;
 typedef LogTest<plain_formatter> LogTestUnadornedEncoder;
 
 TEST_F(LogTestUnadornedEncoder, logContext) {

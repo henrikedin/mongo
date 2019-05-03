@@ -32,7 +32,9 @@
 #include "mongo/logger/log_manager.h"
 
 #include "mongo/logger/console_appender.h"
+#include "mongo/logger/text_formatter.h"
 #include "mongo/logger/message_event_utf8_encoder.h"
+#include "mongo/logger/severity_filter.h"
 
 #include <boost/log/core.hpp>
 #include <boost/log/sinks.hpp>
@@ -45,23 +47,16 @@ LogManager::LogManager() {
     reattachDefaultConsoleAppender();
 
 	typedef boost::log::sinks::synchronous_sink<boost::log::sinks::text_ostream_backend>
-        text_sink_t;
-    auto text_sink = boost::make_shared<text_sink_t>();
+        console_sink_t;
+    auto console_sink = boost::make_shared<console_sink_t>();
 
-    //text_sink->set_formatter(
-    //    [](boost::log::record_view const& rec, boost::log::formatting_ostream& strm) {
-    //        strm << boost::log::extract<std::string>("TimeStamp", rec)
-    //             << " "
-    //             //<< boost::log::expressions::wrap_formatter(&severity_formatter) << " "
-    //             << boost::log::extract<std::string>("Channel", rec) << " ["
-    //             << boost::log::extract<std::string>("ThreadName", rec) << "] "
-    //             << rec[boost::log::expressions::smessage];
-    //    });
+	console_sink->set_filter(SeverityFilter());
+    console_sink->set_formatter(TextFormatter());
 
-    text_sink->locked_backend()->add_stream(
+    console_sink->locked_backend()->add_stream(
         boost::shared_ptr<std::ostream>(&std::cout, boost::null_deleter()));
 
-    boost::log::core::get()->add_sink(std::move(text_sink));
+    boost::log::core::get()->add_sink(std::move(console_sink));
 }
 
 LogManager::~LogManager() {

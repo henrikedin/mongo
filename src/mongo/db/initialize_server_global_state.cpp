@@ -35,6 +35,7 @@
 #include "mongo/db/initialize_server_global_state_gen.h"
 
 #include <boost/filesystem/operations.hpp>
+#include <boost/log/core.hpp>
 #include <iostream>
 #include <memory>
 #include <signal.h>
@@ -53,10 +54,13 @@
 #include "mongo/logger/message_event.h"
 #include "mongo/logger/message_event_utf8_encoder.h"
 #include "mongo/logger/ramlog.h"
+#include "mongo/logger/ramlog_sink.h"
 #include "mongo/logger/rotatable_file_appender.h"
 #include "mongo/logger/rotatable_file_manager.h"
+#include "mongo/logger/rotatable_file_sink.h"
 #include "mongo/logger/rotatable_file_writer.h"
 #include "mongo/logger/syslog_appender.h"
+#include "mongo/logger/text_formatter.h"
 #include "mongo/platform/process_id.h"
 #include "mongo/util/log.h"
 #include "mongo/util/processinfo.h"
@@ -213,8 +217,8 @@ MONGO_INITIALIZER_GENERAL(
     ("default"))
 (InitializerContext*) {
     using logger::LogManager;
-    using logger::MessageEventEphemeral;
     using logger::MessageEventDetailsEncoder;
+    using logger::MessageEventEphemeral;
     using logger::MessageEventWithContextEncoder;
     using logger::MessageLogDomain;
     using logger::RotatableFileAppender;
@@ -254,8 +258,8 @@ MONGO_INITIALIZER_GENERAL(
             exists = boost::filesystem::exists(absoluteLogpath);
         } catch (boost::filesystem::filesystem_error& e) {
             return Status(ErrorCodes::FileNotOpen,
-                          str::stream() << "Failed probe for \"" << absoluteLogpath << "\": "
-                                        << e.code().message());
+                          str::stream() << "Failed probe for \"" << absoluteLogpath
+                                        << "\": " << e.code().message());
         }
 
         if (exists) {
@@ -276,16 +280,16 @@ MONGO_INITIALIZER_GENERAL(
                     return Status(ErrorCodes::FileRenameFailed,
                                   str::stream()
                                       << "Could not rename preexisting log file \""
-                                      << absoluteLogpath
-                                      << "\" to \""
-                                      << renameTarget
+                                      << absoluteLogpath << "\" to \"" << renameTarget
                                       << "\"; run with --logappend or manually remove file: "
                                       << ec.message());
                 }
             }
         }
 
-        StatusWithRotatableFileWriter writer = logger::globalRotatableFileManager()->openFile(
+        boost::log::core::get()->add_sink(logger::create_rotatable_file_sink<logger::TextFormatter>(
+            absoluteLogpath, serverGlobalParams.logAppend));
+        /*StatusWithRotatableFileWriter writer = logger::globalRotatableFileManager()->openFile(
             absoluteLogpath, serverGlobalParams.logAppend);
         if (!writer.isOK()) {
             return writer.getStatus();
@@ -298,13 +302,14 @@ MONGO_INITIALIZER_GENERAL(
                 std::make_unique<MessageEventDetailsEncoder>(), writer.getValue()));
         manager->getNamedDomain("javascriptOutput")
             ->attachAppender(std::make_unique<RotatableFileAppender<MessageEventEphemeral>>(
-                std::make_unique<MessageEventDetailsEncoder>(), writer.getValue()));
+                std::make_unique<MessageEventDetailsEncoder>(), writer.getValue()));*/
+
 
         if (serverGlobalParams.logAppend && exists) {
             log() << "***** SERVER RESTARTED *****";
-            Status status = logger::RotatableFileWriter::Use(writer.getValue()).status();
+            /*Status status = logger::RotatableFileWriter::Use(writer.getValue()).status();
             if (!status.isOK())
-                return status;
+                return status;*/
         }
     } else {
         logger::globalLogManager()
@@ -313,8 +318,10 @@ MONGO_INITIALIZER_GENERAL(
                 std::make_unique<MessageEventDetailsEncoder>()));
     }
 
-    logger::globalLogDomain()->attachAppender(
-        std::make_unique<RamLogAppender>(RamLog::get("global")));
+    /*logger::globalLogDomain()->attachAppender(
+        std::make_unique<RamLogAppender>(RamLog::get("global")));*/
+    boost::log::core::get()->add_sink(
+        logger::create_ramlog_sink<logger::TextFormatter>(RamLog::get("global")));
 
     return Status::OK();
 }
