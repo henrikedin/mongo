@@ -37,18 +37,24 @@
 
 #include "mongo/util/log.h"
 
+#include <sstream>
+
 namespace mongo {
 
 void printStackTrace() {
     // NOTE: We disable long-line truncation for the stack trace, because the JSON representation of
     // the stack trace can sometimes exceed the long line limit.
-    printStackTrace(log().setIsTruncatable(false).stream());
+	std::ostringstream ss;
+    printStackTrace(ss);
+    log() << ss.str();
 }
 
 #if defined(_WIN32)
 
 void printWindowsStackTrace(CONTEXT& context) {
-    printWindowsStackTrace(context, log().stream());
+    std::ostringstream ss;
+    printWindowsStackTrace(context, ss);
+    log() << ss.str();
 }
 
 #endif  // defined(_WIN32)

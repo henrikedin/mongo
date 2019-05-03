@@ -81,7 +81,9 @@ void logContext(const char* errmsg) {
     }
     // NOTE: We disable long-line truncation for the stack trace, because the JSON representation of
     // the stack trace can sometimes exceed the long line limit.
-    printStackTrace(log().setIsTruncatable(false).stream());
+    std::ostringstream ss;
+    printStackTrace(ss);
+    log() << ss.str();
 }
 
 void setPlainConsoleLogger() {
