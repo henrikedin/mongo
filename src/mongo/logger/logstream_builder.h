@@ -111,11 +111,11 @@ public:
         return *this;
     }
 
-    std::ostream& stream() {
+    boost::log::record_ostream& stream() {
         /*if (!_os)
             makeStream();
         return *_os;*/
-        return std::cout;
+        return *_recStream;
     }
 
     LogstreamBuilder& operator<<(const char* x) {
@@ -156,7 +156,8 @@ public:
         return *this;
     }
     LogstreamBuilder& operator<<(ExitCode x) {
-        stream() << x;
+        if (_rec)
+            (*_recStream) << x;
         return *this;
     }
     LogstreamBuilder& operator<<(long x) {
@@ -190,11 +191,13 @@ public:
         return *this;
     }
     LogstreamBuilder& operator<<(void* x) {
-        stream() << x;
+        if (_rec)
+            (*_recStream) << x;
         return *this;
     }
     LogstreamBuilder& operator<<(const void* x) {
-        stream() << x;
+        if (_rec)
+            (*_recStream) << x;
         return *this;
     }
     LogstreamBuilder& operator<<(long long x) {
@@ -248,7 +251,8 @@ public:
         return *this;
     }*/
     LogstreamBuilder& operator<<(std::ios_base& (*manip)(std::ios_base&)) {
-        stream() << manip;
+        if (_rec)
+            (*_recStream) << manip;
         return *this;
     }
 
