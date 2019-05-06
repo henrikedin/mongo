@@ -434,8 +434,8 @@ private:
 
     bool _isCapturingLogMessages;
     std::vector<std::string> _capturedLogMessages;
-    logger::MessageLogDomain::AppenderHandle _captureAppenderHandle;
-    std::unique_ptr<logger::MessageLogDomain::EventAppender> _captureAppender;
+    /*logger::MessageLogDomain::AppenderHandle _captureAppenderHandle;
+    std::unique_ptr<logger::MessageLogDomain::EventAppender> _captureAppender;*/
 };
 
 /**

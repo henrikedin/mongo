@@ -55,14 +55,14 @@ public:
      * Gets the global domain for this manager.  It has no name.
      * Will attach a default console log appender.
      */
-    ComponentMessageLogDomain* getGlobalDomain() {
+    /*ComponentMessageLogDomain* getGlobalDomain() {
         return &_globalDomain;
-    }
+    }*/
 
     /**
      * Get the log domain with the given name, creating if needed.
      */
-    MessageLogDomain* getNamedDomain(const std::string& name);
+    // MessageLogDomain* getNamedDomain(const std::string& name);
 
     /**
      * Detaches the default console log appender
@@ -83,12 +83,34 @@ public:
      */
     bool isDefaultConsoleAppenderAttached() const;
 
-private:
-    typedef stdx::unordered_map<std::string, MessageLogDomain*> DomainsByNameMap;
+    LogComponentSettings* settings(LogDomain domain = kGlobal) {
+        return &_settings;
+    }
 
-    DomainsByNameMap _domains;
-    ComponentMessageLogDomain _globalDomain;
-    ComponentMessageLogDomain::AppenderHandle _defaultAppender;
+	/**
+     * Returns true if system logs should be redacted.
+     */
+    bool shouldRedactLogs() {
+        return _shouldRedact.loadRelaxed();
+    }
+
+    /**
+     * Set the 'redact' mode of the server.
+     */
+	void setShouldRedactLogs(bool shouldRedact) {
+        _shouldRedact.store(shouldRedact);
+	}
+
+	void writeLogBypassFilteringAndFormatting(StringData str);
+
+private:
+    // typedef stdx::unordered_map<std::string, MessageLogDomain*> DomainsByNameMap;
+
+    // DomainsByNameMap _domains;
+    // ComponentMessageLogDomain _globalDomain;
+    // ComponentMessageLogDomain::AppenderHandle _defaultAppender;
+    LogComponentSettings _settings;
+    AtomicWord<bool> _shouldRedact{false};
 };
 
 }  // namespace logger

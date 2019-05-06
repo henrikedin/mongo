@@ -243,10 +243,13 @@ TEST_F(WiredTigerKVEngineTest, TestOplogTruncation) {
 
     // To diagnose any intermittent failures, maximize logging from WiredTigerKVEngine and friends.
     const auto kStorage = logger::LogComponent::kStorage;
-    auto originalVerbosity = logger::globalLogDomain()->getMinimumLogSeverity(kStorage);
-    logger::globalLogDomain()->setMinimumLoggedSeverity(kStorage, logger::LogSeverity::Debug(3));
+    auto originalVerbosity =
+        logger::globalLogManager()->settings()->getMinimumLogSeverity(kStorage);
+    logger::globalLogManager()->settings()->setMinimumLoggedSeverity(kStorage,
+                                                                     logger::LogSeverity::Debug(3));
     ON_BLOCK_EXIT([&]() {
-        logger::globalLogDomain()->setMinimumLoggedSeverity(kStorage, originalVerbosity);
+        logger::globalLogManager()->settings()->setMinimumLoggedSeverity(kStorage,
+                                                                         originalVerbosity);
     });
 
     // Simulate the callback that queries config.transactions for the oldest active transaction.

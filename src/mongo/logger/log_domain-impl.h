@@ -43,56 +43,56 @@
 namespace mongo {
 namespace logger {
 
-template <typename E>
-LogDomain<E>::LogDomain() : _abortOnFailure(false) {}
-
-template <typename E>
-LogDomain<E>::~LogDomain() {}
-
-template <typename E>
-Status LogDomain<E>::append(const E& event) {
-    for (auto& appender : _appenders) {
-        if (appender) {
-            Status status = appender->append(event);
-            if (!status.isOK()) {
-                if (_abortOnFailure) {
-                    ::abort();
-                }
-                return status;
-            }
-        }
-    }
-    return Status::OK();
-}
-
-template <typename E>
-auto LogDomain<E>::attachAppender(std::unique_ptr<EventAppender> appender) -> AppenderHandle {
-    const auto isValidPred = [](auto& appender) -> bool { return !appender; };
-    auto iter = std::find_if(_appenders.begin(), _appenders.end(), isValidPred);
-
-    if (iter == _appenders.end()) {
-        _appenders.emplace_back(std::move(appender));
-        return AppenderHandle(_appenders.size() - 1);
-    }
-
-    iter->swap(appender);
-    return AppenderHandle(iter - _appenders.begin());
-}
-
-template <typename E>
-auto LogDomain<E>::detachAppender(AppenderHandle handle) -> std::unique_ptr<EventAppender> {
-    // So technically this could just return a moved unique_ptr reference
-    // Still, eliding is a thing so swap is a nice certainty.
-    std::unique_ptr<EventAppender> appender;
-    using std::swap;
-    swap(appender, _appenders.at(handle._index));
-    return appender;
-}
-
-template <typename E>
-void LogDomain<E>::clearAppenders() {
-    _appenders.clear();
-}
+//template <typename E>
+//LogDomain<E>::LogDomain() : _abortOnFailure(false) {}
+//
+//template <typename E>
+//LogDomain<E>::~LogDomain() {}
+//
+//template <typename E>
+//Status LogDomain<E>::append(const E& event) {
+//    for (auto& appender : _appenders) {
+//        if (appender) {
+//            Status status = appender->append(event);
+//            if (!status.isOK()) {
+//                if (_abortOnFailure) {
+//                    ::abort();
+//                }
+//                return status;
+//            }
+//        }
+//    }
+//    return Status::OK();
+//}
+//
+//template <typename E>
+//auto LogDomain<E>::attachAppender(std::unique_ptr<EventAppender> appender) -> AppenderHandle {
+//    const auto isValidPred = [](auto& appender) -> bool { return !appender; };
+//    auto iter = std::find_if(_appenders.begin(), _appenders.end(), isValidPred);
+//
+//    if (iter == _appenders.end()) {
+//        _appenders.emplace_back(std::move(appender));
+//        return AppenderHandle(_appenders.size() - 1);
+//    }
+//
+//    iter->swap(appender);
+//    return AppenderHandle(iter - _appenders.begin());
+//}
+//
+//template <typename E>
+//auto LogDomain<E>::detachAppender(AppenderHandle handle) -> std::unique_ptr<EventAppender> {
+//    // So technically this could just return a moved unique_ptr reference
+//    // Still, eliding is a thing so swap is a nice certainty.
+//    std::unique_ptr<EventAppender> appender;
+//    using std::swap;
+//    swap(appender, _appenders.at(handle._index));
+//    return appender;
+//}
+//
+//template <typename E>
+//void LogDomain<E>::clearAppenders() {
+//    _appenders.clear();
+//}
 
 }  // namespace logger
 }  // namespace mongo

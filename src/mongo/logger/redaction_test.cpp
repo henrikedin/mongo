@@ -41,9 +41,8 @@ namespace {
 const std::string kRedactionDefaultMask = "###";
 const std::string kMsg = "Not initialized";
 using BSONStringPair = std::pair<BSONObj, std::string>;
-
 TEST(RedactStringTest, NoRedact) {
-    logger::globalLogDomain()->setShouldRedactLogs(false);
+    logger::globalLogManager()->setShouldRedactLogs(false);
 
     std::string toRedact[] = {"", "abc", "*&$@!_\\\\\\\"*&$@!_\"*&$@!_\"*&$@!_"};
     for (auto s : toRedact) {
@@ -52,7 +51,7 @@ TEST(RedactStringTest, NoRedact) {
 }
 
 TEST(RedactStringTest, BasicStrings) {
-    logger::globalLogDomain()->setShouldRedactLogs(true);
+    logger::globalLogManager()->setShouldRedactLogs(true);
 
     std::string toRedact[] = {"", "abc", "*&$@!_\\\\\\\"*&$@!_\"*&$@!_\"*&$@!_"};
     for (auto s : toRedact) {
@@ -61,31 +60,31 @@ TEST(RedactStringTest, BasicStrings) {
 }
 
 TEST(RedactStatusTest, NoRedact) {
-    logger::globalLogDomain()->setShouldRedactLogs(false);
+    logger::globalLogManager()->setShouldRedactLogs(false);
     Status status(ErrorCodes::InternalError, kMsg);
     ASSERT_EQ(redact(status), status.toString());
 }
 
 TEST(RedactStatusTest, BasicStatus) {
-    logger::globalLogDomain()->setShouldRedactLogs(true);
+    logger::globalLogManager()->setShouldRedactLogs(true);
     Status status(ErrorCodes::InternalError, kMsg);
     ASSERT_EQ(redact(status), "InternalError: " + kRedactionDefaultMask);
 }
 
 TEST(RedactStatusTest, StatusOK) {
-    logger::globalLogDomain()->setShouldRedactLogs(true);
+    logger::globalLogManager()->setShouldRedactLogs(true);
     ASSERT_EQ(redact(Status::OK()), "OK");
 }
 
 TEST(RedactExceptionTest, NoRedact) {
-    logger::globalLogDomain()->setShouldRedactLogs(false);
+    logger::globalLogManager()->setShouldRedactLogs(false);
     ASSERT_THROWS_WITH_CHECK([] { uasserted(ErrorCodes::InternalError, kMsg); }(),
                              DBException,
                              [](const DBException& ex) { ASSERT_EQ(redact(ex), ex.toString()); });
 }
 
 TEST(RedactExceptionTest, BasicException) {
-    logger::globalLogDomain()->setShouldRedactLogs(true);
+    logger::globalLogManager()->setShouldRedactLogs(true);
     ASSERT_THROWS_WITH_CHECK(
         [] { uasserted(ErrorCodes::InternalError, kMsg); }(),
         DBException,
@@ -93,7 +92,7 @@ TEST(RedactExceptionTest, BasicException) {
 }
 
 TEST(RedactBSONTest, NoRedact) {
-    logger::globalLogDomain()->setShouldRedactLogs(false);
+    logger::globalLogManager()->setShouldRedactLogs(false);
     BSONObj obj = BSON("a" << 1);
     ASSERT_EQ(redact(obj), obj.toString());
 }
@@ -105,7 +104,7 @@ void testBSONCases(std::initializer_list<BSONStringPair> testCases) {
 }
 
 TEST(RedactBSONTest, BasicBSON) {
-    logger::globalLogDomain()->setShouldRedactLogs(true);
+    logger::globalLogManager()->setShouldRedactLogs(true);
     std::vector<BSONStringPair> testCases;
 
     testBSONCases({BSONStringPair(BSONObj(), "{}"),

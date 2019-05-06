@@ -43,13 +43,14 @@
 
 namespace mongo {
 namespace logger {
+typedef boost::log::sinks::synchronous_sink<boost::log::sinks::text_ostream_backend> console_sink_t;
+boost::shared_ptr<console_sink_t> console_sink;
 
 LogManager::LogManager() {
     reattachDefaultConsoleAppender();
 
-	typedef boost::log::sinks::synchronous_sink<boost::log::sinks::text_ostream_backend>
-        console_sink_t;
-    auto console_sink = boost::make_shared<console_sink_t>();
+	
+    console_sink = boost::make_shared<console_sink_t>();
 
 	console_sink->set_filter(SeverityFilter());
     console_sink->set_formatter(JsonFormatter());
@@ -61,34 +62,40 @@ LogManager::LogManager() {
 }
 
 LogManager::~LogManager() {
-    for (DomainsByNameMap::iterator iter = _domains.begin(); iter != _domains.end(); ++iter) {
+    /*for (DomainsByNameMap::iterator iter = _domains.begin(); iter != _domains.end(); ++iter) {
         delete iter->second;
-    }
+    }*/
 }
 
-MessageLogDomain* LogManager::getNamedDomain(const std::string& name) {
-    MessageLogDomain*& domain = _domains[name];
-    if (!domain) {
-        domain = new MessageLogDomain;
-    }
-    return domain;
-}
+//MessageLogDomain* LogManager::getNamedDomain(const std::string& name) {
+//    MessageLogDomain*& domain = _domains[name];
+//    if (!domain) {
+//        domain = new MessageLogDomain;
+//    }
+//    return domain;
+//}
 
 void LogManager::detachDefaultConsoleAppender() {
-    invariant(_defaultAppender);
+    /*invariant(_defaultAppender);
     _globalDomain.detachAppender(_defaultAppender);
-    _defaultAppender.reset();
+    _defaultAppender.reset();*/
 }
 
 void LogManager::reattachDefaultConsoleAppender() {
-    invariant(!_defaultAppender);
+    /*invariant(!_defaultAppender);
     _defaultAppender =
         _globalDomain.attachAppender(std::make_unique<ConsoleAppender<MessageEventEphemeral>>(
-            std::make_unique<MessageEventDetailsEncoder>()));
+            std::make_unique<MessageEventDetailsEncoder>()));*/
 }
 
 bool LogManager::isDefaultConsoleAppenderAttached() const {
-    return static_cast<bool>(_defaultAppender);
+    //return static_cast<bool>(_defaultAppender);
+    return true;
+}
+
+void LogManager::writeLogBypassFilteringAndFormatting(StringData str) {
+    boost::log::record_view view;
+    console_sink->locked_backend()->consume(view, std::string(str));
 }
 
 }  // logger

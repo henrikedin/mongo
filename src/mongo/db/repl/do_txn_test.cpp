@@ -194,7 +194,8 @@ void DoTxnTest::tearDown() {
     _opObserver = nullptr;
 
     // Reset default log level in case it was changed.
-    logger::globalLogDomain()->setMinimumLoggedSeverity(logger::LogComponent::kReplication,
+    logger::globalLogManager()->settings()->setMinimumLoggedSeverity(
+        logger::LogComponent::kReplication,
                                                         logger::LogSeverity::Debug(0));
 
     ServiceContextMongoDTest::tearDown();

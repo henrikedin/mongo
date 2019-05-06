@@ -52,7 +52,7 @@ TEST(SERVER25981Test, SetSeverityShouldLogAndClear) {
     stdx::thread shouldLogThread([&]() {
         startupBarrier.countDownAndWait();
         while (running.load()) {
-            logger::globalLogDomain()->shouldLog(LogComponent::kDefault,
+            logger::globalLogManager()->settings()->shouldLog(LogComponent::kDefault,
                                                  logger::LogSeverity::Debug(3));
         }
     });
@@ -60,7 +60,8 @@ TEST(SERVER25981Test, SetSeverityShouldLogAndClear) {
     stdx::thread setMinimumLoggedSeverityThreadA([&]() {
         startupBarrier.countDownAndWait();
         while (running.load()) {
-            logger::globalLogDomain()->setMinimumLoggedSeverity(LogComponent::kDefault,
+            logger::globalLogManager()->settings()->setMinimumLoggedSeverity(
+                LogComponent::kDefault,
                                                                 logger::LogSeverity::Debug(1));
         }
     });
@@ -68,7 +69,8 @@ TEST(SERVER25981Test, SetSeverityShouldLogAndClear) {
     stdx::thread setMinimumLoggedSeverityThreadB([&]() {
         startupBarrier.countDownAndWait();
         while (running.load()) {
-            logger::globalLogDomain()->setMinimumLoggedSeverity(LogComponent::kDefault,
+            logger::globalLogManager()->settings()->setMinimumLoggedSeverity(
+                LogComponent::kDefault,
                                                                 logger::LogSeverity::Log());
         }
     });
@@ -76,7 +78,8 @@ TEST(SERVER25981Test, SetSeverityShouldLogAndClear) {
     stdx::thread clearMinimumLoggedSeverityThread([&]() {
         startupBarrier.countDownAndWait();
         while (running.load()) {
-            logger::globalLogDomain()->clearMinimumLoggedSeverity(LogComponent::kDefault);
+            logger::globalLogManager()->settings()->clearMinimumLoggedSeverity(
+                LogComponent::kDefault);
         }
     });
 

@@ -39,6 +39,13 @@
 namespace mongo {
 namespace logger {
 
+enum LogDomain
+{
+	kDefault = 0,
+	kGlobal = 1,
+	kJavascript = 2
+};
+
 /**
  * Logging domain for events of type E.
  *
@@ -58,100 +65,100 @@ namespace logger {
  * Once you've configured the domain, call append() from potentially many threads, to add log
  * messages.
  */
-template <typename E>
-class LogDomain {
-    LogDomain(const LogDomain&) = delete;
-    LogDomain& operator=(const LogDomain&) = delete;
-
-public:
-    typedef E Event;
-    typedef Appender<Event> EventAppender;
-    typedef std::unique_ptr<EventAppender> AppenderAutoPtr;
-
-    /**
-     * Opaque handle returned by attachAppender(), which can be subsequently passed to
-     * detachAppender() to detach an appender from an instance of LogDomain.
-     */
-    class AppenderHandle {
-        friend class LogDomain;
-
-        static const size_t invalid_handle = (size_t)-1;
-
-    public:
-        AppenderHandle() : _index(invalid_handle) {}
-
-        explicit operator bool() const noexcept {
-            return _index != invalid_handle;
-        }
-
-        void reset() {
-            _index = invalid_handle;
-        }
-
-    private:
-        explicit AppenderHandle(size_t index) : _index(index) {}
-
-        size_t _index;
-    };
-
-    LogDomain();
-    ~LogDomain();
-
-    /**
-     * Receives an event for logging, calling append(event) on all attached appenders.
-     *
-     * If any appender fails, the behavior is determined by the abortOnFailure flag:
-     * *If abortOnFailure is set, ::abort() is immediately called.
-     * *If abortOnFailure is not set, the error is returned and no further appenders are called.
-     */
-    Status append(const Event& event);
-
-    /**
-     * Gets the state of the abortOnFailure flag.
-     */
-    bool getAbortOnFailure() const {
-        return _abortOnFailure;
-    }
-
-    /**
-     * Sets the state of the abortOnFailure flag.
-     */
-    void setAbortOnFailure(bool abortOnFailure) {
-        _abortOnFailure = abortOnFailure;
-    }
-
-    //
-    // Configuration methods.  Must be synchronized with each other and calls to "append" by the
-    // caller.
-    //
-
-    /**
-     * Attaches "appender" to this domain, taking ownership of it.  Returns a handle that may be
-     * used later to detach this appender.
-     */
-    AppenderHandle attachAppender(std::unique_ptr<EventAppender> appender);
-
-    template <typename Ptr>
-    AppenderHandle attachAppender(Ptr appender) {
-        return attachAppender(std::unique_ptr<EventAppender>(std::move(appender)));
-    }
-
-    /**
-     * Detaches the appender referenced by "handle" from this domain, releasing ownership of it.
-     * Returns an unique_ptr to the handler to the caller, who is now responsible for its
-     * deletion. Caller should consider "handle" is invalid after this call.
-     */
-    std::unique_ptr<EventAppender> detachAppender(AppenderHandle handle);
-
-    /**
-     * Destroy all attached appenders, invalidating all handles.
-     */
-    void clearAppenders();
-
-private:
-    std::vector<std::unique_ptr<EventAppender>> _appenders;
-    bool _abortOnFailure;
-};
+//template <typename E>
+//class LogDomain {
+//    LogDomain(const LogDomain&) = delete;
+//    LogDomain& operator=(const LogDomain&) = delete;
+//
+//public:
+//    typedef E Event;
+//    typedef Appender<Event> EventAppender;
+//    typedef std::unique_ptr<EventAppender> AppenderAutoPtr;
+//
+//    /**
+//     * Opaque handle returned by attachAppender(), which can be subsequently passed to
+//     * detachAppender() to detach an appender from an instance of LogDomain.
+//     */
+//    class AppenderHandle {
+//        friend class LogDomain;
+//
+//        static const size_t invalid_handle = (size_t)-1;
+//
+//    public:
+//        AppenderHandle() : _index(invalid_handle) {}
+//
+//        explicit operator bool() const noexcept {
+//            return _index != invalid_handle;
+//        }
+//
+//        void reset() {
+//            _index = invalid_handle;
+//        }
+//
+//    private:
+//        explicit AppenderHandle(size_t index) : _index(index) {}
+//
+//        size_t _index;
+//    };
+//
+//    LogDomain();
+//    ~LogDomain();
+//
+//    /**
+//     * Receives an event for logging, calling append(event) on all attached appenders.
+//     *
+//     * If any appender fails, the behavior is determined by the abortOnFailure flag:
+//     * *If abortOnFailure is set, ::abort() is immediately called.
+//     * *If abortOnFailure is not set, the error is returned and no further appenders are called.
+//     */
+//    Status append(const Event& event);
+//
+//    /**
+//     * Gets the state of the abortOnFailure flag.
+//     */
+//    bool getAbortOnFailure() const {
+//        return _abortOnFailure;
+//    }
+//
+//    /**
+//     * Sets the state of the abortOnFailure flag.
+//     */
+//    void setAbortOnFailure(bool abortOnFailure) {
+//        _abortOnFailure = abortOnFailure;
+//    }
+//
+//    //
+//    // Configuration methods.  Must be synchronized with each other and calls to "append" by the
+//    // caller.
+//    //
+//
+//    /**
+//     * Attaches "appender" to this domain, taking ownership of it.  Returns a handle that may be
+//     * used later to detach this appender.
+//     */
+//    AppenderHandle attachAppender(std::unique_ptr<EventAppender> appender);
+//
+//    template <typename Ptr>
+//    AppenderHandle attachAppender(Ptr appender) {
+//        return attachAppender(std::unique_ptr<EventAppender>(std::move(appender)));
+//    }
+//
+//    /**
+//     * Detaches the appender referenced by "handle" from this domain, releasing ownership of it.
+//     * Returns an unique_ptr to the handler to the caller, who is now responsible for its
+//     * deletion. Caller should consider "handle" is invalid after this call.
+//     */
+//    std::unique_ptr<EventAppender> detachAppender(AppenderHandle handle);
+//
+//    /**
+//     * Destroy all attached appenders, invalidating all handles.
+//     */
+//    void clearAppenders();
+//
+//private:
+//    std::vector<std::unique_ptr<EventAppender>> _appenders;
+//    bool _abortOnFailure;
+//};
 
 }  // namespace logger
 }  // namespace mongo

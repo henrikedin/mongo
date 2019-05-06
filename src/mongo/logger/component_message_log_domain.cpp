@@ -33,7 +33,7 @@
 
 namespace mongo {
 namespace logger {
-
+/*
 ComponentMessageLogDomain::ComponentMessageLogDomain() {}
 
 ComponentMessageLogDomain::~ComponentMessageLogDomain() {}
@@ -83,7 +83,7 @@ void ComponentMessageLogDomain::clearMinimumLoggedSeverity(LogComponent componen
 
 void ComponentMessageLogDomain::setShouldRedactLogs(bool shouldRedact) {
     _shouldRedact.store(shouldRedact);
-}
+}*/
 
 }  // namespace logger
 }  // namespace mongo

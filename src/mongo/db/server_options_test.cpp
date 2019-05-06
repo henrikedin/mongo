@@ -102,7 +102,7 @@ TEST(Verbosity, Default) {
     moe::OptionSection options;
 
     // Reset the log level before we test
-    ::mongo::logger::globalLogDomain()->setMinimumLoggedSeverity(
+    ::mongo::logger::globalLogManager()->settings()->setMinimumLoggedSeverity(
         ::mongo::logger::LogSeverity::Info());
 
     ASSERT_OK(::mongo::addGeneralServerOptions(&options));
@@ -119,7 +119,7 @@ TEST(Verbosity, Default) {
     ASSERT_OK(::mongo::storeServerOptions(environment));
 
     // Make sure the log level didn't change since we didn't specify any verbose options
-    ASSERT_EQUALS(::mongo::logger::globalLogDomain()->getMinimumLogSeverity(),
+    ASSERT_EQUALS(::mongo::logger::globalLogManager()->settings()->getMinimumLogSeverity(),
                   ::mongo::logger::LogSeverity::Info());
 }
 
@@ -129,7 +129,7 @@ TEST(Verbosity, CommandLineImplicit) {
     moe::OptionSection options;
 
     // Reset the log level before we test
-    ::mongo::logger::globalLogDomain()->setMinimumLoggedSeverity(
+    ::mongo::logger::globalLogManager()->settings()->setMinimumLoggedSeverity(
         ::mongo::logger::LogSeverity::Info());
 
     ASSERT_OK(::mongo::addGeneralServerOptions(&options));
@@ -147,7 +147,7 @@ TEST(Verbosity, CommandLineImplicit) {
     ASSERT_OK(::mongo::storeServerOptions(environment));
 
     int verbosity = 1;
-    ASSERT_EQUALS(::mongo::logger::globalLogDomain()->getMinimumLogSeverity(),
+    ASSERT_EQUALS(::mongo::logger::globalLogManager()->settings()->getMinimumLogSeverity(),
                   ::mongo::logger::LogSeverity::Debug(verbosity));
 }
 
@@ -157,7 +157,7 @@ TEST(Verbosity, CommandLineString) {
     moe::OptionSection options;
 
     // Reset the log level before we test
-    ::mongo::logger::globalLogDomain()->setMinimumLoggedSeverity(
+    ::mongo::logger::globalLogManager()->settings()->setMinimumLoggedSeverity(
         ::mongo::logger::LogSeverity::Info());
 
     ASSERT_OK(::mongo::addGeneralServerOptions(&options));
@@ -176,7 +176,7 @@ TEST(Verbosity, CommandLineString) {
     ASSERT_OK(::mongo::storeServerOptions(environment));
 
     int verbosity = 4;
-    ASSERT_EQUALS(::mongo::logger::globalLogDomain()->getMinimumLogSeverity(),
+    ASSERT_EQUALS(::mongo::logger::globalLogManager()->settings()->getMinimumLogSeverity(),
                   ::mongo::logger::LogSeverity::Debug(verbosity));
 }
 
@@ -186,7 +186,7 @@ TEST(Verbosity, CommandLineStringDisguisedLongForm) {
     moe::OptionSection options;
 
     // Reset the log level before we test
-    ::mongo::logger::globalLogDomain()->setMinimumLoggedSeverity(
+    ::mongo::logger::globalLogManager()->settings()->setMinimumLoggedSeverity(
         ::mongo::logger::LogSeverity::Info());
 
     ASSERT_OK(::mongo::addGeneralServerOptions(&options));
@@ -205,7 +205,7 @@ TEST(Verbosity, CommandLineStringDisguisedLongForm) {
     ASSERT_OK(::mongo::storeServerOptions(environment));
 
     int verbosity = 4;
-    ASSERT_EQUALS(::mongo::logger::globalLogDomain()->getMinimumLogSeverity(),
+    ASSERT_EQUALS(::mongo::logger::globalLogManager()->settings()->getMinimumLogSeverity(),
                   ::mongo::logger::LogSeverity::Debug(verbosity));
 }
 
@@ -215,7 +215,7 @@ TEST(Verbosity, CommandLineEmptyString) {
     moe::OptionSection options;
 
     // Reset the log level before we test
-    ::mongo::logger::globalLogDomain()->setMinimumLoggedSeverity(
+    ::mongo::logger::globalLogManager()->settings()->setMinimumLoggedSeverity(
         ::mongo::logger::LogSeverity::Info());
 
     ASSERT_OK(::mongo::addGeneralServerOptions(&options));
@@ -235,7 +235,7 @@ TEST(Verbosity, CommandLineBadString) {
     moe::OptionSection options;
 
     // Reset the log level before we test
-    ::mongo::logger::globalLogDomain()->setMinimumLoggedSeverity(
+    ::mongo::logger::globalLogManager()->settings()->setMinimumLoggedSeverity(
         ::mongo::logger::LogSeverity::Info());
 
     ASSERT_OK(::mongo::addGeneralServerOptions(&options));
@@ -257,7 +257,7 @@ TEST(Verbosity, CommandLineBadStringOnlyDash) {
     moe::OptionSection options;
 
     // Reset the log level before we test
-    ::mongo::logger::globalLogDomain()->setMinimumLoggedSeverity(
+    ::mongo::logger::globalLogManager()->settings()->setMinimumLoggedSeverity(
         ::mongo::logger::LogSeverity::Info());
 
     ASSERT_OK(::mongo::addGeneralServerOptions(&options));
@@ -276,7 +276,7 @@ TEST(Verbosity, CommandLineBadStringOnlyTwoDashes) {
     moe::OptionSection options;
 
     // Reset the log level before we test
-    ::mongo::logger::globalLogDomain()->setMinimumLoggedSeverity(
+    ::mongo::logger::globalLogManager()->settings()->setMinimumLoggedSeverity(
         ::mongo::logger::LogSeverity::Info());
 
     ASSERT_OK(::mongo::addGeneralServerOptions(&options));
@@ -295,7 +295,7 @@ TEST(Verbosity, INIConfigString) {
     moe::OptionSection options;
 
     // Reset the log level before we test
-    ::mongo::logger::globalLogDomain()->setMinimumLoggedSeverity(
+    ::mongo::logger::globalLogManager()->settings()->setMinimumLoggedSeverity(
         ::mongo::logger::LogSeverity::Info());
 
     ASSERT_OK(::mongo::addGeneralServerOptions(&options));
@@ -316,7 +316,7 @@ TEST(Verbosity, INIConfigString) {
     ASSERT_OK(::mongo::storeServerOptions(environment));
 
     int verbosity = 4;
-    ASSERT_EQUALS(::mongo::logger::globalLogDomain()->getMinimumLogSeverity(),
+    ASSERT_EQUALS(::mongo::logger::globalLogManager()->settings()->getMinimumLogSeverity(),
                   ::mongo::logger::LogSeverity::Debug(verbosity));
 }
 
@@ -326,7 +326,7 @@ TEST(Verbosity, INIConfigBadString) {
     moe::OptionSection options;
 
     // Reset the log level before we test
-    ::mongo::logger::globalLogDomain()->setMinimumLoggedSeverity(
+    ::mongo::logger::globalLogManager()->settings()->setMinimumLoggedSeverity(
         ::mongo::logger::LogSeverity::Info());
 
     ASSERT_OK(::mongo::addGeneralServerOptions(&options));
@@ -350,7 +350,7 @@ TEST(Verbosity, INIConfigEmptyString) {
     moe::OptionSection options;
 
     // Reset the log level before we test
-    ::mongo::logger::globalLogDomain()->setMinimumLoggedSeverity(
+    ::mongo::logger::globalLogManager()->settings()->setMinimumLoggedSeverity(
         ::mongo::logger::LogSeverity::Info());
 
     ASSERT_OK(::mongo::addGeneralServerOptions(&options));
@@ -371,7 +371,7 @@ TEST(Verbosity, INIConfigEmptyString) {
     ASSERT_OK(::mongo::storeServerOptions(environment));
 
     int verbosity = 0;
-    ASSERT_EQUALS(::mongo::logger::globalLogDomain()->getMinimumLogSeverity(),
+    ASSERT_EQUALS(::mongo::logger::globalLogManager()->settings()->getMinimumLogSeverity(),
                   ::mongo::logger::LogSeverity::Debug(verbosity));
 }
 
@@ -381,7 +381,7 @@ TEST(Verbosity, JSONConfigString) {
     moe::OptionSection options;
 
     // Reset the log level before we test
-    ::mongo::logger::globalLogDomain()->setMinimumLoggedSeverity(
+    ::mongo::logger::globalLogManager()->settings()->setMinimumLoggedSeverity(
         ::mongo::logger::LogSeverity::Info());
 
     ASSERT_OK(::mongo::addGeneralServerOptions(&options));
@@ -402,7 +402,7 @@ TEST(Verbosity, JSONConfigString) {
     ASSERT_OK(::mongo::storeServerOptions(environment));
 
     int verbosity = 4;
-    ASSERT_EQUALS(::mongo::logger::globalLogDomain()->getMinimumLogSeverity(),
+    ASSERT_EQUALS(::mongo::logger::globalLogManager()->settings()->getMinimumLogSeverity(),
                   ::mongo::logger::LogSeverity::Debug(verbosity));
 }
 
@@ -412,7 +412,7 @@ TEST(Verbosity, MultipleSourcesMultipleOptions) {
     moe::OptionSection options;
 
     // Reset the log level before we test
-    ::mongo::logger::globalLogDomain()->setMinimumLoggedSeverity(
+    ::mongo::logger::globalLogManager()->settings()->setMinimumLoggedSeverity(
         ::mongo::logger::LogSeverity::Info());
 
     ASSERT_OK(::mongo::addGeneralServerOptions(&options));
@@ -435,7 +435,7 @@ TEST(Verbosity, MultipleSourcesMultipleOptions) {
     ASSERT_OK(::mongo::storeServerOptions(environment));
 
     int verbosity = 3;
-    ASSERT_EQUALS(::mongo::logger::globalLogDomain()->getMinimumLogSeverity(),
+    ASSERT_EQUALS(::mongo::logger::globalLogManager()->settings()->getMinimumLogSeverity(),
                   ::mongo::logger::LogSeverity::Debug(verbosity));
 }
 
@@ -445,10 +445,10 @@ TEST(Verbosity, YAMLConfigStringLogComponent) {
     moe::OptionSection options;
 
     // Reset the log level before we test
-    ::mongo::logger::globalLogDomain()->setMinimumLoggedSeverity(
+    ::mongo::logger::globalLogManager()->settings()->setMinimumLoggedSeverity(
         ::mongo::logger::LogSeverity::Info());
     // Log level for Storage will be cleared by config file value.
-    ::mongo::logger::globalLogDomain()->setMinimumLoggedSeverity(
+    ::mongo::logger::globalLogManager()->settings()->setMinimumLoggedSeverity(
         ::mongo::logger::LogComponent::kStorage, ::mongo::logger::LogSeverity::Debug(1));
 
     ASSERT_OK(::mongo::addGeneralServerOptions(&options));
@@ -481,37 +481,37 @@ TEST(Verbosity, YAMLConfigStringLogComponent) {
     int verbosity = 4;
 
     // Default
-    ASSERT_EQUALS(::mongo::logger::globalLogDomain()->getMinimumLogSeverity(),
+    ASSERT_EQUALS(::mongo::logger::globalLogManager()->settings()->getMinimumLogSeverity(),
                   ::mongo::logger::LogSeverity::Debug(verbosity));
-    ASSERT_EQUALS(::mongo::logger::globalLogDomain()->getMinimumLogSeverity(
+    ASSERT_EQUALS(::mongo::logger::globalLogManager()->settings()->getMinimumLogSeverity(
                       ::mongo::logger::LogComponent::kDefault),
                   ::mongo::logger::LogSeverity::Debug(verbosity));
 
     // AccessControl
-    ASSERT_TRUE(::mongo::logger::globalLogDomain()->hasMinimumLogSeverity(
+    ASSERT_TRUE(::mongo::logger::globalLogManager()->settings()->hasMinimumLogSeverity(
         ::mongo::logger::LogComponent::kAccessControl));
-    ASSERT_EQUALS(::mongo::logger::globalLogDomain()->getMinimumLogSeverity(
+    ASSERT_EQUALS(::mongo::logger::globalLogManager()->settings()->getMinimumLogSeverity(
                       ::mongo::logger::LogComponent::kAccessControl),
                   ::mongo::logger::LogSeverity::Log());
 
     // Query - not mentioned in configuration. should match default.
-    ASSERT_FALSE(::mongo::logger::globalLogDomain()->hasMinimumLogSeverity(
+    ASSERT_FALSE(::mongo::logger::globalLogManager()->settings()->hasMinimumLogSeverity(
         ::mongo::logger::LogComponent::kStorage));
-    ASSERT_EQUALS(::mongo::logger::globalLogDomain()->getMinimumLogSeverity(
+    ASSERT_EQUALS(::mongo::logger::globalLogManager()->settings()->getMinimumLogSeverity(
                       ::mongo::logger::LogComponent::kStorage),
                   ::mongo::logger::LogSeverity::Debug(verbosity));
 
     // Storage - cleared by -1 value in configuration. should match default.
-    ASSERT_FALSE(::mongo::logger::globalLogDomain()->hasMinimumLogSeverity(
+    ASSERT_FALSE(::mongo::logger::globalLogManager()->settings()->hasMinimumLogSeverity(
         ::mongo::logger::LogComponent::kStorage));
-    ASSERT_EQUALS(::mongo::logger::globalLogDomain()->getMinimumLogSeverity(
+    ASSERT_EQUALS(::mongo::logger::globalLogManager()->settings()->getMinimumLogSeverity(
                       ::mongo::logger::LogComponent::kStorage),
                   ::mongo::logger::LogSeverity::Debug(verbosity));
 
     // Journaling - explicitly set to 2 in configuration.
-    ASSERT_TRUE(::mongo::logger::globalLogDomain()->hasMinimumLogSeverity(
+    ASSERT_TRUE(::mongo::logger::globalLogManager()->settings()->hasMinimumLogSeverity(
         ::mongo::logger::LogComponent::kJournal));
-    ASSERT_EQUALS(::mongo::logger::globalLogDomain()->getMinimumLogSeverity(
+    ASSERT_EQUALS(::mongo::logger::globalLogManager()->settings()->getMinimumLogSeverity(
                       ::mongo::logger::LogComponent::kJournal),
                   ::mongo::logger::LogSeverity::Debug(2));
 }

@@ -49,9 +49,9 @@ LogManager* globalLogManager();
 /**
  * Gets the global MessageLogDomain associated for the global log manager.
  */
-inline ComponentMessageLogDomain* globalLogDomain() {
-    return globalLogManager()->getGlobalDomain();
-}
+//inline ComponentMessageLogDomain* globalLogDomain() {
+//    return globalLogManager()->getGlobalDomain();
+//}
 
 }  // namespace logger
 }  // namespace mongo

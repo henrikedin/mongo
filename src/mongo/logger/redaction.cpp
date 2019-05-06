@@ -47,7 +47,7 @@ constexpr auto kRedactionDefaultMask = "###"_sd;
 }  // namespace
 
 std::string redact(const BSONObj& objectToRedact) {
-    if (!logger::globalLogDomain()->shouldRedactLogs()) {
+    if (!logger::globalLogManager()->shouldRedactLogs()) {
         return objectToRedact.toString(false);
     }
 
@@ -55,7 +55,7 @@ std::string redact(const BSONObj& objectToRedact) {
 }
 
 StringData redact(StringData stringToRedact) {
-    if (!logger::globalLogDomain()->shouldRedactLogs()) {
+    if (!logger::globalLogManager()->shouldRedactLogs()) {
         return stringToRedact;
     }
 
@@ -64,7 +64,7 @@ StringData redact(StringData stringToRedact) {
 }
 
 std::string redact(const Status& statusToRedact) {
-    if (!logger::globalLogDomain()->shouldRedactLogs()) {
+    if (!logger::globalLogManager()->shouldRedactLogs()) {
         return statusToRedact.toString();
     }
 
@@ -77,7 +77,7 @@ std::string redact(const Status& statusToRedact) {
 }
 
 std::string redact(const DBException& exceptionToRedact) {
-    if (!logger::globalLogDomain()->shouldRedactLogs()) {
+    if (!logger::globalLogManager()->shouldRedactLogs()) {
         return exceptionToRedact.toString();
     }
 

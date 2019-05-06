@@ -39,13 +39,13 @@
     try {                                                                                      \
         expression;                                                                            \
     } catch (const std::exception& e) {                                                        \
-        ::mongo::logger::LogstreamBuilder(::mongo::logger::globalLogDomain(),                  \
+        ::mongo::logger::LogstreamBuilder(/*::mongo::logger::globalLogDomain(),*/                  \
                                           ::mongo::getThreadName(),                            \
                                           ::mongo::logger::LogSeverity::Log())                 \
             << "caught exception (" << e.what() << ") in destructor (" << __FUNCTION__ << ")"  \
             ;                                                                      \
     } catch (...) {                                                                            \
-        ::mongo::logger::LogstreamBuilder(::mongo::logger::globalLogDomain(),                  \
+        ::mongo::logger::LogstreamBuilder(/*::mongo::logger::globalLogDomain(),*/                  \
                                           ::mongo::getThreadName(),                            \
                                           ::mongo::logger::LogSeverity::Log())                 \
             << "caught unknown exception in destructor (" << __FUNCTION__ << ")" ; \

@@ -62,8 +62,11 @@
 #define S2LOG(x) x
 // Expansion of MONGO_LOG_COMPONENT defined in mongo/util/log.h
 #define VLOG(x) \
-    if (!(::mongo::logger::globalLogDomain())->shouldLog(::mongo::logger::LogComponent::kGeo, ::mongo::logger::LogSeverity::Debug(5))) {} \
-    else ::mongo::logger::LogstreamBuilder(::mongo::logger::globalLogDomain(), ::mongo::getThreadName(), ::mongo::logger::LogSeverity::Debug(5), ::mongo::logger::LogComponent::kGeo)
+    if (!(::mongo::logger::globalLogManager()->settings())                        \
+             ->shouldLog(::mongo::logger::LogComponent::kGeo,                     \
+                         ::mongo::logger::LogSeverity::Debug(5))) {               \
+    } \
+    else ::mongo::logger::LogstreamBuilder(/*::mongo::logger::globalLogDomain(),*/ ::mongo::getThreadName(), ::mongo::logger::LogSeverity::Debug(5), ::mongo::logger::LogComponent::kGeo)
 
 class LogMessageBase {
 public:

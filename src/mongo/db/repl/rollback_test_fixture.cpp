@@ -109,7 +109,7 @@ void RollbackTest::setUp() {
     _replicationProcess->initializeRollbackID(_opCtx.get()).transitional_ignore();
 
     // Increase rollback log component verbosity for unit tests.
-    mongo::logger::globalLogDomain()->setMinimumLoggedSeverity(
+    mongo::logger::globalLogManager()->settings()->setMinimumLoggedSeverity(
         logger::LogComponent::kReplicationRollback, logger::LogSeverity::Debug(2));
 
     auto observerRegistry = checked_cast<OpObserverRegistry*>(serviceContext->getOpObserver());

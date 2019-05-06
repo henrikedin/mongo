@@ -43,7 +43,7 @@
 
 #define SQLITE_STMT_TRACE() LOG(MOBILE_TRACE_LEVEL) << "MobileSE: SQLite Stmt ID:" << _id << " "
 #define SQLITE_STMT_TRACE_ENABLED()                 \
-    (::mongo::logger::globalLogDomain()->shouldLog( \
+    (::mongo::logger::globalLogManager()->settings()->shouldLog( \
         MongoLogDefaultComponent_component,         \
         ::mongo::LogstreamBuilder::severityCast(MOBILE_TRACE_LEVEL)))
 

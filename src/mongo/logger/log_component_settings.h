@@ -60,11 +60,13 @@ public:
      * Gets the minimum log severity for component.
      * Result is defined only if hasMinimumLogSeverity() returns true for component.
      */
+    LogSeverity getMinimumLogSeverity() const;
     LogSeverity getMinimumLogSeverity(LogComponent component) const;
 
     /**
      * Sets the minimum log severity for component.
      */
+    void setMinimumLoggedSeverity(LogSeverity severity);
     void setMinimumLoggedSeverity(LogComponent component, LogSeverity severity);
 
     /**

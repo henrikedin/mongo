@@ -220,7 +220,6 @@ MONGO_INITIALIZER_GENERAL(
     using logger::MessageEventDetailsEncoder;
     using logger::MessageEventEphemeral;
     using logger::MessageEventWithContextEncoder;
-    using logger::MessageLogDomain;
     using logger::RotatableFileAppender;
     using logger::StatusWithRotatableFileWriter;
 
@@ -232,7 +231,8 @@ MONGO_INITIALIZER_GENERAL(
         return Status(ErrorCodes::InternalError,
                       "Syslog requested in Windows build; command line processor logic error");
 #else
-        using logger::SyslogAppender;
+		// TODO BOOST LOG
+        /*using logger::SyslogAppender;
 
         StringBuilder sb;
         sb << serverGlobalParams.binaryName << "." << serverGlobalParams.port;
@@ -244,7 +244,7 @@ MONGO_INITIALIZER_GENERAL(
                 std::make_unique<logger::MessageEventDetailsEncoder>()));
         manager->getNamedDomain("javascriptOutput")
             ->attachAppender(std::make_unique<SyslogAppender<MessageEventEphemeral>>(
-                std::make_unique<logger::MessageEventDetailsEncoder>()));
+                std::make_unique<logger::MessageEventDetailsEncoder>()));*/
 #endif  // defined(_WIN32)
     } else if (!serverGlobalParams.logpath.empty()) {
         fassert(16448, !serverGlobalParams.logWithSyslog);
@@ -312,10 +312,11 @@ MONGO_INITIALIZER_GENERAL(
                 return status;*/
         }
     } else {
-        logger::globalLogManager()
+		// TODO BOOST LOG
+        /*logger::globalLogManager()
             ->getNamedDomain("javascriptOutput")
             ->attachAppender(std::make_unique<logger::ConsoleAppender<MessageEventEphemeral>>(
-                std::make_unique<MessageEventDetailsEncoder>()));
+                std::make_unique<MessageEventDetailsEncoder>()));*/
     }
 
     /*logger::globalLogDomain()->attachAppender(

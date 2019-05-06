@@ -60,7 +60,8 @@ bool stringContains(const std::string& haystack, const std::string& needle) {
     return haystack.find(needle) != std::string::npos;
 }
 
-logger::MessageLogDomain* unittestOutput = logger::globalLogManager()->getNamedDomain("unittest");
+// TODO BOOST LOG
+//logger::MessageLogDomain* unittestOutput = logger::globalLogManager()->getNamedDomain("unittest");
 
 typedef std::map<std::string, std::shared_ptr<Suite>> SuiteMap;
 
@@ -72,17 +73,17 @@ SuiteMap& _allSuites() {
 }  // namespace
 
 logger::LogstreamBuilder log() {
-    return LogstreamBuilder(unittestOutput, getThreadName(), logger::LogSeverity::Log());
+    return LogstreamBuilder(/*unittestOutput,*/ getThreadName(), logger::LogSeverity::Log());
 }
 
 logger::LogstreamBuilder warning() {
-    return LogstreamBuilder(unittestOutput, getThreadName(), logger::LogSeverity::Warning());
+    return LogstreamBuilder(/*unittestOutput,*/ getThreadName(), logger::LogSeverity::Warning());
 }
 
 void setupTestLogger() {
-    unittestOutput->attachAppender(
+   /* unittestOutput->attachAppender(
         std::make_unique<logger::ConsoleAppender<logger::MessageLogDomain::Event>>(
-            std::make_unique<logger::MessageEventDetailsEncoder>()));
+            std::make_unique<logger::MessageEventDetailsEncoder>()));*/
 }
 
 MONGO_INITIALIZER_WITH_PREREQUISITES(UnitTestOutput, ("GlobalLogManager", "default"))
@@ -221,59 +222,60 @@ void Test::run() {
     }
 }
 
+// TODO BOOST LOG
 namespace {
-class StringVectorAppender : public logger::MessageLogDomain::EventAppender {
-public:
-    explicit StringVectorAppender(std::vector<std::string>* lines) : _lines(lines) {}
-    virtual ~StringVectorAppender() {}
-    virtual Status append(const logger::MessageLogDomain::Event& event) {
-        std::ostringstream _os;
-        if (!_encoder.encode(event, _os)) {
-            return Status(ErrorCodes::LogWriteFailed, "Failed to append to LogTestAppender.");
-        }
-        stdx::lock_guard<stdx::mutex> lk(_mutex);
-        if (_enabled) {
-            _lines->push_back(_os.str());
-        }
-        return Status::OK();
-    }
-
-    void enable() {
-        stdx::lock_guard<stdx::mutex> lk(_mutex);
-        invariant(!_enabled);
-        _enabled = true;
-    }
-
-    void disable() {
-        stdx::lock_guard<stdx::mutex> lk(_mutex);
-        invariant(_enabled);
-        _enabled = false;
-    }
-
-private:
-    stdx::mutex _mutex;
-    bool _enabled = false;
-    logger::MessageEventDetailsEncoder _encoder;
-    std::vector<std::string>* _lines;
-};
+//class StringVectorAppender : public logger::MessageLogDomain::EventAppender {
+//public:
+//    explicit StringVectorAppender(std::vector<std::string>* lines) : _lines(lines) {}
+//    virtual ~StringVectorAppender() {}
+//    virtual Status append(const logger::MessageLogDomain::Event& event) {
+//        std::ostringstream _os;
+//        if (!_encoder.encode(event, _os)) {
+//            return Status(ErrorCodes::LogWriteFailed, "Failed to append to LogTestAppender.");
+//        }
+//        stdx::lock_guard<stdx::mutex> lk(_mutex);
+//        if (_enabled) {
+//            _lines->push_back(_os.str());
+//        }
+//        return Status::OK();
+//    }
+//
+//    void enable() {
+//        stdx::lock_guard<stdx::mutex> lk(_mutex);
+//        invariant(!_enabled);
+//        _enabled = true;
+//    }
+//
+//    void disable() {
+//        stdx::lock_guard<stdx::mutex> lk(_mutex);
+//        invariant(_enabled);
+//        _enabled = false;
+//    }
+//
+//private:
+//    stdx::mutex _mutex;
+//    bool _enabled = false;
+//    logger::MessageEventDetailsEncoder _encoder;
+//    std::vector<std::string>* _lines;
+//};
 }  // namespace
 
 void Test::startCapturingLogMessages() {
     invariant(!_isCapturingLogMessages);
     _capturedLogMessages.clear();
-    if (!_captureAppender) {
+    /*if (!_captureAppender) {
         _captureAppender = std::make_unique<StringVectorAppender>(&_capturedLogMessages);
     }
     checked_cast<StringVectorAppender*>(_captureAppender.get())->enable();
-    _captureAppenderHandle = logger::globalLogDomain()->attachAppender(std::move(_captureAppender));
+    _captureAppenderHandle = logger::globalLogDomain()->attachAppender(std::move(_captureAppender));*/
     _isCapturingLogMessages = true;
 }
 
 void Test::stopCapturingLogMessages() {
     invariant(_isCapturingLogMessages);
-    invariant(!_captureAppender);
-    _captureAppender = logger::globalLogDomain()->detachAppender(_captureAppenderHandle);
-    checked_cast<StringVectorAppender*>(_captureAppender.get())->disable();
+    //invariant(!_captureAppender);
+    /*_captureAppender = logger::globalLogDomain()->detachAppender(_captureAppenderHandle);
+    checked_cast<StringVectorAppender*>(_captureAppender.get())->disable();*/
     _isCapturingLogMessages = false;
 }
 void Test::printCapturedLogLines() const {

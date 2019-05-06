@@ -54,9 +54,17 @@ bool LogComponentSettings::hasMinimumLogSeverity(LogComponent component) const {
     return _hasMinimumLoggedSeverity[component].load();
 }
 
+LogSeverity LogComponentSettings::getMinimumLogSeverity() const {
+    return getMinimumLogSeverity(LogComponent::kDefault);
+}
+
 LogSeverity LogComponentSettings::getMinimumLogSeverity(LogComponent component) const {
     dassert(int(component) >= 0 && int(component) < LogComponent::kNumLogComponents);
     return LogSeverity::cast(_minimumLoggedSeverity[component].load());
+}
+
+void LogComponentSettings::setMinimumLoggedSeverity(LogSeverity severity) {
+    setMinimumLoggedSeverity(LogComponent::kDefault, severity);
 }
 
 void LogComponentSettings::setMinimumLoggedSeverity(LogComponent component, LogSeverity severity) {

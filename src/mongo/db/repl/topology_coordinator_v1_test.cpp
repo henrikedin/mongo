@@ -6286,12 +6286,14 @@ public:
     virtual void setUp() {
         HeartbeatResponseTestV1::setUp();
         // set verbosity as high as the highest verbosity log message we'd like to check for
-        logger::globalLogDomain()->setMinimumLoggedSeverity(logger::LogSeverity::Debug(3));
+        logger::globalLogManager()->settings()->setMinimumLoggedSeverity(
+            logger::LogSeverity::Debug(3));
     }
 
     virtual void tearDown() {
         HeartbeatResponseTestV1::tearDown();
-        logger::globalLogDomain()->setMinimumLoggedSeverity(logger::LogSeverity::Log());
+        logger::globalLogManager()->settings()->setMinimumLoggedSeverity(
+            logger::LogSeverity::Log());
     }
 };
 

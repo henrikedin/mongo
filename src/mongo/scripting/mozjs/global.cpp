@@ -61,12 +61,13 @@ const char* const GlobalInfo::className = "Global";
 
 namespace {
 
-logger::MessageLogDomain* jsPrintLogDomain;
+// TODO BOOST LOG
+//logger::MessageLogDomain* jsPrintLogDomain;
 
 }  // namespace
 
 void GlobalInfo::Functions::print::call(JSContext* cx, JS::CallArgs args) {
-    logger::LogstreamBuilder builder(jsPrintLogDomain, getThreadName(), logger::LogSeverity::Log());
+    logger::LogstreamBuilder builder(/*jsPrintLogDomain,*/ getThreadName(), logger::LogSeverity::Log());
     auto& ss = builder.stream();
 
     bool first = true;
@@ -126,7 +127,7 @@ void GlobalInfo::Functions::sleep::call(JSContext* cx, JS::CallArgs args) {
 }
 
 MONGO_INITIALIZER(JavascriptPrintDomain)(InitializerContext*) {
-    jsPrintLogDomain = logger::globalLogManager()->getNamedDomain("javascriptOutput");
+    //jsPrintLogDomain = logger::globalLogManager()->getNamedDomain("javascriptOutput");
     return Status::OK();
 }
 

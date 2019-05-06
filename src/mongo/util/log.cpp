@@ -87,10 +87,11 @@ void logContext(const char* errmsg) {
 }
 
 void setPlainConsoleLogger() {
-    logger::globalLogManager()->getGlobalDomain()->clearAppenders();
+	// TODO BOOST LOG
+    /*logger::globalLogManager()->getGlobalDomain()->clearAppenders();
     logger::globalLogManager()->getGlobalDomain()->attachAppender(
         std::make_unique<logger::ConsoleAppender<logger::MessageEventEphemeral>>(
-            std::make_unique<logger::MessageEventUnadornedEncoder>()));
+            std::make_unique<logger::MessageEventUnadornedEncoder>()));*/
 }
 
 Tee* const warnings = RamLog::get("warnings");  // Things put here go in serverStatus

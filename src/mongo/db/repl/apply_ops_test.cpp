@@ -114,7 +114,8 @@ void ApplyOpsTest::tearDown() {
     _opObserver = nullptr;
 
     // Reset default log level in case it was changed.
-    logger::globalLogDomain()->setMinimumLoggedSeverity(logger::LogComponent::kReplication,
+    logger::globalLogManager()->settings()->setMinimumLoggedSeverity(
+        logger::LogComponent::kReplication,
                                                         logger::LogSeverity::Debug(0));
 
     ServiceContextMongoDTest::tearDown();
@@ -306,8 +307,8 @@ TEST_F(ApplyOpsTest, ApplyOpsPropagatesOplogApplicationMode) {
     auto opCtx = cc().makeOperationContext();
 
     // Increase log component verbosity to check for op application messages.
-    logger::globalLogDomain()->setMinimumLoggedSeverity(logger::LogComponent::kReplication,
-                                                        logger::LogSeverity::Debug(3));
+    logger::globalLogManager()->settings()->setMinimumLoggedSeverity(
+        logger::LogComponent::kReplication, logger::LogSeverity::Debug(3));
 
     // Test that the 'applyOps' function passes the oplog application mode through correctly to the
     // underlying op application functions.

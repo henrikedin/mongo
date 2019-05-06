@@ -88,7 +88,8 @@ int main(int argc, char** argv, char** envp) {
         std::cerr << options.helpString();
         return EXIT_FAILURE;
     }
-    ::mongo::logger::globalLogDomain()->setMinimumLoggedSeverity(
+
+    ::mongo::logger::globalLogManager()->settings()->setMinimumLoggedSeverity(
         ::mongo::logger::LogSeverity::Debug(verbose.length()));
 
     if (list) {

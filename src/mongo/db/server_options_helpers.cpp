@@ -253,7 +253,8 @@ Status storeBaseOptions(const moe::Environment& params) {
             return Status(ErrorCodes::BadValue,
                           "systemLog.verbosity YAML Config cannot be negative");
         }
-        logger::globalLogDomain()->setMinimumLoggedSeverity(logger::LogSeverity::Debug(verbosity));
+        logger::globalLogManager()->settings()->setMinimumLoggedSeverity(
+            logger::LogSeverity::Debug(verbosity));
     }
 
     // log component hierarchy verbosity levels
@@ -267,9 +268,9 @@ Status storeBaseOptions(const moe::Environment& params) {
             int verbosity = params[dottedName].as<int>();
             // Clear existing log level if log level is negative.
             if (verbosity < 0) {
-                logger::globalLogDomain()->clearMinimumLoggedSeverity(component);
+                logger::globalLogManager()->settings()->clearMinimumLoggedSeverity(component);
             } else {
-                logger::globalLogDomain()->setMinimumLoggedSeverity(
+                logger::globalLogManager()->settings()->setMinimumLoggedSeverity(
                     component, logger::LogSeverity::Debug(verbosity));
             }
         }

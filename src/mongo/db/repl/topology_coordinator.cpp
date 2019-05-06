@@ -754,7 +754,8 @@ HeartbeatResponseAction TopologyCoordinator::processHeartbeatResponse(
             } else {
                 LOG(2) << "Config from heartbeat response was same as ours.";
             }
-            if (logger::globalLogDomain()->shouldLog(MongoLogDefaultComponent_component,
+            if (logger::globalLogManager()->settings()->shouldLog(
+                    MongoLogDefaultComponent_component,
                                                      ::mongo::LogstreamBuilder::severityCast(2))) {
                 LogstreamBuilder lsb = log();
                 if (_rsConfig.isInitialized()) {

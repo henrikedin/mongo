@@ -156,7 +156,7 @@ std::string ShardRemote::toString() const {
 BSONObj ShardRemote::_appendMetadataForCommand(OperationContext* opCtx,
                                                const ReadPreferenceSetting& readPref) {
     BSONObjBuilder builder;
-    if (logger::globalLogDomain()->shouldLog(
+    if (logger::globalLogManager()->settings()->shouldLog(
             logger::LogComponent::kTracking,
             logger::LogSeverity::Debug(1))) {  // avoid performance overhead if not logging
         if (!TrackingMetadata::get(opCtx).getIsLogged()) {

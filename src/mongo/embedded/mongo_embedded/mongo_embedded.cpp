@@ -107,11 +107,12 @@ struct mongo_embedded_v1_lib {
     ~mongo_embedded_v1_lib() {
         invariant(this->databaseCount.load() == 0);
 
-        if (this->logCallbackHandle) {
-            using mongo::logger::globalLogDomain;
-            globalLogDomain()->detachAppender(this->logCallbackHandle);
-            this->logCallbackHandle.reset();
-        }
+   //     if (this->logCallbackHandle) {
+			//// TODO BOOST LOG
+   //         /*using mongo::logger::globalLogDomain;
+   //         globalLogDomain()->detachAppender(this->logCallbackHandle);*/
+   //         //this->logCallbackHandle.reset();
+   //     }
     }
 
     mongo_embedded_v1_lib(const mongo_embedded_v1_lib&) = delete;
@@ -121,7 +122,7 @@ struct mongo_embedded_v1_lib {
 
     mongo::AtomicWord<int> databaseCount;
 
-    mongo::logger::ComponentMessageLogDomain::AppenderHandle logCallbackHandle;
+    //mongo::logger::ComponentMessageLogDomain::AppenderHandle logCallbackHandle;
 
     std::unique_ptr<mongo_embedded_v1_instance> onlyDB;
 };
@@ -204,13 +205,13 @@ std::unique_ptr<mongo_embedded_v1_lib> library;
 void registerLogCallback(mongo_embedded_v1_lib* const lib,
                          const mongo_embedded_v1_log_callback logCallback,
                          void* const logUserData) {
-    using logger::globalLogDomain;
+    //using logger::globalLogDomain;
     using logger::MessageEventEphemeral;
     using logger::MessageEventUnadornedEncoder;
 
-    lib->logCallbackHandle = globalLogDomain()->attachAppender(
+    /*lib->logCallbackHandle = globalLogDomain()->attachAppender(
         std::make_unique<embedded::EmbeddedLogAppender<MessageEventEphemeral>>(
-            logCallback, logUserData, std::make_unique<MessageEventUnadornedEncoder>()));
+            logCallback, logUserData, std::make_unique<MessageEventUnadornedEncoder>()));*/
 }
 
 mongo_embedded_v1_lib* capi_lib_init(mongo_embedded_v1_init_params const* params) try {
