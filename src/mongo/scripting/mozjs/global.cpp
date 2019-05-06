@@ -67,7 +67,7 @@ namespace {
 }  // namespace
 
 void GlobalInfo::Functions::print::call(JSContext* cx, JS::CallArgs args) {
-    logger::LogstreamBuilder builder(/*jsPrintLogDomain,*/ getThreadName(), logger::LogSeverity::Log());
+    logger::LogstreamBuilder builder(/*jsPrintLogDomain,*/ /*getThreadName(),*/ logger::LogSeverity::Log());
     auto& ss = builder.stream();
 
     bool first = true;

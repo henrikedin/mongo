@@ -84,14 +84,14 @@ using logger::Tee;
  */
 inline LogstreamBuilder severe() {
     return LogstreamBuilder(/*logger::globalLogDomain(),*/
-                            getThreadName(),
+                            /*getThreadName(),*/
                             logger::LogSeverity::Severe(),
                             ::MongoLogDefaultComponent_component);
 }
 
 inline LogstreamBuilder severe(logger::LogComponent component) {
     return LogstreamBuilder(
-        /*logger::globalLogDomain(),*/ getThreadName(), logger::LogSeverity::Severe(), component);
+        /*logger::globalLogDomain(),*/ /*getThreadName(),*/ logger::LogSeverity::Severe(), component);
 }
 
 /**
@@ -99,14 +99,14 @@ inline LogstreamBuilder severe(logger::LogComponent component) {
  */
 inline LogstreamBuilder error() {
     return LogstreamBuilder(/*logger::globalLogDomain(),*/
-                            getThreadName(),
+                            /*getThreadName(),*/
                             logger::LogSeverity::Error(),
                             ::MongoLogDefaultComponent_component);
 }
 
 inline LogstreamBuilder error(logger::LogComponent component) {
     return LogstreamBuilder(
-        /*logger::globalLogDomain(),*/ getThreadName(), logger::LogSeverity::Error(), component);
+        /*logger::globalLogDomain(),*/ /*getThreadName(),*/ logger::LogSeverity::Error(), component);
 }
 
 /**
@@ -114,14 +114,14 @@ inline LogstreamBuilder error(logger::LogComponent component) {
  */
 inline LogstreamBuilder warning() {
     return LogstreamBuilder(/*logger::globalLogDomain(),*/
-                            getThreadName(),
+                            /*getThreadName(),*/
                             logger::LogSeverity::Warning(),
                             ::MongoLogDefaultComponent_component);
 }
 
 inline LogstreamBuilder warning(logger::LogComponent component) {
     return LogstreamBuilder(
-        /*logger::globalLogDomain(),*/ getThreadName(), logger::LogSeverity::Warning(), component);
+        /*logger::globalLogDomain(),*/ /*getThreadName(),*/ logger::LogSeverity::Warning(), component);
 }
 
 /**
@@ -129,7 +129,7 @@ inline LogstreamBuilder warning(logger::LogComponent component) {
  */
 inline LogstreamBuilder log() {
     return LogstreamBuilder(/*logger::globalLogDomain(),*/
-                            getThreadName(),
+                            /*getThreadName(),*/
                             logger::LogSeverity::Log(),
                             ::MongoLogDefaultComponent_component);
 }
@@ -144,7 +144,7 @@ inline LogstreamBuilder log() {
  */
 inline LogstreamBuilder logNoCache() {
     return LogstreamBuilder(/*logger::globalLogDomain(),*/
-                            getThreadName(),
+                            /*getThreadName(),*/
                             logger::LogSeverity::Log(),
                             ::MongoLogDefaultComponent_component,
                             false);
@@ -152,12 +152,12 @@ inline LogstreamBuilder logNoCache() {
 
 inline LogstreamBuilder log(logger::LogComponent component) {
     return LogstreamBuilder(
-        /*logger::globalLogDomain(),*/ getThreadName(), logger::LogSeverity::Log(), component);
+        /*logger::globalLogDomain(),*/ /*getThreadName(),*/ logger::LogSeverity::Log(), component);
 }
 
 inline LogstreamBuilder log(logger::LogComponent::Value componentValue) {
     return LogstreamBuilder(
-        /*logger::globalLogDomain(),*/ getThreadName(), logger::LogSeverity::Log(), componentValue);
+        /*logger::globalLogDomain(),*/ /*getThreadName(),*/ logger::LogSeverity::Log(), componentValue);
 }
 
 /**
@@ -180,7 +180,7 @@ inline bool shouldLog(logger::LogSeverity severity) {
                          ::mongo::LogstreamBuilder::severityCast(DLEVEL))) {           \
     } else                                                                             \
     ::mongo::logger::LogstreamBuilder(/*::mongo::logger::globalLogDomain(),*/              \
-                                      ::mongo::getThreadName(),                        \
+                                      /*::mongo::getThreadName(),*/                        \
                                       ::mongo::LogstreamBuilder::severityCast(DLEVEL), \
                                       MongoLogDefaultComponent_component)
 
@@ -191,7 +191,7 @@ inline bool shouldLog(logger::LogSeverity severity) {
              ->shouldLog((COMPONENT1), ::mongo::LogstreamBuilder::severityCast(DLEVEL))) { \
     } else                                                                                 \
     ::mongo::logger::LogstreamBuilder(/*::mongo::logger::globalLogDomain(),*/                  \
-                                      ::mongo::getThreadName(),                            \
+                                      /*::mongo::getThreadName(),*/                            \
                                       ::mongo::LogstreamBuilder::severityCast(DLEVEL),     \
                                       (COMPONENT1))
 

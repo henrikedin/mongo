@@ -442,7 +442,7 @@ TEST_F(LogTestUnadornedEncoder, MessageEventDetailsEncoderLogComponent) {
 // Tests pass through of log component:
 //     log macros -> LogStreamBuilder -> MessageEventEphemeral -> MessageEventDetailsEncoder
 TEST_F(LogTestDetailsEncoder, ) {
-    globalLogDomain()->setMinimumLoggedSeverity(LogSeverity::Log());
+    globalLogManager()->settings()->setMinimumLoggedSeverity(LogSeverity::Log());
 
     // Default log component short name should not appear in detailed log line.
     MONGO_LOG_COMPONENT(0, componentDefault) << "This is logged";

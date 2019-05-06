@@ -73,11 +73,11 @@ SuiteMap& _allSuites() {
 }  // namespace
 
 logger::LogstreamBuilder log() {
-    return LogstreamBuilder(/*unittestOutput,*/ getThreadName(), logger::LogSeverity::Log());
+    return LogstreamBuilder(/*unittestOutput,*/ /*getThreadName(),*/ logger::LogSeverity::Log());
 }
 
 logger::LogstreamBuilder warning() {
-    return LogstreamBuilder(/*unittestOutput,*/ getThreadName(), logger::LogSeverity::Warning());
+    return LogstreamBuilder(/*unittestOutput,*/ /*getThreadName(),*/ logger::LogSeverity::Warning());
 }
 
 void setupTestLogger() {

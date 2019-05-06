@@ -101,12 +101,12 @@ struct ThreadOstreamCacheFinalizer {
 namespace logger {
 
 LogstreamBuilder::LogstreamBuilder(/*MessageLogDomain* domain,*/
-                                   StringData contextName,
+                                   /*StringData contextName,*/
                                    LogSeverity severity)
-    : LogstreamBuilder(/*domain,*/ contextName, std::move(severity), LogComponent::kDefault) {}
+    : LogstreamBuilder(/*domain,*/ /*contextName,*/ std::move(severity), LogComponent::kDefault) {}
 
 LogstreamBuilder::LogstreamBuilder(/*MessageLogDomain* domain,*/
-                                   StringData contextName,
+                                   /*StringData contextName,*/
                                    LogSeverity severity,
                                    LogComponent component,
                                    bool shouldCache)
