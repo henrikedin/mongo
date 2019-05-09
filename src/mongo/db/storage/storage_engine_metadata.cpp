@@ -239,12 +239,14 @@ void flushMyDirectory(const boost::filesystem::path& file) {
         int e = errno;
         if (e == EINVAL) {  // indicates filesystem does not support synchronization
             if (!_warnedAboutFilesystem) {
-                log() << "\tWARNING: This file system is not supported. For further information"
-                      << " see:" << startupWarningsLog;
-                log() << "\t\t\thttp://dochub.mongodb.org/core/unsupported-filesystems"
-                      << startupWarningsLog;
-                log() << "\t\tPlease notify MongoDB, Inc. if an unlisted filesystem generated "
-                      << "this warning." << startupWarningsLog;
+                log(logger::kStartupWarnings)
+                    << "\tWARNING: This file system is not supported. For further information"
+                      << " see:";
+                log(logger::kStartupWarnings)
+                    << "\t\t\thttp://dochub.mongodb.org/core/unsupported-filesystems";
+                log(logger::kStartupWarnings)
+                    << "\t\tPlease notify MongoDB, Inc. if an unlisted filesystem generated "
+                    << "this warning.";
                 _warnedAboutFilesystem = true;
             }
         } else {

@@ -89,14 +89,13 @@ void initializeStorageEngine(ServiceContext* service, const StorageEngineInitFla
     if (auto existingStorageEngine = StorageEngineMetadata::getStorageEngineForPath(dbpath)) {
         if (*existingStorageEngine == "mmapv1" ||
             (storageGlobalParams.engineSetByUser && storageGlobalParams.engine == "mmapv1")) {
-            log() << startupWarningsLog;
-            log() << "** WARNING: Support for MMAPV1 storage engine has been deprecated and will be"
-                  << startupWarningsLog;
-            log() << "**          removed in version 4.2. Please plan to migrate to the wiredTiger"
-                  << startupWarningsLog;
-            log() << "**          storage engine." << startupWarningsLog;
-            log() << "**          See http://dochub.mongodb.org/core/deprecated-mmapv1";
-            log() << startupWarningsLog;
+            log(logger::kStartupWarnings)
+                << "** WARNING: Support for MMAPV1 storage engine has been deprecated and will be";
+            log(logger::kStartupWarnings)
+                << "**          removed in version 4.2. Please plan to migrate to the wiredTiger";
+            log(logger::kStartupWarnings) << "**          storage engine.";
+            log(logger::kStartupWarnings)
+                << "**          See http://dochub.mongodb.org/core/deprecated-mmapv1";
         }
 
         if (storageGlobalParams.engineSetByUser) {
@@ -133,15 +132,14 @@ void initializeStorageEngine(ServiceContext* service, const StorageEngineInitFla
                     << " storage engine explicitly, e.g. --storageEngine=mmapv1.",
                 isRegisteredStorageEngine(service, storageGlobalParams.engine));
     } else if (storageGlobalParams.engineSetByUser && storageGlobalParams.engine == "mmapv1") {
-        log() << startupWarningsLog;
-        log() << "** WARNING: You have explicitly specified 'MMAPV1' storage engine in your"
-              << startupWarningsLog;
-        log() << "**          config file or as a command line option.  Support for the MMAPV1"
-              << startupWarningsLog;
-        log() << "**          storage engine has been deprecated and will be removed in"
-              << startupWarningsLog;
-        log() << "**          version 4.2. See http://dochub.mongodb.org/core/deprecated-mmapv1";
-        log() << startupWarningsLog;
+        log(logger::kStartupWarnings)
+            << "** WARNING: You have explicitly specified 'MMAPV1' storage engine in your";
+        log(logger::kStartupWarnings)
+            << "**          config file or as a command line option.  Support for the MMAPV1";
+        log(logger::kStartupWarnings)
+            << "**          storage engine has been deprecated and will be removed in";
+        log(logger::kStartupWarnings)
+            << "**          version 4.2. See http://dochub.mongodb.org/core/deprecated-mmapv1";
     }
 
     const StorageEngine::Factory* factory =

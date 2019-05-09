@@ -156,8 +156,8 @@
                              }))
 
 /**
- * Behaves like ASSERT_THROWS, above, but also fails if calling getCode() on the thrown exception
- * does not return an error code equal to EXPECTED_CODE.
+ * Behaves like ASSERT_THROWS, above, but also fails if calling getCode() on the thrown
+ * exception does not return an error code equal to EXPECTED_CODE.
  */
 #define ASSERT_THROWS_CODE(STATEMENT, EXCEPTION_TYPE, EXPECTED_CODE)                     \
     ASSERT_THROWS_WITH_CHECK(STATEMENT, EXCEPTION_TYPE, ([&](const EXCEPTION_TYPE& ex) { \
@@ -165,9 +165,9 @@
                              }))
 
 /**
- * Behaves like ASSERT_THROWS, above, but also fails if calling getCode() on the thrown exception
- * does not return an error code equal to EXPECTED_CODE or if calling what() on the thrown exception
- * does not return a string equal to EXPECTED_WHAT.
+ * Behaves like ASSERT_THROWS, above, but also fails if calling getCode() on the thrown
+ * exception does not return an error code equal to EXPECTED_CODE or if calling what() on the
+ * thrown exception does not return a string equal to EXPECTED_WHAT.
  */
 #define ASSERT_THROWS_CODE_AND_WHAT(STATEMENT, EXCEPTION_TYPE, EXPECTED_CODE, EXPECTED_WHAT) \
     ASSERT_THROWS_WITH_CHECK(STATEMENT, EXCEPTION_TYPE, ([&](const EXCEPTION_TYPE& ex) {     \
@@ -205,16 +205,17 @@
                   "Expression '" #__VA_ARGS__ "' [with " #Alias "] shouldn't compile.");
 
 /**
- * This internal helper is used to ignore warnings about unused results.  Some unit tests which test
- * `ASSERT_THROWS` and its variations are used on functions which both throw and return `Status` or
- * `StatusWith` objects.  Although such function designs are undesirable, they do exist, presently.
- * Therefore this internal helper macro is used by `ASSERT_THROWS` and its variations to silence
- * such warnings without forcing the caller to invoke `.ignore()` on the called function.
+ * This internal helper is used to ignore warnings about unused results.  Some unit tests which
+ * test `ASSERT_THROWS` and its variations are used on functions which both throw and return
+ * `Status` or `StatusWith` objects.  Although such function designs are undesirable, they do
+ * exist, presently. Therefore this internal helper macro is used by `ASSERT_THROWS` and its
+ * variations to silence such warnings without forcing the caller to invoke `.ignore()` on the
+ * called function.
  *
- * NOTE: This macro should NOT be used inside regular unit test code to ignore unchecked `Status` or
- * `StatusWith` instances -- if a `Status` or `StatusWith` result is to be ignored, please use the
- * normal `.ignore()` code.  This macro exists only to make using `ASSERT_THROWS` less inconvenient
- * on functions which both throw and return `Status` or `StatusWith`.
+ * NOTE: This macro should NOT be used inside regular unit test code to ignore unchecked
+ * `Status` or `StatusWith` instances -- if a `Status` or `StatusWith` result is to be ignored,
+ * please use the normal `.ignore()` code.  This macro exists only to make using `ASSERT_THROWS`
+ * less inconvenient on functions which both throw and return `Status` or `StatusWith`.
  */
 #define UNIT_TEST_INTERNALS_IGNORE_UNUSED_RESULT_WARNINGS(EXPRESSION) \
     do {                                                              \
@@ -436,6 +437,8 @@ private:
     std::vector<std::string> _capturedLogMessages;
     /*logger::MessageLogDomain::AppenderHandle _captureAppenderHandle;
     std::unique_ptr<logger::MessageLogDomain::EventAppender> _captureAppender;*/
+    struct SinkImpl;
+    std::unique_ptr<SinkImpl> _sinkImpl;
 };
 
 /**

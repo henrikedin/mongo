@@ -544,22 +544,26 @@ bool repairDatabasesAndCheckVersion(OperationContext* opCtx) {
                     // warning.
                     if (version ==
                         ServerGlobalParams::FeatureCompatibility::Version::kUpgradingTo42) {
-                        log() << "** WARNING: A featureCompatibilityVersion upgrade did not "
-                              << "complete. " << startupWarningsLog;
-                        log() << "**          The current featureCompatibilityVersion is "
-                              << FeatureCompatibilityVersionParser::toString(version) << "."
-                              << startupWarningsLog;
-                        log() << "**          To fix this, use the setFeatureCompatibilityVersion "
-                              << "command to resume upgrade to 4.2." << startupWarningsLog;
+                        log(logger::kStartupWarnings)
+                            << "** WARNING: A featureCompatibilityVersion upgrade did not "
+                              << "complete. ";
+                        log(logger::kStartupWarnings)
+                            << "**          The current featureCompatibilityVersion is "
+                              << FeatureCompatibilityVersionParser::toString(version) << ".";
+                        log(logger::kStartupWarnings)
+                            << "**          To fix this, use the setFeatureCompatibilityVersion "
+                              << "command to resume upgrade to 4.2.";
                     } else if (version == ServerGlobalParams::FeatureCompatibility::Version::
                                               kDowngradingTo40) {
-                        log() << "** WARNING: A featureCompatibilityVersion downgrade did not "
-                              << "complete. " << startupWarningsLog;
-                        log() << "**          The current featureCompatibilityVersion is "
-                              << FeatureCompatibilityVersionParser::toString(version) << "."
-                              << startupWarningsLog;
-                        log() << "**          To fix this, use the setFeatureCompatibilityVersion "
-                              << "command to resume downgrade to 4.0." << startupWarningsLog;
+                        log(logger::kStartupWarnings)
+                            << "** WARNING: A featureCompatibilityVersion downgrade did not "
+                              << "complete. ";
+                        log(logger::kStartupWarnings)
+                            << "**          The current featureCompatibilityVersion is "
+                              << FeatureCompatibilityVersionParser::toString(version) << ".";
+                        log(logger::kStartupWarnings)
+                            << "**          To fix this, use the setFeatureCompatibilityVersion "
+                              << "command to resume downgrade to 4.0.";
                     }
                 }
             }

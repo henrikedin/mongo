@@ -187,9 +187,9 @@ void DatabaseImpl::init(OperationContext* const opCtx) const {
     Status reloadStatus = views->reloadIfNeeded(opCtx);
 
     if (!reloadStatus.isOK()) {
-        warning() << "Unable to parse views: " << redact(reloadStatus)
+        warning(logger::kStartupWarnings) << "Unable to parse views: " << redact(reloadStatus)
                   << "; remove any invalid views from the " << _viewsName
-                  << " collection to restore server functionality." << startupWarningsLog;
+                  << " collection to restore server functionality.";
     }
 }
 
@@ -824,11 +824,12 @@ void DatabaseImpl::checkForIdIndexesAndDropPendingCollections(OperationContext* 
         if (coll->getIndexCatalog()->findIdIndex(opCtx))
             continue;
 
-        log() << "WARNING: the collection '" << nss << "' lacks a unique index on _id."
-              << " This index is needed for replication to function properly" << startupWarningsLog;
-        log() << "\t To fix this, you need to create a unique index on _id."
-              << " See http://dochub.mongodb.org/core/build-replica-set-indexes"
-              << startupWarningsLog;
+        log(logger::kStartupWarnings)
+            << "WARNING: the collection '" << nss << "' lacks a unique index on _id."
+              << " This index is needed for replication to function properly";
+        log(logger::kStartupWarnings)
+            << "\t To fix this, you need to create a unique index on _id."
+              << " See http://dochub.mongodb.org/core/build-replica-set-indexes";
     }
 }
 

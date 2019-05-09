@@ -52,6 +52,11 @@
 #include "mongo/util/stacktrace.h"
 #include "mongo/util/timer.h"
 
+#include <boost/log/sinks/basic_sink_backend.hpp>
+#include <boost/log/sinks/unlocked_frontend.hpp>
+#include <boost/make_shared.hpp>
+#include <boost/log/core.hpp>
+
 namespace mongo {
 namespace unittest {
 namespace {
@@ -59,9 +64,6 @@ namespace {
 bool stringContains(const std::string& haystack, const std::string& needle) {
     return haystack.find(needle) != std::string::npos;
 }
-
-// TODO BOOST LOG
-//logger::MessageLogDomain* unittestOutput = logger::globalLogManager()->getNamedDomain("unittest");
 
 typedef std::map<std::string, std::shared_ptr<Suite>> SuiteMap;
 
@@ -73,17 +75,20 @@ SuiteMap& _allSuites() {
 }  // namespace
 
 logger::LogstreamBuilder log() {
-    return LogstreamBuilder(/*unittestOutput,*/ /*getThreadName(),*/ logger::LogSeverity::Log());
+    return LogstreamBuilder(
+        /*unittestOutput,*/ /*getThreadName(),*/ logger::kUnittest, logger::LogSeverity::Log());
 }
 
 logger::LogstreamBuilder warning() {
-    return LogstreamBuilder(/*unittestOutput,*/ /*getThreadName(),*/ logger::LogSeverity::Warning());
+    return LogstreamBuilder(
+        /*unittestOutput,*/ /*getThreadName(),*/ logger::kUnittest, logger::LogSeverity::Warning());
 }
 
 void setupTestLogger() {
-   /* unittestOutput->attachAppender(
-        std::make_unique<logger::ConsoleAppender<logger::MessageLogDomain::Event>>(
-            std::make_unique<logger::MessageEventDetailsEncoder>()));*/
+    // TODO BOOST LOG
+    /* unittestOutput->attachAppender(
+         std::make_unique<logger::ConsoleAppender<logger::MessageLogDomain::Event>>(
+             std::make_unique<logger::MessageEventDetailsEncoder>()));*/
 }
 
 MONGO_INITIALIZER_WITH_PREREQUISITES(UnitTestOutput, ("GlobalLogManager", "default"))
@@ -198,34 +203,51 @@ struct UnitTestEnvironment {
     Test* const test;
 };
 
-}  // namespace
+class StringVectorSink
+    : public boost::log::sinks::
+          basic_formatted_sink_backend<char, boost::log::sinks::concurrent_feeding> {
+private:
+    //! Base type
+    typedef boost::log::sinks::basic_formatted_sink_backend<char,
+                                                            boost::log::sinks::concurrent_feeding>
+        base_type;
 
-Test::Test() : _isCapturingLogMessages(false) {}
+public:
+    //! Character type
+    typedef typename base_type::char_type char_type;
+    //! String type to be used as a message text holder
+    typedef typename base_type::string_type string_type;
+    //! Output stream type
+    typedef std::basic_ostream<char_type> stream_type;
 
-Test::~Test() {
-    if (_isCapturingLogMessages) {
-        stopCapturingLogMessages();
+    explicit StringVectorSink(std::vector<std::string>* lines) : _lines(lines) {}
+    // The function consumes the log records that come from the frontend
+    void consume(boost::log::record_view const& rec, string_type const& formatted_string) {
+        if (_enabled) {
+            _lines->push_back(formatted_string);
+        }
     }
-}
 
-void Test::run() {
-    UnitTestEnvironment environment(this);
-
-    // An uncaught exception does not prevent the tear down from running. But
-    // such an event still constitutes an error. To test this behavior we use a
-    // special exception here that when thrown does trigger the tear down but is
-    // not considered an error.
-    try {
-        _doTest();
-    } catch (const FixtureExceptionForTesting&) {
-        return;
+    void enable() {
+        stdx::lock_guard<stdx::mutex> lk(_mutex);
+        invariant(!_enabled);
+        _enabled = true;
     }
-}
 
-// TODO BOOST LOG
-namespace {
-//class StringVectorAppender : public logger::MessageLogDomain::EventAppender {
-//public:
+    void disable() {
+        stdx::lock_guard<stdx::mutex> lk(_mutex);
+        invariant(_enabled);
+        _enabled = false;
+    }
+
+private:
+    stdx::mutex _mutex;
+    bool _enabled = false;
+    std::vector<std::string>* _lines;
+};
+
+// class StringVectorAppender : public logger::MessageLogDomain::EventAppender {
+// public:
 //    explicit StringVectorAppender(std::vector<std::string>* lines) : _lines(lines) {}
 //    virtual ~StringVectorAppender() {}
 //    virtual Status append(const logger::MessageLogDomain::Event& event) {
@@ -252,28 +274,71 @@ namespace {
 //        _enabled = false;
 //    }
 //
-//private:
+// private:
 //    stdx::mutex _mutex;
 //    bool _enabled = false;
 //    logger::MessageEventDetailsEncoder _encoder;
 //    std::vector<std::string>* _lines;
 //};
+
+}  // namespace
+
+struct Test::SinkImpl {
+    boost::shared_ptr<boost::log::sinks::unlocked_sink<StringVectorSink>> _sink;
+};
+
+Test::Test() : _isCapturingLogMessages(false), _sinkImpl(std::make_unique<SinkImpl>()) {}
+
+Test::~Test() {
+    if (_isCapturingLogMessages) {
+        stopCapturingLogMessages();
+    }
+}
+
+void Test::run() {
+    UnitTestEnvironment environment(this);
+
+    // An uncaught exception does not prevent the tear down from running. But
+    // such an event still constitutes an error. To test this behavior we use a
+    // special exception here that when thrown does trigger the tear down but is
+    // not considered an error.
+    try {
+        _doTest();
+    } catch (const FixtureExceptionForTesting&) {
+        return;
+    }
+}
+
+// TODO BOOST LOG
+namespace {
+
+
 }  // namespace
 
 void Test::startCapturingLogMessages() {
     invariant(!_isCapturingLogMessages);
     _capturedLogMessages.clear();
+    if (!_sinkImpl->_sink) {
+        _sinkImpl->_sink =
+            boost::make_shared<boost::log::sinks::unlocked_sink<StringVectorSink>>(
+            boost::make_shared<StringVectorSink>(&_capturedLogMessages));
+    }
+    _sinkImpl->_sink->locked_backend()->enable();
     /*if (!_captureAppender) {
         _captureAppender = std::make_unique<StringVectorAppender>(&_capturedLogMessages);
     }
     checked_cast<StringVectorAppender*>(_captureAppender.get())->enable();
-    _captureAppenderHandle = logger::globalLogDomain()->attachAppender(std::move(_captureAppender));*/
+    _captureAppenderHandle =
+    logger::globalLogDomain()->attachAppender(std::move(_captureAppender));*/
+    boost::log::core::get()->add_sink(_sinkImpl->_sink);
     _isCapturingLogMessages = true;
 }
 
 void Test::stopCapturingLogMessages() {
     invariant(_isCapturingLogMessages);
-    //invariant(!_captureAppender);
+    // invariant(!_captureAppender);
+    boost::log::core::get()->remove_sink(_sinkImpl->_sink);
+    _sinkImpl->_sink->locked_backend()->disable();
     /*_captureAppender = logger::globalLogDomain()->detachAppender(_captureAppenderHandle);
     checked_cast<StringVectorAppender*>(_captureAppender.get())->disable();*/
     _isCapturingLogMessages = false;
@@ -303,9 +368,9 @@ void Suite::add(const std::string& name, const TestFunction& testFn) {
 }
 
 Result* Suite::run(const std::string& filter, int runsPerTest) {
-    LOG(1) << "\t about to setupTests" ;
+    LOG(1) << "\t about to setupTests";
     setupTests();
-    LOG(1) << "\t done setupTests" ;
+    LOG(1) << "\t done setupTests";
 
     Timer timer;
     Result* r = new Result(_name);
@@ -313,8 +378,7 @@ Result* Suite::run(const std::string& filter, int runsPerTest) {
 
     for (const auto& tc : _tests) {
         if (filter.size() && tc->getName().find(filter) == std::string::npos) {
-            LOG(1) << "\t skipping test: " << tc->getName() << " because doesn't match filter"
-                   ;
+            LOG(1) << "\t skipping test: " << tc->getName() << " because doesn't match filter";
             continue;
         }
 
@@ -361,7 +425,7 @@ Result* Suite::run(const std::string& filter, int runsPerTest) {
 
     r->_millis = timer.millis();
 
-    log() << "\t DONE running tests" ;
+    log() << "\t DONE running tests";
 
     return r;
 }
@@ -374,8 +438,7 @@ int Suite::run(const std::vector<std::string>& suites, const std::string& filter
 
     for (unsigned int i = 0; i < suites.size(); i++) {
         if (_allSuites().count(suites[i]) == 0) {
-            log() << "invalid test suite [" << suites[i] << "], use --list to see valid names"
-                  ;
+            log() << "invalid test suite [" << suites[i] << "], use --list to see valid names";
             return EXIT_FAILURE;
         }
     }
@@ -394,11 +457,11 @@ int Suite::run(const std::vector<std::string>& suites, const std::string& filter
         std::shared_ptr<Suite>& s = _allSuites()[name];
         fassert(16145, s != NULL);
 
-        log() << "going to run suite: " << name ;
+        log() << "going to run suite: " << name;
         results.emplace_back(s->run(filter, runsPerTest));
     }
 
-    log() << "**************************************************" ;
+    log() << "**************************************************";
 
     int rc = 0;
 
@@ -435,7 +498,7 @@ int Suite::run(const std::vector<std::string>& suites, const std::string& filter
 
     // summary
     if (!totals._fails.empty()) {
-        log() << "Failing tests:" ;
+        log() << "Failing tests:";
         for (const std::string& s : totals._fails) {
             log() << "\t " << s << " Failed";
         }

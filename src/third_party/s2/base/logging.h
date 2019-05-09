@@ -66,7 +66,7 @@
              ->shouldLog(::mongo::logger::LogComponent::kGeo,                     \
                          ::mongo::logger::LogSeverity::Debug(5))) {               \
     } \
-    else ::mongo::logger::LogstreamBuilder(/*::mongo::logger::globalLogDomain(),*/ /*::mongo::getThreadName(),*/ ::mongo::logger::LogSeverity::Debug(5), ::mongo::logger::LogComponent::kGeo)
+    else ::mongo::logger::LogstreamBuilder(::mongo::logger::kDefault, /*::mongo::getThreadName(),*/ ::mongo::logger::LogSeverity::Debug(5), ::mongo::logger::LogComponent::kGeo)
 
 class LogMessageBase {
 public:

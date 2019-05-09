@@ -36,6 +36,8 @@
 #include "mongo/logger/json_formatter.h"
 #include "mongo/logger/message_event_utf8_encoder.h"
 #include "mongo/logger/severity_filter.h"
+#include "mongo/logger/ramlog.h"
+#include "mongo/logger/ramlog_sink.h"
 
 #include <boost/log/core.hpp>
 #include <boost/log/sinks.hpp>
@@ -45,20 +47,18 @@ namespace mongo {
 namespace logger {
 typedef boost::log::sinks::synchronous_sink<boost::log::sinks::text_ostream_backend> console_sink_t;
 boost::shared_ptr<console_sink_t> console_sink;
+boost::shared_ptr<boost::log::sinks::unlocked_sink<RamLogSink>> startup_warnings_sink;
 
 LogManager::LogManager() {
     reattachDefaultConsoleAppender();
 
-	
-    console_sink = boost::make_shared<console_sink_t>();
-
-	console_sink->set_filter(SeverityFilter());
-    console_sink->set_formatter(JsonFormatter());
-
-    console_sink->locked_backend()->add_stream(
-        boost::shared_ptr<std::ostream>(&std::cout, boost::null_deleter()));
-
-    boost::log::core::get()->add_sink(std::move(console_sink));
+	startup_warnings_sink =
+        logger::create_ramlog_sink<logger::TextFormatter>(RamLog::get("startupWarnings"));
+    startup_warnings_sink->set_filter([](boost::log::attribute_value_set const& attrs) {
+        return boost::log::extract<LogDomain>(attributes::domain, attrs) == kStartupWarnings;
+    });
+    boost::log::core::get()->add_sink(startup_warnings_sink);
+    
 }
 
 LogManager::~LogManager() {
@@ -79,6 +79,7 @@ void LogManager::detachDefaultConsoleAppender() {
     /*invariant(_defaultAppender);
     _globalDomain.detachAppender(_defaultAppender);
     _defaultAppender.reset();*/
+    boost::log::core::get()->remove_sink(console_sink);
 }
 
 void LogManager::reattachDefaultConsoleAppender() {
@@ -86,11 +87,20 @@ void LogManager::reattachDefaultConsoleAppender() {
     _defaultAppender =
         _globalDomain.attachAppender(std::make_unique<ConsoleAppender<MessageEventEphemeral>>(
             std::make_unique<MessageEventDetailsEncoder>()));*/
+    console_sink = boost::make_shared<console_sink_t>();
+
+    console_sink->set_filter(SeverityFilter());
+    console_sink->set_formatter(JsonFormatter());
+
+    console_sink->locked_backend()->add_stream(
+        boost::shared_ptr<std::ostream>(&std::cout, boost::null_deleter()));
+
+    boost::log::core::get()->add_sink(console_sink);
 }
 
 bool LogManager::isDefaultConsoleAppenderAttached() const {
     //return static_cast<bool>(_defaultAppender);
-    return true;
+    return console_sink.use_count() > 1;
 }
 
 void LogManager::writeLogBypassFilteringAndFormatting(StringData str) {

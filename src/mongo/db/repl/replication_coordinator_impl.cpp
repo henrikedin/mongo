@@ -576,14 +576,12 @@ void ReplicationCoordinatorImpl::_finishLoadLocalConfig(
     }
 
     if (serverGlobalParams.enableMajorityReadConcern && localConfig.containsArbiter()) {
-        log() << startupWarningsLog;
-        log() << "** WARNING: This replica set uses arbiters, but readConcern:majority is enabled "
-              << startupWarningsLog;
-        log() << "**          for this node. This is not a recommended configuration. Please see "
-              << startupWarningsLog;
-        log() << "**          https://dochub.mongodb.org/core/psa-disable-rc-majority"
-              << startupWarningsLog;
-        log() << startupWarningsLog;
+        log(logger::kStartupWarnings)
+            << "** WARNING: This replica set uses arbiters, but readConcern:majority is enabled ";
+        log(logger::kStartupWarnings)
+            << "**          for this node. This is not a recommended configuration. Please see ";
+        log(logger::kStartupWarnings)
+            << "**          https://dochub.mongodb.org/core/psa-disable-rc-majority";
     }
 
     // Do not check optime, if this node is an arbiter.
@@ -3123,18 +3121,16 @@ ReplicationCoordinatorImpl::_setCurrentRSConfig(WithLock lk,
     if (storageEngine && !storageEngine->isDurable() &&
         (newConfig.getWriteConcernMajorityShouldJournal() &&
          (!oldConfig.isInitialized() || !oldConfig.getWriteConcernMajorityShouldJournal()))) {
-        log() << startupWarningsLog;
-        log() << "** WARNING: This replica set is running without journaling enabled but the "
-              << startupWarningsLog;
-        log() << "**          writeConcernMajorityJournalDefault option to the replica set config "
-              << startupWarningsLog;
-        log() << "**          is set to true. The writeConcernMajorityJournalDefault "
-              << startupWarningsLog;
-        log() << "**          option to the replica set config must be set to false "
-              << startupWarningsLog;
-        log() << "**          or w:majority write concerns will never complete."
-              << startupWarningsLog;
-        log() << startupWarningsLog;
+        log(logger::kStartupWarnings)
+            << "** WARNING: This replica set is running without journaling enabled but the ";
+        log(logger::kStartupWarnings)
+            << "**          writeConcernMajorityJournalDefault option to the replica set config ";
+        log(logger::kStartupWarnings)
+            << "**          is set to true. The writeConcernMajorityJournalDefault ";
+        log(logger::kStartupWarnings)
+            << "**          option to the replica set config must be set to false ";
+        log(logger::kStartupWarnings)
+            << "**          or w:majority write concerns will never complete.";
     }
 
     log() << "New replica set config in use: " << _rsConfig.toBSON() << rsLog;

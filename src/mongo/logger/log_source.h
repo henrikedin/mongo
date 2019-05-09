@@ -147,10 +147,11 @@ private:
             base_type;
 
 public:
-    logger() : _severity(LogSeverity::Log()), _component(LogComponent::kDefault)
+    logger() : _domain(kDefault), _severity(LogSeverity::Log()), _component(LogComponent::kDefault)
 	{
         add_attribute_unlocked(attributes::severity, _severity);
         add_attribute_unlocked(attributes::component, _component);
+        add_attribute_unlocked(attributes::domain, _domain);
         add_attribute_unlocked(attributes::time_stamp,
                                boost::log::attributes::make_function([]() { return Date_t::now(); }));
         add_attribute_unlocked(attributes::thread_name, boost::log::attributes::make_function([]() {
@@ -158,12 +159,13 @@ public:
                                }));
     }
 
-    boost::log::record open_record(LogSeverity severity, LogComponent component) {
+    boost::log::record open_record(LogDomain domain, LogSeverity severity, LogComponent component) {
         // Perform a quick check first
         if (this->core()->get_logging_enabled())
 		{
             _severity.set(severity);
             _component.set(component);
+            _domain.set(domain);
             return base_type::open_record_unlocked();
 		}
         else
@@ -174,9 +176,11 @@ public:
         base_type::push_record_unlocked(boost::move(rec));
         _severity.set(LogSeverity::Log());
         _component.set(LogComponent::kDefault);
+        _domain.set(kDefault);
     }
 
 private:
+    boost::log::attributes::mutable_constant<LogDomain> _domain;
     boost::log::attributes::mutable_constant<LogSeverity> _severity;
     boost::log::attributes::mutable_constant<LogComponent> _component;
 };

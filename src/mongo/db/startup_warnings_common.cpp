@@ -56,28 +56,27 @@ void logCommonStartupWarnings(const ServerGlobalParams& serverParams) {
     {
         auto&& vii = VersionInfoInterface::instance();
         if ((vii.minorVersion() % 2) != 0) {
-            log() << startupWarningsLog;
-            log() << "** NOTE: This is a development version (" << vii.version() << ") of MongoDB."
-                  << startupWarningsLog;
-            log() << "**       Not recommended for production." << startupWarningsLog;
+            log(logger::kStartupWarnings) << "** NOTE: This is a development version ("
+                                          << vii.version() << ") of MongoDB.";
+            log(logger::kStartupWarnings)
+                << "**       Not recommended for production.";
             warned = true;
         }
     }
 
     if (serverParams.authState == ServerGlobalParams::AuthState::kUndefined) {
-        log() << startupWarningsLog;
-        log() << "** WARNING: Access control is not enabled for the database."
-              << startupWarningsLog;
-        log() << "**          Read and write access to data and configuration is "
-                 "unrestricted."
-              << startupWarningsLog;
+        log(logger::kStartupWarnings)
+            << "** WARNING: Access control is not enabled for the database.";
+        log(logger::kStartupWarnings)
+            << "**          Read and write access to data and configuration is "
+                 "unrestricted.";
         warned = true;
     }
 
     const bool is32bit = sizeof(int*) == 4;
     if (is32bit) {
-        log() << startupWarningsLog;
-        log() << "** WARNING: This 32-bit MongoDB binary is deprecated" << startupWarningsLog;
+        log(logger::kStartupWarnings)
+            << "** WARNING: This 32-bit MongoDB binary is deprecated";
         warned = true;
     }
 
@@ -104,50 +103,50 @@ void logCommonStartupWarnings(const ServerGlobalParams& serverParams) {
     BOOL wow64Process;
     BOOL retWow64 = IsWow64Process(GetCurrentProcess(), &wow64Process);
     if (retWow64 && wow64Process) {
-        log() << "** NOTE: This is a 32-bit MongoDB binary running on a 64-bit operating"
-              << startupWarningsLog;
-        log() << "**      system. Switch to a 64-bit build of MongoDB to" << startupWarningsLog;
-        log() << "**      support larger databases." << startupWarningsLog;
+        log(logger::kStartupWarnings)
+            << "** NOTE: This is a 32-bit MongoDB binary running on a 64-bit operating";
+        log(logger::kStartupWarnings) << "**      system. Switch to a 64-bit build of MongoDB to";
+        log(logger::kStartupWarnings) << "**      support larger databases.";
         warned = true;
     }
 #endif
 
 #if !defined(_WIN32)
     if (getuid() == 0) {
-        log() << "** WARNING: You are running this process as the root user, "
-              << "which is not recommended." << startupWarningsLog;
+        log(logger::kStartupWarnings)
+            << "** WARNING: You are running this process as the root user, "
+              << "which is not recommended.";
         warned = true;
     }
 #endif
 
     if (serverParams.bind_ips.empty()) {
-        log() << startupWarningsLog;
-        log() << "** WARNING: This server is bound to localhost." << startupWarningsLog;
-        log() << "**          Remote systems will be unable to connect to this server. "
-              << startupWarningsLog;
-        log() << "**          Start the server with --bind_ip <address> to specify which IP "
-              << startupWarningsLog;
-        log() << "**          addresses it should serve responses from, or with --bind_ip_all to"
-              << startupWarningsLog;
-        log() << "**          bind to all interfaces. If this behavior is desired, start the"
-              << startupWarningsLog;
-        log() << "**          server with --bind_ip 127.0.0.1 to disable this warning."
-              << startupWarningsLog;
+        log(logger::kStartupWarnings)
+            << "** WARNING: This server is bound to localhost.";
+        log(logger::kStartupWarnings)
+            << "**          Remote systems will be unable to connect to this server. ";
+        log(logger::kStartupWarnings)
+            << "**          Start the server with --bind_ip <address> to specify which IP ";
+        log(logger::kStartupWarnings)
+            << "**          addresses it should serve responses from, or with --bind_ip_all to";
+        log(logger::kStartupWarnings)
+            << "**          bind to all interfaces. If this behavior is desired, start the";
+        log(logger::kStartupWarnings)
+            << "**          server with --bind_ip 127.0.0.1 to disable this warning.";
         warned = true;
     }
 
     if (auth::hasMultipleInternalAuthKeys()) {
-        log() << startupWarningsLog;
-        log() << "** WARNING: Multiple keys specified in security key file. If cluster key file"
-              << startupWarningsLog;
-        log() << "            rollover is not in progress, only one key should be specified in"
-              << startupWarningsLog;
-        log() << "            the key file" << startupWarningsLog;
+        log(logger::kStartupWarnings)
+            << "** WARNING: Multiple keys specified in security key file. If cluster key file";
+        log(logger::kStartupWarnings)
+            << "            rollover is not in progress, only one key should be specified in";
+        log(logger::kStartupWarnings) << "            the key file";
         warned = true;
     }
 
-    if (warned) {
-        log() << startupWarningsLog;
-    }
+    //if (warned) {
+    //    log() << startupWarningsLog;
+    //}
 }
 }  // namespace mongo

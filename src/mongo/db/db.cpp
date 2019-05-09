@@ -382,11 +382,12 @@ ExitCode _initAndListen(int listenPort) {
     if (sslGlobalParams.sslAllowInvalidCertificates &&
         ((serverGlobalParams.clusterAuthMode.load() == ServerGlobalParams::ClusterAuthMode_x509) ||
          sequenceContains(saslGlobalParams.authenticationMechanisms, "MONGODB-X509"))) {
-        log() << "** WARNING: While invalid X509 certificates may be used to" << startupWarningsLog;
-        log() << "**          connect to this server, they will not be considered"
-              << startupWarningsLog;
-        log() << "**          permissible for authentication." << startupWarningsLog;
-        log() << startupWarningsLog;
+        log(logger::kStartupWarnings)
+            << "** WARNING: While invalid X509 certificates may be used to";
+        log(logger::kStartupWarnings)
+            << "**          connect to this server, they will not be considered";
+        log(logger::kStartupWarnings)
+            << "**          permissible for authentication.";
     }
 #endif
 
@@ -500,13 +501,12 @@ ExitCode _initAndListen(int listenPort) {
     } else {
         // If authSchemaValidation is disabled and server is running without auth,
         // warn the user and continue startup without authSchema metadata checks.
-        log() << startupWarningsLog;
-        log() << "** WARNING: Startup auth schema validation checks are disabled for the "
-                 "database."
-              << startupWarningsLog;
-        log() << "**          This mode should only be used to manually repair corrupted auth "
-                 "data."
-              << startupWarningsLog;
+        log(logger::kStartupWarnings)
+            << "** WARNING: Startup auth schema validation checks are disabled for the "
+                 "database.";
+        log(logger::kStartupWarnings)
+            << "**          This mode should only be used to manually repair corrupted auth "
+                 "data.";
     }
 
     // This function may take the global lock.
@@ -574,23 +574,23 @@ ExitCode _initAndListen(int listenPort) {
 
         replCoord->startup(startupOpCtx.get());
         if (getReplSetMemberInStandaloneMode(serviceContext)) {
-            log() << startupWarningsLog;
-            log() << "** WARNING: mongod started without --replSet yet document(s) are present in "
-                  << NamespaceString::kSystemReplSetNamespace << "." << startupWarningsLog;
-            log() << "**          Database contents may appear inconsistent with the oplog and may "
-                     "appear to not contain"
-                  << startupWarningsLog;
-            log() << "**          writes that were visible when this node was running as part of a "
-                     "replica set."
-                  << startupWarningsLog;
-            log() << "**          Restart with --replSet unless you are doing maintenance and no "
-                     "other clients are connected."
-                  << startupWarningsLog;
-            log() << "**          The TTL collection monitor will not start because of this."
-                  << startupWarningsLog;
-            log() << "**         ";
-            log() << " For more info see http://dochub.mongodb.org/core/ttlcollections";
-            log() << startupWarningsLog;
+            log(logger::kStartupWarnings)
+                << "** WARNING: mongod started without --replSet yet document(s) are present in "
+                  << NamespaceString::kSystemReplSetNamespace << ".";
+            log(logger::kStartupWarnings)
+                << "**          Database contents may appear inconsistent with the oplog and may "
+                     "appear to not contain";
+            log(logger::kStartupWarnings)
+                << "**          writes that were visible when this node was running as part of a "
+                     "replica set.";
+            log(logger::kStartupWarnings)
+                << "**          Restart with --replSet unless you are doing maintenance and no "
+                     "other clients are connected.";
+            log(logger::kStartupWarnings)
+                << "**          The TTL collection monitor will not start because of this.";
+            log(logger::kStartupWarnings) << "**         ";
+            log(logger::kStartupWarnings)
+                << " For more info see http://dochub.mongodb.org/core/ttlcollections";
         } else {
             startTTLBackgroundJob(serviceContext);
         }

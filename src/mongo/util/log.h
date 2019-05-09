@@ -82,53 +82,60 @@ using logger::Tee;
 /**
  * Returns a LogstreamBuilder for logging a message with LogSeverity::Severe().
  */
-inline LogstreamBuilder severe() {
+inline LogstreamBuilder severe(logger::LogDomain domain = logger::kDefault) {
     return LogstreamBuilder(/*logger::globalLogDomain(),*/
                             /*getThreadName(),*/
+		domain,
                             logger::LogSeverity::Severe(),
                             ::MongoLogDefaultComponent_component);
 }
 
-inline LogstreamBuilder severe(logger::LogComponent component) {
+inline LogstreamBuilder severe(logger::LogComponent component,
+                               logger::LogDomain domain = logger::kDefault) {
     return LogstreamBuilder(
+        domain,
         /*logger::globalLogDomain(),*/ /*getThreadName(),*/ logger::LogSeverity::Severe(), component);
 }
 
 /**
  * Returns a LogstreamBuilder for logging a message with LogSeverity::Error().
  */
-inline LogstreamBuilder error() {
-    return LogstreamBuilder(/*logger::globalLogDomain(),*/
+inline LogstreamBuilder error(logger::LogDomain domain = logger::kDefault) {
+    return LogstreamBuilder(domain, /*logger::globalLogDomain(),*/
                             /*getThreadName(),*/
                             logger::LogSeverity::Error(),
                             ::MongoLogDefaultComponent_component);
 }
 
-inline LogstreamBuilder error(logger::LogComponent component) {
+inline LogstreamBuilder error(logger::LogComponent component,
+                              logger::LogDomain domain = logger::kDefault) {
     return LogstreamBuilder(
+        domain,
         /*logger::globalLogDomain(),*/ /*getThreadName(),*/ logger::LogSeverity::Error(), component);
 }
 
 /**
  * Returns a LogstreamBuilder for logging a message with LogSeverity::Warning().
  */
-inline LogstreamBuilder warning() {
-    return LogstreamBuilder(/*logger::globalLogDomain(),*/
+inline LogstreamBuilder warning(logger::LogDomain domain = logger::kDefault) {
+    return LogstreamBuilder(domain, /*logger::globalLogDomain(),*/
                             /*getThreadName(),*/
                             logger::LogSeverity::Warning(),
                             ::MongoLogDefaultComponent_component);
 }
 
-inline LogstreamBuilder warning(logger::LogComponent component) {
+inline LogstreamBuilder warning(logger::LogComponent component,
+                                logger::LogDomain domain = logger::kDefault) {
     return LogstreamBuilder(
+        domain,
         /*logger::globalLogDomain(),*/ /*getThreadName(),*/ logger::LogSeverity::Warning(), component);
 }
 
 /**
  * Returns a LogstreamBuilder for logging a message with LogSeverity::Log().
  */
-inline LogstreamBuilder log() {
-    return LogstreamBuilder(/*logger::globalLogDomain(),*/
+inline LogstreamBuilder log(logger::LogDomain domain = logger::kDefault) {
+    return LogstreamBuilder(domain, /*logger::globalLogDomain(),*/
                             /*getThreadName(),*/
                             logger::LogSeverity::Log(),
                             ::MongoLogDefaultComponent_component);
@@ -142,21 +149,25 @@ inline LogstreamBuilder log() {
  *
  * Once SERVER-29377 is completed, this overload can be removed.
  */
-inline LogstreamBuilder logNoCache() {
-    return LogstreamBuilder(/*logger::globalLogDomain(),*/
+inline LogstreamBuilder logNoCache(logger::LogDomain domain = logger::kDefault) {
+    return LogstreamBuilder(domain, /*logger::globalLogDomain(),*/
                             /*getThreadName(),*/
                             logger::LogSeverity::Log(),
                             ::MongoLogDefaultComponent_component,
                             false);
 }
 
-inline LogstreamBuilder log(logger::LogComponent component) {
+inline LogstreamBuilder log(logger::LogComponent component,
+                            logger::LogDomain domain = logger::kDefault) {
     return LogstreamBuilder(
+        domain,
         /*logger::globalLogDomain(),*/ /*getThreadName(),*/ logger::LogSeverity::Log(), component);
 }
 
-inline LogstreamBuilder log(logger::LogComponent::Value componentValue) {
+inline LogstreamBuilder log(logger::LogComponent::Value componentValue,
+                            logger::LogDomain domain = logger::kDefault) {
     return LogstreamBuilder(
+        domain,
         /*logger::globalLogDomain(),*/ /*getThreadName(),*/ logger::LogSeverity::Log(), componentValue);
 }
 
@@ -179,7 +190,7 @@ inline bool shouldLog(logger::LogSeverity severity) {
              ->shouldLog(MongoLogDefaultComponent_component,                           \
                          ::mongo::LogstreamBuilder::severityCast(DLEVEL))) {           \
     } else                                                                             \
-    ::mongo::logger::LogstreamBuilder(/*::mongo::logger::globalLogDomain(),*/              \
+    ::mongo::logger::LogstreamBuilder(::mongo::logger::kDefault,              \
                                       /*::mongo::getThreadName(),*/                        \
                                       ::mongo::LogstreamBuilder::severityCast(DLEVEL), \
                                       MongoLogDefaultComponent_component)
@@ -190,7 +201,7 @@ inline bool shouldLog(logger::LogSeverity severity) {
     if (!(::mongo::logger::globalLogManager()->settings())                                              \
              ->shouldLog((COMPONENT1), ::mongo::LogstreamBuilder::severityCast(DLEVEL))) { \
     } else                                                                                 \
-    ::mongo::logger::LogstreamBuilder(/*::mongo::logger::globalLogDomain(),*/                  \
+    ::mongo::logger::LogstreamBuilder(::mongo::logger::kDefault,                  \
                                       /*::mongo::getThreadName(),*/                            \
                                       ::mongo::LogstreamBuilder::severityCast(DLEVEL),     \
                                       (COMPONENT1))
@@ -208,8 +219,8 @@ inline bool shouldLog(logger::LogSeverity severity) {
  */
 bool rotateLogs(bool renameFiles);
 
-extern Tee* const warnings;            // Things put here go in serverStatus
-extern Tee* const startupWarningsLog;  // Things put here get reported in MMS
+//extern Tee* const warnings;            // Things put here go in serverStatus
+//extern Tee* const startupWarningsLog;  // Things put here get reported in MMS
 
 /**
  * Write the current context (backtrace), along with the optional "msg".

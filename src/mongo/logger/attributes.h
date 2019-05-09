@@ -39,6 +39,7 @@ static boost::log::attribute_name severity("severity");
 static boost::log::attribute_name component("component");
 static boost::log::attribute_name time_stamp("time_stamp");
 static boost::log::attribute_name thread_name("thread_name");
+static boost::log::attribute_name domain("domain");
 
 }  // namespace attributes
 }  // namespace logger

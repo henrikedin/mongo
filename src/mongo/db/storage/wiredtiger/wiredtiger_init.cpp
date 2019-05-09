@@ -75,13 +75,12 @@ public:
             int ret = statfs(params.dbpath.c_str(), &fs_stats);
 
             if (ret == 0 && fs_stats.f_type == EXT4_SUPER_MAGIC) {
-                log() << startupWarningsLog;
-                log() << "** WARNING: Using the XFS filesystem is strongly recommended with the "
-                         "WiredTiger storage engine"
-                      << startupWarningsLog;
-                log() << "**          See "
-                         "http://dochub.mongodb.org/core/prodnotes-filesystem"
-                      << startupWarningsLog;
+                log(logger::kStartupWarnings)
+                    << "** WARNING: Using the XFS filesystem is strongly recommended with the "
+                         "WiredTiger storage engine";
+                log(logger::kStartupWarnings)
+                    << "**          See "
+                         "http://dochub.mongodb.org/core/prodnotes-filesystem";
             }
         }
 #endif
@@ -91,13 +90,12 @@ public:
         ProcessInfo p;
         if (p.supported()) {
             if (cacheMB > memoryThresholdPercentage * p.getMemSizeMB()) {
-                log() << startupWarningsLog;
-                log() << "** WARNING: The configured WiredTiger cache size is more than "
-                      << memoryThresholdPercentage * 100 << "% of available RAM."
-                      << startupWarningsLog;
-                log() << "**          See "
-                         "http://dochub.mongodb.org/core/faq-memory-diagnostics-wt"
-                      << startupWarningsLog;
+                log(logger::kStartupWarnings)
+                    << "** WARNING: The configured WiredTiger cache size is more than "
+                      << memoryThresholdPercentage * 100 << "% of available RAM.";
+                log(logger::kStartupWarnings)
+                    << "**          See "
+                         "http://dochub.mongodb.org/core/faq-memory-diagnostics-wt";
             }
         }
         const bool ephemeral = false;

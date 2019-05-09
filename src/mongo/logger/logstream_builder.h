@@ -68,7 +68,8 @@ public:
      * "contextName" is a short name of the thread or other context.
      * "severity" is the logging severity of the message.
      */
-    LogstreamBuilder(/*MessageLogDomain* domain,*/ /*StringData contextName, */LogSeverity severity);
+    LogstreamBuilder(LogDomain domain,/*MessageLogDomain* domain,*/ /*StringData contextName, */
+                             LogSeverity severity);
 
     /**
      * Construct a LogstreamBuilder that writes to "domain" on destruction.
@@ -84,6 +85,7 @@ public:
      */
     LogstreamBuilder(/*MessageLogDomain* domain,*/
                      /*StringData contextName,*/
+                     LogDomain domain,
                      LogSeverity severity,
                      LogComponent component,
                      bool shouldCache = true);

@@ -43,7 +43,10 @@ enum LogDomain
 {
 	kDefault = 0,
 	kGlobal = 1,
-	kJavascript = 2
+	kStartupWarnings = 2,
+	kJavascript = 4,
+	kUnittest = 8,
+	kAudit = 16
 };
 
 /**

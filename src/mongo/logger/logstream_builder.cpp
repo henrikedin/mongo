@@ -102,15 +102,17 @@ namespace logger {
 
 LogstreamBuilder::LogstreamBuilder(/*MessageLogDomain* domain,*/
                                    /*StringData contextName,*/
+                                   LogDomain domain,
                                    LogSeverity severity)
-    : LogstreamBuilder(/*domain,*/ /*contextName,*/ std::move(severity), LogComponent::kDefault) {}
+    : LogstreamBuilder(domain, /*contextName,*/ std::move(severity), LogComponent::kDefault) {}
 
 LogstreamBuilder::LogstreamBuilder(/*MessageLogDomain* domain,*/
                                    /*StringData contextName,*/
+                                   LogDomain domain,
                                    LogSeverity severity,
                                    LogComponent component,
                                    bool shouldCache)
-    : _rec(threadLogSource().get().open_record(severity, component))
+    : _rec(threadLogSource().get().open_record(domain, severity, component))
 /*_domain(domain),
 _contextName(contextName.toString()),
 _severity(std::move(severity)),
@@ -143,7 +145,9 @@ LogstreamBuilder::~LogstreamBuilder() {
     //    }
     //}
     if (_rec) {
+        _recStream->detach_from_record();
         threadLogSource().get().push_record(boost::move(_rec));
+        
     }
 }
 
