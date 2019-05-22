@@ -68,7 +68,7 @@ private:
     };
 
 public:
-    LogTest() /*: _severityOld(globalLogDomain()->getMinimumLogSeverity())*/ {
+    LogTest() : _severityOld(globalLogManager()->settings()->getMinimumLogSeverity()) {
         _sink = boost::make_shared<boost::log::sinks::synchronous_sink<LogTestBackend>>(
             boost::make_shared<LogTestBackend>(this));
         _sink->set_formatter(Formatter());
@@ -78,13 +78,13 @@ public:
 
     virtual ~LogTest() {
         boost::log::core::get()->remove_sink(_sink);
-        //globalLogDomain()->setMinimumLoggedSeverity(_severityOld);
+        globalLogManager()->settings()->setMinimumLoggedSeverity(_severityOld);
     }
 
 protected:
     boost::shared_ptr<boost::log::sinks::synchronous_sink<LogTestBackend>> _sink;
     std::vector<std::string> _logLines;
-    //LogSeverity _severityOld;
+    LogSeverity _severityOld;
 
 private:
     // class LogTestAppender : public MessageLogDomain::EventAppender {
