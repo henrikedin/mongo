@@ -55,7 +55,7 @@ LogManager::LogManager() {
 	startup_warnings_sink =
         logger::create_ramlog_sink<logger::TextFormatter>(RamLog::get("startupWarnings"));
     startup_warnings_sink->set_filter([](boost::log::attribute_value_set const& attrs) {
-        return boost::log::extract<LogDomain>(attributes::domain, attrs) == kStartupWarnings;
+        return boost::log::extract<LogDomain>(attributes::domain(), attrs) == kStartupWarnings;
     });
     boost::log::core::get()->add_sink(startup_warnings_sink);
     

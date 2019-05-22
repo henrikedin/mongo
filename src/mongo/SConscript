@@ -88,6 +88,7 @@ env.Library(
         'bson/simple_bsonelement_comparator.cpp',
         'bson/simple_bsonobj_comparator.cpp',
         'bson/timestamp.cpp',
+        'logger/attributes.cpp',
         'logger/component_message_log_domain.cpp',
         'logger/console.cpp',
         'logger/log_component.cpp',

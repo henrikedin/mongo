@@ -35,11 +35,11 @@ namespace mongo {
 namespace logger {
 namespace attributes {
 
-static boost::log::attribute_name severity("severity");
-static boost::log::attribute_name component("component");
-static boost::log::attribute_name time_stamp("time_stamp");
-static boost::log::attribute_name thread_name("thread_name");
-static boost::log::attribute_name domain("domain");
+const boost::log::attribute_name& severity();
+const boost::log::attribute_name& component();
+const boost::log::attribute_name& time_stamp();
+const boost::log::attribute_name& thread_name();
+const boost::log::attribute_name& domain();
 
 }  // namespace attributes
 }  // namespace logger

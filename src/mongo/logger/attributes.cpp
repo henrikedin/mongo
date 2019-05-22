@@ -29,35 +29,37 @@
 
 #pragma once
 
-#include <boost/log/attributes/value_extraction.hpp>
-#include <boost/log/core/record_view.hpp>
-#include <boost/log/expressions/message.hpp>
-#include <boost/log/utility/formatting_ostream.hpp>
-
-#include "mongo/logger/attributes.h"
-#include "mongo/logger/log_component.h"
-#include "mongo/logger/log_severity.h"
-#include "mongo/util/time_support.h"
+#include <boost/log/attributes/attribute_name.hpp>
 
 namespace mongo {
 namespace logger {
+namespace attributes {
 
-class TextFormatter {
-public:
-    static bool binary() {
-        return false;
-    };
+const boost::log::attribute_name& severity() {
+    static boost::log::attribute_name attr("severity");
+    return attr;
+}
 
-    void operator()(boost::log::record_view const& rec, boost::log::formatting_ostream& strm) {
-        using namespace boost::log;
+const boost::log::attribute_name& component() {
+    static boost::log::attribute_name attr("component");
+    return attr;
+}
 
-        strm << extract<Date_t>(attributes::time_stamp(), rec) << " "
-             << extract<LogSeverity>(attributes::severity(), rec).get().toStringDataCompact() << " "
-             << extract<LogComponent>(attributes::component(), rec) << " ["
-             << extract<StringData>(attributes::thread_name(), rec) << "] "
-             << rec[expressions::smessage];
-    }
-};
+const boost::log::attribute_name& time_stamp() {
+    static boost::log::attribute_name attr("time_stamp");
+    return attr;
+}
 
+const boost::log::attribute_name& thread_name() {
+    static boost::log::attribute_name attr("thread_name");
+    return attr;
+}
+
+const boost::log::attribute_name& domain() {
+    static boost::log::attribute_name attr("domain");
+    return attr;
+}
+
+}  // namespace attributes
 }  // namespace logger
 }  // namespace mongo

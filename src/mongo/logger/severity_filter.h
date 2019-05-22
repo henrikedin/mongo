@@ -47,8 +47,8 @@ public:
         using namespace boost::log;
 
 		return globalLogManager()->settings()->shouldLog(
-            extract<LogComponent>(attributes::component, attrs).get(),
-            extract<LogSeverity>(attributes::severity, attrs).get());
+            extract<LogComponent>(attributes::component(), attrs).get(),
+            extract<LogSeverity>(attributes::severity(), attrs).get());
 	}
 };
 

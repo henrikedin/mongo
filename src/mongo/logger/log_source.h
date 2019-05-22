@@ -149,12 +149,12 @@ private:
 public:
     logger() : _domain(kDefault), _severity(LogSeverity::Log()), _component(LogComponent::kDefault)
 	{
-        add_attribute_unlocked(attributes::severity, _severity);
-        add_attribute_unlocked(attributes::component, _component);
-        add_attribute_unlocked(attributes::domain, _domain);
-        add_attribute_unlocked(attributes::time_stamp,
+        add_attribute_unlocked(attributes::severity(), _severity);
+        add_attribute_unlocked(attributes::component(), _component);
+        add_attribute_unlocked(attributes::domain(), _domain);
+        add_attribute_unlocked(attributes::time_stamp(),
                                boost::log::attributes::make_function([]() { return Date_t::now(); }));
-        add_attribute_unlocked(attributes::thread_name, boost::log::attributes::make_function([]() {
+        add_attribute_unlocked(attributes::thread_name(), boost::log::attributes::make_function([]() {
                                    return getThreadName();
                                }));
     }
