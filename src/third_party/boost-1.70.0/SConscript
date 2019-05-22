@@ -158,7 +158,6 @@ log_env.Library('boost_log', [
             'libs/log/src/format_parser.cpp',
             'libs/log/src/date_time_format_parser.cpp',
             'libs/log/src/named_scope_format_parser.cpp',
-            'libs/log/src/unhandled_exception_count.cpp',
             'libs/log/src/permissions.cpp',
             'libs/log/src/dump.cpp',
         ],
