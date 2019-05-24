@@ -143,6 +143,13 @@
 #  endif
 #endif
 
+// [[noreturn]] is disabled on MSVC because of bogus unreachable code warnings.
+#if FMT_EXCEPTIONS && FMT_HAS_CPP_ATTRIBUTE(noreturn) && !FMT_MSC_VER
+#  define FMT_NORETURN [[noreturn]]
+#else
+#  define FMT_NORETURN
+#endif
+
 #ifndef FMT_DEPRECATED
 #  if (FMT_HAS_CPP_ATTRIBUTE(deprecated) && __cplusplus >= 201402L) || \
       FMT_MSC_VER >= 1900
@@ -182,10 +189,20 @@
 #    define FMT_API __declspec(dllexport)
 #  elif defined(FMT_SHARED)
 #    define FMT_API __declspec(dllimport)
+#    define FMT_EXTERN_TEMPLATE_API FMT_API
 #  endif
 #endif
 #ifndef FMT_API
 #  define FMT_API
+#endif
+#ifndef FMT_EXTERN_TEMPLATE_API
+#  define FMT_EXTERN_TEMPLATE_API
+#endif
+
+#ifndef FMT_HEADER_ONLY
+#  define FMT_EXTERN extern
+#else
+#  define FMT_EXTERN
 #endif
 
 #ifndef FMT_ASSERT
@@ -210,7 +227,8 @@
 
 // An enable_if helper to be used in template parameters. enable_if in template
 // parameters results in much shorter symbols: https://godbolt.org/z/sWw4vP.
-#define FMT_ENABLE_IF(...) typename std::enable_if<__VA_ARGS__, int>::type = 0
+#define FMT_ENABLE_IF_T(...) typename std::enable_if<(__VA_ARGS__), int>::type
+#define FMT_ENABLE_IF(...) FMT_ENABLE_IF_T(__VA_ARGS__) = 0
 
 FMT_BEGIN_NAMESPACE
 namespace internal {
@@ -241,10 +259,10 @@ FMT_CONSTEXPR typename std::make_unsigned<Int>::type to_unsigned(Int value) {
 }
 
 /** A contiguous memory buffer with an optional growing ability. */
-template <typename T> class basic_buffer {
+template <typename T> class buffer {
  private:
-  basic_buffer(const basic_buffer&) = delete;
-  void operator=(const basic_buffer&) = delete;
+  buffer(const buffer&) = delete;
+  void operator=(const buffer&) = delete;
 
   T* ptr_;
   std::size_t size_;
@@ -252,12 +270,12 @@ template <typename T> class basic_buffer {
 
  protected:
   // Don't initialize ptr_ since it is not accessed to save a few cycles.
-  basic_buffer(std::size_t sz) FMT_NOEXCEPT : size_(sz), capacity_(sz) {}
+  buffer(std::size_t sz) FMT_NOEXCEPT : size_(sz), capacity_(sz) {}
 
-  basic_buffer(T* p = FMT_NULL, std::size_t sz = 0,
-               std::size_t cap = 0) FMT_NOEXCEPT : ptr_(p),
-                                                   size_(sz),
-                                                   capacity_(cap) {}
+  buffer(T* p = FMT_NULL, std::size_t sz = 0, std::size_t cap = 0) FMT_NOEXCEPT
+      : ptr_(p),
+        size_(sz),
+        capacity_(cap) {}
 
   /** Sets the buffer data and capacity. */
   void set(T* buf_data, std::size_t buf_capacity) FMT_NOEXCEPT {
@@ -272,7 +290,7 @@ template <typename T> class basic_buffer {
   typedef T value_type;
   typedef const T& const_reference;
 
-  virtual ~basic_buffer() {}
+  virtual ~buffer() {}
 
   T* begin() FMT_NOEXCEPT { return ptr_; }
   T* end() FMT_NOEXCEPT { return ptr_ + size_; }
@@ -317,12 +335,9 @@ template <typename T> class basic_buffer {
   const T& operator[](std::size_t index) const { return ptr_[index]; }
 };
 
-typedef basic_buffer<char> buffer;
-typedef basic_buffer<wchar_t> wbuffer;
-
 // A container-backed buffer.
 template <typename Container>
-class container_buffer : public basic_buffer<typename Container::value_type> {
+class container_buffer : public buffer<typename Container::value_type> {
  private:
   Container& container_;
 
@@ -334,7 +349,7 @@ class container_buffer : public basic_buffer<typename Container::value_type> {
 
  public:
   explicit container_buffer(Container& c)
-      : basic_buffer<typename Container::value_type>(c.size()), container_(c) {}
+      : buffer<typename Container::value_type>(c.size()), container_(c) {}
 };
 
 // Extracts a reference to the container from back_insert_iterator.
@@ -353,7 +368,7 @@ struct error_handler {
   FMT_CONSTEXPR error_handler(const error_handler&) {}
 
   // This function is intentionally not constexpr to give a compile-time error.
-  FMT_API void on_error(const char* message);
+  FMT_API FMT_NORETURN void on_error(const char* message);
 };
 
 // GCC 4.6.x cannot expand `T...`.
@@ -868,11 +883,12 @@ inline init<C, basic_string_view<Char>, string_type> make_value(const T& val) {
 // unsafe: https://github.com/fmtlib/fmt/issues/729
 template <
     typename C, typename T, typename Char = typename C::char_type,
-    FMT_ENABLE_IF(!convert_to_int<T, Char>::value &&
-                  !std::is_same<T, Char>::value &&
-                  !std::is_convertible<T, basic_string_view<Char>>::value &&
-                  !is_constructible<basic_string_view<Char>, T>::value &&
-                  !internal::is_string<T>::value)>
+    typename U = typename std::remove_volatile<T>::type,
+    FMT_ENABLE_IF(!convert_to_int<U, Char>::value &&
+                  !std::is_same<U, Char>::value &&
+                  !std::is_convertible<U, basic_string_view<Char>>::value &&
+                  !is_constructible<basic_string_view<Char>, U>::value &&
+                  !internal::is_string<U>::value)>
 inline init<C, const T&, custom_type> make_value(const T& val) {
   return val;
 }
@@ -1141,7 +1157,7 @@ template <typename OutputIt, typename Char> class basic_format_context {
 
 template <typename Char> struct buffer_context {
   typedef basic_format_context<
-      std::back_insert_iterator<internal::basic_buffer<Char>>, Char>
+      std::back_insert_iterator<internal::buffer<Char>>, Char>
       type;
 };
 typedef buffer_context<char>::type format_context;
@@ -1381,7 +1397,7 @@ std::basic_string<Char> vformat(
 
 template <typename Char>
 typename buffer_context<Char>::type::iterator vformat_to(
-    internal::basic_buffer<Char>& buf, basic_string_view<Char> format_str,
+    internal::buffer<Char>& buf, basic_string_view<Char> format_str,
     basic_format_args<typename buffer_context<Char>::type> args);
 }  // namespace internal
 
@@ -1415,7 +1431,7 @@ template <typename Char>
 struct is_contiguous<std::basic_string<Char>> : std::true_type {};
 
 template <typename Char>
-struct is_contiguous<internal::basic_buffer<Char>> : std::true_type {};
+struct is_contiguous<internal::buffer<Char>> : std::true_type {};
 
 /** Formats a string and writes the output to ``out``. */
 template <typename Container, typename S>

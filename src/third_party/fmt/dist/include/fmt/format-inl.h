@@ -85,7 +85,7 @@ inline int fmt_snprintf(char* buffer, size_t size, const char* format, ...) {
 #  define FMT_SWPRINTF swprintf
 #endif  // defined(_WIN32) && defined(__MINGW32__) && !defined(__NO_ISOCEXT)
 
-typedef void (*FormatFunc)(internal::buffer&, int, string_view);
+typedef void (*FormatFunc)(internal::buffer<char>&, int, string_view);
 
 // Portable thread-safe version of strerror.
 // Sets buffer to point to a string describing the error code.
@@ -154,7 +154,7 @@ int safe_strerror(int error_code, char*& buffer,
   return dispatcher(error_code, buffer, buffer_size).run();
 }
 
-void format_error_code(internal::buffer& out, int error_code,
+void format_error_code(internal::buffer<char>& out, int error_code,
                        string_view message) FMT_NOEXCEPT {
   // Report error code making sure that the output fits into
   // inline_buffer_size to avoid dynamic memory allocation and potential
@@ -244,20 +244,20 @@ FMT_FUNC void system_error::init(int err_code, string_view format_str,
 }
 
 namespace internal {
-template <typename T>
-int char_traits<char>::format_float(char* buf, std::size_t size,
-                                    const char* format, int precision,
-                                    T value) {
-  return precision < 0 ? FMT_SNPRINTF(buf, size, format, value)
-                       : FMT_SNPRINTF(buf, size, format, precision, value);
+
+template <> FMT_FUNC int count_digits<4>(internal::uintptr_t n) {
+  // Assume little endian; pointer formatting is implementation-defined anyway.
+  int i = static_cast<int>(sizeof(void*)) - 1;
+  while (i > 0 && n.value[i] == 0) --i;
+  auto char_digits = std::numeric_limits<unsigned char>::digits / 4;
+  return i >= 0 ? i * char_digits + count_digits<4, unsigned>(n.value[i]) : 1;
 }
 
 template <typename T>
-int char_traits<wchar_t>::format_float(wchar_t* buf, std::size_t size,
-                                       const wchar_t* format, int precision,
-                                       T value) {
-  return precision < 0 ? FMT_SWPRINTF(buf, size, format, value)
-                       : FMT_SWPRINTF(buf, size, format, precision, value);
+int format_float(char* buf, std::size_t size, const char* format, int precision,
+                 T value) {
+  return precision < 0 ? FMT_SNPRINTF(buf, size, format, value)
+                       : FMT_SNPRINTF(buf, size, format, precision, value);
 }
 
 template <typename T>
@@ -267,6 +267,9 @@ const char basic_data<T>::DIGITS[] =
     "4041424344454647484950515253545556575859"
     "6061626364656667686970717273747576777879"
     "8081828384858687888990919293949596979899";
+
+template <typename T>
+const char basic_data<T>::HEX_DIGITS[] = "0123456789abcdef";
 
 #define FMT_POWERS_OF_10(factor)                                             \
   factor * 10, factor * 100, factor * 1000, factor * 10000, factor * 100000, \
@@ -428,6 +431,13 @@ inline fp operator-(fp x, fp y) {
 // with half-up tie breaking, r.e = x.e + y.e + 64. Result may not be
 // normalized.
 FMT_FUNC fp operator*(fp x, fp y) {
+  int exp = x.e + y.e + 64;
+#if FMT_USE_INT128
+  auto product = static_cast<__uint128_t>(x.f) * y.f;
+  auto f = static_cast<uint64_t>(product >> 64);
+  if ((static_cast<uint64_t>(product) & (1ULL << 63)) != 0) ++f;
+  return fp(f, exp);
+#else
   // Multiply 32-bit parts of significands.
   uint64_t mask = (1ULL << 32) - 1;
   uint64_t a = x.f >> 32, b = x.f & mask;
@@ -435,7 +445,8 @@ FMT_FUNC fp operator*(fp x, fp y) {
   uint64_t ac = a * c, bc = b * c, ad = a * d, bd = b * d;
   // Compute mid 64-bit of result and round.
   uint64_t mid = (bd >> 32) + (ad & mask) + (bc & mask) + (1U << 31);
-  return fp(ac + (ad >> 32) + (bc >> 32) + (mid >> 32), x.e + y.e + 64);
+  return fp(ac + (ad >> 32) + (bc >> 32) + (mid >> 32), exp);
+#endif
 }
 
 // Returns cached power (of 10) c_k = c_k.f * pow(2, c_k.e) such that its
@@ -483,10 +494,12 @@ enum result {
 };
 }
 
-// Generates output using Grisu2 digit-gen algorithm.
+// Generates output using the Grisu digit-gen algorithm.
+// error: the size of the region (lower, upper) outside of which numbers
+// definitely do not round to value (Delta in Grisu3).
 template <typename Handler>
-digits::result grisu2_gen_digits(fp value, uint64_t error, int& exp,
-                                 Handler& handler) {
+digits::result grisu_gen_digits(fp value, uint64_t error, int& exp,
+                                Handler& handler) {
   fp one(1ull << -value.e, value.e);
   // The integral part of scaled value (p1 in Grisu) = value / one. It cannot be
   // zero because it contains a product of two 64-bit numbers with MSB set (due
@@ -599,7 +612,7 @@ struct fixed_handler {
                           uint64_t error, int, bool integral) {
     FMT_ASSERT(remainder < divisor, "");
     buf[size++] = digit;
-    if (size != precision) return digits::more;
+    if (size < precision) return digits::more;
     if (!integral) {
       // Check if error * 2 < divisor with overflow prevention.
       // The check is not needed for the integral part because error = 1
@@ -624,34 +637,57 @@ struct fixed_handler {
 };
 
 // The shortest representation digit handler.
-struct shortest_handler {
+template <int GRISU_VERSION> struct grisu_shortest_handler {
   char* buf;
   int size;
-  fp diff;  // wp_w in Grisu.
+  // Distance between scaled value and upper bound (wp_W in Grisu3).
+  uint64_t diff;
 
   digits::result on_start(uint64_t, uint64_t, uint64_t, int&) {
     return digits::more;
   }
-  digits::result on_digit(char digit, uint64_t divisor, uint64_t remainder,
-                          uint64_t error, int exp, bool integral) {
-    buf[size++] = digit;
-    if (remainder > error) return digits::more;
-    uint64_t d = integral ? diff.f : diff.f * data::POWERS_OF_10_64[-exp];
-    while (
-        remainder < d && error - remainder >= divisor &&
-        (remainder + divisor < d || d - remainder > remainder + divisor - d)) {
+
+  // Decrement the generated number approaching value from above.
+  void round(uint64_t d, uint64_t divisor, uint64_t& remainder,
+             uint64_t error) {
+    while (remainder < d && error - remainder >= divisor &&
+            (remainder + divisor < d ||
+            d - remainder >= remainder + divisor - d)) {
       --buf[size - 1];
       remainder += divisor;
     }
-    return digits::done;
+  }
+
+  // Implements Grisu's round_weed.
+  digits::result on_digit(char digit, uint64_t divisor, uint64_t remainder,
+                          uint64_t error, int exp, bool integral) {
+    buf[size++] = digit;
+    if (remainder >= error) return digits::more;
+    if (GRISU_VERSION != 3) {
+      uint64_t d = integral ? diff : diff * data::POWERS_OF_10_64[-exp];
+      round(d, divisor, remainder, error);
+      return digits::done;
+    }
+    uint64_t unit = integral ? 1 : data::POWERS_OF_10_64[-exp];
+    uint64_t up = (diff - 1) * unit;  // wp_Wup
+    round(up, divisor, remainder, error);
+    uint64_t down = (diff + 1) * unit;  // wp_Wdown
+    if (remainder < down && error - remainder >= divisor &&
+        (remainder + divisor < down ||
+         down - remainder > remainder + divisor - down)) {
+      return digits::error;
+    }
+    return 2 * unit <= remainder && remainder <= error - 4 * unit
+               ? digits::done
+               : digits::error;
   }
 };
 
-template <typename Double, typename std::enable_if<
-                               sizeof(Double) == sizeof(uint64_t), int>::type>
-FMT_FUNC bool grisu2_format(Double value, buffer& buf, int precision,
-                            bool fixed, int& exp) {
+template <typename Double, FMT_ENABLE_IF_T(sizeof(Double) == sizeof(uint64_t))>
+FMT_API bool grisu_format(Double value, buffer<char>& buf, int precision,
+                          unsigned options, int& exp) {
   FMT_ASSERT(value >= 0, "value is negative");
+  bool fixed = (options & grisu_options::fixed) != 0;
   if (value <= 0) {  // <= instead of == to silence a warning.
     if (precision < 0 || !fixed) {
       exp = 0;
@@ -674,7 +710,7 @@ FMT_FUNC bool grisu2_format(Double value, buffer& buf, int precision,
         min_exp - (fp_value.e + fp::significand_size), cached_exp10);
     fp_value = fp_value * cached_pow;
     fixed_handler handler{buf.data(), 0, precision, -cached_exp10, fixed};
-    if (grisu2_gen_digits(fp_value, 1, exp, handler) == digits::error)
+    if (grisu_gen_digits(fp_value, 1, exp, handler) == digits::error)
       return false;
     buf.resize(to_unsigned(handler.size));
   } else {
@@ -684,24 +720,36 @@ FMT_FUNC bool grisu2_format(Double value, buffer& buf, int precision,
     // the exponent in the range [min_exp, -32].
     auto cached_pow = get_cached_power(  // \tilde{c}_{-k} in Grisu.
         min_exp - (upper.e + fp::significand_size), cached_exp10);
-    upper = upper * cached_pow;  // \tilde{M}^+ in Grisu.
-    --upper.f;                   // \tilde{M}^+ - 1 ulp -> M^+_{\downarrow}.
-    assert(min_exp <= upper.e && upper.e <= -32);
     fp_value.normalize();
     fp_value = fp_value * cached_pow;
     lower = lower * cached_pow;  // \tilde{M}^- in Grisu.
-    ++lower.f;                   // \tilde{M}^- + 1 ulp -> M^-_{\uparrow}.
-    shortest_handler handler{buf.data(), 0, upper - fp_value};
-    auto result = grisu2_gen_digits(upper, upper.f - lower.f, exp, handler);
+    upper = upper * cached_pow;  // \tilde{M}^+ in Grisu.
+    assert(min_exp <= upper.e && upper.e <= -32);
+    auto result = digits::result();
+    int size = 0;
+    if ((options & grisu_options::grisu3) != 0) {
+      --lower.f;  // \tilde{M}^- - 1 ulp -> M^-_{\downarrow}.
+      ++upper.f;  // \tilde{M}^+ + 1 ulp -> M^+_{\uparrow}.
+      // Numbers outside of (lower, upper) definitely do not round to value.
+      grisu_shortest_handler<3> handler{buf.data(), 0, (upper - fp_value).f};
+      result = grisu_gen_digits(upper, upper.f - lower.f, exp, handler);
+      size = handler.size;
+    } else {
+      ++lower.f;  // \tilde{M}^- + 1 ulp -> M^-_{\uparrow}.
+      --upper.f;  // \tilde{M}^+ - 1 ulp -> M^+_{\downarrow}.
+      grisu_shortest_handler<2> handler{buf.data(), 0, (upper - fp_value).f};
+      result = grisu_gen_digits(upper, upper.f - lower.f, exp, handler);
+      size = handler.size;
+    }
     if (result == digits::error) return false;
-    buf.resize(to_unsigned(handler.size));
+    buf.resize(to_unsigned(size));
   }
   exp -= cached_exp10;
   return true;
 }
 
 template <typename Double>
-void sprintf_format(Double value, internal::buffer& buf,
+void sprintf_format(Double value, internal::buffer<char>& buf,
                     core_format_specs spec) {
   // Buffer capacity must be non-zero, otherwise MSVC's vsnprintf_s will fail.
   FMT_ASSERT(buf.capacity() != 0, "empty buffer");
@@ -738,8 +786,8 @@ void sprintf_format(Double value, internal::buffer& buf,
   for (;;) {
     std::size_t buffer_size = buf.capacity();
     start = &buf[0];
-    int result = internal::char_traits<char>::format_float(
-        start, buffer_size, format, spec.precision, value);
+    int result =
+        format_float(start, buffer_size, format, spec.precision, value);
     if (result >= 0) {
       unsigned n = internal::to_unsigned(result);
       if (n < buf.capacity()) {
@@ -837,7 +885,7 @@ FMT_FUNC void windows_error::init(int err_code, string_view format_str,
   base = std::runtime_error(to_string(buffer));
 }
 
-FMT_FUNC void internal::format_windows_error(internal::buffer& out,
+FMT_FUNC void internal::format_windows_error(internal::buffer<char>& out,
                                              int error_code,
                                              string_view message) FMT_NOEXCEPT {
   FMT_TRY {
@@ -871,7 +919,7 @@ FMT_FUNC void internal::format_windows_error(internal::buffer& out,
 
 #endif  // FMT_USE_WINDOWS_H
 
-FMT_FUNC void format_system_error(internal::buffer& out, int error_code,
+FMT_FUNC void format_system_error(internal::buffer<char>& out, int error_code,
                                   string_view message) FMT_NOEXCEPT {
   FMT_TRY {
     memory_buffer buf;
