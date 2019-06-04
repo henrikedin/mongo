@@ -133,6 +133,10 @@ configs:
         description: 'Append to logpath instead of over-writing'
         short_name: logappend
         arg_vartype: Switch
+    'systemLog.newLogSystem':
+        description: 'Use new log system'
+        short_name: newLogSystem
+        arg_vartype: Switch
     'systemLog.logRotate':
         description: 'Set the log rotation behavior (rename|reopen)'
         short_name: logRotate
