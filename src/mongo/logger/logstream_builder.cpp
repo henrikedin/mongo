@@ -49,9 +49,9 @@ namespace mongo {
 
 namespace {
 
-class log_source {
+class log_source_wrapper {
 public:
-    log_source() {
+    log_source_wrapper() {
         /*lg.add_attribute("TimeStamp", boost::log::attributes::make_function([]() {
                                  return std::string("time_stamp");
                              }));
@@ -67,11 +67,11 @@ public:
 private:
     // boost::log::sources::severity_channel_logger<logger::LogSeverity, logger::LogComponent>
     // logger;
-    logger::logger lg;
+    logger::log_source lg;
 };
 
-log_source& threadLogSource() {
-    thread_local log_source lg;
+log_source_wrapper& threadLogSource() {
+    thread_local log_source_wrapper lg;
     return lg;
 }
 

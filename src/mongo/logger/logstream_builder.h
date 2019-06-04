@@ -277,6 +277,7 @@ public:
 private:
     void makeStream();
 
+//public:
     boost::log::record _rec;
     std::unique_ptr<boost::log::record_ostream> _recStream;
 

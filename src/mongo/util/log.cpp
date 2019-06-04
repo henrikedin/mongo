@@ -37,6 +37,7 @@
 #include "mongo/logger/message_event_utf8_encoder.h"
 #include "mongo/logger/ramlog.h"
 #include "mongo/logger/rotatable_file_manager.h"
+#include "mongo/logger/log_source.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/concurrency/thread_name.h"
 #include "mongo/util/stacktrace.h"
@@ -96,5 +97,56 @@ void setPlainConsoleLogger() {
 
 //Tee* const warnings = RamLog::get("warnings");  // Things put here go in serverStatus
 //Tee* const startupWarningsLog = RamLog::get("startupWarnings");  // intentionally leaked
+
+void log_prototype1(logger::LogComponent component,
+                    logger::LogSeverity severity,
+                    LogPrototype1BuilderStage2&& stage2) {
+    //LogstreamBuilder logstrm(::mongo::logger::kDefault, severity, component);
+    //if (logstrm._rec) {
+    //    for (auto&& attr_value : stage2.attrs) {
+    //        logstrm._rec.attribute_values().insert(attr_value);
+    //    }
+
+    //    *logstrm._recStream << stage2.str;
+    //}
+}
+
+::mongo::logger::log_source& threadLogSource() {
+    thread_local ::mongo::logger::log_source lg;
+    return lg;
+}
+
+void log_prototype4_impl(logger::LogComponent component,
+	logger::LogSeverity severity,
+                         std::string message,
+	const ::mongo::logger::AttributePayload& payload)
+{
+	if (auto record = threadLogSource().open_record(::mongo::logger::kDefault, severity, component))
+	{
+        log_prototype4_helper_impl(std::move(record), std::move(message), payload);
+	}
+    /*LogstreamBuilder logstrm(::mongo::logger::kDefault, severity, component);
+    if (logstrm._rec) {
+        
+    }*/
+}
+
+void log_prototype4_helper_impl(boost::log::record record,
+                                std::string message,
+	const ::mongo::logger::AttributePayload& payload)
+{
+    record.attribute_values().insert(
+        ::mongo::logger::attributes::message(),
+        boost::log::attribute_value(
+            new boost::log::attributes::attribute_value_impl<std::string>(message)));
+
+    record.attribute_values().insert(
+        ::mongo::logger::attributes::attributes(),
+        boost::log::attribute_value(
+            new boost::log::attributes::attribute_value_impl<::mongo::logger::AttributePayload>(
+                payload)));
+
+    threadLogSource().push_record(boost::move(record));
+}
 
 }  // namespace mongo

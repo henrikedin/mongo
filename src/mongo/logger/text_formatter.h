@@ -38,6 +38,9 @@
 #include "mongo/logger/log_component.h"
 #include "mongo/logger/log_severity.h"
 #include "mongo/util/time_support.h"
+#include "mongo/logger/attribute_payload.h"
+
+#include <fmt/format.h>
 
 namespace mongo {
 namespace logger {
@@ -51,11 +54,36 @@ public:
     void operator()(boost::log::record_view const& rec, boost::log::formatting_ostream& strm) {
         using namespace boost::log;
 
-        strm << extract<Date_t>(attributes::time_stamp(), rec) << " "
-             << extract<LogSeverity>(attributes::severity(), rec).get().toStringDataCompact() << " "
-             << extract<LogComponent>(attributes::component(), rec) << " ["
-             << extract<StringData>(attributes::thread_name(), rec) << "] "
-             << rec[expressions::smessage];
+		typedef fmt::basic_format_args<typename fmt::buffer_context<char>::type> formatter_args_t;
+
+		const std::string* message = extract<std::string>(attributes::message(), rec).get_ptr();
+        //const auto args = extract<formatter_args_t>("formatting", rec).get_ptr();
+        const auto args = extract<AttributePayload>(attributes::attributes(), rec).get_ptr();
+
+		if (message)
+		{
+            //auto formatted = fmt::internal::vformat(fmt::to_string_view(*message), *args);
+            auto formatted = fmt::internal::vformat(fmt::to_string_view(*message), args->values);
+
+			auto all = fmt::format(
+                "{} {:<2} {:<8} [{}] {}",
+                extract<Date_t>(attributes::time_stamp(), rec).get().toString(),
+                extract<LogSeverity>(attributes::severity(), rec)
+                    .get()
+                    .toStringDataCompact()
+                    .toString(),
+                            extract<LogComponent>(attributes::component(), rec)
+                                .get()
+                                .getNameForLog()
+                                .toString(),
+                extract<StringData>(attributes::thread_name(), rec).get().toString(),
+                formatted);
+            strm << extract<Date_t>(attributes::time_stamp(), rec) << " "
+                 << extract<LogSeverity>(attributes::severity(), rec).get().toStringDataCompact()
+                 << " " << extract<LogComponent>(attributes::component(), rec) << " ["
+                 << extract<StringData>(attributes::thread_name(), rec) << "] " << formatted;
+		}
+		
     }
 };
 

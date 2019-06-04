@@ -138,16 +138,17 @@ BOOST_PARAMETER_KEYWORD(tag_ns, tag)
 //    BOOST_LOG_FORWARD_LOGGER_MEMBERS_TEMPLATE(logger)
 //};
 
-class logger : public boost::log::sources::
-                   basic_logger<char, logger, boost::log::sources::single_thread_model> {
+class log_source : public boost::log::sources::
+                       basic_logger<char, log_source, boost::log::sources::single_thread_model> {
 private:
 private:
     typedef boost::log::sources::
-        basic_logger<char, logger, boost::log::sources::single_thread_model>
+        basic_logger<char, log_source, boost::log::sources::single_thread_model>
             base_type;
 
 public:
-    logger() : _domain(kDefault), _severity(LogSeverity::Log()), _component(LogComponent::kDefault)
+    log_source()
+        : _domain(kDefault), _severity(LogSeverity::Log()), _component(LogComponent::kDefault)
 	{
         add_attribute_unlocked(attributes::severity(), _severity);
         add_attribute_unlocked(attributes::component(), _component);

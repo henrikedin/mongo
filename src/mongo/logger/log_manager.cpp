@@ -90,7 +90,8 @@ void LogManager::reattachDefaultConsoleAppender() {
     console_sink = boost::make_shared<console_sink_t>();
 
     console_sink->set_filter(SeverityFilter());
-    console_sink->set_formatter(JsonFormatter());
+    //console_sink->set_formatter(JsonFormatter());
+    console_sink->set_formatter(TextFormatter());
 
     console_sink->locked_backend()->add_stream(
         boost::shared_ptr<std::ostream>(&std::cout, boost::null_deleter()));

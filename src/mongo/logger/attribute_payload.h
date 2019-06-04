@@ -29,20 +29,18 @@
 
 #pragma once
 
-#include <boost/log/attributes/attribute_name.hpp>
+#include <boost/container/small_vector.hpp>
+#include <fmt/format.h>
+#include <string_view>
 
 namespace mongo {
 namespace logger {
-namespace attributes {
 
-const boost::log::attribute_name& severity();
-const boost::log::attribute_name& component();
-const boost::log::attribute_name& time_stamp();
-const boost::log::attribute_name& thread_name();
-const boost::log::attribute_name& domain();
-const boost::log::attribute_name& message();
-const boost::log::attribute_name& attributes();
+struct AttributePayload {
+    boost::container::small_vector<std::string_view, fmt::internal::max_packed_args> names;
+    fmt::basic_format_args<typename fmt::buffer_context<char>::type> values;
+};
 
-}  // namespace attributes
+
 }  // namespace logger
 }  // namespace mongo

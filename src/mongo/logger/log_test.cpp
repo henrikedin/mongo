@@ -51,6 +51,8 @@
 #include "mongo/util/concurrency/thread_name.h"
 #include "mongo/util/log.h"
 #include "mongo/util/str.h"
+#include <boost/log/utility/manipulators/add_value.hpp>
+#include <fmt/format.h>
 
 using namespace mongo::logger;
 
@@ -76,6 +78,48 @@ typedef LogTest<TextFormatter> LogTestDetailsEncoder;
 typedef LogTest<plain_formatter> LogTestUnadornedEncoder;
 
 TEST_F(LogTestUnadornedEncoder, logContext) {
+    using namespace fmt::literals;
+
+	auto formatted = fmt::format("test {0} format", "val"_a = "sdf", "val2"_a = "sdf2");
+
+    /*fmt::format(
+        "Prototyping logging with {library} style statements {missing} where formatting is {type}.",
+        "library"_a = "libfmt",
+        "type"_a = "deferred");*/
+
+	log_prototype1(::MongoLogDefaultComponent_component,
+                   logger::LogSeverity::Log(),
+                   "test {} log"_log1(boost::log::add_value("val", 1)));
+
+	//std::string str = "asd";
+	//log_prototype2(::MongoLogDefaultComponent_component,
+ //                  logger::LogSeverity::Log(),
+ //                  "test {val} log",
+ //                  "val"_attr = str);
+
+    log_prototype4("Prototyping logging with {library} style statements where formatting is {type}.",
+                   "library"_a = "libfmt", "type"_a="deferred");
+
+	log_prototype4(
+        std::string("Prototyping logging with {library} style statements where formatting is {type}."),
+        "library"_a = "libfmt"_sd,
+        "type"_a = "deferred");
+
+	log_prototype4(
+        "Prototyping logging with {library} style statements where formatting is {type}."_sd,
+        "library"_a = "libfmt",
+        "type"_a = "deferred");
+
+	/*log_prototype4(
+        "Prototyping logging with {} style statements that should not compile.",
+        "libfmt");*/
+
+	MONGO_DEBUG_LOG(
+        -2,
+        "Prototyping logging with {library} style statements where formatting is {type}.",
+        "library"_a = "libfmt",
+        "type"_a = "deferred");
+
     logContext("WHA!");
     ASSERT_GREATER_THAN(_logLines.size(), 1U);
     ASSERT_NOT_EQUALS(_logLines[0].find("WHA!"), std::string::npos);

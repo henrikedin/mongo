@@ -60,6 +60,16 @@ const boost::log::attribute_name& domain() {
     return attr;
 }
 
+const boost::log::attribute_name& message() {
+    static boost::log::attribute_name attr("message");
+    return attr;
+}
+
+const boost::log::attribute_name& attributes() {
+    static boost::log::attribute_name attr("attributes");
+    return attr;
+}
+
 }  // namespace attributes
 }  // namespace logger
 }  // namespace mongo
