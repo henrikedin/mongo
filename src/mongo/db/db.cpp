@@ -1038,10 +1038,6 @@ int mongoDbMain(int argc, char* argv[], char** envp) {
 
     srand(static_cast<unsigned>(curTimeMicros64()));
 
-    serverGlobalParams.useNewLogSystem = std::any_of(argv, argv + argc, [](const char* option) {
-        return strcmp(option, "--newLogSystem") == 0;
-    });
-
     Status status = mongo::runGlobalInitializers(argc, argv, envp);
     if (!status.isOK()) {
         severe(LogComponent::kControl) << "Failed global initialization: " << status;

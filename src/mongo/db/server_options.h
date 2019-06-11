@@ -100,7 +100,6 @@ struct ServerGlobalParams {
     bool logAppend = false;         // True if logging to a file in append mode.
     bool logRenameOnRotate = true;  // True if logging should rename log files on rotate
     bool logWithSyslog = false;     // True if logging to syslog; must not be set if logpath is set.
-    bool useNewLogSystem = false;
     int syslogFacility;             // Facility used when appending messages to the syslog.
 
 #ifndef _WIN32

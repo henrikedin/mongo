@@ -33,7 +33,6 @@
 
 #include "mongo/logger/console_appender.h"
 #include "mongo/logger/message_event_utf8_encoder.h"
-#include "mongo/db/server_options.h"
 
 namespace mongo {
 namespace logger {
@@ -57,27 +56,20 @@ MessageLogDomain* LogManager::getNamedDomain(const std::string& name) {
 }
 
 void LogManager::detachDefaultConsoleAppender() {
-    if (!serverGlobalParams.useNewLogSystem) {
-		invariant(_defaultAppender);
-		_globalDomain.detachAppender(_defaultAppender);
-		_defaultAppender.reset();
-	}
+    invariant(_defaultAppender);
+    _globalDomain.detachAppender(_defaultAppender);
+    _defaultAppender.reset();
 }
 
 void LogManager::reattachDefaultConsoleAppender() {
-    if (!serverGlobalParams.useNewLogSystem) {
     invariant(!_defaultAppender);
     _defaultAppender =
         _globalDomain.attachAppender(std::make_unique<ConsoleAppender<MessageEventEphemeral>>(
             std::make_unique<MessageEventDetailsEncoder>()));
-	}
 }
 
 bool LogManager::isDefaultConsoleAppenderAttached() const {
-    if (!serverGlobalParams.useNewLogSystem)
-        return static_cast<bool>(_defaultAppender);
-    else
-        return false;
+    return static_cast<bool>(_defaultAppender);
 }
 
 }  // logger
