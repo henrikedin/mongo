@@ -158,7 +158,7 @@ log_env.Library(
         'libs/log/src/dump.cpp',
     ],
     LIBDEPS=[
-		'$BUILD_DIR/mongo/boost_assert_shim',
+        '$BUILD_DIR/mongo/boost_assert_shim',
         'boost_filesystem',
         'boost_thread',
     ]
