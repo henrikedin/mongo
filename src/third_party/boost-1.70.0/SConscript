@@ -159,7 +159,7 @@ log_env.Library(
     ],
     LIBDEPS=[
 		'$BUILD_DIR/mongo/boost_assert_shim',
+        'boost_filesystem',
         'boost_thread',
-        'boost_filesystem'
     ]
 )
