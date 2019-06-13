@@ -146,7 +146,7 @@ public:
 		
 		auto formatted_body = fmt::format(
             "{{\"ts\":\"{}\",\"s\":\"{}\"{: <{}}\"c\":\"{}\"{: <{}}\"ctx\":\"{}\",{}\"msg\":\"{}\",\"attr\":{}}}",
-            extract<Date_t>(attributes::time_stamp(), rec).get().toString(),
+            dateToISOStringUTC(extract<Date_t>(attributes::time_stamp(), rec).get()),
             severity,
             ",",
             3 - severity.size(),
