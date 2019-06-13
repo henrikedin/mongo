@@ -40,14 +40,14 @@ class LogOptions {
 public:
     LogOptions()
         : _component(MongoLogDefaultComponent_component),
-          _domain(LogManager::global().getGlobalDomain()) {}
+          _domain(&LogManager::global().getGlobalDomain()) {}
     LogOptions(LogComponent component)
-        : _component(component), _domain(LogManager::global().getGlobalDomain()) {}
+        : _component(component), _domain(&LogManager::global().getGlobalDomain()) {}
     LogOptions(LogDomain* domain)
         : _component(MongoLogDefaultComponent_component), _domain(domain) {}
     LogOptions(LogTag tags)
         : _component(MongoLogDefaultComponent_component),
-          _domain(LogManager::global().getGlobalDomain()),
+          _domain(&LogManager::global().getGlobalDomain()),
           _tags(tags) {}
 
     LogComponent component() const {

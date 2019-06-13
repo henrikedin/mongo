@@ -101,8 +101,8 @@ LogManager& LogManager::global()
     return globalLogManager;
 }
 
-LogDomain* LogManager::getGlobalDomain() {
-    return &_impl->_globalDomain;
+LogDomain& LogManager::getGlobalDomain() {
+    return _impl->_globalDomain;
 }
 
 void LogManager::detachDefaultBackends() {

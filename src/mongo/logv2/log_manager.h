@@ -55,7 +55,7 @@ public:
      * Gets the global domain for this manager.  It has no name.
      * Will attach a default console log appender.
      */
-    LogDomain* getGlobalDomain();
+    LogDomain& getGlobalDomain();
 
     /**
     * Detaches the default console log appender
