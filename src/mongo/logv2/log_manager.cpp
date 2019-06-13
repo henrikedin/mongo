@@ -31,8 +31,6 @@
 
 #include "mongo/logv2/log_manager.h"
 
-//#include "mongo/logger/console_appender.h"
-//#include "mongo/logger/message_event_utf8_encoder.h"
 #include "mongo/logv2/console.h"
 #include "mongo/logv2/component_settings_filter.h"
 #include "mongo/logv2/log_domain.h"
@@ -62,8 +60,8 @@ struct LogManager::Impl
 	{
         _consoleBackend = boost::make_shared<ConsoleBackend>();
         _consoleBackend->set_filter(ComponentSettingsFilter(_globalDomain.settings()));
-        _consoleBackend->set_formatter(JsonFormatter());
-        //_consoleBackend->set_formatter(TextFormatter());
+        //_consoleBackend->set_formatter(JsonFormatter());
+        _consoleBackend->set_formatter(TextFormatter());
 
         _consoleBackend->locked_backend()->add_stream(
             boost::shared_ptr<std::ostream>(&Console::out(), boost::null_deleter()));
