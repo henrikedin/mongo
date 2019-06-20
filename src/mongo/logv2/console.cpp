@@ -250,7 +250,6 @@ Console::Console() {
     // yet. But that is OK! We ensure that this is called from
     // single-threaded context via a mongo initializer above.
     static const std::ios_base::Init initializeCout;
-
 }
 
 std::ostream& Console::out() {

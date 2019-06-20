@@ -31,14 +31,14 @@
 
 #include "mongo/logv2/log_manager.h"
 
-#include "mongo/logv2/console.h"
 #include "mongo/logv2/component_settings_filter.h"
+#include "mongo/logv2/console.h"
+#include "mongo/logv2/json_formatter.h"
 #include "mongo/logv2/log_domain.h"
 #include "mongo/logv2/log_domain_global.h"
 #include "mongo/logv2/ramlog_sink.h"
 #include "mongo/logv2/tagged_severity_filter.h"
 #include "mongo/logv2/text_formatter.h"
-#include "mongo/logv2/json_formatter.h"
 
 
 #include <boost/core/null_deleter.hpp>
@@ -49,15 +49,13 @@
 namespace mongo {
 namespace logv2 {
 
-struct LogManager::Impl
-{
+struct LogManager::Impl {
     typedef boost::log::sinks::synchronous_sink<boost::log::sinks::text_ostream_backend>
         ConsoleBackend;
 
-	typedef boost::log::sinks::unlocked_sink<RamLogSink> RamLogBackend;
+    typedef boost::log::sinks::unlocked_sink<RamLogSink> RamLogBackend;
 
-	Impl()
-	{
+    Impl() {
         _consoleBackend = boost::make_shared<ConsoleBackend>();
         _consoleBackend->set_filter(ComponentSettingsFilter(_globalDomain.settings()));
         //_consoleBackend->set_formatter(JsonFormatter());
@@ -68,16 +66,16 @@ struct LogManager::Impl
 
         _consoleBackend->locked_backend()->auto_flush();
 
-		_globalLogCacheBackend = RamLogSink::create(RamLog::get("global"));
+        _globalLogCacheBackend = RamLogSink::create(RamLog::get("global"));
         _globalLogCacheBackend->set_filter(ComponentSettingsFilter(_globalDomain.settings()));
         _globalLogCacheBackend->set_formatter(TextFormatter());
 
-		_startupWarningsBackend = RamLogSink::create(RamLog::get("startupWarnings"));
+        _startupWarningsBackend = RamLogSink::create(RamLog::get("startupWarnings"));
         _startupWarningsBackend->set_filter(
             TaggedSeverityFilter({LogTag::kStartupWarnings}, LogSeverity::Warning()));
         // _startupWarningsBackend->set_formatter(JsonFormatter());
         _startupWarningsBackend->set_formatter(TextFormatter());
-	}
+    }
 
     LogDomain _globalDomain{std::make_unique<LogDomainGlobal>()};
     boost::shared_ptr<ConsoleBackend> _consoleBackend;
@@ -92,11 +90,9 @@ LogManager::LogManager() {
     reattachDefaultBackends();
 }
 
-LogManager::~LogManager() {
-}
+LogManager::~LogManager() {}
 
-LogManager& LogManager::global()
- {
+LogManager& LogManager::global() {
     static LogManager globalLogManager;
     return globalLogManager;
 }

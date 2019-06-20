@@ -45,7 +45,7 @@ public:
     bool operator()(boost::log::attribute_value_set const& attrs) {
         using namespace boost::log;
 
-		return _tag.has(extract<LogTag>(attributes::tags(), attrs).get()) &&
+        return _tag.has(extract<LogTag>(attributes::tags(), attrs).get()) &&
             extract<LogSeverity>(attributes::severity(), attrs).get() <= _severity;
 
         return true;

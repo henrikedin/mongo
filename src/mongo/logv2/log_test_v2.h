@@ -57,30 +57,30 @@ public:
 
     virtual ~LogTestV2() {
         LogManager::global().reattachDefaultBackends();
-        //LogManager::global().getGlobalDomain().impl().core()->remove_sink(_sink);
+        // LogManager::global().getGlobalDomain().impl().core()->remove_sink(_sink);
         LogManager::global().getGlobalDomain().impl().core()->remove_all_sinks();
     }
 
-	void attach(boost::shared_ptr<boost::log::sinks::sink> sink)
-	{
+    void attach(boost::shared_ptr<boost::log::sinks::sink> sink) {
         LogManager::global().getGlobalDomain().impl().core()->add_sink(std::move(sink));
-	}
-
-   /* void attach(std::function<bool(boost::log::attribute_value_set const&)> filter,
-                std::function<void(boost::log::record_view const&, boost::log::formatting_ostream&)>
-                    formatter) {
-        _sink->set_filter(std::move(filter));
-        _sink->set_formatter(std::move(formatter));
-        LogManager::global().getGlobalDomain().impl().core()->add_sink(_sink);
     }
 
-    std::string const& last() {
-        return _logLines.back();
-    }
+    /* void attach(std::function<bool(boost::log::attribute_value_set const&)> filter,
+                 std::function<void(boost::log::record_view const&,
+     boost::log::formatting_ostream&)>
+                     formatter) {
+         _sink->set_filter(std::move(filter));
+         _sink->set_formatter(std::move(formatter));
+         LogManager::global().getGlobalDomain().impl().core()->add_sink(_sink);
+     }
 
-	std::size_t count() {
-        return _logLines.size();
-    }*/
+     std::string const& last() {
+         return _logLines.back();
+     }
+
+     std::size_t count() {
+         return _logLines.size();
+     }*/
 
 private:
     /*class LogTestBackend

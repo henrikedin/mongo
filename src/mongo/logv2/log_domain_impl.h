@@ -47,7 +47,8 @@ public:
         return _settings;
     }
 
-        private : LogComponentSettings _settings;
+private:
+    LogComponentSettings _settings;
 };
 
 }  // namespace logv2

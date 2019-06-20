@@ -48,7 +48,7 @@ public:
     bool operator()(boost::log::attribute_value_set const& attrs) {
         using namespace boost::log;
 
-		return _settings.shouldLog(extract<LogComponent>(attributes::component(), attrs).get(),
+        return _settings.shouldLog(extract<LogComponent>(attributes::component(), attrs).get(),
                                    extract<LogSeverity>(attributes::severity(), attrs).get());
     }
 

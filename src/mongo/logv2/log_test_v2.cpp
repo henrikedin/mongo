@@ -432,7 +432,7 @@ TEST_F(LogTestV2, MultipleDomains) {
     ASSERT(global_lines.empty());
     ASSERT(other_lines.back() == "test");
 
-	LOGV2("global domain log");
+    LOGV2("global domain log");
     ASSERT(global_lines.back() == "global domain log");
     ASSERT(other_lines.back() == "test");
 }

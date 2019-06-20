@@ -46,21 +46,24 @@ namespace mongo {
 namespace logv2 {
 
 
-class log_source : public boost::log::sources::
-                       basic_logger<char, log_source, boost::log::sources::single_thread_model> {
+class log_source
+    : public boost::log::sources::basic_logger<char,
+                                               log_source,
+                                               boost::log::sources::single_thread_model> {
 private:
 private:
-    typedef boost::log::sources::
-        basic_logger<char, log_source, boost::log::sources::single_thread_model>
-            base_type;
+    typedef boost::log::sources::basic_logger<char,
+                                              log_source,
+                                              boost::log::sources::single_thread_model>
+        base_type;
 
 public:
-    log_source()
-        : log_source(boost::log::core::get()) {
-    }
+    log_source() : log_source(boost::log::core::get()) {}
 
-	log_source(boost::log::core_ptr core)
-        : boost::log::sources::basic_logger<char, log_source, boost::log::sources::single_thread_model>(core),
+    log_source(boost::log::core_ptr core)
+        : boost::log::sources::basic_logger<char,
+                                            log_source,
+                                            boost::log::sources::single_thread_model>(core),
           _severity(LogSeverity::Log()),
           _component(LogComponent::kDefault),
           _tags(LogTag::kNone),
@@ -77,7 +80,10 @@ public:
             boost::log::attributes::make_function([]() { return getThreadName(); }));
     }
 
-    boost::log::record open_record(LogSeverity severity, LogComponent component, LogTag tags, StringData stable_id) {
+    boost::log::record open_record(LogSeverity severity,
+                                   LogComponent component,
+                                   LogTag tags,
+                                   StringData stable_id) {
         // Perform a quick check first
         if (this->core()->get_logging_enabled()) {
             _severity.set(severity);

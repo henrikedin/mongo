@@ -31,12 +31,9 @@
 
 #include "mongo/logv2/log_source.h"
 
-namespace mongo
-{
-namespace logv2 
-{
-log_source& LogDomainGlobal::source()
-{
+namespace mongo {
+namespace logv2 {
+log_source& LogDomainGlobal::source() {
     thread_local log_source lg;
     return lg;
 }
@@ -44,7 +41,5 @@ log_source& LogDomainGlobal::source()
 boost::shared_ptr<boost::log::core> LogDomainGlobal::core() {
     return boost::log::core::get();
 }
-
-
 }
 }

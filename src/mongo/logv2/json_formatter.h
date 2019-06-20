@@ -34,8 +34,8 @@
 #include <boost/log/expressions/message.hpp>
 #include <boost/log/utility/formatting_ostream.hpp>
 
-#include "mongo/logv2/attributes.h"
 #include "mongo/logv2/attribute_argument_set.h"
+#include "mongo/logv2/attributes.h"
 #include "mongo/logv2/log_component.h"
 #include "mongo/logv2/log_severity.h"
 #include "mongo/logv2/log_tag.h"
@@ -55,7 +55,7 @@ public:
     void operator()(boost::log::record_view const& rec, boost::log::formatting_ostream& strm) {
         using namespace boost::log;
 
-		const auto& attrs = extract<AttributeArgumentSet>(attributes::attributes(), rec).get();
+        const auto& attrs = extract<AttributeArgumentSet>(attributes::attributes(), rec).get();
         std::stringstream ss;
         bool first = true;
         ss << "{";
@@ -68,36 +68,35 @@ public:
             if (!arithmetic)
                 ss << "\"";
 
-			fmt::basic_memory_buffer<char> buffer;
+            fmt::basic_memory_buffer<char> buffer;
             fmt::vformat_to(buffer, fmt::format("{{{}}}", i), attrs.values);
             ss << fmt::to_string(buffer);
 
-			if (!arithmetic)
+            if (!arithmetic)
                 ss << "\"";
         }
         ss << "}";
 
-		std::string id;
+        std::string id;
         auto stable_id = extract<StringData>(attributes::stable_id(), rec).get();
         if (!stable_id.empty()) {
             id = fmt::format("\"id\":\"{}\",", stable_id);
-		}
+        }
 
-		// super naive algorithm to convert back into named args, probably littered with bugs and inefficiencies.
-		std::string message;
-		std::string msg_source = extract<StringData>(attributes::message(), rec).get().toString();
+        // super naive algorithm to convert back into named args, probably littered with bugs and
+        // inefficiencies.
+        std::string message;
+        std::string msg_source = extract<StringData>(attributes::message(), rec).get().toString();
         std::size_t pos = 0;
         std::size_t subst_index = 0;
-		while (true)
-		{
+        while (true) {
             auto res = msg_source.find('{', pos);
             if (res == std::string::npos) {
                 message += msg_source.substr(pos);
                 break;
             }
-                
-			if (res + 1 < msg_source.size() || msg_source[res + 1] != '{')
-			{
+
+            if (res + 1 < msg_source.size() || msg_source[res + 1] != '{') {
                 message += msg_source.substr(pos, res + 1 - pos);
                 size_t end = res;
                 while (true) {
@@ -107,7 +106,7 @@ public:
                         do {
                             substr = msg_source.find('}', substr + 1);
                         } while (substr + 1 < msg_source.size() && msg_source[substr + 1] == '}');
-                        
+
                         message += attrs.names[subst_index].toString();
                         message += msg_source.substr(end, substr + 1 - end);
                         pos = substr + 1;
@@ -117,35 +116,32 @@ public:
                         auto index_str = msg_source.substr(res + 1, end - (res + 1));
                         if (index_str == "0")
                             index = 0;
-						else
-						{
+                        else {
                             auto parsed_index = strtol(index_str.c_str(), nullptr, 10);
                             index = parsed_index != 0 ? parsed_index : -1;
-						}
+                        }
                         message += attrs.names[index != -1 ? index : subst_index].toString();
                         message += '}';
-                        
+
                         pos = end + 1;
                         break;
-					}
-				}
+                    }
+                }
                 subst_index += 1;
-			}
-			else
-			{
+            } else {
                 pos = res + 1;
-			}
+            }
+        }
 
-		}
-        
 
-		StringData severity =
+        StringData severity =
             extract<LogSeverity>(attributes::severity(), rec).get().toStringDataCompact();
         StringData component =
             extract<LogComponent>(attributes::component(), rec).get().getNameForLog();
-		
-		auto formatted_body = fmt::format(
-            "{{\"ts\":\"{}\",\"s\":\"{}\"{: <{}}\"c\":\"{}\"{: <{}}\"ctx\":\"{}\",{}\"msg\":\"{}\",\"attr\":{}}}",
+
+        auto formatted_body = fmt::format(
+            "{{\"ts\":\"{}\",\"s\":\"{}\"{: <{}}\"c\":\"{}\"{: "
+            "<{}}\"ctx\":\"{}\",{}\"msg\":\"{}\",\"attr\":{}}}",
             dateToISOStringUTC(extract<Date_t>(attributes::time_stamp(), rec).get()),
             severity,
             ",",
@@ -154,7 +150,7 @@ public:
             ",",
             9 - component.size(),
             extract<StringData>(attributes::thread_name(), rec).get(),
-			id,
+            id,
             message,
             ss.str());
         strm << formatted_body;

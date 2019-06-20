@@ -34,8 +34,8 @@
 #include <boost/log/expressions/message.hpp>
 #include <boost/log/utility/formatting_ostream.hpp>
 
-#include "mongo/logv2/attributes.h"
 #include "mongo/logv2/attribute_argument_set.h"
+#include "mongo/logv2/attributes.h"
 #include "mongo/logv2/log_component.h"
 #include "mongo/logv2/log_severity.h"
 #include "mongo/util/time_support.h"
@@ -54,22 +54,17 @@ public:
     void operator()(boost::log::record_view const& rec, boost::log::formatting_ostream& strm) {
         using namespace boost::log;
 
-		StringData message = extract<StringData>(attributes::message(), rec).get();
+        StringData message = extract<StringData>(attributes::message(), rec).get();
         const auto& attrs = extract<AttributeArgumentSet>(attributes::attributes(), rec).get();
 
         auto formatted_message = fmt::internal::vformat(to_string_view(message), attrs.values);
-		auto formatted_body = fmt::format(
+        auto formatted_body = fmt::format(
             "{} {:<2} {:<8} [{}] ",
             extract<Date_t>(attributes::time_stamp(), rec).get().toString(),
-            extract<LogSeverity>(attributes::severity(), rec)
-                .get()
-                .toStringDataCompact(),
-            extract<LogComponent>(attributes::component(), rec)
-                    .get()
-                    .getNameForLog(),
+            extract<LogSeverity>(attributes::severity(), rec).get().toStringDataCompact(),
+            extract<LogComponent>(attributes::component(), rec).get().getNameForLog(),
             extract<StringData>(attributes::thread_name(), rec).get());
         strm << formatted_body << formatted_message;
-		
     }
 };
 

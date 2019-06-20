@@ -71,7 +71,6 @@ void RamLog::write(const std::string& str) {
     } else {
         memcpy(p, str.c_str(), C - 1);
         *(p + C - 1) = '\0';
-
     }
 
     if (n < N)

@@ -39,7 +39,7 @@ public:
     LogDebugRecord(std::unique_ptr<LogDebugRecordImpl> impl);
     ~LogDebugRecord();
 
-	LogDebugRecordImpl* impl() {
+    LogDebugRecordImpl* impl() {
         return _impl.get();
     }
 

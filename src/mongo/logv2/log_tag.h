@@ -33,32 +33,25 @@
 
 namespace mongo {
 namespace logv2 {
-class LogTag
-{
+class LogTag {
 public:
-    enum Value {
-		kNone = 0,
-        kStartupWarnings = 1 << 1,
-        kJavascript = 1 << 2
-    };
+    enum Value { kNone = 0, kStartupWarnings = 1 << 1, kJavascript = 1 << 2 };
 
-	LogTag() {}
+    LogTag() {}
     /* implicit */ LogTag(Value value) {
         _value = static_cast<uint64_t>(value);
-	}
+    }
 
-	/*operator Value() const {
+    /*operator Value() const {
         return _value;
     }*/
 
-	bool has(LogTag other)
-	{
+    bool has(LogTag other) {
         return _value & other._value;
-	}
+    }
 
 private:
     uint64_t _value;
 };
-
 }
 }

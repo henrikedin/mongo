@@ -33,20 +33,20 @@
 
 #include "mongo/logv2/attributes.h"
 #include "mongo/logv2/log.h"
+#include "mongo/logv2/log_debug_record_impl.h"
 #include "mongo/logv2/log_domain.h"
 #include "mongo/logv2/log_domain_impl.h"
-#include "mongo/logv2/log_debug_record_impl.h"
 #include "mongo/logv2/log_options.h"
 #include "mongo/logv2/log_source.h"
 
 namespace mongo {
 namespace logv2 {
 namespace detail {
-	namespace {
-		log_source& lg() {
-        thread_local log_source _lg;
-            return _lg;
-    }
+namespace {
+log_source& lg() {
+    thread_local log_source _lg;
+    return _lg;
+}
 }
 
 void doLogImpl(::mongo::logv2::LogSeverity const& severity,
@@ -56,8 +56,7 @@ void doLogImpl(::mongo::logv2::LogSeverity const& severity,
                ::mongo::logv2::AttributeArgumentSet attrs) {
     auto& source = options.domain().impl().source();
     auto record = source.open_record(severity, options.component(), options.tags(), stable_id);
-	if (record)
-	{
+    if (record) {
         record.attribute_values().insert(
             attributes::message(),
             boost::log::attribute_value(
@@ -69,14 +68,13 @@ void doLogImpl(::mongo::logv2::LogSeverity const& severity,
                 new boost::log::attributes::attribute_value_impl<AttributeArgumentSet>(attrs)));
 
         source.push_record(std::move(record));
-	}
+    }
 }
 
 void doLogDebugImpl(LogDebugRecord&& debugRecord,
                     ::mongo::logv2::LogDomain& domain,
-	::mongo::StringData message,
-	::mongo::logv2::AttributeArgumentSet attrs)
-{
+                    ::mongo::StringData message,
+                    ::mongo::logv2::AttributeArgumentSet attrs) {
     auto& source = domain.impl().source();
     auto record = std::move(debugRecord.impl()->_record);
     if (record) {

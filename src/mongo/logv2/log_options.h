@@ -30,8 +30,8 @@
 #pragma once
 
 #include "mongo/logv2/log_component.h"
-#include "mongo/logv2/log_tag.h"
 #include "mongo/logv2/log_manager.h"
+#include "mongo/logv2/log_tag.h"
 
 namespace mongo {
 namespace logv2 {
@@ -53,14 +53,14 @@ public:
     LogComponent component() const {
         return _component;
     }
-	
-	LogDomain& domain() const {
+
+    LogDomain& domain() const {
         return *_domain;
     }
 
-	LogTag tags() const {
-		return _tags;
-	}
+    LogTag tags() const {
+        return _tags;
+    }
 
 private:
     LogComponent _component;

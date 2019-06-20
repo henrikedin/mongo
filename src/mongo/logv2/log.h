@@ -106,9 +106,9 @@ void doLogImpl(::mongo::logv2::LogSeverity const& severity,
                ::mongo::logv2::AttributeArgumentSet attrs);
 
 void doLogDebugImpl(LogDebugRecord&& debugRecord,
-               ::mongo::logv2::LogDomain& domain,
-               ::mongo::StringData message,
-               ::mongo::logv2::AttributeArgumentSet attrs);
+                    ::mongo::logv2::LogDomain& domain,
+                    ::mongo::StringData message,
+                    ::mongo::logv2::AttributeArgumentSet attrs);
 
 template <typename S, typename... Args>
 void doLog(::mongo::logv2::LogSeverity const& severity,
@@ -126,8 +126,8 @@ void doLog(::mongo::logv2::LogSeverity const& severity,
 template <typename S, typename... Args>
 void doLogDebug(LogDebugRecord&& debugRecord,
                 ::mongo::logv2::LogDomain& domain,
-				S const& message,
-				fmt::internal::named_arg<Args, char>&&... args) {
+                S const& message,
+                fmt::internal::named_arg<Args, char>&&... args) {
     ::mongo::logv2::AttributeArgumentSet attr_set;
     attr_set.values = fmt::internal::make_args_checked(message, (args.value)...);
     (attr_set.names.push_back(::mongo::StringData(args.name.data(), args.name.size())), ...);
@@ -139,23 +139,23 @@ void doLogDebug(LogDebugRecord&& debugRecord,
 }  // namespace detail
 }  // namespace logv2
 
-#define LOGV2_IMPL_0(SEVERITY, OPTIONS, ID, MESSAGE)                              \
-    do {                                                                               \
+#define LOGV2_IMPL_0(SEVERITY, OPTIONS, ID, MESSAGE)                      \
+    do {                                                                  \
         logv2::detail::doLog(SEVERITY, OPTIONS, ID, FMT_STRING(MESSAGE)); \
     } while (false)
 
-#define LOGV2_IMPL_1(SEVERITY, OPTIONS, ID, MESSAGE, ...)                            \
-        logv2::detail::doLog(SEVERITY, OPTIONS, ID, FMT_STRING(MESSAGE), __VA_ARGS__)
+#define LOGV2_IMPL_1(SEVERITY, OPTIONS, ID, MESSAGE, ...) \
+    logv2::detail::doLog(SEVERITY, OPTIONS, ID, FMT_STRING(MESSAGE), __VA_ARGS__)
 
 #define LOGV2_1(MESSAGE, ...)                         \
     LOGV2_IMPL_1(::mongo::logv2::LogSeverity::Info(), \
-               ::mongo::logv2::LogOptions{},        \
-               ::mongo::StringData{},               \
-               MESSAGE,                             \
-               __VA_ARGS__)
+                 ::mongo::logv2::LogOptions{},        \
+                 ::mongo::StringData{},               \
+                 MESSAGE,                             \
+                 __VA_ARGS__)
 
 #define LOGV2_OPTIONS_1(OPTIONS, MESSAGE, ...) \
-    LOGV2_IMPL_1(                            \
+    LOGV2_IMPL_1(                              \
         ::mongo::logv2::LogSeverity::Info(), OPTIONS, ::mongo::StringData{}, MESSAGE, __VA_ARGS__)
 
 #if BOOST_PP_VARIADICS_MSVC
@@ -169,16 +169,16 @@ void doLogDebug(LogDebugRecord&& debugRecord,
                  MESSAGE)
 
 #define LOGV2_OPTIONS_0(OPTIONS, MESSAGE) \
-    LOGV2_IMPL_0(                            \
-        ::mongo::logv2::LogSeverity::Info(), OPTIONS, ::mongo::StringData{}, MESSAGE)
+    LOGV2_IMPL_0(::mongo::logv2::LogSeverity::Info(), OPTIONS, ::mongo::StringData{}, MESSAGE)
 
 
 #define LOGV2(...) \
-    BOOST_PP_CAT(LOGV2_, BOOST_PP_GREATER(BOOST_PP_VARIADIC_SIZE(__VA_ARGS__), 1))(__VA_ARGS__) 
-#define LOGV2_OPTIONS(...) \
-    BOOST_PP_CAT(LOGV2_OPTIONS_, BOOST_PP_GREATER(BOOST_PP_VARIADIC_SIZE(__VA_ARGS__), 2))(__VA_ARGS__)
+    BOOST_PP_CAT(LOGV2_, BOOST_PP_GREATER(BOOST_PP_VARIADIC_SIZE(__VA_ARGS__), 1))(__VA_ARGS__)
+#define LOGV2_OPTIONS(...)                                                                 \
+    BOOST_PP_CAT(LOGV2_OPTIONS_, BOOST_PP_GREATER(BOOST_PP_VARIADIC_SIZE(__VA_ARGS__), 2)) \
+    (__VA_ARGS__)
 
-#endif // BOOST_PP_VARIADICS_MSVC
+#endif  // BOOST_PP_VARIADICS_MSVC
 
 #define LOGV2_STABLE(ID, MESSAGE, ...)              \
     LOGV2_IMPL(::mongo::logv2::LogSeverity::Info(), \
@@ -187,35 +187,36 @@ void doLogDebug(LogDebugRecord&& debugRecord,
                MESSAGE,                             \
                __VA_ARGS__)
 
-#define LOGV2_WARNING_OPTIONS(OPTIONS, MESSAGE, ...) \
-    LOGV2_IMPL(                              \
-        ::mongo::logv2::LogSeverity::Warning(), \
+#define LOGV2_WARNING_OPTIONS(OPTIONS, MESSAGE, ...)   \
+    LOGV2_IMPL(::mongo::logv2::LogSeverity::Warning(), \
                OPTIONS,                                \
                ::mongo::StringData{},                  \
                MESSAGE,                                \
                __VA_ARGS__)
 
-#define LOGV2_WARNING(MESSAGE, ...)                         \
+#define LOGV2_WARNING(MESSAGE, ...)                    \
     LOGV2_IMPL(::mongo::logv2::LogSeverity::Warning(), \
-               ::mongo::logv2::LogOptions{},        \
-               ::mongo::StringData{},               \
-               MESSAGE,                             \
+               ::mongo::logv2::LogOptions{},           \
+               ::mongo::StringData{},                  \
+               MESSAGE,                                \
                __VA_ARGS__)
 
-#define LOGV2_WARNING_STABLE(ID, MESSAGE, ...)              \
+#define LOGV2_WARNING_STABLE(ID, MESSAGE, ...)         \
     LOGV2_IMPL(::mongo::logv2::LogSeverity::Warning(), \
-               ::mongo::logv2::LogOptions{},        \
-               ID,                                  \
-               MESSAGE,                             \
+               ::mongo::logv2::LogOptions{},           \
+               ID,                                     \
+               MESSAGE,                                \
                __VA_ARGS__)
 
-#define LOGV2_DEBUG1_OPTIONS(OPTIONS, MESSAGE, ...)                                              \
-    do {                                                                                         \
-        auto debugRecord = (OPTIONS).domain().openDebug(::mongo::logv2::LogSeverity::Info(), \
-                                                            (OPTIONS).component(), (OPTIONS).tags());            \
-		if (debugRecord.impl()) { \
-			logv2::detail::doLogDebug(std::move(debugRecord), (OPTIONS).domain(), FMT_STRING(MESSAGE), __VA_ARGS__); \
-        } \
+#define LOGV2_DEBUG1_OPTIONS(OPTIONS, MESSAGE, ...)                                            \
+    do {                                                                                       \
+        auto debugRecord = (OPTIONS).domain().openDebug(                                       \
+            ::mongo::logv2::LogSeverity::Info(), (OPTIONS).component(), (OPTIONS).tags());     \
+        if (debugRecord.impl()) {                                                              \
+            logv2::detail::doLogDebug(                                                         \
+                std::move(debugRecord), (OPTIONS).domain(), FMT_STRING(MESSAGE), __VA_ARGS__); \
+        }                                                                                      \
+    \
 } while (false)
 
 #define LOGV2_DEBUG1(MESSAGE, ...) \

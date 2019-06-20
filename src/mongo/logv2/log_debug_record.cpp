@@ -32,8 +32,7 @@
 
 namespace mongo {
 namespace logv2 {
-LogDebugRecord::LogDebugRecord(std::unique_ptr<LogDebugRecordImpl> impl)
-    : _impl(std::move(impl)) {}
+LogDebugRecord::LogDebugRecord(std::unique_ptr<LogDebugRecordImpl> impl) : _impl(std::move(impl)) {}
 LogDebugRecord::~LogDebugRecord() {}
 
 }  // namespace logv2

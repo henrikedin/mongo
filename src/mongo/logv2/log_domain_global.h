@@ -31,19 +31,14 @@
 
 #include "mongo/logv2/log_domain_impl.h"
 
-namespace mongo
-{
-namespace logv2 
-{
-class LogDomainGlobal : public LogDomainImpl
-{
+namespace mongo {
+namespace logv2 {
+class LogDomainGlobal : public LogDomainImpl {
 public:
     log_source& source() override;
     boost::shared_ptr<boost::log::core> core() override;
 
 private:
-
 };
-
 }
 }
