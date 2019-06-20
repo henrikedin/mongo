@@ -202,8 +202,8 @@ namespace {
 
 template <typename S, typename... Args>
 void doLog(S const& s, fmt::internal::named_arg<Args, char>&&... args) {
-    auto str = fmt::format(s, (args.value)...);
-    int i = 5;
+    // auto str = fmt::format(s, (args.value)...);
+    // int i = 5;
     // std::apply(fmt::format, saved_args);
     // auto str = fmt::format();
 }

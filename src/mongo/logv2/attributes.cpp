@@ -27,8 +27,6 @@
  *    it in the license file.
  */
 
-#pragma once
-
 #include <boost/log/attributes/attribute_name.hpp>
 
 namespace mongo {
