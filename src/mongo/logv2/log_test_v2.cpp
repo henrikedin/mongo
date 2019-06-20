@@ -370,7 +370,7 @@ TEST_F(LogTestV2, logRamlog) {
         RamLog::LineIterator iter(ramlog);
         return std::all_of(lines.begin(), lines.end(), [&iter](const std::string& line) {
             return line == iter.next();
-		});
+        });
     };
 
     LOGV2("test");
@@ -392,6 +392,49 @@ TEST_F(LogTestV2, logRamlog) {
 
     // LOGV2("test {}", "name"_a = "StringData"_sd);
     // ASSERT(lines.back() == "test StringData");
+}
+
+TEST_F(LogTestV2, MultipleDomains) {
+    using namespace fmt::literals;
+
+    std::vector<std::string> global_lines;
+    auto sink = LogTestBackend::create(global_lines);
+    sink->set_filter(ComponentSettingsFilter(LogManager::global().getGlobalDomain().settings()));
+    sink->set_formatter(PlainFormatter());
+    attach(sink);
+
+    class OtherDomainImpl : public LogDomainImpl {
+    public:
+        OtherDomainImpl() : _core(boost::log::core::create()) {}
+
+        log_source& source() override {
+            thread_local log_source lg(_core);
+            return lg;
+        }
+        boost::shared_ptr<boost::log::core> core() override {
+            return _core;
+        }
+
+    private:
+        boost::shared_ptr<boost::log::core> _core;
+    };
+
+    LogDomain other_domain(std::make_unique<OtherDomainImpl>());
+    std::vector<std::string> other_lines;
+    auto other_sink = LogTestBackend::create(other_lines);
+    other_sink->set_filter(
+        ComponentSettingsFilter(LogManager::global().getGlobalDomain().settings()));
+    other_sink->set_formatter(PlainFormatter());
+    other_domain.impl().core()->add_sink(other_sink);
+
+
+    LOGV2_OPTIONS({&other_domain}, "test");
+    ASSERT(global_lines.empty());
+    ASSERT(other_lines.back() == "test");
+
+	LOGV2("global domain log");
+    ASSERT(global_lines.back() == "global domain log");
+    ASSERT(other_lines.back() == "test");
 }
 
 }  // namespace

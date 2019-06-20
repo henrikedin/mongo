@@ -56,7 +56,15 @@ private:
 
 public:
     log_source()
-        : _severity(LogSeverity::Log()), _component(LogComponent::kDefault), _tags(LogTag::kNone), _id(StringData{}) {
+        : log_source(boost::log::core::get()) {
+    }
+
+	log_source(boost::log::core_ptr core)
+        : boost::log::sources::basic_logger<char, log_source, boost::log::sources::single_thread_model>(core),
+          _severity(LogSeverity::Log()),
+          _component(LogComponent::kDefault),
+          _tags(LogTag::kNone),
+          _id(StringData{}) {
         add_attribute_unlocked(attributes::severity(), _severity);
         add_attribute_unlocked(attributes::component(), _component);
         add_attribute_unlocked(attributes::tags(), _tags);
