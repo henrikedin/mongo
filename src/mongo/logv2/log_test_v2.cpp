@@ -236,8 +236,6 @@ fmt::internal::named_arg<T, char> make_named(const char* n, T&& val) {
 }
 
 TEST_F(LogTestV2, logBasic) {
-    using namespace fmt::literals;
-
     std::vector<std::string> lines;
     auto sink = LogTestBackend::create(lines);
     sink->set_filter(ComponentSettingsFilter(LogManager::global().getGlobalDomain().settings()));
@@ -247,19 +245,19 @@ TEST_F(LogTestV2, logBasic) {
     LOGV2("test");
     ASSERT(lines.back() == "test");
 
-    LOGV2("test {}", "name"_a = 1);
+    LOGV2("test {}", "name"_attr = 1);
     ASSERT(lines.back() == "test 1");
 
-    LOGV2("test {:d}", "name"_a = 2);
+    LOGV2("test {:d}", "name"_attr = 2);
     ASSERT(lines.back() == "test 2");
 
-    LOGV2("test {}", "name"_a = "char*");
+    LOGV2("test {}", "name"_attr = "char*");
     ASSERT(lines.back() == "test char*");
 
-    LOGV2("test {}", "name"_a = std::string("std::string"));
+    LOGV2("test {}", "name"_attr = std::string("std::string"));
     ASSERT(lines.back() == "test std::string");
 
-    LOGV2("test {}", "name"_a = "StringData"_sd);
+    LOGV2("test {}", "name"_attr = "StringData"_sd);
     ASSERT(lines.back() == "test StringData");
 
     // LOGV2_WARNING("test {1} {0}", "asd"_a = 3, "sfd"_a = "sfd2", "dfg"_a = 46);
@@ -278,8 +276,6 @@ TEST_F(LogTestV2, logBasic) {
 }
 
 TEST_F(LogTestV2, logJSON) {
-    using namespace fmt::literals;
-
     std::vector<std::string> lines;
     auto sink = LogTestBackend::create(lines);
     sink->set_filter(ComponentSettingsFilter(LogManager::global().getGlobalDomain().settings()));
@@ -299,13 +295,13 @@ TEST_F(LogTestV2, logJSON) {
     ASSERT(log.getField("msg"_sd).String() == "test");
     ASSERT(log.getField("attr"_sd).Obj().nFields() == 0);
 
-    LOGV2("test {}", "name"_a = 1);
+    LOGV2("test {}", "name"_attr = 1);
     log = mongo::fromjson(lines.back());
     ASSERT(log.getField("msg"_sd).String() == "test {name}");
     ASSERT(log.getField("attr"_sd).Obj().nFields() == 1);
     ASSERT(log.getField("attr"_sd).Obj().getField("name").Int() == 1);
 
-    LOGV2("test {:d}", "name"_a = 2);
+    LOGV2("test {:d}", "name"_attr = 2);
     log = mongo::fromjson(lines.back());
     ASSERT(log.getField("msg"_sd).String() == "test {name:d}");
     ASSERT(log.getField("attr"_sd).Obj().nFields() == 1);
@@ -313,8 +309,6 @@ TEST_F(LogTestV2, logJSON) {
 }
 
 TEST_F(LogTestV2, logThread) {
-    using namespace fmt::literals;
-
     std::vector<std::string> lines;
     auto sink = LogTestBackend::create(lines);
     sink->set_filter(ComponentSettingsFilter(LogManager::global().getGlobalDomain().settings()));
@@ -350,8 +344,6 @@ TEST_F(LogTestV2, logThread) {
 }
 
 TEST_F(LogTestV2, logRamlog) {
-    using namespace fmt::literals;
-
     RamLog* ramlog = RamLog::get("test_ramlog");
 
     auto sink = RamLogSink::create(ramlog);
@@ -395,8 +387,6 @@ TEST_F(LogTestV2, logRamlog) {
 }
 
 TEST_F(LogTestV2, MultipleDomains) {
-    using namespace fmt::literals;
-
     std::vector<std::string> global_lines;
     auto sink = LogTestBackend::create(global_lines);
     sink->set_filter(ComponentSettingsFilter(LogManager::global().getGlobalDomain().settings()));

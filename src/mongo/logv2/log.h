@@ -224,6 +224,9 @@ void doLogDebug(LogDebugRecord&& debugRecord,
 #define LOGV2_DEBUG1(MESSAGE, ...) \
     LOGV2_DEBUG1_OPTIONS(::mongo::logv2::LogOptions{}, MESSAGE, __VA_ARGS__)
 
+inline fmt::internal::udl_arg<char> operator"" _attr(const char* s, std::size_t) {
+    return {s};
+}
 
 }  // namespace mongo
 
