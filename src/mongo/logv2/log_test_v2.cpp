@@ -43,6 +43,7 @@
 #include "mongo/logv2/json_formatter.h"
 #include "mongo/logv2/log.h"
 #include "mongo/logv2/log_component.h"
+#include "mongo/logv2/ramlog_sink.h"
 #include "mongo/logv2/text_formatter.h"
 #include "mongo/stdx/thread.h"
 //#include "mongo/logv2/log_component_settings.h"
@@ -141,6 +142,27 @@
 namespace mongo {
 namespace logv2 {
 namespace {
+class LogTestBackend
+    : public boost::log::sinks::
+          basic_formatted_sink_backend<char, boost::log::sinks::synchronized_feeding> {
+public:
+    LogTestBackend(std::vector<std::string>& lines) : _logLines(lines) {}
+
+    static boost::shared_ptr<boost::log::sinks::synchronous_sink<LogTestBackend>> create(
+        std::vector<std::string>& lines) {
+        auto backend = boost::make_shared<LogTestBackend>(lines);
+        return boost::make_shared<boost::log::sinks::synchronous_sink<LogTestBackend>>(
+            std::move(backend));
+    }
+
+    void consume(boost::log::record_view const& rec, string_type const& formatted_string) {
+        _logLines.push_back(formatted_string);
+    }
+
+private:
+    std::vector<std::string>& _logLines;
+};
+
 class PlainFormatter {
 public:
     static bool binary() {
@@ -216,26 +238,29 @@ fmt::internal::named_arg<T, char> make_named(const char* n, T&& val) {
 TEST_F(LogTestV2, logBasic) {
     using namespace fmt::literals;
 
-    attach(ComponentSettingsFilter(LogManager::global().getGlobalDomain().settings()),
-           PlainFormatter());
+    std::vector<std::string> lines;
+    auto sink = LogTestBackend::create(lines);
+    sink->set_filter(ComponentSettingsFilter(LogManager::global().getGlobalDomain().settings()));
+    sink->set_formatter(PlainFormatter());
+    attach(sink);
 
     LOGV2("test");
-    ASSERT(last() == "test");
+    ASSERT(lines.back() == "test");
 
     LOGV2("test {}", "name"_a = 1);
-    ASSERT(last() == "test 1");
+    ASSERT(lines.back() == "test 1");
 
     LOGV2("test {:d}", "name"_a = 2);
-    ASSERT(last() == "test 2");
+    ASSERT(lines.back() == "test 2");
 
     LOGV2("test {}", "name"_a = "char*");
-    ASSERT(last() == "test char*");
+    ASSERT(lines.back() == "test char*");
 
     LOGV2("test {}", "name"_a = std::string("std::string"));
-    ASSERT(last() == "test std::string");
+    ASSERT(lines.back() == "test std::string");
 
     LOGV2("test {}", "name"_a = "StringData"_sd);
-    ASSERT(last() == "test StringData");
+    ASSERT(lines.back() == "test StringData");
 
     // LOGV2_WARNING("test {1} {0}", "asd"_a = 3, "sfd"_a = "sfd2", "dfg"_a = 46);
     // LOGV2_STABLE("thestableid"_sd, "test {0} {1}", "asd"_a = 3, "sfd"_a = "sfd2", "dfg"_a = 46);
@@ -255,30 +280,33 @@ TEST_F(LogTestV2, logBasic) {
 TEST_F(LogTestV2, logJSON) {
     using namespace fmt::literals;
 
-    attach(ComponentSettingsFilter(LogManager::global().getGlobalDomain().settings()),
-           JsonFormatter());
+    std::vector<std::string> lines;
+    auto sink = LogTestBackend::create(lines);
+    sink->set_filter(ComponentSettingsFilter(LogManager::global().getGlobalDomain().settings()));
+    sink->set_formatter(JsonFormatter());
+    attach(sink);
 
     BSONObj log;
 
-    /*LOGV2("test");
-    log = mongo::fromjson(last());
+    LOGV2("test");
+    log = mongo::fromjson(lines.back());
     ASSERT(log.getField("ts"_sd).String() == dateToISOStringUTC(Date_t::lastNowForTest()));
     ASSERT(log.getField("s"_sd).String() == LogSeverity::Info().toStringDataCompact());
     ASSERT(log.getField("c"_sd).String() ==
-    LogComponent(MONGO_LOGV2_DEFAULT_COMPONENT).getNameForLog());
+           LogComponent(MONGO_LOGV2_DEFAULT_COMPONENT).getNameForLog());
     ASSERT(log.getField("ctx"_sd).String() == getThreadName());
     ASSERT(!log.hasField("id"_sd));
     ASSERT(log.getField("msg"_sd).String() == "test");
-    ASSERT(log.getField("attr"_sd).Obj().nFields() == 0);*/
+    ASSERT(log.getField("attr"_sd).Obj().nFields() == 0);
 
     LOGV2("test {}", "name"_a = 1);
-    log = mongo::fromjson(last());
+    log = mongo::fromjson(lines.back());
     ASSERT(log.getField("msg"_sd).String() == "test {name}");
     ASSERT(log.getField("attr"_sd).Obj().nFields() == 1);
     ASSERT(log.getField("attr"_sd).Obj().getField("name").Int() == 1);
 
     LOGV2("test {:d}", "name"_a = 2);
-    log = mongo::fromjson(last());
+    log = mongo::fromjson(lines.back());
     ASSERT(log.getField("msg"_sd).String() == "test {name:d}");
     ASSERT(log.getField("attr"_sd).Obj().nFields() == 1);
     ASSERT(log.getField("attr"_sd).Obj().getField("name").Int() == 2);
@@ -287,11 +315,14 @@ TEST_F(LogTestV2, logJSON) {
 TEST_F(LogTestV2, logThread) {
     using namespace fmt::literals;
 
-    attach(ComponentSettingsFilter(LogManager::global().getGlobalDomain().settings()),
-           PlainFormatter());
+    std::vector<std::string> lines;
+    auto sink = LogTestBackend::create(lines);
+    sink->set_filter(ComponentSettingsFilter(LogManager::global().getGlobalDomain().settings()));
+    sink->set_formatter(PlainFormatter());
+    attach(sink);
 
-    /*stdx::thread t1([](){
-        for (int i=0; i < 100; ++i)
+    stdx::thread t1([]() {
+        for (int i = 0; i < 100; ++i)
             LOGV2("thread1");
     });
 
@@ -315,7 +346,52 @@ TEST_F(LogTestV2, logThread) {
     t3.join();
     t4.join();
 
-    ASSERT(count() == 400);*/
+    ASSERT(lines.size() == 400);
+}
+
+TEST_F(LogTestV2, logRamlog) {
+    using namespace fmt::literals;
+
+    RamLog* ramlog = RamLog::get("test_ramlog");
+
+    auto sink = RamLogSink::create(ramlog);
+    sink->set_filter(ComponentSettingsFilter(LogManager::global().getGlobalDomain().settings()));
+    sink->set_formatter(PlainFormatter());
+    attach(sink);
+
+    std::vector<std::string> lines;
+    auto testSink = LogTestBackend::create(lines);
+    testSink->set_filter(
+        ComponentSettingsFilter(LogManager::global().getGlobalDomain().settings()));
+    testSink->set_formatter(PlainFormatter());
+    attach(testSink);
+
+    auto verifyRamLog = [&]() {
+        RamLog::LineIterator iter(ramlog);
+        return std::all_of(lines.begin(), lines.end(), [&iter](const std::string& line) {
+            return line == iter.next();
+		});
+    };
+
+    LOGV2("test");
+    ASSERT(verifyRamLog());
+    LOGV2("test2");
+    ASSERT(verifyRamLog());
+
+    // LOGV2("test {}", "name"_a = 1);
+    // ASSERT(lines.back() == "test 1");
+
+    // LOGV2("test {:d}", "name"_a = 2);
+    // ASSERT(lines.back() == "test 2");
+
+    // LOGV2("test {}", "name"_a = "char*");
+    // ASSERT(lines.back() == "test char*");
+
+    // LOGV2("test {}", "name"_a = std::string("std::string"));
+    // ASSERT(lines.back() == "test std::string");
+
+    // LOGV2("test {}", "name"_a = "StringData"_sd);
+    // ASSERT(lines.back() == "test StringData");
 }
 
 }  // namespace

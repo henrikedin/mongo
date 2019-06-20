@@ -50,17 +50,23 @@ class LogTestV2 : public unittest::Test {
 public:
     LogTestV2() {
         LogManager::global().detachDefaultBackends();
-        auto backend = boost::make_shared<LogTestBackend>(_logLines);
+        /*auto backend = boost::make_shared<LogTestBackend>(_logLines);
         _sink = boost::make_shared<boost::log::sinks::synchronous_sink<LogTestBackend>>(
-            std::move(backend));
+            std::move(backend));*/
     }
 
     virtual ~LogTestV2() {
         LogManager::global().reattachDefaultBackends();
-        LogManager::global().getGlobalDomain().impl().core()->remove_sink(_sink);
+        //LogManager::global().getGlobalDomain().impl().core()->remove_sink(_sink);
+        LogManager::global().getGlobalDomain().impl().core()->remove_all_sinks();
     }
 
-    void attach(std::function<bool(boost::log::attribute_value_set const&)> filter,
+	void attach(boost::shared_ptr<boost::log::sinks::sink> sink)
+	{
+        LogManager::global().getGlobalDomain().impl().core()->add_sink(std::move(sink));
+	}
+
+   /* void attach(std::function<bool(boost::log::attribute_value_set const&)> filter,
                 std::function<void(boost::log::record_view const&, boost::log::formatting_ostream&)>
                     formatter) {
         _sink->set_filter(std::move(filter));
@@ -74,10 +80,10 @@ public:
 
 	std::size_t count() {
         return _logLines.size();
-    }
+    }*/
 
 private:
-    class LogTestBackend
+    /*class LogTestBackend
         : public boost::log::sinks::
               basic_formatted_sink_backend<char, boost::log::sinks::synchronized_feeding> {
     public:
@@ -92,7 +98,7 @@ private:
     };
 
     std::vector<std::string> _logLines;
-    boost::shared_ptr<boost::log::sinks::synchronous_sink<LogTestBackend>> _sink;
+    boost::shared_ptr<boost::log::sinks::synchronous_sink<LogTestBackend>> _sink;*/
 };
 
 }  // namespace logv2

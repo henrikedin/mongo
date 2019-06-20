@@ -63,17 +63,15 @@ void RamLog::write(const std::string& str) {
 
     char* p = lines[(h + n) % N];
 
-    unsigned sz = str.size();
-    if (0 == sz)
+    unsigned sz = str.size() + 1;
+    if (1 == sz)
         return;
     if (sz < C) {
-        if (str.c_str()[sz - 1] == '\n') {
-            memcpy(p, str.c_str(), sz - 1);
-            p[sz - 1] = 0;
-        } else
-            memcpy(p, str.c_str(), sz);
+        memcpy(p, str.c_str(), sz);
     } else {
         memcpy(p, str.c_str(), C - 1);
+        *(p + C - 1) = '\0';
+
     }
 
     if (n < N)

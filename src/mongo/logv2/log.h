@@ -52,6 +52,8 @@
 #include "mongo/logv2/log_severity.h"
 #include "mongo/util/errno_util.h"
 
+#include <boost/preprocessor/variadic/size.hpp>
+
 // Provide log component in global scope so that MONGO_LOG will always have a valid component.
 // Global log component will be kDefault unless overridden by MONGO_LOGV2_DEFAULT_COMPONENT.
 #if defined(MONGO_LOGV2_DEFAULT_COMPONENT)
@@ -137,21 +139,39 @@ void doLogDebug(LogDebugRecord&& debugRecord,
 }  // namespace detail
 }  // namespace logv2
 
-#define LOGV2_IMPL(SEVERITY, OPTIONS, ID, MESSAGE, ...)                            \
-    do {                                                                           \
-        logv2::detail::doLog(SEVERITY, OPTIONS, ID, FMT_STRING(MESSAGE), __VA_ARGS__); \
+#define LOGV2_IMPL_0(SEVERITY, OPTIONS, ID, MESSAGE)                              \
+    do {                                                                               \
+        logv2::detail::doLog(SEVERITY, OPTIONS, ID, FMT_STRING(MESSAGE)); \
     } while (false)
+
+#define LOGV2_IMPL_1(SEVERITY, OPTIONS, ID, MESSAGE, ...)                            \
+        logv2::detail::doLog(SEVERITY, OPTIONS, ID, FMT_STRING(MESSAGE), __VA_ARGS__)
 
 #define LOGV2_OPTIONS(OPTIONS, MESSAGE, ...) \
     LOGV2_IMPL(                              \
         ::mongo::logv2::LogSeverity::Info(), OPTIONS, ::mongo::StringData{}, MESSAGE, __VA_ARGS__)
 
-#define LOGV2(MESSAGE, ...)                         \
-    LOGV2_IMPL(::mongo::logv2::LogSeverity::Info(), \
+
+#define LOGV2_1(MESSAGE, ...)                         \
+    LOGV2_IMPL_1(::mongo::logv2::LogSeverity::Info(), \
                ::mongo::logv2::LogOptions{},        \
                ::mongo::StringData{},               \
                MESSAGE,                             \
                __VA_ARGS__)
+
+#if BOOST_PP_VARIADICS_MSVC
+#define LOGV2(MESSAGE, ...) LOGV2_1(MESSAGE, __VA_ARGS__)
+#else
+#define LOGV2_0(MESSAGE)                              \
+    LOGV2_IMPL_0(::mongo::logv2::LogSeverity::Info(), \
+                 ::mongo::logv2::LogOptions{},        \
+                 ::mongo::StringData{},               \
+                 MESSAGE)
+
+
+#define LOGV2(...) \
+    BOOST_PP_CAT(LOGV2_, BOOST_PP_GREATER(BOOST_PP_VARIADIC_SIZE(__VA_ARGS__), 1))(__VA_ARGS__) 
+#endif // BOOST_PP_VARIADICS_MSVC
 
 #define LOGV2_STABLE(ID, MESSAGE, ...)              \
     LOGV2_IMPL(::mongo::logv2::LogSeverity::Info(), \
