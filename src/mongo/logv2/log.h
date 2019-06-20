@@ -103,12 +103,12 @@ void doLogImpl(::mongo::logv2::LogSeverity const& severity,
                ::mongo::logv2::LogOptions const& options,
                ::mongo::StringData stable_id,
                ::mongo::StringData message,
-               ::mongo::logv2::AttributeArgumentSet attrs);
+               ::mongo::logv2::AttributeArgumentSet const& attrs);
 
 void doLogDebugImpl(LogDebugRecord&& debugRecord,
                     ::mongo::logv2::LogDomain& domain,
                     ::mongo::StringData message,
-                    ::mongo::logv2::AttributeArgumentSet attrs);
+                    ::mongo::logv2::AttributeArgumentSet const& attrs);
 
 template <typename S, typename... Args>
 void doLog(::mongo::logv2::LogSeverity const& severity,
@@ -117,7 +117,8 @@ void doLog(::mongo::logv2::LogSeverity const& severity,
            S const& message,
            fmt::internal::named_arg<Args, char>&&... args) {
     ::mongo::logv2::AttributeArgumentSet attr_set;
-    attr_set.values = fmt::internal::make_args_checked(message, (args.value)...);
+    auto arg_store = fmt::internal::make_args_checked(message, (args.value)...);
+    attr_set.values = arg_store;
     (attr_set.names.push_back(::mongo::StringData(args.name.data(), args.name.size())), ...);
     auto msg = static_cast<fmt::string_view>(message);
     doLogImpl(severity, options, stable_id, ::mongo::StringData(msg.data(), msg.size()), attr_set);
@@ -129,7 +130,8 @@ void doLogDebug(LogDebugRecord&& debugRecord,
                 S const& message,
                 fmt::internal::named_arg<Args, char>&&... args) {
     ::mongo::logv2::AttributeArgumentSet attr_set;
-    attr_set.values = fmt::internal::make_args_checked(message, (args.value)...);
+    auto arg_store = fmt::internal::make_args_checked(message, (args.value)...);
+    attr_set.values = arg_store;
     (attr_set.names.push_back(::mongo::StringData(args.name.data(), args.name.size())), ...);
     auto msg = static_cast<fmt::string_view>(message);
     doLogDebugImpl(

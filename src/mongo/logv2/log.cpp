@@ -53,7 +53,7 @@ void doLogImpl(::mongo::logv2::LogSeverity const& severity,
                ::mongo::logv2::LogOptions const& options,
                ::mongo::StringData stable_id,
                ::mongo::StringData message,
-               ::mongo::logv2::AttributeArgumentSet attrs) {
+               ::mongo::logv2::AttributeArgumentSet const& attrs) {
     auto& source = options.domain().impl().source();
     auto record = source.open_record(severity, options.component(), options.tags(), stable_id);
     if (record) {
@@ -74,7 +74,7 @@ void doLogImpl(::mongo::logv2::LogSeverity const& severity,
 void doLogDebugImpl(LogDebugRecord&& debugRecord,
                     ::mongo::logv2::LogDomain& domain,
                     ::mongo::StringData message,
-                    ::mongo::logv2::AttributeArgumentSet attrs) {
+                    ::mongo::logv2::AttributeArgumentSet const& attrs) {
     auto& source = domain.impl().source();
     auto record = std::move(debugRecord.impl()->_record);
     if (record) {
