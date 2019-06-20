@@ -218,8 +218,7 @@ void doLogDebug(LogDebugRecord&& debugRecord,
             logv2::detail::doLogDebug(                                                         \
                 std::move(debugRecord), (OPTIONS).domain(), FMT_STRING(MESSAGE), __VA_ARGS__); \
         }                                                                                      \
-    \
-} while (false)
+    } while (false)
 
 #define LOGV2_DEBUG1(MESSAGE, ...) \
     LOGV2_DEBUG1_OPTIONS(::mongo::logv2::LogOptions{}, MESSAGE, __VA_ARGS__)

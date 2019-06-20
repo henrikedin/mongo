@@ -33,8 +33,6 @@
 
 #include "mongo/logv2/log_test_v2.h"
 
-#include <iostream>
-#include <sstream>
 #include <string>
 #include <vector>
 
@@ -46,101 +44,10 @@
 #include "mongo/logv2/ramlog_sink.h"
 #include "mongo/logv2/text_formatter.h"
 #include "mongo/stdx/thread.h"
-//#include "mongo/logv2/log_component_settings.h"
-//#include "mongo/platform/compiler.h"
-//#include "mongo/unittest/unittest.h"
-//#include "mongo/util/concurrency/thread_name.h"
-//#include "mongo/util/log.h"
-//#include "mongo/util/str.h"
 
-// struct json_visitor {
-//    template <typename T>
-//    void visit_object(T& obj);
-//
-//    template <typename T>
-//    void visit(T& obj) {
-//        visit_object(obj);
-//    }
-//
-//    template <>
-//    void visit<double>(double& obj) {
-//        ss << obj;
-//    }
-//
-//	template <>
-//    void visit<mongo::StringData>(mongo::StringData& obj) {
-//        ss << obj.toString();
-//    }
-//
-//    template <typename T>
-//    void visit_member(const char* name, T& member) {
-//        if (!first_member)
-//            ss << ',';
-//        ss << '"' << name << "\":";
-//        visit(member);
-//        first_member = false;
-//    }
-//
-//    std::string to_string() {
-//        return ss.str();
-//    }
-//
-//    std::stringstream ss;
-//    bool first_member = true;
-//};
-//
-// template <typename T>
-// void json_visitor::visit_object(T& obj) {
-//    ss << "{";
-//    first_member = true;
-//    obj.visit_members(*this);
-//    ss << "}";
-//}
-//
-// struct point {
-//    double x, y;
-//    point() : x(0.0), y(0.0) {}
-//    point(double _x, double _y) : x(_x), y(_y) {}
-//
-//    template <typename Visitor>
-//    void visit_members(Visitor& v) {
-//        v.visit_member("fmt", mongo::StringData("({:.1f}, {:.1f})"));
-//        v.visit_member("x", x);
-//        v.visit_member("y", y);
-//    }
-//};
-//
-// struct triangle {
-//    point p1{1.0, 2.0};
-//    point p2{3.0, 4.0};
-//    point p3{5.0, 6.0};
-//
-//    template <typename Visitor>
-//    void visit_members(Visitor& v) {
-//        v.visit_member("fmt", mongo::StringData ("{} {} {}"));
-//        v.visit_member("p1", p1);
-//        v.visit_member("p2", p2);
-//        v.visit_member("p3", p3);
-//    }
-//};
-//
-// namespace fmt {
-// template <>
-// struct formatter<point> {
-//    template <typename ParseContext>
-//    constexpr auto parse(ParseContext& ctx) {
-//        return ctx.begin();
-//    }
-//
-//    template <typename FormatContext>
-//    auto format(const point& p, FormatContext& ctx) {
-//        return format_to(ctx.out(), "({:.1f}, {:.1f})", p.x, p.y);
-//    }
-//};
-//}  // namespace fmt
+using namespace mongo::logv2;
 
 namespace mongo {
-namespace logv2 {
 namespace {
 class LogTestBackend
     : public boost::log::sinks::
@@ -170,70 +77,13 @@ public:
     };
 
     void operator()(boost::log::record_view const& rec, boost::log::formatting_ostream& strm) {
-        using namespace boost::log;
-
-        StringData message = extract<StringData>(attributes::message(), rec).get();
-        const auto& attrs = extract<AttributeArgumentSet>(attributes::attributes(), rec).get();
+        StringData message = boost::log::extract<StringData>(attributes::message(), rec).get();
+        const auto& attrs =
+            boost::log::extract<AttributeArgumentSet>(attributes::attributes(), rec).get();
 
         strm << fmt::internal::vformat(to_string_view(message), attrs.values);
     }
 };
-}  // namespace
-}  // namespace logv2
-}  // namespace mongo
-
-using namespace mongo::logv2;
-
-namespace mongo {
-namespace {
-
-
-// template <typename S, typename Tuple, std::size_t... I>
-// void performLog(S const& s, Tuple&& t, std::index_sequence<I...>) {
-//    auto str = fmt::format(s, std::get<I>(t)...);
-//    int i = 5;
-//}
-//
-// template <typename S, typename... Args>
-// void doLog(S const& s, Args&&... args) {
-//    auto saved_args = std::make_tuple((args.value)...);
-//    performLog(s, saved_args, std::index_sequence_for<Args...>{});
-//}
-
-template <typename S, typename... Args>
-void doLog(S const& s, fmt::internal::named_arg<Args, char>&&... args) {
-    // auto str = fmt::format(s, (args.value)...);
-    // int i = 5;
-    // std::apply(fmt::format, saved_args);
-    // auto str = fmt::format();
-}
-
-#define DOTHELOG(MESSAGE, ...) doLog(FMT_STRING(MESSAGE), __VA_ARGS__)
-
-#define _GET_NTH_ARG(_1, _2, _3, _4, _5, N, ...) N
-
-#define _fe_0(_call, ...)
-
-#define _fe_1(_call, x) _call(x)
-
-#define _fe_2(_call, x, ...) _call(x) _fe_1(_call, __VA_ARGS__)
-
-#define _fe_3(_call, x, ...) _call(x) _fe_2(_call, __VA_ARGS__)
-
-#define _fe_4(_call, x, ...) _call(x) _fe_3(_call, __VA_ARGS__)
-
-
-#define CALL_MACRO_X_FOR_EACH(x, ...) \
-    _GET_NTH_ARG("ignored", ##__VA_ARGS__, _fe_4, _fe_3, _fe_2, _fe_1, _fe_0)(x, ##__VA_ARGS__)
-
-#define CONSTRUCT_NAMED_ARG(x) make_named##x
-#define DOTHELOG2(MESSAGE, ...) \
-    doLog(FMT_STRING(MESSAGE), CALL_MACRO_X_FOR_EACH(CONSTRUCT_NAMED_ARG, __VA_ARGS__))
-
-template <typename T>
-fmt::internal::named_arg<T, char> make_named(const char* n, T&& val) {
-    return fmt::internal::named_arg<T, char>(n, std::forward<T>(val));
-}
 
 TEST_F(LogTestV2, logBasic) {
     std::vector<std::string> lines;
@@ -259,20 +109,6 @@ TEST_F(LogTestV2, logBasic) {
 
     LOGV2("test {}", "name"_attr = "StringData"_sd);
     ASSERT(lines.back() == "test StringData");
-
-    // LOGV2_WARNING("test {1} {0}", "asd"_a = 3, "sfd"_a = "sfd2", "dfg"_a = 46);
-    // LOGV2_STABLE("thestableid"_sd, "test {0} {1}", "asd"_a = 3, "sfd"_a = "sfd2", "dfg"_a = 46);
-    // LOGV2_OPTIONS(
-    //    {LogTag::kStartupWarnings}, "test {0} {1}", "asd"_a = 3, "sfd"_a = "sfd", "dfg"_a = 46);
-
-    // LOGV2_OPTIONS({LogComponent::kStorageRecovery},
-    //              "test {0} {1}",
-    //              "asd"_a = 3,
-    //              "sfd"_a = "sfd",
-    //              "dfg"_a = 46);
-
-
-    // LOGV2_DEBUG1("test {:d} {}", "asd"_a = 3, "sfd"_a = "sfd", "dfg"_a = 46);
 }
 
 TEST_F(LogTestV2, logJSON) {
@@ -369,21 +205,6 @@ TEST_F(LogTestV2, logRamlog) {
     ASSERT(verifyRamLog());
     LOGV2("test2");
     ASSERT(verifyRamLog());
-
-    // LOGV2("test {}", "name"_a = 1);
-    // ASSERT(lines.back() == "test 1");
-
-    // LOGV2("test {:d}", "name"_a = 2);
-    // ASSERT(lines.back() == "test 2");
-
-    // LOGV2("test {}", "name"_a = "char*");
-    // ASSERT(lines.back() == "test char*");
-
-    // LOGV2("test {}", "name"_a = std::string("std::string"));
-    // ASSERT(lines.back() == "test std::string");
-
-    // LOGV2("test {}", "name"_a = "StringData"_sd);
-    // ASSERT(lines.back() == "test StringData");
 }
 
 TEST_F(LogTestV2, MultipleDomains) {
