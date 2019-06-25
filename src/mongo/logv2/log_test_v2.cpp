@@ -85,6 +85,27 @@ public:
     }
 };
 
+class LogDuringInitTester
+{
+public:
+	LogDuringInitTester()
+	{
+        std::vector<std::string> lines;
+        auto sink = LogTestBackend::create(lines);
+        sink->set_filter(
+            ComponentSettingsFilter(LogManager::global().getGlobalDomain().settings()));
+        sink->set_formatter(PlainFormatter());
+        LogManager::global().getGlobalDomain().impl().core()->add_sink(sink);
+
+		LOGV2("log during init");
+        ASSERT(lines.back() == "log during init");
+
+		LogManager::global().getGlobalDomain().impl().core()->remove_sink(sink);
+	}
+};
+
+LogDuringInitTester logDuringInit;
+
 TEST_F(LogTestV2, logBasic) {
     std::vector<std::string> lines;
     auto sink = LogTestBackend::create(lines);
