@@ -138,10 +138,15 @@ public:
             extract<LogSeverity>(attributes::severity(), rec).get().toStringDataCompact();
         StringData component =
             extract<LogComponent>(attributes::component(), rec).get().getNameForLog();
+        std::string tag;
+        LogTag tags = extract<LogTag>(attributes::tags(), rec).get();
+        if (tags != LogTag::kNone) {
+            tag = fmt::format(",\"tags\":{}", tags);
+        }
 
         auto formatted_body = fmt::format(
-            "{{\"ts\":\"{}\",\"s\":\"{}\"{: <{}}\"c\":\"{}\"{: "
-            "<{}}\"ctx\":\"{}\",{}\"msg\":\"{}\",\"attr\":{}}}",
+            "{{\"t\":\"{}\",\"s\":\"{}\"{: <{}}\"c\":\"{}\"{: "
+            "<{}}\"ctx\":\"{}\",{}\"msg\":\"{}\"{}{}{}}}",
             dateToISOStringUTC(extract<Date_t>(attributes::time_stamp(), rec).get()),
             severity,
             ",",
@@ -152,7 +157,9 @@ public:
             extract<StringData>(attributes::thread_name(), rec).get(),
             id,
             message,
-            ss.str());
+            attrs.names.empty() ? "" : ",\"attr\":",
+            attrs.names.empty() ? "" : ss.str(),
+            tag);
         strm << formatted_body;
     }
 };

@@ -70,24 +70,24 @@ const ::mongo::logv2::LogComponent MongoLogDefaultComponent_component =
 namespace mongo {
 namespace logv2 {
 namespace detail {
-void doLogImpl(::mongo::logv2::LogSeverity const& severity,
-               ::mongo::logv2::LogOptions const& options,
-               ::mongo::StringData stable_id,
-               ::mongo::StringData message,
-               ::mongo::logv2::AttributeArgumentSet const& attrs);
+void doLogImpl(LogSeverity const& severity,
+               LogOptions const& options,
+               StringData stable_id,
+               StringData message,
+               AttributeArgumentSet const& attrs);
 
 void doLogRecordImpl(LogRecord&& debugRecord,
-                    ::mongo::logv2::LogDomain& domain,
-                    ::mongo::StringData message,
-                    ::mongo::logv2::AttributeArgumentSet const& attrs);
+                     LogDomain& domain,
+                     StringData message,
+                     AttributeArgumentSet const& attrs);
 
 template <typename S, typename... Args>
-void doLog(::mongo::logv2::LogSeverity const& severity,
-           ::mongo::logv2::LogOptions const& options,
-           ::mongo::StringData stable_id,
+void doLog(LogSeverity const& severity,
+           LogOptions const& options,
+           StringData stable_id,
            S const& message,
            fmt::internal::named_arg<Args, char>&&... args) {
-    ::mongo::logv2::AttributeArgumentSet attr_set;
+    AttributeArgumentSet attr_set;
     auto arg_store = fmt::internal::make_args_checked(message, (args.value)...);
     attr_set.values = arg_store;
     (attr_set.names.push_back(::mongo::StringData(args.name.data(), args.name.size())), ...);
@@ -97,10 +97,10 @@ void doLog(::mongo::logv2::LogSeverity const& severity,
 
 template <typename S, typename... Args>
 void doLogRecord(LogRecord&& record,
-                ::mongo::logv2::LogDomain& domain,
-                S const& message,
-                fmt::internal::named_arg<Args, char>&&... args) {
-    ::mongo::logv2::AttributeArgumentSet attr_set;
+                 LogDomain& domain,
+                 S const& message,
+                 fmt::internal::named_arg<Args, char>&&... args) {
+    AttributeArgumentSet attr_set;
     auto arg_store = fmt::internal::make_args_checked(message, (args.value)...);
     attr_set.values = arg_store;
     (attr_set.names.push_back(::mongo::StringData(args.name.data(), args.name.size())), ...);

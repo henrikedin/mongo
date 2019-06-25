@@ -49,11 +49,11 @@ log_source& lg() {
 }
 }
 
-void doLogImpl(::mongo::logv2::LogSeverity const& severity,
-               ::mongo::logv2::LogOptions const& options,
-               ::mongo::StringData stable_id,
-               ::mongo::StringData message,
-               ::mongo::logv2::AttributeArgumentSet const& attrs) {
+void doLogImpl(LogSeverity const& severity,
+               LogOptions const& options,
+               StringData stable_id,
+               StringData message,
+               AttributeArgumentSet const& attrs) {
     auto& source = options.domain().impl().source();
     auto record = source.open_record(severity, options.component(), options.tags(), stable_id);
     if (record) {
@@ -72,9 +72,9 @@ void doLogImpl(::mongo::logv2::LogSeverity const& severity,
 }
 
 void doLogRecordImpl(LogRecord&& record,
-                    ::mongo::logv2::LogDomain& domain,
-                    ::mongo::StringData message,
-                    ::mongo::logv2::AttributeArgumentSet const& attrs) {
+                     LogDomain& domain,
+                     StringData message,
+                     AttributeArgumentSet const& attrs) {
     auto& source = domain.impl().source();
     auto rec = std::move(record.impl()->_record);
     if (rec) {

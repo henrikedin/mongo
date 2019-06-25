@@ -28,8 +28,8 @@
  */
 
 #include "mongo/logv2/log_domain.h"
-#include "mongo/logv2/log_record_impl.h"
 #include "mongo/logv2/log_domain_impl.h"
+#include "mongo/logv2/log_record_impl.h"
 
 namespace mongo {
 namespace logv2 {

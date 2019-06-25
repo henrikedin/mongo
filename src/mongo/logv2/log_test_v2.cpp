@@ -109,6 +109,27 @@ TEST_F(LogTestV2, logBasic) {
 
     LOGV2("test {}", "name"_attr = "StringData"_sd);
     ASSERT(lines.back() == "test StringData");
+
+    LOGV2_OPTIONS({LogTag::kStartupWarnings}, "test");
+    ASSERT(lines.back() == "test");
+}
+
+TEST_F(LogTestV2, logText) {
+    std::vector<std::string> lines;
+    auto sink = LogTestBackend::create(lines);
+    sink->set_filter(ComponentSettingsFilter(LogManager::global().getGlobalDomain().settings()));
+    sink->set_formatter(TextFormatter());
+    attach(sink);
+
+    LOGV2_OPTIONS({LogTag::kNone}, "warning");
+    ASSERT(lines.back().rfind("** WARNING: warning") == std::string::npos);
+
+    LOGV2_OPTIONS({LogTag::kStartupWarnings}, "warning");
+    ASSERT(lines.back().rfind("** WARNING: warning") != std::string::npos);
+
+    LOGV2_OPTIONS({static_cast<LogTag::Value>(LogTag::kStartupWarnings | LogTag::kJavascript)},
+                  "warning");
+    ASSERT(lines.back().rfind("** WARNING: warning") != std::string::npos);
 }
 
 TEST_F(LogTestV2, logJSON) {
@@ -122,14 +143,15 @@ TEST_F(LogTestV2, logJSON) {
 
     LOGV2("test");
     log = mongo::fromjson(lines.back());
-    ASSERT(log.getField("ts"_sd).String() == dateToISOStringUTC(Date_t::lastNowForTest()));
+    ASSERT(log.getField("t"_sd).String() == dateToISOStringUTC(Date_t::lastNowForTest()));
     ASSERT(log.getField("s"_sd).String() == LogSeverity::Info().toStringDataCompact());
     ASSERT(log.getField("c"_sd).String() ==
            LogComponent(MONGO_LOGV2_DEFAULT_COMPONENT).getNameForLog());
     ASSERT(log.getField("ctx"_sd).String() == getThreadName());
     ASSERT(!log.hasField("id"_sd));
     ASSERT(log.getField("msg"_sd).String() == "test");
-    ASSERT(log.getField("attr"_sd).Obj().nFields() == 0);
+    ASSERT(!log.hasField("attr"_sd));
+    ASSERT(!log.hasField("tags"_sd));
 
     LOGV2("test {}", "name"_attr = 1);
     log = mongo::fromjson(lines.back());
@@ -142,6 +164,11 @@ TEST_F(LogTestV2, logJSON) {
     ASSERT(log.getField("msg"_sd).String() == "test {name:d}");
     ASSERT(log.getField("attr"_sd).Obj().nFields() == 1);
     ASSERT(log.getField("attr"_sd).Obj().getField("name").Int() == 2);
+
+    LOGV2_OPTIONS({LogTag::kStartupWarnings}, "warning");
+    log = mongo::fromjson(lines.back());
+    ASSERT(log.getField("msg"_sd).String() == "warning");
+    ASSERT(log.getField("tags"_sd).Int() == LogTag::kStartupWarnings);
 }
 
 TEST_F(LogTestV2, logThread) {
@@ -151,32 +178,34 @@ TEST_F(LogTestV2, logThread) {
     sink->set_formatter(PlainFormatter());
     attach(sink);
 
-    stdx::thread t1([]() {
-        for (int i = 0; i < 100; ++i)
+    constexpr int kNumPerThread = 100;
+    std::vector<stdx::thread> threads;
+
+    threads.emplace_back([&]() {
+        for (int i = 0; i < kNumPerThread; ++i)
             LOGV2("thread1");
     });
 
-    stdx::thread t2([]() {
-        for (int i = 0; i < 100; ++i)
+    threads.emplace_back([&]() {
+        for (int i = 0; i < kNumPerThread; ++i)
             LOGV2("thread2");
     });
 
-    stdx::thread t3([]() {
-        for (int i = 0; i < 100; ++i)
+    threads.emplace_back([&]() {
+        for (int i = 0; i < kNumPerThread; ++i)
             LOGV2("thread3");
     });
 
-    stdx::thread t4([]() {
-        for (int i = 0; i < 100; ++i)
+    threads.emplace_back([&]() {
+        for (int i = 0; i < kNumPerThread; ++i)
             LOGV2("thread4");
     });
 
-    t1.join();
-    t2.join();
-    t3.join();
-    t4.join();
+    for (auto&& thread : threads) {
+        thread.join();
+    }
 
-    ASSERT(lines.size() == 400);
+    ASSERT(lines.size() == threads.size() * kNumPerThread);
 }
 
 TEST_F(LogTestV2, logRamlog) {

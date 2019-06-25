@@ -38,6 +38,7 @@
 #include "mongo/logv2/attributes.h"
 #include "mongo/logv2/log_component.h"
 #include "mongo/logv2/log_severity.h"
+#include "mongo/logv2/log_tag.h"
 #include "mongo/util/time_support.h"
 
 #include <fmt/format.h>
@@ -64,7 +65,12 @@ public:
             extract<LogSeverity>(attributes::severity(), rec).get().toStringDataCompact(),
             extract<LogComponent>(attributes::component(), rec).get().getNameForLog(),
             extract<StringData>(attributes::thread_name(), rec).get());
-        strm << formatted_body << formatted_message;
+
+        strm << formatted_body;
+        if (extract<LogTag>(attributes::tags(), rec).get().has(LogTag::kStartupWarnings)) {
+            strm << "** WARNING: ";
+        }
+        strm << formatted_message;
     }
 };
 
