@@ -63,16 +63,21 @@ public:
             if (!first)
                 ss << ",";
             first = false;
-            bool arithmetic = attrs.values.get(i).is_arithmetic();
+            bool is_string = attrs.values.get(i).type() == fmt::internal::type::string_type ||
+                attrs.values.get(i).type() == fmt::internal::type::cstring_type;
             ss << "\"" << attrs.names[i] << "\":";
-            if (!arithmetic)
+            if (is_string)
                 ss << "\"";
 
-            fmt::basic_memory_buffer<char> buffer;
-            fmt::vformat_to(buffer, fmt::format("{{{}}}", i), attrs.values);
+            fmt::memory_buffer buffer;
+            auto format_str = fmt::format(
+                attrs.values.get(i).type() == fmt::internal::type::custom_type ? "{{{}:j}}"
+                                                                               : "{{{}}}",
+                i);
+            fmt::vformat_to(buffer, format_str, attrs.values);
             ss << fmt::to_string(buffer);
 
-            if (!arithmetic)
+            if (is_string)
                 ss << "\"";
         }
         ss << "}";

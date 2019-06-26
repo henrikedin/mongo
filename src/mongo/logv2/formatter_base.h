@@ -29,19 +29,38 @@
 
 #pragma once
 
-#include <boost/container/small_vector.hpp>
-#include <fmt/format.h>
-
-#include "mongo/base/string_data.h"
-
 namespace mongo {
 namespace logv2 {
+struct FormatterBase {
+public:
+    template <typename ParseContext>
+    constexpr auto parse(ParseContext& ctx) {
+        switch (*ctx.begin()) {
+            case 't':
+                _outputFormat = OutputFormat::Text;
+                break;
+            case 'j':
+                _outputFormat = OutputFormat::Json;
+                break;
+            case 'b':
+                _outputFormat = OutputFormat::Bson;
+                break;
+            case '}':
+                return ctx.begin();
+        }
+        return ctx.begin() + 1;
+    }
 
-struct AttributeArgumentSet {
-    boost::container::small_vector<StringData, fmt::internal::max_packed_args> names;
-    fmt::format_args values;
+protected:
+    enum class OutputFormat { Unspecified, Text, Json, Bson };
+
+    OutputFormat output_format() const {
+        return _outputFormat;
+    }
+
+private:
+    OutputFormat _outputFormat{OutputFormat::Unspecified};
 };
-
 
 }  // namespace logv2
 }  // namespace mongo

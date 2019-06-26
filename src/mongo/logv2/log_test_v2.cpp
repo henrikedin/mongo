@@ -38,12 +38,53 @@
 
 #include "mongo/bson/json.h"
 #include "mongo/logv2/component_settings_filter.h"
+#include "mongo/logv2/formatter_base.h"
 #include "mongo/logv2/json_formatter.h"
 #include "mongo/logv2/log.h"
 #include "mongo/logv2/log_component.h"
 #include "mongo/logv2/ramlog_sink.h"
 #include "mongo/logv2/text_formatter.h"
 #include "mongo/stdx/thread.h"
+
+namespace {
+struct TypeWithCustomFormatting {
+    TypeWithCustomFormatting() {}
+    TypeWithCustomFormatting(double x, double y) : _x(x), _y(y) {}
+
+    double _x{0.0};
+    double _y{0.0};
+
+    std::string toString() const {
+        return fmt::format("(x: {}, y: {})", _x, _y);
+    }
+
+    std::string toJson() const {
+        return fmt::format("{{\"x\": {}, \"y\": {}}}", _x, _y);
+    }
+};
+}
+
+
+namespace fmt {
+template <>
+struct formatter<TypeWithCustomFormatting> : public mongo::logv2::FormatterBase {
+    template <typename FormatContext>
+    auto format(const TypeWithCustomFormatting& obj, FormatContext& ctx) {
+        switch (output_format()) {
+            case OutputFormat::Json:
+                return format_to(ctx.out(), "{}", obj.toJson());
+
+            case OutputFormat::Bson:
+                return format_to(ctx.out(), "{}", "bson impl here");
+
+            case OutputFormat::Text:
+            default:
+                return format_to(ctx.out(), "{}", obj.toString());
+        }
+    }
+};
+}  // namespace fmt
+
 
 using namespace mongo::logv2;
 
@@ -85,11 +126,9 @@ public:
     }
 };
 
-class LogDuringInitTester
-{
+class LogDuringInitTester {
 public:
-	LogDuringInitTester()
-	{
+    LogDuringInitTester() {
         std::vector<std::string> lines;
         auto sink = LogTestBackend::create(lines);
         sink->set_filter(
@@ -97,11 +136,11 @@ public:
         sink->set_formatter(PlainFormatter());
         LogManager::global().getGlobalDomain().impl().core()->add_sink(sink);
 
-		LOGV2("log during init");
+        LOGV2("log during init");
         ASSERT(lines.back() == "log during init");
 
-		LogManager::global().getGlobalDomain().impl().core()->remove_sink(sink);
-	}
+        LogManager::global().getGlobalDomain().impl().core()->remove_sink(sink);
+    }
 };
 
 LogDuringInitTester logDuringInit;
@@ -133,6 +172,13 @@ TEST_F(LogTestV2, logBasic) {
 
     LOGV2_OPTIONS({LogTag::kStartupWarnings}, "test");
     ASSERT(lines.back() == "test");
+
+    TypeWithCustomFormatting t(1.0, 2.0);
+    LOGV2("{} custom formatting", "name"_attr = t);
+    ASSERT(lines.back() == t.toString() + " custom formatting");
+
+    LOGV2("{:j} custom formatting, force json", "name"_attr = t);
+    ASSERT(lines.back() == t.toJson() + " custom formatting, force json");
 }
 
 TEST_F(LogTestV2, logText) {
@@ -151,6 +197,10 @@ TEST_F(LogTestV2, logText) {
     LOGV2_OPTIONS({static_cast<LogTag::Value>(LogTag::kStartupWarnings | LogTag::kJavascript)},
                   "warning");
     ASSERT(lines.back().rfind("** WARNING: warning") != std::string::npos);
+
+    TypeWithCustomFormatting t(1.0, 2.0);
+    LOGV2("{} custom formatting", "name"_attr = t);
+    ASSERT(lines.back().rfind(t.toString() + " custom formatting") != std::string::npos);
 }
 
 TEST_F(LogTestV2, logJSON) {
@@ -190,6 +240,19 @@ TEST_F(LogTestV2, logJSON) {
     log = mongo::fromjson(lines.back());
     ASSERT(log.getField("msg"_sd).String() == "warning");
     ASSERT(log.getField("tags"_sd).Int() == LogTag::kStartupWarnings);
+
+    LOGV2_OPTIONS({LogComponent::kControl}, "different component");
+    log = mongo::fromjson(lines.back());
+    ASSERT(log.getField("c"_sd).String() == LogComponent(LogComponent::kControl).getNameForLog());
+    ASSERT(log.getField("msg"_sd).String() == "different component");
+
+    TypeWithCustomFormatting t(1.0, 2.0);
+    LOGV2("{} custom formatting", "name"_attr = t);
+    log = mongo::fromjson(lines.back());
+    ASSERT(log.getField("msg"_sd).String() == "{name} custom formatting");
+    ASSERT(log.getField("attr"_sd).Obj().nFields() == 1);
+    ASSERT(log.getField("attr"_sd).Obj().getField("name").Obj().woCompare(
+               mongo::fromjson(t.toJson())) == 0);
 }
 
 TEST_F(LogTestV2, logThread) {
