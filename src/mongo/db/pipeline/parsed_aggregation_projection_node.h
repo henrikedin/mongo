@@ -151,7 +151,7 @@ protected:
     stdx::unordered_map<size_t, std::unique_ptr<ProjectionNode>> _arrayBranches;
 
     StringMap<boost::intrusive_ptr<Expression>> _expressions;
-    stdx::unordered_set<std::string> _projectedFields;
+    StringSet _projectedFields;
 
     ProjectionPolicies _policies;
 
