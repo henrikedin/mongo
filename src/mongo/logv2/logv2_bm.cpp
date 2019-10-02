@@ -141,14 +141,14 @@ private:
 
         _sink = boost::make_shared<
             boost::log::sinks::synchronous_sink<boost::log::sinks::text_ostream_backend>>(backend);
-        _sink->set_filter(logv2::ComponentSettingsFilter(
-            logv2::LogManager::global().getGlobalDomain().settings()));
+        _sink->set_filter(
+            logv2::ComponentSettingsFilter(logv2::LogManager::global().getGlobalDomain()));
         _sink->set_formatter(logv2::TextFormatter());
-        logv2::LogManager::global().getGlobalDomain().impl().core()->add_sink(_sink);
+        boost::log::core::get()->add_sink(_sink);
     }
 
     void tearDownAppender() {
-        logv2::LogManager::global().getGlobalDomain().impl().core()->remove_sink(_sink);
+        boost::log::core::get()->remove_sink(_sink);
         logv2::LogManager::global().reattachDefaultBackends();
     }
 
