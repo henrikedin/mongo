@@ -41,9 +41,8 @@ public:
     virtual ~LogDomainImpl() {}
 
     virtual LogSource& source() = 0;
-    virtual boost::shared_ptr<boost::log::core> core() = 0;
 
-    LogComponentSettings& settings() {
+    const LogComponentSettings& settings() const {
         return _settings;
     }
 

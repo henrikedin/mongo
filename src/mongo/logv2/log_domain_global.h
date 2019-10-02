@@ -36,7 +36,6 @@ namespace logv2 {
 class LogDomainGlobal : public LogDomainImpl {
 public:
     LogSource& source() override;
-    boost::shared_ptr<boost::log::core> core() override;
 };
 }  // namespace logv2
 }  // namespace mongo

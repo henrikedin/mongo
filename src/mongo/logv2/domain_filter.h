@@ -33,28 +33,26 @@
 #include <boost/log/attributes/value_extraction.hpp>
 
 #include "mongo/logv2/attributes.h"
-#include "mongo/logv2/domain_filter.h"
-#include "mongo/logv2/log_component.h"
-#include "mongo/logv2/log_component_settings.h"
-#include "mongo/logv2/log_severity.h"
+#include "mongo/logv2/log_domain.h"
 
 namespace mongo {
 namespace logv2 {
 
-// Boost::log filter that enables logging if Component+Severity match current settings
-class ComponentSettingsFilter : public DomainFilter<ComponentSettingsFilter> {
+// Boost::log filter that enables logging if domain match
+template <class Filter>
+class DomainFilter {
 public:
-    ComponentSettingsFilter(const LogDomain& domain)
-        : DomainFilter(domain), _settings(domain.settings()) {}
-    bool filter(boost::log::attribute_value_set const& attrs) const {
+    DomainFilter(const LogDomain& domain) : _domain(&domain.impl()) {}
+
+    bool operator()(boost::log::attribute_value_set const& attrs) {
         using namespace boost::log;
 
-        return _settings.shouldLog(extract<LogComponent>(attributes::component(), attrs).get(),
-                                   extract<LogSeverity>(attributes::severity(), attrs).get());
+        return extract<const LogDomainImpl*>(attributes::domain(), attrs).get() == _domain &&
+            static_cast<const Filter*>(this)->filter(attrs);
     }
 
 private:
-    const LogComponentSettings& _settings;
+    const LogDomainImpl* _domain;
 };
 
 }  // namespace logv2

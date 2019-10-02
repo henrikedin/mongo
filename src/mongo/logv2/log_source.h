@@ -29,6 +29,7 @@
 
 #pragma once
 
+#include <boost/log/attributes/constant.hpp>
 #include <boost/log/attributes/function.hpp>
 #include <boost/log/attributes/mutable_constant.hpp>
 #include <boost/log/keywords/channel.hpp>
@@ -45,24 +46,24 @@
 namespace mongo {
 namespace logv2 {
 
+class LogDomainImpl;
+
 // Custom logging source that automatically add our set of attributes
 class LogSource : public boost::log::sources::
                       basic_logger<char, LogSource, boost::log::sources::single_thread_model> {
-private:
 private:
     typedef boost::log::sources::
         basic_logger<char, LogSource, boost::log::sources::single_thread_model>
             base_type;
 
 public:
-    LogSource() : LogSource(boost::log::core::get()) {}
-
-    LogSource(boost::log::core_ptr core)
-        : base_type(core),
+    LogSource(const LogDomainImpl* domain)
+        : _domain(domain),
           _severity(LogSeverity::Log()),
           _component(LogComponent::kDefault),
           _tags(LogTag::kNone),
           _id(StringData{}) {
+        add_attribute_unlocked(attributes::domain(), _domain);
         add_attribute_unlocked(attributes::severity(), _severity);
         add_attribute_unlocked(attributes::component(), _component);
         add_attribute_unlocked(attributes::tags(), _tags);
@@ -99,6 +100,7 @@ public:
     }
 
 private:
+    boost::log::attributes::constant<const LogDomainImpl*> _domain;
     boost::log::attributes::mutable_constant<LogSeverity> _severity;
     boost::log::attributes::mutable_constant<LogComponent> _component;
     boost::log::attributes::mutable_constant<LogTag> _tags;

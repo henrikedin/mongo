@@ -35,7 +35,7 @@ namespace mongo {
 namespace logv2 {
 LogDomain::LogDomain(std::unique_ptr<LogDomainImpl> impl) : _impl(std::move(impl)) {}
 
-LogComponentSettings& LogDomain::settings() {
+const LogComponentSettings& LogDomain::settings() const {
     return impl().settings();
 }
 

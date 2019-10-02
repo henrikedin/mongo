@@ -33,6 +33,11 @@ namespace mongo {
 namespace logv2 {
 namespace attributes {
 
+const boost::log::attribute_name& domain() {
+    static boost::log::attribute_name attr("domain");
+    return attr;
+}
+
 const boost::log::attribute_name& severity() {
     static boost::log::attribute_name attr("severity");
     return attr;

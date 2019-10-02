@@ -46,8 +46,11 @@ public:
     LogDomainImpl& impl() {
         return *_impl;
     }
+    const LogDomainImpl& impl() const {
+        return *_impl;
+    }
 
-    LogComponentSettings& settings();
+    const LogComponentSettings& settings() const;
     LogRecord openRecord(LogSeverity severity, LogComponent component, LogTag tags);
 
 private:
