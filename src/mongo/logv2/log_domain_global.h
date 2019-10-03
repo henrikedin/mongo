@@ -33,7 +33,7 @@
 
 namespace mongo {
 namespace logv2 {
-class LogDomainGlobal : public LogDomainInternal {
+class LogDomainGlobal : public LogDomain::Internal {
 public:
     LogSource& source() override;
 };

@@ -45,13 +45,13 @@ public:
     DomainFilter(const LogDomain& domain) : _domain(&domain.internal()) {}
 
     bool operator()(boost::log::attribute_value_set const& attrs) {
-        return boost::log::extract<const LogDomainInternal*>(attributes::domain(), attrs).get() ==
+        return boost::log::extract<const LogDomain::Internal*>(attributes::domain(), attrs).get() ==
             _domain &&
             static_cast<const Filter*>(this)->filter(attrs);
     }
 
 private:
-    const LogDomainInternal* _domain;
+    const LogDomain::Internal* _domain;
 };
 
 }  // namespace logv2

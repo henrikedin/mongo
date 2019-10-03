@@ -30,14 +30,15 @@
 #pragma once
 
 #include "mongo/logv2/log_component_settings.h"
+#include "mongo/logv2/log_domain.h"
 #include "mongo/logv2/log_source.h"
 
 namespace mongo {
 namespace logv2 {
-class LogDomainInternal {
+class LogDomain::Internal {
 public:
-    LogDomainInternal() {}
-    virtual ~LogDomainInternal();
+    Internal() {}
+    virtual ~Internal();
 
     virtual LogSource& source() = 0;
 

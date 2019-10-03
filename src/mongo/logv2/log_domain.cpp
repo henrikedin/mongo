@@ -33,7 +33,7 @@
 
 namespace mongo {
 namespace logv2 {
-LogDomain::LogDomain(std::unique_ptr<LogDomainInternal> internalDomain)
+LogDomain::LogDomain(std::unique_ptr<LogDomain::Internal> internalDomain)
     : _internal(std::move(internalDomain)) {}
 
 const LogComponentSettings& LogDomain::settings() const {
