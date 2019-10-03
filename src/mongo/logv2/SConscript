@@ -13,6 +13,7 @@ env.Library(
         'log_component.cpp',
         'log_component_settings.cpp',
         'log_domain.cpp',
+        'log_domain_internal.cpp',
         'log_domain_global.cpp',
         'log_manager.cpp',
         'log_record.cpp',

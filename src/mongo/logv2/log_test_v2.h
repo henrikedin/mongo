@@ -30,7 +30,7 @@
 #pragma once
 
 #include "mongo/logv2/log_domain.h"
-#include "mongo/logv2/log_domain_impl.h"
+#include "mongo/logv2/log_domain_internal.h"
 #include "mongo/logv2/log_manager.h"
 #include "mongo/unittest/unittest.h"
 

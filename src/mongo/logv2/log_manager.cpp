@@ -102,18 +102,20 @@ LogDomain& LogManager::getGlobalDomain() {
 void LogManager::detachDefaultBackends() {
     invariant(isDefaultBackendsAttached());
 
-    boost::log::core::get()->remove_sink(_impl->_startupWarningsBackend);
-    boost::log::core::get()->remove_sink(_impl->_globalLogCacheBackend);
-    boost::log::core::get()->remove_sink(_impl->_consoleBackend);
+	auto logCore = boost::log::core::get();
+    logCore->remove_sink(_impl->_startupWarningsBackend);
+    logCore->remove_sink(_impl->_globalLogCacheBackend);
+    logCore->remove_sink(_impl->_consoleBackend);
     _impl->_defaultBackendsAttached = false;
 }
 
 void LogManager::reattachDefaultBackends() {
     invariant(!isDefaultBackendsAttached());
 
-    boost::log::core::get()->add_sink(_impl->_consoleBackend);
-    boost::log::core::get()->add_sink(_impl->_globalLogCacheBackend);
-    boost::log::core::get()->add_sink(_impl->_startupWarningsBackend);
+	auto logCore = boost::log::core::get();
+    logCore->add_sink(_impl->_consoleBackend);
+    logCore->add_sink(_impl->_globalLogCacheBackend);
+    logCore->add_sink(_impl->_startupWarningsBackend);
     _impl->_defaultBackendsAttached = true;
 }
 

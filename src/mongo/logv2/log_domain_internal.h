@@ -29,29 +29,24 @@
 
 #pragma once
 
-#include <boost/log/attributes/attribute_value_set.hpp>
-#include <boost/log/attributes/value_extraction.hpp>
-
-#include "mongo/logv2/attributes.h"
-#include "mongo/logv2/log_domain.h"
+#include "mongo/logv2/log_component_settings.h"
+#include "mongo/logv2/log_source.h"
 
 namespace mongo {
 namespace logv2 {
-
-// Boost::log filter that enables logging if domain match
-template <class Filter>
-class DomainFilter {
+class LogDomainInternal {
 public:
-    DomainFilter(const LogDomain& domain) : _domain(&domain.internal()) {}
+    LogDomainInternal() {}
+    virtual ~LogDomainInternal();
 
-    bool operator()(boost::log::attribute_value_set const& attrs) {
-        return boost::log::extract<const LogDomainInternal*>(attributes::domain(), attrs).get() ==
-            _domain &&
-            static_cast<const Filter*>(this)->filter(attrs);
+    virtual LogSource& source() = 0;
+
+    const LogComponentSettings& settings() const {
+        return _settings;
     }
 
 private:
-    const LogDomainInternal* _domain;
+    LogComponentSettings _settings;
 };
 
 }  // namespace logv2

@@ -29,11 +29,11 @@
 
 #pragma once
 
-#include "mongo/logv2/log_domain_impl.h"
+#include "mongo/logv2/log_domain_internal.h"
 
 namespace mongo {
 namespace logv2 {
-class LogDomainGlobal : public LogDomainImpl {
+class LogDomainGlobal : public LogDomainInternal {
 public:
     LogSource& source() override;
 };

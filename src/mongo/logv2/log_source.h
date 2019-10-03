@@ -46,7 +46,7 @@
 namespace mongo {
 namespace logv2 {
 
-class LogDomainImpl;
+class LogDomainInternal;
 
 // Custom logging source that automatically add our set of attributes
 class LogSource : public boost::log::sources::
@@ -57,7 +57,7 @@ private:
             base_type;
 
 public:
-    LogSource(const LogDomainImpl* domain)
+    LogSource(const LogDomainInternal* domain)
         : _domain(domain),
           _severity(LogSeverity::Log()),
           _component(LogComponent::kDefault),
@@ -100,7 +100,7 @@ public:
     }
 
 private:
-    boost::log::attributes::constant<const LogDomainImpl*> _domain;
+    boost::log::attributes::constant<const LogDomainInternal*> _domain;
     boost::log::attributes::mutable_constant<LogSeverity> _severity;
     boost::log::attributes::mutable_constant<LogComponent> _component;
     boost::log::attributes::mutable_constant<LogTag> _tags;

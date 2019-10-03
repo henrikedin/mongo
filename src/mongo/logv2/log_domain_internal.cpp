@@ -27,28 +27,11 @@
  *    it in the license file.
  */
 
-#pragma once
-
-#include "mongo/logv2/log_component_settings.h"
-#include "mongo/logv2/log_source.h"
-#include <boost/log/core.hpp>
+#include "log_domain_internal.h"
 
 namespace mongo {
 namespace logv2 {
-class LogDomainImpl {
-public:
-    LogDomainImpl() {}
-    virtual ~LogDomainImpl() {}
-
-    virtual LogSource& source() = 0;
-
-    const LogComponentSettings& settings() const {
-        return _settings;
-    }
-
-private:
-    LogComponentSettings _settings;
-};
-
+LogDomainInternal::~LogDomainInternal() {
+}
 }  // namespace logv2
 }  // namespace mongo

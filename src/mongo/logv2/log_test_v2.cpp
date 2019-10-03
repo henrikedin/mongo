@@ -345,7 +345,7 @@ TEST_F(LogTestV2, MultipleDomains) {
     attach(sink);
 
     // Example how a second domain can be created.
-    class OtherDomainImpl : public LogDomainImpl {
+    class OtherDomainImpl : public LogDomainInternal {
     public:
         OtherDomainImpl() {}
 
