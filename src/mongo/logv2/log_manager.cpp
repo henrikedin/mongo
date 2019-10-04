@@ -70,8 +70,8 @@ struct LogManager::Impl {
         _globalLogCacheBackend->set_formatter(TextFormatter());
 
         _startupWarningsBackend = RamLogSink::create(RamLog::get("startupWarnings"));
-        _startupWarningsBackend->set_filter(
-            TaggedSeverityFilter({LogTag::kStartupWarnings}, LogSeverity::Warning()));
+        _startupWarningsBackend->set_filter(TaggedSeverityFilter(
+            _globalDomain, {LogTag::kStartupWarnings}, LogSeverity::Warning()));
         _startupWarningsBackend->set_formatter(TextFormatter());
     }
 
