@@ -45,8 +45,9 @@ public:
     DomainFilter(const LogDomain& domain) : _domain(&domain.internal()) {}
 
     bool operator()(boost::log::attribute_value_set const& attrs) {
-        return boost::log::extract<const LogDomain::Internal*>(attributes::domain(), attrs).get() ==
-            _domain &&
+        using boost::log::extract;
+
+        return extract<const LogDomain::Internal*>(attributes::domain(), attrs).get() == _domain &&
             static_cast<const Filter*>(this)->filter(attrs);
     }
 

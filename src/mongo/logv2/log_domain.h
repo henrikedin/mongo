@@ -43,7 +43,7 @@ class LogDomain {
 public:
     class Internal;
 
-    LogDomain(std::unique_ptr<Internal> internalDomain);
+    explicit LogDomain(std::unique_ptr<Internal> internalDomain);
     Internal& internal() {
         return *_internal;
     }

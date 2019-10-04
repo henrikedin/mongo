@@ -31,6 +31,6 @@
 
 namespace mongo {
 namespace logv2 {
-LogDomain::Internal::~Internal() {}
+LogDomain::Internal::~Internal() = default;
 }  // namespace logv2
 }  // namespace mongo

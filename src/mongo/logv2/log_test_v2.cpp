@@ -89,10 +89,8 @@ struct formatter<TypeWithCustomFormatting> : public mongo::logv2::FormatterBase 
 };
 }  // namespace fmt
 
-
-using namespace mongo::logv2;
-
 namespace mongo {
+namespace logv2 {
 namespace {
 class LogTestBackend
     : public boost::log::sinks::
@@ -429,4 +427,5 @@ TEST_F(LogTestV2, FileLogging) {
 }
 
 }  // namespace
+}  // namespace logv2
 }  // namespace mongo

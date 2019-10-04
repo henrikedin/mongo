@@ -37,7 +37,7 @@ namespace mongo {
 namespace logv2 {
 class LogDomain::Internal {
 public:
-    Internal() {}
+    Internal() = default;
     virtual ~Internal();
 
     virtual LogSource& source() = 0;

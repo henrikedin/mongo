@@ -47,7 +47,7 @@ public:
     ComponentSettingsFilter(const LogDomain& domain)
         : DomainFilter(domain), _settings(domain.settings()) {}
     bool filter(boost::log::attribute_value_set const& attrs) const {
-        using namespace boost::log;
+        using boost::log::extract;
 
         return _settings.shouldLog(extract<LogComponent>(attributes::component(), attrs).get(),
                                    extract<LogSeverity>(attributes::severity(), attrs).get());
