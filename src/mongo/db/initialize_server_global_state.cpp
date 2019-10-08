@@ -58,6 +58,7 @@
 #include "mongo/logger/rotatable_file_manager.h"
 #include "mongo/logger/rotatable_file_writer.h"
 #include "mongo/logger/syslog_appender.h"
+#include "mongo/logv2/log_domain_global.h"
 #include "mongo/platform/process_id.h"
 #include "mongo/util/log.h"
 #include "mongo/util/processinfo.h"
@@ -222,12 +223,14 @@ MONGO_INITIALIZER_GENERAL(ServerLogRedirection,
     MessageEventDetailsEncoder::setMaxLogSizeKBSource(gMaxLogSizeKB);
     LogManager* manager = logger::globalLogManager();
     auto& lv2Manager = logv2::LogManager::global();
+    logv2::LogDomainGlobal::ConfigurationOptions lv2Config;
 
     if (serverGlobalParams.logWithSyslog) {
 #ifdef _WIN32
         return Status(ErrorCodes::InternalError,
                       "Syslog requested in Windows build; command line processor logic error");
 #else
+        lv2Config._syslogEnabled = true;
         std::unique_ptr<logger::Appender<MessageEventEphemeral>> appender;
 
         if (serverGlobalParams.logV2) {
@@ -235,9 +238,10 @@ MONGO_INITIALIZER_GENERAL(ServerLogRedirection,
             appender = std::make_unique<logger::LogV2Appender<MessageEventEphemeral>>(
                 &(lv2Manager.getGlobalDomain()));
 
-            lv2Manager.detachConsoleBackend();
-            lv2Manager.setupSyslogBackend(serverGlobalParams.syslogFacility);
-            lv2Manager.reattachSyslogBackend();
+            lv2Config._consoleEnabled = false;
+            lv2Config._syslogEnabled = true;
+            lv2Config._syslogFacility = serverGlobalParams.syslogFacility;
+
 
         } else {
 
@@ -297,16 +301,16 @@ MONGO_INITIALIZER_GENERAL(ServerLogRedirection,
             }
         }
 
+        lv2Config._consoleEnabled = false;
+        lv2Config._fileEnabled = true;
+        lv2Config._filePath = absoluteLogpath;
+
         std::unique_ptr<logger::Appender<MessageEventEphemeral>> appender;
 
         if (serverGlobalParams.logV2) {
 
             appender = std::make_unique<logger::LogV2Appender<MessageEventEphemeral>>(
                 &(lv2Manager.getGlobalDomain()));
-
-            lv2Manager.detachConsoleBackend();
-            lv2Manager.setupRotatableFileBackend(absoluteLogpath, serverGlobalParams.logAppend);
-            lv2Manager.reattachRotatableFileBackend();
 
             if (serverGlobalParams.logAppend && exists) {
                 log() << "***** SERVER RESTARTED *****";
@@ -355,8 +359,10 @@ MONGO_INITIALIZER_GENERAL(ServerLogRedirection,
     logger::globalLogDomain()->attachAppender(
         std::make_unique<RamLogAppender>(RamLog::get("global")));
 
-    if (serverGlobalParams.logV2)
-        lv2Manager.setOutputFormat(serverGlobalParams.logFormat);
+    if (serverGlobalParams.logV2) {
+        lv2Config._format = serverGlobalParams.logFormat;
+        return lv2Manager.getGlobalDomainImpl().configure(lv2Config);
+    }
 
     return Status::OK();
 }

@@ -30,7 +30,7 @@
 #pragma once
 
 #include "mongo/logv2/log_domain.h"
-#include "mongo/logv2/log_domain_impl.h"
+#include "mongo/logv2/log_domain_global.h"
 #include "mongo/logv2/log_manager.h"
 #include "mongo/unittest/unittest.h"
 
@@ -49,19 +49,25 @@ class LogTestV2 : public unittest::Test {
 
 public:
     LogTestV2() {
-        LogManager::global().detachDefaultBackends();
+        LogDomainGlobal::ConfigurationOptions config;
+        config.makeDisabled();
+        LogManager::global().getGlobalDomainImpl().configure(config);
+        // LogManager::global().detachDefaultBackends();
         /*auto backend = boost::make_shared<LogTestBackend>(_logLines);
         _sink = boost::make_shared<boost::log::sinks::synchronous_sink<LogTestBackend>>(
             std::move(backend));*/
     }
 
     virtual ~LogTestV2() {
-        LogManager::global().reattachDefaultBackends();
-        // LogManager::global().getGlobalDomain().impl().core()->remove_sink(_sink);
-        LogManager::global().getGlobalDomain().impl().core()->remove_all_sinks();
+        for (auto&& sink : _attachedSinks) {
+            LogManager::global().getGlobalDomain().impl().core()->remove_sink(sink);
+        }
+
+        LogManager::global().getGlobalDomainImpl().configure({});
     }
 
     void attach(boost::shared_ptr<boost::log::sinks::sink> sink) {
+        _attachedSinks.push_back(sink);
         LogManager::global().getGlobalDomain().impl().core()->add_sink(std::move(sink));
     }
 
@@ -99,6 +105,8 @@ private:
 
     std::vector<std::string> _logLines;
     boost::shared_ptr<boost::log::sinks::synchronous_sink<LogTestBackend>> _sink;*/
+
+    std::vector<boost::shared_ptr<boost::log::sinks::sink>> _attachedSinks;
 };
 
 }  // namespace logv2

@@ -35,9 +35,6 @@ namespace mongo {
 namespace logv2 {
 LogDomain::LogDomain(std::unique_ptr<LogDomainImpl> impl) : _impl(std::move(impl)) {}
 
-LogComponentSettings& LogDomain::settings() {
-    return impl().settings();
-}
 
 LogRecord LogDomain::openRecord(LogSeverity severity, LogComponent component, LogTag tags) {
     std::unique_ptr<LogRecordImpl> record_impl;

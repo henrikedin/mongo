@@ -47,7 +47,6 @@ public:
         return *_impl;
     }
 
-    LogComponentSettings& settings();
     LogRecord openRecord(LogSeverity severity, LogComponent component, LogTag tags);
 
 private:

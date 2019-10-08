@@ -30,13 +30,40 @@
 #pragma once
 
 #include "mongo/logv2/log_domain_impl.h"
+#include "mongo/logv2/log_format.h"
 
 namespace mongo {
 namespace logv2 {
 class LogDomainGlobal : public LogDomainImpl {
 public:
+    LogDomainGlobal();
+    ~LogDomainGlobal();
+
     LogSource& source() override;
     boost::shared_ptr<boost::log::core> core() override;
+
+    struct ConfigurationOptions {
+        enum class RotationMode { kRename, kReopen };
+
+        bool _consoleEnabled{true};
+        bool _fileEnabled{false};
+        std::string _filePath;
+        RotationMode _fileRotationMode{RotationMode::kRename};
+        bool _syslogEnabled{false};
+        int _syslogFacility{0};
+        LogFormat _format{LogFormat::kDefault};
+
+        void makeDisabled();
+    };
+
+    Status configure(ConfigurationOptions const& options);
+    Status rotate();
+
+    LogComponentSettings& settings();
+
+private:
+    struct Impl;
+    std::unique_ptr<Impl> _impl;
 };
 }  // namespace logv2
 }  // namespace mongo

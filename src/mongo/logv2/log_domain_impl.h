@@ -42,13 +42,6 @@ public:
 
     virtual LogSource& source() = 0;
     virtual boost::shared_ptr<boost::log::core> core() = 0;
-
-    LogComponentSettings& settings() {
-        return _settings;
-    }
-
-private:
-    LogComponentSettings _settings;
 };
 
 }  // namespace logv2

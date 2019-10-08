@@ -38,6 +38,8 @@ namespace mongo {
 namespace logv2 {
 
 class LogDomain;
+class LogDomainGlobal;
+class LogComponentSettings;
 
 /**
  * Container for managing log domains.
@@ -59,6 +61,9 @@ public:
      * Will attach a default console log appender.
      */
     LogDomain& getGlobalDomain();
+    LogDomainGlobal& getGlobalDomainImpl();
+
+    LogComponentSettings& getGlobalSettings();
 
     void setOutputFormat(LogFormat format);
 
@@ -67,28 +72,28 @@ public:
      *
      * @note This function is not thread safe.
      */
-    void detachDefaultBackends();
-    void detachConsoleBackend();
+    // void detachDefaultBackends();
+    // void detachConsoleBackend();
 
-    /**
-     * Reattaches the default log backends
-     *
-     * @note This function is not thread safe.
-     */
-    void reattachDefaultBackends();
-    void reattachConsoleBackend();
+    ///**
+    // * Reattaches the default log backends
+    // *
+    // * @note This function is not thread safe.
+    // */
+    // void reattachDefaultBackends();
+    // void reattachConsoleBackend();
 
-    void setupSyslogBackend(int syslogFacility);
-    void reattachSyslogBackend();
+    // void setupSyslogBackend(int syslogFacility);
+    // void reattachSyslogBackend();
 
-    void setupRotatableFileBackend(std::string path, bool append);
-    void reattachRotatableFileBackend();
-    void rotate();
+    // void setupRotatableFileBackend(std::string path, bool append);
+    // void reattachRotatableFileBackend();
+    // void rotate();
 
     /**
      * Checks if the default log backends are attached
      */
-    bool isDefaultBackendsAttached() const;
+    // bool isDefaultBackendsAttached() const;
 
 private:
     struct Impl;
