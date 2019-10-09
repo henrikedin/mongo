@@ -38,7 +38,8 @@
 namespace mongo {
 namespace logv2 {
 
-// Boost::log filter that enables logging if domain match
+// Boost::log filter that enables logging if domain match. Using CRTP, users should inherit from
+// this and provide the concreate type as the template argument to this class.
 template <class Filter>
 class DomainFilter {
 public:

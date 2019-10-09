@@ -52,7 +52,7 @@ public:
         LogManager::global().detachDefaultBackends();
     }
 
-    virtual ~LogTestV2() {
+    ~LogTestV2() override {
         LogManager::global().reattachDefaultBackends();
         boost::log::core::get()->remove_all_sinks();
     }

@@ -44,6 +44,8 @@ public:
     class Internal;
 
     explicit LogDomain(std::unique_ptr<Internal> internalDomain);
+    ~LogDomain();
+
     Internal& internal() {
         return *_internal;
     }

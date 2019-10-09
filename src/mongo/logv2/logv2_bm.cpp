@@ -35,7 +35,7 @@
 #include "mongo/logger/message_event_utf8_encoder.h"
 #include "mongo/logv2/component_settings_filter.h"
 #include "mongo/logv2/log.h"
-#include "mongo/logv2/log_domain_impl.h"
+#include "mongo/logv2/log_domain_internal.h"
 #include "mongo/logv2/text_formatter.h"
 #include "mongo/platform/basic.h"
 #include "mongo/util/log.h"
