@@ -51,9 +51,8 @@ namespace logv2 {
 class LogSource : public boost::log::sources::
                       basic_logger<char, LogSource, boost::log::sources::single_thread_model> {
 private:
-    typedef boost::log::sources::
-        basic_logger<char, LogSource, boost::log::sources::single_thread_model>
-            base_type;
+    using base_type = boost::log::sources::
+        basic_logger<char, LogSource, boost::log::sources::single_thread_model>;
 
 public:
     LogSource(const LogDomain::Internal* domain)
