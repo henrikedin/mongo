@@ -51,7 +51,7 @@ namespace logv2 {
 class LogSource : public boost::log::sources::
                       basic_logger<char, LogSource, boost::log::sources::single_thread_model> {
 private:
-    using base_type = boost::log::sources::
+    using Base = boost::log::sources::
         basic_logger<char, LogSource, boost::log::sources::single_thread_model>;
 
 public:
@@ -84,13 +84,13 @@ public:
             _component.set(component);
             _tags.set(tags);
             _id.set(stable_id);
-            return base_type::open_record_unlocked();
+            return Base::open_record_unlocked();
         } else
             return boost::log::record();
     }
 
     void push_record(BOOST_RV_REF(boost::log::record) rec) {
-        base_type::push_record_unlocked(boost::move(rec));
+        Base::push_record_unlocked(boost::move(rec));
         _severity.set(LogSeverity::Log());
         _component.set(LogComponent::kDefault);
         _tags.set(LogTag::kNone);
