@@ -62,6 +62,8 @@ public:
 
     LogComponentSettings& settings();
 
+	void unformattedDirectStreamWrite(StringData message);
+
 private:
     struct Impl;
     std::unique_ptr<Impl> _impl;

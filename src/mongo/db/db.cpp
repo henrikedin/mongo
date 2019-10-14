@@ -676,6 +676,8 @@ ExitCode _initAndListen(int listenPort) {
         exitCleanly(EXIT_CLEAN);
     }
 
+	invariant(false);
+
     MONGO_IDLE_THREAD_BLOCK;
     return waitForShutdown();
 }
