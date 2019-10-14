@@ -27,46 +27,8 @@
  *    it in the license file.
  */
 
-#pragma once
+#include "mongo/logger/log_config.h"
 
-#include "mongo/logv2/log_domain_internal.h"
-#include "mongo/logv2/log_format.h"
-
-namespace mongo {
-namespace logv2 {
-class LogDomainGlobal : public LogDomain::Internal {
-public:
-    struct ConfigurationOptions {
-        enum class RotationMode { kRename, kReopen };
-        enum class OpenMode { kTruncate, kAppend };
-
-        bool _consoleEnabled{true};
-        bool _fileEnabled{false};
-        std::string _filePath;
-        RotationMode _fileRotationMode{RotationMode::kRename};
-        OpenMode _fileOpenMode{OpenMode::kTruncate};
-        bool _syslogEnabled{false};
-        int _syslogFacility{-1};  // invalid facility by default, must be set
-        LogFormat _format{LogFormat::kDefault};
-
-        void makeDisabled();
-    };
-
-    LogDomainGlobal();
-    ~LogDomainGlobal();
-
-    LogSource& source() override;
-
-    Status configure(ConfigurationOptions const& options);
-    Status rotate();
-
-    LogComponentSettings& settings();
-
-    void unformattedDirectStreamWrite(StringData message);
-
-private:
-    struct Impl;
-    std::unique_ptr<Impl> _impl;
-};
-}  // namespace logv2
-}  // namespace mongo
+namespace mongo::logger {
+LogSystemConfig globalLogSystemConfig = LogSystemConfig::kNotDetermined;
+}  // namespace mongo::logger

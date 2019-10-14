@@ -100,6 +100,7 @@ baseEnv.Library(
         'logger/console.cpp',
         'logger/log_component.cpp',
         'logger/log_component_settings.cpp',
+        'logger/log_config.cpp',
         'logger/log_manager.cpp',
         'logger/log_severity.cpp',
         'logger/logger.cpp',
