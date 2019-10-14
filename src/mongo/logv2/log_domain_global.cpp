@@ -236,12 +236,11 @@ Status LogDomainGlobal::Impl::rotate() {
 }
 
 void LogDomainGlobal::Impl::unformattedDirectStreamWrite(StringData message) {
-	auto writeToLockedStream = [](std::ostream& stream, StringData message)
-	{
-		stream.write(message.rawData(), message.size());
+    auto writeToLockedStream = [](std::ostream& stream, StringData message) {
+        stream.write(message.rawData(), message.size());
         stream.put('\n');
-		stream.flush();
-	};
+        stream.flush();
+    };
 
     // Hold file backend lock while writing to its stream
     if (_rotatableFileBackend && _currentRotatableFileStream) {

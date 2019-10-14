@@ -49,6 +49,7 @@
 #include "mongo/config.h"
 #include "mongo/db/server_options.h"
 #include "mongo/logger/console_appender.h"
+#include "mongo/logger/log_config.h"
 #include "mongo/logger/logger.h"
 #include "mongo/logger/logv2_appender.h"
 #include "mongo/logger/message_event.h"
@@ -224,6 +225,13 @@ MONGO_INITIALIZER_GENERAL(ServerLogRedirection,
     LogManager* manager = logger::globalLogManager();
     auto& lv2Manager = logv2::LogManager::global();
     logv2::LogDomainGlobal::ConfigurationOptions lv2Config;
+
+    if (serverGlobalParams.logV2) {
+        logger::globalLogSystemConfig = logger::LogSystemConfig::kLogV2;
+    } else {
+        logger::globalLogSystemConfig = logger::LogSystemConfig::kLogV1;
+    }
+
 
     if (serverGlobalParams.logWithSyslog) {
 #ifdef _WIN32
