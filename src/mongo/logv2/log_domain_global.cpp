@@ -89,8 +89,13 @@ struct LogDomainGlobal::Impl {
         RotatableFileBackend;
 
     Impl(LogDomainGlobal& parent);
+    ~Impl();
     Status configure(LogDomainGlobal::ConfigurationOptions const& options);
     Status rotate();
+    void unformattedDirectStreamWrite(StringData message);
+
+    void onFileOpen(std::ostream& stream);
+    void onFileClose(std::ostream& stream);
 
     LogDomainGlobal& _parent;
     LogComponentSettings _settings;
@@ -101,6 +106,7 @@ struct LogDomainGlobal::Impl {
 #ifndef _WIN32
     boost::shared_ptr<SyslogBackend> _syslogBackend;
 #endif
+    std::ostream* _currentRotatableFileStream{nullptr};
 };
 
 LogDomainGlobal::Impl::Impl(LogDomainGlobal& parent) : _parent(parent) {
@@ -125,6 +131,15 @@ LogDomainGlobal::Impl::Impl(LogDomainGlobal& parent) : _parent(parent) {
 
     boost::log::core::get()->add_sink(_globalLogCacheBackend);
     boost::log::core::get()->add_sink(_startupWarningsBackend);
+}
+
+LogDomainGlobal::Impl::~Impl() {
+    if (_rotatableFileBackend) {
+        if (auto backend = _rotatableFileBackend->locked_backend()) {
+            backend->set_open_handler(nullptr);
+            backend->set_close_handler(nullptr);
+        }
+    }
 }
 
 Status LogDomainGlobal::Impl::configure(LogDomainGlobal::ConfigurationOptions const& options) {
@@ -169,6 +184,12 @@ Status LogDomainGlobal::Impl::configure(LogDomainGlobal::ConfigurationOptions co
         auto backend = boost::make_shared<boost::log::sinks::text_file_backend>(
             boost::log::keywords::file_name = options._filePath);
         backend->auto_flush(true);
+        backend->set_open_handler(
+            [this](std::ostream& stream) { _currentRotatableFileStream = &stream; });
+        backend->set_close_handler([this](std::ostream& stream) {
+            if (&stream == _currentRotatableFileStream)
+                _currentRotatableFileStream = nullptr;
+        });
 
         backend->set_file_collector(boost::make_shared<RotateCollector>(options));
 
@@ -214,6 +235,31 @@ Status LogDomainGlobal::Impl::rotate() {
     return Status::OK();
 }
 
+void LogDomainGlobal::Impl::unformattedDirectStreamWrite(StringData message) {
+	auto writeToLockedStream = [](std::ostream& stream, StringData message)
+	{
+		stream.write(message.rawData(), message.size());
+        stream.put('\n');
+		stream.flush();
+	};
+
+    // Hold file backend lock while writing to its stream
+    if (_rotatableFileBackend && _currentRotatableFileStream) {
+        if (auto backend = _rotatableFileBackend->locked_backend()) {
+            if (_currentRotatableFileStream) {
+                writeToLockedStream(*_currentRotatableFileStream, message);
+            }
+        }
+    }
+
+
+    if (_consoleBackend.use_count() > 1) {
+        if (auto backend = _consoleBackend->locked_backend()) {
+            writeToLockedStream(Console::out(), message);
+        }
+    }
+}
+
 LogDomainGlobal::LogDomainGlobal() {
     _impl = std::make_unique<Impl>(*this);
 }
@@ -237,6 +283,10 @@ Status LogDomainGlobal::rotate() {
 
 LogComponentSettings& LogDomainGlobal::settings() {
     return _impl->_settings;
+}
+
+void LogDomainGlobal::unformattedDirectStreamWrite(StringData message) {
+    return _impl->unformattedDirectStreamWrite(message);
 }
 
 }  // namespace logv2

@@ -45,6 +45,8 @@
 #include "mongo/base/string_data.h"
 #include "mongo/logger/log_domain.h"
 #include "mongo/logger/logger.h"
+#include "mongo/logv2/log_domain_global.h"
+#include "mongo/logv2/log_manager.h"
 #include "mongo/platform/compiler.h"
 #include "mongo/stdx/exception.h"
 #include "mongo/stdx/thread.h"
@@ -167,122 +169,130 @@ thread_local int MallocFreeOStreamGuard::terminateDepth = 0;
 
 // must hold MallocFreeOStreamGuard to call
 void writeMallocFreeStreamToLog() {
-    logger::globalLogDomain()
-        ->append(logger::MessageEventEphemeral(Date_t::now(),
-                                               logger::LogSeverity::Severe(),
-                                               getThreadName(),
-                                               mallocFreeOStream.str())
-                     .setIsTruncatable(false))
-        .transitional_ignore();
-    mallocFreeOStream.rewind();
-}
-
-// must hold MallocFreeOStreamGuard to call
-void printSignalAndBacktrace(int signalNum) {
-    mallocFreeOStream << "Got signal: " << signalNum << " (" << strsignal(signalNum) << ").\n";
-    printStackTraceFromSignal(mallocFreeOStream);
-    writeMallocFreeStreamToLog();
-}
-
-// this will be called in certain c++ error cases, for example if there are two active
-// exceptions
-void myTerminate() {
-    MallocFreeOStreamGuard lk{};
-
-    // In c++11 we can recover the current exception to print it.
-    if (std::current_exception()) {
-        mallocFreeOStream << "terminate() called. An exception is active;"
-                          << " attempting to gather more information";
-        writeMallocFreeStreamToLog();
-
-        const std::type_info* typeInfo = nullptr;
-        try {
-            try {
-                throw;
-            } catch (const DBException& ex) {
-                typeInfo = &typeid(ex);
-                mallocFreeOStream << "DBException::toString(): " << redact(ex) << '\n';
-            } catch (const std::exception& ex) {
-                typeInfo = &typeid(ex);
-                mallocFreeOStream << "std::exception::what(): " << redact(ex.what()) << '\n';
-            } catch (const boost::exception& ex) {
-                typeInfo = &typeid(ex);
-                mallocFreeOStream << "boost::diagnostic_information(): "
-                                  << boost::diagnostic_information(ex) << '\n';
-            } catch (...) {
-                mallocFreeOStream << "A non-standard exception type was thrown\n";
-            }
-
-            if (typeInfo) {
-                const std::string name = demangleName(*typeInfo);
-                mallocFreeOStream << "Actual exception type: " << name << '\n';
-            }
-        } catch (...) {
-            mallocFreeOStream << "Exception while trying to print current exception.\n";
-            if (typeInfo) {
-                // It is possible that we failed during demangling. At least try to print the
-                // mangled name.
-                mallocFreeOStream << "Actual exception type: " << typeInfo->name() << '\n';
-            }
-        }
+    if (logger::globalLogDomain()) {
+        logger::globalLogDomain()
+            ->append(logger::MessageEventEphemeral(Date_t::now(),
+                                                   logger::LogSeverity::Severe(),
+                                                   getThreadName(),
+                                                   mallocFreeOStream.str())
+                         .setIsTruncatable(false))
+            .transitional_ignore();
     } else {
-        mallocFreeOStream << "terminate() called. No exception is active";
+		logv2::LogManager::global().getGlobalDomainInternal().unformattedDirectStreamWrite(mallocFreeOStream.str());
+    }
+    
+	mallocFreeOStream.rewind();
+}
+
+
+    // must hold MallocFreeOStreamGuard to call
+    void printSignalAndBacktrace(int signalNum) {
+        mallocFreeOStream << "Got signal: " << signalNum << " (" << strsignal(signalNum) << ").\n";
+        printStackTraceFromSignal(mallocFreeOStream);
+        writeMallocFreeStreamToLog();
     }
 
-    printStackTrace(mallocFreeOStream);
-    writeMallocFreeStreamToLog();
-    breakpoint();
-    endProcessWithSignal(SIGABRT);
-}
+    // this will be called in certain c++ error cases, for example if there are two active
+    // exceptions
+    void myTerminate() {
+        MallocFreeOStreamGuard lk{};
 
-void abruptQuit(int signalNum) {
-    MallocFreeOStreamGuard lk{};
-    printSignalAndBacktrace(signalNum);
-    breakpoint();
-    endProcessWithSignal(signalNum);
-}
+        // In c++11 we can recover the current exception to print it.
+        if (std::current_exception()) {
+            mallocFreeOStream << "terminate() called. An exception is active;"
+                              << " attempting to gather more information";
+            writeMallocFreeStreamToLog();
+
+            const std::type_info* typeInfo = nullptr;
+            try {
+                try {
+                    throw;
+                } catch (const DBException& ex) {
+                    typeInfo = &typeid(ex);
+                    mallocFreeOStream << "DBException::toString(): " << redact(ex) << '\n';
+                } catch (const std::exception& ex) {
+                    typeInfo = &typeid(ex);
+                    mallocFreeOStream << "std::exception::what(): " << redact(ex.what()) << '\n';
+                } catch (const boost::exception& ex) {
+                    typeInfo = &typeid(ex);
+                    mallocFreeOStream
+                        << "boost::diagnostic_information(): " << boost::diagnostic_information(ex)
+                        << '\n';
+                } catch (...) {
+                    mallocFreeOStream << "A non-standard exception type was thrown\n";
+                }
+
+                if (typeInfo) {
+                    const std::string name = demangleName(*typeInfo);
+                    mallocFreeOStream << "Actual exception type: " << name << '\n';
+                }
+            } catch (...) {
+                mallocFreeOStream << "Exception while trying to print current exception.\n";
+                if (typeInfo) {
+                    // It is possible that we failed during demangling. At least try to print the
+                    // mangled name.
+                    mallocFreeOStream << "Actual exception type: " << typeInfo->name() << '\n';
+                }
+            }
+        } else {
+            mallocFreeOStream << "terminate() called. No exception is active";
+        }
+
+        printStackTrace(mallocFreeOStream);
+        writeMallocFreeStreamToLog();
+        breakpoint();
+        endProcessWithSignal(SIGABRT);
+    }
+
+    void abruptQuit(int signalNum) {
+        MallocFreeOStreamGuard lk{};
+        printSignalAndBacktrace(signalNum);
+        breakpoint();
+        endProcessWithSignal(signalNum);
+    }
 
 #if defined(_WIN32)
 
-void myInvalidParameterHandler(const wchar_t* expression,
-                               const wchar_t* function,
-                               const wchar_t* file,
-                               unsigned int line,
-                               uintptr_t pReserved) {
-    severe() << "Invalid parameter detected in function " << toUtf8String(function)
-             << " File: " << toUtf8String(file) << " Line: " << line;
-    severe() << "Expression: " << toUtf8String(expression);
-    severe() << "immediate exit due to invalid parameter";
+    void myInvalidParameterHandler(const wchar_t* expression,
+                                   const wchar_t* function,
+                                   const wchar_t* file,
+                                   unsigned int line,
+                                   uintptr_t pReserved) {
+        severe() << "Invalid parameter detected in function " << toUtf8String(function)
+                 << " File: " << toUtf8String(file) << " Line: " << line;
+        severe() << "Expression: " << toUtf8String(expression);
+        severe() << "immediate exit due to invalid parameter";
 
-    abruptQuit(SIGABRT);
-}
+        abruptQuit(SIGABRT);
+    }
 
-void myPureCallHandler() {
-    severe() << "Pure call handler invoked";
-    severe() << "immediate exit due to invalid pure call";
-    abruptQuit(SIGABRT);
-}
+    void myPureCallHandler() {
+        severe() << "Pure call handler invoked";
+        severe() << "immediate exit due to invalid pure call";
+        abruptQuit(SIGABRT);
+    }
 
 #else
 
-void abruptQuitWithAddrSignal(int signalNum, siginfo_t* siginfo, void* ucontext_erased) {
-    // For convenient debugger access.
-    MONGO_COMPILER_VARIABLE_UNUSED auto ucontext = static_cast<const ucontext_t*>(ucontext_erased);
+    void abruptQuitWithAddrSignal(int signalNum, siginfo_t* siginfo, void* ucontext_erased) {
+        // For convenient debugger access.
+        MONGO_COMPILER_VARIABLE_UNUSED auto ucontext =
+            static_cast<const ucontext_t*>(ucontext_erased);
 
-    MallocFreeOStreamGuard lk{};
+        MallocFreeOStreamGuard lk{};
 
-    const char* action = (signalNum == SIGSEGV || signalNum == SIGBUS) ? "access" : "operation";
-    mallocFreeOStream << "Invalid " << action << " at address: " << siginfo->si_addr;
+        const char* action = (signalNum == SIGSEGV || signalNum == SIGBUS) ? "access" : "operation";
+        mallocFreeOStream << "Invalid " << action << " at address: " << siginfo->si_addr;
 
-    // Writing out message to log separate from the stack trace so at least that much gets
-    // logged. This is important because we may get here by jumping to an invalid address which
-    // could cause unwinding the stack to break.
-    writeMallocFreeStreamToLog();
+        // Writing out message to log separate from the stack trace so at least that much gets
+        // logged. This is important because we may get here by jumping to an invalid address which
+        // could cause unwinding the stack to break.
+        writeMallocFreeStreamToLog();
 
-    printSignalAndBacktrace(signalNum);
-    breakpoint();
-    endProcessWithSignal(signalNum);
-}
+        printSignalAndBacktrace(signalNum);
+        breakpoint();
+        endProcessWithSignal(signalNum);
+    }
 
 #endif
 
@@ -350,4 +360,4 @@ void clearSignalMask() {
     invariant(sigprocmask(SIG_SETMASK, &unblockSignalMask, nullptr) == 0);
 #endif
 }
-}  // namespace mongo
+}  // namespace
