@@ -24,7 +24,7 @@ DEST_DIR=$(git rev-parse --show-toplevel)/src/third_party/$NAME-$VERSION
 cd $SRC_ROOT
 
 if [ ! -f $TARBALL ]; then
-    wget http://downloads.sourceforge.net/project/boost/boost/$VERSION/$TARBALL
+    wget https://dl.bintray.com/boostorg/release/$VERSION/source/$TARBALL
 fi
 
 if [ ! -d $SRC ]; then
