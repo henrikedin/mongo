@@ -34,19 +34,29 @@
 #include "mongo/util/stacktrace.h"
 #include "mongo/platform/basic.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log_domain_global.h"
+#include "mongo/logv2/log_manager.h"
 
 namespace mongo {
 
 void printStackTrace() {
     // NOTE: We disable long-line truncation for the stack trace, because the JSON representation of
     // the stack trace can sometimes exceed the long line limit.
-    printStackTrace(log().setIsTruncatable(false).stream());
+	logv2::LogManager::global().getGlobalDomainInternal().forEachActiveStream(
+        [](std::ostream& stream) {
+		printStackTrace(stream);
+		});
+    //printStackTrace(log().setIsTruncatable(false).stream());
 }
 
 #if defined(_WIN32)
 
 void printWindowsStackTrace(CONTEXT& context) {
-    printWindowsStackTrace(context, log().stream());
+    logv2::LogManager::global().getGlobalDomainInternal().forEachActiveStream(
+        [&context](std::ostream& stream) {
+		printWindowsStackTrace(context, stream);
+		});
+    //printWindowsStackTrace(context, log().stream());
 }
 
 #endif  // defined(_WIN32)

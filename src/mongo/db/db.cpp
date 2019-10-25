@@ -676,7 +676,17 @@ ExitCode _initAndListen(int listenPort) {
         exitCleanly(EXIT_CLEAN);
     }
 
-    //invariant(false);
+    /*struct testspecial {
+        ~testspecial() {
+            int* i = nullptr;
+            *i = 0;
+		}
+    };
+
+	testspecial tspecial;
+    throw std::runtime_error("test");*/
+    std::terminate();
+
 
     MONGO_IDLE_THREAD_BLOCK;
     return waitForShutdown();

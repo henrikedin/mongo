@@ -32,6 +32,8 @@
 #include "mongo/logv2/log_domain_internal.h"
 #include "mongo/logv2/log_format.h"
 
+#include <functional>
+
 namespace mongo {
 namespace logv2 {
 class LogDomainGlobal : public LogDomain::Internal {
@@ -62,6 +64,7 @@ public:
 
     LogComponentSettings& settings();
 
+    void forEachActiveStream(std::function<void(std::ostream&)> callback);
     void unformattedDirectStreamWrite(StringData message);
 
 private:

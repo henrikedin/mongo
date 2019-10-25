@@ -92,6 +92,7 @@ struct LogDomainGlobal::Impl {
     ~Impl();
     Status configure(LogDomainGlobal::ConfigurationOptions const& options);
     Status rotate();
+	void forEachActiveStream(std::function<void(std::ostream&)> callback);
     void unformattedDirectStreamWrite(StringData message);
 
     void onFileOpen(std::ostream& stream);
@@ -235,6 +236,31 @@ Status LogDomainGlobal::Impl::rotate() {
     return Status::OK();
 }
 
+void LogDomainGlobal::Impl::forEachActiveStream(std::function<void(std::ostream&)> callback)
+{
+	auto writeToLockedStream = [callback = std::move(callback)](std::ostream& stream) {
+        callback(stream);
+        stream.put('\n');
+        stream.flush();
+    };
+
+    // Hold file backend lock while writing to its stream
+    if (_rotatableFileBackend && _currentRotatableFileStream) {
+        if (auto backend = _rotatableFileBackend->locked_backend()) {
+            if (_currentRotatableFileStream) {
+                writeToLockedStream(*_currentRotatableFileStream);
+            }
+        }
+    }
+
+
+    if (_consoleBackend.use_count() > 1) {
+        if (auto backend = _consoleBackend->locked_backend()) {
+            writeToLockedStream(Console::out());
+        }
+    }
+}
+
 void LogDomainGlobal::Impl::unformattedDirectStreamWrite(StringData message) {
     auto writeToLockedStream = [](std::ostream& stream, StringData message) {
         stream.write(message.rawData(), message.size());
@@ -282,6 +308,10 @@ Status LogDomainGlobal::rotate() {
 
 LogComponentSettings& LogDomainGlobal::settings() {
     return _impl->_settings;
+}
+
+void LogDomainGlobal::forEachActiveStream(std::function<void(std::ostream&)> callback) {
+	return _impl->forEachActiveStream(std::move(callback));
 }
 
 void LogDomainGlobal::unformattedDirectStreamWrite(StringData message) {

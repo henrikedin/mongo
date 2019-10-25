@@ -39,6 +39,7 @@
 #include <exception>
 #include <iostream>
 #include <memory>
+#include <sstream>
 #include <streambuf>
 #include <typeinfo>
 
@@ -96,46 +97,46 @@ void endProcessWithSignal(int signalNum) {
 #endif
 
 // This should only be used with MallocFreeOSteam
-class MallocFreeStreambuf : public std::streambuf {
-    MallocFreeStreambuf(const MallocFreeStreambuf&) = delete;
-    MallocFreeStreambuf& operator=(const MallocFreeStreambuf&) = delete;
+//class MallocFreeStreambuf : public std::streambuf {
+//    MallocFreeStreambuf(const MallocFreeStreambuf&) = delete;
+//    MallocFreeStreambuf& operator=(const MallocFreeStreambuf&) = delete;
+//
+//public:
+//    MallocFreeStreambuf() {
+//        setp(_buffer, _buffer + maxLogLineSize);
+//    }
+//
+//    StringData str() const {
+//        return StringData(pbase(), pptr() - pbase());
+//    }
+//    void rewind() {
+//        setp(pbase(), epptr());
+//    }
+//
+//private:
+//    static const size_t maxLogLineSize = 100 * 1000;
+//    char _buffer[maxLogLineSize];
+//};
+//
+//class MallocFreeOStream : public std::ostream {
+//    MallocFreeOStream(const MallocFreeOStream&) = delete;
+//    MallocFreeOStream& operator=(const MallocFreeOStream&) = delete;
+//
+//public:
+//    MallocFreeOStream() : std::ostream(&_buf) {}
+//
+//    StringData str() const {
+//        return _buf.str();
+//    }
+//    void rewind() {
+//        _buf.rewind();
+//    }
+//
+//private:
+//    MallocFreeStreambuf _buf;
+//};
 
-public:
-    MallocFreeStreambuf() {
-        setp(_buffer, _buffer + maxLogLineSize);
-    }
-
-    StringData str() const {
-        return StringData(pbase(), pptr() - pbase());
-    }
-    void rewind() {
-        setp(pbase(), epptr());
-    }
-
-private:
-    static const size_t maxLogLineSize = 100 * 1000;
-    char _buffer[maxLogLineSize];
-};
-
-class MallocFreeOStream : public std::ostream {
-    MallocFreeOStream(const MallocFreeOStream&) = delete;
-    MallocFreeOStream& operator=(const MallocFreeOStream&) = delete;
-
-public:
-    MallocFreeOStream() : std::ostream(&_buf) {}
-
-    StringData str() const {
-        return _buf.str();
-    }
-    void rewind() {
-        _buf.rewind();
-    }
-
-private:
-    MallocFreeStreambuf _buf;
-};
-
-MallocFreeOStream mallocFreeOStream;
+std::stringstream mallocFreeOStream;
 
 /**
  * Instances of this type guard the mallocFreeOStream. While locking a mutex isn't guaranteed to
@@ -183,7 +184,7 @@ void writeMallocFreeStreamToLog() {
             .transitional_ignore();
     }
 
-    mallocFreeOStream.rewind();
+    mallocFreeOStream.clear();
 }
 
 
