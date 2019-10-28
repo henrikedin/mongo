@@ -723,7 +723,7 @@ int _main(int argc, char* argv[], char** envp) {
     auto& lv2Manager = logv2::LogManager::global();
     logv2::LogDomainGlobal::ConfigurationOptions lv2Config;
     lv2Config.makeDisabled();
-    lv2Manager.getGlobalDomainInternal().configure(lv2Config);
+    uassertStatusOK(lv2Manager.getGlobalDomainInternal().configure(lv2Config));
 
     mongo::shell_utils::RecordMyLocation(argv[0]);
 
