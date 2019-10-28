@@ -175,6 +175,9 @@ private:
     static inline bool loggingEnabled = true;
 };
 
+/**
+ * Logv2 equivalent of ShellConsoleAppender above. Sharing the lock and LoggingDisabledScope.
+ */
 class ShellBackend final : public boost::log::sinks::text_ostream_backend {
 public:
     void consume(boost::log::record_view const& rec, string_type const& formatted_message) {
@@ -185,6 +188,9 @@ public:
     }
 };
 
+/**
+ * Formatter to provide specialized formatting for logs from javascript engine
+ */
 class ShellFormatter final : private logv2::TextFormatter {
 public:
     void operator()(boost::log::record_view const& rec, boost::log::formatting_ostream& strm) {
