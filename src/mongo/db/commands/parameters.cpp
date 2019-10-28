@@ -42,8 +42,11 @@
 #include "mongo/db/commands.h"
 #include "mongo/db/commands/parameters_gen.h"
 #include "mongo/db/storage/storage_options.h"
+#include "mongo/logger/log_version_util.h"
 #include "mongo/logger/logger.h"
 #include "mongo/logger/parse_log_component_settings.h"
+#include "mongo/logv2/log_domain_global.h"
+#include "mongo/logv2/log_manager.h"
 #include "mongo/util/log.h"
 #include "mongo/util/str.h"
 
@@ -101,8 +104,18 @@ void getLogComponentVerbosity(BSONObj* output) {
         LogComponent component = static_cast<LogComponent::Value>(i);
 
         int severity = -1;
-        if (globalLogDomain()->hasMinimumLogSeverity(component)) {
+        if (!serverGlobalParams.logV2 && globalLogDomain()->hasMinimumLogSeverity(component)) {
             severity = globalLogDomain()->getMinimumLogSeverity(component).toInt();
+        } else if (serverGlobalParams.logV2 &&
+                   logv2::LogManager::global()
+                       .getGlobalDomainInternal()
+                       .settings()
+                       .hasMinimumLogSeverity(logComponentV1toV2(component))) {
+            severity = logv2::LogManager::global()
+                           .getGlobalDomainInternal()
+                           .settings()
+                           .getMinimumLogSeverity(logComponentV1toV2(component))
+                           .toInt();
         }
 
         // Save LogComponent::kDefault LogSeverity at root
@@ -173,12 +186,20 @@ Status setLogComponentVerbosity(const BSONObj& bsonSettings) {
         // Negative value means to clear log level of component.
         if (newSetting.level < 0) {
             globalLogDomain()->clearMinimumLoggedSeverity(newSetting.component);
+            logv2::LogManager::global()
+                .getGlobalDomainInternal()
+                .settings()
+                .clearMinimumLoggedSeverity(logComponentV1toV2(newSetting.component));
             continue;
         }
         // Convert non-negative value to Log()/Debug(N).
         LogSeverity newSeverity =
             (newSetting.level > 0) ? LogSeverity::Debug(newSetting.level) : LogSeverity::Log();
         globalLogDomain()->setMinimumLoggedSeverity(newSetting.component, newSeverity);
+
+        // Apply to both logv1 and logv2, so the redirection from v1 to v2 works.
+        logv2::LogManager::global().getGlobalDomainInternal().settings().setMinimumLoggedSeverity(
+            logComponentV1toV2(newSetting.component), logSeverityV1toV2(newSeverity));
     }
 
     return Status::OK();

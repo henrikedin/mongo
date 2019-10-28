@@ -31,6 +31,7 @@
 
 #include "mongo/base/status.h"
 #include "mongo/logger/appender.h"
+#include "mongo/logger/log_version_util.h"
 #include "mongo/logv2/attribute_argument_set.h"
 #include "mongo/logv2/log_component.h"
 #include "mongo/logv2/log_detail.h"
@@ -83,9 +84,7 @@ public:
             // Similarly, we need to transcode the options. They don't offer a cast
             // operator, so we need to do some metaprogramming on the types.
             logv2::LogOptions{
-                logv2::LogComponent(static_cast<logv2::LogComponent::Value>(
-                    static_cast<std::underlying_type_t<LogComponent::Value>>(
-                        static_cast<LogComponent::Value>(event.getComponent())))),
+                logComponentV1toV2(event.getComponent()),
                 _domain,
                 logv2::LogTag{static_cast<logv2::LogTag::Value>(
                     static_cast<std::underlying_type_t<logv2::LogTag::Value>>(logTagValue) |
