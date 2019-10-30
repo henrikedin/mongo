@@ -117,6 +117,12 @@ if env.ToolchainIs('msvc'):
     # the current source character set (codepage 65001).
     loglib_env.AppendUnique(CCFLAGS=['/wd4828'])
 
+    # permissions.cpp includes windows.h directly, causing issues with boost winapi
+    loglib_env.AppendUnique(
+    CPPDEFINES=[
+        'BOOST_USE_WINDOWS_H',
+    ])
+
 loglib_env.Library(
     target='boost_log', 
     source=[
@@ -136,6 +142,7 @@ loglib_env.Library(
         'libs/log/src/named_scope.cpp',
         'libs/log/src/named_scope_format_parser.cpp',
         'libs/log/src/once_block.cpp',
+        'libs/log/src/permissions.cpp',
         'libs/log/src/process_id.cpp',
         'libs/log/src/process_name.cpp',
         'libs/log/src/record_ostream.cpp',
