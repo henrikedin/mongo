@@ -136,7 +136,6 @@ loglib_env.Library(
         'libs/log/src/named_scope.cpp',
         'libs/log/src/named_scope_format_parser.cpp',
         'libs/log/src/once_block.cpp',
-        'libs/log/src/permissions.cpp',
         'libs/log/src/process_id.cpp',
         'libs/log/src/process_name.cpp',
         'libs/log/src/record_ostream.cpp',
