@@ -29,6 +29,8 @@
 
 #pragma once
 
+#include <iterator>
+
 #include <boost/log/attributes/value_extraction.hpp>
 #include <boost/log/core/record_view.hpp>
 #include <boost/log/expressions/message.hpp>
@@ -44,6 +46,47 @@
 #include <fmt/format.h>
 
 namespace mongo {
+
+template <class CharT = char,
+          class Traits = std::char_traits<CharT>>
+class formatting_ostream_iterator {
+public:
+    using iterator_category = std::output_iterator_tag;
+    using value_type = void;
+    using difference_type = void;
+    using pointer = void;
+    using reference = void;
+
+    using char_type = CharT;
+    using traits_type = Traits;
+    using ostream_type = boost::log::basic_formatting_ostream<CharT, Traits>;
+
+    formatting_ostream_iterator(ostream_type& ostrm)
+        : ostrm_(&ostrm) {  // construct from output stream and delimiter
+    }
+
+    formatting_ostream_iterator& operator=(
+        const CharT& val) {  // insert value into output stream
+        ostrm_->put(val);
+        return *this;
+    }
+
+    formatting_ostream_iterator& operator*() {  // pretend to return designated value
+        return *this;
+    }
+
+    formatting_ostream_iterator& operator++() {  // pretend to preincrement
+        return *this;
+    }
+
+    formatting_ostream_iterator& operator++(int) {  // pretend to postincrement
+        return *this;
+    }
+
+protected:
+    ostream_type* ostrm_;
+};
+
 namespace logv2 {
 
 class TextFormatter {
@@ -70,27 +113,21 @@ public:
         StringData message = extract<StringData>(attributes::message(), rec).get();
         const auto& attrs = extract<AttributeArgumentSet>(attributes::attributes(), rec).get();
 
-        _buffer.clear();
         fmt::format_to(
-            _buffer,
+            formatting_ostream_iterator(strm),
             "{} {:<2} {:<8} [{}] ",
             extract<Date_t>(attributes::timeStamp(), rec).get().toString(),
             extract<LogSeverity>(attributes::severity(), rec).get().toStringDataCompact(),
             extract<LogComponent>(attributes::component(), rec).get().getNameForLog(),
             extract<StringData>(attributes::threadName(), rec).get());
-        strm.write(_buffer.data(), _buffer.size());
 
         if (extract<LogTag>(attributes::tags(), rec).get().has(LogTag::kStartupWarnings)) {
             strm << "** WARNING: ";
         }
 
-        _buffer.clear();
-        fmt::internal::vformat_to(_buffer, to_string_view(message), attrs._values);
-        strm.write(_buffer.data(), _buffer.size());
+		fmt::format_args value_args;
+        fmt::vformat_to(formatting_ostream_iterator(strm), to_string_view(message), value_args);
     }
-
-private:
-    fmt::memory_buffer _buffer;
 };
 
 }  // namespace logv2
