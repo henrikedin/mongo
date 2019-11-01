@@ -43,6 +43,7 @@
 #include "mongo/util/time_support.h"
 
 #include <fmt/format.h>
+#include <stack>
 
 namespace mongo {
 namespace logv2 {
