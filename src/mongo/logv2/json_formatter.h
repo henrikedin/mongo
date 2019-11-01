@@ -36,15 +36,90 @@
 
 #include "mongo/logv2/attribute_argument_set.h"
 #include "mongo/logv2/attributes.h"
+#include "mongo/logv2/formatting_ostream_iterator.h"
 #include "mongo/logv2/log_component.h"
 #include "mongo/logv2/log_severity.h"
 #include "mongo/logv2/log_tag.h"
+#include "mongo/logv2/visitor.h"
 #include "mongo/util/time_support.h"
 
 #include <fmt/format.h>
+#include <stack>
 
 namespace mongo {
 namespace logv2 {
+namespace {
+
+class JsonFormattingVisitor final : public FormattingVisitor {
+public:
+    JsonFormattingVisitor(boost::log::formatting_ostream& strm) : _strm(strm) {}
+
+    void write_int32(StringData name, int32_t val) override {
+        write_name_internal(name);
+        fmt::format_to(formatting_ostream_iterator(_strm), "{}", val);
+    }
+    void write_uint32(StringData name, uint32_t val) override {
+        write_name_internal(name);
+        fmt::format_to(formatting_ostream_iterator(_strm), "{}", val);
+    }
+    void write_int64(StringData name, int64_t val) override {
+        write_name_internal(name);
+        fmt::format_to(formatting_ostream_iterator(_strm), "{}", val);
+    }
+    void write_uint64(StringData name, uint64_t val) override {
+        write_name_internal(name);
+        fmt::format_to(formatting_ostream_iterator(_strm), "{}", val);
+    }
+    void write_bool(StringData name, bool val) override {
+        write_name_internal(name);
+        fmt::format_to(formatting_ostream_iterator(_strm), "{}", val);
+    }
+    void write_char(StringData name, char val) override {
+        write_name_internal(name);
+        fmt::format_to(formatting_ostream_iterator(_strm), "{}", val);
+    }
+    void write_double(StringData name, double val) override {
+        write_name_internal(name);
+        fmt::format_to(formatting_ostream_iterator(_strm), "{}", val);
+    }
+    void write_long_double(StringData name, long double val) override {
+        write_name_internal(name);
+        fmt::format_to(formatting_ostream_iterator(_strm), "{}", val);
+    }
+    void write_string(StringData name, mongo::StringData val) override {
+        write_name_internal(name);
+        fmt::format_to(formatting_ostream_iterator(_strm), "\"{}\"", val);
+    }
+    void write_name(StringData name) override {
+        write_name_internal(name);
+    }
+    void object_begin() override {
+        _strm.put('{');
+        _separator.push(""_sd);
+    }
+    void object_end() override {
+        _strm.put('}');
+        _separator.pop();
+    }
+    void array_begin() override {
+        _strm.put('[');
+        _separator.push(""_sd);
+    }
+    void array_end() override {
+        _strm.put(']');
+        _separator.pop();
+    }
+
+private:
+    void write_name_internal(StringData name) {
+        fmt::format_to(formatting_ostream_iterator(_strm), "{}\"{}\":", _separator.top(), name);
+        _separator.top() = ","_sd;
+    }
+
+    boost::log::formatting_ostream& _strm;
+    std::stack<StringData, std::vector<StringData>> _separator;
+};
+}  // namespace
 
 class JsonFormatter {
 public:
@@ -57,33 +132,6 @@ public:
 
         // Build a JSON object for the user attributes.
         const auto& attrs = extract<AttributeArgumentSet>(attributes::attributes(), rec).get();
-        std::stringstream ss;
-        bool first = true;
-        ss << "{";
-        for (std::size_t i = 0; i < attrs._names.size(); ++i) {
-            if (!first)
-                ss << ",";
-            first = false;
-            bool is_string = attrs._values.get(i).type() == fmt::internal::type::string_type ||
-                attrs._values.get(i).type() == fmt::internal::type::cstring_type;
-            ss << "\"" << attrs._names[i] << "\":";
-            if (is_string)
-                ss << "\"";
-
-            // Call libfmt to extract formatted value from type erased format_args. If we have a
-            // custom formatter, ask for formatting in JSON using :j format specifier.
-            fmt::memory_buffer buffer;
-            auto format_str = fmt::format(
-                attrs._values.get(i).type() == fmt::internal::type::custom_type ? "{{{}:j}}"
-                                                                                : "{{{}}}",
-                i);
-            fmt::vformat_to(buffer, format_str, attrs._values);
-            ss << fmt::to_string(buffer);
-
-            if (is_string)
-                ss << "\"";
-        }
-        ss << "}";
 
         std::string id;
         auto stable_id = extract<StringData>(attributes::stableId(), rec).get();
@@ -114,9 +162,9 @@ public:
             tag = fmt::format(",\"tags\":{}", tags.toJSONArray());
         }
 
-        auto formatted_body = fmt::format(
+        fmt::format_to(formatting_ostream_iterator(strm),
             "{{\"t\":\"{}\",\"s\":\"{}\"{: <{}}\"c\":\"{}\"{: "
-            "<{}}\"ctx\":\"{}\",{}\"msg\":\"{}\"{}{}{}}}",
+            "<{}}\"ctx\":\"{}\",{}\"msg\":\"{}\"{}",
             dateToISOStringUTC(extract<Date_t>(attributes::timeStamp(), rec).get()),
             severity,
             ",",
@@ -127,10 +175,16 @@ public:
             extract<StringData>(attributes::threadName(), rec).get(),
             id,
             message,
-            attrs._names.empty() ? "" : ",\"attr\":",
-            attrs._names.empty() ? "" : ss.str(),
-            tag);
-        strm << formatted_body;
+            attrs._names.empty() ? "" : ",\"attr\":");
+
+        if (!attrs._names.empty()) {
+            JsonFormattingVisitor visitor(strm);
+            visitor.object_begin();
+            attrs._values2.format(&visitor);
+            visitor.object_end();
+		}
+        
+		fmt::format_to(formatting_ostream_iterator(strm), "{}}}", tag);
     }
 
 private:

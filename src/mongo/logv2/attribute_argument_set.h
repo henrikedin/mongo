@@ -35,58 +35,11 @@
 #include <fmt/format.h>
 
 #include "mongo/base/string_data.h"
+#include "mongo/logv2/visitor.h"
 #include "mongo/stdx/variant.h"
 
 namespace mongo {
 namespace logv2 {
-
-class visitor_base {
-public:
-    void write(StringData name, int val) {
-        write_int(name, val);
-	}
-    void write(StringData name, unsigned val) {
-        write_unsigned(name, val);
-    }
-    void write(StringData name, long long val) {
-        write_longlong(name, val);
-    }
-    void write(StringData name, unsigned long long val) {
-        write_unsigned_longlong(name, val);
-    }
-    void write(StringData name, bool val) {
-        write_bool(name, val);
-    }
-    void write(StringData name, char val) {
-        write_char(name, val);
-    }
-    void write(StringData name, double val) {
-        write_double(name, val);
-    }
-    void write(StringData name, long double val) {
-        write_long_double(name, val);
-    }
-    void write(StringData name, const void* val) {
-        write_pointer(name, val);
-    }
-    void write(StringData name, StringData val) {
-        write_string(name, val);
-    }
-    
-	virtual void write_int(StringData name, int val) = 0;
-    virtual void write_unsigned(StringData name, unsigned val) = 0;
-    virtual void write_longlong(StringData name, long long val) = 0;
-    virtual void write_unsigned_longlong(StringData name, unsigned long long val) = 0;
-    virtual void write_bool(StringData name, bool val) = 0;
-    virtual void write_char(StringData name, char val) = 0;
-    virtual void write_double(StringData name, double val) = 0;
-    virtual void write_long_double(StringData name, long double val) = 0;
-    virtual void write_pointer(StringData name, const void* val) = 0;
-    virtual void write_string(StringData name, StringData val) = 0;
-    
-	virtual void begin_member(StringData name) = 0;
-    virtual void end_member() = 0;
-};
 
 class arg_value {
 public:
@@ -112,32 +65,31 @@ public:
                   char,
                   double,
                   long double,
-                  const void*,
                   StringData,
-                  std::function<void(visitor_base*)>>
+                  std::function<void(FormattingVisitor*)>>
         value;
-    size_t index;
 
-    constexpr arg_value(int val = 0) : value(val), index(0) {}
-    constexpr arg_value(unsigned val) : value(val), index(1) {}
-    constexpr arg_value(long long val) : value(val), index(2) {}
-    constexpr arg_value(unsigned long long val) : value(val), index(3) {}
-    constexpr arg_value(double val) : value(val), index(6) {}
-    constexpr arg_value(long double val) : value(val), index(7) {}
-    constexpr arg_value(bool val) : value(val), index(4) {}
-    constexpr arg_value(char val) : value(val), index(5) {}
-    arg_value(const char* val) : value(StringData(val)), index(9) {}
-    arg_value(StringData val) : value(val), index(9) {}
+    constexpr arg_value(int val = 0) : value(val) {}
+    constexpr arg_value(unsigned val) : value(val) {}
+    constexpr arg_value(long long val) : value(val) {}
+    constexpr arg_value(unsigned long long val) : value(val) {}
+    constexpr arg_value(float val) : value(static_cast<double>(val)) {}
+    constexpr arg_value(double val) : value(val) {}
+    constexpr arg_value(long double val) : value(val) {}
+    constexpr arg_value(bool val) : value(val) {}
+    constexpr arg_value(char val) : value(val) {}
+    arg_value(const char* val) : value(StringData(val)) {}
+    arg_value(StringData val) : value(val) {}
+    arg_value(std::string const& val) : value(StringData(val)) {}
     /*value(basic_string_view<char_type> val) {
         string = StringData(val.data(), val.size());
     }*/
-    constexpr arg_value(const void* val) : value(val), index(8) {}
 
     template <typename T>
     arg_value(const T& val) {
         using std::placeholders::_1;
-        value.emplace<std::function<void(visitor_base*)>>(std::bind(&T::format, val, _1));
-        index = 10;
+        value.emplace<std::function<void(FormattingVisitor*)>>(std::bind(&T::format, val, _1));
+
         // stdx::get<10>(value)(nullptr);
         // custom.value = &val;
         //// Get the formatter type through the context to allow different contexts
@@ -202,7 +154,8 @@ public:
     FMT_DEPRECATED static constexpr unsigned long long TYPES = types;*/
 
     arg_store(const Args&... args)
-        : data_{make_arg_value(args.value)...}, name_{StringData(args.name.data(), args.name.size())...} {}
+        : data_{make_arg_value(args.value)...},
+          name_{StringData(args.name.data(), args.name.size())...} {}
 };
 
 template <typename... Args>
@@ -221,47 +174,11 @@ public:
         size_ = store.num_args;
     }
 
-    void format(visitor_base* visitor) const {
+    void format(FormattingVisitor* visitor) const {
         const arg_value* data = data_;
         const StringData* name = name_;
         for (size_t i = 0; i < size_; ++i) {
-            switch (data->index) {
-                case 0:
-                    visitor->write(*name, stdx::get<0>(data->value));
-                    break;
-                case 1:
-                    visitor->write(*name, stdx::get<1>(data->value));
-                    break;
-                case 2:
-                    visitor->write(*name, stdx::get<2>(data->value));
-                    break;
-                case 3:
-                    visitor->write(*name, stdx::get<3>(data->value));
-                    break;
-                case 4:
-                    visitor->write(*name, stdx::get<4>(data->value));
-                    break;
-                case 5:
-                    visitor->write(*name, stdx::get<5>(data->value));
-                    break;
-                case 6:
-                    visitor->write(*name, stdx::get<6>(data->value));
-                    break;
-                case 7:
-                    visitor->write(*name, stdx::get<7>(data->value));
-                    break;
-                case 8:
-                    visitor->write(*name, stdx::get<8>(data->value));
-                    break;
-                case 9:
-                    visitor->write(*name, stdx::get<9>(data->value));
-                    break;
-                case 10:
-                    visitor->begin_member(*name);
-                    stdx::get<10>(data->value)(visitor);
-                    visitor->end_member();
-                    break;
-            };
+            stdx::visit([visitor, name](auto&& arg) { visitor->write(*name, arg); }, data->value);
 
             data++;
             name++;
