@@ -54,7 +54,9 @@ void doLog(LogSeverity const& severity,
            fmt::internal::named_arg<Args, char>&&... args) {
     AttributeArgumentSet attr_set;
     auto arg_store = fmt::internal::make_args_checked(message, (args.value)...);
+    auto arg_store2 = make_arg_store(args...);
     attr_set._values = arg_store;
+    attr_set._values2 = arg_store2;
     (attr_set._names.push_back(::mongo::StringData(args.name.data(), args.name.size())), ...);
     auto msg = static_cast<fmt::string_view>(message);
     doLogImpl(severity, stable_id, options, ::mongo::StringData(msg.data(), msg.size()), attr_set);
