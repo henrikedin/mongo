@@ -36,6 +36,7 @@
 
 #include "mongo/logv2/attribute_argument_set.h"
 #include "mongo/logv2/attributes.h"
+#include "mongo/logv2/formatting_ostream_iterator.h"
 #include "mongo/logv2/log_component.h"
 #include "mongo/logv2/log_severity.h"
 #include "mongo/logv2/log_tag.h"
@@ -48,6 +49,95 @@ namespace logv2 {
 
 class TextFormatter {
 public:
+    class Visitor final : public FormattingVisitor {
+    public:
+        fmt::basic_format_args<fmt::format_context> format_args() {
+            return {_args.data(), static_cast<unsigned>(_args.size())};
+        }
+
+    private:
+        void write_int32(StringData name, int32_t val) override {
+            if (!_depth) {
+                _args.emplace_back(fmt::internal::make_arg<fmt::format_context>(val));
+            }
+        }
+        void write_uint32(StringData name, uint32_t val) override {
+            if (!_depth) {
+                _args.emplace_back(fmt::internal::make_arg<fmt::format_context>(val));
+            }
+        }
+        void write_int64(StringData name, int64_t val) override {
+            if (!_depth) {
+                _args.emplace_back(fmt::internal::make_arg<fmt::format_context>(val));
+            }
+        }
+        void write_uint64(StringData name, uint64_t val) override {
+            if (!_depth) {
+                _args.emplace_back(fmt::internal::make_arg<fmt::format_context>(val));
+            }
+        }
+        void write_bool(StringData name, bool val) override {
+            if (!_depth) {
+                _args.emplace_back(fmt::internal::make_arg<fmt::format_context>(val));
+            }
+        }
+        void write_char(StringData name, char val) override {
+            if (!_depth) {
+                _args.emplace_back(fmt::internal::make_arg<fmt::format_context>(val));
+            }
+        }
+        void write_double(StringData name, double val) override {
+            if (!_depth) {
+                _args.emplace_back(fmt::internal::make_arg<fmt::format_context>(val));
+            } else {
+                write_name(name);
+                _nested.top() += fmt::format("{}", val);
+            }
+        }
+        void write_long_double(StringData name, long double val) override {
+            if (!_depth) {
+                _args.emplace_back(fmt::internal::make_arg<fmt::format_context>(val));
+            }
+        }
+        void write_string(StringData name, mongo::StringData val) override {
+            if (!_depth) {
+                _args.emplace_back(fmt::internal::make_arg<fmt::format_context>(val));
+            }
+        }
+        void write_name(StringData name) override {
+            if (_depth) {
+                _nested.top() += _separator.top().toString() + name.toString() + ": ";
+                _separator.top() = ", "_sd;
+            }
+        }
+        void object_begin() override {
+            _nested.push("(");
+            _separator.push(""_sd);
+            ++_depth;
+        }
+        void object_end() override {
+            --_depth;
+            _nested.top() += ")";
+            _storage.push_back(std::move(_nested.top()));
+            _args.emplace_back(fmt::internal::make_arg<fmt::format_context>(_storage.back()));
+            _nested.pop();
+            _separator.pop();
+        }
+        void array_begin() override {
+            ++_depth;
+        }
+        void array_end() override {
+            --_depth;
+        }
+
+
+        std::vector<fmt::basic_format_arg<fmt::format_context>> _args;
+        std::list<std::string> _storage;
+        std::stack<std::string> _nested;
+        std::stack<StringData> _separator;
+        int _depth = 0;
+    };
+
     TextFormatter() = default;
 
     // Boost log synchronizes calls to a formatter within a backend sink. If this is copied for some
@@ -70,23 +160,21 @@ public:
         StringData message = extract<StringData>(attributes::message(), rec).get();
         const auto& attrs = extract<AttributeArgumentSet>(attributes::attributes(), rec).get();
 
-        _buffer.clear();
+		Visitor visitor;
+        attrs._values2.format(&visitor);
+
         fmt::format_to(
-            _buffer,
-            "{} {:<2} {:<8} [{}] ",
+            formatting_ostream_iterator(strm),
+            "{} {:<2} {:<8} [{}] {}{}",
             extract<Date_t>(attributes::timeStamp(), rec).get().toString(),
             extract<LogSeverity>(attributes::severity(), rec).get().toStringDataCompact(),
             extract<LogComponent>(attributes::component(), rec).get().getNameForLog(),
-            extract<StringData>(attributes::threadName(), rec).get());
-        strm.write(_buffer.data(), _buffer.size());
-
-        if (extract<LogTag>(attributes::tags(), rec).get().has(LogTag::kStartupWarnings)) {
-            strm << "** WARNING: ";
-        }
-
-        _buffer.clear();
-        fmt::internal::vformat_to(_buffer, to_string_view(message), attrs._values);
-        strm.write(_buffer.data(), _buffer.size());
+            extract<StringData>(attributes::threadName(), rec).get(),
+            extract<LogTag>(attributes::tags(), rec)
+                .get().has(LogTag::kStartupWarnings)
+                ? "** WARNING: "_sd
+                : ""_sd,
+            fmt::internal::vformat(to_string_view(message), visitor.format_args()));
     }
 
 protected:
