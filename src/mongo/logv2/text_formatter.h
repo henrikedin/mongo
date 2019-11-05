@@ -29,6 +29,7 @@
 
 #pragma once
 
+#include <boost/container/small_vector.hpp>
 #include <boost/log/attributes/value_extraction.hpp>
 #include <boost/log/core/record_view.hpp>
 #include <boost/log/expressions/message.hpp>
@@ -52,7 +53,7 @@ class TextFormatter {
 public:
     class Visitor final : public FormattingVisitor {
     public:
-		fmt::basic_format_args<fmt::basic_format_context<formatting_ostream_iterator<>, char>>
+        fmt::basic_format_args<fmt::basic_format_context<formatting_ostream_iterator<>, char>>
         format_args() {
             return {_args.data(), static_cast<unsigned>(_args.size())};
         }
@@ -139,9 +140,8 @@ public:
             --_depth;
             _nested.top() += ")";
             _storage.push_back(std::move(_nested.top()));
-            _args.emplace_back(
-                fmt::internal::make_arg<
-                                fmt::basic_format_context<formatting_ostream_iterator<>, char>>(
+            _args.emplace_back(fmt::internal::make_arg<
+                               fmt::basic_format_context<formatting_ostream_iterator<>, char>>(
                 _storage.back()));
             _nested.pop();
             _separator.pop();
@@ -153,8 +153,8 @@ public:
             --_depth;
         }
 
-        std::vector<
-            fmt::basic_format_arg<fmt::basic_format_context<formatting_ostream_iterator<>, char>>>
+        boost::container::small_vector<
+            fmt::basic_format_arg<fmt::basic_format_context<formatting_ostream_iterator<>, char>>, 3>
             _args;
         std::list<std::string> _storage;
         std::stack<std::string> _nested;
@@ -184,7 +184,7 @@ public:
         StringData message = extract<StringData>(attributes::message(), rec).get();
         const auto& attrs = extract<AttributeArgumentSet>(attributes::attributes(), rec).get();
 
-		Visitor visitor;
+        Visitor visitor;
         attrs._values2.format(&visitor);
 
         fmt::format_to(
@@ -194,23 +194,21 @@ public:
             extract<LogSeverity>(attributes::severity(), rec).get().toStringDataCompact(),
             extract<LogComponent>(attributes::component(), rec).get().getNameForLog(),
             extract<StringData>(attributes::threadName(), rec).get(),
-            extract<LogTag>(attributes::tags(), rec)
-                .get().has(LogTag::kStartupWarnings)
+            extract<LogTag>(attributes::tags(), rec).get().has(LogTag::kStartupWarnings)
                 ? "** WARNING: "_sd
-                : ""_sd
-        );
+                : ""_sd);
 
-		fmt::internal::output_range<formatting_ostream_iterator<char, std::char_traits<char>>>
-            the_range{formatting_ostream_iterator<char, std::char_traits<char>>(strm)};
+        using range_t = fmt::internal::output_range<formatting_ostream_iterator<>>;
+        range_t range{formatting_ostream_iterator(strm)};
 
-		fmt::vformat_to<
-            fmt::arg_formatter<fmt::internal::output_range<
-                formatting_ostream_iterator<char, std::char_traits<char>>>>>(
-            the_range, to_string_view(message), visitor.format_args());
+        fmt::vformat_to<fmt::arg_formatter<range_t>>(
+            range, to_string_view(message), visitor.format_args());
+
+		//fmt::vformat_to<fmt::arg_formatter<range_t>>(range, to_string_view(message), attrs._values);
     }
 
 protected:
-    fmt::memory_buffer _buffer;
+    //fmt::memory_buffer _buffer;
 };
 
 }  // namespace logv2

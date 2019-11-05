@@ -35,6 +35,7 @@
 #include <fmt/format.h>
 
 #include "mongo/base/string_data.h"
+#include "mongo/logv2/formatting_ostream_iterator.h"
 #include "mongo/logv2/visitor.h"
 #include "mongo/stdx/variant.h"
 
@@ -194,9 +195,11 @@ private:
 // Type erased set of provided libfmt named arguments. Index match between names and values.
 struct AttributeArgumentSet {
     boost::container::small_vector<StringData, fmt::internal::max_packed_args> _names;
-    fmt::format_args _values;
+    //fmt::format_args _values;
 
     arg_erased_store _values2;
+
+    fmt::basic_format_args<fmt::basic_format_context<formatting_ostream_iterator<>, char>> _values;
 };
 
 

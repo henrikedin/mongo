@@ -68,10 +68,10 @@ public:
     }
 
     template <typename T>
-	void write(StringData name, const T& obj) {
+    void write(StringData name, const T& obj) {
         write_name(name);
         obj->format(this);
-	}
+    }
 
     virtual void write_bool(StringData name, bool val) = 0;
     virtual void write_char(StringData name, char val) = 0;

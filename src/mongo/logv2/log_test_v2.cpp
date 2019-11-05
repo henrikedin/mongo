@@ -193,9 +193,9 @@ class PlainFormatter {
 public:
     class Visitor final : public FormattingVisitor {
     public:
-		fmt::basic_format_args<fmt::format_context> format_args() {
+        fmt::basic_format_args<fmt::format_context> format_args() {
             return {_args.data(), static_cast<unsigned>(_args.size())};
-		}
+        }
 
     private:
         void write_int32(StringData name, int32_t val) override {
@@ -234,7 +234,7 @@ public:
             } else {
                 write_name(name);
                 _nested.top() += fmt::format("{}", val);
-			}
+            }
         }
         void write_long_double(StringData name, long double val) override {
             if (!_depth) {
@@ -251,7 +251,7 @@ public:
                 _nested.top() += _separator.top().toString() + name.toString() + ": ";
                 _separator.top() = ", "_sd;
             }
-		}
+        }
         void object_begin() override {
             _nested.push("(");
             _separator.push(""_sd);
@@ -272,7 +272,7 @@ public:
             --_depth;
         }
 
-		
+
         std::vector<fmt::basic_format_arg<fmt::format_context>> _args;
         std::list<std::string> _storage;
         std::stack<std::string> _nested;
@@ -293,9 +293,9 @@ public:
         attrs._values2.format(&visitor);
         strm << fmt::internal::vformat(to_string_view(message), visitor.format_args());
 
-        // strm << fmt::internal::vformat(to_string_view(message), attrs._values);
-        // json_visitor visitor(strm);
-        // attrs._values2.format(&visitor);
+        //using range_t = fmt::internal::output_range<formatting_ostream_iterator<>>;
+        //fmt::vformat_to<fmt::arg_formatter<range_t>>(
+        //    range_t{formatting_ostream_iterator(strm)}, to_string_view(message), attrs._values);
     }
 };
 
@@ -326,36 +326,36 @@ TEST_F(LogTestV2, Basic) {
     sink->set_formatter(PlainFormatter());
     attach(sink);
 
-     LOGV2("test");
-     ASSERT(lines.back() == "test");
+    LOGV2("test");
+    ASSERT(lines.back() == "test");
 
-     LOGV2_DEBUG(-2, "test debug");
-     ASSERT(lines.back() == "test debug");
+    LOGV2_DEBUG(-2, "test debug");
+    ASSERT(lines.back() == "test debug");
 
-     LOGV2("test {} {}", "name"_attr = 1, "name2"_attr = 2.0f);
-     ASSERT(lines.back() == "test 1 2.0");
+    LOGV2("test {} {}", "name"_attr = 1, "name2"_attr = 2.0f);
+    ASSERT(lines.back() == "test 1 2.0");
 
-     LOGV2("test {:d}", "name"_attr = 2);
-     ASSERT(lines.back() == "test 2");
+    LOGV2("test {:d}", "name"_attr = 2);
+    ASSERT(lines.back() == "test 2");
 
-     LOGV2("test {}", "name"_attr = "char*");
-     ASSERT(lines.back() == "test char*");
+    LOGV2("test {}", "name"_attr = "char*");
+    ASSERT(lines.back() == "test char*");
 
-     LOGV2("test {}", "name"_attr = std::string("std::string"));
-     ASSERT(lines.back() == "test std::string");
+    LOGV2("test {}", "name"_attr = std::string("std::string"));
+    ASSERT(lines.back() == "test std::string");
 
-     LOGV2("test {}", "name"_attr = "StringData"_sd);
-     ASSERT(lines.back() == "test StringData");
+    LOGV2("test {}", "name"_attr = "StringData"_sd);
+    ASSERT(lines.back() == "test StringData");
 
-     LOGV2_OPTIONS({LogTag::kStartupWarnings}, "test");
-     ASSERT(lines.back() == "test");
+    LOGV2_OPTIONS({LogTag::kStartupWarnings}, "test");
+    ASSERT(lines.back() == "test");
 
     TypeWithCustomFormatting t(1.0, 2.0);
     LOGV2("{}", "name"_attr = t);
     ASSERT(lines.back() == t.toString());
 
-    //LOGV2("{:j} custom formatting, force json", "name"_attr = t);
-    //ASSERT(lines.back() == t.toJson() + " custom formatting, force json");
+    // LOGV2("{:j} custom formatting, force json", "name"_attr = t);
+    // ASSERT(lines.back() == t.toJson() + " custom formatting, force json");
 }
 
 TEST_F(LogTestV2, TextFormat) {
@@ -392,7 +392,6 @@ TEST_F(LogTestV2, JSONFormat) {
     BSONObj log;
 
     LOGV2("test");
-    std::cout << lines.back() << std::endl;
     log = mongo::fromjson(lines.back());
     ASSERT(log.getField("t"_sd).String() == dateToISOStringUTC(Date_t::lastNowForTest()));
     ASSERT(log.getField("s"_sd).String() == LogSeverity::Info().toStringDataCompact());
@@ -429,7 +428,6 @@ TEST_F(LogTestV2, JSONFormat) {
 
     TypeWithCustomFormatting t(1.0, 2.0);
     LOGV2("{} custom formatting", "name"_attr = t);
-    std::cout << lines.back() << std::endl;
     log = mongo::fromjson(lines.back());
     ASSERT(log.getField("msg"_sd).String() == "{name} custom formatting");
     ASSERT(log.getField("attr"_sd).Obj().nFields() == 1);

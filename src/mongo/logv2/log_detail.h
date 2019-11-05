@@ -30,6 +30,7 @@
 #include "mongo/base/status.h"
 #include "mongo/bson/util/builder.h"
 #include "mongo/logv2/attribute_argument_set.h"
+#include "mongo/logv2/formatting_ostream_iterator.h"
 #include "mongo/logv2/log_component.h"
 #include "mongo/logv2/log_domain.h"
 #include "mongo/logv2/log_options.h"
@@ -39,6 +40,15 @@
 namespace mongo {
 namespace logv2 {
 namespace detail {
+namespace {
+template <typename S, typename... Args, typename Char = fmt::char_t<S>>
+inline fmt::format_arg_store<fmt::basic_format_context<formatting_ostream_iterator<>, char>,
+                             Args...>
+make_args_checked(const S& format_str, const Args&... args) {
+    fmt::internal::check_format_string<Args...>(format_str);
+    return {args...};
+}
+}  // namespace
 void doLogImpl(LogSeverity const& severity,
                StringData stable_id,
                LogOptions const& options,
@@ -53,8 +63,9 @@ void doLog(LogSeverity const& severity,
            S const& message,
            fmt::internal::named_arg<Args, char>&&... args) {
     AttributeArgumentSet attr_set;
-    auto arg_store = fmt::internal::make_args_checked(message, (args.value)...);
+    //auto arg_store = fmt::internal::make_args_checked(message, (args.value)...);
     auto arg_store2 = make_arg_store(args...);
+    auto arg_store = make_args_checked(message, (args.value)...);
     attr_set._values = arg_store;
     attr_set._values2 = arg_store2;
     (attr_set._names.push_back(::mongo::StringData(args.name.data(), args.name.size())), ...);
