@@ -163,28 +163,28 @@ public:
         }
 
         fmt::format_to(formatting_ostream_iterator(strm),
-            "{{\"t\":\"{}\",\"s\":\"{}\"{: <{}}\"c\":\"{}\"{: "
-            "<{}}\"ctx\":\"{}\",{}\"msg\":\"{}\"{}",
-            dateToISOStringUTC(extract<Date_t>(attributes::timeStamp(), rec).get()),
-            severity,
-            ",",
-            3 - severity.size(),
-            component,
-            ",",
-            9 - component.size(),
-            extract<StringData>(attributes::threadName(), rec).get(),
-            id,
-            message,
-            attrs._names.empty() ? "" : ",\"attr\":");
+                       "{{\"t\":\"{}\",\"s\":\"{}\"{: <{}}\"c\":\"{}\"{: "
+                       "<{}}\"ctx\":\"{}\",{}\"msg\":\"{}\"{}",
+                       dateToISOStringUTC(extract<Date_t>(attributes::timeStamp(), rec).get()),
+                       severity,
+                       ",",
+                       3 - severity.size(),
+                       component,
+                       ",",
+                       9 - component.size(),
+                       extract<StringData>(attributes::threadName(), rec).get(),
+                       id,
+                       message,
+                       attrs._names.empty() ? "" : ",\"attr\":");
 
         if (!attrs._names.empty()) {
             JsonFormattingVisitor visitor(strm);
             visitor.object_begin();
             attrs._values2.format(&visitor);
             visitor.object_end();
-		}
-        
-		fmt::format_to(formatting_ostream_iterator(strm), "{}}}", tag);
+        }
+
+        fmt::format_to(formatting_ostream_iterator(strm), "{}}}", tag);
     }
 
 private:
