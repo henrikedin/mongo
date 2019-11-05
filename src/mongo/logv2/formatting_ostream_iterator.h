@@ -38,7 +38,7 @@ template <class CharT = char, class Traits = std::char_traits<CharT>>
 class formatting_ostream_iterator {
 public:
     using iterator_category = std::output_iterator_tag;
-    using value_type = void;
+    using value_type = CharT;
     using difference_type = void;
     using pointer = void;
     using reference = void;
