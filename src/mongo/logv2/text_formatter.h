@@ -52,44 +52,59 @@ class TextFormatter {
 public:
     class Visitor final : public FormattingVisitor {
     public:
-        fmt::basic_format_args<fmt::format_context> format_args() {
+		fmt::basic_format_args<fmt::basic_format_context<formatting_ostream_iterator<>, char>>
+        format_args() {
             return {_args.data(), static_cast<unsigned>(_args.size())};
         }
 
     private:
         void write_int32(StringData name, int32_t val) override {
             if (!_depth) {
-                _args.emplace_back(fmt::internal::make_arg<fmt::format_context>(val));
+                _args.emplace_back(
+                    fmt::internal::make_arg<
+                        fmt::basic_format_context<formatting_ostream_iterator<>, char>>(val));
             }
         }
         void write_uint32(StringData name, uint32_t val) override {
             if (!_depth) {
-                _args.emplace_back(fmt::internal::make_arg<fmt::format_context>(val));
+                _args.emplace_back(
+                    fmt::internal::make_arg<
+                        fmt::basic_format_context<formatting_ostream_iterator<>, char>>(val));
             }
         }
         void write_int64(StringData name, int64_t val) override {
             if (!_depth) {
-                _args.emplace_back(fmt::internal::make_arg<fmt::format_context>(val));
+                _args.emplace_back(
+                    fmt::internal::make_arg<
+                        fmt::basic_format_context<formatting_ostream_iterator<>, char>>(val));
             }
         }
         void write_uint64(StringData name, uint64_t val) override {
             if (!_depth) {
-                _args.emplace_back(fmt::internal::make_arg<fmt::format_context>(val));
+                _args.emplace_back(
+                    fmt::internal::make_arg<
+                        fmt::basic_format_context<formatting_ostream_iterator<>, char>>(val));
             }
         }
         void write_bool(StringData name, bool val) override {
             if (!_depth) {
-                _args.emplace_back(fmt::internal::make_arg<fmt::format_context>(val));
+                _args.emplace_back(
+                    fmt::internal::make_arg<
+                        fmt::basic_format_context<formatting_ostream_iterator<>, char>>(val));
             }
         }
         void write_char(StringData name, char val) override {
             if (!_depth) {
-                _args.emplace_back(fmt::internal::make_arg<fmt::format_context>(val));
+                _args.emplace_back(
+                    fmt::internal::make_arg<
+                        fmt::basic_format_context<formatting_ostream_iterator<>, char>>(val));
             }
         }
         void write_double(StringData name, double val) override {
             if (!_depth) {
-                _args.emplace_back(fmt::internal::make_arg<fmt::format_context>(val));
+                _args.emplace_back(
+                    fmt::internal::make_arg<
+                        fmt::basic_format_context<formatting_ostream_iterator<>, char>>(val));
             } else {
                 write_name(name);
                 _nested.top() += fmt::format("{}", val);
@@ -97,12 +112,16 @@ public:
         }
         void write_long_double(StringData name, long double val) override {
             if (!_depth) {
-                _args.emplace_back(fmt::internal::make_arg<fmt::format_context>(val));
+                _args.emplace_back(
+                    fmt::internal::make_arg<
+                        fmt::basic_format_context<formatting_ostream_iterator<>, char>>(val));
             }
         }
         void write_string(StringData name, mongo::StringData val) override {
             if (!_depth) {
-                _args.emplace_back(fmt::internal::make_arg<fmt::format_context>(val));
+                _args.emplace_back(
+                    fmt::internal::make_arg<
+                        fmt::basic_format_context<formatting_ostream_iterator<>, char>>(val));
             }
         }
         void write_name(StringData name) override {
@@ -120,7 +139,10 @@ public:
             --_depth;
             _nested.top() += ")";
             _storage.push_back(std::move(_nested.top()));
-            _args.emplace_back(fmt::internal::make_arg<fmt::format_context>(_storage.back()));
+            _args.emplace_back(
+                fmt::internal::make_arg<
+                                fmt::basic_format_context<formatting_ostream_iterator<>, char>>(
+                _storage.back()));
             _nested.pop();
             _separator.pop();
         }
@@ -131,8 +153,9 @@ public:
             --_depth;
         }
 
-
-        std::vector<fmt::basic_format_arg<fmt::format_context>> _args;
+        std::vector<
+            fmt::basic_format_arg<fmt::basic_format_context<formatting_ostream_iterator<>, char>>>
+            _args;
         std::list<std::string> _storage;
         std::stack<std::string> _nested;
         std::stack<StringData> _separator;
@@ -166,7 +189,7 @@ public:
 
         fmt::format_to(
             formatting_ostream_iterator(strm),
-            "{} {:<2} {:<8} [{}] {}{}",
+            "{} {:<2} {:<8} [{}] {}",
             extract<Date_t>(attributes::timeStamp(), rec).get().toString(),
             extract<LogSeverity>(attributes::severity(), rec).get().toStringDataCompact(),
             extract<LogComponent>(attributes::component(), rec).get().getNameForLog(),
@@ -174,8 +197,16 @@ public:
             extract<LogTag>(attributes::tags(), rec)
                 .get().has(LogTag::kStartupWarnings)
                 ? "** WARNING: "_sd
-                : ""_sd,
-            fmt::internal::vformat(to_string_view(message), visitor.format_args()));
+                : ""_sd
+        );
+
+		fmt::internal::output_range<formatting_ostream_iterator<char, std::char_traits<char>>>
+            the_range{formatting_ostream_iterator<char, std::char_traits<char>>(strm)};
+
+		fmt::vformat_to<
+            fmt::arg_formatter<fmt::internal::output_range<
+                formatting_ostream_iterator<char, std::char_traits<char>>>>>(
+            the_range, to_string_view(message), visitor.format_args());
     }
 
 protected:
