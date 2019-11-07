@@ -80,10 +80,11 @@ void LogDomainGlobal::ConfigurationOptions::makeDisabled() {
 }
 
 struct LogDomainGlobal::Impl {
-	typedef composite_backend<boost::log::sinks::text_ostream_backend, RamLogSink, RamLogSink>
+    typedef composite_backend<boost::log::sinks::text_ostream_backend, RamLogSink, RamLogSink>
         ConsoleBackend;
 #ifndef _WIN32
-    typedef composite_backend<boost::log::sinks::syslog_backend, RamLogSink, RamLogSink> SyslogBackend;
+    typedef composite_backend<boost::log::sinks::syslog_backend, RamLogSink, RamLogSink>
+        SyslogBackend;
 #endif
     typedef composite_backend<boost::log::sinks::text_file_backend, RamLogSink, RamLogSink>
         RotatableFileBackend;
@@ -103,17 +104,17 @@ struct LogDomainGlobal::Impl {
 
 LogDomainGlobal::Impl::Impl(LogDomainGlobal& parent) : _parent(parent) {
     auto console = boost::make_shared<ConsoleBackend>(
-            boost::make_shared<boost::log::sinks::text_ostream_backend>(),
-            boost::make_shared<RamLogSink>(RamLog::get("global")),
-            boost::make_shared<RamLogSink>(RamLog::get("startupWarnings")));
+        boost::make_shared<boost::log::sinks::text_ostream_backend>(),
+        boost::make_shared<RamLogSink>(RamLog::get("global")),
+        boost::make_shared<RamLogSink>(RamLog::get("startupWarnings")));
 
-	console->locked_backend<0>()->add_stream(
+    console->locked_backend<0>()->add_stream(
         boost::shared_ptr<std::ostream>(&Console::out(), boost::null_deleter()));
     console->locked_backend<0>()->auto_flush();
     console->set_filter<2>(
         TaggedSeverityFilter(_parent, {LogTag::kStartupWarnings}, LogSeverity::Warning()));
 
-	_consoleSink =
+    _consoleSink =
         boost::make_shared<boost::log::sinks::unlocked_sink<ConsoleBackend>>(std::move(console));
     _consoleSink->set_filter(ComponentSettingsFilter(_parent, _settings));
 
@@ -126,11 +127,13 @@ Status LogDomainGlobal::Impl::configure(LogDomainGlobal::ConfigurationOptions co
     if (options._syslogEnabled) {
         // Create a backend
         auto backend = boost::make_shared<SyslogBackend>(
-            boost::make_shared<boost::log::sinks::syslog_backend>(boost::log::keywords::facility =
-                boost::log::sinks::syslog::make_facility(options._syslogFacility),boost::log::keywords::use_impl = boost::log::sinks::syslog::native),
+            boost::make_shared<boost::log::sinks::syslog_backend>(
+                boost::log::keywords::facility =
+                    boost::log::sinks::syslog::make_facility(options._syslogFacility),
+                boost::log::keywords::use_impl = boost::log::sinks::syslog::native),
             boost::make_shared<RamLogSink>(RamLog::get("global")),
             boost::make_shared<RamLogSink>(RamLog::get("startupWarnings")));
-        
+
         boost::log::sinks::syslog::custom_severity_mapping<LogSeverity> mapping(
             attributes::severity());
 
@@ -151,8 +154,8 @@ Status LogDomainGlobal::Impl::configure(LogDomainGlobal::ConfigurationOptions co
             boost::make_shared<boost::log::sinks::unlocked_sink<SyslogBackend>>(std::move(backend));
         _syslogSink->set_filter(ComponentSettingsFilter(_parent, _settings));
 
-		boost::log::core::get()->add_sink(_syslogSink);
-		// TODO add to boost::core
+        boost::log::core::get()->add_sink(_syslogSink);
+        // TODO add to boost::core
     } else if (_syslogSink) {
         boost::log::core::get()->remove_sink(_syslogSink);
         _syslogSink.reset();

@@ -29,11 +29,12 @@
 
 #pragma once
 
+#include "mongo/stdx/mutex.h"
+
 #include <boost/log/detail/fake_mutex.hpp>
 #include <boost/log/detail/locking_ptr.hpp>
 #include <boost/log/sinks/basic_sink_backend.hpp>
 #include <boost/log/sinks/frontend_requirements.hpp>
-#include <boost/thread/recursive_mutex.hpp>
 #include <tuple>
 
 namespace mongo {
@@ -53,29 +54,26 @@ private:
                                                 boost::log::sinks::flushing>::type>
         base_type;
 
+    // Helper to select mutex type depending on requirements of backend
     template <typename backend_t>
     using backend_mutex_type = std::conditional_t<
         boost::log::sinks::has_requirement<typename backend_t::frontend_requirements,
                                            boost::log::sinks::concurrent_feeding>::value,
         boost::log::aux::fake_mutex,
-        boost::recursive_mutex>;
+        stdx::mutex>;
 
+    // Helper to allow expanding parameter pack
     using filter_func = std::function<bool(boost::log::attribute_value_set const&)>;
     template <typename backend_t>
     using backend_filter_type = filter_func;
 
 public:
-    //! Character type
-    typedef typename base_type::char_type char_type;
-    //! String type to be used as a message text holder
-    typedef typename base_type::string_type string_type;
-    //! Output stream type
-    typedef std::basic_ostream<char_type> stream_type;
-
-
     composite_backend(boost::shared_ptr<Backend>&&... backends)
         : _backends(std::forward<boost::shared_ptr<Backend>>(backends)...) {}
 
+    /**
+     * Locking accessor to the attached backend at index
+     */
     template <size_t I>
     auto locked_backend() {
         return boost::log::aux::locking_ptr<
@@ -84,61 +82,78 @@ public:
                                                          std::get<I>(_mutexes));
     }
 
+    /**
+     * Sets post-formatting filter for the attached backend at index
+     */
     template <size_t I>
-	void set_filter(filter_func const& filter) {
+    void set_filter(filter_func const& filter) {
         std::get<I>(_filters) = filter;
-	}
+    }
 
-	template <size_t I>
+    /**
+     * Resets post-formatting filter for the attached backend at index
+     */
+    template <size_t I>
     void reset_filter() {
         std::get<I>(_filters).reset();
     }
 
+    /**
+     * Consumes formatted log for all attached backends
+     */
     void consume(boost::log::record_view const& rec, string_type const& formatted_string) {
         consume_all(rec, formatted_string, std::make_index_sequence<sizeof...(Backend)>{});
     }
 
+    /**
+     * Flushes all attached backends that supports flushing
+     */
     void flush() {
         flush_all(std::make_index_sequence<sizeof...(Backend)>{});
     }
 
 private:
+    // Implementation of flush if backend support flushing
     template <typename mutex_t, typename backend_t>
     std::enable_if_t<boost::log::sinks::has_requirement<typename backend_t::frontend_requirements,
                                                         boost::log::sinks::flushing>::value>
     flush_backend(mutex_t& mutex, backend_t& backend) {
-        boost::log::aux::exclusive_lock_guard<decltype(mutex)> lock(mutex);
+        stdx::lock_guard<decltype(mutex)> lock(mutex);
 
         backend.flush();
     }
 
+    // Noop implementation of flush if backend does not support flushing
     template <typename mutex_t, typename backend_t>
     std::enable_if_t<!boost::log::sinks::has_requirement<typename backend_t::frontend_requirements,
                                                          boost::log::sinks::flushing>::value>
     flush_backend(mutex_t& mutex, backend_t& backend) {}
 
+    // Helper to flush backend at index
     template <size_t I>
     void flush_at() {
         flush_backend(std::get<I>(_mutexes), *std::get<I>(_backends));
     }
 
+    // Helper to expand tuple for flushing backends
     template <size_t... Is>
     void flush_all(std::index_sequence<Is...>) {
         (flush_at<Is>(), ...);
     }
 
-    // The function consumes the log records that come from the frontend
+    // Helper to consume logs for backend at index
     template <size_t I>
     void consume_at(boost::log::record_view const& rec, string_type const& formatted_string) {
         const filter_func& filter = std::get<I>(_filters);
         if (!filter || filter(rec.attribute_values())) {
-            boost::log::aux::exclusive_lock_guard<std::tuple_element_t<I, decltype(_mutexes)>> lock(
+            stdx::lock_guard<std::tuple_element_t<I, decltype(_mutexes)>> lock(
                 std::get<I>(_mutexes));
 
             std::get<I>(_backends)->consume(rec, formatted_string);
         }
     }
 
+    // Helper to expand tuple for consuming logs
     template <size_t... Is>
     void consume_all(boost::log::record_view const& rec,
                      string_type const& formatted_string,
