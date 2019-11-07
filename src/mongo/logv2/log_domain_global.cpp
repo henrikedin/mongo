@@ -30,6 +30,7 @@
 #include "log_domain_global.h"
 
 #include "mongo/logv2/component_settings_filter.h"
+#include "mongo/logv2/composite_backend.h"
 #include "mongo/logv2/console.h"
 #include "mongo/logv2/json_formatter.h"
 #include "mongo/logv2/log_source.h"
@@ -94,9 +95,9 @@ struct LogDomainGlobal::Impl {
 
     LogDomainGlobal& _parent;
     LogComponentSettings _settings;
-    boost::shared_ptr<ConsoleBackend> _consoleBackend;
+    // boost::shared_ptr<ConsoleBackend> _consoleBackend;
     boost::shared_ptr<RotatableFileBackend> _rotatableFileBackend;
-    boost::shared_ptr<RamLogBackend> _globalLogCacheBackend;
+    // boost::shared_ptr<RamLogBackend> _globalLogCacheBackend;
     boost::shared_ptr<RamLogBackend> _startupWarningsBackend;
 #ifndef _WIN32
     boost::shared_ptr<SyslogBackend> _syslogBackend;
@@ -104,17 +105,25 @@ struct LogDomainGlobal::Impl {
 };
 
 LogDomainGlobal::Impl::Impl(LogDomainGlobal& parent) : _parent(parent) {
-    _consoleBackend = boost::make_shared<ConsoleBackend>();
+    //boost::log::aux::fake_mutex _ramlogmutex;
+	using backend_t = composite_backend<boost::log::sinks::text_ostream_backend, RamLogSink>;
+    auto backend =
+        boost::make_shared<backend_t>(
+            boost::make_shared<boost::log::sinks::text_ostream_backend>(),
+            boost::make_shared<RamLogSink>(RamLog::get("global")));
+
+	boost::log::core::get()->add_sink(boost::make_shared<boost::log::sinks::unlocked_sink<backend_t>>(std::move(backend)));
+    /*_consoleBackend = boost::make_shared<ConsoleBackend>();
     _consoleBackend->set_filter(ComponentSettingsFilter(_parent, _settings));
 
 
     _consoleBackend->locked_backend()->add_stream(
         boost::shared_ptr<std::ostream>(&Console::out(), boost::null_deleter()));
 
-    _consoleBackend->locked_backend()->auto_flush();
+    _consoleBackend->locked_backend()->auto_flush();*/
 
-    _globalLogCacheBackend = RamLogSink::create(RamLog::get("global"));
-    _globalLogCacheBackend->set_filter(ComponentSettingsFilter(_parent, _settings));
+    //_globalLogCacheBackend = RamLogSink::create(RamLog::get("global"));
+    //_globalLogCacheBackend->set_filter(ComponentSettingsFilter(_parent, _settings));
 
     _startupWarningsBackend = RamLogSink::create(RamLog::get("startupWarnings"));
     _startupWarningsBackend->set_filter(
@@ -123,7 +132,7 @@ LogDomainGlobal::Impl::Impl(LogDomainGlobal& parent) : _parent(parent) {
     // Set default configuration
     invariant(configure({}).isOK());
 
-    boost::log::core::get()->add_sink(_globalLogCacheBackend);
+    // boost::log::core::get()->add_sink(_globalLogCacheBackend);
     boost::log::core::get()->add_sink(_startupWarningsBackend);
 }
 
@@ -157,13 +166,13 @@ Status LogDomainGlobal::Impl::configure(LogDomainGlobal::ConfigurationOptions co
     }
 #endif
 
-    if (options._consoleEnabled && _consoleBackend.use_count() == 1) {
+    /*if (options._consoleEnabled && _consoleBackend.use_count() == 1) {
         boost::log::core::get()->add_sink(_consoleBackend);
     }
 
     if (!options._consoleEnabled && _consoleBackend.use_count() > 1) {
         boost::log::core::get()->remove_sink(_consoleBackend);
-    }
+    }*/
 
     if (options._fileEnabled) {
         auto backend = boost::make_shared<boost::log::sinks::text_file_backend>(
@@ -182,8 +191,8 @@ Status LogDomainGlobal::Impl::configure(LogDomainGlobal::ConfigurationOptions co
     }
 
     auto setFormatters = [this](auto&& mkFmt) {
-        _consoleBackend->set_formatter(mkFmt());
-        _globalLogCacheBackend->set_formatter(mkFmt());
+        //_consoleBackend->set_formatter(mkFmt());
+        //_globalLogCacheBackend->set_formatter(mkFmt());
         _startupWarningsBackend->set_formatter(mkFmt());
         if (_rotatableFileBackend)
             _rotatableFileBackend->set_formatter(mkFmt());
