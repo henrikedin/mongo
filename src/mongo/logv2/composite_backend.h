@@ -41,20 +41,28 @@ namespace logv2 {
 
 template <typename... Backend>
 class composite_backend
-    : public boost::log::sinks::
-          basic_formatted_sink_backend<char, boost::log::sinks::combine_requirements< boost::log::sinks::concurrent_feeding, boost::log::sinks::flushing >::type> {
+    : public boost::log::sinks::basic_formatted_sink_backend<
+          char,
+          boost::log::sinks::combine_requirements<boost::log::sinks::concurrent_feeding,
+                                                  boost::log::sinks::flushing>::type> {
 private:
     //! Base type
-    typedef boost::log::sinks::
-          basic_formatted_sink_backend<char, boost::log::sinks::combine_requirements< boost::log::sinks::concurrent_feeding, boost::log::sinks::flushing >::type>
+    typedef boost::log::sinks::basic_formatted_sink_backend<
+        char,
+        boost::log::sinks::combine_requirements<boost::log::sinks::concurrent_feeding,
+                                                boost::log::sinks::flushing>::type>
         base_type;
 
-	template <typename backend_t>
+    template <typename backend_t>
     using backend_mutex_type = std::conditional_t<
         boost::log::sinks::has_requirement<typename backend_t::frontend_requirements,
                                            boost::log::sinks::concurrent_feeding>::value,
         boost::log::aux::fake_mutex,
         boost::recursive_mutex>;
+
+    using filter_func = std::function<bool(boost::log::attribute_value_set const&)>;
+    template <typename backend_t>
+    using backend_filter_type = filter_func;
 
 public:
     //! Character type
@@ -66,24 +74,33 @@ public:
 
 
     composite_backend(boost::shared_ptr<Backend>&&... backends)
-        : _backends(std::forward<boost::shared_ptr<Backend>>(backends)...)
-    {}
+        : _backends(std::forward<boost::shared_ptr<Backend>>(backends)...) {}
 
-	template<size_t I>
+    template <size_t I>
     auto locked_backend() {
-        return boost::log::aux::locking_ptr<typename std::tuple_element_t<I, decltype(_backends)>::element_type,
+        return boost::log::aux::locking_ptr<
+            typename std::tuple_element_t<I, decltype(_backends)>::element_type,
             std::tuple_element_t<I, decltype(_mutexes)>>(std::get<I>(_backends),
                                                          std::get<I>(_mutexes));
+    }
+
+    template <size_t I>
+	void set_filter(filter_func const& filter) {
+        std::get<I>(_filters) = filter;
+	}
+
+	template <size_t I>
+    void reset_filter() {
+        std::get<I>(_filters).reset();
     }
 
     void consume(boost::log::record_view const& rec, string_type const& formatted_string) {
         consume_all(rec, formatted_string, std::make_index_sequence<sizeof...(Backend)>{});
     }
 
-	void flush()
-	{
-		flush_all(std::make_index_sequence<sizeof...(Backend)>{});
-	}
+    void flush() {
+        flush_all(std::make_index_sequence<sizeof...(Backend)>{});
+    }
 
 private:
     template <typename mutex_t, typename backend_t>
@@ -113,10 +130,13 @@ private:
     // The function consumes the log records that come from the frontend
     template <size_t I>
     void consume_at(boost::log::record_view const& rec, string_type const& formatted_string) {
-        boost::log::aux::exclusive_lock_guard<std::tuple_element_t<I, decltype(_mutexes)>> lock(
-            std::get<I>(_mutexes));
+        const filter_func& filter = std::get<I>(_filters);
+        if (!filter || filter(rec.attribute_values())) {
+            boost::log::aux::exclusive_lock_guard<std::tuple_element_t<I, decltype(_mutexes)>> lock(
+                std::get<I>(_mutexes));
 
-        std::get<I>(_backends)->consume(rec, formatted_string);
+            std::get<I>(_backends)->consume(rec, formatted_string);
+        }
     }
 
     template <size_t... Is>
@@ -128,7 +148,7 @@ private:
 
     std::tuple<boost::shared_ptr<Backend>...> _backends;
     std::tuple<backend_mutex_type<Backend>...> _mutexes;
-
+    std::tuple<backend_filter_type<Backend>...> _filters;
 };
 
 }  // namespace logv2
