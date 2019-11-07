@@ -63,7 +63,7 @@ void doLog(LogSeverity const& severity,
            S const& message,
            fmt::internal::named_arg<Args, char>&&... args) {
     AttributeArgumentSet attr_set;
-    //auto arg_store = fmt::internal::make_args_checked(message, (args.value)...);
+    // auto arg_store = fmt::internal::make_args_checked(message, (args.value)...);
     auto arg_store2 = make_arg_store(args...);
     auto arg_store = make_args_checked(message, (args.value)...);
     attr_set._values = arg_store;

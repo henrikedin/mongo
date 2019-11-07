@@ -195,7 +195,7 @@ private:
 // Type erased set of provided libfmt named arguments. Index match between names and values.
 struct AttributeArgumentSet {
     boost::container::small_vector<StringData, fmt::internal::max_packed_args> _names;
-    //fmt::format_args _values;
+    // fmt::format_args _values;
 
     arg_erased_store _values2;
 

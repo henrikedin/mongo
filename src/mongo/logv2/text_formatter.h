@@ -154,7 +154,8 @@ public:
         }
 
         boost::container::small_vector<
-            fmt::basic_format_arg<fmt::basic_format_context<formatting_ostream_iterator<>, char>>, 3>
+            fmt::basic_format_arg<fmt::basic_format_context<formatting_ostream_iterator<>, char>>,
+            3>
             _args;
         std::list<std::string> _storage;
         std::stack<std::string> _nested;
@@ -204,11 +205,12 @@ public:
         fmt::vformat_to<fmt::arg_formatter<range_t>>(
             range, to_string_view(message), visitor.format_args());
 
-		//fmt::vformat_to<fmt::arg_formatter<range_t>>(range, to_string_view(message), attrs._values);
+        // fmt::vformat_to<fmt::arg_formatter<range_t>>(range, to_string_view(message),
+        // attrs._values);
     }
 
 protected:
-    //fmt::memory_buffer _buffer;
+    // fmt::memory_buffer _buffer;
 };
 
 }  // namespace logv2

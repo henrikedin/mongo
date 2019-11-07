@@ -293,8 +293,8 @@ public:
         attrs._values2.format(&visitor);
         strm << fmt::internal::vformat(to_string_view(message), visitor.format_args());
 
-        //using range_t = fmt::internal::output_range<formatting_ostream_iterator<>>;
-        //fmt::vformat_to<fmt::arg_formatter<range_t>>(
+        // using range_t = fmt::internal::output_range<formatting_ostream_iterator<>>;
+        // fmt::vformat_to<fmt::arg_formatter<range_t>>(
         //    range_t{formatting_ostream_iterator(strm)}, to_string_view(message), attrs._values);
     }
 };
