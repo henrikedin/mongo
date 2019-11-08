@@ -29,14 +29,47 @@
 
 #pragma once
 
-#include "mongo/logv2/plain_formatter.h"
+#include <boost/log/attributes/value_extraction.hpp>
+#include <boost/log/core/record_view.hpp>
+#include <boost/log/expressions/message.hpp>
+#include <boost/log/utility/formatting_ostream.hpp>
+
+#include "mongo/logv2/attribute_storage.h"
+#include "mongo/logv2/attributes.h"
+#include "mongo/logv2/log_component.h"
+#include "mongo/logv2/log_severity.h"
+#include "mongo/logv2/log_tag.h"
+#include "mongo/util/time_support.h"
+
+#include <fmt/format.h>
 
 namespace mongo {
 namespace logv2 {
+namespace detail {
+struct TextValueExtractor {
+    void operator()(StringData name, CustomAttributeValue const& val) {
+        _storage.push_back(val._toString());
+        operator()(name, _storage.back());
+    }
 
-class TextFormatter : private PlainFormatter {
+    void operator()(StringData name, const BSONObj* val) {
+        _storage.push_back(val->jsonString());
+        operator()(name, _storage.back());
+    }
+
+    template <typename T>
+    void operator()(StringData name, T&& val) {
+        _args.emplace_back(fmt::internal::make_arg<fmt::format_context>(val));
+    }
+
+    std::vector<fmt::basic_format_arg<fmt::format_context>> _args;
+    std::list<std::string> _storage;
+};
+}  // namespace detail
+
+class PlainFormatter {
 public:
-    TextFormatter() = default;
+    PlainFormatter() = default;
 
     static bool binary() {
         return false;
@@ -45,21 +78,19 @@ public:
     void operator()(boost::log::record_view const& rec, boost::log::formatting_ostream& strm) {
         using namespace boost::log;
 
+        StringData message = extract<StringData>(attributes::message(), rec).get();
+        const auto& attrs =
+            extract<TypeErasedAttributeStorage>(attributes::attributes(), rec).get();
+
+        detail::TextValueExtractor extractor;
+        extractor._args.reserve(attrs.size());
+        attrs.apply(extractor);
         fmt::memory_buffer buffer;
-        fmt::format_to(
-            buffer,
-            "{} {:<2} {:<8} [{}] ",
-            extract<Date_t>(attributes::timeStamp(), rec).get().toString(),
-            extract<LogSeverity>(attributes::severity(), rec).get().toStringDataCompact(),
-            extract<LogComponent>(attributes::component(), rec).get().getNameForLog(),
-            extract<StringData>(attributes::threadName(), rec).get());
+        fmt::internal::vformat_to(buffer,
+                                  to_string_view(message),
+                                  fmt::basic_format_args<fmt::format_context>(
+                                      extractor._args.data(), extractor._args.size()));
         strm.write(buffer.data(), buffer.size());
-
-        if (extract<LogTag>(attributes::tags(), rec).get().has(LogTag::kStartupWarnings)) {
-            strm << "** WARNING: ";
-        }
-
-        PlainFormatter::operator()(rec, strm);
     }
 };
 
