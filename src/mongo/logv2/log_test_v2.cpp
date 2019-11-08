@@ -56,9 +56,10 @@
 namespace mongo {
 namespace logv2 {
 namespace {
-struct TypeWithCustomFormatting {
-    TypeWithCustomFormatting() {}
-    TypeWithCustomFormatting(double x, double y) : _x(x), _y(y) {}
+
+struct TypeWithoutBSON {
+    TypeWithoutBSON() {}
+    TypeWithoutBSON(double x, double y) : _x(x), _y(y) {}
 
     double _x{0.0};
     double _y{0.0};
@@ -66,6 +67,10 @@ struct TypeWithCustomFormatting {
     std::string toString() const {
         return fmt::format("(x: {}, y: {})", _x, _y);
     }
+};
+
+struct TypeWithBSON : public TypeWithoutBSON {
+    using TypeWithoutBSON::TypeWithoutBSON;
 
     BSONObj toBSON() const {
         BSONObjBuilder builder;
@@ -147,9 +152,13 @@ TEST_F(LogTestV2, Basic) {
     LOGV2_OPTIONS({LogTag::kStartupWarnings}, "test");
     ASSERT(lines.back() == "test");
 
-    TypeWithCustomFormatting t(1.0, 2.0);
+    TypeWithBSON t(1.0, 2.0);
     LOGV2("{} custom formatting", "name"_attr = t);
     ASSERT(lines.back() == t.toString() + " custom formatting");
+
+    TypeWithoutBSON t2(1.0, 2.0);
+    LOGV2("{} custom formatting, no bson", "name"_attr = t2);
+    ASSERT(lines.back() == t.toString() + " custom formatting, no bson");
 }
 
 TEST_F(LogTestV2, TextFormat) {
@@ -170,9 +179,13 @@ TEST_F(LogTestV2, TextFormat) {
                   "warning");
     ASSERT(lines.back().rfind("** WARNING: warning") != std::string::npos);
 
-    TypeWithCustomFormatting t(1.0, 2.0);
+    TypeWithBSON t(1.0, 2.0);
     LOGV2("{} custom formatting", "name"_attr = t);
     ASSERT(lines.back().rfind(t.toString() + " custom formatting") != std::string::npos);
+
+    TypeWithoutBSON t2(1.0, 2.0);
+    LOGV2("{} custom formatting, no bson", "name"_attr = t2);
+    ASSERT(lines.back().rfind(t.toString() + " custom formatting, no bson") != std::string::npos);
 }
 
 TEST_F(LogTestV2, JSONFormat) {
@@ -220,13 +233,20 @@ TEST_F(LogTestV2, JSONFormat) {
     ASSERT(log.getField("c"_sd).String() == LogComponent(LogComponent::kControl).getNameForLog());
     ASSERT(log.getField("msg"_sd).String() == "different component");
 
-    TypeWithCustomFormatting t(1.0, 2.0);
+    TypeWithBSON t(1.0, 2.0);
     LOGV2("{} custom formatting", "name"_attr = t);
     log = mongo::fromjson(lines.back());
     ASSERT(log.getField("msg"_sd).String() == "{name} custom formatting");
     ASSERT(log.getField("attr"_sd).Obj().nFields() == 1);
     ASSERT(log.getField("attr"_sd).Obj().getField("name").Obj().woCompare(
                mongo::fromjson(t.toBSON().jsonString())) == 0);
+
+    TypeWithoutBSON t2(1.0, 2.0);
+    LOGV2("{} custom formatting", "name"_attr = t2);
+    log = mongo::fromjson(lines.back());
+    ASSERT(log.getField("msg"_sd).String() == "{name} custom formatting");
+    ASSERT(log.getField("attr"_sd).Obj().nFields() == 1);
+    ASSERT(log.getField("attr"_sd).Obj().getField("name").String() == t.toString());
 }
 
 TEST_F(LogTestV2, Threads) {
