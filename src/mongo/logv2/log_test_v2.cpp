@@ -159,6 +159,84 @@ TEST_F(LogTestV2, Basic) {
     TypeWithoutBSON t2(1.0, 2.0);
     LOGV2("{} custom formatting, no bson", "name"_attr = t2);
     ASSERT(lines.back() == t.toString() + " custom formatting, no bson");
+
+	
+}
+
+TEST_F(LogTestV2, IntegralTypes) {
+    std::vector<std::string> lines;
+    auto sink = LogTestBackend::create(lines);
+    sink->set_filter(ComponentSettingsFilter(LogManager::global().getGlobalDomain(),
+                                             LogManager::global().getGlobalSettings()));
+    sink->set_formatter(PlainFormatter());
+    attach(sink);
+
+	// char gets formatted as byte
+    char c = 1;
+	LOGV2("char {}", "name"_attr = c);
+    ASSERT(lines.back() == "char \x1");
+
+	// signed char gets promoted to int
+	signed char sc = -1;
+	LOGV2("signed char {}", "name"_attr = sc);
+    ASSERT(lines.back() == "signed char -1");
+
+	// unsigned char gets promoted to unsigned int
+	unsigned char uc = -1;
+	LOGV2("unsigned char {}", "name"_attr = uc);
+    ASSERT(lines.back() == "unsigned char 255");
+
+	// short gets promoted to int
+	short s = 1;
+	LOGV2("short {}", "name"_attr = s);
+    ASSERT(lines.back() == "short 1");
+
+	// signed short gets promoted to int
+	signed short ss = -1;
+	LOGV2("signed short {}", "name"_attr = ss);
+    ASSERT(lines.back() == "signed short -1");
+
+	// unsigned short gets promoted to unsigned int
+	unsigned short us = -1;
+	LOGV2("unsigned short {}", "name"_attr = us);
+    ASSERT(lines.back() == "unsigned short 65535");
+
+	// int types are preserved
+	int i = 1;
+	LOGV2("int {}", "name"_attr = i);
+    ASSERT(lines.back() == "int 1");
+
+	signed int si = -1;
+	LOGV2("signed int {}", "name"_attr = si);
+    ASSERT(lines.back() == "signed int -1");
+
+	unsigned int ui = -1;
+	LOGV2("unsigned int {}", "name"_attr = ui);
+    ASSERT(lines.back() == "unsigned int 4294967295");
+
+	// long is prohibited due to ambiguity between platforms (compiles on posix but is explicitly removed on windows)
+
+	// long long types are preserved
+	long long ll = 1;
+	LOGV2("long long {}", "name"_attr = ll);
+    ASSERT(lines.back() == "long long 1");
+
+	signed long long sll = -1;
+	LOGV2("signed long long {}", "name"_attr = sll);
+    ASSERT(lines.back() == "signed long long -1");
+
+	unsigned long long ull = -1;
+	LOGV2("unsigned long long {}", "name"_attr = ull);
+    ASSERT(lines.back() == "unsigned long long 18446744073709551615");
+
+	// int64_t and uint64_t are fine
+	int64_t int64 = 1;
+	LOGV2("int64_t {}", "name"_attr = int64);
+    ASSERT(lines.back() == "int64_t 1");
+
+	uint64_t uint64 = -1;
+	LOGV2("uint64_t {}", "name"_attr = uint64);
+    ASSERT(lines.back() == "uint64_t 18446744073709551615");
 }
 
 TEST_F(LogTestV2, TextFormat) {

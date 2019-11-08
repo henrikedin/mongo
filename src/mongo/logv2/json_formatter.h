@@ -97,7 +97,6 @@ public:
         using namespace boost::log;
 
         // Build a JSON object for the user attributes.
-        // const auto& attrs = extract<AttributeArgumentSet>(attributes::attributes(), rec).get();
         const auto& attrs =
             extract<TypeErasedAttributeStorage>(attributes::attributes(), rec).get();
 
