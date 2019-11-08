@@ -180,7 +180,7 @@ public:
         if (!attrs._names.empty()) {
             JsonFormattingVisitor visitor(strm);
             visitor.object_begin();
-            attrs._values2.format(&visitor);
+            //attrs._values2.format(&visitor);
             visitor.object_end();
         }
 

@@ -185,7 +185,7 @@ public:
         const auto& attrs = extract<AttributeArgumentSet>(attributes::attributes(), rec).get();
 
         Visitor visitor;
-        attrs._values2.format(&visitor);
+        //attrs._values2.format(&visitor);
 
         fmt::format_to(
             formatting_ostream_iterator(strm),

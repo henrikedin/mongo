@@ -290,7 +290,7 @@ public:
             boost::log::extract<AttributeArgumentSet>(attributes::attributes(), rec).get();
 
         Visitor visitor;
-        attrs._values2.format(&visitor);
+        //attrs._values2.format(&visitor);
         strm << fmt::internal::vformat(to_string_view(message), visitor.format_args());
 
         //using range_t = fmt::internal::output_range<formatting_ostream_iterator<>>;

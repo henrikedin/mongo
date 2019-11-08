@@ -70,7 +70,7 @@ public:
     template <typename T>
     void write(StringData name, const T& obj) {
         write_name(name);
-        obj->format(this);
+        //obj->format(this);
     }
 
     virtual void write_bool(StringData name, bool val) = 0;
