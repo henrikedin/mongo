@@ -34,7 +34,8 @@
 #include <boost/log/expressions/message.hpp>
 #include <boost/log/utility/formatting_ostream.hpp>
 
-#include "mongo/logv2/attribute_argument_set.h"
+#include "mongo/bson/bsonobj.h"
+#include "mongo/logv2/attribute_storage.h"
 #include "mongo/logv2/attributes.h"
 #include "mongo/logv2/log_component.h"
 #include "mongo/logv2/log_severity.h"
@@ -46,6 +47,46 @@
 namespace mongo {
 namespace logv2 {
 
+namespace detail {
+struct JsonValueExtractor {
+    JsonValueExtractor() : _separator(""_sd) {}
+    void operator()(StringData name, CustomAttributeValue const& val) {
+        if (val._toBSON) {
+            _storage.push_back(val._toBSON().jsonString());
+
+            // This is a JSON subobject, select overload that does not surround value with quotes
+            operator()(name, _storage.back());
+        } else {
+            _storage.push_back(val._toString());
+
+            // This is a string, select overload that surrounds value with quotes
+            operator()(name, StringData(_storage.back()));
+        }
+    }
+
+    void operator()(StringData name, StringData value) {
+        store(R"({}"{}":"{}")", name, value);
+    }
+
+    template <typename T>
+    void operator()(StringData name, T&& value) {
+        store(R"({}"{}":{})", name, value);
+    }
+
+    template <typename T>
+    void store(const char* fmt_str, StringData name, T&& value) {
+        _name_args.emplace_back(fmt::internal::make_arg<fmt::format_context>(name));
+        fmt::format_to(_buffer, fmt_str, _separator, name, value);
+        _separator = ","_sd;
+    }
+
+    fmt::memory_buffer _buffer;
+    std::vector<fmt::basic_format_arg<fmt::format_context>> _name_args;
+    std::list<std::string> _storage;
+    StringData _separator;
+};
+}  // namespace detail
+
 class JsonFormatter {
 public:
     static bool binary() {
@@ -56,34 +97,12 @@ public:
         using namespace boost::log;
 
         // Build a JSON object for the user attributes.
-        const auto& attrs = extract<AttributeArgumentSet>(attributes::attributes(), rec).get();
-        std::stringstream ss;
-        bool first = true;
-        ss << "{";
-        for (std::size_t i = 0; i < attrs._names.size(); ++i) {
-            if (!first)
-                ss << ",";
-            first = false;
-            bool is_string = attrs._values.get(i).type() == fmt::internal::type::string_type ||
-                attrs._values.get(i).type() == fmt::internal::type::cstring_type;
-            ss << "\"" << attrs._names[i] << "\":";
-            if (is_string)
-                ss << "\"";
+        // const auto& attrs = extract<AttributeArgumentSet>(attributes::attributes(), rec).get();
+        const auto& attrs =
+            extract<TypeErasedAttributeStorage>(attributes::attributes(), rec).get();
 
-            // Call libfmt to extract formatted value from type erased format_args. If we have a
-            // custom formatter, ask for formatting in JSON using :j format specifier.
-            fmt::memory_buffer buffer;
-            auto format_str = fmt::format(
-                attrs._values.get(i).type() == fmt::internal::type::custom_type ? "{{{}:j}}"
-                                                                                : "{{{}}}",
-                i);
-            fmt::vformat_to(buffer, format_str, attrs._values);
-            ss << fmt::to_string(buffer);
-
-            if (is_string)
-                ss << "\"";
-        }
-        ss << "}";
+        detail::JsonValueExtractor extractor;
+        attrs.apply(extractor);
 
         std::string id;
         auto stable_id = extract<StringData>(attributes::stableId(), rec).get();
@@ -93,16 +112,12 @@ public:
 
         std::string message;
         fmt::memory_buffer buffer;
-        std::vector<fmt::basic_format_arg<fmt::format_context>> name_args;
-        for (auto&& attr_name : attrs._names) {
-            name_args.emplace_back(fmt::internal::make_arg<fmt::format_context>(attr_name));
-        }
         fmt::vformat_to<NamedArgFormatter, char>(
             buffer,
             extract<StringData>(attributes::message(), rec).get().toString(),
-            fmt::basic_format_args<fmt::format_context>(name_args.data(), name_args.size()));
+            fmt::basic_format_args<fmt::format_context>(extractor._name_args.data(),
+                                                        extractor._name_args.size()));
         message = fmt::to_string(buffer);
-
 
         StringData severity =
             extract<LogSeverity>(attributes::severity(), rec).get().toStringDataCompact();
@@ -114,22 +129,33 @@ public:
             tag = fmt::format(",\"tags\":{}", tags.toJSONArray());
         }
 
-        auto formatted_body = fmt::format(
-            "{{\"t\":\"{}\",\"s\":\"{}\"{: <{}}\"c\":\"{}\"{: "
-            "<{}}\"ctx\":\"{}\",{}\"msg\":\"{}\"{}{}{}}}",
-            dateToISOStringUTC(extract<Date_t>(attributes::timeStamp(), rec).get()),
-            severity,
-            ",",
-            3 - severity.size(),
-            component,
-            ",",
-            9 - component.size(),
-            extract<StringData>(attributes::threadName(), rec).get(),
-            id,
-            message,
-            attrs._names.empty() ? "" : ",\"attr\":",
-            attrs._names.empty() ? "" : ss.str(),
-            tag);
+        auto formatted_body =
+            fmt::format(R"({{)"
+                        R"("t":"{}",)"        // timestamp
+                        R"("s":"{}"{: <{}})"  // severity with padding for the comma
+                        R"("c":"{}"{: <{}})"  // component with padding for the comma
+                        R"("ctx":"{}",)"      // context
+                        R"({})"               // optional stable id
+                        R"("msg":"{}")"       // message
+                        R"({})"               // optional attribute key
+                        R"({})"               // optional attribute values
+                        R"({})"               // optional attribute closing
+                        R"({})"               // optional tags
+                        R"(}})",
+                        dateToISOStringUTC(extract<Date_t>(attributes::timeStamp(), rec).get()),
+                        severity,
+                        ",",
+                        3 - severity.size(),
+                        component,
+                        ",",
+                        9 - component.size(),
+                        extract<StringData>(attributes::threadName(), rec).get(),
+                        id,
+                        message,
+                        attrs.empty() ? "" : ",\"attr\":{",
+                        attrs.empty() ? "" : fmt::to_string(extractor._buffer),
+                        attrs.empty() ? "" : "}",
+                        tag);
         strm << formatted_body;
     }
 

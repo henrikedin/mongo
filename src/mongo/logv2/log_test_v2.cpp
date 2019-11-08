@@ -37,12 +37,15 @@
 #include <string>
 #include <vector>
 
+#include "mongo/bson/bsonobj.h"
+#include "mongo/bson/bsonobjbuilder.h"
 #include "mongo/bson/json.h"
 #include "mongo/logv2/component_settings_filter.h"
 #include "mongo/logv2/formatter_base.h"
 #include "mongo/logv2/json_formatter.h"
 #include "mongo/logv2/log.h"
 #include "mongo/logv2/log_component.h"
+#include "mongo/logv2/plain_formatter.h"
 #include "mongo/logv2/ramlog_sink.h"
 #include "mongo/logv2/text_formatter.h"
 #include "mongo/stdx/thread.h"
@@ -50,6 +53,8 @@
 
 #include <boost/log/attributes/constant.hpp>
 
+namespace mongo {
+namespace logv2 {
 namespace {
 struct TypeWithCustomFormatting {
     TypeWithCustomFormatting() {}
@@ -62,36 +67,14 @@ struct TypeWithCustomFormatting {
         return fmt::format("(x: {}, y: {})", _x, _y);
     }
 
-    std::string toJson() const {
-        return fmt::format("{{\"x\": {}, \"y\": {}}}", _x, _y);
+    BSONObj toBSON() const {
+        BSONObjBuilder builder;
+        builder.append("x"_sd, _x);
+        builder.append("y"_sd, _y);
+        return builder.obj();
     }
 };
-}  // namespace
 
-
-namespace fmt {
-template <>
-struct formatter<TypeWithCustomFormatting> : public mongo::logv2::FormatterBase {
-    template <typename FormatContext>
-    auto format(const TypeWithCustomFormatting& obj, FormatContext& ctx) {
-        switch (output_format()) {
-            case OutputFormat::kJson:
-                return format_to(ctx.out(), "{}", obj.toJson());
-
-            case OutputFormat::kBson:
-                return format_to(ctx.out(), "{}", "bson impl here");
-
-            case OutputFormat::kText:
-            default:
-                return format_to(ctx.out(), "{}", obj.toString());
-        }
-    }
-};
-}  // namespace fmt
-
-namespace mongo {
-namespace logv2 {
-namespace {
 class LogTestBackend
     : public boost::log::sinks::
           basic_formatted_sink_backend<char, boost::log::sinks::synchronized_feeding> {
@@ -111,21 +94,6 @@ public:
 
 private:
     std::vector<std::string>& _logLines;
-};
-
-class PlainFormatter {
-public:
-    static bool binary() {
-        return false;
-    };
-
-    void operator()(boost::log::record_view const& rec, boost::log::formatting_ostream& strm) {
-        StringData message = boost::log::extract<StringData>(attributes::message(), rec).get();
-        const auto& attrs =
-            boost::log::extract<AttributeArgumentSet>(attributes::attributes(), rec).get();
-
-        strm << fmt::internal::vformat(to_string_view(message), attrs._values);
-    }
 };
 
 class LogDuringInitTester {
@@ -182,9 +150,6 @@ TEST_F(LogTestV2, Basic) {
     TypeWithCustomFormatting t(1.0, 2.0);
     LOGV2("{} custom formatting", "name"_attr = t);
     ASSERT(lines.back() == t.toString() + " custom formatting");
-
-    LOGV2("{:j} custom formatting, force json", "name"_attr = t);
-    ASSERT(lines.back() == t.toJson() + " custom formatting, force json");
 }
 
 TEST_F(LogTestV2, TextFormat) {
@@ -261,7 +226,7 @@ TEST_F(LogTestV2, JSONFormat) {
     ASSERT(log.getField("msg"_sd).String() == "{name} custom formatting");
     ASSERT(log.getField("attr"_sd).Obj().nFields() == 1);
     ASSERT(log.getField("attr"_sd).Obj().getField("name").Obj().woCompare(
-               mongo::fromjson(t.toJson())) == 0);
+               mongo::fromjson(t.toBSON().jsonString())) == 0);
 }
 
 TEST_F(LogTestV2, Threads) {

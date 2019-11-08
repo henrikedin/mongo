@@ -118,7 +118,8 @@ private:
 
 public:
     AttributeStorage(const Args&... args)
-        : data_{detail::makeNamedAttribute(StringData(args.name.data(), args.name.size()), args.value)...} {}
+        : data_{detail::makeNamedAttribute(StringData(args.name.data(), args.name.size()),
+                                           args.value)...} {}
 };
 
 template <typename... Args>
@@ -128,28 +129,33 @@ inline AttributeStorage<Args...> makeAttributeStorage(const Args&... args) {
 
 class TypeErasedAttributeStorage {
 public:
-    TypeErasedAttributeStorage() : size_(0) {}
+    TypeErasedAttributeStorage() : _size(0) {}
 
     template <typename... Args>
     TypeErasedAttributeStorage(const AttributeStorage<Args...>& store) {
-        data_ = store.data_;
-        size_ = store.num_args;
+        _data = store.data_;
+        _size = store.num_args;
     }
 
-    //void format(FormattingVisitor* visitor) const {
-    //    /*const arg_value* data = data_;
-    //    const StringData* name = name_;
-    //    for (size_t i = 0; i < size_; ++i) {
-    //        stdx::visit([visitor, name](auto&& arg) { visitor->write(*name, arg); }, data->value);
+    bool empty() const {
+        return _size == 0;
+    }
 
-    //        data++;
-    //        name++;
-    //    }*/
-    //}
+    std::size_t size() const {
+        return _size;
+    }
+
+    template <typename Func>
+    void apply(Func&& f) const {
+        std::for_each(_data, _data + _size, [&f](const detail::NamedAttribute& attr) {
+            StringData name = attr._name;
+            stdx::visit([name, &f](auto&& val) { f(name, val); }, attr._value);
+        });
+    }
 
 private:
-    const detail::NamedAttribute* data_;
-    size_t size_;
+    const detail::NamedAttribute* _data;
+    size_t _size;
 };
 
 }  // namespace logv2

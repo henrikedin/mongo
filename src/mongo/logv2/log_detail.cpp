@@ -58,7 +58,8 @@ void doLogImpl(LogSeverity const& severity,
         record.attribute_values().insert(
             attributes::attributes(),
             boost::log::attribute_value(
-                new boost::log::attributes::attribute_value_impl<TypeErasedAttributeStorage>(attrs)));
+                new boost::log::attributes::attribute_value_impl<TypeErasedAttributeStorage>(
+                    attrs)));
 
         source.push_record(std::move(record));
     }

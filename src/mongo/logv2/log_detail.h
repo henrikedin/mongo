@@ -53,18 +53,11 @@ void doLog(LogSeverity const& severity,
            LogOptions const& options,
            S const& message,
            fmt::internal::named_arg<Args, char>&&... args) {
-    //AttributeArgumentSet attr_set;
-    //auto arg_store = fmt::internal::make_args_checked(message, (args.value)...);
-    //auto arg_store2 = makeAttributeStorage(args...);
-    //auto arg_store = make_args_checked(message, (args.value)...);
-    //attr_set._values = arg_store;
-    //attr_set._values2 = arg_store2;
-    //(attr_set._names.push_back(::mongo::StringData(args.name.data(), args.name.size())), ...);
-	//fmt::internal::check_format_string<Args...>(message);
-	auto attributes = makeAttributeStorage(args...);
+    auto attributes = makeAttributeStorage(args...);
 
     auto msg = static_cast<fmt::string_view>(message);
-    doLogImpl(severity, stable_id, options, ::mongo::StringData(msg.data(), msg.size()), attributes);
+    doLogImpl(
+        severity, stable_id, options, ::mongo::StringData(msg.data(), msg.size()), attributes);
 }
 
 }  // namespace detail
