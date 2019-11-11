@@ -441,6 +441,64 @@ TEST_F(LogTestV2, JSONFormat) {
     ASSERT(log.getField("attr"_sd).Obj().getField("name").String() == t.toString());
 }
 
+TEST_F(LogTestV2, Unicode) {
+    std::vector<std::string> lines;
+    auto sink = LogTestBackend::create(lines);
+    sink->set_filter(ComponentSettingsFilter(LogManager::global().getGlobalDomain(),
+                                             LogManager::global().getGlobalSettings()));
+    sink->set_formatter(PlainFormatter());
+    attach(sink);
+
+    LOGV2("{}",
+          "name"_attr =
+              "\a\b\f\n\r\t\v\\\0\x7f\x1b"_sd);  // Single byte characters that needs to be escaped
+    ASSERT(lines.back() == "\\a\\b\\f\\n\\r\\t\\v\\\\\\0\\x7f\\e");
+
+    LOGV2("{}", "name"_attr = "\xc2\x80\xc2\x9f"_sd);  // multi byte characters that needs to be
+                                                       // escaped (unicode control characters)
+    ASSERT(lines.back() == "\\xc2\\x80\\xc2\\x9f");
+
+    LOGV2("{}", "name"_attr = "\xc3\xb1");  // Valid 2 Octet sequence
+    ASSERT(lines.back() == "\xc3\xb1");     // LATIN SMALL LETTER N WITH TILDE
+
+    LOGV2("{}", "name"_attr = "\xc3\x28");  // Invalid 2 Octet Sequence
+    ASSERT(lines.back() == "\\xc3\\x28");   // Result is escaped
+
+    LOGV2("{}", "name"_attr = "\xa0\xa1");  // Invalid Sequence Identifier
+    ASSERT(lines.back() == "\\xa0\\xa1");   // Result is escaped
+
+    LOGV2("{}", "name"_attr = "\xe1\x9b\x8f");  // Valid 3 Octet sequence
+    ASSERT(lines.back() == "\xe1\x9b\x8f");     // RUNIC LETTER TIWAZ TIR TYR T
+
+    LOGV2("{}", "name"_attr = "\xe2\x28\xa1");  // Invalid 3 Octet Sequence (in 2nd Octet)
+    ASSERT(lines.back() == "\\xe2\\x28\\xa1");  // Result is escaped
+
+    LOGV2("{}", "name"_attr = "\xe2\x82\x28");  // Invalid 3 Octet Sequence (in 3rd Octet)
+    ASSERT(lines.back() == "\\xe2\\x82\\x28");  // Result is escaped
+
+    LOGV2("{}", "name"_attr = "\xf0\x90\x8c\xbc");  // Valid 4 Octet Sequence
+    ASSERT(lines.back() == "\xf0\x90\x8c\xbc");     // GOTHIC LETTER MANNA
+
+    LOGV2("{}", "name"_attr = "\xf0\x28\x8c\xbc");   // Invalid 4 Octet Sequence (in 2nd Octet)
+    ASSERT(lines.back() == "\\xf0\\x28\\x8c\\xbc");  // Result is escaped
+
+    LOGV2("{}", "name"_attr = "\xf0\x90\x28\xbc");   // Invalid 4 Octet Sequence (in 3rd Octet)
+    ASSERT(lines.back() == "\\xf0\\x90\\x28\\xbc");  // Result is escaped
+
+    LOGV2("{}", "name"_attr = "\xf0\x28\x8c\x28");   // Invalid 4 Octet Sequence (in 4th Octet)
+    ASSERT(lines.back() == "\\xf0\\x28\\x8c\\x28");  // Result is escaped
+
+    LOGV2("{}", "name"_attr = "\xf8\xa1\xa1\xa1\xa1");  // Valid 5 Octet Sequence (but not Unicode!)
+    ASSERT(lines.back() == "\\xf8\\xa1\\xa1\\xa1\\xa1");  // Result is escaped
+
+    LOGV2("{}",
+          "name"_attr = "\xfc\xa1\xa1\xa1\xa1\xa1");  // Valid 6 Octet Sequence (but not Unicode!)
+    ASSERT(lines.back() == "\\xfc\\xa1\\xa1\\xa1\\xa1\\xa1");  // Result is escaped
+
+    LOGV2("{}", "name"_attr = "\xe2\x82");  // Invalid 3 Octet sequence, buffer ends prematurely
+    ASSERT(lines.back() == "\\xe2\\x82");   // Result is escaped
+}
+
 TEST_F(LogTestV2, Threads) {
     std::vector<std::string> linesPlain;
     auto plainSink = LogTestBackend::create(linesPlain);

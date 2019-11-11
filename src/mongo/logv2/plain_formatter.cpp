@@ -33,6 +33,7 @@
 #include "mongo/logv2/attribute_storage.h"
 #include "mongo/logv2/attributes.h"
 #include "mongo/logv2/constants.h"
+#include "mongo/logv2/string_escape.h"
 
 #include <boost/container/small_vector.hpp>
 #include <boost/log/attributes/value_extraction.hpp>
@@ -53,6 +54,11 @@ struct TextValueExtractor {
 
     void operator()(StringData name, const BSONObj* val) {
         _storage.push_back(val->jsonString());
+        operator()(name, _storage.back());
+    }
+
+    void operator()(StringData name, StringData val) {
+        _storage.push_back(escapeForText(val));
         operator()(name, _storage.back());
     }
 
