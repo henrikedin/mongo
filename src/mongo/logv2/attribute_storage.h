@@ -76,24 +76,26 @@ public:
     NamedAttribute(StringData name, uint32_t val) : _name(name), _value(val) {}
     NamedAttribute(StringData name, int64_t val) : _name(name), _value(static_cast<long long>(val)) {}
     NamedAttribute(StringData name, uint64_t val) : _name(name), _value(static_cast<unsigned long long>(val)) {}
-    NamedAttribute(StringData name, float val) : _name(name), _value(static_cast<double>(val)) {}
     NamedAttribute(StringData name, double val) : _name(name), _value(val) {}
     NamedAttribute(StringData name, bool val) : _name(name), _value(val) {}
     NamedAttribute(StringData name, char val) : _name(name), _value(val) {}
-    NamedAttribute(StringData name, const char* val) : _name(name), _value(StringData(val)) {}
     NamedAttribute(StringData name, StringData val) : _name(name), _value(val) {}
+	NamedAttribute(StringData name, const char* val) : NamedAttribute(name, StringData(val)) {}
+	NamedAttribute(StringData name, float val) : NamedAttribute(name, static_cast<double>(val)) {}
     NamedAttribute(StringData name, std::string const& val)
-        : _name(name), _value(StringData(val)) {}
+        : NamedAttribute(name, StringData(val)) {}
 #if defined(_WIN32)
 	// long is 32bit on Windows and 64bit on posix, don't allow this type to be used to avoid ambiguity
     NamedAttribute(StringData name, long val) = delete;
     NamedAttribute(StringData name, unsigned long val) = delete;
 #else
+    static_assert(sizeof(long) == sizeof(long long) == 8, "expected long to be 64bit on this platform");
 	NamedAttribute(StringData name, long long val) : _name(name), _value(val) {}
     NamedAttribute(StringData name, unsigned long long val) : _name(name), _value(val) {}
 #endif
+	NamedAttribute(StringData name, long double val) = delete;
 
-    template <typename T, typename = std::enable_if_t<!std::is_integral_v<T>>>
+    template <typename T, typename = std::enable_if_t<!std::is_integral_v<T> && !std::is_floating_point_v<T>>>
     NamedAttribute(StringData name, const T& val) : _name(name) {
         static_assert(has_toString<T>::value, "custom type need toString() implementation");
 
