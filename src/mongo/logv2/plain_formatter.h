@@ -52,7 +52,7 @@ struct TextValueExtractor {
         operator()(name, _storage.back());
     }
 
-	void operator()(StringData name, const BSONObj* val) {
+    void operator()(StringData name, const BSONObj* val) {
         _storage.push_back(val->jsonString());
         operator()(name, _storage.back());
     }

@@ -38,16 +38,6 @@ class TextFormatter : private PlainFormatter {
 public:
     TextFormatter() = default;
 
-    // Boost log synchronizes calls to a formatter within a backend sink. If this is copied for some
-    // reason (to another backend sink), no need to copy the buffer. This is just storage so we
-    // don't need to allocate this memory every time. A final solution should format directly into
-    // the formatting_ostream.
-    TextFormatter(TextFormatter const&) {}
-
-    TextFormatter& operator=(TextFormatter const&) {
-        return *this;
-    }
-
     static bool binary() {
         return false;
     };
