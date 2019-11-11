@@ -55,15 +55,15 @@ public:
     void operator()(boost::log::record_view const& rec, boost::log::formatting_ostream& strm) {
         using namespace boost::log;
 
-        _buffer.clear();
+        fmt::memory_buffer buffer;
         fmt::format_to(
-            _buffer,
+            buffer,
             "{} {:<2} {:<8} [{}] ",
             extract<Date_t>(attributes::timeStamp(), rec).get().toString(),
             extract<LogSeverity>(attributes::severity(), rec).get().toStringDataCompact(),
             extract<LogComponent>(attributes::component(), rec).get().getNameForLog(),
             extract<StringData>(attributes::threadName(), rec).get());
-        strm.write(_buffer.data(), _buffer.size());
+        strm.write(buffer.data(), buffer.size());
 
         if (extract<LogTag>(attributes::tags(), rec).get().has(LogTag::kStartupWarnings)) {
             strm << "** WARNING: ";

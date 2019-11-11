@@ -95,16 +95,13 @@ public:
         detail::TextValueExtractor extractor;
         extractor._args.reserve(attrs.size());
         attrs.apply(extractor);
-        _buffer.clear();
-        fmt::internal::vformat_to(_buffer,
+        fmt::memory_buffer buffer;
+        fmt::internal::vformat_to(buffer,
                                   to_string_view(message),
                                   fmt::basic_format_args<fmt::format_context>(
                                       extractor._args.data(), extractor._args.size()));
-        strm.write(_buffer.data(), _buffer.size());
+        strm.write(buffer.data(), buffer.size());
     }
-
-protected:
-    fmt::memory_buffer _buffer;
 };
 
 }  // namespace logv2
