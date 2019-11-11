@@ -161,81 +161,161 @@ TEST_F(LogTestV2, Basic) {
     ASSERT(lines.back() == t.toString() + " custom formatting, no bson");
 }
 
-TEST_F(LogTestV2, IntegralTypes) {
-    std::vector<std::string> lines;
-    auto sink = LogTestBackend::create(lines);
-    sink->set_filter(ComponentSettingsFilter(LogManager::global().getGlobalDomain(),
-                                             LogManager::global().getGlobalSettings()));
-    sink->set_formatter(PlainFormatter());
-    attach(sink);
+TEST_F(LogTestV2, Types) {
+    std::vector<std::string> text;
+    auto text_sink = LogTestBackend::create(text);
+    text_sink->set_filter(ComponentSettingsFilter(LogManager::global().getGlobalDomain(),
+                                                  LogManager::global().getGlobalSettings()));
+    text_sink->set_formatter(PlainFormatter());
+    attach(text_sink);
 
-    // char gets formatted as byte
+    std::vector<std::string> json;
+    auto json_sink = LogTestBackend::create(json);
+    json_sink->set_filter(ComponentSettingsFilter(LogManager::global().getGlobalDomain(),
+                                                  LogManager::global().getGlobalSettings()));
+    json_sink->set_formatter(JsonFormatter());
+    attach(json_sink);
+
+    // bool
+    bool b = true;
+    LOGV2("bool {}", "name"_attr = b);
+    ASSERT(text.back() == "bool true");
+    ASSERT(mongo::fromjson(json.back()).getField("attr"_sd).Obj().getField("name").Bool() == b);
+
+    // char gets promoted to int
     char c = 1;
     LOGV2("char {}", "name"_attr = c);
-    ASSERT(lines.back() == "char \x1");
+    ASSERT(text.back() == "char 1");
+    ASSERT(mongo::fromjson(json.back()).getField("attr"_sd).Obj().getField("name").Int() == c);
 
     // signed char gets promoted to int
     signed char sc = -1;
     LOGV2("signed char {}", "name"_attr = sc);
-    ASSERT(lines.back() == "signed char -1");
+    ASSERT(text.back() == "signed char -1");
+    ASSERT(mongo::fromjson(json.back()).getField("attr"_sd).Obj().getField("name").Int() == sc);
 
     // unsigned char gets promoted to unsigned int
     unsigned char uc = -1;
     LOGV2("unsigned char {}", "name"_attr = uc);
-    ASSERT(lines.back() == "unsigned char 255");
+    ASSERT(text.back() == "unsigned char 255");
+    ASSERT(mongo::fromjson(json.back()).getField("attr"_sd).Obj().getField("name").Int() == uc);
 
     // short gets promoted to int
     short s = 1;
     LOGV2("short {}", "name"_attr = s);
-    ASSERT(lines.back() == "short 1");
+    ASSERT(text.back() == "short 1");
+    ASSERT(mongo::fromjson(json.back()).getField("attr"_sd).Obj().getField("name").Int() == s);
 
     // signed short gets promoted to int
     signed short ss = -1;
     LOGV2("signed short {}", "name"_attr = ss);
-    ASSERT(lines.back() == "signed short -1");
+    ASSERT(text.back() == "signed short -1");
+    ASSERT(mongo::fromjson(json.back()).getField("attr"_sd).Obj().getField("name").Int() == ss);
 
     // unsigned short gets promoted to unsigned int
     unsigned short us = -1;
     LOGV2("unsigned short {}", "name"_attr = us);
-    ASSERT(lines.back() == "unsigned short 65535");
+    ASSERT(text.back() == "unsigned short 65535");
+    ASSERT(mongo::fromjson(json.back()).getField("attr"_sd).Obj().getField("name").Int() == us);
 
     // int types are preserved
     int i = 1;
     LOGV2("int {}", "name"_attr = i);
-    ASSERT(lines.back() == "int 1");
+    ASSERT(text.back() == "int 1");
+    ASSERT(mongo::fromjson(json.back()).getField("attr"_sd).Obj().getField("name").Int() == i);
 
     signed int si = -1;
     LOGV2("signed int {}", "name"_attr = si);
-    ASSERT(lines.back() == "signed int -1");
+    ASSERT(text.back() == "signed int -1");
+    ASSERT(mongo::fromjson(json.back()).getField("attr"_sd).Obj().getField("name").Int() == si);
 
     unsigned int ui = -1;
     LOGV2("unsigned int {}", "name"_attr = ui);
-    ASSERT(lines.back() == "unsigned int 4294967295");
+    ASSERT(text.back() == "unsigned int 4294967295");
+    // BSON treats this as long even if it fits in 32bit.
+    ASSERT(mongo::fromjson(json.back()).getField("attr"_sd).Obj().getField("name").Long() == ui);
 
     // long is prohibited due to ambiguity between platforms (compiles on posix but is explicitly
     // removed on windows)
 
     // long long types are preserved
-    long long ll = 1;
+    long long ll = std::numeric_limits<unsigned int>::max();
+    ll += 1;
     LOGV2("long long {}", "name"_attr = ll);
-    ASSERT(lines.back() == "long long 1");
+    ASSERT(text.back() == std::string("long long ") + std::to_string(ll));
+    ASSERT(mongo::fromjson(json.back()).getField("attr"_sd).Obj().getField("name").Long() == ll);
 
     signed long long sll = -1;
     LOGV2("signed long long {}", "name"_attr = sll);
-    ASSERT(lines.back() == "signed long long -1");
+    ASSERT(text.back() == "signed long long -1");
+    // BSON treats this as int as it fits in 32bit.
+    ASSERT(mongo::fromjson(json.back()).getField("attr"_sd).Obj().getField("name").Int() == sll);
 
     unsigned long long ull = -1;
     LOGV2("unsigned long long {}", "name"_attr = ull);
-    ASSERT(lines.back() == "unsigned long long 18446744073709551615");
+    ASSERT(text.back() == "unsigned long long 18446744073709551615");
+    // BSON does not have the concept of unsigned so it falls back to double
+    ASSERT(mongo::fromjson(json.back()).getField("attr"_sd).Obj().getField("name").Double() == ull);
 
     // int64_t and uint64_t are fine
     int64_t int64 = 1;
     LOGV2("int64_t {}", "name"_attr = int64);
-    ASSERT(lines.back() == "int64_t 1");
+    ASSERT(text.back() == "int64_t 1");
+    ASSERT(mongo::fromjson(json.back()).getField("attr"_sd).Obj().getField("name").Int() == int64);
 
     uint64_t uint64 = -1;
     LOGV2("uint64_t {}", "name"_attr = uint64);
-    ASSERT(lines.back() == "uint64_t 18446744073709551615");
+    ASSERT(text.back() == "uint64_t 18446744073709551615");
+    // BSON does not have the concept of unsigned so it falls back to double
+    ASSERT(mongo::fromjson(json.back()).getField("attr"_sd).Obj().getField("name").Double() ==
+           uint64);
+
+    // floating point types
+    float f = 1.0;
+    LOGV2("float {}", "name"_attr = f);
+    ASSERT(text.back() == "float 1.0");
+    ASSERT(mongo::fromjson(json.back()).getField("attr"_sd).Obj().getField("name").Double() == f);
+
+    double d = 1.0;
+    LOGV2("double {}", "name"_attr = d);
+    ASSERT(text.back() == "double 1.0");
+    ASSERT(mongo::fromjson(json.back()).getField("attr"_sd).Obj().getField("name").Double() == d);
+
+    // long double is prohibited, we don't use this type and favors Decimal128 instead.
+
+    // string types
+    const char* c_str = "a c string";
+    LOGV2("c string {}", "name"_attr = c_str);
+    ASSERT(text.back() == "c string a c string");
+    ASSERT(mongo::fromjson(json.back()).getField("attr"_sd).Obj().getField("name").String() ==
+           c_str);
+
+    std::string str = "a std::string";
+    LOGV2("std::string {}", "name"_attr = str);
+    ASSERT(text.back() == "std::string a std::string");
+    ASSERT(mongo::fromjson(json.back()).getField("attr"_sd).Obj().getField("name").String() == str);
+
+    StringData str_data = "a StringData"_sd;
+    LOGV2("StringData {}", "name"_attr = str_data);
+    ASSERT(text.back() == "StringData a StringData");
+    ASSERT(mongo::fromjson(json.back()).getField("attr"_sd).Obj().getField("name").String() ==
+           str_data);
+
+    // BSONObj
+    BSONObjBuilder builder;
+    builder.append("int32"_sd, i);
+    builder.append("int64"_sd, ll);
+    builder.append("double"_sd, d);
+    builder.append("str"_sd, str_data);
+    BSONObj bson = builder.obj();
+    LOGV2("bson {}", "name"_attr = bson);
+    ASSERT(text.back() == std::string("bson ") + bson.jsonString());
+    ASSERT(mongo::fromjson(json.back())
+               .getField("attr"_sd)
+               .Obj()
+               .getField("name")
+               .Obj()
+               .woCompare(bson) == 0);
 }
 
 TEST_F(LogTestV2, TextFormat) {
@@ -259,6 +339,9 @@ TEST_F(LogTestV2, TextFormat) {
     TypeWithBSON t(1.0, 2.0);
     LOGV2("{} custom formatting", "name"_attr = t);
     ASSERT(lines.back().rfind(t.toString() + " custom formatting") != std::string::npos);
+
+    LOGV2("{} bson", "name"_attr = t.toBSON());
+    ASSERT(lines.back().rfind(t.toBSON().jsonString() + " bson") != std::string::npos);
 
     TypeWithoutBSON t2(1.0, 2.0);
     LOGV2("{} custom formatting, no bson", "name"_attr = t2);

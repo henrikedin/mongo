@@ -39,6 +39,7 @@ namespace logv2 {
 namespace detail {
 namespace {
 
+// Helper traits to figure out capabilities on custom types
 template <class T, class = void>
 struct has_toBSON : std::false_type {};
 
@@ -50,13 +51,16 @@ struct has_toString : std::false_type {};
 
 template <class T>
 struct has_toString<T, std::void_t<decltype(std::declval<T>().toString())>> : std::true_type {};
+
 }  // namespace
 
+// Custom type, storage for how to call its formatters
 struct CustomAttributeValue {
     std::function<BSONObj()> _toBSON;
     std::function<std::string()> _toString;
 };
 
+// Named attribute, storage for a name-value attribute.
 class NamedAttribute {
 public:
     StringData _name;
@@ -65,7 +69,6 @@ public:
                   long long,
                   unsigned long long,
                   bool,
-                  char,
                   double,
                   StringData,
                   const BSONObj*,
@@ -81,7 +84,6 @@ public:
         : _name(name), _value(static_cast<unsigned long long>(val)) {}
     NamedAttribute(StringData name, double val) : _name(name), _value(val) {}
     NamedAttribute(StringData name, bool val) : _name(name), _value(val) {}
-    NamedAttribute(StringData name, char val) : _name(name), _value(val) {}
     NamedAttribute(StringData name, StringData val) : _name(name), _value(val) {}
     NamedAttribute(StringData name, BSONObj const& val) : _name(name), _value(&val) {}
     NamedAttribute(StringData name, const char* val) : NamedAttribute(name, StringData(val)) {}
@@ -124,11 +126,13 @@ NamedAttribute makeNamedAttribute(StringData name, const T& val) {
 }
 }  // namespace detail
 
+// Attribute Storage stores an array of Named Attributes.
 template <typename... Args>
 class AttributeStorage {
 private:
     static const size_t num_args = sizeof...(Args);
 
+    // Arrays need a size of at least 1, add dummy element if needed (num_args above is still 0)
     detail::NamedAttribute data_[num_args + (num_args == 0 ? 1 : 0)];
 
     friend class TypeErasedAttributeStorage;
@@ -144,6 +148,7 @@ AttributeStorage<Args...> makeAttributeStorage(const Args&... args) {
     return {args...};
 }
 
+// Wrapper around internal pointer of AttributeStorage so it does not need any template parameters
 class TypeErasedAttributeStorage {
 public:
     TypeErasedAttributeStorage() : _size(0) {}
@@ -162,6 +167,7 @@ public:
         return _size;
     }
 
+    // Applies a function to every stored named attribute in order they are captured
     template <typename Func>
     void apply(Func&& f) const {
         std::for_each(_data, _data + _size, [&f](const detail::NamedAttribute& attr) {

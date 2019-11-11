@@ -61,9 +61,6 @@ public:
 
         PlainFormatter::operator()(rec, strm);
     }
-
-protected:
-    fmt::memory_buffer _buffer;
 };
 
 }  // namespace logv2
