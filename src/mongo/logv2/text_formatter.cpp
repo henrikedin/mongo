@@ -27,22 +27,41 @@
  *    it in the license file.
  */
 
-#pragma once
+#include "mongo/logv2/text_formatter.h"
 
-#include <boost/log/core/record_view.hpp>
-#include <boost/log/utility/formatting_ostream_fwd.hpp>
+#include "mongo/logv2/attributes.h"
+#include "mongo/logv2/log_component.h"
+#include "mongo/logv2/log_severity.h"
+#include "mongo/logv2/log_tag.h"
+#include "mongo/util/time_support.h"
+
+#include <boost/log/attributes/value_extraction.hpp>
+#include <boost/log/utility/formatting_ostream.hpp>
+
+#include <fmt/format.h>
 
 namespace mongo {
 namespace logv2 {
 
-class JsonFormatter {
-public:
-    static bool binary() {
-        return false;
-    };
+void TextFormatter::operator()(boost::log::record_view const& rec,
+                               boost::log::formatting_ostream& strm) {
+    using namespace boost::log;
 
-    void operator()(boost::log::record_view const& rec, boost::log::formatting_ostream& strm);
-};
+    fmt::memory_buffer buffer;
+    fmt::format_to(buffer,
+                   "{} {:<2} {:<8} [{}] ",
+                   extract<Date_t>(attributes::timeStamp(), rec).get().toString(),
+                   extract<LogSeverity>(attributes::severity(), rec).get().toStringDataCompact(),
+                   extract<LogComponent>(attributes::component(), rec).get().getNameForLog(),
+                   extract<StringData>(attributes::threadName(), rec).get());
+    strm.write(buffer.data(), buffer.size());
+
+    if (extract<LogTag>(attributes::tags(), rec).get().has(LogTag::kStartupWarnings)) {
+        strm << "** WARNING: ";
+    }
+
+    PlainFormatter::operator()(rec, strm);
+}
 
 }  // namespace logv2
 }  // namespace mongo
