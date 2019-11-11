@@ -34,7 +34,7 @@
 namespace mongo {
 namespace logv2 {
 
-class TextFormatter : private PlainFormatter {
+class TextFormatter : protected PlainFormatter {
 public:
     TextFormatter() = default;
 
