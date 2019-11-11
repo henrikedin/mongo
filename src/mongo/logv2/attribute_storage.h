@@ -68,6 +68,7 @@ public:
                   char,
                   double,
                   StringData,
+				  const BSONObj*,
                   CustomAttributeValue>
         _value;
 
@@ -80,16 +81,18 @@ public:
     NamedAttribute(StringData name, bool val) : _name(name), _value(val) {}
     NamedAttribute(StringData name, char val) : _name(name), _value(val) {}
     NamedAttribute(StringData name, StringData val) : _name(name), _value(val) {}
+	NamedAttribute(StringData name, BSONObj const& val) : _name(name), _value(&val) {}
 	NamedAttribute(StringData name, const char* val) : NamedAttribute(name, StringData(val)) {}
 	NamedAttribute(StringData name, float val) : NamedAttribute(name, static_cast<double>(val)) {}
     NamedAttribute(StringData name, std::string const& val)
         : NamedAttribute(name, StringData(val)) {}
 #if defined(_WIN32)
 	// long is 32bit on Windows and 64bit on posix, don't allow this type to be used to avoid ambiguity
+	static_assert(sizeof(long) == 4, "expected long to be 32bit on this platform");
     NamedAttribute(StringData name, long val) = delete;
     NamedAttribute(StringData name, unsigned long val) = delete;
 #else
-    static_assert(sizeof(long) == sizeof(long long) == 8, "expected long to be 64bit on this platform");
+    static_assert(sizeof(long) == 8, "expected long to be 64bit on this platform");
 	NamedAttribute(StringData name, long long val) : _name(name), _value(val) {}
     NamedAttribute(StringData name, unsigned long long val) : _name(name), _value(val) {}
 #endif
@@ -112,7 +115,7 @@ public:
 };
 
 template <typename T>
-inline NamedAttribute makeNamedAttribute(StringData name, const T& val) {
+NamedAttribute makeNamedAttribute(StringData name, const T& val) {
     return {name, val};
 }
 }  // namespace detail
@@ -133,7 +136,7 @@ public:
 };
 
 template <typename... Args>
-inline AttributeStorage<Args...> makeAttributeStorage(const Args&... args) {
+AttributeStorage<Args...> makeAttributeStorage(const Args&... args) {
     return {args...};
 }
 

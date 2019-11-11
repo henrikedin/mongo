@@ -52,6 +52,11 @@ struct TextValueExtractor {
         operator()(name, _storage.back());
     }
 
+	void operator()(StringData name, const BSONObj* val) {
+        _storage.push_back(val->jsonString());
+        operator()(name, _storage.back());
+    }
+
     template <typename T>
     void operator()(StringData name, T&& val) {
         _args.emplace_back(fmt::internal::make_arg<fmt::format_context>(val));

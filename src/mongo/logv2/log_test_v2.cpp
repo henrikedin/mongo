@@ -319,6 +319,13 @@ TEST_F(LogTestV2, JSONFormat) {
     ASSERT(log.getField("attr"_sd).Obj().getField("name").Obj().woCompare(
                mongo::fromjson(t.toBSON().jsonString())) == 0);
 
+	LOGV2("{} bson", "name"_attr = t.toBSON());
+    log = mongo::fromjson(lines.back());
+    ASSERT(log.getField("msg"_sd).String() == "{name} bson");
+    ASSERT(log.getField("attr"_sd).Obj().nFields() == 1);
+    ASSERT(log.getField("attr"_sd).Obj().getField("name").Obj().woCompare(
+               mongo::fromjson(t.toBSON().jsonString())) == 0);
+
     TypeWithoutBSON t2(1.0, 2.0);
     LOGV2("{} custom formatting", "name"_attr = t2);
     log = mongo::fromjson(lines.back());

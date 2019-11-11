@@ -64,6 +64,13 @@ struct JsonValueExtractor {
         }
     }
 
+	void operator()(StringData name, const BSONObj* val) {
+        _storage.push_back(val->jsonString());
+
+        // This is a JSON subobject, select overload that does not surround value with quotes
+        operator()(name, _storage.back());
+    }
+
     void operator()(StringData name, StringData value) {
         store(R"({}"{}":"{}")", name, value);
     }
