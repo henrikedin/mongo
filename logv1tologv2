@@ -1,0 +1,94 @@
+#!/usr/bin/perl
+use warnings;
+sub convert {
+    my $ramlogs = { 'startupWarningsLog' => 'kStartupWarnings', 'rsLog' => 'kRSLog', 'warnings' => 'kWarnings'};
+    my $expression = shift(@_);
+    my $severity = shift(@_);
+    my @parts = split(m/\s*\<\<\s*/s,$1 );
+    shift @parts;
+    #print "$fn -> $2 -> $1 -> @parts\n";
+    my $attributes = [];
+    my $message = "";
+
+    # handle the magical Tee logstreamBuilder modifiers
+    my $options;
+    if ($ramlogs->{$parts[-1]}) {
+        my $tag = $ramlogs->{$parts[-1]};
+        my $rl = pop(@parts);
+        $options = "{logv2::LogTag::$tag}";
+    }
+
+    # just toss out a terminal endl
+    if ($parts[-1] =~ /\bendl$/) {
+        pop(@parts);
+    }
+
+    # categorize logged things
+    foreach my $part (@parts) {
+        if ($part =~ /\bboolalpha$/) {
+            next;
+        } elsif ($part =~ /\bendl$/) {
+            $message .= "\\n";
+        } elsif ($part =~ /^\s*'(.)'\s*$/s) {
+            $message .= $1;
+        } elsif ($part =~ /^\s*"(.*)"\s*$/s) {
+            $message .= $1;
+        } else {
+            $attr_name = $part;
+            $attr_name =~ s[^\W+][]g;
+            $attr_name =~ s[\W+$][]g;
+            $attr_name =~ s[\W+][_]g;
+            push(@$attributes, [ $attr_name, $part ]);
+            $message .= "{}";
+        }
+    }
+    my $output = "LOGV2";
+
+    if ($severity) {
+        $output .= "_DEBUG";
+    }
+    if ($options) {
+        $output .= "_OPTIONS";
+    }
+    my @params;
+    if ($severity) {
+        if ($severity =~ /\D/) {
+            push(@params, "::mongo::logger::LogSeverity($severity).toInt()");
+        } else {
+            push(@params, $severity);
+        }
+    }
+    if ($options) {
+        push(@params, $options);
+    }
+    push(@params,"\"$message\"");
+    foreach (@$attributes) {
+        my ($attr_name, $part) = @$_;
+        push(@params, "\"$attr_name\"_attr = $part");
+    }
+    $output .= "(" . join(", ",@params) . ");";
+    return $output;
+}
+
+sub insert_include {
+    my $includes = shift(@_);
+    $inc = "#include \"mongo/logv2/log.h\"";
+    if (index($includes, $inc) != -1) {
+        return $includes;
+    }
+    my @out_includes;
+    my @includes = split("\n",$includes);
+    my $i = scalar(@includes) -1;
+    while ($i > 0 && $includes[$i] gt $inc) { $i -- }
+    return join("\n",@includes[0..$i],$inc,@includes[$i+1..$#includes]);
+}
+
+foreach my $fn (@ARGV) {
+    next if $fn =~ /^#/; # skip commented out file names
+    open($f, "<", $fn);
+    my $data = join('',<$f>);
+    $data =~ s[(\blog\(([^\)]*)\)\s\s*<<[^;]*);$][convert($1,$2)]smige;
+    $data =~ s[(#include "mongo.*#include "mongo[^\n]*$)][insert_include($1)]sem;
+    open($f, ">", $fn);
+    $f->print($data);
+}
