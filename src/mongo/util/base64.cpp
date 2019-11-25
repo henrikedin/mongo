@@ -75,44 +75,55 @@ private:
         "0123456789+/"};
     std::array<unsigned char, 256> decode;
 } alphabet;
-}  // namespace
 
-void base64::encode(stringstream& ss, const char* data, int size) {
+template <typename Writer>
+void base64_encode(Writer write, const char* data, int size) {
     for (int i = 0; i < size; i += 3) {
         int left = size - i;
         const unsigned char* start = (const unsigned char*)data + i;
 
         // byte 0
-        ss << alphabet.e(start[0] >> 2);
+        write(alphabet.e(start[0] >> 2));
 
         // byte 1
         unsigned char temp = (start[0] << 4);
         if (left == 1) {
-            ss << alphabet.e(temp);
+            write(alphabet.e(temp));
             break;
         }
         temp |= ((start[1] >> 4) & 0xF);
-        ss << alphabet.e(temp);
+        write(alphabet.e(temp));
 
         // byte 2
         temp = (start[1] & 0xF) << 2;
         if (left == 2) {
-            ss << alphabet.e(temp);
+            write(alphabet.e(temp));
             break;
         }
         temp |= ((start[2] >> 6) & 0x3);
-        ss << alphabet.e(temp);
+        write(alphabet.e(temp));
 
         // byte 3
-        ss << alphabet.e(start[2] & 0x3f);
+        write(alphabet.e(start[2] & 0x3f));
     }
 
     int mod = size % 3;
     if (mod == 1) {
-        ss << "==";
+        write('=');
+        write('=');
     } else if (mod == 2) {
-        ss << "=";
+        write('=');
     }
+}
+
+}  // namespace
+
+void base64::encode(stringstream& ss, const char* data, int size) {
+    base64_encode([&ss](unsigned char byte) { ss << byte; }, data, size);
+}
+
+void base64::encode(fmt::memory_buffer& buffer, const char* data, int size) {
+    base64_encode([&buffer](unsigned char byte) { buffer.push_back(byte); }, data, size);
 }
 
 

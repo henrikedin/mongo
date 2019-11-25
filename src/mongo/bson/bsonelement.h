@@ -211,10 +211,16 @@ public:
                            bool includeFieldNames = true,
                            int pretty = 0) const;
 
-    void jsonStringStream(JsonStringFormat format,
+    void jsonStringBuffer(JsonStringFormat format,
                           bool includeFieldNames,
                           int pretty,
-                          std::stringstream& s) const;
+                          fmt::memory_buffer& buffer) const;
+
+    template <typename Generator>
+    void jsonStringGenerator(const Generator& g,
+                             bool includeFieldNames,
+                             int pretty,
+                             fmt::memory_buffer& buffer) const;
 
     operator std::string() const {
         return toString();

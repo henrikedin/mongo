@@ -29,20 +29,24 @@
 
 #pragma once
 
-namespace mongo::logv2::constants {
+#include "mongo/base/string_data.h"
+#include "mongo/logv2/constants.h"
 
-// Used in data structures to indicate number of attributes to store without having to allocate
-// memory.
-constexpr size_t kNumStaticAttrs = 16;
+#include <boost/container/small_vector.hpp>
+#include <boost/optional.hpp>
+#include <fmt/format.h>
 
-// Field names used in the JSON and BSON formatter
-constexpr StringData kTimestampFieldName = "t"_sd;
-constexpr StringData kSeverityFieldName = "s"_sd;
-constexpr StringData kComponentFieldName = "c"_sd;
-constexpr StringData kContextFieldName = "ctx"_sd;
-constexpr StringData kStableIdFieldName = "id"_sd;
-constexpr StringData kMessageFieldName = "msg"_sd;
-constexpr StringData kAttributesFieldName = "attr"_sd;
-constexpr StringData kTagsFieldName = "tags"_sd;
+namespace mongo::logv2::detail {
 
-}  // namespace mongo::logv2::constants
+struct NameExtractor {
+    template <typename T>
+    void operator()(StringData name, const T& value) {
+        nameArgs.push_back(fmt::internal::make_arg<fmt::format_context>(name));
+    }
+
+    boost::container::small_vector<fmt::basic_format_arg<fmt::format_context>,
+                                   constants::kNumStaticAttrs>
+        nameArgs;
+};
+
+}  // namespace mongo::logv2::detail

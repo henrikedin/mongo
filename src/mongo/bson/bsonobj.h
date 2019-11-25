@@ -261,14 +261,20 @@ public:
     /** Properly formatted JSON string.
         @param pretty if true we try to add some lf's and indentation
     */
-    std::string jsonString(JsonStringFormat format = Strict,
+    std::string jsonString(JsonStringFormat format = ExtendedCanonicalV200,
                            int pretty = 0,
                            bool isArray = false) const;
 
-    void jsonStringStream(JsonStringFormat format,
+    void jsonStringBuffer(JsonStringFormat format,
                           int pretty,
                           bool isArray,
-                          std::stringstream& s) const;
+                          fmt::memory_buffer& buffer) const;
+
+    template <typename Generator>
+    void jsonStringGenerator(const Generator& g,
+                             int pretty,
+                             bool isArray,
+                             fmt::memory_buffer& buffer) const;
 
     /** note: addFields always adds _id even if not specified */
     int addFields(BSONObj& from, std::set<std::string>& fields); /* returns n added */

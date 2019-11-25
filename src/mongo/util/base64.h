@@ -34,10 +34,13 @@
 
 #include "mongo/base/string_data.h"
 
+#include <fmt/format.h>
+
 namespace mongo {
 namespace base64 {
 
 void encode(std::stringstream& ss, const char* data, int size);
+void encode(fmt::memory_buffer& buffer, const char* data, int size);
 std::string encode(const char* data, int size);
 std::string encode(const std::string& s);
 

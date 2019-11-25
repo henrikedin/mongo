@@ -27,15 +27,13 @@
  *    it in the license file.
  */
 
-#include "mongo/logv2/string_escape.h"
-
-#include "mongo/logv2/constants.h"
+#include "mongo/util/str_escape.h"
 
 #include <algorithm>
 #include <array>
 #include <iterator>
 
-namespace mongo::logv2 {
+namespace mongo::str {
 namespace {
 constexpr char kHexChar[] = "0123456789abcdef";
 
@@ -48,16 +46,11 @@ constexpr char kHexChar[] = "0123456789abcdef";
 // parameter and the corresponding escaped string as the second. They are templates to they can be
 // inlined.
 template <typename SingleByteHandler, typename SingleByteEscaper, typename TwoByteEscaper>
-std::string escape(StringData str,
-                   SingleByteHandler singleHandler,
-                   SingleByteEscaper singleEscaper,
-                   TwoByteEscaper twoEscaper) {
-    std::string escaped;
-    // If input string is over the SSO size and we're going to need to allocate memory, add some
-    // extra to fit a couple of eventual escape sequences.
-    if (str.size() > escaped.capacity())
-        escaped.reserve(str.size() + constants::kReservedSpaceForEscaping);
-
+void escape(fmt::memory_buffer& buffer,
+            StringData str,
+            SingleByteHandler singleHandler,
+            SingleByteEscaper singleEscaper,
+            TwoByteEscaper twoEscaper) {
     // The range [begin, it) contains input that does not need to be escaped and that has not been
     // written to output yet.
     // The range [it end) contains remaining input to scan 'begin' is pointing to the beginning of
@@ -74,11 +67,11 @@ std::string escape(StringData str,
     // 'numHandled' the number of bytes of unescaped data being written escaped in 'escapeSequence'
     auto flushAndWrite = [&](size_t numHandled, StringData escapeSequence) {
         // Flush range of unmodified input
-        escaped.append(begin, it);
+        buffer.append(begin, it);
         begin = it + numHandled;
 
         // Write escaped data
-        escaped.append(escapeSequence.rawData(), escapeSequence.size());
+        buffer.append(escapeSequence.rawData(), escapeSequence.rawData() + escapeSequence.size());
     };
 
     auto isValidCodePoint = [&](auto pos, int len) {
@@ -163,12 +156,12 @@ std::string escape(StringData str,
         }
     }
     // Write last block
-    escaped.append(begin, it);
-    return escaped;
+    buffer.append(begin, it);
 }
 }  // namespace
-std::string escapeForText(StringData str) {
-    return escape(str,
+void escapeForText(fmt::memory_buffer& buffer, StringData str) {
+    return escape(buffer,
+                  str,
                   [](const auto& writer, uint8_t unescaped) {
                       switch (unescaped) {
                           case '\0':
@@ -296,8 +289,16 @@ std::string escapeForText(StringData str) {
 
     );
 }
-std::string escapeForJSON(StringData str) {
-    return escape(str,
+
+std::string escapeForText(StringData str) {
+    fmt::memory_buffer buffer;
+    escapeForText(buffer, str);
+    return fmt::to_string(buffer);
+}
+
+void escapeForJSON(fmt::memory_buffer& buffer, StringData str) {
+    return escape(buffer,
+                  str,
                   [](const auto& writer, uint8_t unescaped) {
                       switch (unescaped) {
                           case '\0':
@@ -424,4 +425,9 @@ std::string escapeForJSON(StringData str) {
                       writer(2, StringData(buffer.data(), buffer.size()));
                   });
 }
-}  // namespace mongo::logv2
+std::string escapeForJSON(StringData str) {
+    fmt::memory_buffer buffer;
+    escapeForJSON(buffer, str);
+    return fmt::to_string(buffer);
+}
+}  // namespace mongo::str
