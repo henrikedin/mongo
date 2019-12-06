@@ -48,7 +48,15 @@ namespace {
 
 struct TextValueExtractor {
     void operator()(StringData name, CustomAttributeValue const& val) {
-        _storage.push_back(str::escapeForText(val.toString()));
+        std::string unescapedStr;
+        if (val.StringSerialize) {
+            fmt::memory_buffer buffer;
+            val.StringSerialize(buffer);
+            unescapedStr = fmt::to_string(buffer);
+        } else {
+            unescapedStr = val.toString();
+        }
+        _storage.push_back(str::escapeForText(unescapedStr));
         operator()(name, _storage.back());
     }
 

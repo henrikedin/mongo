@@ -61,8 +61,14 @@ struct BSONValueExtractor {
     void operator()(StringData name, CustomAttributeValue const& val) {
         if (val.BSONAppend) {
             val.BSONAppend(_builder, name);
-        } else if (val.toBSON) {
-            _builder.append(name, val.toBSON());
+        } else if (val.BSONSerialize) {
+            BSONObjBuilder subObjBuilder = _builder.subobjStart(name);
+            val.BSONSerialize(subObjBuilder);
+            subObjBuilder.done();
+        } else if (val.StringSerialize) {
+            fmt::memory_buffer buffer;
+            val.StringSerialize(buffer);
+            _builder.append(name, fmt::to_string(buffer));
         } else {
             _builder.append(name, val.toString());
         }
