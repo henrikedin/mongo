@@ -31,6 +31,7 @@
 
 #include <functional>
 
+#include "mongo/logv2/log.h"
 #include "mongo/stdx/thread.h"
 #include "mongo/unittest/unittest.h"
 #include "mongo/util/concurrency/spin_lock.h"
@@ -107,7 +108,7 @@ TEST(Concurrency, ConcurrentIncs) {
     }
 
     int ms = timer.millis();
-    mongo::unittest::log() << "spinlock ConcurrentIncs time: " << ms << std::endl;
+    mongo::unittest::LOGV2("spinlock ConcurrentIncs time: {}", "ms"_attr = ms);
 
     ASSERT_EQUALS(counter, threads * incs);
 }

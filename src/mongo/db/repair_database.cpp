@@ -55,6 +55,7 @@
 #include "mongo/db/query/query_knobs_gen.h"
 #include "mongo/db/storage/durable_catalog.h"
 #include "mongo/db/storage/storage_engine.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/log.h"
 #include "mongo/util/scopeguard.h"
 
@@ -145,7 +146,7 @@ Status repairCollections(OperationContext* opCtx,
     for (const auto& nss : colls) {
         opCtx->checkForInterrupt();
 
-        log() << "Repairing collection " << nss;
+        LOGV2("Repairing collection {}", "nss"_attr = nss);
 
         auto collection = CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, nss);
         Status status = engine->repairRecordStore(opCtx, collection->getCatalogId(), nss);
@@ -178,7 +179,7 @@ Status repairDatabase(OperationContext* opCtx, StorageEngine* engine, const std:
     invariant(opCtx->lockState()->isW());
     invariant(dbName.find('.') == std::string::npos);
 
-    log() << "repairDatabase " << dbName;
+    LOGV2("repairDatabase {}", "dbName"_attr = dbName);
 
     BackgroundOperation::assertNoBgOpInProgForDb(dbName);
 

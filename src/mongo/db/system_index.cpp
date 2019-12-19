@@ -46,6 +46,7 @@
 #include "mongo/db/index_builds_coordinator.h"
 #include "mongo/db/jsobj.h"
 #include "mongo/db/storage/storage_options.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/log.h"
 
@@ -106,8 +107,7 @@ void generateSystemIndexForExistingCollection(OperationContext* opCtx,
             opCtx, spec.toBSON(), serverGlobalParams.featureCompatibility);
         BSONObj indexSpec = fassert(40452, indexSpecStatus);
 
-        log() << "No authorization index detected on " << ns
-              << " collection. Attempting to recover by creating an index with spec: " << indexSpec;
+        LOGV2("No authorization index detected on {} collection. Attempting to recover by creating an index with spec: {}", "ns"_attr = ns, "indexSpec"_attr = indexSpec);
 
         auto indexConstraints = IndexBuildsManager::IndexConstraints::kEnforce;
         auto fromMigrate = false;

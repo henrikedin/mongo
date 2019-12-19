@@ -42,6 +42,7 @@
 #include "mongo/db/curop.h"
 #include "mongo/db/db_raii.h"
 #include "mongo/db/jsobj.h"
+#include "mongo/logv2/log.h"
 #include "mongo/rpc/metadata/client_metadata.h"
 #include "mongo/rpc/metadata/client_metadata_ismaster.h"
 #include "mongo/util/log.h"
@@ -159,8 +160,7 @@ void profile(OperationContext* opCtx, NetworkOp op) {
             Database* const db = autoGetDb->getDb();
             if (!db) {
                 // Database disappeared
-                log() << "note: not profiling because db went away for "
-                      << CurOp::get(opCtx)->getNS();
+                LOGV2("note: not profiling because db went away for {}", "CurOp_get_opCtx_getNS"_attr = CurOp::get(opCtx)->getNS());
                 break;
             }
 
@@ -231,7 +231,7 @@ Status createProfileCollection(OperationContext* opCtx, Database* db) {
     }
 
     // system.profile namespace doesn't exist; create it
-    log() << "Creating profile collection: " << dbProfilingNS;
+    LOGV2("Creating profile collection: {}", "dbProfilingNS"_attr = dbProfilingNS);
 
     CollectionOptions collectionOptions;
     collectionOptions.capped = true;

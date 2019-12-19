@@ -51,6 +51,7 @@
 #include "mongo/db/query/getmore_request.h"
 #include "mongo/db/query/query_planner_common.h"
 #include "mongo/executor/task_executor_pool.h"
+#include "mongo/logv2/log.h"
 #include "mongo/platform/overflow_arithmetic.h"
 #include "mongo/s/catalog_cache.h"
 #include "mongo/s/client/num_hosts_targeted_metrics.h"
@@ -518,8 +519,7 @@ CursorId ClusterFind::runQuery(OperationContext* opCtx,
                 throw;
             }
 
-            LOG(1) << "Received error status for query " << redact(query.toStringShort())
-                   << " on attempt " << retries << " of " << kMaxRetries << ": " << redact(ex);
+            LOGV2_DEBUG(1, "Received error status for query {} on attempt {} of {}: {}", "redact_query_toStringShort"_attr = redact(query.toStringShort()), "retries"_attr = retries, "kMaxRetries"_attr = kMaxRetries, "redact_ex"_attr = redact(ex));
 
             Grid::get(opCtx)->catalogCache()->onStaleDatabaseVersion(ex->getDb(),
                                                                      ex->getVersionReceived());
@@ -552,8 +552,7 @@ CursorId ClusterFind::runQuery(OperationContext* opCtx,
                 throw;
             }
 
-            LOG(1) << "Received error status for query " << redact(query.toStringShort())
-                   << " on attempt " << retries << " of " << kMaxRetries << ": " << redact(ex);
+            LOGV2_DEBUG(1, "Received error status for query {} on attempt {} of {}: {}", "redact_query_toStringShort"_attr = redact(query.toStringShort()), "retries"_attr = retries, "kMaxRetries"_attr = kMaxRetries, "redact_ex"_attr = redact(ex));
 
             catalogCache->onStaleShardVersion(std::move(routingInfo));
 

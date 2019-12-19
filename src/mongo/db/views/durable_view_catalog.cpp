@@ -45,6 +45,7 @@
 #include "mongo/db/operation_context.h"
 #include "mongo/db/storage/record_data.h"
 #include "mongo/db/views/view_catalog.h"
+#include "mongo/logv2/log.h"
 #include "mongo/stdx/unordered_set.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/log.h"
@@ -195,7 +196,7 @@ void DurableViewCatalogImpl::upsert(OperationContext* opCtx,
 
     Snapshotted<BSONObj> oldView;
     if (!id.isValid() || !systemViews->findDoc(opCtx, id, &oldView)) {
-        LOG(2) << "insert view " << view << " into " << _db->getSystemViewsName();
+        LOGV2_DEBUG(2, "insert view {} into {}", "view"_attr = view, "_db_getSystemViewsName"_attr = _db->getSystemViewsName());
         uassertStatusOK(
             systemViews->insertDocument(opCtx, InsertStatement(view), &CurOp::get(opCtx)->debug()));
     } else {
@@ -225,7 +226,7 @@ void DurableViewCatalogImpl::remove(OperationContext* opCtx, const NamespaceStri
     if (!id.isValid())
         return;
 
-    LOG(2) << "remove view " << name << " from " << _db->getSystemViewsName();
+    LOGV2_DEBUG(2, "remove view {} from {}", "name"_attr = name, "_db_getSystemViewsName"_attr = _db->getSystemViewsName());
     systemViews->deleteDocument(opCtx, kUninitializedStmtId, id, &CurOp::get(opCtx)->debug());
 }
 }  // namespace mongo

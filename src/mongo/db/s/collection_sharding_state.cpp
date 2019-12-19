@@ -34,6 +34,7 @@
 #include "mongo/db/s/collection_sharding_state.h"
 
 #include "mongo/db/repl/read_concern_args.h"
+#include "mongo/logv2/log.h"
 #include "mongo/s/stale_exception.h"
 #include "mongo/util/fail_point.h"
 #include "mongo/util/log.h"

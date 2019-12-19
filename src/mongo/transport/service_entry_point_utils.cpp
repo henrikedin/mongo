@@ -36,6 +36,7 @@
 #include <functional>
 #include <memory>
 
+#include "mongo/logv2/log.h"
 #include "mongo/stdx/thread.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/debug_util.h"
@@ -104,7 +105,7 @@ Status launchServiceWorkerThread(std::function<void()> task) {
         pthread_attr_destroy(&attrs);
 
         if (failed) {
-            log() << "pthread_create failed: " << errnoWithDescription(failed);
+            LOGV2("pthread_create failed: {}", "errnoWithDescription_failed"_attr = errnoWithDescription(failed));
             throw std::system_error(
                 std::make_error_code(std::errc::resource_unavailable_try_again));
         }

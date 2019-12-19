@@ -45,6 +45,7 @@
 #include "mongo/db/storage/storage_options.h"
 #include "mongo/db/storage/storage_repair_observer.h"
 #include "mongo/db/unclean_shutdown.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/log.h"
 #include "mongo/util/str.h"
@@ -104,9 +105,7 @@ void initializeStorageEngine(ServiceContext* service, const StorageEngineInitFla
             }
         } else {
             // Otherwise set the active storage engine as the contents of the metadata file.
-            log() << "Detected data files in " << dbpath << " created by the '"
-                  << *existingStorageEngine << "' storage engine, so setting the active"
-                  << " storage engine to '" << *existingStorageEngine << "'.";
+            LOGV2("Detected data files in {} created by the '{}' storage engine, so setting the active storage engine to '{}'.", "dbpath"_attr = dbpath, "existingStorageEngine"_attr = *existingStorageEngine, "existingStorageEngine"_attr = *existingStorageEngine);
             storageGlobalParams.engine = *existingStorageEngine;
         }
     }

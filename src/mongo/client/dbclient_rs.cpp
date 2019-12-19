@@ -45,6 +45,7 @@
 #include "mongo/db/auth/sasl_command_constants.h"
 #include "mongo/db/dbmessage.h"
 #include "mongo/db/jsobj.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/log.h"
 
 namespace mongo {
@@ -416,7 +417,7 @@ Status DBClientReplicaSet::_runAuthLoop(Authenticate authCb) {
     const auto readPref =
         std::make_shared<ReadPreferenceSetting>(ReadPreference::PrimaryPreferred, TagSet());
 
-    LOG(3) << "dbclient_rs authentication of " << _getMonitor()->getName();
+    LOGV2_DEBUG(3, "dbclient_rs authentication of {}", "_getMonitor_getName"_attr = _getMonitor()->getName());
 
     // NOTE that we retry MAX_RETRY + 1 times, since we're always primary preferred we don't
     // fallback to the primary.
@@ -533,14 +534,8 @@ unique_ptr<DBClientCursor> DBClientReplicaSet::query(const NamespaceStringOrUUID
     invariant(nsOrUuid.nss());
     const string ns = nsOrUuid.nss()->ns();
     if (_isSecondaryQuery(ns, query.obj, *readPref)) {
-        LOG(3) << "dbclient_rs query using secondary or tagged node selection in "
-               << _getMonitor()->getName() << ", read pref is " << readPref->toString()
-               << " (primary : "
-               << (_master.get() != nullptr ? _master->getServerAddress() : "[not cached]")
-               << ", lastTagged : "
-               << (_lastSlaveOkConn.get() != nullptr ? _lastSlaveOkConn->getServerAddress()
-                                                     : "[not cached]")
-               << ")" << endl;
+        LOGV2_DEBUG(3, "dbclient_rs query using secondary or tagged node selection in {}, read pref is {} (primary : {}, lastTagged : {})", "_getMonitor_getName"_attr = _getMonitor()->getName(), "readPref_toString"_attr = readPref->toString(), "_master_get_nullptr__master_getServerAddress_not_cached"_attr = (_master.get() != nullptr ? _master->getServerAddress() : "[not cached]"), "_lastSlaveOkConn_get_nullptr__lastSlaveOkConn_getServerAddress_not_cached"_attr = (_lastSlaveOkConn.get() != nullptr ? _lastSlaveOkConn->getServerAddress()
+                                                     : "[not cached]"));
 
         string lastNodeErrMsg;
 
@@ -573,7 +568,7 @@ unique_ptr<DBClientCursor> DBClientReplicaSet::query(const NamespaceStringOrUUID
         uasserted(16370, assertMsg.str());
     }
 
-    LOG(3) << "dbclient_rs query to primary node in " << _getMonitor()->getName() << endl;
+    LOGV2_DEBUG(3, "dbclient_rs query to primary node in {}", "_getMonitor_getName"_attr = _getMonitor()->getName());
 
     return checkMaster()->query(
         nsOrUuid, query, nToReturn, nToSkip, fieldsToReturn, queryOptions, batchSize);
@@ -585,14 +580,8 @@ BSONObj DBClientReplicaSet::findOne(const string& ns,
                                     int queryOptions) {
     shared_ptr<ReadPreferenceSetting> readPref(_extractReadPref(query.obj, queryOptions));
     if (_isSecondaryQuery(ns, query.obj, *readPref)) {
-        LOG(3) << "dbclient_rs findOne using secondary or tagged node selection in "
-               << _getMonitor()->getName() << ", read pref is " << readPref->toString()
-               << " (primary : "
-               << (_master.get() != nullptr ? _master->getServerAddress() : "[not cached]")
-               << ", lastTagged : "
-               << (_lastSlaveOkConn.get() != nullptr ? _lastSlaveOkConn->getServerAddress()
-                                                     : "[not cached]")
-               << ")" << endl;
+        LOGV2_DEBUG(3, "dbclient_rs findOne using secondary or tagged node selection in {}, read pref is {} (primary : {}, lastTagged : {})", "_getMonitor_getName"_attr = _getMonitor()->getName(), "readPref_toString"_attr = readPref->toString(), "_master_get_nullptr__master_getServerAddress_not_cached"_attr = (_master.get() != nullptr ? _master->getServerAddress() : "[not cached]"), "_lastSlaveOkConn_get_nullptr__lastSlaveOkConn_getServerAddress_not_cached"_attr = (_lastSlaveOkConn.get() != nullptr ? _lastSlaveOkConn->getServerAddress()
+                                                     : "[not cached]"));
 
         string lastNodeErrMsg;
 
@@ -622,7 +611,7 @@ BSONObj DBClientReplicaSet::findOne(const string& ns,
         uasserted(16379, assertMsg.str());
     }
 
-    LOG(3) << "dbclient_rs findOne to primary node in " << _getMonitor()->getName() << endl;
+    LOGV2_DEBUG(3, "dbclient_rs findOne to primary node in {}", "_getMonitor_getName"_attr = _getMonitor()->getName());
 
     return checkMaster()->findOne(ns, query, fieldsToReturn, queryOptions);
 }
@@ -682,7 +671,7 @@ void DBClientReplicaSet::isntSecondary() {
 DBClientConnection* DBClientReplicaSet::selectNodeUsingTags(
     shared_ptr<ReadPreferenceSetting> readPref) {
     if (checkLastHost(readPref.get())) {
-        LOG(3) << "dbclient_rs selecting compatible last used node " << _lastSlaveOkHost;
+        LOGV2_DEBUG(3, "dbclient_rs selecting compatible last used node {}", "_lastSlaveOkHost"_attr = _lastSlaveOkHost);
 
         return _lastSlaveOkConn.get();
     }
@@ -691,8 +680,7 @@ DBClientConnection* DBClientReplicaSet::selectNodeUsingTags(
 
     auto selectedNodeStatus = monitor->getHostOrRefresh(*readPref).getNoThrow();
     if (!selectedNodeStatus.isOK()) {
-        LOG(3) << "dbclient_rs no compatible node found"
-               << causedBy(redact(selectedNodeStatus.getStatus()));
+        LOGV2_DEBUG(3, "dbclient_rs no compatible node found{}", "causedBy_redact_selectedNodeStatus_getStatus"_attr = causedBy(redact(selectedNodeStatus.getStatus())));
         return nullptr;
     }
 
@@ -712,7 +700,7 @@ DBClientConnection* DBClientReplicaSet::selectNodeUsingTags(
     if (monitor->isPrimary(selectedNode)) {
         checkMaster();
 
-        LOG(3) << "dbclient_rs selecting primary node " << selectedNode << endl;
+        LOGV2_DEBUG(3, "dbclient_rs selecting primary node {}", "selectedNode"_attr = selectedNode);
 
         _lastSlaveOkConn = _master;
 
@@ -746,7 +734,7 @@ DBClientConnection* DBClientReplicaSet::selectNodeUsingTags(
         // Mongos pooled connections are authenticated through ShardingConnectionHook::onCreate()
     }
 
-    LOG(3) << "dbclient_rs selecting node " << _lastSlaveOkHost << endl;
+    LOGV2_DEBUG(3, "dbclient_rs selecting node {}", "_lastSlaveOkHost"_attr = _lastSlaveOkHost);
 
     return _lastSlaveOkConn.get();
 }
@@ -764,14 +752,8 @@ void DBClientReplicaSet::say(Message& toSend, bool isRetry, string* actualServer
 
         shared_ptr<ReadPreferenceSetting> readPref(_extractReadPref(qm.query, qm.queryOptions));
         if (_isSecondaryQuery(qm.ns, qm.query, *readPref)) {
-            LOG(3) << "dbclient_rs say using secondary or tagged node selection in "
-                   << _getMonitor()->getName() << ", read pref is " << readPref->toString()
-                   << " (primary : "
-                   << (_master.get() != nullptr ? _master->getServerAddress() : "[not cached]")
-                   << ", lastTagged : "
-                   << (_lastSlaveOkConn.get() != nullptr ? _lastSlaveOkConn->getServerAddress()
-                                                         : "[not cached]")
-                   << ")" << endl;
+            LOGV2_DEBUG(3, "dbclient_rs say using secondary or tagged node selection in {}, read pref is {} (primary : {}, lastTagged : {})", "_getMonitor_getName"_attr = _getMonitor()->getName(), "readPref_toString"_attr = readPref->toString(), "_master_get_nullptr__master_getServerAddress_not_cached"_attr = (_master.get() != nullptr ? _master->getServerAddress() : "[not cached]"), "_lastSlaveOkConn_get_nullptr__lastSlaveOkConn_getServerAddress_not_cached"_attr = (_lastSlaveOkConn.get() != nullptr ? _lastSlaveOkConn->getServerAddress()
+                                                         : "[not cached]"));
 
             string lastNodeErrMsg;
 
@@ -816,7 +798,7 @@ void DBClientReplicaSet::say(Message& toSend, bool isRetry, string* actualServer
         }
     }
 
-    LOG(3) << "dbclient_rs say to primary node in " << _getMonitor()->getName() << endl;
+    LOGV2_DEBUG(3, "dbclient_rs say to primary node in {}", "_getMonitor_getName"_attr = _getMonitor()->getName());
 
     DBClientConnection* master = checkMaster();
     if (actualServer)
@@ -838,8 +820,7 @@ Status DBClientReplicaSet::recv(Message& m, int lastRequestId) {
     try {
         return _lazyState._lastClient->recv(m, lastRequestId);
     } catch (DBException& e) {
-        log() << "could not receive data from " << _lazyState._lastClient->toString()
-              << causedBy(redact(e));
+        LOGV2("could not receive data from {}{}", "_lazyState__lastClient_toString"_attr = _lazyState._lastClient->toString(), "causedBy_redact_e"_attr = causedBy(redact(e)));
         return e.toStatus();
     }
 }
@@ -898,8 +879,7 @@ void DBClientReplicaSet::checkResponse(const std::vector<BSONObj>& batch,
                 _lazyState._retries++;
                 *retry = true;
             } else {
-                log() << "too many retries (" << _lazyState._retries
-                      << "), could not get data from replica set" << endl;
+                LOGV2("too many retries ({}), could not get data from replica set", "_lazyState__retries"_attr = _lazyState._retries);
             }
         }
     } else if (_lazyState._lastOp == dbQuery) {
@@ -995,14 +975,8 @@ bool DBClientReplicaSet::call(Message& toSend,
 
         shared_ptr<ReadPreferenceSetting> readPref(_extractReadPref(qm.query, qm.queryOptions));
         if (_isSecondaryQuery(ns, qm.query, *readPref)) {
-            LOG(3) << "dbclient_rs call using secondary or tagged node selection in "
-                   << _getMonitor()->getName() << ", read pref is " << readPref->toString()
-                   << " (primary : "
-                   << (_master.get() != nullptr ? _master->getServerAddress() : "[not cached]")
-                   << ", lastTagged : "
-                   << (_lastSlaveOkConn.get() != nullptr ? _lastSlaveOkConn->getServerAddress()
-                                                         : "[not cached]")
-                   << ")" << endl;
+            LOGV2_DEBUG(3, "dbclient_rs call using secondary or tagged node selection in {}, read pref is {} (primary : {}, lastTagged : {})", "_getMonitor_getName"_attr = _getMonitor()->getName(), "readPref_toString"_attr = readPref->toString(), "_master_get_nullptr__master_getServerAddress_not_cached"_attr = (_master.get() != nullptr ? _master->getServerAddress() : "[not cached]"), "_lastSlaveOkConn_get_nullptr__lastSlaveOkConn_getServerAddress_not_cached"_attr = (_lastSlaveOkConn.get() != nullptr ? _lastSlaveOkConn->getServerAddress()
+                                                         : "[not cached]"));
 
             for (size_t retry = 0; retry < MAX_RETRY; retry++) {
                 try {
@@ -1032,7 +1006,7 @@ bool DBClientReplicaSet::call(Message& toSend,
         }
     }
 
-    LOG(3) << "dbclient_rs call to primary node in " << _getMonitor()->getName() << endl;
+    LOGV2_DEBUG(3, "dbclient_rs call to primary node in {}", "_getMonitor_getName"_attr = _getMonitor()->getName());
 
     DBClientConnection* m = checkMaster();
     if (actualServer)

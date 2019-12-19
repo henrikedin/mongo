@@ -63,6 +63,7 @@
 #include "mongo/db/stats/fill_locker_info.h"
 #include "mongo/db/transaction_history_iterator.h"
 #include "mongo/db/transaction_participant_gen.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/fail_point.h"
 #include "mongo/util/log.h"
 #include "mongo/util/net/socket_utils.h"
@@ -652,9 +653,8 @@ TransactionParticipant::OplogSlotReserver::OplogSlotReserver(OperationContext* o
 
 TransactionParticipant::OplogSlotReserver::~OplogSlotReserver() {
     if (MONGO_unlikely(hangBeforeReleasingTransactionOplogHole.shouldFail())) {
-        log()
-            << "transaction - hangBeforeReleasingTransactionOplogHole fail point enabled. Blocking "
-               "until fail point is disabled.";
+        LOGV2("transaction - hangBeforeReleasingTransactionOplogHole fail point enabled. Blocking "
+               "until fail point is disabled.");
         hangBeforeReleasingTransactionOplogHole.pauseWhileSet();
     }
 
@@ -1130,9 +1130,8 @@ Timestamp TransactionParticipant::Participant::prepareTransaction(
 
         if (MONGO_unlikely(hangAfterReservingPrepareTimestamp.shouldFail())) {
             // This log output is used in js tests so please leave it.
-            log() << "transaction - hangAfterReservingPrepareTimestamp fail point "
-                     "enabled. Blocking until fail point is disabled. Prepare OpTime: "
-                  << prepareOplogSlot;
+            LOGV2("transaction - hangAfterReservingPrepareTimestamp fail point "
+                     "enabled. Blocking until fail point is disabled. Prepare OpTime: {}", "prepareOplogSlot"_attr = prepareOplogSlot);
             hangAfterReservingPrepareTimestamp.pauseWhileSet();
         }
     }
@@ -1158,8 +1157,8 @@ Timestamp TransactionParticipant::Participant::prepareTransaction(
     }
 
     if (MONGO_unlikely(hangAfterSettingPrepareStartTime.shouldFail())) {
-        log() << "transaction - hangAfterSettingPrepareStartTime fail point enabled. Blocking "
-                 "until fail point is disabled.";
+        LOGV2("transaction - hangAfterSettingPrepareStartTime fail point enabled. Blocking "
+                 "until fail point is disabled.");
         hangAfterSettingPrepareStartTime.pauseWhileSet();
     }
 
@@ -1901,9 +1900,7 @@ void TransactionParticipant::Participant::_logSlowTransaction(
         if (shouldLog(logger::LogComponent::kTransaction, logger::LogSeverity::Debug(1)) ||
             o().transactionMetricsObserver.getSingleTransactionStats().getDuration(
                 tickSource, tickSource->getTicks()) > Milliseconds(serverGlobalParams.slowMS)) {
-            log(logger::LogComponent::kTransaction)
-                << "transaction "
-                << _transactionInfoForLog(opCtx, lockStats, terminationCause, readConcernArgs);
+            LOGV2_DEBUG(::mongo::logger::LogSeverity(logger::LogComponent::kTransaction).toInt(), "transaction {}", "_transactionInfoForLog_opCtx_lockStats_terminationCause_readConcernArgs"_attr = _transactionInfoForLog(opCtx, lockStats, terminationCause, readConcernArgs));
         }
     }
 }

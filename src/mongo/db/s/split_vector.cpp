@@ -44,6 +44,7 @@
 #include "mongo/db/namespace_string.h"
 #include "mongo/db/query/internal_plans.h"
 #include "mongo/db/query/plan_executor.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/log.h"
 
 namespace mongo {
@@ -137,8 +138,7 @@ StatusWith<std::vector<BSONObj>> splitVector(OperationContext* opCtx,
             return emptyVector;
         }
 
-        log() << "request split points lookup for chunk " << nss.toString() << " " << redact(minKey)
-              << " -->> " << redact(maxKey);
+        LOGV2("request split points lookup for chunk {} {} -->> {}", "nss_toString"_attr = nss.toString(), "redact_minKey"_attr = redact(minKey), "redact_maxKey"_attr = redact(maxKey));
 
         // We'll use the average object size and number of object to find approximately how many
         // keys each chunk should have. We'll split at half the maxChunkSize or maxChunkObjects,
@@ -148,8 +148,7 @@ StatusWith<std::vector<BSONObj>> splitVector(OperationContext* opCtx,
         long long keyCount = maxChunkSize.get() / (2 * avgRecSize);
 
         if (maxChunkObjects.get() && (maxChunkObjects.get() < keyCount)) {
-            log() << "limiting split vector to " << maxChunkObjects.get() << " (from " << keyCount
-                  << ") objects ";
+            LOGV2("limiting split vector to {} (from {}) objects ", "maxChunkObjects_get"_attr = maxChunkObjects.get(), "keyCount"_attr = keyCount);
             keyCount = maxChunkObjects.get();
         }
 
@@ -239,9 +238,7 @@ StatusWith<std::vector<BSONObj>> splitVector(OperationContext* opCtx,
                                 continue;
                             }
 
-                            log() << "Max BSON response size reached for split vector before the"
-                                  << " end of chunk " << nss.toString() << " " << redact(minKey)
-                                  << " -->> " << redact(maxKey);
+                            LOGV2("Max BSON response size reached for split vector before the end of chunk {} {} -->> {}", "nss_toString"_attr = nss.toString(), "redact_minKey"_attr = redact(minKey), "redact_maxKey"_attr = redact(maxKey));
                             break;
                         }
 
@@ -249,15 +246,13 @@ StatusWith<std::vector<BSONObj>> splitVector(OperationContext* opCtx,
                         splitKeys.push_back(currKey.getOwned());
                         currCount = 0;
                         numChunks++;
-                        LOG(4) << "picked a split key: " << redact(currKey);
+                        LOGV2_DEBUG(4, "picked a split key: {}", "redact_currKey"_attr = redact(currKey));
                     }
                 }
 
                 // Stop if we have enough split points.
                 if (maxSplitPoints && maxSplitPoints.get() && (numChunks >= maxSplitPoints.get())) {
-                    log() << "max number of requested split points reached (" << numChunks
-                          << ") before the end of chunk " << nss.toString() << " " << redact(minKey)
-                          << " -->> " << redact(maxKey);
+                    LOGV2("max number of requested split points reached ({}) before the end of chunk {} {} -->> {}", "numChunks"_attr = numChunks, "nss_toString"_attr = nss.toString(), "redact_minKey"_attr = redact(minKey), "redact_maxKey"_attr = redact(maxKey));
                     break;
                 }
 
@@ -280,7 +275,7 @@ StatusWith<std::vector<BSONObj>> splitVector(OperationContext* opCtx,
             force = false;
             keyCount = currCount / 2;
             currCount = 0;
-            log() << "splitVector doing another cycle because of force, keyCount now: " << keyCount;
+            LOGV2("splitVector doing another cycle because of force, keyCount now: {}", "keyCount"_attr = keyCount);
 
             exec = InternalPlanner::indexScan(opCtx,
                                               collection,

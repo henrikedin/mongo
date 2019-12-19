@@ -37,6 +37,7 @@
 
 #include "mongo/db/auth/restriction_environment.h"
 #include "mongo/db/service_context.h"
+#include "mongo/logv2/log.h"
 #include "mongo/transport/service_state_machine.h"
 #include "mongo/transport/session.h"
 #include "mongo/util/log.h"
@@ -91,8 +92,7 @@ ServiceEntryPointImpl::ServiceEntryPointImpl(ServiceContext* svcCtx) : _svcCtx(s
 
         size_t max = (size_t)(limit.rlim_cur * .8);
 
-        LOG(1) << "fd limit"
-               << " hard:" << limit.rlim_max << " soft:" << limit.rlim_cur << " max conn: " << max;
+        LOGV2_DEBUG(1, "fd limit hard:{} soft:{} max conn: {}", "limit_rlim_max"_attr = limit.rlim_max, "limit_rlim_cur"_attr = limit.rlim_cur, "max"_attr = max);
 
         return std::min(max, serverGlobalParams.maxConns);
 #endif
@@ -101,7 +101,7 @@ ServiceEntryPointImpl::ServiceEntryPointImpl(ServiceContext* svcCtx) : _svcCtx(s
     // If we asked for more connections than supported, inform the user.
     if (supportedMax < serverGlobalParams.maxConns &&
         serverGlobalParams.maxConns != DEFAULT_MAX_CONN) {
-        log() << " --maxConns too high, can only handle " << supportedMax;
+        LOGV2(" --maxConns too high, can only handle {}", "supportedMax"_attr = supportedMax);
     }
 
     _maxNumConnections = supportedMax;
@@ -154,7 +154,7 @@ void ServiceEntryPointImpl::startSession(transport::SessionHandle session) {
     // while holding it.
     if (connectionCount > _maxNumConnections && !usingMaxConnOverride) {
         if (!quiet) {
-            log() << "connection refused because too many open connections: " << connectionCount;
+            LOGV2("connection refused because too many open connections: {}", "connectionCount"_attr = connectionCount);
         }
         return;
     } else if (usingMaxConnOverride && _adminInternalPool) {
@@ -163,8 +163,7 @@ void ServiceEntryPointImpl::startSession(transport::SessionHandle session) {
 
     if (!quiet) {
         const auto word = (connectionCount == 1 ? " connection"_sd : " connections"_sd);
-        log() << "connection accepted from " << session->remote() << " #" << session->id() << " ("
-              << connectionCount << word << " now open)";
+        LOGV2("connection accepted from {} #{} ({}{} now open)", "session_remote"_attr = session->remote(), "session_id"_attr = session->id(), "connectionCount"_attr = connectionCount, "word"_attr = word);
     }
 
     ssm->setCleanupHook([this, ssmIt, quiet, session = std::move(session)] {
@@ -180,7 +179,7 @@ void ServiceEntryPointImpl::startSession(transport::SessionHandle session) {
 
         if (!quiet) {
             const auto word = (connectionCount == 1 ? " connection"_sd : " connections"_sd);
-            log() << "end connection " << remote << " (" << connectionCount << word << " now open)";
+            LOGV2("end connection {} ({}{} now open)", "remote"_attr = remote, "connectionCount"_attr = connectionCount, "word"_attr = word);
         }
     });
 
@@ -223,14 +222,13 @@ bool ServiceEntryPointImpl::shutdown(Milliseconds timeout) {
     auto noWorkersLeft = [this] { return numOpenSessions() == 0; };
     while (timeSpent < timeout &&
            !_shutdownCondition.wait_for(lk, checkInterval.toSystemDuration(), noWorkersLeft)) {
-        log(LogComponent::kNetwork)
-            << "shutdown: still waiting on " << numOpenSessions() << " active workers to drain... ";
+        LOGV2_DEBUG(::mongo::logger::LogSeverity(LogComponent::kNetwork).toInt(), "shutdown: still waiting on {} active workers to drain... ", "numOpenSessions"_attr = numOpenSessions());
         timeSpent += checkInterval;
     }
 
     bool result = noWorkersLeft();
     if (result) {
-        log(LogComponent::kNetwork) << "shutdown: no running workers found...";
+        LOGV2_DEBUG(::mongo::logger::LogSeverity(LogComponent::kNetwork).toInt(), "shutdown: no running workers found...");
     } else {
         log(LogComponent::kNetwork) << "shutdown: exhausted grace period for" << numOpenSessions()
                                     << " active workers to drain; continuing with shutdown... ";

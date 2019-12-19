@@ -37,6 +37,7 @@
 #include "mongo/db/repl/collection_cloner.h"
 #include "mongo/db/repl/database_cloner_gen.h"
 #include "mongo/db/repl/repl_server_parameters_gen.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/log.h"
 
@@ -113,9 +114,7 @@ BaseCloner::AfterStageBehavior CollectionCloner::CollectionClonerStage::run() {
     try {
         return ClonerStage<CollectionCloner>::run();
     } catch (const ExceptionFor<ErrorCodes::NamespaceNotFound>&) {
-        log() << "CollectionCloner ns: '" << getCloner()->getSourceNss() << "' uuid: UUID(\""
-              << getCloner()->getSourceUuid()
-              << "\") stopped because collection was dropped on source.";
+        LOGV2("CollectionCloner ns: '{}' uuid: UUID(\"{}\") stopped because collection was dropped on source.", "getCloner_getSourceNss"_attr = getCloner()->getSourceNss(), "getCloner_getSourceUuid"_attr = getCloner()->getSourceUuid());
         getCloner()->waitForDatabaseWorkToComplete();
         return kSkipRemainingStages;
     } catch (const DBException&) {
@@ -200,7 +199,7 @@ void CollectionCloner::handleNextBatch(DBClientCursorBatchIterator& iter) {
             std::string message = str::stream()
                 << "Collection cloning cancelled due to initial sync failure: "
                 << getSharedData()->getInitialSyncStatus(lk).toString();
-            log() << message;
+            LOGV2("{}", "message"_attr = message);
             uasserted(ErrorCodes::CallbackCanceled, message);
         }
     }
@@ -229,9 +228,8 @@ void CollectionCloner::handleNextBatch(DBClientCursorBatchIterator& iter) {
             while (MONGO_unlikely(
                        initialSyncHangCollectionClonerAfterHandlingBatchResponse.shouldFail()) &&
                    !mustExit()) {
-                log() << "initialSyncHangCollectionClonerAfterHandlingBatchResponse fail point "
-                         "enabled for "
-                      << _sourceNss.toString() << ". Blocking until fail point is disabled.";
+                LOGV2("initialSyncHangCollectionClonerAfterHandlingBatchResponse fail point "
+                         "enabled for {}. Blocking until fail point is disabled.", "_sourceNss_toString"_attr = _sourceNss.toString());
                 mongo::sleepsecs(1);
             }
         },
@@ -263,8 +261,8 @@ void CollectionCloner::insertDocumentsCallback(const executor::TaskExecutor::Cal
 
     initialSyncHangDuringCollectionClone.executeIf(
         [&](const BSONObj&) {
-            log() << "initial sync - initialSyncHangDuringCollectionClone fail point "
-                     "enabled. Blocking until fail point is disabled.";
+            LOGV2("initial sync - initialSyncHangDuringCollectionClone fail point "
+                     "enabled. Blocking until fail point is disabled.");
             while (MONGO_unlikely(initialSyncHangDuringCollectionClone.shouldFail()) &&
                    !mustExit()) {
                 mongo::sleepsecs(1);

@@ -45,6 +45,7 @@
 #include "mongo/db/session_catalog_mongod.h"
 #include "mongo/db/transaction_history_iterator.h"
 #include "mongo/db/transaction_participant.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/log.h"
 
 namespace mongo {
@@ -369,7 +370,7 @@ Status _applyPrepareTransaction(OperationContext* opCtx,
     fassert(31137, status);
 
     if (MONGO_unlikely(applyOpsHangBeforePreparingTransaction.shouldFail())) {
-        LOG(0) << "Hit applyOpsHangBeforePreparingTransaction failpoint";
+        LOGV2("Hit applyOpsHangBeforePreparingTransaction failpoint");
         applyOpsHangBeforePreparingTransaction.pauseWhileSet(opCtx);
     }
 
@@ -448,7 +449,7 @@ Status applyPrepareTransaction(OperationContext* opCtx,
 
 void reconstructPreparedTransactions(OperationContext* opCtx, repl::OplogApplication::Mode mode) {
     if (MONGO_unlikely(skipReconstructPreparedTransactions.shouldFail())) {
-        log() << "Hit skipReconstructPreparedTransactions failpoint";
+        LOGV2("Hit skipReconstructPreparedTransactions failpoint");
         return;
     }
     // Read the transactions table and the oplog collection without a timestamp.

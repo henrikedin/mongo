@@ -39,6 +39,7 @@
 #include "mongo/db/storage/wiredtiger/wiredtiger_kv_engine.h"
 #include "mongo/db/storage/wiredtiger/wiredtiger_oplog_manager.h"
 #include "mongo/db/storage/wiredtiger/wiredtiger_util.h"
+#include "mongo/logv2/log.h"
 #include "mongo/platform/mutex.h"
 #include "mongo/util/concurrency/idle_thread_block.h"
 #include "mongo/util/log.h"
@@ -69,7 +70,7 @@ void WiredTigerOplogManager::start(OperationContext* opCtx,
         // rollback before servicing oplog reads.
         auto oplogVisibility = Timestamp(lastRecord->id.repr());
         setOplogReadTimestamp(oplogVisibility);
-        LOG(1) << "Setting oplog visibility at startup. Val: " << oplogVisibility;
+        LOGV2_DEBUG(1, "Setting oplog visibility at startup. Val: {}", "oplogVisibility"_attr = oplogVisibility);
     } else {
         // Avoid setting oplog visibility to 0. That means "everything is visible".
         setOplogReadTimestamp(Timestamp(kMinimumTimestamp));
@@ -115,7 +116,7 @@ void WiredTigerOplogManager::waitForAllEarlierOplogWritesToBeVisible(
         oplogRecordStore->getCursor(opCtx, false /* false = reverse cursor */);
     auto lastRecord = cursor->next();
     if (!lastRecord) {
-        LOG(2) << "Trying to query an empty oplog";
+        LOGV2_DEBUG(2, "Trying to query an empty oplog");
         opCtx->recoveryUnit()->abandonSnapshot();
         return;
     }
@@ -133,9 +134,7 @@ void WiredTigerOplogManager::waitForAllEarlierOplogWritesToBeVisible(
     opCtx->waitForConditionOrInterrupt(_opsBecameVisibleCV, lk, [&] {
         auto newLatestVisibleTimestamp = getOplogReadTimestamp();
         if (newLatestVisibleTimestamp < currentLatestVisibleTimestamp) {
-            LOG(1) << "Oplog latest visible timestamp went backwards. newLatestVisibleTimestamp: "
-                   << Timestamp(newLatestVisibleTimestamp) << " currentLatestVisibleTimestamp: "
-                   << Timestamp(currentLatestVisibleTimestamp);
+            LOGV2_DEBUG(1, "Oplog latest visible timestamp went backwards. newLatestVisibleTimestamp: {} currentLatestVisibleTimestamp: {}", "Timestamp_newLatestVisibleTimestamp"_attr = Timestamp(newLatestVisibleTimestamp), "Timestamp_currentLatestVisibleTimestamp"_attr = Timestamp(currentLatestVisibleTimestamp));
             // If the visibility went backwards, this means a rollback occurred.
             // Thus, we are finished waiting.
             return true;
@@ -215,7 +214,7 @@ void WiredTigerOplogManager::_oplogJournalThreadLoop(WiredTigerSessionCache* ses
         }
 
         if (_shuttingDown) {
-            log() << "Oplog journal thread loop shutting down";
+            LOGV2("Oplog journal thread loop shutting down");
             return;
         }
         invariant(_opsWaitingForJournal);
@@ -228,7 +227,7 @@ void WiredTigerOplogManager::_oplogJournalThreadLoop(WiredTigerSessionCache* ses
         // where we commit data file changes separately from oplog changes, so ignore
         // a non-incrementing timestamp.
         if (newTimestamp <= _oplogReadTimestamp.load()) {
-            LOG(2) << "No new oplog entries were made visible: " << Timestamp(newTimestamp);
+            LOGV2_DEBUG(2, "No new oplog entries were made visible: {}", "Timestamp_newTimestamp"_attr = Timestamp(newTimestamp));
             continue;
         }
 
@@ -277,7 +276,7 @@ void WiredTigerOplogManager::setOplogReadTimestamp(Timestamp ts) {
 void WiredTigerOplogManager::_setOplogReadTimestamp(WithLock, uint64_t newTimestamp) {
     _oplogReadTimestamp.store(newTimestamp);
     _opsBecameVisibleCV.notify_all();
-    LOG(2) << "Setting new oplogReadTimestamp: " << Timestamp(newTimestamp);
+    LOGV2_DEBUG(2, "Setting new oplogReadTimestamp: {}", "Timestamp_newTimestamp"_attr = Timestamp(newTimestamp));
 }
 
 uint64_t WiredTigerOplogManager::fetchAllDurableValue(WT_CONNECTION* conn) {

@@ -51,6 +51,7 @@
 #include "mongo/db/storage/wiredtiger/wiredtiger_record_store.h"
 #include "mongo/db/storage/wiredtiger/wiredtiger_server_status.h"
 #include "mongo/db/storage/wiredtiger/wiredtiger_util.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/log.h"
 #include "mongo/util/processinfo.h"
 
@@ -79,13 +80,11 @@ public:
             int ret = statfs(params.dbpath.c_str(), &fs_stats);
 
             if (ret == 0 && fs_stats.f_type == EXT4_SUPER_MAGIC) {
-                log() << startupWarningsLog;
-                log() << "** WARNING: Using the XFS filesystem is strongly recommended with the "
-                         "WiredTiger storage engine"
-                      << startupWarningsLog;
-                log() << "**          See "
-                         "http://dochub.mongodb.org/core/prodnotes-filesystem"
-                      << startupWarningsLog;
+                LOGV2_OPTIONS({logv2::LogTag::kStartupWarnings}, "");
+                LOGV2_OPTIONS({logv2::LogTag::kStartupWarnings}, "** WARNING: Using the XFS filesystem is strongly recommended with the "
+                         "WiredTiger storage engine");
+                LOGV2_OPTIONS({logv2::LogTag::kStartupWarnings}, "**          See "
+                         "http://dochub.mongodb.org/core/prodnotes-filesystem");
             }
         }
 #endif
@@ -95,13 +94,10 @@ public:
         ProcessInfo p;
         if (p.supported()) {
             if (cacheMB > memoryThresholdPercentage * p.getMemSizeMB()) {
-                log() << startupWarningsLog;
-                log() << "** WARNING: The configured WiredTiger cache size is more than "
-                      << memoryThresholdPercentage * 100 << "% of available RAM."
-                      << startupWarningsLog;
-                log() << "**          See "
-                         "http://dochub.mongodb.org/core/faq-memory-diagnostics-wt"
-                      << startupWarningsLog;
+                LOGV2_OPTIONS({logv2::LogTag::kStartupWarnings}, "");
+                LOGV2_OPTIONS({logv2::LogTag::kStartupWarnings}, "** WARNING: The configured WiredTiger cache size is more than {}% of available RAM.", "memoryThresholdPercentage_100"_attr = memoryThresholdPercentage * 100);
+                LOGV2_OPTIONS({logv2::LogTag::kStartupWarnings}, "**          See "
+                         "http://dochub.mongodb.org/core/faq-memory-diagnostics-wt");
             }
         }
         const bool ephemeral = false;

@@ -48,6 +48,7 @@
 #include "mongo/logger/logger.h"
 #include "mongo/logger/message_event_utf8_encoder.h"
 #include "mongo/logger/message_log_domain.h"
+#include "mongo/logv2/log.h"
 #include "mongo/platform/mutex.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/log.h"
@@ -264,11 +265,11 @@ void Test::stopCapturingLogMessages() {
     _isCapturingLogMessages = false;
 }
 void Test::printCapturedLogLines() const {
-    log() << "****************************** Captured Lines (start) *****************************";
+    LOGV2("****************************** Captured Lines (start) *****************************");
     for (const auto& line : getCapturedLogMessages()) {
-        log() << line;
+        LOGV2("{}", "line"_attr = line);
     }
-    log() << "****************************** Captured Lines (end) ******************************";
+    LOGV2("****************************** Captured Lines (end) ******************************");
 }
 
 int64_t Test::countLogLinesContaining(const std::string& needle) {
@@ -291,13 +292,12 @@ std::unique_ptr<Result> Suite::run(const std::string& filter,
 
     for (const auto& tc : _tests) {
         if (filter.size() && tc.name.find(filter) == std::string::npos) {
-            LOG(1) << "\t skipping test: " << tc.name << " because it doesn't match filter";
+            LOGV2_DEBUG(1, "\t skipping test: {} because it doesn't match filter", "tc_name"_attr = tc.name);
             continue;
         }
 
         if (fileNameFilter.size() && tc.fileName.find(fileNameFilter) == std::string::npos) {
-            LOG(1) << "\t skipping test: " << tc.fileName
-                   << " because it doesn't match fileNameFilter";
+            LOGV2_DEBUG(1, "\t skipping test: {} because it doesn't match fileNameFilter", "tc_fileName"_attr = tc.fileName);
             continue;
         }
 
@@ -315,7 +315,7 @@ std::unique_ptr<Result> Suite::run(const std::string& filter,
                     runTimes << "  (" << x + 1 << "/" << runsPerTest << ")";
                 }
 
-                log() << "\t going to run test: " << tc.name << runTimes.str();
+                LOGV2("\t going to run test: {}{}", "tc_name"_attr = tc.name, "runTimes_str"_attr = runTimes.str());
                 TestSuiteEnvironment environment;
                 tc.fn();
             }
@@ -344,7 +344,7 @@ std::unique_ptr<Result> Suite::run(const std::string& filter,
 
     r->_millis = timer.millis();
 
-    log() << "\t DONE running tests";
+    LOGV2("\t DONE running tests");
 
     return r;
 }
@@ -354,14 +354,13 @@ int Suite::run(const std::vector<std::string>& suites,
                const std::string& fileNameFilter,
                int runsPerTest) {
     if (suitesMap().empty()) {
-        log() << "error: no suites registered.";
+        LOGV2("error: no suites registered.");
         return EXIT_FAILURE;
     }
 
     for (unsigned int i = 0; i < suites.size(); i++) {
         if (suitesMap().count(suites[i]) == 0) {
-            log() << "invalid test suite [" << suites[i] << "], use --list to see valid names"
-                  << std::endl;
+            LOGV2("invalid test suite [{}], use --list to see valid names", "suites_i"_attr = suites[i]);
             return EXIT_FAILURE;
         }
     }
@@ -380,11 +379,11 @@ int Suite::run(const std::vector<std::string>& suites,
         std::shared_ptr<Suite>& s = suitesMap()[name];
         fassert(16145, s != nullptr);
 
-        log() << "going to run suite: " << name << std::endl;
+        LOGV2("going to run suite: {}", "name"_attr = name);
         results.push_back(s->run(filter, fileNameFilter, runsPerTest));
     }
 
-    log() << "**************************************************" << std::endl;
+    LOGV2("**************************************************");
 
     int rc = 0;
 
@@ -420,14 +419,13 @@ int Suite::run(const std::vector<std::string>& suites,
 
     // summary
     if (!totals._fails.empty()) {
-        log() << "Failing tests:" << std::endl;
+        LOGV2("Failing tests:");
         for (const std::string& s : totals._fails) {
-            log() << "\t " << s << " Failed";
+            LOGV2("\t {} Failed", "s"_attr = s);
         }
-        log() << "FAILURE - " << totals._fails.size() << " tests in " << failedSuites.size()
-              << " suites failed";
+        LOGV2("FAILURE - {} tests in {} suites failed", "totals__fails_size"_attr = totals._fails.size(), "failedSuites_size"_attr = failedSuites.size());
     } else {
-        log() << "SUCCESS - All tests in all suites passed";
+        LOGV2("SUCCESS - All tests in all suites passed");
     }
 
     return rc;

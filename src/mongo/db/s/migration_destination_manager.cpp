@@ -60,6 +60,7 @@
 #include "mongo/db/server_options.h"
 #include "mongo/db/service_context.h"
 #include "mongo/db/storage/remove_saver.h"
+#include "mongo/logv2/log.h"
 #include "mongo/s/catalog/type_chunk.h"
 #include "mongo/s/client/shard_registry.h"
 #include "mongo/s/grid.h"
@@ -238,7 +239,7 @@ void MigrationDestinationManager::setState(State newState) {
 }
 
 void MigrationDestinationManager::_setStateFail(StringData msg) {
-    log() << msg;
+    LOGV2("{}", "msg"_attr = msg);
     {
         stdx::lock_guard<Latch> sl(_mutex);
         _errmsg = msg.toString();
@@ -411,7 +412,7 @@ repl::OpTime MigrationDestinationManager::cloneDocumentsFromDonor(
         } catch (...) {
             stdx::lock_guard<Client> lk(*opCtx->getClient());
             opCtx->getServiceContext()->killOperation(lk, opCtx, ErrorCodes::Error(51008));
-            log() << "Batch insertion failed " << causedBy(redact(exceptionToStatus()));
+            LOGV2("Batch insertion failed {}", "causedBy_redact_exceptionToStatus"_attr = causedBy(redact(exceptionToStatus())));
         }
     }};
     auto inserterThreadJoinGuard = makeGuard([&] {
@@ -710,9 +711,7 @@ void MigrationDestinationManager::_migrateDriver(OperationContext* opCtx) {
     invariant(!_min.isEmpty());
     invariant(!_max.isEmpty());
 
-    log() << "Starting receiving end of migration of chunk " << redact(_min) << " -> "
-          << redact(_max) << " for collection " << _nss.ns() << " from " << _fromShard
-          << " at epoch " << _epoch.toString() << " with session id " << *_sessionId;
+    LOGV2("Starting receiving end of migration of chunk {} -> {} for collection {} from {} at epoch {} with session id {}", "redact__min"_attr = redact(_min), "redact__max"_attr = redact(_max), "_nss_ns"_attr = _nss.ns(), "_fromShard"_attr = _fromShard, "_epoch_toString"_attr = _epoch.toString(), "_sessionId"_attr = *_sessionId);
 
     MoveTimingHelper timing(
         opCtx, "to", _nss.ns(), _min, _max, 6 /* steps */, &_errmsg, ShardId(), ShardId());
@@ -745,9 +744,8 @@ void MigrationDestinationManager::_migrateDriver(OperationContext* opCtx) {
         const ChunkRange range(_min, _max);
 
         while (migrationutil::checkForConflictingDeletions(opCtx, range, collectionUuid)) {
-            LOG(0) << "Migration paused because range overlaps with a "
-                      "range that is scheduled for deletion: collection: "
-                   << _nss.ns() << " range: " << redact(range.toString());
+            LOGV2("Migration paused because range overlaps with a "
+                      "range that is scheduled for deletion: collection: {} range: {}", "_nss_ns"_attr = _nss.ns(), "redact_range_toString"_attr = redact(range.toString()));
 
             auto status = CollectionShardingRuntime::waitForClean(opCtx, _nss, _epoch, range);
 
@@ -921,7 +919,7 @@ void MigrationDestinationManager::_migrateDriver(OperationContext* opCtx) {
                 opCtx->checkForInterrupt();
 
                 if (getState() == ABORT) {
-                    log() << "Migration aborted while waiting for replication at catch up stage";
+                    LOGV2("Migration aborted while waiting for replication at catch up stage");
                     return;
                 }
 
@@ -929,7 +927,7 @@ void MigrationDestinationManager::_migrateDriver(OperationContext* opCtx) {
                     break;
 
                 if (i > 100) {
-                    log() << "secondaries having hard time keeping up with migrate";
+                    LOGV2("secondaries having hard time keeping up with migrate");
                 }
 
                 sleepmillis(20);
@@ -949,14 +947,14 @@ void MigrationDestinationManager::_migrateDriver(OperationContext* opCtx) {
         // Pause to wait for replication. This will prevent us from going into critical section
         // until we're ready.
 
-        log() << "Waiting for replication to catch up before entering critical section";
+        LOGV2("Waiting for replication to catch up before entering critical section");
 
         auto awaitReplicationResult = repl::ReplicationCoordinator::get(opCtx)->awaitReplication(
             opCtx, lastOpApplied, _writeConcern);
         uassertStatusOKWithContext(awaitReplicationResult.status,
                                    awaitReplicationResult.status.codeString());
 
-        log() << "Chunk data replicated successfully.";
+        LOGV2("Chunk data replicated successfully.");
     }
 
     {
@@ -993,7 +991,7 @@ void MigrationDestinationManager::_migrateDriver(OperationContext* opCtx) {
             }
 
             if (getState() == ABORT) {
-                log() << "Migration aborted while transferring mods";
+                LOGV2("Migration aborted while transferring mods");
                 return;
             }
 
@@ -1139,14 +1137,12 @@ bool MigrationDestinationManager::_flushPendingWrites(OperationContext* opCtx,
         repl::OpTime op(lastOpApplied);
         static Occasionally sampler;
         if (sampler.tick()) {
-            log() << "migrate commit waiting for a majority of slaves for '" << _nss.ns() << "' "
-                  << redact(_min) << " -> " << redact(_max) << " waiting for: " << op;
+            LOGV2("migrate commit waiting for a majority of slaves for '{}' {} -> {} waiting for: {}", "_nss_ns"_attr = _nss.ns(), "redact__min"_attr = redact(_min), "redact__max"_attr = redact(_max), "op"_attr = op);
         }
         return false;
     }
 
-    log() << "migrate commit succeeded flushing to secondaries for '" << _nss.ns() << "' "
-          << redact(_min) << " -> " << redact(_max);
+    LOGV2("migrate commit succeeded flushing to secondaries for '{}' {} -> {}", "_nss_ns"_attr = _nss.ns(), "redact__min"_attr = redact(_min), "redact__max"_attr = redact(_max));
 
     return true;
 }
@@ -1192,8 +1188,7 @@ void MigrationDestinationManager::_forgetPending(OperationContext* opCtx, ChunkR
     // checking this here is that in the future we shouldn't have this problem.
     if (!optMetadata || !(*optMetadata)->isSharded() ||
         (*optMetadata)->getCollVersion().epoch() != _epoch) {
-        LOG(0) << "No need to forget pending chunk " << redact(range.toString())
-               << " because the epoch for " << _nss.ns() << " changed";
+        LOGV2("No need to forget pending chunk {} because the epoch for {} changed", "redact_range_toString"_attr = redact(range.toString()), "_nss_ns"_attr = _nss.ns());
         return;
     }
 

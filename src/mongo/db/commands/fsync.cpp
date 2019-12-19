@@ -49,6 +49,7 @@
 #include "mongo/db/service_context.h"
 #include "mongo/db/storage/backup_cursor_hooks.h"
 #include "mongo/db/storage/storage_engine.h"
+#include "mongo/logv2/log.h"
 #include "mongo/stdx/condition_variable.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/background.h"
@@ -136,7 +137,7 @@ public:
         const bool sync =
             !cmdObj["async"].trueValue();  // async means do an fsync, but return immediately
         const bool lock = cmdObj["lock"].trueValue();
-        log() << "CMD fsync: sync:" << sync << " lock:" << lock;
+        LOGV2("CMD fsync: sync:{} lock:{}", "sync"_attr = sync, "lock"_attr = lock);
 
         // fsync + lock is sometimes used to block writes out of the system and does not care if
         // the `BackupCursorService::fsyncLock` call succeeds.
@@ -187,9 +188,9 @@ public:
             }
         }
 
-        log() << "mongod is locked and no writes are allowed. db.fsyncUnlock() to unlock";
-        log() << "Lock count is " << getLockCount();
-        log() << "    For more info see " << FSyncCommand::url();
+        LOGV2("mongod is locked and no writes are allowed. db.fsyncUnlock() to unlock");
+        LOGV2("Lock count is {}", "getLockCount"_attr = getLockCount());
+        LOGV2("    For more info see {}", "FSyncCommand_url"_attr = FSyncCommand::url());
         result.append("info", "now locked against writes, use db.fsyncUnlock() to unlock");
         result.append("lockCount", getLockCount());
         result.append("seeAlso", FSyncCommand::url());
@@ -298,7 +299,7 @@ public:
                    const BSONObj& cmdObj,
                    std::string& errmsg,
                    BSONObjBuilder& result) override {
-        log() << "command: unlock requested";
+        LOGV2("command: unlock requested");
 
         Lock::ExclusiveLock lk(opCtx->lockState(), commandMutex);
 
@@ -318,11 +319,11 @@ public:
             // If we're still locked then lock count is not zero.
             invariant(lockCount > 0);
             lockCount = fsyncCmd.getLockCount_inLock();
-            log() << "fsyncUnlock completed. Lock count is now " << lockCount;
+            LOGV2("fsyncUnlock completed. Lock count is now {}", "lockCount"_attr = lockCount);
         } else {
             invariant(fsyncCmd.getLockCount() == 0);
             lockCount = 0;
-            log() << "fsyncUnlock completed. mongod is now unlocked and free to accept writes";
+            LOGV2("fsyncUnlock completed. mongod is now unlocked and free to accept writes");
         }
 
         result.append("info", str::stream() << "fsyncUnlock completed");

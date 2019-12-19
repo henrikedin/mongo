@@ -48,6 +48,7 @@
 #include "mongo/db/prepare_conflict_tracker.h"
 #include "mongo/db/query/getmore_request.h"
 #include "mongo/db/query/plan_summary_stats.h"
+#include "mongo/logv2/log.h"
 #include "mongo/rpc/metadata/client_metadata.h"
 #include "mongo/rpc/metadata/client_metadata_ismaster.h"
 #include "mongo/rpc/metadata/impersonated_user_metadata.h"
@@ -463,7 +464,7 @@ bool CurOp::completeAndLogOperation(OperationContext* opCtx,
         _debug.prepareConflictDurationMillis =
             duration_cast<Milliseconds>(prepareConflictDurationMicros);
 
-        log(component) << _debug.report(opCtx, (lockerInfo ? &lockerInfo->stats : nullptr));
+        LOGV2_DEBUG(::mongo::logger::LogSeverity(component).toInt(), "{}", "_debug_report_opCtx_lockerInfo_lockerInfo_stats_nullptr"_attr = _debug.report(opCtx, (lockerInfo ? &lockerInfo->stats : nullptr)));
     }
 
     // Return 'true' if this operation should also be added to the profiler.

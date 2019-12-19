@@ -41,6 +41,7 @@
 #include "mongo/db/json.h"
 #include "mongo/db/pipeline/field_path.h"
 #include "mongo/dbtests/dbtests.h"
+#include "mongo/logv2/log.h"
 
 namespace DocumentTests {
 
@@ -236,7 +237,7 @@ public:
 
         // Remove the second field.
         md.setField("b", Value());
-        log() << md.peek().toString();
+        LOGV2("{}", "md_peek_toString"_attr = md.peek().toString());
         ASSERT_EQUALS(2U, md.peek().size());
         ASSERT(md.peek()["b"].missing());
         ASSERT_EQUALS("a", getNthField(md.peek(), 0).first.toString());
@@ -1915,7 +1916,7 @@ private:
         assertComparison(expectedResult, fromBson(a), fromBson(b));
     }
     void assertComparison(int expectedResult, const Value& a, const Value& b) {
-        mongo::unittest::log() << "testing " << a.toString() << " and " << b.toString();
+        mongo::unittest::LOGV2("testing {} and {}", "a_toString"_attr = a.toString(), "b_toString"_attr = b.toString());
 
         // reflexivity
         ASSERT_EQUALS(0, cmp(a, a));

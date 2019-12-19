@@ -42,6 +42,7 @@
 #include "mongo/db/operation_context.h"
 #include "mongo/db/storage/durable_catalog.h"
 #include "mongo/db/views/view_catalog.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/fail_point.h"
 #include "mongo/util/log.h"
 
@@ -172,8 +173,7 @@ void ValidateState::initializeCursors(OperationContext* opCtx) {
     } catch (const ExceptionFor<ErrorCodes::CursorNotFound>& ex) {
         invariant(_background);
         // End the validation if we can't open a checkpoint cursor on the collection.
-        log() << "Skipping background validation on collection '" << _nss
-              << "' because the collection is not yet in a checkpoint: " << ex;
+        LOGV2("Skipping background validation on collection '{}' because the collection is not yet in a checkpoint: {}", "_nss"_attr = _nss, "ex"_attr = ex);
         throw;
     }
 
@@ -183,8 +183,7 @@ void ValidateState::initializeCursors(OperationContext* opCtx) {
             opCtx, _collection->getCatalogId(), &readyDurableIndexes);
     } catch (const ExceptionFor<ErrorCodes::CursorNotFound>& ex) {
         invariant(_background);
-        log() << "Skipping background validation on collection '" << _nss
-              << "' because the data is not yet in a checkpoint: " << ex;
+        LOGV2("Skipping background validation on collection '{}' because the data is not yet in a checkpoint: {}", "_nss"_attr = _nss, "ex"_attr = ex);
         throw;
     }
 
@@ -202,8 +201,7 @@ void ValidateState::initializeCursors(OperationContext* opCtx) {
             std::find(readyDurableIndexes.begin(), readyDurableIndexes.end(), desc->indexName()) !=
             readyDurableIndexes.end();
         if (_background && !isIndexDurable) {
-            log() << "Skipping validation on index '" << desc->indexName() << "' in collection '"
-                  << _nss << "' because the index is not yet in a checkpoint.";
+            LOGV2("Skipping validation on index '{}' in collection '{}' because the index is not yet in a checkpoint.", "desc_indexName"_attr = desc->indexName(), "_nss"_attr = _nss);
             continue;
         }
 
@@ -216,8 +214,7 @@ void ValidateState::initializeCursors(OperationContext* opCtx) {
             opCtx->getServiceContext()->getStorageEngine()->getCatalog()->getIndexIdent(
                 opCtx, _collection->getCatalogId(), desc->indexName());
         if (entry->getIdent() != diskIndexIdent) {
-            log() << "Skipping validation on index '" << desc->indexName() << "' in collection '"
-                  << _nss << "' because the index was recreated and is not yet in a checkpoint.";
+            LOGV2("Skipping validation on index '{}' in collection '{}' because the index was recreated and is not yet in a checkpoint.", "desc_indexName"_attr = desc->indexName(), "_nss"_attr = _nss);
             continue;
         }
 
@@ -229,8 +226,7 @@ void ValidateState::initializeCursors(OperationContext* opCtx) {
             invariant(_background);
             // This can only happen if the checkpoint has the MDB catalog entry for the index, but
             // not the corresponding index table.
-            log() << "Skipping validation on index '" << desc->indexName() << "' in collection '"
-                  << _nss << "' because the index data is not in a checkpoint: " << ex;
+            LOGV2("Skipping validation on index '{}' in collection '{}' because the index data is not in a checkpoint: {}", "desc_indexName"_attr = desc->indexName(), "_nss"_attr = _nss, "ex"_attr = ex);
             continue;
         }
 
@@ -240,8 +236,7 @@ void ValidateState::initializeCursors(OperationContext* opCtx) {
             opCtx->getServiceContext()->getStorageEngine()->isInIndividuallyCheckpointedIndexesList(
                 diskIndexIdent)) {
             _indexCursors.erase(desc->indexName());
-            log() << "Skipping validation on index '" << desc->indexName() << "' in collection '"
-                  << _nss << "' because the index data is not yet consistent in the checkpoint.";
+            LOGV2("Skipping validation on index '{}' in collection '{}' because the index data is not yet consistent in the checkpoint.", "desc_indexName"_attr = desc->indexName(), "_nss"_attr = _nss);
             continue;
         }
 
@@ -266,7 +261,7 @@ void ValidateState::_relockDatabaseAndCollection(OperationContext* opCtx) {
     _databaseLock.reset();
 
     if (MONGO_unlikely(hangDuringYieldingLocksForValidation.shouldFail())) {
-        log() << "Hanging on fail point 'hangDuringYieldingLocksForValidation'";
+        LOGV2("Hanging on fail point 'hangDuringYieldingLocksForValidation'");
         hangDuringYieldingLocksForValidation.pauseWhileSet();
     }
 

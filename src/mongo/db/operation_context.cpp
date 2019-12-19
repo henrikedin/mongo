@@ -35,6 +35,7 @@
 
 #include "mongo/db/client.h"
 #include "mongo/db/service_context.h"
+#include "mongo/logv2/log.h"
 #include "mongo/platform/mutex.h"
 #include "mongo/platform/random.h"
 #include "mongo/transport/baton.h"
@@ -218,7 +219,7 @@ Status OperationContext::checkForInterruptNoAssert() noexcept {
 
     checkForInterruptFail.executeIf(
         [&](auto&&) {
-            log() << "set pending kill on op " << getOpID() << ", for checkForInterruptFail";
+            LOGV2("set pending kill on op {}, for checkForInterruptFail", "getOpID"_attr = getOpID());
             markKilled();
         },
         [&](auto&& data) { return opShouldFail(getClient(), data); });
@@ -319,7 +320,7 @@ void OperationContext::markKilled(ErrorCodes::Error killCode) {
     invariant(!ErrorExtraInfo::parserFor(killCode));
 
     if (killCode == ErrorCodes::ClientDisconnect) {
-        log() << "operation was interrupted because a client disconnected";
+        LOGV2("operation was interrupted because a client disconnected");
     }
 
     if (auto status = ErrorCodes::OK; _killCode.compareAndSwap(&status, killCode)) {

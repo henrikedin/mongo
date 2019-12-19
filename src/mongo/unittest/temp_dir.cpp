@@ -36,6 +36,7 @@
 #include <boost/filesystem.hpp>
 
 #include "mongo/base/init.h"
+#include "mongo/logv2/log.h"
 #include "mongo/unittest/unittest.h"
 #include "mongo/util/log.h"
 #include "mongo/util/options_parser/startup_option_init.h"
@@ -90,7 +91,7 @@ TempDir::TempDir(const std::string& namePrefix) {
         fassertFailed(17147);
     }
 
-    ::mongo::unittest::log() << "Created temporary directory: " << _path;
+    ::mongo::unittest::LOGV2("Created temporary directory: {}", "_path"_attr = _path);
 }
 
 TempDir::~TempDir() {

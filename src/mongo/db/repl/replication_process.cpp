@@ -41,6 +41,7 @@
 #include "mongo/db/repl/rollback_gen.h"
 #include "mongo/db/repl/storage_interface.h"
 #include "mongo/db/service_context.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/log.h"
 #include "mongo/util/str.h"
@@ -92,9 +93,9 @@ Status ReplicationProcess::refreshRollbackID(OperationContext* opCtx) {
     }
 
     if (kUninitializedRollbackId == _rbid) {
-        log() << "Rollback ID is " << rbidResult.getValue();
+        LOGV2("Rollback ID is {}", "rbidResult_getValue"_attr = rbidResult.getValue());
     } else {
-        log() << "Rollback ID is " << rbidResult.getValue() << " (previously " << _rbid << ")";
+        LOGV2("Rollback ID is {} (previously {})", "rbidResult_getValue"_attr = rbidResult.getValue(), "_rbid"_attr = _rbid);
     }
     _rbid = rbidResult.getValue();
 
@@ -122,7 +123,7 @@ Status ReplicationProcess::initializeRollbackID(OperationContext* opCtx) {
 
     auto initRbidSW = _storageInterface->initializeRollbackID(opCtx);
     if (initRbidSW.isOK()) {
-        log() << "Initialized the rollback ID to " << initRbidSW.getValue();
+        LOGV2("Initialized the rollback ID to {}", "initRbidSW_getValue"_attr = initRbidSW.getValue());
         _rbid = initRbidSW.getValue();
         invariant(kUninitializedRollbackId != _rbid);
     } else {
@@ -139,7 +140,7 @@ Status ReplicationProcess::incrementRollbackID(OperationContext* opCtx) {
     // If the rollback ID was incremented successfully, cache the new value in _rbid to be returned
     // the next time getRollbackID() is called.
     if (status.isOK()) {
-        log() << "Incremented the rollback ID to " << status.getValue();
+        LOGV2("Incremented the rollback ID to {}", "status_getValue"_attr = status.getValue());
         _rbid = status.getValue();
         invariant(kUninitializedRollbackId != _rbid);
     } else {

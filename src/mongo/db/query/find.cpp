@@ -63,6 +63,7 @@
 #include "mongo/db/stats/top.h"
 #include "mongo/db/storage/storage_options.h"
 #include "mongo/db/views/view_catalog.h"
+#include "mongo/logv2/log.h"
 #include "mongo/s/chunk_version.h"
 #include "mongo/s/stale_exception.h"
 #include "mongo/util/fail_point.h"
@@ -244,7 +245,7 @@ Message getMore(OperationContext* opCtx,
                 bool* isCursorAuthorized) {
     invariant(ntoreturn >= 0);
 
-    LOG(5) << "Running getMore, cursorid: " << cursorid;
+    LOGV2_DEBUG(5, "Running getMore, cursorid: {}", "cursorid"_attr = cursorid);
 
     CurOp& curOp = *CurOp::get(opCtx);
     curOp.ensureStarted();
@@ -523,8 +524,7 @@ Message getMore(OperationContext* opCtx,
         cursorid = 0;
         curOp.debug().cursorExhausted = true;
 
-        LOG(5) << "getMore NOT saving client cursor, ended with state "
-               << PlanExecutor::statestr(state);
+        LOGV2_DEBUG(5, "getMore NOT saving client cursor, ended with state {}", "PlanExecutor_statestr_state"_attr = PlanExecutor::statestr(state));
     } else {
         cursorFreer.dismiss();
         // Continue caching the ClientCursor.
@@ -532,7 +532,7 @@ Message getMore(OperationContext* opCtx,
         cursorPin->incNBatches();
         exec->saveState();
         exec->detachFromOperationContext();
-        LOG(5) << "getMore saving client cursor ended with state " << PlanExecutor::statestr(state);
+        LOGV2_DEBUG(5, "getMore saving client cursor ended with state {}", "PlanExecutor_statestr_state"_attr = PlanExecutor::statestr(state));
 
         *exhaust = cursorPin->queryOptions() & QueryOption_Exhaust;
 
@@ -564,7 +564,7 @@ Message getMore(OperationContext* opCtx,
     qr.setCursorId(cursorid);
     qr.setStartingFrom(startingResult);
     qr.setNReturned(numResults);
-    LOG(5) << "getMore returned " << numResults << " results\n";
+    LOGV2_DEBUG(5, "getMore returned {} results\n", "numResults"_attr = numResults);
     return Message(bb.release());
 }
 
@@ -602,8 +602,8 @@ std::string runQuery(OperationContext* opCtx,
         "Can't canonicalize query");
     invariant(cq.get());
 
-    LOG(5) << "Running query:\n" << redact(cq->toString());
-    LOG(2) << "Running query: " << redact(cq->toStringShort());
+    LOGV2_DEBUG(5, "Running query:\n{}", "redact_cq_toString"_attr = redact(cq->toString()));
+    LOGV2_DEBUG(2, "Running query: {}", "redact_cq_toStringShort"_attr = redact(cq->toStringShort()));
 
     // Parse, canonicalize, plan, transcribe, and get a plan executor.
     AutoGetCollectionForReadCommand ctx(opCtx, nss, AutoGetCollection::ViewMode::kViewsForbidden);
@@ -699,9 +699,7 @@ std::string runQuery(OperationContext* opCtx,
         ++numResults;
 
         if (FindCommon::enoughForFirstBatch(qr, numResults)) {
-            LOG(5) << "Enough for first batch, wantMore=" << qr.wantMore()
-                   << " ntoreturn=" << qr.getNToReturn().value_or(0)
-                   << " numResults=" << numResults;
+            LOGV2_DEBUG(5, "Enough for first batch, wantMore={} ntoreturn={} numResults={}", "qr_wantMore"_attr = qr.wantMore(), "qr_getNToReturn_value_or_0"_attr = qr.getNToReturn().value_or(0), "numResults"_attr = numResults);
             break;
         }
     }
@@ -741,8 +739,7 @@ std::string runQuery(OperationContext* opCtx,
             });
         ccId = pinnedCursor.getCursor()->cursorid();
 
-        LOG(5) << "caching executor with cursorid " << ccId << " after returning " << numResults
-               << " results";
+        LOGV2_DEBUG(5, "caching executor with cursorid {} after returning {} results", "ccId"_attr = ccId, "numResults"_attr = numResults);
 
         // TODO document
         if (qr.isExhaust()) {
@@ -762,7 +759,7 @@ std::string runQuery(OperationContext* opCtx,
 
         endQueryOp(opCtx, collection, *pinnedCursor.getCursor()->getExecutor(), numResults, ccId);
     } else {
-        LOG(5) << "Not caching executor but returning " << numResults << " results.";
+        LOGV2_DEBUG(5, "Not caching executor but returning {} results.", "numResults"_attr = numResults);
         endQueryOp(opCtx, collection, *exec, numResults, ccId);
     }
 

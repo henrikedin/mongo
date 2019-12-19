@@ -35,6 +35,7 @@
 
 #include "mongo/db/client.h"
 #include "mongo/db/service_context.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/clock_source.h"
 #include "mongo/util/log.h"
 #include "mongo/util/scopeguard.h"
@@ -114,7 +115,7 @@ void PeriodicRunnerImpl::PeriodicJobImpl::_run() {
 }
 
 void PeriodicRunnerImpl::PeriodicJobImpl::start() {
-    LOG(2) << "Starting periodic job " << _job.name;
+    LOGV2_DEBUG(2, "Starting periodic job {}", "_job_name"_attr = _job.name);
 
     _run();
 }
@@ -148,7 +149,7 @@ void PeriodicRunnerImpl::PeriodicJobImpl::stop() {
 
     // Only join once
     if (lastExecStatus != ExecutionStatus::CANCELED) {
-        LOG(2) << "Stopping periodic job " << _job.name;
+        LOGV2_DEBUG(2, "Stopping periodic job {}", "_job_name"_attr = _job.name);
 
         _condvar.notify_one();
         _thread.join();

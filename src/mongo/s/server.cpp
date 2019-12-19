@@ -69,6 +69,7 @@
 #include "mongo/db/startup_warnings_common.h"
 #include "mongo/db/wire_version.h"
 #include "mongo/executor/task_executor_pool.h"
+#include "mongo/logv2/log.h"
 #include "mongo/platform/process_id.h"
 #include "mongo/rpc/metadata/egress_metadata_hook_list.h"
 #include "mongo/s/balancer_configuration.h"
@@ -153,8 +154,7 @@ Status waitForSigningKeys(OperationContext* opCtx) {
         // mongod will set minWireVersion == maxWireVersion for isMaster requests from
         // internalClient.
         if (rsm && (rsm->getMaxWireVersion() < WireVersion::SUPPORTS_OP_MSG)) {
-            log() << "Not waiting for signing keys, not supported by the config shard "
-                  << configCS.getSetName();
+            LOGV2("Not waiting for signing keys, not supported by the config shard {}", "configCS_getSetName"_attr = configCS.getSetName());
             return Status::OK();
         }
         auto stopStatus = opCtx->checkForInterruptNoAssert();
@@ -166,8 +166,7 @@ Status waitForSigningKeys(OperationContext* opCtx) {
             if (LogicalTimeValidator::get(opCtx)->shouldGossipLogicalTime()) {
                 return Status::OK();
             }
-            log() << "Waiting for signing keys, sleeping for " << kSignKeysRetryInterval
-                  << " and trying again.";
+            LOGV2("Waiting for signing keys, sleeping for {} and trying again.", "kSignKeysRetryInterval"_attr = kSignKeysRetryInterval);
             sleepFor(kSignKeysRetryInterval);
             continue;
         } catch (const DBException& ex) {
@@ -261,7 +260,7 @@ void cleanupTask(ServiceContext* serviceContext) {
 
         // Shutdown the TransportLayer so that new connections aren't accepted
         if (auto tl = serviceContext->getTransportLayer()) {
-            log(LogComponent::kNetwork) << "shutdown: going to close all sockets...";
+            LOGV2_DEBUG(::mongo::logger::LogSeverity(LogComponent::kNetwork).toInt(), "shutdown: going to close all sockets...");
 
             tl->shutdown();
         }
@@ -324,8 +323,7 @@ void cleanupTask(ServiceContext* serviceContext) {
         // Shutdown the Service Entry Point and its sessions and give it a grace period to complete.
         if (auto sep = serviceContext->getServiceEntryPoint()) {
             if (!sep->shutdown(Seconds(10))) {
-                log(LogComponent::kNetwork)
-                    << "Service entry point failed to shutdown within timelimit.";
+                LOGV2_DEBUG(::mongo::logger::LogSeverity(LogComponent::kNetwork).toInt(), "Service entry point failed to shutdown within timelimit.");
             }
         }
 
@@ -333,8 +331,7 @@ void cleanupTask(ServiceContext* serviceContext) {
         if (auto svcExec = serviceContext->getServiceExecutor()) {
             Status status = svcExec->shutdown(Seconds(5));
             if (!status.isOK()) {
-                log(LogComponent::kNetwork)
-                    << "Service executor failed to shutdown within timelimit: " << status.reason();
+                LOGV2_DEBUG(::mongo::logger::LogSeverity(LogComponent::kNetwork).toInt(), "Service executor failed to shutdown within timelimit: {}", "status_reason"_attr = status.reason());
             }
         }
 #endif
@@ -469,7 +466,7 @@ public:
             invariant(args.status);
 
             try {
-                LOG(0) << "Updating sharding state with confirmed set " << connStr;
+                LOGV2("Updating sharding state with confirmed set {}", "connStr"_attr = connStr);
 
                 Grid::get(serviceContext)->shardRegistry()->updateReplSetHosts(connStr);
 
@@ -478,14 +475,14 @@ public:
                 }
                 ShardRegistry::updateReplicaSetOnConfigServer(serviceContext, connStr);
             } catch (const ExceptionForCat<ErrorCategory::ShutdownError>& e) {
-                LOG(0) << "Unable to update sharding state due to " << e;
+                LOGV2("Unable to update sharding state due to {}", "e"_attr = e);
             }
         };
 
         auto executor = Grid::get(_serviceContext)->getExecutorPool()->getFixedExecutor();
         auto schedStatus = executor->scheduleWork(std::move(fun)).getStatus();
         if (ErrorCodes::isCancelationError(schedStatus.code())) {
-            LOG(2) << "Unable to schedule confirmed set update due to " << schedStatus;
+            LOGV2_DEBUG(2, "Unable to schedule confirmed set update due to {}", "schedStatus"_attr = schedStatus);
             return;
         }
         uassertStatusOK(schedStatus);
@@ -564,7 +561,7 @@ ExitCode runMongosServer(ServiceContext* serviceContext) {
         if (!status.isOK()) {
             if (status == ErrorCodes::CallbackCanceled) {
                 invariant(globalInShutdownDeprecated());
-                log() << "Shutdown called before mongos finished starting up";
+                LOGV2("Shutdown called before mongos finished starting up");
                 return EXIT_CLEAN;
             }
             error() << "Error initializing sharding system: " << status;
@@ -638,7 +635,7 @@ ExitCode runMongosServer(ServiceContext* serviceContext) {
 #else
     if (ntservice::shouldStartService()) {
         ntservice::reportStatus(SERVICE_RUNNING);
-        log() << "Service running";
+        LOGV2("Service running");
     }
 #endif
 
@@ -687,7 +684,7 @@ ExitCode main(ServiceContext* serviceContext) {
         }
 
         if (configAddr.isLocalHost() != shardingContext->allowLocalHost()) {
-            log(LogComponent::kDefault) << "cannot mix localhost and ip addresses in configdbs";
+            LOGV2_DEBUG(::mongo::logger::LogSeverity(LogComponent::kDefault).toInt(), "cannot mix localhost and ip addresses in configdbs");
             return EXIT_BADOPTIONS;
         }
     }

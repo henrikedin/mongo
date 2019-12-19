@@ -32,6 +32,7 @@
 #include "mongo/platform/basic.h"
 
 #include "mongo/db/commands.h"
+#include "mongo/logv2/log.h"
 #include "mongo/s/grid.h"
 #include "mongo/s/is_mongos.h"
 #include "mongo/util/log.h"
@@ -86,16 +87,16 @@ public:
 
         const auto argumentElem = cmdObj.firstElement();
         if (argumentElem.isNumber() || argumentElem.isBoolean()) {
-            LOG(0) << "Routing metadata flushed for all databases";
+            LOGV2("Routing metadata flushed for all databases");
             catalogCache->purgeAllDatabases();
         } else {
             const auto ns = argumentElem.checkAndGetStringData();
             if (nsIsDbOnly(ns)) {
-                LOG(0) << "Routing metadata flushed for database " << ns;
+                LOGV2("Routing metadata flushed for database {}", "ns"_attr = ns);
                 catalogCache->purgeDatabase(ns);
             } else {
                 const NamespaceString nss(ns);
-                LOG(0) << "Routing metadata flushed for collection " << nss;
+                LOGV2("Routing metadata flushed for collection {}", "nss"_attr = nss);
                 catalogCache->purgeCollection(nss);
             }
         }

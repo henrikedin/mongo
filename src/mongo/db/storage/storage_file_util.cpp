@@ -42,6 +42,7 @@
 
 #include <boost/filesystem/path.hpp>
 
+#include "mongo/logv2/log.h"
 #include "mongo/util/file.h"
 #include "mongo/util/log.h"
 
@@ -67,7 +68,7 @@ Status fsyncParentDirectory(const boost::filesystem::path& file) {
 
     boost::filesystem::path dir = file.parent_path();
 
-    LOG(1) << "flushing directory " << dir.string();
+    LOGV2_DEBUG(1, "flushing directory {}", "dir_string"_attr = dir.string());
 
     int fd = ::open(dir.string().c_str(), O_RDONLY);
     if (fd < 0) {

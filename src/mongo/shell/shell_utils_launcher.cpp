@@ -63,6 +63,7 @@
 #include "mongo/base/environment_buffer.h"
 #include "mongo/client/dbclient_connection.h"
 #include "mongo/db/traffic_reader.h"
+#include "mongo/logv2/log.h"
 #include "mongo/scripting/engine.h"
 #include "mongo/shell/shell_options.h"
 #include "mongo/shell/shell_utils.h"
@@ -459,7 +460,7 @@ void ProgramRunner::start() {
         for (unsigned i = 0; i < _argv.size(); i++) {
             ss << " " << _argv[i];
         }
-        log() << ss.str();
+        LOGV2("{}", "ss_str"_attr = ss.str());
     }
 }
 
@@ -715,7 +716,7 @@ bool wait_for_pid(ProcessId pid, bool block = true, int* exit_code = nullptr) {
         return false;
     } else if (ret != WAIT_OBJECT_0) {
         const auto ewd = errnoWithDescription();
-        log() << "wait_for_pid: WaitForSingleObject failed: " << ewd;
+        LOGV2("wait_for_pid: WaitForSingleObject failed: {}", "ewd"_attr = ewd);
     }
 
     DWORD tmp;
@@ -734,7 +735,7 @@ bool wait_for_pid(ProcessId pid, bool block = true, int* exit_code = nullptr) {
         return true;
     } else {
         const auto ewd = errnoWithDescription();
-        log() << "GetExitCodeProcess failed: " << ewd;
+        LOGV2("GetExitCodeProcess failed: {}", "ewd"_attr = ewd);
         return false;
     }
 #else
@@ -796,7 +797,7 @@ BSONObj WaitMongoProgram(const BSONObj& a, void* data) {
     int exit_code = -123456;  // sentinel value
     invariant(port >= 0);
     if (!registry.isPortRegistered(port)) {
-        log() << "No db started on port: " << port;
+        LOGV2("No db started on port: {}", "port"_attr = port);
         return BSON(string("") << 0);
     }
     pid = registry.pidForPort(port);
@@ -892,8 +893,7 @@ void copyDir(const boost::filesystem::path& from, const boost::filesystem::path&
             boost::system::error_code ec;
             boost::filesystem::copy_file(p, to / p.leaf(), ec);
             if (ec) {
-                log() << "Skipping copying of file from '" << p.generic_string() << "' to '"
-                      << (to / p.leaf()).generic_string() << "' due to: " << ec.message();
+                LOGV2("Skipping copying of file from '{}' to '{}' due to: {}", "p_generic_string"_attr = p.generic_string(), "to_p_leaf_generic_string"_attr = (to / p.leaf()).generic_string(), "ec_message"_attr = ec.message());
             }
         } else if (p.leaf() != "mongod.lock" && p.leaf() != "WiredTiger.lock") {
             if (boost::filesystem::is_directory(p)) {
@@ -943,9 +943,7 @@ inline void kill_wrapper(ProcessId pid, int sig, int port, const BSONObj& opt) {
             const auto ewd = errnoWithDescription();
             warning() << "kill_wrapper OpenEvent failed: " << ewd;
         } else {
-            log() << "kill_wrapper OpenEvent failed to open event to the process " << pid.asUInt32()
-                  << ". It has likely died already or server is running an older version."
-                  << " Attempting to shutdown through admin command.";
+            LOGV2("kill_wrapper OpenEvent failed to open event to the process {}. It has likely died already or server is running an older version. Attempting to shutdown through admin command.", "pid_asUInt32"_attr = pid.asUInt32());
 
             // Back-off to the old way of shutting down the server on Windows, in case we
             // are managing a pre-2.6.0rc0 service, which did not have the event.
@@ -993,7 +991,7 @@ inline void kill_wrapper(ProcessId pid, int sig, int port, const BSONObj& opt) {
         if (errno == ESRCH) {
         } else {
             const auto ewd = errnoWithDescription();
-            log() << "killFailed: " << ewd;
+            LOGV2("killFailed: {}", "ewd"_attr = ewd);
             verify(x == 0);
         }
     }
@@ -1005,7 +1003,7 @@ int killDb(int port, ProcessId _pid, int signal, const BSONObj& opt, bool waitPi
     ProcessId pid;
     if (port > 0) {
         if (!registry.isPortRegistered(port)) {
-            log() << "No db started on port: " << port;
+            LOGV2("No db started on port: {}", "port"_attr = port);
             return 0;
         }
         pid = registry.pidForPort(port);
@@ -1017,13 +1015,13 @@ int killDb(int port, ProcessId _pid, int signal, const BSONObj& opt, bool waitPi
 
     // If we are not waiting for the process to end, then return immediately.
     if (!waitPid) {
-        log() << "skip waiting for pid " << pid << " to terminate";
+        LOGV2("skip waiting for pid {} to terminate", "pid"_attr = pid);
         return 0;
     }
 
     int exitCode = EXIT_FAILURE;
     try {
-        log() << "waiting for process " << pid << " to terminate.";
+        LOGV2("waiting for process {} to terminate.", "pid"_attr = pid);
         wait_for_pid(pid, true, &exitCode);
     } catch (...) {
         warning() << "process " << pid << " failed to terminate.";
@@ -1090,10 +1088,10 @@ BSONObj StopMongoProgram(const BSONObj& a, void* data) {
     uassert(ErrorCodes::FailedToParse, "wrong number of arguments", nFields >= 1 && nFields <= 4);
     uassert(ErrorCodes::BadValue, "stopMongoProgram needs a number", a.firstElement().isNumber());
     int port = int(a.firstElement().number());
-    log() << "shell: stopping mongo program, waitpid=" << getWaitPid(a);
+    LOGV2("shell: stopping mongo program, waitpid={}", "getWaitPid_a"_attr = getWaitPid(a));
     int code =
         killDb(port, ProcessId::fromNative(0), getSignal(a), getStopMongodOpts(a), getWaitPid(a));
-    log() << "shell: stopped mongo program on port " << port;
+    LOGV2("shell: stopped mongo program on port {}", "port"_attr = port);
     return BSON("" << (double)code);
 }
 
@@ -1104,7 +1102,7 @@ BSONObj StopMongoProgramByPid(const BSONObj& a, void* data) {
         ErrorCodes::BadValue, "stopMongoProgramByPid needs a number", a.firstElement().isNumber());
     ProcessId pid = ProcessId::fromNative(int(a.firstElement().number()));
     int code = killDb(0, pid, getSignal(a), getStopMongodOpts(a));
-    log() << "shell: stopped mongo program with pid " << pid;
+    LOGV2("shell: stopped mongo program with pid {}", "pid"_attr = pid);
     return BSON("" << (double)code);
 }
 
@@ -1124,7 +1122,7 @@ int KillMongoProgramInstances() {
         int port = registry.portForPid(pid);
         int code = killDb(port != -1 ? port : 0, pid, SIGTERM);
         if (code != EXIT_SUCCESS) {
-            log() << "Process with pid " << pid << " exited with error code " << code;
+            LOGV2("Process with pid {} exited with error code {}", "pid"_attr = pid, "code"_attr = code);
             returnCode = code;
         }
     }

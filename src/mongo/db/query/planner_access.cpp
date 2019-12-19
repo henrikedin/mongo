@@ -50,6 +50,7 @@
 #include "mongo/db/query/query_knobs_gen.h"
 #include "mongo/db/query/query_planner.h"
 #include "mongo/db/query/query_planner_common.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/log.h"
 #include "mongo/util/transitional_tools_do_not_use/vector_spooling.h"
 
@@ -1113,8 +1114,7 @@ std::unique_ptr<QuerySolutionNode> QueryPlannerAccess::buildIndexedAnd(
         } else {
             // We can't use sort-based intersection, and hash-based intersection is disabled.
             // Clean up the index scans and bail out by returning NULL.
-            LOG(5) << "Can't build index intersection solution: "
-                   << "AND_SORTED is not possible and AND_HASH is disabled.";
+            LOGV2_DEBUG(5, "Can't build index intersection solution: AND_SORTED is not possible and AND_HASH is disabled.");
             return nullptr;
         }
     }

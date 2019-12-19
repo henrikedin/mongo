@@ -46,6 +46,7 @@
 #include "mongo/db/stats/timer_stats.h"
 #include "mongo/db/storage/storage_engine.h"
 #include "mongo/db/write_concern_options.h"
+#include "mongo/logv2/log.h"
 #include "mongo/rpc/protocol.h"
 #include "mongo/util/fail_point.h"
 #include "mongo/util/log.h"
@@ -93,8 +94,7 @@ StatusWith<WriteConcernOptions> extractWriteConcern(OperationContext* opCtx,
                 auto wcDefault = ReadWriteConcernDefaults::get(opCtx->getServiceContext())
                                      .getDefaultWriteConcern(opCtx);
                 if (wcDefault) {
-                    LOG(2) << "Applying default writeConcern on " << cmdObj.firstElementFieldName()
-                           << " of " << wcDefault->toBSON();
+                    LOGV2_DEBUG(2, "Applying default writeConcern on {} of {}", "cmdObj_firstElementFieldName"_attr = cmdObj.firstElementFieldName(), "wcDefault_toBSON"_attr = wcDefault->toBSON());
                     return *wcDefault;
                 }
             }
@@ -190,8 +190,7 @@ Status waitForWriteConcern(OperationContext* opCtx,
                            const OpTime& replOpTime,
                            const WriteConcernOptions& writeConcern,
                            WriteConcernResult* result) {
-    LOG(2) << "Waiting for write concern. OpTime: " << replOpTime
-           << ", write concern: " << writeConcern.toBSON();
+    LOGV2_DEBUG(2, "Waiting for write concern. OpTime: {}, write concern: {}", "replOpTime"_attr = replOpTime, "writeConcern_toBSON"_attr = writeConcern.toBSON());
 
     auto const replCoord = repl::ReplicationCoordinator::get(opCtx);
 

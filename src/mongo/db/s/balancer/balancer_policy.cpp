@@ -36,6 +36,7 @@
 #include <random>
 
 #include "mongo/db/s/balancer/type_migration.h"
+#include "mongo/logv2/log.h"
 #include "mongo/s/catalog/type_shard.h"
 #include "mongo/s/catalog/type_tags.h"
 #include "mongo/util/fail_point.h"
@@ -342,8 +343,7 @@ MigrateInfo chooseRandomMigration(const ShardStatisticsVector& shardStats,
     const int destIndex = indices[choice];
     const auto& destShardId = shardStats[destIndex].shardId;
 
-    LOG(1) << "balancerShouldReturnRandomMigrations: source: " << sourceShardId
-           << " dest: " << destShardId;
+    LOGV2_DEBUG(1, "balancerShouldReturnRandomMigrations: source: {} dest: {}", "sourceShardId"_attr = sourceShardId, "destShardId"_attr = destShardId);
 
     const auto& chunks = distribution.getChunks(sourceShardId);
 
@@ -361,7 +361,7 @@ vector<MigrateInfo> BalancerPolicy::balance(const ShardStatisticsVector& shardSt
 
     if (MONGO_unlikely(balancerShouldReturnRandomMigrations.shouldFail()) &&
         !distribution.nss().isConfigDB()) {
-        LOG(1) << "balancerShouldReturnRandomMigrations failpoint is set";
+        LOGV2_DEBUG(1, "balancerShouldReturnRandomMigrations failpoint is set");
 
         if (shardStats.size() < 2)
             return migrations;
@@ -552,7 +552,7 @@ bool BalancerPolicy::_singleZoneBalance(const ShardStatisticsVector& shardStats,
     const ShardId to = _getLeastLoadedReceiverShard(shardStats, distribution, tag, *usedShards);
     if (!to.isValid()) {
         if (migrations->empty()) {
-            log() << "No available shards to take chunks for zone [" << tag << "]";
+            LOGV2("No available shards to take chunks for zone [{}]", "tag"_attr = tag);
         }
         return false;
     }
@@ -565,12 +565,12 @@ bool BalancerPolicy::_singleZoneBalance(const ShardStatisticsVector& shardStats,
 
     const size_t imbalance = max - idealNumberOfChunksPerShardForTag;
 
-    LOG(1) << "collection : " << distribution.nss().ns();
-    LOG(1) << "zone       : " << tag;
-    LOG(1) << "donor      : " << from << " chunks on " << max;
-    LOG(1) << "receiver   : " << to << " chunks on " << min;
-    LOG(1) << "ideal      : " << idealNumberOfChunksPerShardForTag;
-    LOG(1) << "threshold  : " << kDefaultImbalanceThreshold;
+    LOGV2_DEBUG(1, "collection : {}", "distribution_nss_ns"_attr = distribution.nss().ns());
+    LOGV2_DEBUG(1, "zone       : {}", "tag"_attr = tag);
+    LOGV2_DEBUG(1, "donor      : {} chunks on {}", "from"_attr = from, "max"_attr = max);
+    LOGV2_DEBUG(1, "receiver   : {} chunks on {}", "to"_attr = to, "min"_attr = min);
+    LOGV2_DEBUG(1, "ideal      : {}", "idealNumberOfChunksPerShardForTag"_attr = idealNumberOfChunksPerShardForTag);
+    LOGV2_DEBUG(1, "threshold  : {}", "kDefaultImbalanceThreshold"_attr = kDefaultImbalanceThreshold);
 
     // Check whether it is necessary to balance within this zone
     if (imbalance < kDefaultImbalanceThreshold)

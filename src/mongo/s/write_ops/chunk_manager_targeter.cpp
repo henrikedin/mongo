@@ -38,6 +38,7 @@
 #include "mongo/db/matcher/extensions_callback_noop.h"
 #include "mongo/db/query/canonical_query.h"
 #include "mongo/db/query/collation/collation_index_key.h"
+#include "mongo/logv2/log.h"
 #include "mongo/s/client/shard_registry.h"
 #include "mongo/s/cluster_commands_helpers.h"
 #include "mongo/s/database_version_helpers.h"
@@ -751,10 +752,7 @@ Status ChunkManagerTargeter::refreshIfNeeded(OperationContext* opCtx, bool* wasC
 
     *wasChanged = false;
 
-    LOG(4) << "ChunkManagerTargeter checking if refresh is needed, needsTargetingRefresh("
-           << _needsTargetingRefresh << ") remoteShardVersions empty ("
-           << _remoteShardVersions.empty() << ")"
-           << ") remoteDbVersion empty (" << !_remoteDbVersion << ")";
+    LOGV2_DEBUG(4, "ChunkManagerTargeter checking if refresh is needed, needsTargetingRefresh({}) remoteShardVersions empty ({})) remoteDbVersion empty ({})", "_needsTargetingRefresh"_attr = _needsTargetingRefresh, "_remoteShardVersions_empty"_attr = _remoteShardVersions.empty(), "_remoteDbVersion"_attr = !_remoteDbVersion);
 
     //
     // Did we have any stale config or targeting errors at all?
@@ -808,7 +806,7 @@ Status ChunkManagerTargeter::refreshIfNeeded(OperationContext* opCtx, bool* wasC
 
         CompareResult result = compareAllShardVersions(*_routingInfo, _remoteShardVersions);
 
-        LOG(4) << "ChunkManagerTargeter shard versions comparison result: " << (int)result;
+        LOGV2_DEBUG(4, "ChunkManagerTargeter shard versions comparison result: {}", "int_result"_attr = (int)result);
 
         // Reset the versions
         _remoteShardVersions.clear();
@@ -827,7 +825,7 @@ Status ChunkManagerTargeter::refreshIfNeeded(OperationContext* opCtx, bool* wasC
 
         CompareResult result = compareDbVersions(*_routingInfo, *_remoteDbVersion);
 
-        LOG(4) << "ChunkManagerTargeter database versions comparison result: " << (int)result;
+        LOGV2_DEBUG(4, "ChunkManagerTargeter database versions comparison result: {}", "int_result"_attr = (int)result);
 
         // Reset the version
         _remoteDbVersion = boost::none;

@@ -43,6 +43,7 @@
 #include "mongo/db/log_process_details.h"
 #include "mongo/db/server_options.h"
 #include "mongo/db/service_context.h"
+#include "mongo/logv2/log.h"
 #include "mongo/platform/process_id.h"
 #include "mongo/stdx/thread.h"
 #include "mongo/util/assert_util.h"
@@ -78,24 +79,24 @@ namespace {
 #ifdef _WIN32
 void consoleTerminate(const char* controlCodeName) {
     setThreadName("consoleTerminate");
-    log() << "got " << controlCodeName << ", will terminate after current cmd ends";
+    LOGV2("got {}, will terminate after current cmd ends", "controlCodeName"_attr = controlCodeName);
     exitCleanly(EXIT_KILL);
 }
 
 BOOL WINAPI CtrlHandler(DWORD fdwCtrlType) {
     switch (fdwCtrlType) {
         case CTRL_C_EVENT:
-            log() << "Ctrl-C signal";
+            LOGV2("Ctrl-C signal");
             consoleTerminate("CTRL_C_EVENT");
             return TRUE;
 
         case CTRL_CLOSE_EVENT:
-            log() << "CTRL_CLOSE_EVENT signal";
+            LOGV2("CTRL_CLOSE_EVENT signal");
             consoleTerminate("CTRL_CLOSE_EVENT");
             return TRUE;
 
         case CTRL_BREAK_EVENT:
-            log() << "CTRL_BREAK_EVENT signal";
+            LOGV2("CTRL_BREAK_EVENT signal");
             consoleTerminate("CTRL_BREAK_EVENT");
             return TRUE;
 
@@ -104,7 +105,7 @@ BOOL WINAPI CtrlHandler(DWORD fdwCtrlType) {
             return FALSE;
 
         case CTRL_SHUTDOWN_EVENT:
-            log() << "CTRL_SHUTDOWN_EVENT signal";
+            LOGV2("CTRL_SHUTDOWN_EVENT signal");
             consoleTerminate("CTRL_SHUTDOWN_EVENT");
             return TRUE;
 
@@ -139,7 +140,7 @@ void eventProcessingThread() {
 
     setThreadName("eventTerminate");
 
-    log() << "shutdown event signaled, will terminate after current cmd ends";
+    LOGV2("shutdown event signaled, will terminate after current cmd ends");
     exitCleanly(EXIT_CLEAN);
 }
 
@@ -189,19 +190,19 @@ struct LogRotationState {
 
 void handleOneSignal(const SignalWaitResult& waited, LogRotationState* rotation) {
     int sig = waited.sig;
-    log() << "got signal " << sig << " (" << strsignal(sig) << ")";
+    LOGV2("got signal {} ({})", "sig"_attr = sig, "strsignal_sig"_attr = strsignal(sig));
 #ifdef __linux__
     const siginfo_t& si = waited.si;
     switch (si.si_code) {
         case SI_USER:
         case SI_QUEUE:
-            log() << "kill from pid:" << si.si_pid << " uid:" << si.si_uid;
+            LOGV2("kill from pid:{} uid:{}", "si_si_pid"_attr = si.si_pid, "si_si_uid"_attr = si.si_uid);
             break;
         case SI_TKILL:
-            log() << "tgkill";
+            LOGV2("tgkill");
             break;
         case SI_KERNEL:
-            log() << "kernel";
+            LOGV2("kernel");
             break;
     }
 #endif  // __linux__
@@ -231,7 +232,7 @@ void handleOneSignal(const SignalWaitResult& waited, LogRotationState* rotation)
     }
 #endif
     // interrupt/terminate signal
-    log() << "will terminate after current cmd ends";
+    LOGV2("will terminate after current cmd ends");
     exitCleanly(EXIT_CLEAN);
 }
 

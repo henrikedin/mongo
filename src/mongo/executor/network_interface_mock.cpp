@@ -39,6 +39,7 @@
 
 #include "mongo/executor/connection_pool_stats.h"
 #include "mongo/executor/network_connection_hook.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/log.h"
 #include "mongo/util/str.h"
 #include "mongo/util/time_support.h"
@@ -77,9 +78,9 @@ void NetworkInterfaceMock::logQueues() {
             continue;
         }
 
-        log() << "**** queue: " << queue.first << " ****";
+        LOGV2("**** queue: {} ****", "queue_first"_attr = queue.first);
         for (auto&& item : *queue.second) {
-            log() << "\t\t " << item.getDiagnosticString();
+            LOGV2("\t\t {}", "item_getDiagnosticString"_attr = item.getDiagnosticString());
         }
     }
 }

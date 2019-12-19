@@ -51,6 +51,7 @@
 #include "mongo/executor/remote_command_response.h"
 #include "mongo/executor/task_executor.h"
 #include "mongo/executor/task_executor_pool.h"
+#include "mongo/logv2/log.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/s/client/shard_registry.h"
 #include "mongo/s/grid.h"
@@ -374,7 +375,7 @@ void MigrationChunkClonerSourceLegacy::cancelClone(OperationContext* opCtx) {
                                                    kRecvChunkAbort, _args.getNss(), _sessionId))
                                     .getStatus();
             if (!status.isOK()) {
-                LOG(0) << "Failed to cancel migration " << causedBy(redact(status));
+                LOGV2("Failed to cancel migration {}", "causedBy_redact_status"_attr = causedBy(redact(status)));
             }
         }
         // Intentional fall through
@@ -972,13 +973,9 @@ Status MigrationChunkClonerSourceLegacy::_checkRecipientCloningStatus(OperationC
         const std::size_t cloneLocsRemaining = _cloneLocs.size();
 
         if (_forceJumbo && _jumboChunkCloneState) {
-            log() << "moveChunk data transfer progress: " << redact(res)
-                  << " mem used: " << _memoryUsed
-                  << " documents cloned so far: " << _jumboChunkCloneState->docsCloned;
+            LOGV2("moveChunk data transfer progress: {} mem used: {} documents cloned so far: {}", "redact_res"_attr = redact(res), "_memoryUsed"_attr = _memoryUsed, "_jumboChunkCloneState_docsCloned"_attr = _jumboChunkCloneState->docsCloned);
         } else {
-            log() << "moveChunk data transfer progress: " << redact(res)
-                  << " mem used: " << _memoryUsed
-                  << " documents remaining to clone: " << cloneLocsRemaining;
+            LOGV2("moveChunk data transfer progress: {} mem used: {} documents remaining to clone: {}", "redact_res"_attr = redact(res), "_memoryUsed"_attr = _memoryUsed, "cloneLocsRemaining"_attr = cloneLocsRemaining);
         }
 
         if (res["state"].String() == "steady") {

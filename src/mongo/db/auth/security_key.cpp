@@ -52,6 +52,7 @@
 #include "mongo/db/auth/security_file.h"
 #include "mongo/db/auth/user.h"
 #include "mongo/db/server_options.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/icu.h"
 #include "mongo/util/log.h"
 #include "mongo/util/password_digest.h"
@@ -128,7 +129,7 @@ using std::string;
 bool setUpSecurityKey(const string& filename) {
     auto swKeyStrings = mongo::readSecurityFile(filename);
     if (!swKeyStrings.isOK()) {
-        log() << swKeyStrings.getStatus().reason();
+        LOGV2("{}", "swKeyStrings_getStatus_reason"_attr = swKeyStrings.getStatus().reason());
         return false;
     }
 

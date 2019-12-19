@@ -39,6 +39,7 @@
 #include "mongo/db/client.h"
 #include "mongo/db/dbmessage.h"
 #include "mongo/db/service_context.h"
+#include "mongo/logv2/log.h"
 #include "mongo/rpc/op_msg.h"
 #include "mongo/transport/mock_session.h"
 #include "mongo/transport/service_entry_point.h"
@@ -73,7 +74,7 @@ public:
     void startSession(transport::SessionHandle session) override {}
 
     DbResponse handleRequest(OperationContext* opCtx, const Message& request) override {
-        log() << "In handleRequest";
+        LOGV2("In handleRequest");
         _ranHandler = true;
         ASSERT_TRUE(haveClient());
 
@@ -154,7 +155,7 @@ public:
             tl->_lastTicketSource = true;
 
             tl->_ranSource = true;
-            log() << "In sourceMessage";
+            LOGV2("In sourceMessage");
 
             if (tl->_waitHook)
                 tl->_waitHook();
@@ -178,7 +179,7 @@ public:
             ASSERT_EQ(tl->_ssm->state(), ServiceStateMachine::State::SinkWait);
             tl->_lastTicketSource = false;
 
-            log() << "In sinkMessage";
+            LOGV2("In sinkMessage");
             tl->_ranSink = true;
 
             if (tl->_waitHook)
@@ -367,7 +368,7 @@ protected:
 void ServiceStateMachineFixture::runPingTest(State first, State second) {
     ASSERT_FALSE(haveClient());
     ASSERT_EQ(_ssm->state(), State::Created);
-    log() << "run next";
+    LOGV2("run next");
     _ssm->runNext();
 
     ASSERT_EQ(_ssm->state(), first);
@@ -384,7 +385,7 @@ void ServiceStateMachineFixture::sourceAndSink(State afterSource, State afterSin
     invariant(_ssm->state() == State::Source || _ssm->state() == State::Created);
 
     // Source a new message from the network.
-    log() << "(sourceAndSink) runNext to source a message";
+    LOGV2("(sourceAndSink) runNext to source a message");
     _ssm->runNext();
     ASSERT_TRUE(_tl->ranSource());
     ASSERT_EQ(_ssm->state(), afterSource);
@@ -392,7 +393,7 @@ void ServiceStateMachineFixture::sourceAndSink(State afterSource, State afterSin
 
     // Let the message be processed by sending it to the database, receiving the response, and then
     // sinking it.
-    log() << "(sourceAndSink) runNext to process and sink the response message";
+    LOGV2("(sourceAndSink) runNext to process and sink the response message");
     _ssm->runNext();
     ASSERT_FALSE(haveClient());
     ASSERT_TRUE(_tl->ranSink());
@@ -476,7 +477,7 @@ TEST_F(ServiceStateMachineFixture, TestGetMoreWithExhaust) {
     // terminal getMore, indicating that the exhaust stream should be ended.
     _sep->setResponseMessage(getMoreTerminalRes);
 
-    log() << "runNext to terminate the exhaust stream";
+    LOGV2("runNext to terminate the exhaust stream");
     _ssm->runNext();
     ASSERT_FALSE(haveClient());
     ASSERT_EQ(_ssm->state(), State::Source);
@@ -686,7 +687,7 @@ TEST_F(ServiceStateMachineFixture, TerminateWorksForAllStates) {
     SimpleEvent hookRan, okayToContinue;
 
     auto cleanupHook = [&hookRan] {
-        log() << "Cleaning up session";
+        LOGV2("Cleaning up session");
         hookRan.signal();
     };
 
@@ -695,8 +696,7 @@ TEST_F(ServiceStateMachineFixture, TerminateWorksForAllStates) {
     State waitFor = State::Created;
     SimpleEvent atDesiredState;
     auto waitForHook = [this, &waitFor, &atDesiredState, &okayToContinue]() {
-        log() << "Checking for wakeup at " << stateToString(_ssm->state()) << ". Expecting "
-              << stateToString(waitFor);
+        LOGV2("Checking for wakeup at {}. Expecting {}", "stateToString__ssm_state"_attr = stateToString(_ssm->state()), "stateToString_waitFor"_attr = stateToString(waitFor));
         if (_ssm->state() == waitFor) {
             atDesiredState.signal();
             okayToContinue.wait();
@@ -715,7 +715,7 @@ TEST_F(ServiceStateMachineFixture, TerminateWorksForAllStates) {
     // Run this same test for each state.
     auto states = {State::Source, State::SourceWait, State::Process, State::SinkWait};
     for (const auto testState : states) {
-        log() << "Testing termination during " << stateToString(testState);
+        LOGV2("Testing termination during {}", "stateToString_testState"_attr = stateToString(testState));
 
         // Reset the _ssm to a fresh SSM and reset our tracking variables.
         _ssm = ServiceStateMachine::create(
@@ -733,7 +733,7 @@ TEST_F(ServiceStateMachineFixture, TerminateWorksForAllStates) {
 
         // Wait for the SSM to advance to the expected state
         atDesiredState.wait();
-        log() << "Terminating session at " << stateToString(_ssm->state());
+        LOGV2("Terminating session at {}", "stateToString__ssm_state"_attr = stateToString(_ssm->state()));
 
         // Terminate the SSM
         _ssm->terminate();
@@ -760,7 +760,7 @@ TEST_F(ServiceStateMachineFixture, TerminateWorksForAllStatesWithScheduleFailure
     bool scheduleFailed = false;
 
     auto cleanupHook = [&hookRan] {
-        log() << "Cleaning up session";
+        LOGV2("Cleaning up session");
         hookRan.signal();
     };
 
@@ -769,8 +769,7 @@ TEST_F(ServiceStateMachineFixture, TerminateWorksForAllStatesWithScheduleFailure
     State waitFor = State::Created;
     SimpleEvent atDesiredState;
     auto waitForHook = [this, &waitFor, &scheduleFailed, &okayToContinue, &atDesiredState]() {
-        log() << "Checking for wakeup at " << stateToString(_ssm->state()) << ". Expecting "
-              << stateToString(waitFor);
+        LOGV2("Checking for wakeup at {}. Expecting {}", "stateToString__ssm_state"_attr = stateToString(_ssm->state()), "stateToString_waitFor"_attr = stateToString(waitFor));
         if (_ssm->state() == waitFor) {
             atDesiredState.signal();
             okayToContinue.wait();
@@ -786,7 +785,7 @@ TEST_F(ServiceStateMachineFixture, TerminateWorksForAllStatesWithScheduleFailure
 
     auto states = {State::Source, State::SourceWait, State::Process, State::SinkWait};
     for (const auto testState : states) {
-        log() << "Testing termination during " << stateToString(testState);
+        LOGV2("Testing termination during {}", "stateToString_testState"_attr = stateToString(testState));
         _ssm = ServiceStateMachine::create(
             getGlobalServiceContext(), _tl->createSession(), transport::Mode::kSynchronous);
         _tl->setSSM(_ssm.get());
@@ -804,7 +803,7 @@ TEST_F(ServiceStateMachineFixture, TerminateWorksForAllStatesWithScheduleFailure
         // Wait for the SSM to advance to the expected state
         atDesiredState.wait();
         ASSERT_EQ(_ssm->state(), testState);
-        log() << "Terminating session at " << stateToString(_ssm->state());
+        LOGV2("Terminating session at {}", "stateToString__ssm_state"_attr = stateToString(_ssm->state()));
 
         // Terminate the SSM
         _ssm->terminate();
@@ -834,7 +833,7 @@ TEST_F(ServiceStateMachineFixture, SSMRunsRecursively) {
     // The scheduleHook just runs the task, effectively making this a recursive executor.
     int recursionDepth = 0;
     _sexec->setScheduleHook([&recursionDepth](auto task) {
-        log() << "running task in executor. depth: " << ++recursionDepth;
+        LOGV2("running task in executor. depth: {}", "recursionDepth"_attr = ++recursionDepth);
         task();
         return true;
     });

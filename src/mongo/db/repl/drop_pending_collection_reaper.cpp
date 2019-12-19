@@ -40,6 +40,7 @@
 #include "mongo/db/operation_context.h"
 #include "mongo/db/repl/storage_interface.h"
 #include "mongo/db/service_context.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/log.h"
 
 namespace mongo {
@@ -144,8 +145,7 @@ bool DropPendingCollectionReaper::rollBackDropPendingCollection(
         _dropPendingNamespaces.erase(it);
     }
 
-    log() << "Rolling back collection drop for " << pendingNss << " with drop OpTime " << opTime
-          << " to namespace " << collectionNamespace;
+    LOGV2("Rolling back collection drop for {} with drop OpTime {} to namespace {}", "pendingNss"_attr = pendingNss, "opTime"_attr = opTime, "collectionNamespace"_attr = collectionNamespace);
 
     return true;
 }
@@ -174,8 +174,7 @@ void DropPendingCollectionReaper::dropCollectionsOlderThan(OperationContext* opC
         for (const auto& opTimeAndNamespace : toDrop) {
             const auto& dropOpTime = opTimeAndNamespace.first;
             const auto& nss = opTimeAndNamespace.second;
-            log() << "Completing collection drop for " << nss << " with drop optime " << dropOpTime
-                  << " (notification optime: " << opTime << ")";
+            LOGV2("Completing collection drop for {} with drop optime {} (notification optime: {})", "nss"_attr = nss, "dropOpTime"_attr = dropOpTime, "opTime"_attr = opTime);
             Status status = Status::OK();
             try {
                 // dropCollection could throw an interrupt exception, since it acquires db locks.

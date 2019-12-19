@@ -39,6 +39,7 @@
 #include "mongo/base/data_type_endian.h"
 #include "mongo/config.h"
 #include "mongo/db/bson/dotted_path_support.h"
+#include "mongo/logv2/log.h"
 #include "mongo/rpc/object_check.h"
 #include "mongo/util/bufreader.h"
 #include "mongo/util/hex.h"
@@ -218,8 +219,7 @@ OpMsg OpMsg::parse(const Message& message) try {
 
     return msg;
 } catch (const DBException& ex) {
-    LOG(1) << "invalid message: " << ex.code() << " " << redact(ex) << " -- "
-           << redact(hexdump(message.singleData().view2ptr(), message.size()));
+    LOGV2_DEBUG(1, "invalid message: {} {} -- {}", "ex"_attr = ex, "redact_ex"_attr = redact(ex), "redact_hexdump_message_singleData_view2ptr_message_size"_attr = redact(hexdump(message.singleData().view2ptr(), message.size())));
     throw;
 }
 

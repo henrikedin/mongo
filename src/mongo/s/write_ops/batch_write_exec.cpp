@@ -41,6 +41,7 @@
 #include "mongo/client/remote_command_targeter.h"
 #include "mongo/db/error_labels.h"
 #include "mongo/executor/task_executor_pool.h"
+#include "mongo/logv2/log.h"
 #include "mongo/s/client/shard_registry.h"
 #include "mongo/s/grid.h"
 #include "mongo/s/multi_statement_transaction_requests_sender.h"
@@ -71,8 +72,7 @@ WriteErrorDetail errorFromStatus(const Status& status) {
 // Helper to note several stale shard errors from a response
 void noteStaleShardResponses(const std::vector<ShardError>& staleErrors, NSTargeter* targeter) {
     for (const auto& error : staleErrors) {
-        LOG(4) << "Noting stale config response " << error.error.getErrInfo() << " from shard "
-               << error.endpoint.shardName;
+        LOGV2_DEBUG(4, "Noting stale config response {} from shard {}", "error_error_getErrInfo"_attr = error.error.getErrInfo(), "error_endpoint_shardName"_attr = error.endpoint.shardName);
         targeter->noteStaleShardResponse(
             error.endpoint,
             StaleConfigInfo::parseFromCommandError(
@@ -83,8 +83,7 @@ void noteStaleShardResponses(const std::vector<ShardError>& staleErrors, NSTarge
 // Helper to note several stale db errors from a response
 void noteStaleDbResponses(const std::vector<ShardError>& staleErrors, NSTargeter* targeter) {
     for (const auto& error : staleErrors) {
-        LOG(4) << "Noting stale database response " << error.error.toBSON() << " from shard "
-               << error.endpoint.shardName;
+        LOGV2_DEBUG(4, "Noting stale database response {} from shard {}", "error_error_toBSON"_attr = error.error.toBSON(), "error_endpoint_shardName"_attr = error.endpoint.shardName);
         targeter->noteStaleDbResponse(
             error.endpoint, StaleDbRoutingVersion::parseFromCommandError(error.error.toBSON()));
     }
@@ -115,8 +114,7 @@ void BatchWriteExec::executeBatch(OperationContext* opCtx,
                                   BatchWriteExecStats* stats) {
     const auto& nss(clientRequest.getNS());
 
-    LOG(4) << "Starting execution of write batch of size "
-           << static_cast<int>(clientRequest.sizeWriteOps()) << " for " << nss.ns();
+    LOGV2_DEBUG(4, "Starting execution of write batch of size {} for {}", "static_cast_int_clientRequest_sizeWriteOps"_attr = static_cast<int>(clientRequest.sizeWriteOps()), "nss_ns"_attr = nss.ns());
 
     BatchWriteOp batchOp(opCtx, clientRequest);
 
@@ -233,7 +231,7 @@ void BatchWriteExec::executeBatch(OperationContext* opCtx,
                     return requestBuilder.obj();
                 }();
 
-                LOG(4) << "Sending write batch to " << targetShardId << ": " << redact(request);
+                LOGV2_DEBUG(4, "Sending write batch to {}: {}", "targetShardId"_attr = targetShardId, "redact_request"_attr = redact(request));
 
                 requests.emplace_back(targetShardId, request);
 
@@ -279,8 +277,7 @@ void BatchWriteExec::executeBatch(OperationContext* opCtx,
 
                     // TODO: It may be necessary to refresh the cache if stale, or maybe just cancel
                     // and retarget the batch
-                    LOG(4) << "Unable to send write batch to " << batch->getEndpoint().shardName
-                           << causedBy(response.swResponse.getStatus());
+                    LOGV2_DEBUG(4, "Unable to send write batch to {}{}", "batch_getEndpoint_shardName"_attr = batch->getEndpoint().shardName, "causedBy_response_swResponse_getStatus"_attr = causedBy(response.swResponse.getStatus()));
 
                     // We're done with this batch. Clean up when we can't resolve a host.
                     auto it = childBatches.find(batch->getEndpoint().shardName);
@@ -310,8 +307,7 @@ void BatchWriteExec::executeBatch(OperationContext* opCtx,
                     trackedErrors.startTracking(ErrorCodes::StaleDbVersion);
                     trackedErrors.startTracking(ErrorCodes::CannotImplicitlyCreateCollection);
 
-                    LOG(4) << "Write results received from " << shardHost.toString() << ": "
-                           << redact(batchedCommandResponse.toStatus());
+                    LOGV2_DEBUG(4, "Write results received from {}: {}", "shardHost_toString"_attr = shardHost.toString(), "redact_batchedCommandResponse_toStatus"_attr = redact(batchedCommandResponse.toStatus()));
 
                     // Dispatch was ok, note response
                     batchOp.noteBatchResponse(*batch, batchedCommandResponse, &trackedErrors);
@@ -387,8 +383,7 @@ void BatchWriteExec::executeBatch(OperationContext* opCtx,
 
                     batchOp.noteBatchError(*batch, errorFromStatus(status));
 
-                    LOG(4) << "Unable to receive write results from " << shardHost
-                           << causedBy(redact(status));
+                    LOGV2_DEBUG(4, "Unable to receive write results from {}{}", "shardHost"_attr = shardHost, "causedBy_redact_status"_attr = causedBy(redact(status)));
 
                     // If we are in a transaction, we must stop immediately (even for unordered).
                     if (TransactionRouter::get(opCtx)) {
@@ -424,7 +419,7 @@ void BatchWriteExec::executeBatch(OperationContext* opCtx,
         bool targeterChanged = false;
         Status refreshStatus = targeter.refreshIfNeeded(opCtx, &targeterChanged);
 
-        LOG(4) << "executeBatch targeter changed: " << targeterChanged;
+        LOGV2_DEBUG(4, "executeBatch targeter changed: {}", "targeterChanged"_attr = targeterChanged);
 
         if (!refreshStatus.isOK()) {
             // It's okay if we can't refresh, we'll just record errors for the ops if
@@ -461,13 +456,9 @@ void BatchWriteExec::executeBatch(OperationContext* opCtx,
 
     batchOp.buildClientResponse(clientResponse);
 
-    LOG(4) << "Finished execution of write batch"
-           << (clientResponse->isErrDetailsSet() ? " with write errors" : "")
-           << (clientResponse->isErrDetailsSet() && clientResponse->isWriteConcernErrorSet()
+    LOGV2_DEBUG(4, "Finished execution of write batch{}{}{} for {}", "clientResponse_isErrDetailsSet_with_write_errors"_attr = (clientResponse->isErrDetailsSet() ? " with write errors" : ""), "clientResponse_isErrDetailsSet_clientResponse_isWriteConcernErrorSet_and"_attr = (clientResponse->isErrDetailsSet() && clientResponse->isWriteConcernErrorSet()
                    ? " and"
-                   : "")
-           << (clientResponse->isWriteConcernErrorSet() ? " with write concern error" : "")
-           << " for " << clientRequest.getNS();
+                   : ""), "clientResponse_isWriteConcernErrorSet_with_write_concern_error"_attr = (clientResponse->isWriteConcernErrorSet() ? " with write concern error" : ""), "clientRequest_getNS"_attr = clientRequest.getNS());
 }
 
 void BatchWriteExecStats::noteTargetedShard(const ShardId& shardId) {

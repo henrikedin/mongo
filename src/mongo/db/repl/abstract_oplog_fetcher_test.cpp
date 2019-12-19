@@ -35,6 +35,7 @@
 #include "mongo/db/repl/abstract_oplog_fetcher_test_fixture.h"
 #include "mongo/db/repl/oplog_entry.h"
 #include "mongo/db/repl/task_executor_mock.h"
+#include "mongo/logv2/log.h"
 #include "mongo/unittest/task_executor_proxy.h"
 #include "mongo/unittest/unittest.h"
 #include "mongo/util/scopeguard.h"
@@ -300,20 +301,20 @@ TEST_F(AbstractOplogFetcherTest, OplogFetcherStopsRestartingFetcherIfRestartLimi
 
     ASSERT_OK(oplogFetcher.startup());
 
-    unittest::log() << "processing find request from first fetcher";
+    unittest::LOGV2("processing find request from first fetcher");
 
     _assertFindCommandTimestampEquals(
         ops[0], processNetworkResponse({makeCursorResponse(1, {ops[0], ops[1], ops[2]})}, true));
 
-    unittest::log() << "sending error response to getMore request from first fetcher";
+    unittest::LOGV2("sending error response to getMore request from first fetcher");
     assertRemoteCommandNameEquals(
         "getMore", processNetworkResponse({ErrorCodes::CappedPositionLost, "fail 1"}, true));
 
-    unittest::log() << "sending error response to find request from second fetcher";
+    unittest::LOGV2("sending error response to find request from second fetcher");
     _assertFindCommandTimestampEquals(
         ops[2], processNetworkResponse({ErrorCodes::IllegalOperation, "fail 2"}, true));
 
-    unittest::log() << "sending error response to find request from third fetcher";
+    unittest::LOGV2("sending error response to find request from third fetcher");
     _assertFindCommandTimestampEquals(
         ops[2], processNetworkResponse({ErrorCodes::OperationFailed, "fail 3"}, false));
 
@@ -335,28 +336,28 @@ TEST_F(AbstractOplogFetcherTest, OplogFetcherResetsRestartCounterOnSuccessfulFet
 
     ASSERT_OK(oplogFetcher.startup());
 
-    unittest::log() << "processing find request from first fetcher";
+    unittest::LOGV2("processing find request from first fetcher");
 
     _assertFindCommandTimestampEquals(
         ops[0], processNetworkResponse({makeCursorResponse(1, {ops[0], ops[1], ops[2]})}, true));
 
-    unittest::log() << "sending error response to getMore request from first fetcher";
+    unittest::LOGV2("sending error response to getMore request from first fetcher");
     assertRemoteCommandNameEquals(
         "getMore", processNetworkResponse({ErrorCodes::CappedPositionLost, "fail 1"}, true));
 
-    unittest::log() << "processing find request from second fetcher";
+    unittest::LOGV2("processing find request from second fetcher");
     _assertFindCommandTimestampEquals(
         ops[2], processNetworkResponse({makeCursorResponse(1, {ops[2], ops[3], ops[4]})}, true));
 
-    unittest::log() << "sending error response to getMore request from second fetcher";
+    unittest::LOGV2("sending error response to getMore request from second fetcher");
     assertRemoteCommandNameEquals(
         "getMore", processNetworkResponse({ErrorCodes::IllegalOperation, "fail 2"}, true));
 
-    unittest::log() << "sending error response to find request from third fetcher";
+    unittest::LOGV2("sending error response to find request from third fetcher");
     _assertFindCommandTimestampEquals(
         ops[4], processNetworkResponse({ErrorCodes::InternalError, "fail 3"}, true));
 
-    unittest::log() << "sending error response to find request from fourth fetcher";
+    unittest::LOGV2("sending error response to find request from fourth fetcher");
     _assertFindCommandTimestampEquals(
         ops[4], processNetworkResponse({ErrorCodes::OperationFailed, "fail 4"}, false));
 
@@ -406,12 +407,12 @@ TEST_F(AbstractOplogFetcherTest,
     ASSERT_OK(oplogFetcher.startup());
     ASSERT_TRUE(oplogFetcher.isActive());
 
-    unittest::log() << "processing find request from first fetcher";
+    unittest::LOGV2("processing find request from first fetcher");
 
     _assertFindCommandTimestampEquals(
         ops[0], processNetworkResponse({makeCursorResponse(1, {ops[0], ops[1], ops[2]})}, true));
 
-    unittest::log() << "sending error response to getMore request from first fetcher";
+    unittest::LOGV2("sending error response to getMore request from first fetcher");
     shouldFailSchedule = true;
     assertRemoteCommandNameEquals(
         "getMore", processNetworkResponse({ErrorCodes::CappedPositionLost, "dead cursor"}, false));

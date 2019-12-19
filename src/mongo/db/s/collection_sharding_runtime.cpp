@@ -38,6 +38,7 @@
 #include "mongo/db/s/operation_sharding_state.h"
 #include "mongo/db/s/sharded_connection_info.h"
 #include "mongo/db/s/sharding_runtime_d_params_gen.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/duration.h"
 #include "mongo/util/log.h"
 
@@ -256,13 +257,12 @@ Status CollectionShardingRuntime::waitForClean(OperationContext* opCtx,
 
             stillScheduled = self->trackOrphanedDataCleanup(orphanRange);
             if (!stillScheduled) {
-                log() << "Finished deleting " << nss.ns() << " range "
-                      << redact(orphanRange.toString());
+                LOGV2("Finished deleting {} range {}", "nss_ns"_attr = nss.ns(), "redact_orphanRange_toString"_attr = redact(orphanRange.toString()));
                 return Status::OK();
             }
         }
 
-        log() << "Waiting for deletion of " << nss.ns() << " range " << orphanRange;
+        LOGV2("Waiting for deletion of {} range {}", "nss_ns"_attr = nss.ns(), "orphanRange"_attr = orphanRange);
 
         Status result = stillScheduled->waitStatus(opCtx);
         if (!result.isOK()) {
@@ -307,16 +307,15 @@ boost::optional<ScopedCollectionMetadata> CollectionShardingRuntime::_getMetadat
     auto wantedShardVersion = ChunkVersion::UNSHARDED();
 
     if (MONGO_unlikely(useFCV44CheckShardVersionProtocol.shouldFail())) {
-        LOG(0) << "Received shardVersion: " << receivedShardVersion << " for " << _nss.ns();
+        LOGV2("Received shardVersion: {} for {}", "receivedShardVersion"_attr = receivedShardVersion, "_nss_ns"_attr = _nss.ns());
         if (isCollection) {
-            LOG(0) << "Namespace " << _nss.ns() << " is collection, "
-                   << (metadata ? "have shardVersion cached" : "don't know shardVersion");
+            LOGV2("Namespace {} is collection, {}", "_nss_ns"_attr = _nss.ns(), "metadata_have_shardVersion_cached_don_t_know_shardVersion"_attr = (metadata ? "have shardVersion cached" : "don't know shardVersion"));
             uassert(StaleConfigInfo(_nss, receivedShardVersion, wantedShardVersion),
                     "don't know shardVersion",
                     metadata);
             wantedShardVersion = (*metadata)->getShardVersion();
         }
-        LOG(0) << "Wanted shardVersion: " << wantedShardVersion << " for " << _nss.ns();
+        LOGV2("Wanted shardVersion: {} for {}", "wantedShardVersion"_attr = wantedShardVersion, "_nss_ns"_attr = _nss.ns());
     } else {
         if (metadata && (*metadata)->isSharded()) {
             wantedShardVersion = (*metadata)->getShardVersion();

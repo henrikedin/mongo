@@ -35,6 +35,7 @@
 
 #include "mongo/db/query/index_tag.h"
 #include "mongo/db/query/indexability.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/log.h"
 #include "mongo/util/string_map.h"
 
@@ -359,7 +360,7 @@ unique_ptr<MatchExpression> PlanEnumerator::getNext() {
     tagForSort(tree.get());
 
     _root->resetTag();
-    LOG(5) << "Enumerator: memo just before moving:" << endl << dumpMemo();
+    LOGV2_DEBUG(5, "Enumerator: memo just before moving:\n{}", "dumpMemo"_attr = dumpMemo());
     _done = nextMemo(memoIDForNode(_root));
     return tree;
 }
@@ -1568,7 +1569,7 @@ void PlanEnumerator::compound(const vector<MatchExpression*>& tryCompound,
 //
 
 void PlanEnumerator::tagMemo(size_t id) {
-    LOG(5) << "Tagging memoID " << id;
+    LOGV2_DEBUG(5, "Tagging memoID {}", "id"_attr = id);
     NodeAssignment* assign = _memo[id];
     verify(nullptr != assign);
 

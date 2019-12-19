@@ -38,6 +38,7 @@
 #include "mongo/db/storage/mobile/mobile_recovery_unit.h"
 #include "mongo/db/storage/mobile/mobile_sqlite_statement.h"
 #include "mongo/db/storage/mobile/mobile_util.h"
+#include "mongo/logv2/log.h"
 
 namespace mongo {
 namespace embedded {
@@ -185,7 +186,7 @@ void doValidate(OperationContext* opCtx, ValidateResults* results) {
 void configureSession(sqlite3* session, const MobileOptions& options) {
     auto executePragma = [session](auto pragma, auto value) {
         SqliteStatement::execQuery(session, "PRAGMA ", pragma, " = ", value, ";");
-        LOG(MOBILE_LOG_LEVEL_LOW) << "MobileSE session configuration: " << pragma << " = " << value;
+        LOGV2_DEBUG(::mongo::logger::LogSeverity(MOBILE_LOG_LEVEL_LOW).toInt(), "MobileSE session configuration: {} = {}", "pragma"_attr = pragma, "value"_attr = value);
     };
     // We don't manually use VACUUM so set incremental(2) mode to reclaim space
     // This need to be set the first thing we do, before any internal tables are created.

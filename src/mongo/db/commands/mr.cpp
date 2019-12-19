@@ -65,6 +65,7 @@
 #include "mongo/db/server_options.h"
 #include "mongo/db/service_context.h"
 #include "mongo/db/storage/durable_catalog.h"
+#include "mongo/logv2/log.h"
 #include "mongo/platform/mutex.h"
 #include "mongo/s/catalog_cache.h"
 #include "mongo/s/client/parallel.h"
@@ -944,7 +945,7 @@ State::~State() {
             _scope->invoke(cleanup, nullptr, nullptr, 0, true);
         } catch (const DBException&) {
             // not important because properties will be reset if scope is reused
-            LOG(1) << "MapReduce terminated during state destruction";
+            LOGV2_DEBUG(1, "MapReduce terminated during state destruction");
         }
     }
 }
@@ -1086,7 +1087,7 @@ void State::switchMode(bool jsMode) {
 }
 
 void State::bailFromJS() {
-    LOG(1) << "M/R: Switching from JS mode to mixed mode";
+    LOGV2_DEBUG(1, "M/R: Switching from JS mode to mixed mode");
 
     // reduce and reemit into c++
     switchMode(false);
@@ -1363,9 +1364,7 @@ void State::reduceAndSpillInMemoryStateIfNeeded() {
             // reduce now to lower mem usage
             Timer t;
             _scope->invoke(_reduceAll, nullptr, nullptr, 0, true);
-            LOG(3) << "  MR - did reduceAll: keys=" << keyCt << " dups=" << dupCt
-                   << " newKeys=" << _scope->getNumberInt("_keyCt") << " time=" << t.millis()
-                   << "ms";
+            LOGV2_DEBUG(3, "  MR - did reduceAll: keys={} dups={} newKeys={} time={}ms", "keyCt"_attr = keyCt, "dupCt"_attr = dupCt, "_scope_getNumberInt__keyCt"_attr = _scope->getNumberInt("_keyCt"), "t_millis"_attr = t.millis());
             return;
         }
     }
@@ -1378,13 +1377,12 @@ void State::reduceAndSpillInMemoryStateIfNeeded() {
         long oldSize = _size;
         Timer t;
         reduceInMemory();
-        LOG(3) << "  MR - did reduceInMemory: size=" << oldSize << " dups=" << _dupCount
-               << " newSize=" << _size << " time=" << t.millis() << "ms";
+        LOGV2_DEBUG(3, "  MR - did reduceInMemory: size={} dups={} newSize={} time={}ms", "oldSize"_attr = oldSize, "_dupCount"_attr = _dupCount, "_size"_attr = _size, "t_millis"_attr = t.millis());
 
         // if size is still high, or values are not reducing well, dump
         if (_onDisk && (_size > _config.maxInMemSize || _size > oldSize / 2)) {
             dumpToInc();
-            LOG(3) << "  MR - dumping to db";
+            LOGV2_DEBUG(3, "  MR - dumping to db");
         }
     }
 }
@@ -1411,7 +1409,7 @@ bool runMapReduce(OperationContext* opCtx,
 
     const Config config(dbname, cmd);
 
-    LOG(1) << "mr ns: " << config.nss;
+    LOGV2_DEBUG(1, "mr ns: {}", "config_nss"_attr = config.nss);
 
     uassert(16149, "cannot run map reduce without the js engine", getGlobalScriptEngine());
 
@@ -1632,19 +1630,19 @@ bool runMapReduce(OperationContext* opCtx,
             return false;
         }
     } catch (StaleConfigException& e) {
-        log() << "mr detected stale config, should retry" << redact(e);
+        LOGV2("mr detected stale config, should retry{}", "redact_e"_attr = redact(e));
         throw;
     }
     // TODO:  The error handling code for queries is v. fragile,
     // *requires* rethrow AssertionExceptions - should probably fix.
     catch (AssertionException& e) {
-        log() << "mr failed, removing collection" << redact(e);
+        LOGV2("mr failed, removing collection{}", "redact_e"_attr = redact(e));
         throw;
     } catch (std::exception& e) {
-        log() << "mr failed, removing collection" << causedBy(e);
+        LOGV2("mr failed, removing collection{}", "causedBy_e"_attr = causedBy(e));
         throw;
     } catch (...) {
-        log() << "mr failed for unknown reason, removing collection";
+        LOGV2("mr failed for unknown reason, removing collection");
         throw;
     }
 

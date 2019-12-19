@@ -41,6 +41,7 @@
 #include "mongo/db/s/sharding_logging.h"
 #include "mongo/db/s/sharding_state_recovery.h"
 #include "mongo/db/s/sharding_statistics.h"
+#include "mongo/logv2/log.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/s/catalog/type_shard_database.h"
 #include "mongo/s/catalog_cache.h"
@@ -74,7 +75,7 @@ Status MovePrimarySourceManager::clone(OperationContext* opCtx) {
     invariant(_state == kCreated);
     auto scopedGuard = makeGuard([&] { cleanupOnError(opCtx); });
 
-    log() << "Moving " << _dbname << " primary from: " << _fromShard << " to: " << _toShard;
+    LOGV2("Moving {} primary from: {} to: {}", "_dbname"_attr = _dbname, "_fromShard"_attr = _fromShard, "_toShard"_attr = _toShard);
 
     // Record start in changelog
     uassertStatusOK(ShardingLogging::get(opCtx)->logChangeChecked(
@@ -195,7 +196,7 @@ Status MovePrimarySourceManager::enterCriticalSection(OperationContext* opCtx) {
                           << signalStatus.toString()};
     }
 
-    log() << "movePrimary successfully entered critical section";
+    LOGV2("movePrimary successfully entered critical section");
 
     scopedGuard.dismiss();
     return Status::OK();
@@ -244,9 +245,8 @@ Status MovePrimarySourceManager::commitOnConfig(OperationContext* opCtx) {
         // Need to get the latest optime in case the refresh request goes to a secondary --
         // otherwise the read won't wait for the write that _configsvrCommitMovePrimary may have
         // done
-        log() << "Error occurred while committing the movePrimary. Performing a majority write "
-                 "against the config server to obtain its latest optime"
-              << causedBy(redact(commitStatus));
+        LOGV2("Error occurred while committing the movePrimary. Performing a majority write "
+                 "against the config server to obtain its latest optime{}", "causedBy_redact_commitStatus"_attr = causedBy(redact(commitStatus)));
 
         Status validateStatus = ShardingLogging::get(opCtx)->logChangeChecked(
             opCtx,
@@ -337,7 +337,7 @@ Status MovePrimarySourceManager::cleanStaleData(OperationContext* opCtx) {
         client.runCommand(_dbname.toString(), BSON("drop" << coll.coll()), dropCollResult);
         Status dropStatus = getStatusFromCommandResult(dropCollResult);
         if (!dropStatus.isOK()) {
-            log() << "failed to drop cloned collection " << coll << causedBy(redact(dropStatus));
+            LOGV2("failed to drop cloned collection {}{}", "coll"_attr = coll, "causedBy_redact_dropStatus"_attr = causedBy(redact(dropStatus)));
         }
     }
 

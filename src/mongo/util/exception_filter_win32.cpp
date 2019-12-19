@@ -42,6 +42,7 @@
 #include <ostream>
 
 #include "mongo/config.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/exit_code.h"
 #include "mongo/util/log.h"
@@ -63,7 +64,7 @@ void doMinidumpWithException(struct _EXCEPTION_POINTERS* exceptionInfo) {
     DWORD ret = GetModuleFileNameW(nullptr, &moduleFileName[0], ARRAYSIZE(moduleFileName));
     if (ret == 0) {
         int gle = GetLastError();
-        log() << "GetModuleFileName failed " << errnoWithDescription(gle);
+        LOGV2("GetModuleFileName failed {}", "errnoWithDescription_gle"_attr = errnoWithDescription(gle));
 
         // Fallback name
         wcscpy_s(moduleFileName, L"mongo");
@@ -88,8 +89,7 @@ void doMinidumpWithException(struct _EXCEPTION_POINTERS* exceptionInfo) {
         dumpName.c_str(), GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
     if (INVALID_HANDLE_VALUE == hFile) {
         DWORD lasterr = GetLastError();
-        log() << "failed to open minidump file " << toUtf8String(dumpName.c_str()) << " : "
-              << errnoWithDescription(lasterr);
+        LOGV2("failed to open minidump file {} : {}", "toUtf8String_dumpName_c_str"_attr = toUtf8String(dumpName.c_str()), "errnoWithDescription_lasterr"_attr = errnoWithDescription(lasterr));
         return;
     }
 
@@ -105,7 +105,7 @@ void doMinidumpWithException(struct _EXCEPTION_POINTERS* exceptionInfo) {
         static_cast<MINIDUMP_TYPE>(MiniDumpNormal | MiniDumpWithIndirectlyReferencedMemory |
                                    MiniDumpWithProcessThreadData);
 #endif
-    log() << "writing minidump diagnostic file " << toUtf8String(dumpName.c_str());
+    LOGV2("writing minidump diagnostic file {}", "toUtf8String_dumpName_c_str"_attr = toUtf8String(dumpName.c_str()));
 
     BOOL bstatus = MiniDumpWriteDump(GetCurrentProcess(),
                                      GetCurrentProcessId(),
@@ -116,7 +116,7 @@ void doMinidumpWithException(struct _EXCEPTION_POINTERS* exceptionInfo) {
                                      nullptr);
     if (FALSE == bstatus) {
         DWORD lasterr = GetLastError();
-        log() << "failed to create minidump : " << errnoWithDescription(lasterr);
+        LOGV2("failed to create minidump : {}", "errnoWithDescription_lasterr"_attr = errnoWithDescription(lasterr));
     }
 
     CloseHandle(hFile);

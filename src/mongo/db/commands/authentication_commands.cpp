@@ -52,6 +52,7 @@
 #include "mongo/db/commands.h"
 #include "mongo/db/commands/test_commands_enabled.h"
 #include "mongo/db/operation_context.h"
+#include "mongo/logv2/log.h"
 #include "mongo/platform/random.h"
 #include "mongo/rpc/metadata/client_metadata.h"
 #include "mongo/rpc/metadata/client_metadata_ismaster.h"
@@ -254,7 +255,7 @@ bool CmdAuthenticate::run(OperationContext* opCtx,
     CommandHelpers::handleMarkKillOnClientDisconnect(opCtx);
     if (!serverGlobalParams.quiet.load()) {
         mutablebson::Document cmdToLog(cmdObj, mutablebson::Document::kInPlaceDisabled);
-        log() << " authenticate db: " << dbname << " " << cmdToLog;
+        LOGV2(" authenticate db: {} {}", "dbname"_attr = dbname, "cmdToLog"_attr = cmdToLog);
     }
     std::string mechanism = cmdObj.getStringField("mechanism");
     if (mechanism.empty()) {
@@ -283,8 +284,7 @@ bool CmdAuthenticate::run(OperationContext* opCtx,
     if (!status.isOK()) {
         if (!serverGlobalParams.quiet.load()) {
             auto const client = opCtx->getClient();
-            log() << "Failed to authenticate " << user << " from client " << client->getRemote()
-                  << " with mechanism " << mechanism << ": " << status;
+            LOGV2("Failed to authenticate {} from client {} with mechanism {}: {}", "user"_attr = user, "client_getRemote"_attr = client->getRemote(), "mechanism"_attr = mechanism, "status"_attr = status);
         }
         sleepmillis(saslGlobalParams.authFailedDelay.load());
         if (status.code() == ErrorCodes::AuthenticationFailed) {
@@ -298,8 +298,7 @@ bool CmdAuthenticate::run(OperationContext* opCtx,
     }
 
     if (!serverGlobalParams.quiet.load()) {
-        log() << "Successfully authenticated as principal " << user.getUser() << " on "
-              << user.getDB() << " from client " << opCtx->getClient()->session()->remote();
+        LOGV2("Successfully authenticated as principal {} on {} from client {}", "user_getUser"_attr = user.getUser(), "user_getDB"_attr = user.getDB(), "opCtx_getClient_session_remote"_attr = opCtx->getClient()->session()->remote());
     }
 
     result.append("dbname", user.getDB());

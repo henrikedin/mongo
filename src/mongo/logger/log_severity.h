@@ -127,8 +127,8 @@ public:
     /// Returns true if this is no less severe than other.
     inline bool operator>=(const LogSeverity other) const;
 
-private:
     explicit LogSeverity(int severity) : _severity(severity) {}
+private:
 
     /// The stored severity.  More negative is more severe.  NOTE: This means that the >, <, >=
     /// and <= operators on LogSeverity have opposite sense of the same operators on the

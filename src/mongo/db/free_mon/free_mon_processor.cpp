@@ -46,6 +46,7 @@
 #include "mongo/db/free_mon/free_mon_storage.h"
 #include "mongo/db/service_context.h"
 #include "mongo/idl/idl_parser.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/log.h"
 
@@ -646,7 +647,7 @@ void FreeMonProcessor::doAsyncRegisterComplete(
     // Notify waiters
     notifyPendingRegisters(Status::OK());
 
-    log() << "Free Monitoring is Enabled. Frequency: " << resp.getReportingInterval() << " seconds";
+    LOGV2("Free Monitoring is Enabled. Frequency: {} seconds", "resp_getReportingInterval"_attr = resp.getReportingInterval());
 
     // Enqueue next metrics upload immediately to deliver a good experience
     enqueue(FreeMonMessage::createNow(FreeMonMessageType::MetricsSend));
@@ -670,8 +671,7 @@ void FreeMonProcessor::doAsyncRegisterFail(
         return;
     }
 
-    LOG(1) << "Free Monitoring Registration Failed with status '" << msg->getPayload()
-           << "', retrying in " << _registrationRetry->getNextDuration();
+    LOGV2_DEBUG(1, "Free Monitoring Registration Failed with status '{}', retrying in {}", "msg_getPayload"_attr = msg->getPayload(), "_registrationRetry_getNextDuration"_attr = _registrationRetry->getNextDuration());
 
     // Enqueue a register retry
     enqueue(FreeMonRegisterCommandMessage::createWithDeadline(
@@ -688,7 +688,7 @@ void FreeMonProcessor::doCommandUnregister(
 
     writeState(client);
 
-    log() << "Free Monitoring is Disabled";
+    LOGV2("Free Monitoring is Disabled");
 
     msg->setStatus(Status::OK());
 }
@@ -855,8 +855,7 @@ void FreeMonProcessor::doAsyncMetricsFail(
         return;
     }
 
-    LOG(1) << "Free Monitoring Metrics upload failed with status " << msg->getPayload()
-           << ", retrying in " << _metricsRetry->getNextDuration();
+    LOGV2_DEBUG(1, "Free Monitoring Metrics upload failed with status {}, retrying in {}", "msg_getPayload"_attr = msg->getPayload(), "_metricsRetry_getNextDuration"_attr = _metricsRetry->getNextDuration());
 
     // Enqueue next metrics upload
     enqueue(FreeMonMessage::createWithDeadline(FreeMonMessageType::MetricsSend,

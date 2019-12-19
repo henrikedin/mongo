@@ -35,6 +35,7 @@
 #include "mongo/base/static_assert.h"
 #include "mongo/config.h"
 #include "mongo/db/commands/server_status.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/log.h"
 #include "mongo/util/stacktrace.h"
 #include "mongo/util/tcmalloc_parameters_gen.h"
@@ -382,7 +383,7 @@ private:
     // disable profiling and then log an error message.
     void disable(const char* msg) {
         sampleIntervalBytes = 0;
-        log() << msg;
+        LOGV2("{}", "msg"_attr = msg);
     }
 
     //
@@ -506,7 +507,7 @@ private:
                 free(demangled);
         }
         stackInfo.stackObj = builder.obj();
-        log() << "heapProfile stack" << stackInfo.stackNum << ": " << stackInfo.stackObj;
+        LOGV2("heapProfile stack{}: {}", "stackInfo_stackNum"_attr = stackInfo.stackNum, "stackInfo_stackObj"_attr = stackInfo.stackObj);
     }
 
     //
@@ -537,7 +538,7 @@ private:
                   << "objTableSize " << objTableSize / MB << " MB; "
                   << "stackTableSize " << stackTableSize / MB << " MB";
             // print a stack trace to log somap for post-facto symbolization
-            log() << "following stack trace is for heap profiler informational purposes";
+            LOGV2("following stack trace is for heap profiler informational purposes");
             printStackTrace();
             logGeneralStats = false;
         }
@@ -597,7 +598,7 @@ private:
         // importantStacks grows monotonically, so it can accumulate unneeded stacks,
         // so we clear it periodically.
         if (++numImportantSamples >= kMaxImportantSamples) {
-            log() << "clearing importantStacks";
+            LOGV2("clearing importantStacks");
             importantStacks.clear();
             numImportantSamples = 0;
         }

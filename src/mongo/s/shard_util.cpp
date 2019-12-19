@@ -38,6 +38,7 @@
 #include "mongo/client/read_preference.h"
 #include "mongo/client/remote_command_targeter.h"
 #include "mongo/db/namespace_string.h"
+#include "mongo/logv2/log.h"
 #include "mongo/s/client/shard_registry.h"
 #include "mongo/s/grid.h"
 #include "mongo/s/shard_key_pattern.h"
@@ -203,7 +204,7 @@ StatusWith<boost::optional<ChunkRange>> splitChunkAtMultiplePoints(
     }
 
     if (!status.isOK()) {
-        log() << "Split chunk " << redact(cmdObj) << " failed" << causedBy(redact(status));
+        LOGV2("Split chunk {} failed{}", "redact_cmdObj"_attr = redact(cmdObj), "causedBy_redact_status"_attr = causedBy(redact(status)));
         return status.withContext("split failed");
     }
 

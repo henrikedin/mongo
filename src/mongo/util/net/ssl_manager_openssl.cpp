@@ -48,6 +48,7 @@
 #include "mongo/base/secure_allocator.h"
 #include "mongo/bson/bsonobjbuilder.h"
 #include "mongo/config.h"
+#include "mongo/logv2/log.h"
 #include "mongo/platform/atomic_word.h"
 #include "mongo/transport/session.h"
 #include "mongo/util/concurrency/mutex.h"
@@ -630,7 +631,7 @@ SSLConnectionOpenSSL::SSLConnectionOpenSSL(SSL_CTX* context,
     if (len > 0) {
         int toBIO = BIO_write(networkBIO, initialBytes, len);
         if (toBIO != len) {
-            LOG(3) << "Failed to write initial network data to the SSL BIO layer";
+            LOGV2_DEBUG(3, "Failed to write initial network data to the SSL BIO layer");
             throwSocketError(SocketErrorKind::RECV_ERROR, socket->remoteString());
         }
     }
@@ -1107,8 +1108,7 @@ bool SSLManagerOpenSSL::_setupCRL(SSL_CTX* context, const std::string& crlFile) 
                 << getSSLErrorMessage(ERR_get_error());
         return false;
     }
-    log() << "ssl imported " << status << " revoked certificate" << ((status == 1) ? "" : "s")
-          << " from the revocation list.";
+    LOGV2("ssl imported {} revoked certificate{} from the revocation list.", "status"_attr = status, "status_1_s"_attr = ((status == 1) ? "" : "s"));
     return true;
 }
 
@@ -1155,7 +1155,7 @@ void SSLManagerOpenSSL::_flushNetworkBIO(SSLConnectionOpenSSL* conn) {
 
         int toBIO = BIO_write(conn->networkBIO, buffer, numRead);
         if (toBIO != numRead) {
-            LOG(3) << "Failed to write network data to the SSL BIO layer";
+            LOGV2_DEBUG(3, "Failed to write network data to the SSL BIO layer");
             throwSocketError(SocketErrorKind::RECV_ERROR, conn->socket->remoteString());
         }
     }
@@ -1637,7 +1637,7 @@ StatusWith<SSLPeerInfo> SSLManagerOpenSSL::parseAndValidatePeerCertificate(
 
     // TODO: check optional cipher restriction, using cert.
     auto peerSubject = getCertificateSubjectX509Name(peerCert);
-    LOG(2) << "Accepted TLS connection from peer: " << peerSubject;
+    LOGV2_DEBUG(2, "Accepted TLS connection from peer: {}", "peerSubject"_attr = peerSubject);
 
     StatusWith<stdx::unordered_set<RoleName>> swPeerCertificateRoles = _parsePeerRoles(peerCert);
     if (!swPeerCertificateRoles.isOK()) {

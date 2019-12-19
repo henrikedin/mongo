@@ -33,6 +33,7 @@
 #include "mongo/client/dbclient_rs.h"
 #include "mongo/db/ops/write_ops.h"
 #include "mongo/db/query/getmore_request.h"
+#include "mongo/logv2/log.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/rpc/op_msg.h"
 #include "mongo/unittest/integration_test.h"
@@ -585,14 +586,14 @@ TEST(OpMsg, ExhaustWithDBClientCursorBehavesCorrectly) {
     conn->dropCollection(nss.toString());
 
     const int nDocs = 5;
-    unittest::log() << "Inserting " << nDocs << " documents.";
+    unittest::LOGV2("Inserting {} documents.", "nDocs"_attr = nDocs);
     for (int i = 0; i < nDocs; i++) {
         auto doc = BSON("_id" << i);
         conn->insert(nss.toString(), doc, 0);
     }
 
     ASSERT_EQ(conn->count(nss), size_t(nDocs));
-    unittest::log() << "Finished document insertion.";
+    unittest::LOGV2("Finished document insertion.");
 
     // Open an exhaust cursor.
     int batchSize = 2;

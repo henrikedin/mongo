@@ -41,6 +41,7 @@
 #include "mongo/db/index_builds_coordinator.h"
 #include "mongo/db/operation_context.h"
 #include "mongo/db/views/view_catalog.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/log.h"
 
@@ -103,7 +104,7 @@ StatusWith<int64_t> compactCollection(OperationContext* opCtx,
         recordStore = collection->getRecordStore();
     }
 
-    log(LogComponent::kCommand) << "compact " << collectionNss << " begin";
+    LOGV2_DEBUG(::mongo::logger::LogSeverity(LogComponent::kCommand).toInt(), "compact {} begin", "collectionNss"_attr = collectionNss);
 
     auto oldTotalSize = recordStore->storageSize(opCtx) + collection->getIndexSize(opCtx);
     auto indexCatalog = collection->getIndexCatalog();
@@ -119,8 +120,8 @@ StatusWith<int64_t> compactCollection(OperationContext* opCtx,
 
     auto totalSizeDiff =
         oldTotalSize - recordStore->storageSize(opCtx) - collection->getIndexSize(opCtx);
-    log() << "compact " << collectionNss << " bytes freed: " << totalSizeDiff;
-    log() << "compact " << collectionNss << " end";
+    LOGV2("compact {} bytes freed: {}", "collectionNss"_attr = collectionNss, "totalSizeDiff"_attr = totalSizeDiff);
+    LOGV2("compact {} end", "collectionNss"_attr = collectionNss);
     return totalSizeDiff;
 }
 

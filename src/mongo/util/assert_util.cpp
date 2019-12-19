@@ -43,6 +43,7 @@
 #include <exception>
 
 #include "mongo/config.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/debug_util.h"
 #include "mongo/util/debugger.h"
 #include "mongo/util/exit.h"
@@ -194,7 +195,7 @@ MONGO_COMPILER_NOINLINE void uassertedWithLocation(const Status& status,
                                                    const char* file,
                                                    unsigned line) {
     assertionCount.condrollover(assertionCount.user.addAndFetch(1));
-    LOG(1) << "User Assertion: " << redact(status) << ' ' << file << ' ' << std::dec << line;
+    LOGV2_DEBUG(1, "User Assertion: {} {} {}", "redact_status"_attr = redact(status), "file"_attr = file, "line"_attr = line);
     error_details::throwExceptionForStatus(status);
 }
 

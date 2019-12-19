@@ -40,6 +40,7 @@
 
 #include <libunwind.h>
 
+#include "mongo/logv2/log.h"
 #include "mongo/unittest/unittest.h"
 #include "mongo/util/stacktrace.h"
 #include "mongo/util/stacktrace_libunwind_test_functions.h"
@@ -186,7 +187,7 @@ TEST(Unwind, Linkage) {
                 << "--- END ACTUAL BACKTRACE ---";
             FAIL("name '{}' is missing or out of order in sample backtrace"_format(name));
         }
-        unittest::log() << "removing prefix `" << std::string(remainder.substr(0, pos)) << "`";
+        unittest::LOGV2("removing prefix `{}`", "std_string_remainder_substr_0_pos"_attr = std::string(remainder.substr(0, pos)));
         remainder.remove_prefix(pos);
     }
 }

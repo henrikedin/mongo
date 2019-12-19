@@ -42,6 +42,7 @@
 #include "mongo/db/storage/wiredtiger/wiredtiger_kv_engine.h"
 #include "mongo/db/storage/wiredtiger/wiredtiger_recovery_unit.h"
 #include "mongo/db/storage/wiredtiger/wiredtiger_session_cache.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/log.h"
 #include "mongo/util/processinfo.h"
@@ -291,9 +292,7 @@ StatusWith<int64_t> WiredTigerUtil::checkApplicationMetadataFormatVersion(Operat
                                     << " has unsupported format version: " << version << ".");
     }
 
-    LOG(2) << "WiredTigerUtil::checkApplicationMetadataFormatVersion "
-           << " uri: " << uri << " ok range " << minimumVersion << " -> " << maximumVersion
-           << " current: " << version;
+    LOGV2_DEBUG(2, "WiredTigerUtil::checkApplicationMetadataFormatVersion  uri: {} ok range {} -> {} current: {}", "uri"_attr = uri, "minimumVersion"_attr = minimumVersion, "maximumVersion"_attr = maximumVersion, "version"_attr = version);
 
     return version;
 }
@@ -452,7 +451,7 @@ int mdb_handle_error(WT_EVENT_HANDLER* handler,
 
 int mdb_handle_message(WT_EVENT_HANDLER* handler, WT_SESSION* session, const char* message) {
     try {
-        log() << "WiredTiger message " << redact(message);
+        LOGV2("WiredTiger message {}", "redact_message"_attr = redact(message));
     } catch (...) {
         std::terminate();
     }
@@ -464,7 +463,7 @@ int mdb_handle_progress(WT_EVENT_HANDLER* handler,
                         const char* operation,
                         uint64_t progress) {
     try {
-        log() << "WiredTiger progress " << redact(operation) << " " << progress;
+        LOGV2("WiredTiger progress {} {}", "redact_operation"_attr = redact(operation), "progress"_attr = progress);
     } catch (...) {
         std::terminate();
     }
@@ -603,7 +602,7 @@ Status WiredTigerUtil::setTableLogging(WT_SESSION* session, const std::string& u
         return Status::OK();
     }
 
-    LOG(1) << "Changing table logging settings. Uri: " << uri << " Enable? " << on;
+    LOGV2_DEBUG(1, "Changing table logging settings. Uri: {} Enable? {}", "uri"_attr = uri, "on"_attr = on);
     int ret = session->alter(session, uri.c_str(), setting.c_str());
     if (ret) {
         severe() << "Failed to update log setting. Uri: " << uri << " Enable? " << on

@@ -40,6 +40,7 @@
 #include "mongo/client/dbclient_cursor.h"
 #include "mongo/db/operation_context.h"
 #include "mongo/db/service_context.h"
+#include "mongo/logv2/log.h"
 #include "mongo/scripting/dbdirectclient_factory.h"
 #include "mongo/util/fail_point.h"
 #include "mongo/util/file.h"
@@ -339,7 +340,7 @@ public:
 
         if (scope->hasOutOfMemoryException()) {
             // make some room
-            log() << "Clearing all idle JS contexts due to out of memory";
+            LOGV2("Clearing all idle JS contexts due to out of memory");
             _pools.clear();
             return;
         }

@@ -38,6 +38,7 @@
 #include "mongo/db/commands.h"
 #include "mongo/db/lasterror.h"
 #include "mongo/executor/task_executor_pool.h"
+#include "mongo/logv2/log.h"
 #include "mongo/s/client/shard_registry.h"
 #include "mongo/s/cluster_commands_helpers.h"
 #include "mongo/s/cluster_last_error_info.h"
@@ -105,9 +106,7 @@ Status enforceLegacyWriteConcern(OperationContext* opCtx,
             return swShard.getStatus();
         }
 
-        LOG(3) << "enforcing write concern " << options << " on " << shardConnStr.toString()
-               << " at opTime " << opTime.getTimestamp().toStringPretty() << " with electionID "
-               << electionId;
+        LOGV2_DEBUG(3, "enforcing write concern {} on {} at opTime {} with electionID {}", "options"_attr = options, "shardConnStr_toString"_attr = shardConnStr.toString(), "opTime_getTimestamp_toStringPretty"_attr = opTime.getTimestamp().toStringPretty(), "electionId"_attr = electionId);
 
         BSONObj gleCmd = buildGLECmdWithOpTime(options, opTime, electionId);
         requests.emplace_back(swShard.getValue()->getId(), gleCmd);

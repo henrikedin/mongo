@@ -38,6 +38,7 @@
 
 #include "mongo/client/remote_command_targeter.h"
 #include "mongo/executor/remote_command_request.h"
+#include "mongo/logv2/log.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/s/client/shard_registry.h"
 #include "mongo/s/grid.h"
@@ -241,13 +242,9 @@ auto AsyncRequestsSender::RemoteData::handleResponse(RemoteCommandOnAnyCallbackA
         if (!_ars->_stopRetrying && shard->isRetriableError(status.code(), _ars->_retryPolicy) &&
             _retryCount < kMaxNumFailedHostRetryAttempts) {
 
-            LOG(1) << "Command to remote " << _shardId
-                   << (failedTargets.empty()
+            LOGV2_DEBUG(1, "Command to remote {}{}{}failed with retriable error and will be retried {}", "_shardId"_attr = _shardId, "failedTargets_empty_failedTargets_size_1_for_hosts_at_host"_attr = (failedTargets.empty()
                            ? " "
-                           : (failedTargets.size() > 1 ? " for hosts " : " at host "))
-                   << "{}"_format(fmt::join(failedTargets, ", "))
-                   << "failed with retriable error and will be retried "
-                   << causedBy(redact(status));
+                           : (failedTargets.size() > 1 ? " for hosts " : " at host ")), "_format_fmt_join_failedTargets"_attr = "{}"_format(fmt::join(failedTargets, ", ")), "causedBy_redact_status"_attr = causedBy(redact(status)));
 
             ++_retryCount;
             _shardHostAndPort.reset();

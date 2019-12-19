@@ -80,6 +80,7 @@
 #include "mongo/db/transaction_participant.h"
 #include "mongo/db/transaction_participant_gen.h"
 #include "mongo/dbtests/dbtests.h"
+#include "mongo/logv2/log.h"
 #include "mongo/stdx/future.h"
 #include "mongo/unittest/unittest.h"
 #include "mongo/util/stacktrace.h"
@@ -1524,9 +1525,9 @@ public:
         auto beforeTxnTs = beforeTxnTime.asTimestamp();
         auto commitEntryTs = beforeTxnTime.addTicks(1).asTimestamp();
 
-        unittest::log() << "Present TS: " << presentTs;
-        unittest::log() << "Before transaction TS: " << beforeTxnTs;
-        unittest::log() << "Commit entry TS: " << commitEntryTs;
+        unittest::LOGV2("Present TS: {}", "presentTs"_attr = presentTs);
+        unittest::LOGV2("Before transaction TS: {}", "beforeTxnTs"_attr = beforeTxnTs);
+        unittest::LOGV2("Commit entry TS: {}", "commitEntryTs"_attr = commitEntryTs);
 
         const auto sessionId = makeLogicalSessionIdForTest();
         _opCtx->setLogicalSessionId(sessionId);
@@ -2917,9 +2918,9 @@ public:
     }
 
     void logTimestamps() const {
-        unittest::log() << "Present TS: " << presentTs;
-        unittest::log() << "Before transaction TS: " << beforeTxnTs;
-        unittest::log() << "Commit entry TS: " << commitEntryTs;
+        unittest::LOGV2("Present TS: {}", "presentTs"_attr = presentTs);
+        unittest::LOGV2("Before transaction TS: {}", "beforeTxnTs"_attr = beforeTxnTs);
+        unittest::LOGV2("Commit entry TS: {}", "commitEntryTs"_attr = commitEntryTs);
     }
 
     BSONObj getSessionTxnInfoAtTimestamp(const Timestamp& ts, bool expected) {
@@ -3116,7 +3117,7 @@ public:
     void run() {
         auto txnParticipant = TransactionParticipant::get(_opCtx);
         ASSERT(txnParticipant);
-        unittest::log() << "PrepareTS: " << prepareEntryTs;
+        unittest::LOGV2("PrepareTS: {}", "prepareEntryTs"_attr = prepareEntryTs);
         logTimestamps();
 
         const auto prepareFilter = BSON("ts" << prepareEntryTs);
@@ -3310,8 +3311,8 @@ public:
     void run() {
         auto txnParticipant = TransactionParticipant::get(_opCtx);
         ASSERT(txnParticipant);
-        unittest::log() << "PrepareTS: " << prepareEntryTs;
-        unittest::log() << "AbortTS: " << abortEntryTs;
+        unittest::LOGV2("PrepareTS: {}", "prepareEntryTs"_attr = prepareEntryTs);
+        unittest::LOGV2("AbortTS: {}", "abortEntryTs"_attr = abortEntryTs);
 
         const auto prepareFilter = BSON("ts" << prepareEntryTs);
         const auto abortFilter = BSON("ts" << abortEntryTs);
@@ -3414,7 +3415,7 @@ public:
         const auto currentTime = _clock->getClusterTime();
         const auto prepareTs = currentTime.addTicks(1).asTimestamp();
         commitEntryTs = currentTime.addTicks(2).asTimestamp();
-        unittest::log() << "Prepare TS: " << prepareTs;
+        unittest::LOGV2("Prepare TS: {}", "prepareTs"_attr = prepareTs);
         logTimestamps();
 
         {
@@ -3515,7 +3516,7 @@ public:
         const auto currentTime = _clock->getClusterTime();
         const auto prepareTs = currentTime.addTicks(1).asTimestamp();
         const auto abortEntryTs = currentTime.addTicks(2).asTimestamp();
-        unittest::log() << "Prepare TS: " << prepareTs;
+        unittest::LOGV2("Prepare TS: {}", "prepareTs"_attr = prepareTs);
         logTimestamps();
 
         {
@@ -3610,8 +3611,7 @@ public:
         auto storageEngine = cc().getServiceContext()->getStorageEngine();
         if (!storageEngine->supportsReadConcernSnapshot() ||
             !mongo::serverGlobalParams.enableMajorityReadConcern) {
-            unittest::log() << "Skipping this test suite because storage engine "
-                            << storageGlobalParams.engine << " does not support timestamp writes.";
+            unittest::LOGV2("Skipping this test suite because storage engine {} does not support timestamp writes.", "storageGlobalParams_engine"_attr = storageGlobalParams.engine);
             return true;
         }
         return false;

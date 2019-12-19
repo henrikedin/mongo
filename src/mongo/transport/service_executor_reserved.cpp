@@ -27,12 +27,13 @@
  *    it in the license file.
  */
 
-#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::logger::LogComponent::kExecutor;
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::logger::LogComponent::kExecutor
 
 #include "mongo/platform/basic.h"
 
 #include "mongo/transport/service_executor_reserved.h"
 
+#include "mongo/logv2/log.h"
 #include "mongo/stdx/thread.h"
 #include "mongo/transport/service_entry_point_utils.h"
 #include "mongo/transport/service_executor_gen.h"
@@ -78,7 +79,7 @@ Status ServiceExecutorReserved::start() {
 }
 
 Status ServiceExecutorReserved::_startWorker() {
-    log() << "Starting new worker thread for " << _name << " service executor";
+    LOGV2("Starting new worker thread for {} service executor", "_name"_attr = _name);
     return launchServiceWorkerThread([this] {
         stdx::unique_lock<Latch> lk(_mutex);
         _numRunningWorkerThreads.addAndFetch(1);
@@ -134,13 +135,13 @@ Status ServiceExecutorReserved::_startWorker() {
             }
         }
 
-        LOG(3) << "Exiting worker thread in " << _name << " service executor";
+        LOGV2_DEBUG(3, "Exiting worker thread in {} service executor", "_name"_attr = _name);
     });
 }
 
 
 Status ServiceExecutorReserved::shutdown(Milliseconds timeout) {
-    LOG(3) << "Shutting down reserved executor";
+    LOGV2_DEBUG(3, "Shutting down reserved executor");
 
     stdx::unique_lock<Latch> lock(_mutex);
     _stillRunning.store(false);

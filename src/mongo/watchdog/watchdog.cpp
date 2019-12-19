@@ -45,6 +45,7 @@
 #include "mongo/base/static_assert.h"
 #include "mongo/db/client.h"
 #include "mongo/db/operation_context.h"
+#include "mongo/logv2/log.h"
 #include "mongo/platform/process_id.h"
 #include "mongo/util/concurrency/idle_thread_block.h"
 #include "mongo/util/exit.h"
@@ -165,7 +166,7 @@ void WatchdogPeriodicThread::doLoop() {
 
                 // This interruption ends the WatchdogPeriodicThread. This means it is possible to
                 // killOp this operation and stop it for the lifetime of the process.
-                LOG(1) << "WatchdogPeriodicThread interrupted by: " << e;
+                LOGV2_DEBUG(1, "WatchdogPeriodicThread interrupted by: {}", "e"_attr = e);
                 return;
             }
 
@@ -202,8 +203,7 @@ void WatchdogCheckThread::run(OperationContext* opCtx) {
         check->run(opCtx);
         Microseconds micros = timer.elapsed();
 
-        LOG(1) << "Watchdog test '" << check->getDescriptionForLogging() << "' took "
-               << duration_cast<Milliseconds>(micros);
+        LOGV2_DEBUG(1, "Watchdog test '{}' took {}", "check_getDescriptionForLogging"_attr = check->getDescriptionForLogging(), "duration_cast_Milliseconds_micros"_attr = duration_cast<Milliseconds>(micros));
 
         // We completed a check, bump the generation counter.
         _checkGeneration.fetchAndAdd(1);
@@ -250,7 +250,7 @@ WatchdogMonitor::WatchdogMonitor(std::vector<std::unique_ptr<WatchdogCheck>> che
 }
 
 void WatchdogMonitor::start() {
-    log() << "Starting Watchdog Monitor";
+    LOGV2("Starting Watchdog Monitor");
 
     // Start the threads.
     _watchdogCheckThread.start();
@@ -279,12 +279,12 @@ void WatchdogMonitor::setPeriod(Milliseconds duration) {
             _watchdogCheckThread.setPeriod(_checkPeriod);
             _watchdogMonitorThread.setPeriod(duration);
 
-            log() << "WatchdogMonitor period changed to " << duration_cast<Seconds>(duration);
+            LOGV2("WatchdogMonitor period changed to {}", "duration_cast_Seconds_duration"_attr = duration_cast<Seconds>(duration));
         } else {
             _watchdogMonitorThread.setPeriod(duration);
             _watchdogCheckThread.setPeriod(duration);
 
-            log() << "WatchdogMonitor disabled";
+            LOGV2("WatchdogMonitor disabled");
         }
     }
 }

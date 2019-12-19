@@ -37,6 +37,7 @@
 
 #include "mongo/db/concurrency/d_concurrency.h"
 #include "mongo/db/storage/write_unit_of_work.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/log.h"
 
 namespace mongo {
@@ -109,8 +110,7 @@ void KVDropPendingIdentReaper::dropIdentsOlderThan(OperationContext* opCtx, cons
             const auto& identInfo = timestampAndIdentInfo.second;
             const auto& nss = identInfo.nss;
             const auto& ident = identInfo.ident;
-            log() << "Completing drop for ident " << ident << " (ns: " << nss
-                  << ") with drop timestamp " << dropTimestamp;
+            LOGV2("Completing drop for ident {} (ns: {}) with drop timestamp {}", "ident"_attr = ident, "nss"_attr = nss, "dropTimestamp"_attr = dropTimestamp);
             WriteUnitOfWork wuow(opCtx);
             auto status = _engine->dropIdent(opCtx, ident);
             if (!status.isOK()) {

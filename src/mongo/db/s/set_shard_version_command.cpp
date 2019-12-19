@@ -47,6 +47,7 @@
 #include "mongo/db/s/sharded_connection_info.h"
 #include "mongo/db/s/sharding_state.h"
 #include "mongo/db/views/view_catalog.h"
+#include "mongo/logv2/log.h"
 #include "mongo/s/client/shard_registry.h"
 #include "mongo/s/grid.h"
 #include "mongo/s/request_types/set_shard_version_request.h"
@@ -305,7 +306,7 @@ public:
                     if (critSecSignal) {
                         collLock.reset();
                         autoDb.reset();
-                        log() << "waiting till out of critical section";
+                        LOGV2("waiting till out of critical section");
                         critSecSignal->waitFor(opCtx, Seconds(10));
                     }
 
@@ -326,7 +327,7 @@ public:
                     if (critSecSignal) {
                         collLock.reset();
                         autoDb.reset();
-                        log() << "waiting till out of critical section";
+                        LOGV2("waiting till out of critical section");
                         critSecSignal->waitFor(opCtx, Seconds(10));
                     }
 

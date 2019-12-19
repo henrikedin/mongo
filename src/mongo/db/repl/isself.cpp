@@ -44,6 +44,7 @@
 #include "mongo/db/auth/privilege.h"
 #include "mongo/db/commands.h"
 #include "mongo/db/service_context.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/log.h"
 #include "mongo/util/net/socket_utils.h"
 #include "mongo/util/scopeguard.h"
@@ -147,7 +148,7 @@ std::vector<std::string> getAddrsForHost(const std::string& iporhost,
         for (std::vector<std::string>::const_iterator o = out.begin(); o != out.end(); ++o) {
             builder << " [ " << *o << "]";
         }
-        LOG(2) << builder.str();
+        LOGV2_DEBUG(2, "{}", "builder_str"_attr = builder.str());
     }
 
     return out;
@@ -336,7 +337,7 @@ std::vector<std::string> getBoundAddrs(const bool ipv6enabled) {
         for (std::vector<std::string>::const_iterator o = out.begin(); o != out.end(); ++o) {
             builder << " [ " << *o << "]";
         }
-        LOG(2) << builder.str();
+        LOGV2_DEBUG(2, "{}", "builder_str"_attr = builder.str());
     }
     return out;
 }

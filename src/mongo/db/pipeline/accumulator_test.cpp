@@ -38,6 +38,7 @@
 #include "mongo/db/pipeline/expression_context_for_test.h"
 #include "mongo/db/query/collation/collator_interface_mock.h"
 #include "mongo/dbtests/dbtests.h"
+#include "mongo/logv2/log.h"
 
 namespace AccumulatorTests {
 
@@ -93,7 +94,7 @@ static void assertExpectedResults(
                 ASSERT_EQUALS(op.second.getType(), result.getType());
             }
         } catch (...) {
-            log() << "failed with arguments: " << Value(op.first);
+            LOGV2("failed with arguments: {}", "Value_op_first"_attr = Value(op.first));
             throw;
         }
     }

@@ -39,6 +39,7 @@
 #endif
 
 #include "mongo/base/init.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/log.h"
 #include "mongo/util/stacktrace.h"
 
@@ -71,8 +72,7 @@ extern "C" {
 int __cdecl crtDebugCallback(int nRptType, char* originalMessage, int* returnValue) noexcept {
     *returnValue = 0;  // Returned by _CrtDbgReport. (1: starts the debugger).
     bool die = (nRptType != _CRT_WARN);
-    log() << "*** C runtime " << severity(nRptType) << ": " << firstLine(originalMessage)
-          << (die ? ", terminating"_sd : ""_sd);
+    LOGV2("*** C runtime {}: {}{}", "severity_nRptType"_attr = severity(nRptType), "firstLine_originalMessage"_attr = firstLine(originalMessage), "die_terminating__sd__sd"_attr = (die ? ", terminating"_sd : ""_sd));
     if (die) {
         fassertFailed(17006);
     }

@@ -61,6 +61,7 @@
 #include "mongo/transport/baton_asio_linux.h"
 #endif
 
+#include "mongo/logv2/log.h"
 #include "mongo/transport/session_asio.h"
 
 namespace mongo {
@@ -82,7 +83,7 @@ public:
     void cancel(const BatonHandle& baton = nullptr) override {
         // If we have a baton try to cancel that.
         if (baton && baton->networking() && baton->networking()->cancelTimer(*this)) {
-            LOG(2) << "Canceled via baton, skipping asio cancel.";
+            LOGV2_DEBUG(2, "Canceled via baton, skipping asio cancel.");
             return;
         }
 
@@ -109,7 +110,7 @@ private:
             armTimer();
             return _timer->async_wait(UseFuture{}).tapError([timer = _timer](const Status& status) {
                 if (status != ErrorCodes::CallbackCanceled) {
-                    LOG(2) << "Timer received error: " << status;
+                    LOGV2_DEBUG(2, "Timer received error: {}", "status"_attr = status);
                 }
             });
 
@@ -160,7 +161,7 @@ public:
     void drain() override {
         _ioContext.restart();
         while (_ioContext.poll()) {
-            LOG(2) << "Draining remaining work in reactor.";
+            LOGV2_DEBUG(2, "Draining remaining work in reactor.");
         }
         _ioContext.stop();
     }
@@ -613,7 +614,7 @@ Future<SessionHandle> TransportLayerASIO::asyncConnect(HostAndPort peer,
         })
         .getAsync([connector](Status connectResult) {
             if (MONGO_unlikely(transportLayerASIOasyncConnectTimesOut.shouldFail())) {
-                log() << "asyncConnectTimesOut fail point is active. simulating timeout.";
+                LOGV2("asyncConnectTimesOut fail point is active. simulating timeout.");
                 return;
             }
 
@@ -786,7 +787,7 @@ void TransportLayerASIO::_runListener() noexcept {
         }
 
         _acceptConnection(acceptor.second);
-        log() << "Listening on " << acceptor.first.getAddr();
+        LOGV2("Listening on {}", "acceptor_first_getAddr"_attr = acceptor.first.getAddr());
     }
 
     const char* ssl = "";
@@ -795,7 +796,7 @@ void TransportLayerASIO::_runListener() noexcept {
         ssl = " ssl";
     }
 #endif
-    log() << "waiting for connections on port " << _listenerPort << ssl;
+    LOGV2("waiting for connections on port {}{}", "_listenerPort"_attr = _listenerPort, "ssl"_attr = ssl);
 
     _listener.active = true;
     _listener.cv.notify_all();
@@ -817,7 +818,7 @@ void TransportLayerASIO::_runListener() noexcept {
         auto& addr = acceptor.first;
         if (addr.getType() == AF_UNIX && !addr.isAnonymousUNIXSocket()) {
             auto path = addr.getAddr();
-            log() << "removing socket file: " << path;
+            LOGV2("removing socket file: {}", "path"_attr = path);
             if (::unlink(path.c_str()) != 0) {
                 const auto ewd = errnoWithDescription();
                 warning() << "Unable to remove UNIX socket " << path << ": " << ewd;
@@ -893,8 +894,7 @@ void TransportLayerASIO::_acceptConnection(GenericAcceptor& acceptor) {
         }
 
         if (ec) {
-            log() << "Error accepting new connection on "
-                  << endpointToHostAndPort(acceptor.local_endpoint()) << ": " << ec.message();
+            LOGV2("Error accepting new connection on {}: {}", "endpointToHostAndPort_acceptor_local_endpoint"_attr = endpointToHostAndPort(acceptor.local_endpoint()), "ec_message"_attr = ec.message());
             _acceptConnection(acceptor);
             return;
         }

@@ -61,6 +61,7 @@
 #include "mongo/db/s/database_sharding_state.h"
 #include "mongo/db/server_options.h"
 #include "mongo/db/views/view_catalog.h"
+#include "mongo/logv2/log.h"
 #include "mongo/platform/compiler.h"
 #include "mongo/s/shard_key_pattern.h"
 #include "mongo/util/log.h"
@@ -464,8 +465,8 @@ BSONObj runCreateIndexesOnNewCollection(OperationContext* opCtx,
     if (MONGO_unlikely(hangBeforeCreateIndexesCollectionCreate.shouldFail())) {
         // Simulate a scenario where a conflicting collection creation occurs
         // mid-index build.
-        log() << "Hanging create collection due to failpoint "
-                 "'hangBeforeCreateIndexesCollectionCreate'";
+        LOGV2("Hanging create collection due to failpoint "
+                 "'hangBeforeCreateIndexesCollectionCreate'");
         hangBeforeCreateIndexesCollectionCreate.pauseWhileSet();
     }
 
@@ -656,7 +657,7 @@ bool runCreateIndexesForMobile(OperationContext* opCtx,
     }
 
     if (MONGO_unlikely(hangAfterIndexBuildDumpsInsertsFromBulk.shouldFail())) {
-        log() << "Hanging after dumping inserts from bulk builder";
+        LOGV2("Hanging after dumping inserts from bulk builder");
         hangAfterIndexBuildDumpsInsertsFromBulk.pauseWhileSet();
     }
 
@@ -680,7 +681,7 @@ bool runCreateIndexesForMobile(OperationContext* opCtx,
     }
 
     if (MONGO_unlikely(hangAfterIndexBuildFirstDrain.shouldFail())) {
-        log() << "Hanging after index build first drain";
+        LOGV2("Hanging after index build first drain");
         hangAfterIndexBuildFirstDrain.pauseWhileSet();
     }
 
@@ -704,7 +705,7 @@ bool runCreateIndexesForMobile(OperationContext* opCtx,
     }
 
     if (MONGO_unlikely(hangAfterIndexBuildSecondDrain.shouldFail())) {
-        log() << "Hanging after index build second drain";
+        LOGV2("Hanging after index build second drain");
         hangAfterIndexBuildSecondDrain.pauseWhileSet();
     }
 
@@ -842,7 +843,7 @@ bool runCreateIndexesWithCoordinator(OperationContext* opCtx,
     auto protocol = IndexBuildsCoordinator::supportsTwoPhaseIndexBuild()
         ? IndexBuildProtocol::kTwoPhase
         : IndexBuildProtocol::kSinglePhase;
-    log() << "Registering index build: " << buildUUID;
+    LOGV2("Registering index build: {}", "buildUUID"_attr = buildUUID);
     ReplIndexBuildState::IndexCatalogStats stats;
     IndexBuildsCoordinator::IndexBuildOptions indexBuildOptions = {commitQuorum};
 
@@ -853,17 +854,16 @@ bool runCreateIndexesWithCoordinator(OperationContext* opCtx,
         auto deadline = opCtx->getDeadline();
         // Date_t::max() means no deadline.
         if (deadline == Date_t::max()) {
-            log() << "Waiting for index build to complete: " << buildUUID;
+            LOGV2("Waiting for index build to complete: {}", "buildUUID"_attr = buildUUID);
         } else {
-            log() << "Waiting for index build to complete: " << buildUUID
-                  << " (deadline: " << deadline << ")";
+            LOGV2("Waiting for index build to complete: {} (deadline: {})", "buildUUID"_attr = buildUUID, "deadline"_attr = deadline);
         }
 
         // Throws on error.
         try {
             stats = buildIndexFuture.get(opCtx);
         } catch (const ExceptionForCat<ErrorCategory::Interruption>& interruptionEx) {
-            log() << "Index build interrupted: " << buildUUID << ": " << interruptionEx;
+            LOGV2("Index build interrupted: {}: {}", "buildUUID"_attr = buildUUID, "interruptionEx"_attr = interruptionEx);
 
             // If this node is no longer a primary, the index build will continue to run in the
             // background and will complete when this node receives a commitIndexBuild oplog entry
@@ -871,7 +871,7 @@ bool runCreateIndexesWithCoordinator(OperationContext* opCtx,
 
             if (indexBuildsCoord->supportsTwoPhaseIndexBuild() &&
                 ErrorCodes::InterruptedDueToReplStateChange == interruptionEx.code()) {
-                log() << "Index build continuing in background: " << buildUUID;
+                LOGV2("Index build continuing in background: {}", "buildUUID"_attr = buildUUID);
                 throw;
             }
 
@@ -885,18 +885,17 @@ bool runCreateIndexesWithCoordinator(OperationContext* opCtx,
                 buildUUID,
                 str::stream() << "Index build interrupted: " << buildUUID << ": "
                               << interruptionEx.toString());
-            log() << "Index build aborted: " << buildUUID;
+            LOGV2("Index build aborted: {}", "buildUUID"_attr = buildUUID);
 
             throw;
         } catch (const ExceptionForCat<ErrorCategory::NotMasterError>& ex) {
-            log() << "Index build interrupted due to change in replication state: " << buildUUID
-                  << ": " << ex;
+            LOGV2("Index build interrupted due to change in replication state: {}: {}", "buildUUID"_attr = buildUUID, "ex"_attr = ex);
 
             // The index build will continue to run in the background and will complete when this
             // node receives a commitIndexBuild oplog entry from the new primary.
 
             if (indexBuildsCoord->supportsTwoPhaseIndexBuild()) {
-                log() << "Index build continuing in background: " << buildUUID;
+                LOGV2("Index build continuing in background: {}", "buildUUID"_attr = buildUUID);
                 throw;
             }
 
@@ -905,24 +904,24 @@ bool runCreateIndexesWithCoordinator(OperationContext* opCtx,
                 buildUUID,
                 str::stream() << "Index build interrupted due to change in replication state: "
                               << buildUUID << ": " << ex.toString());
-            log() << "Index build aborted due to NotMaster error: " << buildUUID;
+            LOGV2("Index build aborted due to NotMaster error: {}", "buildUUID"_attr = buildUUID);
 
             throw;
         }
 
-        log() << "Index build completed: " << buildUUID;
+        LOGV2("Index build completed: {}", "buildUUID"_attr = buildUUID);
     } catch (DBException& ex) {
         // If the collection is dropped after the initial checks in this function (before the
         // AutoStatsTracker is created), the IndexBuildsCoordinator (either startIndexBuild() or
         // the the task running the index build) may return NamespaceNotFound. This is not
         // considered an error and the command should return success.
         if (ErrorCodes::NamespaceNotFound == ex.code()) {
-            log() << "Index build failed: " << buildUUID << ": collection dropped: " << ns;
+            LOGV2("Index build failed: {}: collection dropped: {}", "buildUUID"_attr = buildUUID, "ns"_attr = ns);
             return true;
         }
 
         // All other errors should be forwarded to the caller with index build information included.
-        log() << "Index build failed: " << buildUUID << ": " << ex.toStatus();
+        LOGV2("Index build failed: {}: {}", "buildUUID"_attr = buildUUID, "ex_toStatus"_attr = ex.toStatus());
         ex.addContext(str::stream() << "Index build failed: " << buildUUID << ": Collection " << ns
                                     << " ( " << *collectionUUID << " )");
 
@@ -1000,12 +999,8 @@ public:
                 }
                 if (shouldLogMessageOnAlreadyBuildingError) {
                     auto bsonElem = cmdObj.getField(kIndexesFieldName);
-                    log()
-                        << "Received a request to create indexes: '" << bsonElem
-                        << "', but found that at least one of the indexes is already being built, '"
-                        << ex.toStatus()
-                        << "'. This request will wait for the pre-existing index build to finish "
-                           "before proceeding.";
+                    LOGV2("Received a request to create indexes: '{}', but found that at least one of the indexes is already being built, '{}'. This request will wait for the pre-existing index build to finish "
+                           "before proceeding.", "bsonElem"_attr = bsonElem, "ex_toStatus"_attr = ex.toStatus());
                     shouldLogMessageOnAlreadyBuildingError = false;
                 }
                 // Unset the response fields so we do not write duplicate fields.

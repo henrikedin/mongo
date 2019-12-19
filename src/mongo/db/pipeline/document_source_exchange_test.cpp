@@ -36,6 +36,7 @@
 #include "mongo/db/storage/key_string.h"
 #include "mongo/executor/network_interface_factory.h"
 #include "mongo/executor/thread_pool_task_executor.h"
+#include "mongo/logv2/log.h"
 #include "mongo/platform/random.h"
 #include "mongo/unittest/temp_dir.h"
 #include "mongo/unittest/unittest.h"
@@ -115,7 +116,7 @@ protected:
 
     static auto getNewSeed() {
         auto seed = Date_t::now().asInt64();
-        unittest::log() << "Generated new seed is " << seed;
+        unittest::LOGV2("Generated new seed is {}", "seed"_attr = seed);
 
         return seed;
     }

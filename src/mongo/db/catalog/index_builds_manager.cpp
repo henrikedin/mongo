@@ -40,6 +40,7 @@
 #include "mongo/db/concurrency/write_conflict_exception.h"
 #include "mongo/db/operation_context.h"
 #include "mongo/db/storage/write_unit_of_work.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/log.h"
 #include "mongo/util/str.h"
@@ -109,8 +110,7 @@ Status IndexBuildsManager::setUpIndexBuild(OperationContext* opCtx,
         return ex.toStatus();
     }
 
-    log() << "Index build initialized: " << buildUUID << ": " << nss << " (" << collection->uuid()
-          << " ): indexes: " << indexes.size();
+    LOGV2("Index build initialized: {}: {} ({} ): indexes: {}", "buildUUID"_attr = buildUUID, "nss"_attr = nss, "collection_uuid"_attr = collection->uuid(), "indexes_size"_attr = indexes.size());
 
     return Status::OK();
 }
@@ -282,7 +282,7 @@ bool IndexBuildsManager::abortIndexBuildWithoutCleanup(OperationContext* opCtx,
         return false;
     }
 
-    log() << "Index build aborted without cleanup: " << buildUUID << ": " << reason;
+    LOGV2("Index build aborted without cleanup: {}: {}", "buildUUID"_attr = buildUUID, "reason"_attr = reason);
     std::shared_ptr<MultiIndexBlock> builder = builderIt->second;
 
     lk.unlock();

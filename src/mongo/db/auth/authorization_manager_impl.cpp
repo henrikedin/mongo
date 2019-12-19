@@ -62,6 +62,7 @@
 #include "mongo/db/global_settings.h"
 #include "mongo/db/jsobj.h"
 #include "mongo/db/mongod_options.h"
+#include "mongo/logv2/log.h"
 #include "mongo/platform/compiler.h"
 #include "mongo/platform/mutex.h"
 #include "mongo/stdx/unordered_map.h"
@@ -503,7 +504,7 @@ Status AuthorizationManagerImpl::getRoleDescriptionsForDB(
 }
 
 void AuthorizationManagerImpl::UserCacheInvalidator::operator()(User* user) {
-    LOG(1) << "Invalidating user " << user->getName().toString();
+    LOGV2_DEBUG(1, "Invalidating user {}", "user_getName_toString"_attr = user->getName().toString());
     user->_invalidate();
 }
 
@@ -518,7 +519,7 @@ StatusWith<UserHandle> AuthorizationManagerImpl::acquireUser(OperationContext* o
         auto ret = *cachedUser;
         fassert(16914, ret.get());
 
-        LOG(1) << "Returning user " << userName << " from cache";
+        LOGV2_DEBUG(1, "Returning user {} from cache", "userName"_attr = userName);
         return ret;
     };
 
@@ -543,7 +544,7 @@ StatusWith<UserHandle> AuthorizationManagerImpl::acquireUser(OperationContext* o
 
     guard.beginFetchPhase();
     // If there's still no user in the cache, then we need to go to disk. Take the slow path.
-    LOG(1) << "Getting user " << userName << " from disk";
+    LOGV2_DEBUG(1, "Getting user {} from disk", "userName"_attr = userName);
 
     int authzVersion = _version;
 
@@ -654,7 +655,7 @@ void AuthorizationManagerImpl::updatePinnedUsersList(std::vector<UserName> names
     bool noUsersToPin = _usersToPin->empty();
     _pinnedUsersCond.notify_one();
     if (noUsersToPin) {
-        LOG(1) << "There were no users to pin, not starting tracker thread";
+        LOGV2_DEBUG(1, "There were no users to pin, not starting tracker thread");
         return;
     }
 
@@ -668,7 +669,7 @@ void AuthorizationManagerImpl::_pinnedUsersThreadRoutine() noexcept try {
     Client::initThread("PinnedUsersTracker");
     std::list<UserHandle> pinnedUsers;
     std::vector<UserName> usersToPin;
-    LOG(1) << "Starting pinned users tracking thread";
+    LOGV2_DEBUG(1, "Starting pinned users tracking thread");
     while (true) {
         auto opCtx = cc().makeOperationContext();
 
@@ -697,13 +698,13 @@ void AuthorizationManagerImpl::_pinnedUsersThreadRoutine() noexcept try {
 
             if (!user->isValid() || !shouldPin) {
                 if (!shouldPin) {
-                    LOG(2) << "Unpinning user " << user->getName();
+                    LOGV2_DEBUG(2, "Unpinning user {}", "user_getName"_attr = user->getName());
                 } else {
-                    LOG(2) << "Pinned user no longer valid, will re-pin " << user->getName();
+                    LOGV2_DEBUG(2, "Pinned user no longer valid, will re-pin {}", "user_getName"_attr = user->getName());
                 }
                 it = pinnedUsers.erase(it);
             } else {
-                LOG(3) << "Pinned user is still valid and pinned " << user->getName();
+                LOGV2_DEBUG(3, "Pinned user is still valid and pinned {}", "user_getName"_attr = user->getName());
                 ++it;
             }
         }
@@ -718,7 +719,7 @@ void AuthorizationManagerImpl::_pinnedUsersThreadRoutine() noexcept try {
             auto swUser = acquireUser(opCtx.get(), userName);
 
             if (swUser.isOK()) {
-                LOG(2) << "Pinned user " << userName;
+                LOGV2_DEBUG(2, "Pinned user {}", "userName"_attr = userName);
                 pinnedUsers.emplace_back(std::move(swUser.getValue()));
             } else {
                 const auto& status = swUser.getStatus();
@@ -728,13 +729,13 @@ void AuthorizationManagerImpl::_pinnedUsersThreadRoutine() noexcept try {
                     warning() << "Unable to fetch pinned user " << userName.toString() << ": "
                               << status;
                 } else {
-                    LOG(2) << "Pinned user not found: " << userName;
+                    LOGV2_DEBUG(2, "Pinned user not found: {}", "userName"_attr = userName);
                 }
             }
         }
     }
 } catch (const ExceptionFor<ErrorCodes::InterruptedAtShutdown>&) {
-    LOG(1) << "Ending pinned users tracking thread";
+    LOGV2_DEBUG(1, "Ending pinned users tracking thread");
     return;
 }
 
@@ -742,21 +743,21 @@ void AuthorizationManagerImpl::invalidateUserByName(OperationContext* opCtx,
                                                     const UserName& userName) {
     CacheGuard guard(opCtx, this);
     _updateCacheGeneration_inlock(guard);
-    LOG(2) << "Invalidating user " << userName;
+    LOGV2_DEBUG(2, "Invalidating user {}", "userName"_attr = userName);
     _userCache.invalidate(userName);
 }
 
 void AuthorizationManagerImpl::invalidateUsersFromDB(OperationContext* opCtx, StringData dbname) {
     CacheGuard guard(opCtx, this);
     _updateCacheGeneration_inlock(guard);
-    LOG(2) << "Invalidating all users from database " << dbname;
+    LOGV2_DEBUG(2, "Invalidating all users from database {}", "dbname"_attr = dbname);
     _userCache.invalidateIf(
         [&](const UserName& user, const User*) { return user.getDB() == dbname; });
 }
 
 void AuthorizationManagerImpl::invalidateUserCache(OperationContext* opCtx) {
     CacheGuard guard(opCtx, this);
-    LOG(2) << "Invalidating user cache";
+    LOGV2_DEBUG(2, "Invalidating user cache");
     _invalidateUserCache_inlock(guard);
 }
 

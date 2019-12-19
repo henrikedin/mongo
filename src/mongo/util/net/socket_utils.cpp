@@ -54,6 +54,7 @@
 #endif
 
 #include "mongo/db/server_options.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/concurrency/value.h"
 #include "mongo/util/errno_util.h"
 #include "mongo/util/log.h"
@@ -69,7 +70,7 @@ const struct WinsockInit {
     WinsockInit() {
         WSADATA d;
         if (WSAStartup(MAKEWORD(2, 2), &d) != 0) {
-            log() << "ERROR: wsastartup failed " << errnoWithDescription();
+            LOGV2("ERROR: wsastartup failed {}", "errnoWithDescription"_attr = errnoWithDescription());
             quickExit(EXIT_NTSERVICE_ERROR);
         }
     }
@@ -196,7 +197,7 @@ std::string getHostName() {
     char buf[256];
     int ec = gethostname(buf, 127);
     if (ec || *buf == 0) {
-        log() << "can't get this server's hostname " << errnoWithDescription();
+        LOGV2("can't get this server's hostname {}", "errnoWithDescription"_attr = errnoWithDescription());
         return "";
     }
     return buf;

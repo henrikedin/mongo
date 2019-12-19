@@ -53,6 +53,7 @@
 #include "mongo/db/server_options_base.h"
 #include "mongo/db/server_options_nongeneral_gen.h"
 #include "mongo/db/server_options_server_helpers.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/log.h"
 #include "mongo/util/net/ssl_options.h"
 #include "mongo/util/options_parser/startup_options.h"
@@ -101,13 +102,13 @@ void printMongodHelp(const moe::OptionSection& options) {
 namespace {
 void sysRuntimeInfo() {
 #if defined(_SC_PAGE_SIZE)
-    log() << "  page size: " << (int)sysconf(_SC_PAGE_SIZE);
+    LOGV2("  page size: {}", "int_sysconf__SC_PAGE_SIZE"_attr = (int)sysconf(_SC_PAGE_SIZE));
 #endif
 #if defined(_SC_PHYS_PAGES)
-    log() << "  _SC_PHYS_PAGES: " << sysconf(_SC_PHYS_PAGES);
+    LOGV2("  _SC_PHYS_PAGES: {}", "sysconf__SC_PHYS_PAGES"_attr = sysconf(_SC_PHYS_PAGES));
 #endif
 #if defined(_SC_AVPHYS_PAGES)
-    log() << "  _SC_AVPHYS_PAGES: " << sysconf(_SC_AVPHYS_PAGES);
+    LOGV2("  _SC_AVPHYS_PAGES: {}", "sysconf__SC_AVPHYS_PAGES"_attr = sysconf(_SC_AVPHYS_PAGES));
 #endif
 }
 }  // namespace
@@ -121,7 +122,7 @@ bool handlePreValidationMongodOptions(const moe::Environment& params,
     if (params.count("version") && params["version"].as<bool>() == true) {
         setPlainConsoleLogger();
         auto&& vii = VersionInfoInterface::instance();
-        log() << mongodVersion(vii);
+        LOGV2("{}", "mongodVersion_vii"_attr = mongodVersion(vii));
         vii.logBuildInfo();
         return false;
     }
@@ -630,10 +631,10 @@ Status storeMongodOptions(const moe::Environment& params) {
     // Check if we are 32 bit and have not explicitly specified any journaling options
     if (sizeof(void*) == 4 && !params.count("storage.journal.enabled")) {
         // trying to make this stand out more like startup warnings
-        log() << endl;
+        LOGV2("");
         warning() << "32-bit servers don't have journaling enabled by default. "
                   << "Please use --journal if you want durability.";
-        log() << endl;
+        LOGV2("");
     }
 
     bool isClusterRoleShard = params.count("shardsvr");

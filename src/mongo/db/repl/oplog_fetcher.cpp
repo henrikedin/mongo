@@ -39,6 +39,7 @@
 #include "mongo/db/matcher/matcher.h"
 #include "mongo/db/repl/replication_coordinator.h"
 #include "mongo/db/stats/timer_stats.h"
+#include "mongo/logv2/log.h"
 #include "mongo/rpc/metadata/oplog_query_metadata.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/fail_point.h"
@@ -395,7 +396,7 @@ StatusWith<BSONObj> OplogFetcher::_onSuccessfulBatch(const Fetcher::QueryRespons
             [&](auto&&) {
                 status = {ErrorCodes::FailPointEnabled,
                           "stopReplProducerOnDocument fail point is enabled."};
-                log() << status.reason();
+                LOGV2("{}", "status_reason"_attr = status.reason());
             },
             [&](const BSONObj& data) {
                 auto opCtx = cc().makeOperationContext();
@@ -413,11 +414,9 @@ StatusWith<BSONObj> OplogFetcher::_onSuccessfulBatch(const Fetcher::QueryRespons
     auto firstDocToApply = documents.cbegin();
 
     if (!documents.empty()) {
-        LOG(2) << "oplog fetcher read " << documents.size()
-               << " operations from remote oplog starting at " << documents.front()["ts"]
-               << " and ending at " << documents.back()["ts"];
+        LOGV2_DEBUG(2, "oplog fetcher read {} operations from remote oplog starting at {} and ending at {}", "documents_size"_attr = documents.size(), "documents_front_ts"_attr = documents.front()["ts"], "documents_back_ts"_attr = documents.back()["ts"]);
     } else {
-        LOG(2) << "oplog fetcher read 0 operations from remote oplog";
+        LOGV2_DEBUG(2, "oplog fetcher read 0 operations from remote oplog");
     }
 
     auto oqMetadataResult = parseOplogQueryMetadata(queryResponse);
@@ -447,7 +446,7 @@ StatusWith<BSONObj> OplogFetcher::_onSuccessfulBatch(const Fetcher::QueryRespons
             return status;
         }
 
-        LOG(1) << "oplog fetcher successfully fetched from " << _getSource();
+        LOGV2_DEBUG(1, "oplog fetcher successfully fetched from {}", "_getSource"_attr = _getSource());
 
         // We do not always enqueue the first document. We elect to skip it for the following
         // reasons:

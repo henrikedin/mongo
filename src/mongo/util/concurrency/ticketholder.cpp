@@ -35,6 +35,7 @@
 
 #include <iostream>
 
+#include "mongo/logv2/log.h"
 #include "mongo/util/log.h"
 #include "mongo/util/str.h"
 
@@ -218,7 +219,7 @@ Status TicketHolder::resize(int newSize) {
            << "more than newSize(" << newSize << ")";
 
         std::string errmsg = ss.str();
-        log() << errmsg;
+        LOGV2("{}", "errmsg"_attr = errmsg);
         return Status(ErrorCodes::BadValue, errmsg);
     }
 

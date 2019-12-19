@@ -49,6 +49,7 @@
 #include "mongo/db/query/planner_ixselect.h"
 #include "mongo/db/query/planner_wildcard_helpers.h"
 #include "mongo/db/query/query_knobs_gen.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/log.h"
 #include "mongo/util/str.h"
 #include "third_party/s2/s2cell.h"
@@ -1090,9 +1091,7 @@ void IndexBoundsBuilder::alignBounds(IndexBounds* bounds, const BSONObj& kp, int
     }
 
     if (!bounds->isValidFor(kp, scanDir)) {
-        log() << "INVALID BOUNDS: " << redact(bounds->toString()) << endl
-              << "kp = " << redact(kp) << endl
-              << "scanDir = " << scanDir;
+        LOGV2("INVALID BOUNDS: {}\nkp = {}\nscanDir = {}", "redact_bounds_toString"_attr = redact(bounds->toString()), "redact_kp"_attr = redact(kp), "scanDir"_attr = scanDir);
         MONGO_UNREACHABLE;
     }
 }

@@ -42,6 +42,7 @@
 #include "mongo/base/error_codes.h"
 #include "mongo/config.h"
 #include "mongo/db/operation_context.h"
+#include "mongo/logv2/log.h"
 #include "mongo/platform/decimal128.h"
 #include "mongo/platform/mutex.h"
 #include "mongo/platform/stack_locator.h"
@@ -223,8 +224,7 @@ void MozJSImplScope::_gcCallback(JSContext* rt, JSGCStatus status, void* data) {
         return;
     }
 
-    log() << "MozJS GC " << (status == JSGC_BEGIN ? "prologue" : "epilogue") << " heap stats - "
-          << " total: " << mongo::sm::get_total_bytes() << " limit: " << mongo::sm::get_max_bytes();
+    LOGV2("MozJS GC {} heap stats -  total: {} limit: {}", "status_JSGC_BEGIN_prologue_epilogue"_attr = (status == JSGC_BEGIN ? "prologue" : "epilogue"), "mongo_sm_get_total_bytes"_attr = mongo::sm::get_total_bytes(), "mongo_sm_get_max_bytes"_attr = mongo::sm::get_max_bytes());
 }
 
 #if __has_feature(address_sanitizer)

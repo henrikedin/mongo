@@ -49,6 +49,7 @@
 #include "mongo/db/storage/record_store.h"
 #include "mongo/db/storage/recovery_unit.h"
 #include "mongo/db/storage/storage_engine_interface.h"
+#include "mongo/logv2/log.h"
 #include "mongo/platform/bits.h"
 #include "mongo/platform/random.h"
 #include "mongo/util/log.h"
@@ -213,9 +214,7 @@ public:
         // Intentionally ignoring failure here. Since we've removed the metadata pointing to the
         // index, we should never see it again anyway.
         if (_engine->getStorageEngine()->supportsPendingDrops() && commitTimestamp) {
-            log() << "Deferring table drop for index '" << _indexName << "' on collection '"
-                  << _indexNss << (_uuid ? " (" + _uuid->toString() + ")'" : "") << ". Ident: '"
-                  << _ident << "', commit timestamp: '" << commitTimestamp << "'";
+            LOGV2("Deferring table drop for index '{}' on collection '{}{}. Ident: '{}', commit timestamp: '{}'", "_indexName"_attr = _indexName, "_indexNss"_attr = _indexNss, "_uuid__uuid_toString"_attr = (_uuid ? " (" + _uuid->toString() + ")'" : ""), "_ident"_attr = _ident, "commitTimestamp"_attr = commitTimestamp);
             _engine->addDropPendingIdent(*commitTimestamp, _indexNss, _ident);
         } else {
             auto kvEngine = _engine->getEngine();
@@ -531,7 +530,7 @@ StatusWith<DurableCatalog::Entry> DurableCatalogImpl::_addEntry(OperationContext
     _catalogIdToEntryMap[res.getValue()] = {res.getValue(), ident, nss};
     opCtx->recoveryUnit()->registerChange(std::make_unique<AddIdentChange>(this, res.getValue()));
 
-    LOG(1) << "stored meta data for " << nss.ns() << " @ " << res.getValue();
+    LOGV2_DEBUG(1, "stored meta data for {} @ {}", "nss_ns"_attr = nss.ns(), "res_getValue"_attr = res.getValue());
     return {{res.getValue(), ident, nss}};
 }
 
@@ -544,7 +543,7 @@ std::string DurableCatalogImpl::getIndexIdent(OperationContext* opCtx,
 }
 
 BSONObj DurableCatalogImpl::_findEntry(OperationContext* opCtx, RecordId catalogId) const {
-    LOG(3) << "looking up metadata for: " << catalogId;
+    LOGV2_DEBUG(3, "looking up metadata for: {}", "catalogId"_attr = catalogId);
     RecordData data;
     if (!_rs->findRecord(opCtx, catalogId, &data)) {
         // since the in memory meta data isn't managed with mvcc
@@ -559,11 +558,11 @@ BSONObj DurableCatalogImpl::_findEntry(OperationContext* opCtx, RecordId catalog
 BSONCollectionCatalogEntry::MetaData DurableCatalogImpl::getMetaData(OperationContext* opCtx,
                                                                      RecordId catalogId) const {
     BSONObj obj = _findEntry(opCtx, catalogId);
-    LOG(3) << " fetched CCE metadata: " << obj;
+    LOGV2_DEBUG(3, " fetched CCE metadata: {}", "obj"_attr = obj);
     BSONCollectionCatalogEntry::MetaData md;
     const BSONElement mdElement = obj["md"];
     if (mdElement.isABSONObj()) {
-        LOG(3) << "returning metadata: " << mdElement;
+        LOGV2_DEBUG(3, "returning metadata: {}", "mdElement"_attr = mdElement);
         md.parse(mdElement.Obj());
     }
     return md;
@@ -624,7 +623,7 @@ void DurableCatalogImpl::putMetaData(OperationContext* opCtx,
         opCtx->recoveryUnit()->setMustBeTimestamped();
     }
 
-    LOG(3) << "recording new metadata: " << obj;
+    LOGV2_DEBUG(3, "recording new metadata: {}", "obj"_attr = obj);
     Status status = _rs->updateRecord(opCtx, catalogId, obj.objdata(), obj.objsize());
     fassert(28521, status);
 }
@@ -685,7 +684,7 @@ Status DurableCatalogImpl::_removeEntry(OperationContext* opCtx, RecordId catalo
     opCtx->recoveryUnit()->registerChange(
         std::make_unique<RemoveIdentChange>(this, catalogId, it->second));
 
-    LOG(1) << "deleting metadata for " << it->second.nss << " @ " << catalogId;
+    LOGV2_DEBUG(1, "deleting metadata for {} @ {}", "it_second_nss"_attr = it->second.nss, "catalogId"_attr = catalogId);
     _rs->deleteRecord(opCtx, catalogId);
     _catalogIdToEntryMap.erase(it);
 
@@ -773,7 +772,7 @@ StatusWith<std::string> DurableCatalogImpl::newOrphanedIdent(OperationContext* o
     _catalogIdToEntryMap[res.getValue()] = Entry(res.getValue(), ident, ns);
     opCtx->recoveryUnit()->registerChange(std::make_unique<AddIdentChange>(this, res.getValue()));
 
-    LOG(1) << "stored meta data for orphaned collection " << ns << " @ " << res.getValue();
+    LOGV2_DEBUG(1, "stored meta data for orphaned collection {} @ {}", "ns"_attr = ns, "res_getValue"_attr = res.getValue());
     return {ns.ns()};
 }
 
@@ -860,8 +859,7 @@ Status DurableCatalogImpl::dropCollection(OperationContext* opCtx, RecordId cata
             StorageEngineInterface* engine = catalog->_engine;
             auto storageEngine = engine->getStorageEngine();
             if (storageEngine->supportsPendingDrops() && commitTimestamp) {
-                log() << "Deferring table drop for collection '" << entry.nss
-                      << "'. Ident: " << entry.ident << ", commit timestamp: " << commitTimestamp;
+                LOGV2("Deferring table drop for collection '{}'. Ident: {}, commit timestamp: {}", "entry_nss"_attr = entry.nss, "entry_ident"_attr = entry.ident, "commitTimestamp"_attr = commitTimestamp);
                 engine->addDropPendingIdent(*commitTimestamp, entry.nss, entry.ident);
             } else {
                 // Intentionally ignoring failure here. Since we've removed the metadata pointing to

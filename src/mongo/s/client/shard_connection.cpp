@@ -37,6 +37,7 @@
 
 #include "mongo/base/init.h"
 #include "mongo/db/lasterror.h"
+#include "mongo/logv2/log.h"
 #include "mongo/s/chunk_manager.h"
 #include "mongo/s/client/shard.h"
 #include "mongo/s/client/shard_connection_gen.h"
@@ -399,8 +400,7 @@ ShardConnection::~ShardConnection() {
             }
         } else {
             // see done() comments above for why we log this line
-            log() << "sharded connection to " << _conn->getServerAddress()
-                  << " not being returned to the pool";
+            LOGV2("sharded connection to {} not being returned to the pool", "_conn_getServerAddress"_attr = _conn->getServerAddress());
 
             kill();
         }

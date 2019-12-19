@@ -54,6 +54,7 @@
 #include "mongo/db/storage/durable_catalog.h"
 #include "mongo/db/ttl_collection_cache.h"
 #include "mongo/db/ttl_gen.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/background.h"
 #include "mongo/util/concurrency/idle_thread_block.h"
 #include "mongo/util/exit.h"
@@ -96,26 +97,26 @@ public:
                 sleepsecs(ttlMonitorSleepSecs.load());
             }
 
-            LOG(3) << "thread awake";
+            LOGV2_DEBUG(3, "thread awake");
 
             if (!ttlMonitorEnabled.load()) {
-                LOG(1) << "disabled";
+                LOGV2_DEBUG(1, "disabled");
                 continue;
             }
 
             if (lockedForWriting()) {
                 // Note: this is not perfect as you can go into fsync+lock between this and actually
                 // doing the delete later.
-                LOG(3) << "locked for writing";
+                LOGV2_DEBUG(3, "locked for writing");
                 continue;
             }
 
             try {
                 doTTLPass();
             } catch (const WriteConflictException&) {
-                LOG(1) << "got WriteConflictException";
+                LOGV2_DEBUG(1, "got WriteConflictException");
             } catch (const ExceptionForCat<ErrorCategory::Interruption>& interruption) {
-                LOG(1) << "TTLMonitor was interrupted: " << interruption;
+                LOGV2_DEBUG(1, "TTLMonitor was interrupted: {}", "interruption"_attr = interruption);
             }
         }
     }
@@ -213,11 +214,11 @@ private:
             return;
         }
 
-        LOG(1) << "ns: " << collectionNSS << " key: " << key << " name: " << name;
+        LOGV2_DEBUG(1, "ns: {} key: {} name: {}", "collectionNSS"_attr = collectionNSS, "key"_attr = key, "name"_attr = name);
 
         AutoGetCollection autoGetCollection(opCtx, collectionNSS, MODE_IX);
         if (MONGO_unlikely(hangTTLMonitorWithLock.shouldFail())) {
-            log() << "Hanging due to hangTTLMonitorWithLock fail point";
+            LOGV2("Hanging due to hangTTLMonitorWithLock fail point");
             hangTTLMonitorWithLock.pauseWhileSet(opCtx);
         }
 
@@ -234,8 +235,7 @@ private:
 
         const IndexDescriptor* desc = collection->getIndexCatalog()->findIndexByName(opCtx, name);
         if (!desc) {
-            LOG(1) << "index not found (index build in progress? index dropped?), skipping "
-                   << "ttl job for: " << idx;
+            LOGV2_DEBUG(1, "index not found (index build in progress? index dropped?), skipping ttl job for: {}", "idx"_attr = idx);
             return;
         }
 
@@ -302,7 +302,7 @@ private:
 
         const long long numDeleted = DeleteStage::getNumDeleted(*exec);
         ttlDeletedDocuments.increment(numDeleted);
-        LOG(1) << "deleted: " << numDeleted;
+        LOGV2_DEBUG(1, "deleted: {}", "numDeleted"_attr = numDeleted);
     }
 
     ServiceContext* _serviceContext;

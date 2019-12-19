@@ -45,6 +45,7 @@
 #include "mongo/db/repl/insert_group.h"
 #include "mongo/db/repl/transaction_oplog_application.h"
 #include "mongo/db/stats/timer_stats.h"
+#include "mongo/logv2/log.h"
 #include "mongo/platform/basic.h"
 #include "mongo/util/fail_point.h"
 #include "mongo/util/log.h"
@@ -120,7 +121,7 @@ Status finishAndLogApply(ClockSource* clockSource,
             s << redact(entryOrGroupedInserts.toBSON());
             s << ", took " << diffMS << "ms";
 
-            log() << s.str();
+            LOGV2("{}", "s_str"_attr = s.str());
         }
     }
     return finalStatus;
@@ -396,8 +397,8 @@ void OplogApplierImpl::_run(OplogBuffer* oplogBuffer) {
 
         // For pausing replication in tests.
         if (MONGO_unlikely(rsSyncApplyStop.shouldFail())) {
-            log() << "Oplog Applier - rsSyncApplyStop fail point enabled. Blocking until fail "
-                     "point is disabled.";
+            LOGV2("Oplog Applier - rsSyncApplyStop fail point enabled. Blocking until fail "
+                     "point is disabled.");
             rsSyncApplyStop.pauseWhileSet(&opCtx);
         }
 
@@ -570,7 +571,7 @@ StatusWith<OpTime> OplogApplierImpl::_applyOplogBatch(OperationContext* opCtx,
                                                       std::vector<OplogEntry> ops) {
     invariant(!ops.empty());
 
-    LOG(2) << "replication batch size is " << ops.size();
+    LOGV2_DEBUG(2, "replication batch size is {}", "ops_size"_attr = ops.size());
 
     // Stop all readers until we're done. This also prevents doc-locking engines from deleting old
     // entries from the oplog until we finish writing.
@@ -620,8 +621,8 @@ StatusWith<OpTime> OplogApplierImpl::_applyOplogBatch(OperationContext* opCtx,
         // Use this fail point to hold the PBWM lock after we have written the oplog entries but
         // before we have applied them.
         if (MONGO_unlikely(pauseBatchApplicationAfterWritingOplogEntries.shouldFail())) {
-            log() << "pauseBatchApplicationAfterWritingOplogEntries fail point enabled. Blocking "
-                     "until fail point is disabled.";
+            LOGV2("pauseBatchApplicationAfterWritingOplogEntries fail point enabled. Blocking "
+                     "until fail point is disabled.");
             pauseBatchApplicationAfterWritingOplogEntries.pauseWhileSet(opCtx);
         }
 
@@ -688,8 +689,8 @@ StatusWith<OpTime> OplogApplierImpl::_applyOplogBatch(OperationContext* opCtx,
 
     // Use this fail point to hold the PBWM lock and prevent the batch from completing.
     if (MONGO_unlikely(pauseBatchApplicationBeforeCompletion.shouldFail())) {
-        log() << "pauseBatchApplicationBeforeCompletion fail point enabled. Blocking until fail "
-                 "point is disabled.";
+        LOGV2("pauseBatchApplicationBeforeCompletion fail point enabled. Blocking until fail "
+                 "point is disabled.");
         while (MONGO_unlikely(pauseBatchApplicationBeforeCompletion.shouldFail())) {
             if (inShutdown()) {
                 severe() << "Turn off pauseBatchApplicationBeforeCompletion before attempting "
@@ -872,10 +873,9 @@ Status applyOplogEntryOrGroupedInserts(OperationContext* opCtx,
     auto applyStartTime = clockSource->now();
 
     if (MONGO_unlikely(hangAfterRecordingOpApplicationStartTime.shouldFail())) {
-        log() << "applyOplogEntryOrGroupedInserts - fail point "
+        LOGV2("applyOplogEntryOrGroupedInserts - fail point "
                  "hangAfterRecordingOpApplicationStartTime "
-                 "enabled. "
-              << "Blocking until fail point is disabled. ";
+                 "enabled. Blocking until fail point is disabled. ");
         hangAfterRecordingOpApplicationStartTime.pauseWhileSet();
     }
 

@@ -57,6 +57,7 @@
 
 #include "mongo/config.h"
 #include "mongo/db/server_options.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/background.h"
 #include "mongo/util/concurrency/value.h"
 #include "mongo/util/debug_util.h"
@@ -116,21 +117,21 @@ void setSockTimeouts(int sock, double secs) {
     int status =
         setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, reinterpret_cast<char*>(&timeout), sizeof(DWORD));
     if (report && (status == SOCKET_ERROR))
-        log() << "unable to set SO_RCVTIMEO: " << errnoWithDescription(WSAGetLastError());
+        LOGV2("unable to set SO_RCVTIMEO: {}", "errnoWithDescription_WSAGetLastError"_attr = errnoWithDescription(WSAGetLastError()));
     status =
         setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, reinterpret_cast<char*>(&timeout), sizeof(DWORD));
     if (kDebugBuild && report && (status == SOCKET_ERROR))
-        log() << "unable to set SO_SNDTIMEO: " << errnoWithDescription(WSAGetLastError());
+        LOGV2("unable to set SO_SNDTIMEO: {}", "errnoWithDescription_WSAGetLastError"_attr = errnoWithDescription(WSAGetLastError()));
 #else
     struct timeval tv;
     tv.tv_sec = (int)secs;
     tv.tv_usec = (int)((long long)(secs * 1000 * 1000) % (1000 * 1000));
     bool ok = setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (char*)&tv, sizeof(tv)) == 0;
     if (report && !ok)
-        log() << "unable to set SO_RCVTIMEO";
+        LOGV2("unable to set SO_RCVTIMEO");
     ok = setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, (char*)&tv, sizeof(tv)) == 0;
     if (kDebugBuild && report && !ok)
-        log() << "unable to set SO_SNDTIMEO";
+        LOGV2("unable to set SO_SNDTIMEO");
 #endif
 }
 
@@ -537,18 +538,17 @@ void Socket::handleSendError(int ret, const char* context) {
     const int mongo_errno = errno;
     if ((mongo_errno == EAGAIN || mongo_errno == EWOULDBLOCK) && _timeout != 0) {
 #endif
-        LOG(_logLevel) << "Socket " << context << " send() timed out " << remoteString();
+        LOGV2_DEBUG(::mongo::logger::LogSeverity(_logLevel).toInt(), "Socket {} send() timed out {}", "context"_attr = context, "remoteString"_attr = remoteString());
         throwSocketError(SocketErrorKind::SEND_TIMEOUT, remoteString());
     } else if (mongo_errno != EINTR) {
-        LOG(_logLevel) << "Socket " << context << " send() " << errnoWithDescription(mongo_errno)
-                       << ' ' << remoteString();
+        LOGV2_DEBUG(::mongo::logger::LogSeverity(_logLevel).toInt(), "Socket {} send() {} {}", "context"_attr = context, "errnoWithDescription_mongo_errno"_attr = errnoWithDescription(mongo_errno), "remoteString"_attr = remoteString());
         throwSocketError(SocketErrorKind::SEND_ERROR, remoteString());
     }
 }  // namespace mongo
 
 void Socket::handleRecvError(int ret, int len) {
     if (ret == 0) {
-        LOG(3) << "Socket recv() conn closed? " << remoteString();
+        LOGV2_DEBUG(3, "Socket recv() conn closed? {}", "remoteString"_attr = remoteString());
         throwSocketError(SocketErrorKind::CLOSED, remoteString());
     }
 
@@ -571,11 +571,11 @@ void Socket::handleRecvError(int ret, int len) {
     if (e == EAGAIN && _timeout > 0) {
 #endif
         // this is a timeout
-        LOG(_logLevel) << "Socket recv() timeout  " << remoteString();
+        LOGV2_DEBUG(::mongo::logger::LogSeverity(_logLevel).toInt(), "Socket recv() timeout  {}", "remoteString"_attr = remoteString());
         throwSocketError(SocketErrorKind::RECV_TIMEOUT, remoteString());
     }
 
-    LOG(_logLevel) << "Socket recv() " << errnoWithDescription(e) << " " << remoteString();
+    LOGV2_DEBUG(::mongo::logger::LogSeverity(_logLevel).toInt(), "Socket recv() {} {}", "errnoWithDescription_e"_attr = errnoWithDescription(e), "remoteString"_attr = remoteString());
     throwSocketError(SocketErrorKind::RECV_ERROR, remoteString());
 }
 
@@ -628,8 +628,7 @@ bool Socket::isStillConnected() {
     // Poll( info[], size, timeout ) - timeout == 0 => nonblocking
     int nEvents = socketPoll(&pollInfo, 1, 0);
 
-    LOG(2) << "polling for status of connection to " << remoteString() << ", "
-           << (nEvents == 0 ? "no events" : nEvents == -1 ? "error detected" : "event detected");
+    LOGV2_DEBUG(2, "polling for status of connection to {}, {}", "remoteString"_attr = remoteString(), "nEvents_0_no_events_nEvents_1_error_detected_event_detected"_attr = (nEvents == 0 ? "no events" : nEvents == -1 ? "error detected" : "event detected"));
 
     if (nEvents == 0) {
         // No events incoming, return still connected AFAWK
@@ -680,20 +679,14 @@ bool Socket::isStillConnected() {
             dassert(false);
         } else {
             // recvd == 0, socket closed remotely, just return false
-            LOG(0) << "Socket closed remotely, no longer connected"
-                   << " (idle " << idleTimeSecs << " secs,"
-                   << " remote host " << remoteString() << ")";
+            LOGV2("Socket closed remotely, no longer connected (idle {} secs, remote host {})", "idleTimeSecs"_attr = idleTimeSecs, "remoteString"_attr = remoteString());
         }
     } else if (pollInfo.revents & POLLHUP) {
         // A hangup has occurred on this socket
-        LOG(0) << "Socket hangup detected, no longer connected"
-               << " (idle " << idleTimeSecs << " secs,"
-               << " remote host " << remoteString() << ")";
+        LOGV2("Socket hangup detected, no longer connected (idle {} secs, remote host {})", "idleTimeSecs"_attr = idleTimeSecs, "remoteString"_attr = remoteString());
     } else if (pollInfo.revents & POLLERR) {
         // An error has occurred on this socket
-        LOG(0) << "Socket error detected, no longer connected"
-               << " (idle " << idleTimeSecs << " secs,"
-               << " remote host " << remoteString() << ")";
+        LOGV2("Socket error detected, no longer connected (idle {} secs, remote host {})", "idleTimeSecs"_attr = idleTimeSecs, "remoteString"_attr = remoteString());
     } else if (pollInfo.revents & POLLNVAL) {
         // Socket descriptor itself is weird
         // Log and warn at runtime, log and abort at devtime

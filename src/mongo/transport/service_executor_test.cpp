@@ -27,13 +27,14 @@
  *    it in the license file.
  */
 
-#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::logger::LogComponent::kDefault;
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::logger::LogComponent::kDefault
 
 #include "mongo/platform/basic.h"
 
 #include "boost/optional.hpp"
 
 #include "mongo/db/service_context.h"
+#include "mongo/logv2/log.h"
 #include "mongo/transport/service_executor_adaptive.h"
 #include "mongo/transport/service_executor_synchronous.h"
 #include "mongo/transport/service_executor_task_names.h"
@@ -114,7 +115,7 @@ public:
     void drain() override final {
         _ioContext.restart();
         while (_ioContext.poll()) {
-            LOG(1) << "Draining remaining work in reactor.";
+            LOGV2_DEBUG(1, "Draining remaining work in reactor.");
         }
         _ioContext.stop();
     }

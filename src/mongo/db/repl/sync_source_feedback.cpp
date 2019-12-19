@@ -39,6 +39,7 @@
 #include "mongo/db/repl/replication_coordinator.h"
 #include "mongo/db/repl/reporter.h"
 #include "mongo/executor/task_executor.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/concurrency/idle_thread_block.h"
 #include "mongo/util/log.h"
 #include "mongo/util/net/hostandport.h"
@@ -124,7 +125,7 @@ Status SyncSourceFeedback::_updateUpstream(Reporter* reporter) {
     auto status = reporter->join();
 
     if (!status.isOK()) {
-        log() << "SyncSourceFeedback error sending update to " << syncTarget << ": " << status;
+        LOGV2("SyncSourceFeedback error sending update to {}: {}", "syncTarget"_attr = syncTarget, "status"_attr = status);
     }
 
     // Sync source blacklisting will be done in BackgroundSync and SyncSourceResolver.
@@ -202,15 +203,14 @@ void SyncSourceFeedback::run(executor::TaskExecutor* executor,
         }
 
         if (syncTarget != target) {
-            LOG(1) << "setting syncSourceFeedback to " << target;
+            LOGV2_DEBUG(1, "setting syncSourceFeedback to {}", "target"_attr = target);
             syncTarget = target;
 
             // Update keepalive value from config.
             auto oldKeepAliveInterval = keepAliveInterval;
             keepAliveInterval = calculateKeepAliveInterval(replCoord->getConfig());
             if (oldKeepAliveInterval != keepAliveInterval) {
-                LOG(1) << "new syncSourceFeedback keep alive duration = " << keepAliveInterval
-                       << " (previously " << oldKeepAliveInterval << ")";
+                LOGV2_DEBUG(1, "new syncSourceFeedback keep alive duration = {} (previously {})", "keepAliveInterval"_attr = keepAliveInterval, "oldKeepAliveInterval"_attr = oldKeepAliveInterval);
             }
         }
 
@@ -233,9 +233,8 @@ void SyncSourceFeedback::run(executor::TaskExecutor* executor,
 
         auto status = _updateUpstream(&reporter);
         if (!status.isOK()) {
-            LOG(1) << "The replication progress command (replSetUpdatePosition) failed and will be "
-                      "retried: "
-                   << status;
+            LOGV2_DEBUG(1, "The replication progress command (replSetUpdatePosition) failed and will be "
+                      "retried: {}", "status"_attr = status);
         }
     }
 }

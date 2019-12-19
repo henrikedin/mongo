@@ -57,6 +57,7 @@
 #include "mongo/db/service_context.h"
 #include "mongo/db/stats/counters.h"
 #include "mongo/db/stats/top.h"
+#include "mongo/logv2/log.h"
 #include "mongo/s/chunk_version.h"
 #include "mongo/util/fail_point.h"
 #include "mongo/util/log.h"
@@ -413,8 +414,8 @@ public:
                           ClientCursorParams::LockPolicy::kLockExternally);
 
                 if (MONGO_unlikely(GetMoreHangBeforeReadLock.shouldFail())) {
-                    log() << "GetMoreHangBeforeReadLock fail point enabled. Blocking until fail "
-                             "point is disabled.";
+                    LOGV2("GetMoreHangBeforeReadLock fail point enabled. Blocking until fail "
+                             "point is disabled.");
                     GetMoreHangBeforeReadLock.pauseWhileSet(opCtx);
                 }
 

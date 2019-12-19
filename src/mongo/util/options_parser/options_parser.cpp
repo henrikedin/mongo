@@ -56,6 +56,7 @@
 #include "mongo/crypto/sha256_block.h"
 #include "mongo/db/jsobj.h"
 #include "mongo/db/json.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/hex.h"
 #include "mongo/util/log.h"
@@ -594,9 +595,9 @@ StatusWith<YAML::Node> runYAMLExpansion(const YAML::Node& node,
         prefix += '.';
     }
 
-    log() << "Processing " << expansion.getExpansionName() << " config expansion for: " << nodeName;
+    LOGV2("Processing {} config expansion for: {}", "expansion_getExpansionName"_attr = expansion.getExpansionName(), "nodeName"_attr = nodeName);
     const auto action = expansion.getAction();
-    LOG(2) << prefix << expansion.getExpansionName() << ": " << action;
+    LOGV2_DEBUG(2, "{}{}: {}", "prefix"_attr = prefix, "expansion_getExpansionName"_attr = expansion.getExpansionName(), "action"_attr = action);
 
     if (expansion.isRestExpansion()) {
         return expansion.process(runYAMLRestExpansion(action, configExpand.timeout));

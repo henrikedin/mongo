@@ -41,6 +41,7 @@
 #include "mongo/logger/message_event_utf8_encoder.h"
 #include "mongo/logger/ramlog.h"
 #include "mongo/logger/rotatable_file_manager.h"
+#include "mongo/logv2/log.h"
 #include "mongo/logv2/log_domain.h"
 #include "mongo/logv2/log_domain_global.h"
 #include "mongo/logv2/log_manager.h"
@@ -84,12 +85,12 @@ Status logger::registerExtraLogContextFn(logger::ExtraLogContextFn contextFn) {
 
 bool rotateLogs(bool renameFiles, bool useLogV2) {
     if (useLogV2) {
-        log() << "Logv2 rotation initiated";
+        LOGV2("Logv2 rotation initiated");
         return logv2::LogManager::global().getGlobalDomainInternal().rotate().isOK();
     }
     using logger::RotatableFileManager;
     RotatableFileManager* manager = logger::globalRotatableFileManager();
-    log() << "Log rotation initiated";
+    LOGV2("Log rotation initiated");
     RotatableFileManager::FileNameStatusPairVector result(
         manager->rotateAll(renameFiles, "." + terseCurrentTime(false)));
     for (RotatableFileManager::FileNameStatusPairVector::iterator it = result.begin();
@@ -102,7 +103,7 @@ bool rotateLogs(bool renameFiles, bool useLogV2) {
 
 void logContext(const char* errmsg) {
     if (errmsg) {
-        log() << errmsg << std::endl;
+        LOGV2("{}", "errmsg"_attr = errmsg);
     }
     // NOTE: We disable long-line truncation for the stack trace, because the JSON representation of
     // the stack trace can sometimes exceed the long line limit.

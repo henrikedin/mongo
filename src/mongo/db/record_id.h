@@ -36,6 +36,7 @@
 #include <ostream>
 
 #include "mongo/bson/util/builder.h"
+#include "mongo/bson/bsonobjbuilder.h"
 #include "mongo/logger/logstream_builder.h"
 #include "mongo/util/bufreader.h"
 
@@ -156,6 +157,14 @@ public:
     RecordId getOwned() const {
         return *this;
     }
+
+	std::string toString() const {
+        return fmt::format("RecordId({})", repr());
+	}
+
+	void serialize(BSONObjBuilder* builder) const {
+        builder->append("RecordId"_sd, repr());
+	}
 
 private:
     int64_t _repr;

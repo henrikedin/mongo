@@ -187,6 +187,7 @@
 #include "mongo/watchdog/watchdog_mongod.h"
 
 #ifdef MONGO_CONFIG_SSL
+#include "mongo/logv2/log.h"
 #include "mongo/util/net/ssl_options.h"
 #endif
 
@@ -307,7 +308,7 @@ ExitCode _initAndListen(int listenPort) {
     }
 
     if (kDebugBuild)
-        log(LogComponent::kControl) << "DEBUG build (which is slower)" << endl;
+        LOGV2_DEBUG(::mongo::logger::LogSeverity(LogComponent::kControl).toInt(), "DEBUG build (which is slower)");
 
 #if defined(_WIN32)
     VersionInfoInterface::instance().logTargetMinOS();
@@ -367,17 +368,14 @@ ExitCode _initAndListen(int listenPort) {
     // Disallow running a storage engine that doesn't support capped collections with --profile
     if (!serviceContext->getStorageEngine()->supportsCappedCollections() &&
         serverGlobalParams.defaultProfile != 0) {
-        log() << "Running " << storageGlobalParams.engine << " with profiling is not supported. "
-              << "Make sure you are not using --profile.";
+        LOGV2("Running {} with profiling is not supported. Make sure you are not using --profile.", "storageGlobalParams_engine"_attr = storageGlobalParams.engine);
         exitCleanly(EXIT_BADOPTIONS);
     }
 
     // Disallow running WiredTiger with --nojournal in a replica set
     if (storageGlobalParams.engine == "wiredTiger" && !storageGlobalParams.dur &&
         replSettings.usingReplSets()) {
-        log() << "Running wiredTiger without journaling in a replica set is not "
-              << "supported. Make sure you are not using --nojournal and that "
-              << "storage.journal.enabled is not set to 'false'.";
+        LOGV2("Running wiredTiger without journaling in a replica set is not supported. Make sure you are not using --nojournal and that storage.journal.enabled is not set to 'false'.");
         exitCleanly(EXIT_BADOPTIONS);
     }
 
@@ -442,11 +440,11 @@ ExitCode _initAndListen(int listenPort) {
     }
 
     if (gFlowControlEnabled.load()) {
-        log() << "Flow Control is enabled on this deployment.";
+        LOGV2("Flow Control is enabled on this deployment.");
     }
 
     if (storageGlobalParams.upgrade) {
-        log() << "finished checking dbs";
+        LOGV2("finished checking dbs");
         exitCleanly(EXIT_CLEAN);
     }
 
@@ -462,7 +460,7 @@ ExitCode _initAndListen(int listenPort) {
     if (globalAuthzManager->shouldValidateAuthSchemaOnStartup()) {
         Status status = verifySystemIndexes(startupOpCtx.get());
         if (!status.isOK()) {
-            log() << redact(status);
+            LOGV2("{}", "redact_status"_attr = redact(status));
             if (status == ErrorCodes::AuthSchemaIncompatible) {
                 exitCleanly(EXIT_NEED_UPGRADE);
             } else if (status == ErrorCodes::NotMaster) {
@@ -478,22 +476,15 @@ ExitCode _initAndListen(int listenPort) {
         status =
             globalAuthzManager->getAuthorizationVersion(startupOpCtx.get(), &foundSchemaVersion);
         if (!status.isOK()) {
-            log() << "Auth schema version is incompatible: "
-                  << "User and role management commands require auth data to have "
-                  << "at least schema version " << AuthorizationManager::schemaVersion26Final
-                  << " but startup could not verify schema version: " << status;
-            log() << "To manually repair the 'authSchema' document in the admin.system.version "
+            LOGV2("Auth schema version is incompatible: User and role management commands require auth data to have at least schema version {} but startup could not verify schema version: {}", "AuthorizationManager_schemaVersion26Final"_attr = AuthorizationManager::schemaVersion26Final, "status"_attr = status);
+            LOGV2("To manually repair the 'authSchema' document in the admin.system.version "
                      "collection, start up with --setParameter "
-                     "startupAuthSchemaValidation=false to disable validation.";
+                     "startupAuthSchemaValidation=false to disable validation.");
             exitCleanly(EXIT_NEED_UPGRADE);
         }
 
         if (foundSchemaVersion <= AuthorizationManager::schemaVersion26Final) {
-            log() << "This server is using MONGODB-CR, an authentication mechanism which "
-                  << "has been removed from MongoDB 4.0. In order to upgrade the auth schema, "
-                  << "first downgrade MongoDB binaries to version 3.6 and then run the "
-                  << "authSchemaUpgrade command. "
-                  << "See http://dochub.mongodb.org/core/3.0-upgrade-to-scram-sha-1";
+            LOGV2("This server is using MONGODB-CR, an authentication mechanism which has been removed from MongoDB 4.0. In order to upgrade the auth schema, first downgrade MongoDB binaries to version 3.6 and then run the authSchemaUpgrade command. See http://dochub.mongodb.org/core/3.0-upgrade-to-scram-sha-1");
             exitCleanly(EXIT_NEED_UPGRADE);
         }
     } else if (globalAuthzManager->isAuthEnabled()) {
@@ -502,13 +493,11 @@ ExitCode _initAndListen(int listenPort) {
     } else {
         // If authSchemaValidation is disabled and server is running without auth,
         // warn the user and continue startup without authSchema metadata checks.
-        log() << startupWarningsLog;
-        log() << "** WARNING: Startup auth schema validation checks are disabled for the "
-                 "database."
-              << startupWarningsLog;
-        log() << "**          This mode should only be used to manually repair corrupted auth "
-                 "data."
-              << startupWarningsLog;
+        LOGV2_OPTIONS({logv2::LogTag::kStartupWarnings}, "");
+        LOGV2_OPTIONS({logv2::LogTag::kStartupWarnings}, "** WARNING: Startup auth schema validation checks are disabled for the "
+                 "database.");
+        LOGV2_OPTIONS({logv2::LogTag::kStartupWarnings}, "**          This mode should only be used to manually repair corrupted auth "
+                 "data.");
     }
 
     WaitForMajorityService::get(serviceContext).setUp(serviceContext);
@@ -519,8 +508,7 @@ ExitCode _initAndListen(int listenPort) {
     if (shardingInitialized) {
         auto status = waitForShardRegistryReload(startupOpCtx.get());
         if (!status.isOK()) {
-            LOG(0) << "Failed to load the shard registry as part of startup"
-                   << causedBy(redact(status));
+            LOGV2("Failed to load the shard registry as part of startup{}", "causedBy_redact_status"_attr = causedBy(redact(status)));
         }
     }
 
@@ -578,23 +566,18 @@ ExitCode _initAndListen(int listenPort) {
 
         replCoord->startup(startupOpCtx.get());
         if (getReplSetMemberInStandaloneMode(serviceContext)) {
-            log() << startupWarningsLog;
-            log() << "** WARNING: mongod started without --replSet yet document(s) are present in "
-                  << NamespaceString::kSystemReplSetNamespace << "." << startupWarningsLog;
-            log() << "**          Database contents may appear inconsistent with the oplog and may "
-                     "appear to not contain"
-                  << startupWarningsLog;
-            log() << "**          writes that were visible when this node was running as part of a "
-                     "replica set."
-                  << startupWarningsLog;
-            log() << "**          Restart with --replSet unless you are doing maintenance and no "
-                     "other clients are connected."
-                  << startupWarningsLog;
-            log() << "**          The TTL collection monitor will not start because of this."
-                  << startupWarningsLog;
-            log() << "**         ";
-            log() << " For more info see http://dochub.mongodb.org/core/ttlcollections";
-            log() << startupWarningsLog;
+            LOGV2_OPTIONS({logv2::LogTag::kStartupWarnings}, "");
+            LOGV2_OPTIONS({logv2::LogTag::kStartupWarnings}, "** WARNING: mongod started without --replSet yet document(s) are present in {}.", "NamespaceString_kSystemReplSetNamespace"_attr = NamespaceString::kSystemReplSetNamespace);
+            LOGV2_OPTIONS({logv2::LogTag::kStartupWarnings}, "**          Database contents may appear inconsistent with the oplog and may "
+                     "appear to not contain");
+            LOGV2_OPTIONS({logv2::LogTag::kStartupWarnings}, "**          writes that were visible when this node was running as part of a "
+                     "replica set.");
+            LOGV2_OPTIONS({logv2::LogTag::kStartupWarnings}, "**          Restart with --replSet unless you are doing maintenance and no "
+                     "other clients are connected.");
+            LOGV2_OPTIONS({logv2::LogTag::kStartupWarnings}, "**          The TTL collection monitor will not start because of this.");
+            LOGV2("**         ");
+            LOGV2(" For more info see http://dochub.mongodb.org/core/ttlcollections");
+            LOGV2_OPTIONS({logv2::LogTag::kStartupWarnings}, "");
         } else {
             startTTLBackgroundJob(serviceContext);
         }
@@ -669,12 +652,12 @@ ExitCode _initAndListen(int listenPort) {
 #else
     if (ntservice::shouldStartService()) {
         ntservice::reportStatus(SERVICE_RUNNING);
-        log() << "Service running";
+        LOGV2("Service running");
     }
 #endif
 
     if (MONGO_unlikely(shutdownAtStartup.shouldFail())) {
-        log() << "starting clean exit via failpoint";
+        LOGV2("starting clean exit via failpoint");
         exitCleanly(EXIT_CLEAN);
     }
 
@@ -686,16 +669,16 @@ ExitCode initAndListen(int listenPort) {
     try {
         return _initAndListen(listenPort);
     } catch (DBException& e) {
-        log() << "exception in initAndListen: " << e.toString() << ", terminating";
+        LOGV2("exception in initAndListen: {}, terminating", "e_toString"_attr = e.toString());
         return EXIT_UNCAUGHT;
     } catch (std::exception& e) {
-        log() << "exception in initAndListen std::exception: " << e.what() << ", terminating";
+        LOGV2("exception in initAndListen std::exception: {}, terminating", "e_what"_attr = e.what());
         return EXIT_UNCAUGHT;
     } catch (int& n) {
-        log() << "exception in initAndListen int: " << n << ", terminating";
+        LOGV2("exception in initAndListen int: {}, terminating", "n"_attr = n);
         return EXIT_UNCAUGHT;
     } catch (...) {
-        log() << "exception in initAndListen, terminating";
+        LOGV2("exception in initAndListen, terminating");
         return EXIT_UNCAUGHT;
     }
 }
@@ -911,8 +894,7 @@ void shutdownTask(const ShutdownTaskArgs& shutdownArgs) {
             } catch (const ExceptionFor<ErrorCodes::NotMaster>&) {
                 // ignore not master errors
             } catch (const DBException& e) {
-                log() << "Failed to stepDown in non-command initiated shutdown path "
-                      << e.toString();
+                LOGV2("Failed to stepDown in non-command initiated shutdown path {}", "e_toString"_attr = e.toString());
             }
         }
     }
@@ -932,7 +914,7 @@ void shutdownTask(const ShutdownTaskArgs& shutdownArgs) {
 
     // Shutdown the TransportLayer so that new connections aren't accepted
     if (auto tl = serviceContext->getTransportLayer()) {
-        log(LogComponent::kNetwork) << "shutdown: going to close listening sockets...";
+        LOGV2_DEBUG(::mongo::logger::LogSeverity(LogComponent::kNetwork).toInt(), "shutdown: going to close listening sockets...");
         tl->shutdown();
     }
 
@@ -1009,8 +991,7 @@ void shutdownTask(const ShutdownTaskArgs& shutdownArgs) {
     // Shutdown the Service Entry Point and its sessions and give it a grace period to complete.
     if (auto sep = serviceContext->getServiceEntryPoint()) {
         if (!sep->shutdown(Seconds(10))) {
-            log(LogComponent::kNetwork)
-                << "Service entry point failed to shutdown within timelimit.";
+            LOGV2_DEBUG(::mongo::logger::LogSeverity(LogComponent::kNetwork).toInt(), "Service entry point failed to shutdown within timelimit.");
         }
     }
 
@@ -1018,8 +999,7 @@ void shutdownTask(const ShutdownTaskArgs& shutdownArgs) {
     if (auto svcExec = serviceContext->getServiceExecutor()) {
         Status status = svcExec->shutdown(Seconds(10));
         if (!status.isOK()) {
-            log(LogComponent::kNetwork)
-                << "Service executor failed to shutdown within timelimit: " << status.reason();
+            LOGV2_DEBUG(::mongo::logger::LogSeverity(LogComponent::kNetwork).toInt(), "Service executor failed to shutdown within timelimit: {}", "status_reason"_attr = status.reason());
         }
     }
 #endif
@@ -1048,7 +1028,7 @@ void shutdownTask(const ShutdownTaskArgs& shutdownArgs) {
     // the memory and makes leak sanitizer happy.
     ScriptEngine::dropScopeCache();
 
-    log(LogComponent::kControl) << "now exiting";
+    LOGV2_DEBUG(::mongo::logger::LogSeverity(LogComponent::kControl).toInt(), "now exiting");
 
     audit::logShutdown(client);
 
