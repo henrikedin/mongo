@@ -737,6 +737,20 @@ int _main(int argc, char* argv[], char** envp) {
     logv2::LogDomainGlobal::ConfigurationOptions lv2Config;
     lv2Config.makeDisabled();
     uassertStatusOK(lv2Manager.getGlobalDomainInternal().configure(lv2Config));
+    {
+		auto consoleSink = boost::make_shared<boost::log::sinks::synchronous_sink<ShellBackend>>();
+        consoleSink->set_filter(logv2::ComponentSettingsFilter(lv2Manager.getGlobalDomain(),
+                                                               lv2Manager.getGlobalSettings()));
+        consoleSink->set_formatter(
+            ShellFormatter(shellGlobalParams.logFormat == logv2::LogFormat::kJson));
+
+        consoleSink->locked_backend()->add_stream(
+            boost::shared_ptr<std::ostream>(&logv2::Console::out(), boost::null_deleter()));
+
+        consoleSink->locked_backend()->auto_flush();
+
+        boost::log::core::get()->add_sink(std::move(consoleSink));
+	}
 
     mongo::shell_utils::RecordMyLocation(argv[0]);
 
@@ -777,7 +791,7 @@ int _main(int argc, char* argv[], char** envp) {
             ->attachAppender(std::make_unique<logger::LogV2Appender<logger::MessageEventEphemeral>>(
                 &lv2Manager.getGlobalDomain(), logv2::LogTag::kPlainShell));
 
-        auto consoleSink = boost::make_shared<boost::log::sinks::synchronous_sink<ShellBackend>>();
+        /*auto consoleSink = boost::make_shared<boost::log::sinks::synchronous_sink<ShellBackend>>();
         consoleSink->set_filter(logv2::ComponentSettingsFilter(lv2Manager.getGlobalDomain(),
                                                                lv2Manager.getGlobalSettings()));
         consoleSink->set_formatter(
@@ -788,7 +802,7 @@ int _main(int argc, char* argv[], char** envp) {
 
         consoleSink->locked_backend()->auto_flush();
 
-        boost::log::core::get()->add_sink(std::move(consoleSink));
+        boost::log::core::get()->add_sink(std::move(consoleSink));*/
     }
 
 
