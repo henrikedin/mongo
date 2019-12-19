@@ -1,0 +1,104 @@
+From 2150f41bd96b6a1262a4aa7d97e9c8cd854ce44f Mon Sep 17 00:00:00 2001
+From: Gabriel Russell <gabriel.russell@mongodb.com>
+Date: Tue, 10 Dec 2019 22:20:43 +0000
+Subject: [PATCH 2/4] logv1tologv2 work
+
+---
+ logging_cpp_files.txt | 4 ++--
+ logv1tologv2          | 9 +++++++--
+ run.sh                | 8 ++++++--
+ scons.sh              | 8 ++++++++
+ 4 files changed, 23 insertions(+), 6 deletions(-)
+ create mode 100755 scons.sh
+
+diff --git a/logging_cpp_files.txt b/logging_cpp_files.txt
+index c67d4089ef..d7054fdd08 100644
+--- a/logging_cpp_files.txt
++++ b/logging_cpp_files.txt
+@@ -70,7 +70,7 @@ src/mongo/db/commands/kill_op.cpp
+ src/mongo/db/commands/mr.cpp
+ src/mongo/db/commands/oplog_note.cpp
+ #src/mongo/db/commands/parameters.cpp
+-src/mongo/db/commands/plan_cache_commands.cpp
++#src/mongo/db/commands/plan_cache_commands.cpp
+ src/mongo/db/commands/resize_oplog.cpp
+ src/mongo/db/commands/restart_catalog_command.cpp
+ src/mongo/db/commands/server_status.cpp
+@@ -235,7 +235,7 @@ src/mongo/db/s/config/configsvr_add_shard_command.cpp
+ src/mongo/db/s/config/configsvr_move_primary_command.cpp
+ src/mongo/db/s/config/configsvr_refine_collection_shard_key_command.cpp
+ src/mongo/db/s/config/configsvr_remove_shard_command.cpp
+-#src/mongo/db/s/config/sharding_catalog_manager_collection_operations.cpp
++src/mongo/db/s/config/sharding_catalog_manager_collection_operations.cpp
+ src/mongo/db/s/config/sharding_catalog_manager_database_operations.cpp
+ src/mongo/db/s/config/sharding_catalog_manager_shard_operations.cpp
+ src/mongo/db/s/database_sharding_state.cpp
+diff --git a/logv1tologv2 b/logv1tologv2
+index da922af53f..2f67f6d85a 100755
+--- a/logv1tologv2
++++ b/logv1tologv2
+@@ -4,6 +4,7 @@ sub convert {
+     my $ramlogs = { 'startupWarningsLog' => 'kStartupWarnings', 'rsLog' => 'kRSLog', 'warnings' => 'kWarnings'};
+     my $expression = shift(@_);
+     my $severity = shift(@_);
++    return "$expression;" if ($expression =~ /str::stream\(\)/);
+     my @parts = split(m/\s*\<\<\s*/s,$1 );
+     shift @parts;
+     #print "$fn -> $2 -> $1 -> @parts\n";
+@@ -27,8 +28,11 @@ sub convert {
+     foreach my $part (@parts) {
+         if ($part =~ /\bboolalpha$/) {
+             next;
++        } elsif ($part =~ /\bstd::dec$/) {
++            #TODO, do we need to actually effect the formatting based on this formatting specifier?
++            next;
+         } elsif ($part =~ /\bendl$/) {
+-            $message .= "\\n"; 
++            $message .= "\\n";
+         } elsif ($part =~ /^\s*'(.)'\s*$/s) {
+             $message .= $1;
+         } elsif ($part =~ /^\s*"(.*)"\s*$/s) {
+@@ -85,9 +89,10 @@ sub insert_include {
+ 
+ foreach my $fn (@ARGV) {
+     next if $fn =~ /^#/; # skip commented out file names
++    warn $fn;
+     open($f, "<", $fn);
+     my $data = join('',<$f>);
+-    $data =~ s[(\blog\(([^\)]*)\)\s\s*<<[^;]*);$][convert($1,$2)]smige;
++    $data =~ s[(\blog\(([^\)]*)\)\s+<<[^;]*);$][convert($1,$2)]smige;
+     $data =~ s[(#include "mongo.*#include "mongo[^\n]*$)][insert_include($1)]sem;
+     open($f, ">", $fn);
+     $f->print($data);
+diff --git a/run.sh b/run.sh
+index 2bd89ce606..77a3f659e2 100755
+--- a/run.sh
++++ b/run.sh
+@@ -1,4 +1,8 @@
+ #!/bin/sh
+-git add ./logv1tologv2
+-git cifa
++set -e
++git add logv1tologv2 run.sh scons.sh logging_cpp_files.txt
++git checkout-index -f -a
+ xargs < logging_cpp_files.txt ./logv1tologv2 
++./scons.sh 2> scons.out.txt
++perl -n -e 'm/\[with T = (.*?);/ and print "$1\n"' scons.out.txt  | sort -n | uniq -c | sort -n > report.txt
++cat report.txt
+diff --git a/scons.sh b/scons.sh
+new file mode 100755
+index 0000000000..9ff63873ab
+--- /dev/null
++++ b/scons.sh
+@@ -0,0 +1,8 @@
++#!/bin/sh
++/opt/mongodbtoolchain/v3/bin/python3 ./buildscripts/scons.py  \
++    --ssl \
++    -j16 \
++    --variables-files=etc/scons/mongodbtoolchain_v3_gcc.vars \
++    CPPDEFINES=MONGO_CONFIG_LOGV2_DEFAULT \
++    -k \
++    mongod
+-- 
+2.17.2
+

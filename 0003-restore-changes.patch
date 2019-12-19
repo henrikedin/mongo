@@ -1,0 +1,39 @@
+From 88a6dc12e52a869daa0f7c0706cd7c18488c3055 Mon Sep 17 00:00:00 2001
+From: Gabriel Russell <gabriel.russell@mongodb.com>
+Date: Thu, 19 Dec 2019 14:54:38 +0000
+Subject: [PATCH 3/4] restore changes
+
+---
+ src/mongo/logv2/log_tag.h         | 2 +-
+ src/mongo/shell/shell_options.cpp | 2 +-
+ 2 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/src/mongo/logv2/log_tag.h b/src/mongo/logv2/log_tag.h
+index 238e252e80..f0112d5f8f 100644
+--- a/src/mongo/logv2/log_tag.h
++++ b/src/mongo/logv2/log_tag.h
+@@ -42,7 +42,7 @@ public:
+         kNone = 0,
+ 
+         // replica set ramlog
+-        kRSLog = 1 << 0,
++        kRS = 1 << 0,
+ 
+         // startupWarnings ramlog
+         kStartupWarnings = 1 << 1,
+diff --git a/src/mongo/shell/shell_options.cpp b/src/mongo/shell/shell_options.cpp
+index 030834c782..f956caa164 100644
+--- a/src/mongo/shell/shell_options.cpp
++++ b/src/mongo/shell/shell_options.cpp
+@@ -27,7 +27,7 @@
+  *    it in the license file.
+  */
+ 
+-#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::logger::LogComponent::kDefault
++#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::logger::LogComponent::kDefault;
+ 
+ #include "mongo/platform/basic.h"
+ 
+-- 
+2.17.2
+
