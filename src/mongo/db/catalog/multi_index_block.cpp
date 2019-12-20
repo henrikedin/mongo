@@ -243,7 +243,7 @@ StatusWith<std::vector<BSONObj>> MultiIndexBlock::init(OperationContext* opCtx,
             BSONObj info = indexSpecs[i];
             if (enableHybrid) {
                 if (info["background"].isBoolean() && !info["background"].Bool()) {
-                    LOGV2("ignoring obselete { background: false } index build option because all "
+                    LOGV2("ignoring obselete {{ background: false }} index build option because all "
                            "indexes are built in the background with the hybrid method");
                 }
                 continue;
