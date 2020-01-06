@@ -98,6 +98,8 @@ foreach my $fn (@ARGV) {
     my $data = join('',<$f>);
     $data =~ s[(\blog\(([^\)]*)\)\s+<<[^;]*);$][convert($1,$2,'')]smige;
     $data =~ s[(\bwarning\(([^\)]*)\)\s+<<[^;]*);$][convert($1,$2,'WARNING')]smige;
+    $data =~ s[(\berror\(([^\)]*)\)\s+<<[^;]*);$][convert($1,$2,'ERROR')]smige;
+    $data =~ s[(\bsevere\(([^\)]*)\)\s+<<[^;]*);$][convert($1,$2,'FATAL')]smige;
     #$data =~ s[(#include "mongo.*#include "mongo[^\n]*$)][insert_include($1)]sem;
     open($f, ">", $fn);
     $f->print($data);
