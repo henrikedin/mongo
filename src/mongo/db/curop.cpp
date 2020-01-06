@@ -464,7 +464,10 @@ bool CurOp::completeAndLogOperation(OperationContext* opCtx,
         _debug.prepareConflictDurationMillis =
             duration_cast<Milliseconds>(prepareConflictDurationMicros);
 
-        LOGV2_DEBUG(::mongo::logger::LogSeverity(component).toInt(), "{}", "_debug_report_opCtx_lockerInfo_lockerInfo_stats_nullptr"_attr = _debug.report(opCtx, (lockerInfo ? &lockerInfo->stats : nullptr)));
+        LOGV2_OPTIONS({logComponentV1toV2(component)},
+                      "{}",
+                      "_debug_report_opCtx_lockerInfo_lockerInfo_stats_nullptr"_attr =
+                          _debug.report(opCtx, (lockerInfo ? &lockerInfo->stats : nullptr)));
     }
 
     // Return 'true' if this operation should also be added to the profiler.
