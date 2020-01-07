@@ -579,7 +579,7 @@ StatusWith<OpTime> OplogApplierImpl::_applyOplogBatch(OperationContext* opCtx,
 
     invariant(_replCoord);
     if (_replCoord->getApplierState() == ReplicationCoordinator::ApplierState::Stopped) {
-        LOGV2_FATAL("attempting to replicate ops while primary");
+        LOGV2_ERROR("attempting to replicate ops while primary");
         return {ErrorCodes::CannotApplyOplogWhilePrimary,
                 "attempting to replicate ops while primary"};
     }
@@ -667,7 +667,7 @@ StatusWith<OpTime> OplogApplierImpl::_applyOplogBatch(OperationContext* opCtx,
             for (auto it = statusVector.cbegin(); it != statusVector.cend(); ++it) {
                 const auto& status = *it;
                 if (!status.isOK()) {
-                    LOGV2_FATAL("Failed to apply batch of operations. Number of operations in batch: {}. First operation: {}. Last operation: {}. Oplog application failed in writer thread {}: {}", "ops_size"_attr = ops.size(), "redact_ops_front_toBSON"_attr = redact(ops.front().toBSON()), "redact_ops_back_toBSON"_attr = redact(ops.back().toBSON()), "std_distance_statusVector_cbegin_it"_attr = std::distance(statusVector.cbegin(), it), "redact_status"_attr = redact(status));
+                    LOGV2_ERROR("Failed to apply batch of operations. Number of operations in batch: {}. First operation: {}. Last operation: {}. Oplog application failed in writer thread {}: {}", "ops_size"_attr = ops.size(), "redact_ops_front_toBSON"_attr = redact(ops.front().toBSON()), "redact_ops_back_toBSON"_attr = redact(ops.back().toBSON()), "std_distance_statusVector_cbegin_it"_attr = std::distance(statusVector.cbegin(), it), "redact_status"_attr = redact(status));
                     return status;
                 }
             }
@@ -688,7 +688,7 @@ StatusWith<OpTime> OplogApplierImpl::_applyOplogBatch(OperationContext* opCtx,
                  "point is disabled.");
         while (MONGO_unlikely(pauseBatchApplicationBeforeCompletion.shouldFail())) {
             if (inShutdown()) {
-                LOGV2_FATAL("Turn off pauseBatchApplicationBeforeCompletion before attempting "
+                LOGV2_FATAL(50798, "Turn off pauseBatchApplicationBeforeCompletion before attempting "
                             "clean shutdown");
                 fassertFailedNoTrace(50798);
             }
@@ -1009,7 +1009,7 @@ Status OplogApplierImpl::applyOplogBatchPerWorker(OperationContext* opCtx,
                         continue;
                     }
 
-                    LOGV2_FATAL("Error applying operation ({}): {}", "redact_entry_toBSON"_attr = redact(entry.toBSON()), "causedBy_redact_status"_attr = causedBy(redact(status)));
+                    LOGV2_ERROR("Error applying operation ({}): {}", "redact_entry_toBSON"_attr = redact(entry.toBSON()), "causedBy_redact_status"_attr = causedBy(redact(status)));
                     return status;
                 }
             } catch (const DBException& e) {
@@ -1020,7 +1020,7 @@ Status OplogApplierImpl::applyOplogBatchPerWorker(OperationContext* opCtx,
                     continue;
                 }
 
-                LOGV2_FATAL("writer worker caught exception: {} on: {}", "redact_e"_attr = redact(e), "redact_entry_toBSON"_attr = redact(entry.toBSON()));
+                LOGV2_ERROR("writer worker caught exception: {} on: {}", "redact_e"_attr = redact(e), "redact_entry_toBSON"_attr = redact(entry.toBSON()));
                 return e.toStatus();
             }
         }

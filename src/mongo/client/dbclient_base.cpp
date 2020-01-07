@@ -56,6 +56,7 @@
 #include "mongo/db/wire_version.h"
 #include "mongo/executor/remote_command_request.h"
 #include "mongo/executor/remote_command_response.h"
+#include "mongo/logger/log_version_util.h"
 #include "mongo/logv2/log.h"
 #include "mongo/platform/mutex.h"
 #include "mongo/rpc/factory.h"
@@ -892,7 +893,7 @@ void DBClientBase::dropIndex(const string& ns, const string& indexName) {
     if (!runCommand(nsToDatabase(ns),
                     BSON("dropIndexes" << nsToCollectionSubstring(ns) << "index" << indexName),
                     info)) {
-        LOGV2_DEBUG({logComponentV1toV2(_logLevel)}, "dropIndex failed: {}", "info"_attr = info);
+        LOGV2_DEBUG(_logLevel.toInt(), "dropIndex failed: {}", "info"_attr = info);
         uassert(10007, "dropIndex failed", 0);
     }
 }

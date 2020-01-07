@@ -214,7 +214,7 @@ void BackgroundSync::_run() {
             sleepmillis(100);  // sleep a bit to keep from hammering this thread with temp. errors.
         } catch (const std::exception& e2) {
             // redact(std::exception&) doesn't work
-            LOGV2_FATAL("sync producer exception: {}", "redact_e2_what"_attr = redact(e2.what()));
+            LOGV2_FATAL(28546, "sync producer exception: {}", "redact_e2_what"_attr = redact(e2.what()));
             fassertFailed(28546);
         }
     }
@@ -474,7 +474,7 @@ void BackgroundSync::_produce() {
     }
 
     const auto logLevel = getTestCommandsEnabled() ? 0 : 1;
-    LOGV2_DEBUG({logComponentV1toV2(logLevel)}, "scheduling fetcher to read remote oplog on {} starting at {}", "source"_attr = source, "oplogFetcher_getFindQuery_forTest_filter"_attr = oplogFetcher->getFindQuery_forTest()["filter"]);
+    LOGV2_DEBUG(logLevel, "scheduling fetcher to read remote oplog on {} starting at {}", "source"_attr = source, "oplogFetcher_getFindQuery_forTest_filter"_attr = oplogFetcher->getFindQuery_forTest()["filter"]);
     auto scheduleStatus = oplogFetcher->startup();
     if (!scheduleStatus.isOK()) {
         LOGV2_WARNING("unable to schedule fetcher to read remote oplog on {}: {}", "source"_attr = source, "scheduleStatus"_attr = scheduleStatus);
@@ -678,7 +678,7 @@ void BackgroundSync::_runRollbackViaRecoverToCheckpoint(
     if (status.isOK()) {
         LOGV2("Rollback successful.");
     } else if (status == ErrorCodes::UnrecoverableRollbackError) {
-        LOGV2_FATAL("Rollback failed with unrecoverable error: {}", "status"_attr = status);
+        LOGV2_FATAL(50666, "Rollback failed with unrecoverable error: {}", "status"_attr = status);
         fassertFailedWithStatusNoTrace(50666, status);
     } else {
         LOGV2_WARNING("Rollback failed with retryable error: {}", "status"_attr = status);
@@ -789,7 +789,7 @@ OpTime BackgroundSync::_readLastAppliedOpTime(OperationContext* opCtx) {
     } catch (const ExceptionForCat<ErrorCategory::ShutdownError>&) {
         throw;
     } catch (const DBException& ex) {
-        LOGV2_FATAL("Problem reading {}: {}", "NamespaceString_kRsOplogNamespace_ns"_attr = NamespaceString::kRsOplogNamespace.ns(), "redact_ex"_attr = redact(ex));
+        LOGV2_FATAL(18904, "Problem reading {}: {}", "NamespaceString_kRsOplogNamespace_ns"_attr = NamespaceString::kRsOplogNamespace.ns(), "redact_ex"_attr = redact(ex));
         fassertFailed(18904);
     }
 

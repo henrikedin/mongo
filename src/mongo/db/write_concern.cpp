@@ -227,7 +227,7 @@ Status waitForWriteConcern(OperationContext* opCtx,
 
     switch (writeConcernWithPopulatedSyncMode.syncMode) {
         case WriteConcernOptions::SyncMode::UNSET:
-            LOGV2_FATAL("Attempting to wait on a WriteConcern with an unset sync option");
+            LOGV2_FATAL(34410, "Attempting to wait on a WriteConcern with an unset sync option");
             fassertFailed(34410);
         case WriteConcernOptions::SyncMode::NONE:
             break;

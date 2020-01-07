@@ -49,6 +49,7 @@
 #include "mongo/db/service_context.h"
 #include "mongo/db/storage/backup_cursor_hooks.h"
 #include "mongo/db/storage/storage_engine.h"
+#include "mongo/logger/log_version_util.h"
 #include "mongo/logv2/log.h"
 #include "mongo/stdx/condition_variable.h"
 #include "mongo/util/assert_util.h"
@@ -427,7 +428,7 @@ void FSyncLockThread::run() {
         }
 
     } catch (const std::exception& e) {
-        LOGV2_FATAL("FSyncLockThread exception: {}", "e_what"_attr = e.what());
+        LOGV2_FATAL(40350, "FSyncLockThread exception: {}", "e_what"_attr = e.what());
         fassertFailed(40350);
     }
 }

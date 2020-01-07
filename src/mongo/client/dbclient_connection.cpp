@@ -62,6 +62,7 @@
 #include "mongo/db/wire_version.h"
 #include "mongo/executor/remote_command_request.h"
 #include "mongo/executor/remote_command_response.h"
+#include "mongo/logger/log_version_util.h"
 #include "mongo/logv2/log.h"
 #include "mongo/platform/mutex.h"
 #include "mongo/rpc/get_status_from_command_result.h"
@@ -470,12 +471,12 @@ void DBClientConnection::_checkConnection() {
     // Don't hammer reconnects, backoff if needed
     sleepFor(_autoReconnectBackoff.nextSleep());
 
-    LOGV2_DEBUG({logComponentV1toV2(_logLevel)}, "trying reconnect to {}", "toString"_attr = toString());
+    LOGV2_DEBUG(_logLevel.toInt(), "trying reconnect to {}", "toString"_attr = toString());
     string errmsg;
     auto connectStatus = connect(_serverAddress, _applicationName);
     if (!connectStatus.isOK()) {
         _markFailed(kSetFlag);
-        LOGV2_DEBUG({logComponentV1toV2(_logLevel)}, "reconnect {} failed {}", "toString"_attr = toString(), "errmsg"_attr = errmsg);
+        LOGV2_DEBUG(_logLevel.toInt(), "reconnect {} failed {}", "toString"_attr = toString(), "errmsg"_attr = errmsg);
         if (connectStatus == ErrorCodes::IncompatibleCatalogManager) {
             uassertStatusOK(connectStatus);  // Will always throw
         } else {

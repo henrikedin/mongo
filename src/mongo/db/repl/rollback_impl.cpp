@@ -924,7 +924,7 @@ StatusWith<RollBackLocalOperations::RollbackCommonPoint> RollbackImpl::_findComm
     if (commonPointOpTime.getTimestamp() < *stableTimestamp) {
         // This is an fassert rather than an invariant, since it can happen if the server was
         // recently upgraded to enableMajorityReadConcern=true.
-        LOGV2_FATAL("Common point must be at least stable timestamp, common point: {}, stable timestamp: {}", "commonPointOpTime_getTimestamp"_attr = commonPointOpTime.getTimestamp(), "stableTimestamp"_attr = *stableTimestamp);
+        LOGV2_FATAL(51121, "Common point must be at least stable timestamp, common point: {}, stable timestamp: {}", "commonPointOpTime_getTimestamp"_attr = commonPointOpTime.getTimestamp(), "stableTimestamp"_attr = *stableTimestamp);
         fassertFailedNoTrace(51121);
     }
 
@@ -1014,7 +1014,7 @@ boost::optional<BSONObj> RollbackImpl::_findDocumentById(OperationContext* opCtx
     } else if (document.getStatus().code() == ErrorCodes::NoSuchKey) {
         return boost::none;
     } else {
-        LOGV2_FATAL("Rollback failed to read document with {} in namespace {} with uuid {}{}", "redact_id"_attr = redact(id), "nss_ns"_attr = nss.ns(), "uuid_toString"_attr = uuid.toString(), "causedBy_document_getStatus"_attr = causedBy(document.getStatus()));
+        LOGV2_FATAL(50751, "Rollback failed to read document with {} in namespace {} with uuid {}{}", "redact_id"_attr = redact(id), "nss_ns"_attr = nss.ns(), "uuid_toString"_attr = uuid.toString(), "causedBy_document_getStatus"_attr = causedBy(document.getStatus()));
         fassert(50751, document.getStatus());
     }
 

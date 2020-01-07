@@ -160,7 +160,7 @@ void WatchdogPeriodicThread::doLoop() {
             } catch (const DBException& e) {
                 // The only bad status is when we are in shutdown
                 if (!opCtx->getServiceContext()->getKillAllOperations()) {
-                    LOGV2_FATAL("Watchdog was interrupted, shutting down, reason: {}", "e_toStatus"_attr = e.toStatus());
+                    LOGV2_FATAL(0, "Watchdog was interrupted, shutting down, reason: {}", "e_toStatus"_attr = e.toStatus());
                     exitCleanly(ExitCode::EXIT_ABRUPT);
                 }
 
@@ -342,14 +342,14 @@ void checkFile(OperationContext* opCtx, const boost::filesystem::path& file) {
                                NULL);
     if (hFile == INVALID_HANDLE_VALUE) {
         std::uint32_t gle = ::GetLastError();
-        LOGV2_FATAL("CreateFile failed for '{}' with error: {}", "file_generic_string"_attr = file.generic_string(), "errnoWithDescription_gle"_attr = errnoWithDescription(gle));
+        LOGV2_FATAL(4074, "CreateFile failed for '{}' with error: {}", "file_generic_string"_attr = file.generic_string(), "errnoWithDescription_gle"_attr = errnoWithDescription(gle));
         fassertNoTrace(4074, gle == 0);
     }
 
     DWORD bytesWrittenTotal;
     if (!WriteFile(hFile, nowStr.c_str(), nowStr.size(), &bytesWrittenTotal, NULL)) {
         std::uint32_t gle = ::GetLastError();
-        LOGV2_FATAL("WriteFile failed for '{}' with error: {}", "file_generic_string"_attr = file.generic_string(), "errnoWithDescription_gle"_attr = errnoWithDescription(gle));
+        LOGV2_FATAL(4075, "WriteFile failed for '{}' with error: {}", "file_generic_string"_attr = file.generic_string(), "errnoWithDescription_gle"_attr = errnoWithDescription(gle));
         fassertNoTrace(4075, gle == 0);
     }
 
@@ -359,14 +359,14 @@ void checkFile(OperationContext* opCtx, const boost::filesystem::path& file) {
 
         if (!FlushFileBuffers(hFile)) {
             std::uint32_t gle = ::GetLastError();
-            LOGV2_FATAL("FlushFileBuffers failed for '{}' with error: {}", "file_generic_string"_attr = file.generic_string(), "errnoWithDescription_gle"_attr = errnoWithDescription(gle));
+            LOGV2_FATAL(4076, "FlushFileBuffers failed for '{}' with error: {}", "file_generic_string"_attr = file.generic_string(), "errnoWithDescription_gle"_attr = errnoWithDescription(gle));
             fassertNoTrace(4076, gle == 0);
         }
 
         DWORD newOffset = SetFilePointer(hFile, 0, 0, FILE_BEGIN);
         if (newOffset != 0) {
             std::uint32_t gle = ::GetLastError();
-            LOGV2_FATAL("SetFilePointer failed for '{}' with error: {}", "file_generic_string"_attr = file.generic_string(), "errnoWithDescription_gle"_attr = errnoWithDescription(gle));
+            LOGV2_FATAL(4077, "SetFilePointer failed for '{}' with error: {}", "file_generic_string"_attr = file.generic_string(), "errnoWithDescription_gle"_attr = errnoWithDescription(gle));
             fassertNoTrace(4077, gle == 0);
         }
 
@@ -374,24 +374,24 @@ void checkFile(OperationContext* opCtx, const boost::filesystem::path& file) {
         auto readBuffer = std::make_unique<char[]>(nowStr.size());
         if (!ReadFile(hFile, readBuffer.get(), nowStr.size(), &bytesRead, NULL)) {
             std::uint32_t gle = ::GetLastError();
-            LOGV2_FATAL("ReadFile failed for '{}' with error: {}", "file_generic_string"_attr = file.generic_string(), "errnoWithDescription_gle"_attr = errnoWithDescription(gle));
+            LOGV2_FATAL(4078, "ReadFile failed for '{}' with error: {}", "file_generic_string"_attr = file.generic_string(), "errnoWithDescription_gle"_attr = errnoWithDescription(gle));
             fassertNoTrace(4078, gle == 0);
         }
 
         if (bytesRead != bytesWrittenTotal) {
-            LOGV2_FATAL("Read wrong number of bytes for '{}' expected {} bytes but read {} bytes", "file_generic_string"_attr = file.generic_string(), "bytesWrittenTotal"_attr = bytesWrittenTotal, "bytesRead"_attr = bytesRead);
+            LOGV2_FATAL(50724, "Read wrong number of bytes for '{}' expected {} bytes but read {} bytes", "file_generic_string"_attr = file.generic_string(), "bytesWrittenTotal"_attr = bytesWrittenTotal, "bytesRead"_attr = bytesRead);
             fassertNoTrace(50724, false);
         }
 
         if (memcmp(nowStr.c_str(), readBuffer.get(), nowStr.size()) != 0) {
-            LOGV2_FATAL("Read wrong string from file '{}{} bytes (in hex) '{}' but read bytes '{}'", "file_generic_string"_attr = file.generic_string(), "nowStr_size"_attr = nowStr.size(), "toHexLower_nowStr_c_str_nowStr_size"_attr = toHexLower(nowStr.c_str(), nowStr.size()), "toHexLower_readBuffer_get_bytesRead"_attr = toHexLower(readBuffer.get(), bytesRead));
+            LOGV2_FATAL(50717, "Read wrong string from file '{}{} bytes (in hex) '{}' but read bytes '{}'", "file_generic_string"_attr = file.generic_string(), "nowStr_size"_attr = nowStr.size(), "toHexLower_nowStr_c_str_nowStr_size"_attr = toHexLower(nowStr.c_str(), nowStr.size()), "toHexLower_readBuffer_get_bytesRead"_attr = toHexLower(readBuffer.get(), bytesRead));
             fassertNoTrace(50717, false);
         }
     }
 
     if (!CloseHandle(hFile)) {
         std::uint32_t gle = ::GetLastError();
-        LOGV2_FATAL("CloseHandle failed for '{}' with error: {}", "file_generic_string"_attr = file.generic_string(), "errnoWithDescription_gle"_attr = errnoWithDescription(gle));
+        LOGV2_FATAL(4079, "CloseHandle failed for '{}' with error: {}", "file_generic_string"_attr = file.generic_string(), "errnoWithDescription_gle"_attr = errnoWithDescription(gle));
         fassertNoTrace(4079, gle == 0);
     }
 }
@@ -416,7 +416,7 @@ void checkFile(OperationContext* opCtx, const boost::filesystem::path& file) {
     int fd = open(file.generic_string().c_str(), O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
     if (fd == -1) {
         auto err = errno;
-        LOGV2_FATAL("open failed for '{}' with error: {}", "file_generic_string"_attr = file.generic_string(), "errnoWithDescription_err"_attr = errnoWithDescription(err));
+        LOGV2_FATAL(4080, "open failed for '{}' with error: {}", "file_generic_string"_attr = file.generic_string(), "errnoWithDescription_err"_attr = errnoWithDescription(err));
         fassertNoTrace(4080, err == 0);
     }
 
@@ -430,7 +430,7 @@ void checkFile(OperationContext* opCtx, const boost::filesystem::path& file) {
                 continue;
             }
 
-            LOGV2_FATAL("write failed for '{}' with error: {}", "file_generic_string"_attr = file.generic_string(), "errnoWithDescription_err"_attr = errnoWithDescription(err));
+            LOGV2_FATAL(4081, "write failed for '{}' with error: {}", "file_generic_string"_attr = file.generic_string(), "errnoWithDescription_err"_attr = errnoWithDescription(err));
             fassertNoTrace(4081, err == 0);
         }
 
@@ -444,7 +444,7 @@ void checkFile(OperationContext* opCtx, const boost::filesystem::path& file) {
 
     if (fsync(fd)) {
         auto err = errno;
-        LOGV2_FATAL("fsync failed for '{}' with error: {}", "file_generic_string"_attr = file.generic_string(), "errnoWithDescription_err"_attr = errnoWithDescription(err));
+        LOGV2_FATAL(4082, "fsync failed for '{}' with error: {}", "file_generic_string"_attr = file.generic_string(), "errnoWithDescription_err"_attr = errnoWithDescription(err));
         fassertNoTrace(4082, err == 0);
     }
 
@@ -459,10 +459,10 @@ void checkFile(OperationContext* opCtx, const boost::filesystem::path& file) {
                 continue;
             }
 
-            LOGV2_FATAL("read failed for '{}' with error: {}", "file_generic_string"_attr = file.generic_string(), "errnoWithDescription_err"_attr = errnoWithDescription(err));
+            LOGV2_FATAL(4083, "read failed for '{}' with error: {}", "file_generic_string"_attr = file.generic_string(), "errnoWithDescription_err"_attr = errnoWithDescription(err));
             fassertNoTrace(4083, err == 0);
         } else if (bytesReadInRead == 0) {
-            LOGV2_FATAL("read failed for '{}' with unexpected end of file", "file_generic_string"_attr = file.generic_string());
+            LOGV2_FATAL(50719, "read failed for '{}' with unexpected end of file", "file_generic_string"_attr = file.generic_string());
             fassertNoTrace(50719, false);
         }
 
@@ -475,13 +475,13 @@ void checkFile(OperationContext* opCtx, const boost::filesystem::path& file) {
     }
 
     if (memcmp(nowStr.c_str(), readBuffer.get(), nowStr.size()) != 0) {
-        LOGV2_FATAL("Read wrong string from file '{}' expected {} bytes (in hex) '{}' but read bytes '{}'", "file_generic_string"_attr = file.generic_string(), "nowStr_size"_attr = nowStr.size(), "toHexLower_nowStr_c_str_nowStr_size"_attr = toHexLower(nowStr.c_str(), nowStr.size()), "toHexLower_readBuffer_get_bytesReadTotal"_attr = toHexLower(readBuffer.get(), bytesReadTotal));
+        LOGV2_FATAL(50718, "Read wrong string from file '{}' expected {} bytes (in hex) '{}' but read bytes '{}'", "file_generic_string"_attr = file.generic_string(), "nowStr_size"_attr = nowStr.size(), "toHexLower_nowStr_c_str_nowStr_size"_attr = toHexLower(nowStr.c_str(), nowStr.size()), "toHexLower_readBuffer_get_bytesReadTotal"_attr = toHexLower(readBuffer.get(), bytesReadTotal));
         fassertNoTrace(50718, false);
     }
 
     if (close(fd)) {
         auto err = errno;
-        LOGV2_FATAL("close failed for '{}' with error: {}", "file_generic_string"_attr = file.generic_string(), "errnoWithDescription_err"_attr = errnoWithDescription(err));
+        LOGV2_FATAL(4084, "close failed for '{}' with error: {}", "file_generic_string"_attr = file.generic_string(), "errnoWithDescription_err"_attr = errnoWithDescription(err));
         fassertNoTrace(4084, err == 0);
     }
 }

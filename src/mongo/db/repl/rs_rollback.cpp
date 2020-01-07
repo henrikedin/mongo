@@ -435,7 +435,7 @@ Status rollback_internal::updateFixUpInfoFromLocalOplogEntry(OperationContext* o
                 string indexName;
                 auto status = bsonExtractStringField(obj, "index", &indexName);
                 if (!status.isOK()) {
-                    LOGV2_FATAL("Missing index name in dropIndexes operation on rollback, document: {}", "redact_oplogEntry_toBSON"_attr = redact(oplogEntry.toBSON()));
+                    LOGV2_ERROR("Missing index name in dropIndexes operation on rollback, document: {}", "redact_oplogEntry_toBSON"_attr = redact(oplogEntry.toBSON()));
                     throw RSFatalException(
                         "Missing index name in dropIndexes operation on rollback.");
                 }
@@ -471,7 +471,7 @@ Status rollback_internal::updateFixUpInfoFromLocalOplogEntry(OperationContext* o
                 string indexName;
                 auto status = bsonExtractStringField(obj, "name", &indexName);
                 if (!status.isOK()) {
-                    LOGV2_FATAL("Missing index name in createIndexes operation on rollback, document: {}", "redact_oplogEntry_toBSON"_attr = redact(oplogEntry.toBSON()));
+                    LOGV2_ERROR("Missing index name in createIndexes operation on rollback, document: {}", "redact_oplogEntry_toBSON"_attr = redact(oplogEntry.toBSON()));
                     throw RSFatalException(
                         "Missing index name in createIndexes operation on rollback.");
                 }
@@ -703,7 +703,7 @@ Status rollback_internal::updateFixUpInfoFromLocalOplogEntry(OperationContext* o
                     }
                     // Some collMod fields cannot be rolled back, such as the index field.
                     string message = "Cannot roll back a collMod command: ";
-                    LOGV2_FATAL("{}{}", "message"_attr = message, "redact_obj"_attr = redact(obj));
+                    LOGV2_ERROR("{}{}", "message"_attr = message, "redact_obj"_attr = redact(obj));
                     throw RSFatalException(message);
                 }
                 return Status::OK();
@@ -740,7 +740,7 @@ Status rollback_internal::updateFixUpInfoFromLocalOplogEntry(OperationContext* o
                         std::string message = str::stream()
                             << "Expected applyOps argument to be an array; found "
                             << redact(operations);
-                        LOGV2_FATAL("{}", "message"_attr = message);
+                        LOGV2_ERROR("{}", "message"_attr = message);
                         return Status(ErrorCodes::UnrecoverableRollbackError, message);
                     }
                     for (const auto& subopElement : operations.Array()) {
@@ -748,7 +748,7 @@ Status rollback_internal::updateFixUpInfoFromLocalOplogEntry(OperationContext* o
                             std::string message = str::stream()
                                 << "Expected applyOps operations to be of Object type, but found "
                                 << redact(subopElement);
-                            LOGV2_FATAL("{}", "message"_attr = message);
+                            LOGV2_ERROR("{}", "message"_attr = message);
                             return Status(ErrorCodes::UnrecoverableRollbackError, message);
                         }
                         // In applyOps, the object contains an array of different oplog entries, we
@@ -782,7 +782,7 @@ Status rollback_internal::updateFixUpInfoFromLocalOplogEntry(OperationContext* o
             default: {
                 std::string message = str::stream() << "Can't roll back this command yet: "
                                                     << " cmdname = " << first.fieldName();
-                LOGV2_FATAL("{} document: {}", "message"_attr = message, "redact_obj"_attr = redact(obj));
+                LOGV2_ERROR("{} document: {}", "message"_attr = message, "redact_obj"_attr = redact(obj));
                 throw RSFatalException(message);
             }
         }
@@ -795,7 +795,7 @@ Status rollback_internal::updateFixUpInfoFromLocalOplogEntry(OperationContext* o
     doc._id = oplogEntry.getIdElement();
     if (doc._id.eoo()) {
         std::string message = str::stream() << "Cannot roll back op with no _id. ns: " << nss.ns();
-        LOGV2_FATAL("{}, document: {}", "message"_attr = message, "redact_oplogEntry_toBSON"_attr = redact(oplogEntry.toBSON()));
+        LOGV2_ERROR("{}, document: {}", "message"_attr = message, "redact_oplogEntry_toBSON"_attr = redact(oplogEntry.toBSON()));
         throw RSFatalException(message);
     }
     fixUpInfo.docsToRefetch.insert(doc);
@@ -874,12 +874,12 @@ void dropIndex(OperationContext* opCtx,
     if (entry->isReady(opCtx)) {
         auto status = indexCatalog->dropIndex(opCtx, indexDescriptor);
         if (!status.isOK()) {
-            LOGV2_FATAL("Rollback failed to drop index {} in {}: {}", "indexName"_attr = indexName, "nss_toString"_attr = nss.toString(), "redact_status"_attr = redact(status));
+            LOGV2_ERROR("Rollback failed to drop index {} in {}: {}", "indexName"_attr = indexName, "nss_toString"_attr = nss.toString(), "redact_status"_attr = redact(status));
         }
     } else {
         auto status = indexCatalog->dropUnfinishedIndex(opCtx, indexDescriptor);
         if (!status.isOK()) {
-            LOGV2_FATAL("Rollback failed to drop unfinished index {} in {}: {}", "indexName"_attr = indexName, "nss_toString"_attr = nss.toString(), "redact_status"_attr = redact(status));
+            LOGV2_ERROR("Rollback failed to drop unfinished index {} in {}: {}", "indexName"_attr = indexName, "nss_toString"_attr = nss.toString(), "redact_status"_attr = redact(status));
         }
     }
     wunit.commit();
@@ -973,7 +973,7 @@ void dropCollection(OperationContext* opCtx,
         while (PlanExecutor::ADVANCED == (execState = exec->getNext(&curObj, nullptr))) {
             auto status = removeSaver.goingToDelete(curObj);
             if (!status.isOK()) {
-                LOGV2_FATAL("Rolling back createCollection on {} failed to write document to remove saver file: {}", "nss"_attr = nss, "redact_status"_attr = redact(status));
+                LOGV2_ERROR("Rolling back createCollection on {} failed to write document to remove saver file: {}", "nss"_attr = nss, "redact_status"_attr = redact(status));
                 throw RSFatalException(
                     "Rolling back createCollection. Failed to write document to remove saver "
                     "file.");
@@ -990,11 +990,11 @@ void dropCollection(OperationContext* opCtx,
             if (execState == PlanExecutor::FAILURE &&
                 WorkingSetCommon::isValidStatusMemberObject(curObj)) {
                 Status errorStatus = WorkingSetCommon::getMemberObjectStatus(curObj);
-                LOGV2_FATAL("Rolling back createCollection on {} failed with {}. A full resync is necessary.", "nss"_attr = nss, "redact_errorStatus"_attr = redact(errorStatus));
+                LOGV2_ERROR("Rolling back createCollection on {} failed with {}. A full resync is necessary.", "nss"_attr = nss, "redact_errorStatus"_attr = redact(errorStatus));
                 throw RSFatalException(
                     "Rolling back createCollection failed. A full resync is necessary.");
             } else {
-                LOGV2_FATAL("Rolling back createCollection on {} failed. A full resync is necessary.", "nss"_attr = nss);
+                LOGV2_ERROR("Rolling back createCollection on {} failed. A full resync is necessary.", "nss"_attr = nss);
                 throw RSFatalException(
                     "Rolling back createCollection failed. A full resync is necessary.");
             }
@@ -1029,7 +1029,7 @@ void renameOutOfTheWay(OperationContext* opCtx, RenameCollectionInfo info, Datab
     // namespace.
     auto tmpNameResult = db->makeUniqueCollectionNamespace(opCtx, "rollback.tmp%%%%%");
     if (!tmpNameResult.isOK()) {
-        LOGV2_FATAL("Unable to generate temporary namespace to rename collection {} out of the way. {}", "info_renameTo"_attr = info.renameTo, "tmpNameResult_getStatus_reason"_attr = tmpNameResult.getStatus().reason());
+        LOGV2_ERROR("Unable to generate temporary namespace to rename collection {} out of the way. {}", "info_renameTo"_attr = info.renameTo, "tmpNameResult_getStatus_reason"_attr = tmpNameResult.getStatus().reason());
         throw RSFatalException(
             "Unable to generate temporary namespace to rename collection out of the way.");
     }
@@ -1043,7 +1043,7 @@ void renameOutOfTheWay(OperationContext* opCtx, RenameCollectionInfo info, Datab
     auto renameStatus = renameCollectionForRollback(opCtx, tempNss, uuid);
 
     if (!renameStatus.isOK()) {
-        LOGV2_FATAL("Unable to rename collection {} out of the way to {}", "info_renameTo"_attr = info.renameTo, "tempNss"_attr = tempNss);
+        LOGV2_ERROR("Unable to rename collection {} out of the way to {}", "info_renameTo"_attr = info.renameTo, "tempNss"_attr = tempNss);
         throw RSFatalException("Unable to rename collection out of the way");
     }
 }
@@ -1075,13 +1075,13 @@ void rollbackRenameCollection(OperationContext* opCtx, UUID uuid, RenameCollecti
         status = renameCollectionForRollback(opCtx, info.renameTo, uuid);
 
         if (!status.isOK()) {
-            LOGV2_FATAL("Rename collection failed to roll back twice. We were unable to rename collection {} to {}. {}", "info_renameFrom"_attr = info.renameFrom, "info_renameTo"_attr = info.renameTo, "status_toString"_attr = status.toString());
+            LOGV2_ERROR("Rename collection failed to roll back twice. We were unable to rename collection {} to {}. {}", "info_renameFrom"_attr = info.renameFrom, "info_renameTo"_attr = info.renameTo, "status_toString"_attr = status.toString());
             throw RSFatalException(
                 "Rename collection failed to roll back twice. We were unable to rename "
                 "the collection.");
         }
     } else if (!status.isOK()) {
-        LOGV2_FATAL("Unable to roll back renameCollection command: {}", "status_toString"_attr = status.toString());
+        LOGV2_ERROR("Unable to roll back renameCollection command: {}", "status_toString"_attr = status.toString());
         throw RSFatalException("Unable to rollback renameCollection command");
     }
 
@@ -1551,7 +1551,7 @@ void rollback_internal::syncFixUp(OperationContext* opCtx,
                     if (found) {
                         auto status = removeSaver->goingToDelete(obj);
                         if (!status.isOK()) {
-                            LOGV2_FATAL("Rollback cannot write document in namespace {} to archive file: {}", "nss_ns"_attr = nss->ns(), "redact_status"_attr = redact(status));
+                            LOGV2_ERROR("Rollback cannot write document in namespace {} to archive file: {}", "nss_ns"_attr = nss->ns(), "redact_status"_attr = redact(status));
                             throw RSFatalException(str::stream()
                                                    << "Rollback cannot write document in namespace "
                                                    << nss->ns() << " to archive file.");
@@ -1725,7 +1725,7 @@ void rollback_internal::syncFixUp(OperationContext* opCtx,
 
     Status status = AuthorizationManager::get(opCtx->getServiceContext())->initialize(opCtx);
     if (!status.isOK()) {
-        LOGV2_FATAL("Failed to reinitialize auth data after rollback: {}", "redact_status"_attr = redact(status));
+        LOGV2_FATAL(40496, "Failed to reinitialize auth data after rollback: {}", "redact_status"_attr = redact(status));
         fassertFailedNoTrace(40496);
     }
 
@@ -1830,7 +1830,7 @@ void rollback(OperationContext* opCtx,
         // WARNING: these statuses sometimes have location codes which are lost with uassertStatusOK
         // so we need to check here first.
         if (ErrorCodes::UnrecoverableRollbackError == status.code()) {
-            LOGV2_FATAL("Unable to complete rollback. A full resync may be needed: {}", "redact_status"_attr = redact(status));
+            LOGV2_FATAL(40507, "Unable to complete rollback. A full resync may be needed: {}", "redact_status"_attr = redact(status));
             fassertFailedNoTrace(40507);
         }
 
@@ -1863,7 +1863,7 @@ void rollback(OperationContext* opCtx,
     // then we must shut down to clear the in-memory ShardingState associated with the
     // shardIdentity document.
     if (ShardIdentityRollbackNotifier::get(opCtx)->didRollbackHappen()) {
-        LOGV2_FATAL("shardIdentity document rollback detected.  Shutting down to clear "
+        LOGV2_FATAL(40498, "shardIdentity document rollback detected.  Shutting down to clear "
                     "in-memory sharding state.  Restarting this process should safely return it "
                     "to a healthy state");
         fassertFailedNoTrace(40498);

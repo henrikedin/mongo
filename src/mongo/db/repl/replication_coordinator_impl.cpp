@@ -478,7 +478,7 @@ bool ReplicationCoordinatorImpl::_startLoadLocalConfig(OperationContext* opCtx) 
     status = localConfig.initialize(cfg.getValue());
     if (!status.isOK()) {
         if (status.code() == ErrorCodes::RepairedReplicaSetNode) {
-            LOGV2_FATAL("This instance has been repaired and may contain modified replicated data that "
+            LOGV2_FATAL(50923, "This instance has been repaired and may contain modified replicated data that "
                    "would not match other replica set members. To see your repaired data, start "
                    "mongod without the --replSet option. When you are finished recovering your "
                    "data and would like to perform a complete re-sync, please refer to the "
@@ -2672,7 +2672,7 @@ Status ReplicationCoordinatorImpl::processReplSetReconfig(OperationContext* opCt
                           "Cannot run replSetReconfig because the node is currently updating "
                           "its configuration");
         default:
-            LOGV2_FATAL("Unexpected _rsConfigState {}", "int__rsConfigState"_attr = int(_rsConfigState));
+            LOGV2_FATAL(18914, "Unexpected _rsConfigState {}", "int__rsConfigState"_attr = int(_rsConfigState));
             fassertFailed(18914);
     }
 
@@ -3110,7 +3110,7 @@ void ReplicationCoordinatorImpl::_performPostMemberStateUpdateAction(
             _startElectSelfV1(StartElectionReasonEnum::kElectionTimeout);
             break;
         default:
-            LOGV2_FATAL("Unknown post member state update action {}", "static_cast_int_action"_attr = static_cast<int>(action));
+            LOGV2_FATAL(26010, "Unknown post member state update action {}", "static_cast_int_action"_attr = static_cast<int>(action));
             fassertFailed(26010);
     }
 }

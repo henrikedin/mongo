@@ -260,7 +260,7 @@ Status IndexBuildInterceptor::drainWritesIntoIndex(OperationContext* opCtx,
     progress->finished();
 
     int logLevel = (_numApplied - appliedAtStart > 0) ? 0 : 1;
-    LOGV2_DEBUG({logComponentV1toV2(logLevel)}, "index build: drain applied {} side writes (inserted: {}, deleted: {}) for '{}' in {} ms", "_numApplied_appliedAtStart"_attr = (_numApplied - appliedAtStart), "totalInserted"_attr = totalInserted, "totalDeleted"_attr = totalDeleted, "_indexCatalogEntry_descriptor_indexName"_attr = _indexCatalogEntry->descriptor()->indexName(), "timer_millis"_attr = timer.millis());
+    LOGV2_DEBUG(logLevel, "index build: drain applied {} side writes (inserted: {}, deleted: {}) for '{}' in {} ms", "_numApplied_appliedAtStart"_attr = (_numApplied - appliedAtStart), "totalInserted"_attr = totalInserted, "totalDeleted"_attr = totalDeleted, "_indexCatalogEntry_descriptor_indexName"_attr = _indexCatalogEntry->descriptor()->indexName(), "timer_millis"_attr = timer.millis());
 
     return Status::OK();
 }

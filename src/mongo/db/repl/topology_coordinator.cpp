@@ -206,7 +206,7 @@ HostAndPort TopologyCoordinator::chooseNewSyncSource(Date_t now,
         const auto& data = sfp.getData();
         const auto hostAndPortElem = data["hostAndPort"];
         if (!hostAndPortElem) {
-            LOGV2_FATAL("'forceSyncSoureCandidate' parameter set with invalid host and port: {}", "data"_attr = data);
+            LOGV2_FATAL(50835, "'forceSyncSoureCandidate' parameter set with invalid host and port: {}", "data"_attr = data);
             fassertFailed(50835);
         }
 
@@ -1339,11 +1339,11 @@ void TopologyCoordinator::changeMemberState_forTest(const MemberState& newMember
             updateConfig(ReplSetConfig(), -1, Date_t());
             break;
         default:
-            LOGV2_FATAL("Cannot switch to state {}", "newMemberState"_attr = newMemberState);
+            LOGV2_FATAL(0, "Cannot switch to state {}", "newMemberState"_attr = newMemberState);
             MONGO_UNREACHABLE;
     }
     if (getMemberState() != newMemberState.s) {
-        LOGV2_FATAL("Expected to enter state {} but am now in {}", "newMemberState"_attr = newMemberState, "getMemberState"_attr = getMemberState());
+        LOGV2_FATAL(0, "Expected to enter state {} but am now in {}", "newMemberState"_attr = newMemberState, "getMemberState"_attr = getMemberState());
         MONGO_UNREACHABLE;
     }
     LOGV2("{}", "newMemberState"_attr = newMemberState);
@@ -2045,7 +2045,7 @@ std::string TopologyCoordinator::_getUnelectableReasonString(const UnelectableRe
         ss << "node is not a member of a valid replica set configuration";
     }
     if (!hasWrittenToStream) {
-        LOGV2_FATAL("Invalid UnelectableReasonMask value 0x{}", "integerToHex_ur"_attr = integerToHex(ur));
+        LOGV2_FATAL(26011, "Invalid UnelectableReasonMask value 0x{}", "integerToHex_ur"_attr = integerToHex(ur));
         fassertFailed(26011);
     }
     ss << " (mask 0x" << integerToHex(ur) << ")";

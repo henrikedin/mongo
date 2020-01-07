@@ -138,7 +138,7 @@ Status DuplicateKeyTracker::checkConstraints(OperationContext* opCtx) const {
     invariant(resolved == _duplicateCounter.load());
 
     int logLevel = (resolved > 0) ? 0 : 1;
-    LOGV2_DEBUG({logComponentV1toV2(logLevel)}, "index build: resolved {} duplicate key conflicts for unique index: {}", "resolved"_attr = resolved, "_indexCatalogEntry_descriptor_indexName"_attr = _indexCatalogEntry->descriptor()->indexName());
+    LOGV2_DEBUG(logLevel, "index build: resolved {} duplicate key conflicts for unique index: {}", "resolved"_attr = resolved, "_indexCatalogEntry_descriptor_indexName"_attr = _indexCatalogEntry->descriptor()->indexName());
     return Status::OK();
 }
 
