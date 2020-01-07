@@ -61,7 +61,7 @@ sub convert {
     my @params;
     if ($severity) {
         if ($severity =~ /\D/) {
-            push(@params, "::mongo::logger::LogSeverity($severity).toInt()");
+            push(@params, "{logComponentV1toV2($severity)}");
         } else {
             push(@params, $severity);
         }
