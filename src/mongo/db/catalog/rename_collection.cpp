@@ -245,9 +245,7 @@ Status renameCollectionAndDropTarget(OperationContext* opCtx,
             // 'renameOpTime' must be null because a valid 'renameOpTimeFromApplyOps' implies
             // replicated writes are not enabled.
             if (!renameOpTime.isNull()) {
-                severe() << "renameCollection: " << source << " to " << target
-                         << " (with dropTarget=true) - unexpected renameCollection oplog entry"
-                         << " written to the oplog with optime " << renameOpTime;
+                LOGV2_FATAL(40616, "renameCollection: {} to {} (with dropTarget=true) - unexpected renameCollection oplog entry written to the oplog with optime {}", "source"_attr = source, "target"_attr = target, "renameOpTime"_attr = renameOpTime);
                 fassertFailed(40616);
             }
             renameOpTime = renameOpTimeFromApplyOps;

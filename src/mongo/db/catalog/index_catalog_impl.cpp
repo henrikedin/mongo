@@ -346,8 +346,7 @@ IndexCatalogEntry* IndexCatalogImpl::createIndexEntry(OperationContext* opCtx,
                                                       bool isReadyIndex) {
     Status status = _isSpecOk(opCtx, descriptor->infoObj());
     if (!status.isOK()) {
-        severe() << "Found an invalid index " << descriptor->infoObj() << " on the "
-                 << _collection->ns() << " collection: " << redact(status);
+        LOGV2_FATAL(28782, "Found an invalid index {} on the {} collection: {}", "descriptor_infoObj"_attr = descriptor->infoObj(), "_collection_ns"_attr = _collection->ns(), "redact_status"_attr = redact(status));
         fassertFailedNoTrace(28782);
     }
 

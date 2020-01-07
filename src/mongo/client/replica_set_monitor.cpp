@@ -291,8 +291,7 @@ void ReplicaSetMonitor::SetState::rescheduleRefresh(SchedulingStrategy strategy)
     }
 
     if (!swHandle.isOK()) {
-        severe() << "Can't continue refresh for replica set " << name << " due to "
-                 << redact(swHandle.getStatus());
+        LOGV2_FATAL(40140, "Can't continue refresh for replica set {} due to {}", "name"_attr = name, "redact_swHandle_getStatus"_attr = redact(swHandle.getStatus()));
         fassertFailed(40140);
     }
 
@@ -551,8 +550,7 @@ void Refresher::scheduleNetworkRequests() {
         }
 
         if (!swHandle.isOK()) {
-            severe() << "Can't continue scan for replica set " << _set->name << " due to "
-                     << redact(swHandle.getStatus());
+            LOGV2_FATAL(31176, "Can't continue scan for replica set {} due to {}", "_set_name"_attr = _set->name, "redact_swHandle_getStatus"_attr = redact(swHandle.getStatus()));
             fassertFailed(31176);
         }
 

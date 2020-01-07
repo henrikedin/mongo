@@ -53,6 +53,10 @@
 
 // Provide log component in global scope so that MONGO_LOG will always have a valid component.
 // Global log component will be kDefault unless overridden by MONGO_LOGV2_DEFAULT_COMPONENT.
+#if defined(MONGO_LOG_DEFAULT_COMPONENT) && !defined(MONGO_LOGV2_DEFAULT_COMPONENT)
+#include "mongo/logger/log_version_util.h"
+#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logComponentV1toV2(MONGO_LOG_DEFAULT_COMPONENT)
+#endif
 #if defined(MONGO_LOGV2_DEFAULT_COMPONENT)
 const ::mongo::logv2::LogComponent MongoLogV2DefaultComponent_component =
     MONGO_LOGV2_DEFAULT_COMPONENT;

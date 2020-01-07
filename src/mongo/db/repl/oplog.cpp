@@ -333,7 +333,7 @@ void _logOpsInner(OperationContext* opCtx,
 
     Status result = oplogCollection->insertDocumentsForOplog(opCtx, records, timestamps);
     if (!result.isOK()) {
-        severe() << "write to oplog failed: " << result.toString();
+        LOGV2_FATAL(17322, "write to oplog failed: {}", "result_toString"_attr = result.toString());
         fassertFailed(17322);
     }
 

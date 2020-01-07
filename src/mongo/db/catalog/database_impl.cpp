@@ -620,7 +620,7 @@ Collection* DatabaseImpl::createCollection(OperationContext* opCtx,
         if (!canAcceptWrites) {
             std::string msg = str::stream()
                 << "Attempted to create a new collection " << nss << " without a UUID";
-            severe() << msg;
+            LOGV2_ERROR("{}", "msg"_attr = msg);
             uasserted(ErrorCodes::InvalidOptions, msg);
         } else {
             optionsWithUUID.uuid.emplace(CollectionUUID::gen());
