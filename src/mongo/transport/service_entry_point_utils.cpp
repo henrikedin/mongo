@@ -84,10 +84,10 @@ Status launchServiceWorkerThread(std::function<void()> task) {
             int failed = pthread_attr_setstacksize(&attrs, stackSizeToSet);
             if (failed) {
                 const auto ewd = errnoWithDescription(failed);
-                warning() << "pthread_attr_setstacksize failed: " << ewd;
+                LOGV2_WARNING("pthread_attr_setstacksize failed: {}", "ewd"_attr = ewd);
             }
         } else if (limits.rlim_cur < 1024 * 1024) {
-            warning() << "Stack size set to " << (limits.rlim_cur / 1024) << "KB. We suggest 1MB";
+            LOGV2_WARNING("Stack size set to {}KB. We suggest 1MB", "limits_rlim_cur_1024"_attr = (limits.rlim_cur / 1024));
         }
 
         // Wrap the user-specified `task` so it runs with an installed `sigaltstack`.
@@ -104,7 +104,7 @@ Status launchServiceWorkerThread(std::function<void()> task) {
         pthread_attr_destroy(&attrs);
 
         if (failed) {
-            log() << "pthread_create failed: " << errnoWithDescription(failed);
+            LOGV2("pthread_create failed: {}", "errnoWithDescription_failed"_attr = errnoWithDescription(failed));
             throw std::system_error(
                 std::make_error_code(std::errc::resource_unavailable_try_again));
         }

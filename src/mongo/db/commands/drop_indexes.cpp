@@ -126,7 +126,7 @@ public:
         const NamespaceString toReIndexNss =
             CommandHelpers::parseNsCollectionRequired(dbname, jsobj);
 
-        LOG(0) << "CMD: reIndex " << toReIndexNss;
+        LOGV2("CMD: reIndex {}", "toReIndexNss"_attr = toReIndexNss);
 
         AutoGetCollection autoColl(opCtx, toReIndexNss, MODE_X);
         Collection* collection = autoColl.getCollection();
@@ -219,7 +219,7 @@ public:
         }
 
         if (MONGO_unlikely(reIndexCrashAfterDrop.shouldFail())) {
-            log() << "exiting because 'reIndexCrashAfterDrop' fail point was set";
+            LOGV2("exiting because 'reIndexCrashAfterDrop' fail point was set");
             quickExit(EXIT_ABRUPT);
         }
 

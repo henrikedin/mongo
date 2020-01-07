@@ -53,9 +53,7 @@ public:
 
         void typedRun(OperationContext* opCtx) {
             TrafficRecorder::get(opCtx->getServiceContext()).start(request());
-            log() << "** Warning: The recording file contains unencrypted user traffic."
-                  << " We recommend that you limit retention of this file and "
-                  << "store it on an encrypted filesystem volume.";
+            LOGV2("** Warning: The recording file contains unencrypted user traffic. We recommend that you limit retention of this file and store it on an encrypted filesystem volume.");
         }
 
     private:

@@ -89,8 +89,7 @@ void DropPendingCollectionReaper::addDropPendingNamespace(
     };
 
     if (std::find_if(lowerBound, upperBound, matcher) != upperBound) {
-        severe() << "Failed to add drop-pending collection " << dropPendingNamespace
-                 << " with drop optime " << dropOpTime << ": duplicate optime and namespace pair.";
+        LOGV2_FATAL("Failed to add drop-pending collection {} with drop optime {}: duplicate optime and namespace pair.", "dropPendingNamespace"_attr = dropPendingNamespace, "dropOpTime"_attr = dropOpTime);
         fassertFailedNoTrace(40448);
     }
 
@@ -136,16 +135,14 @@ bool DropPendingCollectionReaper::rollBackDropPendingCollection(
         auto matcher = [&pendingNss](const auto& pair) { return pair.second == pendingNss; };
         auto it = std::find_if(lowerBound, upperBound, matcher);
         if (it == upperBound) {
-            warning() << "Cannot find drop-pending namespace at OpTime " << opTime
-                      << " for collection " << collectionNamespace << " to roll back.";
+            LOGV2_WARNING("Cannot find drop-pending namespace at OpTime {} for collection {} to roll back.", "opTime"_attr = opTime, "collectionNamespace"_attr = collectionNamespace);
             return false;
         }
 
         _dropPendingNamespaces.erase(it);
     }
 
-    log() << "Rolling back collection drop for " << pendingNss << " with drop OpTime " << opTime
-          << " to namespace " << collectionNamespace;
+    LOGV2("Rolling back collection drop for {} with drop OpTime {} to namespace {}", "pendingNss"_attr = pendingNss, "opTime"_attr = opTime, "collectionNamespace"_attr = collectionNamespace);
 
     return true;
 }
@@ -174,8 +171,7 @@ void DropPendingCollectionReaper::dropCollectionsOlderThan(OperationContext* opC
         for (const auto& opTimeAndNamespace : toDrop) {
             const auto& dropOpTime = opTimeAndNamespace.first;
             const auto& nss = opTimeAndNamespace.second;
-            log() << "Completing collection drop for " << nss << " with drop optime " << dropOpTime
-                  << " (notification optime: " << opTime << ")";
+            LOGV2("Completing collection drop for {} with drop optime {} (notification optime: {})", "nss"_attr = nss, "dropOpTime"_attr = dropOpTime, "opTime"_attr = opTime);
             Status status = Status::OK();
             try {
                 // dropCollection could throw an interrupt exception, since it acquires db locks.
@@ -184,9 +180,7 @@ void DropPendingCollectionReaper::dropCollectionsOlderThan(OperationContext* opC
                 status = exceptionToStatus();
             }
             if (!status.isOK()) {
-                warning() << "Failed to remove drop-pending collection " << nss
-                          << " with drop optime " << dropOpTime
-                          << " (notification optime: " << opTime << "): " << status;
+                LOGV2_WARNING("Failed to remove drop-pending collection {} with drop optime {} (notification optime: {}): {}", "nss"_attr = nss, "dropOpTime"_attr = dropOpTime, "opTime"_attr = opTime, "status"_attr = status);
             }
         }
     }

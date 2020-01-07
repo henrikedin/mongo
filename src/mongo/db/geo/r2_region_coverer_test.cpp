@@ -58,7 +58,7 @@ MONGO_INITIALIZER(R2CellUnion_Test)(InitializerContext* context) {
         }
     }
     generator.seed(seed);
-    log() << "R2CellUnion Test - Random Number Generator Seed: " << seed;
+    LOGV2("R2CellUnion Test - Random Number Generator Seed: {}", "seed"_attr = seed);
     return Status::OK();
 }
 
@@ -226,8 +226,8 @@ void checkCellIdCovering(const GeoHashConverter& converter,
 
     // The covering doesn't contain this cell, so the region shouldn't contain this cell.
     if (region.fastContains(cell)) {
-        log() << "covering " << covering.toString();
-        log() << "cellId " << cellId;
+        LOGV2("covering {}", "covering_toString"_attr = covering.toString());
+        LOGV2("cellId {}", "cellId"_attr = cellId);
     }
     ASSERT_FALSE(region.fastContains(cell));
 
@@ -726,8 +726,8 @@ TEST(R2CellUnion, Normalize) {
             ASSERT_EQUALS(expected[i], cellUnion.cellIds()[i]);
         }
     }
-    log() << "Average Unnormalized Size: " << unnormalizedSum * 1.0 / kIters;
-    log() << "Average Normalized Size: " << normalizedSum * 1.0 / kIters;
+    LOGV2("Average Unnormalized Size: {}", "unnormalizedSum_1_0_kIters"_attr = unnormalizedSum * 1.0 / kIters);
+    LOGV2("Average Normalized Size: {}", "normalizedSum_1_0_kIters"_attr = normalizedSum * 1.0 / kIters);
 }
 
 void testContains(const R2CellUnion& cellUnion, GeoHash id, int num) {

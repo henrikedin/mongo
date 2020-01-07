@@ -165,13 +165,12 @@ void UserCacheInvalidator::initialize(OperationContext* opCtx) {
     }
 
     if (currentGeneration.getStatus().code() == ErrorCodes::CommandNotFound) {
-        warning() << "_getUserCacheGeneration command not found while fetching initial user "
+        LOGV2_WARNING("_getUserCacheGeneration command not found while fetching initial user "
                      "cache generation from the config server(s).  This most likely means you are "
-                     "running an outdated version of mongod on the config servers";
+                     "running an outdated version of mongod on the config servers");
     } else {
-        warning() << "An error occurred while fetching initial user cache generation from "
-                     "config servers: "
-                  << currentGeneration.getStatus();
+        LOGV2_WARNING("An error occurred while fetching initial user cache generation from "
+                     "config servers: {}", "currentGeneration_getStatus"_attr = currentGeneration.getStatus());
     }
     _previousCacheGeneration = OID();
 }
@@ -184,15 +183,14 @@ void UserCacheInvalidator::run() {
         auto opCtx = cc().makeOperationContext();
         StatusWith<OID> currentGeneration = getCurrentCacheGeneration(opCtx.get());
         if (!currentGeneration.isOK()) {
-            warning() << "An error occurred while fetching current user cache generation "
-                         "to check if user cache needs invalidation: "
-                      << currentGeneration.getStatus();
+            LOGV2_WARNING("An error occurred while fetching current user cache generation "
+                         "to check if user cache needs invalidation: {}", "currentGeneration_getStatus"_attr = currentGeneration.getStatus());
 
             // When in doubt, invalidate the cache
             try {
                 _authzManager->invalidateUserCache(opCtx.get());
             } catch (const DBException& e) {
-                warning() << "Error invalidating user cache: " << e.toStatus();
+                LOGV2_WARNING("Error invalidating user cache: {}", "e_toStatus"_attr = e.toStatus());
             }
             continue;
         }
@@ -203,7 +201,7 @@ void UserCacheInvalidator::run() {
             try {
                 _authzManager->invalidateUserCache(opCtx.get());
             } catch (const DBException& e) {
-                warning() << "Error invalidating user cache: " << e.toStatus();
+                LOGV2_WARNING("Error invalidating user cache: {}", "e_toStatus"_attr = e.toStatus());
             }
 
             _previousCacheGeneration = currentGeneration.getValue();

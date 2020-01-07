@@ -163,7 +163,7 @@ FieldCompareResult compareDottedFieldNames(const string& l,
             return LEFT_SUBFIELD;
     }
 
-    log() << "compareDottedFieldNames ERROR  l: " << l << " r: " << r << "  TOO MANY LOOPS" << endl;
+    LOGV2("compareDottedFieldNames ERROR  l: {} r: {}  TOO MANY LOOPS", "l"_attr = l, "r"_attr = r);
     verify(0);
     return SAME;  // will never get here
 }

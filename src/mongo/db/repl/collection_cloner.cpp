@@ -113,9 +113,7 @@ BaseCloner::AfterStageBehavior CollectionCloner::CollectionClonerStage::run() {
     try {
         return ClonerStage<CollectionCloner>::run();
     } catch (const ExceptionFor<ErrorCodes::NamespaceNotFound>&) {
-        log() << "CollectionCloner ns: '" << getCloner()->getSourceNss() << "' uuid: UUID(\""
-              << getCloner()->getSourceUuid()
-              << "\") stopped because collection was dropped on source.";
+        LOGV2("CollectionCloner ns: '{}' uuid: UUID(\"{}\") stopped because collection was dropped on source.", "getCloner_getSourceNss"_attr = getCloner()->getSourceNss(), "getCloner_getSourceUuid"_attr = getCloner()->getSourceUuid());
         getCloner()->waitForDatabaseWorkToComplete();
         return kSkipRemainingStages;
     } catch (const DBException&) {
@@ -131,8 +129,8 @@ BaseCloner::AfterStageBehavior CollectionCloner::countStage() {
     // so we set it to zero here to avoid aborting the collection clone.
     // Note that this count value is only used for reporting purposes.
     if (count < 0) {
-        warning() << "Count command returned negative value. Updating to 0 to allow progress "
-                     "meter to function properly. ";
+        LOGV2_WARNING("Count command returned negative value. Updating to 0 to allow progress "
+                     "meter to function properly. ");
         count = 0;
     }
 
@@ -147,8 +145,7 @@ BaseCloner::AfterStageBehavior CollectionCloner::countStage() {
 BaseCloner::AfterStageBehavior CollectionCloner::listIndexesStage() {
     auto indexSpecs = getClient()->getIndexSpecs(_sourceDbAndUuid, QueryOption_SlaveOk);
     if (indexSpecs.empty()) {
-        warning() << "No indexes found for collection " << _sourceNss.ns() << " while cloning from "
-                  << getSource();
+        LOGV2_WARNING("No indexes found for collection {} while cloning from {}", "_sourceNss_ns"_attr = _sourceNss.ns(), "getSource"_attr = getSource());
     }
     for (auto&& spec : indexSpecs) {
         if (spec["name"].str() == "_id_"_sd) {
@@ -163,9 +160,7 @@ BaseCloner::AfterStageBehavior CollectionCloner::listIndexesStage() {
     };
 
     if (!_idIndexSpec.isEmpty() && _collectionOptions.autoIndexId == CollectionOptions::NO) {
-        warning()
-            << "Found the _id_ index spec but the collection specified autoIndexId of false on ns:"
-            << this->_sourceNss;
+        LOGV2_WARNING("Found the _id_ index spec but the collection specified autoIndexId of false on ns:{}", "this__sourceNss"_attr = this->_sourceNss);
     }
     return kContinueNormally;
 }
@@ -200,7 +195,7 @@ void CollectionCloner::handleNextBatch(DBClientCursorBatchIterator& iter) {
             std::string message = str::stream()
                 << "Collection cloning cancelled due to initial sync failure: "
                 << getSharedData()->getInitialSyncStatus(lk).toString();
-            log() << message;
+            LOGV2("{}", "message"_attr = message);
             uasserted(ErrorCodes::CallbackCanceled, message);
         }
     }
@@ -229,9 +224,8 @@ void CollectionCloner::handleNextBatch(DBClientCursorBatchIterator& iter) {
             while (MONGO_unlikely(
                        initialSyncHangCollectionClonerAfterHandlingBatchResponse.shouldFail()) &&
                    !mustExit()) {
-                log() << "initialSyncHangCollectionClonerAfterHandlingBatchResponse fail point "
-                         "enabled for "
-                      << _sourceNss.toString() << ". Blocking until fail point is disabled.";
+                LOGV2("initialSyncHangCollectionClonerAfterHandlingBatchResponse fail point "
+                         "enabled for {}. Blocking until fail point is disabled.", "_sourceNss_toString"_attr = _sourceNss.toString());
                 mongo::sleepsecs(1);
             }
         },
@@ -249,8 +243,7 @@ void CollectionCloner::insertDocumentsCallback(const executor::TaskExecutor::Cal
         stdx::lock_guard<Latch> lk(_mutex);
         std::vector<BSONObj> docs;
         if (_documentsToInsert.size() == 0) {
-            warning() << "insertDocumentsCallback, but no documents to insert for ns:"
-                      << _sourceNss;
+            LOGV2_WARNING("insertDocumentsCallback, but no documents to insert for ns:{}", "_sourceNss"_attr = _sourceNss);
             return;
         }
         _documentsToInsert.swap(docs);
@@ -266,8 +259,8 @@ void CollectionCloner::insertDocumentsCallback(const executor::TaskExecutor::Cal
 
     initialSyncHangDuringCollectionClone.executeIf(
         [&](const BSONObj&) {
-            log() << "initial sync - initialSyncHangDuringCollectionClone fail point "
-                     "enabled. Blocking until fail point is disabled.";
+            LOGV2("initial sync - initialSyncHangDuringCollectionClone fail point "
+                     "enabled. Blocking until fail point is disabled.");
             while (MONGO_unlikely(initialSyncHangDuringCollectionClone.shouldFail()) &&
                    !mustExit()) {
                 mongo::sleepsecs(1);

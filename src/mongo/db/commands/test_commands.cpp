@@ -80,7 +80,7 @@ public:
                            string& errmsg,
                            BSONObjBuilder& result) {
         const NamespaceString nss(CommandHelpers::parseNsCollectionRequired(dbname, cmdObj));
-        log() << "test only command godinsert invoked coll:" << nss.coll();
+        LOGV2("test only command godinsert invoked coll:{}", "nss_coll"_attr = nss.coll());
         BSONObj obj = cmdObj["obj"].embeddedObjectUserCheck();
 
         Lock::DBLock lk(opCtx, dbname, MODE_X);

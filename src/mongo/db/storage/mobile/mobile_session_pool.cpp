@@ -56,7 +56,7 @@ void MobileDelayedOpQueue::enqueueOp(std::string& opQuery) {
     if (_opQueryQueue.empty())
         _isEmpty.store(false);
     _opQueryQueue.push(opQuery);
-    LOG(MOBILE_LOG_LEVEL_LOW) << "MobileSE: Enqueued operation for delayed execution: " << opQuery;
+    LOGV2_DEBUG({logComponentV1toV2(MOBILE_LOG_LEVEL_LOW)}, "MobileSE: Enqueued operation for delayed execution: {}", "opQuery"_attr = opQuery);
     _queueMutex.unlock();
 }
 
@@ -73,14 +73,14 @@ void MobileDelayedOpQueue::execAndDequeueOp(MobileSession* session) {
     }
     _queueMutex.unlock();
 
-    LOG(MOBILE_LOG_LEVEL_LOW) << "MobileSE: Retrying previously enqueued operation: " << opQuery;
+    LOGV2_DEBUG({logComponentV1toV2(MOBILE_LOG_LEVEL_LOW)}, "MobileSE: Retrying previously enqueued operation: {}", "opQuery"_attr = opQuery);
     try {
         SqliteStatement::execQuery(session, opQuery);
     } catch (const WriteConflictException&) {
         // It is possible that this operation fails because of a transaction running in parallel.
         // We re-enqueue it for now and keep retrying later.
-        LOG(MOBILE_LOG_LEVEL_LOW) << "MobileSE: Caught WriteConflictException while executing "
-                                     " previously enqueued operation, re-enquing it";
+        LOGV2_DEBUG({logComponentV1toV2(MOBILE_LOG_LEVEL_LOW)}, "MobileSE: Caught WriteConflictException while executing "
+                                     " previously enqueued operation, re-enquing it");
         enqueueOp(opQuery);
     }
 }
@@ -171,7 +171,7 @@ void MobileSessionPool::shutDown() {
         int status = sqlite3_open(_path.c_str(), &session);
         embedded::checkStatus(status, SQLITE_OK, "sqlite3_open");
         std::unique_ptr<MobileSession> mobSession = std::make_unique<MobileSession>(session, this);
-        LOG(MOBILE_LOG_LEVEL_LOW) << "MobileSE: Executing queued drops at shutdown";
+        LOGV2_DEBUG({logComponentV1toV2(MOBILE_LOG_LEVEL_LOW)}, "MobileSE: Executing queued drops at shutdown");
         failedDropsQueue.execAndDequeueAllOps(mobSession.get());
         sqlite3_close(session);
     }

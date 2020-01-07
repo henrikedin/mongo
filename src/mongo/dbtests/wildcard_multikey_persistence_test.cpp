@@ -116,9 +116,9 @@ protected:
             // Confirm that there are no further keys in the index.
             ASSERT(!indexKey);
         } catch (const TestAssertionFailureException& ex) {
-            log() << "Writing remaining index keys to debug log:";
+            LOGV2("Writing remaining index keys to debug log:");
             while (indexKey) {
-                log() << "{ key: " << indexKey->key << ", loc: " << indexKey->loc << " }";
+                LOGV2("{ key: {}, loc: {} }", "indexKey_key"_attr = indexKey->key, "indexKey_loc"_attr = indexKey->loc);
                 indexKey = indexCursor->next();
             }
             throw ex;

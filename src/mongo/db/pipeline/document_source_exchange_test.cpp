@@ -115,7 +115,7 @@ protected:
 
     static auto getNewSeed() {
         auto seed = Date_t::now().asInt64();
-        unittest::log() << "Generated new seed is " << seed;
+        unittest::LOGV2("Generated new seed is {}", "seed"_attr = seed);
 
         return seed;
     }

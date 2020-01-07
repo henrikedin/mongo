@@ -254,10 +254,7 @@ public:
                               cm->getShardKeyPattern(),
                               ChunkRange(chunk->getMin(), chunk->getMax()));
 
-        log() << "Splitting chunk "
-              << redact(ChunkRange(chunk->getMin(), chunk->getMax()).toString())
-              << " in collection " << nss.ns() << " on shard " << chunk->getShardId() << " at key "
-              << redact(splitPoint);
+        LOGV2("Splitting chunk {} in collection {} on shard {} at key {}", "redact_ChunkRange_chunk_getMin_chunk_getMax_toString"_attr = redact(ChunkRange(chunk->getMin(), chunk->getMax()).toString()), "nss_ns"_attr = nss.ns(), "chunk_getShardId"_attr = chunk->getShardId(), "redact_splitPoint"_attr = redact(splitPoint));
 
         uassertStatusOK(
             shardutil::splitChunkAtMultiplePoints(opCtx,

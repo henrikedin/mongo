@@ -77,10 +77,8 @@ void ReplClientInfo::setLastOpToSystemLastOpTime(OperationContext* opCtx) {
         if (systemOpTime >= _lastOp) {
             _lastOp = systemOpTime;
         } else {
-            log() << "Not setting the last OpTime for this Client from " << _lastOp
-                  << " to the current system time of " << systemOpTime
-                  << " as that would be moving the OpTime backwards.  This should only happen if "
-                     "there was a rollback recently";
+            LOGV2("Not setting the last OpTime for this Client from {} to the current system time of {} as that would be moving the OpTime backwards.  This should only happen if "
+                     "there was a rollback recently", "_lastOp"_attr = _lastOp, "systemOpTime"_attr = systemOpTime);
         }
 
         lastOpInfo(opCtx).lastOpSetExplicitly = true;

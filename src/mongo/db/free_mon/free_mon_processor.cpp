@@ -259,9 +259,8 @@ void FreeMonProcessor::run() {
         // Stop the queue
         _queue.stop();
 
-        warning() << "Uncaught exception in '" << exceptionToStatus()
-                  << "' in free monitoring subsystem. Shutting down the "
-                     "free monitoring subsystem.";
+        LOGV2_WARNING("Uncaught exception in '{}' in free monitoring subsystem. Shutting down the "
+                     "free monitoring subsystem.", "exceptionToStatus"_attr = exceptionToStatus());
     }
 }
 
@@ -600,7 +599,7 @@ void FreeMonProcessor::doAsyncRegisterComplete(
 
     Status s = validateRegistrationResponse(resp);
     if (!s.isOK()) {
-        warning() << "Free Monitoring registration halted due to " << s;
+        LOGV2_WARNING("Free Monitoring registration halted due to {}", "s"_attr = s);
 
         // Disable on any error
         _state->setState(StorageStateEnum::disabled);
@@ -646,7 +645,7 @@ void FreeMonProcessor::doAsyncRegisterComplete(
     // Notify waiters
     notifyPendingRegisters(Status::OK());
 
-    log() << "Free Monitoring is Enabled. Frequency: " << resp.getReportingInterval() << " seconds";
+    LOGV2("Free Monitoring is Enabled. Frequency: {} seconds", "resp_getReportingInterval"_attr = resp.getReportingInterval());
 
     // Enqueue next metrics upload immediately to deliver a good experience
     enqueue(FreeMonMessage::createNow(FreeMonMessageType::MetricsSend));
@@ -666,12 +665,11 @@ void FreeMonProcessor::doAsyncRegisterFail(
 
     if (!_registrationRetry->incrementError()) {
         // We have exceeded our retry
-        warning() << "Free Monitoring is abandoning registration after excess retries";
+        LOGV2_WARNING("Free Monitoring is abandoning registration after excess retries");
         return;
     }
 
-    LOG(1) << "Free Monitoring Registration Failed with status '" << msg->getPayload()
-           << "', retrying in " << _registrationRetry->getNextDuration();
+    LOGV2_DEBUG(1, "Free Monitoring Registration Failed with status '{}', retrying in {}", "msg_getPayload"_attr = msg->getPayload(), "_registrationRetry_getNextDuration"_attr = _registrationRetry->getNextDuration());
 
     // Enqueue a register retry
     enqueue(FreeMonRegisterCommandMessage::createWithDeadline(
@@ -688,7 +686,7 @@ void FreeMonProcessor::doCommandUnregister(
 
     writeState(client);
 
-    log() << "Free Monitoring is Disabled";
+    LOGV2("Free Monitoring is Disabled");
 
     msg->setStatus(Status::OK());
 }
@@ -778,7 +776,7 @@ void FreeMonProcessor::doAsyncMetricsComplete(
 
     Status s = validateMetricsResponse(resp);
     if (!s.isOK()) {
-        warning() << "Free Monitoring metrics uploading halted due to " << s;
+        LOGV2_WARNING("Free Monitoring metrics uploading halted due to {}", "s"_attr = s);
 
         // Disable free monitoring on validation errors
         _state->setState(StorageStateEnum::disabled);
@@ -851,12 +849,11 @@ void FreeMonProcessor::doAsyncMetricsFail(
 
     if (!_metricsRetry->incrementError()) {
         // We have exceeded our retry
-        warning() << "Free Monitoring is abandoning metrics upload after excess retries";
+        LOGV2_WARNING("Free Monitoring is abandoning metrics upload after excess retries");
         return;
     }
 
-    LOG(1) << "Free Monitoring Metrics upload failed with status " << msg->getPayload()
-           << ", retrying in " << _metricsRetry->getNextDuration();
+    LOGV2_DEBUG(1, "Free Monitoring Metrics upload failed with status {}, retrying in {}", "msg_getPayload"_attr = msg->getPayload(), "_metricsRetry_getNextDuration"_attr = _metricsRetry->getNextDuration());
 
     // Enqueue next metrics upload
     enqueue(FreeMonMessage::createWithDeadline(FreeMonMessageType::MetricsSend,
@@ -948,9 +945,8 @@ void FreeMonProcessor::doNotifyOnUpsert(
         // Stop the queue
         _queue.stop();
 
-        warning() << "Uncaught exception in '" << exceptionToStatus()
-                  << "' in free monitoring op observer. Shutting down the "
-                     "free monitoring subsystem.";
+        LOGV2_WARNING("Uncaught exception in '{}' in free monitoring op observer. Shutting down the "
+                     "free monitoring subsystem.", "exceptionToStatus"_attr = exceptionToStatus());
     }
 }
 

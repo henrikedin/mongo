@@ -114,7 +114,7 @@ StatusWith<RollBackLocalOperations::RollbackCommonPoint> RollBackLocalOperations
 
     while (getTimestamp(_localOplogValue) > getTimestamp(operation)) {
         _scanned++;
-        LOG(2) << "Local oplog entry to roll back: " << redact(_localOplogValue.first);
+        LOGV2_DEBUG(2, "Local oplog entry to roll back: {}", "redact__localOplogValue_first"_attr = redact(_localOplogValue.first));
         auto status = _rollbackOperation(_localOplogValue.first);
         if (!status.isOK()) {
             invariant(ErrorCodes::NoSuchKey != status.code());

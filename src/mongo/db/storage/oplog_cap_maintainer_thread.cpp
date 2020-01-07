@@ -56,7 +56,7 @@ namespace mongo {
 
 bool OplogCapMaintainerThread::_deleteExcessDocuments() {
     if (!getGlobalServiceContext()->getStorageEngine()) {
-        LOG(2) << "OplogCapMaintainerThread: no global storage engine yet";
+        LOGV2_DEBUG(2, "OplogCapMaintainerThread: no global storage engine yet");
         return false;
     }
 
@@ -81,7 +81,7 @@ bool OplogCapMaintainerThread::_deleteExcessDocuments() {
             auto databaseHolder = DatabaseHolder::get(opCtx.get());
             auto db = databaseHolder->getDb(opCtx.get(), oplogNss.db());
             if (!db) {
-                LOG(2) << "no local database yet";
+                LOGV2_DEBUG(2, "no local database yet");
                 return false;
             }
             // We need to hold the database lock while getting the collection. Otherwise a
@@ -90,7 +90,7 @@ bool OplogCapMaintainerThread::_deleteExcessDocuments() {
             Collection* collection = CollectionCatalog::get(opCtx.get())
                                          .lookupCollectionByNamespace(opCtx.get(), oplogNss);
             if (!collection) {
-                LOG(2) << "no collection " << oplogNss;
+                LOGV2_DEBUG(2, "no collection {}", "oplogNss"_attr = oplogNss);
                 return false;
             }
             rs = collection->getRecordStore();
@@ -102,7 +102,7 @@ bool OplogCapMaintainerThread::_deleteExcessDocuments() {
     } catch (const ExceptionForCat<ErrorCategory::Interruption>&) {
         return false;
     } catch (const std::exception& e) {
-        severe() << "error in OplogCapMaintainerThread: " << e.what();
+        LOGV2_FATAL("error in OplogCapMaintainerThread: {}", "e_what"_attr = e.what());
         fassertFailedNoTrace(!"error in OplogCapMaintainerThread");
     } catch (...) {
         fassertFailedNoTrace(!"unknown error in OplogCapMaintainerThread");

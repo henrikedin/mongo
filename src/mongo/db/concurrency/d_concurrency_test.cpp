@@ -2042,9 +2042,7 @@ TEST_F(DConcurrencyTestFixture, CompatibleFirstStress) {
     for (auto& thread : threads)
         thread.join();
     for (int threadId = 0; threadId < numThreads; threadId++) {
-        log() << "thread " << threadId << " stats: " << acquisitionCount[threadId]
-              << " acquisitions, " << timeoutCount[threadId] << " timeouts, "
-              << busyWaitCount[threadId] / 1'000'000 << "M busy waits";
+        LOGV2("thread {} stats: {} acquisitions, {} timeouts, {}M busy waits", "threadId"_attr = threadId, "acquisitionCount_threadId"_attr = acquisitionCount[threadId], "timeoutCount_threadId"_attr = timeoutCount[threadId], "busyWaitCount_threadId_1_000_000"_attr = busyWaitCount[threadId] / 1'000'000);
     }
 }
 

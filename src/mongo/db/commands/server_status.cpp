@@ -145,7 +145,7 @@ public:
         timeBuilder.appendNumber("at end", durationCount<Milliseconds>(runElapsed));
         if (runElapsed > Milliseconds(1000)) {
             BSONObj t = timeBuilder.obj();
-            log() << "serverStatus was very slow: " << t;
+            LOGV2("serverStatus was very slow: {}", "t"_attr = t);
 
             bool include_timing = true;
             const auto& elem = cmdObj[kTimingSection];

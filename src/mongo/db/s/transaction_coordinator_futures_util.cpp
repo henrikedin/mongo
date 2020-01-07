@@ -96,7 +96,7 @@ Future<executor::TaskExecutor::ResponseStatus> AsyncWorkScheduler::scheduleRemot
                 ->grantInternalAuthorization(opCtx->getClient());
 
             if (MONGO_unlikely(hangWhileTargetingLocalHost.shouldFail())) {
-                LOG(0) << "Hit hangWhileTargetingLocalHost failpoint";
+                LOGV2("Hit hangWhileTargetingLocalHost failpoint");
                 hangWhileTargetingLocalHost.pauseWhileSet(opCtx);
             }
 
@@ -232,7 +232,7 @@ Future<AsyncWorkScheduler::HostAndShard> AsyncWorkScheduler::_targetHostAsync(
         const auto shard = uassertStatusOK(shardRegistry->getShard(opCtx, shardId));
 
         if (MONGO_unlikely(hangWhileTargetingRemoteHost.shouldFail())) {
-            LOG(0) << "Hit hangWhileTargetingRemoteHost failpoint for shard " << shardId;
+            LOGV2("Hit hangWhileTargetingRemoteHost failpoint for shard {}", "shardId"_attr = shardId);
             hangWhileTargetingRemoteHost.pauseWhileSet(opCtx);
         }
 

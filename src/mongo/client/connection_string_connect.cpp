@@ -61,11 +61,11 @@ std::unique_ptr<DBClientBase> ConnectionString::connect(StringData applicationNa
                 auto c = std::make_unique<DBClientConnection>(true, 0, newURI);
 
                 c->setSoTimeout(socketTimeout);
-                LOG(1) << "creating new connection to:" << server;
+                LOGV2_DEBUG(1, "creating new connection to:{}", "server"_attr = server);
                 if (!c->connect(server, applicationName, errmsg)) {
                     continue;
                 }
-                LOG(1) << "connected connection!";
+                LOGV2_DEBUG(1, "connected connection!");
                 return std::move(c);
             }
             return nullptr;
@@ -96,8 +96,7 @@ std::unique_ptr<DBClientBase> ConnectionString::connect(StringData applicationNa
             // Double-checked lock, since this will never be active during normal operation
             auto replacementConn = _connectHook->connect(*this, errmsg, socketTimeout);
 
-            log() << "replacing connection to " << this->toString() << " with "
-                  << (replacementConn ? replacementConn->getServerAddress() : "(empty)");
+            LOGV2("replacing connection to {} with {}", "this_toString"_attr = this->toString(), "replacementConn_replacementConn_getServerAddress_empty"_attr = (replacementConn ? replacementConn->getServerAddress() : "(empty)"));
 
             return replacementConn;
         }

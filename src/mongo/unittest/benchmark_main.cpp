@@ -53,9 +53,9 @@ int main(int argc, char** argv, char** envp) {
         return 1;
 
 #ifndef MONGO_CONFIG_OPTIMIZED_BUILD
-    ::mongo::log() << "***WARNING*** MongoDB was built with --opt=off. Function timings may be "
+    ::mongo::LOGV2("***WARNING*** MongoDB was built with --opt=off. Function timings may be "
                       "affected. Always verify any code change against the production environment "
-                      "(e.g. --opt=on).";
+                      "(e.g. --opt=on).");
 #endif
 
     ::benchmark::RunSpecifiedBenchmarks();

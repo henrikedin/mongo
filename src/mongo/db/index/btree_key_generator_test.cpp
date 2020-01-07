@@ -137,15 +137,13 @@ bool testKeygen(const BSONObj& kp,
     //
     bool match = keysetsEqual(expectedKeys, actualKeys);
     if (!match) {
-        log() << "Expected: " << dumpKeyset(expectedKeys) << ", "
-              << "Actual: " << dumpKeyset(actualKeys);
+        LOGV2("Expected: {}, Actual: {}", "dumpKeyset_expectedKeys"_attr = dumpKeyset(expectedKeys), "dumpKeyset_actualKeys"_attr = dumpKeyset(actualKeys));
         return false;
     }
 
     match = (expectedMultikeyPaths == actualMultikeyPaths);
     if (!match) {
-        log() << "Expected: " << dumpMultikeyPaths(expectedMultikeyPaths) << ", "
-              << "Actual: " << dumpMultikeyPaths(actualMultikeyPaths);
+        LOGV2("Expected: {}, Actual: {}", "dumpMultikeyPaths_expectedMultikeyPaths"_attr = dumpMultikeyPaths(expectedMultikeyPaths), "dumpMultikeyPaths_actualMultikeyPaths"_attr = dumpMultikeyPaths(actualMultikeyPaths));
     }
 
     return match;

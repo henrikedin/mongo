@@ -159,13 +159,13 @@ void WatchdogPeriodicThread::doLoop() {
             } catch (const DBException& e) {
                 // The only bad status is when we are in shutdown
                 if (!opCtx->getServiceContext()->getKillAllOperations()) {
-                    severe() << "Watchdog was interrupted, shutting down, reason: " << e.toStatus();
+                    LOGV2_FATAL("Watchdog was interrupted, shutting down, reason: {}", "e_toStatus"_attr = e.toStatus());
                     exitCleanly(ExitCode::EXIT_ABRUPT);
                 }
 
                 // This interruption ends the WatchdogPeriodicThread. This means it is possible to
                 // killOp this operation and stop it for the lifetime of the process.
-                LOG(1) << "WatchdogPeriodicThread interrupted by: " << e;
+                LOGV2_DEBUG(1, "WatchdogPeriodicThread interrupted by: {}", "e"_attr = e);
                 return;
             }
 
@@ -202,8 +202,7 @@ void WatchdogCheckThread::run(OperationContext* opCtx) {
         check->run(opCtx);
         Microseconds micros = timer.elapsed();
 
-        LOG(1) << "Watchdog test '" << check->getDescriptionForLogging() << "' took "
-               << duration_cast<Milliseconds>(micros);
+        LOGV2_DEBUG(1, "Watchdog test '{}' took {}", "check_getDescriptionForLogging"_attr = check->getDescriptionForLogging(), "duration_cast_Milliseconds_micros"_attr = duration_cast<Milliseconds>(micros));
 
         // We completed a check, bump the generation counter.
         _checkGeneration.fetchAndAdd(1);
@@ -250,7 +249,7 @@ WatchdogMonitor::WatchdogMonitor(std::vector<std::unique_ptr<WatchdogCheck>> che
 }
 
 void WatchdogMonitor::start() {
-    log() << "Starting Watchdog Monitor";
+    LOGV2("Starting Watchdog Monitor");
 
     // Start the threads.
     _watchdogCheckThread.start();
@@ -279,12 +278,12 @@ void WatchdogMonitor::setPeriod(Milliseconds duration) {
             _watchdogCheckThread.setPeriod(_checkPeriod);
             _watchdogMonitorThread.setPeriod(duration);
 
-            log() << "WatchdogMonitor period changed to " << duration_cast<Seconds>(duration);
+            LOGV2("WatchdogMonitor period changed to {}", "duration_cast_Seconds_duration"_attr = duration_cast<Seconds>(duration));
         } else {
             _watchdogMonitorThread.setPeriod(duration);
             _watchdogCheckThread.setPeriod(duration);
 
-            log() << "WatchdogMonitor disabled";
+            LOGV2("WatchdogMonitor disabled");
         }
     }
 }
@@ -342,36 +341,31 @@ void checkFile(OperationContext* opCtx, const boost::filesystem::path& file) {
                                NULL);
     if (hFile == INVALID_HANDLE_VALUE) {
         std::uint32_t gle = ::GetLastError();
-        severe() << "CreateFile failed for '" << file.generic_string()
-                 << "' with error: " << errnoWithDescription(gle);
+        LOGV2_FATAL("CreateFile failed for '{}' with error: {}", "file_generic_string"_attr = file.generic_string(), "errnoWithDescription_gle"_attr = errnoWithDescription(gle));
         fassertNoTrace(4074, gle == 0);
     }
 
     DWORD bytesWrittenTotal;
     if (!WriteFile(hFile, nowStr.c_str(), nowStr.size(), &bytesWrittenTotal, NULL)) {
         std::uint32_t gle = ::GetLastError();
-        severe() << "WriteFile failed for '" << file.generic_string()
-                 << "' with error: " << errnoWithDescription(gle);
+        LOGV2_FATAL("WriteFile failed for '{}' with error: {}", "file_generic_string"_attr = file.generic_string(), "errnoWithDescription_gle"_attr = errnoWithDescription(gle));
         fassertNoTrace(4075, gle == 0);
     }
 
     if (bytesWrittenTotal != nowStr.size()) {
-        warning() << "partial write for '" << file.generic_string() << "' expected "
-                  << nowStr.size() << " bytes but wrote " << bytesWrittenTotal << " bytes";
+        LOGV2_WARNING("partial write for '{}' expected {} bytes but wrote {} bytes", "file_generic_string"_attr = file.generic_string(), "nowStr_size"_attr = nowStr.size(), "bytesWrittenTotal"_attr = bytesWrittenTotal);
     } else {
 
         if (!FlushFileBuffers(hFile)) {
             std::uint32_t gle = ::GetLastError();
-            severe() << "FlushFileBuffers failed for '" << file.generic_string()
-                     << "' with error: " << errnoWithDescription(gle);
+            LOGV2_FATAL("FlushFileBuffers failed for '{}' with error: {}", "file_generic_string"_attr = file.generic_string(), "errnoWithDescription_gle"_attr = errnoWithDescription(gle));
             fassertNoTrace(4076, gle == 0);
         }
 
         DWORD newOffset = SetFilePointer(hFile, 0, 0, FILE_BEGIN);
         if (newOffset != 0) {
             std::uint32_t gle = ::GetLastError();
-            severe() << "SetFilePointer failed for '" << file.generic_string()
-                     << "' with error: " << errnoWithDescription(gle);
+            LOGV2_FATAL("SetFilePointer failed for '{}' with error: {}", "file_generic_string"_attr = file.generic_string(), "errnoWithDescription_gle"_attr = errnoWithDescription(gle));
             fassertNoTrace(4077, gle == 0);
         }
 
@@ -379,29 +373,24 @@ void checkFile(OperationContext* opCtx, const boost::filesystem::path& file) {
         auto readBuffer = std::make_unique<char[]>(nowStr.size());
         if (!ReadFile(hFile, readBuffer.get(), nowStr.size(), &bytesRead, NULL)) {
             std::uint32_t gle = ::GetLastError();
-            severe() << "ReadFile failed for '" << file.generic_string()
-                     << "' with error: " << errnoWithDescription(gle);
+            LOGV2_FATAL("ReadFile failed for '{}' with error: {}", "file_generic_string"_attr = file.generic_string(), "errnoWithDescription_gle"_attr = errnoWithDescription(gle));
             fassertNoTrace(4078, gle == 0);
         }
 
         if (bytesRead != bytesWrittenTotal) {
-            severe() << "Read wrong number of bytes for '" << file.generic_string() << "' expected "
-                     << bytesWrittenTotal << " bytes but read " << bytesRead << " bytes";
+            LOGV2_FATAL("Read wrong number of bytes for '{}' expected {} bytes but read {} bytes", "file_generic_string"_attr = file.generic_string(), "bytesWrittenTotal"_attr = bytesWrittenTotal, "bytesRead"_attr = bytesRead);
             fassertNoTrace(50724, false);
         }
 
         if (memcmp(nowStr.c_str(), readBuffer.get(), nowStr.size()) != 0) {
-            severe() << "Read wrong string from file '" << file.generic_string() << nowStr.size()
-                     << " bytes (in hex) '" << toHexLower(nowStr.c_str(), nowStr.size())
-                     << "' but read bytes '" << toHexLower(readBuffer.get(), bytesRead) << "'";
+            LOGV2_FATAL("Read wrong string from file '{}{} bytes (in hex) '{}' but read bytes '{}'", "file_generic_string"_attr = file.generic_string(), "nowStr_size"_attr = nowStr.size(), "toHexLower_nowStr_c_str_nowStr_size"_attr = toHexLower(nowStr.c_str(), nowStr.size()), "toHexLower_readBuffer_get_bytesRead"_attr = toHexLower(readBuffer.get(), bytesRead));
             fassertNoTrace(50717, false);
         }
     }
 
     if (!CloseHandle(hFile)) {
         std::uint32_t gle = ::GetLastError();
-        severe() << "CloseHandle failed for '" << file.generic_string()
-                 << "' with error: " << errnoWithDescription(gle);
+        LOGV2_FATAL("CloseHandle failed for '{}' with error: {}", "file_generic_string"_attr = file.generic_string(), "errnoWithDescription_gle"_attr = errnoWithDescription(gle));
         fassertNoTrace(4079, gle == 0);
     }
 }
@@ -426,8 +415,7 @@ void checkFile(OperationContext* opCtx, const boost::filesystem::path& file) {
     int fd = open(file.generic_string().c_str(), O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
     if (fd == -1) {
         auto err = errno;
-        severe() << "open failed for '" << file.generic_string()
-                 << "' with error: " << errnoWithDescription(err);
+        LOGV2_FATAL("open failed for '{}' with error: {}", "file_generic_string"_attr = file.generic_string(), "errnoWithDescription_err"_attr = errnoWithDescription(err));
         fassertNoTrace(4080, err == 0);
     }
 
@@ -441,15 +429,13 @@ void checkFile(OperationContext* opCtx, const boost::filesystem::path& file) {
                 continue;
             }
 
-            severe() << "write failed for '" << file.generic_string()
-                     << "' with error: " << errnoWithDescription(err);
+            LOGV2_FATAL("write failed for '{}' with error: {}", "file_generic_string"_attr = file.generic_string(), "errnoWithDescription_err"_attr = errnoWithDescription(err));
             fassertNoTrace(4081, err == 0);
         }
 
         // Warn if the write was incomplete
         if (bytesWrittenTotal == 0 && static_cast<size_t>(bytesWrittenInWrite) != nowStr.size()) {
-            warning() << "parital write for '" << file.generic_string() << "' expected "
-                      << nowStr.size() << " bytes but wrote " << bytesWrittenInWrite << " bytes";
+            LOGV2_WARNING("parital write for '{}' expected {} bytes but wrote {} bytes", "file_generic_string"_attr = file.generic_string(), "nowStr_size"_attr = nowStr.size(), "bytesWrittenInWrite"_attr = bytesWrittenInWrite);
         }
 
         bytesWrittenTotal += bytesWrittenInWrite;
@@ -457,8 +443,7 @@ void checkFile(OperationContext* opCtx, const boost::filesystem::path& file) {
 
     if (fsync(fd)) {
         auto err = errno;
-        severe() << "fsync failed for '" << file.generic_string()
-                 << "' with error: " << errnoWithDescription(err);
+        LOGV2_FATAL("fsync failed for '{}' with error: {}", "file_generic_string"_attr = file.generic_string(), "errnoWithDescription_err"_attr = errnoWithDescription(err));
         fassertNoTrace(4082, err == 0);
     }
 
@@ -473,36 +458,29 @@ void checkFile(OperationContext* opCtx, const boost::filesystem::path& file) {
                 continue;
             }
 
-            severe() << "read failed for '" << file.generic_string()
-                     << "' with error: " << errnoWithDescription(err);
+            LOGV2_FATAL("read failed for '{}' with error: {}", "file_generic_string"_attr = file.generic_string(), "errnoWithDescription_err"_attr = errnoWithDescription(err));
             fassertNoTrace(4083, err == 0);
         } else if (bytesReadInRead == 0) {
-            severe() << "read failed for '" << file.generic_string()
-                     << "' with unexpected end of file";
+            LOGV2_FATAL("read failed for '{}' with unexpected end of file", "file_generic_string"_attr = file.generic_string());
             fassertNoTrace(50719, false);
         }
 
         // Warn if the read was incomplete
         if (bytesReadTotal == 0 && static_cast<size_t>(bytesReadInRead) != nowStr.size()) {
-            warning() << "partial read for '" << file.generic_string() << "' expected "
-                      << nowStr.size() << " bytes but read " << bytesReadInRead << " bytes";
+            LOGV2_WARNING("partial read for '{}' expected {} bytes but read {} bytes", "file_generic_string"_attr = file.generic_string(), "nowStr_size"_attr = nowStr.size(), "bytesReadInRead"_attr = bytesReadInRead);
         }
 
         bytesReadTotal += bytesReadInRead;
     }
 
     if (memcmp(nowStr.c_str(), readBuffer.get(), nowStr.size()) != 0) {
-        severe() << "Read wrong string from file '" << file.generic_string() << "' expected "
-                 << nowStr.size() << " bytes (in hex) '"
-                 << toHexLower(nowStr.c_str(), nowStr.size()) << "' but read bytes '"
-                 << toHexLower(readBuffer.get(), bytesReadTotal) << "'";
+        LOGV2_FATAL("Read wrong string from file '{}' expected {} bytes (in hex) '{}' but read bytes '{}'", "file_generic_string"_attr = file.generic_string(), "nowStr_size"_attr = nowStr.size(), "toHexLower_nowStr_c_str_nowStr_size"_attr = toHexLower(nowStr.c_str(), nowStr.size()), "toHexLower_readBuffer_get_bytesReadTotal"_attr = toHexLower(readBuffer.get(), bytesReadTotal));
         fassertNoTrace(50718, false);
     }
 
     if (close(fd)) {
         auto err = errno;
-        severe() << "close failed for '" << file.generic_string()
-                 << "' with error: " << errnoWithDescription(err);
+        LOGV2_FATAL("close failed for '{}' with error: {}", "file_generic_string"_attr = file.generic_string(), "errnoWithDescription_err"_attr = errnoWithDescription(err));
         fassertNoTrace(4084, err == 0);
     }
 }
@@ -529,8 +507,7 @@ void DirectoryCheck::run(OperationContext* opCtx) {
     boost::system::error_code ec;
     boost::filesystem::remove(file, ec);
     if (ec) {
-        warning() << "Failed to delete file '" << file.generic_string()
-                  << "', error: " << ec.message();
+        LOGV2_WARNING("Failed to delete file '{}', error: {}", "file_generic_string"_attr = file.generic_string(), "ec_message"_attr = ec.message());
     }
 }
 

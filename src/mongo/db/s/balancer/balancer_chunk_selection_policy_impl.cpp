@@ -218,8 +218,7 @@ StatusWith<SplitInfoVector> BalancerChunkSelectionPolicyImpl::selectChunksToSpli
             // Namespace got dropped before we managed to get to it, so just skip it
             continue;
         } else if (!candidatesStatus.isOK()) {
-            warning() << "Unable to enforce tag range policy for collection " << nss.ns()
-                      << causedBy(candidatesStatus.getStatus());
+            LOGV2_WARNING("Unable to enforce tag range policy for collection {}{}", "nss_ns"_attr = nss.ns(), "causedBy_candidatesStatus_getStatus"_attr = causedBy(candidatesStatus.getStatus()));
             continue;
         }
 
@@ -292,8 +291,7 @@ StatusWith<MigrateInfoVector> BalancerChunkSelectionPolicyImpl::selectChunksToMo
             // Namespace got dropped before we managed to get to it, so just skip it
             continue;
         } else if (!candidatesStatus.isOK()) {
-            warning() << "Unable to balance collection " << nss.ns()
-                      << causedBy(candidatesStatus.getStatus());
+            LOGV2_WARNING("Unable to balance collection {}{}", "nss_ns"_attr = nss.ns(), "causedBy_candidatesStatus_getStatus"_attr = causedBy(candidatesStatus.getStatus()));
             continue;
         }
 

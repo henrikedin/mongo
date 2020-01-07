@@ -302,7 +302,7 @@ DocumentSource::GetNextResult Exchange::getNext(OperationContext* opCtx,
 
         // There is not any document so try to load more from the source.
         if (_loadingThreadId == kInvalidThreadId) {
-            LOG(3) << "A consumer " << consumerId << " begins loading";
+            LOGV2_DEBUG(3, "A consumer {} begins loading", "consumerId"_attr = consumerId);
 
             try {
                 // This consumer won the race and will fill the buffers.
@@ -316,7 +316,7 @@ DocumentSource::GetNextResult Exchange::getNext(OperationContext* opCtx,
                 size_t fullConsumerId = loadNextBatch();
 
                 if (MONGO_unlikely(exchangeFailLoadNextBatch.shouldFail())) {
-                    log() << "exchangeFailLoadNextBatch fail point enabled.";
+                    LOGV2("exchangeFailLoadNextBatch fail point enabled.");
                     uasserted(ErrorCodes::FailPointEnabled,
                               "Asserting on loading the next batch due to failpoint.");
                 }

@@ -538,8 +538,7 @@ CursorId ClusterFind::runQuery(OperationContext* opCtx,
                 throw;
             }
 
-            LOG(1) << "Received error status for query " << redact(query.toStringShort())
-                   << " on attempt " << retries << " of " << kMaxRetries << ": " << redact(ex);
+            LOGV2_DEBUG(1, "Received error status for query {} on attempt {} of {}: {}", "redact_query_toStringShort"_attr = redact(query.toStringShort()), "retries"_attr = retries, "kMaxRetries"_attr = kMaxRetries, "redact_ex"_attr = redact(ex));
 
             Grid::get(opCtx)->catalogCache()->onStaleDatabaseVersion(ex->getDb(),
                                                                      ex->getVersionReceived());
@@ -572,8 +571,7 @@ CursorId ClusterFind::runQuery(OperationContext* opCtx,
                 throw;
             }
 
-            LOG(1) << "Received error status for query " << redact(query.toStringShort())
-                   << " on attempt " << retries << " of " << kMaxRetries << ": " << redact(ex);
+            LOGV2_DEBUG(1, "Received error status for query {} on attempt {} of {}: {}", "redact_query_toStringShort"_attr = redact(query.toStringShort()), "retries"_attr = retries, "kMaxRetries"_attr = kMaxRetries, "redact_ex"_attr = redact(ex));
 
             catalogCache->onStaleShardVersion(std::move(routingInfo));
 

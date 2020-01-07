@@ -328,9 +328,7 @@ public:
                     auto status = WorkingSetCommon::getMemberObjectStatus(doc);
                     invariant(!status.isOK());
                     // Log an error message and then perform the cleanup.
-                    warning() << "GetMore command executor error: "
-                              << PlanExecutor::statestr(*state) << ", status: " << status
-                              << ", stats: " << redact(Explain::getWinningPlanStats(exec));
+                    LOGV2_WARNING("GetMore command executor error: {}, status: {}, stats: {}", "PlanExecutor_statestr_state"_attr = PlanExecutor::statestr(*state), "status"_attr = status, "redact_Explain_getWinningPlanStats_exec"_attr = redact(Explain::getWinningPlanStats(exec)));
 
                     nextBatch->abandon();
                     return status;
@@ -413,8 +411,8 @@ public:
                           ClientCursorParams::LockPolicy::kLockExternally);
 
                 if (MONGO_unlikely(GetMoreHangBeforeReadLock.shouldFail())) {
-                    log() << "GetMoreHangBeforeReadLock fail point enabled. Blocking until fail "
-                             "point is disabled.";
+                    LOGV2("GetMoreHangBeforeReadLock fail point enabled. Blocking until fail "
+                             "point is disabled.");
                     GetMoreHangBeforeReadLock.pauseWhileSet(opCtx);
                 }
 

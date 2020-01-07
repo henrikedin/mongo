@@ -158,8 +158,7 @@ public:
         const auto toShard = [&]() {
             auto toShardStatus = shardRegistry->getShard(opCtx, to);
             if (!toShardStatus.isOK()) {
-                log() << "Could not move database '" << dbname << "' to shard '" << to
-                      << causedBy(toShardStatus.getStatus());
+                LOGV2("Could not move database '{}' to shard '{}{}", "dbname"_attr = dbname, "to"_attr = to, "causedBy_toShardStatus_getStatus"_attr = causedBy(toShardStatus.getStatus()));
                 uassertStatusOKWithContext(toShardStatus.getStatus(),
                                            str::stream() << "Could not move database '" << dbname
                                                          << "' to shard '" << to << "'");

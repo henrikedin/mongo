@@ -88,7 +88,7 @@ Status restoreMissingFeatureCompatibilityVersionDocument(OperationContext* opCtx
     auto databaseHolder = DatabaseHolder::get(opCtx);
     auto db = databaseHolder->getDb(opCtx, fcvNss.db());
     if (!db) {
-        log() << "Re-creating admin database that was dropped.";
+        LOGV2("Re-creating admin database that was dropped.");
     }
     db = databaseHolder->openDb(opCtx, fcvNss.db());
     invariant(db);
@@ -97,8 +97,8 @@ Status restoreMissingFeatureCompatibilityVersionDocument(OperationContext* opCtx
     // create it.
     if (!CollectionCatalog::get(opCtx).lookupCollectionByNamespace(
             opCtx, NamespaceString::kServerConfigurationNamespace)) {
-        log() << "Re-creating the server configuration collection (admin.system.version) that was "
-                 "dropped.";
+        LOGV2("Re-creating the server configuration collection (admin.system.version) that was "
+                 "dropped.");
         uassertStatusOK(
             createCollection(opCtx, fcvNss.db().toString(), BSON("create" << fcvNss.coll())));
     }
@@ -113,8 +113,7 @@ Status restoreMissingFeatureCompatibilityVersionDocument(OperationContext* opCtx
                           fcvColl,
                           BSON("_id" << FeatureCompatibilityVersionParser::kParameterName),
                           featureCompatibilityVersion)) {
-        log() << "Re-creating featureCompatibilityVersion document that was deleted with version "
-              << FeatureCompatibilityVersionParser::kVersion42 << ".";
+        LOGV2("Re-creating featureCompatibilityVersion document that was deleted with version {}.", "FeatureCompatibilityVersionParser_kVersion42"_attr = FeatureCompatibilityVersionParser::kVersion42);
 
         BSONObj fcvObj = BSON("_id" << FeatureCompatibilityVersionParser::kParameterName
                                     << FeatureCompatibilityVersionParser::kVersionField
@@ -226,8 +225,7 @@ Status ensureCollectionProperties(OperationContext* opCtx,
                 log() << "collection " << coll->ns() << " is missing an _id index; building it now";
                 auto status = buildMissingIdIndex(opCtx, coll);
                 if (!status.isOK()) {
-                    error() << "could not build an _id index on collection " << coll->ns() << ": "
-                            << status;
+                    LOGV2_ERROR("could not build an _id index on collection {}: {}", "coll_ns"_attr = coll->ns(), "status"_attr = status);
                     return downgradeError;
                 }
             }
@@ -268,12 +266,11 @@ void rebuildIndexes(OperationContext* opCtx, StorageEngine* storageEngine) {
     auto reconcileResult = fassert(40593, storageEngine->reconcileCatalogAndIdents(opCtx));
 
     if (!reconcileResult.indexesToRebuild.empty() && serverGlobalParams.indexBuildRetry) {
-        log() << "note: restart the server with --noIndexBuildRetry "
-              << "to skip index rebuilds";
+        LOGV2("note: restart the server with --noIndexBuildRetry to skip index rebuilds");
     }
 
     if (!serverGlobalParams.indexBuildRetry) {
-        log() << "  not rebuilding interrupted indexes";
+        LOGV2("  not rebuilding interrupted indexes");
         return;
     }
 
@@ -308,7 +305,7 @@ void rebuildIndexes(OperationContext* opCtx, StorageEngine* storageEngine) {
 
         auto collection = CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, collNss);
         for (const auto& indexName : entry.second.first) {
-            log() << "Rebuilding index. Collection: " << collNss << " Index: " << indexName;
+            LOGV2("Rebuilding index. Collection: {} Index: {}", "collNss"_attr = collNss, "indexName"_attr = indexName);
         }
 
         std::vector<BSONObj> indexSpecs = entry.second.second;
@@ -378,7 +375,7 @@ bool repairDatabasesAndCheckVersion(OperationContext* opCtx) {
         invariant(!storageGlobalParams.readOnly);
 
         if (MONGO_unlikely(exitBeforeDataRepair.shouldFail())) {
-            log() << "Exiting because 'exitBeforeDataRepair' fail point was set.";
+            LOGV2("Exiting because 'exitBeforeDataRepair' fail point was set.");
             quickExit(EXIT_ABRUPT);
         }
 
@@ -392,7 +389,7 @@ bool repairDatabasesAndCheckVersion(OperationContext* opCtx) {
         }
 
         for (const auto& dbName : dbNames) {
-            LOG(1) << "    Repairing database: " << dbName;
+            LOGV2_DEBUG(1, "    Repairing database: {}", "dbName"_attr = dbName);
             fassertNoTrace(18506, repairDatabase(opCtx, storageEngine, dbName));
         }
 
@@ -437,7 +434,7 @@ bool repairDatabasesAndCheckVersion(OperationContext* opCtx) {
 
     if (storageGlobalParams.repair) {
         if (MONGO_unlikely(exitBeforeRepairInvalidatesConfig.shouldFail())) {
-            log() << "Exiting because 'exitBeforeRepairInvalidatesConfig' fail point was set.";
+            LOGV2("Exiting because 'exitBeforeRepairInvalidatesConfig' fail point was set.");
             quickExit(EXIT_ABRUPT);
         }
         // This must be done after opening the "local" database as it modifies the replica set
@@ -445,23 +442,23 @@ bool repairDatabasesAndCheckVersion(OperationContext* opCtx) {
         auto repairObserver = StorageRepairObserver::get(opCtx->getServiceContext());
         repairObserver->onRepairDone(opCtx);
         if (repairObserver->getModifications().size() > 0) {
-            warning() << "Modifications made by repair:";
+            LOGV2_WARNING("Modifications made by repair:");
             const auto& mods = repairObserver->getModifications();
             for (const auto& mod : mods) {
-                warning() << "  " << mod.getDescription();
+                LOGV2_WARNING("  {}", "mod_getDescription"_attr = mod.getDescription());
             }
         }
         if (repairObserver->isDataInvalidated()) {
             if (hasReplSetConfigDoc(opCtx)) {
-                warning() << "WARNING: Repair may have modified replicated data. This node will no "
-                             "longer be able to join a replica set without a full re-sync";
+                LOGV2_WARNING("WARNING: Repair may have modified replicated data. This node will no "
+                             "longer be able to join a replica set without a full re-sync");
             }
         }
 
         // There were modifications, but only benign ones.
         if (repairObserver->getModifications().size() > 0 && !repairObserver->isDataInvalidated()) {
-            log() << "Repair has made modifications to unreplicated data. The data is healthy and "
-                     "the node is eligible to be returned to the replica set.";
+            LOGV2("Repair has made modifications to unreplicated data. The data is healthy and "
+                     "the node is eligible to be returned to the replica set.");
         }
     }
 
@@ -487,7 +484,7 @@ bool repairDatabasesAndCheckVersion(OperationContext* opCtx) {
         if (dbName != "local") {
             nonLocalDatabases = true;
         }
-        LOG(1) << "    Recovering database: " << dbName;
+        LOGV2_DEBUG(1, "    Recovering database: {}", "dbName"_attr = dbName);
 
         auto db = databaseHolder->openDb(opCtx, dbName);
         invariant(db);
@@ -504,11 +501,10 @@ bool repairDatabasesAndCheckVersion(OperationContext* opCtx) {
                 // current version of mongod with --repair and then proceed with normal startup.
                 status = {ErrorCodes::MustUpgrade, status.reason()};
             }
-            severe() << "Unable to start mongod due to an incompatibility with the data files and"
-                        " this version of mongod: "
-                     << redact(status);
-            severe() << "Please consult our documentation when trying to downgrade to a previous"
-                        " major release";
+            LOGV2_FATAL("Unable to start mongod due to an incompatibility with the data files and"
+                        " this version of mongod: {}", "redact_status"_attr = redact(status));
+            LOGV2_FATAL("Please consult our documentation when trying to downgrade to a previous"
+                        " major release");
             quickExit(EXIT_NEED_UPGRADE);
             MONGO_UNREACHABLE;
         }
@@ -549,23 +545,15 @@ bool repairDatabasesAndCheckVersion(OperationContext* opCtx) {
                     // warning.
                     if (version ==
                         ServerGlobalParams::FeatureCompatibility::Version::kUpgradingTo44) {
-                        log() << "** WARNING: A featureCompatibilityVersion upgrade did not "
-                              << "complete. " << startupWarningsLog;
-                        log() << "**          The current featureCompatibilityVersion is "
-                              << FeatureCompatibilityVersionParser::toString(version) << "."
-                              << startupWarningsLog;
-                        log() << "**          To fix this, use the setFeatureCompatibilityVersion "
-                              << "command to resume upgrade to 4.4." << startupWarningsLog;
+                        LOGV2_OPTIONS({logv2::LogTag::kStartupWarnings}, "** WARNING: A featureCompatibilityVersion upgrade did not complete. ");
+                        LOGV2_OPTIONS({logv2::LogTag::kStartupWarnings}, "**          The current featureCompatibilityVersion is {}.", "FeatureCompatibilityVersionParser_toString_version"_attr = FeatureCompatibilityVersionParser::toString(version));
+                        LOGV2_OPTIONS({logv2::LogTag::kStartupWarnings}, "**          To fix this, use the setFeatureCompatibilityVersion command to resume upgrade to 4.4.");
                     } else if (version ==
                                ServerGlobalParams::FeatureCompatibility::Version::
                                    kDowngradingTo42) {
-                        log() << "** WARNING: A featureCompatibilityVersion downgrade did not "
-                              << "complete. " << startupWarningsLog;
-                        log() << "**          The current featureCompatibilityVersion is "
-                              << FeatureCompatibilityVersionParser::toString(version) << "."
-                              << startupWarningsLog;
-                        log() << "**          To fix this, use the setFeatureCompatibilityVersion "
-                              << "command to resume downgrade to 4.2." << startupWarningsLog;
+                        LOGV2_OPTIONS({logv2::LogTag::kStartupWarnings}, "** WARNING: A featureCompatibilityVersion downgrade did not complete. ");
+                        LOGV2_OPTIONS({logv2::LogTag::kStartupWarnings}, "**          The current featureCompatibilityVersion is {}.", "FeatureCompatibilityVersionParser_toString_version"_attr = FeatureCompatibilityVersionParser::toString(version));
+                        LOGV2_OPTIONS({logv2::LogTag::kStartupWarnings}, "**          To fix this, use the setFeatureCompatibilityVersion command to resume downgrade to 4.2.");
                     }
                 }
             }
@@ -597,13 +585,12 @@ bool repairDatabasesAndCheckVersion(OperationContext* opCtx) {
     // Fail to start up if there is no featureCompatibilityVersion document and there are non-local
     // databases present and we do not need to start up via initial sync.
     if (!fcvDocumentExists && nonLocalDatabases && !needInitialSync) {
-        severe()
-            << "Unable to start up mongod due to missing featureCompatibilityVersion document.";
-        severe() << "Please run with --repair to restore the document.";
+        LOGV2_FATAL("Unable to start up mongod due to missing featureCompatibilityVersion document.");
+        LOGV2_FATAL("Please run with --repair to restore the document.");
         fassertFailedNoTrace(40652);
     }
 
-    LOG(1) << "done repairDatabases";
+    LOGV2_DEBUG(1, "done repairDatabases");
     return nonLocalDatabases;
 }
 

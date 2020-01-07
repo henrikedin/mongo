@@ -86,11 +86,11 @@ void MozJSScriptEngine::interrupt(unsigned opId) {
     OpIdToScopeMap::iterator iScope = _opToScopeMap.find(opId);
     if (iScope == _opToScopeMap.end()) {
         // got interrupt request for a scope that no longer exists
-        LOG(1) << "received interrupt request for unknown op: " << opId << printKnownOps_inlock();
+        LOGV2_DEBUG(1, "received interrupt request for unknown op: {}{}", "opId"_attr = opId, "printKnownOps_inlock"_attr = printKnownOps_inlock());
         return;
     }
 
-    LOG(1) << "interrupting op: " << opId << printKnownOps_inlock();
+    LOGV2_DEBUG(1, "interrupting op: {}{}", "opId"_attr = opId, "printKnownOps_inlock"_attr = printKnownOps_inlock());
     iScope->second->kill();
 }
 
@@ -147,7 +147,7 @@ void MozJSScriptEngine::registerOperation(OperationContext* opCtx, MozJSImplScop
 
     _opToScopeMap[opId] = scope;
 
-    LOG(2) << "SMScope " << static_cast<const void*>(scope) << " registered for op " << opId;
+    LOGV2_DEBUG(2, "SMScope {} registered for op {}", "static_cast_const_void_scope"_attr = static_cast<const void*>(scope), "opId"_attr = opId);
     Status status = opCtx->checkForInterruptNoAssert();
     if (!status.isOK()) {
         scope->kill();
@@ -157,7 +157,7 @@ void MozJSScriptEngine::registerOperation(OperationContext* opCtx, MozJSImplScop
 void MozJSScriptEngine::unregisterOperation(unsigned int opId) {
     stdx::lock_guard<Latch> giLock(_globalInterruptLock);
 
-    LOG(2) << "ImplScope " << static_cast<const void*>(this) << " unregistered for op " << opId;
+    LOGV2_DEBUG(2, "ImplScope {} unregistered for op {}", "static_cast_const_void_this"_attr = static_cast<const void*>(this), "opId"_attr = opId);
 
     if (opId != 0) {
         // scope is currently associated with an operation id

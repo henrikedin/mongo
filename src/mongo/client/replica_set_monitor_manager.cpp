@@ -121,7 +121,7 @@ shared_ptr<ReplicaSetMonitor> ReplicaSetMonitorManager::getOrCreateMonitor(const
         return monitor;
     }
 
-    log() << "Starting new replica set monitor for " << uri.toString();
+    LOGV2("Starting new replica set monitor for {}", "uri_toString"_attr = uri.toString());
 
     auto newMonitor = std::make_shared<ReplicaSetMonitor>(uri);
     _monitors[setName] = newMonitor;
@@ -149,7 +149,7 @@ void ReplicaSetMonitorManager::removeMonitor(StringData setName) {
             monitor->drop();
         }
         _monitors.erase(it);
-        log() << "Removed ReplicaSetMonitor for replica set " << setName;
+        LOGV2("Removed ReplicaSetMonitor for replica set {}", "setName"_attr = setName);
     }
 }
 
@@ -172,12 +172,12 @@ void ReplicaSetMonitorManager::shutdown() {
     }
 
     if (taskExecutor) {
-        LOG(1) << "Shutting down task executor used for monitoring replica sets";
+        LOGV2_DEBUG(1, "Shutting down task executor used for monitoring replica sets");
         taskExecutor->shutdown();
     }
 
     if (monitors.size()) {
-        log() << "Dropping all ongoing scans against replica sets";
+        LOGV2("Dropping all ongoing scans against replica sets");
     }
     for (auto& [name, monitor] : monitors) {
         auto anchor = monitor.lock();

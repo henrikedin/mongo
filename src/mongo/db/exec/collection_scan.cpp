@@ -173,7 +173,7 @@ PlanStage::StageState CollectionScan::doWork(WorkingSetID* out) {
                 boost::optional<RecordId> startLoc =
                     collection()->getRecordStore()->oplogStartHack(getOpCtx(), goal.getValue());
                 if (startLoc && !startLoc->isNull()) {
-                    LOG(3) << "Using direct oplog seek";
+                    LOGV2_DEBUG(3, "Using direct oplog seek");
                     record = _cursor->seekExact(*startLoc);
                 }
             }

@@ -89,8 +89,7 @@ void HaystackAccessMethod::searchCommand(OperationContext* opCtx,
                                          unsigned limit) const {
     Timer t;
 
-    LOG(1) << "SEARCH near:" << redact(nearObj) << " maxDistance:" << maxDistance
-           << " search: " << redact(search);
+    LOGV2_DEBUG(1, "SEARCH near:{} maxDistance:{} search: {}", "redact_nearObj"_attr = redact(nearObj), "maxDistance"_attr = maxDistance, "redact_search"_attr = redact(search));
     int x, y;
     {
         BSONObjIterator i(nearObj);

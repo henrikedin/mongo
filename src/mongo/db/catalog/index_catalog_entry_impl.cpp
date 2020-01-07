@@ -107,8 +107,7 @@ IndexCatalogEntryImpl::IndexCatalogEntryImpl(OperationContext* const opCtx,
                                          MatchExpressionParser::kBanAllSpecialFeatures);
         invariant(statusWithMatcher.getStatus());
         _filterExpression = std::move(statusWithMatcher.getValue());
-        LOG(2) << "have filter expression for " << ns() << " " << _descriptor->indexName() << " "
-               << redact(filter);
+        LOGV2_DEBUG(2, "have filter expression for {} {} {}", "ns"_attr = ns(), "_descriptor_indexName"_attr = _descriptor->indexName(), "redact_filter"_attr = redact(filter));
     }
 }
 
@@ -250,8 +249,7 @@ void IndexCatalogEntryImpl::setMultikey(OperationContext* opCtx,
         }
 
         if (indexMetadataHasChanged && _queryInfo) {
-            LOG(1) << ns() << ": clearing plan cache - index " << _descriptor->keyPattern()
-                   << " set to multi key.";
+            LOGV2_DEBUG(1, "{}: clearing plan cache - index {} set to multi key.", "ns"_attr = ns(), "_descriptor_keyPattern"_attr = _descriptor->keyPattern());
             _queryInfo->clearQueryCache();
         }
     };
@@ -281,8 +279,7 @@ void IndexCatalogEntryImpl::setMultikey(OperationContext* opCtx,
 
             auto status = opCtx->recoveryUnit()->setTimestamp(writeTs);
             if (status.code() == ErrorCodes::BadValue) {
-                log() << "Temporarily could not timestamp the multikey catalog write, retrying. "
-                      << status.reason();
+                LOGV2("Temporarily could not timestamp the multikey catalog write, retrying. {}", "status_reason"_attr = status.reason());
                 throw WriteConflictException();
             }
             fassert(31164, status);

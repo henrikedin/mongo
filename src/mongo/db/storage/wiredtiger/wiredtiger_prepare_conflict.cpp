@@ -46,12 +46,11 @@ MONGO_FAIL_POINT_DEFINE(WTSkipPrepareConflictRetries);
 MONGO_FAIL_POINT_DEFINE(WTPrintPrepareConflictLog);
 
 void wiredTigerPrepareConflictLog(int attempts) {
-    LOG(1) << "Caught WT_PREPARE_CONFLICT, attempt " << attempts
-           << ". Waiting for unit of work to commit or abort.";
+    LOGV2_DEBUG(1, "Caught WT_PREPARE_CONFLICT, attempt {}. Waiting for unit of work to commit or abort.", "attempts"_attr = attempts);
 }
 
 void wiredTigerPrepareConflictFailPointLog() {
-    log() << "WTPrintPrepareConflictLog fail point enabled.";
+    LOGV2("WTPrintPrepareConflictLog fail point enabled.");
 }
 
 }  // namespace mongo

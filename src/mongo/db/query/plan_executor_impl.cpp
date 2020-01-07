@@ -635,8 +635,8 @@ PlanExecutor::ExecState PlanExecutorImpl::_getNextImpl(Snapshotted<Document>* ob
                         }
                         return true;
                     }))) {
-                log() << "PlanExecutor - planExecutorHangBeforeShouldWaitForInserts fail point "
-                         "enabled. Blocking until fail point is disabled.";
+                LOGV2("PlanExecutor - planExecutorHangBeforeShouldWaitForInserts fail point "
+                         "enabled. Blocking until fail point is disabled.");
                 planExecutorHangBeforeShouldWaitForInserts.pauseWhileSet();
             }
             if (!_shouldWaitForInserts()) {

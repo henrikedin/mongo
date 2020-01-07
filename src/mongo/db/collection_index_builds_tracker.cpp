@@ -110,9 +110,9 @@ void CollectionIndexBuildsTracker::waitUntilNoIndexBuildsRemain(stdx::unique_loc
             return true;
         }
 
-        log() << "Waiting until the following index builds are finished:";
+        LOGV2("Waiting until the following index builds are finished:");
         for (const auto& indexBuild : _buildStateByBuildUUID) {
-            log() << "    Index build with UUID: " << indexBuild.first;
+            LOGV2("    Index build with UUID: {}", "indexBuild_first"_attr = indexBuild.first);
         }
 
         return false;

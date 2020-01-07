@@ -130,10 +130,8 @@ boost::optional<repl::OpTime> Grid::advanceConfigOpTime(OperationContext* opCtx,
         if (opCtx && opCtx->getClient()) {
             clientAddr = opCtx->getClient()->clientAddress(true);
         }
-        log() << "Received " << what << " " << clientAddr
-              << " indicating config server optime "
-                 "term has increased, previous optime "
-              << prevOpTime << ", now " << opTime;
+        LOGV2("Received {} {} indicating config server optime "
+                 "term has increased, previous optime {}, now {}", "what"_attr = what, "clientAddr"_attr = clientAddr, "prevOpTime"_attr = prevOpTime, "opTime"_attr = opTime);
     }
     return prevOpTime;
 }

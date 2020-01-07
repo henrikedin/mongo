@@ -469,7 +469,7 @@ Status DBClientBase::authenticateInternalUser() {
     ScopedMetadataWriterRemover remover{this};
     if (!auth::isInternalAuthSet()) {
         if (!serverGlobalParams.quiet.load()) {
-            log() << "ERROR: No authentication parameters set for internal user";
+            LOGV2("ERROR: No authentication parameters set for internal user");
         }
         return {ErrorCodes::AuthenticationFailed,
                 "No authentication parameters set for internal user"};
@@ -491,8 +491,7 @@ Status DBClientBase::authenticateInternalUser() {
     }
 
     if (serverGlobalParams.quiet.load()) {
-        log() << "can't authenticate to " << toString()
-              << " as internal user, error: " << status.reason();
+        LOGV2("can't authenticate to {} as internal user, error: {}", "toString"_attr = toString(), "status_reason"_attr = status.reason());
     }
 
     return status;
@@ -892,7 +891,7 @@ void DBClientBase::dropIndex(const string& ns, const string& indexName) {
     if (!runCommand(nsToDatabase(ns),
                     BSON("dropIndexes" << nsToCollectionSubstring(ns) << "index" << indexName),
                     info)) {
-        LOG(_logLevel) << "dropIndex failed: " << info << endl;
+        LOGV2_DEBUG({logComponentV1toV2(_logLevel)}, "dropIndex failed: {}", "info"_attr = info);
         uassert(10007, "dropIndex failed", 0);
     }
 }

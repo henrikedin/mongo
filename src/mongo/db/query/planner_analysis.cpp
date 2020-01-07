@@ -344,7 +344,7 @@ std::unique_ptr<QuerySolutionNode> addSortKeyGeneratorStageIfNeeded(
 std::unique_ptr<ProjectionNode> analyzeProjection(const CanonicalQuery& query,
                                                   std::unique_ptr<QuerySolutionNode> solnRoot,
                                                   const bool hasSortStage) {
-    LOG(5) << "PROJECTION: Current plan is:\n" << redact(solnRoot->toString());
+    LOGV2_DEBUG(5, "PROJECTION: Current plan is:\n{}", "redact_solnRoot_toString"_attr = redact(solnRoot->toString()));
 
     // If the projection requires the entire document we add a fetch stage if not present. Otherwise
     // we add a fetch stage if we are not covered.
@@ -628,8 +628,7 @@ bool QueryPlannerAnalysis::explodeForSort(const CanonicalQuery& query,
 
     // Too many ixscans spoil the performance.
     if (totalNumScans > (size_t)internalQueryMaxScansToExplode.load()) {
-        LOG(5) << "Could expand ixscans to pull out sort order but resulting scan count"
-               << "(" << totalNumScans << ") is too high.";
+        LOGV2_DEBUG(5, "Could expand ixscans to pull out sort order but resulting scan count({}) is too high.", "totalNumScans"_attr = totalNumScans);
         return false;
     }
 
@@ -689,7 +688,7 @@ QuerySolutionNode* QueryPlannerAnalysis::analyzeSort(const CanonicalQuery& query
     BSONObj reverseSort = QueryPlannerCommon::reverseSortObj(sortObj);
     if (sorts.end() != sorts.find(reverseSort)) {
         QueryPlannerCommon::reverseScans(solnRoot);
-        LOG(5) << "Reversing ixscan to provide sort. Result: " << redact(solnRoot->toString());
+        LOGV2_DEBUG(5, "Reversing ixscan to provide sort. Result: {}", "redact_solnRoot_toString"_attr = redact(solnRoot->toString()));
         return solnRoot;
     }
 

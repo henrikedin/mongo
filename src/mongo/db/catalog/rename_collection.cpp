@@ -172,9 +172,7 @@ Status renameTargetCollectionToTmp(OperationContext* opCtx,
 
         wunit.commit();
 
-        log() << "Successfully renamed the target " << targetNs << " (" << targetUUID << ") to "
-              << tmpName << " so that the source " << sourceNs << " (" << sourceUUID
-              << ") could be renamed to " << targetNs;
+        LOGV2("Successfully renamed the target {} ({}) to {} so that the source {} ({}) could be renamed to {}", "targetNs"_attr = targetNs, "targetUUID"_attr = targetUUID, "tmpName"_attr = tmpName, "sourceNs"_attr = sourceNs, "sourceUUID"_attr = sourceUUID, "targetNs"_attr = targetNs);
 
         return Status::OK();
     });
@@ -545,8 +543,7 @@ Status renameBetweenDBs(OperationContext* opCtx,
     }
     const auto& tmpName = tmpNameResult.getValue();
 
-    log() << "Attempting to create temporary collection: " << tmpName
-          << " with the contents of collection: " << source;
+    LOGV2("Attempting to create temporary collection: {} with the contents of collection: {}", "tmpName"_attr = tmpName, "source"_attr = source);
 
     Collection* tmpColl = nullptr;
     {
@@ -580,8 +577,7 @@ Status renameBetweenDBs(OperationContext* opCtx,
         if (!status.isOK()) {
             // Ignoring failure case when dropping the temporary collection during cleanup because
             // the rename operation has already failed for another reason.
-            log() << "Unable to drop temporary collection " << tmpName << " while renaming from "
-                  << source << " to " << target << ": " << status;
+            LOGV2("Unable to drop temporary collection {} while renaming from {} to {}: {}", "tmpName"_attr = tmpName, "source"_attr = source, "target"_attr = target, "status"_attr = status);
         }
     });
 
@@ -838,7 +834,7 @@ Status renameCollection(OperationContext* opCtx,
 
     const std::string dropTargetMsg =
         options.dropTarget ? " and drop " + target.toString() + "." : ".";
-    log() << "renameCollectionForCommand: rename " << source << " to " << target << dropTargetMsg;
+    LOGV2("renameCollectionForCommand: rename {} to {}{}", "source"_attr = source, "target"_attr = target, "dropTargetMsg"_attr = dropTargetMsg);
 
     if (source.db() == target.db())
         return renameCollectionWithinDB(opCtx, source, target, options);
@@ -934,8 +930,7 @@ Status renameCollectionForApplyOps(OperationContext* opCtx,
     const std::string dropTargetMsg =
         uuidToDrop ? " and drop " + uuidToDrop->toString() + "." : ".";
     const std::string uuidString = uuidToRename ? uuidToRename->toString() : "UUID unknown";
-    log() << "renameCollectionForApplyOps: rename " << sourceNss << " (" << uuidString << ") to "
-          << targetNss << dropTargetMsg;
+    LOGV2("renameCollectionForApplyOps: rename {} ({}) to {}{}", "sourceNss"_attr = sourceNss, "uuidString"_attr = uuidString, "targetNss"_attr = targetNss, "dropTargetMsg"_attr = dropTargetMsg);
 
     if (sourceNss.db() == targetNss.db()) {
         return renameCollectionWithinDBForApplyOps(
@@ -956,8 +951,7 @@ Status renameCollectionForRollback(OperationContext* opCtx,
                                "have the same database. source: "
                             << *source << ". target: " << target);
 
-    log() << "renameCollectionForRollback: rename " << *source << " (" << uuid << ") to " << target
-          << ".";
+    LOGV2("renameCollectionForRollback: rename {} ({}) to {}.", "source"_attr = *source, "uuid"_attr = uuid, "target"_attr = target);
 
     return renameCollectionWithinDB(opCtx, *source, target, {});
 }

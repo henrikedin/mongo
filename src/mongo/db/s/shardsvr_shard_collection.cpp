@@ -94,7 +94,7 @@ const ReadPreferenceSetting kConfigReadSelector(ReadPreference::Nearest, TagSet{
  */
 void uassertStatusOKWithWarning(const Status& status) {
     if (!status.isOK()) {
-        warning() << "shardsvrShardCollection failed" << causedBy(redact(status));
+        LOGV2_WARNING("shardsvrShardCollection failed{}", "causedBy_redact_status"_attr = causedBy(redact(status)));
         uassertStatusOK(status);
     }
 }
@@ -515,7 +515,7 @@ void logStartShardCollection(OperationContext* opCtx,
                              const ShardsvrShardCollection& request,
                              const ShardCollectionTargetState& prerequisites,
                              const ShardId& dbPrimaryShardId) {
-    LOG(0) << "CMD: shardcollection: " << cmdObj;
+    LOGV2("CMD: shardcollection: {}", "cmdObj"_attr = cmdObj);
 
     audit::logShardCollection(
         opCtx->getClient(), nss.ns(), prerequisites.shardKeyPattern.toBSON(), request.getUnique());
@@ -769,8 +769,7 @@ UUID shardCollection(OperationContext* opCtx,
         writeChunkDocumentsAndRefreshShards(*targetState, initialChunks);
     }
 
-    LOG(0) << "Created " << initialChunks.chunks.size() << " chunk(s) for: " << nss
-           << ", producing collection version " << initialChunks.collVersion();
+    LOGV2("Created {} chunk(s) for: {}, producing collection version {}", "initialChunks_chunks_size"_attr = initialChunks.chunks.size(), "nss"_attr = nss, "initialChunks_collVersion"_attr = initialChunks.collVersion());
 
 
     ShardingLogging::get(opCtx)->logChange(
@@ -859,7 +858,7 @@ public:
                     uuid);
 
             if (MONGO_unlikely(pauseShardCollectionBeforeReturning.shouldFail())) {
-                log() << "Hit pauseShardCollectionBeforeReturning";
+                LOGV2("Hit pauseShardCollectionBeforeReturning");
                 pauseShardCollectionBeforeReturning.pauseWhileSet(opCtx);
             }
 

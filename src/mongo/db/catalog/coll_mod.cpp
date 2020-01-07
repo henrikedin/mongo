@@ -376,7 +376,7 @@ Status _collModInternal(OperationContext* opCtx,
                     std::make_unique<CollModResultChange>(oldExpireSecs, newExpireSecs, result));
 
                 if (MONGO_unlikely(assertAfterIndexUpdate.shouldFail())) {
-                    log() << "collMod - assertAfterIndexUpdate fail point enabled.";
+                    LOGV2("collMod - assertAfterIndexUpdate fail point enabled.");
                     uasserted(50970, "trigger rollback after the index update");
                 }
             }

@@ -305,7 +305,7 @@ public:
                     if (critSecSignal) {
                         collLock.reset();
                         autoDb.reset();
-                        log() << "waiting till out of critical section";
+                        LOGV2("waiting till out of critical section");
                         critSecSignal->waitFor(opCtx, Seconds(10));
                     }
 
@@ -326,7 +326,7 @@ public:
                     if (critSecSignal) {
                         collLock.reset();
                         autoDb.reset();
-                        log() << "waiting till out of critical section";
+                        LOGV2("waiting till out of critical section");
                         critSecSignal->waitFor(opCtx, Seconds(10));
                     }
 
@@ -371,7 +371,7 @@ public:
                     << ", stored shard version is " << currVersion.toString()
                     << causedBy(redact(status));
 
-                warning() << errmsg;
+                LOGV2_WARNING("{}", "errmsg"_attr = errmsg);
 
                 result.append("ns", nss.ns());
                 result.append("code", status.code());
@@ -390,7 +390,7 @@ public:
 
                 static Occasionally sampler;
                 if (sampler.tick()) {
-                    warning() << errmsg;
+                    LOGV2_WARNING("{}", "errmsg"_attr = errmsg);
                 }
 
                 // WARNING: the exact fields below are important for compatibility with mongos

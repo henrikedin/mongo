@@ -210,7 +210,7 @@ protected:
             }
 
             if (_done) {
-                log() << "dbCheck terminated due to stepdown";
+                LOGV2("dbCheck terminated due to stepdown");
                 return;
             }
         }

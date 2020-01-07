@@ -703,14 +703,14 @@ TEST(OpMsg, ExhaustWithDBClientCursorBehavesCorrectly) {
     conn->dropCollection(nss.toString());
 
     const int nDocs = 5;
-    unittest::log() << "Inserting " << nDocs << " documents.";
+    unittest::LOGV2("Inserting {} documents.", "nDocs"_attr = nDocs);
     for (int i = 0; i < nDocs; i++) {
         auto doc = BSON("_id" << i);
         conn->insert(nss.toString(), doc);
     }
 
     ASSERT_EQ(conn->count(nss), size_t(nDocs));
-    unittest::log() << "Finished document insertion.";
+    unittest::LOGV2("Finished document insertion.");
 
     // Open an exhaust cursor.
     int batchSize = 2;

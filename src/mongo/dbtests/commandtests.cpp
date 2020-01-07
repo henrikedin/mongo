@@ -177,7 +177,7 @@ public:
 
             BSONObj result;
             bool ok = db.runCommand(nsDb(), cmd.obj(), result);
-            log() << result.jsonString();
+            LOGV2("{}", "result_jsonString"_attr = result.jsonString());
             ASSERT(ok);
         }
     }
@@ -194,7 +194,7 @@ public:
 
         BSONObj result;
         bool ok = db.runCommand(nsDb(), cmd.obj(), result);
-        log() << result.jsonString();
+        LOGV2("{}", "result_jsonString"_attr = result.jsonString());
         ASSERT(ok);
     }
 };
@@ -215,7 +215,7 @@ public:
 
         BSONObj result;
         bool ok = db.runCommand(nsDb(), cmd.obj(), result);
-        log() << result.jsonString();
+        LOGV2("{}", "result_jsonString"_attr = result.jsonString());
         ASSERT(!ok);
     }
 };
@@ -237,7 +237,7 @@ public:
 
         BSONObj result;
         bool ok = db.runCommand(nsDb(), cmd.obj(), result);
-        log() << result.jsonString();
+        LOGV2("{}", "result_jsonString"_attr = result.jsonString());
         ASSERT(!ok);
     }
 };
@@ -262,7 +262,7 @@ public:
 
         BSONObj result;
         bool ok = db.runCommand(nsDb(), cmd.obj(), result);
-        log() << result.jsonString();
+        LOGV2("{}", "result_jsonString"_attr = result.jsonString());
         ASSERT(!ok);
     }
 };
@@ -286,7 +286,7 @@ public:
 
         BSONObj result;
         bool ok = db.runCommand(nsDb(), cmd.obj(), result);
-        log() << result.jsonString();
+        LOGV2("{}", "result_jsonString"_attr = result.jsonString());
         ASSERT(ok);
         // TODO(kangas) test that Tom's score is 1
     }
@@ -336,7 +336,7 @@ public:
 
             BSONObj result;
             bool ok = db.runCommand(nsDb(), cmd.obj(), result);
-            log() << result.jsonString();
+            LOGV2("{}", "result_jsonString"_attr = result.jsonString());
             ASSERT(ok);
         }
     }

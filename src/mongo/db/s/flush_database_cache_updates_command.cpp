@@ -133,7 +133,7 @@ public:
             oss.waitForMigrationCriticalSectionSignal(opCtx);
 
             if (request().getSyncFromConfig()) {
-                LOG(1) << "Forcing remote routing table refresh for " << _dbName();
+                LOGV2_DEBUG(1, "Forcing remote routing table refresh for {}", "_dbName"_attr = _dbName());
                 forceDatabaseRefresh(opCtx, _dbName());
             }
 

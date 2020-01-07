@@ -485,8 +485,7 @@ void DocumentSourceMerge::waitWhileFailPointEnabled() {
         pExpCtx->opCtx,
         "hangWhileBuildingDocumentSourceMergeBatch",
         []() {
-            log() << "Hanging aggregation due to 'hangWhileBuildingDocumentSourceMergeBatch' "
-                  << "failpoint";
+            LOGV2("Hanging aggregation due to 'hangWhileBuildingDocumentSourceMergeBatch' failpoint");
         });
 }
 

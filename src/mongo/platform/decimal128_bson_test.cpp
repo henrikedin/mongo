@@ -94,7 +94,7 @@ TEST(Decimal128BSONTest, TestsConstructingDecimalWithBsonDump) {
             BSONElement extjson = b.getField("extjson");
             BSONElement canonical_extjson = b.getField("canonical_extjson");
 
-            log() << "Test - " << desc.str();
+            LOGV2("Test - {}", "desc_str"_attr = desc.str());
 
             StringData hexString = bson.valueStringData();
             BSONObj d = convertHexStringToBsonObj(hexString);
@@ -108,7 +108,7 @@ TEST(Decimal128BSONTest, TestsConstructingDecimalWithBsonDump) {
             }
 
             ASSERT_EQ(trimWhiteSpace(outputJson), trimWhiteSpace(expectedJson));
-            log() << "PASSED";
+            LOGV2("PASSED");
         }
     }
 }

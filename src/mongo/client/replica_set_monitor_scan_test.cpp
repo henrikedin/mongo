@@ -1416,11 +1416,10 @@ TEST_F(MinOpTimeTest, MinOpTimeIgnored) {
 class Listener : public ReplicaSetChangeNotifier::Listener {
 public:
     void logEvent(StringData name, const Key& key) {
-        log() << name << ": " << key;
+        LOGV2("{}: {}", "name"_attr = name, "key"_attr = key);
     }
     void logEvent(StringData name, const State& state) {
-        log() << name << ": "
-              << "(" << state.generation << ") " << state.connStr << " | " << state.primary;
+        LOGV2("{}: ({}) {} | {}", "name"_attr = name, "state_generation"_attr = state.generation, "state_connStr"_attr = state.connStr, "state_primary"_attr = state.primary);
     }
 
     void onFoundSet(const Key& key) override {

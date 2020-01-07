@@ -59,7 +59,7 @@ public:
                                                                                              nss));
 
             if (MONGO_unlikely(hangRefineCollectionShardKeyAfterRefresh.shouldFail())) {
-                log() << "Hit hangRefineCollectionShardKeyAfterRefresh failpoint";
+                LOGV2("Hit hangRefineCollectionShardKeyAfterRefresh failpoint");
                 hangRefineCollectionShardKeyAfterRefresh.pauseWhileSet(opCtx);
             }
 

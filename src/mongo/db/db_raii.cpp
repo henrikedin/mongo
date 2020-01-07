@@ -185,9 +185,7 @@ AutoGetCollectionForRead::AutoGetCollectionForRead(OperationContext* opCtx,
         // waiting for the lastAppliedTimestamp to move forward. Instead we force the reader take
         // the PBWM lock and retry.
         if (lastAppliedTimestamp) {
-            LOG(0) << "tried reading at last-applied time: " << *lastAppliedTimestamp
-                   << " on ns: " << nss.ns() << ", but future catalog changes are pending at time "
-                   << *minSnapshot << ". Trying again without reading at last-applied time.";
+            LOGV2("tried reading at last-applied time: {} on ns: {}, but future catalog changes are pending at time {}. Trying again without reading at last-applied time.", "lastAppliedTimestamp"_attr = *lastAppliedTimestamp, "nss_ns"_attr = nss.ns(), "minSnapshot"_attr = *minSnapshot);
             // Destructing the block sets _shouldConflictWithSecondaryBatchApplication back to the
             // previous value. If the previous value is false (because there is another
             // shouldNotConflictWithSecondaryBatchApplicationBlock outside of this function), this
@@ -259,7 +257,7 @@ bool AutoGetCollectionForRead::_shouldReadAtLastAppliedTimestamp(
     // This may occur when multiple collection locks are held concurrently, which is often the case
     // when DBDirectClient is used.
     if (opCtx->lockState()->isLockHeldForMode(resourceIdParallelBatchWriterMode, MODE_IS)) {
-        LOG(1) << "not reading at last-applied because the PBWM lock is held";
+        LOGV2_DEBUG(1, "not reading at last-applied because the PBWM lock is held");
         return false;
     }
 

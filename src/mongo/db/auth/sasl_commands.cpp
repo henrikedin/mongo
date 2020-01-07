@@ -208,9 +208,7 @@ Status doSaslStep(OperationContext* opCtx,
         }
 
         if (!serverGlobalParams.quiet.load()) {
-            log() << "Successfully authenticated as principal " << mechanism.getPrincipalName()
-                  << " on " << mechanism.getAuthenticationDatabase() << " from client "
-                  << opCtx->getClient()->session()->remote();
+            LOGV2("Successfully authenticated as principal {} on {} from client {}", "mechanism_getPrincipalName"_attr = mechanism.getPrincipalName(), "mechanism_getAuthenticationDatabase"_attr = mechanism.getAuthenticationDatabase(), "opCtx_getClient_session_remote"_attr = opCtx->getClient()->session()->remote());
         }
     }
     return Status::OK();

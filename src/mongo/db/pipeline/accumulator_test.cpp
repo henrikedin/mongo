@@ -93,7 +93,7 @@ static void assertExpectedResults(
                 ASSERT_EQUALS(op.second.getType(), result.getType());
             }
         } catch (...) {
-            log() << "failed with arguments: " << Value(op.first);
+            LOGV2("failed with arguments: {}", "Value_op_first"_attr = Value(op.first));
             throw;
         }
     }

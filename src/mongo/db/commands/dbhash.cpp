@@ -370,7 +370,7 @@ private:
             exec = InternalPlanner::collectionScan(
                 opCtx, nss.ns(), collection, PlanExecutor::NO_YIELD);
         } else {
-            log() << "can't find _id index for: " << nss;
+            LOGV2("can't find _id index for: {}", "nss"_attr = nss);
             return "no _id _index";
         }
 
@@ -386,7 +386,7 @@ private:
             n++;
         }
         if (PlanExecutor::IS_EOF != state) {
-            warning() << "error while hashing, db dropped? ns=" << nss;
+            LOGV2_WARNING("error while hashing, db dropped? ns={}", "nss"_attr = nss);
             uasserted(34371,
                       "Plan executor error while running dbHash command: " +
                           WorkingSetCommon::toStatusString(c));

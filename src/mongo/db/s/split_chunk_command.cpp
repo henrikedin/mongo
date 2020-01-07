@@ -120,7 +120,7 @@ public:
         auto parseShardNameStatus = bsonExtractStringField(cmdObj, "from", &shardName);
         uassertStatusOK(parseShardNameStatus);
 
-        log() << "received splitChunk request: " << redact(cmdObj);
+        LOGV2("received splitChunk request: {}", "redact_cmdObj"_attr = redact(cmdObj));
 
         vector<BSONObj> splitKeys;
         {

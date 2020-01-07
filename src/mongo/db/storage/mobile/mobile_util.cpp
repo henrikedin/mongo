@@ -137,7 +137,7 @@ void checkStatus(int retStatus, int desiredStatus, const char* fnName, const cha
             s << "------ Error Message: " << errMsg;
         }
 
-        severe() << s.str();
+        LOGV2_FATAL("{}", "s_str"_attr = s.str());
         fassertFailed(37000);
     }
 }
@@ -146,7 +146,7 @@ void checkStatus(int retStatus, int desiredStatus, const char* fnName, const cha
  * Helper to add and log errors for validate.
  */
 void validateLogAndAppendError(ValidateResults* results, const std::string& errMsg) {
-    error() << "validate found error: " << errMsg;
+    LOGV2_ERROR("validate found error: {}", "errMsg"_attr = errMsg);
     results->errors.push_back(errMsg);
     results->valid = false;
 }
@@ -185,7 +185,7 @@ void doValidate(OperationContext* opCtx, ValidateResults* results) {
 void configureSession(sqlite3* session, const MobileOptions& options) {
     auto executePragma = [session](auto pragma, auto value) {
         SqliteStatement::execQuery(session, "PRAGMA ", pragma, " = ", value, ";");
-        LOG(MOBILE_LOG_LEVEL_LOW) << "MobileSE session configuration: " << pragma << " = " << value;
+        LOGV2_DEBUG({logComponentV1toV2(MOBILE_LOG_LEVEL_LOW)}, "MobileSE session configuration: {} = {}", "pragma"_attr = pragma, "value"_attr = value);
     };
     // We don't manually use VACUUM so set incremental(2) mode to reclaim space
     // This need to be set the first thing we do, before any internal tables are created.

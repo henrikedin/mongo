@@ -102,7 +102,7 @@ public:
         try {
             _ioContext.run_for(time.toSystemDuration());
         } catch (...) {
-            severe() << "Uncaught exception in reactor: " << exceptionToStatus();
+            LOGV2_FATAL("Uncaught exception in reactor: {}", "exceptionToStatus"_attr = exceptionToStatus());
             fassertFailed(50476);
         }
     }
@@ -114,7 +114,7 @@ public:
     void drain() override final {
         _ioContext.restart();
         while (_ioContext.poll()) {
-            LOG(1) << "Draining remaining work in reactor.";
+            LOGV2_DEBUG(1, "Draining remaining work in reactor.");
         }
         _ioContext.stop();
     }

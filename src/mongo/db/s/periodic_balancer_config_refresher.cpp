@@ -60,7 +60,7 @@ PeriodicJobAnchor launchBalancerConfigRefresher(ServiceContext* serviceContext) 
 
             Status status = balancerConfig->refreshAndCheck(opCtx.get());
             if (!status.isOK()) {
-                log() << "Failed to refresh balancer configuration" << causedBy(status);
+                LOGV2("Failed to refresh balancer configuration{}", "causedBy_status"_attr = causedBy(status));
             }
         },
         Seconds(30));

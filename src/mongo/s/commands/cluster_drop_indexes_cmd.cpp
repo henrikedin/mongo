@@ -69,7 +69,7 @@ public:
                    std::string& errmsg,
                    BSONObjBuilder& output) override {
         const NamespaceString nss(CommandHelpers::parseNsCollectionRequired(dbName, cmdObj));
-        LOG(1) << "dropIndexes: " << nss << " cmd:" << redact(cmdObj);
+        LOGV2_DEBUG(1, "dropIndexes: {} cmd:{}", "nss"_attr = nss, "redact_cmdObj"_attr = redact(cmdObj));
 
         // If the collection is sharded, we target only the primary shard and the shards that own
         // chunks for the collection. We ignore IndexNotFound errors, because the index may have

@@ -47,10 +47,10 @@ void printShardingVersionInfo(bool isForVersionReportingOnly) {
 
     if (isForVersionReportingOnly) {
         setPlainConsoleLogger();
-        log() << mongosVersion(vii);
+        LOGV2("{}", "mongosVersion_vii"_attr = mongosVersion(vii));
         vii.logBuildInfo();
     } else {
-        log() << mongosVersion(vii);
+        LOGV2("{}", "mongosVersion_vii"_attr = mongosVersion(vii));
         logProcessDetails();
     }
 }

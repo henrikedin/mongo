@@ -62,7 +62,7 @@ void OpCounters::gotOp(int op, bool isCommand) {
         case opReply:
             break;
         default:
-            log() << "OpCounters::gotOp unknown op: " << op << std::endl;
+            LOGV2("OpCounters::gotOp unknown op: {}", "op"_attr = op);
     }
 }
 

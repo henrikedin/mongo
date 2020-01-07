@@ -320,7 +320,7 @@ MONGO_INITIALIZER_GENERAL(ServerLogRedirection,
                 : logv2::LogDomainGlobal::ConfigurationOptions::OpenMode::kTruncate;
 
             if (serverGlobalParams.logAppend && exists) {
-                log() << "***** SERVER RESTARTED *****";
+                LOGV2("***** SERVER RESTARTED *****");
                 // FIXME rewrite for logv2
                 // Status status = logger::RotatableFileWriter::Use(writer.getValue()).status();
                 // if (!status.isOK())
@@ -338,7 +338,7 @@ MONGO_INITIALIZER_GENERAL(ServerLogRedirection,
             javascriptAppender = std::make_unique<RotatableFileAppender<MessageEventEphemeral>>(
                 std::make_unique<MessageEventDetailsEncoder>(), writer.getValue());
             if (serverGlobalParams.logAppend && exists) {
-                log() << "***** SERVER RESTARTED *****";
+                LOGV2("***** SERVER RESTARTED *****");
                 Status status = logger::RotatableFileWriter::Use(writer.getValue()).status();
                 if (!status.isOK())
                     return status;

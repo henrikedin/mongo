@@ -58,7 +58,7 @@ void ShardingConnectionHook::onCreate(DBClientBase* conn) {
     // Authenticate as the first thing we do
     // NOTE: Replica set authentication allows authentication against *any* online host
     if (auth::isInternalAuthSet()) {
-        LOG(2) << "calling onCreate auth for " << conn->toString();
+        LOGV2_DEBUG(2, "calling onCreate auth for {}", "conn_toString"_attr = conn->toString());
 
         uassertStatusOKWithContext(conn->authenticateInternalUser(),
                                    str::stream() << "can't authenticate to server "

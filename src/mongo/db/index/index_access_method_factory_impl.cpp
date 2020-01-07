@@ -62,7 +62,7 @@ std::unique_ptr<IndexAccessMethod> IndexAccessMethodFactoryImpl::make(
         return std::make_unique<TwoDAccessMethod>(entry, std::move(sortedDataInterface));
     else if (IndexNames::WILDCARD == type)
         return std::make_unique<WildcardAccessMethod>(entry, std::move(sortedDataInterface));
-    log() << "Can't find index for keyPattern " << desc->keyPattern();
+    LOGV2("Can't find index for keyPattern {}", "desc_keyPattern"_attr = desc->keyPattern());
     fassertFailed(31021);
 }
 

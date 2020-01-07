@@ -101,16 +101,12 @@ bool DataReplicatorExternalStateImpl::shouldStopFetching(
         // If OplogQueryMetadata was provided, its values were used to determine if we should
         // change sync sources.
         if (oqMetadata) {
-            log() << "Canceling oplog query due to OplogQueryMetadata. We have to choose a new "
-                     "sync source. Current source: "
-                  << source << ", OpTime " << oqMetadata->getLastOpApplied()
-                  << ", its sync source index:" << oqMetadata->getSyncSourceIndex();
+            LOGV2("Canceling oplog query due to OplogQueryMetadata. We have to choose a new "
+                     "sync source. Current source: {}, OpTime {}, its sync source index:{}", "source"_attr = source, "oqMetadata_getLastOpApplied"_attr = oqMetadata->getLastOpApplied(), "oqMetadata_getSyncSourceIndex"_attr = oqMetadata->getSyncSourceIndex());
 
         } else {
-            log() << "Canceling oplog query due to ReplSetMetadata. We have to choose a new sync "
-                     "source. Current source: "
-                  << source << ", OpTime " << replMetadata.getLastOpVisible()
-                  << ", its sync source index:" << replMetadata.getSyncSourceIndex();
+            LOGV2("Canceling oplog query due to ReplSetMetadata. We have to choose a new sync "
+                     "source. Current source: {}, OpTime {}, its sync source index:{}", "source"_attr = source, "replMetadata_getLastOpVisible"_attr = replMetadata.getLastOpVisible(), "replMetadata_getSyncSourceIndex"_attr = replMetadata.getSyncSourceIndex());
         }
         return true;
     }

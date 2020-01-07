@@ -553,11 +553,11 @@ MONGO_INITIALIZER_WITH_PREREQUISITES(SSLManagerLogger, ("SSLManager", "GlobalLog
     if (!isSSLServer || (sslGlobalParams.sslMode.load() != SSLParams::SSLMode_disabled)) {
         const auto& config = theSSLManager->getSSLConfiguration();
         if (!config.clientSubjectName.empty()) {
-            LOG(1) << "Client Certificate Name: " << config.clientSubjectName;
+            LOGV2_DEBUG(1, "Client Certificate Name: {}", "config_clientSubjectName"_attr = config.clientSubjectName);
         }
         if (!config.serverSubjectName().empty()) {
-            LOG(1) << "Server Certificate Name: " << config.serverSubjectName();
-            LOG(1) << "Server Certificate Expiration: " << config.serverCertificateExpirationDate;
+            LOGV2_DEBUG(1, "Server Certificate Name: {}", "config_serverSubjectName"_attr = config.serverSubjectName());
+            LOGV2_DEBUG(1, "Server Certificate Expiration: {}", "config_serverCertificateExpirationDate"_attr = config.serverCertificateExpirationDate);
         }
     }
 
@@ -594,8 +594,7 @@ Status SSLX509Name::normalizeStrings() {
                     break;
                 }
                 default:
-                    LOG(1) << "Certificate subject name contains unknown string type: "
-                           << entry.type << " (string value is \"" << entry.value << "\")";
+                    LOGV2_DEBUG(1, "Certificate subject name contains unknown string type: {} (string value is \"{}\")", "entry_type"_attr = entry.type, "entry_value"_attr = entry.value);
                     break;
             }
         }
@@ -677,13 +676,13 @@ bool SSLConfiguration::isClusterMember(SSLX509Name subject) const {
 bool SSLConfiguration::isClusterMember(StringData subjectName) const {
     auto swClient = parseDN(subjectName);
     if (!swClient.isOK()) {
-        warning() << "Unable to parse client subject name: " << swClient.getStatus();
+        LOGV2_WARNING("Unable to parse client subject name: {}", "swClient_getStatus"_attr = swClient.getStatus());
         return false;
     }
     auto& client = swClient.getValue();
     auto status = client.normalizeStrings();
     if (!status.isOK()) {
-        warning() << "Unable to normalize client subject name: " << status;
+        LOGV2_WARNING("Unable to normalize client subject name: {}", "status"_attr = status);
         return false;
     }
 
@@ -1112,8 +1111,7 @@ void recordTLSVersion(TLSVersion version, const HostAndPort& hostForLogging) {
     }
 
     if (!versionString.empty()) {
-        log() << "Accepted connection with TLS Version " << versionString << " from connection "
-              << hostForLogging;
+        LOGV2("Accepted connection with TLS Version {} from connection {}", "versionString"_attr = versionString, "hostForLogging"_attr = hostForLogging);
     }
 }
 
@@ -1141,11 +1139,11 @@ bool hostNameMatchForX509Certificates(std::string nameToMatch, std::string certH
 }
 
 void tlsEmitWarningExpiringClientCertificate(const SSLX509Name& peer) {
-    warning() << "Peer certificate '" << peer << "' expires soon";
+    LOGV2_WARNING("Peer certificate '{}' expires soon", "peer"_attr = peer);
 }
 
 void tlsEmitWarningExpiringClientCertificate(const SSLX509Name& peer, Days days) {
-    warning() << "Peer certificate '" << peer << "' expires in " << days;
+    LOGV2_WARNING("Peer certificate '{}' expires in {}", "peer"_attr = peer, "days"_attr = days);
 }
 
 }  // namespace mongo

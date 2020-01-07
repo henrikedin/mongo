@@ -69,7 +69,7 @@ void ShardingState::setInitialized(ShardId shardId, OID clusterId) {
 
 void ShardingState::setInitialized(Status failedStatus) {
     invariant(!failedStatus.isOK());
-    log() << "Failed to initialize sharding components" << causedBy(failedStatus);
+    LOGV2("Failed to initialize sharding components{}", "causedBy_failedStatus"_attr = causedBy(failedStatus));
 
     stdx::unique_lock<Latch> ul(_mutex);
     invariant(_getInitializationState() == InitializationState::kNew);

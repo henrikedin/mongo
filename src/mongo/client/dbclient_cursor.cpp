@@ -195,13 +195,13 @@ bool DBClientCursor::init() {
         _client->call(toSend, reply, true, &_originalHost);
     } catch (const DBException&) {
         // log msg temp?
-        log() << "DBClientCursor::init call() failed" << endl;
+        LOGV2("DBClientCursor::init call() failed");
         // We always want to throw on network exceptions.
         throw;
     }
     if (reply.empty()) {
         // log msg temp?
-        log() << "DBClientCursor::init message from call() was empty" << endl;
+        LOGV2("DBClientCursor::init message from call() was empty");
         return false;
     }
     dataReceived(reply);
@@ -227,9 +227,9 @@ bool DBClientCursor::initLazyFinish(bool& retry) {
     // If we get a bad response, return false
     if (!recvStatus.isOK() || reply.empty()) {
         if (!recvStatus.isOK())
-            log() << "DBClientCursor::init lazy say() failed: " << redact(recvStatus) << endl;
+            LOGV2("DBClientCursor::init lazy say() failed: {}", "redact_recvStatus"_attr = redact(recvStatus));
         if (reply.empty())
-            log() << "DBClientCursor::init message from say() was empty" << endl;
+            LOGV2("DBClientCursor::init message from say() was empty");
 
         _client->checkResponse({}, true, &retry, &_lazyHost);
 

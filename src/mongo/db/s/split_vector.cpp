@@ -130,8 +130,7 @@ StatusWith<std::vector<BSONObj>> splitVector(OperationContext* opCtx,
             return emptyVector;
         }
 
-        log() << "request split points lookup for chunk " << nss.toString() << " " << redact(minKey)
-              << " -->> " << redact(maxKey);
+        LOGV2("request split points lookup for chunk {} {} -->> {}", "nss_toString"_attr = nss.toString(), "redact_minKey"_attr = redact(minKey), "redact_maxKey"_attr = redact(maxKey));
 
         // We'll use the average object size and number of object to find approximately how many
         // keys each chunk should have. We'll split at half the maxChunkSizeBytes or
@@ -141,8 +140,7 @@ StatusWith<std::vector<BSONObj>> splitVector(OperationContext* opCtx,
         long long keyCount = maxChunkSizeBytes.get() / (2 * avgRecSize);
 
         if (maxChunkObjects.get() && (maxChunkObjects.get() < keyCount)) {
-            log() << "limiting split vector to " << maxChunkObjects.get() << " (from " << keyCount
-                  << ") objects ";
+            LOGV2("limiting split vector to {} (from {}) objects ", "maxChunkObjects_get"_attr = maxChunkObjects.get(), "keyCount"_attr = keyCount);
             keyCount = maxChunkObjects.get();
         }
 
@@ -195,9 +193,7 @@ StatusWith<std::vector<BSONObj>> splitVector(OperationContext* opCtx,
         if (currKey.woCompare(maxKeyInChunk) == 0) {
             // Range contains only documents with a single key value.  So we cannot possibly find a
             // split point, and there is no need to scan any further.
-            warning() << "possible low cardinality key detected in " << nss.toString()
-                      << " - range " << redact(minKey) << " -->> " << redact(maxKey)
-                      << " contains only the key " << redact(prettyKey(idx->keyPattern(), currKey));
+            LOGV2_WARNING("possible low cardinality key detected in {} - range {} -->> {} contains only the key {}", "nss_toString"_attr = nss.toString(), "redact_minKey"_attr = redact(minKey), "redact_maxKey"_attr = redact(maxKey), "redact_prettyKey_idx_keyPattern_currKey"_attr = redact(prettyKey(idx->keyPattern(), currKey)));
             std::vector<BSONObj> emptyVector;
             return emptyVector;
         }
@@ -232,9 +228,7 @@ StatusWith<std::vector<BSONObj>> splitVector(OperationContext* opCtx,
                                 continue;
                             }
 
-                            log() << "Max BSON response size reached for split vector before the"
-                                  << " end of chunk " << nss.toString() << " " << redact(minKey)
-                                  << " -->> " << redact(maxKey);
+                            LOGV2("Max BSON response size reached for split vector before the end of chunk {} {} -->> {}", "nss_toString"_attr = nss.toString(), "redact_minKey"_attr = redact(minKey), "redact_maxKey"_attr = redact(maxKey));
                             break;
                         }
 
@@ -242,15 +236,13 @@ StatusWith<std::vector<BSONObj>> splitVector(OperationContext* opCtx,
                         splitKeys.push_back(currKey.getOwned());
                         currCount = 0;
                         numChunks++;
-                        LOG(4) << "picked a split key: " << redact(currKey);
+                        LOGV2_DEBUG(4, "picked a split key: {}", "redact_currKey"_attr = redact(currKey));
                     }
                 }
 
                 // Stop if we have enough split points.
                 if (maxSplitPoints && maxSplitPoints.get() && (numChunks >= maxSplitPoints.get())) {
-                    log() << "max number of requested split points reached (" << numChunks
-                          << ") before the end of chunk " << nss.toString() << " " << redact(minKey)
-                          << " -->> " << redact(maxKey);
+                    LOGV2("max number of requested split points reached ({}) before the end of chunk {} {} -->> {}", "numChunks"_attr = numChunks, "nss_toString"_attr = nss.toString(), "redact_minKey"_attr = redact(minKey), "redact_maxKey"_attr = redact(maxKey));
                     break;
                 }
 
@@ -273,7 +265,7 @@ StatusWith<std::vector<BSONObj>> splitVector(OperationContext* opCtx,
             force = false;
             keyCount = currCount / 2;
             currCount = 0;
-            log() << "splitVector doing another cycle because of force, keyCount now: " << keyCount;
+            LOGV2("splitVector doing another cycle because of force, keyCount now: {}", "keyCount"_attr = keyCount);
 
             exec = InternalPlanner::indexScan(opCtx,
                                               collection,
@@ -294,18 +286,14 @@ StatusWith<std::vector<BSONObj>> splitVector(OperationContext* opCtx,
 
         // Warn for keys that are more numerous than maxChunkSizeBytes allows.
         for (auto it = tooFrequentKeys.cbegin(); it != tooFrequentKeys.cend(); ++it) {
-            warning() << "possible low cardinality key detected in " << nss.toString()
-                      << " - key is " << redact(prettyKey(idx->keyPattern(), *it));
+            LOGV2_WARNING("possible low cardinality key detected in {} - key is {}", "nss_toString"_attr = nss.toString(), "redact_prettyKey_idx_keyPattern_it"_attr = redact(prettyKey(idx->keyPattern(), *it)));
         }
 
         // Remove the sentinel at the beginning before returning
         splitKeys.erase(splitKeys.begin());
 
         if (timer.millis() > serverGlobalParams.slowMS) {
-            warning() << "Finding the split vector for " << nss.toString() << " over "
-                      << redact(keyPattern) << " keyCount: " << keyCount
-                      << " numSplits: " << splitKeys.size() << " lookedAt: " << currCount
-                      << " took " << timer.millis() << "ms";
+            LOGV2_WARNING("Finding the split vector for {} over {} keyCount: {} numSplits: {} lookedAt: {} took {}ms", "nss_toString"_attr = nss.toString(), "redact_keyPattern"_attr = redact(keyPattern), "keyCount"_attr = keyCount, "splitKeys_size"_attr = splitKeys.size(), "currCount"_attr = currCount, "timer_millis"_attr = timer.millis());
         }
     }
 

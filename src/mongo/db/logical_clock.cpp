@@ -118,8 +118,8 @@ LogicalTime LogicalClock::reserveTicks(uint64_t nTicks) {
     // second.
     else if (clusterTime.asTimestamp().getInc() > (kMaxSignedInt - nTicks)) {
 
-        log() << "Exceeded maximum allowable increment value within one second. Moving clusterTime "
-                 "forward to the next second.";
+        LOGV2("Exceeded maximum allowable increment value within one second. Moving clusterTime "
+                 "forward to the next second.");
 
         // Move time forward to the next second
         clusterTime = LogicalTime(Timestamp(clusterTime.asTimestamp().getSecs() + 1, 0));

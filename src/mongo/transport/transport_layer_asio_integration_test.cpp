@@ -58,11 +58,11 @@ TEST(TransportLayerASIO, HTTPRequestGetsHTTPError) {
     asio::ip::tcp::resolver resolver(ioContext);
     asio::ip::tcp::socket socket(ioContext);
 
-    log() << "Connecting to " << server;
+    LOGV2("Connecting to {}", "server"_attr = server);
     auto resolverIt = resolver.resolve(server.host(), std::to_string(server.port()));
     asio::connect(socket, resolverIt);
 
-    log() << "Sending HTTP request";
+    LOGV2("Sending HTTP request");
     std::string httpReq = str::stream() << "GET /\r\n"
                                            "Host: "
                                         << server
@@ -71,13 +71,13 @@ TEST(TransportLayerASIO, HTTPRequestGetsHTTPError) {
                                            "Accept: */*";
     asio::write(socket, asio::buffer(httpReq.data(), httpReq.size()));
 
-    log() << "Waiting for response";
+    LOGV2("Waiting for response");
     std::array<char, 256> httpRespBuf;
     std::error_code ec;
     auto size = asio::read(socket, asio::buffer(httpRespBuf.data(), httpRespBuf.size()), ec);
     StringData httpResp(httpRespBuf.data(), size);
 
-    log() << "Received response: \"" << httpResp << "\"";
+    LOGV2("Received response: \"{}\"", "httpResp"_attr = httpResp);
     ASSERT_TRUE(httpResp.startsWith("HTTP/1.0 200 OK"));
 
 // Why oh why can't ASIO unify their error codes

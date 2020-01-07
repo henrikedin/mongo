@@ -245,9 +245,7 @@ bool validateNumericPathComponents(const MultikeyPaths& multikeyPaths,
     // all paths with and without array indices. Because this is O(2^n), we decline to answer
     // queries that traverse more than 8 levels of array indices.
     if (arrayIndices.size() > kWildcardMaxArrayIndexTraversalDepth) {
-        LOG(2) << "Declining to answer query on field '" << queryPath.dottedField()
-               << "' with $** index, as it traverses through more than "
-               << kWildcardMaxArrayIndexTraversalDepth << " nested array indices.";
+        LOGV2_DEBUG(2, "Declining to answer query on field '{}' with $** index, as it traverses through more than {} nested array indices.", "queryPath_dottedField"_attr = queryPath.dottedField(), "kWildcardMaxArrayIndexTraversalDepth"_attr = kWildcardMaxArrayIndexTraversalDepth);
         return false;
     }
 

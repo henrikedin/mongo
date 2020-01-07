@@ -375,16 +375,14 @@ void ServiceStateMachine::_sourceCallback(Status status) {
                                       transport::ServiceExecutorTaskName::kSSMProcessMessage);
     } else if (ErrorCodes::isInterruption(status.code()) ||
                ErrorCodes::isNetworkError(status.code())) {
-        LOG(2) << "Session from " << remote
-               << " encountered a network error during SourceMessage: " << status;
+        LOGV2_DEBUG(2, "Session from {} encountered a network error during SourceMessage: {}", "remote"_attr = remote, "status"_attr = status);
         _state.store(State::EndSession);
     } else if (status == TransportLayer::TicketSessionClosedStatus) {
         // Our session may have been closed internally.
-        LOG(2) << "Session from " << remote << " was closed internally during SourceMessage";
+        LOGV2_DEBUG(2, "Session from {} was closed internally during SourceMessage", "remote"_attr = remote);
         _state.store(State::EndSession);
     } else {
-        log() << "Error receiving request from client: " << status << ". Ending connection from "
-              << remote << " (connection id: " << _session()->id() << ")";
+        LOGV2("Error receiving request from client: {}. Ending connection from {} (connection id: {})", "status"_attr = status, "remote"_attr = remote, "_session_id"_attr = _session()->id());
         _state.store(State::EndSession);
     }
 
@@ -406,8 +404,7 @@ void ServiceStateMachine::_sinkCallback(Status status) {
     // Otherwise, update the current state depending on whether we're in exhaust or not, and call
     // scheduleNext() to unwind the stack and do the next step.
     if (!status.isOK()) {
-        log() << "Error sending response to client: " << status << ". Ending connection from "
-              << _session()->remote() << " (connection id: " << _session()->id() << ")";
+        LOGV2("Error sending response to client: {}. Ending connection from {} (connection id: {})", "status"_attr = status, "_session_remote"_attr = _session()->remote(), "_session_id"_attr = _session()->id());
         _state.store(State::EndSession);
         return _runNextInGuard(std::move(guard));
     } else if (_inExhaust) {
@@ -540,7 +537,7 @@ void ServiceStateMachine::_runNextInGuard(ThreadGuard guard) {
 
         return;
     } catch (const DBException& e) {
-        log() << "DBException handling request, closing client connection: " << redact(e);
+        LOGV2("DBException handling request, closing client connection: {}", "redact_e"_attr = redact(e));
     }
     // No need to catch std::exception, as std::terminate will be called when the exception bubbles
     // to the top of the stack
@@ -604,7 +601,7 @@ void ServiceStateMachine::terminateIfTagsDontMatch(transport::Session::TagMask t
     // If terminateIfTagsDontMatch gets called when we still are 'pending' where no tags have been
     // set, then skip the termination check.
     if ((sessionTags & tags) || (sessionTags & transport::Session::kPending)) {
-        log() << "Skip closing connection for connection # " << _session()->id();
+        LOGV2("Skip closing connection for connection # {}", "_session_id"_attr = _session()->id());
         return;
     }
 
@@ -622,7 +619,7 @@ ServiceStateMachine::State ServiceStateMachine::state() {
 
 void ServiceStateMachine::_terminateAndLogIfError(Status status) {
     if (!status.isOK()) {
-        warning(logger::LogComponent::kExecutor) << "Terminating session due to error: " << status;
+        LOGV2_WARNING_DEBUG({logComponentV1toV2(logger::LogComponent::kExecutor)}, "Terminating session due to error: {}", "status"_attr = status);
         terminate();
     }
 }
@@ -642,7 +639,7 @@ void ServiceStateMachine::_cleanupExhaustResources() noexcept try {
         _sep->handleRequest(opCtx.get(), makeKillCursorsMessage(cursorId));
     }
 } catch (const DBException& e) {
-    log() << "Error cleaning up resources for exhaust requests: " << e.toStatus();
+    LOGV2("Error cleaning up resources for exhaust requests: {}", "e_toStatus"_attr = e.toStatus());
 }
 
 void ServiceStateMachine::_cleanupSession(ThreadGuard guard) {

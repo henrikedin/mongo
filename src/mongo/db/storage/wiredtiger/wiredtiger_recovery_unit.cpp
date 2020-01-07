@@ -221,7 +221,7 @@ void WiredTigerRecoveryUnit::prepareUnitOfWork() {
     auto session = getSession();
     WT_SESSION* s = session->getSession();
 
-    LOG(1) << "preparing transaction at time: " << _prepareTimestamp;
+    LOGV2_DEBUG(1, "preparing transaction at time: {}", "_prepareTimestamp"_attr = _prepareTimestamp);
 
     const std::string conf = "prepare_timestamp=" + integerToHex(_prepareTimestamp.asULL());
     // Prepare the transaction.
@@ -269,7 +269,7 @@ void WiredTigerRecoveryUnit::assertInActiveTxn() const {
     if (_isActive()) {
         return;
     }
-    severe() << "Recovery unit is not active. Current state: " << toString(getState());
+    LOGV2_FATAL("Recovery unit is not active. Current state: {}", "toString_getState"_attr = toString(getState()));
     fassertFailed(28575);
 }
 
@@ -322,9 +322,7 @@ void WiredTigerRecoveryUnit::_txnClose(bool commit) {
         // `serverGlobalParams.slowMs` can be set to values <= 0. In those cases, give logging a
         // break.
         if (transactionTime >= std::max(1, serverGlobalParams.slowMS)) {
-            LOG(kSlowTransactionSeverity)
-                << "Slow WT transaction. Lifetime of SnapshotId " << getSnapshotId().toNumber()
-                << " was " << transactionTime << "ms";
+            LOGV2_DEBUG({logComponentV1toV2(kSlowTransactionSeverity)}, "Slow WT transaction. Lifetime of SnapshotId {} was {}ms", "getSnapshotId_toNumber"_attr = getSnapshotId().toNumber(), "transactionTime"_attr = transactionTime);
         }
     }
 
@@ -349,11 +347,11 @@ void WiredTigerRecoveryUnit::_txnClose(bool commit) {
         }
 
         wtRet = s->commit_transaction(s, conf.str().c_str());
-        LOG(3) << "WT commit_transaction for snapshot id " << getSnapshotId().toNumber();
+        LOGV2_DEBUG(3, "WT commit_transaction for snapshot id {}", "getSnapshotId_toNumber"_attr = getSnapshotId().toNumber());
     } else {
         wtRet = s->rollback_transaction(s, nullptr);
         invariant(!wtRet);
-        LOG(3) << "WT rollback_transaction for snapshot id " << getSnapshotId().toNumber();
+        LOGV2_DEBUG(3, "WT rollback_transaction for snapshot id {}", "getSnapshotId_toNumber"_attr = getSnapshotId().toNumber());
     }
 
     if (_isTimestamped) {
@@ -529,7 +527,7 @@ void WiredTigerRecoveryUnit::_txnOpen() {
         }
     }
 
-    LOG(3) << "WT begin_transaction for snapshot id " << getSnapshotId().toNumber();
+    LOGV2_DEBUG(3, "WT begin_transaction for snapshot id {}", "getSnapshotId_toNumber"_attr = getSnapshotId().toNumber());
 }
 
 Timestamp WiredTigerRecoveryUnit::_beginTransactionAtAllDurableTimestamp(WT_SESSION* session) {
@@ -605,7 +603,7 @@ Timestamp WiredTigerRecoveryUnit::_getTransactionReadTimestamp(WT_SESSION* sessi
 
 Status WiredTigerRecoveryUnit::setTimestamp(Timestamp timestamp) {
     _ensureSession();
-    LOG(3) << "WT set timestamp of future write operations to " << timestamp;
+    LOGV2_DEBUG(3, "WT set timestamp of future write operations to {}", "timestamp"_attr = timestamp);
     WT_SESSION* session = _session->getSession();
     invariant(_inUnitOfWork(), toString(getState()));
     invariant(_prepareTimestamp.isNull());
@@ -732,8 +730,7 @@ void WiredTigerRecoveryUnit::setRoundUpPreparedTimestamps(bool value) {
 
 void WiredTigerRecoveryUnit::setTimestampReadSource(ReadSource readSource,
                                                     boost::optional<Timestamp> provided) {
-    LOG(3) << "setting timestamp read source: " << static_cast<int>(readSource)
-           << ", provided timestamp: " << ((provided) ? provided->toString() : "none");
+    LOGV2_DEBUG(3, "setting timestamp read source: {}, provided timestamp: {}", "static_cast_int_readSource"_attr = static_cast<int>(readSource), "provided_provided_toString_none"_attr = ((provided) ? provided->toString() : "none"));
 
     invariant(!_isActive() || _timestampReadSource == readSource,
               str::stream() << "Current state: " << toString(getState())

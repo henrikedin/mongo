@@ -61,14 +61,11 @@ ThreadPool::Options cleanUpOptions(ThreadPool::Options&& options) {
         options.threadNamePrefix = str::stream() << options.poolName << '-';
     }
     if (options.maxThreads < 1) {
-        severe() << "Tried to create pool " << options.poolName << " with a maximum of "
-                 << options.maxThreads << " but the maximum must be at least 1";
+        LOGV2_FATAL("Tried to create pool {} with a maximum of {} but the maximum must be at least 1", "options_poolName"_attr = options.poolName, "options_maxThreads"_attr = options.maxThreads);
         fassertFailed(28702);
     }
     if (options.minThreads > options.maxThreads) {
-        severe() << "Tried to create pool " << options.poolName << " with a minimum of "
-                 << options.minThreads << " which is more than the configured maximum of "
-                 << options.maxThreads;
+        LOGV2_FATAL("Tried to create pool {} with a minimum of {} which is more than the configured maximum of {}", "options_poolName"_attr = options.poolName, "options_minThreads"_attr = options.minThreads, "options_maxThreads"_attr = options.maxThreads);
         fassertFailed(28686);
     }
     return {std::move(options)};
@@ -86,7 +83,7 @@ ThreadPool::~ThreadPool() {
     }
 
     if (shutdownComplete != _state) {
-        severe() << "Failed to shutdown pool during destruction";
+        LOGV2_FATAL("Failed to shutdown pool during destruction");
         fassertFailed(28704);
     }
     invariant(_threads.empty());
@@ -96,8 +93,7 @@ ThreadPool::~ThreadPool() {
 void ThreadPool::startup() {
     stdx::lock_guard<Latch> lk(_mutex);
     if (_state != preStart) {
-        severe() << "Attempting to start pool " << _options.poolName
-                 << ", but it has already started";
+        LOGV2_FATAL("Attempting to start pool {}, but it has already started", "_options_poolName"_attr = _options.poolName);
         fassertFailed(28698);
     }
     _setState_inlock(running);
@@ -145,7 +141,7 @@ void ThreadPool::_join_inlock(stdx::unique_lock<Latch>* lk) {
                 return true;
             case joining:
             case shutdownComplete:
-                severe() << "Attempted to join pool " << _options.poolName << " more than once";
+                LOGV2_FATAL("Attempted to join pool {} more than once", "_options_poolName"_attr = _options.poolName);
                 fassertFailed(28700);
         }
         MONGO_UNREACHABLE;
@@ -243,7 +239,7 @@ void ThreadPool::_workerThreadBody(ThreadPool* pool, const std::string& threadNa
     setThreadName(threadName);
     pool->_options.onCreateThread(threadName);
     const auto poolName = pool->_options.poolName;
-    LOG(1) << "starting thread in pool " << poolName;
+    LOGV2_DEBUG(1, "starting thread in pool {}", "poolName"_attr = poolName);
     pool->_consumeTasks();
 
     // At this point, another thread may have destroyed "pool", if this thread chose to detach
@@ -253,7 +249,7 @@ void ThreadPool::_workerThreadBody(ThreadPool* pool, const std::string& threadNa
     // This can happen if this thread decided to retire, got descheduled after removing itself
     // from _threads and calling detach(), and then the pool was deleted. When this thread resumes,
     // it is no longer safe to access "pool".
-    LOG(1) << "shutting down thread in pool " << poolName;
+    LOGV2_DEBUG(1, "shutting down thread in pool {}", "poolName"_attr = poolName);
 }
 
 void ThreadPool::_consumeTasks() {
@@ -274,8 +270,7 @@ void ThreadPool::_consumeTasks() {
                     break;
                 }
 
-                LOG(3) << "Not reaping because the earliest retirement date is "
-                       << nextThreadRetirementDate;
+                LOGV2_DEBUG(3, "Not reaping because the earliest retirement date is {}", "nextThreadRetirementDate"_attr = nextThreadRetirementDate);
                 MONGO_IDLE_THREAD_BLOCK;
                 _workAvailable.wait_until(lk, nextThreadRetirementDate.toSystemTimePoint());
             } else {
@@ -309,8 +304,7 @@ void ThreadPool::_consumeTasks() {
     --_numIdleThreads;
 
     if (_state != running) {
-        severe() << "State of pool " << _options.poolName << " is " << static_cast<int32_t>(_state)
-                 << ", but expected " << static_cast<int32_t>(running);
+        LOGV2_FATAL("State of pool {} is {}, but expected {}", "_options_poolName"_attr = _options.poolName, "static_cast_int32_t__state"_attr = static_cast<int32_t>(_state), "static_cast_int32_t_running"_attr = static_cast<int32_t>(running));
         fassertFailedNoTrace(28701);
     }
 
@@ -333,7 +327,7 @@ void ThreadPool::_consumeTasks() {
 
 void ThreadPool::_doOneTask(stdx::unique_lock<Latch>* lk) noexcept {
     invariant(!_pendingTasks.empty());
-    LOG(3) << "Executing a task on behalf of pool " << _options.poolName;
+    LOGV2_DEBUG(3, "Executing a task on behalf of pool {}", "_options_poolName"_attr = _options.poolName);
     Task task = std::move(_pendingTasks.front());
     _pendingTasks.pop_front();
     --_numIdleThreads;
@@ -355,8 +349,7 @@ void ThreadPool::_startWorkerThread_inlock() {
         case joinRequired:
         case joining:
         case shutdownComplete:
-            LOG(1) << "Not starting new thread in pool " << _options.poolName
-                   << " while shutting down";
+            LOGV2_DEBUG(1, "Not starting new thread in pool {} while shutting down", "_options_poolName"_attr = _options.poolName);
             return;
         case running:
             break;
@@ -364,8 +357,7 @@ void ThreadPool::_startWorkerThread_inlock() {
             MONGO_UNREACHABLE;
     }
     if (_threads.size() == _options.maxThreads) {
-        LOG(2) << "Not starting new thread in pool " << _options.poolName
-               << " because it already has " << _options.maxThreads << ", its maximum";
+        LOGV2_DEBUG(2, "Not starting new thread in pool {} because it already has {}, its maximum", "_options_poolName"_attr = _options.poolName, "_options_maxThreads"_attr = _options.maxThreads);
         return;
     }
     invariant(_threads.size() < _options.maxThreads);

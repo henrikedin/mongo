@@ -60,7 +60,7 @@ Status _performNoopWrite(OperationContext* opCtx, BSONObj msgObj, StringData not
         opCtx, MODE_IX, Date_t::now() + Milliseconds(1), Lock::InterruptBehavior::kLeaveUnlocked);
 
     if (!lock.isLocked()) {
-        LOG(1) << "Global lock is not available skipping noopWrite";
+        LOGV2_DEBUG(1, "Global lock is not available skipping noopWrite");
         return {ErrorCodes::LockFailed, "Global lock is not available"};
     }
 

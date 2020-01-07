@@ -188,8 +188,7 @@ void AbstractOplogFetcher::_callback(const Fetcher::QueryResponseStatus& result,
     Status responseStatus =
         _checkForShutdownAndConvertStatus(result.getStatus(), "error in fetcher batch callback");
     if (ErrorCodes::CallbackCanceled == responseStatus) {
-        LOG(1) << _getComponentName() << " oplog query cancelled to " << _getSource() << ": "
-               << redact(responseStatus);
+        LOGV2_DEBUG(1, "{} oplog query cancelled to {}: {}", "_getComponentName"_attr = _getComponentName(), "_getSource"_attr = _getSource(), "redact_responseStatus"_attr = redact(responseStatus));
         _finishCallback(responseStatus);
         return;
     }
@@ -204,12 +203,9 @@ void AbstractOplogFetcher::_callback(const Fetcher::QueryResponseStatus& result,
         {
             stdx::lock_guard<Latch> lock(_mutex);
             if (_fetcherRestarts == _maxFetcherRestarts) {
-                log() << "Error returned from oplog query (no more query restarts left): "
-                      << redact(responseStatus);
+                LOGV2("Error returned from oplog query (no more query restarts left): {}", "redact_responseStatus"_attr = redact(responseStatus));
             } else {
-                log() << "Restarting oplog query due to error: " << redact(responseStatus)
-                      << ". Last fetched optime: " << _lastFetched
-                      << ". Restarts remaining: " << (_maxFetcherRestarts - _fetcherRestarts);
+                LOGV2("Restarting oplog query due to error: {}. Last fetched optime: {}. Restarts remaining: {}", "redact_responseStatus"_attr = redact(responseStatus), "_lastFetched"_attr = _lastFetched, "_maxFetcherRestarts__fetcherRestarts"_attr = (_maxFetcherRestarts - _fetcherRestarts));
                 _fetcherRestarts++;
                 // Destroying current instance in _shuttingDownFetcher will possibly block.
                 _shuttingDownFetcher.reset();
@@ -221,11 +217,10 @@ void AbstractOplogFetcher::_callback(const Fetcher::QueryResponseStatus& result,
 
                 auto scheduleStatus = _scheduleFetcher_inlock();
                 if (scheduleStatus.isOK()) {
-                    log() << "Scheduled new oplog query " << _fetcher->toString();
+                    LOGV2("Scheduled new oplog query {}", "_fetcher_toString"_attr = _fetcher->toString());
                     return;
                 }
-                error() << "Error scheduling new oplog query: " << redact(scheduleStatus)
-                        << ". Returning current oplog query error: " << redact(responseStatus);
+                LOGV2_ERROR("Error scheduling new oplog query: {}. Returning current oplog query error: {}", "redact_scheduleStatus"_attr = redact(scheduleStatus), "redact_responseStatus"_attr = redact(responseStatus));
             }
         }
         _finishCallback(responseStatus);
@@ -276,8 +271,7 @@ void AbstractOplogFetcher::_callback(const Fetcher::QueryResponseStatus& result,
             return;
         }
         auto lastDoc = lastDocRes.getValue();
-        LOG(3) << _getComponentName()
-               << " setting last fetched optime ahead after batch: " << lastDoc;
+        LOGV2_DEBUG(3, "{} setting last fetched optime ahead after batch: {}", "_getComponentName"_attr = _getComponentName(), "lastDoc"_attr = lastDoc);
 
         stdx::lock_guard<Latch> lock(_mutex);
         _lastFetched = lastDoc;

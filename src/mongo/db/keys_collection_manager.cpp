@@ -293,7 +293,7 @@ void KeysCollectionManager::PeriodicRunner::_doPeriodicRefresh(ServiceContext* s
                     return _inShutdown || _refreshRequest;
                 });
         } catch (const DBException& e) {
-            LOG(1) << "Unable to wait for refresh request due to: " << e;
+            LOGV2_DEBUG(1, "Unable to wait for refresh request due to: {}", "e"_attr = e);
 
             if (ErrorCodes::isShutdownError(e)) {
                 return;

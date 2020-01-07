@@ -175,7 +175,7 @@ void DatabaseHolderImpl::dropDb(OperationContext* opCtx, Database* db) {
     // Store the name so we have if for after the db object is deleted
     auto name = db->name();
 
-    LOG(1) << "dropDatabase " << name;
+    LOGV2_DEBUG(1, "dropDatabase {}", "name"_attr = name);
 
     invariant(opCtx->lockState()->isDbLockedForMode(name, MODE_X));
 
@@ -251,7 +251,7 @@ void DatabaseHolderImpl::closeAll(OperationContext* opCtx) {
     }
 
     for (const auto& name : dbs) {
-        LOG(2) << "DatabaseHolder::closeAll name:" << name;
+        LOGV2_DEBUG(2, "DatabaseHolder::closeAll name:{}", "name"_attr = name);
 
         Database* db = _dbs[name];
         CollectionCatalog::get(opCtx).onCloseDatabase(opCtx, name);

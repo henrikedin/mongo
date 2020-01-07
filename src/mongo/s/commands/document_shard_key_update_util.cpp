@@ -78,7 +78,7 @@ bool executeOperationsAsPartOfShardKeyUpdate(OperationContext* opCtx,
     }
 
     if (MONGO_unlikely(hangBeforeInsertOnUpdateShardKey.shouldFail())) {
-        log() << "Hit hangBeforeInsertOnUpdateShardKey failpoint";
+        LOGV2("Hit hangBeforeInsertOnUpdateShardKey failpoint");
         hangBeforeInsertOnUpdateShardKey.pauseWhileSet(opCtx);
     }
 

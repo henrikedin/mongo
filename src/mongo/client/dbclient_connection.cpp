@@ -276,7 +276,7 @@ Status DBClientConnection::connect(const HostAndPort& serverAddress, StringData 
     auto validateStatus =
         rpc::validateWireVersion(WireSpec::instance().outgoing, swProtocolSet.getValue().version);
     if (!validateStatus.isOK()) {
-        warning() << "remote host has incompatible wire version: " << validateStatus;
+        LOGV2_WARNING("remote host has incompatible wire version: {}", "validateStatus"_attr = validateStatus);
 
         return validateStatus;
     }
@@ -347,7 +347,7 @@ Status DBClientConnection::connectSocketOnly(const HostAndPort& serverAddress) {
     _lastConnectivityCheck = Date_t::now();
     _session->setTimeout(_socketTimeout);
     _session->setTags(_tagMask);
-    LOG(1) << "connected to server " << toString();
+    LOGV2_DEBUG(1, "connected to server {}", "toString"_attr = toString());
     return Status::OK();
 }
 
@@ -469,12 +469,12 @@ void DBClientConnection::_checkConnection() {
     // Don't hammer reconnects, backoff if needed
     sleepFor(_autoReconnectBackoff.nextSleep());
 
-    LOG(_logLevel) << "trying reconnect to " << toString() << endl;
+    LOGV2_DEBUG({logComponentV1toV2(_logLevel)}, "trying reconnect to {}", "toString"_attr = toString());
     string errmsg;
     auto connectStatus = connect(_serverAddress, _applicationName);
     if (!connectStatus.isOK()) {
         _markFailed(kSetFlag);
-        LOG(_logLevel) << "reconnect " << toString() << " failed " << errmsg << endl;
+        LOGV2_DEBUG({logComponentV1toV2(_logLevel)}, "reconnect {} failed {}", "toString"_attr = toString(), "errmsg"_attr = errmsg);
         if (connectStatus == ErrorCodes::IncompatibleCatalogManager) {
             uassertStatusOK(connectStatus);  // Will always throw
         } else {
@@ -482,7 +482,7 @@ void DBClientConnection::_checkConnection() {
         }
     }
 
-    LOG(_logLevel) << "reconnect " << toString() << " ok" << endl;
+    LOGV2_DEBUG({logComponentV1toV2(_logLevel)}, "reconnect {} ok", "toString"_attr = toString());
     if (_internalAuthOnReconnect) {
         uassertStatusOK(authenticateInternalUser());
     } else {
@@ -490,10 +490,7 @@ void DBClientConnection::_checkConnection() {
             try {
                 DBClientConnection::_auth(kv.second);
             } catch (ExceptionFor<ErrorCodes::AuthenticationFailed>& ex) {
-                LOG(_logLevel) << "reconnect: auth failed "
-                               << kv.second[auth::getSaslCommandUserDBFieldName()]
-                               << kv.second[auth::getSaslCommandUserFieldName()] << ' ' << ex.what()
-                               << std::endl;
+                LOGV2_DEBUG({logComponentV1toV2(_logLevel)}, "reconnect: auth failed {}{} {}", "kv_second_auth_getSaslCommandUserDBFieldName"_attr = kv.second[auth::getSaslCommandUserDBFieldName()], "kv_second_auth_getSaslCommandUserFieldName"_attr = kv.second[auth::getSaslCommandUserFieldName()], "ex_what"_attr = ex.what());
             }
         }
     }
@@ -646,8 +643,7 @@ bool DBClientConnection::call(Message& toSend,
 
     auto sinkStatus = _session->sinkMessage(swm.getValue());
     if (!sinkStatus.isOK()) {
-        log() << "DBClientConnection failed to send message to " << getServerAddress() << " - "
-              << redact(sinkStatus);
+        LOGV2("DBClientConnection failed to send message to {} - {}", "getServerAddress"_attr = getServerAddress(), "redact_sinkStatus"_attr = redact(sinkStatus));
         return maybeThrow(sinkStatus);
     }
 
@@ -655,8 +651,7 @@ bool DBClientConnection::call(Message& toSend,
     if (swm.isOK()) {
         response = std::move(swm.getValue());
     } else {
-        log() << "DBClientConnection failed to receive message from " << getServerAddress() << " - "
-              << redact(swm.getStatus());
+        LOGV2("DBClientConnection failed to receive message from {} - {}", "getServerAddress"_attr = getServerAddress(), "redact_swm_getStatus"_attr = redact(swm.getStatus()));
         return maybeThrow(swm.getStatus());
     }
 

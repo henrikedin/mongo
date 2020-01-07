@@ -79,14 +79,12 @@ std::string dumpMultikeyPaths(const MultikeyPaths& multikeyPaths) {
 
 bool areKeysetsEqual(const KeyStringSet& expectedKeys, const KeyStringSet& actualKeys) {
     if (expectedKeys.size() != actualKeys.size()) {
-        log() << "Expected: " << dumpKeyset(expectedKeys) << ", "
-              << "Actual: " << dumpKeyset(actualKeys);
+        LOGV2("Expected: {}, Actual: {}", "dumpKeyset_expectedKeys"_attr = dumpKeyset(expectedKeys), "dumpKeyset_actualKeys"_attr = dumpKeyset(actualKeys));
         return false;
     }
 
     if (!std::equal(expectedKeys.begin(), expectedKeys.end(), actualKeys.begin())) {
-        log() << "Expected: " << dumpKeyset(expectedKeys) << ", "
-              << "Actual: " << dumpKeyset(actualKeys);
+        LOGV2("Expected: {}, Actual: {}", "dumpKeyset_expectedKeys"_attr = dumpKeyset(expectedKeys), "dumpKeyset_actualKeys"_attr = dumpKeyset(actualKeys));
         return false;
     }
 

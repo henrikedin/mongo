@@ -137,7 +137,7 @@ bool Scope::execFile(const string& filename, bool printResult, bool reportError,
     boost::filesystem::path p(filename);
 #endif
     if (!exists(p)) {
-        error() << "file [" << filename << "] doesn't exist";
+        LOGV2_ERROR("file [{}] doesn't exist", "filename"_attr = filename);
         return false;
     }
 
@@ -156,7 +156,7 @@ bool Scope::execFile(const string& filename, bool printResult, bool reportError,
         }
 
         if (empty) {
-            error() << "directory [" << filename << "] doesn't have any *.js files";
+            LOGV2_ERROR("directory [{}] doesn't have any *.js files", "filename"_attr = filename);
             return false;
         }
 
@@ -171,7 +171,7 @@ bool Scope::execFile(const string& filename, bool printResult, bool reportError,
 
     fileofs fo = f.len();
     if (fo > kMaxJsFileLength) {
-        warning() << "attempted to execute javascript file larger than 2GB";
+        LOGV2_WARNING("attempted to execute javascript file larger than 2GB");
         return false;
     }
     unsigned len = static_cast<unsigned>(fo);
@@ -258,8 +258,7 @@ void Scope::loadStored(OperationContext* opCtx, bool ignoreNotConnected) {
                 throw;
             }
 
-            error() << "unable to load stored JavaScript function " << n.valuestr()
-                    << "(): " << redact(setElemEx);
+            LOGV2_ERROR("unable to load stored JavaScript function {}(): {}", "n_valuestr"_attr = n.valuestr(), "redact_setElemEx"_attr = redact(setElemEx));
         }
     }
 
@@ -339,7 +338,7 @@ public:
 
         if (scope->hasOutOfMemoryException()) {
             // make some room
-            log() << "Clearing all idle JS contexts due to out of memory";
+            LOGV2("Clearing all idle JS contexts due to out of memory");
             _pools.clear();
             return;
         }

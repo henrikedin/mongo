@@ -395,7 +395,7 @@ StatusWith<BSONObj> OplogFetcher::_onSuccessfulBatch(const Fetcher::QueryRespons
             [&](auto&&) {
                 status = {ErrorCodes::FailPointEnabled,
                           "stopReplProducerOnDocument fail point is enabled."};
-                log() << status.reason();
+                LOGV2("{}", "status_reason"_attr = status.reason());
             },
             [&](const BSONObj& data) {
                 auto opCtx = cc().makeOperationContext();
@@ -413,17 +413,14 @@ StatusWith<BSONObj> OplogFetcher::_onSuccessfulBatch(const Fetcher::QueryRespons
     auto firstDocToApply = documents.cbegin();
 
     if (!documents.empty()) {
-        LOG(2) << "oplog fetcher read " << documents.size()
-               << " operations from remote oplog starting at " << documents.front()["ts"]
-               << " and ending at " << documents.back()["ts"];
+        LOGV2_DEBUG(2, "oplog fetcher read {} operations from remote oplog starting at {} and ending at {}", "documents_size"_attr = documents.size(), "documents_front_ts"_attr = documents.front()["ts"], "documents_back_ts"_attr = documents.back()["ts"]);
     } else {
-        LOG(2) << "oplog fetcher read 0 operations from remote oplog";
+        LOGV2_DEBUG(2, "oplog fetcher read 0 operations from remote oplog");
     }
 
     auto oqMetadataResult = parseOplogQueryMetadata(queryResponse);
     if (!oqMetadataResult.isOK()) {
-        error() << "invalid oplog query metadata from sync source " << _getSource() << ": "
-                << oqMetadataResult.getStatus() << ": " << queryResponse.otherFields.metadata;
+        LOGV2_ERROR("invalid oplog query metadata from sync source {}: {}: {}", "_getSource"_attr = _getSource(), "oqMetadataResult_getStatus"_attr = oqMetadataResult.getStatus(), "queryResponse_otherFields_metadata"_attr = queryResponse.otherFields.metadata);
         return oqMetadataResult.getStatus();
     }
     auto oqMetadata = oqMetadataResult.getValue();
@@ -447,7 +444,7 @@ StatusWith<BSONObj> OplogFetcher::_onSuccessfulBatch(const Fetcher::QueryRespons
             return status;
         }
 
-        LOG(1) << "oplog fetcher successfully fetched from " << _getSource();
+        LOGV2_DEBUG(1, "oplog fetcher successfully fetched from {}", "_getSource"_attr = _getSource());
 
         // We do not always enqueue the first document. We elect to skip it for the following
         // reasons:
@@ -481,8 +478,7 @@ StatusWith<BSONObj> OplogFetcher::_onSuccessfulBatch(const Fetcher::QueryRespons
         const auto& metadataObj = queryResponse.otherFields.metadata;
         auto metadataResult = rpc::ReplSetMetadata::readFromMetadata(metadataObj);
         if (!metadataResult.isOK()) {
-            error() << "invalid replication metadata from sync source " << _getSource() << ": "
-                    << metadataResult.getStatus() << ": " << metadataObj;
+            LOGV2_ERROR("invalid replication metadata from sync source {}: {}: {}", "_getSource"_attr = _getSource(), "metadataResult_getStatus"_attr = metadataResult.getStatus(), "metadataObj"_attr = metadataObj);
             return metadataResult.getStatus();
         }
         replSetMetadata = metadataResult.getValue();

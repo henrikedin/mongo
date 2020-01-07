@@ -107,7 +107,7 @@ TEST(NetworkInterfaceASIO, SerialPerf) {
 
     int duration = timeNetworkTestMillis(numOperations, &netAsio);
     int result = numOperations * 1000 / duration;
-    log() << "THROUGHPUT asio ping ops/s: " << result;
+    LOGV2("THROUGHPUT asio ping ops/s: {}", "result"_attr = result);
 }
 
 }  // namespace

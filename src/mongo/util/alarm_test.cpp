@@ -49,21 +49,21 @@ TEST(AlarmScheduler, BasicSingleThread) {
     auto alarm = scheduler->alarmAt(testStart + Milliseconds(10));
     bool firstTimerExpired = false;
     std::move(alarm.future).getAsync([&](Status status) {
-        log() << "Timer expired: " << status;
+        LOGV2("Timer expired: {}", "status"_attr = status);
         firstTimerExpired = true;
     });
 
     alarm = scheduler->alarmAt(testStart + Milliseconds(500));
     bool secondTimerExpired = false;
     std::move(alarm.future).getAsync([&](Status status) {
-        log() << "Second timer expired: " << status;
+        LOGV2("Second timer expired: {}", "status"_attr = status);
         secondTimerExpired = true;
     });
 
     alarm = scheduler->alarmAt(testStart + Milliseconds(515));
     bool thirdTimerExpired = false;
     std::move(alarm.future).getAsync([&](Status status) {
-        log() << "third timer expired: " << status;
+        LOGV2("third timer expired: {}", "status"_attr = status);
         thirdTimerExpired = true;
     });
     auto missingEvent = alarm.handle;

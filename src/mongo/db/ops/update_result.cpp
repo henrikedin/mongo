@@ -53,7 +53,7 @@ UpdateResult::UpdateResult(bool existing_,
     if (!existing && numMatched == 0 && !id.eoo()) {
         upserted = id.wrap(kUpsertedFieldName);
     }
-    LOG(4) << "UpdateResult -- " << redact(toString());
+    LOGV2_DEBUG(4, "UpdateResult -- {}", "redact_toString"_attr = redact(toString()));
 }
 
 std::string UpdateResult::toString() const {

@@ -407,7 +407,7 @@ public:
             if (mongo::NumberParser{}(meminfo, &systemMem).isOK()) {
                 return systemMem * 1024;  // convert from kB to bytes
             } else
-                log() << "Unable to collect system memory information";
+                LOGV2("Unable to collect system memory information");
         }
         return 0;
     }
@@ -521,7 +521,7 @@ void ProcessInfo::SystemInfo::collectSystemInfo() {
     LinuxSysHelper::getLinuxDistro(distroName, distroVersion);
 
     if (uname(&unameData) == -1) {
-        log() << "Unable to collect detailed system information: " << strerror(errno);
+        LOGV2("Unable to collect detailed system information: {}", "strerror_errno"_attr = strerror(errno));
     }
 
     osType = "Linux";
@@ -573,8 +573,7 @@ bool ProcessInfo::checkNumaEnabled() {
         hasMultipleNodes = boost::filesystem::exists("/sys/devices/system/node/node1");
         hasNumaMaps = boost::filesystem::exists("/proc/self/numa_maps");
     } catch (boost::filesystem::filesystem_error& e) {
-        log() << "WARNING: Cannot detect if NUMA interleaving is enabled. "
-              << "Failed to probe \"" << e.path1().string() << "\": " << e.code().message();
+        LOGV2("WARNING: Cannot detect if NUMA interleaving is enabled. Failed to probe \"{}\": {}", "e_path1_string"_attr = e.path1().string(), "e_code_message"_attr = e.code().message());
         return false;
     }
 
@@ -600,7 +599,7 @@ bool ProcessInfo::blockCheckSupported() {
 bool ProcessInfo::blockInMemory(const void* start) {
     unsigned char x = 0;
     if (mincore(const_cast<void*>(alignToStartOfPage(start)), getPageSize(), &x)) {
-        log() << "mincore failed: " << errnoWithDescription();
+        LOGV2("mincore failed: {}", "errnoWithDescription"_attr = errnoWithDescription());
         return 1;
     }
     return x & 0x1;
@@ -611,7 +610,7 @@ bool ProcessInfo::pagesInMemory(const void* start, size_t numPages, std::vector<
     if (mincore(const_cast<void*>(alignToStartOfPage(start)),
                 numPages * getPageSize(),
                 reinterpret_cast<unsigned char*>(&out->front()))) {
-        log() << "mincore failed: " << errnoWithDescription();
+        LOGV2("mincore failed: {}", "errnoWithDescription"_attr = errnoWithDescription());
         return false;
     }
     for (size_t i = 0; i < numPages; ++i) {

@@ -113,8 +113,7 @@ void PeriodicThreadToAbortExpiredTransactions::_init(ServiceContext* serviceCont
             try {
                 anchor->setPeriod(getPeriod(secs));
             } catch (const DBException& ex) {
-                log() << "Failed to update period of thread which aborts expired transactions "
-                      << ex.toStatus();
+                LOGV2("Failed to update period of thread which aborts expired transactions {}", "ex_toStatus"_attr = ex.toStatus());
             }
         });
 }

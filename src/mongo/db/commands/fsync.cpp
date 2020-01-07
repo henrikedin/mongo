@@ -136,7 +136,7 @@ public:
         const bool sync =
             !cmdObj["async"].trueValue();  // async means do an fsync, but return immediately
         const bool lock = cmdObj["lock"].trueValue();
-        log() << "CMD fsync: sync:" << sync << " lock:" << lock;
+        LOGV2("CMD fsync: sync:{} lock:{}", "sync"_attr = sync, "lock"_attr = lock);
 
         // fsync + lock is sometimes used to block writes out of the system and does not care if
         // the `BackupCursorService::fsyncLock` call succeeds.
@@ -182,14 +182,14 @@ public:
 
             if (!status.isOK()) {
                 releaseLock();
-                warning() << "fsyncLock failed. Lock count reset to 0. Status: " << status;
+                LOGV2_WARNING("fsyncLock failed. Lock count reset to 0. Status: {}", "status"_attr = status);
                 uassertStatusOK(status);
             }
         }
 
-        log() << "mongod is locked and no writes are allowed. db.fsyncUnlock() to unlock";
-        log() << "Lock count is " << getLockCount();
-        log() << "    For more info see " << FSyncCommand::url();
+        LOGV2("mongod is locked and no writes are allowed. db.fsyncUnlock() to unlock");
+        LOGV2("Lock count is {}", "getLockCount"_attr = getLockCount());
+        LOGV2("    For more info see {}", "FSyncCommand_url"_attr = FSyncCommand::url());
         result.append("info", "now locked against writes, use db.fsyncUnlock() to unlock");
         result.append("lockCount", getLockCount());
         result.append("seeAlso", FSyncCommand::url());
@@ -298,7 +298,7 @@ public:
                    const BSONObj& cmdObj,
                    std::string& errmsg,
                    BSONObjBuilder& result) override {
-        log() << "command: unlock requested";
+        LOGV2("command: unlock requested");
 
         Lock::ExclusiveLock lk(opCtx->lockState(), commandMutex);
 
@@ -318,11 +318,11 @@ public:
             // If we're still locked then lock count is not zero.
             invariant(lockCount > 0);
             lockCount = fsyncCmd.getLockCount_inLock();
-            log() << "fsyncUnlock completed. Lock count is now " << lockCount;
+            LOGV2("fsyncUnlock completed. Lock count is now {}", "lockCount"_attr = lockCount);
         } else {
             invariant(fsyncCmd.getLockCount() == 0);
             lockCount = 0;
-            log() << "fsyncUnlock completed. mongod is now unlocked and free to accept writes";
+            LOGV2("fsyncUnlock completed. mongod is now unlocked and free to accept writes");
         }
 
         result.append("info", str::stream() << "fsyncUnlock completed");
@@ -359,7 +359,7 @@ void FSyncLockThread::run() {
             registerShutdownTask([&] {
                 stdx::unique_lock<Latch> stateLock(fsyncCmd.lockStateMutex);
                 if (fsyncCmd.getLockCount_inLock() > 0) {
-                    warning() << "Interrupting fsync because the server is shutting down.";
+                    LOGV2_WARNING("Interrupting fsync because the server is shutting down.");
                     while (fsyncCmd.getLockCount_inLock()) {
                         // Relies on the lock to be released in 'releaseLock_inLock()' when the
                         // release brings the lock count to 0.
@@ -373,7 +373,7 @@ void FSyncLockThread::run() {
         try {
             storageEngine->flushAllFiles(&opCtx, true);
         } catch (const std::exception& e) {
-            error() << "error doing flushAll: " << e.what();
+            LOGV2_ERROR("error doing flushAll: {}", "e_what"_attr = e.what());
             fsyncCmd.threadStatus = Status(ErrorCodes::CommandFailed, e.what());
             fsyncCmd.acquireFsyncLockSyncCV.notify_one();
             return;
@@ -399,10 +399,9 @@ void FSyncLockThread::run() {
                                });
         } catch (const DBException& e) {
             if (_allowFsyncFailure) {
-                warning() << "Locking despite storage engine being unable to begin backup : "
-                          << e.toString();
+                LOGV2_WARNING("Locking despite storage engine being unable to begin backup : {}", "e_toString"_attr = e.toString());
             } else {
-                error() << "storage engine unable to begin backup : " << e.toString();
+                LOGV2_ERROR("storage engine unable to begin backup : {}", "e_toString"_attr = e.toString());
                 fsyncCmd.threadStatus = e.toStatus();
                 fsyncCmd.acquireFsyncLockSyncCV.notify_one();
                 return;
@@ -413,8 +412,8 @@ void FSyncLockThread::run() {
         fsyncCmd.acquireFsyncLockSyncCV.notify_one();
 
         while (fsyncCmd.getLockCount_inLock() > 0) {
-            warning() << "WARNING: instance is locked, blocking all writes. The fsync command has "
-                         "finished execution, remember to unlock the instance using fsyncUnlock().";
+            LOGV2_WARNING("WARNING: instance is locked, blocking all writes. The fsync command has "
+                         "finished execution, remember to unlock the instance using fsyncUnlock().");
             fsyncCmd.releaseFsyncLockSyncCV.wait_for(lk, Seconds(60).toSystemDuration());
         }
 
@@ -427,7 +426,7 @@ void FSyncLockThread::run() {
         }
 
     } catch (const std::exception& e) {
-        severe() << "FSyncLockThread exception: " << e.what();
+        LOGV2_FATAL("FSyncLockThread exception: {}", "e_what"_attr = e.what());
         fassertFailed(40350);
     }
 }

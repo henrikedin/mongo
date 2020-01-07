@@ -120,8 +120,7 @@ void DatabaseShardingState::setDbVersion(OperationContext* opCtx,
                                          boost::optional<DatabaseVersion> newDbVersion,
                                          DSSLock&) {
     invariant(opCtx->lockState()->isDbLockedForMode(_dbName, MODE_X));
-    log() << "setting this node's cached database version for " << _dbName << " to "
-          << (newDbVersion ? newDbVersion->toBSON() : BSONObj());
+    LOGV2("setting this node's cached database version for {} to {}", "_dbName"_attr = _dbName, "newDbVersion_newDbVersion_toBSON_BSONObj"_attr = (newDbVersion ? newDbVersion->toBSON() : BSONObj()));
     _dbVersion = newDbVersion;
 }
 

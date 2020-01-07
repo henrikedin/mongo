@@ -45,14 +45,14 @@ namespace mongo {
 SharedLibrary::~SharedLibrary() {
     if (_handle) {
         if (dlclose(_handle) != 0) {
-            LOG(2) << "Load Library close failed " << dlerror();
+            LOGV2_DEBUG(2, "Load Library close failed {}", "dlerror"_attr = dlerror());
         }
     }
 }
 
 StatusWith<std::unique_ptr<SharedLibrary>> SharedLibrary::create(
     const boost::filesystem::path& full_path) {
-    LOG(1) << "Loading library: " << full_path.c_str();
+    LOGV2_DEBUG(1, "Loading library: {}", "full_path_c_str"_attr = full_path.c_str());
 
     void* handle = dlopen(full_path.c_str(), RTLD_NOW | RTLD_GLOBAL);
     if (handle == nullptr) {

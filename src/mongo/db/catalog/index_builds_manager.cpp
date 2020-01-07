@@ -109,8 +109,7 @@ Status IndexBuildsManager::setUpIndexBuild(OperationContext* opCtx,
         return ex.toStatus();
     }
 
-    log() << "Index build initialized: " << buildUUID << ": " << nss << " (" << collection->uuid()
-          << " ): indexes: " << indexes.size();
+    LOGV2("Index build initialized: {}: {} ({} ): indexes: {}", "buildUUID"_attr = buildUUID, "nss"_attr = nss, "collection_uuid"_attr = collection->uuid(), "indexes_size"_attr = indexes.size());
 
     return Status::OK();
 }
@@ -163,12 +162,10 @@ StatusWith<std::pair<long long, long long>> IndexBuildsManager::startBuildingInd
                 auto validStatus = validateBSON(data.data(), data.size(), BSONVersion::kLatest);
                 if (!validStatus.isOK()) {
                     if (repair == RepairData::kNo) {
-                        severe() << "Invalid BSON detected at " << id << ": "
-                                 << redact(validStatus);
+                        LOGV2_FATAL("Invalid BSON detected at {}: {}", "id"_attr = id, "redact_validStatus"_attr = redact(validStatus));
                         fassertFailed(31396);
                     }
-                    warning() << "Invalid BSON detected at " << id << ": " << redact(validStatus)
-                              << ". Deleting.";
+                    LOGV2_WARNING("Invalid BSON detected at {}: {}. Deleting.", "id"_attr = id, "redact_validStatus"_attr = redact(validStatus));
                     rs->deleteRecord(opCtx, id);
                 } else {
                     numRecords++;
@@ -287,7 +284,7 @@ bool IndexBuildsManager::abortIndexBuildWithoutCleanup(OperationContext* opCtx,
         return false;
     }
 
-    log() << "Index build aborted without cleanup: " << buildUUID << ": " << reason;
+    LOGV2("Index build aborted without cleanup: {}: {}", "buildUUID"_attr = buildUUID, "reason"_attr = reason);
     std::shared_ptr<MultiIndexBlock> builder = builderIt->second;
 
     lk.unlock();

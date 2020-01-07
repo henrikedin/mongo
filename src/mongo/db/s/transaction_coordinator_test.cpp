@@ -87,7 +87,7 @@ void killClientOpCtx(ServiceContext* service, const std::string& clientName) {
         sleepmillis(50);
     }
 
-    error() << "Timed out trying to find and kill client opCtx with name: " << clientName;
+    LOGV2_ERROR("Timed out trying to find and kill client opCtx with name: {}", "clientName"_attr = clientName);
     ASSERT_FALSE(true);
 }
 
@@ -1513,7 +1513,7 @@ TEST_F(TransactionCoordinatorMetricsTest, SimpleTwoPhaseCommitRealCoordinator) {
 
     checkMetrics(expectedMetrics);
 
-    log() << "Create the coordinator.";
+    LOGV2("Create the coordinator.");
 
     expectedStats.createTime = advanceClockSourceAndReturnNewNow();
     expectedStats.totalDuration = Microseconds(0);
@@ -1531,8 +1531,8 @@ TEST_F(TransactionCoordinatorMetricsTest, SimpleTwoPhaseCommitRealCoordinator) {
     checkStats(stats, expectedStats);
     checkMetrics(expectedMetrics);
 
-    log() << "Start two-phase commit (allow the coordinator to progress to writing the participant "
-             "list).";
+    LOGV2("Start two-phase commit (allow the coordinator to progress to writing the participant "
+             "list).");
 
     expectedStats.writingParticipantListStartTime = advanceClockSourceAndReturnNewNow();
     tickSource()->advance(Microseconds(100));
@@ -1552,7 +1552,7 @@ TEST_F(TransactionCoordinatorMetricsTest, SimpleTwoPhaseCommitRealCoordinator) {
     checkStats(stats, expectedStats);
     checkMetrics(expectedMetrics);
 
-    log() << "Allow the coordinator to progress to waiting for votes.";
+    LOGV2("Allow the coordinator to progress to waiting for votes.");
 
     expectedStats.waitingForVotesStartTime = advanceClockSourceAndReturnNewNow();
     tickSource()->advance(Microseconds(100));
@@ -1573,7 +1573,7 @@ TEST_F(TransactionCoordinatorMetricsTest, SimpleTwoPhaseCommitRealCoordinator) {
     checkStats(stats, expectedStats);
     checkMetrics(expectedMetrics);
 
-    log() << "Allow the coordinator to progress to writing the decision.";
+    LOGV2("Allow the coordinator to progress to writing the decision.");
 
     expectedStats.writingDecisionStartTime = advanceClockSourceAndReturnNewNow();
     tickSource()->advance(Microseconds(100));
@@ -1599,7 +1599,7 @@ TEST_F(TransactionCoordinatorMetricsTest, SimpleTwoPhaseCommitRealCoordinator) {
     checkStats(stats, expectedStats);
     checkMetrics(expectedMetrics);
 
-    log() << "Allow the coordinator to progress to waiting for acks.";
+    LOGV2("Allow the coordinator to progress to waiting for acks.");
 
     expectedStats.waitingForDecisionAcksStartTime = advanceClockSourceAndReturnNewNow();
     tickSource()->advance(Microseconds(100));
@@ -1623,7 +1623,7 @@ TEST_F(TransactionCoordinatorMetricsTest, SimpleTwoPhaseCommitRealCoordinator) {
     checkStats(stats, expectedStats);
     checkMetrics(expectedMetrics);
 
-    log() << "Allow the coordinator to progress to deleting the coordinator doc.";
+    LOGV2("Allow the coordinator to progress to deleting the coordinator doc.");
 
     expectedStats.deletingCoordinatorDocStartTime = advanceClockSourceAndReturnNewNow();
     tickSource()->advance(Microseconds(100));
@@ -1649,7 +1649,7 @@ TEST_F(TransactionCoordinatorMetricsTest, SimpleTwoPhaseCommitRealCoordinator) {
     checkStats(stats, expectedStats);
     checkMetrics(expectedMetrics);
 
-    log() << "Allow the coordinator to complete.";
+    LOGV2("Allow the coordinator to complete.");
 
     expectedStats.endTime = advanceClockSourceAndReturnNewNow();
     tickSource()->advance(Microseconds(100));

@@ -218,8 +218,7 @@ OpMsg OpMsg::parse(const Message& message) try {
 
     return msg;
 } catch (const DBException& ex) {
-    LOG(1) << "invalid message: " << ex.code() << " " << redact(ex) << " -- "
-           << redact(hexdump(message.singleData().view2ptr(), message.size()));
+    LOGV2_DEBUG(1, "invalid message: {} {} -- {}", "ex_code"_attr = ex.code(), "redact_ex"_attr = redact(ex), "redact_hexdump_message_singleData_view2ptr_message_size"_attr = redact(hexdump(message.singleData().view2ptr(), message.size())));
     throw;
 }
 
@@ -291,8 +290,7 @@ Message OpMsgBuilder::finish() {
         std::set<StringData> seenFields;
         for (auto elem : resumeBody().asTempObj()) {
             if (!(seenFields.insert(elem.fieldNameStringData()).second)) {
-                severe() << "OP_MSG with duplicate field '" << elem.fieldNameStringData()
-                         << "' : " << redact(resumeBody().asTempObj());
+                LOGV2_FATAL("OP_MSG with duplicate field '{}' : {}", "elem_fieldNameStringData"_attr = elem.fieldNameStringData(), "redact_resumeBody_asTempObj"_attr = redact(resumeBody().asTempObj()));
                 fassert(40474, false);
             }
         }

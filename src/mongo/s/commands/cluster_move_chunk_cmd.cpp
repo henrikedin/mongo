@@ -119,7 +119,7 @@ public:
             std::string msg(str::stream()
                             << "Could not move chunk in '" << nss.ns() << "' to shard '" << toString
                             << "' because that shard does not exist");
-            log() << msg;
+            LOGV2("{}", "msg"_attr = msg);
             uasserted(ErrorCodes::ShardNotFound, msg);
         }
 

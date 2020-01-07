@@ -63,7 +63,7 @@ Status ServiceExecutorSynchronous::start() {
 }
 
 Status ServiceExecutorSynchronous::shutdown(Milliseconds timeout) {
-    LOG(3) << "Shutting down passthrough executor";
+    LOGV2_DEBUG(3, "Shutting down passthrough executor");
 
     _stillRunning.store(false);
 
@@ -113,7 +113,7 @@ Status ServiceExecutorSynchronous::schedule(Task task,
 
     // First call to schedule() for this connection, spawn a worker thread that will push jobs
     // into the thread local job queue.
-    LOG(3) << "Starting new executor thread in passthrough mode";
+    LOGV2_DEBUG(3, "Starting new executor thread in passthrough mode");
 
     Status status = launchServiceWorkerThread([this, task = std::move(task)] {
         _numRunningWorkerThreads.addAndFetch(1);

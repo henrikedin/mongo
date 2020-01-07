@@ -168,8 +168,7 @@ void DocumentSourceOut::initialize() {
         pExpCtx->opCtx,
         "outWaitAfterTempCollectionCreation",
         []() {
-            log() << "Hanging aggregation due to 'outWaitAfterTempCollectionCreation' "
-                  << "failpoint";
+            LOGV2("Hanging aggregation due to 'outWaitAfterTempCollectionCreation' failpoint");
         });
     if (_originalIndexes.empty()) {
         return;
@@ -261,8 +260,7 @@ void DocumentSourceOut::waitWhileFailPointEnabled() {
         pExpCtx->opCtx,
         "hangWhileBuildingDocumentSourceOutBatch",
         []() {
-            log() << "Hanging aggregation due to 'hangWhileBuildingDocumentSourceOutBatch' "
-                  << "failpoint";
+            LOGV2("Hanging aggregation due to 'hangWhileBuildingDocumentSourceOutBatch' failpoint");
         });
 }
 

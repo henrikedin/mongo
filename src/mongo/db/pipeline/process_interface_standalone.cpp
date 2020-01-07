@@ -268,7 +268,7 @@ std::vector<Document> MongoInterfaceStandalone::getIndexStats(OperationContext* 
     Collection* collection = autoColl.getCollection();
     std::vector<Document> indexStats;
     if (!collection) {
-        LOG(2) << "Collection not found on index stats retrieval: " << ns.ns();
+        LOGV2_DEBUG(2, "Collection not found on index stats retrieval: {}", "ns_ns"_attr = ns.ns());
         return indexStats;
     }
 

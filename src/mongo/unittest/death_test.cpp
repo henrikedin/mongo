@@ -63,10 +63,10 @@ namespace unittest {
 
 void DeathTestBase::_doTest() {
 #if defined(_WIN32)
-    log() << "Skipping death test on Windows";
+    LOGV2("Skipping death test on Windows");
     return;
 #elif defined(__APPLE__) && (TARGET_OS_TV || TARGET_OS_WATCH)
-    log() << "Skipping death test on tvOS/watchOS";
+    LOGV2("Skipping death test on tvOS/watchOS");
     return;
 #else
     int pipes[2];
@@ -78,14 +78,14 @@ void DeathTestBase::_doTest() {
         char buf[1000];
         std::ostringstream os;
         ssize_t bytesRead;
-        log() << "========== Beginning of interleaved output of death test ==========";
+        LOGV2("========== Beginning of interleaved output of death test ==========");
         while (0 < (bytesRead = read(pipes[0], buf, sizeof(buf)))) {
             std::cout.write(buf, bytesRead);
             invariant(std::cout);
             os.write(buf, bytesRead);
             invariant(os);
         }
-        log() << "========== End of interleaved output of death test ==========";
+        LOGV2("========== End of interleaved output of death test ==========");
         checkSyscall(bytesRead);
         pid_t pid;
         int stat;
@@ -96,8 +96,7 @@ void DeathTestBase::_doTest() {
                 case EINTR:
                     continue;
                 default:
-                    severe() << "Unrecoverable error while waiting for " << child << ": "
-                             << errnoWithDescription(err);
+                    LOGV2_FATAL("Unrecoverable error while waiting for {}: {}", "child"_attr = child, "errnoWithDescription_err"_attr = errnoWithDescription(err));
                     MONGO_UNREACHABLE;
             }
         }
@@ -127,7 +126,7 @@ void DeathTestBase::_doTest() {
         auto test = _doMakeTest();
         test->run();
     } catch (const TestAssertionFailureException& tafe) {
-        log() << "Caught test exception while expecting death: " << tafe;
+        LOGV2("Caught test exception while expecting death: {}", "tafe"_attr = tafe);
         // To fail the test, we must exit with a successful error code, because the parent process
         // is checking for the child to die with an exit code indicating an error.
         quickExit(EXIT_SUCCESS);

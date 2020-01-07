@@ -54,8 +54,7 @@ using namespace fmt::literals;
 
 #if 0
 #define MONGO_JSON_DEBUG(message)                                                          \
-    log() << "JSON DEBUG @ " << __FILE__ << ":" << __LINE__ << " " << __FUNCTION__ << ": " \
-          << message << endl;
+    LOGV2("JSON DEBUG @ {}:{} {}{}{}", "__FILE__"_attr = __FILE__, "__LINE__"_attr = __LINE__, "__FUNCTION__"_attr = __FUNCTION__, ""_attr = ": " \, "message"_attr = message);
 #else
 #define MONGO_JSON_DEBUG(message)
 #endif

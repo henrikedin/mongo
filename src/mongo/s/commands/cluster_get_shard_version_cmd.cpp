@@ -114,7 +114,7 @@ public:
                 bool exceedsSizeLimit = false;
 
                 for (const auto& chunk : cm->chunks()) {
-                    log() << redact(chunk.toString());
+                    LOGV2("{}", "redact_chunk_toString"_attr = redact(chunk.toString()));
                     if (!exceedsSizeLimit) {
                         BSONArrayBuilder chunkBB(chunksArrBuilder.subarrayStart());
                         chunkBB.append(chunk.getMin());

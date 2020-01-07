@@ -1608,7 +1608,7 @@ TEST_F(TopoCoordTest, ReplSetGetStatus) {
         &resultStatus);
     ASSERT_OK(resultStatus);
     BSONObj rsStatus = statusBuilder.obj();
-    unittest::log() << rsStatus;
+    unittest::LOGV2("{}", "rsStatus"_attr = rsStatus);
 
     // Test results for all non-self members
     ASSERT_EQUALS(setName, rsStatus["set"].String());
@@ -1724,7 +1724,7 @@ TEST_F(TopoCoordTest, ReplSetGetStatus) {
         &resultStatus);
     ASSERT_OK(resultStatus);
     rsStatus = statusBuilder2.obj();
-    unittest::log() << rsStatus;
+    unittest::LOGV2("{}", "rsStatus"_attr = rsStatus);
     ASSERT_EQUALS(setName, rsStatus["set"].String());
     ASSERT_FALSE(rsStatus.hasField("lastStableRecoveryTimestamp"));
     ASSERT_FALSE(rsStatus.hasField("electionCandidateMetrics"));

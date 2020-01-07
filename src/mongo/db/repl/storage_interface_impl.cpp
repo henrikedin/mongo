@@ -190,7 +190,7 @@ StorageInterfaceImpl::createCollectionForBulkLoading(
     const BSONObj idIndexSpec,
     const std::vector<BSONObj>& secondaryIndexSpecs) {
 
-    LOG(2) << "StorageInterfaceImpl::createCollectionForBulkLoading called for ns: " << nss.ns();
+    LOGV2_DEBUG(2, "StorageInterfaceImpl::createCollectionForBulkLoading called for ns: {}", "nss_ns"_attr = nss.ns());
 
     class StashClient {
     public:
@@ -387,7 +387,7 @@ Status StorageInterfaceImpl::dropReplicatedDatabases(OperationContext* opCtx) {
     std::vector<std::string> dbNames =
         opCtx->getServiceContext()->getStorageEngine()->listDatabases();
     invariant(!dbNames.empty());
-    log() << "dropReplicatedDatabases - dropping " << dbNames.size() << " databases";
+    LOGV2("dropReplicatedDatabases - dropping {} databases", "dbNames_size"_attr = dbNames.size());
 
     ReplicationCoordinator::get(opCtx)->dropAllSnapshots();
 
@@ -404,14 +404,13 @@ Status StorageInterfaceImpl::dropReplicatedDatabases(OperationContext* opCtx) {
             } else {
                 // This is needed since dropDatabase can't be rolled back.
                 // This is safe be replaced by "invariant(db);dropDatabase(opCtx, db);" once fixed.
-                log() << "dropReplicatedDatabases - database disappeared after retrieving list of "
-                         "database names but before drop: "
-                      << dbName;
+                LOGV2("dropReplicatedDatabases - database disappeared after retrieving list of "
+                         "database names but before drop: {}", "dbName"_attr = dbName);
             }
         });
     }
     invariant(hasLocalDatabase, "local database missing");
-    log() << "dropReplicatedDatabases - dropped " << dbNames.size() << " databases";
+    LOGV2("dropReplicatedDatabases - dropped {} databases", "dbNames_size"_attr = dbNames.size());
 
     return Status::OK();
 }

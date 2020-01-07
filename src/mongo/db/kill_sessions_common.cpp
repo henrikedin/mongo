@@ -56,8 +56,7 @@ SessionKiller::Result killSessionsLocalKillOps(OperationContext* opCtx,
                 if (const KillAllSessionsByPattern* pattern = matcher.match(*lsid)) {
                     ScopedKillAllSessionsByPatternImpersonator impersonator(opCtx, *pattern);
 
-                    log() << "killing op: " << opCtxToKill->getOpID()
-                          << " as part of killing session: " << lsid->toBSON();
+                    LOGV2("killing op: {} as part of killing session: {}", "opCtxToKill_getOpID"_attr = opCtxToKill->getOpID(), "lsid_toBSON"_attr = lsid->toBSON());
 
                     opCtx->getServiceContext()->killOperation(lk, opCtxToKill);
                 }

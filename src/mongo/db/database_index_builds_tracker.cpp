@@ -80,9 +80,9 @@ void DatabaseIndexBuildsTracker::waitUntilNoIndexBuildsRemain(stdx::unique_lock<
             return true;
         }
 
-        log() << "Waiting until the following index builds are finished:";
+        LOGV2("Waiting until the following index builds are finished:");
         for (const auto& indexBuild : _allIndexBuilds) {
-            log() << "    Index build with UUID: " << indexBuild.first;
+            LOGV2("    Index build with UUID: {}", "indexBuild_first"_attr = indexBuild.first);
         }
 
         return false;

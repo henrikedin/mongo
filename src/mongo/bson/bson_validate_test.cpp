@@ -94,9 +94,7 @@ TEST(BSONValidate, RandomData) {
         delete[] x;
     }
 
-    log() << "RandomData: didn't crash valid/total: " << numValid << "/" << numToRun
-          << " (want few valid ones)"
-          << " jsonSize: " << jsonSize << endl;
+    LOGV2("RandomData: didn't crash valid/total: {}/{} (want few valid ones) jsonSize: {}", "numValid"_attr = numValid, "numToRun"_attr = numToRun, "jsonSize"_attr = jsonSize);
 }
 
 TEST(BSONValidate, MuckingData1) {
@@ -140,14 +138,12 @@ TEST(BSONValidate, MuckingData1) {
         }
     }
 
-    log() << "MuckingData1: didn't crash valid/total: " << numValid << "/" << numToRun
-          << " (want few valid ones) "
-          << " jsonSize: " << jsonSize << endl;
+    LOGV2("MuckingData1: didn't crash valid/total: {}/{} (want few valid ones)  jsonSize: {}", "numValid"_attr = numValid, "numToRun"_attr = numToRun, "jsonSize"_attr = jsonSize);
 }
 
 TEST(BSONValidate, Fuzz) {
     int64_t seed = time(nullptr);
-    log() << "BSONValidate Fuzz random seed: " << seed << endl;
+    LOGV2("BSONValidate Fuzz random seed: {}", "seed"_attr = seed);
     PseudoRandom randomSource(seed);
 
     BSONObj original =

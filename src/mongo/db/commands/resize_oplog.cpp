@@ -107,7 +107,7 @@ public:
             uassertStatusOK(status);
             DurableCatalog::get(opCtx)->updateCappedSize(opCtx, coll->getCatalogId(), size);
             wunit.commit();
-            LOG(0) << "replSetResizeOplog success, currentSize:" << size;
+            LOGV2("replSetResizeOplog success, currentSize:{}", "size"_attr = size);
             return true;
         });
     }

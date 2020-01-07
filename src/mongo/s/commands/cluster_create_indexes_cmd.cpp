@@ -70,7 +70,7 @@ public:
                    std::string& errmsg,
                    BSONObjBuilder& output) override {
         const NamespaceString nss(CommandHelpers::parseNsCollectionRequired(dbName, cmdObj));
-        LOG(1) << "createIndexes: " << nss << " cmd:" << redact(cmdObj);
+        LOGV2_DEBUG(1, "createIndexes: {} cmd:{}", "nss"_attr = nss, "redact_cmdObj"_attr = redact(cmdObj));
 
         createShardDatabase(opCtx, dbName);
 

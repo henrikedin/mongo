@@ -425,7 +425,7 @@ Status dropChunksAndDeleteCollectionsEntry(OperationContext* opCtx, const Namesp
             }
         }
 
-        LOG(1) << "Successfully cleared persisted chunk metadata for collection '" << nss << "'.";
+        LOGV2_DEBUG(1, "Successfully cleared persisted chunk metadata for collection '{}'.", "nss"_attr = nss);
         return Status::OK();
     } catch (const DBException& ex) {
         return ex.toStatus();
@@ -444,7 +444,7 @@ void dropChunks(OperationContext* opCtx, const NamespaceString& nss) {
         }
     }
 
-    LOG(1) << "Successfully cleared persisted chunk metadata for collection '" << nss << "'.";
+    LOGV2_DEBUG(1, "Successfully cleared persisted chunk metadata for collection '{}'.", "nss"_attr = nss);
 }
 
 Status deleteDatabasesEntry(OperationContext* opCtx, StringData dbName) {
@@ -464,7 +464,7 @@ Status deleteDatabasesEntry(OperationContext* opCtx, StringData dbName) {
         uassertStatusOK(
             getStatusFromWriteCommandResponse(deleteCommandResponse->getCommandReply()));
 
-        LOG(1) << "Successfully cleared persisted metadata for db '" << dbName.toString() << "'.";
+        LOGV2_DEBUG(1, "Successfully cleared persisted metadata for db '{}'.", "dbName_toString"_attr = dbName.toString());
         return Status::OK();
     } catch (const DBException& ex) {
         return ex.toStatus();

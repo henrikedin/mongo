@@ -77,9 +77,9 @@ void NetworkInterfaceMock::logQueues() {
             continue;
         }
 
-        log() << "**** queue: " << queue.first << " ****";
+        LOGV2("**** queue: {} ****", "queue_first"_attr = queue.first);
         for (auto&& item : *queue.second) {
-            log() << "\t\t " << item.getDiagnosticString();
+            LOGV2("\t\t {}", "item_getDiagnosticString"_attr = item.getDiagnosticString());
         }
     }
 }
@@ -240,8 +240,7 @@ void NetworkInterfaceMock::shutdown() {
     _waitingToRunMask |= kExecutorThread;  // Prevents network thread from scheduling.
     lk.unlock();
     for (NetworkOperationIterator iter = todo.begin(); iter != todo.end(); ++iter) {
-        warning() << "Mock network interface shutting down with outstanding request: "
-                  << iter->getRequest();
+        LOGV2_WARNING("Mock network interface shutting down with outstanding request: {}", "iter_getRequest"_attr = iter->getRequest());
         iter->setResponse(
             now, {ErrorCodes::ShutdownInProgress, "Shutting down mock network", Milliseconds(0)});
         iter->finishResponse();

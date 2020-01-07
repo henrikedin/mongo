@@ -184,7 +184,7 @@ void WaitForMajorityService::_periodicallyWaitForMajority(ServiceContext* servic
             _opCtx->waitForConditionOrInterrupt(
                 _hasNewOpTimeCV, lk, [&] { return !_queuedOpTimes.empty() || _inShutDown; });
         } catch (const DBException& e) {
-            LOG(1) << "Unable to wait for new op time due to: " << e;
+            LOGV2_DEBUG(1, "Unable to wait for new op time due to: {}", "e"_attr = e);
         }
 
         _opCtx = nullptr;

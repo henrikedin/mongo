@@ -259,10 +259,7 @@ Status IndexBuildInterceptor::drainWritesIntoIndex(OperationContext* opCtx,
     progress->finished();
 
     int logLevel = (_numApplied - appliedAtStart > 0) ? 0 : 1;
-    LOG(logLevel) << "index build: drain applied " << (_numApplied - appliedAtStart)
-                  << " side writes (inserted: " << totalInserted << ", deleted: " << totalDeleted
-                  << ") for '" << _indexCatalogEntry->descriptor()->indexName() << "' in "
-                  << timer.millis() << " ms";
+    LOGV2_DEBUG({logComponentV1toV2(logLevel)}, "index build: drain applied {} side writes (inserted: {}, deleted: {}) for '{}' in {} ms", "_numApplied_appliedAtStart"_attr = (_numApplied - appliedAtStart), "totalInserted"_attr = totalInserted, "totalDeleted"_attr = totalDeleted, "_indexCatalogEntry_descriptor_indexName"_attr = _indexCatalogEntry->descriptor()->indexName(), "timer_millis"_attr = timer.millis());
 
     return Status::OK();
 }
@@ -346,7 +343,7 @@ void IndexBuildInterceptor::_yield(OperationContext* opCtx) {
 
     hangDuringIndexBuildDrainYield.executeIf(
         [&](auto&&) {
-            log() << "Hanging index build during drain yield";
+            LOGV2("Hanging index build during drain yield");
             hangDuringIndexBuildDrainYield.pauseWhileSet();
         },
         [&](auto&& config) {
@@ -371,7 +368,7 @@ bool IndexBuildInterceptor::areAllWritesApplied(OperationContext* opCtx) const {
                 << writesRecorded << ", applied: " << _numApplied;
 
             dassert(writesRecorded == _numApplied, message);
-            warning() << message;
+            LOGV2_WARNING("{}", "message"_attr = message);
         }
         return true;
     }
@@ -472,8 +469,7 @@ Status IndexBuildInterceptor::sideWrite(OperationContext* opCtx,
                                     RecordData(doc.objdata(), doc.objsize())});
     }
 
-    LOG(2) << "recording " << records.size() << " side write keys on index '"
-           << _indexCatalogEntry->descriptor()->indexName() << "'";
+    LOGV2_DEBUG(2, "recording {} side write keys on index '{}'", "records_size"_attr = records.size(), "_indexCatalogEntry_descriptor_indexName"_attr = _indexCatalogEntry->descriptor()->indexName());
 
     // By passing a vector of null timestamps, these inserts are not timestamped individually, but
     // rather with the timestamp of the owning operation.

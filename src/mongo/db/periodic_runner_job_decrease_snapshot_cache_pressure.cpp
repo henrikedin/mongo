@@ -82,9 +82,8 @@ void PeriodicThreadToDecreaseSnapshotHistoryCachePressure::_init(ServiceContext*
                 SnapshotWindowUtil::decreaseTargetSnapshotWindowSize(opCtx.get());
             } catch (const DBException& ex) {
                 if (!ErrorCodes::isShutdownError(ex.toStatus().code())) {
-                    warning() << "Periodic task to check for and decrease cache pressure caused by "
-                                 "maintaining too much snapshot history failed! Caused by: "
-                              << ex.toStatus();
+                    LOGV2_WARNING("Periodic task to check for and decrease cache pressure caused by "
+                                 "maintaining too much snapshot history failed! Caused by: {}", "ex_toStatus"_attr = ex.toStatus());
                 }
             }
         },
@@ -97,9 +96,8 @@ void PeriodicThreadToDecreaseSnapshotHistoryCachePressure::_init(ServiceContext*
         try {
             anchor->setPeriod(Seconds(secs));
         } catch (const DBException& ex) {
-            log() << "Failed to update the period of the thread which decreases data history cache "
-                     "target size if there is cache pressure."
-                  << ex.toStatus();
+            LOGV2("Failed to update the period of the thread which decreases data history cache "
+                     "target size if there is cache pressure.{}", "ex_toStatus"_attr = ex.toStatus());
         }
     });
 }

@@ -80,8 +80,7 @@ CleanupResult cleanupOrphanedData(OperationContext* opCtx,
         auto* const css = CollectionShardingRuntime::get(opCtx, ns);
         const auto metadata = css->getCurrentMetadata();
         if (!metadata->isSharded()) {
-            LOG(0) << "skipping orphaned data cleanup for " << ns.ns()
-                   << ", collection is not sharded";
+            LOGV2("skipping orphaned data cleanup for {}, collection is not sharded", "ns_ns"_attr = ns.ns());
             return CleanupResult::kDone;
         }
 
@@ -92,7 +91,7 @@ CleanupResult cleanupOrphanedData(OperationContext* opCtx,
                     << "could not cleanup orphaned data, start key " << startingFromKey
                     << " does not match shard key pattern " << keyPattern;
 
-                log() << *errMsg;
+                LOGV2("{}", "errMsg"_attr = *errMsg);
                 return CleanupResult::kError;
             }
         } else {
@@ -101,8 +100,7 @@ CleanupResult cleanupOrphanedData(OperationContext* opCtx,
 
         targetRange = css->getNextOrphanRange(startingFromKey);
         if (!targetRange) {
-            LOG(1) << "cleanupOrphaned requested for " << ns.toString() << " starting from "
-                   << redact(startingFromKey) << ", no orphan ranges remain";
+            LOGV2_DEBUG(1, "cleanupOrphaned requested for {} starting from {}, no orphan ranges remain", "ns_toString"_attr = ns.toString(), "redact_startingFromKey"_attr = redact(startingFromKey));
 
             return CleanupResult::kDone;
         }
@@ -121,10 +119,10 @@ CleanupResult cleanupOrphanedData(OperationContext* opCtx,
 
     Status result = notifn.waitStatus(opCtx);
 
-    LOG(1) << "Finished waiting for last " << ns.toString() << " orphan range cleanup";
+    LOGV2_DEBUG(1, "Finished waiting for last {} orphan range cleanup", "ns_toString"_attr = ns.toString());
 
     if (!result.isOK()) {
-        log() << redact(result.reason());
+        LOGV2("{}", "redact_result_reason"_attr = redact(result.reason()));
         *errMsg = result.reason();
         return CleanupResult::kError;
     }

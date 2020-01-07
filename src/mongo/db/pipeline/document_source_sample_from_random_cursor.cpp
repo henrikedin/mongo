@@ -121,8 +121,7 @@ DocumentSource::GetNextResult DocumentSourceSampleFromRandomCursor::getNextNonDu
                 if (_seenDocs.insert(std::move(idField)).second) {
                     return nextInput;
                 }
-                LOG(1) << "$sample encountered duplicate document: "
-                       << nextInput.getDocument().toString();
+                LOGV2_DEBUG(1, "$sample encountered duplicate document: {}", "nextInput_getDocument_toString"_attr = nextInput.getDocument().toString());
                 break;  // Try again with the next document.
             }
             case GetNextResult::ReturnStatus::kPauseExecution: {

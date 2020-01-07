@@ -277,7 +277,7 @@ void ValidateAdaptor::traverseRecordStore(OperationContext* opCtx,
                 ss << "Reason: Validated size of " << validatedSize
                    << " bytes does not equal the record size of " << dataSize << " bytes";
             }
-            log() << std::string(ss);
+            LOGV2("{}", "std_string_ss"_attr = std::string(ss));
 
             // Only log once
             if (results->valid) {

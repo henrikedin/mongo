@@ -107,9 +107,9 @@ public:
         }
 
         if (repairObserver->isDone() && repairObserver->isDataInvalidated()) {
-            unittest::log() << "Modifications: ";
+            unittest::LOGV2("Modifications: ");
             for (const auto& mod : repairObserver->getModifications()) {
-                unittest::log() << "  " << mod.getDescription();
+                unittest::LOGV2("  {}", "mod_getDescription"_attr = mod.getDescription());
             }
         }
     }

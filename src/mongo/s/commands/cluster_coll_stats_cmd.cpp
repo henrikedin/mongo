@@ -173,7 +173,7 @@ public:
                         }
                     }
                 } else {
-                    log() << "mongos collstats doesn't know about: " << e.fieldName();
+                    LOGV2("mongos collstats doesn't know about: {}", "e_fieldName"_attr = e.fieldName());
                 }
             }
 

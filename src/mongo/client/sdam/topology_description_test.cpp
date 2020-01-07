@@ -143,8 +143,7 @@ TEST_F(TopologyDescriptionTestFixture, ShouldOnlyAllowSingleAndRsNoPrimaryWithSe
                         topologyTypes.end());
 
     for (const auto topologyType : topologyTypes) {
-        unittest::log() << "Check TopologyType " << toString(topologyType)
-                        << " with setName value.";
+        unittest::LOGV2("Check TopologyType {} with setName value.", "toString_topologyType"_attr = toString(topologyType));
         ASSERT_THROWS_CODE(
             SdamConfiguration(kOneServer, topologyType, mongo::Seconds(10), kSetName),
             DBException,

@@ -277,7 +277,7 @@ public:
                     if (partialOk) {
                         break;  // skipped chunk is probably on another shard
                     }
-                    log() << "should have chunk: " << n << " have:" << myn;
+                    LOGV2("should have chunk: {} have:{}", "n"_attr = n, "myn"_attr = myn);
                     dumpChunks(opCtx, nss.ns(), query, sort);
                     uassert(10040, "chunks out of order", n == myn);
                 }
@@ -312,7 +312,7 @@ public:
                     // RELOCKED
                     ctx.reset(new AutoGetCollectionForReadCommand(opCtx, nss));
                 } catch (const StaleConfigException&) {
-                    LOG(1) << "chunk metadata changed during filemd5, will retarget and continue";
+                    LOGV2_DEBUG(1, "chunk metadata changed during filemd5, will retarget and continue");
                     break;
                 }
 
@@ -347,7 +347,7 @@ public:
         q.sort(sort);
         unique_ptr<DBClientCursor> c = client.query(NamespaceString(ns), q);
         while (c->more()) {
-            log() << c->nextSafe();
+            LOGV2("{}", "c_nextSafe"_attr = c->nextSafe());
         }
     }
 

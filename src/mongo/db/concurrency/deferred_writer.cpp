@@ -47,7 +47,7 @@ auto kLogInterval = stdx::chrono::minutes(1);
 
 void DeferredWriter::_logFailure(const Status& status) {
     if (TimePoint::clock::now() - _lastLogged > kLogInterval) {
-        log() << "Unable to write to collection " << _nss.toString() << ": " << status.toString();
+        LOGV2("Unable to write to collection {}: {}", "_nss_toString"_attr = _nss.toString(), "status_toString"_attr = status.toString());
         _lastLogged = stdx::chrono::system_clock::now();
     }
 }
@@ -55,8 +55,7 @@ void DeferredWriter::_logFailure(const Status& status) {
 void DeferredWriter::_logDroppedEntry() {
     _droppedEntries += 1;
     if (TimePoint::clock::now() - _lastLoggedDrop > kLogInterval) {
-        log() << "Deferred write buffer for " << _nss.toString() << " is full. " << _droppedEntries
-              << " entries have been dropped.";
+        LOGV2("Deferred write buffer for {} is full. {} entries have been dropped.", "_nss_toString"_attr = _nss.toString(), "_droppedEntries"_attr = _droppedEntries);
         _lastLoggedDrop = stdx::chrono::system_clock::now();
         _droppedEntries = 0;
     }

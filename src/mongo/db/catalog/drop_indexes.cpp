@@ -204,7 +204,7 @@ Status dropIndexes(OperationContext* opCtx,
         }
 
         if (!serverGlobalParams.quiet.load()) {
-            LOG(0) << "CMD: dropIndexes " << nss << ": " << cmdObj[kIndexFieldName].toString(false);
+            LOGV2("CMD: dropIndexes {}: {}", "nss"_attr = nss, "cmdObj_kIndexFieldName_toString_false"_attr = cmdObj[kIndexFieldName].toString(false));
         }
 
         // If db/collection does not exist, short circuit and return.

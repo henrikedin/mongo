@@ -99,10 +99,7 @@ public:
                     "prepareTransaction must be run within a transaction",
                     txnParticipant);
 
-            LOG(3)
-                << "Participant shard received prepareTransaction for transaction with txnNumber "
-                << opCtx->getTxnNumber() << " on session "
-                << opCtx->getLogicalSessionId()->toBSON();
+            LOGV2_DEBUG(3, "Participant shard received prepareTransaction for transaction with txnNumber {} on session {}", "opCtx_getTxnNumber"_attr = opCtx->getTxnNumber(), "opCtx_getLogicalSessionId_toBSON"_attr = opCtx->getLogicalSessionId()->toBSON());
 
             uassert(ErrorCodes::NoSuchTransaction,
                     "Transaction isn't in progress",
@@ -200,10 +197,8 @@ std::set<ShardId> validateParticipants(OperationContext* opCtx,
     }
     ss << ']';
 
-    LOG(3) << "Coordinator shard received request to coordinate commit with "
-              "participant list "
-           << ss.str() << " for " << opCtx->getLogicalSessionId()->getId() << ':'
-           << opCtx->getTxnNumber();
+    LOGV2_DEBUG(3, "Coordinator shard received request to coordinate commit with "
+              "participant list {} for {}:{}", "ss_str"_attr = ss.str(), "opCtx_getLogicalSessionId_getId"_attr = opCtx->getLogicalSessionId()->getId(), "opCtx_getTxnNumber"_attr = opCtx->getTxnNumber());
 
     return participantsSet;
 }
@@ -235,7 +230,7 @@ public:
                                         validateParticipants(opCtx, cmd.getParticipants()));
 
             if (MONGO_unlikely(hangAfterStartingCoordinateCommit.shouldFail())) {
-                LOG(0) << "Hit hangAfterStartingCoordinateCommit failpoint";
+                LOGV2("Hit hangAfterStartingCoordinateCommit failpoint");
                 hangAfterStartingCoordinateCommit.pauseWhileSet(opCtx);
             }
 
@@ -275,8 +270,7 @@ public:
 
             // No coordinator was found in memory. Recover the decision from the local participant.
 
-            LOG(3) << "Going to recover decision from local participant for "
-                   << opCtx->getLogicalSessionId()->getId() << ':' << opCtx->getTxnNumber();
+            LOGV2_DEBUG(3, "Going to recover decision from local participant for {}:{}", "opCtx_getLogicalSessionId_getId"_attr = opCtx->getLogicalSessionId()->getId(), "opCtx_getTxnNumber"_attr = opCtx->getTxnNumber());
 
             boost::optional<SharedSemiFuture<void>> participantExitPrepareFuture;
             {

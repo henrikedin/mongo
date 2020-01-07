@@ -202,8 +202,7 @@ protected:
     }
     void check(const BSONObj& expected, const BSONObj& got) const {
         if (expected.woCompare(got)) {
-            ::mongo::log() << "expected: " << expected.toString() << ", got: " << got.toString()
-                           << endl;
+            ::mongo::LOGV2("expected: {}, got: {}", "expected_toString"_attr = expected.toString(), "got_toString"_attr = got.toString());
         }
         ASSERT_BSONOBJ_EQ(expected, got);
     }
@@ -252,7 +251,7 @@ protected:
             OldClientContext ctx(&_opCtx, ns());
             for (vector<BSONObj>::iterator i = ops.begin(); i != ops.end(); ++i) {
                 if (0) {
-                    mongo::unittest::log() << "op: " << *i << endl;
+                    mongo::unittest::LOGV2("op: {}", "i"_attr = *i);
                 }
                 repl::UnreplicatedWritesBlock uwb(&_opCtx);
                 auto entry = uassertStatusOK(OplogEntry::parse(*i));

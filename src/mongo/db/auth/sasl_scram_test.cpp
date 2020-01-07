@@ -270,12 +270,12 @@ protected:
 
 public:
     void run() {
-        log() << "SCRAM-SHA-1 variant";
+        LOGV2("SCRAM-SHA-1 variant");
         saslServerSession = std::make_unique<SaslSCRAMSHA1ServerMechanism>("test");
         _digestPassword = true;
         Test::run();
 
-        log() << "SCRAM-SHA-256 variant";
+        LOGV2("SCRAM-SHA-256 variant");
         saslServerSession = std::make_unique<SaslSCRAMSHA256ServerMechanism>("test");
         _digestPassword = false;
         Test::run();

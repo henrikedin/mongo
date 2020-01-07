@@ -73,7 +73,7 @@ public:
                     incomingRequest));
 
             if (MONGO_unlikely(hangRenameCollectionAfterGettingRename.shouldFail())) {
-                log() << "Hit hangRenameCollectionAfterGettingRename";
+                LOGV2("Hit hangRenameCollectionAfterGettingRename");
                 hangRenameCollectionAfterGettingRename.pauseWhileSet(opCtx);
             }
 

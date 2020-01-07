@@ -182,7 +182,7 @@ void shutdown(ServiceContext* srvContext) {
     }
     setGlobalServiceContext(nullptr);
 
-    log(LogComponent::kControl) << "now exiting";
+    LOGV2_DEBUG({logComponentV1toV2(LogComponent::kControl)}, "now exiting");
 }
 
 
@@ -226,7 +226,7 @@ ServiceContext* initialize(const char* yaml_config) {
     }
 
     if (kDebugBuild)
-        log(LogComponent::kControl) << "DEBUG build (which is slower)" << endl;
+        LOGV2_DEBUG({logComponentV1toV2(LogComponent::kControl)}, "DEBUG build (which is slower)");
 
     // The periodic runner is required by the storage engine to be running beforehand.
     auto periodicRunner = std::make_unique<PeriodicRunnerEmbedded>(
@@ -249,9 +249,7 @@ ServiceContext* initialize(const char* yaml_config) {
 
             // Warn if field name matches non-active registered storage engine.
             if (isRegisteredStorageEngine(serviceContext, e.fieldName())) {
-                warning() << "Detected configuration for non-active storage engine "
-                          << e.fieldName() << " when current storage engine is "
-                          << storageGlobalParams.engine;
+                LOGV2_WARNING("Detected configuration for non-active storage engine {} when current storage engine is {}", "e_fieldName"_attr = e.fieldName(), "storageGlobalParams_engine"_attr = storageGlobalParams.engine);
             }
         }
     }
@@ -286,7 +284,7 @@ ServiceContext* initialize(const char* yaml_config) {
     try {
         repairDatabasesAndCheckVersion(startupOpCtx.get());
     } catch (const ExceptionFor<ErrorCodes::MustDowngrade>& error) {
-        severe(LogComponent::kControl) << "** IMPORTANT: " << error.toStatus().reason();
+        LOGV2_FATAL_DEBUG({logComponentV1toV2(LogComponent::kControl)}, "** IMPORTANT: {}", "error_toStatus_reason"_attr = error.toStatus().reason());
         quickExit(EXIT_NEED_DOWNGRADE);
     }
 
@@ -300,7 +298,7 @@ ServiceContext* initialize(const char* yaml_config) {
     }
 
     if (storageGlobalParams.upgrade) {
-        log() << "finished checking dbs";
+        LOGV2("finished checking dbs");
         exitCleanly(EXIT_CLEAN);
     }
 

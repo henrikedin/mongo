@@ -156,8 +156,7 @@ MigrationSourceManager::MigrationSourceManager(OperationContext* opCtx,
             "Destination shard cannot be the same as source",
             _args.getFromShardId() != _args.getToShardId());
 
-    log() << "Starting chunk migration " << redact(_args.toString())
-          << " with expected collection version epoch " << _args.getVersionEpoch();
+    LOGV2("Starting chunk migration {} with expected collection version epoch {}", "redact__args_toString"_attr = redact(_args.toString()), "_args_getVersionEpoch"_attr = _args.getVersionEpoch());
 
     // Force refresh of the metadata to ensure we have the latest
     forceShardFilteringMetadataRefresh(_opCtx, getNss());
@@ -390,7 +389,7 @@ Status MigrationSourceManager::enterCriticalSection() {
                           << signalStatus.toString()};
     }
 
-    log() << "Migration successfully entered critical section";
+    LOGV2("Migration successfully entered critical section");
 
     scopedGuard.dismiss();
     return Status::OK();
@@ -516,9 +515,7 @@ Status MigrationSourceManager::commitChunkMetadataOnConfig() {
                 }
                 _opCtx->checkForInterrupt();
 
-                LOG(0) << "_configsvrEnsureChunkVersionIsGreaterThan failed after " << attempts
-                       << " attempts " << causedBy(ensureChunkVersionIsGreaterThanStatus)
-                       << " . Will try again.";
+                LOGV2("_configsvrEnsureChunkVersionIsGreaterThan failed after {} attempts {} . Will try again.", "attempts"_attr = attempts, "causedBy_ensureChunkVersionIsGreaterThanStatus"_attr = causedBy(ensureChunkVersionIsGreaterThanStatus));
             }
         } else {
             // This is the FCV 4.2 and below protocol.
@@ -526,9 +523,8 @@ Status MigrationSourceManager::commitChunkMetadataOnConfig() {
             // Need to get the latest optime in case the refresh request goes to a secondary --
             // otherwise the read won't wait for the write that _configsvrCommitChunkMigration may
             // have done
-            log() << "Error occurred while committing the migration. Performing a majority write "
-                     "against the config server to obtain its latest optime"
-                  << causedBy(redact(migrationCommitStatus));
+            LOGV2("Error occurred while committing the migration. Performing a majority write "
+                     "against the config server to obtain its latest optime{}", "causedBy_redact_migrationCommitStatus"_attr = causedBy(redact(migrationCommitStatus)));
 
             Status status = ShardingLogging::get(_opCtx)->logChangeChecked(
                 _opCtx,
@@ -592,9 +588,7 @@ Status MigrationSourceManager::commitChunkMetadataOnConfig() {
             }
             _opCtx->checkForInterrupt();
 
-            log() << "Failed to refresh metadata after " << attempts << " attempts, after a "
-                  << (migrationCommitStatus.isOK() ? "failed commit attempt" : "successful commit")
-                  << causedBy(redact(ex.toStatus())) << ". Will try to refresh again.";
+            LOGV2("Failed to refresh metadata after {} attempts, after a {}{}. Will try to refresh again.", "attempts"_attr = attempts, "migrationCommitStatus_isOK_failed_commit_attempt_successful_commit"_attr = (migrationCommitStatus.isOK() ? "failed commit attempt" : "successful commit"), "causedBy_redact_ex_toStatus"_attr = causedBy(redact(ex.toStatus())));
         }
     }
 
@@ -619,8 +613,7 @@ Status MigrationSourceManager::commitChunkMetadataOnConfig() {
     }
 
     // Migration succeeded
-    LOG(0) << "Migration succeeded and updated collection version to "
-           << refreshedMetadata->getCollVersion();
+    LOGV2("Migration succeeded and updated collection version to {}", "refreshedMetadata_getCollVersion"_attr = refreshedMetadata->getCollVersion());
 
     if (_useFCV44Protocol) {
         _coordinator->setMigrationDecision(
@@ -670,8 +663,7 @@ Status MigrationSourceManager::commitChunkMetadataOnConfig() {
         << redact(range.toString()) << " due to: ";
 
     if (_args.getWaitForDelete()) {
-        log() << "Waiting for cleanup of " << getNss().ns() << " range "
-              << redact(range.toString());
+        LOGV2("Waiting for cleanup of {} range {}", "getNss_ns"_attr = getNss().ns(), "redact_range_toString"_attr = redact(range.toString()));
         auto deleteStatus = notification.waitStatus(_opCtx);
         if (!deleteStatus.isOK()) {
             return {ErrorCodes::OrphanedRangeCleanUpFailed,
@@ -684,8 +676,7 @@ Status MigrationSourceManager::commitChunkMetadataOnConfig() {
         return {ErrorCodes::OrphanedRangeCleanUpFailed,
                 orphanedRangeCleanUpErrMsg + redact(notification.waitStatus(_opCtx))};
     } else {
-        log() << "Leaving cleanup of " << getNss().ns() << " range " << redact(range.toString())
-              << " to complete in background";
+        LOGV2("Leaving cleanup of {} range {} to complete in background", "getNss_ns"_attr = getNss().ns(), "redact_range_toString"_attr = redact(range.toString()));
         notification.abandon();
     }
 
@@ -708,8 +699,7 @@ void MigrationSourceManager::cleanupOnError() {
     try {
         _cleanup();
     } catch (const DBException& ex) {
-        warning() << "Failed to clean up migration: " << redact(_args.toString())
-                  << "due to: " << redact(ex);
+        LOGV2_WARNING("Failed to clean up migration: {}due to: {}", "redact__args_toString"_attr = redact(_args.toString()), "redact_ex"_attr = redact(ex));
     }
 }
 

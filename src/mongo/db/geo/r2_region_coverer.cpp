@@ -108,7 +108,7 @@ void R2RegionCoverer::getCovering(const R2Region& region, vector<GeoHash>* cover
         Candidate* candidate = _candidateQueue->top().second;  // Owned
         _candidateQueue->pop();
         // REDACT?? I think this may have User info, but I'm not sure how to redact
-        LOG(3) << "Pop: " << redact(candidate->cell.toString());
+        LOGV2_DEBUG(3, "Pop: {}", "redact_candidate_cell_toString"_attr = redact(candidate->cell.toString()));
 
         // Try to expand this cell into its children
         if (candidate->cell.getBits() < _minLevel || candidate->numChildren == 1 ||
@@ -123,7 +123,7 @@ void R2RegionCoverer::getCovering(const R2Region& region, vector<GeoHash>* cover
             candidate->isTerminal = true;
             addCandidate(candidate);
         }
-        LOG(3) << "Queue: " << _candidateQueue->size();
+        LOGV2_DEBUG(3, "Queue: {}", "_candidateQueue_size"_attr = _candidateQueue->size());
     }
 
     _region = nullptr;
@@ -185,7 +185,7 @@ void R2RegionCoverer::addCandidate(Candidate* candidate) {
                          numTerminals);
         _candidateQueue->push(make_pair(priority, candidate));  // queue owns candidate
         // REDACT??
-        LOG(3) << "Push: " << redact(candidate->cell.toString()) << " (" << priority << ") ";
+        LOGV2_DEBUG(3, "Push: {} ({}) ", "redact_candidate_cell_toString"_attr = redact(candidate->cell.toString()), "priority"_attr = priority);
     }
 }
 

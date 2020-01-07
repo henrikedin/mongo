@@ -94,7 +94,7 @@ Status ViewCatalog::reload(OperationContext* opCtx, ViewCatalogLookupBehavior lo
 Status ViewCatalog::_reload(WithLock,
                             OperationContext* opCtx,
                             ViewCatalogLookupBehavior lookupBehavior) {
-    LOG(1) << "reloading view catalog for database " << _durable->getName();
+    LOGV2_DEBUG(1, "reloading view catalog for database {}", "_durable_getName"_attr = _durable->getName());
 
     _viewMap.clear();
     _valid = false;
@@ -137,8 +137,7 @@ Status ViewCatalog::_reload(WithLock,
         }
     } catch (const DBException& ex) {
         auto status = ex.toStatus();
-        LOG(0) << "could not load view catalog for database " << _durable->getName() << ": "
-               << status;
+        LOGV2("could not load view catalog for database {}: {}", "_durable_getName"_attr = _durable->getName(), "status"_attr = status);
         return status;
     }
 

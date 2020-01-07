@@ -177,7 +177,7 @@ void CollectionQueryInfo::notifyOfQuery(OperationContext* opCtx,
 
 void CollectionQueryInfo::clearQueryCache() {
     const Collection* coll = get.owner(this);
-    LOG(1) << coll->ns() << ": clearing plan cache - collection info cache reset";
+    LOGV2_DEBUG(1, "{}: clearing plan cache - collection info cache reset", "coll_ns"_attr = coll->ns());
     if (nullptr != _planCache.get()) {
         _planCache->clear();
     }

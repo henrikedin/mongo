@@ -64,14 +64,13 @@ BaseCloner::AfterStageBehavior AllDatabaseCloner::listDatabasesStage() {
     auto databasesArray = getClient()->getDatabaseInfos(BSONObj(), true /* nameOnly */);
     for (const auto& dbBSON : databasesArray) {
         if (!dbBSON.hasField("name")) {
-            LOG(1) << "Excluding database due to the 'listDatabases' response not containing a "
-                      "'name' field for this entry: "
-                   << dbBSON;
+            LOGV2_DEBUG(1, "Excluding database due to the 'listDatabases' response not containing a "
+                      "'name' field for this entry: {}", "dbBSON"_attr = dbBSON);
             continue;
         }
         const auto& dbName = dbBSON["name"].str();
         if (dbName == "local") {
-            LOG(1) << "Excluding database from the 'listDatabases' response: " << dbBSON;
+            LOGV2_DEBUG(1, "Excluding database from the 'listDatabases' response: {}", "dbBSON"_attr = dbBSON);
             continue;
         } else {
             _databases.emplace_back(dbName);
@@ -106,15 +105,14 @@ void AllDatabaseCloner::postStage() {
         }
         auto dbStatus = _currentDatabaseCloner->run();
         if (dbStatus.isOK()) {
-            LOG(1) << "Database clone for '" << dbName << "' finished: " << dbStatus;
+            LOGV2_DEBUG(1, "Database clone for '{}' finished: {}", "dbName"_attr = dbName, "dbStatus"_attr = dbStatus);
         } else {
-            warning() << "database '" << dbName << "' (" << (_stats.databasesCloned + 1) << " of "
-                      << _databases.size() << ") clone failed due to " << dbStatus.toString();
+            LOGV2_WARNING("database '{}' ({} of {}) clone failed due to {}", "dbName"_attr = dbName, "_stats_databasesCloned_1"_attr = (_stats.databasesCloned + 1), "_databases_size"_attr = _databases.size(), "dbStatus_toString"_attr = dbStatus.toString());
             setInitialSyncFailedStatus(dbStatus);
             return;
         }
         if (StringData(dbName).equalCaseInsensitive("admin")) {
-            LOG(1) << "Finished the 'admin' db, now validating it.";
+            LOGV2_DEBUG(1, "Finished the 'admin' db, now validating it.");
             // Do special checks for the admin database because of auth. collections.
             auto adminStatus = Status(ErrorCodes::NotYetInitialized, "");
             {
@@ -127,7 +125,7 @@ void AllDatabaseCloner::postStage() {
                 adminStatus = getStorageInterface()->isAdminDbValid(opCtx);
             }
             if (!adminStatus.isOK()) {
-                LOG(1) << "Validation failed on 'admin' db due to " << adminStatus;
+                LOGV2_DEBUG(1, "Validation failed on 'admin' db due to {}", "adminStatus"_attr = adminStatus);
                 setInitialSyncFailedStatus(adminStatus);
                 return;
             }

@@ -168,7 +168,7 @@ void IndexBuildBlock::success(OperationContext* opCtx, Collection* collection) {
         invariant(_indexBuildInterceptor->areAllConstraintsChecked(opCtx));
     }
 
-    log() << "index build: done building index " << _indexName << " on ns " << _nss;
+    LOGV2("index build: done building index {} on ns {}", "_indexName"_attr = _indexName, "_nss"_attr = _nss);
 
     collection->indexBuildSuccess(opCtx, _indexCatalogEntry);
 

@@ -85,8 +85,7 @@ public:
 
         void typedRun(OperationContext* opCtx) {
             BSONObj cmdObj = request().toBSON(BSONObj());
-            LOG(1) << "setIndexCommitQuorum: " << request().getNamespace()
-                   << " cmd:" << redact(cmdObj);
+            LOGV2_DEBUG(1, "setIndexCommitQuorum: {} cmd:{}", "request_getNamespace"_attr = request().getNamespace(), "redact_cmdObj"_attr = redact(cmdObj));
 
             scatterGatherOnlyVersionIfUnsharded(
                 opCtx,

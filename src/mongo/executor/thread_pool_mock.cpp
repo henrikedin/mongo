@@ -52,7 +52,7 @@ ThreadPoolMock::~ThreadPoolMock() {
 }
 
 void ThreadPoolMock::startup() {
-    LOG(1) << "Starting pool";
+    LOGV2_DEBUG(1, "Starting pool");
     stdx::lock_guard<Latch> lk(_mutex);
     invariant(!_started);
     invariant(!_worker.joinable());
@@ -61,7 +61,7 @@ void ThreadPoolMock::startup() {
         _options.onCreateThread();
         stdx::unique_lock<Latch> lk(_mutex);
 
-        LOG(1) << "Starting to consume tasks";
+        LOGV2_DEBUG(1, "Starting to consume tasks");
         while (!_joining) {
             if (_tasks.empty()) {
                 lk.unlock();
@@ -72,7 +72,7 @@ void ThreadPoolMock::startup() {
 
             _consumeOneTask(lk);
         }
-        LOG(1) << "Done consuming tasks";
+        LOGV2_DEBUG(1, "Done consuming tasks");
     });
 }
 
@@ -115,14 +115,14 @@ void ThreadPoolMock::_consumeOneTask(stdx::unique_lock<Latch>& lk) {
 }
 
 void ThreadPoolMock::_shutdown(stdx::unique_lock<Latch>& lk) {
-    LOG(1) << "Shutting down pool";
+    LOGV2_DEBUG(1, "Shutting down pool");
 
     _inShutdown = true;
     _net->signalWorkAvailable();
 }
 
 void ThreadPoolMock::_join(stdx::unique_lock<Latch>& lk) {
-    LOG(1) << "Joining pool";
+    LOGV2_DEBUG(1, "Joining pool");
 
     _joining = true;
     _net->signalWorkAvailable();

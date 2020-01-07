@@ -294,8 +294,7 @@ TEST_F(WiredTigerKVEngineTest, TestOplogTruncation) {
             sleepmillis(100);
         }
 
-        unittest::log() << "Expected the pinned oplog to advance. Expected value: " << newPinned
-                        << " Published value: " << _engine->getOplogNeededForCrashRecovery();
+        unittest::LOGV2("Expected the pinned oplog to advance. Expected value: {} Published value: {}", "newPinned"_attr = newPinned, "_engine_getOplogNeededForCrashRecovery"_attr = _engine->getOplogNeededForCrashRecovery());
         FAIL("");
     };
 

@@ -482,7 +482,7 @@ void TransactionRouter::Router::processParticipantResponse(OperationContext* opC
 
     if (txnResponseMetadata.getReadOnly()) {
         if (participant->readOnly == Participant::ReadOnly::kUnset) {
-            LOG(3) << txnIdToString() << " Marking " << shardId << " as read-only";
+            LOGV2_DEBUG(3, "{} Marking {} as read-only", "txnIdToString"_attr = txnIdToString(), "shardId"_attr = shardId);
             _setReadOnlyForParticipant(opCtx, shardId, Participant::ReadOnly::kReadOnly);
             return;
         }
@@ -498,12 +498,12 @@ void TransactionRouter::Router::processParticipantResponse(OperationContext* opC
     // The shard reported readOnly:false on this statement.
 
     if (participant->readOnly != Participant::ReadOnly::kNotReadOnly) {
-        LOG(3) << txnIdToString() << " Marking " << shardId << " as having done a write";
+        LOGV2_DEBUG(3, "{} Marking {} as having done a write", "txnIdToString"_attr = txnIdToString(), "shardId"_attr = shardId);
 
         _setReadOnlyForParticipant(opCtx, shardId, Participant::ReadOnly::kNotReadOnly);
 
         if (!p().recoveryShardId) {
-            LOG(3) << txnIdToString() << " Choosing " << shardId << " as recovery shard";
+            LOGV2_DEBUG(3, "{} Choosing {} as recovery shard", "txnIdToString"_attr = txnIdToString(), "shardId"_attr = shardId);
             p().recoveryShardId = shardId;
         }
     }
@@ -551,13 +551,12 @@ BSONObj TransactionRouter::Router::attachTxnFieldsIfNeeded(OperationContext* opC
                                                            const BSONObj& cmdObj) {
     RouterTransactionsMetrics::get(opCtx)->incrementTotalRequestsTargeted();
     if (auto txnPart = getParticipant(shardId)) {
-        LOG(4) << txnIdToString()
-               << " Sending transaction fields to existing participant: " << shardId;
+        LOGV2_DEBUG(4, "{} Sending transaction fields to existing participant: {}", "txnIdToString"_attr = txnIdToString(), "shardId"_attr = shardId);
         return txnPart->attachTxnFieldsIfNeeded(cmdObj, false);
     }
 
     auto txnPart = _createParticipant(opCtx, shardId);
-    LOG(4) << txnIdToString() << " Sending transaction fields to new participant: " << shardId;
+    LOGV2_DEBUG(4, "{} Sending transaction fields to new participant: {}", "txnIdToString"_attr = txnIdToString(), "shardId"_attr = shardId);
     if (!p().isRecoveringCommit) {
         // Don't update participant stats during recovery since the participant list isn't known.
         RouterTransactionsMetrics::get(opCtx)->incrementTotalContactedParticipants();
@@ -739,8 +738,7 @@ void TransactionRouter::Router::onStaleShardOrDbError(OperationContext* opCtx,
                                                       const Status& errorStatus) {
     invariant(canContinueOnStaleShardOrDbError(cmdName));
 
-    LOG(3) << txnIdToString()
-           << " Clearing pending participants after stale version error: " << errorStatus;
+    LOGV2_DEBUG(3, "{} Clearing pending participants after stale version error: {}", "txnIdToString"_attr = txnIdToString(), "errorStatus"_attr = errorStatus);
 
     // Remove participants created during the current statement so they are sent the correct options
     // if they are targeted again by the retry.
@@ -751,8 +749,7 @@ void TransactionRouter::Router::onViewResolutionError(OperationContext* opCtx,
                                                       const NamespaceString& nss) {
     // The router can always retry on a view resolution error.
 
-    LOG(3) << txnIdToString()
-           << " Clearing pending participants after view resolution error on namespace: " << nss;
+    LOGV2_DEBUG(3, "{} Clearing pending participants after view resolution error on namespace: {}", "txnIdToString"_attr = txnIdToString(), "nss"_attr = nss);
 
     // Requests against views are always routed to the primary shard for its database, but the retry
     // on the resolved namespace does not have to re-target the primary, so pending participants
@@ -772,10 +769,8 @@ void TransactionRouter::Router::onSnapshotError(OperationContext* opCtx,
                                                 const Status& errorStatus) {
     invariant(canContinueOnSnapshotError());
 
-    LOG(3) << txnIdToString()
-           << " Clearing pending participants and resetting global snapshot "
-              "timestamp after snapshot error: "
-           << errorStatus << ", previous timestamp: " << o().atClusterTime->getTime();
+    LOGV2_DEBUG(3, "{} Clearing pending participants and resetting global snapshot "
+              "timestamp after snapshot error: {}, previous timestamp: {}", "txnIdToString"_attr = txnIdToString(), "errorStatus"_attr = errorStatus, "o_atClusterTime_getTime"_attr = o().atClusterTime->getTime());
 
     // The transaction must be restarted on all participants because a new read timestamp will be
     // selected, so clear all pending participants. Snapshot errors are only retryable on the first
@@ -813,8 +808,7 @@ void TransactionRouter::Router::_setAtClusterTime(
         return;
     }
 
-    LOG(2) << txnIdToString() << " Setting global snapshot timestamp to " << candidateTime
-           << " on statement " << p().latestStmtId;
+    LOGV2_DEBUG(2, "{} Setting global snapshot timestamp to {} on statement {}", "txnIdToString"_attr = txnIdToString(), "candidateTime"_attr = candidateTime, "p_latestStmtId"_attr = p().latestStmtId);
 
     o(lk).atClusterTime->setTime(candidateTime, p().latestStmtId);
 }
@@ -876,7 +870,7 @@ void TransactionRouter::Router::beginOrContinueTxn(OperationContext* opCtx,
                     o(lk).atClusterTime.emplace();
                 }
 
-                LOG(3) << txnIdToString() << " New transaction started";
+                LOGV2_DEBUG(3, "{} New transaction started", "txnIdToString"_attr = txnIdToString());
                 break;
             }
             case TransactionActions::kContinue: {
@@ -891,7 +885,7 @@ void TransactionRouter::Router::beginOrContinueTxn(OperationContext* opCtx,
                 // means that the client is attempting to recover a commit decision.
                 p().isRecoveringCommit = true;
 
-                LOG(3) << txnIdToString() << " Commit recovery started";
+                LOGV2_DEBUG(3, "{} Commit recovery started", "txnIdToString"_attr = txnIdToString());
                 break;
             }
         };
@@ -928,8 +922,7 @@ BSONObj TransactionRouter::Router::_handOffCommitToCoordinator(OperationContext*
     const auto coordinateCommitCmdObj = coordinateCommitCmd.toBSON(
         BSON(WriteConcernOptions::kWriteConcernField << opCtx->getWriteConcern().toBSON()));
 
-    LOG(3) << txnIdToString()
-           << " Committing using two-phase commit, coordinator: " << *o().coordinatorId;
+    LOGV2_DEBUG(3, "{} Committing using two-phase commit, coordinator: {}", "txnIdToString"_attr = txnIdToString(), "o_coordinatorId"_attr = *o().coordinatorId);
 
     MultiStatementTransactionRequestsSender ars(
         opCtx,
@@ -1030,8 +1023,7 @@ BSONObj TransactionRouter::Router::_commitTransaction(
 
     if (o().participants.size() == 1) {
         ShardId shardId = o().participants.cbegin()->first;
-        LOG(3) << txnIdToString()
-               << " Committing single-shard transaction, single participant: " << shardId;
+        LOGV2_DEBUG(3, "{} Committing single-shard transaction, single participant: {}", "txnIdToString"_attr = txnIdToString(), "shardId"_attr = shardId);
 
         {
             stdx::lock_guard<Client> lk(*opCtx->getClient());
@@ -1044,8 +1036,7 @@ BSONObj TransactionRouter::Router::_commitTransaction(
     }
 
     if (writeShards.size() == 0) {
-        LOG(3) << txnIdToString() << " Committing read-only transaction on "
-               << readOnlyShards.size() << " shards";
+        LOGV2_DEBUG(3, "{} Committing read-only transaction on {} shards", "txnIdToString"_attr = txnIdToString(), "readOnlyShards_size"_attr = readOnlyShards.size());
         {
             stdx::lock_guard<Client> lk(*opCtx->getClient());
             o(lk).commitType = CommitType::kReadOnly;
@@ -1056,9 +1047,7 @@ BSONObj TransactionRouter::Router::_commitTransaction(
     }
 
     if (writeShards.size() == 1) {
-        LOG(3) << txnIdToString() << " Committing single-write-shard transaction with "
-               << readOnlyShards.size()
-               << " read-only shards, write shard: " << writeShards.front();
+        LOGV2_DEBUG(3, "{} Committing single-write-shard transaction with {} read-only shards, write shard: {}", "txnIdToString"_attr = txnIdToString(), "readOnlyShards_size"_attr = readOnlyShards.size(), "writeShards_front"_attr = writeShards.front());
         {
             stdx::lock_guard<Client> lk(*opCtx->getClient());
             o(lk).commitType = CommitType::kSingleWriteShard;
@@ -1105,8 +1094,7 @@ BSONObj TransactionRouter::Router::abortTransaction(OperationContext* opCtx) {
         abortRequests.emplace_back(ShardId(participantEntry.first), abortCmd);
     }
 
-    LOG(3) << txnIdToString() << " Aborting transaction on " << o().participants.size()
-           << " shard(s)";
+    LOGV2_DEBUG(3, "{} Aborting transaction on {} shard(s)", "txnIdToString"_attr = txnIdToString(), "o_participants_size"_attr = o().participants.size());
 
     const auto responses = gatherResponses(opCtx,
                                            NamespaceString::kAdminDb,
@@ -1144,9 +1132,8 @@ void TransactionRouter::Router::implicitlyAbortTransaction(OperationContext* opC
 
     if (o().commitType == CommitType::kTwoPhaseCommit ||
         o().commitType == CommitType::kRecoverWithToken) {
-        LOG(3) << txnIdToString()
-               << " Router not sending implicit abortTransaction because commit "
-                  "may have been handed off to the coordinator";
+        LOGV2_DEBUG(3, "{} Router not sending implicit abortTransaction because commit "
+                  "may have been handed off to the coordinator", "txnIdToString"_attr = txnIdToString());
         return;
     }
 
@@ -1166,8 +1153,7 @@ void TransactionRouter::Router::implicitlyAbortTransaction(OperationContext* opC
         abortRequests.emplace_back(ShardId(participantEntry.first), abortCmd);
     }
 
-    LOG(3) << txnIdToString() << " Implicitly aborting transaction on " << o().participants.size()
-           << " shard(s) due to error: " << errorStatus;
+    LOGV2_DEBUG(3, "{} Implicitly aborting transaction on {} shard(s) due to error: {}", "txnIdToString"_attr = txnIdToString(), "o_participants_size"_attr = o().participants.size(), "errorStatus"_attr = errorStatus);
 
     try {
         // Ignore the responses.
@@ -1177,8 +1163,7 @@ void TransactionRouter::Router::implicitlyAbortTransaction(OperationContext* opC
                         Shard::RetryPolicy::kIdempotent,
                         abortRequests);
     } catch (const DBException& ex) {
-        LOG(3) << txnIdToString() << " Implicitly aborting transaction failed "
-               << causedBy(ex.toStatus());
+        LOGV2_DEBUG(3, "{} Implicitly aborting transaction failed {}", "txnIdToString"_attr = txnIdToString(), "causedBy_ex_toStatus"_attr = causedBy(ex.toStatus()));
         // Ignore any exceptions.
     }
 }
@@ -1261,7 +1246,7 @@ BSONObj TransactionRouter::Router::_commitWithRecoveryToken(OperationContext* op
 
 void TransactionRouter::Router::_logSlowTransaction(OperationContext* opCtx,
                                                     TerminationCause terminationCause) const {
-    log() << "transaction " << _transactionInfoForLog(opCtx, terminationCause);
+    LOGV2("transaction {}", "_transactionInfoForLog_opCtx_terminationCause"_attr = _transactionInfoForLog(opCtx, terminationCause));
 }
 
 std::string TransactionRouter::Router::_transactionInfoForLog(

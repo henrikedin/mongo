@@ -184,8 +184,7 @@ void TransactionCoordinatorService::onStepUp(OperationContext* opCtx,
                     replClientInfo.setLastOpToSystemLastOpTime(opCtx);
 
                     const auto lastOpTime = replClientInfo.getLastOp();
-                    LOG(3) << "Waiting for OpTime " << lastOpTime
-                           << " to become majority committed";
+                    LOGV2_DEBUG(3, "Waiting for OpTime {} to become majority committed", "lastOpTime"_attr = lastOpTime);
 
                     WriteConcernResult unusedWCResult;
                     uassertStatusOK(waitForWriteConcern(
@@ -198,8 +197,7 @@ void TransactionCoordinatorService::onStepUp(OperationContext* opCtx,
 
                     auto coordinatorDocs = txn::readAllCoordinatorDocs(opCtx);
 
-                    LOG(0) << "Need to resume coordinating commit for " << coordinatorDocs.size()
-                           << " transactions";
+                    LOGV2("Need to resume coordinating commit for {} transactions", "coordinatorDocs_size"_attr = coordinatorDocs.size());
 
                     const auto service = opCtx->getServiceContext();
                     const auto clockSource = service->getFastClockSource();
@@ -208,7 +206,7 @@ void TransactionCoordinatorService::onStepUp(OperationContext* opCtx,
                     auto& scheduler = catalogAndScheduler->scheduler;
 
                     for (const auto& doc : coordinatorDocs) {
-                        LOG(3) << "Going to resume coordinating commit for " << doc.toBSON();
+                        LOGV2_DEBUG(3, "Going to resume coordinating commit for {}", "doc_toBSON"_attr = doc.toBSON());
 
                         const auto lsid = *doc.getId().getSessionId();
                         const auto txnNumber = *doc.getId().getTxnNumber();
@@ -274,7 +272,7 @@ void TransactionCoordinatorService::joinPreviousRound() {
     if (!_catalogAndSchedulerToCleanup)
         return;
 
-    LOG(0) << "Waiting for coordinator tasks from previous term to complete";
+    LOGV2("Waiting for coordinator tasks from previous term to complete");
 
     // Block until all coordinators scheduled the previous time the service was primary to have
     // drained. Because the scheduler was interrupted, it should be extremely rare for there to be

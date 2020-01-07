@@ -203,7 +203,7 @@ void LockerImpl::dump() const {
     }
     _lock.unlock();
 
-    log() << ss.str();
+    LOGV2("{}", "ss_str"_attr = ss.str());
 }
 
 
@@ -1062,7 +1062,7 @@ public:
     }
 
     void taskDoWork() {
-        LOG(2) << "cleaning up unused lock buckets of the global lock manager";
+        LOGV2_DEBUG(2, "cleaning up unused lock buckets of the global lock manager");
         getGlobalLockManager()->cleanupUnusedLocks();
     }
 } unusedLockCleaner;

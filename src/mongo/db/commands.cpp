@@ -534,15 +534,12 @@ void CommandHelpers::evaluateFailCommandFailPoint(OperationContext* opCtx,
 
             if (closeConnection) {
                 opCtx->getClient()->session()->end();
-                log() << "Failing command '" << commandName
-                      << "' via 'failCommand' failpoint. Action: closing connection.";
+                LOGV2("Failing command '{}' via 'failCommand' failpoint. Action: closing connection.", "commandName"_attr = commandName);
                 uasserted(50985, "Failing command due to 'failCommand' failpoint");
             }
 
             if (hasErrorCode) {
-                log() << "Failing command '" << commandName
-                      << "' via 'failCommand' failpoint. Action: returning error code " << errorCode
-                      << ".";
+                LOGV2("Failing command '{}' via 'failCommand' failpoint. Action: returning error code {}.", "commandName"_attr = commandName, "errorCode"_attr = errorCode);
                 uasserted(ErrorCodes::Error(errorCode),
                           "Failing command due to 'failCommand' failpoint");
             }
@@ -604,7 +601,7 @@ void CommandInvocation::checkAuthorization(OperationContext* opCtx,
             }
         }
     } catch (const DBException& e) {
-        log(LogComponent::kAccessControl) << e.toStatus();
+        LOGV2_DEBUG({logComponentV1toV2(LogComponent::kAccessControl)}, "{}", "e_toStatus"_attr = e.toStatus());
         CommandHelpers::auditLogAuthEvent(opCtx, this, request, e.code());
         throw;
     }

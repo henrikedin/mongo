@@ -148,7 +148,7 @@ public:
                                                                  collType.getUnique(),
                                                                  false);  // createIndexIfPossible
 
-            LOG(0) << "CMD: refineCollectionShardKey: " << request().toBSON({});
+            LOGV2("CMD: refineCollectionShardKey: {}", "request_toBSON"_attr = request().toBSON({}));
 
             audit::logRefineCollectionShardKey(opCtx->getClient(), nss.ns(), proposedKey);
 

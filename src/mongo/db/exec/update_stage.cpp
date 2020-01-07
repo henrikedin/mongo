@@ -735,7 +735,7 @@ bool UpdateStage::checkUpdateChangesShardKeyFields(ScopedCollectionMetadata meta
 
     if (!metadata->keyBelongsToMe(newShardKey)) {
         if (MONGO_unlikely(hangBeforeThrowWouldChangeOwningShard.shouldFail())) {
-            log() << "Hit hangBeforeThrowWouldChangeOwningShard failpoint";
+            LOGV2("Hit hangBeforeThrowWouldChangeOwningShard failpoint");
             hangBeforeThrowWouldChangeOwningShard.pauseWhileSet(getOpCtx());
         }
 

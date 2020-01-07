@@ -227,8 +227,7 @@ void mergeChunks(OperationContext* opCtx,
 
     if ((!commandStatus.isOK() || !writeConcernStatus.isOK()) &&
         checkMetadataForSuccess(opCtx, nss, epoch, ChunkRange(minKey, maxKey))) {
-        LOG(1) << "mergeChunk [" << redact(minKey) << "," << redact(maxKey)
-               << ") has already been committed.";
+        LOGV2_DEBUG(1, "mergeChunk [{},{}) has already been committed.", "redact_minKey"_attr = redact(minKey), "redact_maxKey"_attr = redact(maxKey));
         return;
     }
 

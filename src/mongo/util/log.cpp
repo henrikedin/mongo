@@ -84,25 +84,25 @@ Status logger::registerExtraLogContextFn(logger::ExtraLogContextFn contextFn) {
 
 bool rotateLogs(bool renameFiles, bool useLogV2) {
     if (useLogV2) {
-        log() << "Logv2 rotation initiated";
+        LOGV2("Logv2 rotation initiated");
         return logv2::LogManager::global().getGlobalDomainInternal().rotate().isOK();
     }
     using logger::RotatableFileManager;
     RotatableFileManager* manager = logger::globalRotatableFileManager();
-    log() << "Log rotation initiated";
+    LOGV2("Log rotation initiated");
     RotatableFileManager::FileNameStatusPairVector result(
         manager->rotateAll(renameFiles, "." + terseCurrentTime(false)));
     for (RotatableFileManager::FileNameStatusPairVector::iterator it = result.begin();
          it != result.end();
          it++) {
-        warning() << "Rotating log file " << it->first << " failed: " << it->second.toString();
+        LOGV2_WARNING("Rotating log file {} failed: {}", "it_first"_attr = it->first, "it_second_toString"_attr = it->second.toString());
     }
     return result.empty();
 }
 
 void logContext(const char* errmsg) {
     if (errmsg) {
-        log() << errmsg << std::endl;
+        LOGV2("{}", "errmsg"_attr = errmsg);
     }
     // NOTE: We disable long-line truncation for the stack trace, because the JSON representation of
     // the stack trace can sometimes exceed the long line limit.

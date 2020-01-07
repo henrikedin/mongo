@@ -106,10 +106,10 @@ public:
             }
         }
 
-        log() << "Closing database catalog";
+        LOGV2("Closing database catalog");
         auto state = catalog::closeCatalog(opCtx);
 
-        log() << "Reopening database catalog";
+        LOGV2("Reopening database catalog");
         catalog::openCatalog(opCtx, state);
 
         return true;

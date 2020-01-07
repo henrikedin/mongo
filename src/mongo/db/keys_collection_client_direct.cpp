@@ -158,9 +158,7 @@ Status KeysCollectionClientDirect::_insert(OperationContext* opCtx,
             Shard::CommandResponse::processBatchWriteResponse(swResponse, &batchResponse);
         if (retry < kOnErrorNumRetries &&
             isRetriableError(writeStatus.code(), Shard::RetryPolicy::kIdempotent)) {
-            LOG(2) << "Batch write command to " << nss.db()
-                   << "failed with retriable error and will be retried"
-                   << causedBy(redact(writeStatus));
+            LOGV2_DEBUG(2, "Batch write command to {}failed with retriable error and will be retried{}", "nss_db"_attr = nss.db(), "causedBy_redact_writeStatus"_attr = causedBy(redact(writeStatus)));
             continue;
         }
 

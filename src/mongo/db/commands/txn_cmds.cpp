@@ -95,8 +95,7 @@ public:
                 "commitTransaction must be run within a transaction",
                 txnParticipant);
 
-        LOG(3) << "Received commitTransaction for transaction with txnNumber "
-               << opCtx->getTxnNumber() << " on session " << opCtx->getLogicalSessionId()->toBSON();
+        LOGV2_DEBUG(3, "Received commitTransaction for transaction with txnNumber {} on session {}", "opCtx_getTxnNumber"_attr = opCtx->getTxnNumber(), "opCtx_getLogicalSessionId_toBSON"_attr = opCtx->getLogicalSessionId()->toBSON());
 
         // commitTransaction is retryable.
         if (txnParticipant.transactionIsCommitted()) {
@@ -199,8 +198,7 @@ public:
                 "abortTransaction must be run within a transaction",
                 txnParticipant);
 
-        LOG(3) << "Received abortTransaction for transaction with txnNumber "
-               << opCtx->getTxnNumber() << " on session " << opCtx->getLogicalSessionId()->toBSON();
+        LOGV2_DEBUG(3, "Received abortTransaction for transaction with txnNumber {} on session {}", "opCtx_getTxnNumber"_attr = opCtx->getTxnNumber(), "opCtx_getLogicalSessionId_toBSON"_attr = opCtx->getLogicalSessionId()->toBSON());
 
         uassert(ErrorCodes::NoSuchTransaction,
                 "Transaction isn't in progress",

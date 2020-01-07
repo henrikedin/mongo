@@ -109,9 +109,9 @@ RemoteCommandResponse NetworkInterfaceIntegrationFixture::runCommandSync(
     auto deferred = runCommand(makeCallbackHandle(), request);
     auto& res = deferred.get();
     if (res.isOK()) {
-        log() << "got command result: " << res.toString();
+        LOGV2("got command result: {}", "res_toString"_attr = res.toString());
     } else {
-        log() << "command failed: " << res.status;
+        LOGV2("command failed: {}", "res_status"_attr = res.status);
     }
     return res;
 }

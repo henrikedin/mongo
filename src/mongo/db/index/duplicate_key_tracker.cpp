@@ -79,8 +79,7 @@ Status DuplicateKeyTracker::recordKeys(OperationContext* opCtx, const std::vecto
         records.emplace_back(Record{RecordId(), RecordData(obj.objdata(), obj.objsize())});
     }
 
-    LOG(1) << "recording " << records.size() << " duplicate key conflicts on unique index: "
-           << _indexCatalogEntry->descriptor()->indexName();
+    LOGV2_DEBUG(1, "recording {} duplicate key conflicts on unique index: {}", "records_size"_attr = records.size(), "_indexCatalogEntry_descriptor_indexName"_attr = _indexCatalogEntry->descriptor()->indexName());
 
     WriteUnitOfWork wuow(opCtx);
     std::vector<Timestamp> timestamps(records.size());
@@ -138,9 +137,7 @@ Status DuplicateKeyTracker::checkConstraints(OperationContext* opCtx) const {
     invariant(resolved == _duplicateCounter.load());
 
     int logLevel = (resolved > 0) ? 0 : 1;
-    LOG(logLevel) << "index build: resolved " << resolved
-                  << " duplicate key conflicts for unique index: "
-                  << _indexCatalogEntry->descriptor()->indexName();
+    LOGV2_DEBUG({logComponentV1toV2(logLevel)}, "index build: resolved {} duplicate key conflicts for unique index: {}", "resolved"_attr = resolved, "_indexCatalogEntry_descriptor_indexName"_attr = _indexCatalogEntry->descriptor()->indexName());
     return Status::OK();
 }
 

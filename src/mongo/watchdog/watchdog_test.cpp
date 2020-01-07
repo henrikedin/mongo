@@ -300,7 +300,7 @@ class WatchdogMonitorThreadTest : public ServiceContextTest {};
 TEST_F(WatchdogMonitorThreadTest, Basic) {
     ManualResetEvent deathEvent;
     WatchdogDeathCallback deathCallback = [&deathEvent]() {
-        log() << "Death signalled";
+        LOGV2("Death signalled");
         deathEvent.set();
     };
 
@@ -345,7 +345,7 @@ private:
 TEST_F(WatchdogMonitorThreadTest, SleepyHungCheck) {
     ManualResetEvent deathEvent;
     WatchdogDeathCallback deathCallback = [&deathEvent]() {
-        log() << "Death signalled";
+        LOGV2("Death signalled");
         deathEvent.set();
     };
 
@@ -375,7 +375,7 @@ class WatchdogMonitorTest : public ServiceContextTest {};
 TEST_F(WatchdogMonitorTest, SleepyHungCheck) {
     ManualResetEvent deathEvent;
     WatchdogDeathCallback deathCallback = [&deathEvent]() {
-        log() << "Death signalled";
+        LOGV2("Death signalled");
         deathEvent.set();
     };
 
@@ -412,7 +412,7 @@ DEATH_TEST(WatchdogMonitorTest, Death, "") {
 TEST_F(WatchdogMonitorTest, PauseAndResume) {
 
     WatchdogDeathCallback deathCallback = []() {
-        log() << "Death signalled, it should not have been";
+        LOGV2("Death signalled, it should not have been");
         invariant(false);
     };
 

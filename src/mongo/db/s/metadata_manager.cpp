@@ -128,7 +128,7 @@ void scheduleCleanup(executor::TaskExecutor* executor,
                      NamespaceString nss,
                      UUID collectionUuid,
                      Date_t when) {
-    LOG(1) << "Scheduling cleanup on " << nss.ns() << " at " << when;
+    LOGV2_DEBUG(1, "Scheduling cleanup on {} at {}", "nss_ns"_attr = nss.ns(), "when"_attr = when);
     auto swCallbackHandle = executor->scheduleWorkAt(
         when, [executor, nss = std::move(nss), uuid = collectionUuid](auto& args) {
             auto& status = args.status;
@@ -154,8 +154,7 @@ void scheduleCleanup(executor::TaskExecutor* executor,
         });
 
     if (!swCallbackHandle.isOK()) {
-        log() << "Failed to schedule the orphan data cleanup task"
-              << causedBy(redact(swCallbackHandle.getStatus()));
+        LOGV2("Failed to schedule the orphan data cleanup task{}", "causedBy_redact_swCallbackHandle_getStatus"_attr = causedBy(redact(swCallbackHandle.getStatus())));
     }
 }
 
@@ -294,14 +293,11 @@ void MetadataManager::setFilteringMetadata(CollectionMetadata remoteMetadata) {
     // We already have the same or newer version
     if (activeMetadata.getCollVersion().epoch() == remoteMetadata.getCollVersion().epoch() &&
         activeMetadata.getCollVersion() >= remoteMetadata.getCollVersion()) {
-        LOG(1) << "Ignoring update of active metadata " << activeMetadata.toStringBasic()
-               << " with an older " << remoteMetadata.toStringBasic();
+        LOGV2_DEBUG(1, "Ignoring update of active metadata {} with an older {}", "activeMetadata_toStringBasic"_attr = activeMetadata.toStringBasic(), "remoteMetadata_toStringBasic"_attr = remoteMetadata.toStringBasic());
         return;
     }
 
-    LOG(0) << "Updating metadata for collection " << _nss.ns() << " from "
-           << activeMetadata.toStringBasic() << " to " << remoteMetadata.toStringBasic()
-           << " due to version change";
+    LOGV2("Updating metadata for collection {} from {} to {} due to version change", "_nss_ns"_attr = _nss.ns(), "activeMetadata_toStringBasic"_attr = activeMetadata.toStringBasic(), "remoteMetadata_toStringBasic"_attr = remoteMetadata.toStringBasic());
 
     // Resolve any receiving chunks, which might have completed by now
     for (auto it = _receivingChunks.begin(); it != _receivingChunks.end();) {
@@ -314,8 +310,7 @@ void MetadataManager::setFilteringMetadata(CollectionMetadata remoteMetadata) {
 
         // The remote metadata contains a chunk we were earlier in the process of receiving, so we
         // deem it successfully received
-        LOG(2) << "Verified chunk " << redact(receivingRange.toString()) << " for collection "
-               << _nss.ns() << " has been migrated to this shard earlier";
+        LOGV2_DEBUG(2, "Verified chunk {} for collection {} has been migrated to this shard earlier", "redact_receivingRange_toString"_attr = redact(receivingRange.toString()), "_nss_ns"_attr = _nss.ns());
 
         _receivingChunks.erase(it);
         it = _receivingChunks.begin();
@@ -423,8 +418,7 @@ auto MetadataManager::beginReceive(ChunkRange const& range) -> CleanupNotificati
 
     _receivingChunks.emplace(range.getMin().getOwned(), range.getMax().getOwned());
 
-    log() << "Scheduling deletion of any documents in " << _nss.ns() << " range "
-          << redact(range.toString()) << " before migrating in a chunk covering the range";
+    LOGV2("Scheduling deletion of any documents in {} range {} before migrating in a chunk covering the range", "_nss_ns"_attr = _nss.ns(), "redact_range_toString"_attr = redact(range.toString()));
 
     return _pushRangeToClean(lg, range, Date_t{});
 }
@@ -469,13 +463,11 @@ auto MetadataManager::cleanUpRange(ChunkRange const& range, Date_t whenToDelete)
     if (!overlapMetadata) {
         // No running queries can depend on it, so queue it for deletion immediately.
         const auto whenStr = (whenToDelete == Date_t{}) ? "immediate"_sd : "deferred"_sd;
-        log() << "Scheduling " << whenStr << " deletion of " << _nss.ns() << " range "
-              << redact(range.toString());
+        LOGV2("Scheduling {} deletion of {} range {}", "whenStr"_attr = whenStr, "_nss_ns"_attr = _nss.ns(), "redact_range_toString"_attr = redact(range.toString()));
         return _pushRangeToClean(lg, range, whenToDelete);
     }
 
-    log() << "Deletion of " << _nss.ns() << " range " << redact(range.toString())
-          << " will be scheduled after all possibly dependent queries finish";
+    LOGV2("Deletion of {} range {} will be scheduled after all possibly dependent queries finish", "_nss_ns"_attr = _nss.ns(), "redact_range_toString"_attr = redact(range.toString()));
 
     // Put it on the oldest metadata permissible; the current one might live a long time.
     auto& orphans = overlapMetadata->orphans;

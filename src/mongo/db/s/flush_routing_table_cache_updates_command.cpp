@@ -132,7 +132,7 @@ public:
             oss.waitForMigrationCriticalSectionSignal(opCtx);
 
             if (request().getSyncFromConfig()) {
-                LOG(1) << "Forcing remote routing table refresh for " << ns();
+                LOGV2_DEBUG(1, "Forcing remote routing table refresh for {}", "ns"_attr = ns());
                 forceShardFilteringMetadataRefresh(opCtx, ns());
             }
 

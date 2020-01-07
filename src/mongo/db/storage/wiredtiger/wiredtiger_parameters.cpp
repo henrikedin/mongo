@@ -50,7 +50,7 @@ Status applyMaxCacheOverflowSizeGBParameter(WiredTigerMaxCacheOverflowSizeGBPara
 
     const auto valueMB = static_cast<size_t>(1024 * value);
 
-    log() << "Reconfiguring WiredTiger max cache overflow size with value: \"" << valueMB << "MB\'";
+    LOGV2("Reconfiguring WiredTiger max cache overflow size with value: \"{}MB\'", "valueMB"_attr = valueMB);
 
     invariant(param._data.second);
     int ret = param._data.second->reconfigure(
@@ -58,7 +58,7 @@ Status applyMaxCacheOverflowSizeGBParameter(WiredTigerMaxCacheOverflowSizeGBPara
     if (ret != 0) {
         string result = (str::stream() << "WiredTiger reconfiguration failed with error code ("
                                        << ret << "): " << wiredtiger_strerror(ret));
-        error() << result;
+        LOGV2_ERROR("{}", "result"_attr = result);
 
         return Status(ErrorCodes::BadValue, result);
     }
@@ -85,14 +85,14 @@ Status WiredTigerEngineRuntimeConfigParameter::setFromString(const std::string& 
                        << pos));
     }
 
-    log() << "Reconfiguring WiredTiger storage engine with config string: \"" << str << "\"";
+    LOGV2("Reconfiguring WiredTiger storage engine with config string: \"{}\"", "str"_attr = str);
 
     invariant(_data.second);
     int ret = _data.second->reconfigure(str.c_str());
     if (ret != 0) {
         string result = (str::stream() << "WiredTiger reconfiguration failed with error code ("
                                        << ret << "): " << wiredtiger_strerror(ret));
-        error() << result;
+        LOGV2_ERROR("{}", "result"_attr = result);
 
         return Status(ErrorCodes::BadValue, result);
     }

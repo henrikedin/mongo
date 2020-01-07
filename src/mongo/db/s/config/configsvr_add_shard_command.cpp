@@ -129,8 +129,7 @@ public:
             parsedRequest.hasMaxSize() ? parsedRequest.getMaxSize() : kMaxSizeMBDefault);
 
         if (!addShardResult.isOK()) {
-            log() << "addShard request '" << parsedRequest << "'"
-                  << "failed" << causedBy(addShardResult.getStatus());
+            LOGV2("addShard request '{}'failed{}", "parsedRequest"_attr = parsedRequest, "causedBy_addShardResult_getStatus"_attr = causedBy(addShardResult.getStatus()));
             uassertStatusOK(addShardResult.getStatus());
         }
 

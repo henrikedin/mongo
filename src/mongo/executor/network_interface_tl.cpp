@@ -89,7 +89,7 @@ void NetworkInterfaceTL::startup() {
     }
 
     if (!_tl) {
-        warning() << "No TransportLayer configured during NetworkInterface startup";
+        LOGV2_WARNING("No TransportLayer configured during NetworkInterface startup");
         _ownedTransportLayer =
             transport::TransportLayerManager::makeAndStartDefaultEgressTransportLayer();
         _tl = _ownedTransportLayer.get();
@@ -109,7 +109,7 @@ void NetworkInterfaceTL::startup() {
 }
 
 void NetworkInterfaceTL::_run() {
-    LOG(2) << "The NetworkInterfaceTL reactor thread is spinning up";
+    LOGV2_DEBUG(2, "The NetworkInterfaceTL reactor thread is spinning up");
 
     // This returns when the reactor is stopped in shutdown()
     _reactor->run();
@@ -122,14 +122,14 @@ void NetworkInterfaceTL::_run() {
     // Close out all remaining tasks in the reactor now that they've all been canceled.
     _reactor->drain();
 
-    LOG(2) << "NetworkInterfaceTL shutdown successfully";
+    LOGV2_DEBUG(2, "NetworkInterfaceTL shutdown successfully");
 }
 
 void NetworkInterfaceTL::shutdown() {
     if (_state.swap(kStopped) != kStarted)
         return;
 
-    LOG(2) << "Shutting down network interface.";
+    LOGV2_DEBUG(2, "Shutting down network interface.");
 
     // Stop the reactor/thread first so that nothing runs on a partially dtor'd pool.
     _reactor->stop();
@@ -215,7 +215,7 @@ Status NetworkInterfaceTL::startCommand(const TaskExecutor::CallbackHandle& cbHa
         return {ErrorCodes::ShutdownInProgress, "NetworkInterface shutdown in progress"};
     }
 
-    LOG(3) << "startCommand: " << redact(request.toString());
+    LOGV2_DEBUG(3, "startCommand: {}", "redact_request_toString"_attr = redact(request.toString()));
 
     if (_metadataHook) {
         BSONObjBuilder newMetadata(std::move(request.metadata));
@@ -262,8 +262,7 @@ Status NetworkInterfaceTL::startCommand(const TaskExecutor::CallbackHandle& cbHa
     std::move(pf.future)
         .onError([requestId = cmdState->requestOnAny.id](
                      auto error) -> StatusWith<RemoteCommandOnAnyResponse> {
-            LOG(2) << "Failed to get connection from pool for request " << requestId << ": "
-                   << redact(error);
+            LOGV2_DEBUG(2, "Failed to get connection from pool for request {}: {}", "requestId"_attr = requestId, "redact_error"_attr = redact(error));
 
             // The TransportLayer has, for historical reasons returned SocketException
             // for network errors, but sharding assumes HostUnreachable on network
@@ -280,14 +279,13 @@ Status NetworkInterfaceTL::startCommand(const TaskExecutor::CallbackHandle& cbHa
                 onFinish(RemoteCommandOnAnyResponse(boost::none, response.getStatus(), duration));
             } else {
                 const auto& rs = response.getValue();
-                LOG(2) << "Request " << cmdState->requestOnAny.id << " finished with response: "
-                       << redact(rs.isOK() ? rs.data.toString() : rs.status.toString());
+                LOGV2_DEBUG(2, "Request {} finished with response: {}", "cmdState_requestOnAny_id"_attr = cmdState->requestOnAny.id, "redact_rs_isOK_rs_data_toString_rs_status_toString"_attr = redact(rs.isOK() ? rs.data.toString() : rs.status.toString()));
                 onFinish(rs);
             }
         });
 
     if (MONGO_unlikely(networkInterfaceDiscardCommandsBeforeAcquireConn.shouldFail())) {
-        log() << "Discarding command due to failpoint before acquireConn";
+        LOGV2("Discarding command due to failpoint before acquireConn");
         return Status::OK();
     }
 
@@ -312,7 +310,7 @@ Status NetworkInterfaceTL::startCommand(const TaskExecutor::CallbackHandle& cbHa
         cmdState->request.emplace(cmdState->requestOnAny, idx);
 
         if (MONGO_unlikely(networkInterfaceDiscardCommandsAfterAcquireConn.shouldFail())) {
-            log() << "Discarding command due to failpoint after acquireConn";
+            LOGV2("Discarding command due to failpoint after acquireConn");
             return Status::OK();
         }
 
@@ -410,7 +408,7 @@ void NetworkInterfaceTL::_onAcquireConn(std::shared_ptr<CommandState> state,
                     << ", deadline was " << state->deadline.toString() << ", op was "
                     << redact(state->requestOnAny.toString());
 
-                LOG(2) << message;
+                LOGV2_DEBUG(2, "{}", "message"_attr = message);
                 state->promise.setError(
                     Status(ErrorCodes::NetworkInterfaceExceededTimeLimit, message));
 
@@ -588,8 +586,7 @@ void NetworkInterfaceTL::_answerAlarm(Status status, std::shared_ptr<AlarmState>
     // free and allows us to be resilient to a world where timers impls do have spurious wake ups.
     auto currentTime = now();
     if (status.isOK() && currentTime < state->when) {
-        LOG(2) << "Alarm returned early. Expected at: " << state->when
-               << ", fired at: " << currentTime;
+        LOGV2_DEBUG(2, "Alarm returned early. Expected at: {}, fired at: {}", "state_when"_attr = state->when, "currentTime"_attr = currentTime);
         state->timer->waitUntil(state->when, nullptr)
             .getAsync([this, state = std::move(state)](Status status) mutable {
                 _answerAlarm(status, state);

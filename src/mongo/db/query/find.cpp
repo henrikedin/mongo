@@ -203,8 +203,7 @@ void generateBatch(int ntoreturn,
     switch (*state) {
         // Log an error message and then perform the cleanup.
         case PlanExecutor::FAILURE: {
-            error() << "getMore executor error, stats: "
-                    << redact(Explain::getWinningPlanStats(exec));
+            LOGV2_ERROR("getMore executor error, stats: {}", "redact_Explain_getWinningPlanStats_exec"_attr = redact(Explain::getWinningPlanStats(exec)));
             // We should always have a valid status object by this point.
             auto status = WorkingSetCommon::getMemberObjectStatus(doc);
             invariant(!status.isOK());
@@ -244,7 +243,7 @@ Message getMore(OperationContext* opCtx,
                 bool* isCursorAuthorized) {
     invariant(ntoreturn >= 0);
 
-    LOG(5) << "Running getMore, cursorid: " << cursorid;
+    LOGV2_DEBUG(5, "Running getMore, cursorid: {}", "cursorid"_attr = cursorid);
 
     CurOp& curOp = *CurOp::get(opCtx);
     curOp.ensureStarted();
@@ -525,8 +524,7 @@ Message getMore(OperationContext* opCtx,
         cursorid = 0;
         curOp.debug().cursorExhausted = true;
 
-        LOG(5) << "getMore NOT saving client cursor, ended with state "
-               << PlanExecutor::statestr(state);
+        LOGV2_DEBUG(5, "getMore NOT saving client cursor, ended with state {}", "PlanExecutor_statestr_state"_attr = PlanExecutor::statestr(state));
     } else {
         cursorFreer.dismiss();
         // Continue caching the ClientCursor.
@@ -534,7 +532,7 @@ Message getMore(OperationContext* opCtx,
         cursorPin->incNBatches();
         exec->saveState();
         exec->detachFromOperationContext();
-        LOG(5) << "getMore saving client cursor ended with state " << PlanExecutor::statestr(state);
+        LOGV2_DEBUG(5, "getMore saving client cursor ended with state {}", "PlanExecutor_statestr_state"_attr = PlanExecutor::statestr(state));
 
         // Set 'exhaust' if the client requested exhaust and the cursor is not exhausted.
         *exhaust = opCtx->isExhaust();
@@ -567,7 +565,7 @@ Message getMore(OperationContext* opCtx,
     qr.setCursorId(cursorid);
     qr.setStartingFrom(startingResult);
     qr.setNReturned(numResults);
-    LOG(5) << "getMore returned " << numResults << " results\n";
+    LOGV2_DEBUG(5, "getMore returned {} results\n", "numResults"_attr = numResults);
     return Message(bb.release());
 }
 
@@ -605,8 +603,8 @@ bool runQuery(OperationContext* opCtx,
         "Can't canonicalize query");
     invariant(cq.get());
 
-    LOG(5) << "Running query:\n" << redact(cq->toString());
-    LOG(2) << "Running query: " << redact(cq->toStringShort());
+    LOGV2_DEBUG(5, "Running query:\n{}", "redact_cq_toString"_attr = redact(cq->toString()));
+    LOGV2_DEBUG(2, "Running query: {}", "redact_cq_toStringShort"_attr = redact(cq->toStringShort()));
 
     // Parse, canonicalize, plan, transcribe, and get a plan executor.
     AutoGetCollectionForReadCommand ctx(opCtx, nss, AutoGetCollection::ViewMode::kViewsForbidden);
@@ -704,17 +702,14 @@ bool runQuery(OperationContext* opCtx,
         ++numResults;
 
         if (FindCommon::enoughForFirstBatch(qr, numResults)) {
-            LOG(5) << "Enough for first batch, wantMore=" << qr.wantMore()
-                   << " ntoreturn=" << qr.getNToReturn().value_or(0)
-                   << " numResults=" << numResults;
+            LOGV2_DEBUG(5, "Enough for first batch, wantMore={} ntoreturn={} numResults={}", "qr_wantMore"_attr = qr.wantMore(), "qr_getNToReturn_value_or_0"_attr = qr.getNToReturn().value_or(0), "numResults"_attr = numResults);
             break;
         }
     }
 
     // Caller expects exceptions thrown in certain cases.
     if (PlanExecutor::FAILURE == state) {
-        error() << "Plan executor error during find: " << PlanExecutor::statestr(state)
-                << ", stats: " << redact(Explain::getWinningPlanStats(exec.get()));
+        LOGV2_ERROR("Plan executor error during find: {}, stats: {}", "PlanExecutor_statestr_state"_attr = PlanExecutor::statestr(state), "redact_Explain_getWinningPlanStats_exec_get"_attr = redact(Explain::getWinningPlanStats(exec.get())));
         uassertStatusOKWithContext(WorkingSetCommon::getMemberObjectStatus(doc),
                                    "Executor error during OP_QUERY find");
         MONGO_UNREACHABLE;
@@ -746,8 +741,7 @@ bool runQuery(OperationContext* opCtx,
             });
         ccId = pinnedCursor.getCursor()->cursorid();
 
-        LOG(5) << "caching executor with cursorid " << ccId << " after returning " << numResults
-               << " results";
+        LOGV2_DEBUG(5, "caching executor with cursorid {} after returning {} results", "ccId"_attr = ccId, "numResults"_attr = numResults);
 
         // Set curOp.debug().exhaust if the client requested exhaust and the cursor is not
         // exhausted.
@@ -768,7 +762,7 @@ bool runQuery(OperationContext* opCtx,
 
         endQueryOp(opCtx, collection, *pinnedCursor.getCursor()->getExecutor(), numResults, ccId);
     } else {
-        LOG(5) << "Not caching executor but returning " << numResults << " results.";
+        LOGV2_DEBUG(5, "Not caching executor but returning {} results.", "numResults"_attr = numResults);
         endQueryOp(opCtx, collection, *exec, numResults, ccId);
     }
 

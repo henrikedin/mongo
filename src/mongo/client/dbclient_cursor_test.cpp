@@ -78,7 +78,7 @@ public:
 
     // No-op.
     void killCursor(const NamespaceString& ns, long long cursorID) override {
-        unittest::log() << "Killing cursor in DBClientConnectionForTest";
+        unittest::LOGV2("Killing cursor in DBClientConnectionForTest");
     }
 
     void setSupportedProtocols(rpc::ProtocolSet protocols) {

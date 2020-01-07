@@ -78,7 +78,7 @@ void EphemeralForTestRecoveryUnit::doAbortUnitOfWork() {
         for (Changes::reverse_iterator it = _changes.rbegin(), end = _changes.rend(); it != end;
              ++it) {
             auto change = *it;
-            LOG(2) << "CUSTOM ROLLBACK " << demangleName(typeid(*change));
+            LOGV2_DEBUG(2, "CUSTOM ROLLBACK {}", "demangleName_typeid_change"_attr = demangleName(typeid(*change)));
             change->rollback();
         }
         _changes.clear();

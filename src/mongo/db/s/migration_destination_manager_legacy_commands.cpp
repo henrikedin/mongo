@@ -202,7 +202,7 @@ public:
         Status const status = mdm->startCommit(sessionId);
         mdm->report(result, opCtx, false);
         if (!status.isOK()) {
-            log() << status.reason();
+            LOGV2("{}", "status_reason"_attr = status.reason());
             uassertStatusOK(status);
         }
         return true;
@@ -250,7 +250,7 @@ public:
             Status const status = mdm->abort(migrationSessionIdStatus.getValue());
             mdm->report(result, opCtx, false);
             if (!status.isOK()) {
-                log() << status.reason();
+                LOGV2("{}", "status_reason"_attr = status.reason());
                 uassertStatusOK(status);
             }
         } else if (migrationSessionIdStatus == ErrorCodes::NoSuchKey) {

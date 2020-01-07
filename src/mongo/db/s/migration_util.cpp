@@ -79,7 +79,7 @@ void sendToRecipient(OperationContext* opCtx,
     auto recipientShard =
         uassertStatusOK(Grid::get(opCtx)->shardRegistry()->getShard(opCtx, recipientId));
 
-    LOG(1) << "Sending request " << cmd.toBSON({}) << " to recipient.";
+    LOGV2_DEBUG(1, "Sending request {} to recipient.", "cmd_toBSON"_attr = cmd.toBSON({}));
 
     auto response = recipientShard->runCommandWithFixedRetryAttempts(
         opCtx,
@@ -133,34 +133,31 @@ bool submitRangeDeletionTask(OperationContext* opCtx, const RangeDeletionTask& d
     AutoGetCollection autoColl(opCtx, deletionTask.getNss(), MODE_IS);
 
     if (!autoColl.getCollection()) {
-        LOG(0) << "Namespace not found: " << deletionTask.getNss();
+        LOGV2("Namespace not found: {}", "deletionTask_getNss"_attr = deletionTask.getNss());
         return false;
     }
 
     if (autoColl.getCollection()->uuid() != deletionTask.getCollectionUuid()) {
-        LOG(0) << "Collection UUID doesn't match the one marked for deletion: "
-               << autoColl.getCollection()->uuid() << " != " << deletionTask.getCollectionUuid();
+        LOGV2("Collection UUID doesn't match the one marked for deletion: {} != {}", "autoColl_getCollection_uuid"_attr = autoColl.getCollection()->uuid(), "deletionTask_getCollectionUuid"_attr = deletionTask.getCollectionUuid());
 
         return false;
     }
 
-    LOG(0) << "Scheduling range " << deletionTask.getRange() << " in namespace "
-           << deletionTask.getNss() << " for deletion.";
+    LOGV2("Scheduling range {} in namespace {} for deletion.", "deletionTask_getRange"_attr = deletionTask.getRange(), "deletionTask_getNss"_attr = deletionTask.getNss());
 
     auto css = CollectionShardingRuntime::get(opCtx, deletionTask.getNss());
 
     // TODO (SERVER-44554): This is needed for now because of the invariant that throws on cleanup
     // if the metadata is not set.
     if (!css->getCurrentMetadataIfKnown()) {
-        LOG(0) << "Current metadata is not available";
+        LOGV2("Current metadata is not available");
         return false;
     }
 
     auto notification = css->cleanUpRange(deletionTask.getRange(), whenToClean);
 
     if (notification.ready() && !notification.waitStatus(opCtx).isOK()) {
-        LOG(0) << "Failed to resubmit range for deletion: "
-               << causedBy(notification.waitStatus(opCtx));
+        LOGV2("Failed to resubmit range for deletion: {}", "causedBy_notification_waitStatus_opCtx"_attr = causedBy(notification.waitStatus(opCtx)));
     } else {
         notification.abandon();
     }
@@ -191,7 +188,7 @@ void submitPendingDeletions(OperationContext* opCtx) {
 }
 
 void resubmitRangeDeletionsOnStepUp(ServiceContext* serviceContext) {
-    LOG(0) << "Starting pending deletion submission thread.";
+    LOGV2("Starting pending deletion submission thread.");
 
     auto executor = Grid::get(serviceContext)->getExecutorPool()->getFixedExecutor();
 
@@ -224,8 +221,7 @@ void forEachOrphanRange(OperationContext* opCtx, const NamespaceString& nss, Cal
         RangeMap{SimpleBSONObjComparator::kInstance.makeBSONObjIndexedMap<BSONObj>()};
 
     if (!metadata->isSharded()) {
-        LOG(0) << "Upgrade: skipping orphaned range enumeration for " << nss
-               << ", collection is not sharded";
+        LOGV2("Upgrade: skipping orphaned range enumeration for {}, collection is not sharded", "nss"_attr = nss);
         return;
     }
 
@@ -234,8 +230,7 @@ void forEachOrphanRange(OperationContext* opCtx, const NamespaceString& nss, Cal
     while (true) {
         auto range = metadata->getNextOrphanRange(emptyChunkMap, startingKey);
         if (!range) {
-            LOG(2) << "Upgrade: Completed orphaned range enumeration for " << nss.toString()
-                   << " starting from " << redact(startingKey) << ", no orphan ranges remain";
+            LOGV2_DEBUG(2, "Upgrade: Completed orphaned range enumeration for {} starting from {}, no orphan ranges remain", "nss_toString"_attr = nss.toString(), "redact_startingKey"_attr = redact(startingKey));
 
             return;
         }
@@ -253,7 +248,7 @@ void submitOrphanRanges(OperationContext* opCtx, const NamespaceString& nss, con
         if (version == ChunkVersion::UNSHARDED())
             return;
 
-        LOG(2) << "Upgrade: Cleaning up existing orphans for " << nss << " : " << uuid;
+        LOGV2_DEBUG(2, "Upgrade: Cleaning up existing orphans for {} : {}", "nss"_attr = nss, "uuid"_attr = uuid);
 
         std::vector<RangeDeletionTask> deletions;
         forEachOrphanRange(opCtx, nss, [&deletions, &opCtx, &nss, &uuid](const auto& range) {
@@ -271,14 +266,11 @@ void submitOrphanRanges(OperationContext* opCtx, const NamespaceString& nss, con
                                                      NamespaceString::kRangeDeletionNamespace);
 
         for (const auto& task : deletions) {
-            LOG(2) << "Upgrade: Submitting range for cleanup: " << task.getRange() << " from "
-                   << nss;
+            LOGV2_DEBUG(2, "Upgrade: Submitting range for cleanup: {} from {}", "task_getRange"_attr = task.getRange(), "nss"_attr = nss);
             store.add(opCtx, task);
         }
     } catch (ExceptionFor<ErrorCodes::NamespaceNotFound>& e) {
-        LOG(0) << "Upgrade: Failed to cleanup orphans for " << nss
-               << " because the namespace was not found: " << e.what()
-               << ", the collection must have been dropped";
+        LOGV2("Upgrade: Failed to cleanup orphans for {} because the namespace was not found: {}, the collection must have been dropped", "nss"_attr = nss, "e_what"_attr = e.what());
     }
 }
 
@@ -293,7 +285,7 @@ void submitOrphanRangesForCleanup(OperationContext* opCtx) {
         for (auto collIt = catalog.begin(dbName); collIt != catalog.end(); ++collIt) {
             auto uuid = collIt.uuid().get();
             auto nss = catalog.lookupNSSByUUID(opCtx, uuid).get();
-            LOG(2) << "Upgrade: processing collection: " << nss;
+            LOGV2_DEBUG(2, "Upgrade: processing collection: {}", "nss"_attr = nss);
 
             submitOrphanRanges(opCtx, nss, uuid);
         }

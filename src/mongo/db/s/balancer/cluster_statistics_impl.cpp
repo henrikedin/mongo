@@ -141,8 +141,7 @@ StatusWith<std::vector<ShardStatistics>> ClusterStatisticsImpl::getStats(Operati
         } else {
             // Since the mongod version is only used for reporting, there is no need to fail the
             // entire round if it cannot be retrieved, so just leave it empty
-            log() << "Unable to obtain shard version for " << shard.getName()
-                  << causedBy(mongoDVersionStatus.getStatus());
+            LOGV2("Unable to obtain shard version for {}{}", "shard_getName"_attr = shard.getName(), "causedBy_mongoDVersionStatus_getStatus"_attr = causedBy(mongoDVersionStatus.getStatus()));
         }
 
         std::set<std::string> shardTags;

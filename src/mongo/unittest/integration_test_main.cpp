@@ -133,7 +133,7 @@ MONGO_STARTUP_OPTIONS_STORE(IntegrationTestOptions)(InitializerContext*) {
     }
 
     fixtureConnectionString = std::move(swConnectionString.getValue());
-    log() << "Using test fixture with connection string = " << connectionString;
+    LOGV2("Using test fixture with connection string = {}", "connectionString"_attr = connectionString);
 
 
     return Status::OK();

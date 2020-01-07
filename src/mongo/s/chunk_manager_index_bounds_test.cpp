@@ -88,7 +88,7 @@ protected:
             for (size_t i = 0; i < oil.intervals.size(); i++) {
                 if (Interval::INTERVAL_EQUALS !=
                     oil.intervals[i].compare(expectedOil.intervals[i])) {
-                    log() << oil.intervals[i] << " != " << expectedOil.intervals[i];
+                    LOGV2("{} != {}", "oil_intervals_i"_attr = oil.intervals[i], "expectedOil_intervals_i"_attr = expectedOil.intervals[i]);
                 }
                 ASSERT_EQUALS(Interval::INTERVAL_EQUALS,
                               oil.intervals[i].compare(expectedOil.intervals[i]));
@@ -109,7 +109,7 @@ protected:
 
         if (oil.intervals.size() != expectedOil.intervals.size()) {
             for (size_t i = 0; i < oil.intervals.size(); i++) {
-                log() << oil.intervals[i];
+                LOGV2("{}", "oil_intervals_i"_attr = oil.intervals[i]);
             }
         }
 

@@ -75,8 +75,7 @@ namespace {
 
 auto makeRandom() {
     auto seed = SecureRandom().nextInt64();
-    unittest::log() << "PseudoRandom(" << std::showbase << std::hex << seed << std::dec
-                    << std::noshowbase << ")";
+    unittest::LOGV2("PseudoRandom({}{}{}{})", "std_showbase"_attr = std::showbase, "std_hex"_attr = std::hex, "seed"_attr = seed, "std_noshowbase"_attr = std::noshowbase);
     return PseudoRandom(seed);
 }
 
@@ -245,7 +244,7 @@ public:
 
     Future<FreeMonRegistrationResponse> sendRegistrationAsync(
         const FreeMonRegistrationRequest& req) final {
-        log() << "Sending Registration ...";
+        LOGV2("Sending Registration ...");
 
         _registers.addAndFetch(1);
 
@@ -291,7 +290,7 @@ public:
 
 
     Future<FreeMonMetricsResponse> sendMetricsAsync(const FreeMonMetricsRequest& req) final {
-        log() << "Sending Metrics ...";
+        LOGV2("Sending Metrics ...");
 
         _metrics.addAndFetch(1);
 
@@ -508,8 +507,8 @@ TEST(FreeMonRetryTest, TestRegistration) {
     // If jitter is large as possible, we'd expect trueMin increments before false.
     const auto trueMin = characterizeJitter(Seconds{9}, Seconds{119});
 
-    // unittest::log() << "trueMin:" << trueMin;
-    // unittest::log() << "trueMax:" << trueMax;
+    // unittest::LOGV2("trueMin:{}", "trueMin"_attr = trueMin);
+    // unittest::LOGV2("trueMax:{}", "trueMax"_attr = trueMax);
 
     for (int j = 0; j < 30; j++) {
         // std::cout << "j: " << j << "\n";

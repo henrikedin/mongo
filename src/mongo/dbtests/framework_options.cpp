@@ -119,7 +119,7 @@ Status storeTestFrameworkOptions(const moe::Environment& params,
     }
 
     if (kDebugBuild)
-        log() << "DEBUG build" << endl;
+        LOGV2("DEBUG build");
 
     string dbpathString = p.string();
     storageGlobalParams.dbpath = dbpathString.c_str();
@@ -128,7 +128,7 @@ Status storeTestFrameworkOptions(const moe::Environment& params,
     gFlowControlEnabled.store(params["enableFlowControl"].as<bool>());
 
     if (gFlowControlEnabled.load()) {
-        log() << "Flow Control enabled" << endl;
+        LOGV2("Flow Control enabled");
     }
 
     if (storageGlobalParams.engine == "wiredTiger" &&

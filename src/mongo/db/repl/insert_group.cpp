@@ -139,9 +139,9 @@ StatusWith<InsertGroup::ConstIterator> InsertGroup::groupAndApplyInserts(ConstIt
 
         // It's not an error during initial sync to encounter DuplicateKey errors.
         if (Mode::kInitialSync == _mode && ErrorCodes::DuplicateKey == status) {
-            LOG(2) << status;
+            LOGV2_DEBUG(2, "{}", "status"_attr = status);
         } else {
-            error() << status;
+            LOGV2_ERROR("{}", "status"_attr = status);
         }
 
         // Avoid quadratic run time from failed insert by not retrying until we

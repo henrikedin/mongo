@@ -384,12 +384,11 @@ void CollectionCatalog::registerCollection(CollectionUUID uuid, std::unique_ptr<
     auto ns = (*coll)->ns();
     stdx::lock_guard<Latch> lock(_catalogLock);
     if (_collections.find(ns) != _collections.end()) {
-        log() << "Conflicted creating a collection. ns: " << (*coll)->ns() << " ("
-              << (*coll)->uuid() << ").";
+        LOGV2("Conflicted creating a collection. ns: {} ({}).", "coll_ns"_attr = (*coll)->ns(), "coll_uuid"_attr = (*coll)->uuid());
         throw WriteConflictException();
     }
 
-    LOG(1) << "Registering collection " << ns << " with UUID " << uuid;
+    LOGV2_DEBUG(1, "Registering collection {} with UUID {}", "ns"_attr = ns, "uuid"_attr = uuid);
 
     auto dbName = ns.db().toString();
     auto dbIdPair = std::make_pair(dbName, uuid);
@@ -419,7 +418,7 @@ std::unique_ptr<Collection> CollectionCatalog::deregisterCollection(CollectionUU
     auto dbName = ns.db().toString();
     auto dbIdPair = std::make_pair(dbName, uuid);
 
-    LOG(1) << "Deregistering collection " << ns << " with UUID " << uuid;
+    LOGV2_DEBUG(1, "Deregistering collection {} with UUID {}", "ns"_attr = ns, "uuid"_attr = uuid);
 
     // Make sure collection object exists.
     invariant(_collections.find(ns) != _collections.end());
@@ -447,14 +446,14 @@ std::unique_ptr<RecoveryUnit::Change> CollectionCatalog::makeFinishDropCollectio
 void CollectionCatalog::deregisterAllCollections() {
     stdx::lock_guard<Latch> lock(_catalogLock);
 
-    LOG(0) << "Deregistering all the collections";
+    LOGV2("Deregistering all the collections");
     for (auto& entry : _catalog) {
         auto uuid = entry.first;
         auto ns = entry.second->ns();
         auto dbName = ns.db().toString();
         auto dbIdPair = std::make_pair(dbName, uuid);
 
-        LOG(1) << "Deregistering collection " << ns << " with UUID " << uuid;
+        LOGV2_DEBUG(1, "Deregistering collection {} with UUID {}", "ns"_attr = ns, "uuid"_attr = uuid);
 
         entry.second.reset();
     }
