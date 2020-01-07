@@ -160,7 +160,7 @@ public:
     }
 
     void serialize(fmt::memory_buffer& buffer) const {
-        return fmt::format_to(buffer, "RecordId({})", _repr);
+        fmt::format_to(buffer, "RecordId({})", _repr);
     }
 
     void serialize(BSONObjBuilder* builder) const {
