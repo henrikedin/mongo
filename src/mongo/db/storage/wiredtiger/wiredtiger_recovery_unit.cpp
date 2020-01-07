@@ -270,7 +270,7 @@ void WiredTigerRecoveryUnit::assertInActiveTxn() const {
     if (_isActive()) {
         return;
     }
-    LOGV2_FATAL("Recovery unit is not active. Current state: {}", "toString_getState"_attr = toString(getState()));
+    LOGV2_FATAL(28575, "Recovery unit is not active. Current state: {}", "toString_getState"_attr = toString(getState()));
     fassertFailed(28575);
 }
 
@@ -323,7 +323,7 @@ void WiredTigerRecoveryUnit::_txnClose(bool commit) {
         // `serverGlobalParams.slowMs` can be set to values <= 0. In those cases, give logging a
         // break.
         if (transactionTime >= std::max(1, serverGlobalParams.slowMS)) {
-            LOGV2_DEBUG({logComponentV1toV2(kSlowTransactionSeverity)}, "Slow WT transaction. Lifetime of SnapshotId {} was {}ms", "getSnapshotId_toNumber"_attr = getSnapshotId().toNumber(), "transactionTime"_attr = transactionTime);
+            LOGV2_DEBUG(kSlowTransactionSeverity.toInt(), "Slow WT transaction. Lifetime of SnapshotId {} was {}ms", "getSnapshotId_toNumber"_attr = getSnapshotId().toNumber(), "transactionTime"_attr = transactionTime);
         }
     }
 

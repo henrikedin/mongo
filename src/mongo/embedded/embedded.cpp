@@ -183,7 +183,7 @@ void shutdown(ServiceContext* srvContext) {
     }
     setGlobalServiceContext(nullptr);
 
-    LOGV2_DEBUG({logComponentV1toV2(LogComponent::kControl)}, "now exiting");
+    LOGV2_OPTIONS({logComponentV1toV2(LogComponent::kControl)}, "now exiting");
 }
 
 
@@ -227,7 +227,7 @@ ServiceContext* initialize(const char* yaml_config) {
     }
 
     if (kDebugBuild)
-        LOGV2_DEBUG({logComponentV1toV2(LogComponent::kControl)}, "DEBUG build (which is slower)");
+        LOGV2_OPTIONS({logComponentV1toV2(LogComponent::kControl)}, "DEBUG build (which is slower)");
 
     // The periodic runner is required by the storage engine to be running beforehand.
     auto periodicRunner = std::make_unique<PeriodicRunnerEmbedded>(

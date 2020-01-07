@@ -259,7 +259,7 @@ void cleanupTask(ServiceContext* serviceContext) {
 
         // Shutdown the TransportLayer so that new connections aren't accepted
         if (auto tl = serviceContext->getTransportLayer()) {
-            LOGV2_DEBUG({logComponentV1toV2(LogComponent::kNetwork)}, "shutdown: going to close all sockets...");
+            LOGV2_OPTIONS({logComponentV1toV2(LogComponent::kNetwork)}, "shutdown: going to close all sockets...");
 
             tl->shutdown();
         }
@@ -321,7 +321,7 @@ void cleanupTask(ServiceContext* serviceContext) {
         // Shutdown the Service Entry Point and its sessions and give it a grace period to complete.
         if (auto sep = serviceContext->getServiceEntryPoint()) {
             if (!sep->shutdown(Seconds(10))) {
-                LOGV2_DEBUG({logComponentV1toV2(LogComponent::kNetwork)}, "Service entry point failed to shutdown within timelimit.");
+                LOGV2_OPTIONS({logComponentV1toV2(LogComponent::kNetwork)}, "Service entry point failed to shutdown within timelimit.");
             }
         }
 
@@ -329,7 +329,7 @@ void cleanupTask(ServiceContext* serviceContext) {
         if (auto svcExec = serviceContext->getServiceExecutor()) {
             Status status = svcExec->shutdown(Seconds(5));
             if (!status.isOK()) {
-                LOGV2_DEBUG({logComponentV1toV2(LogComponent::kNetwork)}, "Service executor failed to shutdown within timelimit: {}", "status_reason"_attr = status.reason());
+                LOGV2_OPTIONS({logComponentV1toV2(LogComponent::kNetwork)}, "Service executor failed to shutdown within timelimit: {}", "status_reason"_attr = status.reason());
             }
         }
 #endif
@@ -682,7 +682,7 @@ ExitCode main(ServiceContext* serviceContext) {
         }
 
         if (configAddr.isLocalHost() != shardingContext->allowLocalHost()) {
-            LOGV2_DEBUG({logComponentV1toV2(LogComponent::kDefault)}, "cannot mix localhost and ip addresses in configdbs");
+            LOGV2_OPTIONS({logComponentV1toV2(LogComponent::kDefault)}, "cannot mix localhost and ip addresses in configdbs");
             return EXIT_BADOPTIONS;
         }
     }
@@ -739,7 +739,7 @@ ExitCode mongoSMain(int argc, char* argv[], char** envp) {
 
     Status status = runGlobalInitializers(argc, argv, envp);
     if (!status.isOK()) {
-        LOGV2_FATAL_DEBUG({logComponentV1toV2(LogComponent::kDefault)}, "Failed global initialization: {}", "status"_attr = status);
+        LOGV2_FATAL_OPTIONS(0, {logComponentV1toV2(LogComponent::kDefault)}, "Failed global initialization: {}", "status"_attr = status);
         return EXIT_ABRUPT;
     }
 
@@ -747,7 +747,7 @@ ExitCode mongoSMain(int argc, char* argv[], char** envp) {
         setGlobalServiceContext(ServiceContext::make());
     } catch (...) {
         auto cause = exceptionToStatus();
-        LOGV2_FATAL_DEBUG({logComponentV1toV2(LogComponent::kDefault)}, "Failed to create service context: {}", "redact_cause"_attr = redact(cause));
+        LOGV2_FATAL_OPTIONS(0, {logComponentV1toV2(LogComponent::kDefault)}, "Failed to create service context: {}", "redact_cause"_attr = redact(cause));
         return EXIT_ABRUPT;
     }
 

@@ -91,7 +91,7 @@ MONGO_COMPILER_NOINLINE void verifyFailed(const char* expr, const char* file, un
     breakpoint();
 #if defined(MONGO_CONFIG_DEBUG_BUILD)
     // this is so we notice in buildbot
-    LOGV2_FATAL("\n\n***aborting after verify() failure as this is a debug/test build\n\n");
+    LOGV2_FATAL(0, "\n\n***aborting after verify() failure as this is a debug/test build\n\n");
     std::abort();
 #endif
     error_details::throwExceptionForStatus(Status(ErrorCodes::UnknownError, temp.str()));
@@ -100,9 +100,9 @@ MONGO_COMPILER_NOINLINE void verifyFailed(const char* expr, const char* file, un
 MONGO_COMPILER_NOINLINE void invariantFailed(const char* expr,
                                              const char* file,
                                              unsigned line) noexcept {
-    LOGV2_FATAL("Invariant failure {} {} {}", "expr"_attr = expr, "file"_attr = file, "line"_attr = line);
+    LOGV2_FATAL(0, "Invariant failure {} {} {}", "expr"_attr = expr, "file"_attr = file, "line"_attr = line);
     breakpoint();
-    LOGV2_FATAL("\n\n***aborting after invariant() failure\n\n");
+    LOGV2_FATAL(0, "\n\n***aborting after invariant() failure\n\n");
     std::abort();
 }
 
@@ -110,9 +110,9 @@ MONGO_COMPILER_NOINLINE void invariantFailedWithMsg(const char* expr,
                                                     const std::string& msg,
                                                     const char* file,
                                                     unsigned line) noexcept {
-    LOGV2_FATAL("Invariant failure {} {} {} {}", "expr"_attr = expr, "msg"_attr = msg, "file"_attr = file, "line"_attr = line);
+    LOGV2_FATAL(0, "Invariant failure {} {} {} {}", "expr"_attr = expr, "msg"_attr = msg, "file"_attr = file, "line"_attr = line);
     breakpoint();
-    LOGV2_FATAL("\n\n***aborting after invariant() failure\n\n");
+    LOGV2_FATAL(0, "\n\n***aborting after invariant() failure\n\n");
     std::abort();
 }
 
@@ -120,9 +120,9 @@ MONGO_COMPILER_NOINLINE void invariantOKFailed(const char* expr,
                                                const Status& status,
                                                const char* file,
                                                unsigned line) noexcept {
-    LOGV2_FATAL("Invariant failure: {} resulted in status {} at {} {}", "expr"_attr = expr, "redact_status"_attr = redact(status), "file"_attr = file, "line"_attr = line);
+    LOGV2_FATAL(0, "Invariant failure: {} resulted in status {} at {} {}", "expr"_attr = expr, "redact_status"_attr = redact(status), "file"_attr = file, "line"_attr = line);
     breakpoint();
-    LOGV2_FATAL("\n\n***aborting after invariant() failure\n\n");
+    LOGV2_FATAL(0, "\n\n***aborting after invariant() failure\n\n");
     std::abort();
 }
 
@@ -131,36 +131,36 @@ MONGO_COMPILER_NOINLINE void invariantOKFailedWithMsg(const char* expr,
                                                       const std::string& msg,
                                                       const char* file,
                                                       unsigned line) noexcept {
-    LOGV2_FATAL("Invariant failure: {} {} resulted in status {} at {} {}", "expr"_attr = expr, "msg"_attr = msg, "redact_status"_attr = redact(status), "file"_attr = file, "line"_attr = line);
+    LOGV2_FATAL(0, "Invariant failure: {} {} resulted in status {} at {} {}", "expr"_attr = expr, "msg"_attr = msg, "redact_status"_attr = redact(status), "file"_attr = file, "line"_attr = line);
     breakpoint();
-    LOGV2_FATAL("\n\n***aborting after invariant() failure\n\n");
+    LOGV2_FATAL(0, "\n\n***aborting after invariant() failure\n\n");
     std::abort();
 }
 
 MONGO_COMPILER_NOINLINE void invariantStatusOKFailed(const Status& status,
                                                      const char* file,
                                                      unsigned line) noexcept {
-    LOGV2_FATAL("Invariant failure {} at {} {}", "redact_status"_attr = redact(status), "file"_attr = file, "line"_attr = line);
+    LOGV2_FATAL(0, "Invariant failure {} at {} {}", "redact_status"_attr = redact(status), "file"_attr = file, "line"_attr = line);
     breakpoint();
-    LOGV2_FATAL("\n\n***aborting after invariant() failure\n\n");
+    LOGV2_FATAL(0, "\n\n***aborting after invariant() failure\n\n");
     std::abort();
 }
 
 MONGO_COMPILER_NOINLINE void fassertFailedWithLocation(int msgid,
                                                        const char* file,
                                                        unsigned line) noexcept {
-    LOGV2_FATAL("Fatal Assertion {} at {} {}", "msgid"_attr = msgid, "file"_attr = file, "line"_attr = line);
+    LOGV2_FATAL(0, "Fatal Assertion {} at {} {}", "msgid"_attr = msgid, "file"_attr = file, "line"_attr = line);
     breakpoint();
-    LOGV2_FATAL("\n\n***aborting after fassert() failure\n\n");
+    LOGV2_FATAL(0, "\n\n***aborting after fassert() failure\n\n");
     std::abort();
 }
 
 MONGO_COMPILER_NOINLINE void fassertFailedNoTraceWithLocation(int msgid,
                                                               const char* file,
                                                               unsigned line) noexcept {
-    LOGV2_FATAL("Fatal Assertion {} at {} {}", "msgid"_attr = msgid, "file"_attr = file, "line"_attr = line);
+    LOGV2_FATAL(0, "Fatal Assertion {} at {} {}", "msgid"_attr = msgid, "file"_attr = file, "line"_attr = line);
     breakpoint();
-    LOGV2_FATAL("\n\n***aborting after fassert() failure\n\n");
+    LOGV2_FATAL(0, "\n\n***aborting after fassert() failure\n\n");
     quickExit(EXIT_ABRUPT);
 }
 
@@ -168,9 +168,9 @@ MONGO_COMPILER_NORETURN void fassertFailedWithStatusWithLocation(int msgid,
                                                                  const Status& status,
                                                                  const char* file,
                                                                  unsigned line) noexcept {
-    LOGV2_FATAL("Fatal assertion {} {} at {} {}", "msgid"_attr = msgid, "redact_status"_attr = redact(status), "file"_attr = file, "line"_attr = line);
+    LOGV2_FATAL(0, "Fatal assertion {} {} at {} {}", "msgid"_attr = msgid, "redact_status"_attr = redact(status), "file"_attr = file, "line"_attr = line);
     breakpoint();
-    LOGV2_FATAL("\n\n***aborting after fassert() failure\n\n");
+    LOGV2_FATAL(0, "\n\n***aborting after fassert() failure\n\n");
     std::abort();
 }
 
@@ -178,9 +178,9 @@ MONGO_COMPILER_NORETURN void fassertFailedWithStatusNoTraceWithLocation(int msgi
                                                                         const Status& status,
                                                                         const char* file,
                                                                         unsigned line) noexcept {
-    LOGV2_FATAL("Fatal assertion {} {} at {} {}", "msgid"_attr = msgid, "redact_status"_attr = redact(status), "file"_attr = file, "line"_attr = line);
+    LOGV2_FATAL(0, "Fatal assertion {} {} at {} {}", "msgid"_attr = msgid, "redact_status"_attr = redact(status), "file"_attr = file, "line"_attr = line);
     breakpoint();
-    LOGV2_FATAL("\n\n***aborting after fassert() failure\n\n");
+    LOGV2_FATAL(0, "\n\n***aborting after fassert() failure\n\n");
     quickExit(EXIT_ABRUPT);
 }
 
@@ -261,7 +261,7 @@ Status exceptionToStatus() noexcept {
                           << boost::diagnostic_information(ex));
 
     } catch (...) {
-        LOGV2_FATAL("Caught unknown exception in exceptionToStatus()");
+        LOGV2_FATAL(0, "Caught unknown exception in exceptionToStatus()");
         std::terminate();
     }
 }

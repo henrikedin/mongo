@@ -241,7 +241,7 @@ void ShardRegistry::startup(OperationContext* opCtx) {
     }
 
     if (!status.isOK()) {
-        LOGV2_FATAL("Can't schedule ShardRegistry reload due to {}", "causedBy_status_getStatus"_attr = causedBy(status.getStatus()));
+        LOGV2_FATAL(40252, "Can't schedule ShardRegistry reload due to {}", "causedBy_status_getStatus"_attr = causedBy(status.getStatus()));
         fassertFailed(40252);
     }
 }
@@ -275,7 +275,7 @@ void ShardRegistry::_internalReload(const CallbackArgs& cbArgs) {
     }
 
     if (!status.isOK()) {
-        LOGV2_FATAL("Can't schedule ShardRegistry reload due to {}", "causedBy_status_getStatus"_attr = causedBy(status.getStatus()));
+        LOGV2_FATAL(40253, "Can't schedule ShardRegistry reload due to {}", "causedBy_status_getStatus"_attr = causedBy(status.getStatus()));
         fassertFailed(40253);
     }
 }

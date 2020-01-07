@@ -85,7 +85,7 @@ public:
             if (ErrorCodes::isExceededTimeLimitError(rcStatus.code())) {
                 const int debugLevel =
                     serverGlobalParams.clusterRole == ClusterRole::ConfigServer ? 0 : 2;
-                LOGV2_DEBUG({logComponentV1toV2(debugLevel)}, "Command on database {} timed out waiting for read concern to be satisfied. Command: {}. Info: {}", "request_getDatabase"_attr = request.getDatabase(), "redact_ServiceEntryPointCommon_getRedactedCopyForLogging_invocation_definition_request_body"_attr = redact(ServiceEntryPointCommon::getRedactedCopyForLogging(
+                LOGV2_DEBUG(debugLevel, "Command on database {} timed out waiting for read concern to be satisfied. Command: {}. Info: {}", "request_getDatabase"_attr = request.getDatabase(), "redact_ServiceEntryPointCommon_getRedactedCopyForLogging_invocation_definition_request_body"_attr = redact(ServiceEntryPointCommon::getRedactedCopyForLogging(
                                        invocation->definition(), request.body)), "redact_rcStatus"_attr = redact(rcStatus));
             }
 

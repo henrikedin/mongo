@@ -357,14 +357,14 @@ Status waitForReadConcernImpl(OperationContext* opCtx,
 
         const int debugLevel = serverGlobalParams.clusterRole == ClusterRole::ConfigServer ? 1 : 2;
 
-        LOGV2_DEBUG({logComponentV1toV2(debugLevel)}, "Waiting for 'committed' snapshot to be available for reading: {}", "readConcernArgs"_attr = readConcernArgs);
+        LOGV2_DEBUG(debugLevel, "Waiting for 'committed' snapshot to be available for reading: {}", "readConcernArgs"_attr = readConcernArgs);
 
         opCtx->recoveryUnit()->setTimestampReadSource(RecoveryUnit::ReadSource::kMajorityCommitted);
         Status status = opCtx->recoveryUnit()->obtainMajorityCommittedSnapshot();
 
         // Wait until a snapshot is available.
         while (status == ErrorCodes::ReadConcernMajorityNotAvailableYet) {
-            LOGV2_DEBUG({logComponentV1toV2(debugLevel)}, "Snapshot not available yet.");
+            LOGV2_DEBUG(debugLevel, "Snapshot not available yet.");
             replCoord->waitUntilSnapshotCommitted(opCtx, Timestamp());
             status = opCtx->recoveryUnit()->obtainMajorityCommittedSnapshot();
         }
@@ -373,7 +373,7 @@ Status waitForReadConcernImpl(OperationContext* opCtx,
             return status;
         }
 
-        LOGV2_DEBUG({logComponentV1toV2(debugLevel)}, "Using 'committed' snapshot: {} with readTs: {}", "CurOp_get_opCtx_opDescription"_attr = CurOp::get(opCtx)->opDescription(), "opCtx_recoveryUnit_getPointInTimeReadTimestamp"_attr = opCtx->recoveryUnit()->getPointInTimeReadTimestamp());
+        LOGV2_DEBUG(debugLevel, "Using 'committed' snapshot: {} with readTs: {}", "CurOp_get_opCtx_opDescription"_attr = CurOp::get(opCtx)->opDescription(), "opCtx_recoveryUnit_getPointInTimeReadTimestamp"_attr = opCtx->recoveryUnit()->getPointInTimeReadTimestamp());
     }
     return Status::OK();
 }

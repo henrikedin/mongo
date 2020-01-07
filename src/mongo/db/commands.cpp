@@ -602,7 +602,7 @@ void CommandInvocation::checkAuthorization(OperationContext* opCtx,
             }
         }
     } catch (const DBException& e) {
-        LOGV2_DEBUG({logComponentV1toV2(LogComponent::kAccessControl)}, "{}", "e_toStatus"_attr = e.toStatus());
+        LOGV2_OPTIONS({logComponentV1toV2(LogComponent::kAccessControl)}, "{}", "e_toStatus"_attr = e.toStatus());
         CommandHelpers::auditLogAuthEvent(opCtx, this, request, e.code());
         throw;
     }

@@ -170,7 +170,7 @@ void NoopWriter::_writeNoop(OperationContext* opCtx) {
     } else {
         if (writePeriodicNoops.load()) {
             const auto logLevel = getTestCommandsEnabled() ? 0 : 1;
-            LOGV2_DEBUG({logComponentV1toV2(logLevel)}, "Writing noop to oplog as there has been no writes to this replica set in over {}", "_writeInterval"_attr = _writeInterval);
+            LOGV2_DEBUG(logLevel, "Writing noop to oplog as there has been no writes to this replica set in over {}", "_writeInterval"_attr = _writeInterval);
             writeConflictRetry(
                 opCtx, "writeNoop", NamespaceString::kRsOplogNamespace.ns(), [&opCtx] {
                     WriteUnitOfWork uow(opCtx);

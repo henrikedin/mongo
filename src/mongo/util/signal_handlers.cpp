@@ -168,7 +168,7 @@ bool waitForSignal(const sigset_t& sigset, SignalWaitResult* result) {
         if (result->sig == -1) {
             if (errsv == EINTR)
                 continue;
-            LOGV2_FATAL("sigwaitinfo failed with error:{}", "strerror_errsv"_attr = strerror(errsv));
+            LOGV2_FATAL(0, "sigwaitinfo failed with error:{}", "strerror_errsv"_attr = strerror(errsv));
             return false;
         }
         return true;
@@ -260,7 +260,7 @@ void signalProcessingThread(LogFileStatus rotate) {
     errno = 0;
     if (int r = pthread_sigmask(SIG_SETMASK, &waitSignals, nullptr); r != 0) {
         int errsv = errno;
-        LOGV2_FATAL("pthread_sigmask failed with error:{}", "strerror_errsv"_attr = strerror(errsv));
+        LOGV2_FATAL(31377, "pthread_sigmask failed with error:{}", "strerror_errsv"_attr = strerror(errsv));
         fassertFailed(31377);
     }
 

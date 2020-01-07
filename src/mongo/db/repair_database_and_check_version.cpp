@@ -502,9 +502,9 @@ bool repairDatabasesAndCheckVersion(OperationContext* opCtx) {
                 // current version of mongod with --repair and then proceed with normal startup.
                 status = {ErrorCodes::MustUpgrade, status.reason()};
             }
-            LOGV2_FATAL("Unable to start mongod due to an incompatibility with the data files and"
+            LOGV2_FATAL(0, "Unable to start mongod due to an incompatibility with the data files and"
                         " this version of mongod: {}", "redact_status"_attr = redact(status));
-            LOGV2_FATAL("Please consult our documentation when trying to downgrade to a previous"
+            LOGV2_FATAL(0, "Please consult our documentation when trying to downgrade to a previous"
                         " major release");
             quickExit(EXIT_NEED_UPGRADE);
             MONGO_UNREACHABLE;
@@ -586,8 +586,8 @@ bool repairDatabasesAndCheckVersion(OperationContext* opCtx) {
     // Fail to start up if there is no featureCompatibilityVersion document and there are non-local
     // databases present and we do not need to start up via initial sync.
     if (!fcvDocumentExists && nonLocalDatabases && !needInitialSync) {
-        LOGV2_FATAL("Unable to start up mongod due to missing featureCompatibilityVersion document.");
-        LOGV2_FATAL("Please run with --repair to restore the document.");
+        LOGV2_FATAL(40652, "Unable to start up mongod due to missing featureCompatibilityVersion document.");
+        LOGV2_FATAL(0, "Please run with --repair to restore the document.");
         fassertFailedNoTrace(40652);
     }
 

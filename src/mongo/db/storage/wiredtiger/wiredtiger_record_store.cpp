@@ -1226,7 +1226,7 @@ void WiredTigerRecordStore::reclaimOplog(OperationContext* opCtx, Timestamp mayT
             return;
         }
 
-        LOGV2_DEBUG(1, "Truncating the oplog between {} and {} to remove approximately {} records totaling to {} bytes", "_oplogStones_firstRecord"_attr = _oplogStones->firstRecord, "stone_lastRecord"_attr = stone->lastRecord, "stone_records"_attr = stone->records, "stone_bytes"_attr = stone->bytes);
+        // TODO LOGV2_DEBUG(1, "Truncating the oplog between {} and {} to remove approximately {} records totaling to {} bytes", "_oplogStones_firstRecord"_attr = _oplogStones->firstRecord, "stone_lastRecord"_attr = stone->lastRecord, "stone_records"_attr = stone->records, "stone_bytes"_attr = stone->bytes);
 
         WiredTigerRecoveryUnit* ru = WiredTigerRecoveryUnit::get(opCtx);
         WT_SESSION* session = ru->getSession()->getSession();
@@ -1242,7 +1242,7 @@ void WiredTigerRecordStore::reclaimOplog(OperationContext* opCtx, Timestamp mayT
             invariantWTOK(ret);
             RecordId firstRecord = getKey(cursor);
             if (firstRecord < _oplogStones->firstRecord || firstRecord > stone->lastRecord) {
-                LOGV2_WARNING("First oplog record {} is not in truncation range ({}, {})", "firstRecord"_attr = firstRecord, "_oplogStones_firstRecord"_attr = _oplogStones->firstRecord, "stone_lastRecord"_attr = stone->lastRecord);
+                // TODO LOGV2_WARNING("First oplog record {} is not in truncation range ({}, {})", "firstRecord"_attr = firstRecord, "_oplogStones_firstRecord"_attr = _oplogStones->firstRecord, "stone_lastRecord"_attr = stone->lastRecord);
             }
 
             setKey(cursor, stone->lastRecord);
@@ -1940,7 +1940,7 @@ boost::optional<Record> WiredTigerRecordStoreCursorBase::next() {
     }
 
     if (_forward && _lastReturnedId >= id) {
-        LOGV2("WTCursor::next -- c->next_key ( {}) was not greater than _lastReturnedId ({}) which is a bug.", "id"_attr = id, "_lastReturnedId"_attr = _lastReturnedId);
+        // TODO LOGV2("WTCursor::next -- c->next_key ( {}) was not greater than _lastReturnedId ({}) which is a bug.", "id"_attr = id, "_lastReturnedId"_attr = _lastReturnedId);
 
         // Crash when test commands are enabled.
         invariant(!getTestCommandsEnabled());

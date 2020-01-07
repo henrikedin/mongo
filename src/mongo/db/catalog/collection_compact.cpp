@@ -104,7 +104,7 @@ StatusWith<int64_t> compactCollection(OperationContext* opCtx,
         recordStore = collection->getRecordStore();
     }
 
-    LOGV2_DEBUG({logComponentV1toV2(LogComponent::kCommand)}, "compact {} begin", "collectionNss"_attr = collectionNss);
+    LOGV2_OPTIONS({logComponentV1toV2(LogComponent::kCommand)}, "compact {} begin", "collectionNss"_attr = collectionNss);
 
     auto oldTotalSize = recordStore->storageSize(opCtx) + collection->getIndexSize(opCtx);
     auto indexCatalog = collection->getIndexCatalog();

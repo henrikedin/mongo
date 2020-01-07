@@ -239,7 +239,7 @@ int FlowControl::_calculateNewTicketsForLag(const std::vector<repl::MemberData>&
 
     const std::int64_t sustainerAppliedCount =
         _approximateOpsBetween(prevSustainerAppliedTs, currSustainerAppliedTs);
-    LOGV2_DEBUG({logComponentV1toV2(DEBUG_LOG_LEVEL)}, " PrevApplied: {} CurrApplied: {} NumSustainerApplied: {}", "prevSustainerAppliedTs"_attr = prevSustainerAppliedTs, "currSustainerAppliedTs"_attr = currSustainerAppliedTs, "sustainerAppliedCount"_attr = sustainerAppliedCount);
+    LOGV2_DEBUG(DEBUG_LOG_LEVEL, " PrevApplied: {} CurrApplied: {} NumSustainerApplied: {}", "prevSustainerAppliedTs"_attr = prevSustainerAppliedTs, "currSustainerAppliedTs"_attr = currSustainerAppliedTs, "sustainerAppliedCount"_attr = sustainerAppliedCount);
     if (sustainerAppliedCount > 0) {
         _lastTimeSustainerAdvanced = Date_t::now();
     } else {
@@ -282,7 +282,7 @@ int FlowControl::_calculateNewTicketsForLag(const std::vector<repl::MemberData>&
     // an environment where secondaries consistently process operations slower than the primary.
     double sustainerAppliedPenalty =
         sustainerAppliedCount * reduce * gFlowControlFudgeFactor.load();
-    LOGV2_DEBUG({logComponentV1toV2(DEBUG_LOG_LEVEL)}, "Sustainer: {} LagMillis: {} Threshold lag: {} Exponent: {} Reduce: {} Penalty: {}", "sustainerAppliedCount"_attr = sustainerAppliedCount, "lagMillis"_attr = lagMillis, "thresholdLagMillis"_attr = thresholdLagMillis, "exponent"_attr = exponent, "reduce"_attr = reduce, "sustainerAppliedPenalty"_attr = sustainerAppliedPenalty);
+    LOGV2_DEBUG(DEBUG_LOG_LEVEL, "Sustainer: {} LagMillis: {} Threshold lag: {} Exponent: {} Reduce: {} Penalty: {}", "sustainerAppliedCount"_attr = sustainerAppliedCount, "lagMillis"_attr = lagMillis, "thresholdLagMillis"_attr = thresholdLagMillis, "exponent"_attr = exponent, "reduce"_attr = reduce, "sustainerAppliedPenalty"_attr = sustainerAppliedPenalty);
 
     return multiplyWithOverflowCheck(locksPerOp, sustainerAppliedPenalty, _kMaxTickets);
 }
@@ -370,7 +370,7 @@ int FlowControl::getNumTickets() {
 
     ret = std::max(ret, gFlowControlMinTicketsPerSecond.load());
 
-    LOGV2_DEBUG({logComponentV1toV2(DEBUG_LOG_LEVEL)}, "Are lagged? {} Curr lag millis: {} OpsLagged: {} Granting: {} Last granted: {} Last sustainer applied: {} Acquisitions since last check: {} Locks per op: {} Count of lagged periods: {} Total duration of lagged periods: {}", "_isLagged_load_true_false"_attr = (_isLagged.load() ? "true" : "false"), "getLagMillis_myLastApplied_wallTime_lastCommitted_wallTime"_attr = getLagMillis(myLastApplied.wallTime, lastCommitted.wallTime), "_approximateOpsBetween_lastCommitted_opTime_getTimestamp_myLastApplied_opTime_getTimestamp"_attr = _approximateOpsBetween(lastCommitted.opTime.getTimestamp(),
+    LOGV2_DEBUG(DEBUG_LOG_LEVEL, "Are lagged? {} Curr lag millis: {} OpsLagged: {} Granting: {} Last granted: {} Last sustainer applied: {} Acquisitions since last check: {} Locks per op: {} Count of lagged periods: {} Total duration of lagged periods: {}", "_isLagged_load_true_false"_attr = (_isLagged.load() ? "true" : "false"), "getLagMillis_myLastApplied_wallTime_lastCommitted_wallTime"_attr = getLagMillis(myLastApplied.wallTime, lastCommitted.wallTime), "_approximateOpsBetween_lastCommitted_opTime_getTimestamp_myLastApplied_opTime_getTimestamp"_attr = _approximateOpsBetween(lastCommitted.opTime.getTimestamp(),
                                                    myLastApplied.opTime.getTimestamp()), "ret"_attr = ret, "_lastTargetTicketsPermitted_load"_attr = _lastTargetTicketsPermitted.load(), "_lastSustainerAppliedCount_load"_attr = _lastSustainerAppliedCount.load(), "locksUsedLastPeriod"_attr = locksUsedLastPeriod, "_lastLocksPerOp_load"_attr = _lastLocksPerOp.load(), "_isLaggedCount_load"_attr = _isLaggedCount.load(), "_isLaggedTimeMicros_load"_attr = _isLaggedTimeMicros.load());
 
     _lastTargetTicketsPermitted.store(ret);
@@ -433,7 +433,7 @@ void FlowControl::sample(Timestamp timestamp, std::uint64_t opsApplied) {
     _lastSample = _numOpsSinceStartup;
 
     const auto lockAcquisitions = stats.get(resourceIdGlobal, LockMode::MODE_IX).numAcquisitions;
-    LOGV2_DEBUG({logComponentV1toV2(DEBUG_LOG_LEVEL)}, "Sampling. Time: {} Applied: {} LockAcquisitions: {}", "timestamp"_attr = timestamp, "_numOpsSinceStartup"_attr = _numOpsSinceStartup, "lockAcquisitions"_attr = lockAcquisitions);
+    LOGV2_DEBUG(DEBUG_LOG_LEVEL, "Sampling. Time: {} Applied: {} LockAcquisitions: {}", "timestamp"_attr = timestamp, "_numOpsSinceStartup"_attr = _numOpsSinceStartup, "lockAcquisitions"_attr = lockAcquisitions);
 
     if (_sampledOpsApplied.size() <
         static_cast<std::deque<Sample>::size_type>(gFlowControlMaxSamples)) {
@@ -462,7 +462,7 @@ void FlowControl::_trimSamples(const Timestamp trimTo) {
         ++numTrimmed;
     }
 
-    LOGV2_DEBUG({logComponentV1toV2(DEBUG_LOG_LEVEL)}, "Trimmed samples. Num: {}", "numTrimmed"_attr = numTrimmed);
+    LOGV2_DEBUG(DEBUG_LOG_LEVEL, "Trimmed samples. Num: {}", "numTrimmed"_attr = numTrimmed);
 }
 
 int64_t FlowControl::_getLocksUsedLastPeriod() {

@@ -398,7 +398,7 @@ SSLManagerWindows::SSLManagerWindows(const SSLParams& params, bool isServer)
         BOOLEAN enabled = FALSE;
         BCryptGetFipsAlgorithmMode(&enabled);
         if (!enabled) {
-            LOGV2_FATAL("FIPS modes is not enabled on the operating system.");
+            LOGV2_FATAL(50744, "FIPS modes is not enabled on the operating system.");
             fassertFailedNoTrace(50744);
         }
     }
@@ -516,7 +516,7 @@ int SSLManagerWindows::SSL_read(SSLConnectionInterface* connInterface, void* buf
                 return bytes_transferred;
             }
             default:
-                LOGV2_FATAL("Unexpected ASIO state: {}", "static_cast_int_want"_attr = static_cast<int>(want));
+                LOGV2_FATAL(0, "Unexpected ASIO state: {}", "static_cast_int_want"_attr = static_cast<int>(want));
                 MONGO_UNREACHABLE;
         }
     }
@@ -560,7 +560,7 @@ int SSLManagerWindows::SSL_write(SSLConnectionInterface* connInterface, const vo
                 return bytes_transferred;
             }
             default:
-                LOGV2_FATAL("Unexpected ASIO state: {}", "static_cast_int_want"_attr = static_cast<int>(want));
+                LOGV2_FATAL(0, "Unexpected ASIO state: {}", "static_cast_int_want"_attr = static_cast<int>(want));
                 MONGO_UNREACHABLE;
         }
     }
@@ -1585,7 +1585,7 @@ Status SSLManagerWindows::_validateCertificate(PCCERT_CONTEXT cert,
 
         if ((FiletimeToULL(cert->pCertInfo->NotBefore) > currentTimeLong) ||
             (currentTimeLong > FiletimeToULL(cert->pCertInfo->NotAfter))) {
-            LOGV2_FATAL("The provided SSL certificate is expired or not yet valid.");
+            LOGV2_FATAL(50755, "The provided SSL certificate is expired or not yet valid.");
             fassertFailedNoTrace(50755);
         }
 

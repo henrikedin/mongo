@@ -534,10 +534,10 @@ void Socket::handleSendError(int ret, const char* context) {
     const int mongo_errno = errno;
     if ((mongo_errno == EAGAIN || mongo_errno == EWOULDBLOCK) && _timeout != 0) {
 #endif
-        LOGV2_DEBUG({logComponentV1toV2(_logLevel)}, "Socket {} send() timed out {}", "context"_attr = context, "remoteString"_attr = remoteString());
+        LOGV2_DEBUG(_logLevel.toInt(), "Socket {} send() timed out {}", "context"_attr = context, "remoteString"_attr = remoteString());
         throwSocketError(SocketErrorKind::SEND_TIMEOUT, remoteString());
     } else if (mongo_errno != EINTR) {
-        LOGV2_DEBUG({logComponentV1toV2(_logLevel)}, "Socket {} send() {} {}", "context"_attr = context, "errnoWithDescription_mongo_errno"_attr = errnoWithDescription(mongo_errno), "remoteString"_attr = remoteString());
+        LOGV2_DEBUG(_logLevel.toInt(), "Socket {} send() {} {}", "context"_attr = context, "errnoWithDescription_mongo_errno"_attr = errnoWithDescription(mongo_errno), "remoteString"_attr = remoteString());
         throwSocketError(SocketErrorKind::SEND_ERROR, remoteString());
     }
 }  // namespace mongo
@@ -567,11 +567,11 @@ void Socket::handleRecvError(int ret, int len) {
     if (e == EAGAIN && _timeout > 0) {
 #endif
         // this is a timeout
-        LOGV2_DEBUG({logComponentV1toV2(_logLevel)}, "Socket recv() timeout  {}", "remoteString"_attr = remoteString());
+        LOGV2_DEBUG(_logLevel.toInt(), "Socket recv() timeout  {}", "remoteString"_attr = remoteString());
         throwSocketError(SocketErrorKind::RECV_TIMEOUT, remoteString());
     }
 
-    LOGV2_DEBUG({logComponentV1toV2(_logLevel)}, "Socket recv() {} {}", "errnoWithDescription_e"_attr = errnoWithDescription(e), "remoteString"_attr = remoteString());
+    LOGV2_DEBUG(_logLevel.toInt(), "Socket recv() {} {}", "errnoWithDescription_e"_attr = errnoWithDescription(e), "remoteString"_attr = remoteString());
     throwSocketError(SocketErrorKind::RECV_ERROR, remoteString());
 }
 

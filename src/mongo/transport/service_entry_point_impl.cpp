@@ -222,13 +222,13 @@ bool ServiceEntryPointImpl::shutdown(Milliseconds timeout) {
     auto noWorkersLeft = [this] { return numOpenSessions() == 0; };
     while (timeSpent < timeout &&
            !_shutdownCondition.wait_for(lk, checkInterval.toSystemDuration(), noWorkersLeft)) {
-        LOGV2_DEBUG({logComponentV1toV2(LogComponent::kNetwork)}, "shutdown: still waiting on {} active workers to drain... ", "numOpenSessions"_attr = numOpenSessions());
+        LOGV2_OPTIONS({logComponentV1toV2(LogComponent::kNetwork)}, "shutdown: still waiting on {} active workers to drain... ", "numOpenSessions"_attr = numOpenSessions());
         timeSpent += checkInterval;
     }
 
     bool result = noWorkersLeft();
     if (result) {
-        LOGV2_DEBUG({logComponentV1toV2(LogComponent::kNetwork)}, "shutdown: no running workers found...");
+        LOGV2_OPTIONS({logComponentV1toV2(LogComponent::kNetwork)}, "shutdown: no running workers found...");
     } else {
         log(LogComponent::kNetwork) << "shutdown: exhausted grace period for" << numOpenSessions()
                                     << " active workers to drain; continuing with shutdown... ";

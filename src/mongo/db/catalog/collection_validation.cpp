@@ -93,7 +93,7 @@ std::map<std::string, int64_t> _validateIndexesInternalStructure(
         const IndexDescriptor* descriptor = entry->descriptor();
         const IndexAccessMethod* iam = entry->accessMethod();
 
-        LOGV2_DEBUG({logComponentV1toV2(LogComponent::kIndex)}, "validating the internal structure of index {} on collection {}", "descriptor_indexName"_attr = descriptor->indexName(), "descriptor_parentNS"_attr = descriptor->parentNS());
+        LOGV2_OPTIONS({logComponentV1toV2(LogComponent::kIndex)}, "validating the internal structure of index {} on collection {}", "descriptor_indexName"_attr = descriptor->indexName(), "descriptor_parentNS"_attr = descriptor->parentNS());
         ValidateResults& curIndexResults = (*indexNsResultsMap)[descriptor->indexName()];
 
         int64_t numValidated;
@@ -123,7 +123,7 @@ void _validateIndexes(OperationContext* opCtx,
 
         const IndexDescriptor* descriptor = index->descriptor();
 
-        LOGV2_DEBUG({logComponentV1toV2(LogComponent::kIndex)}, "validating index consistency {} on collection {}", "descriptor_indexName"_attr = descriptor->indexName(), "descriptor_parentNS"_attr = descriptor->parentNS());
+        LOGV2_OPTIONS({logComponentV1toV2(LogComponent::kIndex)}, "validating index consistency {} on collection {}", "descriptor_indexName"_attr = descriptor->indexName(), "descriptor_parentNS"_attr = descriptor->parentNS());
 
         ValidateResults& curIndexResults = (*indexNsResultsMap)[descriptor->indexName()];
         int64_t numTraversedKeys;
@@ -181,7 +181,7 @@ void _gatherIndexEntryErrors(OperationContext* opCtx,
                              ValidateResults* result) {
     indexConsistency->setSecondPhase();
 
-    LOGV2_DEBUG({logComponentV1toV2(LogComponent::kIndex)}, "Starting to traverse through all the document key sets.");
+    LOGV2_OPTIONS({logComponentV1toV2(LogComponent::kIndex)}, "Starting to traverse through all the document key sets.");
 
     // During the second phase of validation, iterate through each documents key set and only record
     // the keys that were inconsistent during the first phase of validation.
@@ -191,8 +191,8 @@ void _gatherIndexEntryErrors(OperationContext* opCtx,
         indexValidator->traverseRecordStore(opCtx, &tempValidateResults, &tempBuilder);
     }
 
-    LOGV2_DEBUG({logComponentV1toV2(LogComponent::kIndex)}, "Finished traversing through all the document key sets.");
-    LOGV2_DEBUG({logComponentV1toV2(LogComponent::kIndex)}, "Starting to traverse through all the indexes.");
+    LOGV2_OPTIONS({logComponentV1toV2(LogComponent::kIndex)}, "Finished traversing through all the document key sets.");
+    LOGV2_OPTIONS({logComponentV1toV2(LogComponent::kIndex)}, "Starting to traverse through all the indexes.");
 
     // Iterate through all the indexes in the collection and only record the index entry keys that
     // had inconsistencies during the first phase.
@@ -201,7 +201,7 @@ void _gatherIndexEntryErrors(OperationContext* opCtx,
 
         const IndexDescriptor* descriptor = index->descriptor();
 
-        LOGV2_DEBUG({logComponentV1toV2(LogComponent::kIndex)}, "Traversing through the index entries for index {}.", "descriptor_indexName"_attr = descriptor->indexName());
+        LOGV2_OPTIONS({logComponentV1toV2(LogComponent::kIndex)}, "Traversing through the index entries for index {}.", "descriptor_indexName"_attr = descriptor->indexName());
 
         indexValidator->traverseIndex(opCtx,
                                       index.get(),
@@ -209,7 +209,7 @@ void _gatherIndexEntryErrors(OperationContext* opCtx,
                                       /*ValidateResults=*/nullptr);
     }
 
-    LOGV2_DEBUG({logComponentV1toV2(LogComponent::kIndex)}, "Finished traversing through all the indexes.");
+    LOGV2_OPTIONS({logComponentV1toV2(LogComponent::kIndex)}, "Finished traversing through all the indexes.");
 
     indexConsistency->addIndexEntryErrors(indexNsResultsMap, result);
 }
@@ -431,7 +431,7 @@ Status validate(OperationContext* opCtx,
         const string uuidString = str::stream() << " (UUID: " << validateState.uuid() << ")";
 
         // Validate the record store.
-        LOGV2_DEBUG({logComponentV1toV2(LogComponent::kIndex)}, "validating collection {}{}", "validateState_nss"_attr = validateState.nss(), "uuidString"_attr = uuidString);
+        LOGV2_OPTIONS({logComponentV1toV2(LogComponent::kIndex)}, "validating collection {}{}", "validateState_nss"_attr = validateState.nss(), "uuidString"_attr = uuidString);
 
         IndexConsistency indexConsistency(opCtx, &validateState);
         ValidateAdaptor indexValidator(&indexConsistency, &validateState, &indexNsResultsMap);
@@ -470,7 +470,7 @@ Status validate(OperationContext* opCtx,
                              results);
 
             if (indexConsistency.haveEntryMismatch()) {
-                LOGV2_DEBUG({logComponentV1toV2(LogComponent::kIndex)}, "Index inconsistencies were detected on collection {}. Starting the second phase of index validation to gather concise errors.", "validateState_nss"_attr = validateState.nss());
+                LOGV2_OPTIONS({logComponentV1toV2(LogComponent::kIndex)}, "Index inconsistencies were detected on collection {}. Starting the second phase of index validation to gather concise errors.", "validateState_nss"_attr = validateState.nss());
                 _gatherIndexEntryErrors(opCtx,
                                         &validateState,
                                         &indexConsistency,
@@ -490,9 +490,9 @@ Status validate(OperationContext* opCtx,
             opCtx, &validateState, &indexNsResultsMap, &keysPerIndex, results, output);
 
         if (!results->valid) {
-            LOGV2_DEBUG({logComponentV1toV2(LogComponent::kIndex)}, "Validation complete for collection {}{}. Corruption found.", "validateState_nss"_attr = validateState.nss(), "uuidString"_attr = uuidString);
+            LOGV2_OPTIONS({logComponentV1toV2(LogComponent::kIndex)}, "Validation complete for collection {}{}. Corruption found.", "validateState_nss"_attr = validateState.nss(), "uuidString"_attr = uuidString);
         } else {
-            LOGV2_DEBUG({logComponentV1toV2(LogComponent::kIndex)}, "Validation complete for collection {}{}. No corruption found.", "validateState_nss"_attr = validateState.nss(), "uuidString"_attr = uuidString);
+            LOGV2_OPTIONS({logComponentV1toV2(LogComponent::kIndex)}, "Validation complete for collection {}{}. No corruption found.", "validateState_nss"_attr = validateState.nss(), "uuidString"_attr = uuidString);
         }
 
         output->append("ns", validateState.nss().ns());

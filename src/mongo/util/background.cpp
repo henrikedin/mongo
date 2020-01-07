@@ -341,7 +341,7 @@ void PeriodicTaskRunner::_runTask(PeriodicTask* const task) {
 
     const int ms = timer.millis();
     const int kMinLogMs = 100;
-    LOGV2_DEBUG({logComponentV1toV2(ms <= kMinLogMs ? 3 : 0)}, "task: {} took: {}ms", "taskName"_attr = taskName, "ms"_attr = ms);
+    LOGV2_DEBUG(ms <= kMinLogMs ? 3 : 0, "task: {} took: {}ms", "taskName"_attr = taskName, "ms"_attr = ms);
 }
 
 }  // namespace mongo

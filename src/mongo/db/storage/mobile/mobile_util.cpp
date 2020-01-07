@@ -138,7 +138,7 @@ void checkStatus(int retStatus, int desiredStatus, const char* fnName, const cha
             s << "------ Error Message: " << errMsg;
         }
 
-        LOGV2_FATAL("{}", "s_str"_attr = s.str());
+        LOGV2_FATAL(37000, "{}", "s_str"_attr = s.str());
         fassertFailed(37000);
     }
 }
@@ -186,7 +186,7 @@ void doValidate(OperationContext* opCtx, ValidateResults* results) {
 void configureSession(sqlite3* session, const MobileOptions& options) {
     auto executePragma = [session](auto pragma, auto value) {
         SqliteStatement::execQuery(session, "PRAGMA ", pragma, " = ", value, ";");
-        LOGV2_DEBUG({logComponentV1toV2(MOBILE_LOG_LEVEL_LOW)}, "MobileSE session configuration: {} = {}", "pragma"_attr = pragma, "value"_attr = value);
+        LOGV2_DEBUG(MOBILE_LOG_LEVEL_LOW, "MobileSE session configuration: {} = {}", "pragma"_attr = pragma, "value"_attr = value);
     };
     // We don't manually use VACUUM so set incremental(2) mode to reclaim space
     // This need to be set the first thing we do, before any internal tables are created.

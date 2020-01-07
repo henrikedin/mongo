@@ -1596,7 +1596,7 @@ bool SSLManagerOpenSSL::_parseAndValidateCertificate(const std::string& keyFile,
         }
 
         if ((notBeforeMillis > curTimeMillis64()) || (curTimeMillis64() > notAfterMillis)) {
-            LOGV2_FATAL("The provided SSL certificate is expired or not yet valid.");
+            LOGV2_FATAL(28652, "The provided SSL certificate is expired or not yet valid.");
             fassertFailedNoTrace(28652);
         }
 

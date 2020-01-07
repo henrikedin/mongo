@@ -97,7 +97,7 @@ void fassertOnRepeatedExecution(const LogicalSessionId& lsid,
                                 StmtId stmtId,
                                 const repl::OpTime& firstOpTime,
                                 const repl::OpTime& secondOpTime) {
-    LOGV2_FATAL("Statement id {} from transaction [ {}:{} ] was committed once with opTime {} and a second time with opTime {}. This indicates possible data corruption or server bug and the process will be "
+    LOGV2_FATAL(40526, "Statement id {} from transaction [ {}:{} ] was committed once with opTime {} and a second time with opTime {}. This indicates possible data corruption or server bug and the process will be "
                 "terminated.", "stmtId"_attr = stmtId, "lsid_toBSON"_attr = lsid.toBSON(), "txnNumber"_attr = txnNumber, "firstOpTime"_attr = firstOpTime, "secondOpTime"_attr = secondOpTime);
     fassertFailed(40526);
 }
@@ -1064,7 +1064,7 @@ Timestamp TransactionParticipant::Participant::prepareTransaction(
         } catch (...) {
             // It is illegal for aborting a prepared transaction to fail for any reason, so we crash
             // instead.
-            LOGV2_FATAL("Caught exception during abort of prepared transaction {} on {}: {}", "opCtx_getTxnNumber"_attr = opCtx->getTxnNumber(), "_sessionId_toBSON"_attr = _sessionId().toBSON(), "exceptionToStatus"_attr = exceptionToStatus());
+            LOGV2_FATAL(0, "Caught exception during abort of prepared transaction {} on {}: {}", "opCtx_getTxnNumber"_attr = opCtx->getTxnNumber(), "_sessionId_toBSON"_attr = _sessionId().toBSON(), "exceptionToStatus"_attr = exceptionToStatus());
             std::terminate();
         }
     });
@@ -1256,7 +1256,7 @@ void TransactionParticipant::Participant::commitUnpreparedTransaction(OperationC
     } catch (...) {
         // It is illegal for committing a transaction to fail for any reason, other than an
         // invalid command, so we crash instead.
-        LOGV2_FATAL("Caught exception during commit of unprepared transaction {} on {}: {}", "opCtx_getTxnNumber"_attr = opCtx->getTxnNumber(), "_sessionId_toBSON"_attr = _sessionId().toBSON(), "exceptionToStatus"_attr = exceptionToStatus());
+        LOGV2_FATAL(0, "Caught exception during commit of unprepared transaction {} on {}: {}", "opCtx_getTxnNumber"_attr = opCtx->getTxnNumber(), "_sessionId_toBSON"_attr = _sessionId().toBSON(), "exceptionToStatus"_attr = exceptionToStatus());
         std::terminate();
     }
 
@@ -1380,7 +1380,7 @@ void TransactionParticipant::Participant::commitPreparedTransaction(
     } catch (...) {
         // It is illegal for committing a prepared transaction to fail for any reason, other than an
         // invalid command, so we crash instead.
-        LOGV2_FATAL("Caught exception during commit of prepared transaction {} on {}: {}", "opCtx_getTxnNumber"_attr = opCtx->getTxnNumber(), "_sessionId_toBSON"_attr = _sessionId().toBSON(), "exceptionToStatus"_attr = exceptionToStatus());
+        LOGV2_FATAL(0, "Caught exception during commit of prepared transaction {} on {}: {}", "opCtx_getTxnNumber"_attr = opCtx->getTxnNumber(), "_sessionId_toBSON"_attr = _sessionId().toBSON(), "exceptionToStatus"_attr = exceptionToStatus());
         std::terminate();
     }
 }
@@ -1400,7 +1400,7 @@ void TransactionParticipant::Participant::_commitStorageTransaction(OperationCon
     opCtx->lockState()->unsetMaxLockTimeout();
 } catch (...) {
     // It is illegal for committing a storage-transaction to fail so we crash instead.
-    LOGV2_FATAL("Caught exception during commit of storage-transaction {} on {}: {}", "opCtx_getTxnNumber"_attr = opCtx->getTxnNumber(), "_sessionId_toBSON"_attr = _sessionId().toBSON(), "exceptionToStatus"_attr = exceptionToStatus());
+    LOGV2_FATAL(0, "Caught exception during commit of storage-transaction {} on {}: {}", "opCtx_getTxnNumber"_attr = opCtx->getTxnNumber(), "_sessionId_toBSON"_attr = _sessionId().toBSON(), "exceptionToStatus"_attr = exceptionToStatus());
     std::terminate();
 }
 
@@ -1511,7 +1511,7 @@ void TransactionParticipant::Participant::_abortActiveTransaction(
         } catch (...) {
             // It is illegal for aborting a transaction that must write an abort oplog entry to fail
             // after aborting the storage transaction, so we crash instead.
-            LOGV2_FATAL("Caught exception during abort of transaction that must write abort oplog entry {} on {}: {}", "opCtx_getTxnNumber"_attr = opCtx->getTxnNumber(), "_sessionId_toBSON"_attr = _sessionId().toBSON(), "exceptionToStatus"_attr = exceptionToStatus());
+            LOGV2_FATAL(0, "Caught exception during abort of transaction that must write abort oplog entry {} on {}: {}", "opCtx_getTxnNumber"_attr = opCtx->getTxnNumber(), "_sessionId_toBSON"_attr = _sessionId().toBSON(), "exceptionToStatus"_attr = exceptionToStatus());
             std::terminate();
         }
     } else {
@@ -1887,7 +1887,7 @@ void TransactionParticipant::Participant::_logSlowTransaction(
         if (shouldLog(logger::LogComponent::kTransaction, logger::LogSeverity::Debug(1)) ||
             o().transactionMetricsObserver.getSingleTransactionStats().getDuration(
                 tickSource, tickSource->getTicks()) > Milliseconds(serverGlobalParams.slowMS)) {
-            LOGV2_DEBUG({logComponentV1toV2(logger::LogComponent::kTransaction)}, "transaction {}", "_transactionInfoForLog_opCtx_lockStats_terminationCause_readConcernArgs"_attr = _transactionInfoForLog(opCtx, lockStats, terminationCause, readConcernArgs));
+            LOGV2_OPTIONS({logComponentV1toV2(logger::LogComponent::kTransaction)}, "transaction {}", "_transactionInfoForLog_opCtx_lockStats_terminationCause_readConcernArgs"_attr = _transactionInfoForLog(opCtx, lockStats, terminationCause, readConcernArgs));
         }
     }
 }

@@ -454,11 +454,11 @@ bool CurOp::completeAndLogOperation(OperationContext* opCtx,
                 if (lk.isLocked()) {
                     _debug.storageStats = opCtx->recoveryUnit()->getOperationStatistics();
                 } else {
-                    LOGV2_WARNING_DEBUG({logComponentV1toV2(component)}, "Unable to gather storage statistics for a slow "
+                    LOGV2_WARNING_OPTIONS({logComponentV1toV2(component)}, "Unable to gather storage statistics for a slow "
                                           "operation due to lock aquire timeout");
                 }
             } catch (const ExceptionForCat<ErrorCategory::Interruption>&) {
-                LOGV2_WARNING_DEBUG({logComponentV1toV2(component)}, "Unable to gather storage statistics for a slow "
+                LOGV2_WARNING_OPTIONS({logComponentV1toV2(component)}, "Unable to gather storage statistics for a slow "
                                       "operation due to interrupt");
             }
         }
@@ -469,7 +469,7 @@ bool CurOp::completeAndLogOperation(OperationContext* opCtx,
         _debug.prepareConflictDurationMillis =
             duration_cast<Milliseconds>(prepareConflictDurationMicros);
 
-        LOGV2_DEBUG({logComponentV1toV2(component)}, "{}", "_debug_report_opCtx_lockerInfo_lockerInfo_stats_nullptr"_attr = _debug.report(opCtx, (lockerInfo ? &lockerInfo->stats : nullptr)));
+        LOGV2_OPTIONS({logComponentV1toV2(component)}, "{}", "_debug_report_opCtx_lockerInfo_lockerInfo_stats_nullptr"_attr = _debug.report(opCtx, (lockerInfo ? &lockerInfo->stats : nullptr)));
     }
 
     // Return 'true' if this operation should also be added to the profiler.

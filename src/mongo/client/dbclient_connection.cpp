@@ -484,7 +484,7 @@ void DBClientConnection::_checkConnection() {
         }
     }
 
-    LOGV2_DEBUG({logComponentV1toV2(_logLevel)}, "reconnect {} ok", "toString"_attr = toString());
+    LOGV2_DEBUG(_logLevel.toInt(), "reconnect {} ok", "toString"_attr = toString());
     if (_internalAuthOnReconnect) {
         uassertStatusOK(authenticateInternalUser());
     } else {
@@ -492,7 +492,7 @@ void DBClientConnection::_checkConnection() {
             try {
                 DBClientConnection::_auth(kv.second);
             } catch (ExceptionFor<ErrorCodes::AuthenticationFailed>& ex) {
-                LOGV2_DEBUG({logComponentV1toV2(_logLevel)}, "reconnect: auth failed {}{} {}", "kv_second_auth_getSaslCommandUserDBFieldName"_attr = kv.second[auth::getSaslCommandUserDBFieldName()], "kv_second_auth_getSaslCommandUserFieldName"_attr = kv.second[auth::getSaslCommandUserFieldName()], "ex_what"_attr = ex.what());
+                LOGV2_DEBUG(_logLevel.toInt(), "reconnect: auth failed {}{} {}", "kv_second_auth_getSaslCommandUserDBFieldName"_attr = kv.second[auth::getSaslCommandUserDBFieldName()], "kv_second_auth_getSaslCommandUserFieldName"_attr = kv.second[auth::getSaslCommandUserFieldName()], "ex_what"_attr = ex.what());
             }
         }
     }

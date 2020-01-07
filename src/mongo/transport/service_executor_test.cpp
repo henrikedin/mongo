@@ -103,7 +103,7 @@ public:
         try {
             _ioContext.run_for(time.toSystemDuration());
         } catch (...) {
-            LOGV2_FATAL("Uncaught exception in reactor: {}", "exceptionToStatus"_attr = exceptionToStatus());
+            LOGV2_FATAL(50476, "Uncaught exception in reactor: {}", "exceptionToStatus"_attr = exceptionToStatus());
             fassertFailed(50476);
         }
     }

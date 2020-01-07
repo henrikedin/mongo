@@ -79,7 +79,7 @@ void initializeStorageEngine(ServiceContext* service, const StorageEngineInitFla
         if (storageGlobalParams.repair) {
             repairObserver->onRepairStarted();
         } else if (repairObserver->isIncomplete()) {
-            LOGV2_FATAL("An incomplete repair has been detected! This is likely because a repair "
+            LOGV2_FATAL(50922, "An incomplete repair has been detected! This is likely because a repair "
                    "operation unexpectedly failed before completing. MongoDB will not start up "
                    "again without --repair.");
             fassertFailedNoTrace(50922);
@@ -200,7 +200,7 @@ void createLockFile(ServiceContext* service) {
 
     if (wasUnclean) {
         if (storageGlobalParams.readOnly) {
-            LOGV2_FATAL("Attempted to open dbpath in readOnly mode, but the server was "
+            LOGV2_FATAL(34416, "Attempted to open dbpath in readOnly mode, but the server was "
                         "previously not shut down cleanly.");
             fassertFailedNoTrace(34416);
         }

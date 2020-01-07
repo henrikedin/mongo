@@ -97,7 +97,7 @@ void DeathTestBase::_doTest() {
                 case EINTR:
                     continue;
                 default:
-                    LOGV2_FATAL("Unrecoverable error while waiting for {}: {}", "child"_attr = child, "errnoWithDescription_err"_attr = errnoWithDescription(err));
+                    LOGV2_FATAL(0, "Unrecoverable error while waiting for {}: {}", "child"_attr = child, "errnoWithDescription_err"_attr = errnoWithDescription(err));
                     MONGO_UNREACHABLE;
             }
         }

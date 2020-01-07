@@ -325,7 +325,7 @@ StatusWith<std::vector<BSONObj>> MultiIndexBlock::init(OperationContext* opCtx,
             }
             index.options.fromIndexBuilder = true;
 
-            LOGV2("index build: starting on {} properties: {} using method: {}", "ns"_attr = ns, "descriptor_toString"_attr = descriptor->toString(), "_method"_attr = _method);
+            // TODO LOGV2("index build: starting on {} properties: {} using method: {}", "ns"_attr = ns, "descriptor_toString"_attr = descriptor->toString(), "_method"_attr = _method);
             if (index.bulk)
                 LOGV2("build may temporarily use up to {} megabytes of RAM", "eachIndexBuildMaxMemoryUsageBytes_1024_1024"_attr = eachIndexBuildMaxMemoryUsageBytes / 1024 / 1024);
 

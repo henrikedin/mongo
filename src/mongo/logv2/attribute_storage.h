@@ -207,6 +207,11 @@ inline CustomAttributeValue mapValue(boost::none_t val) {
     return custom;
 }
 
+template <typename T, std::enable_if_t<std::is_enum_v<T>, int> = 0>
+int mapValue(T val) {
+    return static_cast<int>(val);
+}
+
 template <typename T, std::enable_if_t<IsContainer<T>::value && !HasMappedType<T>::value, int> = 0>
 CustomAttributeValue mapValue(const T& val) {
     CustomAttributeValue custom;
@@ -224,7 +229,7 @@ CustomAttributeValue mapValue(const T& val) {
 }
 
 template <typename T,
-          std::enable_if_t<!std::is_integral_v<T> && !std::is_floating_point_v<T> &&
+          std::enable_if_t<!std::is_integral_v<T> && !std::is_floating_point_v<T> && !std::is_enum_v<T> &&
                                !IsContainer<T>::value,
                            int> = 0>
 CustomAttributeValue mapValue(const T& val) {

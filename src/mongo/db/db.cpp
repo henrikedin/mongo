@@ -309,7 +309,7 @@ ExitCode _initAndListen(int listenPort) {
     }
 
     if (kDebugBuild)
-        LOGV2_DEBUG({logComponentV1toV2(LogComponent::kControl)}, "DEBUG build (which is slower)");
+        LOGV2_OPTIONS({logComponentV1toV2(LogComponent::kControl)}, "DEBUG build (which is slower)");
 
 #if defined(_WIN32)
     VersionInfoInterface::instance().logTargetMinOS();
@@ -417,7 +417,7 @@ ExitCode _initAndListen(int listenPort) {
     try {
         nonLocalDatabases = repairDatabasesAndCheckVersion(startupOpCtx.get());
     } catch (const ExceptionFor<ErrorCodes::MustDowngrade>& error) {
-        LOGV2_FATAL_DEBUG({logComponentV1toV2(LogComponent::kControl)}, "** IMPORTANT: {}", "error_toStatus_reason"_attr = error.toStatus().reason());
+        LOGV2_FATAL_OPTIONS(0, {logComponentV1toV2(LogComponent::kControl)}, "** IMPORTANT: {}", "error_toStatus_reason"_attr = error.toStatus().reason());
         exitCleanly(EXIT_NEED_DOWNGRADE);
     }
 
@@ -933,7 +933,7 @@ void shutdownTask(const ShutdownTaskArgs& shutdownArgs) {
 
     // Shutdown the TransportLayer so that new connections aren't accepted
     if (auto tl = serviceContext->getTransportLayer()) {
-        LOGV2_DEBUG({logComponentV1toV2(LogComponent::kNetwork)}, "shutdown: going to close listening sockets...");
+        LOGV2_OPTIONS({logComponentV1toV2(LogComponent::kNetwork)}, "shutdown: going to close listening sockets...");
         tl->shutdown();
     }
 
@@ -1010,7 +1010,7 @@ void shutdownTask(const ShutdownTaskArgs& shutdownArgs) {
     // Shutdown the Service Entry Point and its sessions and give it a grace period to complete.
     if (auto sep = serviceContext->getServiceEntryPoint()) {
         if (!sep->shutdown(Seconds(10))) {
-            LOGV2_DEBUG({logComponentV1toV2(LogComponent::kNetwork)}, "Service entry point failed to shutdown within timelimit.");
+            LOGV2_OPTIONS({logComponentV1toV2(LogComponent::kNetwork)}, "Service entry point failed to shutdown within timelimit.");
         }
     }
 
@@ -1018,7 +1018,7 @@ void shutdownTask(const ShutdownTaskArgs& shutdownArgs) {
     if (auto svcExec = serviceContext->getServiceExecutor()) {
         Status status = svcExec->shutdown(Seconds(10));
         if (!status.isOK()) {
-            LOGV2_DEBUG({logComponentV1toV2(LogComponent::kNetwork)}, "Service executor failed to shutdown within timelimit: {}", "status_reason"_attr = status.reason());
+            LOGV2_OPTIONS({logComponentV1toV2(LogComponent::kNetwork)}, "Service executor failed to shutdown within timelimit: {}", "status_reason"_attr = status.reason());
         }
     }
 #endif
@@ -1047,7 +1047,7 @@ void shutdownTask(const ShutdownTaskArgs& shutdownArgs) {
     // the memory and makes leak sanitizer happy.
     ScriptEngine::dropScopeCache();
 
-    LOGV2_DEBUG({logComponentV1toV2(LogComponent::kControl)}, "now exiting");
+    LOGV2_OPTIONS({logComponentV1toV2(LogComponent::kControl)}, "now exiting");
 
     audit::logShutdown(client);
 
@@ -1063,7 +1063,7 @@ int mongoDbMain(int argc, char* argv[], char** envp) {
 
     Status status = mongo::runGlobalInitializers(argc, argv, envp);
     if (!status.isOK()) {
-        LOGV2_FATAL_DEBUG({logComponentV1toV2(LogComponent::kControl)}, "Failed global initialization: {}", "status"_attr = status);
+        LOGV2_FATAL_OPTIONS(0, {logComponentV1toV2(LogComponent::kControl)}, "Failed global initialization: {}", "status"_attr = status);
         quickExit(EXIT_FAILURE);
     }
 
@@ -1071,7 +1071,7 @@ int mongoDbMain(int argc, char* argv[], char** envp) {
         setGlobalServiceContext(ServiceContext::make());
     } catch (...) {
         auto cause = exceptionToStatus();
-        LOGV2_FATAL_DEBUG({logComponentV1toV2(LogComponent::kControl)}, "Failed to create service context: {}", "redact_cause"_attr = redact(cause));
+        LOGV2_FATAL_OPTIONS(0, {logComponentV1toV2(LogComponent::kControl)}, "Failed to create service context: {}", "redact_cause"_attr = redact(cause));
         quickExit(EXIT_FAILURE);
     }
 

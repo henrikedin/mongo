@@ -530,7 +530,7 @@ StatusWith<DurableCatalog::Entry> DurableCatalogImpl::_addEntry(OperationContext
     _catalogIdToEntryMap[res.getValue()] = {res.getValue(), ident, nss};
     opCtx->recoveryUnit()->registerChange(std::make_unique<AddIdentChange>(this, res.getValue()));
 
-    LOGV2_DEBUG(1, "stored meta data for {} @ {}", "nss_ns"_attr = nss.ns(), "res_getValue"_attr = res.getValue());
+    // TODO LOGV2_DEBUG(1, "stored meta data for {} @ {}", "nss_ns"_attr = nss.ns(), "res_getValue"_attr = res.getValue());
     return {{res.getValue(), ident, nss}};
 }
 
@@ -543,7 +543,7 @@ std::string DurableCatalogImpl::getIndexIdent(OperationContext* opCtx,
 }
 
 BSONObj DurableCatalogImpl::_findEntry(OperationContext* opCtx, RecordId catalogId) const {
-    LOGV2_DEBUG(3, "looking up metadata for: {}", "catalogId"_attr = catalogId);
+    // TODO LOGV2_DEBUG(3, "looking up metadata for: {}", "catalogId"_attr = catalogId);
     RecordData data;
     if (!_rs->findRecord(opCtx, catalogId, &data)) {
         // since the in memory meta data isn't managed with mvcc
@@ -684,7 +684,7 @@ Status DurableCatalogImpl::_removeEntry(OperationContext* opCtx, RecordId catalo
     opCtx->recoveryUnit()->registerChange(
         std::make_unique<RemoveIdentChange>(this, catalogId, it->second));
 
-    LOGV2_DEBUG(1, "deleting metadata for {} @ {}", "it_second_nss"_attr = it->second.nss, "catalogId"_attr = catalogId);
+    // TODO LOGV2_DEBUG(1, "deleting metadata for {} @ {}", "it_second_nss"_attr = it->second.nss, "catalogId"_attr = catalogId);
     _rs->deleteRecord(opCtx, catalogId);
     _catalogIdToEntryMap.erase(it);
 
@@ -772,7 +772,7 @@ StatusWith<std::string> DurableCatalogImpl::newOrphanedIdent(OperationContext* o
     _catalogIdToEntryMap[res.getValue()] = Entry(res.getValue(), ident, ns);
     opCtx->recoveryUnit()->registerChange(std::make_unique<AddIdentChange>(this, res.getValue()));
 
-    LOGV2_DEBUG(1, "stored meta data for orphaned collection {} @ {}", "ns"_attr = ns, "res_getValue"_attr = res.getValue());
+    // TODO LOGV2_DEBUG(1, "stored meta data for orphaned collection {} @ {}", "ns"_attr = ns, "res_getValue"_attr = res.getValue());
     return {ns.ns()};
 }
 

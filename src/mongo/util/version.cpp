@@ -119,7 +119,7 @@ const VersionInfoInterface& VersionInfoInterface::instance(NotEnabledAction acti
         return fallbackVersionInfo;
     }
 
-    LOGV2_FATAL("Terminating because valid version info has not been configured");
+    LOGV2_FATAL(40278, "Terminating because valid version info has not been configured");
     fassertFailed(40278);
 }
 

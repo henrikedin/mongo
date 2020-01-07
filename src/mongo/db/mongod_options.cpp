@@ -133,7 +133,7 @@ bool handlePreValidationMongodOptions(const moe::Environment& params,
     }
 
     if (params.count("master") || params.count("slave")) {
-        LOGV2_FATAL("Master/slave replication is no longer supported");
+        LOGV2_ERROR("Master/slave replication is no longer supported");
         return false;
     }
 

@@ -620,7 +620,7 @@ ServiceStateMachine::State ServiceStateMachine::state() {
 
 void ServiceStateMachine::_terminateAndLogIfError(Status status) {
     if (!status.isOK()) {
-        LOGV2_WARNING_DEBUG({logComponentV1toV2(logger::LogComponent::kExecutor)}, "Terminating session due to error: {}", "status"_attr = status);
+        LOGV2_WARNING_OPTIONS({logComponentV1toV2(logger::LogComponent::kExecutor)}, "Terminating session due to error: {}", "status"_attr = status);
         terminate();
     }
 }

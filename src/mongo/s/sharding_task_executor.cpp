@@ -185,7 +185,7 @@ StatusWith<TaskExecutor::CallbackHandle> ShardingTaskExecutor::scheduleRemoteCom
             }
 
             if (isMongos() && args.response.status == ErrorCodes::IncompatibleWithUpgradedServer) {
-                LOGV2_FATAL("This mongos server must be upgraded. It is attempting to communicate "
+                LOGV2_FATAL(50710, "This mongos server must be upgraded. It is attempting to communicate "
                             "with "
                             "an upgraded cluster with which it is incompatible. Error: '{}' Crashing in order to bring attention to the incompatibility, rather "
                             "than erroring endlessly.", "args_response_status_toString"_attr = args.response.status.toString());
@@ -227,7 +227,7 @@ StatusWith<TaskExecutor::CallbackHandle> ShardingTaskExecutor::scheduleRemoteCom
 
                 auto shardConn = ConnectionString::parse(target.toString());
                 if (!shardConn.isOK()) {
-                    LOGV2_FATAL("got bad host string in saveGLEStats: {}", "target"_attr = target);
+                    LOGV2_ERROR("got bad host string in saveGLEStats: {}", "target"_attr = target);
                 }
 
                 clusterGLE->addHostOpTime(shardConn.getValue(),

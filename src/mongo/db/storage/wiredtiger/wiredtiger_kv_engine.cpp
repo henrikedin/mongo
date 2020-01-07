@@ -887,12 +887,12 @@ void WiredTigerKVEngine::_openWiredTiger(const std::string& path, const std::str
         LOGV2_WARNING("WiredTiger metadata corruption detected");
 
         if (!_inRepairMode) {
-            LOGV2_FATAL("{}", "kWTRepairMsg"_attr = kWTRepairMsg);
+            LOGV2_FATAL(50944, "{}", "kWTRepairMsg"_attr = kWTRepairMsg);
             fassertFailedNoTrace(50944);
         }
     }
 
-    LOGV2_FATAL("Reason: {}", "wtRCToStatus_ret_reason"_attr = wtRCToStatus(ret).reason());
+    LOGV2_ERROR("Reason: {}", "wtRCToStatus_ret_reason"_attr = wtRCToStatus(ret).reason());
     if (!_inRepairMode) {
         fassertFailedNoTrace(28595);
     }
@@ -908,7 +908,7 @@ void WiredTigerKVEngine::_openWiredTiger(const std::string& path, const std::str
         return;
     }
 
-    LOGV2_FATAL("{}", "Failed_to_salvage_WiredTiger_metadata_wtRCToStatus_ret_reason"_attr = "Failed to salvage WiredTiger metadata: " + wtRCToStatus(ret).reason());
+    LOGV2_FATAL(50947, "{}", "Failed_to_salvage_WiredTiger_metadata_wtRCToStatus_ret_reason"_attr = "Failed to salvage WiredTiger metadata: " + wtRCToStatus(ret).reason());
     fassertFailedNoTrace(50947);
 }
 
@@ -1845,7 +1845,7 @@ bool WiredTigerKVEngine::_canRecoverToStableTimestamp() const {
 
 StatusWith<Timestamp> WiredTigerKVEngine::recoverToStableTimestamp(OperationContext* opCtx) {
     if (!supportsRecoverToStableTimestamp()) {
-        LOGV2_FATAL("WiredTiger is configured to not support recover to a stable timestamp");
+        LOGV2_FATAL(50665, "WiredTiger is configured to not support recover to a stable timestamp");
         fassertFailed(50665);
     }
 
@@ -1918,7 +1918,7 @@ Timestamp WiredTigerKVEngine::getOldestOpenReadTimestamp() const {
 
 boost::optional<Timestamp> WiredTigerKVEngine::getRecoveryTimestamp() const {
     if (!supportsRecoveryTimestamp()) {
-        LOGV2_FATAL("WiredTiger is configured to not support providing a recovery timestamp");
+        LOGV2_FATAL(50745, "WiredTiger is configured to not support providing a recovery timestamp");
         fassertFailed(50745);
     }
 

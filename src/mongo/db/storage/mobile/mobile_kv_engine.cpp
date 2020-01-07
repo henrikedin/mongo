@@ -81,13 +81,13 @@ MobileKVEngine::MobileKVEngine(const std::string& path,
     auto session = _sessionPool->getSession(nullptr);
 
     fassert(37001, queryPragmaStr(*session, "journal_mode"_sd) == "wal");
-    LOGV2_DEBUG({logComponentV1toV2(MOBILE_LOG_LEVEL_LOW)}, "MobileSE: Confirmed SQLite database opened in WAL mode");
+    LOGV2_DEBUG(MOBILE_LOG_LEVEL_LOW, "MobileSE: Confirmed SQLite database opened in WAL mode");
 
     fassert(50869, queryPragmaInt(*session, "synchronous"_sd) == _options.durabilityLevel);
-    LOGV2_DEBUG({logComponentV1toV2(MOBILE_LOG_LEVEL_LOW)}, "MobileSE: Confirmed SQLite database has synchronous set to: {}", "_options_durabilityLevel"_attr = _options.durabilityLevel);
+    LOGV2_DEBUG(MOBILE_LOG_LEVEL_LOW, "MobileSE: Confirmed SQLite database has synchronous set to: {}", "_options_durabilityLevel"_attr = _options.durabilityLevel);
 
     fassert(50868, queryPragmaInt(*session, "fullfsync"_sd) == 1);
-    LOGV2_DEBUG({logComponentV1toV2(MOBILE_LOG_LEVEL_LOW)}, "MobileSE: Confirmed SQLite database is set to fsync with "
+    LOGV2_DEBUG(MOBILE_LOG_LEVEL_LOW, "MobileSE: Confirmed SQLite database is set to fsync with "
                                  "F_FULLFSYNC if the platform supports it (currently only darwin "
                                  "kernels). Value: 1");
 
@@ -109,7 +109,7 @@ void MobileKVEngine::cleanShutdown() {
         if (!_options.disableVacuumJob)
             maybeVacuum(Client::getCurrent(), Date_t());
     } catch (const std::exception& e) {
-        LOGV2_DEBUG({logComponentV1toV2(MOBILE_LOG_LEVEL_LOW)}, "MobileSE: Exception while doing vacuum at shutdown, surpressing. {}", "e_what"_attr = e.what());
+        LOGV2_DEBUG(MOBILE_LOG_LEVEL_LOW, "MobileSE: Exception while doing vacuum at shutdown, surpressing. {}", "e_what"_attr = e.what());
     }
 }
 
@@ -138,10 +138,10 @@ void MobileKVEngine::maybeVacuum(Client* client, Date_t deadline) {
     }
 
     constexpr int kPageSize = 4096;  // SQLite default
-    LOGV2_DEBUG({logComponentV1toV2(MOBILE_LOG_LEVEL_LOW)}, "MobileSE: Evaluating if we need to vacuum. page_count = {}, freelist_count = {}", "pageCount"_attr = pageCount, "freelistCount"_attr = freelistCount);
+    LOGV2_DEBUG(MOBILE_LOG_LEVEL_LOW, "MobileSE: Evaluating if we need to vacuum. page_count = {}, freelist_count = {}", "pageCount"_attr = pageCount, "freelistCount"_attr = freelistCount);
     if ((pageCount > 0 && (float)freelistCount / pageCount >= _options.vacuumFreePageRatio) ||
         (freelistCount * kPageSize >= _options.vacuumFreeSizeMB * 1024 * 1024)) {
-        LOGV2_DEBUG({logComponentV1toV2(MOBILE_LOG_LEVEL_LOW)}, "MobileSE: Performing incremental vacuum");
+        LOGV2_DEBUG(MOBILE_LOG_LEVEL_LOW, "MobileSE: Performing incremental vacuum");
         // Data will we moved on the file system, take an exclusive lock
         Lock::GlobalLock lk(opCtx, MODE_X, deadline, Lock::InterruptBehavior::kThrow);
         if (!lk.isLocked())
@@ -251,7 +251,7 @@ Status MobileKVEngine::dropIdent(OperationContext* opCtx, StringData ident) {
     } catch (const WriteConflictException&) {
         // It is possible that this drop fails because of transaction running in parallel.
         // We pretend that it succeeded, queue it for now and keep retrying later.
-        LOGV2_DEBUG({logComponentV1toV2(MOBILE_LOG_LEVEL_LOW)}, "MobileSE: Caught WriteConflictException while dropping table, "
+        LOGV2_DEBUG(MOBILE_LOG_LEVEL_LOW, "MobileSE: Caught WriteConflictException while dropping table, "
                "queuing to retry later");
         MobileRecoveryUnit::get(opCtx)->enqueueFailedDrop(dropQuery);
     }

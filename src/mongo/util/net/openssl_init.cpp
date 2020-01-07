@@ -149,12 +149,12 @@ void setupFIPS() {
 #if defined(MONGO_CONFIG_HAVE_FIPS_MODE_SET)
     int status = FIPS_mode_set(1);
     if (!status) {
-        LOGV2_FATAL("can't activate FIPS mode: {}", "SSLManagerInterface_getSSLErrorMessage_ERR_get_error"_attr = SSLManagerInterface::getSSLErrorMessage(ERR_get_error()));
+        LOGV2_FATAL(16703, "can't activate FIPS mode: {}", "SSLManagerInterface_getSSLErrorMessage_ERR_get_error"_attr = SSLManagerInterface::getSSLErrorMessage(ERR_get_error()));
         fassertFailedNoTrace(16703);
     }
     LOGV2("FIPS 140-2 mode activated");
 #else
-    LOGV2_FATAL("this version of mongodb was not compiled with FIPS support");
+    LOGV2_FATAL(17089, "this version of mongodb was not compiled with FIPS support");
     fassertFailedNoTrace(17089);
 #endif
 }

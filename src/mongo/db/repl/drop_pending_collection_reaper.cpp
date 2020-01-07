@@ -90,7 +90,7 @@ void DropPendingCollectionReaper::addDropPendingNamespace(
     };
 
     if (std::find_if(lowerBound, upperBound, matcher) != upperBound) {
-        LOGV2_FATAL("Failed to add drop-pending collection {} with drop optime {}: duplicate optime and namespace pair.", "dropPendingNamespace"_attr = dropPendingNamespace, "dropOpTime"_attr = dropOpTime);
+        LOGV2_FATAL(40448, "Failed to add drop-pending collection {} with drop optime {}: duplicate optime and namespace pair.", "dropPendingNamespace"_attr = dropPendingNamespace, "dropOpTime"_attr = dropOpTime);
         fassertFailedNoTrace(40448);
     }
 

@@ -62,11 +62,11 @@ ThreadPool::Options cleanUpOptions(ThreadPool::Options&& options) {
         options.threadNamePrefix = str::stream() << options.poolName << '-';
     }
     if (options.maxThreads < 1) {
-        LOGV2_FATAL("Tried to create pool {} with a maximum of {} but the maximum must be at least 1", "options_poolName"_attr = options.poolName, "options_maxThreads"_attr = options.maxThreads);
+        LOGV2_FATAL(28702, "Tried to create pool {} with a maximum of {} but the maximum must be at least 1", "options_poolName"_attr = options.poolName, "options_maxThreads"_attr = options.maxThreads);
         fassertFailed(28702);
     }
     if (options.minThreads > options.maxThreads) {
-        LOGV2_FATAL("Tried to create pool {} with a minimum of {} which is more than the configured maximum of {}", "options_poolName"_attr = options.poolName, "options_minThreads"_attr = options.minThreads, "options_maxThreads"_attr = options.maxThreads);
+        LOGV2_FATAL(28686, "Tried to create pool {} with a minimum of {} which is more than the configured maximum of {}", "options_poolName"_attr = options.poolName, "options_minThreads"_attr = options.minThreads, "options_maxThreads"_attr = options.maxThreads);
         fassertFailed(28686);
     }
     return {std::move(options)};
@@ -84,7 +84,7 @@ ThreadPool::~ThreadPool() {
     }
 
     if (shutdownComplete != _state) {
-        LOGV2_FATAL("Failed to shutdown pool during destruction");
+        LOGV2_FATAL(28704, "Failed to shutdown pool during destruction");
         fassertFailed(28704);
     }
     invariant(_threads.empty());
@@ -94,7 +94,7 @@ ThreadPool::~ThreadPool() {
 void ThreadPool::startup() {
     stdx::lock_guard<Latch> lk(_mutex);
     if (_state != preStart) {
-        LOGV2_FATAL("Attempting to start pool {}, but it has already started", "_options_poolName"_attr = _options.poolName);
+        LOGV2_FATAL(28698, "Attempting to start pool {}, but it has already started", "_options_poolName"_attr = _options.poolName);
         fassertFailed(28698);
     }
     _setState_inlock(running);
@@ -142,7 +142,7 @@ void ThreadPool::_join_inlock(stdx::unique_lock<Latch>* lk) {
                 return true;
             case joining:
             case shutdownComplete:
-                LOGV2_FATAL("Attempted to join pool {} more than once", "_options_poolName"_attr = _options.poolName);
+                LOGV2_FATAL(28700, "Attempted to join pool {} more than once", "_options_poolName"_attr = _options.poolName);
                 fassertFailed(28700);
         }
         MONGO_UNREACHABLE;
@@ -305,7 +305,7 @@ void ThreadPool::_consumeTasks() {
     --_numIdleThreads;
 
     if (_state != running) {
-        LOGV2_FATAL("State of pool {} is {}, but expected {}", "_options_poolName"_attr = _options.poolName, "static_cast_int32_t__state"_attr = static_cast<int32_t>(_state), "static_cast_int32_t_running"_attr = static_cast<int32_t>(running));
+        LOGV2_FATAL(28701, "State of pool {} is {}, but expected {}", "_options_poolName"_attr = _options.poolName, "static_cast_int32_t__state"_attr = static_cast<int32_t>(_state), "static_cast_int32_t_running"_attr = static_cast<int32_t>(running));
         fassertFailedNoTrace(28701);
     }
 

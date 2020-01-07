@@ -945,7 +945,7 @@ void TransportLayerASIO::_runListener() noexcept {
         asio::error_code ec;
         acceptor.second.listen(serverGlobalParams.listenBacklog, ec);
         if (ec) {
-            LOGV2_FATAL("Error listening for new connections on {}: {}", "acceptor_first"_attr = acceptor.first, "ec_message"_attr = ec.message());
+            LOGV2_FATAL(31339, "Error listening for new connections on {}: {}", "acceptor_first"_attr = acceptor.first, "ec_message"_attr = ec.message());
             fassertFailed(31339);
         }
 

@@ -126,11 +126,11 @@ void generateLegacyQueryErrorResponse(const AssertionException& exception,
                                       Message* response) {
     curop->debug().errInfo = exception.toStatus();
 
-    LOGV2_DEBUG({logComponentV1toV2(LogComponent::kQuery)}, "assertion {} ns:{} query:{}", "exception_toString"_attr = exception.toString(), "queryMessage_ns"_attr = queryMessage.ns, "queryMessage_query_valid_BSONVersion_kLatest_redact_queryMessage_query_query_object_is_corrupt"_attr = (queryMessage.query.valid(BSONVersion::kLatest)
+    LOGV2_OPTIONS({logComponentV1toV2(LogComponent::kQuery)}, "assertion {} ns:{} query:{}", "exception_toString"_attr = exception.toString(), "queryMessage_ns"_attr = queryMessage.ns, "queryMessage_query_valid_BSONVersion_kLatest_redact_queryMessage_query_query_object_is_corrupt"_attr = (queryMessage.query.valid(BSONVersion::kLatest)
                                       ? redact(queryMessage.query)
                                       : "query object is corrupt"));
     if (queryMessage.ntoskip || queryMessage.ntoreturn) {
-        LOGV2_DEBUG({logComponentV1toV2(LogComponent::kQuery)}, " ntoskip:{} ntoreturn:{}", "queryMessage_ntoskip"_attr = queryMessage.ntoskip, "queryMessage_ntoreturn"_attr = queryMessage.ntoreturn);
+        LOGV2_OPTIONS({logComponentV1toV2(LogComponent::kQuery)}, " ntoskip:{} ntoreturn:{}", "queryMessage_ntoskip"_attr = queryMessage.ntoskip, "queryMessage_ntoreturn"_attr = queryMessage.ntoreturn);
     }
 
     BSONObjBuilder err;
@@ -145,7 +145,7 @@ void generateLegacyQueryErrorResponse(const AssertionException& exception,
 
     const bool isStaleConfig = exception.code() == ErrorCodes::StaleConfig;
     if (isStaleConfig) {
-        LOGV2_DEBUG({logComponentV1toV2(LogComponent::kQuery)}, "stale version detected during query over {} : {}", "queryMessage_ns"_attr = queryMessage.ns, "errObj"_attr = errObj);
+        LOGV2_OPTIONS({logComponentV1toV2(LogComponent::kQuery)}, "stale version detected during query over {} : {}", "queryMessage_ns"_attr = queryMessage.ns, "errObj"_attr = errObj);
     }
 
     BufBuilder bb;
@@ -434,7 +434,7 @@ void _abortUnpreparedOrStashPreparedTransaction(
             txnParticipant->abortTransaction(opCtx);
     } catch (...) {
         // It is illegal for this to throw so we catch and log this here for diagnosability.
-        LOGV2_FATAL("Caught exception during transaction {}{}{}: {}", "opCtx_getTxnNumber"_attr = opCtx->getTxnNumber(), "isPrepared_stash_abort"_attr = (isPrepared ? " stash " : " abort "), "opCtx_getLogicalSessionId_toBSON"_attr = opCtx->getLogicalSessionId()->toBSON(), "exceptionToStatus"_attr = exceptionToStatus());
+        LOGV2_FATAL(0, "Caught exception during transaction {}{}{}: {}", "opCtx_getTxnNumber"_attr = opCtx->getTxnNumber(), "isPrepared_stash_abort"_attr = (isPrepared ? " stash " : " abort "), "opCtx_getLogicalSessionId_toBSON"_attr = opCtx->getLogicalSessionId()->toBSON(), "exceptionToStatus"_attr = exceptionToStatus());
         std::terminate();
     }
 }
@@ -1233,7 +1233,7 @@ void receivedKillCursors(OperationContext* opCtx, const Message& m) {
     int found = runOpKillCursors(opCtx, static_cast<size_t>(n), cursorArray);
 
     if (shouldLog(logger::LogSeverity::Debug(1)) || found != n) {
-        LOGV2_DEBUG({logComponentV1toV2(found == n ? 1 : 0)}, "killcursors: found {} of {}", "found"_attr = found, "n"_attr = n);
+        LOGV2_DEBUG(found == n ? 1 : 0, "killcursors: found {} of {}", "found"_attr = found, "n"_attr = n);
     }
 }
 

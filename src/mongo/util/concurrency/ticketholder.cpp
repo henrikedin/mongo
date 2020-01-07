@@ -48,7 +48,7 @@ namespace {
  * Accepts an errno code, prints its error message, and exits.
  */
 void failWithErrno(int err) {
-    LOGV2_FATAL("error in Ticketholder: {}", "errnoWithDescription_err"_attr = errnoWithDescription(err));
+    LOGV2_FATAL(28604, "error in Ticketholder: {}", "errnoWithDescription_err"_attr = errnoWithDescription(err));
     fassertFailed(28604);
 }
 
