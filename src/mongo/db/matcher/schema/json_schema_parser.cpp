@@ -60,6 +60,7 @@
 #include "mongo/db/matcher/schema/expression_internal_schema_xor.h"
 #include "mongo/db/matcher/schema/json_pointer.h"
 #include "mongo/logger/log_component_settings.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/log.h"
 #include "mongo/util/string_map.h"
 

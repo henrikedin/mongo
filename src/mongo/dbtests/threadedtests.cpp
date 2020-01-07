@@ -38,6 +38,7 @@
 #include "mongo/config.h"
 #include "mongo/db/client.h"
 #include "mongo/dbtests/dbtests.h"
+#include "mongo/logv2/log.h"
 #include "mongo/platform/atomic_word.h"
 #include "mongo/platform/bits.h"
 #include "mongo/stdx/thread.h"

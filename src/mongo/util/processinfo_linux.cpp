@@ -54,6 +54,7 @@
 #include <boost/none.hpp>
 #include <boost/optional.hpp>
 
+#include "mongo/logv2/log.h"
 #include "mongo/util/file.h"
 #include "mongo/util/log.h"
 

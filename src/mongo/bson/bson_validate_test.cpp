@@ -34,6 +34,7 @@
 #include "mongo/base/data_view.h"
 #include "mongo/bson/bson_validate.h"
 #include "mongo/db/jsobj.h"
+#include "mongo/logv2/log.h"
 #include "mongo/platform/random.h"
 #include "mongo/unittest/unittest.h"
 #include "mongo/util/log.h"

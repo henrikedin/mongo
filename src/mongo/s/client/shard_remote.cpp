@@ -47,6 +47,7 @@
 #include "mongo/db/query/query_request.h"
 #include "mongo/db/repl/read_concern_args.h"
 #include "mongo/executor/task_executor_pool.h"
+#include "mongo/logv2/log.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/rpc/metadata/repl_set_metadata.h"
 #include "mongo/rpc/metadata/tracking_metadata.h"

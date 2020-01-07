@@ -36,6 +36,7 @@
 #include "mongo/base/initializer.h"
 #include "mongo/config.h"
 #include "mongo/db/service_context.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/log.h"
 #include "mongo/util/signal_handlers_synchronous.h"
 

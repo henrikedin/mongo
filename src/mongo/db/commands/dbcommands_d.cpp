@@ -86,6 +86,7 @@
 #include "mongo/db/repl/replication_coordinator.h"
 #include "mongo/db/stats/storage_stats.h"
 #include "mongo/db/write_concern.h"
+#include "mongo/logv2/log.h"
 #include "mongo/s/stale_exception.h"
 #include "mongo/scripting/engine.h"
 #include "mongo/util/fail_point.h"

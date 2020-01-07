@@ -37,6 +37,7 @@
 #include "mongo/db/logical_clock.h"
 #include "mongo/db/query/collation/collator_factory_interface.h"
 #include "mongo/db/repl/optime_with.h"
+#include "mongo/logv2/log.h"
 #include "mongo/s/catalog/type_collection.h"
 #include "mongo/s/catalog/type_database.h"
 #include "mongo/s/client/shard_registry.h"

@@ -48,6 +48,7 @@
 #include "mongo/bson/simple_bsonobj_comparator.h"
 #include "mongo/config.h"
 #include "mongo/db/storage/key_string.h"
+#include "mongo/logv2/log.h"
 #include "mongo/platform/decimal128.h"
 #include "mongo/stdx/future.h"
 #include "mongo/unittest/death_test.h"

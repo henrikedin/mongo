@@ -87,6 +87,7 @@
 #include "mongo/db/write_concern_options.h"
 #include "mongo/executor/connection_pool_stats.h"
 #include "mongo/executor/network_interface.h"
+#include "mongo/logv2/log.h"
 #include "mongo/platform/mutex.h"
 #include "mongo/rpc/metadata/oplog_query_metadata.h"
 #include "mongo/rpc/metadata/repl_set_metadata.h"

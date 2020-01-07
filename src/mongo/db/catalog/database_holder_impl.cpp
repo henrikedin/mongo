@@ -44,6 +44,7 @@
 #include "mongo/db/service_context.h"
 #include "mongo/db/stats/top.h"
 #include "mongo/db/storage/storage_engine.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/log.h"
 
 namespace mongo {

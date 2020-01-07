@@ -48,6 +48,7 @@
 #include "mongo/db/storage/mobile/mobile_session.h"
 #include "mongo/db/storage/mobile/mobile_sqlite_statement.h"
 #include "mongo/db/storage/mobile/mobile_util.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/log.h"
 #include "mongo/util/scopeguard.h"
 

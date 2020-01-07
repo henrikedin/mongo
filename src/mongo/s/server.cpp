@@ -69,6 +69,7 @@
 #include "mongo/db/startup_warnings_common.h"
 #include "mongo/db/wire_version.h"
 #include "mongo/executor/task_executor_pool.h"
+#include "mongo/logv2/log.h"
 #include "mongo/platform/process_id.h"
 #include "mongo/rpc/metadata/egress_metadata_hook_list.h"
 #include "mongo/s/balancer_configuration.h"

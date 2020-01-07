@@ -36,6 +36,7 @@
 #include "mongo/db/client.h"
 #include "mongo/db/read_write_concern_defaults.h"
 #include "mongo/db/server_options.h"
+#include "mongo/logv2/log.h"
 #include "mongo/s/balancer_configuration.h"
 #include "mongo/s/catalog/type_mongos.h"
 #include "mongo/s/grid.h"

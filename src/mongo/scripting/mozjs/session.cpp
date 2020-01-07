@@ -33,6 +33,7 @@
 
 #include "mongo/scripting/mozjs/session.h"
 
+#include "mongo/logv2/log.h"
 #include "mongo/scripting/mozjs/bson.h"
 #include "mongo/scripting/mozjs/implscope.h"
 #include "mongo/scripting/mozjs/mongo.h"

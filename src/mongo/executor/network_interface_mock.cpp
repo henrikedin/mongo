@@ -39,6 +39,7 @@
 
 #include "mongo/executor/connection_pool_stats.h"
 #include "mongo/executor/network_connection_hook.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/log.h"
 #include "mongo/util/str.h"
 #include "mongo/util/time_support.h"

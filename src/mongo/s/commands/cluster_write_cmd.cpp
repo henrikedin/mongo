@@ -43,6 +43,7 @@
 #include "mongo/db/stats/counters.h"
 #include "mongo/db/storage/duplicate_key_error_info.h"
 #include "mongo/executor/task_executor_pool.h"
+#include "mongo/logv2/log.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/s/client/num_hosts_targeted_metrics.h"
 #include "mongo/s/client/shard_registry.h"

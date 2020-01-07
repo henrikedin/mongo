@@ -40,6 +40,7 @@
 #include "mongo/db/dbmessage.h"
 #include "mongo/db/stats/counters.h"
 #include "mongo/db/traffic_recorder.h"
+#include "mongo/logv2/log.h"
 #include "mongo/rpc/message.h"
 #include "mongo/rpc/op_msg.h"
 #include "mongo/transport/message_compressor_manager.h"

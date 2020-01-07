@@ -42,6 +42,7 @@
 
 #include <boost/filesystem/path.hpp>
 
+#include "mongo/logv2/log.h"
 #include "mongo/util/file.h"
 #include "mongo/util/log.h"
 

@@ -62,6 +62,7 @@
 #include "mongo/db/service_context.h"
 #include "mongo/db/storage/storage_engine.h"
 #include "mongo/executor/network_interface.h"
+#include "mongo/logv2/log.h"
 #include "mongo/transport/session.h"
 #include "mongo/transport/transport_layer.h"
 #include "mongo/util/decimal_counter.h"

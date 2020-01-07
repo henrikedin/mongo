@@ -35,6 +35,7 @@
 #include "mongo/base/init.h"
 #include "mongo/db/auth/sasl_options.h"
 #include "mongo/db/auth/user.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/icu.h"
 #include "mongo/util/log.h"
 #include "mongo/util/net/socket_utils.h"

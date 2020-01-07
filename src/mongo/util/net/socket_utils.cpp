@@ -54,6 +54,7 @@
 #endif
 
 #include "mongo/db/server_options.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/concurrency/value.h"
 #include "mongo/util/errno_util.h"
 #include "mongo/util/log.h"

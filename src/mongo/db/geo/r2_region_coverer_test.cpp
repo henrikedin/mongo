@@ -38,6 +38,7 @@
 #include "mongo/base/init.h"
 #include "mongo/bson/bsonmisc.h"
 #include "mongo/db/geo/geometry_container.h"
+#include "mongo/logv2/log.h"
 #include "mongo/platform/random.h"
 #include "mongo/unittest/unittest.h"
 #include "mongo/util/log.h"

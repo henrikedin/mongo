@@ -66,6 +66,7 @@ std::string nextFileName() {
 
 // Need access to internal classes
 #include "mongo/db/sorter/sorter.cpp"
+#include "mongo/logv2/log.h"
 
 namespace mongo {
 

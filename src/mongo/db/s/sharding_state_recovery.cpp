@@ -50,6 +50,7 @@
 #include "mongo/db/s/sharding_state.h"
 #include "mongo/db/write_concern.h"
 #include "mongo/db/write_concern_options.h"
+#include "mongo/logv2/log.h"
 #include "mongo/s/client/shard_registry.h"
 #include "mongo/s/grid.h"
 #include "mongo/util/log.h"

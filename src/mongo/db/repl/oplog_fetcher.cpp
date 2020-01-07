@@ -39,6 +39,7 @@
 #include "mongo/db/matcher/matcher.h"
 #include "mongo/db/repl/replication_coordinator.h"
 #include "mongo/db/stats/timer_stats.h"
+#include "mongo/logv2/log.h"
 #include "mongo/rpc/metadata/oplog_query_metadata.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/fail_point.h"

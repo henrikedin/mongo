@@ -47,6 +47,7 @@
 #include "mongo/db/auth/sasl_mechanism_registry.h"
 #include "mongo/db/auth/sasl_scram_server_conversation.h"
 #include "mongo/db/service_context.h"
+#include "mongo/logv2/log.h"
 #include "mongo/unittest/unittest.h"
 #include "mongo/util/base64.h"
 #include "mongo/util/log.h"

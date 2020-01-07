@@ -50,6 +50,7 @@
 #include "mongo/db/repl/replication_coordinator.h"
 #include "mongo/db/storage/storage_engine.h"
 #include "mongo/db/transaction_participant.h"
+#include "mongo/logv2/log.h"
 #include "mongo/platform/mutex.h"
 #include "mongo/util/log.h"
 #include "mongo/util/md5.hpp"

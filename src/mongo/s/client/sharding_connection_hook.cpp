@@ -38,6 +38,7 @@
 #include "mongo/bson/util/bson_extract.h"
 #include "mongo/client/authenticate.h"
 #include "mongo/db/client.h"
+#include "mongo/logv2/log.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/s/client/version_manager.h"
 #include "mongo/util/log.h"

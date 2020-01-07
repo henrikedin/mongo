@@ -48,6 +48,7 @@
 #include "mongo/db/s/op_observer_sharding_impl.h"
 #include "mongo/dbtests/dbtests.h"
 #include "mongo/logger/logger.h"
+#include "mongo/logv2/log.h"
 #include "mongo/transport/transport_layer_asio.h"
 #include "mongo/util/log.h"
 

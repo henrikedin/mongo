@@ -51,6 +51,7 @@
 #include "mongo/db/query/planner_ixselect.h"
 #include "mongo/db/query/query_knobs_gen.h"
 #include "mongo/db/query/query_solution.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/hex.h"
 #include "mongo/util/log.h"

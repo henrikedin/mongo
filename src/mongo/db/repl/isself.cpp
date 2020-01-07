@@ -44,6 +44,7 @@
 #include "mongo/db/auth/privilege.h"
 #include "mongo/db/commands.h"
 #include "mongo/db/service_context.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/log.h"
 #include "mongo/util/net/socket_utils.h"
 #include "mongo/util/scopeguard.h"

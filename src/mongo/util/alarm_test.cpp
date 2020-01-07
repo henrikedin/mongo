@@ -30,6 +30,7 @@
 
 #include "mongo/platform/basic.h"
 
+#include "mongo/logv2/log.h"
 #include "mongo/stdx/chrono.h"
 #include "mongo/unittest/unittest.h"
 #include "mongo/util/alarm.h"

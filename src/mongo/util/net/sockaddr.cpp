@@ -54,6 +54,7 @@
 #endif
 
 #include "mongo/bson/util/builder.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/itoa.h"
 #include "mongo/util/log.h"
 

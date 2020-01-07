@@ -56,6 +56,7 @@
 #include "mongo/db/wire_version.h"
 #include "mongo/executor/remote_command_request.h"
 #include "mongo/executor/remote_command_response.h"
+#include "mongo/logv2/log.h"
 #include "mongo/platform/mutex.h"
 #include "mongo/rpc/factory.h"
 #include "mongo/rpc/get_status_from_command_result.h"

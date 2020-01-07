@@ -57,6 +57,7 @@
 
 #include "mongo/config.h"
 #include "mongo/db/server_options.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/background.h"
 #include "mongo/util/concurrency/value.h"
 #include "mongo/util/debug_util.h"

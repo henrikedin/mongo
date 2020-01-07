@@ -53,6 +53,7 @@
 #include "mongo/db/operation_context.h"
 #include "mongo/db/pipeline/aggregation_request.h"
 #include "mongo/db/pipeline/lite_parsed_pipeline.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/log.h"
 #include "mongo/util/str.h"

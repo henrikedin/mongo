@@ -47,6 +47,7 @@
 #include "mongo/db/service_context.h"
 #include "mongo/db/storage/record_store.h"
 #include "mongo/logger/logstream_builder.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/exit.h"
 #include "mongo/util/log.h"

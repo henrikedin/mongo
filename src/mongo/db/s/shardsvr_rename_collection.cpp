@@ -39,6 +39,7 @@
 #include "mongo/db/repl/repl_client_info.h"
 #include "mongo/db/repl/replication_coordinator.h"
 #include "mongo/db/s/active_rename_collection_registry.h"
+#include "mongo/logv2/log.h"
 #include "mongo/s/grid.h"
 #include "mongo/s/request_types/rename_collection_gen.h"
 #include "mongo/util/log.h"

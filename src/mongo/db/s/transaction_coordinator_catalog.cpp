@@ -33,6 +33,7 @@
 
 #include "mongo/db/s/transaction_coordinator_catalog.h"
 
+#include "mongo/logv2/log.h"
 #include "mongo/s/grid.h"
 #include "mongo/util/log.h"
 

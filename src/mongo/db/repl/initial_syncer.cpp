@@ -63,6 +63,7 @@
 #include "mongo/db/session_txn_record_gen.h"
 #include "mongo/executor/task_executor.h"
 #include "mongo/executor/thread_pool_task_executor.h"
+#include "mongo/logv2/log.h"
 #include "mongo/rpc/metadata/repl_set_metadata.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/destructor_guard.h"

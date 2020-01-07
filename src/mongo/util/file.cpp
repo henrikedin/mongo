@@ -43,6 +43,7 @@
 #include <sys/types.h>
 #endif
 
+#include "mongo/logv2/log.h"
 #include "mongo/platform/basic.h"
 #include "mongo/util/allocator.h"
 #include "mongo/util/assert_util.h"

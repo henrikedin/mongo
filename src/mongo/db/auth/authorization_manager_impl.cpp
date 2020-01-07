@@ -62,6 +62,7 @@
 #include "mongo/db/global_settings.h"
 #include "mongo/db/jsobj.h"
 #include "mongo/db/mongod_options.h"
+#include "mongo/logv2/log.h"
 #include "mongo/platform/compiler.h"
 #include "mongo/platform/mutex.h"
 #include "mongo/stdx/unordered_map.h"

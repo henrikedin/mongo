@@ -42,6 +42,7 @@
 #include "mongo/db/auth/user_cache_invalidator_job_parameters_gen.h"
 #include "mongo/db/client.h"
 #include "mongo/db/commands.h"
+#include "mongo/logv2/log.h"
 #include "mongo/platform/compiler.h"
 #include "mongo/platform/mutex.h"
 #include "mongo/rpc/get_status_from_command_result.h"

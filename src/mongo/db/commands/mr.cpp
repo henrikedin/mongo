@@ -65,6 +65,7 @@
 #include "mongo/db/server_options.h"
 #include "mongo/db/service_context.h"
 #include "mongo/db/storage/durable_catalog.h"
+#include "mongo/logv2/log.h"
 #include "mongo/platform/mutex.h"
 #include "mongo/s/catalog_cache.h"
 #include "mongo/s/client/parallel.h"

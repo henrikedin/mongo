@@ -37,6 +37,7 @@
 #include "mongo/db/server_options.h"
 #include "mongo/executor/task_executor.h"
 #include "mongo/executor/task_executor_pool.h"
+#include "mongo/logv2/log.h"
 #include "mongo/s/balancer_configuration.h"
 #include "mongo/s/catalog_cache.h"
 #include "mongo/s/client/shard_factory.h"

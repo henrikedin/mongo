@@ -41,6 +41,7 @@
 #include "mongo/db/index_builds_coordinator.h"
 #include "mongo/db/operation_context.h"
 #include "mongo/db/views/view_catalog.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/log.h"
 

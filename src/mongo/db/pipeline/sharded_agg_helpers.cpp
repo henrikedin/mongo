@@ -41,6 +41,7 @@
 #include "mongo/db/pipeline/document_source_change_stream.h"
 #include "mongo/db/pipeline/document_source_out.h"
 #include "mongo/db/query/find_common.h"
+#include "mongo/logv2/log.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/rpc/op_msg_rpc_impls.h"
 #include "mongo/s/catalog/type_shard.h"

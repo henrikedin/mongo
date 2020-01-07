@@ -40,6 +40,7 @@
 
 #include "mongo/base/init.h"
 #include "mongo/db/client.h"
+#include "mongo/logv2/log.h"
 #include "mongo/platform/mutex.h"
 #include "mongo/util/clock_source.h"
 #include "mongo/util/hierarchical_acquisition.h"

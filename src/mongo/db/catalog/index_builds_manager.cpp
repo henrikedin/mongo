@@ -40,6 +40,7 @@
 #include "mongo/db/concurrency/write_conflict_exception.h"
 #include "mongo/db/operation_context.h"
 #include "mongo/db/storage/write_unit_of_work.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/log.h"
 #include "mongo/util/str.h"

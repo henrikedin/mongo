@@ -42,6 +42,7 @@
 #include "mongo/db/curop.h"
 #include "mongo/db/db_raii.h"
 #include "mongo/db/jsobj.h"
+#include "mongo/logv2/log.h"
 #include "mongo/rpc/metadata/client_metadata.h"
 #include "mongo/rpc/metadata/client_metadata_ismaster.h"
 #include "mongo/util/log.h"

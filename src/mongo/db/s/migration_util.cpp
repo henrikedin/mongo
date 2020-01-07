@@ -50,6 +50,7 @@
 #include "mongo/db/write_concern.h"
 #include "mongo/executor/task_executor_pool.h"
 #include "mongo/executor/thread_pool_task_executor.h"
+#include "mongo/logv2/log.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/s/catalog/type_chunk.h"
 #include "mongo/s/client/shard.h"

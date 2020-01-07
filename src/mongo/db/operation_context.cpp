@@ -36,6 +36,7 @@
 #include "mongo/db/client.h"
 #include "mongo/db/operation_key_manager.h"
 #include "mongo/db/service_context.h"
+#include "mongo/logv2/log.h"
 #include "mongo/platform/mutex.h"
 #include "mongo/platform/random.h"
 #include "mongo/transport/baton.h"

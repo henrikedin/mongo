@@ -38,6 +38,7 @@
 #include <ostream>
 #include <sstream>
 
+#include "mongo/logv2/log.h"
 #include "mongo/util/log.h"
 #include "mongo/util/str.h"
 #include "mongo/util/text.h"

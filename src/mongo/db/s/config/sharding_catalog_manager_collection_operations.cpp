@@ -56,6 +56,7 @@
 #include "mongo/db/s/sharding_logging.h"
 #include "mongo/executor/network_interface.h"
 #include "mongo/executor/task_executor.h"
+#include "mongo/logv2/log.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/s/balancer_configuration.h"
 #include "mongo/s/catalog/sharding_catalog_client_impl.h"

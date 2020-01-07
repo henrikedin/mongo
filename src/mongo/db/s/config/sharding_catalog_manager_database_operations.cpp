@@ -39,6 +39,7 @@
 #include "mongo/db/repl/repl_client_info.h"
 #include "mongo/db/server_options.h"
 #include "mongo/db/write_concern.h"
+#include "mongo/logv2/log.h"
 #include "mongo/s/catalog/type_database.h"
 #include "mongo/s/catalog_cache.h"
 #include "mongo/s/client/shard.h"

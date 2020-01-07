@@ -31,6 +31,7 @@
 
 #include <functional>
 
+#include "mongo/logv2/log.h"
 #include "mongo/stdx/thread.h"
 #include "mongo/unittest/unittest.h"
 #include "mongo/util/concurrency/spin_lock.h"

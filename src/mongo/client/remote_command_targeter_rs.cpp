@@ -38,6 +38,7 @@
 #include "mongo/client/read_preference.h"
 #include "mongo/client/replica_set_monitor.h"
 #include "mongo/db/operation_context.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/log.h"
 #include "mongo/util/net/hostandport.h"

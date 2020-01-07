@@ -80,6 +80,7 @@
 #include "mongo/db/transaction_participant.h"
 #include "mongo/db/transaction_participant_gen.h"
 #include "mongo/dbtests/dbtests.h"
+#include "mongo/logv2/log.h"
 #include "mongo/stdx/future.h"
 #include "mongo/unittest/unittest.h"
 #include "mongo/util/stacktrace.h"

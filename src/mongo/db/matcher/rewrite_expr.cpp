@@ -36,6 +36,7 @@
 #include "mongo/db/matcher/expression_internal_expr_eq.h"
 #include "mongo/db/matcher/expression_leaf.h"
 #include "mongo/db/matcher/expression_tree.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/log.h"
 
 namespace mongo {

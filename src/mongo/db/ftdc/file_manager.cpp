@@ -43,6 +43,7 @@
 #include "mongo/db/ftdc/constants.h"
 #include "mongo/db/ftdc/file_reader.h"
 #include "mongo/db/jsobj.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/log.h"
 #include "mongo/util/str.h"

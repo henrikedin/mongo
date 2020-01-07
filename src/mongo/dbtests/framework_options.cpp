@@ -43,6 +43,7 @@
 #include "mongo/db/storage/flow_control_parameters_gen.h"
 #include "mongo/db/storage/storage_options.h"
 #include "mongo/dbtests/dbtests.h"
+#include "mongo/logv2/log.h"
 #include "mongo/unittest/unittest.h"
 #include "mongo/util/log.h"
 #include "mongo/util/options_parser/startup_options.h"

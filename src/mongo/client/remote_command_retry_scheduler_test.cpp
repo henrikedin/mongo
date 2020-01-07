@@ -39,6 +39,7 @@
 #include "mongo/executor/remote_command_response.h"
 #include "mongo/executor/task_executor.h"
 #include "mongo/executor/thread_pool_task_executor_test_fixture.h"
+#include "mongo/logv2/log.h"
 #include "mongo/unittest/task_executor_proxy.h"
 #include "mongo/unittest/unittest.h"
 #include "mongo/util/assert_util.h"

@@ -48,6 +48,7 @@
 #include "mongo/db/query/plan_cache.h"
 #include "mongo/db/query/planner_ixselect.h"
 #include "mongo/db/service_context.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/clock_source.h"
 #include "mongo/util/log.h"
 

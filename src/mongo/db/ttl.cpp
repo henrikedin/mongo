@@ -54,6 +54,7 @@
 #include "mongo/db/storage/durable_catalog.h"
 #include "mongo/db/ttl_collection_cache.h"
 #include "mongo/db/ttl_gen.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/background.h"
 #include "mongo/util/concurrency/idle_thread_block.h"
 #include "mongo/util/exit.h"

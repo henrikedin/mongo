@@ -61,6 +61,7 @@
 #include "mongo/db/stats/counters.h"
 #include "mongo/db/transaction_validation.h"
 #include "mongo/db/views/resolved_view.h"
+#include "mongo/logv2/log.h"
 #include "mongo/rpc/factory.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/rpc/metadata/logical_time_metadata.h"

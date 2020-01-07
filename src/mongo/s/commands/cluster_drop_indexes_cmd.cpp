@@ -32,6 +32,7 @@
 #include "mongo/platform/basic.h"
 
 #include "mongo/db/commands.h"
+#include "mongo/logv2/log.h"
 #include "mongo/s/cluster_commands_helpers.h"
 #include "mongo/s/grid.h"
 #include "mongo/util/log.h"

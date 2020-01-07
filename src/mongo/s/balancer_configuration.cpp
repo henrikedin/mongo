@@ -43,6 +43,7 @@
 #include "mongo/bson/bsonobj.h"
 #include "mongo/bson/util/bson_extract.h"
 #include "mongo/db/namespace_string.h"
+#include "mongo/logv2/log.h"
 #include "mongo/s/catalog/sharding_catalog_client.h"
 #include "mongo/s/grid.h"
 #include "mongo/util/log.h"

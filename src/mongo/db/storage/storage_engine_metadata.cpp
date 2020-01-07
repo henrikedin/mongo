@@ -51,6 +51,7 @@
 #include "mongo/base/data_type_validated.h"
 #include "mongo/db/bson/dotted_path_support.h"
 #include "mongo/db/jsobj.h"
+#include "mongo/logv2/log.h"
 #include "mongo/rpc/object_check.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/file.h"

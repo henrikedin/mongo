@@ -45,6 +45,7 @@
 #include "mongo/db/server_options.h"
 #include "mongo/db/service_context.h"
 #include "mongo/db/views/view_catalog.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/fail_point.h"
 #include "mongo/util/log.h"
 

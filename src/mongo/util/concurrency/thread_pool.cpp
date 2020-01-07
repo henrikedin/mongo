@@ -34,6 +34,7 @@
 #include "mongo/util/concurrency/thread_pool.h"
 
 #include "mongo/base/status.h"
+#include "mongo/logv2/log.h"
 #include "mongo/platform/atomic_word.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/concurrency/idle_thread_block.h"

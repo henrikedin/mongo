@@ -45,6 +45,7 @@
 #include "mongo/db/jsobj.h"
 #include "mongo/db/json.h"
 #include "mongo/dbtests/dbtests.h"
+#include "mongo/logv2/log.h"
 #include "mongo/platform/decimal128.h"
 #include "mongo/unittest/unittest.h"
 #include "mongo/util/log.h"

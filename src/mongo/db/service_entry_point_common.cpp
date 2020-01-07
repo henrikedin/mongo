@@ -81,6 +81,7 @@
 #include "mongo/db/stats/top.h"
 #include "mongo/db/transaction_participant.h"
 #include "mongo/db/transaction_validation.h"
+#include "mongo/logv2/log.h"
 #include "mongo/rpc/factory.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/rpc/message.h"

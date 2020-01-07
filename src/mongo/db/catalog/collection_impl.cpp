@@ -71,6 +71,7 @@
 #include "mongo/db/update/update_driver.h"
 
 #include "mongo/db/auth/user_document_parser.h"  // XXX-ANDY
+#include "mongo/logv2/log.h"
 #include "mongo/rpc/object_check.h"
 #include "mongo/util/fail_point.h"
 #include "mongo/util/log.h"

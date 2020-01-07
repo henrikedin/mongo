@@ -35,6 +35,7 @@
 #include "mongo/db/commands/list_collections_filter.h"
 #include "mongo/db/repl/database_cloner.h"
 #include "mongo/db/repl/database_cloner_gen.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/log.h"
 

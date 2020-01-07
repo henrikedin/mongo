@@ -63,6 +63,7 @@
 #include "mongo/base/environment_buffer.h"
 #include "mongo/client/dbclient_connection.h"
 #include "mongo/db/traffic_reader.h"
+#include "mongo/logv2/log.h"
 #include "mongo/scripting/engine.h"
 #include "mongo/shell/shell_options.h"
 #include "mongo/shell/shell_utils.h"

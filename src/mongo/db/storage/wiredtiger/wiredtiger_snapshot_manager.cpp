@@ -37,6 +37,7 @@
 #include "mongo/db/storage/wiredtiger/wiredtiger_begin_transaction_block.h"
 #include "mongo/db/storage/wiredtiger/wiredtiger_oplog_manager.h"
 #include "mongo/db/storage/wiredtiger/wiredtiger_util.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/log.h"
 
 namespace mongo {

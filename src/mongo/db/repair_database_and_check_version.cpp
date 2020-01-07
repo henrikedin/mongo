@@ -56,6 +56,7 @@
 #include "mongo/db/server_options.h"
 #include "mongo/db/storage/durable_catalog.h"
 #include "mongo/db/storage/storage_repair_observer.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/exit.h"
 #include "mongo/util/fail_point.h"
 #include "mongo/util/log.h"

@@ -38,6 +38,7 @@
 #include "mongo/db/storage/mobile/mobile_recovery_unit.h"
 #include "mongo/db/storage/mobile/mobile_sqlite_statement.h"
 #include "mongo/db/storage/mobile/mobile_util.h"
+#include "mongo/logv2/log.h"
 
 namespace mongo {
 namespace embedded {

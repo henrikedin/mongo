@@ -37,6 +37,7 @@
 #include "mongo/db/concurrency/lock_manager_defs.h"
 #include "mongo/db/concurrency/write_conflict_exception.h"
 #include "mongo/db/storage/recovery_unit.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/log.h"
 #include "mongo/util/uuid.h"

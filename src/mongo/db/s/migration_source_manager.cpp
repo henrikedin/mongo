@@ -55,6 +55,7 @@
 #include "mongo/db/s/sharding_statistics.h"
 #include "mongo/executor/task_executor.h"
 #include "mongo/executor/task_executor_pool.h"
+#include "mongo/logv2/log.h"
 #include "mongo/s/catalog/type_chunk.h"
 #include "mongo/s/catalog/type_shard_collection.h"
 #include "mongo/s/catalog_cache_loader.h"

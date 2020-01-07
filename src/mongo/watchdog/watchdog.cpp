@@ -45,6 +45,7 @@
 #include "mongo/base/static_assert.h"
 #include "mongo/db/client.h"
 #include "mongo/db/operation_context.h"
+#include "mongo/logv2/log.h"
 #include "mongo/platform/process_id.h"
 #include "mongo/util/concurrency/idle_thread_block.h"
 #include "mongo/util/exit.h"

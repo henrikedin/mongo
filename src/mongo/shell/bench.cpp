@@ -41,6 +41,7 @@
 #include "mongo/db/query/cursor_response.h"
 #include "mongo/db/query/getmore_request.h"
 #include "mongo/db/query/query_request.h"
+#include "mongo/logv2/log.h"
 #include "mongo/scripting/bson_template_evaluator.h"
 #include "mongo/stdx/thread.h"
 #include "mongo/util/log.h"

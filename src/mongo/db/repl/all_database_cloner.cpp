@@ -33,6 +33,7 @@
 
 #include "mongo/base/string_data.h"
 #include "mongo/db/repl/all_database_cloner.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/log.h"
 namespace mongo {

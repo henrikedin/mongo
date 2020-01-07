@@ -48,6 +48,7 @@
 #include "mongo/db/prepare_conflict_tracker.h"
 #include "mongo/db/query/getmore_request.h"
 #include "mongo/db/query/plan_summary_stats.h"
+#include "mongo/logv2/log.h"
 #include "mongo/rpc/metadata/client_metadata.h"
 #include "mongo/rpc/metadata/client_metadata_ismaster.h"
 #include "mongo/rpc/metadata/impersonated_user_metadata.h"

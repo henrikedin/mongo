@@ -38,6 +38,7 @@
 #include "mongo/db/dbdirectclient.h"
 #include "mongo/db/ops/write_ops.h"
 #include "mongo/db/write_concern_options.h"
+#include "mongo/logv2/log.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/rpc/unique_message.h"
 #include "mongo/s/catalog/type_chunk.h"

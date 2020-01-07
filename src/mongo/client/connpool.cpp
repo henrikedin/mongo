@@ -44,6 +44,7 @@
 #include "mongo/client/global_conn_pool.h"
 #include "mongo/client/replica_set_monitor.h"
 #include "mongo/executor/connection_pool_stats.h"
+#include "mongo/logv2/log.h"
 #include "mongo/stdx/chrono.h"
 #include "mongo/util/exit.h"
 #include "mongo/util/log.h"

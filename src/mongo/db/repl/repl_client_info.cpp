@@ -36,6 +36,7 @@
 #include "mongo/db/client.h"
 #include "mongo/db/operation_context.h"
 #include "mongo/db/repl/replication_coordinator.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/decorable.h"
 #include "mongo/util/log.h"
 

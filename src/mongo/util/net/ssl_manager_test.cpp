@@ -38,6 +38,7 @@
 #include "mongo/util/log.h"
 
 #if MONGO_CONFIG_SSL_PROVIDER == MONGO_CONFIG_SSL_PROVIDER_OPENSSL
+#include "mongo/logv2/log.h"
 #include "mongo/util/net/dh_openssl.h"
 #endif
 

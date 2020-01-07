@@ -38,6 +38,7 @@
 #include "mongo/base/status.h"
 #include "mongo/db/auth/enable_localhost_auth_bypass_parameter_gen.h"
 #include "mongo/db/client.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/debug_util.h"
 #include "mongo/util/log.h"
 

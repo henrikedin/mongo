@@ -188,6 +188,7 @@
 #include "mongo/watchdog/watchdog_mongod.h"
 
 #ifdef MONGO_CONFIG_SSL
+#include "mongo/logv2/log.h"
 #include "mongo/util/net/ssl_options.h"
 #endif
 

@@ -45,6 +45,7 @@
 #include "mongo/db/operation_context.h"
 #include "mongo/db/storage/record_data.h"
 #include "mongo/db/views/view_catalog.h"
+#include "mongo/logv2/log.h"
 #include "mongo/stdx/unordered_set.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/log.h"

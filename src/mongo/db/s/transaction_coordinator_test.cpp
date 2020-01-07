@@ -39,6 +39,7 @@
 #include "mongo/db/s/transaction_coordinator_document_gen.h"
 #include "mongo/db/s/transaction_coordinator_metrics_observer.h"
 #include "mongo/db/s/transaction_coordinator_test_fixture.h"
+#include "mongo/logv2/log.h"
 #include "mongo/unittest/unittest.h"
 #include "mongo/util/clock_source_mock.h"
 #include "mongo/util/log.h"

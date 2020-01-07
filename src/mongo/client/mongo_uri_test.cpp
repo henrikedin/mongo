@@ -37,6 +37,7 @@
 #include "mongo/bson/json.h"
 #include "mongo/client/mongo_uri.h"
 #include "mongo/db/service_context_test_fixture.h"
+#include "mongo/logv2/log.h"
 #include "mongo/unittest/unittest.h"
 
 #include <boost/filesystem/operations.hpp>

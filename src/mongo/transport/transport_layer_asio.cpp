@@ -67,6 +67,7 @@
 #include "mongo/transport/baton_asio_linux.h"
 #endif
 
+#include "mongo/logv2/log.h"
 #include "mongo/transport/session_asio.h"
 
 namespace mongo {

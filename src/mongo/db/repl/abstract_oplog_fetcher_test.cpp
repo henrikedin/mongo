@@ -35,6 +35,7 @@
 #include "mongo/db/repl/abstract_oplog_fetcher_test_fixture.h"
 #include "mongo/db/repl/oplog_entry.h"
 #include "mongo/db/repl/task_executor_mock.h"
+#include "mongo/logv2/log.h"
 #include "mongo/unittest/task_executor_proxy.h"
 #include "mongo/unittest/unittest.h"
 #include "mongo/util/scopeguard.h"

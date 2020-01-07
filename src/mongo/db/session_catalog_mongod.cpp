@@ -45,6 +45,7 @@
 #include "mongo/db/session_txn_record_gen.h"
 #include "mongo/db/sessions_collection.h"
 #include "mongo/db/transaction_participant.h"
+#include "mongo/logv2/log.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/s/write_ops/batched_command_response.h"
 #include "mongo/util/concurrency/thread_pool.h"

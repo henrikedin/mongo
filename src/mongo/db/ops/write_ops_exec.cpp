@@ -74,6 +74,7 @@
 #include "mongo/db/storage/duplicate_key_error_info.h"
 #include "mongo/db/transaction_participant.h"
 #include "mongo/db/write_concern.h"
+#include "mongo/logv2/log.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/s/cannot_implicitly_create_collection_info.h"
 #include "mongo/s/would_change_owning_shard_exception.h"

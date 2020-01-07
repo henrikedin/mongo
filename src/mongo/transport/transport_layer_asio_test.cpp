@@ -33,6 +33,7 @@
 #include "mongo/transport/transport_layer_asio.h"
 
 #include "mongo/db/server_options.h"
+#include "mongo/logv2/log.h"
 #include "mongo/rpc/op_msg.h"
 #include "mongo/transport/service_entry_point.h"
 #include "mongo/unittest/unittest.h"

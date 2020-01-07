@@ -42,6 +42,7 @@
 #include "mongo/db/s/operation_sharding_state.h"
 #include "mongo/db/s/sharding_state.h"
 #include "mongo/db/s/split_chunk.h"
+#include "mongo/logv2/log.h"
 #include "mongo/s/catalog/type_chunk.h"
 #include "mongo/util/log.h"
 #include "mongo/util/str.h"

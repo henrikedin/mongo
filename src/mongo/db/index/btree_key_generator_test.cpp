@@ -39,6 +39,7 @@
 #include "mongo/bson/simple_bsonobj_comparator.h"
 #include "mongo/db/json.h"
 #include "mongo/db/query/collation/collator_interface_mock.h"
+#include "mongo/logv2/log.h"
 #include "mongo/unittest/unittest.h"
 #include "mongo/util/log.h"
 

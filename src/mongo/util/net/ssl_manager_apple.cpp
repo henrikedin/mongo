@@ -43,6 +43,7 @@
 #include "mongo/base/status_with.h"
 #include "mongo/crypto/sha1_block.h"
 #include "mongo/crypto/sha256_block.h"
+#include "mongo/logv2/log.h"
 #include "mongo/platform/random.h"
 #include "mongo/util/base64.h"
 #include "mongo/util/concurrency/mutex.h"

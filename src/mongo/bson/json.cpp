@@ -36,6 +36,7 @@
 
 #include "mongo/base/parse_number.h"
 #include "mongo/db/jsobj.h"
+#include "mongo/logv2/log.h"
 #include "mongo/platform/decimal128.h"
 #include "mongo/platform/strtoll.h"
 #include "mongo/util/base64.h"

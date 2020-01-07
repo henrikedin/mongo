@@ -34,6 +34,7 @@
 #include "mongo/db/database_index_builds_tracker.h"
 
 #include "mongo/db/catalog/index_builds_manager.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/log.h"
 
 namespace mongo {

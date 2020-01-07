@@ -41,6 +41,7 @@
 #include "mongo/db/query/internal_plans.h"
 #include "mongo/db/range_arithmetic.h"
 #include "mongo/db/s/collection_sharding_state.h"
+#include "mongo/logv2/log.h"
 #include "mongo/s/grid.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/fail_point.h"

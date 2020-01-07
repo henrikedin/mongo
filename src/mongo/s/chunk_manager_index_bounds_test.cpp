@@ -37,6 +37,7 @@
 #include "mongo/db/namespace_string.h"
 #include "mongo/db/pipeline/expression_context_for_test.h"
 #include "mongo/db/query/canonical_query.h"
+#include "mongo/logv2/log.h"
 #include "mongo/s/chunk_manager.h"
 #include "mongo/s/shard_key_pattern.h"
 #include "mongo/s/sharding_router_test_fixture.h"

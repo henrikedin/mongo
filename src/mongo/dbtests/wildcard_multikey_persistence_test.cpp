@@ -36,6 +36,7 @@
 #include "mongo/db/index/wildcard_access_method.h"
 #include "mongo/db/repl/storage_interface_impl.h"
 #include "mongo/db/storage/sorted_data_interface.h"
+#include "mongo/logv2/log.h"
 #include "mongo/unittest/unittest.h"
 #include "mongo/util/log.h"
 

@@ -39,6 +39,7 @@
 #include "mongo/db/namespace_string.h"
 #include "mongo/db/service_context.h"
 #include "mongo/db/storage/flow_control.h"
+#include "mongo/logv2/log.h"
 #include "mongo/platform/compiler.h"
 #include "mongo/stdx/new.h"
 #include "mongo/util/background.h"

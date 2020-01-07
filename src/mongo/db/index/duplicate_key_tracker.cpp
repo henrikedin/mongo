@@ -37,6 +37,7 @@
 #include "mongo/db/curop.h"
 #include "mongo/db/index/index_access_method.h"
 #include "mongo/db/keypattern.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/log.h"
 

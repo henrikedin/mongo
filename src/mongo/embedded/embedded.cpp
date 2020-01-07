@@ -66,6 +66,7 @@
 #include "mongo/embedded/replication_coordinator_embedded.h"
 #include "mongo/embedded/service_entry_point_embedded.h"
 #include "mongo/logger/log_component.h"
+#include "mongo/logv2/log.h"
 #include "mongo/scripting/dbdirectclient_factory.h"
 #include "mongo/util/background.h"
 #include "mongo/util/exit.h"

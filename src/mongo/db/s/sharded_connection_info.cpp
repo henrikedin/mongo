@@ -34,6 +34,7 @@
 #include "mongo/db/s/sharded_connection_info.h"
 
 #include "mongo/db/client.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/log.h"
 
 namespace mongo {

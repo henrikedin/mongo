@@ -40,6 +40,7 @@
 #include "mongo/db/storage/wiredtiger/wiredtiger_prepare_conflict.h"
 #include "mongo/db/storage/wiredtiger/wiredtiger_session_cache.h"
 #include "mongo/db/storage/wiredtiger/wiredtiger_util.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/hex.h"
 #include "mongo/util/log.h"
 

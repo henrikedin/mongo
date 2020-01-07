@@ -33,6 +33,7 @@
 #include <type_traits>
 #include <utility>
 
+#include "mongo/logv2/log.h"
 #include "mongo/stdx/type_traits.h"
 #include "mongo/unittest/unittest.h"
 #include "mongo/util/assert_util.h"

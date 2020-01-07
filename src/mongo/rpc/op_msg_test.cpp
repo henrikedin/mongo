@@ -37,6 +37,7 @@
 #include "mongo/bson/json.h"
 #include "mongo/bson/util/builder.h"
 #include "mongo/db/jsobj.h"
+#include "mongo/logv2/log.h"
 #include "mongo/rpc/op_msg.h"
 #include "mongo/unittest/unittest.h"
 #include "mongo/util/hex.h"

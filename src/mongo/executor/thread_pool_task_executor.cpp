@@ -42,6 +42,7 @@
 #include "mongo/db/operation_context.h"
 #include "mongo/executor/connection_pool_stats.h"
 #include "mongo/executor/network_interface.h"
+#include "mongo/logv2/log.h"
 #include "mongo/platform/atomic_word.h"
 #include "mongo/transport/baton.h"
 #include "mongo/util/concurrency/thread_pool_interface.h"

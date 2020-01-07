@@ -40,6 +40,7 @@
 #include "mongo/db/exec/or.h"
 #include "mongo/db/exec/queued_data_stage.h"
 #include "mongo/db/exec/working_set_common.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/log.h"
 
 namespace mongo {

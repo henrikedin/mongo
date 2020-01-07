@@ -63,6 +63,7 @@
 #include "mongo/db/service_context.h"
 #include "mongo/db/write_concern_options.h"
 #include "mongo/executor/network_interface_mock.h"
+#include "mongo/logv2/log.h"
 #include "mongo/rpc/metadata/oplog_query_metadata.h"
 #include "mongo/rpc/metadata/repl_set_metadata.h"
 #include "mongo/stdx/future.h"

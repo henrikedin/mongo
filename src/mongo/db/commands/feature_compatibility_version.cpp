@@ -51,6 +51,7 @@
 #include "mongo/db/wire_version.h"
 #include "mongo/db/write_concern_options.h"
 #include "mongo/executor/egress_tag_closer_manager.h"
+#include "mongo/logv2/log.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/s/catalog_cache.h"
 #include "mongo/s/grid.h"

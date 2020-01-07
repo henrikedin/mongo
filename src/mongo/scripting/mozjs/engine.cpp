@@ -36,6 +36,7 @@
 #include <js/Initialization.h>
 
 #include "mongo/db/operation_context.h"
+#include "mongo/logv2/log.h"
 #include "mongo/scripting/mozjs/engine_gen.h"
 #include "mongo/scripting/mozjs/implscope.h"
 #include "mongo/scripting/mozjs/proxyscope.h"

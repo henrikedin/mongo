@@ -38,6 +38,7 @@
 #include "mongo/executor/network_interface_integration_fixture.h"
 #include "mongo/executor/remote_command_response.h"
 #include "mongo/executor/task_executor.h"
+#include "mongo/logv2/log.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/stdx/future.h"
 #include "mongo/unittest/integration_test.h"

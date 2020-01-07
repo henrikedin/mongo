@@ -41,6 +41,7 @@
 #include "mongo/logger/message_event_utf8_encoder.h"
 #include "mongo/logger/ramlog.h"
 #include "mongo/logger/rotatable_file_manager.h"
+#include "mongo/logv2/log.h"
 #include "mongo/logv2/log_domain.h"
 #include "mongo/logv2/log_domain_global.h"
 #include "mongo/logv2/log_manager.h"

@@ -43,6 +43,7 @@
 #include "mongo/db/concurrency/write_conflict_exception.h"
 #include "mongo/db/service_context_d_test_fixture.h"
 #include "mongo/db/storage/recovery_unit_noop.h"
+#include "mongo/logv2/log.h"
 #include "mongo/stdx/future.h"
 #include "mongo/stdx/thread.h"
 #include "mongo/unittest/unittest.h"

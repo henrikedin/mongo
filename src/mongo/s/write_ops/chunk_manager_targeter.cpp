@@ -38,6 +38,7 @@
 #include "mongo/db/matcher/extensions_callback_noop.h"
 #include "mongo/db/query/canonical_query.h"
 #include "mongo/db/query/collation/collation_index_key.h"
+#include "mongo/logv2/log.h"
 #include "mongo/s/client/shard_registry.h"
 #include "mongo/s/cluster_commands_helpers.h"
 #include "mongo/s/database_version_helpers.h"

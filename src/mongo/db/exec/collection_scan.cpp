@@ -47,6 +47,7 @@
 #include "mongo/util/log.h"
 
 #include "mongo/db/client.h"  // XXX-ERH
+#include "mongo/logv2/log.h"
 
 namespace mongo {
 

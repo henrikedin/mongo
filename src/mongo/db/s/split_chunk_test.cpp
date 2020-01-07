@@ -42,6 +42,7 @@
 #include "mongo/executor/remote_command_request.h"
 #include "mongo/executor/remote_command_response.h"
 #include "mongo/executor/task_executor.h"
+#include "mongo/logv2/log.h"
 #include "mongo/s/catalog/dist_lock_manager_mock.h"
 #include "mongo/s/catalog/type_chunk.h"
 #include "mongo/s/catalog/type_collection.h"

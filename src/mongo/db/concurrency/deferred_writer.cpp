@@ -35,6 +35,7 @@
 #include "mongo/db/concurrency/write_conflict_exception.h"
 #include "mongo/db/db_raii.h"
 #include "mongo/db/operation_context.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/concurrency/idle_thread_block.h"
 #include "mongo/util/concurrency/thread_pool.h"
 #include "mongo/util/log.h"

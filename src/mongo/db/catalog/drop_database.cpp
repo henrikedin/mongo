@@ -47,6 +47,7 @@
 #include "mongo/db/repl/replication_coordinator.h"
 #include "mongo/db/service_context.h"
 #include "mongo/db/write_concern_options.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/duration.h"
 #include "mongo/util/fail_point.h"
 #include "mongo/util/log.h"

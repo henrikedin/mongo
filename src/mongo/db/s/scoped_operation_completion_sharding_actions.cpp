@@ -38,6 +38,7 @@
 #include "mongo/db/s/operation_sharding_state.h"
 #include "mongo/db/s/shard_filtering_metadata_refresh.h"
 #include "mongo/db/s/sharding_state.h"
+#include "mongo/logv2/log.h"
 #include "mongo/s/cannot_implicitly_create_collection_info.h"
 #include "mongo/s/stale_exception.h"
 #include "mongo/util/log.h"

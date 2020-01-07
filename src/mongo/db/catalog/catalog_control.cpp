@@ -43,6 +43,7 @@
 #include "mongo/db/index_builds_coordinator.h"
 #include "mongo/db/namespace_string.h"
 #include "mongo/db/repair_database.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/log.h"
 
 namespace mongo {

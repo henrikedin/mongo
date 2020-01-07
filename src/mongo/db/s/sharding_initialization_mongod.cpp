@@ -54,6 +54,7 @@
 #include "mongo/db/s/transaction_coordinator_service.h"
 #include "mongo/db/server_options.h"
 #include "mongo/executor/task_executor_pool.h"
+#include "mongo/logv2/log.h"
 #include "mongo/rpc/metadata/egress_metadata_hook_list.h"
 #include "mongo/s/catalog_cache.h"
 #include "mongo/s/client/shard_connection.h"

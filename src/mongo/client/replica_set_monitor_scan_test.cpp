@@ -34,6 +34,7 @@
 #include "mongo/client/replica_set_monitor_test_fixture.h"
 
 #include "mongo/client/mongo_uri.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/log.h"
 
 namespace mongo {

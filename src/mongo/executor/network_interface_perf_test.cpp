@@ -43,6 +43,7 @@
 #include "mongo/executor/network_interface_asio.h"
 #include "mongo/executor/network_interface_asio_test_utils.h"
 #include "mongo/executor/task_executor.h"
+#include "mongo/logv2/log.h"
 #include "mongo/unittest/integration_test.h"
 #include "mongo/unittest/unittest.h"
 #include "mongo/util/assert_util.h"

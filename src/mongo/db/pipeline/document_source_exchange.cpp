@@ -39,6 +39,7 @@
 #include "mongo/db/hasher.h"
 #include "mongo/db/pipeline/document_source_exchange.h"
 #include "mongo/db/storage/key_string.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/log.h"
 
 namespace mongo {

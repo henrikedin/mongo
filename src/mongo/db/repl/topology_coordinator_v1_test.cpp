@@ -42,6 +42,7 @@
 #include "mongo/db/server_options.h"
 #include "mongo/executor/task_executor.h"
 #include "mongo/logger/logger.h"
+#include "mongo/logv2/log.h"
 #include "mongo/rpc/metadata/oplog_query_metadata.h"
 #include "mongo/rpc/metadata/repl_set_metadata.h"
 #include "mongo/unittest/unittest.h"

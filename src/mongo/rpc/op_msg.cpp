@@ -39,6 +39,7 @@
 #include "mongo/base/data_type_endian.h"
 #include "mongo/config.h"
 #include "mongo/db/bson/dotted_path_support.h"
+#include "mongo/logv2/log.h"
 #include "mongo/rpc/object_check.h"
 #include "mongo/util/bufreader.h"
 #include "mongo/util/hex.h"

@@ -33,6 +33,7 @@
 
 #include "mongo/db/storage/wiredtiger/wiredtiger_prepare_conflict.h"
 
+#include "mongo/logv2/log.h"
 #include "mongo/util/fail_point.h"
 #include "mongo/util/log.h"
 

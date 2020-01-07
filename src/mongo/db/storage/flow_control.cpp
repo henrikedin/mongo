@@ -44,6 +44,7 @@
 #include "mongo/db/repl/replication_coordinator.h"
 #include "mongo/db/server_options.h"
 #include "mongo/db/storage/flow_control_parameters_gen.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/background.h"
 #include "mongo/util/fail_point.h"
 #include "mongo/util/log.h"

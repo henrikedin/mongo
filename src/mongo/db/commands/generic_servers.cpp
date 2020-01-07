@@ -37,6 +37,7 @@
 #include "mongo/db/commands/shutdown.h"
 #include "mongo/db/commands/test_commands_enabled.h"
 #include "mongo/db/log_process_details.h"
+#include "mongo/logv2/log.h"
 #include "mongo/logv2/ramlog.h"
 #include "mongo/scripting/engine.h"
 #include "mongo/util/exit.h"

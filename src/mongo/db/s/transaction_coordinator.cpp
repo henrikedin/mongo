@@ -37,6 +37,7 @@
 #include "mongo/db/s/transaction_coordinator_metrics_observer.h"
 #include "mongo/db/s/wait_for_majority_service.h"
 #include "mongo/db/server_options.h"
+#include "mongo/logv2/log.h"
 #include "mongo/s/grid.h"
 #include "mongo/util/fail_point.h"
 #include "mongo/util/log.h"

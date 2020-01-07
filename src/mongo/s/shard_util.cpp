@@ -38,6 +38,7 @@
 #include "mongo/client/read_preference.h"
 #include "mongo/client/remote_command_targeter.h"
 #include "mongo/db/namespace_string.h"
+#include "mongo/logv2/log.h"
 #include "mongo/s/client/shard_registry.h"
 #include "mongo/s/grid.h"
 #include "mongo/s/shard_key_pattern.h"

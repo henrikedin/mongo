@@ -38,6 +38,7 @@
 #include <string>
 
 #include "mongo/bson/bsonobjbuilder.h"
+#include "mongo/logv2/log.h"
 #include "mongo/unittest/death_test.h"
 #include "mongo/unittest/unittest.h"
 #include "mongo/util/assert_util.h"

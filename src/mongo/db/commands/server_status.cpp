@@ -37,6 +37,7 @@
 #include "mongo/db/commands/server_status_internal.h"
 #include "mongo/db/service_context.h"
 #include "mongo/db/stats/counters.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/log.h"
 #include "mongo/util/net/http_client.h"
 #include "mongo/util/net/socket_utils.h"

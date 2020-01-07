@@ -51,6 +51,7 @@
 #include "mongo/db/repl/isself.h"
 #include "mongo/db/repl/member_data.h"
 #include "mongo/db/repl/rslog.h"
+#include "mongo/logv2/log.h"
 #include "mongo/rpc/metadata/oplog_query_metadata.h"
 #include "mongo/rpc/metadata/repl_set_metadata.h"
 #include "mongo/util/assert_util.h"

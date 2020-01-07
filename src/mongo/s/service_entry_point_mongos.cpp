@@ -40,6 +40,7 @@
 #include "mongo/db/lasterror.h"
 #include "mongo/db/operation_context.h"
 #include "mongo/db/service_context.h"
+#include "mongo/logv2/log.h"
 #include "mongo/rpc/message.h"
 #include "mongo/s/client/shard_connection.h"
 #include "mongo/s/cluster_last_error_info.h"

@@ -46,6 +46,7 @@
 #include "mongo/db/operation_context.h"
 #include "mongo/db/storage/key_string.h"
 #include "mongo/db/storage/record_store.h"
+#include "mongo/logv2/log.h"
 #include "mongo/rpc/object_check.h"
 #include "mongo/util/log.h"
 

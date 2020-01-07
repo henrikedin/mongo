@@ -49,6 +49,7 @@
 #include "mongo/db/storage/record_store.h"
 #include "mongo/db/storage/recovery_unit.h"
 #include "mongo/db/storage/storage_engine_interface.h"
+#include "mongo/logv2/log.h"
 #include "mongo/platform/bits.h"
 #include "mongo/platform/random.h"
 #include "mongo/util/log.h"

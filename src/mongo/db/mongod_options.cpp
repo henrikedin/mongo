@@ -53,6 +53,7 @@
 #include "mongo/db/server_options_base.h"
 #include "mongo/db/server_options_nongeneral_gen.h"
 #include "mongo/db/server_options_server_helpers.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/log.h"
 #include "mongo/util/net/ssl_options.h"
 #include "mongo/util/options_parser/startup_options.h"

@@ -49,6 +49,7 @@
 #include "mongo/db/s/migration_util.h"
 #include "mongo/db/s/sharding_state.h"
 #include "mongo/db/server_options.h"
+#include "mongo/logv2/log.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/s/catalog/type_collection.h"
 #include "mongo/s/database_version_helpers.h"

@@ -67,6 +67,7 @@
 #include "mongo/db/storage/durable_catalog.h"
 #include "mongo/db/transaction_history_iterator.h"
 #include "mongo/db/transaction_participant.h"
+#include "mongo/logv2/log.h"
 #include "mongo/s/cluster_commands_helpers.h"
 #include "mongo/s/query/document_source_merge_cursors.h"
 #include "mongo/util/log.h"

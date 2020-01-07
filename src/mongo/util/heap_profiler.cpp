@@ -35,6 +35,7 @@
 #include "mongo/base/static_assert.h"
 #include "mongo/config.h"
 #include "mongo/db/commands/server_status.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/log.h"
 #include "mongo/util/stacktrace.h"
 #include "mongo/util/tcmalloc_parameters_gen.h"

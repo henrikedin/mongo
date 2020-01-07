@@ -36,6 +36,7 @@
 #include "mongo/db/commands/test_commands_enabled.h"
 #include "mongo/db/server_options.h"
 #include "mongo/executor/connection_pool_tl.h"
+#include "mongo/logv2/log.h"
 #include "mongo/transport/transport_layer_manager.h"
 #include "mongo/util/concurrency/idle_thread_block.h"
 #include "mongo/util/log.h"

@@ -54,6 +54,7 @@
 #include "mongo/db/repl/topology_coordinator.h"
 #include "mongo/db/repl/vote_requester.h"
 #include "mongo/db/service_context.h"
+#include "mongo/logv2/log.h"
 #include "mongo/platform/mutex.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/rpc/metadata/repl_set_metadata.h"

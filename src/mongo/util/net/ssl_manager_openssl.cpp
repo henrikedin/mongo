@@ -48,6 +48,7 @@
 #include "mongo/base/secure_allocator.h"
 #include "mongo/bson/bsonobjbuilder.h"
 #include "mongo/config.h"
+#include "mongo/logv2/log.h"
 #include "mongo/platform/atomic_word.h"
 #include "mongo/transport/session.h"
 #include "mongo/util/concurrency/mutex.h"

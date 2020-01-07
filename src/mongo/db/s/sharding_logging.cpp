@@ -37,6 +37,7 @@
 #include "mongo/db/s/sharding_state.h"
 #include "mongo/db/server_options.h"
 #include "mongo/executor/network_interface.h"
+#include "mongo/logv2/log.h"
 #include "mongo/s/catalog/type_changelog.h"
 #include "mongo/s/grid.h"
 #include "mongo/util/log.h"

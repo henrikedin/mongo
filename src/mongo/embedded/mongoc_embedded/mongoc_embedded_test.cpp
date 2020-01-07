@@ -43,6 +43,7 @@
 #include "mongo/db/server_options.h"
 #include "mongo/embedded/mongo_embedded/mongo_embedded.h"
 #include "mongo/embedded/mongoc_embedded/mongoc_embedded_test_gen.h"
+#include "mongo/logv2/log.h"
 #include "mongo/unittest/temp_dir.h"
 #include "mongo/unittest/unittest.h"
 #include "mongo/util/log.h"

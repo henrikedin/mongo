@@ -61,6 +61,7 @@
 #include "mongo/db/storage/remove_saver.h"
 #include "mongo/db/write_concern.h"
 #include "mongo/executor/task_executor.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/log.h"
 #include "mongo/util/scopeguard.h"
 #include "mongo/util/str.h"

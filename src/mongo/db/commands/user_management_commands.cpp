@@ -67,6 +67,7 @@
 #include "mongo/db/ops/write_ops.h"
 #include "mongo/db/query/cursor_response.h"
 #include "mongo/db/service_context.h"
+#include "mongo/logv2/log.h"
 #include "mongo/platform/mutex.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/s/write_ops/batched_command_response.h"

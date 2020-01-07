@@ -45,6 +45,7 @@
 #include "mongo/db/repl/insert_group.h"
 #include "mongo/db/repl/transaction_oplog_application.h"
 #include "mongo/db/stats/timer_stats.h"
+#include "mongo/logv2/log.h"
 #include "mongo/platform/basic.h"
 #include "mongo/util/fail_point.h"
 #include "mongo/util/log.h"

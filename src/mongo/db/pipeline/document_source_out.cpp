@@ -39,6 +39,7 @@
 #include "mongo/db/curop_failpoint_helpers.h"
 #include "mongo/db/ops/write_ops.h"
 #include "mongo/db/pipeline/document_path_support.h"
+#include "mongo/logv2/log.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/util/destructor_guard.h"
 #include "mongo/util/fail_point.h"

@@ -36,6 +36,7 @@
 #include <functional>
 
 #include "mongo/config.h"
+#include "mongo/logv2/log.h"
 #include "mongo/platform/mutex.h"
 #include "mongo/stdx/condition_variable.h"
 #include "mongo/stdx/thread.h"

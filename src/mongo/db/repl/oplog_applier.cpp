@@ -36,6 +36,7 @@
 #include "mongo/db/auth/authorization_session.h"
 #include "mongo/db/namespace_string.h"
 #include "mongo/db/repl/repl_server_parameters_gen.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/log.h"
 #include "mongo/util/time_support.h"
 

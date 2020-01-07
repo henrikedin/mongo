@@ -38,6 +38,7 @@
 #include "mongo/db/commands.h"
 #include "mongo/db/lasterror.h"
 #include "mongo/executor/task_executor_pool.h"
+#include "mongo/logv2/log.h"
 #include "mongo/s/client/shard_registry.h"
 #include "mongo/s/cluster_commands_helpers.h"
 #include "mongo/s/cluster_last_error_info.h"

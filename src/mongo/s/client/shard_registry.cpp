@@ -50,6 +50,7 @@
 #include "mongo/executor/task_executor.h"
 #include "mongo/executor/task_executor_pool.h"
 #include "mongo/executor/thread_pool_task_executor.h"
+#include "mongo/logv2/log.h"
 #include "mongo/platform/mutex.h"
 #include "mongo/rpc/metadata/egress_metadata_hook_list.h"
 #include "mongo/s/catalog/sharding_catalog_client.h"

@@ -44,6 +44,7 @@
 #include <vm/vm_param.h>
 
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/scopeguard.h"
 #include "processinfo.h"
 

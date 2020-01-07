@@ -37,6 +37,7 @@
 #include "mongo/base/data_type_endian.h"
 #include "mongo/bson/bsonobj.h"
 #include "mongo/bson/bsonobjbuilder.h"
+#include "mongo/logv2/log.h"
 #include "mongo/rpc/message.h"
 #include "mongo/transport/message_compressor_registry.h"
 #include "mongo/transport/session.h"

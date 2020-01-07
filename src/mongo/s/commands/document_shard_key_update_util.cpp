@@ -33,6 +33,7 @@
 
 #include "mongo/base/status_with.h"
 #include "mongo/db/namespace_string.h"
+#include "mongo/logv2/log.h"
 #include "mongo/s/would_change_owning_shard_exception.h"
 #include "mongo/s/write_ops/batched_command_request.h"
 #include "mongo/s/write_ops/batched_command_response.h"

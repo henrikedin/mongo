@@ -71,6 +71,7 @@
 #include "mongo/db/storage/kv/kv_engine.h"
 #include "mongo/db/storage/storage_engine_init.h"
 #include "mongo/db/ttl_collection_cache.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/log.h"
 #include "mongo/util/represent_as.h"

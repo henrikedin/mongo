@@ -43,6 +43,7 @@
 #include "mongo/db/repl/noop_writer.h"
 #include "mongo/db/repl/oplog.h"
 #include "mongo/db/repl/repl_server_parameters_gen.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/concurrency/idle_thread_block.h"
 #include "mongo/util/log.h"
 

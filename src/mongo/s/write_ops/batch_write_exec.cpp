@@ -41,6 +41,7 @@
 #include "mongo/client/remote_command_targeter.h"
 #include "mongo/db/error_labels.h"
 #include "mongo/executor/task_executor_pool.h"
+#include "mongo/logv2/log.h"
 #include "mongo/s/client/shard_registry.h"
 #include "mongo/s/grid.h"
 #include "mongo/s/multi_statement_transaction_requests_sender.h"

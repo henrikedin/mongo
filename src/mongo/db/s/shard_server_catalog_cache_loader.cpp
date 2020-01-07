@@ -43,6 +43,7 @@
 #include "mongo/db/repl/replication_coordinator.h"
 #include "mongo/db/s/shard_metadata_util.h"
 #include "mongo/db/s/sharding_state.h"
+#include "mongo/logv2/log.h"
 #include "mongo/s/catalog/type_shard_collection.h"
 #include "mongo/s/catalog/type_shard_database.h"
 #include "mongo/s/client/shard_registry.h"

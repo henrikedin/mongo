@@ -39,6 +39,7 @@
 #include "mongo/db/repl/replication_coordinator.h"
 #include "mongo/db/repl/reporter.h"
 #include "mongo/executor/task_executor.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/concurrency/idle_thread_block.h"
 #include "mongo/util/log.h"
 #include "mongo/util/net/hostandport.h"

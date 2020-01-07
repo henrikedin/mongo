@@ -55,6 +55,7 @@
 #include "mongo/db/query/query_knobs_gen.h"
 #include "mongo/db/storage/durable_catalog.h"
 #include "mongo/db/storage/storage_engine.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/log.h"
 #include "mongo/util/scopeguard.h"
 

@@ -50,6 +50,7 @@
 #include "mongo/s/request_types/flush_database_cache_updates_gen.h"
 
 
+#include "mongo/logv2/log.h"
 #include "mongo/util/log.h"
 
 namespace mongo {

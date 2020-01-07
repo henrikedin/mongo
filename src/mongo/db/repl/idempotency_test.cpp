@@ -40,6 +40,7 @@
 #include "mongo/db/repl/idempotency_update_sequence.h"
 #include "mongo/db/repl/replication_coordinator.h"
 #include "mongo/db/server_options.h"
+#include "mongo/logv2/log.h"
 #include "mongo/unittest/unittest.h"
 
 namespace mongo {

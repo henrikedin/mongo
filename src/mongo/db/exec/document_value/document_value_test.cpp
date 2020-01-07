@@ -41,6 +41,7 @@
 #include "mongo/db/json.h"
 #include "mongo/db/pipeline/field_path.h"
 #include "mongo/dbtests/dbtests.h"
+#include "mongo/logv2/log.h"
 
 namespace DocumentTests {
 

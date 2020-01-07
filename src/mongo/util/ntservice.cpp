@@ -37,6 +37,7 @@
 
 #include "mongo/util/ntservice.h"
 
+#include "mongo/logv2/log.h"
 #include "mongo/stdx/chrono.h"
 #include "mongo/stdx/future.h"
 #include "mongo/stdx/thread.h"

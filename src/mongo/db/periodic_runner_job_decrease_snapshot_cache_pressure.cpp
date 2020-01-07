@@ -38,6 +38,7 @@
 #include "mongo/db/service_context.h"
 #include "mongo/db/snapshot_window_options.h"
 #include "mongo/db/snapshot_window_util.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/log.h"
 #include "mongo/util/periodic_runner.h"
 

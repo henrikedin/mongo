@@ -50,6 +50,7 @@
 #include "mongo/db/storage/storage_parameters_gen.h"
 #include "mongo/db/transaction_history_iterator.h"
 #include "mongo/db/transaction_participant.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/log.h"
 #include "mongo/util/timer.h"
 

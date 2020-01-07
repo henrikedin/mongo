@@ -68,6 +68,7 @@
 #include "mongo/util/scopeguard.h"
 #include "mongo/util/str.h"
 
+#include "mongo/logv2/log.h"
 #include "mongo/unittest/barrier.h"
 #include "mongo/unittest/unittest.h"
 

@@ -39,6 +39,7 @@
 #include "mongo/db/client.h"
 #include "mongo/db/dbmessage.h"
 #include "mongo/db/service_context.h"
+#include "mongo/logv2/log.h"
 #include "mongo/rpc/op_msg.h"
 #include "mongo/transport/mock_session.h"
 #include "mongo/transport/service_entry_point.h"

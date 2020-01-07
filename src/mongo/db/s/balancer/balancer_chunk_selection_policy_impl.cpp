@@ -39,6 +39,7 @@
 
 #include "mongo/base/status_with.h"
 #include "mongo/bson/bsonobj_comparator_interface.h"
+#include "mongo/logv2/log.h"
 #include "mongo/s/balancer_configuration.h"
 #include "mongo/s/catalog/type_chunk.h"
 #include "mongo/s/catalog/type_collection.h"

@@ -45,6 +45,7 @@
 #include "mongo/db/auth/sasl_command_constants.h"
 #include "mongo/db/dbmessage.h"
 #include "mongo/db/jsobj.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/log.h"
 
 namespace mongo {

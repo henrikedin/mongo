@@ -38,6 +38,7 @@
 #include "mongo/db/service_context.h"
 #include "mongo/db/transaction_participant.h"
 #include "mongo/db/transaction_participant_gen.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/log.h"
 #include "mongo/util/periodic_runner.h"
 

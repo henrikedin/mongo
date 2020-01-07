@@ -39,6 +39,7 @@
 #include <fstream>
 #include <iostream>
 
+#include "mongo/logv2/log.h"
 #include "mongo/util/log.h"
 
 namespace mongo {

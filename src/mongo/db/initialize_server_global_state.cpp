@@ -58,6 +58,7 @@
 #include "mongo/logger/rotatable_file_manager.h"
 #include "mongo/logger/rotatable_file_writer.h"
 #include "mongo/logger/syslog_appender.h"
+#include "mongo/logv2/log.h"
 #include "mongo/logv2/log_domain_global.h"
 #include "mongo/platform/process_id.h"
 #include "mongo/util/log.h"

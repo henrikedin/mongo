@@ -35,6 +35,7 @@
 
 #include "mongo/db/log_process_details.h"
 #include "mongo/db/server_options.h"
+#include "mongo/logv2/log.h"
 #include "mongo/platform/process_id.h"
 #include "mongo/util/debug_util.h"
 #include "mongo/util/log.h"

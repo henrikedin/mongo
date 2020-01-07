@@ -30,6 +30,7 @@
 #include "mongo/client/dbclient_connection.h"
 #include "mongo/client/dbclient_cursor.h"
 #include "mongo/db/query/cursor_response.h"
+#include "mongo/logv2/log.h"
 #include "mongo/unittest/unittest.h"
 #include "mongo/util/assert_util.h"
 

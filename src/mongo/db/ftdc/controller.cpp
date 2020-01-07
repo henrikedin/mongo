@@ -39,6 +39,7 @@
 #include "mongo/db/ftdc/collector.h"
 #include "mongo/db/ftdc/util.h"
 #include "mongo/db/jsobj.h"
+#include "mongo/logv2/log.h"
 #include "mongo/platform/mutex.h"
 #include "mongo/stdx/condition_variable.h"
 #include "mongo/stdx/thread.h"

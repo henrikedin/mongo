@@ -32,6 +32,7 @@
 #include "mongo/platform/basic.h"
 
 #include "mongo/db/storage/recovery_unit.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/log.h"
 #include "mongo/util/scopeguard.h"
 

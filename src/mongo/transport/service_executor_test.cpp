@@ -34,6 +34,7 @@
 #include "boost/optional.hpp"
 
 #include "mongo/db/service_context.h"
+#include "mongo/logv2/log.h"
 #include "mongo/transport/service_executor_adaptive.h"
 #include "mongo/transport/service_executor_synchronous.h"
 #include "mongo/transport/service_executor_task_names.h"

@@ -37,6 +37,7 @@
 #include "mongo/db/repl/collection_cloner.h"
 #include "mongo/db/repl/database_cloner_gen.h"
 #include "mongo/db/repl/repl_server_parameters_gen.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/log.h"
 

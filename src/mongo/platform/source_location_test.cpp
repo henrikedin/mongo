@@ -29,6 +29,7 @@
 
 #include "mongo/platform/basic.h"
 
+#include "mongo/logv2/log.h"
 #include "mongo/platform/source_location_test.h"
 
 namespace mongo {

@@ -33,6 +33,7 @@
 #include <ostream>
 
 #include "mongo/client/sdam/sdam_test_base.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/log.h"
 
 namespace mongo::sdam {

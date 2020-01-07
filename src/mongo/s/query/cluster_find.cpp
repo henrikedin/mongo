@@ -51,6 +51,7 @@
 #include "mongo/db/query/getmore_request.h"
 #include "mongo/db/query/query_planner_common.h"
 #include "mongo/executor/task_executor_pool.h"
+#include "mongo/logv2/log.h"
 #include "mongo/platform/overflow_arithmetic.h"
 #include "mongo/s/catalog_cache.h"
 #include "mongo/s/client/num_hosts_targeted_metrics.h"

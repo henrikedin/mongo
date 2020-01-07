@@ -36,6 +36,7 @@
 #include <random>
 
 #include "mongo/db/s/balancer/type_migration.h"
+#include "mongo/logv2/log.h"
 #include "mongo/s/catalog/type_shard.h"
 #include "mongo/s/catalog/type_tags.h"
 #include "mongo/util/fail_point.h"

@@ -32,6 +32,7 @@
 
 #include "mongo/platform/random.h"
 
+#include "mongo/logv2/log.h"
 #include "mongo/unittest/unittest.h"
 
 namespace mongo {

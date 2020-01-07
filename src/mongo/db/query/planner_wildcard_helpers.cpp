@@ -39,6 +39,7 @@
 #include "mongo/db/exec/projection_executor_utils.h"
 #include "mongo/db/index/wildcard_key_generator.h"
 #include "mongo/db/query/index_bounds.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/log.h"
 
 namespace mongo {

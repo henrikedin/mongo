@@ -41,6 +41,7 @@
 #include "mongo/db/repl/replication_coordinator_test_fixture.h"
 #include "mongo/db/repl/topology_coordinator.h"
 #include "mongo/executor/network_interface_mock.h"
+#include "mongo/logv2/log.h"
 #include "mongo/rpc/metadata/repl_set_metadata.h"
 #include "mongo/unittest/unittest.h"
 #include "mongo/util/log.h"

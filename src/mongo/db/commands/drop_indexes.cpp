@@ -53,6 +53,7 @@
 #include "mongo/db/service_context.h"
 #include "mongo/db/storage/durable_catalog.h"
 #include "mongo/db/views/view_catalog.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/log.h"
 #include "mongo/util/quick_exit.h"
 

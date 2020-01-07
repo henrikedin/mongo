@@ -73,6 +73,7 @@
 #include "mongo/db/storage/storage_options.h"
 #include "mongo/db/system_index.h"
 #include "mongo/db/views/view_catalog.h"
+#include "mongo/logv2/log.h"
 #include "mongo/platform/random.h"
 #include "mongo/s/cannot_implicitly_create_collection_info.h"
 #include "mongo/util/assert_util.h"

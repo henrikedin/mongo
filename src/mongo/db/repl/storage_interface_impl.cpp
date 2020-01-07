@@ -76,6 +76,7 @@
 #include "mongo/db/service_context.h"
 #include "mongo/db/storage/durable_catalog.h"
 #include "mongo/db/storage/oplog_cap_maintainer_thread.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/background.h"
 #include "mongo/util/log.h"

@@ -50,6 +50,7 @@
 #include "mongo/db/matcher/extensions_callback_real.h"
 #include "mongo/db/namespace_string.h"
 #include "mongo/db/query/collection_query_info.h"
+#include "mongo/logv2/log.h"
 #include "mongo/stdx/unordered_set.h"
 #include "mongo/util/log.h"
 

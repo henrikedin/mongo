@@ -61,6 +61,7 @@
 #include "mongo/db/s/database_sharding_state.h"
 #include "mongo/db/server_options.h"
 #include "mongo/db/views/view_catalog.h"
+#include "mongo/logv2/log.h"
 #include "mongo/platform/compiler.h"
 #include "mongo/s/shard_key_pattern.h"
 #include "mongo/util/log.h"

@@ -41,6 +41,7 @@
 #include "mongo/db/s/sharding_logging.h"
 #include "mongo/db/s/sharding_state_recovery.h"
 #include "mongo/db/s/sharding_statistics.h"
+#include "mongo/logv2/log.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/s/catalog/type_shard_database.h"
 #include "mongo/s/catalog_cache.h"

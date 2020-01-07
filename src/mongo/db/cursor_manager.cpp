@@ -52,6 +52,7 @@
 #include "mongo/db/operation_context.h"
 #include "mongo/db/query/plan_executor.h"
 #include "mongo/db/service_context.h"
+#include "mongo/logv2/log.h"
 #include "mongo/platform/random.h"
 #include "mongo/util/exit.h"
 #include "mongo/util/log.h"

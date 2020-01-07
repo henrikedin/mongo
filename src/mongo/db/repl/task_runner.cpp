@@ -40,6 +40,7 @@
 #include "mongo/db/client.h"
 #include "mongo/db/operation_context.h"
 #include "mongo/db/service_context.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/concurrency/thread_name.h"
 #include "mongo/util/destructor_guard.h"

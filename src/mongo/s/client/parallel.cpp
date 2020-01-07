@@ -39,6 +39,7 @@
 #include "mongo/client/replica_set_monitor.h"
 #include "mongo/db/bson/dotted_path_support.h"
 #include "mongo/db/query/query_request.h"
+#include "mongo/logv2/log.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/s/catalog_cache.h"
 #include "mongo/s/client/shard_connection.h"

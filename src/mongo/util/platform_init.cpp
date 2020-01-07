@@ -39,6 +39,7 @@
 #endif
 
 #include "mongo/base/init.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/log.h"
 #include "mongo/util/stacktrace.h"
 

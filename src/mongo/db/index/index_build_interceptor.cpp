@@ -46,6 +46,7 @@
 #include "mongo/db/multi_key_path_tracker.h"
 #include "mongo/db/operation_context.h"
 #include "mongo/db/service_context.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/fail_point.h"
 #include "mongo/util/log.h"
 #include "mongo/util/progress_meter.h"

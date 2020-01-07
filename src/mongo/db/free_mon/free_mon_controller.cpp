@@ -35,6 +35,7 @@
 
 #include "mongo/db/ftdc/collector.h"
 #include "mongo/logger/logstream_builder.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/log.h"
 
 namespace mongo {

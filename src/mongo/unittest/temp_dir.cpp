@@ -36,6 +36,7 @@
 #include <boost/filesystem.hpp>
 
 #include "mongo/base/init.h"
+#include "mongo/logv2/log.h"
 #include "mongo/unittest/unittest.h"
 #include "mongo/util/log.h"
 #include "mongo/util/options_parser/startup_option_init.h"

@@ -33,6 +33,7 @@
 #include "mongo/client/dbclient_rs.h"
 #include "mongo/db/ops/write_ops.h"
 #include "mongo/db/query/getmore_request.h"
+#include "mongo/logv2/log.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/rpc/op_msg.h"
 #include "mongo/unittest/integration_test.h"

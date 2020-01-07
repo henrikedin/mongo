@@ -45,6 +45,7 @@
 #include "mongo/db/s/sharding_state.h"
 #include "mongo/db/server_options.h"
 #include "mongo/db/storage/recovery_unit.h"
+#include "mongo/logv2/log.h"
 #include "mongo/s/grid.h"
 #include "mongo/util/concurrency/notification.h"
 #include "mongo/util/log.h"

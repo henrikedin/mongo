@@ -57,6 +57,7 @@
 #include "mongo/db/service_context.h"
 #include "mongo/db/stats/counters.h"
 #include "mongo/db/stats/top.h"
+#include "mongo/logv2/log.h"
 #include "mongo/s/chunk_version.h"
 #include "mongo/util/fail_point.h"
 #include "mongo/util/log.h"

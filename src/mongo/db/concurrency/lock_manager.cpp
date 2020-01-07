@@ -41,6 +41,7 @@
 #include "mongo/db/catalog/collection_catalog.h"
 #include "mongo/db/concurrency/d_concurrency.h"
 #include "mongo/db/concurrency/locker.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/log.h"
 #include "mongo/util/str.h"

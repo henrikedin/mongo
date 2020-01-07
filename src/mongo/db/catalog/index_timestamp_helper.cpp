@@ -35,6 +35,7 @@
 #include "mongo/db/logical_clock.h"
 #include "mongo/db/repl/member_state.h"
 #include "mongo/db/repl/replication_coordinator.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/log.h"
 
 namespace mongo {

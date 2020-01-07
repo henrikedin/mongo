@@ -42,6 +42,7 @@
 #include "mongo/db/auth/authorization_manager.h"
 #include "mongo/db/auth/sasl_command_constants.h"
 #include "mongo/db/server_options.h"
+#include "mongo/logv2/log.h"
 #include "mongo/platform/mutex.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/rpc/op_msg_rpc_impls.h"

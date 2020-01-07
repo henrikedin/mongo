@@ -48,6 +48,7 @@
 #include "mongo/db/s/shard_identity_rollback_notifier.h"
 #include "mongo/db/s/type_shard_identity.h"
 #include "mongo/db/service_context.h"
+#include "mongo/logv2/log.h"
 #include "mongo/s/catalog/type_config_version.h"
 #include "mongo/stdx/thread.h"
 #include "mongo/transport/session.h"

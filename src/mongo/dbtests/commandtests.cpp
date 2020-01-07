@@ -37,6 +37,7 @@
 #include "mongo/db/dbdirectclient.h"
 #include "mongo/db/operation_context.h"
 #include "mongo/dbtests/dbtests.h"
+#include "mongo/logv2/log.h"
 #include "mongo/rpc/op_msg.h"
 
 using namespace mongo;

@@ -42,6 +42,7 @@
 #include "mongo/db/auth/authorization_session.h"
 #include "mongo/db/commands.h"
 #include "mongo/db/commands/kill_op_cmd_base.h"
+#include "mongo/logv2/log.h"
 #include "mongo/rpc/metadata.h"
 #include "mongo/s/client/shard.h"
 #include "mongo/s/client/shard_registry.h"

@@ -33,6 +33,7 @@
 
 #include "mongo/db/repl/oplog_entry.h"
 #include "mongo/executor/thread_pool_task_executor_test_fixture.h"
+#include "mongo/logv2/log.h"
 #include "mongo/unittest/unittest.h"
 
 namespace mongo {

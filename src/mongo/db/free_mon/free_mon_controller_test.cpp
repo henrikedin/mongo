@@ -62,6 +62,7 @@
 #include "mongo/db/service_context_d_test_fixture.h"
 #include "mongo/executor/network_interface_mock.h"
 #include "mongo/executor/thread_pool_task_executor_test_fixture.h"
+#include "mongo/logv2/log.h"
 #include "mongo/rpc/object_check.h"
 #include "mongo/unittest/barrier.h"
 #include "mongo/unittest/temp_dir.h"

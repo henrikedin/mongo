@@ -59,6 +59,7 @@
 #include "mongo/db/s/type_shard_identity.h"
 #include "mongo/db/wire_version.h"
 #include "mongo/executor/task_executor.h"
+#include "mongo/logv2/log.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/s/catalog/config_server_version.h"
 #include "mongo/s/catalog/sharding_catalog_client.h"

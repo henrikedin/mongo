@@ -35,6 +35,7 @@
 
 #include "mongo/db/operation_context.h"
 #include "mongo/db/s/operation_sharding_state.h"
+#include "mongo/logv2/log.h"
 #include "mongo/s/database_version_helpers.h"
 #include "mongo/s/stale_exception.h"
 #include "mongo/util/fail_point.h"

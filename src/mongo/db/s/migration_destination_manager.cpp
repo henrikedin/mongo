@@ -60,6 +60,7 @@
 #include "mongo/db/server_options.h"
 #include "mongo/db/service_context.h"
 #include "mongo/db/storage/remove_saver.h"
+#include "mongo/logv2/log.h"
 #include "mongo/s/catalog/type_chunk.h"
 #include "mongo/s/client/shard_registry.h"
 #include "mongo/s/grid.h"

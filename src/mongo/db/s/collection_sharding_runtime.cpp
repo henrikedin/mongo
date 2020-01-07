@@ -39,6 +39,7 @@
 #include "mongo/db/s/sharded_connection_info.h"
 #include "mongo/db/s/sharding_runtime_d_params_gen.h"
 #include "mongo/db/s/sharding_state.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/duration.h"
 #include "mongo/util/log.h"
 

@@ -38,6 +38,7 @@
 #include "mongo/db/logical_time.h"
 #include "mongo/db/operation_time_tracker.h"
 #include "mongo/executor/thread_pool_task_executor.h"
+#include "mongo/logv2/log.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/rpc/metadata/sharding_metadata.h"
 #include "mongo/s/client/shard_registry.h"

@@ -41,6 +41,7 @@
 #include "mongo/db/concurrency/lock_state.h"
 #include "mongo/db/service_context_test_fixture.h"
 #include "mongo/db/storage/recovery_unit_noop.h"
+#include "mongo/logv2/log.h"
 #include "mongo/unittest/unittest.h"
 #include "mongo/util/log.h"
 #include "mongo/util/time_support.h"

@@ -34,6 +34,7 @@
 #include "mongo/bson/json.h"
 #include "mongo/db/index/wildcard_key_generator.h"
 #include "mongo/db/query/collation/collator_interface_mock.h"
+#include "mongo/logv2/log.h"
 #include "mongo/unittest/unittest.h"
 #include "mongo/util/log.h"
 

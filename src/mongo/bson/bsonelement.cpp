@@ -43,6 +43,7 @@
 #include "mongo/bson/generator_extended_relaxed_2_0_0.h"
 #include "mongo/bson/generator_legacy_strict.h"
 #include "mongo/db/jsobj.h"
+#include "mongo/logv2/log.h"
 #include "mongo/platform/strnlen.h"
 #include "mongo/util/base64.h"
 #include "mongo/util/duration.h"

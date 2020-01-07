@@ -45,6 +45,7 @@
 #include "mongo/db/logical_time.h"
 #include "mongo/db/operation_context.h"
 #include "mongo/db/service_context.h"
+#include "mongo/logv2/log.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/s/catalog/sharding_catalog_client.h"
 #include "mongo/s/write_ops/batched_command_request.h"

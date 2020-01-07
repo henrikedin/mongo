@@ -75,6 +75,7 @@
 #include "mongo/db/storage/durable_catalog.h"
 #include "mongo/db/storage/remove_saver.h"
 #include "mongo/db/transaction_participant.h"
+#include "mongo/logv2/log.h"
 #include "mongo/s/client/shard_registry.h"
 #include "mongo/s/grid.h"
 #include "mongo/util/exit.h"

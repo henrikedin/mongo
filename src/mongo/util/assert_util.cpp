@@ -43,6 +43,7 @@
 #include <exception>
 
 #include "mongo/config.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/debug_util.h"
 #include "mongo/util/debugger.h"
 #include "mongo/util/exit.h"

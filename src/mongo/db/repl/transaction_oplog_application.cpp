@@ -45,6 +45,7 @@
 #include "mongo/db/session_catalog_mongod.h"
 #include "mongo/db/transaction_history_iterator.h"
 #include "mongo/db/transaction_participant.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/log.h"
 
 namespace mongo {

@@ -33,6 +33,7 @@
 
 #include "mongo/transport/service_executor_reserved.h"
 
+#include "mongo/logv2/log.h"
 #include "mongo/stdx/thread.h"
 #include "mongo/transport/service_entry_point_utils.h"
 #include "mongo/transport/service_executor_gen.h"

@@ -50,6 +50,7 @@
 #include "mongo/db/storage/kv/temporary_kv_record_store.h"
 #include "mongo/db/storage/storage_repair_observer.h"
 #include "mongo/db/unclean_shutdown.h"
+#include "mongo/logv2/log.h"
 #include "mongo/stdx/unordered_map.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/log.h"

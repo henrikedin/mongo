@@ -42,6 +42,7 @@
 #include "mongo/db/s/collection_sharding_state.h"
 #include "mongo/db/s/shard_filtering_metadata_refresh.h"
 #include "mongo/db/s/sharding_state.h"
+#include "mongo/logv2/log.h"
 #include "mongo/s/catalog/type_chunk.h"
 #include "mongo/s/client/shard_registry.h"
 #include "mongo/s/grid.h"

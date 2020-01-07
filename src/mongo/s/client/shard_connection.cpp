@@ -37,6 +37,7 @@
 
 #include "mongo/base/init.h"
 #include "mongo/db/lasterror.h"
+#include "mongo/logv2/log.h"
 #include "mongo/s/chunk_manager.h"
 #include "mongo/s/client/shard.h"
 #include "mongo/s/client/shard_connection_gen.h"

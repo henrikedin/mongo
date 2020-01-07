@@ -45,6 +45,7 @@
 #include "mongo/db/operation_context.h"
 #include "mongo/db/repl/bson_extract_optime.h"
 #include "mongo/db/server_options.h"
+#include "mongo/logv2/log.h"
 #include "mongo/platform/atomic_word.h"
 #include "mongo/platform/mutex.h"
 #include "mongo/stdx/condition_variable.h"

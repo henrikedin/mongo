@@ -42,6 +42,7 @@
 #include "mongo/base/error_codes.h"
 #include "mongo/config.h"
 #include "mongo/db/operation_context.h"
+#include "mongo/logv2/log.h"
 #include "mongo/platform/decimal128.h"
 #include "mongo/platform/mutex.h"
 #include "mongo/platform/stack_locator.h"

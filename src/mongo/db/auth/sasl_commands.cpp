@@ -51,6 +51,7 @@
 #include "mongo/db/commands.h"
 #include "mongo/db/commands/authentication_commands.h"
 #include "mongo/db/server_options.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/base64.h"
 #include "mongo/util/log.h"
 #include "mongo/util/sequence_util.h"
