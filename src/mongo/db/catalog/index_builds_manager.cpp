@@ -163,10 +163,10 @@ StatusWith<std::pair<long long, long long>> IndexBuildsManager::startBuildingInd
                 auto validStatus = validateBSON(data.data(), data.size(), BSONVersion::kLatest);
                 if (!validStatus.isOK()) {
                     if (repair == RepairData::kNo) {
-                        // TODO LOGV2_FATAL(31396, "Invalid BSON detected at {}: {}", "id"_attr = id, "redact_validStatus"_attr = redact(validStatus));
+                        LOGV2_FATAL(31396, "Invalid BSON detected at {}: {}", "id"_attr = id, "redact_validStatus"_attr = redact(validStatus));
                         fassertFailed(31396);
                     }
-                    // TODO LOGV2_WARNING("Invalid BSON detected at {}: {}. Deleting.", "id"_attr = id, "redact_validStatus"_attr = redact(validStatus));
+                    LOGV2_WARNING("Invalid BSON detected at {}: {}. Deleting.", "id"_attr = id, "redact_validStatus"_attr = redact(validStatus));
                     rs->deleteRecord(opCtx, id);
                 } else {
                     numRecords++;

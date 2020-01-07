@@ -1681,7 +1681,7 @@ void rollback_internal::syncFixUp(OperationContext* opCtx,
         opCtx->recoveryUnit()->waitUntilUnjournaledWritesDurable(opCtx, stableCheckpoint);
     }
 
-    // TODO LOGV2("Truncating the oplog at {} ({}), non-inclusive", "fixUpInfo_commonPoint_toString"_attr = fixUpInfo.commonPoint.toString(), "fixUpInfo_commonPointOurDiskloc"_attr = fixUpInfo.commonPointOurDiskloc);
+    LOGV2("Truncating the oplog at {} ({}), non-inclusive", "fixUpInfo_commonPoint_toString"_attr = fixUpInfo.commonPoint.toString(), "fixUpInfo_commonPointOurDiskloc"_attr = fixUpInfo.commonPointOurDiskloc);
 
     // Cleans up the oplog.
     {
