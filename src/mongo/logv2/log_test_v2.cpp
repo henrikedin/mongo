@@ -369,10 +369,9 @@ TEST_F(LogTestV2, Types) {
 
     // long double is prohibited, we don't use this type and favors Decimal128 instead.
 
-    enum UnscopedEnum { UnscopedEntry };
-
     // enums
 
+    enum UnscopedEnum { UnscopedEntry };
     LOGV2("{}", "name"_attr = UnscopedEntry);
     auto expectedUnscoped = static_cast<std::underlying_type_t<UnscopedEnum>>(UnscopedEntry);
     ASSERT_EQUALS(text.back(), std::to_string(expectedUnscoped));
@@ -380,7 +379,6 @@ TEST_F(LogTestV2, Types) {
     ASSERT_EQUALS(lastBSONElement().Number(), expectedUnscoped);
 
     enum class ScopedEnum { Entry = -1 };
-
     LOGV2("{}", "name"_attr = ScopedEnum::Entry);
     auto expectedScoped = static_cast<std::underlying_type_t<ScopedEnum>>(ScopedEnum::Entry);
     ASSERT_EQUALS(text.back(), std::to_string(expectedScoped));
