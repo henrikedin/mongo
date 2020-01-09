@@ -1,9 +1,11 @@
 #!/usr/bin/perl
 use warnings;
 sub convert {
-    my $ramlogs = { 'startupWarningsLog' => 'kStartupWarnings', 'rsLog' => 'kRSLog', 'warnings' => 'kWarnings'};
+    my $ramlogs = { 'startupWarningsLog' => 'kStartupWarnings', 'rsLog' => 'kRS', 'warnings' => 'kWarnings'};
     my $expression = shift(@_);
     my $severity = shift(@_);
+    my $macro = shift(@_);
+    return "$expression;" if ($expression =~ /str::stream\(\)/);
     my @parts = split(m/\s*\<\<\s*/s,$1 );
     shift @parts;
     #print "$fn -> $2 -> $1 -> @parts\n";
@@ -19,13 +21,16 @@ sub convert {
     }
 
     # just toss out a terminal endl
-    if ($parts[-1] =~ /\bendl$/) {
+    if (@parts && $parts[-1] =~ /\bendl$/) {
         pop(@parts);
     }
 
     # categorize logged things
     foreach my $part (@parts) {
         if ($part =~ /\bboolalpha$/) {
+            next;
+        } elsif ($part =~ /\bstd::dec$/) {
+            #TODO, do we need to actually effect the formatting based on this formatting specifier?
             next;
         } elsif ($part =~ /\bendl$/) {
             $message .= "\\n";
@@ -43,7 +48,10 @@ sub convert {
         }
     }
     my $output = "LOGV2";
-
+    if ($macro ne "") {
+        $output .= "_";
+        $output .= $macro;
+    }
     if ($severity) {
         $output .= "_DEBUG";
     }
@@ -85,10 +93,12 @@ sub insert_include {
 
 foreach my $fn (@ARGV) {
     next if $fn =~ /^#/; # skip commented out file names
+    warn $fn;
     open($f, "<", $fn);
     my $data = join('',<$f>);
-    $data =~ s[(\blog\(([^\)]*)\)\s\s*<<[^;]*);$][convert($1,$2)]smige;
-    $data =~ s[(#include "mongo.*#include "mongo[^\n]*$)][insert_include($1)]sem;
+    $data =~ s[(\blog\(([^\)]*)\)\s+<<[^;]*);$][convert($1,$2,'')]smige;
+    $data =~ s[(\bwarning\(([^\)]*)\)\s+<<[^;]*);$][convert($1,$2,'WARNING')]smige;
+    #$data =~ s[(#include "mongo.*#include "mongo[^\n]*$)][insert_include($1)]sem;
     open($f, ">", $fn);
     $f->print($data);
 }
