@@ -360,7 +360,7 @@ src/mongo/s/client/shard.cpp
 src/mongo/s/client/sharding_connection_hook.cpp
 src/mongo/s/client/shard_registry.cpp
 src/mongo/s/client/shard_remote.cpp
-#src/mongo/s/client/version_manager.cpp
+src/mongo/s/client/version_manager.cpp
 src/mongo/s/commands/cluster_collection_mod_cmd.cpp
 src/mongo/s/commands/cluster_coll_stats_cmd.cpp
 src/mongo/s/commands/cluster_create_indexes_cmd.cpp

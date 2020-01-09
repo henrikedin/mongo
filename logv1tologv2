@@ -88,6 +88,7 @@ sub insert_include {
     my @includes = split("\n",$includes);
     my $i = scalar(@includes) -1;
     while ($i > 0 && $includes[$i] gt $inc) { $i -- }
+    if ($includes[$i] eq $inc) { return join("\n",@includes) }
     return join("\n",@includes[0..$i],$inc,@includes[$i+1..$#includes]);
 }
 
@@ -98,7 +99,7 @@ foreach my $fn (@ARGV) {
     my $data = join('',<$f>);
     $data =~ s[(\blog\(([^\)]*)\)\s+<<[^;]*);$][convert($1,$2,'')]smige;
     $data =~ s[(\bwarning\(([^\)]*)\)\s+<<[^;]*);$][convert($1,$2,'WARNING')]smige;
-    #$data =~ s[(#include "mongo.*#include "mongo[^\n]*$)][insert_include($1)]sem;
+    $data =~ s[(#include "mongo.*#include "mongo[^\n]*$)][insert_include($1)]sem;
     open($f, ">", $fn);
     $f->print($data);
 }
