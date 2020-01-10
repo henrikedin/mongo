@@ -1,23 +1,44 @@
 #!/usr/bin/perl
 use warnings;
+my $log_id = 70000;
 sub convert {
     my $ramlogs = { 'startupWarningsLog' => 'kStartupWarnings', 'rsLog' => 'kRS', 'warnings' => 'kWarnings'};
     my $expression = shift(@_);
-    my $severity = shift(@_);
+    my $argument = shift(@_);
     my $macro = shift(@_);
+
     return "$expression;" if ($expression =~ /str::stream\(\)/);
+
+    my $message = "";
+    my @options;
+    my @params;
+
+    #push (@params,$log_id++);
+
+    my $assert_value;
+    if ($macro && $macro eq "FATAL") {
+        my $post = $';
+        $post =~ m/(.*?);/ms;
+        my $first = $1;
+        if ($first =~ m/assert.*\((\d+)/) {
+            push(@params,$1);
+        } elsif ($first =~ m/(exit|terminate)/i) {
+            push(@params,0);
+        } else {
+            $macro = 'ERROR';
+        }
+    }
+
     my @parts = split(m/\s*\<\<\s*/s,$1 );
     shift @parts;
     #print "$fn -> $2 -> $1 -> @parts\n";
     my $attributes = [];
-    my $message = "";
 
     # handle the magical Tee logstreamBuilder modifiers
-    my $options;
     if ($ramlogs->{$parts[-1]}) {
         my $tag = $ramlogs->{$parts[-1]};
         my $rl = pop(@parts);
-        $options = "{logv2::LogTag::$tag}";
+        push(@options, "logv2::LogTag::$tag");
     }
 
     # just toss out a terminal endl
@@ -40,9 +61,9 @@ sub convert {
             $message .= $1;
         } else {
             $attr_name = $part;
-            $attr_name =~ s[^\W+][]g;
-            $attr_name =~ s[\W+$][]g;
-            $attr_name =~ s[\W+][_]g;
+            $attr_name =~ s[^(\W|_)+][]g;
+            $attr_name =~ s[(\W+|_)$][]g;
+            $attr_name =~ s[(\W|_)+][_]g;
             push(@$attributes, [ $attr_name, $part ]);
             $message .= "{}";
         }
@@ -52,22 +73,18 @@ sub convert {
         $output .= "_";
         $output .= $macro;
     }
-    if ($severity) {
-        $output .= "_DEBUG";
-    }
-    if ($options) {
-        $output .= "_OPTIONS";
-    }
-    my @params;
-    if ($severity) {
-        if ($severity =~ /\D/) {
-            push(@params, "::mongo::logger::LogSeverity($severity).toInt()");
+
+    if ($argument) {
+        if ($argument =~ /component/i) {
+            push(@options, $argument);
         } else {
-            push(@params, $severity);
+            $output .= "_DEBUG";
+            push(@params, "::mongo::logger::LogSeverity($argument).toInt()");
         }
     }
-    if ($options) {
-        push(@params, $options);
+    if (@options) {
+        push(@params, "{".join(",",@options)."}");
+        $output .= "_OPTIONS";
     }
     push(@params,"\"$message\"");
     foreach (@$attributes) {
@@ -100,7 +117,7 @@ foreach my $fn (@ARGV) {
     $data =~ s[(\blog\(([^\)]*)\)\s+<<[^;]*);$][convert($1,$2,'')]smige;
     $data =~ s[(\bwarning\(([^\)]*)\)\s+<<[^;]*);$][convert($1,$2,'WARNING')]smige;
     $data =~ s[(\berror\(([^\)]*)\)\s+<<[^;]*);$][convert($1,$2,'ERROR')]smige;
-    $data =~ s[(\bsevere\(([^\)]*)\)\s+<<[^;]*);$][convert($1,$2,'FATAL')]smige;
+    $data =~ s[(\bsevere\(([^\)]*)\)\s+<<[^;]*);$][convert($1,$2,'FATAL',$3)]smige;
     $data =~ s[(#include "mongo.*#include "mongo[^\n]*$)][insert_include($1)]sem;
     open($f, ">", $fn);
     $f->print($data);
