@@ -76,10 +76,14 @@ sub convert {
 
     if ($argument) {
         if ($argument =~ /component/i) {
-            push(@options, $argument);
+            push(@options, "logComponentV1toV2($argument)");
         } else {
             $output .= "_DEBUG";
-            push(@params, "::mongo::logger::LogSeverity($argument).toInt()");
+            if ($argument =~ /^\d+$/) {
+                push(@params, $argument);
+            } else {
+                push(@params, "::mongo::logger::LogSeverity($argument).toInt()");
+            }
         }
     }
     if (@options) {
