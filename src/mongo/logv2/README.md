@@ -8,17 +8,21 @@ The log system is made available with the following header:
 
 `#include "mongo/logv2/log.h"`
 
+To be able to include it a default log component needs to be defined in the cpp file before including `log.h`:
+
+`#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kDefault`
+
 Logging is performed using function style macros:
 
 `LOGV2(ID, message-string, "name0"_attr = var0, ..., "nameN"_attr = varN);`
 
 The ID is a signed 32bit integer in the same number space as the error code numbers. It is used to uniquely identify a log statement. If changing existing code, using a new ID is strongly advised to avoid any parsing ambiguity. 
 
-The message string contains the description of the log event with libfmt style replacement fields optionally embedded within it. The message string must comply with the [format syntax](https://fmt.dev/latest/syntax.html) from libfmt. 
+The message string contains the description of the log event with libfmt style replacement fields optionally embedded within it. The message string must comply with the [format syntax](https://fmt.dev/latest/syntax.html#formatspec) from libfmt. 
 
 Replacement fields are placed in the message string with curly braces `{}`. Everything not surrounded with curly braces is part of the message text. Curly brace characters can be output by escaping them using double braces: `{{` or `}}`. 
 
-Attributes are created with the `_attr` user-defined string literal. The intermediate object that gets instantiated provides the assignment operator `=` for assigning a value to the attribute.
+Attributes are created with the `_attr` user-defined literal. The intermediate object that gets instantiated provides the assignment operator `=` for assigning a value to the attribute.
 
 Attributes are associated with replacement fields in the message string by index. The first replacement field (from left to right) is associated with the first attribute and so forth. This order can be changed by providing an index as the *arg_id* in the replacement field ([grammar](https://fmt.dev/latest/syntax.html)). `{1}` would associate with attribute at index 1.
 
@@ -26,7 +30,7 @@ It is allowed to have more attributes than replacement fields in a log statement
 
 Libfmt supports named replacement fields within the message string, this is not supported in the log system. However, *format spec* is supported but will only affect the human readable text output format.
 
-Last, the message string must be a compile time constant. This is to be able to add compile time verification of log statements in the future.
+The message string must be a compile time constant. This is to be able to add compile time verification of log statements in the future.
 
 #### Examples
 
@@ -43,10 +47,6 @@ LOGV2(1002, "Replication state change", "from"_attr = getOldState(), "to"_attr =
 ```
 
 ### Log Component
-
-Default log component is set using a per-cpp file macro (to be set before including `log.h`)
-
-`#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kDefault`
 
 To override the default component, a separate logging API can be used that takes a `LogOptions` structure:
 
@@ -132,17 +132,26 @@ Many types basic types have built in support
 
 ### User defined types
 
-To make a user defined type loggable it needs a serialization member function that the log system can bind to. The following list are function signatures the log system looks for in priority order:
+To make a user defined type loggable it needs a serialization member function that the log system can bind to. The system will bind a stringification function and optionally a function for structured serialization. Structured serialization is optional but recommended to make available but recommended as output will be output. The system binds the two serialization functions by looking for member functions in the following priority order (as a last resort a non-member function is considered):
+
+##### Structured serialization function signatures
 
 1. `void serialize(BSONObjBuilder*) const`
 2. `BSONObj toBSON() const`
 3. `BSONArray toBSONArray() const`
-4. `void serialize(fmt::memory_buffer&) const`
-5. `std::string toString() const`
+4. `toBSON(const T& val)` (non-member function)
 
-Stringification (**4** or **5**) is required to be able to produce human readable log output. Structured serialization (**1** to **3**) is optional but recommended to be able to produce structured log output.
+##### Stringification function signatures
 
-*NOTE: `operator<<` is not used even if available*
+1. `void serialize(fmt::memory_buffer&) const`
+2. `std::string toString() const`
+3. `toString(const T& val)` (non-member function)
+
+Stringification is required because there is a text log output format. 
+
+Enums will try and bind a `toString(const T& val)` non-member function to log enum values as string. If that is not available the enum will be logged as their underlying integral type.
+
+*NOTE: No `operator<<` overload is used even if available*
 
 #### Examples
 
@@ -182,6 +191,11 @@ Ranges is loggable via helpers to indicate what type of range it is
 
 * `seqLog(begin, end)`
 * `mapLog(begin, end)`
+
+seqLog indicates that it is a sequential range where the iterators point to loggable value directly.
+
+mapLog indicates that it is a range coming from an associative container where the iterators point to a key-value pair.
+
 
 #### Examples
 
