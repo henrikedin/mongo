@@ -42,7 +42,7 @@ public:
         kNone = 0,
 
         // replica set ramlog
-        kRSLog = 1 << 0,
+        kRS = 1 << 0,
 
         // startupWarnings ramlog
         kStartupWarnings = 1 << 1,

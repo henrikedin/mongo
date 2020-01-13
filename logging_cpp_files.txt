@@ -69,8 +69,7 @@ src/mongo/db/commands/index_filter_commands.cpp
 src/mongo/db/commands/kill_op.cpp
 src/mongo/db/commands/mr.cpp
 src/mongo/db/commands/oplog_note.cpp
-#src/mongo/db/commands/parameters.cpp
-src/mongo/db/commands/plan_cache_commands.cpp
+src/mongo/db/commands/parameters.cpp
 src/mongo/db/commands/resize_oplog.cpp
 src/mongo/db/commands/restart_catalog_command.cpp
 src/mongo/db/commands/server_status.cpp
@@ -114,7 +113,7 @@ src/mongo/db/index_builds_coordinator.cpp
 src/mongo/db/index/duplicate_key_tracker.cpp
 src/mongo/db/index/hash_key_generator_test.cpp
 src/mongo/db/index/haystack_access_method.cpp
-#src/mongo/db/index/index_access_method.cpp
+#src/mongo/db/index/index_access_method.cpp # unsigned long
 src/mongo/db/index/index_access_method_factory_impl.cpp
 src/mongo/db/index/index_build_interceptor.cpp
 src/mongo/db/index/s2_key_generator_test.cpp
@@ -126,7 +125,7 @@ src/mongo/db/keys_collection_manager.cpp
 src/mongo/db/kill_sessions_common.cpp
 src/mongo/db/kill_sessions_local.cpp
 src/mongo/db/logical_clock.cpp
-#src/mongo/db/logical_session_cache_impl.cpp
+src/mongo/db/logical_session_cache_impl.cpp
 src/mongo/db/logical_time_validator.cpp
 src/mongo/db/log_process_details.cpp
 src/mongo/db/matcher/rewrite_expr.cpp
@@ -235,7 +234,7 @@ src/mongo/db/s/config/configsvr_add_shard_command.cpp
 src/mongo/db/s/config/configsvr_move_primary_command.cpp
 src/mongo/db/s/config/configsvr_refine_collection_shard_key_command.cpp
 src/mongo/db/s/config/configsvr_remove_shard_command.cpp
-#src/mongo/db/s/config/sharding_catalog_manager_collection_operations.cpp
+src/mongo/db/s/config/sharding_catalog_manager_collection_operations.cpp
 src/mongo/db/s/config/sharding_catalog_manager_database_operations.cpp
 src/mongo/db/s/config/sharding_catalog_manager_shard_operations.cpp
 src/mongo/db/s/database_sharding_state.cpp
@@ -281,7 +280,7 @@ src/mongo/db/storage/key_string_test.cpp
 src/mongo/db/storage/kv/kv_drop_pending_ident_reaper.cpp
 src/mongo/db/storage/mobile/mobile_kv_engine.cpp
 src/mongo/db/storage/mobile/mobile_session_pool.cpp
-#src/mongo/db/storage/mobile/mobile_sqlite_statement.cpp
+#src/mongo/db/storage/mobile/mobile_sqlite_statement.cpp # uses macros that wrap legacy logging macros
 src/mongo/db/storage/mobile/mobile_util.cpp
 src/mongo/db/storage/oplog_cap_maintainer_thread.cpp
 src/mongo/db/storage/recovery_unit.cpp
@@ -293,7 +292,7 @@ src/mongo/db/storage/storage_engine_metadata.cpp
 src/mongo/db/storage/storage_file_util.cpp
 src/mongo/db/storage/storage_repair_observer_test.cpp
 src/mongo/db/storage/wiredtiger/wiredtiger_global_options.cpp
-#src/mongo/db/storage/wiredtiger/wiredtiger_index.cpp
+#src/mongo/db/storage/wiredtiger/wiredtiger_index.cpp # uses macros that wrap legacy logging macros
 src/mongo/db/storage/wiredtiger/wiredtiger_init.cpp
 src/mongo/db/storage/wiredtiger/wiredtiger_kv_engine.cpp
 src/mongo/db/storage/wiredtiger/wiredtiger_kv_engine_test.cpp
@@ -331,7 +330,7 @@ src/mongo/db/write_concern.cpp
 src/mongo/embedded/embedded.cpp
 src/mongo/embedded/mongoc_embedded/mongoc_embedded_test.cpp
 src/mongo/embedded/mongoed_main.cpp
-#src/mongo/executor/connection_pool.cpp
+src/mongo/executor/connection_pool.cpp
 src/mongo/executor/connection_pool_tl.cpp
 src/mongo/executor/network_interface_integration_fixture.cpp
 src/mongo/executor/network_interface_mock.cpp

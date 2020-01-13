@@ -200,10 +200,10 @@ namespace mongo {
 
 #define LOGV2_DEBUG_OPTIONS(DLEVEL, OPTIONS, MESSAGE, ...)                                \
     do {                                                                                  \
-        auto severity = ::mongo::logv2::LogSeverity::Debug(DLEVEL);                       \
+        auto _severity = ::mongo::logv2::LogSeverity::Debug(DLEVEL);                       \
         if (::mongo::logv2::LogManager::global().getGlobalSettings().shouldLog(           \
-                MongoLogV2DefaultComponent_component, severity)) {                        \
-            LOGV2_IMPL(severity, ::mongo::StringData{}, OPTIONS, MESSAGE, ##__VA_ARGS__); \
+                MongoLogV2DefaultComponent_component, _severity)) {                        \
+            LOGV2_IMPL(_severity, ::mongo::StringData{}, OPTIONS, MESSAGE, ##__VA_ARGS__); \
         }                                                                                 \
     } while (false)
 
