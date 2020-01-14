@@ -1,6 +1,6 @@
 # Log System Overview
 
-The new log system adds capability to produce structured logs in the [Relaxed Extended JSON 2.0.0](https://github.com/mongodb/specifications/blob/master/source/extended-json.rst) format. Variables are logged as attributes where they are assigned a name. This is achieved with a new API which is inspired by [libfmt](https://fmt.dev/latest/index.html) and its Format API.
+The new log system adds capability to produce structured logs in the [Relaxed Extended JSON 2.0.0](https://github.com/mongodb/specifications/blob/master/source/extended-json.rst) format. Variables are logged as attributes where they are assigned a name. This is achieved with a new API which is inspired by [libfmt](https://fmt.dev/6.1.1/index.html) and its Format API.
 
 # Basic Usage
 
@@ -18,13 +18,13 @@ Logging is performed using function style macros:
 
 The ID is a signed 32bit integer in the same number space as the error code numbers. It is used to uniquely identify a log statement. If changing existing code, using a new ID is strongly advised to avoid any parsing ambiguity. 
 
-The message string contains the description of the log event with libfmt style replacement fields optionally embedded within it. The message string must comply with the [format syntax](https://fmt.dev/latest/syntax.html#formatspec) from libfmt. 
+The message string contains the description of the log event with libfmt style replacement fields optionally embedded within it. The message string must comply with the [format syntax](https://fmt.dev/6.1.1/syntax.html#formatspec) from libfmt. 
 
 Replacement fields are placed in the message string with curly braces `{}`. Everything not surrounded with curly braces is part of the message text. Curly brace characters can be output by escaping them using double braces: `{{` or `}}`. 
 
 Attributes are created with the `_attr` user-defined literal. The intermediate object that gets instantiated provides the assignment operator `=` for assigning a value to the attribute.
 
-Attributes are associated with replacement fields in the message string by index. The first replacement field (from left to right) is associated with the first attribute and so forth. This order can be changed by providing an index as the *arg_id* in the replacement field ([grammar](https://fmt.dev/latest/syntax.html)). `{1}` would associate with attribute at index 1.
+Attributes are associated with replacement fields in the message string by index. The first replacement field (from left to right) is associated with the first attribute and so forth. This order can be changed by providing an index as the *arg_id* in the replacement field ([grammar](https://fmt.dev/6.1.1/syntax.html)). `{1}` would associate with attribute at index 1.
 
 It is allowed to have more attributes than replacement fields in a log statement. However, having fewer attributes than replacement fields is not allowed.
 
@@ -132,24 +132,36 @@ Many types basic types have built in support
 
 ### User defined types
 
-To make a user defined type loggable it needs a serialization member function that the log system can bind to. The system will bind a stringification function and optionally a function for structured serialization. Structured serialization is optional but recommended to make available but recommended as output will be output. The system binds the two serialization functions by looking for member functions in the following priority order (as a last resort a non-member function is considered):
+To make a user defined type loggable it needs a serialization member function that the log system can bind to. At a minimum a type needs a stringification function. This would be used to produce text output and used as a fallback for JSON output.
+
+In order to offer more its string representation in JSON, a type would need to supply a  structured serialization function.
+
+The system will bind a stringification function and optionally a structured serialization function. The system binds to the serialization functions by looking for functions in the following priority order:
 
 ##### Structured serialization function signatures
+
+Member functions:
 
 1. `void serialize(BSONObjBuilder*) const`
 2. `BSONObj toBSON() const`
 3. `BSONArray toBSONArray() const`
+
+Non-member functions:
+
 4. `toBSON(const T& val)` (non-member function)
 
 ##### Stringification function signatures
 
+Member functions:
+
 1. `void serialize(fmt::memory_buffer&) const`
 2. `std::string toString() const`
-3. `toString(const T& val)` (non-member function)
 
-Stringification is required because there is a text log output format. 
+Non-member functions:
 
-Enums will try and bind a `toString(const T& val)` non-member function to log enum values as string. If that is not available the enum will be logged as their underlying integral type.
+3. `toString(const T& val)` (non-member function) 
+
+Enums will only try to bind a `toString(const T& val)` non-member function. If one is not available the enum value will be logged as its underlying integral type.
 
 *NOTE: No `operator<<` overload is used even if available*
 
