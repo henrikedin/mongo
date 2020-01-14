@@ -42,6 +42,7 @@
 #include "mongo/db/curop.h"
 #include "mongo/db/db_raii.h"
 #include "mongo/db/jsobj.h"
+#include "mongo/logv2/log.h"
 #include "mongo/rpc/metadata/client_metadata.h"
 #include "mongo/rpc/metadata/client_metadata_ismaster.h"
 #include "mongo/util/log.h"
@@ -159,8 +160,7 @@ void profile(OperationContext* opCtx, NetworkOp op) {
             Database* const db = autoGetDb->getDb();
             if (!db) {
                 // Database disappeared
-                log() << "note: not profiling because db went away for "
-                      << CurOp::get(opCtx)->getNS();
+                LOGV2("note: not profiling because db went away for {}", "CurOp_get_opCtx_getNS"_attr = CurOp::get(opCtx)->getNS());
                 break;
             }
 
@@ -201,14 +201,9 @@ void profile(OperationContext* opCtx, NetworkOp op) {
         }
     } catch (const AssertionException& assertionEx) {
         if (acquireDbXLock && ErrorCodes::isInterruption(assertionEx)) {
-            warning()
-                << "Interrupted while attempting to create profile collection in database "
-                << dbName << " to profile operation " << networkOpToString(op) << " against "
-                << CurOp::get(opCtx)->getNS()
-                << ". Manually create profile collection to ensure future operations are logged.";
+            LOGV2_WARNING("Interrupted while attempting to create profile collection in database {} to profile operation {} against {}. Manually create profile collection to ensure future operations are logged.", "dbName"_attr = dbName, "networkOpToString_op"_attr = networkOpToString(op), "CurOp_get_opCtx_getNS"_attr = CurOp::get(opCtx)->getNS());
         } else {
-            warning() << "Caught Assertion while trying to profile " << networkOpToString(op)
-                      << " against " << CurOp::get(opCtx)->getNS() << ": " << redact(assertionEx);
+            LOGV2_WARNING("Caught Assertion while trying to profile {} against {}: {}", "networkOpToString_op"_attr = networkOpToString(op), "CurOp_get_opCtx_getNS"_attr = CurOp::get(opCtx)->getNS(), "redact_assertionEx"_attr = redact(assertionEx));
         }
     }
 }
@@ -231,7 +226,7 @@ Status createProfileCollection(OperationContext* opCtx, Database* db) {
     }
 
     // system.profile namespace doesn't exist; create it
-    log() << "Creating profile collection: " << dbProfilingNS;
+    LOGV2("Creating profile collection: {}", "dbProfilingNS"_attr = dbProfilingNS);
 
     CollectionOptions collectionOptions;
     collectionOptions.capped = true;

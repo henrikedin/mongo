@@ -41,6 +41,7 @@
 #include "mongo/db/pipeline/document_source_change_stream.h"
 #include "mongo/db/pipeline/document_source_out.h"
 #include "mongo/db/query/find_common.h"
+#include "mongo/logv2/log.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/rpc/op_msg_rpc_impls.h"
 #include "mongo/s/catalog/type_shard.h"
@@ -202,7 +203,7 @@ std::vector<RemoteCursor> establishShardCursors(
     const std::set<ShardId>& shardIds,
     const BSONObj& cmdObj,
     const ReadPreferenceSetting& readPref) {
-    LOG(1) << "Dispatching command " << redact(cmdObj) << " to establish cursors on shards";
+    LOGV2_DEBUG(1, "Dispatching command {} to establish cursors on shards", "redact_cmdObj"_attr = redact(cmdObj));
 
     const bool mustRunOnAll = mustRunOnAllShards(nss, hasChangeStream);
     std::vector<std::pair<ShardId, BSONObj>> requests;
@@ -235,8 +236,8 @@ std::vector<RemoteCursor> establishShardCursors(
     }
 
     if (MONGO_unlikely(shardedAggregateHangBeforeEstablishingShardCursors.shouldFail())) {
-        log() << "shardedAggregateHangBeforeEstablishingShardCursors fail point enabled.  Blocking "
-                 "until fail point is disabled.";
+        LOGV2("shardedAggregateHangBeforeEstablishingShardCursors fail point enabled.  Blocking "
+                 "until fail point is disabled.");
         while (MONGO_unlikely(shardedAggregateHangBeforeEstablishingShardCursors.shouldFail())) {
             sleepsecs(1);
         }
@@ -403,7 +404,7 @@ sharded_agg_helpers::DispatchShardPipelineResults dispatchExchangeConsumerPipeli
     auto opCtx = expCtx->opCtx;
 
     if (MONGO_unlikely(shardedAggregateFailToDispatchExchangeConsumerPipeline.shouldFail())) {
-        log() << "shardedAggregateFailToDispatchExchangeConsumerPipeline fail point enabled.";
+        LOGV2("shardedAggregateFailToDispatchExchangeConsumerPipeline fail point enabled.");
         uasserted(ErrorCodes::FailPointEnabled,
                   "Asserting on exhange consumer pipeline dispatch due to failpoint.");
     }
@@ -585,10 +586,7 @@ DispatchShardPipelineResults dispatchShardPipeline(
     boost::optional<cluster_aggregation_planner::SplitPipeline> splitPipeline;
 
     if (needsSplit) {
-        LOG(5) << "Splitting pipeline: "
-               << "targeting = " << shardIds.size()
-               << " shards, needsMongosMerge = " << needsMongosMerge
-               << ", needsPrimaryShardMerge = " << needsPrimaryShardMerge;
+        LOGV2_DEBUG(5, "Splitting pipeline: targeting = {} shards, needsMongosMerge = {}, needsPrimaryShardMerge = {}", "shardIds_size"_attr = shardIds.size(), "needsMongosMerge"_attr = needsMongosMerge, "needsPrimaryShardMerge"_attr = needsPrimaryShardMerge);
         splitPipeline = cluster_aggregation_planner::splitPipeline(std::move(pipeline));
 
         exchangeSpec = cluster_aggregation_planner::checkIfEligibleForExchange(
@@ -708,7 +706,7 @@ AsyncRequestsSender::Response establishMergingShardCursor(OperationContext* opCt
                                                           const BSONObj mergeCmdObj,
                                                           const ShardId& mergingShardId) {
     if (MONGO_unlikely(shardedAggregateFailToEstablishMergingShardCursor.shouldFail())) {
-        log() << "shardedAggregateFailToEstablishMergingShardCursor fail point enabled.";
+        LOGV2("shardedAggregateFailToEstablishMergingShardCursor fail point enabled.");
         uasserted(ErrorCodes::FailPointEnabled,
                   "Asserting on establishing merging shard cursor due to failpoint.");
     }
@@ -782,7 +780,7 @@ Status dispatchMergingPipeline(
     auto mergeCmdObj = createCommandForMergingShard(
         serializedCommand, expCtx, mergingShardId, mergingShardContributesData, mergePipeline);
 
-    LOG(1) << "Dispatching merge pipeline " << redact(mergeCmdObj) << " to designated shard";
+    LOGV2_DEBUG(1, "Dispatching merge pipeline {} to designated shard", "redact_mergeCmdObj"_attr = redact(mergeCmdObj));
 
     // Dispatch $mergeCursors to the chosen shard, store the resulting cursor, and return.
     auto mergeResponse =

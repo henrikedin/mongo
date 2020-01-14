@@ -41,6 +41,7 @@
 #include "mongo/bson/bsonobjbuilder.h"
 #include "mongo/executor/connection_pool_stats.h"
 #include "mongo/executor/remote_command_request.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/destructor_guard.h"
 #include "mongo/util/hierarchical_acquisition.h"
@@ -112,7 +113,7 @@ size_t ConnectionPool::ConnectionInterface::getGeneration() const {
 void ConnectionPool::ControllerInterface::init(ConnectionPool* pool) {
     invariant(pool);
 
-    LOG(2) << "Controller for " << pool->_name << " is " << name();
+    LOGV2_DEBUG(2, "Controller for {} is {}", "pool_name"_attr = pool->_name, "name"_attr = name());
     _pool = pool;
 }
 
@@ -325,7 +326,7 @@ public:
 
     void fassertSSLModeIs(transport::ConnectSSLMode desired) const {
         if (desired != _sslMode) {
-            severe() << "Mixing ssl modes for a single host is not supported";
+            LOGV2_FATAL(51043, "Mixing ssl modes for a single host is not supported");
             fassertFailedNoTrace(51043);
         }
     }
@@ -629,8 +630,7 @@ Future<ConnectionPool::ConnectionHandle> ConnectionPool::SpecificPool::getConnec
         auto conn = tryGetConnection();
 
         if (conn) {
-            LOG(kDiagnosticLogLevel) << "Requesting new connection to " << _hostAndPort
-                                     << "--using existing idle connection";
+            LOGV2_DEBUG(::mongo::logger::LogSeverity(kDiagnosticLogLevel).toInt(), "Requesting new connection to {}--using existing idle connection", "hostAndPort"_attr = _hostAndPort);
             return Future<ConnectionPool::ConnectionHandle>::makeReady(std::move(conn));
         }
     }
@@ -639,8 +639,7 @@ Future<ConnectionPool::ConnectionHandle> ConnectionPool::SpecificPool::getConnec
     if (timeout < Milliseconds(0) || timeout > pendingTimeout) {
         timeout = pendingTimeout;
     }
-    LOG(kDiagnosticLogLevel) << "Requesting new connection to " << _hostAndPort << " with timeout "
-                             << timeout;
+    LOGV2_DEBUG(::mongo::logger::LogSeverity(kDiagnosticLogLevel).toInt(), "Requesting new connection to {} with timeout {}", "hostAndPort"_attr = _hostAndPort, "timeout"_attr = timeout);
 
     const auto expiration = now + timeout;
     auto pf = makePromiseFuture<ConnectionHandle>();
@@ -672,7 +671,7 @@ ConnectionPool::ConnectionHandle ConnectionPool::SpecificPool::tryGetConnection(
         conn->cancelTimeout();
 
         if (!conn->isHealthy()) {
-            log() << "dropping unhealthy pooled connection to " << conn->getHostAndPort();
+            LOGV2("dropping unhealthy pooled connection to {}", "conn_getHostAndPort"_attr = conn->getHostAndPort());
 
             // Drop the bad connection via scoped destruction and retry
             continue;
@@ -714,19 +713,18 @@ void ConnectionPool::SpecificPool::finishRefresh(ConnectionInterface* connPtr, S
 
     // Pass a failure on through
     if (!status.isOK()) {
-        LOG(kDiagnosticLogLevel) << "Connection failed to " << _hostAndPort << " due to "
-                                 << redact(status);
+        LOGV2_DEBUG(::mongo::logger::LogSeverity(kDiagnosticLogLevel).toInt(), "Connection failed to {} due to {}", "hostAndPort"_attr = _hostAndPort, "redact_status"_attr = redact(status));
         processFailure(status);
         return;
     }
 
     // If the host and port were dropped, let this lapse and spawn new connections
     if (!conn || conn->getGeneration() != _generation) {
-        LOG(kDiagnosticLogLevel) << "Dropping late refreshed connection to " << _hostAndPort;
+        LOGV2_DEBUG(::mongo::logger::LogSeverity(kDiagnosticLogLevel).toInt(), "Dropping late refreshed connection to {}", "hostAndPort"_attr = _hostAndPort);
         return;
     }
 
-    LOG(kDiagnosticLogLevel) << "Finishing connection refresh for " << _hostAndPort;
+    LOGV2_DEBUG(::mongo::logger::LogSeverity(kDiagnosticLogLevel).toInt(), "Finishing connection refresh for {}", "hostAndPort"_attr = _hostAndPort);
 
     // If the connection refreshed successfully, throw it back in the ready pool
     addToReady(std::move(conn));
@@ -774,7 +772,7 @@ void ConnectionPool::SpecificPool::returnConnection(ConnectionInterface* connPtr
 
         _processingPool[connPtr] = std::move(conn);
 
-        LOG(kDiagnosticLogLevel) << "Refreshing connection to " << _hostAndPort;
+        LOGV2_DEBUG(::mongo::logger::LogSeverity(kDiagnosticLogLevel).toInt(), "Refreshing connection to {}", "hostAndPort"_attr = _hostAndPort);
         connPtr->refresh(_parent->_controller->pendingTimeout(),
                          guardCallback([this](auto conn, auto status) {
                              finishRefresh(std::move(conn), std::move(status));
@@ -784,7 +782,7 @@ void ConnectionPool::SpecificPool::returnConnection(ConnectionInterface* connPtr
     }
 
     // If it's fine as it is, just put it in the ready queue
-    LOG(kDiagnosticLogLevel) << "Returning ready connection to " << _hostAndPort;
+    LOGV2_DEBUG(::mongo::logger::LogSeverity(kDiagnosticLogLevel).toInt(), "Returning ready connection to {}", "hostAndPort"_attr = _hostAndPort);
     addToReady(std::move(conn));
 
     fulfillRequests();
@@ -801,7 +799,7 @@ void ConnectionPool::SpecificPool::addToReady(OwnedConnection conn) {
     // immediately check them back in (which kicks off the refresh logic in
     // returnConnection
     auto returnConnectionFunc = guardCallback([this, connPtr]() {
-        LOG(kDiagnosticLogLevel) << "Triggered refresh timeout for " << _hostAndPort;
+        LOGV2_DEBUG(::mongo::logger::LogSeverity(kDiagnosticLogLevel).toInt(), "Triggered refresh timeout for {}", "hostAndPort"_attr = _hostAndPort);
         auto conn = takeFromPool(_readyPool, connPtr);
 
         // We've already been checked out. We don't need to refresh ourselves.
@@ -828,7 +826,7 @@ void ConnectionPool::SpecificPool::triggerShutdown(const Status& status) {
         return;
     }
 
-    LOG(2) << "Delisting connection pool for " << _hostAndPort;
+    LOGV2_DEBUG(2, "Delisting connection pool for {}", "hostAndPort"_attr = _hostAndPort);
 
     // Make sure the pool lifetime lasts until the end of this function,
     // it could be only in the map of pools
@@ -849,8 +847,7 @@ void ConnectionPool::SpecificPool::processFailure(const Status& status) {
 
     if (!_readyPool.empty() || !_processingPool.empty()) {
         auto severity = MONGO_GET_LIMITED_SEVERITY(_hostAndPort, Seconds{1}, 0, 2);
-        LOG(severity) << "Dropping all pooled connections to " << _hostAndPort << " due to "
-                      << redact(status);
+        LOGV2_DEBUG(::mongo::logger::LogSeverity(severity).toInt(), "Dropping all pooled connections to {} due to {}", "hostAndPort"_attr = _hostAndPort, "redact_status"_attr = redact(status));
     }
 
     // When a connection enters the ready pool, its timer is set to eventually refresh the
@@ -878,7 +875,7 @@ void ConnectionPool::SpecificPool::processFailure(const Status& status) {
         request.second.setError(status);
     }
 
-    LOG(kDiagnosticLogLevel) << "Failing requests to " << _hostAndPort;
+    LOGV2_DEBUG(::mongo::logger::LogSeverity(kDiagnosticLogLevel).toInt(), "Failing requests to {}", "hostAndPort"_attr = _hostAndPort);
     _requests.clear();
 }
 
@@ -916,15 +913,12 @@ void ConnectionPool::SpecificPool::spawnConnections() {
     }
 
     if (_health.isFailed) {
-        LOG(kDiagnosticLogLevel)
-            << "Pool for " << _hostAndPort
-            << " has failed recently. Postponing any attempts to spawn connections";
+        LOGV2_DEBUG(::mongo::logger::LogSeverity(kDiagnosticLogLevel).toInt(), "Pool for {} has failed recently. Postponing any attempts to spawn connections", "hostAndPort"_attr = _hostAndPort);
         return;
     }
 
     auto controls = _parent->_controller->getControls(_id);
-    LOG(kDiagnosticLogLevel) << "Comparing connection state for " << _hostAndPort
-                             << " to Controls: " << controls;
+    LOGV2_DEBUG(::mongo::logger::LogSeverity(kDiagnosticLogLevel).toInt(), "Comparing connection state for {} to Controls: {}", "hostAndPort"_attr = _hostAndPort, "controls"_attr = controls);
 
     auto pendingConnections = refreshingConnections();
     if (pendingConnections >= controls.maxPendingConnections) {
@@ -937,18 +931,18 @@ void ConnectionPool::SpecificPool::spawnConnections() {
     }
 
     auto severity = MONGO_GET_LIMITED_SEVERITY(_hostAndPort, Seconds{1}, 0, 2);
-    LOG(severity) << "Connecting to " << _hostAndPort;
+    LOGV2_DEBUG(::mongo::logger::LogSeverity(severity).toInt(), "Connecting to {}", "hostAndPort"_attr = _hostAndPort);
 
     auto allowance = std::min(controls.targetConnections - totalConnections,
                               controls.maxPendingConnections - pendingConnections);
-    LOG(kDiagnosticLogLevel) << "Spawning " << allowance << " connections to " << _hostAndPort;
+    LOGV2_DEBUG(::mongo::logger::LogSeverity(kDiagnosticLogLevel).toInt(), "Spawning {} connections to {}", "allowance"_attr = allowance, "hostAndPort"_attr = _hostAndPort);
     for (decltype(allowance) i = 0; i < allowance; ++i) {
         OwnedConnection handle;
         try {
             // make a new connection and put it in processing
             handle = _parent->_factory->makeConnection(_hostAndPort, _sslMode, _generation);
         } catch (std::system_error& e) {
-            severe() << "Failed to construct a new connection object: " << e.what();
+            LOGV2_FATAL(40336, "Failed to construct a new connection object: {}", "e_what"_attr = e.what());
             fassertFailed(40336);
         }
 
@@ -1067,8 +1061,7 @@ void ConnectionPool::SpecificPool::updateController() {
         availableConnections(),
         inUseConnections(),
     };
-    LOG(kDiagnosticLogLevel) << "Updating controller for " << _hostAndPort
-                             << " with State: " << state;
+    LOGV2_DEBUG(::mongo::logger::LogSeverity(kDiagnosticLogLevel).toInt(), "Updating controller for {} with State: {}", "hostAndPort"_attr = _hostAndPort, "state"_attr = state);
     auto hostGroup = controller.updateHost(_id, std::move(state));
 
     // If we can shutdown, then do so
@@ -1110,7 +1103,7 @@ void ConnectionPool::SpecificPool::updateController() {
 void ConnectionPool::SpecificPool::updateState() {
     if (_health.isShutdown) {
         // If we're in shutdown, there is nothing to update. Our clients are all gone.
-        LOG(kDiagnosticLogLevel) << _hostAndPort << " is dead";
+        LOGV2_DEBUG(::mongo::logger::LogSeverity(kDiagnosticLogLevel).toInt(), "{} is dead", "hostAndPort"_attr = _hostAndPort);
         return;
     }
 

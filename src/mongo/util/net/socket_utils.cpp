@@ -54,6 +54,7 @@
 #endif
 
 #include "mongo/db/server_options.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/concurrency/value.h"
 #include "mongo/util/errno_util.h"
 #include "mongo/util/log.h"
@@ -69,7 +70,7 @@ const struct WinsockInit {
     WinsockInit() {
         WSADATA d;
         if (WSAStartup(MAKEWORD(2, 2), &d) != 0) {
-            log() << "ERROR: wsastartup failed " << errnoWithDescription();
+            LOGV2("ERROR: wsastartup failed {}", "errnoWithDescription"_attr = errnoWithDescription());
             quickExit(EXIT_NTSERVICE_ERROR);
         }
     }
@@ -114,7 +115,7 @@ void setSocketKeepAliveParams(int sock,
             // Return seconds
             return val ? (val.get() / 1000) : default_value;
         }
-        error() << "can't get KeepAlive parameter: " << withval.getStatus();
+        LOGV2_ERROR("can't get KeepAlive parameter: {}", "withval_getStatus"_attr = withval.getStatus());
         return default_value;
     };
 
@@ -136,7 +137,7 @@ void setSocketKeepAliveParams(int sock,
                      &sent,
                      nullptr,
                      nullptr)) {
-            error() << "failed setting keepalive values: " << WSAGetLastError();
+            LOGV2_ERROR("failed setting keepalive values: {}", "WSAGetLastError"_attr = WSAGetLastError());
         }
     }
 #elif defined(__APPLE__) || defined(__linux__)
@@ -146,13 +147,13 @@ void setSocketKeepAliveParams(int sock,
             socklen_t len = sizeof(optval);
 
             if (getsockopt(sock, level, optnum, (char*)&optval, &len)) {
-                error() << "can't get " << optname << ": " << errnoWithDescription();
+                LOGV2_ERROR("can't get {}: {}", "optname"_attr = optname, "errnoWithDescription"_attr = errnoWithDescription());
             }
 
             if (optval > maxval) {
                 optval = maxval;
                 if (setsockopt(sock, level, optnum, (char*)&optval, sizeof(optval))) {
-                    error() << "can't set " << optname << ": " << errnoWithDescription();
+                    LOGV2_ERROR("can't set {}: {}", "optname"_attr = optname, "errnoWithDescription"_attr = errnoWithDescription());
                 }
             }
         };
@@ -196,7 +197,7 @@ std::string getHostName() {
     char buf[256];
     int ec = gethostname(buf, 127);
     if (ec || *buf == 0) {
-        log() << "can't get this server's hostname " << errnoWithDescription();
+        LOGV2("can't get this server's hostname {}", "errnoWithDescription"_attr = errnoWithDescription());
         return "";
     }
     return buf;

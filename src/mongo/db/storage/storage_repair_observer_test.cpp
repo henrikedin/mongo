@@ -37,6 +37,7 @@
 #include "mongo/db/repl/replication_coordinator_mock.h"
 #include "mongo/db/service_context_d_test_fixture.h"
 #include "mongo/db/storage/storage_repair_observer.h"
+#include "mongo/logv2/log.h"
 #include "mongo/unittest/death_test.h"
 #include "mongo/unittest/unittest.h"
 
@@ -107,9 +108,9 @@ public:
         }
 
         if (repairObserver->isDone() && repairObserver->isDataInvalidated()) {
-            unittest::log() << "Modifications: ";
+            unittest::LOGV2("Modifications: ");
             for (const auto& mod : repairObserver->getModifications()) {
-                unittest::log() << "  " << mod.getDescription();
+                unittest::LOGV2("  {}", "mod_getDescription"_attr = mod.getDescription());
             }
         }
     }

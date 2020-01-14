@@ -43,6 +43,7 @@
 #include <sys/types.h>
 #endif
 
+#include "mongo/logv2/log.h"
 #include "mongo/platform/basic.h"
 #include "mongo/util/allocator.h"
 #include "mongo/util/assert_util.h"
@@ -72,16 +73,14 @@ intmax_t File::freeSpace(const std::string& path) {
         return avail.QuadPart;
     }
     DWORD dosError = GetLastError();
-    log() << "In File::freeSpace(), GetDiskFreeSpaceEx for '" << path << "' failed with "
-          << errnoWithDescription(dosError);
+    LOGV2("In File::freeSpace(), GetDiskFreeSpaceEx for '{}' failed with {}", "path"_attr = path, "errnoWithDescription_dosError"_attr = errnoWithDescription(dosError));
     return -1;
 }
 
 void File::fsync() const {
     if (FlushFileBuffers(_handle) == 0) {
         DWORD dosError = GetLastError();
-        log() << "In File::fsync(), FlushFileBuffers for '" << _name << "' failed with "
-              << errnoWithDescription(dosError);
+        LOGV2("In File::fsync(), FlushFileBuffers for '{}' failed with {}", "name"_attr = _name, "errnoWithDescription_dosError"_attr = errnoWithDescription(dosError));
     }
 }
 
@@ -96,8 +95,7 @@ fileofs File::len() {
     }
     _bad = true;
     DWORD dosError = GetLastError();
-    log() << "In File::len(), GetFileSizeEx for '" << _name << "' failed with "
-          << errnoWithDescription(dosError);
+    LOGV2("In File::len(), GetFileSizeEx for '{}' failed with {}", "name"_attr = _name, "errnoWithDescription_dosError"_attr = errnoWithDescription(dosError));
     return 0;
 }
 
@@ -113,8 +111,7 @@ void File::open(const char* filename, bool readOnly, bool direct) {
     _bad = !is_open();
     if (_bad) {
         DWORD dosError = GetLastError();
-        log() << "In File::open(), CreateFileW for '" << _name << "' failed with "
-              << errnoWithDescription(dosError);
+        LOGV2("In File::open(), CreateFileW for '{}' failed with {}", "name"_attr = _name, "errnoWithDescription_dosError"_attr = errnoWithDescription(dosError));
     }
 }
 
@@ -124,17 +121,14 @@ void File::read(fileofs o, char* data, unsigned len) {
     if (SetFilePointerEx(_handle, li, nullptr, FILE_BEGIN) == 0) {
         _bad = true;
         DWORD dosError = GetLastError();
-        log() << "In File::read(), SetFilePointerEx for '" << _name
-              << "' tried to set the file pointer to " << o << " but failed with "
-              << errnoWithDescription(dosError);
+        LOGV2("In File::read(), SetFilePointerEx for '{}' tried to set the file pointer to {} but failed with {}", "name"_attr = _name, "o"_attr = o, "errnoWithDescription_dosError"_attr = errnoWithDescription(dosError));
         return;
     }
     DWORD bytesRead;
     if (!ReadFile(_handle, data, len, &bytesRead, 0)) {
         _bad = true;
         DWORD dosError = GetLastError();
-        log() << "In File::read(), ReadFile for '" << _name << "' failed with "
-              << errnoWithDescription(dosError);
+        LOGV2("In File::read(), ReadFile for '{}' failed with {}", "name"_attr = _name, "errnoWithDescription_dosError"_attr = errnoWithDescription(dosError));
     } else if (bytesRead != len) {
         _bad = true;
         msgasserted(10438,
@@ -153,16 +147,13 @@ void File::truncate(fileofs size) {
     if (SetFilePointerEx(_handle, li, nullptr, FILE_BEGIN) == 0) {
         _bad = true;
         DWORD dosError = GetLastError();
-        log() << "In File::truncate(), SetFilePointerEx for '" << _name
-              << "' tried to set the file pointer to " << size << " but failed with "
-              << errnoWithDescription(dosError);
+        LOGV2("In File::truncate(), SetFilePointerEx for '{}' tried to set the file pointer to {} but failed with {}", "name"_attr = _name, "size"_attr = size, "errnoWithDescription_dosError"_attr = errnoWithDescription(dosError));
         return;
     }
     if (SetEndOfFile(_handle) == 0) {
         _bad = true;
         DWORD dosError = GetLastError();
-        log() << "In File::truncate(), SetEndOfFile for '" << _name << "' failed with "
-              << errnoWithDescription(dosError);
+        LOGV2("In File::truncate(), SetEndOfFile for '{}' failed with {}", "name"_attr = _name, "errnoWithDescription_dosError"_attr = errnoWithDescription(dosError));
     }
 }
 
@@ -172,18 +163,14 @@ void File::write(fileofs o, const char* data, unsigned len) {
     if (SetFilePointerEx(_handle, li, nullptr, FILE_BEGIN) == 0) {
         _bad = true;
         DWORD dosError = GetLastError();
-        log() << "In File::write(), SetFilePointerEx for '" << _name
-              << "' tried to set the file pointer to " << o << " but failed with "
-              << errnoWithDescription(dosError) << std::endl;
+        LOGV2("In File::write(), SetFilePointerEx for '{}' tried to set the file pointer to {} but failed with {}", "name"_attr = _name, "o"_attr = o, "errnoWithDescription_dosError"_attr = errnoWithDescription(dosError));
         return;
     }
     DWORD bytesWritten;
     if (WriteFile(_handle, data, len, &bytesWritten, nullptr) == 0) {
         _bad = true;
         DWORD dosError = GetLastError();
-        log() << "In File::write(), WriteFile for '" << _name << "' tried to write " << len
-              << " bytes but only wrote " << bytesWritten << " bytes, failing with "
-              << errnoWithDescription(dosError);
+        LOGV2("In File::write(), WriteFile for '{}' tried to write {} bytes but only wrote {} bytes, failing with {}", "name"_attr = _name, "len"_attr = len, "bytesWritten"_attr = bytesWritten, "errnoWithDescription_dosError"_attr = errnoWithDescription(dosError));
     }
 }
 
@@ -203,15 +190,13 @@ intmax_t File::freeSpace(const std::string& path) {
     if (statvfs(path.c_str(), &info) == 0) {
         return static_cast<intmax_t>(info.f_bavail) * info.f_frsize;
     }
-    log() << "In File::freeSpace(), statvfs for '" << path << "' failed with "
-          << errnoWithDescription();
+    LOGV2("In File::freeSpace(), statvfs for '{}' failed with {}", "path"_attr = path, "errnoWithDescription"_attr = errnoWithDescription());
     return -1;
 }
 
 void File::fsync() const {
     if (::fsync(_fd)) {
-        log() << "In File::fsync(), ::fsync for '" << _name << "' failed with "
-              << errnoWithDescription();
+        LOGV2("In File::fsync(), ::fsync for '{}' failed with {}", "name"_attr = _name, "errnoWithDescription"_attr = errnoWithDescription());
     }
 }
 
@@ -225,7 +210,7 @@ fileofs File::len() {
         return o;
     }
     _bad = true;
-    log() << "In File::len(), lseek for '" << _name << "' failed with " << errnoWithDescription();
+    LOGV2("In File::len(), lseek for '{}' failed with {}", "name"_attr = _name, "errnoWithDescription"_attr = errnoWithDescription());
     return 0;
 }
 
@@ -244,8 +229,7 @@ void File::open(const char* filename, bool readOnly, bool direct) {
                  S_IRUSR | S_IWUSR);
     _bad = !is_open();
     if (_bad) {
-        log() << "In File::open(), ::open for '" << _name << "' failed with "
-              << errnoWithDescription();
+        LOGV2("In File::open(), ::open for '{}' failed with {}", "name"_attr = _name, "errnoWithDescription"_attr = errnoWithDescription());
     }
 }
 
@@ -253,8 +237,7 @@ void File::read(fileofs o, char* data, unsigned len) {
     ssize_t bytesRead = ::pread(_fd, data, len, o);
     if (bytesRead == -1) {
         _bad = true;
-        log() << "In File::read(), ::pread for '" << _name << "' failed with "
-              << errnoWithDescription();
+        LOGV2("In File::read(), ::pread for '{}' failed with {}", "name"_attr = _name, "errnoWithDescription"_attr = errnoWithDescription());
     } else if (bytesRead != static_cast<ssize_t>(len)) {
         _bad = true;
         msgasserted(16569,
@@ -270,9 +253,7 @@ void File::truncate(fileofs size) {
     }
     if (ftruncate(_fd, size) != 0) {
         _bad = true;
-        log() << "In File::truncate(), ftruncate for '" << _name
-              << "' tried to set the file pointer to " << size << " but failed with "
-              << errnoWithDescription() << std::endl;
+        LOGV2("In File::truncate(), ftruncate for '{}' tried to set the file pointer to {} but failed with {}", "name"_attr = _name, "size"_attr = size, "errnoWithDescription"_attr = errnoWithDescription());
         return;
     }
 }
@@ -281,9 +262,7 @@ void File::write(fileofs o, const char* data, unsigned len) {
     ssize_t bytesWritten = ::pwrite(_fd, data, len, o);
     if (bytesWritten != static_cast<ssize_t>(len)) {
         _bad = true;
-        log() << "In File::write(), ::pwrite for '" << _name << "' tried to write " << len
-              << " bytes but only wrote " << bytesWritten << " bytes, failing with "
-              << errnoWithDescription();
+        LOGV2("In File::write(), ::pwrite for '{}' tried to write {} bytes but only wrote {} bytes, failing with {}", "name"_attr = _name, "len"_attr = len, "bytesWritten"_attr = bytesWritten, "errnoWithDescription"_attr = errnoWithDescription());
     }
 }
 

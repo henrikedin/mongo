@@ -61,6 +61,7 @@
 #include "mongo/db/storage/remove_saver.h"
 #include "mongo/db/write_concern.h"
 #include "mongo/executor/task_executor.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/log.h"
 #include "mongo/util/scopeguard.h"
 #include "mongo/util/str.h"
@@ -115,7 +116,7 @@ StatusWith<int> doDeletion(OperationContext* opCtx,
     if (!idx) {
         std::string msg = str::stream()
             << "Unable to find shard key index for " << keyPattern.toString() << " in " << nss.ns();
-        LOG(0) << msg;
+        LOGV2("{}", "msg"_attr = msg);
         return {ErrorCodes::InternalError, msg};
     }
 
@@ -128,7 +129,7 @@ StatusWith<int> doDeletion(OperationContext* opCtx,
     const auto min = extend(range.getMin());
     const auto max = extend(range.getMax());
 
-    LOG(1) << "begin removal of " << min << " to " << max << " in " << nss.ns();
+    LOGV2_DEBUG(1, "begin removal of {} to {} in {}", "min"_attr = min, "max"_attr = max, "nss_ns"_attr = nss.ns());
 
     const auto indexName = idx->indexName();
     const IndexDescriptor* descriptor =
@@ -136,7 +137,7 @@ StatusWith<int> doDeletion(OperationContext* opCtx,
     if (!descriptor) {
         std::string msg = str::stream()
             << "shard key index with name " << indexName << " on '" << nss.ns() << "' was dropped";
-        LOG(0) << msg;
+        LOGV2("{}", "msg"_attr = msg);
         return {ErrorCodes::InternalError, msg};
     }
 
@@ -161,7 +162,7 @@ StatusWith<int> doDeletion(OperationContext* opCtx,
                                                      InternalPlanner::FORWARD);
 
     if (MONGO_unlikely(hangBeforeDoingDeletion.shouldFail())) {
-        LOG(0) << "Hit hangBeforeDoingDeletion failpoint";
+        LOGV2("Hit hangBeforeDoingDeletion failpoint");
         hangBeforeDoingDeletion.pauseWhileSet(opCtx);
     }
 
@@ -182,9 +183,7 @@ StatusWith<int> doDeletion(OperationContext* opCtx,
         }
 
         if (state == PlanExecutor::FAILURE) {
-            warning() << PlanExecutor::statestr(state) << " - cursor error while trying to delete "
-                      << redact(min) << " to " << redact(max) << " in " << nss
-                      << ": FAILURE, stats: " << Explain::getWinningPlanStats(exec.get());
+            LOGV2_WARNING("{} - cursor error while trying to delete {} to {} in {}: FAILURE, stats: {}", "PlanExecutor_statestr_state"_attr = PlanExecutor::statestr(state), "redact_min"_attr = redact(min), "redact_max"_attr = redact(max), "nss"_attr = nss, "Explain_getWinningPlanStats_exec_get"_attr = Explain::getWinningPlanStats(exec.get()));
             break;
         }
 
@@ -243,7 +242,7 @@ boost::optional<Date_t> CollectionRangeDeleter::cleanUpNextRange(
         {
             stdx::lock_guard<Latch> scopedLock(csr->_metadataManager->_managerLock);
             if (self->isEmpty()) {
-                LOG(1) << "No further range deletions scheduled on " << nss.ns();
+                LOGV2_DEBUG(1, "No further range deletions scheduled on {}", "nss_ns"_attr = nss.ns());
                 return boost::none;
             }
 
@@ -252,15 +251,13 @@ boost::optional<Date_t> CollectionRangeDeleter::cleanUpNextRange(
                 // We have delayed deletions; see if any are ready.
                 auto& df = self->_delayedOrphans.front();
                 if (df.whenToDelete > Date_t::now()) {
-                    LOG(0) << "Deferring deletion of " << nss.ns() << " range "
-                           << redact(df.range.toString()) << " until " << df.whenToDelete;
+                    LOGV2("Deferring deletion of {} range {} until {}", "nss_ns"_attr = nss.ns(), "redact_df_range_toString"_attr = redact(df.range.toString()), "df_whenToDelete"_attr = df.whenToDelete);
                     return df.whenToDelete;
                 }
 
                 // Move a single range from _delayedOrphans to _orphans
                 orphans.splice(orphans.end(), self->_delayedOrphans, self->_delayedOrphans.begin());
-                LOG(1) << "Proceeding with deferred deletion of " << nss.ns() << " range "
-                       << redact(orphans.front().range.toString());
+                LOGV2_DEBUG(1, "Proceeding with deferred deletion of {} range {}", "nss_ns"_attr = nss.ns(), "redact_orphans_front_range_toString"_attr = redact(orphans.front().range.toString()));
 
                 writeOpLog = true;
             }
@@ -310,11 +307,11 @@ boost::optional<Date_t> CollectionRangeDeleter::cleanUpNextRange(
                                       // taking the MetadataManager lock is not required.
                                       self->_throwWriteConflictForTest);
             if (swNumDeleted.isOK()) {
-                LOG(0) << "Deleted " << swNumDeleted.getValue() << " documents in pass.";
+                LOGV2("Deleted {} documents in pass.", "swNumDeleted_getValue"_attr = swNumDeleted.getValue());
             }
         } catch (const DBException& e) {
             swNumDeleted = e.toStatus();
-            warning() << e.what();
+            LOGV2_WARNING("{}", "e_what"_attr = e.what());
         }
     }  // drop autoColl
 
@@ -329,16 +326,14 @@ boost::optional<Date_t> CollectionRangeDeleter::cleanUpNextRange(
     // This branch means that we will NOT continue deleting documents from this range.
     if (!continueDeleting) {
         if (swNumDeleted.isOK()) {
-            LOG(0) << "No documents remain to delete in " << nss << " range "
-                   << redact(range->toString());
+            LOGV2("No documents remain to delete in {} range {}", "nss"_attr = nss, "redact_range_toString"_attr = redact(range->toString()));
         }
 
         // Wait for majority replication even when swNumDeleted isn't OK or == 0, because it might
         // have been OK and/or > 0 previously, and the deletions must be persistent before notifying
         // clients in _pop().
 
-        LOG(0) << "Waiting for majority replication of local deletions in " << nss.ns() << " range "
-               << redact(range->toString());
+        LOGV2("Waiting for majority replication of local deletions in {} range {}", "nss_ns"_attr = nss.ns(), "redact_range_toString"_attr = redact(range->toString()));
 
         repl::ReplClientInfo::forClient(opCtx->getClient()).setLastOpToSystemLastOpTime(opCtx);
         const auto clientOpTime = repl::ReplClientInfo::forClient(opCtx->getClient()).getLastOp();
@@ -374,8 +369,7 @@ boost::optional<Date_t> CollectionRangeDeleter::cleanUpNextRange(
             stdx::lock_guard<Latch> scopedLock(csr->_metadataManager->_managerLock);
 
             if (!replicationStatus.isOK()) {
-                LOG(0) << "Error when waiting for write concern after removing " << nss << " range "
-                       << redact(range->toString()) << " : " << redact(replicationStatus.reason());
+                LOGV2("Error when waiting for write concern after removing {} range {} : {}", "nss"_attr = nss, "redact_range_toString"_attr = redact(range->toString()), "redact_replicationStatus_reason"_attr = redact(replicationStatus.reason()));
 
                 // If range were already popped (e.g. by dropping nss during the waitForWriteConcern
                 // above) its notification would have been triggered, so this check suffices to
@@ -383,22 +377,18 @@ boost::optional<Date_t> CollectionRangeDeleter::cleanUpNextRange(
                 if (!notification.ready()) {
                     invariant(!self->isEmpty() &&
                               self->_orphans.front().notification == notification);
-                    LOG(0) << "Abandoning deletion of latest range in " << nss.ns()
-                           << " after local "
-                           << "deletions because of replication failure";
+                    LOGV2("Abandoning deletion of latest range in {} after local deletions because of replication failure", "nss_ns"_attr = nss.ns());
                     self->_pop(replicationStatus);
                 }
             } else {
-                LOG(0) << "Finished deleting documents in " << nss.ns() << " range "
-                       << redact(range->toString());
+                LOGV2("Finished deleting documents in {} range {}", "nss_ns"_attr = nss.ns(), "redact_range_toString"_attr = redact(range->toString()));
 
                 finishedDeleting = true;
                 self->_pop(swNumDeleted.getStatus());
             }
 
             if (!self->_orphans.empty()) {
-                LOG(1) << "Deleting " << nss.ns() << " range "
-                       << redact(self->_orphans.front().range.toString()) << " next.";
+                LOGV2_DEBUG(1, "Deleting {} range {} next.", "nss_ns"_attr = nss.ns(), "redact_self_orphans_front_range_toString"_attr = redact(self->_orphans.front().range.toString()));
             }
         }
 
@@ -411,8 +401,7 @@ boost::optional<Date_t> CollectionRangeDeleter::cleanUpNextRange(
                                    << collectionUuid << RangeDeletionTask::kRangeFieldName
                                    << range->toBSON()));
             } catch (const DBException& e) {
-                LOG(0) << "Failed to delete range deletion task for range " << range.get()
-                       << " in collection " << nss << causedBy(e.what());
+                LOGV2("Failed to delete range deletion task for range {} in collection {}{}", "range_get"_attr = range.get(), "nss"_attr = nss, "causedBy_e_what"_attr = causedBy(e.what()));
             }
         }
 
@@ -434,17 +423,15 @@ bool CollectionRangeDeleter::_checkCollectionMetadataStillValid(
     std::shared_ptr<MetadataManager> metadataManager) {
 
     if (!metadataManager) {
-        LOG(0) << "Abandoning any range deletions because the metadata for " << nss.ns()
-               << " was reset";
+        LOGV2("Abandoning any range deletions because the metadata for {} was reset", "nss_ns"_attr = nss.ns());
         return false;
     }
 
     if (!forTestOnly && (!collection)) {
         if (!collection) {
-            LOG(0) << "Abandoning any range deletions left over from dropped " << nss.ns();
+            LOGV2("Abandoning any range deletions left over from dropped {}", "nss_ns"_attr = nss.ns());
         } else {
-            LOG(0) << "Abandoning any range deletions left over from previously sharded"
-                   << nss.ns();
+            LOGV2("Abandoning any range deletions left over from previously sharded{}", "nss_ns"_attr = nss.ns());
         }
 
         stdx::lock_guard<Latch> lk(metadataManager->_managerLock);
@@ -453,9 +440,7 @@ bool CollectionRangeDeleter::_checkCollectionMetadataStillValid(
     }
 
     if (!forTestOnly && collection->uuid() != collectionUuid) {
-        LOG(1) << "Abandoning range deletion task for " << nss.ns() << " with UUID "
-               << collectionUuid << " because UUID of " << nss.ns() << "has changed (current is "
-               << collection->uuid() << ")";
+        LOGV2_DEBUG(1, "Abandoning range deletion task for {} with UUID {} because UUID of {}has changed (current is {})", "nss_ns"_attr = nss.ns(), "collectionUuid"_attr = collectionUuid, "nss_ns"_attr = nss.ns(), "collection_uuid"_attr = collection->uuid());
         return false;
     }
 

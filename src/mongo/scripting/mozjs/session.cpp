@@ -33,6 +33,7 @@
 
 #include "mongo/scripting/mozjs/session.h"
 
+#include "mongo/logv2/log.h"
 #include "mongo/scripting/mozjs/bson.h"
 #include "mongo/scripting/mozjs/implscope.h"
 #include "mongo/scripting/mozjs/mongo.h"
@@ -152,7 +153,7 @@ void SessionInfo::finalize(js::FreeOp* fop, JSObject* obj) {
             auto status = exceptionToStatus();
 
             try {
-                LOG(0) << "Failed to end session " << lsid << " due to " << status;
+                LOGV2("Failed to end session {} due to {}", "lsid"_attr = lsid, "status"_attr = status);
             } catch (...) {
                 // This is here in case logging fails.
             }

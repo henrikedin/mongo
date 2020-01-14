@@ -37,6 +37,7 @@
 
 #include "mongo/base/init.h"
 #include "mongo/db/lasterror.h"
+#include "mongo/logv2/log.h"
 #include "mongo/s/chunk_manager.h"
 #include "mongo/s/client/shard.h"
 #include "mongo/s/client/shard_connection_gen.h"
@@ -184,8 +185,7 @@ public:
         const bool isConnGood = shardConnectionPool.isConnectionGood(addr, conn);
 
         if (s->avail != nullptr) {
-            warning() << "Detected additional sharded connection in the "
-                      << "thread local pool for " << addr;
+            LOGV2_WARNING("Detected additional sharded connection in the thread local pool for {}", "addr"_attr = addr);
 
             if (DBException::traceExceptions.load()) {
                 // There shouldn't be more than one connection checked out to the same
@@ -247,8 +247,7 @@ public:
 
                 versionManager.checkShardVersionCB(opCtx, s->avail, ns, false, 1);
             } catch (const DBException& ex) {
-                warning() << "Problem while initially checking shard versions on"
-                          << " " << shardId << causedBy(redact(ex));
+                LOGV2_WARNING("Problem while initially checking shard versions on {}{}", "shardId"_attr = shardId, "causedBy_redact_ex"_attr = causedBy(redact(ex)));
 
                 // NOTE: This is only a heuristic, to avoid multiple stale version retries across
                 // multiple shards, and does not affect correctness.
@@ -399,8 +398,7 @@ ShardConnection::~ShardConnection() {
             }
         } else {
             // see done() comments above for why we log this line
-            log() << "sharded connection to " << _conn->getServerAddress()
-                  << " not being returned to the pool";
+            LOGV2("sharded connection to {} not being returned to the pool", "conn_getServerAddress"_attr = _conn->getServerAddress());
 
             kill();
         }

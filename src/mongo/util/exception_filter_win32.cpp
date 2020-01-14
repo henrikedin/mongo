@@ -42,6 +42,7 @@
 #include <ostream>
 
 #include "mongo/config.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/exit_code.h"
 #include "mongo/util/log.h"
@@ -63,7 +64,7 @@ void doMinidumpWithException(struct _EXCEPTION_POINTERS* exceptionInfo) {
     DWORD ret = GetModuleFileNameW(nullptr, &moduleFileName[0], ARRAYSIZE(moduleFileName));
     if (ret == 0) {
         int gle = GetLastError();
-        log() << "GetModuleFileName failed " << errnoWithDescription(gle);
+        LOGV2("GetModuleFileName failed {}", "errnoWithDescription_gle"_attr = errnoWithDescription(gle));
 
         // Fallback name
         wcscpy_s(moduleFileName, L"mongo");
@@ -88,8 +89,7 @@ void doMinidumpWithException(struct _EXCEPTION_POINTERS* exceptionInfo) {
         dumpName.c_str(), GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
     if (INVALID_HANDLE_VALUE == hFile) {
         DWORD lasterr = GetLastError();
-        log() << "failed to open minidump file " << toUtf8String(dumpName.c_str()) << " : "
-              << errnoWithDescription(lasterr);
+        LOGV2("failed to open minidump file {} : {}", "toUtf8String_dumpName_c_str"_attr = toUtf8String(dumpName.c_str()), "errnoWithDescription_lasterr"_attr = errnoWithDescription(lasterr));
         return;
     }
 
@@ -105,7 +105,7 @@ void doMinidumpWithException(struct _EXCEPTION_POINTERS* exceptionInfo) {
         static_cast<MINIDUMP_TYPE>(MiniDumpNormal | MiniDumpWithIndirectlyReferencedMemory |
                                    MiniDumpWithProcessThreadData);
 #endif
-    log() << "writing minidump diagnostic file " << toUtf8String(dumpName.c_str());
+    LOGV2("writing minidump diagnostic file {}", "toUtf8String_dumpName_c_str"_attr = toUtf8String(dumpName.c_str()));
 
     BOOL bstatus = MiniDumpWriteDump(GetCurrentProcess(),
                                      GetCurrentProcessId(),
@@ -116,7 +116,7 @@ void doMinidumpWithException(struct _EXCEPTION_POINTERS* exceptionInfo) {
                                      nullptr);
     if (FALSE == bstatus) {
         DWORD lasterr = GetLastError();
-        log() << "failed to create minidump : " << errnoWithDescription(lasterr);
+        LOGV2("failed to create minidump : {}", "errnoWithDescription_lasterr"_attr = errnoWithDescription(lasterr));
     }
 
     CloseHandle(hFile);
@@ -135,8 +135,7 @@ LONG WINAPI exceptionFilter(struct _EXCEPTION_POINTERS* excPointers) {
               sizeof(addressString),
               "0x%p",
               excPointers->ExceptionRecord->ExceptionAddress);
-    severe() << "*** unhandled exception " << exceptionString << " at " << addressString
-             << ", terminating";
+    LOGV2_ERROR("*** unhandled exception {} at {}, terminating", "exceptionString"_attr = exceptionString, "addressString"_attr = addressString);
     if (excPointers->ExceptionRecord->ExceptionCode == EXCEPTION_ACCESS_VIOLATION) {
         ULONG acType = excPointers->ExceptionRecord->ExceptionInformation[0];
         const char* acTypeString;
@@ -158,10 +157,10 @@ LONG WINAPI exceptionFilter(struct _EXCEPTION_POINTERS* excPointers) {
                   sizeof(addressString),
                   " 0x%llx",
                   excPointers->ExceptionRecord->ExceptionInformation[1]);
-        severe() << "*** access violation was a " << acTypeString << addressString;
+        LOGV2_ERROR("*** access violation was a {}{}", "acTypeString"_attr = acTypeString, "addressString"_attr = addressString);
     }
 
-    severe() << "*** stack trace for unhandled exception:";
+    LOGV2_ERROR("*** stack trace for unhandled exception:");
 
     // Create a copy of context record because printWindowsStackTrace will mutate it.
     CONTEXT contextCopy(*(excPointers->ContextRecord));
@@ -172,7 +171,7 @@ LONG WINAPI exceptionFilter(struct _EXCEPTION_POINTERS* excPointers) {
 
     // Don't go through normal shutdown procedure. It may make things worse.
     // Do not go through _exit or ExitProcess(), terminate immediately
-    severe() << "*** immediate exit due to unhandled exception";
+    LOGV2_FATAL(0, "*** immediate exit due to unhandled exception");
     TerminateProcess(GetCurrentProcess(), EXIT_ABRUPT);
 
     // We won't reach here

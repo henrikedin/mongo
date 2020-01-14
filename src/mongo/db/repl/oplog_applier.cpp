@@ -36,6 +36,7 @@
 #include "mongo/db/auth/authorization_session.h"
 #include "mongo/db/namespace_string.h"
 #include "mongo/db/repl/repl_server_parameters_gen.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/log.h"
 #include "mongo/util/time_support.h"
 
@@ -63,9 +64,9 @@ Future<void> OplogApplier::startup() {
     auto callback =
         [ this, promise = std::move(pf.promise) ](const CallbackArgs& args) mutable noexcept {
         invariant(args.status);
-        log() << "Starting oplog application";
+        LOGV2("Starting oplog application");
         _run(_oplogBuffer);
-        log() << "Finished oplog application";
+        LOGV2("Finished oplog application");
         promise.setWith([] {});
     };
     invariant(_executor->scheduleWork(std::move(callback)).getStatus());
@@ -75,7 +76,7 @@ Future<void> OplogApplier::startup() {
 void OplogApplier::shutdown() {
     // Shutdown will hang if this failpoint is enabled.
     if (globalFailPointRegistry().find("rsSyncApplyStop")->shouldFail()) {
-        severe() << "Turn off rsSyncApplyStop before attempting clean shutdown";
+        LOGV2_FATAL(40304, "Turn off rsSyncApplyStop before attempting clean shutdown");
         fassertFailedNoTrace(40304);
     }
 
@@ -110,7 +111,7 @@ void OplogApplier::enqueue(OperationContext* opCtx,
                            OplogBuffer::Batch::const_iterator end) {
     static Occasionally sampler;
     if (sampler.tick()) {
-        LOG(2) << "oplog buffer has " << _oplogBuffer->getSize() << " bytes";
+        LOGV2_DEBUG(2, "oplog buffer has {} bytes", "oplogBuffer_getSize"_attr = _oplogBuffer->getSize());
     }
     _oplogBuffer->push(opCtx, begin, end);
 }

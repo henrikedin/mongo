@@ -35,6 +35,7 @@
 #include "mongo/db/repl/storage_interface_mock.h"
 #include "mongo/db/service_context_test_fixture.h"
 #include "mongo/dbtests/mock/mock_dbclient_connection.h"
+#include "mongo/logv2/log.h"
 #include "mongo/unittest/unittest.h"
 #include "mongo/util/clock_source_mock.h"
 #include "mongo/util/concurrency/thread_pool.h"
@@ -114,7 +115,7 @@ TEST_F(AllDatabaseClonerTest, RetriesConnect) {
     ASSERT_EQ(2, _sharedData->getTotalRetries(WithLock::withoutLock()));
 
     // Bring the server up.
-    unittest::log() << "Bringing mock server back up.";
+    unittest::LOGV2("Bringing mock server back up.");
     _mockServer->reboot();
 
     // Allow the cloner to finish.
@@ -229,7 +230,7 @@ TEST_F(AllDatabaseClonerTest, RetriesListDatabases) {
     ASSERT_EQ(2, _sharedData->getTotalRetries(WithLock::withoutLock()));
 
     // Bring the server up.
-    unittest::log() << "Bringing mock server back up.";
+    unittest::LOGV2("Bringing mock server back up.");
     _mockServer->reboot();
 
     // Allow the cloner to finish.
@@ -277,7 +278,7 @@ TEST_F(AllDatabaseClonerTest, RetriesListDatabasesButRollBackIdChanges) {
     _mockServer->setCommandReply("replSetGetRBID", fromjson("{ok:1, rbid:2}"));
 
     // Bring the server up.
-    unittest::log() << "Bringing mock server back up.";
+    unittest::LOGV2("Bringing mock server back up.");
     _mockServer->reboot();
 
     // Allow the cloner to finish.

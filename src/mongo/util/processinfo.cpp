@@ -39,6 +39,7 @@
 #include <fstream>
 #include <iostream>
 
+#include "mongo/logv2/log.h"
 #include "mongo/util/log.h"
 
 namespace mongo {
@@ -61,11 +62,9 @@ public:
         if (!out.good()) {
             auto errAndStr = errnoAndDescription();
             if (errAndStr.first == 0) {
-                log() << "ERROR: Cannot write pid file to " << path.string()
-                      << ": Unable to determine OS error";
+                LOGV2("ERROR: Cannot write pid file to {}: Unable to determine OS error", "path_string"_attr = path.string());
             } else {
-                log() << "ERROR: Cannot write pid file to " << path.string() << ": "
-                      << errAndStr.second;
+                LOGV2("ERROR: Cannot write pid file to {}: {}", "path_string"_attr = path.string(), "errAndStr_second"_attr = errAndStr.second);
             }
         } else {
             boost::system::error_code ec;
@@ -75,8 +74,7 @@ public:
                     boost::filesystem::group_read | boost::filesystem::others_read,
                 ec);
             if (ec) {
-                log() << "Could not set permissions on pid file " << path.string() << ": "
-                      << ec.message();
+                LOGV2("Could not set permissions on pid file {}: {}", "path_string"_attr = path.string(), "ec_message"_attr = ec.message());
                 return false;
             }
         }

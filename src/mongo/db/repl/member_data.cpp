@@ -35,6 +35,7 @@
 
 #include "mongo/db/repl/member_data.h"
 #include "mongo/db/repl/rslog.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/log.h"
 
 namespace mongo {
@@ -69,8 +70,7 @@ bool MemberData::setUpValues(Date_t now, ReplSetHeartbeatResponse&& hbResponse) 
     }
     // Log if the state changes
     if (_lastResponse.getState() != hbResponse.getState()) {
-        log() << "Member " << _hostAndPort.toString() << " is now in state "
-              << hbResponse.getState().toString() << rsLog;
+        LOGV2_OPTIONS({logv2::LogTag::kRS}, "Member {} is now in state {}", "hostAndPort_toString"_attr = _hostAndPort.toString(), "hbResponse_getState_toString"_attr = hbResponse.getState().toString());
     }
 
     bool opTimeAdvanced =
@@ -93,8 +93,7 @@ void MemberData::setDownValues(Date_t now, const std::string& heartbeatMessage) 
     _lastHeartbeatMessage = heartbeatMessage;
 
     if (_lastResponse.getState() != MemberState::RS_DOWN) {
-        log() << "Member " << _hostAndPort.toString() << " is now in state RS_DOWN - "
-              << redact(heartbeatMessage) << rsLog;
+        LOGV2_OPTIONS({logv2::LogTag::kRS}, "Member {} is now in state RS_DOWN - {}", "hostAndPort_toString"_attr = _hostAndPort.toString(), "redact_heartbeatMessage"_attr = redact(heartbeatMessage));
     }
 
     _lastResponse = ReplSetHeartbeatResponse();
@@ -116,8 +115,7 @@ void MemberData::setAuthIssue(Date_t now) {
     _lastHeartbeatMessage.clear();
 
     if (_lastResponse.getState() != MemberState::RS_UNKNOWN) {
-        log() << "Member " << _hostAndPort.toString()
-              << " is now in state RS_UNKNOWN due to authentication issue." << rsLog;
+        LOGV2_OPTIONS({logv2::LogTag::kRS}, "Member {} is now in state RS_UNKNOWN due to authentication issue.", "hostAndPort_toString"_attr = _hostAndPort.toString());
     }
 
     _lastResponse = ReplSetHeartbeatResponse();
@@ -142,12 +140,8 @@ void MemberData::setLastDurableOpTimeAndWallTime(OpTimeAndWallTime opTime, Date_
     if (_lastAppliedOpTime < opTime.opTime) {
         // TODO(russotto): We think this should never happen, rollback or no rollback.  Make this an
         // invariant and see what happens.
-        log() << "Durable progress (" << opTime.opTime << ") is ahead of the applied progress ("
-              << _lastAppliedOpTime
-              << ". This is likely due to a "
-                 "rollback."
-              << " memberid: " << _memberId << _hostAndPort.toString()
-              << " previous durable progress: " << _lastDurableOpTime;
+        LOGV2("Durable progress ({}) is ahead of the applied progress ({}. This is likely due to a "
+                 "rollback. memberid: {}{} previous durable progress: {}", "opTime_opTime"_attr = opTime.opTime, "lastAppliedOpTime"_attr = _lastAppliedOpTime, "memberId"_attr = _memberId, "hostAndPort_toString"_attr = _hostAndPort.toString(), "lastDurableOpTime"_attr = _lastDurableOpTime);
     } else {
         _lastDurableOpTime = opTime.opTime;
         _lastDurableWallTime = opTime.wallTime;

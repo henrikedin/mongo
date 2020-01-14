@@ -45,6 +45,7 @@
 #include "mongo/db/storage/wiredtiger/wiredtiger_kv_engine.h"
 #include "mongo/db/storage/wiredtiger/wiredtiger_record_store.h"
 #include "mongo/logger/logger.h"
+#include "mongo/logv2/log.h"
 #include "mongo/unittest/temp_dir.h"
 #include "mongo/unittest/unittest.h"
 #include "mongo/util/clock_source_mock.h"
@@ -294,8 +295,7 @@ TEST_F(WiredTigerKVEngineTest, TestOplogTruncation) {
             sleepmillis(100);
         }
 
-        unittest::log() << "Expected the pinned oplog to advance. Expected value: " << newPinned
-                        << " Published value: " << _engine->getOplogNeededForCrashRecovery();
+        unittest::LOGV2("Expected the pinned oplog to advance. Expected value: {} Published value: {}", "newPinned"_attr = newPinned, "engine_getOplogNeededForCrashRecovery"_attr = _engine->getOplogNeededForCrashRecovery());
         FAIL("");
     };
 

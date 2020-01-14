@@ -45,6 +45,7 @@
 #include "mongo/db/operation_context.h"
 #include "mongo/db/repl/collection_bulk_loader_impl.h"
 #include "mongo/db/repl/repl_server_parameters_gen.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/destructor_guard.h"
 #include "mongo/util/log.h"
 #include "mongo/util/scopeguard.h"
@@ -212,7 +213,7 @@ Status CollectionBulkLoaderImpl::insertDocuments(const std::vector<BSONObj>::con
 Status CollectionBulkLoaderImpl::commit() {
     return _runTaskReleaseResourcesOnFailure([&] {
         _stats.startBuildingIndexes = Date_t::now();
-        LOG(2) << "Creating indexes for ns: " << _nss.ns();
+        LOGV2_DEBUG(2, "Creating indexes for ns: {}", "nss_ns"_attr = _nss.ns());
         UnreplicatedWritesBlock uwb(_opCtx.get());
 
         // Commit before deleting dups, so the dups will be removed from secondary indexes when
@@ -323,7 +324,7 @@ Status CollectionBulkLoaderImpl::commit() {
         }
 
         _stats.endBuildingIndexes = Date_t::now();
-        LOG(2) << "Done creating indexes for ns: " << _nss.ns() << ", stats: " << _stats.toString();
+        LOGV2_DEBUG(2, "Done creating indexes for ns: {}, stats: {}", "nss_ns"_attr = _nss.ns(), "stats_toString"_attr = _stats.toString());
 
         _releaseResources();
         return Status::OK();

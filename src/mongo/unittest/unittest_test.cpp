@@ -38,6 +38,7 @@
 #include <string>
 
 #include "mongo/bson/bsonobjbuilder.h"
+#include "mongo/logv2/log.h"
 #include "mongo/unittest/death_test.h"
 #include "mongo/unittest/unittest.h"
 #include "mongo/util/assert_util.h"
@@ -270,7 +271,7 @@ class DeathTestSelfTestFixture : public ::mongo::unittest::Test {
 public:
     void setUp() override {}
     void tearDown() override {
-        mongo::unittest::log() << "Died in tear-down";
+        mongo::unittest::LOGV2("Died in tear-down");
         invariant(false);
     }
 };

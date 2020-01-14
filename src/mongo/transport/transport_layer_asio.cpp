@@ -67,6 +67,7 @@
 #include "mongo/transport/baton_asio_linux.h"
 #endif
 
+#include "mongo/logv2/log.h"
 #include "mongo/transport/session_asio.h"
 
 namespace mongo {
@@ -112,7 +113,7 @@ public:
     void cancel(const BatonHandle& baton = nullptr) override {
         // If we have a baton try to cancel that.
         if (baton && baton->networking() && baton->networking()->cancelTimer(*this)) {
-            LOG(2) << "Canceled via baton, skipping asio cancel.";
+            LOGV2_DEBUG(2, "Canceled via baton, skipping asio cancel.");
             return;
         }
 
@@ -139,7 +140,7 @@ private:
             armTimer();
             return _timer->async_wait(UseFuture{}).tapError([timer = _timer](const Status& status) {
                 if (status != ErrorCodes::CallbackCanceled) {
-                    LOG(2) << "Timer received error: " << status;
+                    LOGV2_DEBUG(2, "Timer received error: {}", "status"_attr = status);
                 }
             });
 
@@ -191,7 +192,7 @@ public:
         ThreadIdGuard threadIdGuard(this);
         _ioContext.restart();
         while (_ioContext.poll()) {
-            LOG(2) << "Draining remaining work in reactor.";
+            LOGV2_DEBUG(2, "Draining remaining work in reactor.");
         }
         _ioContext.stop();
     }
@@ -617,8 +618,7 @@ Future<SessionHandle> TransportLayerASIO::asyncConnect(HostAndPort peer,
             try {
                 Date_t timeAfter = Date_t::now();
                 if (timeAfter - timeBefore > Seconds(1)) {
-                    warning() << "DNS resolution while connecting to " << connector->peer
-                              << " took " << timeAfter - timeBefore;
+                    LOGV2_WARNING("DNS resolution while connecting to {} took {}", "connector_peer"_attr = connector->peer, "timeAfter_timeBefore"_attr = timeAfter - timeBefore);
                 }
 
                 stdx::lock_guard<Latch> lk(connector->mutex);
@@ -667,7 +667,7 @@ Future<SessionHandle> TransportLayerASIO::asyncConnect(HostAndPort peer,
         })
         .getAsync([connector](Status connectResult) {
             if (MONGO_unlikely(transportLayerASIOasyncConnectTimesOut.shouldFail())) {
-                log() << "asyncConnectTimesOut fail point is active. simulating timeout.";
+                LOGV2("asyncConnectTimesOut fail point is active. simulating timeout.");
                 return;
             }
 
@@ -805,7 +805,7 @@ Status TransportLayerASIO::setup() {
         if (tcpFastOpenIsConfigured) {
             return foStatus;
         } else {
-            log() << foStatus.reason();
+            LOGV2("{}", "foStatus_reason"_attr = foStatus.reason());
         }
     }
 
@@ -821,14 +821,14 @@ Status TransportLayerASIO::setup() {
     std::set<WrappedEndpoint> endpoints;
     for (auto& ip : listenAddrs) {
         if (ip.empty()) {
-            warning() << "Skipping empty bind address";
+            LOGV2_WARNING("Skipping empty bind address");
             continue;
         }
 
         auto swAddrs =
             resolver.resolve(HostAndPort(ip, _listenerPort), _listenerOptions.enableIPv6);
         if (!swAddrs.isOK()) {
-            warning() << "Found no addresses for " << swAddrs.getStatus();
+            LOGV2_WARNING("Found no addresses for {}", "swAddrs_getStatus"_attr = swAddrs.getStatus());
             continue;
         }
         auto& addrs = swAddrs.getValue();
@@ -839,14 +839,13 @@ Status TransportLayerASIO::setup() {
 #ifndef _WIN32
         if (addr.family() == AF_UNIX) {
             if (::unlink(addr.toString().c_str()) == -1 && errno != ENOENT) {
-                error() << "Failed to unlink socket file " << addr.toString().c_str() << " "
-                        << errnoWithDescription(errno);
+                LOGV2_ERROR("Failed to unlink socket file {} {}", "addr_toString_c_str"_attr = addr.toString().c_str(), "errnoWithDescription_errno"_attr = errnoWithDescription(errno));
                 fassertFailedNoTrace(40486);
             }
         }
 #endif
         if (addr.family() == AF_INET6 && !_listenerOptions.enableIPv6) {
-            error() << "Specified ipv6 bind address, but ipv6 is disabled";
+            LOGV2_ERROR("Specified ipv6 bind address, but ipv6 is disabled");
             fassertFailedNoTrace(40488);
         }
 
@@ -881,8 +880,7 @@ Status TransportLayerASIO::setup() {
 #ifndef _WIN32
         if (addr.family() == AF_UNIX) {
             if (::chmod(addr.toString().c_str(), serverGlobalParams.unixSocketPermissions) == -1) {
-                error() << "Failed to chmod socket file " << addr.toString().c_str() << " "
-                        << errnoWithDescription(errno);
+                LOGV2_ERROR("Failed to chmod socket file {} {}", "addr_toString_c_str"_attr = addr.toString().c_str(), "errnoWithDescription_errno"_attr = errnoWithDescription(errno));
                 fassertFailedNoTrace(40487);
             }
         }
@@ -950,13 +948,12 @@ void TransportLayerASIO::_runListener() noexcept {
         asio::error_code ec;
         acceptor.second.listen(serverGlobalParams.listenBacklog, ec);
         if (ec) {
-            severe() << "Error listening for new connections on " << acceptor.first << ": "
-                     << ec.message();
+            LOGV2_FATAL(31339, "Error listening for new connections on {}: {}", "acceptor_first"_attr = acceptor.first, "ec_message"_attr = ec.message());
             fassertFailed(31339);
         }
 
         _acceptConnection(acceptor.second);
-        log() << "Listening on " << acceptor.first.getAddr();
+        LOGV2("Listening on {}", "acceptor_first_getAddr"_attr = acceptor.first.getAddr());
     }
 
     const char* ssl = "";
@@ -965,7 +962,7 @@ void TransportLayerASIO::_runListener() noexcept {
         ssl = " ssl";
     }
 #endif
-    log() << "waiting for connections on port " << _listenerPort << ssl;
+    LOGV2("waiting for connections on port {}{}", "listenerPort"_attr = _listenerPort, "ssl"_attr = ssl);
 
     _listener.active = true;
     _listener.cv.notify_all();
@@ -987,10 +984,10 @@ void TransportLayerASIO::_runListener() noexcept {
         auto& addr = acceptor.first;
         if (addr.getType() == AF_UNIX && !addr.isAnonymousUNIXSocket()) {
             auto path = addr.getAddr();
-            log() << "removing socket file: " << path;
+            LOGV2("removing socket file: {}", "path"_attr = path);
             if (::unlink(path.c_str()) != 0) {
                 const auto ewd = errnoWithDescription();
-                warning() << "Unable to remove UNIX socket " << path << ": " << ewd;
+                LOGV2_WARNING("Unable to remove UNIX socket {}: {}", "path"_attr = path, "ewd"_attr = ewd);
             }
         }
     }
@@ -1063,8 +1060,7 @@ void TransportLayerASIO::_acceptConnection(GenericAcceptor& acceptor) {
         }
 
         if (ec) {
-            log() << "Error accepting new connection on "
-                  << endpointToHostAndPort(acceptor.local_endpoint()) << ": " << ec.message();
+            LOGV2("Error accepting new connection on {}: {}", "endpointToHostAndPort_acceptor_local_endpoint"_attr = endpointToHostAndPort(acceptor.local_endpoint()), "ec_message"_attr = ec.message());
             _acceptConnection(acceptor);
             return;
         }
@@ -1083,7 +1079,7 @@ void TransportLayerASIO::_acceptConnection(GenericAcceptor& acceptor) {
                 new ASIOSession(this, std::move(peerSocket), true));
             _sep->startSession(std::move(session));
         } catch (const DBException& e) {
-            warning() << "Error accepting new connection " << e;
+            LOGV2_WARNING("Error accepting new connection {}", "e"_attr = e);
         }
 
         _acceptConnection(acceptor);

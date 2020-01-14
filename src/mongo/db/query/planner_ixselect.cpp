@@ -47,6 +47,7 @@
 #include "mongo/db/query/indexability.h"
 #include "mongo/db/query/planner_wildcard_helpers.h"
 #include "mongo/db/query/query_planner_common.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/log.h"
 
 namespace mongo {
@@ -287,15 +288,14 @@ std::vector<IndexEntry> QueryPlannerIXSelect::findIndexesByHint(
         auto hintName = firstHintElt.valueStringData();
         for (auto&& entry : allIndices) {
             if (entry.identifier.catalogName == hintName) {
-                LOG(5) << "Hint by name specified, restricting indices to "
-                       << entry.keyPattern.toString();
+                LOGV2_DEBUG(5, "Hint by name specified, restricting indices to {}", "entry_keyPattern_toString"_attr = entry.keyPattern.toString());
                 out.push_back(entry);
             }
         }
     } else {
         for (auto&& entry : allIndices) {
             if (SimpleBSONObjComparator::kInstance.evaluate(entry.keyPattern == hintedIndex)) {
-                LOG(5) << "Hint specified, restricting indices to " << hintedIndex.toString();
+                LOGV2_DEBUG(5, "Hint specified, restricting indices to {}", "hintedIndex_toString"_attr = hintedIndex.toString());
                 out.push_back(entry);
             }
         }
@@ -579,8 +579,7 @@ bool QueryPlannerIXSelect::_compatible(const BSONElement& keyPatternElt,
     } else if (IndexNames::GEO_HAYSTACK == indexedFieldType) {
         return false;
     } else {
-        warning() << "Unknown indexing for node " << node->debugString() << " and field "
-                  << keyPatternElt.toString();
+        LOGV2_WARNING("Unknown indexing for node {} and field {}", "node_debugString"_attr = node->debugString(), "keyPatternElt_toString"_attr = keyPatternElt.toString());
         verify(0);
     }
 }

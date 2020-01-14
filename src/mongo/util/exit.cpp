@@ -37,6 +37,7 @@
 #include <functional>
 #include <stack>
 
+#include "mongo/logv2/log.h"
 #include "mongo/platform/mutex.h"
 #include "mongo/stdx/condition_variable.h"
 #include "mongo/stdx/thread.h"
@@ -68,7 +69,7 @@ void runTasks(decltype(shutdownTasks) tasks, const ShutdownTaskArgs& shutdownArg
 // has its own 'quickExitMutex' to prohibit multiple threads from attempting to call _exit().
 MONGO_COMPILER_NORETURN void logAndQuickExit_inlock() {
     ExitCode code = shutdownExitCode.get();
-    log() << "shutting down with code:" << code;
+    LOGV2("shutting down with code:{}", "code"_attr = code);
     quickExit(code);
 }
 

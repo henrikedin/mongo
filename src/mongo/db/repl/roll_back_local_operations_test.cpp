@@ -39,6 +39,7 @@
 #include "mongo/db/repl/oplog_interface_mock.h"
 #include "mongo/db/repl/oplog_interface_remote.h"
 #include "mongo/db/repl/roll_back_local_operations.h"
+#include "mongo/logv2/log.h"
 #include "mongo/unittest/unittest.h"
 
 namespace {
@@ -326,14 +327,12 @@ public:
                                           int batchSize) override {
         if (_initFailuresLeft > 0) {
             _initFailuresLeft--;
-            unittest::log()
-                << "Throwing DBException on DBClientCursorForTest::query(). Failures left: "
-                << _initFailuresLeft;
+            unittest::LOGV2("Throwing DBException on DBClientCursorForTest::query(). Failures left: {}", "initFailuresLeft"_attr = _initFailuresLeft);
             uasserted(50852, "Simulated network error");
             MONGO_UNREACHABLE;
         }
 
-        unittest::log() << "Returning success on DBClientCursorForTest::query()";
+        unittest::LOGV2("Returning success on DBClientCursorForTest::query()");
 
         BSONArrayBuilder builder;
         builder.append(makeOp(1));

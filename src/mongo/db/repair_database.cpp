@@ -55,6 +55,7 @@
 #include "mongo/db/query/query_knobs_gen.h"
 #include "mongo/db/storage/durable_catalog.h"
 #include "mongo/db/storage/storage_engine.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/log.h"
 #include "mongo/util/scopeguard.h"
 
@@ -146,7 +147,7 @@ Status repairCollections(OperationContext* opCtx,
     for (const auto& nss : colls) {
         opCtx->checkForInterrupt();
 
-        log() << "Repairing collection " << nss;
+        LOGV2("Repairing collection {}", "nss"_attr = nss);
 
         auto collection = CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, nss);
         Status status = engine->repairRecordStore(opCtx, collection->getCatalogId(), nss);
@@ -179,7 +180,7 @@ Status repairDatabase(OperationContext* opCtx, StorageEngine* engine, const std:
     invariant(opCtx->lockState()->isW());
     invariant(dbName.find('.') == std::string::npos);
 
-    log() << "repairDatabase " << dbName;
+    LOGV2("repairDatabase {}", "dbName"_attr = dbName);
 
     BackgroundOperation::assertNoBgOpInProgForDb(dbName);
 
@@ -191,7 +192,7 @@ Status repairDatabase(OperationContext* opCtx, StorageEngine* engine, const std:
 
     auto status = repairCollections(opCtx, engine, dbName);
     if (!status.isOK()) {
-        severe() << "Failed to repair database " << dbName << ": " << status.reason();
+        LOGV2_ERROR("Failed to repair database {}: {}", "dbName"_attr = dbName, "status_reason"_attr = status.reason());
     }
 
     try {
@@ -220,7 +221,7 @@ Status repairDatabase(OperationContext* opCtx, StorageEngine* engine, const std:
         // have a UUID.
         throw;
     } catch (...) {
-        severe() << "Unexpected exception encountered while reopening database after repair.";
+        LOGV2_FATAL(0, "Unexpected exception encountered while reopening database after repair.");
         std::terminate();  // Logs additional info about the specific error.
     }
 

@@ -37,6 +37,7 @@
 #include "mongo/db/storage/wiredtiger/wiredtiger_begin_transaction_block.h"
 #include "mongo/db/storage/wiredtiger/wiredtiger_oplog_manager.h"
 #include "mongo/db/storage/wiredtiger/wiredtiger_util.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/log.h"
 
 namespace mongo {
@@ -101,7 +102,7 @@ Timestamp WiredTigerSnapshotManager::beginTransactionOnLocalSnapshot(
 
     stdx::lock_guard<Latch> lock(_localSnapshotMutex);
     invariant(_localSnapshot);
-    LOG(3) << "begin_transaction on local snapshot " << _localSnapshot.get().toString();
+    LOGV2_DEBUG(3, "begin_transaction on local snapshot {}", "localSnapshot_get_toString"_attr = _localSnapshot.get().toString());
     auto status = txnOpen.setReadSnapshot(_localSnapshot.get());
     fassert(50775, status);
 

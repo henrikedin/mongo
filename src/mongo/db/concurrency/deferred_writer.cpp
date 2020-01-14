@@ -35,6 +35,7 @@
 #include "mongo/db/concurrency/write_conflict_exception.h"
 #include "mongo/db/db_raii.h"
 #include "mongo/db/operation_context.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/concurrency/idle_thread_block.h"
 #include "mongo/util/concurrency/thread_pool.h"
 #include "mongo/util/log.h"
@@ -47,7 +48,7 @@ auto kLogInterval = stdx::chrono::minutes(1);
 
 void DeferredWriter::_logFailure(const Status& status) {
     if (TimePoint::clock::now() - _lastLogged > kLogInterval) {
-        log() << "Unable to write to collection " << _nss.toString() << ": " << status.toString();
+        LOGV2("Unable to write to collection {}: {}", "nss_toString"_attr = _nss.toString(), "status_toString"_attr = status.toString());
         _lastLogged = stdx::chrono::system_clock::now();
     }
 }
@@ -55,8 +56,7 @@ void DeferredWriter::_logFailure(const Status& status) {
 void DeferredWriter::_logDroppedEntry() {
     _droppedEntries += 1;
     if (TimePoint::clock::now() - _lastLoggedDrop > kLogInterval) {
-        log() << "Deferred write buffer for " << _nss.toString() << " is full. " << _droppedEntries
-              << " entries have been dropped.";
+        LOGV2("Deferred write buffer for {} is full. {} entries have been dropped.", "nss_toString"_attr = _nss.toString(), "droppedEntries"_attr = _droppedEntries);
         _lastLoggedDrop = stdx::chrono::system_clock::now();
         _droppedEntries = 0;
     }

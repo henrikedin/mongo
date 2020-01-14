@@ -39,6 +39,7 @@
 #include "mongo/db/s/sharded_connection_info.h"
 #include "mongo/db/s/sharding_runtime_d_params_gen.h"
 #include "mongo/db/s/sharding_state.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/duration.h"
 #include "mongo/util/log.h"
 
@@ -206,7 +207,7 @@ void CollectionShardingRuntime::setFilteringMetadata(OperationContext* opCtx,
     stdx::lock_guard lk(_metadataManagerLock);
 
     if (!newMetadata.isSharded()) {
-        LOG(0) << "Marking collection " << _nss.ns() << " as " << newMetadata.toStringBasic();
+        LOGV2("Marking collection {} as {}", "nss_ns"_attr = _nss.ns(), "newMetadata_toStringBasic"_attr = newMetadata.toStringBasic());
         _metadataType = MetadataType::kUnsharded;
         _metadataManager.reset();
     } else if (!_metadataManager ||
@@ -271,13 +272,12 @@ Status CollectionShardingRuntime::waitForClean(OperationContext* opCtx,
 
             stillScheduled = self->_metadataManager->trackOrphanedDataCleanup(orphanRange);
             if (!stillScheduled) {
-                log() << "Finished deleting " << nss.ns() << " range "
-                      << redact(orphanRange.toString());
+                LOGV2("Finished deleting {} range {}", "nss_ns"_attr = nss.ns(), "redact_orphanRange_toString"_attr = redact(orphanRange.toString()));
                 return Status::OK();
             }
         }
 
-        log() << "Waiting for deletion of " << nss.ns() << " range " << orphanRange;
+        LOGV2("Waiting for deletion of {} range {}", "nss_ns"_attr = nss.ns(), "orphanRange"_attr = orphanRange);
 
         Status result = stillScheduled->waitStatus(opCtx);
         if (!result.isOK()) {
@@ -334,16 +334,15 @@ boost::optional<ScopedCollectionMetadata> CollectionShardingRuntime::_getMetadat
     }();
 
     if (MONGO_unlikely(useFCV44CheckShardVersionProtocol.shouldFail())) {
-        LOG(0) << "Received shardVersion: " << receivedShardVersion << " for " << _nss.ns();
+        LOGV2("Received shardVersion: {} for {}", "receivedShardVersion"_attr = receivedShardVersion, "nss_ns"_attr = _nss.ns());
         if (isCollection) {
             auto shardVersionKnown = _metadataType != MetadataType::kUnknown;
-            LOG(0) << "Namespace " << _nss.ns() << " is collection, "
-                   << (shardVersionKnown ? "have shardVersion cached" : "don't know shardVersion");
+            LOGV2("Namespace {} is collection, {}", "nss_ns"_attr = _nss.ns(), "shardVersionKnown_have_shardVersion_cached_don_t_know_shardVersion"_attr = (shardVersionKnown ? "have shardVersion cached" : "don't know shardVersion"));
             uassert(StaleConfigInfo(_nss, receivedShardVersion, wantedShardVersion, shardId),
                     "don't know shardVersion",
                     shardVersionKnown);
         }
-        LOG(0) << "Wanted shardVersion: " << wantedShardVersion << " for " << _nss.ns();
+        LOGV2("Wanted shardVersion: {} for {}", "wantedShardVersion"_attr = wantedShardVersion, "nss_ns"_attr = _nss.ns());
     }
 
     auto criticalSectionSignal = [&] {

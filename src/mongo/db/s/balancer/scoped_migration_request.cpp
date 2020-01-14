@@ -35,6 +35,7 @@
 
 #include "mongo/db/s/balancer/type_migration.h"
 #include "mongo/db/write_concern_options.h"
+#include "mongo/logv2/log.h"
 #include "mongo/s/client/shard_registry.h"
 #include "mongo/s/grid.h"
 #include "mongo/util/log.h"
@@ -68,8 +69,7 @@ ScopedMigrationRequest::~ScopedMigrationRequest() {
         _opCtx, MigrationType::ConfigNS, migrationDocumentIdentifier, kMajorityWriteConcern);
 
     if (!result.isOK()) {
-        LOG(0) << "Failed to remove config.migrations document for migration '"
-               << migrationDocumentIdentifier.toString() << "'" << causedBy(redact(result));
+        LOGV2("Failed to remove config.migrations document for migration '{}'{}", "migrationDocumentIdentifier_toString"_attr = migrationDocumentIdentifier.toString(), "causedBy_redact_result"_attr = causedBy(redact(result)));
     }
 }
 
@@ -141,10 +141,7 @@ StatusWith<ScopedMigrationRequest> ScopedMigrationRequest::writeMigration(
             MigrateInfo activeMigrateInfo = statusWithActiveMigration.getValue().toMigrateInfo();
             if (activeMigrateInfo.to != migrateInfo.to ||
                 activeMigrateInfo.from != migrateInfo.from) {
-                log() << "Failed to write document '" << redact(migrateInfo.toString())
-                      << "' to config.migrations because there is already an active migration for"
-                      << " that chunk: '" << redact(activeMigrateInfo.toString()) << "'."
-                      << causedBy(redact(result));
+                LOGV2("Failed to write document '{}' to config.migrations because there is already an active migration for that chunk: '{}'.{}", "redact_migrateInfo_toString"_attr = redact(migrateInfo.toString()), "redact_activeMigrateInfo_toString"_attr = redact(activeMigrateInfo.toString()), "causedBy_redact_result"_attr = causedBy(redact(result)));
                 return result;
             }
 
@@ -195,8 +192,7 @@ Status ScopedMigrationRequest::tryToRemoveMigration() {
 void ScopedMigrationRequest::keepDocumentOnDestruct() {
     invariant(_opCtx);
     _opCtx = nullptr;
-    LOG(1) << "Keeping config.migrations document with namespace '" << _nss << "' and minKey '"
-           << _minKey << "' for balancer recovery";
+    LOGV2_DEBUG(1, "Keeping config.migrations document with namespace '{}' and minKey '{}' for balancer recovery", "nss"_attr = _nss, "minKey"_attr = _minKey);
 }
 
 }  // namespace mongo

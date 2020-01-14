@@ -34,6 +34,7 @@
 #include "mongo/db/database_index_builds_tracker.h"
 
 #include "mongo/db/catalog/index_builds_manager.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/log.h"
 
 namespace mongo {
@@ -80,9 +81,9 @@ void DatabaseIndexBuildsTracker::waitUntilNoIndexBuildsRemain(stdx::unique_lock<
             return true;
         }
 
-        log() << "Waiting until the following index builds are finished:";
+        LOGV2("Waiting until the following index builds are finished:");
         for (const auto& indexBuild : _allIndexBuilds) {
-            log() << "    Index build with UUID: " << indexBuild.first;
+            LOGV2("    Index build with UUID: {}", "indexBuild_first"_attr = indexBuild.first);
         }
 
         return false;

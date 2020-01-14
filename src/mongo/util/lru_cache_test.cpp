@@ -33,6 +33,7 @@
 #include <type_traits>
 #include <utility>
 
+#include "mongo/logv2/log.h"
 #include "mongo/stdx/type_traits.h"
 #include "mongo/unittest/unittest.h"
 #include "mongo/util/assert_util.h"
@@ -144,7 +145,7 @@ const std::array<int, 7> kTestSizes{1, 2, 3, 4, 5, 10, 1000};
 using SizedTest = std::function<void(int)>;
 void runWithDifferentSizes(SizedTest test) {
     for (auto size : kTestSizes) {
-        mongo::unittest::log() << "\t\tTesting cache size of " << size;
+        mongo::unittest::LOGV2("\t\tTesting cache size of {}", "size"_attr = size);
         test(size);
     }
 }

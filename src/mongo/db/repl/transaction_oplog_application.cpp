@@ -45,6 +45,7 @@
 #include "mongo/db/session_catalog_mongod.h"
 #include "mongo/db/transaction_history_iterator.h"
 #include "mongo/db/transaction_participant.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/log.h"
 
 namespace mongo {
@@ -337,8 +338,7 @@ Status _applyPrepareTransaction(OperationContext* opCtx,
             auto ns = op.getNss();
             auto uuid = *op.getUuid();
             if (BackgroundOperation::inProgForNs(ns)) {
-                warning() << "blocking replication until index builds are finished on "
-                          << redact(ns.toString()) << ", due to prepared transaction";
+                LOGV2_WARNING("blocking replication until index builds are finished on {}, due to prepared transaction", "redact_ns_toString"_attr = redact(ns.toString()));
                 BackgroundOperation::awaitNoBgOpInProgForNs(ns);
                 IndexBuildsCoordinator::get(opCtx)->awaitNoIndexBuildInProgressForCollection(uuid);
             }
@@ -369,7 +369,7 @@ Status _applyPrepareTransaction(OperationContext* opCtx,
     fassert(31137, status);
 
     if (MONGO_unlikely(applyOpsHangBeforePreparingTransaction.shouldFail())) {
-        LOG(0) << "Hit applyOpsHangBeforePreparingTransaction failpoint";
+        LOGV2("Hit applyOpsHangBeforePreparingTransaction failpoint");
         applyOpsHangBeforePreparingTransaction.pauseWhileSet(opCtx);
     }
 
@@ -418,10 +418,9 @@ Status applyPrepareTransaction(OperationContext* opCtx,
     switch (mode) {
         case repl::OplogApplication::Mode::kRecovering: {
             if (!serverGlobalParams.enableMajorityReadConcern) {
-                error()
-                    << "Cannot replay a prepared transaction when 'enableMajorityReadConcern' is "
+                LOGV2_ERROR("Cannot replay a prepared transaction when 'enableMajorityReadConcern' is "
                        "set to false. Restart the server with --enableMajorityReadConcern=true "
-                       "to complete recovery.";
+                       "to complete recovery.");
                 fassertFailed(51146);
             }
 
@@ -448,7 +447,7 @@ Status applyPrepareTransaction(OperationContext* opCtx,
 
 void reconstructPreparedTransactions(OperationContext* opCtx, repl::OplogApplication::Mode mode) {
     if (MONGO_unlikely(skipReconstructPreparedTransactions.shouldFail())) {
-        log() << "Hit skipReconstructPreparedTransactions failpoint";
+        LOGV2("Hit skipReconstructPreparedTransactions failpoint");
         return;
     }
     // Read the transactions table and the oplog collection without a timestamp.

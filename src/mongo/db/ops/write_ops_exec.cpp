@@ -74,6 +74,7 @@
 #include "mongo/db/storage/duplicate_key_error_info.h"
 #include "mongo/db/transaction_participant.h"
 #include "mongo/db/write_concern.h"
+#include "mongo/logv2/log.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/s/cannot_implicitly_create_collection_info.h"
 #include "mongo/s/would_change_owning_shard_exception.h"
@@ -128,8 +129,7 @@ void finishCurOp(OperationContext* opCtx, CurOp* curOp) {
                     curOp->getReadWriteType());
 
         if (!curOp->debug().errInfo.isOK()) {
-            LOG(3) << "Caught Assertion in " << redact(logicalOpToString(curOp->getLogicalOp()))
-                   << ": " << curOp->debug().errInfo.toString();
+            LOGV2_DEBUG(3, "Caught Assertion in {}: {}", "redact_logicalOpToString_curOp_getLogicalOp"_attr = redact(logicalOpToString(curOp->getLogicalOp())), "curOp_debug_errInfo_toString"_attr = curOp->debug().errInfo.toString());
         }
 
         // Mark the op as complete, and log it if appropriate. Returns a boolean indicating whether
@@ -147,7 +147,7 @@ void finishCurOp(OperationContext* opCtx, CurOp* curOp) {
         // We need to ignore all errors here. We don't want a successful op to fail because of a
         // failure to record stats. We also don't want to replace the error reported for an op that
         // is failing.
-        log() << "Ignoring error from finishCurOp: " << redact(ex);
+        LOGV2("Ignoring error from finishCurOp: {}", "redact_ex"_attr = redact(ex));
     }
 }
 
@@ -168,7 +168,7 @@ public:
             // guard to fire in that case. Operations on the local DB aren't replicated, so they
             // don't need to bump the lastOp.
             replClientInfo().setLastOpToSystemLastOpTime(_opCtx);
-            LOG(5) << "Set last op to system time: " << replClientInfo().getLastOp().getTimestamp();
+            LOGV2_DEBUG(5, "Set last op to system time: {}", "replClientInfo_getLastOp_getTimestamp"_attr = replClientInfo().getLastOp().getTimestamp());
         }
     }
 
@@ -375,10 +375,8 @@ bool insertBatchAndHandleErrors(OperationContext* opCtx,
         opCtx,
         "hangDuringBatchInsert",
         [&wholeOp]() {
-            log() << "batch insert - hangDuringBatchInsert fail point enabled for namespace "
-                  << wholeOp.getNamespace()
-                  << ". Blocking "
-                     "until fail point is disabled.";
+            LOGV2("batch insert - hangDuringBatchInsert fail point enabled for namespace {}. Blocking "
+                     "until fail point is disabled.", "wholeOp_getNamespace"_attr = wholeOp.getNamespace());
         },
         true,  // Check for interrupt periodically.
         wholeOp.getNamespace());
@@ -609,9 +607,8 @@ static SingleWriteResult performSingleUpdateOp(OperationContext* opCtx,
         opCtx,
         "hangDuringBatchUpdate",
         [&ns]() {
-            log() << "batch update - hangDuringBatchUpdate fail point enabled for nss " << ns
-                  << ". Blocking until "
-                     "fail point is disabled.";
+            LOGV2("batch update - hangDuringBatchUpdate fail point enabled for nss {}. Blocking until "
+                     "fail point is disabled.", "ns"_attr = ns);
         },
         false /*checkForInterrupt*/,
         ns);
@@ -862,8 +859,8 @@ static SingleWriteResult performSingleDeleteOp(OperationContext* opCtx,
         opCtx,
         "hangDuringBatchRemove",
         []() {
-            log() << "batch remove - hangDuringBatchRemove fail point enabled. Blocking "
-                     "until fail point is disabled.";
+            LOGV2("batch remove - hangDuringBatchRemove fail point enabled. Blocking "
+                     "until fail point is disabled.");
         },
         true  // Check for interrupt periodically.
     );

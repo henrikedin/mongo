@@ -50,6 +50,7 @@
 #include "mongo/db/storage/storage_parameters_gen.h"
 #include "mongo/db/transaction_history_iterator.h"
 #include "mongo/db/transaction_participant.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/log.h"
 #include "mongo/util/timer.h"
 
@@ -90,8 +91,7 @@ public:
     void onBatchEnd(const StatusWith<OpTime>&, const std::vector<OplogEntry>&) final {}
 
     void complete(const OpTime& applyThroughOpTime) const {
-        log() << "Applied " << _numOpsApplied << " operations in " << _numBatches
-              << " batches. Last operation applied with optime: " << applyThroughOpTime;
+        LOGV2("Applied {} operations in {} batches. Last operation applied with optime: {}", "numOpsApplied"_attr = _numOpsApplied, "numBatches"_attr = _numBatches, "applyThroughOpTime"_attr = applyThroughOpTime);
     }
 
 private:
@@ -128,8 +128,7 @@ public:
             // This should really be impossible because we check above that the top of the oplog is
             // strictly > appliedThrough. If this fails it represents a serious bug in either the
             // storage engine or query's implementation of OplogReplay.
-            severe() << "Couldn't find any entries in the oplog >= "
-                     << _oplogApplicationStartPoint.toBSON() << " which should be impossible.";
+            LOGV2_FATAL(40293, "Couldn't find any entries in the oplog >= {} which should be impossible.", "oplogApplicationStartPoint_toBSON"_attr = _oplogApplicationStartPoint.toBSON());
             fassertFailedNoTrace(40293);
         }
 
@@ -204,8 +203,7 @@ private:
 boost::optional<Timestamp> recoverFromOplogPrecursor(OperationContext* opCtx,
                                                      StorageInterface* storageInterface) {
     if (!storageInterface->supportsRecoveryTimestamp(opCtx->getServiceContext())) {
-        severe() << "Cannot recover from the oplog with a storage engine that does not support "
-                 << "recover to stable timestamp.";
+        LOGV2_FATAL(50805, "Cannot recover from the oplog with a storage engine that does not support recover to stable timestamp.");
         fassertFailedNoTrace(50805);
     }
 
@@ -214,7 +212,7 @@ boost::optional<Timestamp> recoverFromOplogPrecursor(OperationContext* opCtx,
     // happen.
     auto recoveryTS = storageInterface->getRecoveryTimestamp(opCtx->getServiceContext());
     if (recoveryTS && recoveryTS->isNull()) {
-        severe() << "Cannot recover from the oplog with stable checkpoint at null timestamp.";
+        LOGV2_FATAL(50806, "Cannot recover from the oplog with stable checkpoint at null timestamp.");
         fassertFailedNoTrace(50806);
     }
 
@@ -232,36 +230,33 @@ void ReplicationRecoveryImpl::_assertNoRecoveryNeededOnUnstableCheckpoint(Operat
     invariant(!_storageInterface->getRecoveryTimestamp(opCtx->getServiceContext()));
 
     if (_consistencyMarkers->getInitialSyncFlag(opCtx)) {
-        severe() << "Unexpected recovery needed, initial sync flag set.";
+        LOGV2_FATAL(31362, "Unexpected recovery needed, initial sync flag set.");
         fassertFailedNoTrace(31362);
     }
 
     const auto truncateAfterPoint = _consistencyMarkers->getOplogTruncateAfterPoint(opCtx);
     if (!truncateAfterPoint.isNull()) {
-        severe() << "Unexpected recovery needed, oplog requires truncation. Truncate after point: "
-                 << truncateAfterPoint.toString();
+        LOGV2_FATAL(31363, "Unexpected recovery needed, oplog requires truncation. Truncate after point: {}", "truncateAfterPoint_toString"_attr = truncateAfterPoint.toString());
         fassertFailedNoTrace(31363);
     }
 
     auto topOfOplogSW = _getTopOfOplog(opCtx);
     if (!topOfOplogSW.isOK()) {
-        severe() << "Recovery not possible, no oplog found: " << topOfOplogSW.getStatus();
+        LOGV2_FATAL(31364, "Recovery not possible, no oplog found: {}", "topOfOplogSW_getStatus"_attr = topOfOplogSW.getStatus());
         fassertFailedNoTrace(31364);
     }
     const auto topOfOplog = topOfOplogSW.getValue();
 
     const auto appliedThrough = _consistencyMarkers->getAppliedThrough(opCtx);
     if (!appliedThrough.isNull() && appliedThrough != topOfOplog) {
-        severe() << "Unexpected recovery needed, appliedThrough is not at top of oplog, indicating "
-                    "oplog has not been fully applied. appliedThrough: "
-                 << appliedThrough.toString();
+        LOGV2_FATAL(31365, "Unexpected recovery needed, appliedThrough is not at top of oplog, indicating "
+                    "oplog has not been fully applied. appliedThrough: {}", "appliedThrough_toString"_attr = appliedThrough.toString());
         fassertFailedNoTrace(31365);
     }
 
     const auto minValid = _consistencyMarkers->getMinValid(opCtx);
     if (minValid > topOfOplog) {
-        severe() << "Unexpected recovery needed, top of oplog is not consistent. topOfOplog: "
-                 << topOfOplog << ", minValid: " << minValid;
+        LOGV2_FATAL(31366, "Unexpected recovery needed, top of oplog is not consistent. topOfOplog: {}, minValid: {}", "topOfOplog"_attr = topOfOplog, "minValid"_attr = minValid);
         fassertFailedNoTrace(31366);
     }
 }
@@ -281,21 +276,19 @@ void ReplicationRecoveryImpl::recoverFromOplogAsStandalone(OperationContext* opC
         if (gTakeUnstableCheckpointOnShutdown) {
             // Ensure 'recoverFromOplogAsStandalone' with 'takeUnstableCheckpointOnShutdown'
             // is safely idempotent when it succeeds.
-            log() << "Recovering from unstable checkpoint with 'takeUnstableCheckpointOnShutdown'."
-                  << " Confirming that no oplog recovery is needed.";
+            LOGV2("Recovering from unstable checkpoint with 'takeUnstableCheckpointOnShutdown'. Confirming that no oplog recovery is needed.");
             _assertNoRecoveryNeededOnUnstableCheckpoint(opCtx);
-            log() << "Not doing any oplog recovery since there is an unstable checkpoint that is "
-                  << "up to date.";
+            LOGV2("Not doing any oplog recovery since there is an unstable checkpoint that is up to date.");
         } else {
-            severe() << "Cannot use 'recoverFromOplogAsStandalone' without a stable checkpoint.";
+            LOGV2_FATAL(31229, "Cannot use 'recoverFromOplogAsStandalone' without a stable checkpoint.");
             fassertFailedNoTrace(31229);
         }
     }
 
     reconstructPreparedTransactions(opCtx, OplogApplication::Mode::kRecovering);
 
-    warning() << "Setting mongod to readOnly mode as a result of specifying "
-                 "'recoverFromOplogAsStandalone'.";
+    LOGV2_WARNING("Setting mongod to readOnly mode as a result of specifying "
+                 "'recoverFromOplogAsStandalone'.");
     storageGlobalParams.readOnly = true;
 }
 
@@ -307,7 +300,7 @@ void ReplicationRecoveryImpl::recoverFromOplogUpTo(OperationContext* opCtx, Time
 
     auto recoveryTS = recoverFromOplogPrecursor(opCtx, _storageInterface);
     if (!recoveryTS) {
-        severe() << "Cannot use 'recoverToOplogTimestamp' without a stable checkpoint.";
+        LOGV2_FATAL(31399, "Cannot use 'recoverToOplogTimestamp' without a stable checkpoint.");
         fassertFailedNoTrace(31399);
     }
 
@@ -316,15 +309,14 @@ void ReplicationRecoveryImpl::recoverFromOplogUpTo(OperationContext* opCtx, Time
 
     Timestamp startPoint = _consistencyMarkers->getAppliedThrough(opCtx).getTimestamp();
     if (startPoint.isNull()) {
-        log() << "No stored oplog entries to apply for recovery.";
+        LOGV2("No stored oplog entries to apply for recovery.");
         return;
     }
 
     invariant(!endPoint.isNull());
 
     if (startPoint == endPoint) {
-        log() << "No oplog entries to apply for recovery. Start point '" << startPoint
-              << "' is at the end point '" << endPoint << "' in the oplog.";
+        LOGV2("No oplog entries to apply for recovery. Start point '{}' is at the end point '{}' in the oplog.", "startPoint"_attr = startPoint, "endPoint"_attr = endPoint);
         return;
     } else if (startPoint > endPoint) {
         uasserted(ErrorCodes::BadValue,
@@ -335,9 +327,7 @@ void ReplicationRecoveryImpl::recoverFromOplogUpTo(OperationContext* opCtx, Time
 
     Timestamp appliedUpTo = _applyOplogOperations(opCtx, startPoint, endPoint);
     if (appliedUpTo != endPoint) {
-        severe() << "Given 'recoverToOplogTimestamp' (" << endPoint.toString()
-                 << ") does not have a corresponding oplog entry with the same timestamp. "
-                 << "The last applied entry in the oplog has timestamp " << appliedUpTo.toString();
+        LOGV2_FATAL(31400, "Given 'recoverToOplogTimestamp' ({}) does not have a corresponding oplog entry with the same timestamp. The last applied entry in the oplog has timestamp {}", "endPoint_toString"_attr = endPoint.toString(), "appliedUpTo_toString"_attr = appliedUpTo.toString());
         fassertFailedNoTrace(31400);
     }
 
@@ -347,7 +337,7 @@ void ReplicationRecoveryImpl::recoverFromOplogUpTo(OperationContext* opCtx, Time
 void ReplicationRecoveryImpl::recoverFromOplog(OperationContext* opCtx,
                                                boost::optional<Timestamp> stableTimestamp) try {
     if (_consistencyMarkers->getInitialSyncFlag(opCtx)) {
-        log() << "No recovery needed. Initial sync flag set.";
+        LOGV2("No recovery needed. Initial sync flag set.");
         return;  // Initial Sync will take over so no cleanup is needed.
     }
 
@@ -387,7 +377,7 @@ void ReplicationRecoveryImpl::recoverFromOplog(OperationContext* opCtx,
         topOfOplogSW.getStatus() == ErrorCodes::NamespaceNotFound) {
         // Oplog is empty. There are no oplog entries to apply, so we exit recovery and go into
         // initial sync.
-        log() << "No oplog entries to apply for recovery. Oplog is empty.";
+        LOGV2("No oplog entries to apply for recovery. Oplog is empty.");
         return;
     }
     fassert(40290, topOfOplogSW);
@@ -400,7 +390,7 @@ void ReplicationRecoveryImpl::recoverFromOplog(OperationContext* opCtx,
         _recoverFromUnstableCheckpoint(opCtx, appliedThrough, topOfOplog);
     }
 } catch (...) {
-    severe() << "Caught exception during replication recovery: " << exceptionToStatus();
+    LOGV2_FATAL(0, "Caught exception during replication recovery: {}", "exceptionToStatus"_attr = exceptionToStatus());
     std::terminate();
 }
 
@@ -411,11 +401,9 @@ void ReplicationRecoveryImpl::_recoverFromStableTimestamp(OperationContext* opCt
     invariant(!stableTimestamp.isNull());
     invariant(!topOfOplog.isNull());
     const auto truncateAfterPoint = _consistencyMarkers->getOplogTruncateAfterPoint(opCtx);
-    log() << "Recovering from stable timestamp: " << stableTimestamp
-          << " (top of oplog: " << topOfOplog << ", appliedThrough: " << appliedThrough
-          << ", TruncateAfter: " << truncateAfterPoint << ")";
+    LOGV2("Recovering from stable timestamp: {} (top of oplog: {}, appliedThrough: {}, TruncateAfter: {})", "stableTimestamp"_attr = stableTimestamp, "topOfOplog"_attr = topOfOplog, "appliedThrough"_attr = appliedThrough, "truncateAfterPoint"_attr = truncateAfterPoint);
 
-    log() << "Starting recovery oplog application at the stable timestamp: " << stableTimestamp;
+    LOGV2("Starting recovery oplog application at the stable timestamp: {}", "stableTimestamp"_attr = stableTimestamp);
     _applyToEndOfOplog(opCtx, stableTimestamp, topOfOplog.getTimestamp());
 }
 
@@ -423,18 +411,16 @@ void ReplicationRecoveryImpl::_recoverFromUnstableCheckpoint(OperationContext* o
                                                              OpTime appliedThrough,
                                                              OpTime topOfOplog) {
     invariant(!topOfOplog.isNull());
-    log() << "Recovering from an unstable checkpoint (top of oplog: " << topOfOplog
-          << ", appliedThrough: " << appliedThrough << ")";
+    LOGV2("Recovering from an unstable checkpoint (top of oplog: {}, appliedThrough: {})", "topOfOplog"_attr = topOfOplog, "appliedThrough"_attr = appliedThrough);
 
     if (appliedThrough.isNull()) {
         // The appliedThrough would be null if we shut down cleanly or crashed as a primary. Either
         // way we are consistent at the top of the oplog.
-        log() << "No oplog entries to apply for recovery. appliedThrough is null.";
+        LOGV2("No oplog entries to apply for recovery. appliedThrough is null.");
     } else {
         // If the appliedThrough is not null, then we shut down uncleanly during secondary oplog
         // application and must apply from the appliedThrough to the top of the oplog.
-        log() << "Starting recovery oplog application at the appliedThrough: " << appliedThrough
-              << ", through the top of the oplog: " << topOfOplog;
+        LOGV2("Starting recovery oplog application at the appliedThrough: {}, through the top of the oplog: {}", "appliedThrough"_attr = appliedThrough, "topOfOplog"_attr = topOfOplog);
 
         // When `recoverFromOplog` truncates the oplog, that also happens to set the "oldest
         // timestamp" to the truncation point[1]. `_applyToEndOfOplog` will then perform writes
@@ -484,11 +470,10 @@ void ReplicationRecoveryImpl::_applyToEndOfOplog(OperationContext* opCtx,
     // Check if we have any unapplied ops in our oplog. It is important that this is done after
     // deleting the ragged end of the oplog.
     if (oplogApplicationStartPoint == topOfOplog) {
-        log() << "No oplog entries to apply for recovery. Start point is at the top of the oplog.";
+        LOGV2("No oplog entries to apply for recovery. Start point is at the top of the oplog.");
         return;  // We've applied all the valid oplog we have.
     } else if (oplogApplicationStartPoint > topOfOplog) {
-        severe() << "Applied op " << oplogApplicationStartPoint.toBSON()
-                 << " not found. Top of oplog is " << topOfOplog.toBSON() << '.';
+        LOGV2_FATAL(40313, "Applied op {} not found. Top of oplog is {}.", "oplogApplicationStartPoint_toBSON"_attr = oplogApplicationStartPoint.toBSON(), "topOfOplog_toBSON"_attr = topOfOplog.toBSON());
         fassertFailedNoTrace(40313);
     }
 
@@ -502,8 +487,7 @@ void ReplicationRecoveryImpl::_applyToEndOfOplog(OperationContext* opCtx,
 Timestamp ReplicationRecoveryImpl::_applyOplogOperations(OperationContext* opCtx,
                                                          const Timestamp& startPoint,
                                                          const Timestamp& endPoint) {
-    log() << "Replaying stored operations from " << startPoint << " (inclusive) to " << endPoint
-          << " (inclusive).";
+    LOGV2("Replaying stored operations from {} (inclusive) to {} (inclusive).", "startPoint"_attr = startPoint, "endPoint"_attr = endPoint);
 
     OplogBufferLocalOplog oplogBuffer(startPoint, endPoint);
     oplogBuffer.startup(opCtx);
@@ -596,9 +580,9 @@ void ReplicationRecoveryImpl::_truncateOplogTo(OperationContext* opCtx,
         const auto tsElem = entry["ts"];
         if (count == 1) {
             if (tsElem.eoo())
-                LOG(2) << "Oplog tail entry: " << redact(entry);
+                LOGV2_DEBUG(2, "Oplog tail entry: {}", "redact_entry"_attr = redact(entry));
             else
-                LOG(2) << "Oplog tail entry ts field: " << tsElem;
+                LOGV2_DEBUG(2, "Oplog tail entry ts field: {}", "tsElem"_attr = tsElem);
         }
 
         if (tsElem.timestamp() < truncateTimestamp) {
@@ -608,16 +592,14 @@ void ReplicationRecoveryImpl::_truncateOplogTo(OperationContext* opCtx,
                 invariant(!oldestIDToDelete.isNull());
                 oplogCollection->cappedTruncateAfter(opCtx, oldestIDToDelete, inclusive);
             }
-            log() << "Replication recovery oplog truncation finished in: " << timer.millis()
-                  << "ms";
+            LOGV2("Replication recovery oplog truncation finished in: {}ms", "timer_millis"_attr = timer.millis());
             return;
         }
 
         oldestIDToDelete = id;
     }
 
-    severe() << "Reached end of oplog looking for oplog entry before " << truncateTimestamp.toBSON()
-             << " but couldn't find any after looking through " << count << " entries.";
+    LOGV2_FATAL(40296, "Reached end of oplog looking for oplog entry before {} but couldn't find any after looking through {} entries.", "truncateTimestamp_toBSON"_attr = truncateTimestamp.toBSON(), "count"_attr = count);
     fassertFailedNoTrace(40296);
 }
 
@@ -638,16 +620,13 @@ void ReplicationRecoveryImpl::_truncateOplogIfNeededAndThenClearOplogTruncateAft
         AutoGetCollectionForRead oplog(opCtx, NamespaceString::kRsOplogNamespace);
         invariant(oplog.getCollection());
 
-        log() << "The oplog truncation point (" << truncatePoint
-              << ") is equal to or earlier than the stable timestamp (" << stableTimestamp.get()
-              << "), so truncating after the stable timestamp instead";
+        LOGV2("The oplog truncation point ({}) is equal to or earlier than the stable timestamp ({}), so truncating after the stable timestamp instead", "truncatePoint"_attr = truncatePoint, "stableTimestamp_get"_attr = stableTimestamp.get());
 
         inclusive = false;
         truncatePoint = stableTimestamp.get();
     }
 
-    log() << "Removing unapplied oplog entries starting at: " << truncatePoint.toBSON() << ", "
-          << (inclusive ? "inclusive" : "not inclusive");
+    LOGV2("Removing unapplied oplog entries starting at: {}, {}", "truncatePoint_toBSON"_attr = truncatePoint.toBSON(), "inclusive_inclusive_not_inclusive"_attr = (inclusive ? "inclusive" : "not inclusive"));
     _truncateOplogTo(opCtx, truncatePoint, inclusive);
 
     // Clear the oplogTruncateAfterPoint now that we have removed any holes that might exist in the

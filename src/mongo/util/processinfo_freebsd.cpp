@@ -44,6 +44,7 @@
 #include <vm/vm_param.h>
 
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/scopeguard.h"
 #include "processinfo.h"
 
@@ -130,13 +131,11 @@ void ProcessInfo::SystemInfo::collectSystemInfo() {
 
     int status = getSysctlByNameWithDefault("kern.version", std::string("unknown"), &osVersion);
     if (status != 0)
-        log() << "Unable to collect OS Version. (errno: " << status << " msg: " << strerror(status)
-              << ")";
+        LOGV2("Unable to collect OS Version. (errno: {} msg: {})", "status"_attr = status, "strerror_status"_attr = strerror(status));
 
     status = getSysctlByNameWithDefault("hw.machine_arch", std::string("unknown"), &cpuArch);
     if (status != 0)
-        log() << "Unable to collect Machine Architecture. (errno: " << status
-              << " msg: " << strerror(status) << ")";
+        LOGV2("Unable to collect Machine Architecture. (errno: {} msg: {})", "status"_attr = status, "strerror_status"_attr = strerror(status));
     addrSize = cpuArch.find("64") != std::string::npos ? 64 : 32;
 
     uintptr_t numBuffer;
@@ -145,14 +144,12 @@ void ProcessInfo::SystemInfo::collectSystemInfo() {
     memSize = numBuffer;
     memLimit = memSize;
     if (status != 0)
-        log() << "Unable to collect Physical Memory. (errno: " << status
-              << " msg: " << strerror(status) << ")";
+        LOGV2("Unable to collect Physical Memory. (errno: {} msg: {})", "status"_attr = status, "strerror_status"_attr = strerror(status));
 
     status = getSysctlByNameWithDefault("hw.ncpu", defaultNum, &numBuffer);
     numCores = numBuffer;
     if (status != 0)
-        log() << "Unable to collect Number of CPUs. (errno: " << status
-              << " msg: " << strerror(status) << ")";
+        LOGV2("Unable to collect Number of CPUs. (errno: {} msg: {})", "status"_attr = status, "strerror_status"_attr = strerror(status));
 
     pageSize = static_cast<unsigned long long>(sysconf(_SC_PAGESIZE));
 
@@ -172,7 +169,7 @@ bool ProcessInfo::blockCheckSupported() {
 bool ProcessInfo::blockInMemory(const void* start) {
     char x = 0;
     if (mincore(alignToStartOfPage(start), getPageSize(), &x)) {
-        log() << "mincore failed: " << errnoWithDescription();
+        LOGV2("mincore failed: {}", "errnoWithDescription"_attr = errnoWithDescription());
         return 1;
     }
     return x & 0x1;
@@ -182,7 +179,7 @@ bool ProcessInfo::pagesInMemory(const void* start, size_t numPages, std::vector<
     out->resize(numPages);
     // int mincore(const void *addr, size_t len, char *vec);
     if (mincore(alignToStartOfPage(start), numPages * getPageSize(), &(out->front()))) {
-        log() << "mincore failed: " << errnoWithDescription();
+        LOGV2("mincore failed: {}", "errnoWithDescription"_attr = errnoWithDescription());
         return false;
     }
     for (size_t i = 0; i < numPages; ++i) {

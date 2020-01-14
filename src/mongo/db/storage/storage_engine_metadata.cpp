@@ -51,6 +51,7 @@
 #include "mongo/base/data_type_validated.h"
 #include "mongo/db/bson/dotted_path_support.h"
 #include "mongo/db/jsobj.h"
+#include "mongo/logv2/log.h"
 #include "mongo/rpc/object_check.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/file.h"
@@ -85,7 +86,7 @@ std::unique_ptr<StorageEngineMetadata> StorageEngineMetadata::forPath(const std:
         metadata.reset(new StorageEngineMetadata(dbpath));
         Status status = metadata->read();
         if (!status.isOK()) {
-            error() << "Unable to read the storage engine metadata file: " << status;
+            LOGV2_ERROR("Unable to read the storage engine metadata file: {}", "status"_attr = status);
             fassertFailedNoTrace(28661);
         }
     }
@@ -219,14 +220,14 @@ void flushMyDirectory(const boost::filesystem::path& file) {
     // so make a warning. need a better solution longer term.
     // massert(13652, str::stream() << "Couldn't find parent dir for file: " << file.string(),);
     if (!file.has_branch_path()) {
-        log() << "warning flushMyDirectory couldn't find parent dir for file: " << file.string();
+        LOGV2("warning flushMyDirectory couldn't find parent dir for file: {}", "file_string"_attr = file.string());
         return;
     }
 
 
     boost::filesystem::path dir = file.branch_path();  // parent_path in new boosts
 
-    LOG(1) << "flushing directory " << dir.string();
+    LOGV2_DEBUG(1, "flushing directory {}", "dir_string"_attr = dir.string());
 
     int fd = ::open(dir.string().c_str(), O_RDONLY);  // DO NOT THROW OR ASSERT BEFORE CLOSING
     massert(13650,
@@ -237,12 +238,9 @@ void flushMyDirectory(const boost::filesystem::path& file) {
         int e = errno;
         if (e == EINVAL) {  // indicates filesystem does not support synchronization
             if (!_warnedAboutFilesystem) {
-                log() << "\tWARNING: This file system is not supported. For further information"
-                      << " see:" << startupWarningsLog;
-                log() << "\t\t\thttp://dochub.mongodb.org/core/unsupported-filesystems"
-                      << startupWarningsLog;
-                log() << "\t\tPlease notify MongoDB, Inc. if an unlisted filesystem generated "
-                      << "this warning." << startupWarningsLog;
+                LOGV2_OPTIONS({logv2::LogTag::kStartupWarnings}, "\tWARNING: This file system is not supported. For further information see:");
+                LOGV2_OPTIONS({logv2::LogTag::kStartupWarnings}, "\t\t\thttp://dochub.mongodb.org/core/unsupported-filesystems");
+                LOGV2_OPTIONS({logv2::LogTag::kStartupWarnings}, "\t\tPlease notify MongoDB, Inc. if an unlisted filesystem generated this warning.");
                 _warnedAboutFilesystem = true;
             }
         } else {

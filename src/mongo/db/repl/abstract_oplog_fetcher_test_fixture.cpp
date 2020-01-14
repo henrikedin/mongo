@@ -33,6 +33,7 @@
 
 #include "mongo/db/repl/oplog_entry.h"
 #include "mongo/executor/thread_pool_task_executor_test_fixture.h"
+#include "mongo/logv2/log.h"
 #include "mongo/unittest/unittest.h"
 
 namespace mongo {
@@ -119,13 +120,13 @@ executor::RemoteCommandRequest AbstractOplogFetcherTest::processNetworkResponse(
 
     auto net = getNet();
     executor::NetworkInterfaceMock::InNetworkGuard guard(net);
-    unittest::log() << "scheduling response.";
+    unittest::LOGV2("scheduling response.");
     auto request = net->scheduleSuccessfulResponse(response);
-    unittest::log() << "running network ops.";
+    unittest::LOGV2("running network ops.");
     net->runReadyNetworkOperations();
-    unittest::log() << "checking for more requests";
+    unittest::LOGV2("checking for more requests");
     ASSERT_EQUALS(expectReadyRequestsAfterProcessing, net->hasReadyRequests());
-    unittest::log() << "returning consumed request";
+    unittest::LOGV2("returning consumed request");
     return request;
 }
 

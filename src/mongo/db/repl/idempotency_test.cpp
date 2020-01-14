@@ -40,6 +40,7 @@
 #include "mongo/db/repl/idempotency_update_sequence.h"
 #include "mongo/db/repl/replication_coordinator.h"
 #include "mongo/db/server_options.h"
+#include "mongo/logv2/log.h"
 #include "mongo/unittest/unittest.h"
 
 namespace mongo {
@@ -114,7 +115,7 @@ std::vector<OplogEntry> RandomizedIdempotencyTest::createUpdateSequence(
 std::string RandomizedIdempotencyTest::getStatesString(const std::vector<CollectionState>& state1,
                                                        const std::vector<CollectionState>& state2,
                                                        const std::vector<OplogEntry>& ops) {
-    unittest::log() << IdempotencyTest::getStatesString(state1, state2, ops);
+    unittest::LOGV2("{}", "IdempotencyTest_getStatesString_state1_state2_ops"_attr = IdempotencyTest::getStatesString(state1, state2, ops));
     StringBuilder sb;
     sb << "Ran update ops: ";
     sb << "[ ";

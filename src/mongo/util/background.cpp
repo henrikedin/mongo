@@ -36,6 +36,7 @@
 #include <functional>
 
 #include "mongo/config.h"
+#include "mongo/logv2/log.h"
 #include "mongo/platform/mutex.h"
 #include "mongo/stdx/condition_variable.h"
 #include "mongo/stdx/thread.h"
@@ -147,7 +148,7 @@ void BackgroundJob::jobBody() {
         setThreadName(threadName);
     }
 
-    LOG(1) << "BackgroundJob starting: " << threadName;
+    LOGV2_DEBUG(1, "BackgroundJob starting: {}", "threadName"_attr = threadName);
 
     run();
 
@@ -333,14 +334,14 @@ void PeriodicTaskRunner::_runTask(PeriodicTask* const task) {
     try {
         task->taskDoWork();
     } catch (const std::exception& e) {
-        error() << "task: " << taskName << " failed: " << redact(e.what());
+        LOGV2_ERROR("task: {} failed: {}", "taskName"_attr = taskName, "redact_e_what"_attr = redact(e.what()));
     } catch (...) {
-        error() << "task: " << taskName << " failed with unknown error";
+        LOGV2_ERROR("task: {} failed with unknown error", "taskName"_attr = taskName);
     }
 
     const int ms = timer.millis();
     const int kMinLogMs = 100;
-    LOG(ms <= kMinLogMs ? 3 : 0) << "task: " << taskName << " took: " << ms << "ms";
+    LOGV2_DEBUG(::mongo::logger::LogSeverity(ms <= kMinLogMs ? 3 : 0).toInt(), "task: {} took: {}ms", "taskName"_attr = taskName, "ms"_attr = ms);
 }
 
 }  // namespace mongo

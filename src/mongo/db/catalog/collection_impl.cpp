@@ -71,6 +71,7 @@
 #include "mongo/db/update/update_driver.h"
 
 #include "mongo/db/auth/user_document_parser.h"  // XXX-ANDY
+#include "mongo/logv2/log.h"
 #include "mongo/rpc/object_check.h"
 #include "mongo/util/fail_point.h"
 #include "mongo/util/log.h"
@@ -110,7 +111,7 @@ Status checkFailCollectionInsertsFailPoint(const NamespaceString& ns, const BSON
             const std::string msg = str::stream()
                 << "Failpoint (failCollectionInserts) has been enabled (" << data
                 << "), so rejecting insert (first doc): " << firstDoc;
-            log() << msg;
+            LOGV2("{}", "msg"_attr = msg);
             s = {ErrorCodes::FailPointEnabled, msg};
         },
         [&](const BSONObj& data) {
@@ -138,9 +139,7 @@ std::unique_ptr<CollatorInterface> parseCollation(OperationContext* opCtx,
     // integration, shut down the server. Errors other than IncompatibleCollationVersion should not
     // be possible, so these are an invariant rather than fassert.
     if (collator == ErrorCodes::IncompatibleCollationVersion) {
-        log() << "Collection " << nss
-              << " has a default collation which is incompatible with this version: "
-              << collationSpec;
+        LOGV2("Collection {} has a default collation which is incompatible with this version: {}", "nss"_attr = nss, "collationSpec"_attr = collationSpec);
         fassertFailedNoTrace(40144);
     }
     invariant(collator.getStatus());
@@ -295,8 +294,7 @@ Status CollectionImpl::checkValidation(OperationContext* opCtx, const BSONObj& d
         return Status::OK();
 
     if (_validationAction == ValidationAction::WARN) {
-        warning() << "Document would fail validation"
-                  << " collection: " << ns() << " doc: " << redact(document);
+        LOGV2_WARNING("Document would fail validation collection: {} doc: {}", "ns"_attr = ns(), "redact_document"_attr = redact(document));
         return Status::OK();
     }
 
@@ -415,8 +413,7 @@ Status CollectionImpl::insertDocuments(OperationContext* opCtx,
                 whenFirst += " when first _id is ";
                 whenFirst += firstIdElem.str();
             }
-            log() << "hangAfterCollectionInserts fail point enabled for " << _ns << whenFirst
-                  << ". Blocking until fail point is disabled.";
+            LOGV2("hangAfterCollectionInserts fail point enabled for {}{}. Blocking until fail point is disabled.", "ns"_attr = _ns, "whenFirst"_attr = whenFirst);
             hangAfterCollectionInserts.pauseWhileSet(opCtx);
         },
         [&](const BSONObj& data) {
@@ -468,8 +465,7 @@ Status CollectionImpl::insertDocumentForBulkLoader(OperationContext* opCtx,
     status = onRecordInserted(loc.getValue());
 
     if (MONGO_unlikely(failAfterBulkLoadDocInsert.shouldFail())) {
-        log() << "Failpoint failAfterBulkLoadDocInsert enabled for " << _ns.ns()
-              << ". Throwing WriteConflictException.";
+        LOGV2("Failpoint failAfterBulkLoadDocInsert enabled for {}. Throwing WriteConflictException.", "ns_ns"_attr = _ns.ns());
         throw WriteConflictException();
     }
 
@@ -593,7 +589,7 @@ void CollectionImpl::deleteDocument(OperationContext* opCtx,
                                     bool noWarn,
                                     Collection::StoreDeletedDoc storeDeletedDoc) {
     if (isCapped()) {
-        log() << "failing remove on a capped ns " << _ns;
+        LOGV2("failing remove on a capped ns {}", "ns"_attr = _ns);
         uasserted(10089, "cannot remove from a capped collection");
         return;
     }

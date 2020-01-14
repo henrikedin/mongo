@@ -45,6 +45,7 @@
 #include "mongo/db/query/collection_query_info.h"
 #include "mongo/db/storage/durable_catalog.h"
 #include "mongo/db/ttl_collection_cache.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/log.h"
 
@@ -168,7 +169,7 @@ void IndexBuildBlock::success(OperationContext* opCtx, Collection* collection) {
         invariant(_indexBuildInterceptor->areAllConstraintsChecked(opCtx));
     }
 
-    log() << "index build: done building index " << _indexName << " on ns " << _nss;
+    LOGV2("index build: done building index {} on ns {}", "indexName"_attr = _indexName, "nss"_attr = _nss);
 
     collection->indexBuildSuccess(opCtx, _indexCatalogEntry);
     auto svcCtx = opCtx->getClient()->getServiceContext();
