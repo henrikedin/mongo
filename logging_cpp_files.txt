@@ -113,7 +113,7 @@ src/mongo/db/index_builds_coordinator.cpp
 src/mongo/db/index/duplicate_key_tracker.cpp
 src/mongo/db/index/hash_key_generator_test.cpp
 src/mongo/db/index/haystack_access_method.cpp
-#src/mongo/db/index/index_access_method.cpp # unsigned long
+src/mongo/db/index/index_access_method.cpp # unsigned long
 src/mongo/db/index/index_access_method_factory_impl.cpp
 src/mongo/db/index/index_build_interceptor.cpp
 src/mongo/db/index/s2_key_generator_test.cpp

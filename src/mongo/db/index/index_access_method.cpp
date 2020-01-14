@@ -112,7 +112,7 @@ bool AbstractIndexAccessMethod::isFatalError(OperationContext* opCtx,
     // A document might be indexed multiple times during a background index build if it moves ahead
     // of the cursor (e.g. via an update). We test this scenario and swallow the error accordingly.
     if (status == ErrorCodes::DuplicateKeyValue && !_btreeState->isReady(opCtx)) {
-        LOG(3) << "KeyString " << key << " already in index during background indexing (ok)";
+        LOGV2_DEBUG(3, "KeyString {} already in index during background indexing (ok)", "key"_attr = key);
         return false;
     }
     return true;
@@ -199,10 +199,8 @@ void AbstractIndexAccessMethod::removeOneKey(OperationContext* opCtx,
     try {
         _newInterface->unindex(opCtx, keyString, dupsAllowed);
     } catch (AssertionException& e) {
-        log() << "Assertion failure: _unindex failed on: " << _descriptor->parentNS()
-              << " for index: " << _descriptor->indexName();
-        log() << "Assertion failure: _unindex failed: " << redact(e) << "  KeyString:" << keyString
-              << "  dl:" << loc;
+        LOGV2("Assertion failure: _unindex failed on: {} for index: {}", "descriptor_parentNS"_attr = _descriptor->parentNS(), "descriptor_indexName"_attr = _descriptor->indexName());
+        LOGV2("Assertion failure: _unindex failed: {}  KeyString:{}  dl:{}", "redact_e"_attr = redact(e), "keyString"_attr = keyString, "loc"_attr = loc);
         logContext();
     }
 }
@@ -601,9 +599,7 @@ Status AbstractIndexAccessMethod::commitBulk(OperationContext* opCtx,
         if (kDebugBuild || _descriptor->unique()) {
             cmpData = data.first.compareWithoutRecordId(previousKey);
             if (cmpData < 0) {
-                severe() << "expected the next key" << data.first.toString()
-                         << " to be greater than or equal to the previous key"
-                         << previousKey.toString();
+                LOGV2_FATAL(31171, "expected the next key{} to be greater than or equal to the previous key{}", "data_first_toString"_attr = data.first.toString(), "previousKey_toString"_attr = previousKey.toString());
                 fassertFailedNoTrace(31171);
             }
         }
@@ -650,8 +646,7 @@ Status AbstractIndexAccessMethod::commitBulk(OperationContext* opCtx,
 
     pm.finished();
 
-    log() << "index build: inserted " << bulk->getKeysInserted()
-          << " keys from external sorter into index in " << timer.seconds() << " seconds";
+    LOGV2("index build: inserted {} keys from external sorter into index in {} seconds", "bulk_getKeysInserted"_attr = bulk->getKeysInserted(), "timer_seconds"_attr = timer.seconds());
 
     WriteUnitOfWork wunit(opCtx);
     builder->commit(true);
@@ -718,8 +713,7 @@ void AbstractIndexAccessMethod::getKeys(const BSONObj& obj,
             throw;
         }
 
-        LOG(1) << "Ignoring indexing error for idempotency reasons: " << redact(ex)
-               << " when getting index keys of " << redact(obj);
+        LOGV2_DEBUG(1, "Ignoring indexing error for idempotency reasons: {} when getting index keys of {}", "redact_ex"_attr = redact(ex), "redact_obj"_attr = redact(obj));
     }
 }
 
@@ -751,4 +745,5 @@ std::string nextFileName() {
 }  // namespace mongo
 
 #include "mongo/db/sorter/sorter.cpp"
+#include "mongo/logv2/log.h"
 MONGO_CREATE_SORTER(mongo::KeyString::Value, mongo::NullValue, mongo::BtreeExternalSortComparison);
