@@ -27,6 +27,8 @@
  *    it in the license file.
  */
 
+#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kDefault
+
 #include "mongo/platform/basic.h"
 
 #include "mongo/db/hasher.h"
@@ -116,7 +118,7 @@ protected:
 
     static auto getNewSeed() {
         auto seed = Date_t::now().asInt64();
-        unittest::LOGV2("Generated new seed is {}", "seed"_attr = seed);
+        LOGV2("Generated new seed is {}", "seed"_attr = seed);
 
         return seed;
     }

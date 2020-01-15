@@ -1537,7 +1537,7 @@ TEST_F(TakeoverTest, CatchupTakeoverDryRunFailsPrimarySaysNo) {
     NetworkInterfaceMock::NetworkOperationIterator noi_primary;
     Date_t until = net->now() + Seconds(1);
     while (voteRequests < votesExpected) {
-        unittest::LOGV2("request: {} expected: {}", "voteRequests"_attr = voteRequests, "votesExpected"_attr = votesExpected);
+        LOGV2("request: {} expected: {}", "voteRequests"_attr = voteRequests, "votesExpected"_attr = votesExpected);
         const NetworkInterfaceMock::NetworkOperationIterator noi = net->getNextReadyRequest();
         const RemoteCommandRequest& request = noi->getRequest();
         LOGV2("{} processing {}", "request_target_toString"_attr = request.target.toString(), "request_cmdObj"_attr = request.cmdObj);

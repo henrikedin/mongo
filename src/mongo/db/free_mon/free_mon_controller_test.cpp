@@ -76,7 +76,7 @@ namespace {
 
 auto makeRandom() {
     auto seed = SecureRandom().nextInt64();
-    unittest::LOGV2("PseudoRandom({}{}{}{})", "std_showbase"_attr = std::showbase, "std_hex"_attr = std::hex, "seed"_attr = seed, "std_noshowbase"_attr = std::noshowbase);
+    LOGV2("PseudoRandom({:#x})", "seed"_attr = seed);
     return PseudoRandom(seed);
 }
 
@@ -508,8 +508,8 @@ TEST(FreeMonRetryTest, TestRegistration) {
     // If jitter is large as possible, we'd expect trueMin increments before false.
     const auto trueMin = characterizeJitter(Seconds{9}, Seconds{119});
 
-    // unittest::LOGV2("trueMin:{}", "trueMin"_attr = trueMin);
-    // unittest::LOGV2("trueMax:{}", "trueMax"_attr = trueMax);
+    // LOGV2("trueMin:{}", "trueMin"_attr = trueMin);
+    // LOGV2("trueMax:{}", "trueMax"_attr = trueMax);
 
     for (int j = 0; j < 30; j++) {
         // std::cout << "j: " << j << "\n";

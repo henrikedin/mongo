@@ -279,7 +279,7 @@ private:
             _hotel.checkOut();
 
             if ((i % (checkIns / 10)) == 0)
-                mongo::unittest::LOGV2("checked in {} times...", "i"_attr = i);
+                mongo::LOGV2("checked in {} times...", "i"_attr = i);
         }
     }
 

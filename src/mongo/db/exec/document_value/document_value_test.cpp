@@ -27,6 +27,8 @@
  *    it in the license file.
  */
 
+#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kDefault
+
 #include <math.h>
 
 #include "mongo/platform/basic.h"
@@ -1916,7 +1918,7 @@ private:
         assertComparison(expectedResult, fromBson(a), fromBson(b));
     }
     void assertComparison(int expectedResult, const Value& a, const Value& b) {
-        mongo::unittest::LOGV2("testing {} and {}", "a_toString"_attr = a.toString(), "b_toString"_attr = b.toString());
+        mongo::LOGV2("testing {} and {}", "a_toString"_attr = a.toString(), "b_toString"_attr = b.toString());
 
         // reflexivity
         ASSERT_EQUALS(0, cmp(a, a));

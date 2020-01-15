@@ -27,6 +27,8 @@
  *    it in the license file.
  */
 
+#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kDefault
+
 #include "mongo/platform/basic.h"
 
 #include <iostream>
@@ -145,7 +147,7 @@ const std::array<int, 7> kTestSizes{1, 2, 3, 4, 5, 10, 1000};
 using SizedTest = std::function<void(int)>;
 void runWithDifferentSizes(SizedTest test) {
     for (auto size : kTestSizes) {
-        mongo::unittest::LOGV2("\t\tTesting cache size of {}", "size"_attr = size);
+        mongo::LOGV2("\t\tTesting cache size of {}", "size"_attr = size);
         test(size);
     }
 }

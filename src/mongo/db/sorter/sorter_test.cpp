@@ -27,6 +27,8 @@
  *    it in the license file.
  */
 
+#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kDefault
+
 #include "mongo/platform/basic.h"
 
 #include "mongo/db/sorter/sorter.h"
@@ -205,7 +207,7 @@ void _assertIteratorsEquivalent(It1 it1, It2 it2, int line) {
         it1->closeSource();
         it2->closeSource();
     } catch (...) {
-        mongo::unittest::LOGV2("Failure from line {} on iteration {}", "line"_attr = line, "iteration"_attr = iteration);
+        mongo::LOGV2("Failure from line {} on iteration {}", "line"_attr = line, "iteration"_attr = iteration);
         it1->closeSource();
         it2->closeSource();
         throw;

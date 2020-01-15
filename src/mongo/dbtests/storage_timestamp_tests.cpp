@@ -27,6 +27,8 @@
  *    it in the license file.
  */
 
+#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kDefault
+
 #include "mongo/platform/basic.h"
 
 #include <cstdint>
@@ -1525,9 +1527,9 @@ public:
         auto beforeTxnTs = beforeTxnTime.asTimestamp();
         auto commitEntryTs = beforeTxnTime.addTicks(1).asTimestamp();
 
-        unittest::LOGV2("Present TS: {}", "presentTs"_attr = presentTs);
-        unittest::LOGV2("Before transaction TS: {}", "beforeTxnTs"_attr = beforeTxnTs);
-        unittest::LOGV2("Commit entry TS: {}", "commitEntryTs"_attr = commitEntryTs);
+        LOGV2("Present TS: {}", "presentTs"_attr = presentTs);
+        LOGV2("Before transaction TS: {}", "beforeTxnTs"_attr = beforeTxnTs);
+        LOGV2("Commit entry TS: {}", "commitEntryTs"_attr = commitEntryTs);
 
         const auto sessionId = makeLogicalSessionIdForTest();
         _opCtx->setLogicalSessionId(sessionId);
@@ -2918,9 +2920,9 @@ public:
     }
 
     void logTimestamps() const {
-        unittest::LOGV2("Present TS: {}", "presentTs"_attr = presentTs);
-        unittest::LOGV2("Before transaction TS: {}", "beforeTxnTs"_attr = beforeTxnTs);
-        unittest::LOGV2("Commit entry TS: {}", "commitEntryTs"_attr = commitEntryTs);
+        LOGV2("Present TS: {}", "presentTs"_attr = presentTs);
+        LOGV2("Before transaction TS: {}", "beforeTxnTs"_attr = beforeTxnTs);
+        LOGV2("Commit entry TS: {}", "commitEntryTs"_attr = commitEntryTs);
     }
 
     BSONObj getSessionTxnInfoAtTimestamp(const Timestamp& ts, bool expected) {
@@ -3117,7 +3119,7 @@ public:
     void run() {
         auto txnParticipant = TransactionParticipant::get(_opCtx);
         ASSERT(txnParticipant);
-        unittest::LOGV2("PrepareTS: {}", "prepareEntryTs"_attr = prepareEntryTs);
+        LOGV2("PrepareTS: {}", "prepareEntryTs"_attr = prepareEntryTs);
         logTimestamps();
 
         const auto prepareFilter = BSON("ts" << prepareEntryTs);
@@ -3311,8 +3313,8 @@ public:
     void run() {
         auto txnParticipant = TransactionParticipant::get(_opCtx);
         ASSERT(txnParticipant);
-        unittest::LOGV2("PrepareTS: {}", "prepareEntryTs"_attr = prepareEntryTs);
-        unittest::LOGV2("AbortTS: {}", "abortEntryTs"_attr = abortEntryTs);
+        LOGV2("PrepareTS: {}", "prepareEntryTs"_attr = prepareEntryTs);
+        LOGV2("AbortTS: {}", "abortEntryTs"_attr = abortEntryTs);
 
         const auto prepareFilter = BSON("ts" << prepareEntryTs);
         const auto abortFilter = BSON("ts" << abortEntryTs);
@@ -3415,7 +3417,7 @@ public:
         const auto currentTime = _clock->getClusterTime();
         const auto prepareTs = currentTime.addTicks(1).asTimestamp();
         commitEntryTs = currentTime.addTicks(2).asTimestamp();
-        unittest::LOGV2("Prepare TS: {}", "prepareTs"_attr = prepareTs);
+        LOGV2("Prepare TS: {}", "prepareTs"_attr = prepareTs);
         logTimestamps();
 
         {
@@ -3516,7 +3518,7 @@ public:
         const auto currentTime = _clock->getClusterTime();
         const auto prepareTs = currentTime.addTicks(1).asTimestamp();
         const auto abortEntryTs = currentTime.addTicks(2).asTimestamp();
-        unittest::LOGV2("Prepare TS: {}", "prepareTs"_attr = prepareTs);
+        LOGV2("Prepare TS: {}", "prepareTs"_attr = prepareTs);
         logTimestamps();
 
         {
@@ -3611,7 +3613,7 @@ public:
         auto storageEngine = cc().getServiceContext()->getStorageEngine();
         if (!storageEngine->supportsReadConcernSnapshot() ||
             !mongo::serverGlobalParams.enableMajorityReadConcern) {
-            unittest::LOGV2("Skipping this test suite because storage engine {} does not support timestamp writes.", "storageGlobalParams_engine"_attr = storageGlobalParams.engine);
+            LOGV2("Skipping this test suite because storage engine {} does not support timestamp writes.", "storageGlobalParams_engine"_attr = storageGlobalParams.engine);
             return true;
         }
         return false;

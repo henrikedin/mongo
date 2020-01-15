@@ -27,6 +27,8 @@
  *    it in the license file.
  */
 
+#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kDefault
+
 #include "mongo/platform/basic.h"
 
 #include <memory>
@@ -536,7 +538,7 @@ TEST_F(RemoteCommandRetrySchedulerTest,
         request,
         [&result,
          sharedCallbackData](const executor::TaskExecutor::RemoteCommandCallbackArgs& rcba) {
-            unittest::LOGV2("setting result to {}", "rcba_response_status"_attr = rcba.response.status);
+            LOGV2("setting result to {}", "rcba_response_status"_attr = rcba.response.status);
             result = rcba.response.status;
         },
         std::move(policy));

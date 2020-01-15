@@ -27,6 +27,8 @@
  *    it in the license file.
  */
 
+#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kDefault
+
 #include "mongo/platform/basic.h"
 
 #include <iostream>
@@ -1609,7 +1611,7 @@ TEST_F(TopoCoordTest, ReplSetGetStatus) {
         &resultStatus);
     ASSERT_OK(resultStatus);
     BSONObj rsStatus = statusBuilder.obj();
-    unittest::LOGV2("{}", "rsStatus"_attr = rsStatus);
+    LOGV2("{}", "rsStatus"_attr = rsStatus);
 
     // Test results for all non-self members
     ASSERT_EQUALS(setName, rsStatus["set"].String());
@@ -1725,7 +1727,7 @@ TEST_F(TopoCoordTest, ReplSetGetStatus) {
         &resultStatus);
     ASSERT_OK(resultStatus);
     rsStatus = statusBuilder2.obj();
-    unittest::LOGV2("{}", "rsStatus"_attr = rsStatus);
+    LOGV2("{}", "rsStatus"_attr = rsStatus);
     ASSERT_EQUALS(setName, rsStatus["set"].String());
     ASSERT_FALSE(rsStatus.hasField("lastStableRecoveryTimestamp"));
     ASSERT_FALSE(rsStatus.hasField("electionCandidateMetrics"));

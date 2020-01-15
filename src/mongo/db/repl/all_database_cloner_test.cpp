@@ -27,6 +27,8 @@
  *    it in the license file.
  */
 
+#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kDefault
+
 #include "mongo/platform/basic.h"
 
 #include "mongo/db/repl/all_database_cloner.h"
@@ -115,7 +117,7 @@ TEST_F(AllDatabaseClonerTest, RetriesConnect) {
     ASSERT_EQ(2, _sharedData->getTotalRetries(WithLock::withoutLock()));
 
     // Bring the server up.
-    unittest::LOGV2("Bringing mock server back up.");
+    LOGV2("Bringing mock server back up.");
     _mockServer->reboot();
 
     // Allow the cloner to finish.
@@ -230,7 +232,7 @@ TEST_F(AllDatabaseClonerTest, RetriesListDatabases) {
     ASSERT_EQ(2, _sharedData->getTotalRetries(WithLock::withoutLock()));
 
     // Bring the server up.
-    unittest::LOGV2("Bringing mock server back up.");
+    LOGV2("Bringing mock server back up.");
     _mockServer->reboot();
 
     // Allow the cloner to finish.
@@ -278,7 +280,7 @@ TEST_F(AllDatabaseClonerTest, RetriesListDatabasesButRollBackIdChanges) {
     _mockServer->setCommandReply("replSetGetRBID", fromjson("{ok:1, rbid:2}"));
 
     // Bring the server up.
-    unittest::LOGV2("Bringing mock server back up.");
+    LOGV2("Bringing mock server back up.");
     _mockServer->reboot();
 
     // Allow the cloner to finish.

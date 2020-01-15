@@ -507,7 +507,7 @@ TEST_F(ReplCoordHBV1Test, IgnoreTheContentsOfMetadataWhenItsReplicaSetIdDoesNotM
     ASSERT_OK(getReplCoord()->processReplSetGetStatus(
         &statusBuilder, ReplicationCoordinator::ReplSetGetStatusResponseStyle::kBasic));
     auto statusObj = statusBuilder.obj();
-    unittest::LOGV2("replica set status = {}", "statusObj"_attr = statusObj);
+    LOGV2("replica set status = {}", "statusObj"_attr = statusObj);
 
     ASSERT_EQ(mongo::Array, statusObj["members"].type());
     auto members = statusObj["members"].Array();

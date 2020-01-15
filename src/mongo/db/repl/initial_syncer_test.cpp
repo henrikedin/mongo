@@ -27,6 +27,8 @@
  *    it in the license file.
  */
 
+#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kDefault
+
 #include "mongo/platform/basic.h"
 
 #include <iosfwd>
@@ -863,7 +865,7 @@ TEST_F(InitialSyncerTest,
 
     // Check number of failed attempts in stats.
     auto progress = initialSyncer->getInitialSyncProgress();
-    unittest::LOGV2("Progress after {} failed attempts: {}", "initialSyncMaxAttempts"_attr = initialSyncMaxAttempts, "progress"_attr = progress);
+    LOGV2("Progress after {} failed attempts: {}", "initialSyncMaxAttempts"_attr = initialSyncMaxAttempts, "progress"_attr = progress);
     ASSERT_EQUALS(progress.getIntField("failedInitialSyncAttempts"), int(initialSyncMaxAttempts))
         << progress;
     ASSERT_EQUALS(progress.getIntField("maxFailedInitialSyncAttempts"), int(initialSyncMaxAttempts))

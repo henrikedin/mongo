@@ -27,6 +27,8 @@
  *    it in the license file.
  */
 
+#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kDefault
+
 #include "mongo/client/dbclient_connection.h"
 #include "mongo/client/dbclient_cursor.h"
 #include "mongo/db/query/cursor_response.h"
@@ -79,7 +81,7 @@ public:
 
     // No-op.
     void killCursor(const NamespaceString& ns, long long cursorID) override {
-        unittest::LOGV2("Killing cursor in DBClientConnectionForTest");
+        LOGV2("Killing cursor in DBClientConnectionForTest");
     }
 
     void setSupportedProtocols(rpc::ProtocolSet protocols) {

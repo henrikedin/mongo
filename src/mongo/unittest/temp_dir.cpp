@@ -91,7 +91,7 @@ TempDir::TempDir(const std::string& namePrefix) {
         fassertFailed(17147);
     }
 
-    ::mongo::unittest::LOGV2("Created temporary directory: {}", "_path"_attr = _path);
+    ::mongo::LOGV2("Created temporary directory: {}", "_path"_attr = _path);
 }
 
 TempDir::~TempDir() {

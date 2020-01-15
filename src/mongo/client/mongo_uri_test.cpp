@@ -27,6 +27,8 @@
  *    it in the license file.
  */
 
+#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kDefault
+
 #include "mongo/platform/basic.h"
 
 #include <fstream>
@@ -85,7 +87,7 @@ void compareOptions(size_t lineNumber,
 
     for (std::size_t i = 0; i < std::min(options.size(), expectedOptions.size()); ++i) {
         if (options[i] != expectedOptions[i]) {
-            unittest::LOGV2("Option: \"tolower({})={}\" doesn't equal: \"tolower({})={}\" data on line: {}", "options_i_first_original"_attr = options[i].first.original(), "options_i_second"_attr = options[i].second, "expectedOptions_i_first_original"_attr = expectedOptions[i].first.original(), "expectedOptions_i_second"_attr = expectedOptions[i].second, "lineNumber"_attr = lineNumber);
+            LOGV2("Option: \"tolower({})={}\" doesn't equal: \"tolower({})={}\" data on line: {}", "options_i_first_original"_attr = options[i].first.original(), "options_i_second"_attr = options[i].second, "expectedOptions_i_first_original"_attr = expectedOptions[i].first.original(), "expectedOptions_i_second"_attr = expectedOptions[i].second, "lineNumber"_attr = lineNumber);
             std::cerr << "Failing URI: \"" << uri << "\""
                       << " data on line: " << lineNumber << std::endl;
             ASSERT(false);
@@ -591,7 +593,7 @@ std::string returnStringFromElementOrNull(BSONElement element) {
 
 // Helper method to take a valid test case, parse() it, and assure the output is correct
 void testValidURIFormat(URITestCase testCase) {
-    unittest::LOGV2("Testing URI: {}{}", "testCase_URI"_attr = testCase.URI, "n"_attr = '\n');
+    LOGV2("Testing URI: {}{}", "testCase_URI"_attr = testCase.URI, "n"_attr = '\n');
     std::string errMsg;
     const auto cs_status = MongoURI::parse(testCase.URI);
     ASSERT_OK(cs_status);
@@ -619,7 +621,7 @@ TEST(MongoURI, InvalidURIs) {
 
     for (size_t i = 0; i != numCases; ++i) {
         const InvalidURITestCase testCase = invalidCases[i];
-        unittest::LOGV2("Testing URI: {}{}", "testCase_URI"_attr = testCase.URI, "n"_attr = '\n');
+        LOGV2("Testing URI: {}{}", "testCase_URI"_attr = testCase.URI, "n"_attr = '\n');
         auto cs_status = MongoURI::parse(testCase.URI);
         ASSERT_NOT_OK(cs_status);
         if (testCase.code) {
@@ -701,7 +703,7 @@ TEST(MongoURI, specTests) {
             if (!valid) {
                 // This uri string is invalid --> parse the uri and ensure it fails
                 const InvalidURITestCase testCase = InvalidURITestCase{uri};
-                unittest::LOGV2("Testing URI: {}{}", "testCase_URI"_attr = testCase.URI, "n"_attr = '\n');
+                LOGV2("Testing URI: {}{}", "testCase_URI"_attr = testCase.URI, "n"_attr = '\n');
                 auto cs_status = MongoURI::parse(testCase.URI);
                 ASSERT_NOT_OK(cs_status);
             } else {

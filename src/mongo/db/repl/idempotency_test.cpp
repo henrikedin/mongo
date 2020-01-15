@@ -27,6 +27,8 @@
  *    it in the license file.
  */
 
+#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kDefault
+
 #include "mongo/platform/basic.h"
 
 #include "mongo/db/catalog/index_catalog.h"
@@ -115,7 +117,7 @@ std::vector<OplogEntry> RandomizedIdempotencyTest::createUpdateSequence(
 std::string RandomizedIdempotencyTest::getStatesString(const std::vector<CollectionState>& state1,
                                                        const std::vector<CollectionState>& state2,
                                                        const std::vector<OplogEntry>& ops) {
-    unittest::LOGV2("{}", "IdempotencyTest_getStatesString_state1_state2_ops"_attr = IdempotencyTest::getStatesString(state1, state2, ops));
+    LOGV2("{}", "IdempotencyTest_getStatesString_state1_state2_ops"_attr = IdempotencyTest::getStatesString(state1, state2, ops));
     StringBuilder sb;
     sb << "Ran update ops: ";
     sb << "[ ";

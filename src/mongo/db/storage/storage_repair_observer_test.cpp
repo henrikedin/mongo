@@ -27,6 +27,8 @@
  *    it in the license file.
  */
 
+#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kDefault
+
 #include "mongo/platform/basic.h"
 
 #include <boost/filesystem.hpp>
@@ -108,9 +110,9 @@ public:
         }
 
         if (repairObserver->isDone() && repairObserver->isDataInvalidated()) {
-            unittest::LOGV2("Modifications: ");
+            LOGV2("Modifications: ");
             for (const auto& mod : repairObserver->getModifications()) {
-                unittest::LOGV2("  {}", "mod_getDescription"_attr = mod.getDescription());
+                LOGV2("  {}", "mod_getDescription"_attr = mod.getDescription());
             }
         }
     }

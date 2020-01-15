@@ -27,6 +27,8 @@
  *    it in the license file.
  */
 
+#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kDefault
+
 #include "mongo/platform/basic.h"
 
 #include <iterator>
@@ -327,12 +329,12 @@ public:
                                           int batchSize) override {
         if (_initFailuresLeft > 0) {
             _initFailuresLeft--;
-            unittest::LOGV2("Throwing DBException on DBClientCursorForTest::query(). Failures left: {}", "_initFailuresLeft"_attr = _initFailuresLeft);
+            LOGV2("Throwing DBException on DBClientCursorForTest::query(). Failures left: {}", "_initFailuresLeft"_attr = _initFailuresLeft);
             uasserted(50852, "Simulated network error");
             MONGO_UNREACHABLE;
         }
 
-        unittest::LOGV2("Returning success on DBClientCursorForTest::query()");
+        LOGV2("Returning success on DBClientCursorForTest::query()");
 
         BSONArrayBuilder builder;
         builder.append(makeOp(1));

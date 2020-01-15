@@ -27,6 +27,8 @@
  *    it in the license file.
  */
 
+#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kDefault
+
 #include "mongo/platform/basic.h"
 
 #include "mongo/db/repl/abstract_oplog_fetcher_test_fixture.h"
@@ -120,13 +122,13 @@ executor::RemoteCommandRequest AbstractOplogFetcherTest::processNetworkResponse(
 
     auto net = getNet();
     executor::NetworkInterfaceMock::InNetworkGuard guard(net);
-    unittest::LOGV2("scheduling response.");
+    LOGV2("scheduling response.");
     auto request = net->scheduleSuccessfulResponse(response);
-    unittest::LOGV2("running network ops.");
+    LOGV2("running network ops.");
     net->runReadyNetworkOperations();
-    unittest::LOGV2("checking for more requests");
+    LOGV2("checking for more requests");
     ASSERT_EQUALS(expectReadyRequestsAfterProcessing, net->hasReadyRequests());
-    unittest::LOGV2("returning consumed request");
+    LOGV2("returning consumed request");
     return request;
 }
 

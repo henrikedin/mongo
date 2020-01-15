@@ -27,6 +27,8 @@
  *    it in the license file.
  */
 
+#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kDefault
+
 #include "mongo/platform/basic.h"
 
 #include "mongo/client/dbclient_connection.h"
@@ -704,14 +706,14 @@ TEST(OpMsg, ExhaustWithDBClientCursorBehavesCorrectly) {
     conn->dropCollection(nss.toString());
 
     const int nDocs = 5;
-    unittest::LOGV2("Inserting {} documents.", "nDocs"_attr = nDocs);
+    LOGV2("Inserting {} documents.", "nDocs"_attr = nDocs);
     for (int i = 0; i < nDocs; i++) {
         auto doc = BSON("_id" << i);
         conn->insert(nss.toString(), doc);
     }
 
     ASSERT_EQ(conn->count(nss), size_t(nDocs));
-    unittest::LOGV2("Finished document insertion.");
+    LOGV2("Finished document insertion.");
 
     // Open an exhaust cursor.
     int batchSize = 2;

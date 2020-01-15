@@ -27,6 +27,8 @@
  *    it in the license file.
  */
 
+#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kDefault
+
 #include "mongo/platform/basic.h"
 
 #include <functional>
@@ -37,6 +39,7 @@
 #include "mongo/util/concurrency/spin_lock.h"
 #include "mongo/util/timer.h"
 
+namespace mongo {
 namespace {
 
 using mongo::SpinLock;
@@ -108,9 +111,10 @@ TEST(Concurrency, ConcurrentIncs) {
     }
 
     int ms = timer.millis();
-    mongo::unittest::LOGV2("spinlock ConcurrentIncs time: {}", "ms"_attr = ms);
+    LOGV2("spinlock ConcurrentIncs time: {}", "ms"_attr = ms);
 
     ASSERT_EQUALS(counter, threads * incs);
 }
 
 }  // namespace
+}  // namespace mongo

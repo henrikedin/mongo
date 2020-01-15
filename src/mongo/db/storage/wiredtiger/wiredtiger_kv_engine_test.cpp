@@ -27,6 +27,8 @@
  *    it in the license file.
  */
 
+#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kDefault
+
 #include "mongo/platform/basic.h"
 
 #include "mongo/db/storage/kv/kv_engine_test_harness.h"
@@ -295,7 +297,7 @@ TEST_F(WiredTigerKVEngineTest, TestOplogTruncation) {
             sleepmillis(100);
         }
 
-        unittest::LOGV2("Expected the pinned oplog to advance. Expected value: {} Published value: {}", "newPinned"_attr = newPinned, "_engine_getOplogNeededForCrashRecovery"_attr = _engine->getOplogNeededForCrashRecovery());
+        LOGV2("Expected the pinned oplog to advance. Expected value: {} Published value: {}", "newPinned"_attr = newPinned, "_engine_getOplogNeededForCrashRecovery"_attr = _engine->getOplogNeededForCrashRecovery());
         FAIL("");
     };
 
