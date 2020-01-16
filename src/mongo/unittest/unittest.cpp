@@ -33,6 +33,7 @@
 
 #include "mongo/unittest/unittest.h"
 
+#include <boost/log/core.hpp>
 #include <fmt/format.h>
 #include <fmt/printf.h>
 #include <functional>
@@ -48,7 +49,12 @@
 #include "mongo/logger/logger.h"
 #include "mongo/logger/message_event_utf8_encoder.h"
 #include "mongo/logger/message_log_domain.h"
+#include "mongo/logv2/component_settings_filter.h"
 #include "mongo/logv2/log.h"
+#include "mongo/logv2/log_capture_backend.h"
+#include "mongo/logv2/log_domain.h"
+#include "mongo/logv2/log_domain_global.h"
+#include "mongo/logv2/log_manager.h"
 #include "mongo/platform/mutex.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/log.h"
@@ -187,12 +193,30 @@ struct UnitTestEnvironment {
 
 }  // namespace
 
-Test::Test() : _isCapturingLogMessages(false) {}
+class Test::CaptureLogs {
+public:
+    ~CaptureLogs() {
+        if (_isCapturingLogMessages) {
+            stopCapturingLogMessages();
+		}
+    }
+    void startCapturingLogMessages();
+    void stopCapturingLogMessages();
+    const std::vector<std::string>& getCapturedLogMessages() const;
+    int64_t countLogLinesContaining(const std::string& needle);
+    void printCapturedLogLines() const;
+
+private:
+    bool _isCapturingLogMessages{false};
+    std::vector<std::string> _capturedLogMessages;
+    logger::MessageLogDomain::AppenderHandle _captureAppenderHandle;
+    std::unique_ptr<logger::MessageLogDomain::EventAppender> _captureAppender;
+    boost::shared_ptr<boost::log::sinks::synchronous_sink<LogCaptureBackend>> _captureSink;
+};
+
+Test::Test() : _captureLogs(std::make_unique<CaptureLogs>()) {}
 
 Test::~Test() {
-    if (_isCapturingLogMessages) {
-        stopCapturingLogMessages();
-    }
 }
 
 void Test::run() {
@@ -246,25 +270,50 @@ private:
 };
 }  // namespace
 
-void Test::startCapturingLogMessages() {
+void Test::CaptureLogs::startCapturingLogMessages() {
     invariant(!_isCapturingLogMessages);
     _capturedLogMessages.clear();
-    if (!_captureAppender) {
-        _captureAppender = std::make_unique<StringVectorAppender>(&_capturedLogMessages);
+
+    if (logV2Enabled()) {
+        if (!_captureSink) {
+            _captureSink = LogCaptureBackend::create(_capturedLogMessages);
+            _captureSink->set_filter(
+                logv2::ComponentSettingsFilter(logv2::LogManager::global().getGlobalDomain(),
+                                               logv2::LogManager::global().getGlobalSettings()));
+            _captureSink->set_formatter(
+                logv2::LogManager::global().getGlobalDomainInternal().createActiveFormatter());
+        }
+        boost::log::core::get()->add_sink(_captureSink);
+    } else {
+        if (!_captureAppender) {
+            _captureAppender = std::make_unique<StringVectorAppender>(&_capturedLogMessages);
+        }
+        checked_cast<StringVectorAppender*>(_captureAppender.get())->enable();
+        _captureAppenderHandle =
+            logger::globalLogDomain()->attachAppender(std::move(_captureAppender));
     }
-    checked_cast<StringVectorAppender*>(_captureAppender.get())->enable();
-    _captureAppenderHandle = logger::globalLogDomain()->attachAppender(std::move(_captureAppender));
+
     _isCapturingLogMessages = true;
 }
 
-void Test::stopCapturingLogMessages() {
+void Test::CaptureLogs::stopCapturingLogMessages() {
     invariant(_isCapturingLogMessages);
-    invariant(!_captureAppender);
-    _captureAppender = logger::globalLogDomain()->detachAppender(_captureAppenderHandle);
-    checked_cast<StringVectorAppender*>(_captureAppender.get())->disable();
+    if (logV2Enabled()) {
+        boost::log::core::get()->remove_sink(_captureSink);
+    } else {
+        invariant(!_captureAppender);
+        _captureAppender = logger::globalLogDomain()->detachAppender(_captureAppenderHandle);
+        checked_cast<StringVectorAppender*>(_captureAppender.get())->disable();
+    }
+
     _isCapturingLogMessages = false;
 }
-void Test::printCapturedLogLines() const {
+
+const std::vector<std::string>& Test::CaptureLogs::getCapturedLogMessages() const {
+    return _capturedLogMessages;
+}
+
+void Test::CaptureLogs::printCapturedLogLines() const {
     LOGV2("****************************** Captured Lines (start) *****************************");
     for (const auto& line : getCapturedLogMessages()) {
         LOGV2("{}", "line"_attr = line);
@@ -272,7 +321,23 @@ void Test::printCapturedLogLines() const {
     LOGV2("****************************** Captured Lines (end) ******************************");
 }
 
+void Test::startCapturingLogMessages() {
+    _captureLogs->startCapturingLogMessages();
+}
+void Test::stopCapturingLogMessages() {
+    _captureLogs->stopCapturingLogMessages();
+}
+const std::vector<std::string>& Test::getCapturedLogMessages() const {
+    return _captureLogs->getCapturedLogMessages();
+}
 int64_t Test::countLogLinesContaining(const std::string& needle) {
+    return _captureLogs->countLogLinesContaining(needle);
+}
+void Test::printCapturedLogLines() const {
+    _captureLogs->printCapturedLogLines();
+}
+
+int64_t Test::CaptureLogs::countLogLinesContaining(const std::string& needle) {
     const auto& msgs = getCapturedLogMessages();
     return std::count_if(
         msgs.begin(), msgs.end(), [&](const std::string& s) { return stringContains(s, needle); });
@@ -292,12 +357,16 @@ std::unique_ptr<Result> Suite::run(const std::string& filter,
 
     for (const auto& tc : _tests) {
         if (filter.size() && tc.name.find(filter) == std::string::npos) {
-            LOGV2_DEBUG(1, "\t skipping test: {} because it doesn't match filter", "tc_name"_attr = tc.name);
+            LOGV2_DEBUG(1,
+                        "\t skipping test: {} because it doesn't match filter",
+                        "tc_name"_attr = tc.name);
             continue;
         }
 
         if (fileNameFilter.size() && tc.fileName.find(fileNameFilter) == std::string::npos) {
-            LOGV2_DEBUG(1, "\t skipping test: {} because it doesn't match fileNameFilter", "tc_fileName"_attr = tc.fileName);
+            LOGV2_DEBUG(1,
+                        "\t skipping test: {} because it doesn't match fileNameFilter",
+                        "tc_fileName"_attr = tc.fileName);
             continue;
         }
 
@@ -315,7 +384,9 @@ std::unique_ptr<Result> Suite::run(const std::string& filter,
                     runTimes << "  (" << x + 1 << "/" << runsPerTest << ")";
                 }
 
-                LOGV2("\t going to run test: {}{}", "tc_name"_attr = tc.name, "runTimes_str"_attr = runTimes.str());
+                LOGV2("\t going to run test: {}{}",
+                      "tc_name"_attr = tc.name,
+                      "runTimes_str"_attr = runTimes.str());
                 TestSuiteEnvironment environment;
                 tc.fn();
             }
@@ -360,7 +431,8 @@ int Suite::run(const std::vector<std::string>& suites,
 
     for (unsigned int i = 0; i < suites.size(); i++) {
         if (suitesMap().count(suites[i]) == 0) {
-            LOGV2("invalid test suite [{}], use --list to see valid names", "suites_i"_attr = suites[i]);
+            LOGV2("invalid test suite [{}], use --list to see valid names",
+                  "suites_i"_attr = suites[i]);
             return EXIT_FAILURE;
         }
     }
@@ -423,7 +495,9 @@ int Suite::run(const std::vector<std::string>& suites,
         for (const std::string& s : totals._fails) {
             LOGV2("\t {} Failed", "s"_attr = s);
         }
-        LOGV2("FAILURE - {} tests in {} suites failed", "totals__fails_size"_attr = totals._fails.size(), "failedSuites_size"_attr = failedSuites.size());
+        LOGV2("FAILURE - {} tests in {} suites failed",
+              "totals__fails_size"_attr = totals._fails.size(),
+              "failedSuites_size"_attr = failedSuites.size());
     } else {
         LOGV2("SUCCESS - All tests in all suites passed");
     }

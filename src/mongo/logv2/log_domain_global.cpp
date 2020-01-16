@@ -92,9 +92,12 @@ struct LogDomainGlobal::Impl {
     Impl(LogDomainGlobal& parent);
     Status configure(LogDomainGlobal::ConfigurationOptions const& options);
     Status rotate();
+    std::function<void(boost::log::record_view const&, boost::log::formatting_ostream&)>
+    createActiveFormatter() const;
 
     LogDomainGlobal& _parent;
     LogComponentSettings _settings;
+    LogDomainGlobal::ConfigurationOptions _configuration;
     boost::shared_ptr<boost::log::sinks::unlocked_sink<ConsoleBackend>> _consoleSink;
     boost::shared_ptr<boost::log::sinks::unlocked_sink<RotatableFileBackend>> _rotatableFileSink;
 #ifndef _WIN32
@@ -123,6 +126,7 @@ LogDomainGlobal::Impl::Impl(LogDomainGlobal& parent) : _parent(parent) {
 }
 
 Status LogDomainGlobal::Impl::configure(LogDomainGlobal::ConfigurationOptions const& options) {
+    _configuration = options;
 #ifndef _WIN32
     if (options._syslogEnabled) {
         // Create a backend
@@ -191,25 +195,13 @@ Status LogDomainGlobal::Impl::configure(LogDomainGlobal::ConfigurationOptions co
         _rotatableFileSink.reset();
     }
 
-    auto setFormatters = [this](auto&& mkFmt) {
-        _consoleSink->set_formatter(mkFmt());
-        if (_rotatableFileSink)
-            _rotatableFileSink->set_formatter(mkFmt());
+    _consoleSink->set_formatter(createActiveFormatter());
+    if (_rotatableFileSink)
+        _rotatableFileSink->set_formatter(createActiveFormatter());
 #ifndef _WIN32
-        if (_syslogSink)
-            _syslogSink->set_formatter(mkFmt());
+    if (_syslogSink)
+        _syslogSink->set_formatter(createActiveFormatter());
 #endif
-    };
-
-    switch (options._format) {
-        case LogFormat::kDefault:
-        case LogFormat::kText:
-            setFormatters([] { return TextFormatter(); });
-            break;
-        case LogFormat::kJson:
-            setFormatters([] { return JSONFormatter(); });
-            break;
-    }
 
     return Status::OK();
 }
@@ -220,6 +212,18 @@ Status LogDomainGlobal::Impl::rotate() {
         backend->rotate_file();
     }
     return Status::OK();
+}
+
+std::function<void(boost::log::record_view const&, boost::log::formatting_ostream&)>
+LogDomainGlobal::Impl::createActiveFormatter() const {
+    switch (_configuration._format) {
+		case LogFormat::kJson:
+            return JSONFormatter();
+        case LogFormat::kDefault:
+        case LogFormat::kText:
+        default:
+            return TextFormatter();
+    }
 }
 
 LogDomainGlobal::LogDomainGlobal() {
@@ -245,6 +249,11 @@ Status LogDomainGlobal::rotate() {
 
 LogComponentSettings& LogDomainGlobal::settings() {
     return _impl->_settings;
+}
+
+std::function<void(boost::log::record_view const&, boost::log::formatting_ostream&)>
+LogDomainGlobal::createActiveFormatter() const {
+    return _impl->createActiveFormatter();
 }
 
 }  // namespace logv2

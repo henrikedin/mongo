@@ -560,9 +560,7 @@ protected:
      * Gets a vector of strings, one log line per string, captured since
      * the last call to startCapturingLogMessages() in this test.
      */
-    const std::vector<std::string>& getCapturedLogMessages() const {
-        return _capturedLogMessages;
-    }
+    const std::vector<std::string>& getCapturedLogMessages() const;
 
     /**
      * Returns the number of collected log lines containing "needle".
@@ -580,10 +578,11 @@ private:
      */
     virtual void _doTest() = 0;
 
-    bool _isCapturingLogMessages;
-    std::vector<std::string> _capturedLogMessages;
-    logger::MessageLogDomain::AppenderHandle _captureAppenderHandle;
-    std::unique_ptr<logger::MessageLogDomain::EventAppender> _captureAppender;
+    
+
+	class CaptureLogs;
+	std::unique_ptr<CaptureLogs> _captureLogs;
+	//boost::shared_ptr<boost::log::sinks::synchronous_sink<LogCaptureBackend>> _captureSink;
 };
 
 /**
