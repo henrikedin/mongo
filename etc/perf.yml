@@ -59,7 +59,7 @@ modules:
   branch: master
 
 - name: mongo-perf
-  repo: git@github.com:mongodb/mongo-perf.git
+  repo: git@github.com:henrikedin/mongo-perf.git
   branch: master
 
 functions:
