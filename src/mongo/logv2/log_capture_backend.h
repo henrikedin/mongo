@@ -37,6 +37,7 @@
 #include <boost/log/sinks.hpp>
 #include <boost/make_shared.hpp>
 
+namespace mongo::logv2 {
 class LogCaptureBackend
     : public boost::log::sinks::
           basic_formatted_sink_backend<char, boost::log::sinks::synchronized_feeding> {
@@ -56,3 +57,4 @@ public:
 private:
     std::vector<std::string>& _logLines;
 };
+}  // namespace mongo::logv2

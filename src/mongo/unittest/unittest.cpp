@@ -211,7 +211,7 @@ private:
     std::vector<std::string> _capturedLogMessages;
     logger::MessageLogDomain::AppenderHandle _captureAppenderHandle;
     std::unique_ptr<logger::MessageLogDomain::EventAppender> _captureAppender;
-    boost::shared_ptr<boost::log::sinks::synchronous_sink<LogCaptureBackend>> _captureSink;
+    boost::shared_ptr<boost::log::sinks::synchronous_sink<logv2::LogCaptureBackend>> _captureSink;
 };
 
 Test::Test() : _captureLogs(std::make_unique<CaptureLogs>()) {}
@@ -276,7 +276,7 @@ void Test::CaptureLogs::startCapturingLogMessages() {
 
     if (logV2Enabled()) {
         if (!_captureSink) {
-            _captureSink = LogCaptureBackend::create(_capturedLogMessages);
+            _captureSink = logv2::LogCaptureBackend::create(_capturedLogMessages);
             _captureSink->set_filter(
                 logv2::ComponentSettingsFilter(logv2::LogManager::global().getGlobalDomain(),
                                                logv2::LogManager::global().getGlobalSettings()));
