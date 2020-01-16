@@ -795,9 +795,10 @@ int _main(int argc, char* argv[], char** envp) {
 
         consoleSink->locked_backend()->auto_flush();
 
-		// Remove the initial config from above when setting this sink, otherwise we log everything twice.
-		lv2Config.makeDisabled();
-		uassertStatusOK(lv2Manager.getGlobalDomainInternal().configure(lv2Config));
+        // Remove the initial config from above when setting this sink, otherwise we log everything
+        // twice.
+        lv2Config.makeDisabled();
+        uassertStatusOK(lv2Manager.getGlobalDomainInternal().configure(lv2Config));
 
         boost::log::core::get()->add_sink(std::move(consoleSink));
     }
