@@ -728,15 +728,22 @@ int _main(int argc, char* argv[], char** envp) {
     setupSignalHandlers();
     setupSignals();
 
-    logger::globalLogManager()->getGlobalDomain()->clearAppenders();
-    logger::globalLogManager()->getGlobalDomain()->attachAppender(
-        std::make_unique<ShellConsoleAppender>(
-            std::make_unique<logger::MessageEventDetailsEncoder>()));
+	auto& lv2Manager = logv2::LogManager::global();
+	logv2::LogDomainGlobal::ConfigurationOptions lv2Config;
+	if (logV2Enabled()) {
+        logger::globalLogManager()->getGlobalDomain()->clearAppenders();
+        logger::globalLogManager()->getGlobalDomain()->attachAppender(
+            std::make_unique<logger::LogV2Appender<logger::MessageEventEphemeral>>(
+                &lv2Manager.getGlobalDomain()));
+    } else {
+		logger::globalLogManager()->getGlobalDomain()->clearAppenders();
+		logger::globalLogManager()->getGlobalDomain()->attachAppender(
+			std::make_unique<ShellConsoleAppender>(
+				std::make_unique<logger::MessageEventDetailsEncoder>()));
 
-    auto& lv2Manager = logv2::LogManager::global();
-    logv2::LogDomainGlobal::ConfigurationOptions lv2Config;
-    lv2Config.makeDisabled();
-    uassertStatusOK(lv2Manager.getGlobalDomainInternal().configure(lv2Config));
+		lv2Config.makeDisabled();
+	}
+	uassertStatusOK(lv2Manager.getGlobalDomainInternal().configure(lv2Config));
 
     mongo::shell_utils::RecordMyLocation(argv[0]);
 
