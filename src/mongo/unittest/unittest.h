@@ -560,17 +560,17 @@ protected:
      * Gets a vector of strings, one log line per string, captured since
      * the last call to startCapturingLogMessages() in this test.
      */
-    const std::vector<std::string>& getCapturedLogMessages() const;
+    const std::vector<std::string>& getCapturedTextFormatLogMessages() const;
 
     /**
      * Returns the number of collected log lines containing "needle".
      */
-    int64_t countLogLinesContaining(const std::string& needle);
+    int64_t countTextFormatLogLinesContaining(const std::string& needle);
 
     /**
      * Prints the captured log lines.
      */
-    void printCapturedLogLines() const;
+    void printCapturedTextFormatLogLines() const;
 
 private:
     /**

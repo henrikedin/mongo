@@ -29,10 +29,6 @@
 
 #pragma once
 
-#include <functional>
-#include <boost/log/core/record_view.hpp>
-#include <boost/log/utility/formatting_ostream_fwd.hpp>
-
 #include "mongo/logv2/log_domain_internal.h"
 #include "mongo/logv2/log_format.h"
 
@@ -65,9 +61,6 @@ public:
     Status rotate();
 
     LogComponentSettings& settings();
-
-	std::function<void(boost::log::record_view const&, boost::log::formatting_ostream&)>
-    createActiveFormatter() const;
 
 private:
     struct Impl;

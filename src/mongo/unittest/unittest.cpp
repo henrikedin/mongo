@@ -55,6 +55,7 @@
 #include "mongo/logv2/log_domain.h"
 #include "mongo/logv2/log_domain_global.h"
 #include "mongo/logv2/log_manager.h"
+#include "mongo/logv2/plain_formatter.h"
 #include "mongo/platform/mutex.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/log.h"
@@ -202,9 +203,9 @@ public:
     }
     void startCapturingLogMessages();
     void stopCapturingLogMessages();
-    const std::vector<std::string>& getCapturedLogMessages() const;
-    int64_t countLogLinesContaining(const std::string& needle);
-    void printCapturedLogLines() const;
+    const std::vector<std::string>& getCapturedTextFormatLogMessages() const;
+    int64_t countTextFormatLogLinesContaining(const std::string& needle);
+    void printCapturedTextFormatLogLines() const;
 
 private:
     bool _isCapturingLogMessages{false};
@@ -280,8 +281,7 @@ void Test::CaptureLogs::startCapturingLogMessages() {
             _captureSink->set_filter(
                 logv2::ComponentSettingsFilter(logv2::LogManager::global().getGlobalDomain(),
                                                logv2::LogManager::global().getGlobalSettings()));
-            _captureSink->set_formatter(
-                logv2::LogManager::global().getGlobalDomainInternal().createActiveFormatter());
+            _captureSink->set_formatter(logv2::PlainFormatter());
         }
         boost::log::core::get()->add_sink(_captureSink);
     } else {
@@ -309,16 +309,22 @@ void Test::CaptureLogs::stopCapturingLogMessages() {
     _isCapturingLogMessages = false;
 }
 
-const std::vector<std::string>& Test::CaptureLogs::getCapturedLogMessages() const {
+const std::vector<std::string>& Test::CaptureLogs::getCapturedTextFormatLogMessages() const {
     return _capturedLogMessages;
 }
 
-void Test::CaptureLogs::printCapturedLogLines() const {
+void Test::CaptureLogs::printCapturedTextFormatLogLines() const {
     LOGV2("****************************** Captured Lines (start) *****************************");
-    for (const auto& line : getCapturedLogMessages()) {
+    for (const auto& line : getCapturedTextFormatLogMessages()) {
         LOGV2("{}", "line"_attr = line);
     }
     LOGV2("****************************** Captured Lines (end) ******************************");
+}
+
+int64_t Test::CaptureLogs::countTextFormatLogLinesContaining(const std::string& needle) {
+    const auto& msgs = getCapturedTextFormatLogMessages();
+    return std::count_if(
+        msgs.begin(), msgs.end(), [&](const std::string& s) { return stringContains(s, needle); });
 }
 
 void Test::startCapturingLogMessages() {
@@ -327,20 +333,14 @@ void Test::startCapturingLogMessages() {
 void Test::stopCapturingLogMessages() {
     _captureLogs->stopCapturingLogMessages();
 }
-const std::vector<std::string>& Test::getCapturedLogMessages() const {
-    return _captureLogs->getCapturedLogMessages();
+const std::vector<std::string>& Test::getCapturedTextFormatLogMessages() const {
+    return _captureLogs->getCapturedTextFormatLogMessages();
 }
-int64_t Test::countLogLinesContaining(const std::string& needle) {
-    return _captureLogs->countLogLinesContaining(needle);
+int64_t Test::countTextFormatLogLinesContaining(const std::string& needle) {
+    return _captureLogs->countTextFormatLogLinesContaining(needle);
 }
-void Test::printCapturedLogLines() const {
-    _captureLogs->printCapturedLogLines();
-}
-
-int64_t Test::CaptureLogs::countLogLinesContaining(const std::string& needle) {
-    const auto& msgs = getCapturedLogMessages();
-    return std::count_if(
-        msgs.begin(), msgs.end(), [&](const std::string& s) { return stringContains(s, needle); });
+void Test::printCapturedTextFormatLogLines() const {
+    _captureLogs->printCapturedTextFormatLogLines();
 }
 
 Suite::Suite(ConstructorEnable, std::string name) : _name(std::move(name)) {}

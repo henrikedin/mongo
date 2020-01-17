@@ -490,7 +490,8 @@ TEST_F(RSRollbackTest, RollbackInsertDocumentWithNoId) {
     stopCapturingLogMessages();
     ASSERT_EQUALS(ErrorCodes::UnrecoverableRollbackError, status.code());
     ASSERT_STRING_CONTAINS(status.reason(), "unable to determine common point");
-    ASSERT_EQUALS(1, countLogLinesContaining("Cannot roll back op with no _id. ns: test.t,"));
+    ASSERT_EQUALS(
+        1, countTextFormatLogLinesContaining("Cannot roll back op with no _id. ns: test.t,"));
     ASSERT_FALSE(rollbackSource.called);
 }
 
@@ -526,11 +527,11 @@ TEST_F(RSRollbackTest, RollbackCreateIndexCommand) {
         _coordinator,
         _replicationProcess.get()));
     stopCapturingLogMessages();
-    ASSERT_EQUALS(
-        1,
-        countLogLinesContaining(str::stream()
-                                << "Dropped index in rollback for collection: " << nss.toString()
-                                << ", UUID: " << options.uuid->toString() << ", index: a_1"));
+    ASSERT_EQUALS(1,
+                  countTextFormatLogLinesContaining(
+                      str::stream()
+                      << "Dropped index in rollback for collection: " << nss.toString()
+                      << ", UUID: " << options.uuid->toString() << ", index: a_1"));
     {
         Lock::DBLock dbLock(_opCtx.get(), nss.db(), MODE_S);
         auto indexCatalog = collection->getIndexCatalog();
@@ -569,7 +570,8 @@ TEST_F(RSRollbackTest, RollbackCreateIndexCommandIndexNotInCatalog) {
                            _coordinator,
                            _replicationProcess.get()));
     stopCapturingLogMessages();
-    ASSERT_EQUALS(1, countLogLinesContaining("Rollback failed to drop index a_1 in test.t"));
+    ASSERT_EQUALS(1,
+                  countTextFormatLogLinesContaining("Rollback failed to drop index a_1 in test.t"));
     {
         Lock::DBLock dbLock(_opCtx.get(), "test", MODE_S);
         auto indexCatalog = collection->getIndexCatalog();
@@ -778,12 +780,12 @@ TEST_F(RSRollbackTest, RollingBackDropAndCreateOfSameIndexNameWithDifferentSpecs
         ASSERT(indexCatalog);
         ASSERT_EQUALS(2, indexCatalog->numIndexesReady(_opCtx.get()));
         ASSERT_EQUALS(1,
-                      countLogLinesContaining(
+                      countTextFormatLogLinesContaining(
                           str::stream()
                           << "Dropped index in rollback for collection: " << nss.toString()
                           << ", UUID: " << options.uuid->toString() << ", index: a_1"));
         ASSERT_EQUALS(1,
-                      countLogLinesContaining(
+                      countTextFormatLogLinesContaining(
                           str::stream()
                           << "Created index in rollback for collection: " << nss.toString()
                           << ", UUID: " << options.uuid->toString() << ", index: a_1"));
@@ -833,7 +835,7 @@ TEST_F(RSRollbackTest, RollbackCreateIndexCommandMissingIndexName) {
     ASSERT_EQUALS(ErrorCodes::UnrecoverableRollbackError, status.code());
     ASSERT_STRING_CONTAINS(status.reason(), "unable to determine common point");
     ASSERT_EQUALS(1,
-                  countLogLinesContaining(
+                  countTextFormatLogLinesContaining(
                       "Missing index name in createIndexes operation on rollback, document: "));
 }
 
@@ -1975,7 +1977,7 @@ TEST_F(RSRollbackTest, RollbackCollectionModificationCommand) {
     stopCapturingLogMessages();
 
     ASSERT_TRUE(rollbackSource.called);
-    for (const auto& message : getCapturedLogMessages()) {
+    for (const auto& message : getCapturedTextFormatLogMessages()) {
         ASSERT_TRUE(message.find("ignoring op with no _id during rollback. ns: test.t") ==
                     std::string::npos);
     }
@@ -2758,7 +2760,8 @@ TEST_F(RSRollbackTest, RollbackReturnsImmediatelyOnFailureToTransitionToRollback
              _replicationProcess.get());
     stopCapturingLogMessages();
 
-    ASSERT_EQUALS(1, countLogLinesContaining("Cannot transition from SECONDARY to ROLLBACK"));
+    ASSERT_EQUALS(
+        1, countTextFormatLogLinesContaining("Cannot transition from SECONDARY to ROLLBACK"));
     ASSERT_EQUALS(MemberState(MemberState::RS_SECONDARY), _coordinator->getMemberState());
 }
 
@@ -2803,8 +2806,9 @@ TEST_F(RSRollbackTest, RollbackLogsRetryMessageAndReturnsOnNonUnrecoverableRollb
              noopSleepSecsFn);
     stopCapturingLogMessages();
 
-    ASSERT_EQUALS(
-        1, countLogLinesContaining("Rollback cannot complete at this time (retrying later)"));
+    ASSERT_EQUALS(1,
+                  countTextFormatLogLinesContaining(
+                      "Rollback cannot complete at this time (retrying later)"));
     ASSERT_EQUALS(MemberState(MemberState::RS_RECOVERING), _coordinator->getMemberState());
 }
 
