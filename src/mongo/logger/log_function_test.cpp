@@ -50,7 +50,7 @@ using namespace mongo::logger;
 namespace mongo {
 namespace {
 
-typedef LogTest<MessageEventDetailsEncoder, logv2::TextFormatter> LogTestDetailsEnccooder;
+typedef LogTest<MessageEventDetailsEncoder, logv2::TextFormatter> LogTestDetailsEncoder;
 
 // Constants for log component test cases.
 const LogComponent componentA = LogComponent::kCommand;
