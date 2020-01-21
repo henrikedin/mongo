@@ -62,9 +62,6 @@ public:
     LogTest() : _severityOld(getMinimumLogSeverity()) {
         globalLogDomain()->clearAppenders();
         if (logV2Enabled()) {
-            logv2::LogDomainGlobal::ConfigurationOptions config;
-            config.makeDisabled();
-            invariant(logv2::LogManager::global().getGlobalDomainInternal().configure(config));
 			_appenderHandle = globalLogDomain()->attachAppender(
                 std::make_unique<LogV2Appender<MessageEventEphemeral>>(
                     &logv2::LogManager::global().getGlobalDomain(), true));
