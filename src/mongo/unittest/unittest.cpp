@@ -279,8 +279,7 @@ void Test::CaptureLogs::startCapturingLogMessages() {
         if (!_captureSink) {
             _captureSink = logv2::LogCaptureBackend::create(_capturedLogMessages);
             _captureSink->set_filter(
-                logv2::ComponentSettingsFilter(logv2::LogManager::global().getGlobalDomain(),
-                                               logv2::LogManager::global().getGlobalSettings()));
+                logv2::AllLogsFilter(logv2::LogManager::global().getGlobalDomain()));
             _captureSink->set_formatter(logv2::PlainFormatter());
         }
         boost::log::core::get()->add_sink(_captureSink);
