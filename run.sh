@@ -1,4 +1,4 @@
 #!/bin/sh
-git add ./logv1tologv2 ./run.sh ./logging_cpp_files.txt
+git add ./logv1tologv2 ./run.sh ./logging_cpp_files.txt ./batcher.pl
 git cifa
-xargs < logging_cpp_files.txt ./logv1tologv2 
+exec xargs ./logv1tologv2 

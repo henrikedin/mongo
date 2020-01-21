@@ -2,6 +2,7 @@
 use warnings;
 my $log_id = 20100;
 my $any_conversions = 0;
+my $all_log_lines = 0;
 sub convert {
     my $ramlogs = { 'startupWarningsLog' => 'kStartupWarnings', 'rsLog' => 'kRS', 'warnings' => 'kWarnings'};
     my $expression = shift(@_);
@@ -17,6 +18,7 @@ sub convert {
     my @params;
 
     push (@params,$log_id++);
+    $all_log_lines++;
 
     #my $assert_value;
     #if ($macro && $macro eq "FATAL") {
