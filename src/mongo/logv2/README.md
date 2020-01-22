@@ -1,6 +1,6 @@
 # Log System Overview
 
-The new log system adds capability to produce structured logs in the [Relaxed Extended JSON 2.0.0](https://github.com/mongodb/specifications/blob/master/source/extended-json.rst) format. Variables are logged as attributes where they are assigned a name. This is achieved with a new API which is inspired by [libfmt](https://fmt.dev/6.1.1/index.html) and its Format API.
+The new log system adds capability to produce structured logs in the [Relaxed Extended JSON 2.0.0](https://github.com/mongodb/specifications/blob/master/source/extended-json.rst) format. There is a new C++ API where variables are given a name and is logged together as attributes. Log messages are built with a new API, inspired by [libfmt](https://fmt.dev/6.1.1/index.html), where attributes are inserted using replacement fields instead of streamed together using the streaming operator `<<`.
 
 # Basic Usage
 
@@ -257,6 +257,7 @@ LOGV2_ERROR(1020, "Example (b: {}), (vec: {})",
     "s": "E",
     "c": "NETWORK",
     "ctx": "conn1",
+    "id": 23453,
     "msg": "Example (b: {bson}), (vec: {vector})",
     "attr": {  
         "bson": {
