@@ -34,12 +34,12 @@
 #include "mongo/logv2/attribute_storage.h"
 #include "mongo/logv2/log_component.h"
 #include "mongo/logv2/log_domain.h"
-#include "mongo/logv2/log_options.h"
 #include "mongo/logv2/log_severity.h"
 #include "mongo/util/errno_util.h"
 
 namespace mongo {
 namespace logv2 {
+class LogOptions;
 namespace detail {
 
 void doLogImpl(LogSeverity const& severity,
