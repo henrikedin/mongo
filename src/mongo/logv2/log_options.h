@@ -45,7 +45,7 @@ public:
         return options;
 	}
 
-    LogOptions() {}
+    //LogOptions() {}
 
     LogOptions(LogComponent component) : _component(component) {}
 
