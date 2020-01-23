@@ -53,6 +53,10 @@
 #include "mongo/logv2/log_severity.h"
 #include "mongo/util/errno_util.h"
 
+#if defined(MONGO_LOG_DEFAULT_COMPONENT)
+#include "mongo/logger/log_version_util.h"
+#endif
+
 namespace {
 #if defined(MONGO_LOGV2_DEFAULT_COMPONENT)
 const ::mongo::logv2::LogComponent MongoLogV2DefaultComponent_component =
@@ -61,7 +65,6 @@ const ::mongo::logv2::LogComponent MongoLogV2DefaultComponent_component =
 // Provide log component in global scope so that MONGO_LOG will always have a valid component.
 // Global log component will be kDefault unless overridden by MONGO_LOGV2_DEFAULT_COMPONENT.
 #elif defined(MONGO_LOG_DEFAULT_COMPONENT)
-#include "mongo/logger/log_version_util.h"
 const ::mongo::logv2::LogComponent MongoLogV2DefaultComponent_component =
     ::mongo::logComponentV1toV2(MONGO_LOG_DEFAULT_COMPONENT);
 #else
