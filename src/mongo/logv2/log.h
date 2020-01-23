@@ -90,7 +90,7 @@ logv2::detail::doLog(SEVERITY, ID, OPTIONS, FMT_STRING(MESSAGE), ##__VA_ARGS__)
 #define LOGV2_OPTIONS(OPTIONS, MESSAGE, ...)       \
     LOGV2_IMPL(::mongo::logv2::LogSeverity::Log(), \
                ::mongo::StringData{},              \
-               ::mongo::logv2::LogOptions::setComponentIfNotSet(OPTIONS, MongoLogV2DefaultComponent_component),                            \
+               ::mongo::logv2::LogOptions::ensureValidComponent(OPTIONS, MongoLogV2DefaultComponent_component),                            \
                MESSAGE,                            \
                ##__VA_ARGS__)
 
@@ -102,7 +102,7 @@ logv2::detail::doLog(SEVERITY, ID, OPTIONS, FMT_STRING(MESSAGE), ##__VA_ARGS__)
                ##__VA_ARGS__)
 
 #define LOGV2_OPTIONS_STABLE(ID, OPTIONS, MESSAGE, ...) \
-    LOGV2_IMPL(::mongo::logv2::LogSeverity::Log(), ID, ::mongo::logv2::LogOptions::setComponentIfNotSet(OPTIONS, MongoLogV2DefaultComponent_component), MESSAGE, ##__VA_ARGS__)
+    LOGV2_IMPL(::mongo::logv2::LogSeverity::Log(), ID, ::mongo::logv2::LogOptions::ensureValidComponent(OPTIONS, MongoLogV2DefaultComponent_component), MESSAGE, ##__VA_ARGS__)
 
 #define LOGV2_INFO(MESSAGE, ...)                    \
     LOGV2_IMPL(::mongo::logv2::LogSeverity::Info(), \
@@ -114,7 +114,7 @@ logv2::detail::doLog(SEVERITY, ID, OPTIONS, FMT_STRING(MESSAGE), ##__VA_ARGS__)
 #define LOGV2_INFO_OPTIONS(OPTIONS, MESSAGE, ...)   \
     LOGV2_IMPL(::mongo::logv2::LogSeverity::Info(), \
                ::mongo::StringData{},               \
-               ::mongo::logv2::LogOptions::setComponentIfNotSet(OPTIONS, MongoLogV2DefaultComponent_component),                             \
+               ::mongo::logv2::LogOptions::ensureValidComponent(OPTIONS, MongoLogV2DefaultComponent_component),                             \
                MESSAGE,                             \
                ##__VA_ARGS__)
 
@@ -126,7 +126,7 @@ logv2::detail::doLog(SEVERITY, ID, OPTIONS, FMT_STRING(MESSAGE), ##__VA_ARGS__)
                ##__VA_ARGS__)
 
 #define LOGV2_INFO_OPTIONS_STABLE(ID, OPTIONS, MESSAGE, ...) \
-    LOGV2_IMPL(::mongo::logv2::LogSeverity::Info(), ID, ::mongo::logv2::LogOptions::setComponentIfNotSet(OPTIONS, MongoLogV2DefaultComponent_component), MESSAGE, ##__VA_ARGS__)
+    LOGV2_IMPL(::mongo::logv2::LogSeverity::Info(), ID, ::mongo::logv2::LogOptions::ensureValidComponent(OPTIONS, MongoLogV2DefaultComponent_component), MESSAGE, ##__VA_ARGS__)
 
 #define LOGV2_WARNING(MESSAGE, ...)                    \
     LOGV2_IMPL(::mongo::logv2::LogSeverity::Warning(), \
@@ -138,7 +138,7 @@ logv2::detail::doLog(SEVERITY, ID, OPTIONS, FMT_STRING(MESSAGE), ##__VA_ARGS__)
 #define LOGV2_WARNING_OPTIONS(OPTIONS, MESSAGE, ...)   \
     LOGV2_IMPL(::mongo::logv2::LogSeverity::Warning(), \
                ::mongo::StringData{},                  \
-               ::mongo::logv2::LogOptions::setComponentIfNotSet(OPTIONS, MongoLogV2DefaultComponent_component),                                \
+               ::mongo::logv2::LogOptions::ensureValidComponent(OPTIONS, MongoLogV2DefaultComponent_component),                                \
                MESSAGE,                                \
                ##__VA_ARGS__)
 
@@ -150,7 +150,7 @@ logv2::detail::doLog(SEVERITY, ID, OPTIONS, FMT_STRING(MESSAGE), ##__VA_ARGS__)
                ##__VA_ARGS__)
 
 #define LOGV2_WARNING_OPTIONS_STABLE(ID, OPTIONS, MESSAGE, ...) \
-    LOGV2_IMPL(::mongo::logv2::LogSeverity::Warning(), ID, ::mongo::logv2::LogOptions::setComponentIfNotSet(OPTIONS, MongoLogV2DefaultComponent_component), MESSAGE, ##__VA_ARGS__)
+    LOGV2_IMPL(::mongo::logv2::LogSeverity::Warning(), ID, ::mongo::logv2::LogOptions::ensureValidComponent(OPTIONS, MongoLogV2DefaultComponent_component), MESSAGE, ##__VA_ARGS__)
 
 #define LOGV2_ERROR(MESSAGE, ...)                    \
     LOGV2_IMPL(::mongo::logv2::LogSeverity::Error(), \
@@ -162,7 +162,7 @@ logv2::detail::doLog(SEVERITY, ID, OPTIONS, FMT_STRING(MESSAGE), ##__VA_ARGS__)
 #define LOGV2_ERROR_OPTIONS(OPTIONS, MESSAGE, ...)   \
     LOGV2_IMPL(::mongo::logv2::LogSeverity::Error(), \
                ::mongo::StringData{},                \
-               ::mongo::logv2::LogOptions::setComponentIfNotSet(OPTIONS, MongoLogV2DefaultComponent_component),                              \
+               ::mongo::logv2::LogOptions::ensureValidComponent(OPTIONS, MongoLogV2DefaultComponent_component),                              \
                MESSAGE,                              \
                ##__VA_ARGS__)
 
@@ -174,7 +174,7 @@ logv2::detail::doLog(SEVERITY, ID, OPTIONS, FMT_STRING(MESSAGE), ##__VA_ARGS__)
                ##__VA_ARGS__)
 
 #define LOGV2_ERROR_OPTIONS_STABLE(ID, OPTIONS, MESSAGE, ...) \
-    LOGV2_IMPL(::mongo::logv2::LogSeverity::Error(), ID, ::mongo::logv2::LogOptions::setComponentIfNotSet(OPTIONS, MongoLogV2DefaultComponent_component), MESSAGE, ##__VA_ARGS__)
+    LOGV2_IMPL(::mongo::logv2::LogSeverity::Error(), ID, ::mongo::logv2::LogOptions::ensureValidComponent(OPTIONS, MongoLogV2DefaultComponent_component), MESSAGE, ##__VA_ARGS__)
 
 #define LOGV2_FATAL(FASSERT_ID, MESSAGE, ...)         \
     LOGV2_IMPL(::mongo::logv2::LogSeverity::Severe(), \
@@ -186,7 +186,7 @@ logv2::detail::doLog(SEVERITY, ID, OPTIONS, FMT_STRING(MESSAGE), ##__VA_ARGS__)
 #define LOGV2_FATAL_OPTIONS(FASSERT_ID, OPTIONS, MESSAGE, ...) \
     LOGV2_IMPL(::mongo::logv2::LogSeverity::Severe(),          \
                ::mongo::StringData{},                          \
-               ::mongo::logv2::LogOptions::setComponentIfNotSet(OPTIONS, MongoLogV2DefaultComponent_component),                                        \
+               ::mongo::logv2::LogOptions::ensureValidComponent(OPTIONS, MongoLogV2DefaultComponent_component),                                        \
                MESSAGE,                                        \
                ##__VA_ARGS__)
 
@@ -198,14 +198,14 @@ logv2::detail::doLog(SEVERITY, ID, OPTIONS, FMT_STRING(MESSAGE), ##__VA_ARGS__)
                ##__VA_ARGS__)
 
 #define LOGV2_FATAL_OPTIONS_STABLE(ID, FASSERT_ID, OPTIONS, MESSAGE, ...) \
-    LOGV2_IMPL(::mongo::logv2::LogSeverity::Severe(), ID, ::mongo::logv2::LogOptions::setComponentIfNotSet(OPTIONS, MongoLogV2DefaultComponent_component), MESSAGE, ##__VA_ARGS__)
+    LOGV2_IMPL(::mongo::logv2::LogSeverity::Severe(), ID, ::mongo::logv2::LogOptions::ensureValidComponent(OPTIONS, MongoLogV2DefaultComponent_component), MESSAGE, ##__VA_ARGS__)
 
 #define LOGV2_DEBUG_OPTIONS(DLEVEL, OPTIONS, MESSAGE, ...)                                \
     do {                                                                                  \
         auto severity = ::mongo::logv2::LogSeverity::Debug(DLEVEL);                       \
         if (::mongo::logv2::LogManager::global().getGlobalSettings().shouldLog(           \
                 MongoLogV2DefaultComponent_component, severity)) {                        \
-            LOGV2_IMPL(severity, ::mongo::StringData{}, ::mongo::logv2::LogOptions::setComponentIfNotSet(OPTIONS, MongoLogV2DefaultComponent_component), MESSAGE, ##__VA_ARGS__); \
+            LOGV2_IMPL(severity, ::mongo::StringData{}, ::mongo::logv2::LogOptions::ensureValidComponent(OPTIONS, MongoLogV2DefaultComponent_component), MESSAGE, ##__VA_ARGS__); \
         }                                                                                 \
     } while (false)
 
