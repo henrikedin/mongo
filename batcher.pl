@@ -4,20 +4,21 @@ use strict;
 use Text::Glob qw(match_glob);
 
 open(my $batches_file, $ARGV[0]) or die $!;
-my $batch_map = {};
+my $batch_reviewers = {};
 my $found_batches = {};
 while (<$batches_file>) {
     s/\r?\n//;
     my @fields = split(/\t/);
     $fields[0],"\n";
-    $batch_map->{$fields[0]}=$fields[1];
+    $batch_reviewers->{$fields[0]}=$fields[2];
 }
 open(my $files_file, "logging_cpp_files.txt") or die $!;
 while (<$files_file>) {
     next if /^#/;
     s/\r?\n//;
     my $match = "";
-    foreach my $key (sort keys %$batch_map) {
+    #print("FILE $_\n");
+    foreach my $key (sort { length($b) <=> length($a) } keys %$batch_reviewers) {
         my $regex;
         if ($key =~ /\*/) {
             $regex = $key;
@@ -30,23 +31,30 @@ while (<$files_file>) {
         } else {
             $regex = "$key/.*";
         }
+        #print ("REGEX: $regex\n");
         if (m[$regex]) {
-            if (length($key)>length($match)) {
-                $match = $key;
-            }
+            #print("MATCH!!\n");
+            $match = $key;
+            last;
         }
     }
-    if ($match eq "") {
-        #print("?\tunknown\t$_\n");
+    if ($match) {
+        push(@{$found_batches->{$match}},$_);
     } else {
-        push(@{$found_batches->{$batch_map->{$match}}},$_);
-        #print("$batch_map->{$match}\t$match\t$_\n");
+        print("?\tunknown\t$_\n");
     }
+}
+
+sub run {
+    my @cmd = @_;
+    print( join(" ",map { / /?"\"$_\"":$_ } @cmd),"\n" );
+    #exec(@cmd);
 }
 
 for my $batch (sort keys %$found_batches) {
     my @files = @{$found_batches->{$batch}};
-    print(qw(git cifa),"\n");
-    print(./logv1tologv2,@files,"\n"); 
-    #python ~/git/kernel-tools/codereview/upload.py --git_no_find_copies -y -m "structured logging auto-conversion" HEAD
+    print ("BATCH $batch $batch_reviewers->{$batch}\n");
+    run(qw(git cifa));
+    run("./logv1tologv2",@files); 
+    run(qw(python ~/git/kernel-tools/codereview/upload.py --git_no_find_copies -y),"-r", $batch_reviewers->{$batch}, "-m", "structured logging auto-conversion of ".$batch, "HEAD");
 }
