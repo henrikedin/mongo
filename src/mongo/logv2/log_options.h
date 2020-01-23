@@ -38,8 +38,8 @@ namespace logv2 {
 
 class LogOptions {
 public:
-	static LogOptions setComponentIfNotSet(LogOptions options, LogComponent component) {
-		if (options._component == LogComponent::kNumLogComponents) {
+    static LogOptions ensureValidComponent(LogOptions options, LogComponent component) {
+        if (options._component == LogComponent::kAutomaticDetermination) {
             options._component = component;
 		}
         return options;
@@ -71,7 +71,7 @@ public:
 private:
     LogDomain* _domain = &LogManager::global().getGlobalDomain();
     LogTag _tags;
-    LogComponent _component = LogComponent::kNumLogComponents;
+    LogComponent _component = LogComponent::kAutomaticDetermination;
 };
 
 }  // namespace logv2

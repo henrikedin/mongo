@@ -45,6 +45,7 @@ namespace logv2 {
 class LogComponent {
 public:
     enum Value {
+		kAutomaticDetermination = -1,
         kDefault = 0,
         kAccessControl,
         kCommand,

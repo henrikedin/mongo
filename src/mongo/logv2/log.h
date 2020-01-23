@@ -47,10 +47,13 @@
 #include "mongo/base/status.h"
 #include "mongo/bson/util/builder.h"
 #include "mongo/logv2/log_component.h"
+#include "mongo/logv2/log_detail.h"
 #include "mongo/logv2/log_domain.h"
+#include "mongo/logv2/log_options.h"
 #include "mongo/logv2/log_severity.h"
 #include "mongo/util/errno_util.h"
 
+namespace {
 #if defined(MONGO_LOGV2_DEFAULT_COMPONENT)
 const ::mongo::logv2::LogComponent MongoLogV2DefaultComponent_component =
     MONGO_LOGV2_DEFAULT_COMPONENT;
@@ -66,10 +69,7 @@ const ::mongo::logv2::LogComponent MongoLogV2DefaultComponent_component =
     "mongo/logv2/log.h requires MONGO_LOGV2_DEFAULT_COMPONENT to be defined. " \
        "Please see http://www.mongodb.org/about/contributors/reference/server-logging-rules/ "
 #endif  // MONGO_LOGV2_DEFAULT_COMPONENT
-
-// include log_detail.h and log_options.h after MONGO_LOGV2_DEFAULT_COMPONENT gets set
-#include "mongo/logv2/log_detail.h"
-#include "mongo/logv2/log_options.h"
+}  // namespace
 
 namespace mongo {
 
