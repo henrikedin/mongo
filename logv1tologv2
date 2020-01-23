@@ -1,14 +1,16 @@
 #!/usr/bin/perl
 use warnings;
+use Data::Dumper;
 my $log_id = 20100;
 my $any_conversions = 0;
 my $all_log_lines = 0;
+my $severities = {};
 sub convert {
     my $ramlogs = { 'startupWarningsLog' => 'kStartupWarnings', 'rsLog' => 'kRS', 'warnings' => 'kWarnings'};
     my $expression = shift(@_);
     my $argument = shift(@_);
     my $macro = shift(@_);
-
+    $severities->{$macro}++;
     return "$expression;" if ($expression =~ /str::stream\(\)/);
 
     $any_conversions = 1;
@@ -87,6 +89,7 @@ sub convert {
             push(@options, "logComponentV1toV2($argument)");
         } else {
             $output .= "_DEBUG";
+            $severities->{$argument}++;
             if ($argument =~ /^\d+$/) {
                 push(@params, $argument);
             } else {
@@ -143,3 +146,6 @@ foreach my $fn (@ARGV) {
     open($f, ">", $fn);
     $f->print($data);
 }
+
+$severities->{"all"} = $all_log_lines;
+print Dumper(\$severities);
