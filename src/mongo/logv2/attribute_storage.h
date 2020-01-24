@@ -497,16 +497,46 @@ AttributeStorage<Args...> makeAttributeStorage(const Args&... args) {
 
 }  // namespace detail
 
+class AttributeBuilder {
+public:
+    // Do not allow rvalue references and temporary objects to avoid lifetime problem issues
+    template <typename T,
+              std::enable_if_t<std::is_arithmetic_v<T> || std::is_pointer_v<T> || std::is_enum_v<T>,
+                               int> = 0>
+    void add(StringData name, T value) {
+        _attributes.emplace_back(name, value);
+    }
+
+    template <typename T, std::enable_if_t<std::is_class_v<T>, int> = 0>
+    void add(StringData name, const T& value) {
+        _attributes.emplace_back(name, value);
+    }
+
+    template <typename T, std::enable_if_t<std::is_class_v<T>, int> = 0>
+    void add(StringData name, T&& value) = delete;
+
+    void add(StringData name, StringData value) {
+        _attributes.emplace_back(name, value);
+    }
+private:
+    // This class is meant to be wrapped by TypeErasedAttributeStorage below that provides public
+    // accessors. Let it access all our internals.
+    friend class mongo::logv2::TypeErasedAttributeStorage;
+
+    std::vector<detail::NamedAttribute> _attributes;
+};
+
 // Wrapper around internal pointer of AttributeStorage so it does not need any template parameters
 class TypeErasedAttributeStorage {
 public:
     TypeErasedAttributeStorage() : _size(0) {}
 
     template <typename... Args>
-    TypeErasedAttributeStorage(const detail::AttributeStorage<Args...>& store) {
-        _data = store._data;
-        _size = store.kNumArgs;
-    }
+    TypeErasedAttributeStorage(const detail::AttributeStorage<Args...>& store)
+        : _data(store._data), _size(store.kNumArgs) {}
+
+    TypeErasedAttributeStorage(const AttributeBuilder& builder)
+        : _data(builder._attributes.data()), _size(builder._attributes.size()) {}
 
     bool empty() const {
         return _size == 0;

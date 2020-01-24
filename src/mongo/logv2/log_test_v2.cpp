@@ -165,6 +165,10 @@ public:
 
 LogDuringInitTester logDuringInit;
 
+std::string createStr() {
+    return "asd";
+}
+
 TEST_F(LogTestV2, Basic) {
     std::vector<std::string> lines;
     auto sink = LogCaptureBackend::create(lines);
@@ -732,6 +736,29 @@ TEST_F(LogTestV2, JsonBsonFormat) {
     };
     validateCustomAttrBSONArray(mongo::fromjson(lines.back()));
     validateCustomAttrBSONArray(BSONObj(linesBson.back().data()));
+
+
+    AttributeBuilder attrBuilder;
+    attrBuilder.add("string data"_sd, "a string data"_sd);
+    attrBuilder.add("cstr"_sd, "a c string");
+    attrBuilder.add("int"_sd, 5);
+    attrBuilder.add("float"_sd, 3.0f);
+    attrBuilder.add("bool"_sd, true);
+    attrBuilder.add("enum"_sd, UnscopedEntryWithToString);
+    BSONObj bsonObj;
+    attrBuilder.add("bson"_sd, bsonObj);
+    LOGV2("message", attrBuilder);
+    auto validateDynamic = [](const BSONObj& obj) {
+        ASSERT(obj.getField(kAttributesFieldName).Obj().hasField("string data"));
+        ASSERT(obj.getField(kAttributesFieldName).Obj().hasField("cstr"));
+        ASSERT(obj.getField(kAttributesFieldName).Obj().hasField("int"));
+        ASSERT(obj.getField(kAttributesFieldName).Obj().hasField("float"));
+        ASSERT(obj.getField(kAttributesFieldName).Obj().hasField("bool"));
+        ASSERT(obj.getField(kAttributesFieldName).Obj().hasField("enum"));
+        ASSERT(obj.getField(kAttributesFieldName).Obj().hasField("bson"));
+    };
+    validateDynamic(mongo::fromjson(lines.back()));
+    validateDynamic(BSONObj(linesBson.back().data()));
 }
 
 TEST_F(LogTestV2, Containers) {

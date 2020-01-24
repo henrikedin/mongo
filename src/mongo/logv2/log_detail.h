@@ -61,6 +61,16 @@ void doLog(LogSeverity const& severity,
     doLogImpl(severity, stable_id, options, StringData(msg.data(), msg.size()), attributes);
 }
 
+template <typename S>
+void doLog(int32_t id,
+           LogSeverity const& severity,
+           LogOptions const& options,
+           S const& message,
+           const AttributeBuilder& dynamic_args) {
+    auto msg = static_cast<fmt::string_view>(message);
+    doLogImpl(id, severity, options, StringData(msg.data(), msg.size()), dynamic_args);
+}
+
 }  // namespace detail
 }  // namespace logv2
 
