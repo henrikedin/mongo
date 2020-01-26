@@ -79,9 +79,7 @@ struct TextValueExtractor {
     boost::container::small_vector<fmt::basic_format_arg<fmt::format_context>,
                                    constants::kNumStaticAttrs>
         args;
-	boost::container::small_vector<StringData,
-                                   constants::kNumStaticAttrs>
-        names;
+    boost::container::small_vector<StringData, constants::kNumStaticAttrs> names;
 
 private:
     std::deque<std::string> _storage;
@@ -100,7 +98,9 @@ public:
 
     using arg_formatter::operator();
 
-	// Libfmt instantiates this class for every replacement field in the message string. Unfortunately there's no easy way to pass in some context from the caller so we need to make this a thread_local as this can run concurrently with other threads.
+    // Libfmt instantiates this class for every replacement field in the message string.
+    // Unfortunately there's no easy way to pass in some context from the caller so we need to make
+    // this a thread_local as this can run concurrently with other threads.
     static thread_local int32_t count;
 };
 
@@ -128,9 +128,10 @@ void PlainFormatter::operator()(boost::log::record_view const& rec,
     StringData separator = ""_sd;
     for (int32_t i = ArgCounter::count; i < extractor.args.size(); ++i) {
         fmt::format_to(buffer, "{} {}: ", separator, extractor.names[i]);
-        fmt::vformat_to(buffer, "{}", fmt::basic_format_args<fmt::format_context>(&extractor.args[i], 1));
+        fmt::vformat_to(
+            buffer, "{}", fmt::basic_format_args<fmt::format_context>(&extractor.args[i], 1));
         separator = ","_sd;
-	}
+    }
 
     strm.write(buffer.data(), buffer.size());
 }
