@@ -73,15 +73,38 @@ struct TextValueExtractor {
     template <typename T>
     void operator()(StringData name, const T& val) {
         args.push_back(fmt::internal::make_arg<fmt::format_context>(val));
+        names.push_back(name);
     }
 
     boost::container::small_vector<fmt::basic_format_arg<fmt::format_context>,
                                    constants::kNumStaticAttrs>
         args;
+	boost::container::small_vector<StringData,
+                                   constants::kNumStaticAttrs>
+        names;
 
 private:
     std::deque<std::string> _storage;
 };
+
+class ArgCounter : public fmt::arg_formatter<fmt::buffer_range<char>> {
+public:
+    typedef fmt::arg_formatter<fmt::buffer_range<char>> arg_formatter;
+
+    ArgCounter(fmt::format_context& ctx,
+               fmt::format_parse_context* parse_ctx = nullptr,
+               fmt::format_specs* spec = nullptr)
+        : arg_formatter(ctx, parse_ctx, spec) {
+        ++count;
+    }
+
+    using arg_formatter::operator();
+
+	// Libfmt instantiates this class for every replacement field in the message string. Unfortunately there's no easy way to pass in some context from the caller so we need to make this a thread_local as this can run concurrently with other threads.
+    static thread_local int32_t count;
+};
+
+thread_local int32_t ArgCounter::count = 0;
 
 }  // namespace
 
@@ -96,10 +119,19 @@ void PlainFormatter::operator()(boost::log::record_view const& rec,
     extractor.args.reserve(attrs.size());
     attrs.apply(extractor);
     fmt::memory_buffer buffer;
-    fmt::vformat_to(
+    ArgCounter::count = 0;
+    fmt::vformat_to<ArgCounter, char>(
         buffer,
         to_string_view(message),
         fmt::basic_format_args<fmt::format_context>(extractor.args.data(), extractor.args.size()));
+
+    StringData separator = ""_sd;
+    for (int32_t i = ArgCounter::count; i < extractor.args.size(); ++i) {
+        fmt::format_to(buffer, "{} {}: ", separator, extractor.names[i]);
+        fmt::vformat_to(buffer, "{}", fmt::basic_format_args<fmt::format_context>(&extractor.args[i], 1));
+        separator = ","_sd;
+	}
+
     strm.write(buffer.data(), buffer.size());
 }
 
