@@ -34,6 +34,7 @@
 #include "mongo/logv2/constants.h"
 #include "mongo/stdx/variant.h"
 
+#include <boost/container/small_vector.hpp>
 #include <functional>
 
 namespace mongo {
@@ -523,7 +524,7 @@ private:
     // accessors. Let it access all our internals.
     friend class mongo::logv2::TypeErasedAttributeStorage;
 
-    std::vector<detail::NamedAttribute> _attributes;
+    boost::container::small_vector<detail::NamedAttribute, constants::kNumStaticAttrs> _attributes;
 };
 
 // Wrapper around internal pointer of AttributeStorage so it does not need any template parameters
