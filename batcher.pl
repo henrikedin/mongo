@@ -7,6 +7,7 @@ open(my $batches_file, $ARGV[0]) or die $!;
 my $batch_reviewers = {};
 my $found_batches = {};
 while (<$batches_file>) {
+    next if /^#/;
     s/\r?\n//;
     my @fields = split(/\t/);
     $fields[0],"\n";
@@ -56,6 +57,6 @@ for my $batch (sort keys %$found_batches) {
     print ("BATCH $batch $batch_reviewers->{$batch}\n");
     run(qw(git cifa));
     run("./logv1tologv2",@files); 
-    run(qw(python ~/git/kernel-tools/codereview/upload.py --git_no_find_copies -y),"-r", $batch_reviewers->{$batch}, "-m", "structured logging auto-conversion of ".$batch, "HEAD");
-    run(qw(evergreen patch -p mongodb-mongo-master  --yes), "-d", "structured logging auto-conversion of $batch");
+    run(qw(python ~/git/kernel-tools/codereview/upload.py --git_no_find_copies -y),"-r", $batch_reviewers->{$batch}, "--send_mail", "-m", "structured logging auto-conversion of ".$batch, "HEAD");
+    #run(qw(evergreen patch -p mongodb-mongo-master  --yes), "-d", "structured logging auto-conversion of $batch");
 }
