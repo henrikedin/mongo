@@ -75,7 +75,7 @@ sub convert {
             $attr_name =~ s[(\W+|_)$][]g;
             $attr_name =~ s[(\W|_)+][_]g;
             push(@$attributes, [ $attr_name, $part ]);
-            $message .= "{}";
+            $message .= "{$attr_name}";
         }
     }
     my $output = "LOGV2";
