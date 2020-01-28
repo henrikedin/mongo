@@ -59,6 +59,7 @@ for my $batch (sort keys %$found_batches) {
     run(qw(git commit -m xxx));
     run(qw(git cifa));
     run("./logv1tologv2",@files); 
+    run(qw(buildscripts/clang_format.py format));
     run(qw(evergreen patch -p mongodb-mongo-master  --yes -a required -f), "-d", "structured logging auto-conversion of $batch");
     run(qw(python ~/git/kernel-tools/codereview/upload.py --git_no_find_copies -y),"-r", $batch_reviewers->{$batch}, "--send_mail", "-m", "structured logging auto-conversion of ".$batch, "HEAD");
 }
