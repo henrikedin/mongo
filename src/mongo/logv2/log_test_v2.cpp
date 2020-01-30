@@ -656,7 +656,7 @@ TEST_F(LogTestV2, JsonBsonFormat) {
     validateRoot(BSONObj(linesBson.back().data()));
 
 
-    LOGV2(20038, "test {}", "name"_attr = 1);
+    LOGV2(20038, "test {name}", "name"_attr = 1);
     auto validateAttr = [](const BSONObj& obj) {
         ASSERT_EQUALS(obj.getField(kMessageFieldName).String(), "test {name}");
         ASSERT_EQUALS(obj.getField(kAttributesFieldName).Obj().nFields(), 1);
@@ -666,7 +666,7 @@ TEST_F(LogTestV2, JsonBsonFormat) {
     validateAttr(BSONObj(linesBson.back().data()));
 
 
-    LOGV2(20039, "test {:d}", "name"_attr = 2);
+    LOGV2(20039, "test {name:d}", "name"_attr = 2);
     auto validateMsgReconstruction = [](const BSONObj& obj) {
         ASSERT_EQUALS(obj.getField(kMessageFieldName).String(), "test {name:d}");
         ASSERT_EQUALS(obj.getField(kAttributesFieldName).Obj().nFields(), 1);
@@ -675,7 +675,7 @@ TEST_F(LogTestV2, JsonBsonFormat) {
     validateMsgReconstruction(mongo::fromjson(lines.back()));
     validateMsgReconstruction(BSONObj(linesBson.back().data()));
 
-    LOGV2(20040, "test {: <4}", "name"_attr = 2);
+    LOGV2(20040, "test {name: <4}", "name"_attr = 2);
     auto validateMsgReconstruction2 = [](const BSONObj& obj) {
         ASSERT_EQUALS(obj.getField(kMessageFieldName).String(), "test {name: <4}");
         ASSERT_EQUALS(obj.getField(kAttributesFieldName).Obj().nFields(), 1);
@@ -706,7 +706,7 @@ TEST_F(LogTestV2, JsonBsonFormat) {
 
 
     TypeWithBSON t(1.0, 2.0);
-    LOGV2(20041, "{} custom formatting", "name"_attr = t);
+    LOGV2(20041, "{name} custom formatting", "name"_attr = t);
     auto validateCustomAttr = [&t](const BSONObj& obj) {
         ASSERT_EQUALS(obj.getField(kMessageFieldName).String(), "{name} custom formatting");
         ASSERT_EQUALS(obj.getField(kAttributesFieldName).Obj().nFields(), 1);
@@ -718,7 +718,7 @@ TEST_F(LogTestV2, JsonBsonFormat) {
     validateCustomAttr(BSONObj(linesBson.back().data()));
 
 
-    LOGV2(20042, "{} bson", "name"_attr = t.toBSON());
+    LOGV2(20042, "{name} bson", "name"_attr = t.toBSON());
     auto validateBsonAttr = [&t](const BSONObj& obj) {
         ASSERT_EQUALS(obj.getField(kMessageFieldName).String(), "{name} bson");
         ASSERT_EQUALS(obj.getField(kAttributesFieldName).Obj().nFields(), 1);
@@ -731,7 +731,7 @@ TEST_F(LogTestV2, JsonBsonFormat) {
 
 
     TypeWithoutBSON t2(1.0, 2.0);
-    LOGV2(20043, "{} custom formatting", "name"_attr = t2);
+    LOGV2(20043, "{name} custom formatting", "name"_attr = t2);
     auto validateCustomAttrWithoutBSON = [&t2](const BSONObj& obj) {
         ASSERT_EQUALS(obj.getField(kMessageFieldName).String(), "{name} custom formatting");
         ASSERT_EQUALS(obj.getField(kAttributesFieldName).Obj().nFields(), 1);
@@ -742,7 +742,7 @@ TEST_F(LogTestV2, JsonBsonFormat) {
     validateCustomAttrWithoutBSON(BSONObj(linesBson.back().data()));
 
     TypeWithBSONSerialize t3(1.0, 2.0);
-    LOGV2(20044, "{}", "name"_attr = t3);
+    LOGV2(20044, "{name}", "name"_attr = t3);
     auto validateCustomAttrBSONSerialize = [&t3](const BSONObj& obj) {
         BSONObjBuilder builder;
         t3.serialize(&builder);
@@ -757,7 +757,7 @@ TEST_F(LogTestV2, JsonBsonFormat) {
 
 
     TypeWithBothBSONFormatters t4(1.0, 2.0);
-    LOGV2(20045, "{}", "name"_attr = t4);
+    LOGV2(20045, "{name}", "name"_attr = t4);
     auto validateCustomAttrBSONBothFormatters = [&t4](const BSONObj& obj) {
         BSONObjBuilder builder;
         t4.serialize(&builder);
@@ -771,7 +771,7 @@ TEST_F(LogTestV2, JsonBsonFormat) {
     validateCustomAttrBSONBothFormatters(BSONObj(linesBson.back().data()));
 
     TypeWithBSONArray t5;
-    LOGV2(20046, "{}", "name"_attr = t5);
+    LOGV2(20046, "{name}", "name"_attr = t5);
     auto validateCustomAttrBSONArray = [&t5](const BSONObj& obj) {
         ASSERT_EQUALS(obj.getField(kAttributesFieldName).Obj().getField("name").type(),
                       BSONType::Array);
@@ -785,7 +785,7 @@ TEST_F(LogTestV2, JsonBsonFormat) {
     validateCustomAttrBSONArray(BSONObj(linesBson.back().data()));
 
     TypeWithNonMemberFormatting t6;
-    LOGV2(20080, "{}", "name"_attr = t6);
+    LOGV2(20080, "{name}", "name"_attr = t6);
     auto validateNonMemberToBSON = [&t6](const BSONObj& obj) {
         ASSERT(
             obj.getField(kAttributesFieldName).Obj().getField("name").Obj().woCompare(toBSON(t6)) ==
