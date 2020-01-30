@@ -58,6 +58,7 @@
 #include "mongo/s/request_types/ensure_chunk_version_is_greater_than_gen.h"
 #include "mongo/util/exit.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 
 namespace mongo {
 namespace migrationutil {
@@ -78,7 +79,7 @@ void sendToRecipient(OperationContext* opCtx, const ShardId& recipientId, const 
     auto recipientShard =
         uassertStatusOK(Grid::get(opCtx)->shardRegistry()->getShard(opCtx, recipientId));
 
-    LOG(1) << "Sending request " << cmd.toBSON({}) << " to recipient.";
+    LOGV2_DEBUG(21743, 1, "Sending request {cmd_toBSON} to recipient.", "cmd_toBSON"_attr = cmd.toBSON({}));
 
     auto response = recipientShard->runCommandWithFixedRetryAttempts(
         opCtx,
@@ -148,12 +149,9 @@ ExecutorFuture<bool> submitRangeDeletionTask(OperationContext* opCtx,
                 // If the collection's filtering metadata is not known or its UUID does not match
                 // the UUID of the deletion task, force a filtering metadata refresh once, because
                 // this node may have just stepped up and therefore may have a stale cache.
-                LOG(0) << "Filtering metadata for namespace in deletion task "
-                       << deletionTask.toBSON()
-                       << (css->getCurrentMetadataIfKnown()
+                LOGV2(21744, "Filtering metadata for namespace in deletion task {deletionTask_toBSON}{css_getCurrentMetadataIfKnown_has_UUID_that_does_not_match_UUID_of_the_deletion_task_is_not_known}, forcing a refresh of {deletionTask_getNss}", "deletionTask_toBSON"_attr = deletionTask.toBSON(), "css_getCurrentMetadataIfKnown_has_UUID_that_does_not_match_UUID_of_the_deletion_task_is_not_known"_attr = (css->getCurrentMetadataIfKnown()
                                ? " has UUID that does not match UUID of the deletion task"
-                               : " is not known")
-                       << ", forcing a refresh of " << deletionTask.getNss();
+                               : " is not known"), "deletionTask_getNss"_attr = deletionTask.getNss());
 
                 // TODO (SERVER-45577): Add an asynchronous version of
                 // forceShardFilteringMetadataRefresh to avoid blocking on the network in the
@@ -165,13 +163,10 @@ ExecutorFuture<bool> submitRangeDeletionTask(OperationContext* opCtx,
             autoColl.emplace(opCtx, deletionTask.getNss(), MODE_IS);
             if (!css->getCurrentMetadataIfKnown() ||
                 !css->getCurrentMetadata()->uuidMatches(deletionTask.getCollectionUuid())) {
-                LOG(0) << "Even after forced refresh, filtering metadata for namespace in deletion "
-                          "task "
-                       << deletionTask.toBSON()
-                       << (css->getCurrentMetadataIfKnown()
+                LOGV2(21745, "Even after forced refresh, filtering metadata for namespace in deletion "
+                          "task {deletionTask_toBSON}{css_getCurrentMetadataIfKnown_has_UUID_that_does_not_match_UUID_of_the_deletion_task_is_not_known}, deleting the task.", "deletionTask_toBSON"_attr = deletionTask.toBSON(), "css_getCurrentMetadataIfKnown_has_UUID_that_does_not_match_UUID_of_the_deletion_task_is_not_known"_attr = (css->getCurrentMetadataIfKnown()
                                ? "has UUID that does not match UUID of the deletion task"
-                               : "is not known")
-                       << ", deleting the task.";
+                               : "is not known"));
 
                 autoColl.reset();
                 deleteRangeDeletionTaskLocally(
@@ -179,7 +174,7 @@ ExecutorFuture<bool> submitRangeDeletionTask(OperationContext* opCtx,
                 return false;
             }
 
-            LOG(0) << "Submitting range deletion task " << deletionTask.toBSON();
+            LOGV2(21746, "Submitting range deletion task {deletionTask_toBSON}", "deletionTask_toBSON"_attr = deletionTask.toBSON());
 
             const auto whenToClean = deletionTask.getWhenToClean() == CleanWhenEnum::kNow
                 ? CollectionShardingRuntime::kNow
@@ -189,8 +184,7 @@ ExecutorFuture<bool> submitRangeDeletionTask(OperationContext* opCtx,
 
             if (cleanupCompleteFuture.isReady() &&
                 !cleanupCompleteFuture.getNoThrow(opCtx).isOK()) {
-                LOG(0) << "Failed to submit range deletion task " << deletionTask.toBSON()
-                       << causedBy(cleanupCompleteFuture.getNoThrow(opCtx));
+                LOGV2(21747, "Failed to submit range deletion task {deletionTask_toBSON}{causedBy_cleanupCompleteFuture_getNoThrow_opCtx}", "deletionTask_toBSON"_attr = deletionTask.toBSON(), "causedBy_cleanupCompleteFuture_getNoThrow_opCtx"_attr = causedBy(cleanupCompleteFuture.getNoThrow(opCtx)));
                 return false;
             }
             return true;
@@ -210,7 +204,7 @@ void submitPendingDeletions(OperationContext* opCtx) {
 }
 
 void resubmitRangeDeletionsOnStepUp(ServiceContext* serviceContext) {
-    LOG(0) << "Starting pending deletion submission thread.";
+    LOGV2(21748, "Starting pending deletion submission thread.");
 
     auto executor = Grid::get(serviceContext)->getExecutorPool()->getFixedExecutor();
 
@@ -243,8 +237,7 @@ void forEachOrphanRange(OperationContext* opCtx, const NamespaceString& nss, Cal
         RangeMap{SimpleBSONObjComparator::kInstance.makeBSONObjIndexedMap<BSONObj>()};
 
     if (!metadata->isSharded()) {
-        LOG(0) << "Upgrade: skipping orphaned range enumeration for " << nss
-               << ", collection is not sharded";
+        LOGV2(21749, "Upgrade: skipping orphaned range enumeration for {nss}, collection is not sharded", "nss"_attr = nss);
         return;
     }
 
@@ -253,8 +246,7 @@ void forEachOrphanRange(OperationContext* opCtx, const NamespaceString& nss, Cal
     while (true) {
         auto range = metadata->getNextOrphanRange(emptyChunkMap, startingKey);
         if (!range) {
-            LOG(2) << "Upgrade: Completed orphaned range enumeration for " << nss.toString()
-                   << " starting from " << redact(startingKey) << ", no orphan ranges remain";
+            LOGV2_DEBUG(21750, 2, "Upgrade: Completed orphaned range enumeration for {nss_toString} starting from {redact_startingKey}, no orphan ranges remain", "nss_toString"_attr = nss.toString(), "redact_startingKey"_attr = redact(startingKey));
 
             return;
         }
@@ -272,7 +264,7 @@ void submitOrphanRanges(OperationContext* opCtx, const NamespaceString& nss, con
         if (version == ChunkVersion::UNSHARDED())
             return;
 
-        LOG(2) << "Upgrade: Cleaning up existing orphans for " << nss << " : " << uuid;
+        LOGV2_DEBUG(21751, 2, "Upgrade: Cleaning up existing orphans for {nss} : {uuid}", "nss"_attr = nss, "uuid"_attr = uuid);
 
         std::vector<RangeDeletionTask> deletions;
         forEachOrphanRange(opCtx, nss, [&deletions, &opCtx, &nss, &uuid](const auto& range) {
@@ -290,14 +282,11 @@ void submitOrphanRanges(OperationContext* opCtx, const NamespaceString& nss, con
                                                      NamespaceString::kRangeDeletionNamespace);
 
         for (const auto& task : deletions) {
-            LOG(2) << "Upgrade: Submitting range for cleanup: " << task.getRange() << " from "
-                   << nss;
+            LOGV2_DEBUG(21752, 2, "Upgrade: Submitting range for cleanup: {task_getRange} from {nss}", "task_getRange"_attr = task.getRange(), "nss"_attr = nss);
             store.add(opCtx, task);
         }
     } catch (ExceptionFor<ErrorCodes::NamespaceNotFound>& e) {
-        LOG(0) << "Upgrade: Failed to cleanup orphans for " << nss
-               << " because the namespace was not found: " << e.what()
-               << ", the collection must have been dropped";
+        LOGV2(21753, "Upgrade: Failed to cleanup orphans for {nss} because the namespace was not found: {e_what}, the collection must have been dropped", "nss"_attr = nss, "e_what"_attr = e.what());
     }
 }
 
@@ -312,7 +301,7 @@ void submitOrphanRangesForCleanup(OperationContext* opCtx) {
         for (auto collIt = catalog.begin(dbName); collIt != catalog.end(); ++collIt) {
             auto uuid = collIt.uuid().get();
             auto nss = catalog.lookupNSSByUUID(opCtx, uuid).get();
-            LOG(2) << "Upgrade: processing collection: " << nss;
+            LOGV2_DEBUG(21754, 2, "Upgrade: processing collection: {nss}", "nss"_attr = nss);
 
             submitOrphanRanges(opCtx, nss, uuid);
         }
@@ -454,9 +443,7 @@ void ensureChunkVersionIsGreaterThan(OperationContext* opCtx,
         }
         opCtx->checkForInterrupt();
 
-        LOG(0) << "_configsvrEnsureChunkVersionIsGreaterThan failed after " << attempts
-               << " attempts " << causedBy(ensureChunkVersionIsGreaterThanStatus)
-               << " . Will try again.";
+        LOGV2(21755, "_configsvrEnsureChunkVersionIsGreaterThan failed after {attempts} attempts {causedBy_ensureChunkVersionIsGreaterThanStatus} . Will try again.", "attempts"_attr = attempts, "causedBy_ensureChunkVersionIsGreaterThanStatus"_attr = causedBy(ensureChunkVersionIsGreaterThanStatus));
     }
 }
 
@@ -472,15 +459,13 @@ void refreshFilteringMetadataUntilSuccess(OperationContext* opCtx, const Namespa
             }
             opCtx->checkForInterrupt();
 
-            LOG(0) << "Failed to refresh metadata for " << nss.ns() << " after " << attempts
-                   << " attempts " << causedBy(redact(ex.toStatus()))
-                   << ". Will try to refresh again.";
+            LOGV2(21756, "Failed to refresh metadata for {nss_ns} after {attempts} attempts {causedBy_redact_ex_toStatus}. Will try to refresh again.", "nss_ns"_attr = nss.ns(), "attempts"_attr = attempts, "causedBy_redact_ex_toStatus"_attr = causedBy(redact(ex.toStatus())));
         }
     }
 }
 
 void resumeMigrationCoordinationsOnStepUp(ServiceContext* serviceContext) {
-    LOG(0) << "Starting migration coordinator stepup recovery thread.";
+    LOGV2(21757, "Starting migration coordinator stepup recovery thread.");
 
     auto executor = Grid::get(serviceContext)->getExecutorPool()->getFixedExecutor();
     ExecutorFuture<void>(executor).getAsync([serviceContext](const Status& status) {
@@ -511,7 +496,7 @@ void resumeMigrationCoordinationsOnStepUp(ServiceContext* serviceContext) {
             auto& replClientInfo = repl::ReplClientInfo::forClient(opCtx->getClient());
             replClientInfo.setLastOpToSystemLastOpTime(opCtx);
             const auto lastOpTime = replClientInfo.getLastOp();
-            LOG(0) << "Waiting for OpTime " << lastOpTime << " to become majority committed";
+            LOGV2(21758, "Waiting for OpTime {lastOpTime} to become majority committed", "lastOpTime"_attr = lastOpTime);
             WriteConcernResult unusedWCResult;
             uassertStatusOK(
                 waitForWriteConcern(opCtx,
@@ -525,7 +510,7 @@ void resumeMigrationCoordinationsOnStepUp(ServiceContext* serviceContext) {
                 opCtx, NamespaceString::kMigrationCoordinatorsNamespace);
             Query query;
             store.forEach(opCtx, query, [&opCtx](const MigrationCoordinatorDocument& doc) {
-                LOG(0) << "Recovering migration " << doc.toBSON();
+                LOGV2(21759, "Recovering migration {doc_toBSON}", "doc_toBSON"_attr = doc.toBSON());
 
                 // Create a MigrationCoordinator to complete the coordination.
                 MigrationCoordinator coordinator(doc.getId(),
@@ -561,15 +546,12 @@ void resumeMigrationCoordinationsOnStepUp(ServiceContext* serviceContext) {
 
                 if (!refreshedMetadata || !(*refreshedMetadata)->isSharded() ||
                     !(*refreshedMetadata)->uuidMatches(doc.getCollectionUuid())) {
-                    LOG(0) << "Even after forced refresh, filtering metadata for namespace in "
-                              "migration coordinator doc "
-                           << doc.toBSON()
-                           << (!refreshedMetadata || !(*refreshedMetadata)->isSharded()
+                    LOGV2(21760, "Even after forced refresh, filtering metadata for namespace in "
+                              "migration coordinator doc {doc_toBSON}{refreshedMetadata_refreshedMetadata_isSharded_is_not_known_has_UUID_that_does_not_match_the_collection_UUID_in_the_coordinator_doc}. Deleting the range deletion tasks on the donor and recipient as "
+                              "well as the migration coordinator document on this node.", "doc_toBSON"_attr = doc.toBSON(), "refreshedMetadata_refreshedMetadata_isSharded_is_not_known_has_UUID_that_does_not_match_the_collection_UUID_in_the_coordinator_doc"_attr = (!refreshedMetadata || !(*refreshedMetadata)->isSharded()
                                    ? "is not known"
                                    : "has UUID that does not match the collection UUID in the "
-                                     "coordinator doc")
-                           << ". Deleting the range deletion tasks on the donor and recipient as "
-                              "well as the migration coordinator document on this node.";
+                                     "coordinator doc"));
 
                     // TODO (SERVER-45707): Test that range deletion tasks are eventually
                     // deleted even if the collection is dropped before migration coordination
@@ -590,8 +572,7 @@ void resumeMigrationCoordinationsOnStepUp(ServiceContext* serviceContext) {
                 return true;
             });
         } catch (const DBException& ex) {
-            LOG(0) << "Failed to resume coordinating migrations on stepup "
-                   << causedBy(ex.toStatus());
+            LOGV2(21761, "Failed to resume coordinating migrations on stepup {causedBy_ex_toStatus}", "causedBy_ex_toStatus"_attr = causedBy(ex.toStatus()));
         }
     });
 }

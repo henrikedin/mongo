@@ -58,6 +58,7 @@
 #include "mongo/db/service_context.h"
 #include "mongo/util/fail_point.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/scopeguard.h"
 #include "mongo/util/stacktrace.h"
 
@@ -635,8 +636,8 @@ PlanExecutor::ExecState PlanExecutorImpl::_getNextImpl(Snapshotted<Document>* ob
                         }
                         return true;
                     }))) {
-                log() << "PlanExecutor - planExecutorHangBeforeShouldWaitForInserts fail point "
-                         "enabled. Blocking until fail point is disabled.";
+                LOGV2(20747, "PlanExecutor - planExecutorHangBeforeShouldWaitForInserts fail point "
+                         "enabled. Blocking until fail point is disabled.");
                 planExecutorHangBeforeShouldWaitForInserts.pauseWhileSet();
             }
             if (!_shouldWaitForInserts()) {

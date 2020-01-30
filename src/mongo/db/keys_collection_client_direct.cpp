@@ -50,6 +50,7 @@
 #include "mongo/s/write_ops/batched_command_request.h"
 #include "mongo/s/write_ops/batched_command_response.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 
 namespace mongo {
 namespace {
@@ -158,9 +159,7 @@ Status KeysCollectionClientDirect::_insert(OperationContext* opCtx,
             Shard::CommandResponse::processBatchWriteResponse(swResponse, &batchResponse);
         if (retry < kOnErrorNumRetries &&
             isRetriableError(writeStatus.code(), Shard::RetryPolicy::kIdempotent)) {
-            LOG(2) << "Batch write command to " << nss.db()
-                   << "failed with retriable error and will be retried"
-                   << causedBy(redact(writeStatus));
+            LOGV2_DEBUG(20651, 2, "Batch write command to {nss_db}failed with retriable error and will be retried{causedBy_redact_writeStatus}", "nss_db"_attr = nss.db(), "causedBy_redact_writeStatus"_attr = causedBy(redact(writeStatus)));
             continue;
         }
 

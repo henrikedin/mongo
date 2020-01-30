@@ -41,6 +41,7 @@
 #include "mongo/unittest/unittest.h"
 #include "mongo/util/hex.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 #include "third_party/wiredtiger/wiredtiger.h"
 
 namespace mongo {
@@ -661,12 +662,10 @@ void testSerializer(const Message& fromSerializer, OpMsgBytes&& expected) {
         std::mismatch(gotSD.begin(), gotSD.end(), expectedSD.begin(), expectedSD.end()).first -
         gotSD.begin();
 
-    log() << "Mismatch after " << commonLength << " bytes.";
-    log() << "Common prefix: " << hexdump(gotSD.rawData(), commonLength);
-    log() << "Got suffix     : "
-          << hexdump(gotSD.rawData() + commonLength, gotSD.size() - commonLength);
-    log() << "Expected suffix: "
-          << hexdump(expectedSD.rawData() + commonLength, expectedSD.size() - commonLength);
+    LOGV2(22323, "Mismatch after {commonLength} bytes.", "commonLength"_attr = commonLength);
+    LOGV2(22324, "Common prefix: {hexdump_gotSD_rawData_commonLength}", "hexdump_gotSD_rawData_commonLength"_attr = hexdump(gotSD.rawData(), commonLength));
+    LOGV2(22325, "Got suffix     : {hexdump_gotSD_rawData_commonLength_gotSD_size_commonLength}", "hexdump_gotSD_rawData_commonLength_gotSD_size_commonLength"_attr = hexdump(gotSD.rawData() + commonLength, gotSD.size() - commonLength));
+    LOGV2(22326, "Expected suffix: {hexdump_expectedSD_rawData_commonLength_expectedSD_size_commonLength}", "hexdump_expectedSD_rawData_commonLength_expectedSD_size_commonLength"_attr = hexdump(expectedSD.rawData() + commonLength, expectedSD.size() - commonLength));
     FAIL("Serialization didn't match expected data. See above for details.");
 }
 

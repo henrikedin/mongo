@@ -42,6 +42,7 @@
 #include "mongo/s/grid.h"
 #include "mongo/s/request_types/rename_collection_gen.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 
 namespace mongo {
 
@@ -73,7 +74,7 @@ public:
                     incomingRequest));
 
             if (MONGO_unlikely(hangRenameCollectionAfterGettingRename.shouldFail())) {
-                log() << "Hit hangRenameCollectionAfterGettingRename";
+                LOGV2(21815, "Hit hangRenameCollectionAfterGettingRename");
                 hangRenameCollectionAfterGettingRename.pauseWhileSet(opCtx);
             }
 

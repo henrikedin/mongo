@@ -42,6 +42,7 @@
 #include "mongo/s/grid.h"
 #include "mongo/s/request_types/refine_collection_shard_key_gen.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 
 namespace mongo {
 namespace {
@@ -148,7 +149,7 @@ public:
                                                                  collType.getUnique(),
                                                                  false);  // createIndexIfPossible
 
-            LOG(0) << "CMD: refineCollectionShardKey: " << request().toBSON({});
+            LOGV2(21633, "CMD: refineCollectionShardKey: {request_toBSON}", "request_toBSON"_attr = request().toBSON({}));
 
             audit::logRefineCollectionShardKey(opCtx->getClient(), nss.ns(), proposedKey);
 

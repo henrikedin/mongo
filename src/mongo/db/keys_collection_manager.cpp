@@ -44,6 +44,7 @@
 #include "mongo/util/concurrency/idle_thread_block.h"
 #include "mongo/util/fail_point.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/str.h"
 #include "mongo/util/time_support.h"
 
@@ -293,7 +294,7 @@ void KeysCollectionManager::PeriodicRunner::_doPeriodicRefresh(ServiceContext* s
                     return _inShutdown || _refreshRequest;
                 });
         } catch (const DBException& e) {
-            LOG(1) << "Unable to wait for refresh request due to: " << e;
+            LOGV2_DEBUG(20652, 1, "Unable to wait for refresh request due to: {e}", "e"_attr = e);
 
             if (ErrorCodes::isShutdownError(e)) {
                 return;

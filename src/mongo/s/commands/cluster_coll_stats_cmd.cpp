@@ -36,6 +36,7 @@
 #include "mongo/s/cluster_commands_helpers.h"
 #include "mongo/s/grid.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 
 namespace mongo {
 namespace {
@@ -173,7 +174,7 @@ public:
                         }
                     }
                 } else {
-                    log() << "mongos collstats doesn't know about: " << e.fieldName();
+                    LOGV2(22436, "mongos collstats doesn't know about: {e_fieldName}", "e_fieldName"_attr = e.fieldName());
                 }
             }
 

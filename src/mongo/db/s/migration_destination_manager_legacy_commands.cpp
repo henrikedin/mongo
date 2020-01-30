@@ -47,6 +47,7 @@
 #include "mongo/s/request_types/migration_secondary_throttle_options.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 
 namespace mongo {
 namespace {
@@ -202,7 +203,7 @@ public:
         Status const status = mdm->startCommit(sessionId);
         mdm->report(result, opCtx, false);
         if (!status.isOK()) {
-            log() << status.reason();
+            LOGV2(21733, "{status_reason}", "status_reason"_attr = status.reason());
             uassertStatusOK(status);
         }
         return true;
@@ -250,7 +251,7 @@ public:
             Status const status = mdm->abort(migrationSessionIdStatus.getValue());
             mdm->report(result, opCtx, false);
             if (!status.isOK()) {
-                log() << status.reason();
+                LOGV2(21734, "{status_reason}", "status_reason"_attr = status.reason());
                 uassertStatusOK(status);
             }
         } else if (migrationSessionIdStatus == ErrorCodes::NoSuchKey) {

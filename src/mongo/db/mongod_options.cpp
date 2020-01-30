@@ -54,6 +54,7 @@
 #include "mongo/db/server_options_nongeneral_gen.h"
 #include "mongo/db/server_options_server_helpers.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/net/ssl_options.h"
 #include "mongo/util/options_parser/startup_options.h"
 #include "mongo/util/str.h"
@@ -101,13 +102,13 @@ void printMongodHelp(const moe::OptionSection& options) {
 namespace {
 void sysRuntimeInfo() {
 #if defined(_SC_PAGE_SIZE)
-    log() << "  page size: " << (int)sysconf(_SC_PAGE_SIZE);
+    LOGV2(20677, "  page size: {int_sysconf_SC_PAGE_SIZE}", "int_sysconf_SC_PAGE_SIZE"_attr = (int)sysconf(_SC_PAGE_SIZE));
 #endif
 #if defined(_SC_PHYS_PAGES)
-    log() << "  _SC_PHYS_PAGES: " << sysconf(_SC_PHYS_PAGES);
+    LOGV2(20678, "  _SC_PHYS_PAGES: {sysconf_SC_PHYS_PAGES}", "sysconf_SC_PHYS_PAGES"_attr = sysconf(_SC_PHYS_PAGES));
 #endif
 #if defined(_SC_AVPHYS_PAGES)
-    log() << "  _SC_AVPHYS_PAGES: " << sysconf(_SC_AVPHYS_PAGES);
+    LOGV2(20679, "  _SC_AVPHYS_PAGES: {sysconf_SC_AVPHYS_PAGES}", "sysconf_SC_AVPHYS_PAGES"_attr = sysconf(_SC_AVPHYS_PAGES));
 #endif
 }
 }  // namespace
@@ -121,7 +122,7 @@ bool handlePreValidationMongodOptions(const moe::Environment& params,
     if (params.count("version") && params["version"].as<bool>() == true) {
         setPlainConsoleLogger();
         auto&& vii = VersionInfoInterface::instance();
-        log() << mongodVersion(vii);
+        LOGV2(20680, "{mongodVersion_vii}", "mongodVersion_vii"_attr = mongodVersion(vii));
         vii.logBuildInfo();
         return false;
     }
@@ -132,7 +133,7 @@ bool handlePreValidationMongodOptions(const moe::Environment& params,
     }
 
     if (params.count("master") || params.count("slave")) {
-        severe() << "Master/slave replication is no longer supported";
+        LOGV2_FATAL(20685, "Master/slave replication is no longer supported");
         return false;
     }
 
@@ -572,10 +573,9 @@ Status storeMongodOptions(const moe::Environment& params) {
 
             if (params.count("replication.enableMajorityReadConcern") &&
                 !params["replication.enableMajorityReadConcern"].as<bool>()) {
-                warning()
-                    << "Config servers require majority read concern, but it was explicitly "
+                LOGV2_WARNING(20683, "Config servers require majority read concern, but it was explicitly "
                        "disabled. The override is being ignored and the process is continuing "
-                       "with majority read concern enabled.";
+                       "with majority read concern enabled.");
             }
             serverGlobalParams.enableMajorityReadConcern = true;
 
@@ -630,10 +630,9 @@ Status storeMongodOptions(const moe::Environment& params) {
     // Check if we are 32 bit and have not explicitly specified any journaling options
     if (sizeof(void*) == 4 && !params.count("storage.journal.enabled")) {
         // trying to make this stand out more like startup warnings
-        log() << endl;
-        warning() << "32-bit servers don't have journaling enabled by default. "
-                  << "Please use --journal if you want durability.";
-        log() << endl;
+        LOGV2(20681, "");
+        LOGV2_WARNING(20684, "32-bit servers don't have journaling enabled by default. Please use --journal if you want durability.");
+        LOGV2(20682, "");
     }
 
     bool isClusterRoleShard = params.count("shardsvr");

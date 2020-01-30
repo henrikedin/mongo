@@ -43,6 +43,7 @@
 #include "mongo/util/destructor_guard.h"
 #include "mongo/util/fail_point.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/uuid.h"
 
 namespace mongo {
@@ -168,8 +169,7 @@ void DocumentSourceOut::initialize() {
         pExpCtx->opCtx,
         "outWaitAfterTempCollectionCreation",
         []() {
-            log() << "Hanging aggregation due to 'outWaitAfterTempCollectionCreation' "
-                  << "failpoint";
+            LOGV2(20702, "Hanging aggregation due to 'outWaitAfterTempCollectionCreation' failpoint");
         });
     if (_originalIndexes.empty()) {
         return;
@@ -261,8 +261,7 @@ void DocumentSourceOut::waitWhileFailPointEnabled() {
         pExpCtx->opCtx,
         "hangWhileBuildingDocumentSourceOutBatch",
         []() {
-            log() << "Hanging aggregation due to 'hangWhileBuildingDocumentSourceOutBatch' "
-                  << "failpoint";
+            LOGV2(20703, "Hanging aggregation due to 'hangWhileBuildingDocumentSourceOutBatch' failpoint");
         });
 }
 

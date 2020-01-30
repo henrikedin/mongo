@@ -45,6 +45,7 @@
 #include "mongo/s/grid.h"
 #include "mongo/s/shard_util.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 
 namespace mongo {
 namespace {
@@ -254,10 +255,7 @@ public:
                               cm->getShardKeyPattern(),
                               ChunkRange(chunk->getMin(), chunk->getMax()));
 
-        log() << "Splitting chunk "
-              << redact(ChunkRange(chunk->getMin(), chunk->getMax()).toString())
-              << " in collection " << nss.ns() << " on shard " << chunk->getShardId() << " at key "
-              << redact(splitPoint);
+        LOGV2(22445, "Splitting chunk {redact_ChunkRange_chunk_getMin_chunk_getMax_toString} in collection {nss_ns} on shard {chunk_getShardId} at key {redact_splitPoint}", "redact_ChunkRange_chunk_getMin_chunk_getMax_toString"_attr = redact(ChunkRange(chunk->getMin(), chunk->getMax()).toString()), "nss_ns"_attr = nss.ns(), "chunk_getShardId"_attr = chunk->getShardId(), "redact_splitPoint"_attr = redact(splitPoint));
 
         uassertStatusOK(
             shardutil::splitChunkAtMultiplePoints(opCtx,

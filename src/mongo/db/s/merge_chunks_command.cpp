@@ -47,6 +47,7 @@
 #include "mongo/s/grid.h"
 #include "mongo/s/request_types/merge_chunk_request_type.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/str.h"
 
 namespace mongo {
@@ -227,8 +228,7 @@ void mergeChunks(OperationContext* opCtx,
 
     if ((!commandStatus.isOK() || !writeConcernStatus.isOK()) &&
         checkMetadataForSuccess(opCtx, nss, epoch, ChunkRange(minKey, maxKey))) {
-        LOG(1) << "mergeChunk [" << redact(minKey) << "," << redact(maxKey)
-               << ") has already been committed.";
+        LOGV2_DEBUG(21704, 1, "mergeChunk [{redact_minKey},{redact_maxKey}) has already been committed.", "redact_minKey"_attr = redact(minKey), "redact_maxKey"_attr = redact(maxKey));
         return;
     }
 

@@ -39,6 +39,7 @@
 #include "mongo/s/write_ops/cluster_write.h"
 #include "mongo/util/fail_point.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/str.h"
 
 namespace mongo {
@@ -78,7 +79,7 @@ bool executeOperationsAsPartOfShardKeyUpdate(OperationContext* opCtx,
     }
 
     if (MONGO_unlikely(hangBeforeInsertOnUpdateShardKey.shouldFail())) {
-        log() << "Hit hangBeforeInsertOnUpdateShardKey failpoint";
+        LOGV2(22447, "Hit hangBeforeInsertOnUpdateShardKey failpoint");
         hangBeforeInsertOnUpdateShardKey.pauseWhileSet(opCtx);
     }
 

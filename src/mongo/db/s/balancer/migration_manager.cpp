@@ -50,6 +50,7 @@
 #include "mongo/s/grid.h"
 #include "mongo/s/request_types/move_chunk_request.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/net/hostandport.h"
 #include "mongo/util/scopeguard.h"
 
@@ -234,9 +235,7 @@ void MigrationManager::startRecoveryAndAcquireDistLocks(OperationContext* opCtx)
             boost::none);
 
     if (!statusWithMigrationsQueryResponse.isOK()) {
-        log() << "Unable to read config.migrations collection documents for balancer migration"
-              << " recovery. Abandoning balancer recovery."
-              << causedBy(redact(statusWithMigrationsQueryResponse.getStatus()));
+        LOGV2(21605, "Unable to read config.migrations collection documents for balancer migration recovery. Abandoning balancer recovery.{causedBy_redact_statusWithMigrationsQueryResponse_getStatus}", "causedBy_redact_statusWithMigrationsQueryResponse_getStatus"_attr = causedBy(redact(statusWithMigrationsQueryResponse.getStatus())));
         return;
     }
 
@@ -246,9 +245,7 @@ void MigrationManager::startRecoveryAndAcquireDistLocks(OperationContext* opCtx)
             // The format of this migration document is incorrect. The balancer holds a distlock for
             // this migration, but without parsing the migration document we cannot identify which
             // distlock must be released. So we must release all distlocks.
-            log() << "Unable to parse config.migrations document '" << redact(migration.toString())
-                  << "' for balancer migration recovery. Abandoning balancer recovery."
-                  << causedBy(redact(statusWithMigrationType.getStatus()));
+            LOGV2(21606, "Unable to parse config.migrations document '{redact_migration_toString}' for balancer migration recovery. Abandoning balancer recovery.{causedBy_redact_statusWithMigrationType_getStatus}", "redact_migration_toString"_attr = redact(migration.toString()), "causedBy_redact_statusWithMigrationType_getStatus"_attr = causedBy(redact(statusWithMigrationType.getStatus())));
             return;
         }
         MigrationType migrateType = std::move(statusWithMigrationType.getValue());
@@ -265,11 +262,7 @@ void MigrationManager::startRecoveryAndAcquireDistLocks(OperationContext* opCtx)
             auto statusWithDistLockHandle = distLockManager->tryLockWithLocalWriteConcern(
                 opCtx, migrateType.getNss().ns(), whyMessage, _lockSessionID);
             if (!statusWithDistLockHandle.isOK()) {
-                log() << "Failed to acquire distributed lock for collection '"
-                      << migrateType.getNss().ns()
-                      << "' during balancer recovery of an active migration. Abandoning"
-                      << " balancer recovery."
-                      << causedBy(redact(statusWithDistLockHandle.getStatus()));
+                LOGV2(21607, "Failed to acquire distributed lock for collection '{migrateType_getNss_ns}' during balancer recovery of an active migration. Abandoning balancer recovery.{causedBy_redact_statusWithDistLockHandle_getStatus}", "migrateType_getNss_ns"_attr = migrateType.getNss().ns(), "causedBy_redact_statusWithDistLockHandle_getStatus"_attr = causedBy(redact(statusWithDistLockHandle.getStatus())));
                 return;
             }
         }
@@ -320,9 +313,7 @@ void MigrationManager::finishRecovery(OperationContext* opCtx,
             // This shouldn't happen because the collection was intact and sharded when the previous
             // config primary was active and the dist locks have been held by the balancer
             // throughout. Abort migration recovery.
-            log() << "Unable to reload chunk metadata for collection '" << nss
-                  << "' during balancer recovery. Abandoning recovery."
-                  << causedBy(redact(routingInfoStatus.getStatus()));
+            LOGV2(21608, "Unable to reload chunk metadata for collection '{nss}' during balancer recovery. Abandoning recovery.{causedBy_redact_routingInfoStatus_getStatus}", "nss"_attr = nss, "causedBy_redact_routingInfoStatus_getStatus"_attr = causedBy(redact(routingInfoStatus.getStatus())));
             return;
         }
 

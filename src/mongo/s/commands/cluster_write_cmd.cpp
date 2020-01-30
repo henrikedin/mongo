@@ -60,6 +60,7 @@
 #include "mongo/s/write_ops/chunk_manager_targeter.h"
 #include "mongo/s/write_ops/cluster_write.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/timer.h"
 
 namespace mongo {
@@ -206,7 +207,7 @@ bool handleWouldChangeOwningShardError(OperationContext* opCtx,
     boost::optional<BSONObj> upsertedId;
     if (isRetryableWrite) {
         if (MONGO_unlikely(hangAfterThrowWouldChangeOwningShardRetryableWrite.shouldFail())) {
-            log() << "Hit hangAfterThrowWouldChangeOwningShardRetryableWrite failpoint";
+            LOGV2(22446, "Hit hangAfterThrowWouldChangeOwningShardRetryableWrite failpoint");
             hangAfterThrowWouldChangeOwningShardRetryableWrite.pauseWhileSet(opCtx);
         }
         RouterOperationContextSession routerSession(opCtx);

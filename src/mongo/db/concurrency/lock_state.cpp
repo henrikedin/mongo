@@ -46,6 +46,7 @@
 #include "mongo/util/debug_util.h"
 #include "mongo/util/fail_point.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/scopeguard.h"
 #include "mongo/util/str.h"
 
@@ -203,7 +204,7 @@ void LockerImpl::dump() const {
     }
     _lock.unlock();
 
-    log() << ss.str();
+    LOGV2(20491, "{ss_str}", "ss_str"_attr = ss.str());
 }
 
 
@@ -1062,7 +1063,7 @@ public:
     }
 
     void taskDoWork() {
-        LOG(2) << "cleaning up unused lock buckets of the global lock manager";
+        LOGV2_DEBUG(20492, 2, "cleaning up unused lock buckets of the global lock manager");
         getGlobalLockManager()->cleanupUnusedLocks();
     }
 } unusedLockCleaner;

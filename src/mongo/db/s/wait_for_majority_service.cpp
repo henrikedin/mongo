@@ -41,6 +41,7 @@
 #include "mongo/executor/thread_pool_task_executor.h"
 #include "mongo/util/concurrency/thread_pool.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 
 namespace mongo {
 
@@ -184,7 +185,7 @@ void WaitForMajorityService::_periodicallyWaitForMajority(ServiceContext* servic
             _opCtx->waitForConditionOrInterrupt(
                 _hasNewOpTimeCV, lk, [&] { return !_queuedOpTimes.empty() || _inShutDown; });
         } catch (const DBException& e) {
-            LOG(1) << "Unable to wait for new op time due to: " << e;
+            LOGV2_DEBUG(22212, 1, "Unable to wait for new op time due to: {e}", "e"_attr = e);
         }
 
         _opCtx = nullptr;

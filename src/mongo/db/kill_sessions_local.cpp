@@ -41,6 +41,7 @@
 #include "mongo/db/session_catalog.h"
 #include "mongo/db/transaction_participant.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 
 namespace mongo {
 namespace {
@@ -132,11 +133,8 @@ void killAllExpiredTransactions(OperationContext* opCtx) {
                            // that as aborted due to transactionLifetimeLimitSessions.
                            if (txnParticipant.transactionIsInProgress() ||
                                txnParticipant.transactionIsAborted()) {
-                               log() << "Aborting transaction with txnNumber "
-                                     << txnParticipant.getActiveTxnNumber() << " on session "
-                                     << session.getSessionId().getId()
-                                     << " because it has been running for longer than "
-                                        "'transactionLifetimeLimitSeconds'";
+                               LOGV2(20654, "Aborting transaction with txnNumber {txnParticipant_getActiveTxnNumber} on session {session_getSessionId_getId} because it has been running for longer than "
+                                        "'transactionLifetimeLimitSeconds'", "txnParticipant_getActiveTxnNumber"_attr = txnParticipant.getActiveTxnNumber(), "session_getSessionId_getId"_attr = session.getSessionId().getId());
                                if (txnParticipant.transactionIsInProgress()) {
                                    txnParticipant.abortTransaction(opCtx);
                                }
@@ -205,9 +203,7 @@ void yieldLocksForPreparedTransactions(OperationContext* opCtx) {
                            // any new
                            // writes.
                            if (txnParticipant.transactionIsPrepared()) {
-                               LOG(3) << "Yielding locks of prepared transaction. SessionId: "
-                                      << session.getSessionId().getId()
-                                      << " TxnNumber: " << txnParticipant.getActiveTxnNumber();
+                               LOGV2_DEBUG(20655, 3, "Yielding locks of prepared transaction. SessionId: {session_getSessionId_getId} TxnNumber: {txnParticipant_getActiveTxnNumber}", "session_getSessionId_getId"_attr = session.getSessionId().getId(), "txnParticipant_getActiveTxnNumber"_attr = txnParticipant.getActiveTxnNumber());
                                txnParticipant.refreshLocksForPreparedTransaction(killerOpCtx, true);
                            }
                        },

@@ -43,6 +43,7 @@
 #include "mongo/unittest/integration_test.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 
 namespace mongo {
 namespace executor {
@@ -117,9 +118,9 @@ RemoteCommandResponse NetworkInterfaceIntegrationFixture::runCommandSync(
     auto deferred = runCommand(makeCallbackHandle(), request);
     auto& res = deferred.get();
     if (res.isOK()) {
-        log() << "got command result: " << res.toString();
+        LOGV2(22291, "got command result: {res_toString}", "res_toString"_attr = res.toString());
     } else {
-        log() << "command failed: " << res.status;
+        LOGV2(22292, "command failed: {res_status}", "res_status"_attr = res.status);
     }
     return res;
 }

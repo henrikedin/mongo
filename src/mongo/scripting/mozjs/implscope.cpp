@@ -51,6 +51,7 @@
 #include "mongo/scripting/mozjs/valuewriter.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/scopeguard.h"
 
 #if !defined(__has_feature)
@@ -223,8 +224,7 @@ void MozJSImplScope::_gcCallback(JSContext* rt, JSGCStatus status, void* data) {
         return;
     }
 
-    log() << "MozJS GC " << (status == JSGC_BEGIN ? "prologue" : "epilogue") << " heap stats - "
-          << " total: " << mongo::sm::get_total_bytes() << " limit: " << mongo::sm::get_max_bytes();
+    LOGV2(22474, "MozJS GC {status_JSGC_BEGIN_prologue_epilogue} heap stats -  total: {mongo_sm_get_total_bytes} limit: {mongo_sm_get_max_bytes}", "status_JSGC_BEGIN_prologue_epilogue"_attr = (status == JSGC_BEGIN ? "prologue" : "epilogue"), "mongo_sm_get_total_bytes"_attr = mongo::sm::get_total_bytes(), "mongo_sm_get_max_bytes"_attr = mongo::sm::get_max_bytes());
 }
 
 #if __has_feature(address_sanitizer)
@@ -270,7 +270,7 @@ MozJSImplScope::MozRuntime::MozRuntime(const MozJSScriptEngine* engine) {
 
     const auto jsHeapLimit = engine->getJSHeapLimitMB();
     if (jsHeapLimit != 0 && jsHeapLimit < 10) {
-        warning() << "JavaScript may not be able to initialize with a heap limit less than 10MB.";
+        LOGV2_WARNING(22475, "JavaScript may not be able to initialize with a heap limit less than 10MB.");
     }
     size_t mallocMemoryLimit = 1024ul * 1024 * jsHeapLimit;
     mongo::sm::reset(mallocMemoryLimit);
@@ -694,7 +694,7 @@ int MozJSImplScope::invoke(ScriptingFunction func,
             // must validate the handle because TerminateExecution may have
             // been thrown after the above checks
             if (out.isObject() && _nativeFunctionProto.instanceOf(out)) {
-                warning() << "storing native function as return value";
+                LOGV2_WARNING(22476, "storing native function as return value");
                 _lastRetIsNativeCode = true;
             } else {
                 _lastRetIsNativeCode = false;
@@ -912,7 +912,7 @@ bool MozJSImplScope::_checkErrorState(bool success, bool reportError, bool asser
     }
 
     if (reportError)
-        error() << redact(_error);
+        LOGV2_ERROR(22477, "{redact_error}", "redact_error"_attr = redact(_error));
 
     // Clear the status state
     auto status = std::move(_status);

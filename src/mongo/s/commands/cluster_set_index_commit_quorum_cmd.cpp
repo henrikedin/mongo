@@ -39,6 +39,7 @@
 #include "mongo/db/commands/set_index_commit_quorum_gen.h"
 #include "mongo/s/cluster_commands_helpers.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 
 namespace mongo {
 namespace {
@@ -85,8 +86,7 @@ public:
 
         void typedRun(OperationContext* opCtx) {
             BSONObj cmdObj = request().toBSON(BSONObj());
-            LOG(1) << "setIndexCommitQuorum: " << request().getNamespace()
-                   << " cmd:" << redact(cmdObj);
+            LOGV2_DEBUG(22444, 1, "setIndexCommitQuorum: {request_getNamespace} cmd:{redact_cmdObj}", "request_getNamespace"_attr = request().getNamespace(), "redact_cmdObj"_attr = redact(cmdObj));
 
             scatterGatherOnlyVersionIfUnsharded(
                 opCtx,

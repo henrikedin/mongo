@@ -48,6 +48,7 @@
 #include "mongo/platform/decimal128.h"
 #include "mongo/unittest/unittest.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 
 
 namespace {
@@ -544,14 +545,12 @@ void assertEquals(const std::string& json,
                   const char* msg) {
     const bool bad = expected.woCompare(actual);
     if (bad) {
-        ::mongo::log() << "want:" << expected.jsonString() << " size: " << expected.objsize()
-                       << std::endl;
-        ::mongo::log() << "got :" << actual.jsonString() << " size: " << actual.objsize()
-                       << std::endl;
-        ::mongo::log() << expected.hexDump() << std::endl;
-        ::mongo::log() << actual.hexDump() << std::endl;
-        ::mongo::log() << msg << std::endl;
-        ::mongo::log() << "orig json:" << json;
+        ::mongo::LOGV2(22219, "want:{expected_jsonString} size: {expected_objsize}", "expected_jsonString"_attr = expected.jsonString(), "expected_objsize"_attr = expected.objsize());
+        ::mongo::LOGV2(22220, "got :{actual_jsonString} size: {actual_objsize}", "actual_jsonString"_attr = actual.jsonString(), "actual_objsize"_attr = actual.objsize());
+        ::mongo::LOGV2(22221, "{expected_hexDump}", "expected_hexDump"_attr = expected.hexDump());
+        ::mongo::LOGV2(22222, "{actual_hexDump}", "actual_hexDump"_attr = actual.hexDump());
+        ::mongo::LOGV2(22223, "{msg}", "msg"_attr = msg);
+        ::mongo::LOGV2(22224, "orig json:{json}", "json"_attr = json);
     }
     ASSERT(!bad);
 }

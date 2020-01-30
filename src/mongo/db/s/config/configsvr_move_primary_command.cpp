@@ -51,6 +51,7 @@
 #include "mongo/s/grid.h"
 #include "mongo/s/request_types/move_primary_gen.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/scopeguard.h"
 
 namespace mongo {
@@ -158,8 +159,7 @@ public:
         const auto toShard = [&]() {
             auto toShardStatus = shardRegistry->getShard(opCtx, to);
             if (!toShardStatus.isOK()) {
-                log() << "Could not move database '" << dbname << "' to shard '" << to
-                      << causedBy(toShardStatus.getStatus());
+                LOGV2(21632, "Could not move database '{dbname}' to shard '{to}{causedBy_toShardStatus_getStatus}", "dbname"_attr = dbname, "to"_attr = to, "causedBy_toShardStatus_getStatus"_attr = causedBy(toShardStatus.getStatus()));
                 uassertStatusOKWithContext(toShardStatus.getStatus(),
                                            str::stream() << "Could not move database '" << dbname
                                                          << "' to shard '" << to << "'");

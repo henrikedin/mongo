@@ -35,6 +35,7 @@
 #include "mongo/unittest/unittest.h"
 #include "mongo/util/concurrency/with_lock.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 
 #include <iostream>
 
@@ -63,7 +64,7 @@ private:
         return _blerp(lk, i);
     }
     int _blerp(WithLock, int i) {
-        log() << i << " bleep" << (i == 1 ? "\n" : "s\n");
+        LOGV2(22805, "{i} bleep{i_1_n_s_n}", "i"_attr = i, "i_1_n_s_n"_attr = (i == 1 ? "\n" : "s\n"));
         return i;
     }
     Mutex _m = MONGO_MAKE_LATCH("Beerp::_m");

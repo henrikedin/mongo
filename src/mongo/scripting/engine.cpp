@@ -44,6 +44,7 @@
 #include "mongo/util/fail_point.h"
 #include "mongo/util/file.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/text.h"
 
 namespace mongo {
@@ -137,7 +138,7 @@ bool Scope::execFile(const string& filename, bool printResult, bool reportError,
     boost::filesystem::path p(filename);
 #endif
     if (!exists(p)) {
-        error() << "file [" << filename << "] doesn't exist";
+        LOGV2_ERROR(22466, "file [{filename}] doesn't exist", "filename"_attr = filename);
         return false;
     }
 
@@ -156,7 +157,7 @@ bool Scope::execFile(const string& filename, bool printResult, bool reportError,
         }
 
         if (empty) {
-            error() << "directory [" << filename << "] doesn't have any *.js files";
+            LOGV2_ERROR(22467, "directory [{filename}] doesn't have any *.js files", "filename"_attr = filename);
             return false;
         }
 
@@ -171,7 +172,7 @@ bool Scope::execFile(const string& filename, bool printResult, bool reportError,
 
     fileofs fo = f.len();
     if (fo > kMaxJsFileLength) {
-        warning() << "attempted to execute javascript file larger than 2GB";
+        LOGV2_WARNING(22465, "attempted to execute javascript file larger than 2GB");
         return false;
     }
     unsigned len = static_cast<unsigned>(fo);
@@ -258,8 +259,7 @@ void Scope::loadStored(OperationContext* opCtx, bool ignoreNotConnected) {
                 throw;
             }
 
-            error() << "unable to load stored JavaScript function " << n.valuestr()
-                    << "(): " << redact(setElemEx);
+            LOGV2_ERROR(22468, "unable to load stored JavaScript function {n_valuestr}(): {redact_setElemEx}", "n_valuestr"_attr = n.valuestr(), "redact_setElemEx"_attr = redact(setElemEx));
         }
     }
 
@@ -339,7 +339,7 @@ public:
 
         if (scope->hasOutOfMemoryException()) {
             // make some room
-            log() << "Clearing all idle JS contexts due to out of memory";
+            LOGV2(22464, "Clearing all idle JS contexts due to out of memory");
             _pools.clear();
             return;
         }

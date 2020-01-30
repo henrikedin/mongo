@@ -44,6 +44,7 @@
 #include "mongo/util/concurrency/thread_name.h"
 #include "mongo/util/destructor_guard.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/str.h"
 
 namespace mongo {
@@ -65,7 +66,7 @@ TaskRunner::NextAction runSingleTask(const TaskRunner::Task& task,
     try {
         return task(opCtx, status);
     } catch (...) {
-        log() << "Unhandled exception in task runner: " << redact(exceptionToStatus());
+        LOGV2(21493, "Unhandled exception in task runner: {redact_exceptionToStatus}", "redact_exceptionToStatus"_attr = redact(exceptionToStatus()));
     }
     return TaskRunner::NextAction::kCancel;
 }

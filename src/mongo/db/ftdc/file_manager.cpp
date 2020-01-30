@@ -45,6 +45,7 @@
 #include "mongo/db/jsobj.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/str.h"
 #include "mongo/util/time_support.h"
 
@@ -227,8 +228,7 @@ Status FTDCFileManager::trimDirectory(std::vector<boost::filesystem::path>& file
         size += fileSize;
 
         if (size >= maxSize) {
-            LOG(1) << "Cleaning file over full-time diagnostic data capture quota, file: "
-                   << (*it).generic_string() << " with size " << fileSize;
+            LOGV2_DEBUG(20585, 1, "Cleaning file over full-time diagnostic data capture quota, file: {it_generic_string} with size {fileSize}", "it_generic_string"_attr = (*it).generic_string(), "fileSize"_attr = fileSize);
 
             boost::filesystem::remove(*it, ec);
             if (ec) {
@@ -257,8 +257,7 @@ FTDCFileManager::recoverInterimFile() {
     boost::system::error_code ec;
     size_t size = boost::filesystem::file_size(interimFile, ec);
     if (ec) {
-        log() << "Recover interim file failed as the file size could not be checked: "
-              << ec.message();
+        LOGV2(20586, "Recover interim file failed as the file size could not be checked: {ec_message}", "ec_message"_attr = ec.message());
         return docs;
     }
 
@@ -269,11 +268,10 @@ FTDCFileManager::recoverInterimFile() {
     FTDCFileReader read;
     auto s = read.open(interimFile);
     if (!s.isOK()) {
-        log() << "Unclean full-time diagnostic data capture shutdown detected, found interim file, "
+        LOGV2(20587, "Unclean full-time diagnostic data capture shutdown detected, found interim file, "
                  "but failed "
                  "to open it, some "
-                 "metrics may have been lost. "
-              << s;
+                 "metrics may have been lost. {s}", "s"_attr = s);
 
         // Note: We ignore any actual errors as reading from the interim files is a best-effort
         return docs;
@@ -288,10 +286,9 @@ FTDCFileManager::recoverInterimFile() {
 
     // Warn if the interim file was corrupt or we had an unclean shutdown
     if (!m.isOK() || !docs.empty()) {
-        log() << "Unclean full-time diagnostic data capture shutdown detected, found interim file, "
+        LOGV2(20588, "Unclean full-time diagnostic data capture shutdown detected, found interim file, "
                  "some "
-                 "metrics may have been lost. "
-              << m.getStatus();
+                 "metrics may have been lost. {m_getStatus}", "m_getStatus"_attr = m.getStatus());
     }
 
     // Note: We ignore any actual errors as reading from the interim files is a best-effort

@@ -66,6 +66,7 @@
 #include "mongo/s/transaction_router.h"
 #include "mongo/util/fail_point.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/scopeguard.h"
 
 namespace mongo {
@@ -538,8 +539,7 @@ CursorId ClusterFind::runQuery(OperationContext* opCtx,
                 throw;
             }
 
-            LOG(1) << "Received error status for query " << redact(query.toStringShort())
-                   << " on attempt " << retries << " of " << kMaxRetries << ": " << redact(ex);
+            LOGV2_DEBUG(22523, 1, "Received error status for query {redact_query_toStringShort} on attempt {retries} of {kMaxRetries}: {redact_ex}", "redact_query_toStringShort"_attr = redact(query.toStringShort()), "retries"_attr = retries, "kMaxRetries"_attr = kMaxRetries, "redact_ex"_attr = redact(ex));
 
             Grid::get(opCtx)->catalogCache()->onStaleDatabaseVersion(ex->getDb(),
                                                                      ex->getVersionReceived());
@@ -572,8 +572,7 @@ CursorId ClusterFind::runQuery(OperationContext* opCtx,
                 throw;
             }
 
-            LOG(1) << "Received error status for query " << redact(query.toStringShort())
-                   << " on attempt " << retries << " of " << kMaxRetries << ": " << redact(ex);
+            LOGV2_DEBUG(22524, 1, "Received error status for query {redact_query_toStringShort} on attempt {retries} of {kMaxRetries}: {redact_ex}", "redact_query_toStringShort"_attr = redact(query.toStringShort()), "retries"_attr = retries, "kMaxRetries"_attr = kMaxRetries, "redact_ex"_attr = redact(ex));
 
             if (auto staleInfo = ex.extraInfo<StaleConfigInfo>()) {
                 catalogCache->invalidateShardOrEntireCollectionEntryForShardedCollection(

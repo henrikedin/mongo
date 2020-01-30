@@ -48,6 +48,7 @@
 #include "mongo/db/storage/storage_options.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 
 using namespace std::chrono_literals;
 
@@ -106,15 +107,14 @@ void generateSystemIndexForExistingCollection(OperationContext* opCtx,
             opCtx, spec.toBSON(), serverGlobalParams.featureCompatibility);
         BSONObj indexSpec = fassert(40452, indexSpecStatus);
 
-        log() << "No authorization index detected on " << ns
-              << " collection. Attempting to recover by creating an index with spec: " << indexSpec;
+        LOGV2(22213, "No authorization index detected on {ns} collection. Attempting to recover by creating an index with spec: {indexSpec}", "ns"_attr = ns, "indexSpec"_attr = indexSpec);
 
         auto indexConstraints = IndexBuildsManager::IndexConstraints::kEnforce;
         auto fromMigrate = false;
         IndexBuildsCoordinator::get(opCtx)->createIndexes(
             opCtx, collectionUUID, {indexSpec}, indexConstraints, fromMigrate);
     } catch (const DBException& e) {
-        severe() << "Failed to regenerate index for " << ns << ". Exception: " << e.what();
+        LOGV2_FATAL(22215, "Failed to regenerate index for {ns}. Exception: {e_what}", "ns"_attr = ns, "e_what"_attr = e.what());
         throw;
     }
 }
@@ -124,7 +124,7 @@ void generateSystemIndexForExistingCollection(OperationContext* opCtx,
 Status verifySystemIndexes(OperationContext* opCtx) {
     // Do not try and generate any system indexes in read only mode.
     if (storageGlobalParams.readOnly) {
-        warning() << "Running in queryable backup mode. Unable to create authorization indexes";
+        LOGV2_WARNING(22214, "Running in queryable backup mode. Unable to create authorization indexes");
         return Status::OK();
     }
 

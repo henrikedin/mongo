@@ -47,6 +47,7 @@
 #include "mongo/db/views/view_catalog.h"
 #include "mongo/util/fail_point.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 
 namespace mongo {
 
@@ -74,8 +75,8 @@ Status _dropView(OperationContext* opCtx,
     Lock::CollectionLock systemViewsLock(opCtx, db->getSystemViewsName(), MODE_X);
 
     if (MONGO_unlikely(hangDuringDropCollection.shouldFail())) {
-        log() << "hangDuringDropCollection fail point enabled. Blocking until fail point is "
-                 "disabled.";
+        LOGV2(20298, "hangDuringDropCollection fail point enabled. Blocking until fail point is "
+                 "disabled.");
         hangDuringDropCollection.pauseWhileSet();
     }
 
@@ -116,8 +117,8 @@ Status _dropCollection(OperationContext* opCtx,
     }
 
     if (MONGO_unlikely(hangDuringDropCollection.shouldFail())) {
-        log() << "hangDuringDropCollection fail point enabled. Blocking until fail point is "
-                 "disabled.";
+        LOGV2(20299, "hangDuringDropCollection fail point enabled. Blocking until fail point is "
+                 "disabled.");
         hangDuringDropCollection.pauseWhileSet();
     }
 
@@ -160,11 +161,11 @@ Status dropCollection(OperationContext* opCtx,
                       const repl::OpTime& dropOpTime,
                       DropCollectionSystemCollectionMode systemCollectionMode) {
     if (!serverGlobalParams.quiet.load()) {
-        log() << "CMD: drop " << collectionName;
+        LOGV2(20300, "CMD: drop {collectionName}", "collectionName"_attr = collectionName);
     }
 
     if (MONGO_unlikely(hangDropCollectionBeforeLockAcquisition.shouldFail())) {
-        log() << "Hanging drop collection before lock acquisition while fail point is set";
+        LOGV2(20301, "Hanging drop collection before lock acquisition while fail point is set");
         hangDropCollectionBeforeLockAcquisition.pauseWhileSet();
     }
     return writeConflictRetry(opCtx, "drop", collectionName.ns(), [&] {

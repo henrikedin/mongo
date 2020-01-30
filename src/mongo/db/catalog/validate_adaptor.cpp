@@ -48,6 +48,7 @@
 #include "mongo/db/storage/record_store.h"
 #include "mongo/rpc/object_check.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 
 namespace mongo {
 
@@ -277,7 +278,7 @@ void ValidateAdaptor::traverseRecordStore(OperationContext* opCtx,
                 ss << "Reason: Validated size of " << validatedSize
                    << " bytes does not equal the record size of " << dataSize << " bytes";
             }
-            log() << std::string(ss);
+            LOGV2(20372, "{std_string_ss}", "std_string_ss"_attr = std::string(ss));
 
             // Only log once
             if (results->valid) {

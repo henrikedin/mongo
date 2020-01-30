@@ -53,6 +53,7 @@
 #include "mongo/db/server_options.h"
 #include "mongo/util/base64.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/sequence_util.h"
 #include "mongo/util/str.h"
 
@@ -208,9 +209,7 @@ Status doSaslStep(OperationContext* opCtx,
         }
 
         if (!serverGlobalParams.quiet.load()) {
-            log() << "Successfully authenticated as principal " << mechanism.getPrincipalName()
-                  << " on " << mechanism.getAuthenticationDatabase() << " from client "
-                  << opCtx->getClient()->session()->remote();
+            LOGV2(20220, "Successfully authenticated as principal {mechanism_getPrincipalName} on {mechanism_getAuthenticationDatabase} from client {opCtx_getClient_session_remote}", "mechanism_getPrincipalName"_attr = mechanism.getPrincipalName(), "mechanism_getAuthenticationDatabase"_attr = mechanism.getAuthenticationDatabase(), "opCtx_getClient_session_remote"_attr = opCtx->getClient()->session()->remote());
         }
     }
     return Status::OK();

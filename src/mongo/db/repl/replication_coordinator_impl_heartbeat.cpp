@@ -60,6 +60,7 @@
 #include "mongo/util/assert_util.h"
 #include "mongo/util/fail_point.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/str.h"
 #include "mongo/util/time_support.h"
 
@@ -271,11 +272,11 @@ stdx::unique_lock<Latch> ReplicationCoordinatorImpl::_handleHeartbeatResponseAct
         case HeartbeatResponseAction::StepDownSelf:
             invariant(action.getPrimaryConfigIndex() == _selfIndex);
             if (_topCoord->prepareForUnconditionalStepDown()) {
-                log() << "Stepping down from primary in response to heartbeat";
+                LOGV2(21213, "Stepping down from primary in response to heartbeat");
                 _stepDownStart();
             } else {
-                LOG(2) << "Heartbeat would have triggered a stepdown, but we're already in the "
-                          "process of stepping down";
+                LOGV2_DEBUG(21214, 2, "Heartbeat would have triggered a stepdown, but we're already in the "
+                          "process of stepping down");
             }
             break;
         case HeartbeatResponseAction::PriorityTakeover: {
@@ -322,11 +323,9 @@ void remoteStepdownCallback(const executor::TaskExecutor::RemoteCommandCallbackA
     }
 
     if (status.isOK()) {
-        LOG(1) << "stepdown of primary(" << cbData.request.target << ") succeeded with response -- "
-               << cbData.response.data;
+        LOGV2_DEBUG(21215, 1, "stepdown of primary({cbData_request_target}) succeeded with response -- {cbData_response_data}", "cbData_request_target"_attr = cbData.request.target, "cbData_response_data"_attr = cbData.response.data);
     } else {
-        warning() << "stepdown of primary(" << cbData.request.target << ") failed due to "
-                  << cbData.response.status;
+        LOGV2_WARNING(21223, "stepdown of primary({cbData_request_target}) failed due to {cbData_response_status}", "cbData_request_target"_attr = cbData.request.target, "cbData_response_status"_attr = cbData.response.status);
     }
 }
 }  // namespace
@@ -341,7 +340,7 @@ void ReplicationCoordinatorImpl::_requestRemotePrimaryStepdown(const HostAndPort
                                            20LL)),
         nullptr);
 
-    log() << "Requesting " << target << " step down from primary";
+    LOGV2(21216, "Requesting {target} step down from primary", "target"_attr = target);
     auto cbh = _replExecutor->scheduleRemoteCommand(request, remoteStepdownCallback);
     if (cbh.getStatus() != ErrorCodes::ShutdownInProgress) {
         fassert(18808, cbh.getStatus());
@@ -372,8 +371,8 @@ void ReplicationCoordinatorImpl::_stepDownFinish(
 
     if (MONGO_unlikely(blockHeartbeatStepdown.shouldFail())) {
         // This log output is used in js tests so please leave it.
-        log() << "stepDown - blockHeartbeatStepdown fail point enabled. "
-                 "Blocking until fail point is disabled.";
+        LOGV2(21217, "stepDown - blockHeartbeatStepdown fail point enabled. "
+                 "Blocking until fail point is disabled.");
 
         auto inShutdown = [&] {
             stdx::lock_guard<Latch> lk(_mutex);
@@ -487,8 +486,7 @@ void ReplicationCoordinatorImpl::_heartbeatReconfigStore(
     const executor::TaskExecutor::CallbackArgs& cbd, const ReplSetConfig& newConfig) {
 
     if (cbd.status.code() == ErrorCodes::CallbackCanceled) {
-        log() << "The callback to persist the replica set configuration was canceled - "
-              << "the configuration was not persisted but was used: " << newConfig.toBSON();
+        LOGV2(21218, "The callback to persist the replica set configuration was canceled - the configuration was not persisted but was used: {newConfig_toBSON}", "newConfig_toBSON"_attr = newConfig.toBSON());
         return;
     }
 
@@ -511,9 +509,8 @@ void ReplicationCoordinatorImpl::_heartbeatReconfigStore(
 
     bool shouldStartDataReplication = false;
     if (!myIndex.getStatus().isOK() && myIndex.getStatus() != ErrorCodes::NodeNotFound) {
-        warning() << "Not persisting new configuration in heartbeat response to disk because "
-                     "it is invalid: "
-                  << myIndex.getStatus();
+        LOGV2_WARNING(21224, "Not persisting new configuration in heartbeat response to disk because "
+                     "it is invalid: {myIndex_getStatus}", "myIndex_getStatus"_attr = myIndex.getStatus());
     } else {
         LOG_FOR_HEARTBEATS(2) << "Config with version " << newConfig.getConfigVersion()
                               << " validated for reconfig; persisting to disk.";
@@ -625,7 +622,7 @@ void ReplicationCoordinatorImpl::_heartbeatReconfigFinish(
         lk.lock();
         if (_topCoord->isSteppingDownUnconditionally()) {
             invariant(opCtx->lockState()->isRSTLExclusive());
-            log() << "stepping down from primary, because we received a new config via heartbeat";
+            LOGV2(21219, "stepping down from primary, because we received a new config via heartbeat");
             // We need to release the mutex before yielding locks for prepared transactions, which
             // might check out sessions, to avoid deadlocks with checked-out sessions accessing
             // this mutex.
@@ -776,7 +773,7 @@ void ReplicationCoordinatorImpl::_scheduleNextLivenessUpdate_inlock() {
     }
 
     auto nextTimeout = earliestDate + _rsConfig.getElectionTimeoutPeriod();
-    LOG(3) << "scheduling next check at " << nextTimeout;
+    LOGV2_DEBUG(21220, 3, "scheduling next check at {nextTimeout}", "nextTimeout"_attr = nextTimeout);
 
     // It is possible we will schedule the next timeout in the past.
     // ThreadPoolTaskExecutor::_scheduleWorkAt() schedules its work immediately if it's given a
@@ -808,7 +805,7 @@ void ReplicationCoordinatorImpl::_cancelAndRescheduleLivenessUpdate_inlock(int u
 
 void ReplicationCoordinatorImpl::_cancelPriorityTakeover_inlock() {
     if (_priorityTakeoverCbh.isValid()) {
-        log() << "Canceling priority takeover callback";
+        LOGV2(21221, "Canceling priority takeover callback");
         _replExecutor->cancel(_priorityTakeoverCbh);
         _priorityTakeoverCbh = CallbackHandle();
         _priorityTakeoverWhen = Date_t();
@@ -817,7 +814,7 @@ void ReplicationCoordinatorImpl::_cancelPriorityTakeover_inlock() {
 
 void ReplicationCoordinatorImpl::_cancelCatchupTakeover_inlock() {
     if (_catchupTakeoverCbh.isValid()) {
-        log() << "Canceling catchup takeover callback";
+        LOGV2(21222, "Canceling catchup takeover callback");
         _replExecutor->cancel(_catchupTakeoverCbh);
         _catchupTakeoverCbh = CallbackHandle();
         _catchupTakeoverWhen = Date_t();

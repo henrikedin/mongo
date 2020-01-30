@@ -45,6 +45,7 @@
 #include "mongo/db/transaction_participant.h"
 #include "mongo/db/transaction_validation.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 
 namespace mongo {
 namespace {
@@ -95,8 +96,7 @@ public:
                 "commitTransaction must be run within a transaction",
                 txnParticipant);
 
-        LOG(3) << "Received commitTransaction for transaction with txnNumber "
-               << opCtx->getTxnNumber() << " on session " << opCtx->getLogicalSessionId()->toBSON();
+        LOGV2_DEBUG(20475, 3, "Received commitTransaction for transaction with txnNumber {opCtx_getTxnNumber} on session {opCtx_getLogicalSessionId_toBSON}", "opCtx_getTxnNumber"_attr = opCtx->getTxnNumber(), "opCtx_getLogicalSessionId_toBSON"_attr = opCtx->getLogicalSessionId()->toBSON());
 
         // commitTransaction is retryable.
         if (txnParticipant.transactionIsCommitted()) {
@@ -199,8 +199,7 @@ public:
                 "abortTransaction must be run within a transaction",
                 txnParticipant);
 
-        LOG(3) << "Received abortTransaction for transaction with txnNumber "
-               << opCtx->getTxnNumber() << " on session " << opCtx->getLogicalSessionId()->toBSON();
+        LOGV2_DEBUG(20476, 3, "Received abortTransaction for transaction with txnNumber {opCtx_getTxnNumber} on session {opCtx_getLogicalSessionId_toBSON}", "opCtx_getTxnNumber"_attr = opCtx->getTxnNumber(), "opCtx_getLogicalSessionId_toBSON"_attr = opCtx->getLogicalSessionId()->toBSON());
 
         uassert(ErrorCodes::NoSuchTransaction,
                 "Transaction isn't in progress",

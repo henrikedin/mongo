@@ -42,6 +42,7 @@
 #include "mongo/util/decimal_counter.h"
 #include "mongo/util/hex.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/str.h"
 #include "mongo/util/time_support.h"
 
@@ -54,8 +55,7 @@ using namespace fmt::literals;
 
 #if 0
 #define MONGO_JSON_DEBUG(message)                                                          \
-    log() << "JSON DEBUG @ " << __FILE__ << ":" << __LINE__ << " " << __FUNCTION__ << ": " \
-          << message << endl;
+    LOGV2(20106, "JSON DEBUG @ {FILE_}:{LINE_} {FUNCTION_}{}{message}", "FILE_"_attr = __FILE__, "LINE_"_attr = __LINE__, "FUNCTION_"_attr = __FUNCTION__, ""_attr = ": " \, "message"_attr = message);
 #else
 #define MONGO_JSON_DEBUG(message)
 #endif

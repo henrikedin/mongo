@@ -47,6 +47,7 @@
 #include "mongo/s/grid.h"
 #include "mongo/util/exit.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/scopeguard.h"
 
 namespace mongo {
@@ -74,7 +75,7 @@ Status MovePrimarySourceManager::clone(OperationContext* opCtx) {
     invariant(_state == kCreated);
     auto scopedGuard = makeGuard([&] { cleanupOnError(opCtx); });
 
-    log() << "Moving " << _dbname << " primary from: " << _fromShard << " to: " << _toShard;
+    LOGV2(21762, "Moving {dbname} primary from: {fromShard} to: {toShard}", "dbname"_attr = _dbname, "fromShard"_attr = _fromShard, "toShard"_attr = _toShard);
 
     // Record start in changelog
     uassertStatusOK(ShardingLogging::get(opCtx)->logChangeChecked(
@@ -195,7 +196,7 @@ Status MovePrimarySourceManager::enterCriticalSection(OperationContext* opCtx) {
                           << signalStatus.toString()};
     }
 
-    log() << "movePrimary successfully entered critical section";
+    LOGV2(21763, "movePrimary successfully entered critical section");
 
     scopedGuard.dismiss();
     return Status::OK();
@@ -244,9 +245,8 @@ Status MovePrimarySourceManager::commitOnConfig(OperationContext* opCtx) {
         // Need to get the latest optime in case the refresh request goes to a secondary --
         // otherwise the read won't wait for the write that _configsvrCommitMovePrimary may have
         // done
-        log() << "Error occurred while committing the movePrimary. Performing a majority write "
-                 "against the config server to obtain its latest optime"
-              << causedBy(redact(commitStatus));
+        LOGV2(21764, "Error occurred while committing the movePrimary. Performing a majority write "
+                 "against the config server to obtain its latest optime{causedBy_redact_commitStatus}", "causedBy_redact_commitStatus"_attr = causedBy(redact(commitStatus)));
 
         Status validateStatus = ShardingLogging::get(opCtx)->logChangeChecked(
             opCtx,
@@ -337,7 +337,7 @@ Status MovePrimarySourceManager::cleanStaleData(OperationContext* opCtx) {
         client.runCommand(_dbname.toString(), BSON("drop" << coll.coll()), dropCollResult);
         Status dropStatus = getStatusFromCommandResult(dropCollResult);
         if (!dropStatus.isOK()) {
-            log() << "failed to drop cloned collection " << coll << causedBy(redact(dropStatus));
+            LOGV2(21765, "failed to drop cloned collection {coll}{causedBy_redact_dropStatus}", "coll"_attr = coll, "causedBy_redact_dropStatus"_attr = causedBy(redact(dropStatus)));
         }
     }
 
@@ -363,8 +363,7 @@ void MovePrimarySourceManager::cleanupOnError(OperationContext* opCtx) {
     } catch (const ExceptionForCat<ErrorCategory::NotMasterError>& ex) {
         BSONObjBuilder requestArgsBSON;
         _requestArgs.serialize(&requestArgsBSON);
-        warning() << "Failed to clean up movePrimary: " << redact(requestArgsBSON.obj())
-                  << "due to: " << redact(ex);
+        LOGV2_WARNING(21766, "Failed to clean up movePrimary: {redact_requestArgsBSON_obj}due to: {redact_ex}", "redact_requestArgsBSON_obj"_attr = redact(requestArgsBSON.obj()), "redact_ex"_attr = redact(ex));
     }
 }
 

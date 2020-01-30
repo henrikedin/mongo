@@ -58,6 +58,7 @@
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/util/fail_point.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 
 namespace mongo {
 namespace repl {
@@ -266,7 +267,7 @@ Status _applyOps(OperationContext* opCtx,
 
         ab.append(status.isOK());
         if (!status.isOK()) {
-            log() << "applyOps error applying: " << status;
+            LOGV2(20841, "applyOps error applying: {status}", "status"_attr = status);
             errors++;
         }
 

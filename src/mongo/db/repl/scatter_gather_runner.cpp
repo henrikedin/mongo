@@ -40,6 +40,7 @@
 #include "mongo/db/repl/scatter_gather_algorithm.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/scopeguard.h"
 
 namespace mongo {
@@ -105,8 +106,7 @@ StatusWith<EventHandle> ScatterGatherRunner::RunnerImpl::start(
 
     std::vector<RemoteCommandRequest> requests = _algorithm->getRequests();
     for (size_t i = 0; i < requests.size(); ++i) {
-        log() << "Scheduling remote command request for " << _logMessage << ": "
-              << requests[i].toString();
+        LOGV2(21468, "Scheduling remote command request for {logMessage}: {requests_i_toString}", "logMessage"_attr = _logMessage, "requests_i_toString"_attr = requests[i].toString());
         const StatusWith<CallbackHandle> cbh =
             _executor->scheduleRemoteCommand(requests[i], processResponseCB);
         if (cbh.getStatus() == ErrorCodes::ShutdownInProgress) {

@@ -50,6 +50,7 @@
 #include "mongo/util/allocator.h"
 #include "mongo/util/embedded_builder.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/str.h"
 #include "mongo/util/timer.h"
 
@@ -163,7 +164,7 @@ FieldCompareResult compareDottedFieldNames(const string& l,
             return LEFT_SUBFIELD;
     }
 
-    log() << "compareDottedFieldNames ERROR  l: " << l << " r: " << r << "  TOO MANY LOOPS" << endl;
+    LOGV2(22218, "compareDottedFieldNames ERROR  l: {l} r: {r}  TOO MANY LOOPS", "l"_attr = l, "r"_attr = r);
     verify(0);
     return SAME;  // will never get here
 }

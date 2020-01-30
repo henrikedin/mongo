@@ -39,6 +39,7 @@
 #include "mongo/db/repl/vote_requester.h"
 #include "mongo/platform/mutex.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/scopeguard.h"
 
 namespace mongo {
@@ -55,7 +56,7 @@ public:
         if (_dismissed) {
             return;
         }
-        log() << "Lost " << (_isDryRun ? "dry run " : "") << "election due to internal error";
+        LOGV2(21174, "Lost {isDryRun_dry_run}election due to internal error", "isDryRun_dry_run"_attr = (_isDryRun ? "dry run " : ""));
         _replCoord->_topCoord->processLoseElection();
         _replCoord->_voteRequester.reset(nullptr);
         if (_isDryRun && _replCoord->_electionDryRunFinishedEvent.isValid()) {
@@ -110,8 +111,7 @@ void ReplicationCoordinatorImpl::_startElectSelfV1_inlock(StartElectionReasonEnu
             _topCoord->processLoseElection();
             return;
         default:
-            severe() << "Entered replica set election code while in illegal config state "
-                     << int(_rsConfigState);
+            LOGV2_FATAL(21191, "Entered replica set election code while in illegal config state {int_rsConfigState}", "int_rsConfigState"_attr = int(_rsConfigState));
             fassertFailed(28641);
     }
 
@@ -134,8 +134,8 @@ void ReplicationCoordinatorImpl::_startElectSelfV1_inlock(StartElectionReasonEnu
     const auto lastOpTime = _getMyLastAppliedOpTime_inlock();
 
     if (lastOpTime == OpTime()) {
-        log() << "not trying to elect self, "
-                 "do not yet have a complete set of data from any point in time";
+        LOGV2(21175, "not trying to elect self, "
+                 "do not yet have a complete set of data from any point in time");
         return;
     }
 
@@ -144,13 +144,13 @@ void ReplicationCoordinatorImpl::_startElectSelfV1_inlock(StartElectionReasonEnu
 
     if (reason == StartElectionReasonEnum::kStepUpRequestSkipDryRun) {
         long long newTerm = term + 1;
-        log() << "skipping dry run and running for election in term " << newTerm;
+        LOGV2(21176, "skipping dry run and running for election in term {newTerm}", "newTerm"_attr = newTerm);
         _startRealElection_inlock(newTerm, reason);
         lossGuard.dismiss();
         return;
     }
 
-    log() << "conducting a dry run election to see if we could be elected. current term: " << term;
+    LOGV2(21177, "conducting a dry run election to see if we could be elected. current term: {term}", "term"_attr = term);
     _voteRequester.reset(new VoteRequester);
 
     // Only set primaryIndex if the primary's vote is required during the dry run.
@@ -186,29 +186,28 @@ void ReplicationCoordinatorImpl::_processDryRunResult(long long originalTerm,
     invariant(_voteRequester);
 
     if (_topCoord->getTerm() != originalTerm) {
-        log() << "not running for primary, we have been superseded already during dry run. "
-              << "original term: " << originalTerm << ", current term: " << _topCoord->getTerm();
+        LOGV2(21178, "not running for primary, we have been superseded already during dry run. original term: {originalTerm}, current term: {topCoord_getTerm}", "originalTerm"_attr = originalTerm, "topCoord_getTerm"_attr = _topCoord->getTerm());
         return;
     }
 
     const VoteRequester::Result endResult = _voteRequester->getResult();
 
     if (endResult == VoteRequester::Result::kInsufficientVotes) {
-        log() << "not running for primary, we received insufficient votes";
+        LOGV2(21179, "not running for primary, we received insufficient votes");
         return;
     } else if (endResult == VoteRequester::Result::kStaleTerm) {
-        log() << "not running for primary, we have been superseded already";
+        LOGV2(21180, "not running for primary, we have been superseded already");
         return;
     } else if (endResult == VoteRequester::Result::kPrimaryRespondedNo) {
-        log() << "not running for primary, the current primary responded no in the dry run";
+        LOGV2(21181, "not running for primary, the current primary responded no in the dry run");
         return;
     } else if (endResult != VoteRequester::Result::kSuccessfullyElected) {
-        log() << "not running for primary, we received an unexpected problem";
+        LOGV2(21182, "not running for primary, we received an unexpected problem");
         return;
     }
 
     long long newTerm = originalTerm + 1;
-    log() << "dry election run succeeded, running for election in term " << newTerm;
+    LOGV2(21183, "dry election run succeeded, running for election in term {newTerm}", "newTerm"_attr = newTerm);
 
     _startRealElection_inlock(newTerm, reason);
     lossGuard.dismiss();
@@ -291,14 +290,13 @@ void ReplicationCoordinatorImpl::_writeLastVoteForMyElection(
     }
 
     if (!status.isOK()) {
-        log() << "failed to store LastVote document when voting for myself: " << status;
+        LOGV2(21184, "failed to store LastVote document when voting for myself: {status}", "status"_attr = status);
         return;
     }
 
     if (_topCoord->getTerm() != lastVote.getTerm()) {
-        log() << "not running for primary, we have been superseded already while writing our last "
-                 "vote. election term: "
-              << lastVote.getTerm() << ", current term: " << _topCoord->getTerm();
+        LOGV2(21185, "not running for primary, we have been superseded already while writing our last "
+                 "vote. election term: {lastVote_getTerm}, current term: {topCoord_getTerm}", "lastVote_getTerm"_attr = lastVote.getTerm(), "topCoord_getTerm"_attr = _topCoord->getTerm());
         return;
     }
     _startVoteRequester_inlock(lastVote.getTerm(), reason);
@@ -336,8 +334,7 @@ void ReplicationCoordinatorImpl::_onVoteRequestComplete(long long newTerm,
     invariant(_voteRequester);
 
     if (_topCoord->getTerm() != newTerm) {
-        log() << "not becoming primary, we have been superseded already during election. "
-              << "election term: " << newTerm << ", current term: " << _topCoord->getTerm();
+        LOGV2(21186, "not becoming primary, we have been superseded already during election. election term: {newTerm}, current term: {topCoord_getTerm}", "newTerm"_attr = newTerm, "topCoord_getTerm"_attr = _topCoord->getTerm());
         return;
     }
 
@@ -346,13 +343,13 @@ void ReplicationCoordinatorImpl::_onVoteRequestComplete(long long newTerm,
 
     switch (endResult) {
         case VoteRequester::Result::kInsufficientVotes:
-            log() << "not becoming primary, we received insufficient votes";
+            LOGV2(21187, "not becoming primary, we received insufficient votes");
             return;
         case VoteRequester::Result::kStaleTerm:
-            log() << "not becoming primary, we have been superseded already";
+            LOGV2(21188, "not becoming primary, we have been superseded already");
             return;
         case VoteRequester::Result::kSuccessfullyElected:
-            log() << "election succeeded, assuming primary role in term " << _topCoord->getTerm();
+            LOGV2(21189, "election succeeded, assuming primary role in term {topCoord_getTerm}", "topCoord_getTerm"_attr = _topCoord->getTerm());
             ReplicationMetrics::get(getServiceContext())
                 .incrementNumElectionsSuccessfulForReason(reason);
             break;
@@ -372,9 +369,8 @@ void ReplicationCoordinatorImpl::_onVoteRequestComplete(long long newTerm,
 
     electionHangsBeforeUpdateMemberState.execute([&](const BSONObj& customWait) {
         auto waitForMillis = Milliseconds(customWait["waitForMillis"].numberInt());
-        log() << "election succeeded - electionHangsBeforeUpdateMemberState fail point "
-                 "enabled, sleeping "
-              << waitForMillis;
+        LOGV2(21190, "election succeeded - electionHangsBeforeUpdateMemberState fail point "
+                 "enabled, sleeping {waitForMillis}", "waitForMillis"_attr = waitForMillis);
         sleepFor(waitForMillis);
     });
 

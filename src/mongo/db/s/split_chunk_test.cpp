@@ -55,6 +55,7 @@
 #include "mongo/s/write_ops/batched_command_response.h"
 #include "mongo/unittest/unittest.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 
 namespace mongo {
 namespace {
@@ -169,8 +170,8 @@ void SplitChunkTest::expectLock() {
     dynamic_cast<DistLockManagerMock*>(distLock())
         ->expectLock(
             [this](StringData name, StringData whyMessage, Milliseconds) {
-                LOG(0) << name;
-                LOG(0) << whyMessage;
+                LOGV2(21821, "{name}", "name"_attr = name);
+                LOGV2(21822, "{whyMessage}", "whyMessage"_attr = whyMessage);
             },
             Status::OK());
 }

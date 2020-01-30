@@ -52,6 +52,7 @@
 #include "mongo/util/cmdline_utils/censor_cmdline.h"
 #include "mongo/util/fail_point.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/map_util.h"
 #include "mongo/util/net/sock.h"
 #include "mongo/util/net/socket_utils.h"
@@ -114,7 +115,7 @@ Status setParsedOpts(const moe::Environment& params) {
 }  // namespace
 
 void printCommandLineOpts() {
-    log() << "options: " << serverGlobalParams.parsedOpts << endl;
+    LOGV2(21672, "options: {serverGlobalParams_parsedOpts}", "serverGlobalParams_parsedOpts"_attr = serverGlobalParams.parsedOpts);
 }
 
 Status validateServerOptions(const moe::Environment& params) {

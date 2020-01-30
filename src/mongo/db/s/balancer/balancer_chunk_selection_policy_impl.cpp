@@ -46,6 +46,7 @@
 #include "mongo/s/catalog_cache.h"
 #include "mongo/s/grid.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/str.h"
 
 namespace mongo {
@@ -218,8 +219,7 @@ StatusWith<SplitInfoVector> BalancerChunkSelectionPolicyImpl::selectChunksToSpli
             // Namespace got dropped before we managed to get to it, so just skip it
             continue;
         } else if (!candidatesStatus.isOK()) {
-            warning() << "Unable to enforce tag range policy for collection " << nss.ns()
-                      << causedBy(candidatesStatus.getStatus());
+            LOGV2_WARNING(21561, "Unable to enforce tag range policy for collection {nss_ns}{causedBy_candidatesStatus_getStatus}", "nss_ns"_attr = nss.ns(), "causedBy_candidatesStatus_getStatus"_attr = causedBy(candidatesStatus.getStatus()));
             continue;
         }
 
@@ -292,8 +292,7 @@ StatusWith<MigrateInfoVector> BalancerChunkSelectionPolicyImpl::selectChunksToMo
             // Namespace got dropped before we managed to get to it, so just skip it
             continue;
         } else if (!candidatesStatus.isOK()) {
-            warning() << "Unable to balance collection " << nss.ns()
-                      << causedBy(candidatesStatus.getStatus());
+            LOGV2_WARNING(21562, "Unable to balance collection {nss_ns}{causedBy_candidatesStatus_getStatus}", "nss_ns"_attr = nss.ns(), "causedBy_candidatesStatus_getStatus"_attr = causedBy(candidatesStatus.getStatus()));
             continue;
         }
 

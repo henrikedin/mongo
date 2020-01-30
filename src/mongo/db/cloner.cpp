@@ -65,6 +65,7 @@
 #include "mongo/util/assert_util.h"
 #include "mongo/util/fail_point.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/str.h"
 
 namespace mongo {
@@ -155,7 +156,7 @@ struct Cloner::Fun {
                 if (now - lastLog >= 60) {
                     // report progress
                     if (lastLog)
-                        log() << "clone " << to_collection << ' ' << numSeen;
+                        LOGV2(20380, "clone {to_collection} {numSeen}", "to_collection"_attr = to_collection, "numSeen"_attr = numSeen);
                     lastLog = now;
                 }
                 opCtx->checkForInterrupt();
@@ -235,8 +236,7 @@ struct Cloner::Fun {
                 Status status =
                     collection->insertDocument(opCtx, InsertStatement(doc), nullOpDebug, true);
                 if (!status.isOK() && status.code() != ErrorCodes::DuplicateKey) {
-                    error() << "error: exception cloning object in " << from_collection << ' '
-                            << redact(status) << " obj:" << redact(doc);
+                    LOGV2_ERROR(20391, "error: exception cloning object in {from_collection} {redact_status} obj:{redact_doc}", "from_collection"_attr = from_collection, "redact_status"_attr = redact(status), "redact_doc"_attr = redact(doc));
                     uassertStatusOK(status);
                 }
                 if (status.isOK()) {
@@ -246,7 +246,7 @@ struct Cloner::Fun {
 
             static Rarely sampler;
             if (sampler.tick() && (time(nullptr) - saveLast > 60)) {
-                log() << numSeen << " objects cloned so far from collection " << from_collection;
+                LOGV2(20381, "{numSeen} objects cloned so far from collection {from_collection}", "numSeen"_attr = numSeen, "from_collection"_attr = from_collection);
                 saveLast = time(nullptr);
             }
         }
@@ -275,8 +275,7 @@ void Cloner::copy(OperationContext* opCtx,
                   const NamespaceString& to_collection,
                   const CloneOptions& opts,
                   Query query) {
-    LOG(2) << "\t\tcloning collection " << from_collection << " to " << to_collection << " on "
-           << _conn->getServerAddress() << " with filter " << redact(query.toString());
+    LOGV2_DEBUG(20382, 2, "\t\tcloning collection {from_collection} to {to_collection} on {conn_getServerAddress} with filter {redact_query_toString}", "from_collection"_attr = from_collection, "to_collection"_attr = to_collection, "conn_getServerAddress"_attr = _conn->getServerAddress(), "redact_query_toString"_attr = redact(query.toString()));
 
     Fun f(opCtx, toDBName);
     f.numSeen = 0;
@@ -311,8 +310,7 @@ void Cloner::copyIndexes(OperationContext* opCtx,
                          const BSONObj& from_opts,
                          const std::list<BSONObj>& from_indexes,
                          const NamespaceString& to_collection) {
-    LOG(2) << "\t\t copyIndexes " << from_collection << " to " << to_collection << " on "
-           << _conn->getServerAddress();
+    LOGV2_DEBUG(20383, 2, "\t\t copyIndexes {from_collection} to {to_collection} on {conn_getServerAddress}", "from_collection"_attr = from_collection, "to_collection"_attr = to_collection, "conn_getServerAddress"_attr = _conn->getServerAddress());
 
     uassert(ErrorCodes::PrimarySteppedDown,
             str::stream() << "Not primary while copying indexes from " << from_collection.ns()
@@ -506,8 +504,7 @@ bool Cloner::copyCollection(OperationContext* opCtx,
             return result;
         }
     } else {
-        LOG(1) << "No collection info found for ns:" << nss.toString()
-               << ", host:" << _conn->getServerAddress();
+        LOGV2_DEBUG(20384, 1, "No collection info found for ns:{nss_toString}, host:{conn_getServerAddress}", "nss_toString"_attr = nss.toString(), "conn_getServerAddress"_attr = _conn->getServerAddress());
     }
 
     // main data
@@ -517,7 +514,7 @@ bool Cloner::copyCollection(OperationContext* opCtx,
 
     /* TODO : copyIndexes bool does not seem to be implemented! */
     if (!shouldCopyIndexes) {
-        log() << "ERROR copy collection shouldCopyIndexes not implemented? " << ns;
+        LOGV2(20385, "ERROR copy collection shouldCopyIndexes not implemented? {ns}", "ns"_attr = ns);
     }
 
     // indexes
@@ -530,7 +527,7 @@ StatusWith<std::vector<BSONObj>> Cloner::filterCollectionsForClone(
     const CloneOptions& opts, const std::list<BSONObj>& initialCollections) {
     std::vector<BSONObj> finalCollections;
     for (auto&& collection : initialCollections) {
-        LOG(2) << "\t cloner got " << collection;
+        LOGV2_DEBUG(20386, 2, "\t cloner got {collection}", "collection"_attr = collection);
 
         BSONElement collectionOptions = collection["options"];
         if (collectionOptions.isABSONObj()) {
@@ -551,7 +548,7 @@ StatusWith<std::vector<BSONObj>> Cloner::filterCollectionsForClone(
 
         if (ns.isSystem()) {
             if (!ns.isLegalClientSystemNS()) {
-                LOG(2) << "\t\t not cloning because system collection";
+                LOGV2_DEBUG(20387, 2, "\t\t not cloning because system collection");
                 continue;
             }
         }
@@ -785,7 +782,7 @@ Status Cloner::copyDb(OperationContext* opCtx,
                 continue;
             }
 
-            LOG(2) << "  really will clone: " << params.collectionInfo;
+            LOGV2_DEBUG(20388, 2, "  really will clone: {params_collectionInfo}", "params_collectionInfo"_attr = params.collectionInfo);
 
             const NamespaceString from_name(opts.fromDB, params.collectionName);
             const NamespaceString to_name(toDBName, params.collectionName);
@@ -794,7 +791,7 @@ Status Cloner::copyDb(OperationContext* opCtx,
                 clonedColls->insert(from_name.ns());
             }
 
-            LOG(1) << "\t\t cloning " << from_name << " -> " << to_name;
+            LOGV2_DEBUG(20389, 1, "\t\t cloning {from_name} -> {to_name}", "from_name"_attr = from_name, "to_name"_attr = to_name);
 
             copy(opCtx,
                  toDBName,
@@ -810,7 +807,7 @@ Status Cloner::copyDb(OperationContext* opCtx,
     // now build the secondary indexes
     if (opts.syncIndexes) {
         for (auto&& params : createCollectionParams) {
-            log() << "copying indexes for: " << params.collectionInfo;
+            LOGV2(20390, "copying indexes for: {params_collectionInfo}", "params_collectionInfo"_attr = params.collectionInfo);
 
             const NamespaceString from_name(opts.fromDB, params.collectionName);
             const NamespaceString to_name(toDBName, params.collectionName);

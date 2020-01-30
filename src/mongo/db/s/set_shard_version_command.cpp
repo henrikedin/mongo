@@ -51,6 +51,7 @@
 #include "mongo/s/grid.h"
 #include "mongo/s/request_types/set_shard_version_request.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/str.h"
 
 namespace mongo {
@@ -305,7 +306,7 @@ public:
                     if (critSecSignal) {
                         collLock.reset();
                         autoDb.reset();
-                        log() << "waiting till out of critical section";
+                        LOGV2(21771, "waiting till out of critical section");
                         critSecSignal->waitFor(opCtx, Seconds(10));
                     }
 
@@ -326,7 +327,7 @@ public:
                     if (critSecSignal) {
                         collLock.reset();
                         autoDb.reset();
-                        log() << "waiting till out of critical section";
+                        LOGV2(21772, "waiting till out of critical section");
                         critSecSignal->waitFor(opCtx, Seconds(10));
                     }
 
@@ -371,7 +372,7 @@ public:
                     << ", stored shard version is " << currVersion.toString()
                     << causedBy(redact(status));
 
-                warning() << errmsg;
+                LOGV2_WARNING(21773, "{errmsg}", "errmsg"_attr = errmsg);
 
                 result.append("ns", nss.ns());
                 result.append("code", status.code());
@@ -390,7 +391,7 @@ public:
 
                 static Occasionally sampler;
                 if (sampler.tick()) {
-                    warning() << errmsg;
+                    LOGV2_WARNING(21774, "{errmsg}", "errmsg"_attr = errmsg);
                 }
 
                 // WARNING: the exact fields below are important for compatibility with mongos

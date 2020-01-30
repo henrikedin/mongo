@@ -54,6 +54,7 @@
 #include "mongo/s/grid.h"
 #include "mongo/s/stale_exception.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 
 namespace mongo {
 
@@ -84,11 +85,8 @@ public:
             if (ErrorCodes::isExceededTimeLimitError(rcStatus.code())) {
                 const int debugLevel =
                     serverGlobalParams.clusterRole == ClusterRole::ConfigServer ? 0 : 2;
-                LOG(debugLevel) << "Command on database " << request.getDatabase()
-                                << " timed out waiting for read concern to be satisfied. Command: "
-                                << redact(ServiceEntryPointCommon::getRedactedCopyForLogging(
-                                       invocation->definition(), request.body))
-                                << ". Info: " << redact(rcStatus);
+                LOGV2_DEBUG(21697, logSeverityV1toV2(debugLevel).toInt(), "Command on database {request_getDatabase} timed out waiting for read concern to be satisfied. Command: {redact_ServiceEntryPointCommon_getRedactedCopyForLogging_invocation_definition_request_body}. Info: {redact_rcStatus}", "request_getDatabase"_attr = request.getDatabase(), "redact_ServiceEntryPointCommon_getRedactedCopyForLogging_invocation_definition_request_body"_attr = redact(ServiceEntryPointCommon::getRedactedCopyForLogging(
+                                       invocation->definition(), request.body)), "redact_rcStatus"_attr = redact(rcStatus));
             }
 
             uassertStatusOK(rcStatus);

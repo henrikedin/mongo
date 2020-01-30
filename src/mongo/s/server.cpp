@@ -104,6 +104,7 @@
 #include "mongo/util/fast_clock_source_factory.h"
 #include "mongo/util/latch_analyzer.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/net/socket_exception.h"
 #include "mongo/util/net/socket_utils.h"
 #include "mongo/util/net/ssl_manager.h"
@@ -153,8 +154,7 @@ Status waitForSigningKeys(OperationContext* opCtx) {
         // mongod will set minWireVersion == maxWireVersion for isMaster requests from
         // internalClient.
         if (rsm && (rsm->getMaxWireVersion() < WireVersion::SUPPORTS_OP_MSG)) {
-            log() << "Not waiting for signing keys, not supported by the config shard "
-                  << configCS.getSetName();
+            LOGV2(22525, "Not waiting for signing keys, not supported by the config shard {configCS_getSetName}", "configCS_getSetName"_attr = configCS.getSetName());
             return Status::OK();
         }
         auto stopStatus = opCtx->checkForInterruptNoAssert();
@@ -166,14 +166,12 @@ Status waitForSigningKeys(OperationContext* opCtx) {
             if (LogicalTimeValidator::get(opCtx)->shouldGossipLogicalTime()) {
                 return Status::OK();
             }
-            log() << "Waiting for signing keys, sleeping for " << kSignKeysRetryInterval
-                  << " and trying again.";
+            LOGV2(22526, "Waiting for signing keys, sleeping for {kSignKeysRetryInterval} and trying again.", "kSignKeysRetryInterval"_attr = kSignKeysRetryInterval);
             sleepFor(kSignKeysRetryInterval);
             continue;
         } catch (const DBException& ex) {
             Status status = ex.toStatus();
-            warning() << "Error waiting for signing keys, sleeping for " << kSignKeysRetryInterval
-                      << " and trying again " << causedBy(status);
+            LOGV2_WARNING(22537, "Error waiting for signing keys, sleeping for {kSignKeysRetryInterval} and trying again {causedBy_status}", "kSignKeysRetryInterval"_attr = kSignKeysRetryInterval, "causedBy_status"_attr = causedBy(status));
             sleepFor(kSignKeysRetryInterval);
             continue;
         }
@@ -261,7 +259,7 @@ void cleanupTask(ServiceContext* serviceContext) {
 
         // Shutdown the TransportLayer so that new connections aren't accepted
         if (auto tl = serviceContext->getTransportLayer()) {
-            log(LogComponent::kNetwork) << "shutdown: going to close all sockets...";
+            LOGV2_OPTIONS(22527, {logComponentV1toV2(LogComponent::kNetwork)}, "shutdown: going to close all sockets...");
 
             tl->shutdown();
         }
@@ -270,8 +268,7 @@ void cleanupTask(ServiceContext* serviceContext) {
             // Abort transactions while we can still send remote commands.
             implicitlyAbortAllTransactions(opCtx);
         } catch (const DBException& excep) {
-            warning() << "encountered " << excep
-                      << " while trying to abort all active transactions";
+            LOGV2_WARNING(22538, "encountered {excep} while trying to abort all active transactions", "excep"_attr = excep);
         }
 
         if (auto lsc = LogicalSessionCache::get(serviceContext)) {
@@ -324,8 +321,7 @@ void cleanupTask(ServiceContext* serviceContext) {
         // Shutdown the Service Entry Point and its sessions and give it a grace period to complete.
         if (auto sep = serviceContext->getServiceEntryPoint()) {
             if (!sep->shutdown(Seconds(10))) {
-                log(LogComponent::kNetwork)
-                    << "Service entry point failed to shutdown within timelimit.";
+                LOGV2_OPTIONS(22528, {logComponentV1toV2(LogComponent::kNetwork)}, "Service entry point failed to shutdown within timelimit.");
             }
         }
 
@@ -333,8 +329,7 @@ void cleanupTask(ServiceContext* serviceContext) {
         if (auto svcExec = serviceContext->getServiceExecutor()) {
             Status status = svcExec->shutdown(Seconds(5));
             if (!status.isOK()) {
-                log(LogComponent::kNetwork)
-                    << "Service executor failed to shutdown within timelimit: " << status.reason();
+                LOGV2_OPTIONS(22529, {logComponentV1toV2(LogComponent::kNetwork)}, "Service executor failed to shutdown within timelimit: {status_reason}", "status_reason"_attr = status.reason());
             }
         }
 #endif
@@ -469,7 +464,7 @@ public:
             invariant(args.status);
 
             try {
-                LOG(0) << "Updating sharding state with confirmed set " << connStr;
+                LOGV2(22530, "Updating sharding state with confirmed set {connStr}", "connStr"_attr = connStr);
 
                 Grid::get(serviceContext)->shardRegistry()->updateReplSetHosts(connStr);
 
@@ -478,14 +473,14 @@ public:
                 }
                 ShardRegistry::updateReplicaSetOnConfigServer(serviceContext, connStr);
             } catch (const ExceptionForCat<ErrorCategory::ShutdownError>& e) {
-                LOG(0) << "Unable to update sharding state due to " << e;
+                LOGV2(22531, "Unable to update sharding state due to {e}", "e"_attr = e);
             }
         };
 
         auto executor = Grid::get(_serviceContext)->getExecutorPool()->getFixedExecutor();
         auto schedStatus = executor->scheduleWork(std::move(fun)).getStatus();
         if (ErrorCodes::isCancelationError(schedStatus.code())) {
-            LOG(2) << "Unable to schedule confirmed set update due to " << schedStatus;
+            LOGV2_DEBUG(22532, 2, "Unable to schedule confirmed set update due to {schedStatus}", "schedStatus"_attr = schedStatus);
             return;
         }
         uassertStatusOK(schedStatus);
@@ -495,7 +490,7 @@ public:
         try {
             Grid::get(_serviceContext)->shardRegistry()->updateReplSetHosts(state.connStr);
         } catch (const DBException& ex) {
-            LOG(2) << "Unable to update sharding state with possible set due to " << ex;
+            LOGV2_DEBUG(22533, 2, "Unable to update sharding state with possible set due to {ex}", "ex"_attr = ex);
         }
     }
 
@@ -517,7 +512,7 @@ ExitCode runMongosServer(ServiceContext* serviceContext) {
         transport::TransportLayerManager::createWithConfig(&serverGlobalParams, serviceContext);
     auto res = tl->setup();
     if (!res.isOK()) {
-        error() << "Failed to set up listener: " << res;
+        LOGV2_ERROR(22540, "Failed to set up listener: {res}", "res"_attr = res);
         return EXIT_NET_ERROR;
     }
     serviceContext->setTransportLayer(std::move(tl));
@@ -568,10 +563,10 @@ ExitCode runMongosServer(ServiceContext* serviceContext) {
         if (!status.isOK()) {
             if (status == ErrorCodes::CallbackCanceled) {
                 invariant(globalInShutdownDeprecated());
-                log() << "Shutdown called before mongos finished starting up";
+                LOGV2(22534, "Shutdown called before mongos finished starting up");
                 return EXIT_CLEAN;
             }
-            error() << "Error initializing sharding system: " << status;
+            LOGV2_ERROR(22541, "Error initializing sharding system: {status}", "status"_attr = status);
             return EXIT_SHARDING_ERROR;
         }
 
@@ -583,8 +578,7 @@ ExitCode runMongosServer(ServiceContext* serviceContext) {
         try {
             ReadWriteConcernDefaults::get(serviceContext).refreshIfNecessary(opCtx);
         } catch (const DBException& ex) {
-            warning() << "Failed to load read and write concern defaults at startup"
-                      << causedBy(redact(ex.toStatus()));
+            LOGV2_WARNING(22539, "Failed to load read and write concern defaults at startup{causedBy_redact_ex_toStatus}", "causedBy_redact_ex_toStatus"_attr = causedBy(redact(ex.toStatus())));
         }
     }
 
@@ -592,7 +586,7 @@ ExitCode runMongosServer(ServiceContext* serviceContext) {
 
     Status status = AuthorizationManager::get(serviceContext)->initialize(opCtx);
     if (!status.isOK()) {
-        error() << "Initializing authorization data failed: " << status;
+        LOGV2_ERROR(22542, "Initializing authorization data failed: {status}", "status"_attr = status);
         return EXIT_SHARDING_ERROR;
     }
 
@@ -626,19 +620,19 @@ ExitCode runMongosServer(ServiceContext* serviceContext) {
 
     status = serviceContext->getServiceExecutor()->start();
     if (!status.isOK()) {
-        error() << "Failed to start the service executor: " << redact(status);
+        LOGV2_ERROR(22543, "Failed to start the service executor: {redact_status}", "redact_status"_attr = redact(status));
         return EXIT_NET_ERROR;
     }
 
     status = serviceContext->getServiceEntryPoint()->start();
     if (!status.isOK()) {
-        error() << "Failed to start the service entry point: " << redact(status);
+        LOGV2_ERROR(22544, "Failed to start the service entry point: {redact_status}", "redact_status"_attr = redact(status));
         return EXIT_NET_ERROR;
     }
 
     status = serviceContext->getTransportLayer()->start();
     if (!status.isOK()) {
-        error() << "Failed to start the transport layer: " << redact(status);
+        LOGV2_ERROR(22545, "Failed to start the transport layer: {redact_status}", "redact_status"_attr = redact(status));
         return EXIT_NET_ERROR;
     }
 
@@ -649,7 +643,7 @@ ExitCode runMongosServer(ServiceContext* serviceContext) {
 #else
     if (ntservice::shouldStartService()) {
         ntservice::reportStatus(SERVICE_RUNNING);
-        log() << "Service running";
+        LOGV2(22535, "Service running");
     }
 #endif
 
@@ -698,7 +692,7 @@ ExitCode main(ServiceContext* serviceContext) {
         }
 
         if (configAddr.isLocalHost() != shardingContext->allowLocalHost()) {
-            log(LogComponent::kDefault) << "cannot mix localhost and ip addresses in configdbs";
+            LOGV2_OPTIONS(22536, {logComponentV1toV2(LogComponent::kDefault)}, "cannot mix localhost and ip addresses in configdbs");
             return EXIT_BADOPTIONS;
         }
     }
@@ -755,7 +749,7 @@ ExitCode mongoSMain(int argc, char* argv[], char** envp) {
 
     Status status = runGlobalInitializers(argc, argv, envp);
     if (!status.isOK()) {
-        severe(LogComponent::kDefault) << "Failed global initialization: " << status;
+        LOGV2_FATAL_OPTIONS(22549, {logComponentV1toV2(LogComponent::kDefault)}, "Failed global initialization: {status}", "status"_attr = status);
         return EXIT_ABRUPT;
     }
 
@@ -763,7 +757,7 @@ ExitCode mongoSMain(int argc, char* argv[], char** envp) {
         setGlobalServiceContext(ServiceContext::make());
     } catch (...) {
         auto cause = exceptionToStatus();
-        severe(LogComponent::kDefault) << "Failed to create service context: " << redact(cause);
+        LOGV2_FATAL_OPTIONS(22550, {logComponentV1toV2(LogComponent::kDefault)}, "Failed to create service context: {redact_cause}", "redact_cause"_attr = redact(cause));
         return EXIT_ABRUPT;
     }
 
@@ -789,13 +783,13 @@ ExitCode mongoSMain(int argc, char* argv[], char** envp) {
 
         return main(service);
     } catch (const DBException& e) {
-        error() << "uncaught DBException in mongos main: " << redact(e);
+        LOGV2_ERROR(22546, "uncaught DBException in mongos main: {redact_e}", "redact_e"_attr = redact(e));
         return EXIT_UNCAUGHT;
     } catch (const std::exception& e) {
-        error() << "uncaught std::exception in mongos main:" << redact(e.what());
+        LOGV2_ERROR(22547, "uncaught std::exception in mongos main:{redact_e_what}", "redact_e_what"_attr = redact(e.what()));
         return EXIT_UNCAUGHT;
     } catch (...) {
-        error() << "uncaught unknown exception in mongos main";
+        LOGV2_ERROR(22548, "uncaught unknown exception in mongos main");
         return EXIT_UNCAUGHT;
     }
 }

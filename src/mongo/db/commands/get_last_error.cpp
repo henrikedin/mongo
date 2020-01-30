@@ -42,6 +42,7 @@
 #include "mongo/db/repl/replication_coordinator.h"
 #include "mongo/db/write_concern.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 
 namespace mongo {
 namespace {
@@ -263,8 +264,7 @@ public:
                 }
             } else {
                 if (electionId != repl::ReplicationCoordinator::get(opCtx)->getElectionId()) {
-                    LOG(3) << "oid passed in is " << electionId << ", but our id is "
-                           << repl::ReplicationCoordinator::get(opCtx)->getElectionId();
+                    LOGV2_DEBUG(20443, 3, "oid passed in is {electionId}, but our id is {repl_ReplicationCoordinator_get_opCtx_getElectionId}", "electionId"_attr = electionId, "repl_ReplicationCoordinator_get_opCtx_getElectionId"_attr = repl::ReplicationCoordinator::get(opCtx)->getElectionId());
                     errmsg = "election occurred after write";
                     result.append("code", ErrorCodes::WriteConcernFailed);
                     result.append("codeName",

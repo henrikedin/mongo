@@ -46,6 +46,7 @@
 #include "mongo/s/grid.h"
 #include "mongo/s/request_types/migration_secondary_throttle_options.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/timer.h"
 
 namespace mongo {
@@ -119,7 +120,7 @@ public:
             std::string msg(str::stream()
                             << "Could not move chunk in '" << nss.ns() << "' to shard '" << toString
                             << "' because that shard does not exist");
-            log() << msg;
+            LOGV2(22442, "{msg}", "msg"_attr = msg);
             uasserted(ErrorCodes::ShardNotFound, msg);
         }
 

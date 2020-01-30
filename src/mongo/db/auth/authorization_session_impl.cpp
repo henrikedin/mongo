@@ -55,6 +55,7 @@
 #include "mongo/db/pipeline/lite_parsed_pipeline.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/str.h"
 
 namespace mongo {
@@ -139,8 +140,7 @@ Status AuthorizationSessionImpl::addAndAuthorizeUser(OperationContext* opCtx,
     Status restrictionStatus =
         restrictionSet.validate(RestrictionEnvironment::get(*opCtx->getClient()));
     if (!restrictionStatus.isOK()) {
-        log() << "Failed to acquire user '" << userName
-              << "' because of unmet authentication restrictions: " << restrictionStatus.reason();
+        LOGV2(20212, "Failed to acquire user '{userName}' because of unmet authentication restrictions: {restrictionStatus_reason}", "userName"_attr = userName, "restrictionStatus_reason"_attr = restrictionStatus.reason());
         return AuthorizationManager::authenticationFailedStatus;
     }
 
@@ -552,9 +552,8 @@ bool AuthorizationSessionImpl::isAuthorizedToCreateRole(
                 return true;
             }
         }
-        log() << "Not authorized to create the first role in the system '" << args.roleName
-              << "' using the localhost exception. The user needs to acquire the role through "
-                 "external authentication first.";
+        LOGV2(20213, "Not authorized to create the first role in the system '{args_roleName}' using the localhost exception. The user needs to acquire the role through "
+                 "external authentication first.", "args_roleName"_attr = args.roleName);
     }
 
     return false;
@@ -764,37 +763,29 @@ void AuthorizationSessionImpl::_refreshUserInfoAsNeeded(OperationContext* opCtx)
                         Status restrictionStatus = restrictionSet.validate(
                             RestrictionEnvironment::get(*opCtx->getClient()));
                         if (!restrictionStatus.isOK()) {
-                            log() << "Removed user " << name
-                                  << " with unmet authentication restrictions from session cache of"
-                                  << " user information. Restriction failed because: "
-                                  << restrictionStatus.reason();
+                            LOGV2(20214, "Removed user {name} with unmet authentication restrictions from session cache of user information. Restriction failed because: {restrictionStatus_reason}", "name"_attr = name, "restrictionStatus_reason"_attr = restrictionStatus.reason());
                             // If we remove from the UserSet, we cannot increment the iterator.
                             continue;
                         }
                     } catch (...) {
-                        log() << "Evaluating authentication restrictions for " << name
-                              << " resulted in an unknown exception. Removing user from the"
-                              << " session cache.";
+                        LOGV2(20215, "Evaluating authentication restrictions for {name} resulted in an unknown exception. Removing user from the session cache.", "name"_attr = name);
                         continue;
                     }
 
                     // Success! Replace the old User object with the updated one.
                     removeGuard.dismiss();
                     _authenticatedUsers.replaceAt(it, std::move(updatedUser));
-                    LOG(1) << "Updated session cache of user information for " << name;
+                    LOGV2_DEBUG(20216, 1, "Updated session cache of user information for {name}", "name"_attr = name);
                     break;
                 }
                 case ErrorCodes::UserNotFound: {
                     // User does not exist anymore; remove it from _authenticatedUsers.
-                    log() << "Removed deleted user " << name
-                          << " from session cache of user information.";
+                    LOGV2(20217, "Removed deleted user {name} from session cache of user information.", "name"_attr = name);
                     continue;  // No need to advance "it" in this case.
                 }
                 case ErrorCodes::UnsupportedFormat: {
                     // An auth subsystem has explicitly indicated a failure.
-                    log() << "Removed user " << name
-                          << " from session cache of user information because of refresh failure:"
-                          << " '" << status << "'.";
+                    LOGV2(20218, "Removed user {name} from session cache of user information because of refresh failure: '{status}'.", "name"_attr = name, "status"_attr = status);
                     continue;  // No need to advance "it" in this case.
                 }
                 default:

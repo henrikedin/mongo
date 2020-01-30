@@ -46,6 +46,7 @@
 #include "mongo/util/assert_util.h"
 #include "mongo/util/fail_point.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/time_support.h"
 
 namespace mongo {
@@ -167,14 +168,11 @@ void MetadataManager::setFilteringMetadata(CollectionMetadata remoteMetadata) {
     // We already have the same or newer version
     if (activeMetadata.getCollVersion().epoch() == remoteMetadata.getCollVersion().epoch() &&
         activeMetadata.getCollVersion() >= remoteMetadata.getCollVersion()) {
-        LOG(1) << "Ignoring update of active metadata " << activeMetadata.toStringBasic()
-               << " with an older " << remoteMetadata.toStringBasic();
+        LOGV2_DEBUG(21705, 1, "Ignoring update of active metadata {activeMetadata_toStringBasic} with an older {remoteMetadata_toStringBasic}", "activeMetadata_toStringBasic"_attr = activeMetadata.toStringBasic(), "remoteMetadata_toStringBasic"_attr = remoteMetadata.toStringBasic());
         return;
     }
 
-    LOG(0) << "Updating metadata for collection " << _nss.ns() << " from "
-           << activeMetadata.toStringBasic() << " to " << remoteMetadata.toStringBasic()
-           << " due to version change";
+    LOGV2(21706, "Updating metadata for collection {nss_ns} from {activeMetadata_toStringBasic} to {remoteMetadata_toStringBasic} due to version change", "nss_ns"_attr = _nss.ns(), "activeMetadata_toStringBasic"_attr = activeMetadata.toStringBasic(), "remoteMetadata_toStringBasic"_attr = remoteMetadata.toStringBasic());
 
     // Resolve any receiving chunks, which might have completed by now
     for (auto it = _receivingChunks.begin(); it != _receivingChunks.end();) {
@@ -187,8 +185,7 @@ void MetadataManager::setFilteringMetadata(CollectionMetadata remoteMetadata) {
 
         // The remote metadata contains a chunk we were earlier in the process of receiving, so we
         // deem it successfully received
-        LOG(2) << "Verified chunk " << redact(receivingRange.toString()) << " for collection "
-               << _nss.ns() << " has been migrated to this shard earlier";
+        LOGV2_DEBUG(21707, 2, "Verified chunk {redact_receivingRange_toString} for collection {nss_ns} has been migrated to this shard earlier", "redact_receivingRange_toString"_attr = redact(receivingRange.toString()), "nss_ns"_attr = _nss.ns());
 
         _receivingChunks.erase(it);
         it = _receivingChunks.begin();
@@ -279,8 +276,7 @@ SharedSemiFuture<void> MetadataManager::beginReceive(ChunkRange const& range) {
 
     _receivingChunks.emplace(range.getMin().getOwned(), range.getMax().getOwned());
 
-    log() << "Scheduling deletion of any documents in " << _nss.ns() << " range "
-          << redact(range.toString()) << " before migrating in a chunk covering the range";
+    LOGV2(21708, "Scheduling deletion of any documents in {nss_ns} range {redact_range_toString} before migrating in a chunk covering the range", "nss_ns"_attr = _nss.ns(), "redact_range_toString"_attr = redact(range.toString()));
 
     return _submitRangeForDeletion(
         lg, SemiFuture<void>::makeReady(), range, Seconds(orphanCleanupDelaySecs.load()));
@@ -327,8 +323,7 @@ SharedSemiFuture<void> MetadataManager::cleanUpRange(ChunkRange const& range,
         shouldDelayBeforeDeletion ? Seconds(orphanCleanupDelaySecs.load()) : Seconds(0);
 
     if (overlapMetadata) {
-        log() << "Deletion of " << _nss.ns() << " range " << redact(range.toString())
-              << " will be scheduled after all possibly dependent queries finish";
+        LOGV2(21709, "Deletion of {nss_ns} range {redact_range_toString} will be scheduled after all possibly dependent queries finish", "nss_ns"_attr = _nss.ns(), "redact_range_toString"_attr = redact(range.toString()));
         ++overlapMetadata->numContingentRangeDeletionTasks;
         // Schedule the range for deletion once the overlapping metadata object is destroyed
         // (meaning no more queries can be using the range) and obtain a future which will be
@@ -339,7 +334,7 @@ SharedSemiFuture<void> MetadataManager::cleanUpRange(ChunkRange const& range,
                                        delayForActiveQueriesOnSecondariesToComplete);
     } else {
         // No running queries can depend on this range, so queue it for deletion immediately.
-        log() << "Scheduling deletion of " << _nss.ns() << " range " << redact(range.toString());
+        LOGV2(21710, "Scheduling deletion of {nss_ns} range {redact_range_toString}", "nss_ns"_attr = _nss.ns(), "redact_range_toString"_attr = redact(range.toString()));
 
         return _submitRangeForDeletion(
             lg, SemiFuture<void>::makeReady(), range, delayForActiveQueriesOnSecondariesToComplete);

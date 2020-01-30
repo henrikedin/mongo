@@ -45,6 +45,7 @@
 #include "mongo/logger/logger.h"
 #include "mongo/logger/parse_log_component_settings.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/str.h"
 
 using std::string;
@@ -358,8 +359,7 @@ public:
             try {
                 uassertStatusOK(foundParameter->second->set(parameter));
             } catch (const DBException& ex) {
-                log() << "error setting parameter " << parameterName << " to "
-                      << redact(parameter.toString(false)) << " errMsg: " << redact(ex);
+                LOGV2(20463, "error setting parameter {parameterName} to {redact_parameter_toString_false} errMsg: {redact_ex}", "parameterName"_attr = parameterName, "redact_parameter_toString_false"_attr = redact(parameter.toString(false)), "redact_ex"_attr = redact(ex));
                 throw;
             }
 

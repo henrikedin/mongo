@@ -38,6 +38,7 @@
 #include "mongo/db/server_options.h"
 #include "mongo/db/server_options_server_helpers.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/net/socket_utils.h"
 #include "mongo/util/processinfo.h"
 #include "mongo/util/version.h"
@@ -50,21 +51,18 @@ bool is32bit() {
 
 void logProcessDetails() {
     auto&& vii = VersionInfoInterface::instance();
-    log() << mongodVersion(vii);
+    LOGV2(20666, "{mongodVersion_vii}", "mongodVersion_vii"_attr = mongodVersion(vii));
     vii.logBuildInfo();
 
     if (ProcessInfo::getMemSizeMB() < ProcessInfo::getSystemMemSizeMB()) {
-        log() << ProcessInfo::getMemSizeMB() << " MB of memory available to the process out of "
-              << ProcessInfo::getSystemMemSizeMB() << " MB total system memory";
+        LOGV2(20667, "{ProcessInfo_getMemSizeMB} MB of memory available to the process out of {ProcessInfo_getSystemMemSizeMB} MB total system memory", "ProcessInfo_getMemSizeMB"_attr = ProcessInfo::getMemSizeMB(), "ProcessInfo_getSystemMemSizeMB"_attr = ProcessInfo::getSystemMemSizeMB());
     }
 
     printCommandLineOpts();
 }
 
 void logProcessDetailsForLogRotate(ServiceContext* serviceContext) {
-    log() << "pid=" << ProcessId::getCurrent() << " port=" << serverGlobalParams.port
-          << (is32bit() ? " 32" : " 64") << "-bit "
-          << "host=" << getHostNameCached();
+    LOGV2(20668, "pid={ProcessId_getCurrent} port={serverGlobalParams_port}{is32bit_32_64}-bit host={getHostNameCached}", "ProcessId_getCurrent"_attr = ProcessId::getCurrent(), "serverGlobalParams_port"_attr = serverGlobalParams.port, "is32bit_32_64"_attr = (is32bit() ? " 32" : " 64"), "getHostNameCached"_attr = getHostNameCached());
 
     auto replCoord = repl::ReplicationCoordinator::get(serviceContext);
     if (replCoord != nullptr &&
@@ -72,10 +70,10 @@ void logProcessDetailsForLogRotate(ServiceContext* serviceContext) {
         auto rsConfig = replCoord->getConfig();
 
         if (rsConfig.isInitialized()) {
-            log() << "Replica Set Config: " << rsConfig.toBSON();
-            log() << "Replica Set Member State: " << (replCoord->getMemberState()).toString();
+            LOGV2(20669, "Replica Set Config: {rsConfig_toBSON}", "rsConfig_toBSON"_attr = rsConfig.toBSON());
+            LOGV2(20670, "Replica Set Member State: {replCoord_getMemberState_toString}", "replCoord_getMemberState_toString"_attr = (replCoord->getMemberState()).toString());
         } else {
-            log() << "Node currently has no Replica Set Config.";
+            LOGV2(20671, "Node currently has no Replica Set Config.");
         }
     }
 

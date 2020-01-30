@@ -41,6 +41,7 @@
 #include "mongo/s/cannot_implicitly_create_collection_info.h"
 #include "mongo/s/stale_exception.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 
 namespace mongo {
 
@@ -89,16 +90,14 @@ ScopedOperationCompletionShardingActions::~ScopedOperationCompletionShardingActi
         auto handleMismatchStatus = onShardVersionMismatchNoExcept(
             _opCtx, staleInfo->getNss(), staleInfo->getVersionReceived());
         if (!handleMismatchStatus.isOK())
-            log() << "Failed to handle stale version exception"
-                  << causedBy(redact(handleMismatchStatus));
+            LOGV2(21768, "Failed to handle stale version exception{causedBy_redact_handleMismatchStatus}", "causedBy_redact_handleMismatchStatus"_attr = causedBy(redact(handleMismatchStatus)));
     } else if (auto staleInfo = status->extraInfo<StaleDbRoutingVersion>()) {
         auto handleMismatchStatus = onDbVersionMismatchNoExcept(_opCtx,
                                                                 staleInfo->getDb(),
                                                                 staleInfo->getVersionReceived(),
                                                                 staleInfo->getVersionWanted());
         if (!handleMismatchStatus.isOK())
-            log() << "Failed to handle database version exception"
-                  << causedBy(redact(handleMismatchStatus));
+            LOGV2(21769, "Failed to handle database version exception{causedBy_redact_handleMismatchStatus}", "causedBy_redact_handleMismatchStatus"_attr = causedBy(redact(handleMismatchStatus)));
     } else if (auto cannotImplicitCreateCollInfo =
                    status->extraInfo<CannotImplicitlyCreateCollectionInfo>()) {
         if (ShardingState::get(_opCtx)->enabled() &&
@@ -107,8 +106,7 @@ ScopedOperationCompletionShardingActions::~ScopedOperationCompletionShardingActi
             auto handleCannotImplicitCreateStatus =
                 onCannotImplicitlyCreateCollection(_opCtx, cannotImplicitCreateCollInfo->getNss());
             if (!handleCannotImplicitCreateStatus.isOK())
-                log() << "Failed to handle CannotImplicitlyCreateCollection exception"
-                      << causedBy(redact(handleCannotImplicitCreateStatus));
+                LOGV2(21770, "Failed to handle CannotImplicitlyCreateCollection exception{causedBy_redact_handleCannotImplicitCreateStatus}", "causedBy_redact_handleCannotImplicitCreateStatus"_attr = causedBy(redact(handleCannotImplicitCreateStatus)));
         }
     }
 }

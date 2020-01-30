@@ -47,6 +47,7 @@
 #include "mongo/util/concurrency/thread_pool_interface.h"
 #include "mongo/util/fail_point.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/time_support.h"
 
 namespace mongo {
@@ -432,7 +433,7 @@ StatusWith<TaskExecutor::CallbackHandle> ThreadPoolTaskExecutor::scheduleRemoteC
     if (!swCbHandle.isOK())
         return swCbHandle;
     const auto cbState = _networkInProgressQueue.back();
-    LOG(3) << "Scheduling remote command request: " << redact(scheduledRequest.toString());
+    LOGV2_DEBUG(22312, 3, "Scheduling remote command request: {redact_scheduledRequest_toString}", "redact_scheduledRequest_toString"_attr = redact(scheduledRequest.toString()));
     lk.unlock();
 
     auto commandStatus = _net->startCommand(
@@ -447,8 +448,7 @@ StatusWith<TaskExecutor::CallbackHandle> ThreadPoolTaskExecutor::scheduleRemoteC
             if (_inShutdown_inlock()) {
                 return;
             }
-            LOG(3) << "Received remote response: "
-                   << redact(response.isOK() ? response.toString() : response.status.toString());
+            LOGV2_DEBUG(22313, 3, "Received remote response: {redact_response_isOK_response_toString_response_status_toString}", "redact_response_isOK_response_toString_response_status_toString"_attr = redact(response.isOK() ? response.toString() : response.status.toString()));
             swap(cbState->callback, newCb);
             scheduleIntoPool_inlock(&_networkInProgressQueue, cbState->iter, std::move(lk));
         },

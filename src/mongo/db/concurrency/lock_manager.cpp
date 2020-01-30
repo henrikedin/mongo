@@ -43,6 +43,7 @@
 #include "mongo/db/concurrency/locker.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/str.h"
 #include "mongo/util/timer.h"
 
@@ -826,7 +827,7 @@ LockManager::Partition* LockManager::_getPartition(LockRequest* request) const {
 }
 
 void LockManager::dump() const {
-    log() << "Dumping LockManager @ " << reinterpret_cast<uint64_t>(this) << '\n';
+    LOGV2(20489, "Dumping LockManager @ {reinterpret_cast_uint64_t_this}{n}", "reinterpret_cast_uint64_t_this"_attr = reinterpret_cast<uint64_t>(this), "n"_attr = '\n');
 
     auto lockToClientMap = getLockToClientMap(getGlobalServiceContext());
     for (unsigned i = 0; i < _numLockBuckets; i++) {
@@ -963,7 +964,7 @@ void LockManager::_dumpBucket(const std::map<LockerId, BSONObj>& lockToClientMap
         }
 
         sb << "-----------------------------------------------------------\n";
-        log() << sb.str();
+        LOGV2(20490, "{sb_str}", "sb_str"_attr = sb.str());
     }
 }
 

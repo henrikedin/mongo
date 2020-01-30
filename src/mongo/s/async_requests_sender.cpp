@@ -45,6 +45,7 @@
 #include "mongo/transport/transport_layer.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/scopeguard.h"
 
 using namespace fmt::literals;
@@ -241,13 +242,9 @@ auto AsyncRequestsSender::RemoteData::handleResponse(RemoteCommandOnAnyCallbackA
         if (!_ars->_stopRetrying && shard->isRetriableError(status.code(), _ars->_retryPolicy) &&
             _retryCount < kMaxNumFailedHostRetryAttempts) {
 
-            LOG(1) << "Command to remote " << _shardId
-                   << (failedTargets.empty()
+            LOGV2_DEBUG(22327, 1, "Command to remote {shardId}{failedTargets_empty_failedTargets_size_1_for_hosts_at_host}{format_fmt_join_failedTargets}failed with retriable error and will be retried {causedBy_redact_status}", "shardId"_attr = _shardId, "failedTargets_empty_failedTargets_size_1_for_hosts_at_host"_attr = (failedTargets.empty()
                            ? " "
-                           : (failedTargets.size() > 1 ? " for hosts " : " at host "))
-                   << "{}"_format(fmt::join(failedTargets, ", "))
-                   << "failed with retriable error and will be retried "
-                   << causedBy(redact(status));
+                           : (failedTargets.size() > 1 ? " for hosts " : " at host ")), "format_fmt_join_failedTargets"_attr = "{}"_format(fmt::join(failedTargets, ", ")), "causedBy_redact_status"_attr = causedBy(redact(status)));
 
             ++_retryCount;
             _shardHostAndPort.reset();

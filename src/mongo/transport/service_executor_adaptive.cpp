@@ -42,6 +42,7 @@
 #include "mongo/util/concurrency/thread_name.h"
 #include "mongo/util/duration.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/processinfo.h"
 #include "mongo/util/scopeguard.h"
 #include "mongo/util/str.h"
@@ -79,8 +80,7 @@ struct ServerParameterOptions : public ServiceExecutorAdaptive::Options {
             value = ProcessInfo::getNumAvailableCores() / 2;
             value = std::max(value, 2);
             adaptiveServiceExecutorReservedThreads.store(value);
-            log() << "No thread count configured for executor. Using number of cores / 2: "
-                  << value;
+            LOGV2(22634, "No thread count configured for executor. Using number of cores / 2: {value}", "value"_attr = value);
         }
         return value;
     }
@@ -101,9 +101,7 @@ struct ServerParameterOptions : public ServiceExecutorAdaptive::Options {
         static Nanoseconds minTimerResolution = getMinimumTimerResolution();
         Microseconds value{adaptiveServiceExecutorMaxQueueLatencyMicros.load()};
         if (value < minTimerResolution) {
-            log() << "Target MaxQueueLatencyMicros (" << value
-                  << ") is less than minimum timer resolution of OS (" << minTimerResolution
-                  << "). Using " << minTimerResolution;
+            LOGV2(22635, "Target MaxQueueLatencyMicros ({value}) is less than minimum timer resolution of OS ({minTimerResolution}). Using {minTimerResolution}", "value"_attr = value, "minTimerResolution"_attr = minTimerResolution, "minTimerResolution"_attr = minTimerResolution);
             value = duration_cast<Microseconds>(minTimerResolution) + Microseconds{1};
             adaptiveServiceExecutorMaxQueueLatencyMicros.store(value.count());
         }
@@ -350,9 +348,7 @@ void ServiceExecutorAdaptive::_controllerThreadRoutine() {
                 // thread to unblock the executor for now.
                 stuckThreadTimeout /= 2;
                 stuckThreadTimeout = std::max(Milliseconds{10}, stuckThreadTimeout);
-                log() << "Detected blocked worker threads, "
-                      << "starting new thread to unblock service executor. "
-                      << "Stuck thread timeout now: " << stuckThreadTimeout;
+                LOGV2(22636, "Detected blocked worker threads, starting new thread to unblock service executor. Stuck thread timeout now: {stuckThreadTimeout}", "stuckThreadTimeout"_attr = stuckThreadTimeout);
                 _startWorkerThread(ThreadCreationReason::kStuckDetection);
 
                 // Since we've just started a worker thread, then we know that the executor isn't
@@ -365,15 +361,14 @@ void ServiceExecutorAdaptive::_controllerThreadRoutine() {
             auto newStuckThreadTimeout = stuckThreadTimeout + (stuckThreadTimeout / 2);
             newStuckThreadTimeout = std::min(_config->stuckThreadTimeout(), newStuckThreadTimeout);
             if (newStuckThreadTimeout != stuckThreadTimeout) {
-                LOG(1) << "Increasing stuck thread timeout to " << newStuckThreadTimeout;
+                LOGV2_DEBUG(22637, 1, "Increasing stuck thread timeout to {newStuckThreadTimeout}", "newStuckThreadTimeout"_attr = newStuckThreadTimeout);
                 stuckThreadTimeout = newStuckThreadTimeout;
             }
         }
 
         auto threadsRunning = _threadsRunning.load();
         if (threadsRunning < _config->reservedThreads()) {
-            log() << "Starting " << _config->reservedThreads() - threadsRunning
-                  << " to replenish reserved worker threads";
+            LOGV2(22638, "Starting {config_reservedThreads_threadsRunning} to replenish reserved worker threads", "config_reservedThreads_threadsRunning"_attr = _config->reservedThreads() - threadsRunning);
             while (_threadsRunning.load() < _config->reservedThreads()) {
                 _startWorkerThread(ThreadCreationReason::kReserveMinimum);
             }
@@ -421,7 +416,7 @@ void ServiceExecutorAdaptive::_controllerThreadRoutine() {
         // number of tasks executing (the number of free threads), then start a new worker to
         // avoid starvation.
         if (_isStarved()) {
-            log() << "Starting worker thread to avoid starvation.";
+            LOGV2(22639, "Starting worker thread to avoid starvation.");
             _startWorkerThread(ThreadCreationReason::kStarvation);
         }
     }
@@ -442,7 +437,7 @@ void ServiceExecutorAdaptive::_startWorkerThread(ThreadCreationReason reason) {
         launchServiceWorkerThread([this, num, it] { _workerThreadRoutine(num, it); });
 
     if (!launchResult.isOK()) {
-        warning() << "Failed to launch new worker thread: " << launchResult;
+        LOGV2_WARNING(22642, "Failed to launch new worker thread: {launchResult}", "launchResult"_attr = launchResult);
         lk.lock();
         _threadsPending.subtractAndFetch(1);
         _threadsRunning.subtractAndFetch(1);
@@ -528,7 +523,7 @@ void ServiceExecutorAdaptive::_workerThreadRoutine(
         setThreadName(threadName);
     }
 
-    log() << "Started new database worker thread " << threadId;
+    LOGV2(22640, "Started new database worker thread {threadId}", "threadId"_attr = threadId);
 
     bool guardThreadsRunning = true;
     const auto guard = makeGuard([this, &guardThreadsRunning, state] {
@@ -605,8 +600,7 @@ void ServiceExecutorAdaptive::_workerThreadRoutine(
         } while (terminateThread &&
                  !_threadsRunning.compareAndSwap(&runningThreads, runningThreads - 1));
         if (terminateThread) {
-            log() << "Thread was only executing tasks " << pctExecuting << "% over the last "
-                  << runTime << ". Exiting thread.";
+            LOGV2(22641, "Thread was only executing tasks {pctExecuting}% over the last {runTime}. Exiting thread.", "pctExecuting"_attr = pctExecuting, "runTime"_attr = runTime);
 
             // Because we've already modified _threadsRunning, make sure the thread guard also
             // doesn't do it.

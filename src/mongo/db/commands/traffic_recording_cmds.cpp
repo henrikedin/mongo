@@ -39,6 +39,7 @@
 #include "mongo/db/traffic_recorder.h"
 #include "mongo/db/traffic_recorder_gen.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 
 namespace mongo {
 namespace {
@@ -53,9 +54,7 @@ public:
 
         void typedRun(OperationContext* opCtx) {
             TrafficRecorder::get(opCtx->getServiceContext()).start(request());
-            log() << "** Warning: The recording file contains unencrypted user traffic."
-                  << " We recommend that you limit retention of this file and "
-                  << "store it on an encrypted filesystem volume.";
+            LOGV2(20474, "** Warning: The recording file contains unencrypted user traffic. We recommend that you limit retention of this file and store it on an encrypted filesystem volume.");
         }
 
     private:

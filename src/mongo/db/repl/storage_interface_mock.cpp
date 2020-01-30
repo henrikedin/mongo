@@ -35,6 +35,7 @@
 #include "mongo/db/repl/storage_interface_mock.h"
 
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/str.h"
 
 namespace mongo {
@@ -103,14 +104,14 @@ bool StorageInterfaceMock::supportsDocLocking(ServiceContext* serviceCtx) const 
 }
 
 Status CollectionBulkLoaderMock::init(const std::vector<BSONObj>& secondaryIndexSpecs) {
-    LOG(1) << "CollectionBulkLoaderMock::init called";
+    LOGV2_DEBUG(21473, 1, "CollectionBulkLoaderMock::init called");
     stats->initCalled = true;
     return Status::OK();
 };
 
 Status CollectionBulkLoaderMock::insertDocuments(const std::vector<BSONObj>::const_iterator begin,
                                                  const std::vector<BSONObj>::const_iterator end) {
-    LOG(1) << "CollectionBulkLoaderMock::insertDocuments called";
+    LOGV2_DEBUG(21474, 1, "CollectionBulkLoaderMock::insertDocuments called");
     const auto status = insertDocsFn(begin, end);
 
     // Only count if it succeeds.
@@ -121,7 +122,7 @@ Status CollectionBulkLoaderMock::insertDocuments(const std::vector<BSONObj>::con
 };
 
 Status CollectionBulkLoaderMock::commit() {
-    LOG(1) << "CollectionBulkLoaderMock::commit called";
+    LOGV2_DEBUG(21475, 1, "CollectionBulkLoaderMock::commit called");
     stats->commitCalled = true;
     return commitFn();
 };

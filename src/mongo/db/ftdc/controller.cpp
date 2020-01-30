@@ -45,6 +45,7 @@
 #include "mongo/util/concurrency/idle_thread_block.h"
 #include "mongo/util/exit.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/time_support.h"
 
 namespace mongo {
@@ -137,8 +138,7 @@ BSONObj FTDCController::getMostRecentPeriodicDocument() {
 }
 
 void FTDCController::start() {
-    log() << "Initializing full-time diagnostic data capture with directory '"
-          << _path.generic_string() << "'";
+    LOGV2(20582, "Initializing full-time diagnostic data capture with directory '{path_generic_string}'", "path_generic_string"_attr = _path.generic_string());
 
     // Start the thread
     _thread = stdx::thread([this] { doLoop(); });
@@ -152,7 +152,7 @@ void FTDCController::start() {
 }
 
 void FTDCController::stop() {
-    log() << "Shutting down full-time diagnostic data capture";
+    LOGV2(20583, "Shutting down full-time diagnostic data capture");
 
     {
         stdx::lock_guard<Latch> lock(_mutex);
@@ -180,7 +180,7 @@ void FTDCController::stop() {
     if (_mgr) {
         auto s = _mgr->close();
         if (!s.isOK()) {
-            log() << "Failed to close full-time diagnostic data capture file manager: " << s;
+            LOGV2(20584, "Failed to close full-time diagnostic data capture file manager: {s}", "s"_attr = s);
         }
     }
 }

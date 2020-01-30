@@ -36,6 +36,7 @@
 
 #include "mongo/db/lasterror.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/str.h"
 
 namespace mongo {
@@ -53,7 +54,7 @@ UpdateResult::UpdateResult(bool existing_,
     if (!existing && numMatched == 0 && !id.eoo()) {
         upserted = id.wrap(kUpsertedFieldName);
     }
-    LOG(4) << "UpdateResult -- " << redact(toString());
+    LOGV2_DEBUG(20688, 4, "UpdateResult -- {redact_toString}", "redact_toString"_attr = redact(toString()));
 }
 
 std::string UpdateResult::toString() const {

@@ -81,6 +81,7 @@
 #include "mongo/s/transaction_router.h"
 #include "mongo/util/fail_point.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/scopeguard.h"
 #include "mongo/util/str.h"
 #include "mongo/util/timer.h"
@@ -135,12 +136,12 @@ void appendRequiredFieldsToResponse(OperationContext* opCtx, BSONObjBuilder* res
         // Add operationTime.
         auto operationTime = OperationTimeTracker::get(opCtx)->getMaxOperationTime();
         if (operationTime != LogicalTime::kUninitialized) {
-            LOG(5) << "Appending operationTime: " << operationTime.asTimestamp();
+            LOGV2_DEBUG(22451, 5, "Appending operationTime: {operationTime_asTimestamp}", "operationTime_asTimestamp"_attr = operationTime.asTimestamp());
             responseBuilder->append(kOperationTime, operationTime.asTimestamp());
         } else if (now != LogicalTime::kUninitialized) {
             // If we don't know the actual operation time, use the cluster time instead. This is
             // safe but not optimal because we can always return a later operation time than actual.
-            LOG(5) << "Appending clusterTime as operationTime " << now.asTimestamp();
+            LOGV2_DEBUG(22452, 5, "Appending clusterTime as operationTime {now_asTimestamp}", "now_asTimestamp"_attr = now.asTimestamp());
             responseBuilder->append(kOperationTime, now.asTimestamp());
         }
 
@@ -444,8 +445,7 @@ void runCommand(OperationContext* opCtx,
             if (const auto wcDefault = ReadWriteConcernDefaults::get(opCtx->getServiceContext())
                                            .getDefaultWriteConcern(opCtx)) {
                 wc = *wcDefault;
-                LOG(2) << "Applying default writeConcern on " << request.getCommandName() << " of "
-                       << wcDefault->toBSON();
+                LOGV2_DEBUG(22453, 2, "Applying default writeConcern on {request_getCommandName} of {wcDefault_toBSON}", "request_getCommandName"_attr = request.getCommandName(), "wcDefault_toBSON"_attr = wcDefault->toBSON());
             }
         }
 
@@ -471,8 +471,7 @@ void runCommand(OperationContext* opCtx,
                         stdx::lock_guard<Client> lk(*opCtx->getClient());
                         readConcernArgs = std::move(*rcDefault);
                     }
-                    LOG(2) << "Applying default readConcern on "
-                           << invocation->definition()->getName() << " of " << *rcDefault;
+                    LOGV2_DEBUG(22454, 2, "Applying default readConcern on {invocation_definition_getName} of {rcDefault}", "invocation_definition_getName"_attr = invocation->definition()->getName(), "rcDefault"_attr = *rcDefault);
                     // Update the readConcernSupport, since the default RC was applied.
                     readConcernSupport =
                         invocation->supportsReadConcern(readConcernArgs.getLevel());
@@ -745,8 +744,7 @@ DbResponse Strategy::queryOp(OperationContext* opCtx, const NamespaceString& nss
     audit::logQueryAuthzCheck(client, nss, q.query, status.code());
     uassertStatusOK(status);
 
-    LOG(3) << "query: " << q.ns << " " << redact(q.query) << " ntoreturn: " << q.ntoreturn
-           << " options: " << q.queryOptions;
+    LOGV2_DEBUG(22455, 3, "query: {q_ns} {redact_q_query} ntoreturn: {q_ntoreturn} options: {q_queryOptions}", "q_ns"_attr = q.ns, "redact_q_query"_attr = redact(q.query), "q_ntoreturn"_attr = q.ntoreturn, "q_queryOptions"_attr = q.queryOptions);
 
     if (q.queryOptions & QueryOption_Exhaust) {
         uasserted(18526,
@@ -844,7 +842,7 @@ DbResponse Strategy::clientCommand(OperationContext* opCtx, const Message& m) {
                 if (ErrorCodes::isConnectionFatalMessageParseError(ex.code()))
                     propagateException = true;
 
-                LOG(1) << "Exception thrown while parsing command " << causedBy(redact(ex));
+                LOGV2_DEBUG(22456, 1, "Exception thrown while parsing command {causedBy_redact_ex}", "causedBy_redact_ex"_attr = causedBy(redact(ex)));
                 throw;
             }
         }();
@@ -854,12 +852,11 @@ DbResponse Strategy::clientCommand(OperationContext* opCtx, const Message& m) {
         // Execute.
         std::string db = request.getDatabase().toString();
         try {
-            LOG(3) << "Command begin db: " << db << " msg id: " << m.header().getId();
+            LOGV2_DEBUG(22457, 3, "Command begin db: {db} msg id: {m_header_getId}", "db"_attr = db, "m_header_getId"_attr = m.header().getId());
             runCommand(opCtx, request, m.operation(), reply.get(), &errorBuilder);
-            LOG(3) << "Command end db: " << db << " msg id: " << m.header().getId();
+            LOGV2_DEBUG(22458, 3, "Command end db: {db} msg id: {m_header_getId}", "db"_attr = db, "m_header_getId"_attr = m.header().getId());
         } catch (const DBException& ex) {
-            LOG(1) << "Exception thrown while processing command on " << db
-                   << " msg id: " << m.header().getId() << causedBy(redact(ex));
+            LOGV2_DEBUG(22459, 1, "Exception thrown while processing command on {db} msg id: {m_header_getId}{causedBy_redact_ex}", "db"_attr = db, "m_header_getId"_attr = m.header().getId(), "causedBy_redact_ex"_attr = causedBy(redact(ex)));
 
             // Record the exception in CurOp.
             CurOp::get(opCtx)->debug().errInfo = ex.toStatus();
@@ -996,7 +993,7 @@ void Strategy::killCursors(OperationContext* opCtx, DbMessage* dbm) {
 
         boost::optional<NamespaceString> nss = manager->getNamespaceForCursorId(cursorId);
         if (!nss) {
-            LOG(3) << "Can't find cursor to kill.  Cursor id: " << cursorId << ".";
+            LOGV2_DEBUG(22460, 3, "Can't find cursor to kill.  Cursor id: {cursorId}.", "cursorId"_attr = cursorId);
             continue;
         }
 
@@ -1007,19 +1004,17 @@ void Strategy::killCursors(OperationContext* opCtx, DbMessage* dbm) {
         auto authzStatus = manager->checkAuthForKillCursors(opCtx, *nss, cursorId, authChecker);
         audit::logKillCursorsAuthzCheck(client, *nss, cursorId, authzStatus.code());
         if (!authzStatus.isOK()) {
-            LOG(3) << "Not authorized to kill cursor.  Namespace: '" << *nss
-                   << "', cursor id: " << cursorId << ".";
+            LOGV2_DEBUG(22461, 3, "Not authorized to kill cursor.  Namespace: '{nss}', cursor id: {cursorId}.", "nss"_attr = *nss, "cursorId"_attr = cursorId);
             continue;
         }
 
         Status killCursorStatus = manager->killCursor(opCtx, *nss, cursorId);
         if (!killCursorStatus.isOK()) {
-            LOG(3) << "Can't find cursor to kill.  Namespace: '" << *nss
-                   << "', cursor id: " << cursorId << ".";
+            LOGV2_DEBUG(22462, 3, "Can't find cursor to kill.  Namespace: '{nss}', cursor id: {cursorId}.", "nss"_attr = *nss, "cursorId"_attr = cursorId);
             continue;
         }
 
-        LOG(3) << "Killed cursor.  Namespace: '" << *nss << "', cursor id: " << cursorId << ".";
+        LOGV2_DEBUG(22463, 3, "Killed cursor.  Namespace: '{nss}', cursor id: {cursorId}.", "nss"_attr = *nss, "cursorId"_attr = cursorId);
     }
 }
 

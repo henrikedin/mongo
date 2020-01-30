@@ -43,6 +43,7 @@
 #include "mongo/util/bufreader.h"
 #include "mongo/util/hex.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 
 #ifdef MONGO_CONFIG_WIREDTIGER_ENABLED
 #include <wiredtiger.h>
@@ -218,8 +219,7 @@ OpMsg OpMsg::parse(const Message& message) try {
 
     return msg;
 } catch (const DBException& ex) {
-    LOG(1) << "invalid message: " << ex.code() << " " << redact(ex) << " -- "
-           << redact(hexdump(message.singleData().view2ptr(), message.size()));
+    LOGV2_DEBUG(22321, 1, "invalid message: {ex_code} {redact_ex} -- {redact_hexdump_message_singleData_view2ptr_message_size}", "ex_code"_attr = ex.code(), "redact_ex"_attr = redact(ex), "redact_hexdump_message_singleData_view2ptr_message_size"_attr = redact(hexdump(message.singleData().view2ptr(), message.size())));
     throw;
 }
 
@@ -291,8 +291,7 @@ Message OpMsgBuilder::finish() {
         std::set<StringData> seenFields;
         for (auto elem : resumeBody().asTempObj()) {
             if (!(seenFields.insert(elem.fieldNameStringData()).second)) {
-                severe() << "OP_MSG with duplicate field '" << elem.fieldNameStringData()
-                         << "' : " << redact(resumeBody().asTempObj());
+                LOGV2_FATAL(22322, "OP_MSG with duplicate field '{elem_fieldNameStringData}' : {redact_resumeBody_asTempObj}", "elem_fieldNameStringData"_attr = elem.fieldNameStringData(), "redact_resumeBody_asTempObj"_attr = redact(resumeBody().asTempObj()));
                 fassert(40474, false);
             }
         }

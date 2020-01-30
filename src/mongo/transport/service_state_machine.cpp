@@ -53,6 +53,7 @@
 #include "mongo/util/debug_util.h"
 #include "mongo/util/exit.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/net/socket_exception.h"
 #include "mongo/util/quick_exit.h"
 
@@ -375,16 +376,14 @@ void ServiceStateMachine::_sourceCallback(Status status) {
                                       transport::ServiceExecutorTaskName::kSSMProcessMessage);
     } else if (ErrorCodes::isInterruption(status.code()) ||
                ErrorCodes::isNetworkError(status.code())) {
-        LOG(2) << "Session from " << remote
-               << " encountered a network error during SourceMessage: " << status;
+        LOGV2_DEBUG(22669, 2, "Session from {remote} encountered a network error during SourceMessage: {status}", "remote"_attr = remote, "status"_attr = status);
         _state.store(State::EndSession);
     } else if (status == TransportLayer::TicketSessionClosedStatus) {
         // Our session may have been closed internally.
-        LOG(2) << "Session from " << remote << " was closed internally during SourceMessage";
+        LOGV2_DEBUG(22670, 2, "Session from {remote} was closed internally during SourceMessage", "remote"_attr = remote);
         _state.store(State::EndSession);
     } else {
-        log() << "Error receiving request from client: " << status << ". Ending connection from "
-              << remote << " (connection id: " << _session()->id() << ")";
+        LOGV2(22671, "Error receiving request from client: {status}. Ending connection from {remote} (connection id: {session_id})", "status"_attr = status, "remote"_attr = remote, "session_id"_attr = _session()->id());
         _state.store(State::EndSession);
     }
 
@@ -406,8 +405,7 @@ void ServiceStateMachine::_sinkCallback(Status status) {
     // Otherwise, update the current state depending on whether we're in exhaust or not, and call
     // scheduleNext() to unwind the stack and do the next step.
     if (!status.isOK()) {
-        log() << "Error sending response to client: " << status << ". Ending connection from "
-              << _session()->remote() << " (connection id: " << _session()->id() << ")";
+        LOGV2(22672, "Error sending response to client: {status}. Ending connection from {session_remote} (connection id: {session_id})", "status"_attr = status, "session_remote"_attr = _session()->remote(), "session_id"_attr = _session()->id());
         _state.store(State::EndSession);
         return _runNextInGuard(std::move(guard));
     } else if (_inExhaust) {
@@ -540,7 +538,7 @@ void ServiceStateMachine::_runNextInGuard(ThreadGuard guard) {
 
         return;
     } catch (const DBException& e) {
-        log() << "DBException handling request, closing client connection: " << redact(e);
+        LOGV2(22673, "DBException handling request, closing client connection: {redact_e}", "redact_e"_attr = redact(e));
     }
     // No need to catch std::exception, as std::terminate will be called when the exception bubbles
     // to the top of the stack
@@ -604,7 +602,7 @@ void ServiceStateMachine::terminateIfTagsDontMatch(transport::Session::TagMask t
     // If terminateIfTagsDontMatch gets called when we still are 'pending' where no tags have been
     // set, then skip the termination check.
     if ((sessionTags & tags) || (sessionTags & transport::Session::kPending)) {
-        log() << "Skip closing connection for connection # " << _session()->id();
+        LOGV2(22674, "Skip closing connection for connection # {session_id}", "session_id"_attr = _session()->id());
         return;
     }
 
@@ -622,7 +620,7 @@ ServiceStateMachine::State ServiceStateMachine::state() {
 
 void ServiceStateMachine::_terminateAndLogIfError(Status status) {
     if (!status.isOK()) {
-        warning(logger::LogComponent::kExecutor) << "Terminating session due to error: " << status;
+        LOGV2_WARNING_OPTIONS(22676, {logComponentV1toV2(logger::LogComponent::kExecutor)}, "Terminating session due to error: {status}", "status"_attr = status);
         terminate();
     }
 }
@@ -642,7 +640,7 @@ void ServiceStateMachine::_cleanupExhaustResources() noexcept try {
         _sep->handleRequest(opCtx.get(), makeKillCursorsMessage(cursorId));
     }
 } catch (const DBException& e) {
-    log() << "Error cleaning up resources for exhaust requests: " << e.toStatus();
+    LOGV2(22675, "Error cleaning up resources for exhaust requests: {e_toStatus}", "e_toStatus"_attr = e.toStatus());
 }
 
 void ServiceStateMachine::_cleanupSession(ThreadGuard guard) {

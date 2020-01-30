@@ -38,6 +38,7 @@
 #include "mongo/base/init.h"
 #include "mongo/unittest/unittest.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/options_parser/startup_option_init.h"
 #include "mongo/util/options_parser/startup_options.h"
 #include "mongo/util/str.h"
@@ -86,7 +87,7 @@ TempDir::TempDir(const std::string& namePrefix) {
 
     bool createdNewDirectory = boost::filesystem::create_directory(_path);
     if (!createdNewDirectory) {
-        error() << "unique path (" << _path << ") already existed";
+        LOGV2_ERROR(22741, "unique path ({path}) already existed", "path"_attr = _path);
         fassertFailed(17147);
     }
 
@@ -97,8 +98,7 @@ TempDir::~TempDir() {
     try {
         boost::filesystem::remove_all(_path);
     } catch (const std::exception& e) {
-        warning() << "error encountered recursively deleting directory '" << _path
-                  << "': " << e.what() << ". Ignoring and continuing.";
+        LOGV2_WARNING(22740, "error encountered recursively deleting directory '{path}': {e_what}. Ignoring and continuing.", "path"_attr = _path, "e_what"_attr = e.what());
     }
 }
 

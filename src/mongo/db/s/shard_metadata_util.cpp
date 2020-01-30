@@ -46,6 +46,7 @@
 #include "mongo/s/chunk_version.h"
 #include "mongo/s/write_ops/batched_command_response.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 
 namespace mongo {
 namespace shardmetadatautil {
@@ -425,7 +426,7 @@ Status dropChunksAndDeleteCollectionsEntry(OperationContext* opCtx, const Namesp
             }
         }
 
-        LOG(1) << "Successfully cleared persisted chunk metadata for collection '" << nss << "'.";
+        LOGV2_DEBUG(21805, 1, "Successfully cleared persisted chunk metadata for collection '{nss}'.", "nss"_attr = nss);
         return Status::OK();
     } catch (const DBException& ex) {
         return ex.toStatus();
@@ -444,7 +445,7 @@ void dropChunks(OperationContext* opCtx, const NamespaceString& nss) {
         }
     }
 
-    LOG(1) << "Successfully cleared persisted chunk metadata for collection '" << nss << "'.";
+    LOGV2_DEBUG(21806, 1, "Successfully cleared persisted chunk metadata for collection '{nss}'.", "nss"_attr = nss);
 }
 
 Status deleteDatabasesEntry(OperationContext* opCtx, StringData dbName) {
@@ -464,7 +465,7 @@ Status deleteDatabasesEntry(OperationContext* opCtx, StringData dbName) {
         uassertStatusOK(
             getStatusFromWriteCommandResponse(deleteCommandResponse->getCommandReply()));
 
-        LOG(1) << "Successfully cleared persisted metadata for db '" << dbName.toString() << "'.";
+        LOGV2_DEBUG(21807, 1, "Successfully cleared persisted metadata for db '{dbName_toString}'.", "dbName_toString"_attr = dbName.toString());
         return Status::OK();
     } catch (const DBException& ex) {
         return ex.toStatus();

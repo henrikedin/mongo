@@ -40,6 +40,7 @@
 #include "mongo/s/grid.h"
 #include "mongo/util/fail_point.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 
 namespace mongo {
 namespace {
@@ -63,7 +64,7 @@ ExecutorFuture<void> waitForMajorityWithHangFailpoint(ServiceContext* service,
 
     if (auto sfp = failpoint.scoped(); MONGO_unlikely(sfp.isActive())) {
         const BSONObj& data = sfp.getData();
-        LOG(0) << "Hit " << failPointName << " failpoint";
+        LOGV2(22170, "Hit {failPointName} failpoint", "failPointName"_attr = failPointName);
 
         // Run the hang failpoint asynchronously on a different thread to avoid self deadlocks.
         return ExecutorFuture<void>(executor).then(
@@ -200,9 +201,7 @@ TransactionCoordinator::TransactionCoordinator(OperationContext* operationContex
                     }
 
                     if (_decision->getDecision() == CommitDecision::kCommit) {
-                        LOG(3) << txn::txnIdToString(_lsid, _txnNumber)
-                               << " Advancing cluster time to the commit timestamp "
-                               << *_decision->getCommitTimestamp();
+                        LOGV2_DEBUG(22171, 3, "{txn_txnIdToString_lsid_txnNumber} Advancing cluster time to the commit timestamp {decision_getCommitTimestamp}", "txn_txnIdToString_lsid_txnNumber"_attr = txn::txnIdToString(_lsid, _txnNumber), "decision_getCommitTimestamp"_attr = *_decision->getCommitTimestamp());
 
                         uassertStatusOK(LogicalClock::get(_serviceContext)
                                             ->advanceClusterTime(
@@ -382,8 +381,7 @@ void TransactionCoordinator::_done(Status status) {
                         str::stream() << "Coordinator " << _lsid.getId() << ':' << _txnNumber
                                       << " stopped due to: " << status.reason());
 
-    LOG(3) << txn::txnIdToString(_lsid, _txnNumber) << " Two-phase commit completed with "
-           << redact(status);
+    LOGV2_DEBUG(22172, 3, "{txn_txnIdToString_lsid_txnNumber} Two-phase commit completed with {redact_status}", "txn_txnIdToString_lsid_txnNumber"_attr = txn::txnIdToString(_lsid, _txnNumber), "redact_status"_attr = redact(status));
 
     stdx::unique_lock<Latch> ul(_mutex);
 
@@ -413,7 +411,7 @@ void TransactionCoordinator::_done(Status status) {
 
 void TransactionCoordinator::_logSlowTwoPhaseCommit(
     const txn::CoordinatorCommitDecision& decision) {
-    log() << _twoPhaseCommitInfoForLog(decision);
+    LOGV2(22173, "{twoPhaseCommitInfoForLog_decision}", "twoPhaseCommitInfoForLog_decision"_attr = _twoPhaseCommitInfoForLog(decision));
 }
 
 std::string TransactionCoordinator::_twoPhaseCommitInfoForLog(

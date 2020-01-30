@@ -41,6 +41,7 @@
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/s/client/version_manager.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 
 namespace mongo {
 
@@ -58,7 +59,7 @@ void ShardingConnectionHook::onCreate(DBClientBase* conn) {
     // Authenticate as the first thing we do
     // NOTE: Replica set authentication allows authentication against *any* online host
     if (auth::isInternalAuthSet()) {
-        LOG(2) << "calling onCreate auth for " << conn->toString();
+        LOGV2_DEBUG(22410, 2, "calling onCreate auth for {conn_toString}", "conn_toString"_attr = conn->toString());
 
         uassertStatusOKWithContext(conn->authenticateInternalUser(),
                                    str::stream() << "can't authenticate to server "

@@ -63,6 +63,7 @@
 #include "mongo/util/fail_point.h"
 #include "mongo/util/invariant.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/str.h"
 
 namespace mongo {
@@ -556,15 +557,12 @@ void CommandHelpers::evaluateFailCommandFailPoint(OperationContext* opCtx,
 
             if (closeConnection) {
                 opCtx->getClient()->session()->end();
-                log() << "Failing command '" << cmd->getName()
-                      << "' via 'failCommand' failpoint. Action: closing connection.";
+                LOGV2(20398, "Failing command '{cmd_getName}' via 'failCommand' failpoint. Action: closing connection.", "cmd_getName"_attr = cmd->getName());
                 uasserted(50985, "Failing command due to 'failCommand' failpoint");
             }
 
             if (hasErrorCode) {
-                log() << "Failing command '" << cmd->getName()
-                      << "' via 'failCommand' failpoint. Action: returning error code " << errorCode
-                      << ".";
+                LOGV2(20399, "Failing command '{cmd_getName}' via 'failCommand' failpoint. Action: returning error code {errorCode}.", "cmd_getName"_attr = cmd->getName(), "errorCode"_attr = errorCode);
                 uasserted(ErrorCodes::Error(errorCode),
                           "Failing command due to 'failCommand' failpoint");
             }
@@ -626,7 +624,7 @@ void CommandInvocation::checkAuthorization(OperationContext* opCtx,
             }
         }
     } catch (const DBException& e) {
-        log(LogComponent::kAccessControl) << e.toStatus();
+        LOGV2_OPTIONS(20400, {logComponentV1toV2(LogComponent::kAccessControl)}, "{e_toStatus}", "e_toStatus"_attr = e.toStatus());
         CommandHelpers::auditLogAuthEvent(opCtx, this, request, e.code());
         throw;
     }

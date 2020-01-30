@@ -40,6 +40,7 @@
 #include "mongo/db/query/query_request.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 
 namespace mongo {
 
@@ -79,8 +80,7 @@ bool FindCommon::haveSpaceForNext(const BSONObj& nextDoc, long long numDocs, int
 void FindCommon::waitInFindBeforeMakingBatch(OperationContext* opCtx, const CanonicalQuery& cq) {
     auto whileWaitingFunc = [&, hasLogged = false]() mutable {
         if (!std::exchange(hasLogged, true)) {
-            log() << "Waiting in find before making batch for query - "
-                  << redact(cq.toStringShort());
+            LOGV2(20710, "Waiting in find before making batch for query - {redact_cq_toStringShort}", "redact_cq_toStringShort"_attr = redact(cq.toStringShort()));
         }
     };
 

@@ -49,6 +49,7 @@
 #include "mongo/util/concurrency/ticketholder.h"
 #include "mongo/util/debug_util.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/progress_meter.h"
 #include "mongo/util/scopeguard.h"
 #include "mongo/util/time_support.h"
@@ -2056,9 +2057,7 @@ TEST_F(DConcurrencyTestFixture, CompatibleFirstStress) {
     for (auto& thread : threads)
         thread.join();
     for (int threadId = 0; threadId < numThreads; threadId++) {
-        log() << "thread " << threadId << " stats: " << acquisitionCount[threadId]
-              << " acquisitions, " << timeoutCount[threadId] << " timeouts, "
-              << busyWaitCount[threadId] / 1'000'000 << "M busy waits";
+        LOGV2(20483, "thread {threadId} stats: {acquisitionCount_threadId} acquisitions, {timeoutCount_threadId} timeouts, {busyWaitCount_threadId_1_000_000}M busy waits", "threadId"_attr = threadId, "acquisitionCount_threadId"_attr = acquisitionCount[threadId], "timeoutCount_threadId"_attr = timeoutCount[threadId], "busyWaitCount_threadId_1_000_000"_attr = busyWaitCount[threadId] / 1'000'000);
     }
 }
 

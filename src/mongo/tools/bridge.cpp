@@ -56,6 +56,7 @@
 #include "mongo/util/assert_util.h"
 #include "mongo/util/exit.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/quick_exit.h"
 #include "mongo/util/signal_handlers.h"
 #include "mongo/util/str.h"
@@ -93,7 +94,7 @@ public:
             return status.getStatus();
         }
 
-        log() << "Processing bridge command: " << cmdName;
+        LOGV2(22600, "Processing bridge command: {cmdName}", "cmdName"_attr = cmdName);
 
         BridgeCommand* command = status.getValue();
         return command->run(cmdObj, &_settingsMutex, &_settings);
@@ -249,7 +250,7 @@ DbResponse ServiceEntryPointBridge::handleRequest(OperationContext* opCtx, const
                     tl->connect(destAddr, transport::kGlobalSSLMode, connectExpiration - now);
                 auto status = sws.getStatus();
                 if (!status.isOK()) {
-                    warning() << "Unable to establish connection to " << destAddr << ": " << status;
+                    LOGV2_WARNING(22608, "Unable to establish connection to {destAddr}: {status}", "destAddr"_attr = destAddr, "status"_attr = status);
                     now = getGlobalServiceContext()->getFastClockSource()->now();
                 } else {
                     return std::move(sws.getValue());
@@ -277,8 +278,7 @@ DbResponse ServiceEntryPointBridge::handleRequest(OperationContext* opCtx, const
 
         dest.extractHostInfo(*cmdRequest);
 
-        LOG(1) << "Received \"" << cmdRequest->getCommandName() << "\" command with arguments "
-               << cmdRequest->body << " from " << dest;
+        LOGV2_DEBUG(22601, 1, "Received \"{cmdRequest_getCommandName}\" command with arguments {cmdRequest_body} from {dest}", "cmdRequest_getCommandName"_attr = cmdRequest->getCommandName(), "cmdRequest_body"_attr = cmdRequest->body, "dest"_attr = dest);
     }
 
     // Handle a message intended to configure the mongobridge and return a response.
@@ -304,8 +304,7 @@ DbResponse ServiceEntryPointBridge::handleRequest(OperationContext* opCtx, const
     switch (hostSettings.state) {
         // Close the connection to 'dest'.
         case HostSettings::State::kHangUp:
-            log() << "Rejecting connection from " << dest << ", end connection "
-                  << source->remote().toString();
+            LOGV2(22602, "Rejecting connection from {dest}, end connection {source_remote_toString}", "dest"_attr = dest, "source_remote_toString"_attr = source->remote().toString());
             source->end();
             return {Message()};
         // Forward the message to 'dest' with probability '1 - hostSettings.loss'.
@@ -313,12 +312,9 @@ DbResponse ServiceEntryPointBridge::handleRequest(OperationContext* opCtx, const
             if (dest.nextCanonicalDouble() < hostSettings.loss) {
                 std::string hostName = dest.toString();
                 if (cmdRequest) {
-                    log() << "Discarding \"" << cmdRequest->getCommandName()
-                          << "\" command with arguments " << cmdRequest->body << " from "
-                          << hostName;
+                    LOGV2(22603, "Discarding \"{cmdRequest_getCommandName}\" command with arguments {cmdRequest_body} from {hostName}", "cmdRequest_getCommandName"_attr = cmdRequest->getCommandName(), "cmdRequest_body"_attr = cmdRequest->body, "hostName"_attr = hostName);
                 } else {
-                    log() << "Discarding " << networkOpToString(request.operation()) << " from "
-                          << hostName;
+                    LOGV2(22604, "Discarding {networkOpToString_request_operation} from {hostName}", "networkOpToString_request_operation"_attr = networkOpToString(request.operation()), "hostName"_attr = hostName);
                 }
                 return {Message()};
             }
@@ -351,7 +347,7 @@ DbResponse ServiceEntryPointBridge::handleRequest(OperationContext* opCtx, const
         // reply with. If the message handling settings were since changed to close
         // connections from 'host', then do so now.
         if (hostSettings.state == HostSettings::State::kHangUp) {
-            log() << "Closing connection from " << dest << ", end connection " << source->remote();
+            LOGV2(22605, "Closing connection from {dest}, end connection {source_remote}", "dest"_attr = dest, "source_remote"_attr = source->remote());
             source->end();
             return {Message()};
         }
@@ -403,12 +399,12 @@ int bridgeMain(int argc, char** argv, char** envp) {
         opts, serviceContext->getServiceEntryPoint()));
     auto tl = serviceContext->getTransportLayer();
     if (!tl->setup().isOK()) {
-        log() << "Error setting up transport layer";
+        LOGV2(22606, "Error setting up transport layer");
         return EXIT_NET_ERROR;
     }
 
     if (!tl->start().isOK()) {
-        log() << "Error starting transport layer";
+        LOGV2(22607, "Error starting transport layer");
         return EXIT_NET_ERROR;
     }
 

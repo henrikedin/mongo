@@ -43,6 +43,7 @@
 #include "mongo/util/clock_source.h"
 #include "mongo/util/fail_point.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/scopeguard.h"
 #include "mongo/util/system_tick_source.h"
 
@@ -223,7 +224,7 @@ Status OperationContext::checkForInterruptNoAssert() noexcept {
 
     checkForInterruptFail.executeIf(
         [&](auto&&) {
-            log() << "set pending kill on op " << getOpID() << ", for checkForInterruptFail";
+            LOGV2(20686, "set pending kill on op {getOpID}, for checkForInterruptFail", "getOpID"_attr = getOpID());
             markKilled();
         },
         [&](auto&& data) { return opShouldFail(getClient(), data); });
@@ -324,7 +325,7 @@ void OperationContext::markKilled(ErrorCodes::Error killCode) {
     invariant(!ErrorExtraInfo::parserFor(killCode));
 
     if (killCode == ErrorCodes::ClientDisconnect) {
-        log() << "operation was interrupted because a client disconnected";
+        LOGV2(20687, "operation was interrupted because a client disconnected");
     }
 
     if (auto status = ErrorCodes::OK; _killCode.compareAndSwap(&status, killCode)) {

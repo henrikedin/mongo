@@ -42,6 +42,7 @@
 #include "mongo/s/client/shard_factory.h"
 #include "mongo/s/query/cluster_cursor_manager.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 
 namespace mongo {
 namespace {
@@ -130,10 +131,8 @@ boost::optional<repl::OpTime> Grid::advanceConfigOpTime(OperationContext* opCtx,
         if (opCtx && opCtx->getClient()) {
             clientAddr = opCtx->getClient()->clientAddress(true);
         }
-        log() << "Received " << what << " " << clientAddr
-              << " indicating config server optime "
-                 "term has increased, previous optime "
-              << prevOpTime << ", now " << opTime;
+        LOGV2(22479, "Received {what} {clientAddr} indicating config server optime "
+                 "term has increased, previous optime {prevOpTime}, now {opTime}", "what"_attr = what, "clientAddr"_attr = clientAddr, "prevOpTime"_attr = prevOpTime, "opTime"_attr = opTime);
     }
     return prevOpTime;
 }

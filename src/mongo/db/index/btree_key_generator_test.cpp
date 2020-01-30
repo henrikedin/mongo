@@ -41,6 +41,7 @@
 #include "mongo/db/query/collation/collator_interface_mock.h"
 #include "mongo/unittest/unittest.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 
 using namespace mongo;
 using std::cout;
@@ -137,15 +138,13 @@ bool testKeygen(const BSONObj& kp,
     //
     bool match = keysetsEqual(expectedKeys, actualKeys);
     if (!match) {
-        log() << "Expected: " << dumpKeyset(expectedKeys) << ", "
-              << "Actual: " << dumpKeyset(actualKeys);
+        LOGV2(20603, "Expected: {dumpKeyset_expectedKeys}, Actual: {dumpKeyset_actualKeys}", "dumpKeyset_expectedKeys"_attr = dumpKeyset(expectedKeys), "dumpKeyset_actualKeys"_attr = dumpKeyset(actualKeys));
         return false;
     }
 
     match = (expectedMultikeyPaths == actualMultikeyPaths);
     if (!match) {
-        log() << "Expected: " << dumpMultikeyPaths(expectedMultikeyPaths) << ", "
-              << "Actual: " << dumpMultikeyPaths(actualMultikeyPaths);
+        LOGV2(20604, "Expected: {dumpMultikeyPaths_expectedMultikeyPaths}, Actual: {dumpMultikeyPaths_actualMultikeyPaths}", "dumpMultikeyPaths_expectedMultikeyPaths"_attr = dumpMultikeyPaths(expectedMultikeyPaths), "dumpMultikeyPaths_actualMultikeyPaths"_attr = dumpMultikeyPaths(actualMultikeyPaths));
     }
 
     return match;

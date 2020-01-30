@@ -39,6 +39,7 @@
 #include "mongo/db/storage/recovery_unit.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/uuid.h"
 
 namespace mongo {
@@ -384,12 +385,11 @@ void CollectionCatalog::registerCollection(CollectionUUID uuid, std::unique_ptr<
     auto ns = (*coll)->ns();
     stdx::lock_guard<Latch> lock(_catalogLock);
     if (_collections.find(ns) != _collections.end()) {
-        log() << "Conflicted creating a collection. ns: " << (*coll)->ns() << " ("
-              << (*coll)->uuid() << ").";
+        LOGV2(20248, "Conflicted creating a collection. ns: {coll_ns} ({coll_uuid}).", "coll_ns"_attr = (*coll)->ns(), "coll_uuid"_attr = (*coll)->uuid());
         throw WriteConflictException();
     }
 
-    LOG(1) << "Registering collection " << ns << " with UUID " << uuid;
+    LOGV2_DEBUG(20249, 1, "Registering collection {ns} with UUID {uuid}", "ns"_attr = ns, "uuid"_attr = uuid);
 
     auto dbName = ns.db().toString();
     auto dbIdPair = std::make_pair(dbName, uuid);
@@ -419,7 +419,7 @@ std::unique_ptr<Collection> CollectionCatalog::deregisterCollection(CollectionUU
     auto dbName = ns.db().toString();
     auto dbIdPair = std::make_pair(dbName, uuid);
 
-    LOG(1) << "Deregistering collection " << ns << " with UUID " << uuid;
+    LOGV2_DEBUG(20250, 1, "Deregistering collection {ns} with UUID {uuid}", "ns"_attr = ns, "uuid"_attr = uuid);
 
     // Make sure collection object exists.
     invariant(_collections.find(ns) != _collections.end());
@@ -447,14 +447,14 @@ std::unique_ptr<RecoveryUnit::Change> CollectionCatalog::makeFinishDropCollectio
 void CollectionCatalog::deregisterAllCollections() {
     stdx::lock_guard<Latch> lock(_catalogLock);
 
-    LOG(0) << "Deregistering all the collections";
+    LOGV2(20251, "Deregistering all the collections");
     for (auto& entry : _catalog) {
         auto uuid = entry.first;
         auto ns = entry.second->ns();
         auto dbName = ns.db().toString();
         auto dbIdPair = std::make_pair(dbName, uuid);
 
-        LOG(1) << "Deregistering collection " << ns << " with UUID " << uuid;
+        LOGV2_DEBUG(20252, 1, "Deregistering collection {ns} with UUID {uuid}", "ns"_attr = ns, "uuid"_attr = uuid);
 
         entry.second.reset();
     }

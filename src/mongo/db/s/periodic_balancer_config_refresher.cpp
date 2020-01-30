@@ -38,6 +38,7 @@
 #include "mongo/s/balancer_configuration.h"
 #include "mongo/s/grid.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 
 namespace mongo {
 
@@ -60,7 +61,7 @@ PeriodicJobAnchor launchBalancerConfigRefresher(ServiceContext* serviceContext) 
 
             Status status = balancerConfig->refreshAndCheck(opCtx.get());
             if (!status.isOK()) {
-                log() << "Failed to refresh balancer configuration" << causedBy(status);
+                LOGV2(21767, "Failed to refresh balancer configuration{causedBy_status}", "causedBy_status"_attr = causedBy(status));
             }
         },
         Seconds(30));

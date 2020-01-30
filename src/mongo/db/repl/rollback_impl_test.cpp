@@ -55,6 +55,7 @@
 #include "mongo/unittest/death_test.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/uuid.h"
 
 namespace {
@@ -113,10 +114,9 @@ protected:
                                         UUID uuid,
                                         NamespaceString nss,
                                         const SimpleBSONObjUnorderedSet& idSet) final {
-        log() << "Simulating writing a rollback file for namespace " << nss.ns() << " with uuid "
-              << uuid;
+        LOGV2(21373, "Simulating writing a rollback file for namespace {nss_ns} with uuid {uuid}", "nss_ns"_attr = nss.ns(), "uuid"_attr = uuid);
         for (auto&& id : idSet) {
-            log() << "Looking up " << id.jsonString(JsonStringFormat::LegacyStrict);
+            LOGV2(21374, "Looking up {id_jsonString_JsonStringFormat_LegacyStrict}", "id_jsonString_JsonStringFormat_LegacyStrict"_attr = id.jsonString(JsonStringFormat::LegacyStrict));
             auto document = _findDocumentById(opCtx, uuid, nss, id.firstElement());
             if (document) {
                 _uuidToObjsMap[uuid].push_back(*document);

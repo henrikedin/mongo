@@ -45,6 +45,7 @@
 #include "mongo/s/cluster_last_error_info.h"
 #include "mongo/s/commands/strategy.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/scopeguard.h"
 
 namespace mongo {
@@ -117,8 +118,7 @@ DbResponse ServiceEntryPointMongos::handleRequest(OperationContext* opCtx, const
         }
 
 
-        LOG(3) << "Request::process begin ns: " << nss << " msg id: " << msgId
-               << " op: " << networkOpToString(op);
+        LOGV2_DEBUG(22551, 3, "Request::process begin ns: {nss} msg id: {msgId} op: {networkOpToString_op}", "nss"_attr = nss, "msgId"_attr = msgId, "networkOpToString_op"_attr = networkOpToString(op));
 
         switch (op) {
             case dbQuery:
@@ -146,12 +146,10 @@ DbResponse ServiceEntryPointMongos::handleRequest(OperationContext* opCtx, const
                 MONGO_UNREACHABLE;
         }
 
-        LOG(3) << "Request::process end ns: " << nss << " msg id: " << msgId
-               << " op: " << networkOpToString(op);
+        LOGV2_DEBUG(22552, 3, "Request::process end ns: {nss} msg id: {msgId} op: {networkOpToString_op}", "nss"_attr = nss, "msgId"_attr = msgId, "networkOpToString_op"_attr = networkOpToString(op));
 
     } catch (const DBException& ex) {
-        LOG(1) << "Exception thrown while processing " << networkOpToString(op) << " op for "
-               << nss.ns() << causedBy(ex);
+        LOGV2_DEBUG(22553, 1, "Exception thrown while processing {networkOpToString_op} op for {nss_ns}{causedBy_ex}", "networkOpToString_op"_attr = networkOpToString(op), "nss_ns"_attr = nss.ns(), "causedBy_ex"_attr = causedBy(ex));
 
         if (op == dbQuery || op == dbGetMore) {
             dbResponse = replyToQuery(buildErrReply(ex), ResultFlag_ErrSet);

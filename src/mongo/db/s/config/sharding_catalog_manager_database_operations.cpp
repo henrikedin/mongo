@@ -47,6 +47,7 @@
 #include "mongo/s/shard_id.h"
 #include "mongo/s/shard_util.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 
 namespace mongo {
 namespace {
@@ -150,7 +151,7 @@ DatabaseType ShardingCatalogManager::createDatabase(OperationContext* opCtx,
     // Pick a primary shard for the new database.
     DatabaseType db(dbName.toString(), shardPtr->getId(), false, databaseVersion::makeNew());
 
-    log() << "Registering new database " << db << " in sharding catalog";
+    LOGV2(21659, "Registering new database {db} in sharding catalog", "db"_attr = db);
 
     // Do this write with majority writeConcern to guarantee that the shard sees the write when it
     // receives the _flushDatabaseCacheUpdates.
@@ -214,7 +215,7 @@ void ShardingCatalogManager::enableSharding(OperationContext* opCtx,
                                                 Milliseconds{30000}),
                             &unusedResult));
 
-    log() << "Enabling sharding for database [" << dbName << "] in config db";
+    LOGV2(21660, "Enabling sharding for database [{dbName}] in config db", "dbName"_attr = dbName);
 
     uassertStatusOK(Grid::get(opCtx)->catalogClient()->updateConfigDocument(
         opCtx,
@@ -303,8 +304,7 @@ Status ShardingCatalogManager::commitMovePrimary(OperationContext* opCtx,
         ShardingCatalogClient::kLocalWriteConcern);
 
     if (!updateStatus.isOK()) {
-        log() << "error committing movePrimary: " << dbname
-              << causedBy(redact(updateStatus.getStatus()));
+        LOGV2(21661, "error committing movePrimary: {dbname}{causedBy_redact_updateStatus_getStatus}", "dbname"_attr = dbname, "causedBy_redact_updateStatus_getStatus"_attr = causedBy(redact(updateStatus.getStatus())));
         return updateStatus.getStatus();
     }
 

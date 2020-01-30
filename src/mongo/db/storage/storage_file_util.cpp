@@ -44,6 +44,7 @@
 
 #include "mongo/util/file.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 
 namespace mongo {
 
@@ -67,7 +68,7 @@ Status fsyncParentDirectory(const boost::filesystem::path& file) {
 
     boost::filesystem::path dir = file.parent_path();
 
-    LOG(1) << "flushing directory " << dir.string();
+    LOGV2_DEBUG(22019, 1, "flushing directory {dir_string}", "dir_string"_attr = dir.string());
 
     int fd = ::open(dir.string().c_str(), O_RDONLY);
     if (fd < 0) {
@@ -78,7 +79,7 @@ Status fsyncParentDirectory(const boost::filesystem::path& file) {
     if (fsync(fd) != 0) {
         int e = errno;
         if (e == EINVAL) {
-            warning() << "Could not fsync directory because this file system is not supported.";
+            LOGV2_WARNING(22020, "Could not fsync directory because this file system is not supported.");
         } else {
             close(fd);
             return {ErrorCodes::OperationFailed,

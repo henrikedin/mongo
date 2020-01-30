@@ -42,6 +42,7 @@
 #include "mongo/db/operation_context.h"
 #include "mongo/db/storage/durable_catalog.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 
 namespace mongo {
 namespace {
@@ -107,7 +108,7 @@ public:
             uassertStatusOK(status);
             DurableCatalog::get(opCtx)->updateCappedSize(opCtx, coll->getCatalogId(), size);
             wunit.commit();
-            LOG(0) << "replSetResizeOplog success, currentSize:" << size;
+            LOGV2(20464, "replSetResizeOplog success, currentSize:{size}", "size"_attr = size);
             return true;
         });
     }

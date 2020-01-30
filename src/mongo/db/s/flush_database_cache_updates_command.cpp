@@ -51,6 +51,7 @@
 
 
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 
 namespace mongo {
 namespace {
@@ -133,7 +134,7 @@ public:
             oss.waitForMigrationCriticalSectionSignal(opCtx);
 
             if (request().getSyncFromConfig()) {
-                LOG(1) << "Forcing remote routing table refresh for " << _dbName();
+                LOGV2_DEBUG(21702, 1, "Forcing remote routing table refresh for {dbName}", "dbName"_attr = _dbName());
                 forceDatabaseRefresh(opCtx, _dbName());
             }
 

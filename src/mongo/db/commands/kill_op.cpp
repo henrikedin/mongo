@@ -44,6 +44,7 @@
 #include "mongo/db/operation_context.h"
 #include "mongo/db/service_context.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/str.h"
 
 namespace mongo {
@@ -58,7 +59,7 @@ public:
 
         // Used by tests to check if auth checks passed.
         result.append("info", "attempting to kill op");
-        log() << "going to kill op: " << opId;
+        LOGV2(20449, "going to kill op: {opId}", "opId"_attr = opId);
         KillOpCmdBase::killLocalOperation(opCtx, opId);
 
         // killOp always reports success once past the auth check.

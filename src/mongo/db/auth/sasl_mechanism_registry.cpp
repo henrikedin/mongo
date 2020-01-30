@@ -37,6 +37,7 @@
 #include "mongo/db/auth/user.h"
 #include "mongo/util/icu.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/net/socket_utils.h"
 #include "mongo/util/scopeguard.h"
 #include "mongo/util/sequence_util.h"
@@ -108,8 +109,7 @@ void SASLServerMechanismRegistry::advertiseMechanismNamesForUser(OperationContex
         if (!swUser.isOK()) {
             auto& status = swUser.getStatus();
             if (status.code() == ErrorCodes::UserNotFound) {
-                log() << "Supported SASL mechanisms requested for unknown user '" << userName
-                      << "'";
+                LOGV2(20221, "Supported SASL mechanisms requested for unknown user '{userName}'", "userName"_attr = userName);
                 return;
             }
             uassertStatusOK(status);

@@ -44,6 +44,7 @@
 #include "mongo/rpc/metadata/repl_set_metadata.h"
 #include "mongo/unittest/unittest.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 
 namespace mongo {
 namespace repl {
@@ -416,7 +417,7 @@ TEST_F(ReplCoordHBV1Test,
     enterNetwork();
     const NetworkInterfaceMock::NetworkOperationIterator noi = getNet()->getNextReadyRequest();
     const RemoteCommandRequest& request = noi->getRequest();
-    log() << request.target.toString() << " processing " << request.cmdObj;
+    LOGV2(21225, "{request_target_toString} processing {request_cmdObj}", "request_target_toString"_attr = request.target.toString(), "request_cmdObj"_attr = request.cmdObj);
     getNet()->scheduleResponse(
         noi,
         getNet()->now(),
@@ -426,8 +427,7 @@ TEST_F(ReplCoordHBV1Test,
 
     if (request.target != HostAndPort("node2", 12345) &&
         request.cmdObj.firstElement().fieldNameStringData() != "replSetHeartbeat") {
-        error() << "Black holing unexpected request to " << request.target << ": "
-                << request.cmdObj;
+        LOGV2_ERROR(21228, "Black holing unexpected request to {request_target}: {request_cmdObj}", "request_target"_attr = request.target, "request_cmdObj"_attr = request.cmdObj);
         getNet()->blackHole(noi);
     }
     getNet()->runReadyNetworkOperations();
@@ -490,11 +490,10 @@ TEST_F(ReplCoordHBV1Test, IgnoreTheContentsOfMetadataWhenItsReplicaSetIdDoesNotM
         const RemoteCommandRequest& request = noi->getRequest();
         if (request.target == host2 &&
             request.cmdObj.firstElement().fieldNameStringData() == "replSetHeartbeat") {
-            log() << request.target.toString() << " processing " << request.cmdObj;
+            LOGV2(21226, "{request_target_toString} processing {request_cmdObj}", "request_target_toString"_attr = request.target.toString(), "request_cmdObj"_attr = request.cmdObj);
             net->scheduleResponse(noi, net->now(), heartbeatResponse);
         } else {
-            log() << "blackholing request to " << request.target.toString() << ": "
-                  << request.cmdObj;
+            LOGV2(21227, "blackholing request to {request_target_toString}: {request_cmdObj}", "request_target_toString"_attr = request.target.toString(), "request_cmdObj"_attr = request.cmdObj);
             net->blackHole(noi);
         }
         net->runReadyNetworkOperations();

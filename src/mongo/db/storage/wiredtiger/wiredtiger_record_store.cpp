@@ -65,6 +65,7 @@
 #include "mongo/util/concurrency/idle_thread_block.h"
 #include "mongo/util/fail_point.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/scopeguard.h"
 #include "mongo/util/str.h"
 #include "mongo/util/time_support.h"
@@ -261,7 +262,7 @@ void WiredTigerRecordStore::OplogStones::createNewStoneIfNeeded(RecordId lastRec
         return;
     }
 
-    LOG(2) << "create new oplogStone, current stones:" << _stones.size();
+    LOGV2_DEBUG(22107, 2, "create new oplogStone, current stones:{stones_size}", "stones_size"_attr = _stones.size());
     OplogStones::Stone stone = {_currentRecords.swap(0), _currentBytes.swap(0), lastRecord};
     _stones.push_back(stone);
 
@@ -325,14 +326,13 @@ void WiredTigerRecordStore::OplogStones::_calculateStones(OperationContext* opCt
     const std::uint64_t startWaitTime = curTimeMicros64();
     ON_BLOCK_EXIT([&] {
         auto waitTime = curTimeMicros64() - startWaitTime;
-        log() << "WiredTiger record store oplog processing took " << waitTime / 1000 << "ms";
+        LOGV2(22108, "WiredTiger record store oplog processing took {waitTime_1000}ms", "waitTime_1000"_attr = waitTime / 1000);
         _totalTimeProcessing.fetchAndAdd(waitTime);
     });
     long long numRecords = _rs->numRecords(opCtx);
     long long dataSize = _rs->dataSize(opCtx);
 
-    log() << "The size storer reports that the oplog contains " << numRecords
-          << " records totaling to " << dataSize << " bytes";
+    LOGV2(22109, "The size storer reports that the oplog contains {numRecords} records totaling to {dataSize} bytes", "numRecords"_attr = numRecords, "dataSize"_attr = dataSize);
 
     // Don't calculate stones if this is a new collection. This is to prevent standalones from
     // attempting to get a forward scanning oplog cursor on an explicit create of the oplog
@@ -366,7 +366,7 @@ void WiredTigerRecordStore::OplogStones::_calculateStones(OperationContext* opCt
 
 void WiredTigerRecordStore::OplogStones::_calculateStonesByScanning(OperationContext* opCtx) {
     _processBySampling.store(false);  // process by scanning
-    log() << "Scanning the oplog to determine where to place markers for truncation";
+    LOGV2(22110, "Scanning the oplog to determine where to place markers for truncation");
 
     long long numRecords = 0;
     long long dataSize = 0;
@@ -376,8 +376,7 @@ void WiredTigerRecordStore::OplogStones::_calculateStonesByScanning(OperationCon
         _currentRecords.addAndFetch(1);
         int64_t newCurrentBytes = _currentBytes.addAndFetch(record->data.size());
         if (newCurrentBytes >= _minBytesPerStone) {
-            LOG(1) << "Placing a marker at optime "
-                   << Timestamp(record->id.repr()).toStringPretty();
+            LOGV2_DEBUG(22111, 1, "Placing a marker at optime {Timestamp_record_id_repr_toStringPretty}", "Timestamp_record_id_repr_toStringPretty"_attr = Timestamp(record->id.repr()).toStringPretty());
 
             OplogStones::Stone stone = {_currentRecords.swap(0), _currentBytes.swap(0), record->id};
             _stones.push_back(stone);
@@ -393,7 +392,7 @@ void WiredTigerRecordStore::OplogStones::_calculateStonesByScanning(OperationCon
 void WiredTigerRecordStore::OplogStones::_calculateStonesBySampling(OperationContext* opCtx,
                                                                     int64_t estRecordsPerStone,
                                                                     int64_t estBytesPerStone) {
-    log() << "Sampling the oplog to determine where to place markers for truncation";
+    LOGV2(22112, "Sampling the oplog to determine where to place markers for truncation");
     _processBySampling.store(true);  // process by sampling
     Timestamp earliestOpTime;
     Timestamp latestOpTime;
@@ -405,7 +404,7 @@ void WiredTigerRecordStore::OplogStones::_calculateStonesBySampling(OperationCon
         if (!record) {
             // This shouldn't really happen unless the size storer values are far off from reality.
             // The collection is probably empty, but fall back to scanning the oplog just in case.
-            log() << "Failed to determine the earliest optime, falling back to scanning the oplog";
+            LOGV2(22113, "Failed to determine the earliest optime, falling back to scanning the oplog");
             _calculateStonesByScanning(opCtx);
             return;
         }
@@ -419,22 +418,19 @@ void WiredTigerRecordStore::OplogStones::_calculateStonesBySampling(OperationCon
         if (!record) {
             // This shouldn't really happen unless the size storer values are far off from reality.
             // The collection is probably empty, but fall back to scanning the oplog just in case.
-            log() << "Failed to determine the latest optime, falling back to scanning the oplog";
+            LOGV2(22114, "Failed to determine the latest optime, falling back to scanning the oplog");
             _calculateStonesByScanning(opCtx);
             return;
         }
         latestOpTime = Timestamp(record->id.repr());
     }
 
-    log() << "Sampling from the oplog between " << earliestOpTime.toStringPretty() << " and "
-          << latestOpTime.toStringPretty() << " to determine where to place markers for truncation";
+    LOGV2(22115, "Sampling from the oplog between {earliestOpTime_toStringPretty} and {latestOpTime_toStringPretty} to determine where to place markers for truncation", "earliestOpTime_toStringPretty"_attr = earliestOpTime.toStringPretty(), "latestOpTime_toStringPretty"_attr = latestOpTime.toStringPretty());
 
     int64_t wholeStones = _rs->numRecords(opCtx) / estRecordsPerStone;
     int64_t numSamples = kRandomSamplesPerStone * _rs->numRecords(opCtx) / estRecordsPerStone;
 
-    log() << "Taking " << numSamples << " samples and assuming that each section of oplog contains"
-          << " approximately " << estRecordsPerStone << " records totaling to " << estBytesPerStone
-          << " bytes";
+    LOGV2(22116, "Taking {numSamples} samples and assuming that each section of oplog contains approximately {estRecordsPerStone} records totaling to {estBytesPerStone} bytes", "numSamples"_attr = numSamples, "estRecordsPerStone"_attr = estRecordsPerStone, "estBytesPerStone"_attr = estBytesPerStone);
 
     // Inform the random cursor of the number of samples we intend to take. This allows it to
     // account for skew in the tree shape.
@@ -455,7 +451,7 @@ void WiredTigerRecordStore::OplogStones::_calculateStonesBySampling(OperationCon
         if (!record) {
             // This shouldn't really happen unless the size storer values are far off from reality.
             // The collection is probably empty, but fall back to scanning the oplog just in case.
-            log() << "Failed to get enough random samples, falling back to scanning the oplog";
+            LOGV2(22117, "Failed to get enough random samples, falling back to scanning the oplog");
             _calculateStonesByScanning(opCtx);
             return;
         }
@@ -464,13 +460,12 @@ void WiredTigerRecordStore::OplogStones::_calculateStonesBySampling(OperationCon
         const auto now = Date_t::now();
         if (samplingLogIntervalSeconds > 0 &&
             now - lastProgressLog >= Seconds(samplingLogIntervalSeconds)) {
-            log() << "Oplog sampling progress: " << (i + 1) << " of " << numSamples
-                  << " samples taken";
+            LOGV2(22118, "Oplog sampling progress: {i_1} of {numSamples} samples taken", "i_1"_attr = (i + 1), "numSamples"_attr = numSamples);
             lastProgressLog = now;
         }
     }
     std::sort(oplogEstimates.begin(), oplogEstimates.end());
-    log() << "Oplog sampling complete";
+    LOGV2(22119, "Oplog sampling complete");
 
     for (int i = 1; i <= wholeStones; ++i) {
         // Use every (kRandomSamplesPerStone)th sample, starting with the
@@ -478,7 +473,7 @@ void WiredTigerRecordStore::OplogStones::_calculateStonesBySampling(OperationCon
         int sampleIndex = kRandomSamplesPerStone * i - 1;
         RecordId lastRecord = oplogEstimates[sampleIndex];
 
-        log() << "Placing a marker at optime " << Timestamp(lastRecord.repr()).toStringPretty();
+        LOGV2(22120, "Placing a marker at optime {Timestamp_lastRecord_repr_toStringPretty}", "Timestamp_lastRecord_repr_toStringPretty"_attr = Timestamp(lastRecord.repr()).toStringPretty());
         OplogStones::Stone stone = {estRecordsPerStone, estBytesPerStone, lastRecord};
         _stones.push_back(stone);
     }
@@ -755,9 +750,9 @@ WiredTigerRecordStore::~WiredTigerRecordStore() {
     }
 
     if (!isTemp()) {
-        LOG(1) << "~WiredTigerRecordStore for: " << ns();
+        LOGV2_DEBUG(22121, 1, "~WiredTigerRecordStore for: {ns}", "ns"_attr = ns());
     } else {
-        LOG(1) << "~WiredTigerRecordStore for temporary ident: " << getIdent();
+        LOGV2_DEBUG(22122, 1, "~WiredTigerRecordStore for temporary ident: {getIdent}", "getIdent"_attr = getIdent());
     }
 
     if (_oplogStones) {
@@ -1174,7 +1169,7 @@ int64_t WiredTigerRecordStore::_cappedDeleteAsNeeded_inlock(OperationContext* op
 
             if (ret == ENOENT || ret == WT_NOTFOUND) {
                 // TODO we should remove this case once SERVER-17141 is resolved
-                log() << "Soft failure truncating capped collection. Will try again later.";
+                LOGV2(22123, "Soft failure truncating capped collection. Will try again later.");
                 docsRemoved = 0;
             } else {
                 invariantWTOK(ret);
@@ -1188,7 +1183,7 @@ int64_t WiredTigerRecordStore::_cappedDeleteAsNeeded_inlock(OperationContext* op
     } catch (const WriteConflictException&) {
         opCtx->releaseRecoveryUnit();
         opCtx->setRecoveryUnit(std::unique_ptr<RecoveryUnit>(realRecoveryUnit), realRUstate);
-        log() << "got conflict truncating capped, ignoring";
+        LOGV2(22124, "got conflict truncating capped, ignoring");
         return 0;
     } catch (...) {
         opCtx->releaseRecoveryUnit();
@@ -1243,9 +1238,7 @@ void WiredTigerRecordStore::reclaimOplog(OperationContext* opCtx, Timestamp mayT
             return;
         }
 
-        LOG(1) << "Truncating the oplog between " << _oplogStones->firstRecord << " and "
-               << stone->lastRecord << " to remove approximately " << stone->records
-               << " records totaling to " << stone->bytes << " bytes";
+        LOGV2_DEBUG(22125, 1, "Truncating the oplog between {oplogStones_firstRecord} and {stone_lastRecord} to remove approximately {stone_records} records totaling to {stone_bytes} bytes", "oplogStones_firstRecord"_attr = _oplogStones->firstRecord, "stone_lastRecord"_attr = stone->lastRecord, "stone_records"_attr = stone->records, "stone_bytes"_attr = stone->bytes);
 
         WiredTigerRecoveryUnit* ru = WiredTigerRecoveryUnit::get(opCtx);
         WT_SESSION* session = ru->getSession()->getSession();
@@ -1261,8 +1254,7 @@ void WiredTigerRecordStore::reclaimOplog(OperationContext* opCtx, Timestamp mayT
             invariantWTOK(ret);
             RecordId firstRecord = getKey(cursor);
             if (firstRecord < _oplogStones->firstRecord || firstRecord > stone->lastRecord) {
-                warning() << "First oplog record " << firstRecord << " is not in truncation range ("
-                          << _oplogStones->firstRecord << ", " << stone->lastRecord << ")";
+                LOGV2_WARNING(22133, "First oplog record {firstRecord} is not in truncation range ({oplogStones_firstRecord}, {stone_lastRecord})", "firstRecord"_attr = firstRecord, "oplogStones_firstRecord"_attr = _oplogStones->firstRecord, "stone_lastRecord"_attr = stone->lastRecord);
             }
 
             setKey(cursor, stone->lastRecord);
@@ -1278,18 +1270,16 @@ void WiredTigerRecordStore::reclaimOplog(OperationContext* opCtx, Timestamp mayT
             // Stash the truncate point for next time to cleanly skip over tombstones, etc.
             _oplogStones->firstRecord = stone->lastRecord;
         } catch (const WriteConflictException&) {
-            LOG(1) << "Caught WriteConflictException while truncating oplog entries, retrying";
+            LOGV2_DEBUG(22126, 1, "Caught WriteConflictException while truncating oplog entries, retrying");
         }
     }
 
-    LOG(1) << "Finished truncating the oplog, it now contains approximately "
-           << _sizeInfo->numRecords.load() << " records totaling to " << _sizeInfo->dataSize.load()
-           << " bytes";
+    LOGV2_DEBUG(22127, 1, "Finished truncating the oplog, it now contains approximately {sizeInfo_numRecords_load} records totaling to {sizeInfo_dataSize_load} bytes", "sizeInfo_numRecords_load"_attr = _sizeInfo->numRecords.load(), "sizeInfo_dataSize_load"_attr = _sizeInfo->dataSize.load());
     auto elapsedMicros = timer.micros();
     auto elapsedMillis = elapsedMicros / 1000;
     _totalTimeTruncating.fetchAndAdd(elapsedMicros);
     _truncateCount.fetchAndAdd(1);
-    log() << "WiredTiger record store oplog truncation finished in: " << elapsedMillis << "ms";
+    LOGV2(22128, "WiredTiger record store oplog truncation finished in: {elapsedMillis}ms", "elapsedMillis"_attr = elapsedMillis);
 }
 
 Status WiredTigerRecordStore::insertRecords(OperationContext* opCtx,
@@ -1352,7 +1342,7 @@ Status WiredTigerRecordStore::_insertRecords(OperationContext* opCtx,
             ts = timestamps[i];
         }
         if (!ts.isNull()) {
-            LOG(4) << "inserting record with timestamp " << ts;
+            LOGV2_DEBUG(22129, 4, "inserting record with timestamp {ts}", "ts"_attr = ts);
             fassert(39001, opCtx->recoveryUnit()->setTimestamp(ts));
         }
         setKey(c, record.id);
@@ -1591,7 +1581,7 @@ void WiredTigerRecordStore::validate(OperationContext* opCtx,
             << "This is a transient issue as the collection was actively "
                "in use by other operations.";
 
-        warning() << msg;
+        LOGV2_WARNING(22134, "{msg}", "msg"_attr = msg);
         results->warnings.push_back(msg);
         return;
     }
@@ -1599,7 +1589,7 @@ void WiredTigerRecordStore::validate(OperationContext* opCtx,
     std::string msg = str::stream() << "verify() returned " << wiredtiger_strerror(err) << ". "
                                     << "This indicates structural damage. "
                                     << "Not examining individual documents.";
-    error() << msg;
+    LOGV2_ERROR(22135, "{msg}", "msg"_attr = msg);
     results->errors.push_back(msg);
     results->valid = false;
 }
@@ -1752,7 +1742,7 @@ public:
     NumRecordsChange(WiredTigerRecordStore* rs, int64_t diff) : _rs(rs), _diff(diff) {}
     virtual void commit(boost::optional<Timestamp>) {}
     virtual void rollback() {
-        LOG(3) << "WiredTigerRecordStore: rolling back NumRecordsChange " << -_diff;
+        LOGV2_DEBUG(22130, 3, "WiredTigerRecordStore: rolling back NumRecordsChange {diff}", "diff"_attr = -_diff);
         _rs->_sizeInfo->numRecords.fetchAndAdd(-_diff);
     }
 
@@ -1886,7 +1876,7 @@ void WiredTigerRecordStore::cappedTruncateAfter(OperationContext* opCtx,
         }
 
         _kvEngine->getOplogManager()->setOplogReadTimestamp(truncTs);
-        LOG(1) << "truncation new read timestamp: " << truncTs;
+        LOGV2_DEBUG(22131, 1, "truncation new read timestamp: {truncTs}", "truncTs"_attr = truncTs);
     }
 
     if (_oplogStones) {
@@ -1966,9 +1956,7 @@ boost::optional<Record> WiredTigerRecordStoreCursorBase::next() {
     }
 
     if (_forward && _lastReturnedId >= id) {
-        log() << "WTCursor::next -- c->next_key ( " << id
-              << ") was not greater than _lastReturnedId (" << _lastReturnedId
-              << ") which is a bug.";
+        LOGV2(22132, "WTCursor::next -- c->next_key ( {id}) was not greater than _lastReturnedId ({lastReturnedId}) which is a bug.", "id"_attr = id, "lastReturnedId"_attr = _lastReturnedId);
 
         // Crash when test commands are enabled.
         invariant(!getTestCommandsEnabled());

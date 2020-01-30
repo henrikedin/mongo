@@ -48,6 +48,7 @@
 #include "mongo/s/grid.h"
 #include "mongo/s/request_types/flush_routing_table_cache_updates_gen.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 
 namespace mongo {
 namespace {
@@ -132,7 +133,7 @@ public:
             oss.waitForMigrationCriticalSectionSignal(opCtx);
 
             if (request().getSyncFromConfig()) {
-                LOG(1) << "Forcing remote routing table refresh for " << ns();
+                LOGV2_DEBUG(21703, 1, "Forcing remote routing table refresh for {ns}", "ns"_attr = ns());
                 forceShardFilteringMetadataRefresh(opCtx, ns());
             }
 

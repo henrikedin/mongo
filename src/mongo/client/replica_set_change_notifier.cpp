@@ -35,6 +35,7 @@
 
 #include "mongo/util/fail_point.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/stacktrace.h"
 
 namespace mongo {
@@ -54,7 +55,7 @@ void ReplicaSetChangeNotifier::_removeListener(Listener* listener) {
 }
 
 void ReplicaSetChangeNotifier::onFoundSet(const std::string& name) noexcept {
-    LOG(2) << "Signaling found set " << name;
+    LOGV2_DEBUG(20150, 2, "Signaling found set {name}", "name"_attr = name);
 
     stdx::unique_lock<Latch> lk(_mutex);
 
@@ -69,7 +70,7 @@ void ReplicaSetChangeNotifier::onFoundSet(const std::string& name) noexcept {
 }
 
 void ReplicaSetChangeNotifier::onPossibleSet(ConnectionString connectionString) noexcept {
-    LOG(2) << "Signaling possible set " << connectionString;
+    LOGV2_DEBUG(20151, 2, "Signaling possible set {connectionString}", "connectionString"_attr = connectionString);
 
     const auto& name = connectionString.getSetName();
 
@@ -96,7 +97,7 @@ void ReplicaSetChangeNotifier::onPossibleSet(ConnectionString connectionString) 
 void ReplicaSetChangeNotifier::onConfirmedSet(ConnectionString connectionString,
                                               HostAndPort primary,
                                               std::set<HostAndPort> passives) noexcept {
-    LOG(2) << "Signaling confirmed set " << connectionString << " with primary " << primary;
+    LOGV2_DEBUG(20152, 2, "Signaling confirmed set {connectionString} with primary {primary}", "connectionString"_attr = connectionString, "primary"_attr = primary);
 
     const auto& name = connectionString.getSetName();
     stdx::unique_lock<Latch> lk(_mutex);
@@ -121,7 +122,7 @@ void ReplicaSetChangeNotifier::onConfirmedSet(ConnectionString connectionString,
 }
 
 void ReplicaSetChangeNotifier::onDroppedSet(const std::string& name) noexcept {
-    LOG(2) << "Signaling dropped set " << name;
+    LOGV2_DEBUG(20153, 2, "Signaling dropped set {name}", "name"_attr = name);
 
     stdx::unique_lock<Latch> lk(_mutex);
 

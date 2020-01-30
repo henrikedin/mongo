@@ -40,6 +40,7 @@
 #include "mongo/scripting/mozjs/valuereader.h"
 #include "mongo/scripting/mozjs/wrapconstrainedmethod.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/str.h"
 
 namespace mongo {
@@ -152,7 +153,7 @@ void SessionInfo::finalize(js::FreeOp* fop, JSObject* obj) {
             auto status = exceptionToStatus();
 
             try {
-                LOG(0) << "Failed to end session " << lsid << " due to " << status;
+                LOGV2(22478, "Failed to end session {lsid} due to {status}", "lsid"_attr = lsid, "status"_attr = status);
             } catch (...) {
                 // This is here in case logging fails.
             }

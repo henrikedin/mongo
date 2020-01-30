@@ -50,6 +50,7 @@
 #include "mongo/logger/logger.h"
 #include "mongo/transport/transport_layer_asio.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 
 using namespace mongo::repl;
 
@@ -202,8 +203,7 @@ protected:
     }
     void check(const BSONObj& expected, const BSONObj& got) const {
         if (expected.woCompare(got)) {
-            ::mongo::log() << "expected: " << expected.toString() << ", got: " << got.toString()
-                           << endl;
+            ::mongo::LOGV2(22225, "expected: {expected_toString}, got: {got_toString}", "expected_toString"_attr = expected.toString(), "got_toString"_attr = got.toString());
         }
         ASSERT_BSONOBJ_EQ(expected, got);
     }

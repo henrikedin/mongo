@@ -35,6 +35,7 @@
 
 #include "mongo/util/fail_point.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 
 namespace mongo {
 
@@ -46,12 +47,11 @@ MONGO_FAIL_POINT_DEFINE(WTSkipPrepareConflictRetries);
 MONGO_FAIL_POINT_DEFINE(WTPrintPrepareConflictLog);
 
 void wiredTigerPrepareConflictLog(int attempts) {
-    LOG(1) << "Caught WT_PREPARE_CONFLICT, attempt " << attempts
-           << ". Waiting for unit of work to commit or abort.";
+    LOGV2_DEBUG(22105, 1, "Caught WT_PREPARE_CONFLICT, attempt {attempts}. Waiting for unit of work to commit or abort.", "attempts"_attr = attempts);
 }
 
 void wiredTigerPrepareConflictFailPointLog() {
-    log() << "WTPrintPrepareConflictLog fail point enabled.";
+    LOGV2(22106, "WTPrintPrepareConflictLog fail point enabled.");
 }
 
 }  // namespace mongo

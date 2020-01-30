@@ -41,6 +41,7 @@
 #include "mongo/db/s/sharding_state.h"
 #include "mongo/util/duration.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 
 namespace mongo {
 
@@ -207,7 +208,7 @@ void CollectionShardingRuntime::setFilteringMetadata(OperationContext* opCtx,
     stdx::lock_guard lk(_metadataManagerLock);
 
     if (!newMetadata.isSharded()) {
-        LOG(0) << "Marking collection " << _nss.ns() << " as " << newMetadata.toStringBasic();
+        LOGV2(21625, "Marking collection {nss_ns} as {newMetadata_toStringBasic}", "nss_ns"_attr = _nss.ns(), "newMetadata_toStringBasic"_attr = newMetadata.toStringBasic());
         _metadataType = MetadataType::kUnsharded;
         _metadataManager.reset();
     } else if (!_metadataManager ||
@@ -269,13 +270,12 @@ Status CollectionShardingRuntime::waitForClean(OperationContext* opCtx,
 
             stillScheduled = self->_metadataManager->trackOrphanedDataCleanup(orphanRange);
             if (!stillScheduled) {
-                log() << "Finished deleting " << nss.ns() << " range "
-                      << redact(orphanRange.toString());
+                LOGV2(21626, "Finished deleting {nss_ns} range {redact_orphanRange_toString}", "nss_ns"_attr = nss.ns(), "redact_orphanRange_toString"_attr = redact(orphanRange.toString()));
                 return Status::OK();
             }
         }
 
-        log() << "Waiting for deletion of " << nss.ns() << " range " << orphanRange;
+        LOGV2(21627, "Waiting for deletion of {nss_ns} range {orphanRange}", "nss_ns"_attr = nss.ns(), "orphanRange"_attr = orphanRange);
 
         Status result = stillScheduled->getNoThrow(opCtx);
 
@@ -337,16 +337,15 @@ boost::optional<ScopedCollectionMetadata> CollectionShardingRuntime::_getMetadat
     }();
 
     if (MONGO_unlikely(useFCV44CheckShardVersionProtocol.shouldFail())) {
-        LOG(0) << "Received shardVersion: " << receivedShardVersion << " for " << _nss.ns();
+        LOGV2(21628, "Received shardVersion: {receivedShardVersion} for {nss_ns}", "receivedShardVersion"_attr = receivedShardVersion, "nss_ns"_attr = _nss.ns());
         if (isCollection) {
             auto shardVersionKnown = _metadataType != MetadataType::kUnknown;
-            LOG(0) << "Namespace " << _nss.ns() << " is collection, "
-                   << (shardVersionKnown ? "have shardVersion cached" : "don't know shardVersion");
+            LOGV2(21629, "Namespace {nss_ns} is collection, {shardVersionKnown_have_shardVersion_cached_don_t_know_shardVersion}", "nss_ns"_attr = _nss.ns(), "shardVersionKnown_have_shardVersion_cached_don_t_know_shardVersion"_attr = (shardVersionKnown ? "have shardVersion cached" : "don't know shardVersion"));
             uassert(StaleConfigInfo(_nss, receivedShardVersion, wantedShardVersion, shardId),
                     "don't know shardVersion",
                     shardVersionKnown);
         }
-        LOG(0) << "Wanted shardVersion: " << wantedShardVersion << " for " << _nss.ns();
+        LOGV2(21630, "Wanted shardVersion: {wantedShardVersion} for {nss_ns}", "wantedShardVersion"_attr = wantedShardVersion, "nss_ns"_attr = _nss.ns());
     }
 
     auto criticalSectionSignal = [&] {

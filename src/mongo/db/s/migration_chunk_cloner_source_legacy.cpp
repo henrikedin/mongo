@@ -56,6 +56,7 @@
 #include "mongo/s/grid.h"
 #include "mongo/util/elapsed_tracker.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/scopeguard.h"
 #include "mongo/util/str.h"
 #include "mongo/util/time_support.h"
@@ -181,7 +182,7 @@ void LogTransactionOperationsForShardingHandler::commit(boost::optional<Timestam
 
         auto idElement = documentKey["_id"];
         if (idElement.eoo()) {
-            warning() << "Received a document with no id, ignoring: " << redact(documentKey);
+            LOGV2_WARNING(21714, "Received a document with no id, ignoring: {redact_documentKey}", "redact_documentKey"_attr = redact(documentKey));
             continue;
         }
 
@@ -389,7 +390,7 @@ void MigrationChunkClonerSourceLegacy::cancelClone(OperationContext* opCtx) {
                                                    kRecvChunkAbort, _args.getNss(), _sessionId))
                                     .getStatus();
             if (!status.isOK()) {
-                LOG(0) << "Failed to cancel migration " << causedBy(redact(status));
+                LOGV2(21711, "Failed to cancel migration {causedBy_redact_status}", "causedBy_redact_status"_attr = causedBy(redact(status)));
             }
         }
         // Intentional fall through
@@ -412,8 +413,7 @@ void MigrationChunkClonerSourceLegacy::onInsertOp(OperationContext* opCtx,
 
     BSONElement idElement = insertedDoc["_id"];
     if (idElement.eoo()) {
-        warning() << "logInsertOp got a document with no _id field, ignoring inserted document: "
-                  << redact(insertedDoc);
+        LOGV2_WARNING(21715, "logInsertOp got a document with no _id field, ignoring inserted document: {redact_insertedDoc}", "redact_insertedDoc"_attr = redact(insertedDoc));
         return;
     }
 
@@ -443,8 +443,7 @@ void MigrationChunkClonerSourceLegacy::onUpdateOp(OperationContext* opCtx,
 
     BSONElement idElement = postImageDoc["_id"];
     if (idElement.eoo()) {
-        warning() << "logUpdateOp got a document with no _id field, ignoring updatedDoc: "
-                  << redact(postImageDoc);
+        LOGV2_WARNING(21716, "logUpdateOp got a document with no _id field, ignoring updatedDoc: {redact_postImageDoc}", "redact_postImageDoc"_attr = redact(postImageDoc));
         return;
     }
 
@@ -481,8 +480,7 @@ void MigrationChunkClonerSourceLegacy::onDeleteOp(OperationContext* opCtx,
 
     BSONElement idElement = deletedDocId["_id"];
     if (idElement.eoo()) {
-        warning() << "logDeleteOp got a document with no _id field, ignoring deleted doc: "
-                  << redact(deletedDocId);
+        LOGV2_WARNING(21717, "logDeleteOp got a document with no _id field, ignoring deleted doc: {redact_deletedDocId}", "redact_deletedDocId"_attr = redact(deletedDocId));
         return;
     }
 
@@ -987,13 +985,9 @@ Status MigrationChunkClonerSourceLegacy::_checkRecipientCloningStatus(OperationC
         const std::size_t cloneLocsRemaining = _cloneLocs.size();
 
         if (_forceJumbo && _jumboChunkCloneState) {
-            log() << "moveChunk data transfer progress: " << redact(res)
-                  << " mem used: " << _memoryUsed
-                  << " documents cloned so far: " << _jumboChunkCloneState->docsCloned;
+            LOGV2(21712, "moveChunk data transfer progress: {redact_res} mem used: {memoryUsed} documents cloned so far: {jumboChunkCloneState_docsCloned}", "redact_res"_attr = redact(res), "memoryUsed"_attr = _memoryUsed, "jumboChunkCloneState_docsCloned"_attr = _jumboChunkCloneState->docsCloned);
         } else {
-            log() << "moveChunk data transfer progress: " << redact(res)
-                  << " mem used: " << _memoryUsed
-                  << " documents remaining to clone: " << cloneLocsRemaining;
+            LOGV2(21713, "moveChunk data transfer progress: {redact_res} mem used: {memoryUsed} documents remaining to clone: {cloneLocsRemaining}", "redact_res"_attr = redact(res), "memoryUsed"_attr = _memoryUsed, "cloneLocsRemaining"_attr = cloneLocsRemaining);
         }
 
         if (res["state"].String() == "steady") {

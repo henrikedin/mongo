@@ -49,6 +49,7 @@
 #include "mongo/s/grid.h"
 #include "mongo/util/fail_point.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 
 namespace mongo {
 
@@ -90,7 +91,7 @@ void dropChunksIfEpochChanged(OperationContext* opCtx,
         dropChunks(opCtx, nss);
 
         if (MONGO_unlikely(hangPersistCollectionAndChangedChunksAfterDropChunks.shouldFail())) {
-            log() << "Hit hangPersistCollectionAndChangedChunksAfterDropChunks failpoint";
+            LOGV2(21808, "Hit hangPersistCollectionAndChangedChunksAfterDropChunks failpoint");
             hangPersistCollectionAndChangedChunksAfterDropChunks.pauseWhileSet(opCtx);
         }
     }
@@ -954,12 +955,10 @@ void ShardServerCatalogCacheLoader::_runCollAndChunksTasks(const NamespaceString
         _updatePersistedCollAndChunksMetadata(context.opCtx(), nss);
         taskFinished = true;
     } catch (const ExceptionForCat<ErrorCategory::ShutdownError>&) {
-        LOG(0) << "Failed to persist chunk metadata update for collection '" << nss
-               << "' due to shutdown.";
+        LOGV2(21809, "Failed to persist chunk metadata update for collection '{nss}' due to shutdown.", "nss"_attr = nss);
         inShutdown = true;
     } catch (const DBException& ex) {
-        LOG(0) << "Failed to persist chunk metadata update for collection '" << nss
-               << causedBy(redact(ex));
+        LOGV2(21810, "Failed to persist chunk metadata update for collection '{nss}{causedBy_redact_ex}", "nss"_attr = nss, "causedBy_redact_ex"_attr = causedBy(redact(ex)));
     }
 
     {
@@ -988,10 +987,7 @@ void ShardServerCatalogCacheLoader::_runCollAndChunksTasks(const NamespaceString
 
     _threadPool.schedule([this, nss](auto status) {
         if (ErrorCodes::isCancelationError(status.code())) {
-            LOG(0) << "Cache loader failed to schedule a persisted metadata update"
-                   << " task for namespace '" << nss << "' due to '" << redact(status)
-                   << "'. Clearing task list so that scheduling will be attempted by the next"
-                   << " caller to refresh this namespace.";
+            LOGV2(21811, "Cache loader failed to schedule a persisted metadata update task for namespace '{nss}' due to '{redact_status}'. Clearing task list so that scheduling will be attempted by the next caller to refresh this namespace.", "nss"_attr = nss, "redact_status"_attr = redact(status));
 
             {
                 stdx::lock_guard<Latch> lock(_mutex);
@@ -1014,11 +1010,10 @@ void ShardServerCatalogCacheLoader::_runDbTasks(StringData dbName) {
         _updatePersistedDbMetadata(context.opCtx(), dbName);
         taskFinished = true;
     } catch (const ExceptionForCat<ErrorCategory::ShutdownError>&) {
-        LOG(0) << "Failed to persist metadata update for db '" << dbName << "' due to shutdown.";
+        LOGV2(21812, "Failed to persist metadata update for db '{dbName}' due to shutdown.", "dbName"_attr = dbName);
         inShutdown = true;
     } catch (const DBException& ex) {
-        LOG(0) << "Failed to persist chunk metadata update for database " << dbName
-               << causedBy(redact(ex));
+        LOGV2(21813, "Failed to persist chunk metadata update for database {dbName}{causedBy_redact_ex}", "dbName"_attr = dbName, "causedBy_redact_ex"_attr = causedBy(redact(ex)));
     }
 
     {
@@ -1047,10 +1042,7 @@ void ShardServerCatalogCacheLoader::_runDbTasks(StringData dbName) {
 
     _threadPool.schedule([this, name = dbName.toString()](auto status) {
         if (ErrorCodes::isCancelationError(status.code())) {
-            LOG(0) << "Cache loader failed to schedule a persisted metadata update"
-                   << " task for namespace '" << name << "' due to '" << redact(status)
-                   << "'. Clearing task list so that scheduling will be attempted by the next"
-                   << " caller to refresh this namespace.";
+            LOGV2(21814, "Cache loader failed to schedule a persisted metadata update task for namespace '{name}' due to '{redact_status}'. Clearing task list so that scheduling will be attempted by the next caller to refresh this namespace.", "name"_attr = name, "redact_status"_attr = redact(status));
 
             {
                 stdx::lock_guard<Latch> lock(_mutex);

@@ -35,6 +35,7 @@
 
 #include "mongo/db/operation_context.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/time_support.h"
 
 namespace mongo {
@@ -81,7 +82,7 @@ void FlowControlTicketholder::set(ServiceContext* service,
 void FlowControlTicketholder::refreshTo(int numTickets) {
     invariant(numTickets >= 0);
     stdx::lock_guard<Latch> lk(_mutex);
-    LOG(4) << "Refreshing tickets. Before: " << _tickets << " Now: " << numTickets;
+    LOGV2_DEBUG(20486, 4, "Refreshing tickets. Before: {tickets} Now: {numTickets}", "tickets"_attr = _tickets, "numTickets"_attr = numTickets);
     _tickets = numTickets;
     _cv.notify_all();
 }
@@ -93,7 +94,7 @@ void FlowControlTicketholder::getTicket(OperationContext* opCtx,
         return;
     }
 
-    LOG(4) << "Taking ticket. Available: " << _tickets;
+    LOGV2_DEBUG(20487, 4, "Taking ticket. Available: {tickets}", "tickets"_attr = _tickets);
     if (_tickets == 0) {
         ++stats->acquireWaitCount;
     }
@@ -130,7 +131,7 @@ void FlowControlTicketholder::getTicket(OperationContext* opCtx,
 
 // Should only be called once, during shutdown.
 void FlowControlTicketholder::setInShutdown() {
-    LOG(0) << "Stopping further Flow Control ticket acquisitions.";
+    LOGV2(20488, "Stopping further Flow Control ticket acquisitions.");
     stdx::lock_guard<Latch> lk(_mutex);
     _inShutdown = true;
     _cv.notify_all();

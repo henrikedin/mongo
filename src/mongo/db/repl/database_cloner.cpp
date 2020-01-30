@@ -37,6 +37,7 @@
 #include "mongo/db/repl/database_cloner_gen.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 
 namespace mongo {
 namespace repl {
@@ -88,10 +89,10 @@ BaseCloner::AfterStageBehavior DatabaseCloner::listCollectionsStage() {
         }
         NamespaceString collectionNamespace(_dbName, result.getName());
         if (collectionNamespace.isSystem() && !collectionNamespace.isLegalClientSystemNS()) {
-            LOG(1) << "Skipping 'system' collection: " << collectionNamespace.ns();
+            LOGV2_DEBUG(20922, 1, "Skipping 'system' collection: {collectionNamespace_ns}", "collectionNamespace_ns"_attr = collectionNamespace.ns());
             continue;
         }
-        LOG(2) << "Allowing cloning of collectionInfo: " << info;
+        LOGV2_DEBUG(20923, 2, "Allowing cloning of collectionInfo: {info}", "info"_attr = info);
 
         bool isDuplicate = seen.insert(result.getName().toString()).second;
         uassert(51005,
@@ -137,10 +138,9 @@ void DatabaseCloner::postStage() {
         }
         auto collStatus = _currentCollectionCloner->run();
         if (collStatus.isOK()) {
-            LOG(1) << "collection clone finished: " << sourceNss;
+            LOGV2_DEBUG(20924, 1, "collection clone finished: {sourceNss}", "sourceNss"_attr = sourceNss);
         } else {
-            error() << "collection clone for '" << sourceNss << "' failed due to "
-                    << collStatus.toString();
+            LOGV2_ERROR(20925, "collection clone for '{sourceNss}' failed due to {collStatus_toString}", "sourceNss"_attr = sourceNss, "collStatus_toString"_attr = collStatus.toString());
             setInitialSyncFailedStatus(
                 {ErrorCodes::InitialSyncFailure,
                  collStatus

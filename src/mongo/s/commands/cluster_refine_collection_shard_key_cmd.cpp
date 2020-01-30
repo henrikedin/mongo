@@ -37,6 +37,7 @@
 #include "mongo/s/request_types/refine_collection_shard_key_gen.h"
 #include "mongo/util/fail_point.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 
 namespace mongo {
 namespace {
@@ -59,7 +60,7 @@ public:
                                                                                              nss));
 
             if (MONGO_unlikely(hangRefineCollectionShardKeyAfterRefresh.shouldFail())) {
-                log() << "Hit hangRefineCollectionShardKeyAfterRefresh failpoint";
+                LOGV2(22443, "Hit hangRefineCollectionShardKeyAfterRefresh failpoint");
                 hangRefineCollectionShardKeyAfterRefresh.pauseWhileSet(opCtx);
             }
 

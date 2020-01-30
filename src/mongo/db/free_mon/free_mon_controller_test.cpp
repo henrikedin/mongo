@@ -68,6 +68,7 @@
 #include "mongo/unittest/unittest.h"
 #include "mongo/util/clock_source.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 
 
 namespace mongo {
@@ -245,7 +246,7 @@ public:
 
     Future<FreeMonRegistrationResponse> sendRegistrationAsync(
         const FreeMonRegistrationRequest& req) final {
-        log() << "Sending Registration ...";
+        LOGV2(20570, "Sending Registration ...");
 
         _registers.addAndFetch(1);
 
@@ -291,7 +292,7 @@ public:
 
 
     Future<FreeMonMetricsResponse> sendMetricsAsync(const FreeMonMetricsRequest& req) final {
-        log() << "Sending Metrics ...";
+        LOGV2(20571, "Sending Metrics ...");
 
         _metrics.addAndFetch(1);
 

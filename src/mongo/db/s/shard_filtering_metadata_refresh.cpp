@@ -46,6 +46,7 @@
 #include "mongo/s/grid.h"
 #include "mongo/util/fail_point.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 
 namespace mongo {
 
@@ -63,8 +64,7 @@ void onShardVersionMismatch(OperationContext* opCtx,
 
     invariant(ShardingState::get(opCtx)->canAcceptShardedCommands());
 
-    LOG(2) << "Metadata refresh requested for " << nss.ns() << " at shard version "
-           << shardVersionReceived;
+    LOGV2_DEBUG(21776, 2, "Metadata refresh requested for {nss_ns} at shard version {shardVersionReceived}", "nss_ns"_attr = nss.ns(), "shardVersionReceived"_attr = shardVersionReceived);
 
     ShardingStatistics::get(opCtx).countStaleConfigErrors.addAndFetch(1);
 
@@ -134,7 +134,7 @@ Status onShardVersionMismatchNoExcept(OperationContext* opCtx,
         onShardVersionMismatch(opCtx, nss, shardVersionReceived, forceRefreshFromThisThread);
         return Status::OK();
     } catch (const DBException& ex) {
-        log() << "Failed to refresh metadata for collection " << nss << causedBy(redact(ex));
+        LOGV2(21777, "Failed to refresh metadata for collection {nss}{causedBy_redact_ex}", "nss"_attr = nss, "causedBy_redact_ex"_attr = causedBy(redact(ex)));
         return ex.toStatus();
     }
 }
@@ -179,8 +179,7 @@ ChunkVersion forceShardFilteringMetadataRefresh(OperationContext* opCtx,
             if (metadata->isSharded() &&
                 metadata->getCollVersion().epoch() == cm->getVersion().epoch() &&
                 metadata->getCollVersion() >= cm->getVersion()) {
-                LOG(1) << "Skipping refresh of metadata for " << nss << " "
-                       << metadata->getCollVersion() << " with an older " << cm->getVersion();
+                LOGV2_DEBUG(21778, 1, "Skipping refresh of metadata for {nss} {metadata_getCollVersion} with an older {cm_getVersion}", "nss"_attr = nss, "metadata_getCollVersion"_attr = metadata->getCollVersion(), "cm_getVersion"_attr = cm->getVersion());
                 return metadata->getShardVersion();
             }
         }
@@ -202,8 +201,7 @@ ChunkVersion forceShardFilteringMetadataRefresh(OperationContext* opCtx,
             if (metadata->isSharded() &&
                 metadata->getCollVersion().epoch() == cm->getVersion().epoch() &&
                 metadata->getCollVersion() >= cm->getVersion()) {
-                LOG(1) << "Skipping refresh of metadata for " << nss << " "
-                       << metadata->getCollVersion() << " with an older " << cm->getVersion();
+                LOGV2_DEBUG(21779, 1, "Skipping refresh of metadata for {nss} {metadata_getCollVersion} with an older {cm_getVersion}", "nss"_attr = nss, "metadata_getCollVersion"_attr = metadata->getCollVersion(), "cm_getVersion"_attr = cm->getVersion());
                 return metadata->getShardVersion();
             }
         }
@@ -225,8 +223,7 @@ Status onDbVersionMismatchNoExcept(
         onDbVersionMismatch(opCtx, dbName, clientDbVersion, serverDbVersion);
         return Status::OK();
     } catch (const DBException& ex) {
-        log() << "Failed to refresh databaseVersion for database " << dbName
-              << causedBy(redact(ex));
+        LOGV2(21780, "Failed to refresh databaseVersion for database {dbName}{causedBy_redact_ex}", "dbName"_attr = dbName, "causedBy_redact_ex"_attr = causedBy(redact(ex)));
         return ex.toStatus();
     }
 }
@@ -266,10 +263,7 @@ void forceDatabaseRefresh(OperationContext* opCtx, const StringData dbName) {
         const auto cachedDbVersion = dss->getDbVersion(opCtx, dssLock);
         if (cachedDbVersion && cachedDbVersion->getUuid() == refreshedDbVersion.getUuid() &&
             cachedDbVersion->getLastMod() >= refreshedDbVersion.getLastMod()) {
-            LOG(2) << "Skipping setting cached databaseVersion for " << dbName
-                   << " to refreshed version " << refreshedDbVersion.toBSON()
-                   << " because current cached databaseVersion is already "
-                   << cachedDbVersion->toBSON();
+            LOGV2_DEBUG(21781, 2, "Skipping setting cached databaseVersion for {dbName} to refreshed version {refreshedDbVersion_toBSON} because current cached databaseVersion is already {cachedDbVersion_toBSON}", "dbName"_attr = dbName, "refreshedDbVersion_toBSON"_attr = refreshedDbVersion.toBSON(), "cachedDbVersion_toBSON"_attr = cachedDbVersion->toBSON());
             return;
         }
     }

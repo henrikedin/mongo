@@ -64,6 +64,7 @@
 #include "mongo/s/shard_util.h"
 #include "mongo/util/fail_point.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/scopeguard.h"
 #include "mongo/util/str.h"
 
@@ -92,7 +93,7 @@ const ReadPreferenceSetting kConfigReadSelector(ReadPreference::Nearest, TagSet{
  */
 void uassertStatusOKWithWarning(const Status& status) {
     if (!status.isOK()) {
-        warning() << "shardsvrShardCollection failed" << causedBy(redact(status));
+        LOGV2_WARNING(21819, "shardsvrShardCollection failed{causedBy_redact_status}", "causedBy_redact_status"_attr = causedBy(redact(status)));
         uassertStatusOK(status);
     }
 }
@@ -467,7 +468,7 @@ void logStartShardCollection(OperationContext* opCtx,
                              const ShardsvrShardCollection& request,
                              const ShardCollectionTargetState& prerequisites,
                              const ShardId& dbPrimaryShardId) {
-    LOG(0) << "CMD: shardcollection: " << cmdObj;
+    LOGV2(21816, "CMD: shardcollection: {cmdObj}", "cmdObj"_attr = cmdObj);
 
     audit::logShardCollection(
         opCtx->getClient(), nss.ns(), prerequisites.shardKeyPattern.toBSON(), request.getUnique());
@@ -722,8 +723,7 @@ UUID shardCollection(OperationContext* opCtx,
         writeChunkDocumentsAndRefreshShards(*targetState, initialChunks);
     }
 
-    LOG(0) << "Created " << initialChunks.chunks.size() << " chunk(s) for: " << nss
-           << ", producing collection version " << initialChunks.collVersion();
+    LOGV2(21817, "Created {initialChunks_chunks_size} chunk(s) for: {nss}, producing collection version {initialChunks_collVersion}", "initialChunks_chunks_size"_attr = initialChunks.chunks.size(), "nss"_attr = nss, "initialChunks_collVersion"_attr = initialChunks.collVersion());
 
 
     ShardingLogging::get(opCtx)->logChange(
@@ -813,7 +813,7 @@ public:
                     uuid);
 
             if (MONGO_unlikely(pauseShardCollectionBeforeReturning.shouldFail())) {
-                log() << "Hit pauseShardCollectionBeforeReturning";
+                LOGV2(21818, "Hit pauseShardCollectionBeforeReturning");
                 pauseShardCollectionBeforeReturning.pauseWhileSet(opCtx);
             }
 

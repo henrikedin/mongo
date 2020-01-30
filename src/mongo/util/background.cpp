@@ -46,6 +46,7 @@
 #include "mongo/util/debug_util.h"
 #include "mongo/util/hierarchical_acquisition.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/str.h"
 #include "mongo/util/timer.h"
 
@@ -147,7 +148,7 @@ void BackgroundJob::jobBody() {
         setThreadName(threadName);
     }
 
-    LOG(1) << "BackgroundJob starting: " << threadName;
+    LOGV2_DEBUG(22785, 1, "BackgroundJob starting: {threadName}", "threadName"_attr = threadName);
 
     run();
 
@@ -333,14 +334,14 @@ void PeriodicTaskRunner::_runTask(PeriodicTask* const task) {
     try {
         task->taskDoWork();
     } catch (const std::exception& e) {
-        error() << "task: " << taskName << " failed: " << redact(e.what());
+        LOGV2_ERROR(22787, "task: {taskName} failed: {redact_e_what}", "taskName"_attr = taskName, "redact_e_what"_attr = redact(e.what()));
     } catch (...) {
-        error() << "task: " << taskName << " failed with unknown error";
+        LOGV2_ERROR(22788, "task: {taskName} failed with unknown error", "taskName"_attr = taskName);
     }
 
     const int ms = timer.millis();
     const int kMinLogMs = 100;
-    LOG(ms <= kMinLogMs ? 3 : 0) << "task: " << taskName << " took: " << ms << "ms";
+    LOGV2_DEBUG(22786, logSeverityV1toV2(ms <= kMinLogMs ? 3 : 0).toInt(), "task: {taskName} took: {ms}ms", "taskName"_attr = taskName, "ms"_attr = ms);
 }
 
 }  // namespace mongo

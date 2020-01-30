@@ -40,6 +40,7 @@
 #include "mongo/s/database_version_gen.h"
 #include "mongo/s/grid.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 
 namespace mongo {
 namespace {
@@ -114,7 +115,7 @@ public:
                 bool exceedsSizeLimit = false;
 
                 for (const auto& chunk : cm->chunks()) {
-                    log() << redact(chunk.toString());
+                    LOGV2(22440, "{redact_chunk_toString}", "redact_chunk_toString"_attr = redact(chunk.toString()));
                     if (!exceedsSizeLimit) {
                         BSONArrayBuilder chunkBB(chunksArrBuilder.subarrayStart());
                         chunkBB.append(chunk.getMin());

@@ -41,6 +41,7 @@
 #include "mongo/util/assert_util.h"
 #include "mongo/util/destructor_guard.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 
 namespace mongo {
 namespace repl {
@@ -190,8 +191,7 @@ Status Reporter::trigger() {
 
     _status = scheduleResult.getStatus();
     if (!_status.isOK()) {
-        LOG(2) << "Reporter failed to schedule callback to prepare and send update command: "
-               << _status;
+        LOGV2_DEBUG(21313, 2, "Reporter failed to schedule callback to prepare and send update command: {status}", "status"_attr = _status);
         return _status;
     }
 
@@ -212,8 +212,7 @@ StatusWith<BSONObj> Reporter::_prepareCommand() {
 
     // If there was an error in preparing the command, abort and return that error.
     if (!prepareResult.isOK()) {
-        LOG(2) << "Reporter failed to prepare update command with status: "
-               << prepareResult.getStatus();
+        LOGV2_DEBUG(21314, 2, "Reporter failed to prepare update command with status: {prepareResult_getStatus}", "prepareResult_getStatus"_attr = prepareResult.getStatus());
         _status = prepareResult.getStatus();
         return _status;
     }
@@ -222,8 +221,7 @@ StatusWith<BSONObj> Reporter::_prepareCommand() {
 }
 
 void Reporter::_sendCommand_inlock(BSONObj commandRequest, Milliseconds netTimeout) {
-    LOG(2) << "Reporter sending slave oplog progress to upstream updater " << _target << ": "
-           << commandRequest;
+    LOGV2_DEBUG(21315, 2, "Reporter sending slave oplog progress to upstream updater {target}: {commandRequest}", "target"_attr = _target, "commandRequest"_attr = commandRequest);
 
     auto scheduleResult = _executor->scheduleRemoteCommand(
         executor::RemoteCommandRequest(_target, "admin", commandRequest, nullptr, netTimeout),
@@ -233,7 +231,7 @@ void Reporter::_sendCommand_inlock(BSONObj commandRequest, Milliseconds netTimeo
 
     _status = scheduleResult.getStatus();
     if (!_status.isOK()) {
-        LOG(2) << "Reporter failed to schedule with status: " << _status;
+        LOGV2_DEBUG(21316, 2, "Reporter failed to schedule with status: {status}", "status"_attr = _status);
         if (_status != ErrorCodes::ShutdownInProgress) {
             fassert(34434, _status);
         }
@@ -272,8 +270,7 @@ void Reporter::_processResponseCallback(
         // sync target.
         if (_status == ErrorCodes::InvalidReplicaSetConfig &&
             _isTargetConfigNewerThanRequest(commandResult, rcbd.request.cmdObj)) {
-            LOG(1) << "Reporter found newer configuration on sync source: " << _target
-                   << ". Retrying.";
+            LOGV2_DEBUG(21317, 1, "Reporter found newer configuration on sync source: {target}. Retrying.", "target"_attr = _target);
             _status = Status::OK();
             // Do not resend update command immediately.
             _isWaitingToSendReporter = false;

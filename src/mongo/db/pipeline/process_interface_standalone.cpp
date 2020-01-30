@@ -70,6 +70,7 @@
 #include "mongo/s/cluster_commands_helpers.h"
 #include "mongo/s/query/document_source_merge_cursors.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 
 namespace mongo {
 
@@ -268,7 +269,7 @@ std::vector<Document> MongoInterfaceStandalone::getIndexStats(OperationContext* 
     Collection* collection = autoColl.getCollection();
     std::vector<Document> indexStats;
     if (!collection) {
-        LOG(2) << "Collection not found on index stats retrieval: " << ns.ns();
+        LOGV2_DEBUG(20705, 2, "Collection not found on index stats retrieval: {ns_ns}", "ns_ns"_attr = ns.ns());
         return indexStats;
     }
 

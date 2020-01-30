@@ -41,6 +41,7 @@
 #include "mongo/platform/random.h"
 #include "mongo/unittest/unittest.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 
 namespace {
 
@@ -58,7 +59,7 @@ MONGO_INITIALIZER(R2CellUnion_Test)(InitializerContext* context) {
         }
     }
     generator.seed(seed);
-    log() << "R2CellUnion Test - Random Number Generator Seed: " << seed;
+    LOGV2(20596, "R2CellUnion Test - Random Number Generator Seed: {seed}", "seed"_attr = seed);
     return Status::OK();
 }
 
@@ -226,8 +227,8 @@ void checkCellIdCovering(const GeoHashConverter& converter,
 
     // The covering doesn't contain this cell, so the region shouldn't contain this cell.
     if (region.fastContains(cell)) {
-        log() << "covering " << covering.toString();
-        log() << "cellId " << cellId;
+        LOGV2(20597, "covering {covering_toString}", "covering_toString"_attr = covering.toString());
+        LOGV2(20598, "cellId {cellId}", "cellId"_attr = cellId);
     }
     ASSERT_FALSE(region.fastContains(cell));
 
@@ -726,8 +727,8 @@ TEST(R2CellUnion, Normalize) {
             ASSERT_EQUALS(expected[i], cellUnion.cellIds()[i]);
         }
     }
-    log() << "Average Unnormalized Size: " << unnormalizedSum * 1.0 / kIters;
-    log() << "Average Normalized Size: " << normalizedSum * 1.0 / kIters;
+    LOGV2(20599, "Average Unnormalized Size: {unnormalizedSum_1_0_kIters}", "unnormalizedSum_1_0_kIters"_attr = unnormalizedSum * 1.0 / kIters);
+    LOGV2(20600, "Average Normalized Size: {normalizedSum_1_0_kIters}", "normalizedSum_1_0_kIters"_attr = normalizedSum * 1.0 / kIters);
 }
 
 void testContains(const R2CellUnion& cellUnion, GeoHash id, int num) {

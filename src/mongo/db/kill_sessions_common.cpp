@@ -38,6 +38,7 @@
 #include "mongo/db/service_context.h"
 #include "mongo/db/session_killer.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 
 namespace mongo {
 
@@ -56,8 +57,7 @@ SessionKiller::Result killSessionsLocalKillOps(OperationContext* opCtx,
                 if (const KillAllSessionsByPattern* pattern = matcher.match(*lsid)) {
                     ScopedKillAllSessionsByPatternImpersonator impersonator(opCtx, *pattern);
 
-                    log() << "killing op: " << opCtxToKill->getOpID()
-                          << " as part of killing session: " << lsid->toBSON();
+                    LOGV2(20653, "killing op: {opCtxToKill_getOpID} as part of killing session: {lsid_toBSON}", "opCtxToKill_getOpID"_attr = opCtxToKill->getOpID(), "lsid_toBSON"_attr = lsid->toBSON());
 
                     opCtx->getServiceContext()->killOperation(lk, opCtxToKill);
                 }

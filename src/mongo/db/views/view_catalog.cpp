@@ -57,6 +57,7 @@
 #include "mongo/db/views/view_graph.h"
 #include "mongo/util/fail_point.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 
 namespace mongo {
 
@@ -94,7 +95,7 @@ Status ViewCatalog::reload(OperationContext* opCtx, ViewCatalogLookupBehavior lo
 Status ViewCatalog::_reload(WithLock,
                             OperationContext* opCtx,
                             ViewCatalogLookupBehavior lookupBehavior) {
-    LOG(1) << "reloading view catalog for database " << _durable->getName();
+    LOGV2_DEBUG(22254, 1, "reloading view catalog for database {durable_getName}", "durable_getName"_attr = _durable->getName());
 
     _viewMap.clear();
     _valid = false;
@@ -137,8 +138,7 @@ Status ViewCatalog::_reload(WithLock,
         }
     } catch (const DBException& ex) {
         auto status = ex.toStatus();
-        LOG(0) << "could not load view catalog for database " << _durable->getName() << ": "
-               << status;
+        LOGV2(22255, "could not load view catalog for database {durable_getName}: {status}", "durable_getName"_attr = _durable->getName(), "status"_attr = status);
         return status;
     }
 

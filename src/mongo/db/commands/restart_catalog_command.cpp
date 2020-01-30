@@ -41,6 +41,7 @@
 #include "mongo/db/commands/test_commands_enabled.h"
 #include "mongo/db/concurrency/d_concurrency.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 
 namespace mongo {
 /**
@@ -106,10 +107,10 @@ public:
             }
         }
 
-        log() << "Closing database catalog";
+        LOGV2(20465, "Closing database catalog");
         auto state = catalog::closeCatalog(opCtx);
 
-        log() << "Reopening database catalog";
+        LOGV2(20466, "Reopening database catalog");
         catalog::openCatalog(opCtx, state);
 
         return true;

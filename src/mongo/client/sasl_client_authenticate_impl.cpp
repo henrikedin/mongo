@@ -51,6 +51,7 @@
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/util/base64.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/net/hostandport.h"
 #include "mongo/util/password_digest.h"
 
@@ -186,7 +187,7 @@ Future<void> asyncSaslConversation(auth::RunCommandHook runCommand,
     if (!status.isOK())
         return status;
 
-    LOG(saslLogLevel) << "sasl client input: " << base64::encode(payload) << endl;
+    LOGV2_DEBUG(20189, logSeverityV1toV2(saslLogLevel).toInt(), "sasl client input: {base64_encode_payload}", "base64_encode_payload"_attr = base64::encode(payload));
 
     // Create new payload for our response
     std::string responsePayload;
@@ -194,7 +195,7 @@ Future<void> asyncSaslConversation(auth::RunCommandHook runCommand,
     if (!status.isOK())
         return status;
 
-    LOG(saslLogLevel) << "sasl client output: " << base64::encode(responsePayload) << endl;
+    LOGV2_DEBUG(20190, logSeverityV1toV2(saslLogLevel).toInt(), "sasl client output: {base64_encode_responsePayload}", "base64_encode_responsePayload"_attr = base64::encode(responsePayload));
 
     // Handle a done from the server which comes before the client is complete.
     const bool serverDone = inputObj[saslCommandDoneFieldName].trueValue();

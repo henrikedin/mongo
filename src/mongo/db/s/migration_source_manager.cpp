@@ -67,6 +67,7 @@
 #include "mongo/util/exit.h"
 #include "mongo/util/fail_point.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/scopeguard.h"
 
 namespace mongo {
@@ -155,8 +156,7 @@ MigrationSourceManager::MigrationSourceManager(OperationContext* opCtx,
             "Destination shard cannot be the same as source",
             _args.getFromShardId() != _args.getToShardId());
 
-    log() << "Starting chunk migration " << redact(_args.toString())
-          << " with expected collection version epoch " << _args.getVersionEpoch();
+    LOGV2(21735, "Starting chunk migration {redact_args_toString} with expected collection version epoch {args_getVersionEpoch}", "redact_args_toString"_attr = redact(_args.toString()), "args_getVersionEpoch"_attr = _args.getVersionEpoch());
 
     // Force refresh of the metadata to ensure we have the latest
     forceShardFilteringMetadataRefresh(_opCtx, getNss());
@@ -380,7 +380,7 @@ Status MigrationSourceManager::enterCriticalSection() {
                           << signalStatus.toString()};
     }
 
-    log() << "Migration successfully entered critical section";
+    LOGV2(21736, "Migration successfully entered critical section");
 
     scopedGuard.dismiss();
     return Status::OK();
@@ -475,9 +475,8 @@ Status MigrationSourceManager::commitChunkMetadataOnConfig() {
             // Need to get the latest optime in case the refresh request goes to a secondary --
             // otherwise the read won't wait for the write that _configsvrCommitChunkMigration may
             // have done
-            log() << "Error occurred while committing the migration. Performing a majority write "
-                     "against the config server to obtain its latest optime"
-                  << causedBy(redact(migrationCommitStatus));
+            LOGV2(21737, "Error occurred while committing the migration. Performing a majority write "
+                     "against the config server to obtain its latest optime{causedBy_redact_migrationCommitStatus}", "causedBy_redact_migrationCommitStatus"_attr = causedBy(redact(migrationCommitStatus)));
 
             Status status = ShardingLogging::get(_opCtx)->logChangeChecked(
                 _opCtx,
@@ -552,8 +551,7 @@ Status MigrationSourceManager::commitChunkMetadataOnConfig() {
     }
 
     // Migration succeeded
-    LOG(0) << "Migration succeeded and updated collection version to "
-           << refreshedMetadata->getCollVersion();
+    LOGV2(21738, "Migration succeeded and updated collection version to {refreshedMetadata_getCollVersion}", "refreshedMetadata_getCollVersion"_attr = refreshedMetadata->getCollVersion());
 
     if (_useFCV44Protocol) {
         _coordinator->setMigrationDecision(
@@ -597,8 +595,7 @@ Status MigrationSourceManager::commitChunkMetadataOnConfig() {
 
     if (_useFCV44Protocol) {
         if (_args.getWaitForDelete()) {
-            log() << "Waiting for cleanup of " << getNss().ns() << " range "
-                  << redact(range.toString());
+            LOGV2(21739, "Waiting for cleanup of {getNss_ns} range {redact_range_toString}", "getNss_ns"_attr = getNss().ns(), "redact_range_toString"_attr = redact(range.toString()));
 
             auto deleteStatus = CollectionShardingRuntime::waitForClean(
                 _opCtx, getNss(), _collectionUuid.get(), range);
@@ -619,8 +616,7 @@ Status MigrationSourceManager::commitChunkMetadataOnConfig() {
         }();
 
         if (_args.getWaitForDelete()) {
-            log() << "Waiting for cleanup of " << getNss().ns() << " range "
-                  << redact(range.toString());
+            LOGV2(21740, "Waiting for cleanup of {getNss_ns} range {redact_range_toString}", "getNss_ns"_attr = getNss().ns(), "redact_range_toString"_attr = redact(range.toString()));
 
             auto deleteStatus = cleanupCompleteFuture.getNoThrow(_opCtx);
 
@@ -636,8 +632,7 @@ Status MigrationSourceManager::commitChunkMetadataOnConfig() {
             return {ErrorCodes::OrphanedRangeCleanUpFailed,
                     orphanedRangeCleanUpErrMsg + redact(cleanupCompleteFuture.getNoThrow(_opCtx))};
         } else {
-            log() << "Leaving cleanup of " << getNss().ns() << " range " << redact(range.toString())
-                  << " to complete in background";
+            LOGV2(21741, "Leaving cleanup of {getNss_ns} range {redact_range_toString} to complete in background", "getNss_ns"_attr = getNss().ns(), "redact_range_toString"_attr = redact(range.toString()));
         }
     }
 
@@ -660,8 +655,7 @@ void MigrationSourceManager::cleanupOnError() {
     try {
         _cleanup();
     } catch (const DBException& ex) {
-        warning() << "Failed to clean up migration: " << redact(_args.toString())
-                  << "due to: " << redact(ex);
+        LOGV2_WARNING(21742, "Failed to clean up migration: {redact_args_toString}due to: {redact_ex}", "redact_args_toString"_attr = redact(_args.toString()), "redact_ex"_attr = redact(ex));
     }
 }
 

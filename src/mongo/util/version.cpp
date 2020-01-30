@@ -48,6 +48,7 @@
 #include "mongo/db/jsobj.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 
 namespace mongo {
 namespace {
@@ -118,7 +119,7 @@ const VersionInfoInterface& VersionInfoInterface::instance(NotEnabledAction acti
         return fallbackVersionInfo;
     }
 
-    severe() << "Terminating because valid version info has not been configured";
+    LOGV2_FATAL(23071, "Terminating because valid version info has not been configured");
     fassertFailed(40278);
 }
 
@@ -195,17 +196,17 @@ std::string VersionInfoInterface::openSSLVersion(StringData prefix, StringData s
 }
 
 void VersionInfoInterface::logTargetMinOS() const {
-    log() << "targetMinOS: " << targetMinOS();
+    LOGV2(23064, "targetMinOS: {targetMinOS}", "targetMinOS"_attr = targetMinOS());
 }
 
 void VersionInfoInterface::logBuildInfo() const {
-    log() << "git version: " << gitVersion();
+    LOGV2(23065, "git version: {gitVersion}", "gitVersion"_attr = gitVersion());
 
 #if defined(MONGO_CONFIG_SSL) && MONGO_CONFIG_SSL_PROVIDER == MONGO_CONFIG_SSL_PROVIDER_OPENSSL
-    log() << openSSLVersion("OpenSSL version: ");
+    LOGV2(23066, "{openSSLVersion_OpenSSL_version}", "openSSLVersion_OpenSSL_version"_attr = openSSLVersion("OpenSSL version: "));
 #endif
 
-    log() << "allocator: " << allocator();
+    LOGV2(23067, "allocator: {allocator}", "allocator"_attr = allocator());
 
     std::stringstream ss;
     ss << "modules: ";
@@ -217,15 +218,15 @@ void VersionInfoInterface::logBuildInfo() const {
             ss << m << " ";
         }
     }
-    log() << ss.str();
+    LOGV2(23068, "{ss_str}", "ss_str"_attr = ss.str());
 
-    log() << "build environment:";
+    LOGV2(23069, "build environment:");
     for (auto&& envDataEntry : buildInfo()) {
         if (std::get<3>(envDataEntry)) {
             auto val = std::get<1>(envDataEntry);
             if (val.size() == 0)
                 continue;
-            log() << "    " << std::get<0>(envDataEntry) << ": " << std::get<1>(envDataEntry);
+            LOGV2(23070, "    {std_get_0_envDataEntry}: {std_get_1_envDataEntry}", "std_get_0_envDataEntry"_attr = std::get<0>(envDataEntry), "std_get_1_envDataEntry"_attr = std::get<1>(envDataEntry));
         }
     }
 }

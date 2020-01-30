@@ -38,6 +38,7 @@
 #include "mongo/db/repl/replication_coordinator.h"
 #include "mongo/util/decorable.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 
 namespace mongo {
 namespace repl {
@@ -103,10 +104,8 @@ void ReplClientInfo::setLastOpToSystemLastOpTime(OperationContext* opCtx) {
         if (systemOpTime >= _lastOp) {
             _lastOp = systemOpTime;
         } else {
-            log() << "Not setting the last OpTime for this Client from " << _lastOp
-                  << " to the current system time of " << systemOpTime
-                  << " as that would be moving the OpTime backwards.  This should only happen if "
-                     "there was a rollback recently";
+            LOGV2(21043, "Not setting the last OpTime for this Client from {lastOp} to the current system time of {systemOpTime} as that would be moving the OpTime backwards.  This should only happen if "
+                     "there was a rollback recently", "lastOp"_attr = _lastOp, "systemOpTime"_attr = systemOpTime);
         }
 
         lastOpInfo(opCtx).lastOpSetExplicitly = true;
@@ -122,7 +121,7 @@ void ReplClientInfo::setLastOpToSystemLastOpTimeIgnoringInterrupt(OperationConte
     } catch (const ExceptionForCat<ErrorCategory::Interruption>& e) {
         // In most cases, it is safe to ignore interruption errors because we cannot use the same
         // OperationContext to wait for writeConcern anyways.
-        LOG(2) << "Ignoring set last op interruption error: " << e.toStatus();
+        LOGV2_DEBUG(21044, 2, "Ignoring set last op interruption error: {e_toStatus}", "e_toStatus"_attr = e.toStatus());
     }
 }
 

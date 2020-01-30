@@ -56,6 +56,7 @@
 #include "mongo/s/grid.h"
 #include "mongo/transport/service_entry_point.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 
 namespace mongo {
 
@@ -157,8 +158,7 @@ void FeatureCompatibilityVersion::onInsertOrUpdate(OperationContext* opCtx, cons
         ? serverGlobalParams.featureCompatibility.getVersion() != newVersion
         : true;
     if (isDifferent) {
-        log() << "setting featureCompatibilityVersion to "
-              << FeatureCompatibilityVersionParser::toString(newVersion);
+        LOGV2(20426, "setting featureCompatibilityVersion to {FeatureCompatibilityVersionParser_toString_newVersion}", "FeatureCompatibilityVersionParser_toString_newVersion"_attr = FeatureCompatibilityVersionParser::toString(newVersion));
     }
 
     opCtx->recoveryUnit()->onCommit([opCtx, newVersion](boost::optional<Timestamp>) {
@@ -178,9 +178,9 @@ void FeatureCompatibilityVersion::onInsertOrUpdate(OperationContext* opCtx, cons
 
         if (newVersion != ServerGlobalParams::FeatureCompatibility::Version::kFullyUpgradedTo44) {
             if (MONGO_unlikely(hangBeforeAbortingRunningTransactionsOnFCVDowngrade.shouldFail())) {
-                log() << "featureCompatibilityVersion - "
+                LOGV2(20427, "featureCompatibilityVersion - "
                          "hangBeforeAbortingRunningTransactionsOnFCVDowngrade fail point enabled. "
-                         "Blocking until fail point is disabled.";
+                         "Blocking until fail point is disabled.");
                 hangBeforeAbortingRunningTransactionsOnFCVDowngrade.pauseWhileSet();
             }
             // Abort all open transactions when downgrading the featureCompatibilityVersion.

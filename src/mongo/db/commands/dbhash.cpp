@@ -52,6 +52,7 @@
 #include "mongo/db/transaction_participant.h"
 #include "mongo/platform/mutex.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/md5.hpp"
 #include "mongo/util/net/socket_utils.h"
 #include "mongo/util/timer.h"
@@ -370,7 +371,7 @@ private:
             exec = InternalPlanner::collectionScan(
                 opCtx, nss.ns(), collection, PlanExecutor::NO_YIELD);
         } else {
-            log() << "can't find _id index for: " << nss;
+            LOGV2(20422, "can't find _id index for: {nss}", "nss"_attr = nss);
             return "no _id _index";
         }
 
@@ -386,7 +387,7 @@ private:
             n++;
         }
         if (PlanExecutor::IS_EOF != state) {
-            warning() << "error while hashing, db dropped? ns=" << nss;
+            LOGV2_WARNING(20423, "error while hashing, db dropped? ns={nss}", "nss"_attr = nss);
             uasserted(34371,
                       "Plan executor error while running dbHash command: " +
                           WorkingSetCommon::toStatusString(c));

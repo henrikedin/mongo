@@ -46,6 +46,7 @@
 #include "mongo/unittest/unittest.h"
 #include "mongo/util/hex.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 
 namespace {
 std::string initTestData();
@@ -94,7 +95,7 @@ TEST(Decimal128BSONTest, TestsConstructingDecimalWithBsonDump) {
             BSONElement extjson = b.getField("extjson");
             BSONElement canonical_extjson = b.getField("canonical_extjson");
 
-            log() << "Test - " << desc.str();
+            LOGV2(22314, "Test - {desc_str}", "desc_str"_attr = desc.str());
 
             StringData hexString = bson.valueStringData();
             BSONObj d = convertHexStringToBsonObj(hexString);
@@ -108,7 +109,7 @@ TEST(Decimal128BSONTest, TestsConstructingDecimalWithBsonDump) {
             }
 
             ASSERT_EQ(trimWhiteSpace(outputJson), trimWhiteSpace(expectedJson));
-            log() << "PASSED";
+            LOGV2(22315, "PASSED");
         }
     }
 }

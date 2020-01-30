@@ -61,6 +61,7 @@
 #include "mongo/logv2/log_domain_global.h"
 #include "mongo/platform/process_id.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/processinfo.h"
 #include "mongo/util/quick_exit.h"
 #include "mongo/util/signal_handlers_synchronous.h"
@@ -320,7 +321,7 @@ MONGO_INITIALIZER_GENERAL(ServerLogRedirection,
                 : logv2::LogDomainGlobal::ConfigurationOptions::OpenMode::kTruncate;
 
             if (serverGlobalParams.logAppend && exists) {
-                log() << "***** SERVER RESTARTED *****";
+                LOGV2(20645, "***** SERVER RESTARTED *****");
                 // FIXME rewrite for logv2
                 // Status status = logger::RotatableFileWriter::Use(writer.getValue()).status();
                 // if (!status.isOK())
@@ -338,7 +339,7 @@ MONGO_INITIALIZER_GENERAL(ServerLogRedirection,
             javascriptAppender = std::make_unique<RotatableFileAppender<MessageEventEphemeral>>(
                 std::make_unique<MessageEventDetailsEncoder>(), writer.getValue());
             if (serverGlobalParams.logAppend && exists) {
-                log() << "***** SERVER RESTARTED *****";
+                LOGV2(20646, "***** SERVER RESTARTED *****");
                 Status status = logger::RotatableFileWriter::Use(writer.getValue()).status();
                 if (!status.isOK())
                     return status;

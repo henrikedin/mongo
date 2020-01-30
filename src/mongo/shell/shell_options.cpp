@@ -48,6 +48,7 @@
 #include "mongo/transport/message_compressor_options_client_gen.h"
 #include "mongo/transport/message_compressor_registry.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/net/socket_utils.h"
 #include "mongo/util/options_parser/startup_options.h"
 #include "mongo/util/str.h"
@@ -89,9 +90,9 @@ bool handlePreValidationMongoShellOptions(const moe::Environment& params,
     auto&& vii = VersionInfoInterface::instance();
     if (params.count("version") || params.count("help")) {
         setPlainConsoleLogger();
-        log() << mongoShellVersion(vii);
+        LOGV2(22495, "{mongoShellVersion_vii}", "mongoShellVersion_vii"_attr = mongoShellVersion(vii));
         if (params.count("help")) {
-            log() << getMongoShellHelp(args[0], moe::startupOptions);
+            LOGV2(22496, "{getMongoShellHelp_args_0_moe_startupOptions}", "getMongoShellHelp_args_0_moe_startupOptions"_attr = getMongoShellHelp(args[0], moe::startupOptions));
         } else {
             vii.logBuildInfo();
         }

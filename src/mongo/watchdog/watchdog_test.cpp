@@ -44,6 +44,7 @@
 #include "mongo/util/clock_source.h"
 #include "mongo/util/clock_source_mock.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/tick_source_mock.h"
 
 namespace mongo {
@@ -300,7 +301,7 @@ class WatchdogMonitorThreadTest : public ServiceContextTest {};
 TEST_F(WatchdogMonitorThreadTest, Basic) {
     ManualResetEvent deathEvent;
     WatchdogDeathCallback deathCallback = [&deathEvent]() {
-        log() << "Death signalled";
+        LOGV2(23097, "Death signalled");
         deathEvent.set();
     };
 
@@ -345,7 +346,7 @@ private:
 TEST_F(WatchdogMonitorThreadTest, SleepyHungCheck) {
     ManualResetEvent deathEvent;
     WatchdogDeathCallback deathCallback = [&deathEvent]() {
-        log() << "Death signalled";
+        LOGV2(23098, "Death signalled");
         deathEvent.set();
     };
 
@@ -375,7 +376,7 @@ class WatchdogMonitorTest : public ServiceContextTest {};
 TEST_F(WatchdogMonitorTest, SleepyHungCheck) {
     ManualResetEvent deathEvent;
     WatchdogDeathCallback deathCallback = [&deathEvent]() {
-        log() << "Death signalled";
+        LOGV2(23099, "Death signalled");
         deathEvent.set();
     };
 
@@ -412,7 +413,7 @@ DEATH_TEST(WatchdogMonitorTest, Death, "") {
 TEST_F(WatchdogMonitorTest, PauseAndResume) {
 
     WatchdogDeathCallback deathCallback = []() {
-        log() << "Death signalled, it should not have been";
+        LOGV2(23100, "Death signalled, it should not have been");
         invariant(false);
     };
 

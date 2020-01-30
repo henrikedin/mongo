@@ -41,6 +41,7 @@
 #include "mongo/unittest/unittest.h"
 #include "mongo/util/duration.h"
 #include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 
 namespace mongo {
 namespace {
@@ -102,15 +103,15 @@ protected:
         const auto net = getNet();
         const auto request = noi->getRequest();
         _numChecks[request.target]++;
-        LOG(2) << "at " << elapsed() << " got mock net operation " << request.toString();
+        LOGV2_DEBUG(20184, 2, "at {elapsed} got mock net operation {request_toString}", "elapsed"_attr = elapsed(), "request_toString"_attr = request.toString());
         const auto node = replSet.getNode(request.target.toString());
         if (node->isRunning()) {
             const auto opmsg = OpMsgRequest::fromDBAndBody(request.dbname, request.cmdObj);
             const auto reply = node->runCommand(request.id, opmsg)->getCommandReply();
-            LOG(2) << "replying " << reply;
+            LOGV2_DEBUG(20185, 2, "replying {reply}", "reply"_attr = reply);
             net->scheduleSuccessfulResponse(noi, RemoteCommandResponse(reply, Milliseconds(0)));
         } else {
-            LOG(2) << "black hole";
+            LOGV2_DEBUG(20186, 2, "black hole");
             net->blackHole(noi);
         }
         net->runReadyNetworkOperations();
@@ -122,9 +123,9 @@ protected:
         InNetworkGuard guard(net);
 
         // Operations can happen inline with advanceTime(), so log before and after the call.
-        LOG(3) << "Advancing time from " << elapsed() << " to " << (elapsed() + d);
+        LOGV2_DEBUG(20187, 3, "Advancing time from {elapsed} to {elapsed_d}", "elapsed"_attr = elapsed(), "elapsed_d"_attr = (elapsed() + d));
         net->advanceTime(net->now() + d);
-        LOG(3) << "Advanced to " << elapsed();
+        LOGV2_DEBUG(20188, 3, "Advanced to {elapsed}", "elapsed"_attr = elapsed());
     }
 
     int getNumChecks(HostAndPort host) {
