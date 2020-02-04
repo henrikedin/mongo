@@ -1821,7 +1821,8 @@ elif env.TargetOSIs('windows'):
     # Note that this means we can't do parallel links in the build.
     #
     # Please also note that this has nothing to do with _DEBUG or optimization.
-    env.Append( LINKFLAGS=["/DEBUG"] )
+    if not any(flag.startswith('/DEBUG') for flag in env['LINKFLAGS']):
+        env.Append( LINKFLAGS=["/DEBUG"] )
 
     # /MD:  use the multithreaded, DLL version of the run-time library (MSVCRT.lib/MSVCR###.DLL)
     # /MDd: Defines _DEBUG, _MT, _DLL, and uses MSVCRTD.lib/MSVCRD###.DLL
