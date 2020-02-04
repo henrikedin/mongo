@@ -122,6 +122,7 @@ baseEnv.Library(
         'logv2/log_manager.cpp',
         'logv2/log_severity.cpp',
         'logv2/log_tag.cpp',
+        'logv2/log_truncation.cpp',
         'logv2/plain_formatter.cpp',
         'logv2/ramlog.cpp',
         'logv2/text_formatter.cpp',
@@ -166,6 +167,7 @@ baseEnv.Library(
         'util/timer.cpp',
         'util/uuid.cpp',
         'util/version.cpp',
+        baseEnv.Idlc('logv2/config.idl')[0],
     ],
     # NOTE: This library *must not* depend on any libraries than
     # the ones declared here. Do not add to this list.

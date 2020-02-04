@@ -27,13 +27,16 @@
  *    it in the license file.
  */
 
-#pragma once
+#include "mongo/logv2/log_truncation.h"
+
+#include "mongo/logv2/config_gen.h"
 
 namespace mongo {
 namespace logv2 {
 
-enum class LogTruncation { Enabled, Disabled };
-size_t getMaxLogAttributeSize();
+size_t getMaxLogAttributeSize() {
+    return gMaxLogAttributeSizeKB.loadRelaxed() * 1024;
+}
 
 }  // namespace logv2
 }  // namespace mongo
