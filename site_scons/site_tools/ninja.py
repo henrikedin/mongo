@@ -357,7 +357,7 @@ class NinjaState:
         escape = env.get("ESCAPE", lambda x: x)
 
         self.variables = {
-            "COPY": "cmd.exe /c copy" if sys.platform == "win32" else "cp",
+            "COPY": "cmd.exe /c 1>NUL copy" if sys.platform == "win32" else "cp",
             "SCONS_INVOCATION": "{} {} __NINJA_NO=1 $out".format(
                 sys.executable,
                 " ".join(
