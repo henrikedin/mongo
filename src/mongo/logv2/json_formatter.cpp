@@ -62,7 +62,7 @@ struct JSONValueExtractor {
             // This is a JSON subobject, no quotes needed
             storeUnquoted(name);
             builder.done().getField(name).jsonStringBuffer(
-                JsonStringFormat::ExtendedRelaxedV2_0_0, false, 0, _buffer);
+                JsonStringFormat::ExtendedRelaxedV2_0_0, false, false, 0, _buffer);
         } else if (val.BSONSerialize) {
             // This is a JSON subobject, no quotes needed
             storeUnquoted(name);

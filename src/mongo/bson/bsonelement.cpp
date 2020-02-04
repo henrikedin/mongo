@@ -67,39 +67,55 @@ const double BSONElement::kLongLongMaxPlusOneAsDouble =
     scalbn(1, std::numeric_limits<long long>::digits);
 
 std::string BSONElement::jsonString(JsonStringFormat format,
+                                    bool includeSeparator,
                                     bool includeFieldNames,
-                                    int pretty) const {
+                                    int pretty,
+                                    size_t writeLimit,
+                                    bool* outDidWriteEverything) const {
     fmt::memory_buffer buffer;
-    jsonStringBuffer(format, includeFieldNames, pretty, buffer);
+    bool wroteEverything =
+        jsonStringBuffer(format, includeSeparator, includeFieldNames, pretty, buffer, writeLimit);
+    if (outDidWriteEverything) {
+        *outDidWriteEverything = wroteEverything;
+    }
     return fmt::to_string(buffer);
 }
 
-void BSONElement::jsonStringBuffer(JsonStringFormat format,
+bool BSONElement::jsonStringBuffer(JsonStringFormat format,
+                                   bool includeSeparator,
                                    bool includeFieldNames,
                                    int pretty,
-                                   fmt::memory_buffer& buffer) const {
+                                   fmt::memory_buffer& buffer,
+                                   size_t writeLimit) const {
     auto withGenerator = [&](auto&& gen) {
-        jsonStringGenerator(gen, includeFieldNames, pretty, buffer);
+        return jsonStringGenerator(
+            gen, includeSeparator, includeFieldNames, pretty, buffer, writeLimit);
     };
     if (format == ExtendedCanonicalV2_0_0)
-        withGenerator(ExtendedCanonicalV200Generator());
+        return withGenerator(ExtendedCanonicalV200Generator());
     else if (format == ExtendedRelaxedV2_0_0)
-        withGenerator(ExtendedRelaxedV200Generator());
+        return withGenerator(ExtendedRelaxedV200Generator());
     else if (format == LegacyStrict) {
-        withGenerator(LegacyStrictGenerator());
+        return withGenerator(LegacyStrictGenerator());
     } else {
         MONGO_UNREACHABLE;
     }
 }
 
 template <typename Generator>
-void BSONElement::_jsonStringGenerator(const Generator& g,
+bool BSONElement::_jsonStringGenerator(const Generator& g,
+                                       bool includeSeparator,
                                        bool includeFieldNames,
                                        int pretty,
-                                       fmt::memory_buffer& buffer) const {
+                                       fmt::memory_buffer& buffer,
+                                       size_t writeLimit) const {
+    size_t before = buffer.size();
+    if (includeSeparator)
+        buffer.push_back(',');
+
     if (includeFieldNames) {
         g.writePadding(buffer);
-        g.writeString(buffer, fieldName());
+        g.writeString(buffer, fieldNameStringData());
         g.writePadding(buffer);
         buffer.push_back(':');
     }
@@ -135,11 +151,11 @@ void BSONElement::_jsonStringGenerator(const Generator& g,
             g.writeUndefined(buffer);
             break;
         case Object:
-            embeddedObject().jsonStringGenerator(g, pretty ? pretty + 1 : 0, false, buffer);
-            break;
+            return embeddedObject().jsonStringGenerator(
+                g, pretty ? pretty + 1 : 0, false, buffer, writeLimit);
         case mongo::Array:
-            embeddedObject().jsonStringGenerator(g, pretty ? pretty + 1 : 0, true, buffer);
-            break;
+            return embeddedObject().jsonStringGenerator(
+                g, pretty ? pretty + 1 : 0, true, buffer, writeLimit);
         case DBRef:
             // valuestrsize() returns the size including the null terminator
             g.writeDBRef(buffer,
@@ -187,25 +203,39 @@ void BSONElement::_jsonStringGenerator(const Generator& g,
         default:
             MONGO_UNREACHABLE;
     }
+    if (writeLimit > 0 && buffer.size() > writeLimit) {
+        buffer.resize(before);
+        return false;
+    }
+    return true;
 }
 
-void BSONElement::jsonStringGenerator(ExtendedCanonicalV200Generator const& generator,
+bool BSONElement::jsonStringGenerator(ExtendedCanonicalV200Generator const& generator,
+                                      bool includeSeparator,
                                       bool includeFieldNames,
                                       int pretty,
-                                      fmt::memory_buffer& buffer) const {
-    _jsonStringGenerator(generator, includeFieldNames, pretty, buffer);
+                                      fmt::memory_buffer& buffer,
+                                      size_t writeLimit) const {
+    return _jsonStringGenerator(
+        generator, includeSeparator, includeFieldNames, pretty, buffer, writeLimit);
 }
-void BSONElement::jsonStringGenerator(ExtendedRelaxedV200Generator const& generator,
+bool BSONElement::jsonStringGenerator(ExtendedRelaxedV200Generator const& generator,
+                                      bool includeSeparator,
                                       bool includeFieldNames,
                                       int pretty,
-                                      fmt::memory_buffer& buffer) const {
-    _jsonStringGenerator(generator, includeFieldNames, pretty, buffer);
+                                      fmt::memory_buffer& buffer,
+                                      size_t writeLimit) const {
+    return _jsonStringGenerator(
+        generator, includeSeparator, includeFieldNames, pretty, buffer, writeLimit);
 }
-void BSONElement::jsonStringGenerator(LegacyStrictGenerator const& generator,
+bool BSONElement::jsonStringGenerator(LegacyStrictGenerator const& generator,
+                                      bool includeSeparator,
                                       bool includeFieldNames,
                                       int pretty,
-                                      fmt::memory_buffer& buffer) const {
-    _jsonStringGenerator(generator, includeFieldNames, pretty, buffer);
+                                      fmt::memory_buffer& buffer,
+                                      size_t writeLimit) const {
+    return _jsonStringGenerator(
+        generator, includeSeparator, includeFieldNames, pretty, buffer, writeLimit);
 }
 
 namespace {

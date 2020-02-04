@@ -144,72 +144,90 @@ BSONObj BSONObj::getOwned(const BSONObj& obj) {
 }
 
 template <typename Generator>
-void BSONObj::_jsonStringGenerator(const Generator& g,
+bool BSONObj::_jsonStringGenerator(const Generator& g,
                                    int pretty,
                                    bool isArray,
-                                   fmt::memory_buffer& buffer) const {
+                                   fmt::memory_buffer& buffer,
+                                   size_t writeLimit) const {
     if (isEmpty()) {
         fmt::format_to(buffer, "{}", isArray ? "[]" : "{}");
-        return;
+        return true;
     }
     buffer.push_back(isArray ? '[' : '{');
 
     BSONObjIterator i(*this);
     BSONElement e = i.next();
-    if (!e.eoo())
+    bool wroteAllElements = true;
+    if (!e.eoo()) {
+        bool writeSeparator = false;
         while (1) {
-            e.jsonStringGenerator(g, !isArray, pretty, buffer);
+            wroteAllElements = e.jsonStringGenerator(g, writeSeparator, !isArray, pretty, buffer, writeLimit);
             e = i.next();
-            if (e.eoo()) {
+            if (!wroteAllElements || e.eoo()) {
                 g.writePadding(buffer);
                 break;
             }
-            buffer.push_back(',');
+            writeSeparator = true;
             if (pretty) {
                 fmt::format_to(buffer, "{: <{}}", '\n', pretty * 2);
             }
         }
+    }
 
     buffer.push_back(isArray ? ']' : '}');
+    return wroteAllElements;
 }
 
-void BSONObj::jsonStringGenerator(ExtendedCanonicalV200Generator const& generator,
+bool BSONObj::jsonStringGenerator(ExtendedCanonicalV200Generator const& generator,
                                   int pretty,
                                   bool isArray,
-                                  fmt::memory_buffer& buffer) const {
-    _jsonStringGenerator(generator, pretty, isArray, buffer);
+                                  fmt::memory_buffer& buffer,
+                                  size_t writeLimit) const {
+    return _jsonStringGenerator(generator, pretty, isArray, buffer, writeLimit);
 }
-void BSONObj::jsonStringGenerator(ExtendedRelaxedV200Generator const& generator,
+bool BSONObj::jsonStringGenerator(ExtendedRelaxedV200Generator const& generator,
                                   int pretty,
                                   bool isArray,
-                                  fmt::memory_buffer& buffer) const {
-    _jsonStringGenerator(generator, pretty, isArray, buffer);
+                                  fmt::memory_buffer& buffer,
+                                  size_t writeLimit) const {
+    return _jsonStringGenerator(generator, pretty, isArray, buffer, writeLimit);
 }
-void BSONObj::jsonStringGenerator(LegacyStrictGenerator const& generator,
+bool BSONObj::jsonStringGenerator(LegacyStrictGenerator const& generator,
                                   int pretty,
                                   bool isArray,
-                                  fmt::memory_buffer& buffer) const {
-    _jsonStringGenerator(generator, pretty, isArray, buffer);
+                                  fmt::memory_buffer& buffer,
+                                  size_t writeLimit) const {
+    return _jsonStringGenerator(generator, pretty, isArray, buffer, writeLimit);
 }
 
-std::string BSONObj::jsonString(JsonStringFormat format, int pretty, bool isArray) const {
+std::string BSONObj::jsonString(JsonStringFormat format,
+                                int pretty,
+                                bool isArray,
+                                size_t writeLimit,
+                                bool* outDidWriteEverything) const {
     fmt::memory_buffer buffer;
-    jsonStringBuffer(format, pretty, isArray, buffer);
+    bool wroteEverything = jsonStringBuffer(format, pretty, isArray, buffer);
+    if (outDidWriteEverything) {
+        *outDidWriteEverything = wroteEverything;
+    }
     return fmt::to_string(buffer);
 }
 
-void BSONObj::jsonStringBuffer(JsonStringFormat format,
+bool BSONObj::jsonStringBuffer(JsonStringFormat format,
                                int pretty,
                                bool isArray,
-                               fmt::memory_buffer& buffer) const {
-    auto withGenerator = [&](auto&& gen) { jsonStringGenerator(gen, pretty, isArray, buffer); };
+                               fmt::memory_buffer& buffer,
+                               size_t writeLimit) const {
+    auto withGenerator = [&](auto&& gen) {
+        return jsonStringGenerator(gen, pretty, isArray, buffer, writeLimit);
+    };
 
     if (format == ExtendedCanonicalV2_0_0) {
-        withGenerator(ExtendedCanonicalV200Generator());
+        return withGenerator(ExtendedCanonicalV200Generator());
     } else if (format == ExtendedRelaxedV2_0_0) {
-        withGenerator(ExtendedRelaxedV200Generator());
+        return withGenerator(ExtendedRelaxedV200Generator());
     } else if (format == LegacyStrict) {
-        withGenerator(LegacyStrictGenerator());
+        return withGenerator(LegacyStrictGenerator());
     } else {
         MONGO_UNREACHABLE;
     }

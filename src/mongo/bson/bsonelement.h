@@ -212,26 +212,37 @@ public:
                   int depth = 0) const;
 
     std::string jsonString(JsonStringFormat format,
+                           bool includeSeparator,
                            bool includeFieldNames = true,
-                           int pretty = 0) const;
+                           int pretty = 0,
+                           size_t writeLimit = 0,
+                           bool* outDidWriteEverything = nullptr) const;
 
-    void jsonStringBuffer(JsonStringFormat format,
+    bool jsonStringBuffer(JsonStringFormat format,
+                          bool includeSeparator,
                           bool includeFieldNames,
                           int pretty,
-                          fmt::memory_buffer& buffer) const;
+                          fmt::memory_buffer& buffer,
+                          size_t writeLimit = 0) const;
 
-    void jsonStringGenerator(ExtendedCanonicalV200Generator const& generator,
+    bool jsonStringGenerator(ExtendedCanonicalV200Generator const& generator,
+                             bool includeSeparator,
                              bool includeFieldNames,
                              int pretty,
-                             fmt::memory_buffer& buffer) const;
-    void jsonStringGenerator(ExtendedRelaxedV200Generator const& generator,
+                             fmt::memory_buffer& buffer,
+                             size_t writeLimit = 0) const;
+    bool jsonStringGenerator(ExtendedRelaxedV200Generator const& generator,
+                             bool includeSeparator,
                              bool includeFieldNames,
                              int pretty,
-                             fmt::memory_buffer& buffer) const;
-    void jsonStringGenerator(LegacyStrictGenerator const& generator,
+                             fmt::memory_buffer& buffer,
+                             size_t writeLimit = 0) const;
+    bool jsonStringGenerator(LegacyStrictGenerator const& generator,
+                             bool includeSeparator,
                              bool includeFieldNames,
                              int pretty,
-                             fmt::memory_buffer& buffer) const;
+                             fmt::memory_buffer& buffer,
+                             size_t writeLimit = 0) const;
 
     operator std::string() const {
         return toString();
@@ -772,10 +783,12 @@ public:
 
 private:
     template <typename Generator>
-    void _jsonStringGenerator(const Generator& g,
+    bool _jsonStringGenerator(const Generator& g,
+                              bool includeSeparator,
                               bool includeFieldNames,
                               int pretty,
-                              fmt::memory_buffer& buffer) const;
+                              fmt::memory_buffer& buffer,
+                              size_t writeLimit) const;
 
     const char* data;
     int fieldNameSize_;  // internal size includes null terminator
