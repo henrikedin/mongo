@@ -50,6 +50,36 @@
 
 namespace mongo::logv2 {
 namespace {
+constexpr std::size_t kMaxAttributeSize = 10000;
+template <typename Iterator>
+Iterator unicodeSafeTruncation(Iterator begin, Iterator end, std::size_t maximum) {
+    const auto rbegin = std::make_reverse_iterator(begin + std::min(static_cast<size_t>(end-begin), maximum));
+    const auto rend = std::make_reverse_iterator(begin);
+    auto it = rbegin;
+
+    // Look back until we find the beginning of a unicode codepoint, extract its expected number of bytes
+    int codepoint_bytes = 0;
+    for (; it != rend; ++it) {
+        if ((*it & 0b1000'0000) == 0) {
+            codepoint_bytes = 1;
+            break;
+        } else if ((*it & 0b1100'0000) == 0b1100'0000) {
+            codepoint_bytes = 2;
+            uint8_t byte = *it << 1;
+            while ((codepoint_bytes < 4) && ((byte <<= 1) & 0b1000'0000))
+                ++codepoint_bytes;
+            break;
+        }
+    }
+
+    // Check we had the expected number of continuation bytes. If not skip this codepoint.
+    int offset = codepoint_bytes - 1;
+    if (std::distance(rbegin, it) != offset)
+        offset = 0;
+
+    return it.base() + offset;
+}
+
 struct JSONValueExtractor {
     JSONValueExtractor(fmt::memory_buffer& buffer) : _buffer(buffer) {}
 
@@ -129,7 +159,12 @@ private:
     template <typename T>
     void storeQuoted(StringData name, const T& value) {
         fmt::format_to(_buffer, R"({}"{}":")", _separator, name);
+        std::size_t before = _buffer.size();
         str::escapeForJSON(_buffer, value);
+        auto truncatedEnd =
+            unicodeSafeTruncation(_buffer.begin() + before, _buffer.end(), kMaxAttributeSize);
+        _buffer.resize(truncatedEnd - _buffer.begin());
+
         _buffer.push_back('"');
         _separator = ","_sd;
     }
