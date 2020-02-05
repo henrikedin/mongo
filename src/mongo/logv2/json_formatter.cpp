@@ -91,20 +91,23 @@ struct JSONValueExtractor {
             val.BSONAppend(builder, name);
             // This is a JSON subobject, no quotes needed
             storeUnquoted(name);
-            builder.done().getField(name).jsonStringBuffer(
-                JsonStringFormat::ExtendedRelaxedV2_0_0, false, false, 0, _buffer);
+            if (!builder.done().getField(name).jsonStringBuffer(
+                JsonStringFormat::ExtendedRelaxedV2_0_0, false, false, 0, _buffer, kMaxAttributeSize))
+                _truncated.push_back(name);
         } else if (val.BSONSerialize) {
             // This is a JSON subobject, no quotes needed
             storeUnquoted(name);
             BSONObjBuilder builder;
             val.BSONSerialize(builder);
-            builder.done().jsonStringBuffer(
-                JsonStringFormat::ExtendedRelaxedV2_0_0, 0, false, _buffer);
+            if (!builder.done().jsonStringBuffer(
+                JsonStringFormat::ExtendedRelaxedV2_0_0, 0, false, _buffer, kMaxAttributeSize))
+                _truncated.push_back(name);
         } else if (val.toBSONArray) {
             // This is a JSON subarray, no quotes needed
             storeUnquoted(name);
-            val.toBSONArray().jsonStringBuffer(
-                JsonStringFormat::ExtendedRelaxedV2_0_0, 0, true, _buffer);
+            if (!val.toBSONArray().jsonStringBuffer(
+                JsonStringFormat::ExtendedRelaxedV2_0_0, 0, true, _buffer, kMaxAttributeSize))
+                _truncated.push_back(name);
         } else if (val.stringSerialize) {
             fmt::memory_buffer intermediate;
             val.stringSerialize(intermediate);
@@ -118,13 +121,15 @@ struct JSONValueExtractor {
     void operator()(StringData name, const BSONObj* val) {
         // This is a JSON subobject, no quotes needed
         storeUnquoted(name);
-        val->jsonStringBuffer(JsonStringFormat::ExtendedRelaxedV2_0_0, 0, false, _buffer);
+        if (!val->jsonStringBuffer(JsonStringFormat::ExtendedRelaxedV2_0_0, 0, false, _buffer, kMaxAttributeSize))
+            _truncated.push_back(name);
     }
 
     void operator()(StringData name, const BSONArray* val) {
         // This is a JSON subobject, no quotes needed
         storeUnquoted(name);
-        val->jsonStringBuffer(JsonStringFormat::ExtendedRelaxedV2_0_0, 0, true, _buffer);
+        if (!val->jsonStringBuffer(JsonStringFormat::ExtendedRelaxedV2_0_0, 0, true, _buffer, kMaxAttributeSize))
+            _truncated.push_back(name);
     }
 
     void operator()(StringData name, StringData value) {
@@ -163,6 +168,8 @@ private:
         str::escapeForJSON(_buffer, value);
         auto truncatedEnd =
             unicodeSafeTruncation(_buffer.begin() + before, _buffer.end(), kMaxAttributeSize);
+        if (truncatedEnd != _buffer.end())
+            _truncated.push_back(name);
         _buffer.resize(truncatedEnd - _buffer.begin());
 
         _buffer.push_back('"');
@@ -170,6 +177,7 @@ private:
     }
 
     fmt::memory_buffer& _buffer;
+    boost::container::small_vector<StringData, constants::kNumStaticAttrs> _truncated;
     StringData _separator = ""_sd;
 };
 }  // namespace
