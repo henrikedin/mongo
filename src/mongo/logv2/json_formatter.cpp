@@ -186,7 +186,7 @@ private:
         auto truncatedEnd =
             unicodeSafeTruncation(_buffer.begin() + before, _buffer.end(), kMaxAttributeSize);
         if (truncatedEnd != _buffer.end())
-            _truncated.append(name, "string");
+            _truncated.append(name, typeName(BSONType::String));
         _buffer.resize(truncatedEnd - _buffer.begin());
 
         _buffer.push_back('"');

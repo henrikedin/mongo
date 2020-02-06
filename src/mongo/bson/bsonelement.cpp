@@ -221,7 +221,7 @@ BSONObj BSONElement::_jsonStringGenerator(const Generator& g,
         buffer.resize(before);
 
         BSONObjBuilder builder;
-        builder.append(fieldNameStringData(), "asd");
+        builder.append(fieldNameStringData(), typeName(type()));
         return builder.obj();
     }
     return BSONObj();
