@@ -216,28 +216,28 @@ public:
                            bool includeFieldNames = true,
                            int pretty = 0,
                            size_t writeLimit = 0,
-                           bool* outDidWriteEverything = nullptr) const;
+                           BSONObj* outTruncationResult = nullptr) const;
 
-    bool jsonStringBuffer(JsonStringFormat format,
+    BSONObj jsonStringBuffer(JsonStringFormat format,
                           bool includeSeparator,
                           bool includeFieldNames,
                           int pretty,
                           fmt::memory_buffer& buffer,
                           size_t writeLimit = 0) const;
 
-    bool jsonStringGenerator(ExtendedCanonicalV200Generator const& generator,
+    BSONObj jsonStringGenerator(ExtendedCanonicalV200Generator const& generator,
                              bool includeSeparator,
                              bool includeFieldNames,
                              int pretty,
                              fmt::memory_buffer& buffer,
                              size_t writeLimit = 0) const;
-    bool jsonStringGenerator(ExtendedRelaxedV200Generator const& generator,
+    BSONObj jsonStringGenerator(ExtendedRelaxedV200Generator const& generator,
                              bool includeSeparator,
                              bool includeFieldNames,
                              int pretty,
                              fmt::memory_buffer& buffer,
                              size_t writeLimit = 0) const;
-    bool jsonStringGenerator(LegacyStrictGenerator const& generator,
+    BSONObj jsonStringGenerator(LegacyStrictGenerator const& generator,
                              bool includeSeparator,
                              bool includeFieldNames,
                              int pretty,
@@ -783,7 +783,7 @@ public:
 
 private:
     template <typename Generator>
-    bool _jsonStringGenerator(const Generator& g,
+    BSONObj _jsonStringGenerator(const Generator& g,
                               bool includeSeparator,
                               bool includeFieldNames,
                               int pretty,

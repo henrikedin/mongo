@@ -71,22 +71,22 @@ std::string BSONElement::jsonString(JsonStringFormat format,
                                     bool includeFieldNames,
                                     int pretty,
                                     size_t writeLimit,
-                                    bool* outDidWriteEverything) const {
+                                    BSONObj* outTruncationResult) const {
     fmt::memory_buffer buffer;
-    bool wroteEverything =
+    BSONObj truncation =
         jsonStringBuffer(format, includeSeparator, includeFieldNames, pretty, buffer, writeLimit);
-    if (outDidWriteEverything) {
-        *outDidWriteEverything = wroteEverything;
+    if (outTruncationResult) {
+        *outTruncationResult = truncation;
     }
     return fmt::to_string(buffer);
 }
 
-bool BSONElement::jsonStringBuffer(JsonStringFormat format,
-                                   bool includeSeparator,
-                                   bool includeFieldNames,
-                                   int pretty,
-                                   fmt::memory_buffer& buffer,
-                                   size_t writeLimit) const {
+BSONObj BSONElement::jsonStringBuffer(JsonStringFormat format,
+                                      bool includeSeparator,
+                                      bool includeFieldNames,
+                                      int pretty,
+                                      fmt::memory_buffer& buffer,
+                                      size_t writeLimit) const {
     auto withGenerator = [&](auto&& gen) {
         return jsonStringGenerator(
             gen, includeSeparator, includeFieldNames, pretty, buffer, writeLimit);
@@ -103,12 +103,12 @@ bool BSONElement::jsonStringBuffer(JsonStringFormat format,
 }
 
 template <typename Generator>
-bool BSONElement::_jsonStringGenerator(const Generator& g,
-                                       bool includeSeparator,
-                                       bool includeFieldNames,
-                                       int pretty,
-                                       fmt::memory_buffer& buffer,
-                                       size_t writeLimit) const {
+BSONObj BSONElement::_jsonStringGenerator(const Generator& g,
+                                          bool includeSeparator,
+                                          bool includeFieldNames,
+                                          int pretty,
+                                          fmt::memory_buffer& buffer,
+                                          size_t writeLimit) const {
     size_t before = buffer.size();
     if (includeSeparator)
         buffer.push_back(',');
@@ -150,12 +150,26 @@ bool BSONElement::_jsonStringGenerator(const Generator& g,
         case Undefined:
             g.writeUndefined(buffer);
             break;
-        case Object:
-            return embeddedObject().jsonStringGenerator(
+        case Object: {
+            BSONObj truncated = embeddedObject().jsonStringGenerator(
                 g, pretty ? pretty + 1 : 0, false, buffer, writeLimit);
-        case mongo::Array:
-            return embeddedObject().jsonStringGenerator(
+            if (!truncated.isEmpty()) {
+                BSONObjBuilder builder;
+                builder.append(fieldNameStringData(), truncated);
+                return builder.obj();
+            }
+            return truncated;
+        }
+        case mongo::Array: {
+            BSONObj truncated = embeddedObject().jsonStringGenerator(
                 g, pretty ? pretty + 1 : 0, true, buffer, writeLimit);
+            if (!truncated.isEmpty()) {
+                BSONObjBuilder builder;
+                builder.append(fieldNameStringData(), truncated);
+                return builder.obj();
+            }
+            return truncated;
+        }
         case DBRef:
             // valuestrsize() returns the size including the null terminator
             g.writeDBRef(buffer,
@@ -205,35 +219,38 @@ bool BSONElement::_jsonStringGenerator(const Generator& g,
     }
     if (writeLimit > 0 && buffer.size() > writeLimit) {
         buffer.resize(before);
-        return false;
+
+        BSONObjBuilder builder;
+        builder.append(fieldNameStringData(), "asd");
+        return builder.obj();
     }
-    return true;
+    return BSONObj();
 }
 
-bool BSONElement::jsonStringGenerator(ExtendedCanonicalV200Generator const& generator,
-                                      bool includeSeparator,
-                                      bool includeFieldNames,
-                                      int pretty,
-                                      fmt::memory_buffer& buffer,
-                                      size_t writeLimit) const {
+BSONObj BSONElement::jsonStringGenerator(ExtendedCanonicalV200Generator const& generator,
+                                         bool includeSeparator,
+                                         bool includeFieldNames,
+                                         int pretty,
+                                         fmt::memory_buffer& buffer,
+                                         size_t writeLimit) const {
     return _jsonStringGenerator(
         generator, includeSeparator, includeFieldNames, pretty, buffer, writeLimit);
 }
-bool BSONElement::jsonStringGenerator(ExtendedRelaxedV200Generator const& generator,
-                                      bool includeSeparator,
-                                      bool includeFieldNames,
-                                      int pretty,
-                                      fmt::memory_buffer& buffer,
-                                      size_t writeLimit) const {
+BSONObj BSONElement::jsonStringGenerator(ExtendedRelaxedV200Generator const& generator,
+                                         bool includeSeparator,
+                                         bool includeFieldNames,
+                                         int pretty,
+                                         fmt::memory_buffer& buffer,
+                                         size_t writeLimit) const {
     return _jsonStringGenerator(
         generator, includeSeparator, includeFieldNames, pretty, buffer, writeLimit);
 }
-bool BSONElement::jsonStringGenerator(LegacyStrictGenerator const& generator,
-                                      bool includeSeparator,
-                                      bool includeFieldNames,
-                                      int pretty,
-                                      fmt::memory_buffer& buffer,
-                                      size_t writeLimit) const {
+BSONObj BSONElement::jsonStringGenerator(LegacyStrictGenerator const& generator,
+                                         bool includeSeparator,
+                                         bool includeFieldNames,
+                                         int pretty,
+                                         fmt::memory_buffer& buffer,
+                                         size_t writeLimit) const {
     return _jsonStringGenerator(
         generator, includeSeparator, includeFieldNames, pretty, buffer, writeLimit);
 }
