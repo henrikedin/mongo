@@ -42,6 +42,7 @@
 #include "mongo/logv2/log_component.h"
 #include "mongo/logv2/log_severity.h"
 #include "mongo/logv2/log_tag.h"
+#include "mongo/logv2/log_truncation.h"
 #include "mongo/logv2/name_extractor.h"
 #include "mongo/util/str_escape.h"
 #include "mongo/util/time_support.h"
@@ -52,7 +53,7 @@ namespace mongo::logv2 {
 namespace {
 constexpr std::size_t kMaxAttributeSize = 10000;
 template <typename Iterator>
-Iterator unicodeSafeTruncation(Iterator begin, Iterator end, std::size_t maximum) {
+Iterator UTF8SafeTruncation(Iterator begin, Iterator end, std::size_t maximum) {
     const auto rbegin =
         std::make_reverse_iterator(begin + std::min(static_cast<size_t>(end - begin), maximum));
     const auto rend = std::make_reverse_iterator(begin);
@@ -83,7 +84,8 @@ Iterator unicodeSafeTruncation(Iterator begin, Iterator end, std::size_t maximum
 }
 
 struct JSONValueExtractor {
-    JSONValueExtractor(fmt::memory_buffer& buffer) : _buffer(buffer) {}
+    JSONValueExtractor(fmt::memory_buffer& buffer, size_t attributeMaxSize)
+        : _buffer(buffer), _attributeMaxSize(attributeMaxSize) {}
 
     void operator()(StringData name, CustomAttributeValue const& val) {
         // Try to format as BSON first if available. Prefer BSONAppend if available as we might only
@@ -99,7 +101,7 @@ struct JSONValueExtractor {
                 false,
                 0,
                 _buffer,
-                kMaxAttributeSize);
+                _attributeMaxSize);
             if (!truncated.isEmpty())
                 _truncated.append(name, truncated);
         } else if (val.BSONSerialize) {
@@ -108,14 +110,14 @@ struct JSONValueExtractor {
             BSONObjBuilder builder;
             val.BSONSerialize(builder);
             BSONObj truncated = builder.done().jsonStringBuffer(
-                JsonStringFormat::ExtendedRelaxedV2_0_0, 0, false, _buffer, kMaxAttributeSize);
+                JsonStringFormat::ExtendedRelaxedV2_0_0, 0, false, _buffer, _attributeMaxSize);
             if (!truncated.isEmpty())
                 _truncated.append(name, truncated);
         } else if (val.toBSONArray) {
             // This is a JSON subarray, no quotes needed
             storeUnquoted(name);
             BSONObj truncated = val.toBSONArray().jsonStringBuffer(
-                JsonStringFormat::ExtendedRelaxedV2_0_0, 0, true, _buffer, kMaxAttributeSize);
+                JsonStringFormat::ExtendedRelaxedV2_0_0, 0, true, _buffer, _attributeMaxSize);
             if (!truncated.isEmpty())
                 _truncated.append(name, truncated);
         } else if (val.stringSerialize) {
@@ -132,7 +134,7 @@ struct JSONValueExtractor {
         // This is a JSON subobject, no quotes needed
         storeUnquoted(name);
         BSONObj truncated = val->jsonStringBuffer(
-            JsonStringFormat::ExtendedRelaxedV2_0_0, 0, false, _buffer, kMaxAttributeSize);
+            JsonStringFormat::ExtendedRelaxedV2_0_0, 0, false, _buffer, _attributeMaxSize);
         if (!truncated.isEmpty())
             _truncated.append(name, truncated);
     }
@@ -141,7 +143,7 @@ struct JSONValueExtractor {
         // This is a JSON subobject, no quotes needed
         storeUnquoted(name);
         BSONObj truncated = val->jsonStringBuffer(
-            JsonStringFormat::ExtendedRelaxedV2_0_0, 0, true, _buffer, kMaxAttributeSize);
+            JsonStringFormat::ExtendedRelaxedV2_0_0, 0, true, _buffer, _attributeMaxSize);
         if (!truncated.isEmpty())
             _truncated.append(name, truncated);
     }
@@ -183,11 +185,13 @@ private:
         fmt::format_to(_buffer, R"({}"{}":")", _separator, name);
         std::size_t before = _buffer.size();
         str::escapeForJSON(_buffer, value);
-        auto truncatedEnd =
-            unicodeSafeTruncation(_buffer.begin() + before, _buffer.end(), kMaxAttributeSize);
-        if (truncatedEnd != _buffer.end())
-            _truncated.append(name, typeName(BSONType::String));
-        _buffer.resize(truncatedEnd - _buffer.begin());
+        if (_attributeMaxSize != 0) {
+            auto truncatedEnd =
+                UTF8SafeTruncation(_buffer.begin() + before, _buffer.end(), _attributeMaxSize);
+            if (truncatedEnd != _buffer.end())
+                _truncated.append(name, typeName(BSONType::String));
+            _buffer.resize(truncatedEnd - _buffer.begin());
+        }
 
         _buffer.push_back('"');
         _separator = ","_sd;
@@ -196,6 +200,7 @@ private:
     fmt::memory_buffer& _buffer;
     BSONObjBuilder _truncated;
     StringData _separator = ""_sd;
+    size_t _attributeMaxSize;
 };
 }  // namespace
 
@@ -256,7 +261,11 @@ void JSONFormatter::operator()(boost::log::record_view const& rec,
     if (!attrs.empty()) {
         fmt::format_to(buffer, R"(,"{}":{{)", constants::kAttributesFieldName);
         // comma separated list of attributes (no opening/closing brace are added here)
-        JSONValueExtractor extractor(buffer);
+        JSONValueExtractor extractor(buffer,
+                                     extract<LogTruncation>(attributes::truncation(), rec).get() ==
+                                             LogTruncation::Enabled
+                                         ? getMaxLogAttributeSize()
+                                         : 0);
         attrs.apply(extractor);
         buffer.push_back('}');
 
