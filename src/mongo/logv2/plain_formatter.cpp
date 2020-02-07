@@ -151,10 +151,10 @@ void PlainFormatter::operator()(boost::log::record_view const& rec,
         fmt::basic_format_args<fmt::format_context>(extractor.args.data(), extractor.args.size()));
 
     LogTruncation truncation = extract<LogTruncation>(attributes::truncation(), rec).get();
+    size_t maxAttributeSize = getMaxLogAttributeSize();
+    bool truncationEnabled = truncation == LogTruncation::Enabled && maxAttributeSize != 0;
     strm.write(buffer.data(),
-               truncation == LogTruncation::Enabled
-                   ? std::min(constants::kDefaultMaxAttributeOutputSize, buffer.size())
-                   : buffer.size());
+               truncationEnabled ? std::min(maxAttributeSize, buffer.size()) : buffer.size());
 }
 
 }  // namespace mongo::logv2

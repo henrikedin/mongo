@@ -271,26 +271,26 @@ public:
                            BSONObj* outTruncationResult = nullptr) const;
 
     BSONObj jsonStringBuffer(JsonStringFormat format,
-                          int pretty,
-                          bool isArray,
-                          fmt::memory_buffer& buffer,
-                          size_t writeLimit = 0) const;
+                             int pretty,
+                             bool isArray,
+                             fmt::memory_buffer& buffer,
+                             size_t writeLimit = 0) const;
 
     BSONObj jsonStringGenerator(ExtendedCanonicalV200Generator const& generator,
-                             int pretty,
-                             bool isArray,
-                             fmt::memory_buffer& buffer,
-                             size_t writeLimit = 0) const;
+                                int pretty,
+                                bool isArray,
+                                fmt::memory_buffer& buffer,
+                                size_t writeLimit = 0) const;
     BSONObj jsonStringGenerator(ExtendedRelaxedV200Generator const& generator,
-                             int pretty,
-                             bool isArray,
-                             fmt::memory_buffer& buffer,
-                             size_t writeLimit = 0) const;
+                                int pretty,
+                                bool isArray,
+                                fmt::memory_buffer& buffer,
+                                size_t writeLimit = 0) const;
     BSONObj jsonStringGenerator(LegacyStrictGenerator const& generator,
-                             int pretty,
-                             bool isArray,
-                             fmt::memory_buffer& buffer,
-                             size_t writeLimit = 0) const;
+                                int pretty,
+                                bool isArray,
+                                fmt::memory_buffer& buffer,
+                                size_t writeLimit = 0) const;
 
     /** note: addFields always adds _id even if not specified */
     int addFields(BSONObj& from, std::set<std::string>& fields); /* returns n added */
@@ -610,10 +610,10 @@ public:
 private:
     template <typename Generator>
     BSONObj _jsonStringGenerator(const Generator& g,
-                              int pretty,
-                              bool isArray,
-                              fmt::memory_buffer& buffer,
-                              size_t writeLimit) const;
+                                 int pretty,
+                                 bool isArray,
+                                 fmt::memory_buffer& buffer,
+                                 size_t writeLimit) const;
 
     void _assertInvalid(int maxSize) const;
 

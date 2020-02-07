@@ -219,30 +219,30 @@ public:
                            BSONObj* outTruncationResult = nullptr) const;
 
     BSONObj jsonStringBuffer(JsonStringFormat format,
-                          bool includeSeparator,
-                          bool includeFieldNames,
-                          int pretty,
-                          fmt::memory_buffer& buffer,
-                          size_t writeLimit = 0) const;
+                             bool includeSeparator,
+                             bool includeFieldNames,
+                             int pretty,
+                             fmt::memory_buffer& buffer,
+                             size_t writeLimit = 0) const;
 
     BSONObj jsonStringGenerator(ExtendedCanonicalV200Generator const& generator,
-                             bool includeSeparator,
-                             bool includeFieldNames,
-                             int pretty,
-                             fmt::memory_buffer& buffer,
-                             size_t writeLimit = 0) const;
+                                bool includeSeparator,
+                                bool includeFieldNames,
+                                int pretty,
+                                fmt::memory_buffer& buffer,
+                                size_t writeLimit = 0) const;
     BSONObj jsonStringGenerator(ExtendedRelaxedV200Generator const& generator,
-                             bool includeSeparator,
-                             bool includeFieldNames,
-                             int pretty,
-                             fmt::memory_buffer& buffer,
-                             size_t writeLimit = 0) const;
+                                bool includeSeparator,
+                                bool includeFieldNames,
+                                int pretty,
+                                fmt::memory_buffer& buffer,
+                                size_t writeLimit = 0) const;
     BSONObj jsonStringGenerator(LegacyStrictGenerator const& generator,
-                             bool includeSeparator,
-                             bool includeFieldNames,
-                             int pretty,
-                             fmt::memory_buffer& buffer,
-                             size_t writeLimit = 0) const;
+                                bool includeSeparator,
+                                bool includeFieldNames,
+                                int pretty,
+                                fmt::memory_buffer& buffer,
+                                size_t writeLimit = 0) const;
 
     operator std::string() const {
         return toString();
@@ -784,11 +784,11 @@ public:
 private:
     template <typename Generator>
     BSONObj _jsonStringGenerator(const Generator& g,
-                              bool includeSeparator,
-                              bool includeFieldNames,
-                              int pretty,
-                              fmt::memory_buffer& buffer,
-                              size_t writeLimit) const;
+                                 bool includeSeparator,
+                                 bool includeFieldNames,
+                                 int pretty,
+                                 fmt::memory_buffer& buffer,
+                                 size_t writeLimit) const;
 
     const char* data;
     int fieldNameSize_;  // internal size includes null terminator

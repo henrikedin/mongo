@@ -33,6 +33,7 @@ namespace mongo {
 namespace logv2 {
 
 enum class LogTruncation { Enabled, Disabled };
+size_t getMaxLogAttributeSize();
 
 }  // namespace logv2
 }  // namespace mongo

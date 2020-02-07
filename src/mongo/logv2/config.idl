@@ -1,4 +1,4 @@
-# Copyright (C) 2018-present MongoDB, Inc.
+# Copyright (C) 2020-present MongoDB, Inc.
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the Server Side Public License, version 1,
@@ -26,24 +26,16 @@
 # it in the license file.
 
 global:
-    cpp_namespace: mongo
+    cpp_namespace: mongo::logv2
     cpp_includes:
-      - mongo/logger/message_event_utf8_encoder.h
+      - mongo/logv2/constants.h
 
 server_parameters:
-  honorSystemUmask:
-    description: 'Use the system provided umask, rather than overriding with processUmask config value'
-    set_at: startup
-    cpp_class: HonorSystemUMaskServerParameter
-    condition:
-      preprocessor: '!defined(_WIN32)'
-
-  processUmask:
-    description: >
-        Override system umask for group/other permissions when honorSystemUmask is false.
-        User umask is always preserved.
-    set_at: startup
-    cpp_class: ProcessUMaskServerParameter
-    condition:
-      preprocessor: '!defined(_WIN32)'
+  maxLogSizeKB:
+    cpp_varname: gMaxLogAttributeSizeKB
+    cpp_vartype: AtomicWord<int32_t>
+    default:
+      expr: constants::kDefaultMaxAttributeOutputSizeKB
+    description: 'Max log attribute size in kilobytes'
+    set_at: [ startup, runtime ]
 

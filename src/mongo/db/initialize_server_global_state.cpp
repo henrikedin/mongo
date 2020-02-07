@@ -220,7 +220,6 @@ MONGO_INITIALIZER_GENERAL(ServerLogRedirection,
     using logger::StatusWithRotatableFileWriter;
 
     // Hook up this global into our logging encoder
-    MessageEventDetailsEncoder::setMaxLogSizeKBSource(gMaxLogSizeKB);
     LogManager* manager = logger::globalLogManager();
     auto& lv2Manager = logv2::LogManager::global();
     logv2::LogDomainGlobal::ConfigurationOptions lv2Config;

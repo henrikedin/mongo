@@ -1,5 +1,5 @@
 /**
- *    Copyright (C) 2019-present MongoDB, Inc.
+ *    Copyright (C) 2020-present MongoDB, Inc.
  *
  *    This program is free software: you can redistribute it and/or modify
  *    it under the terms of the Server Side Public License, version 1,
@@ -27,31 +27,16 @@
  *    it in the license file.
  */
 
-#pragma once
-
 #include "mongo/logv2/log_truncation.h"
 
-namespace mongo::logv2::constants {
+#include "mongo/logv2/config_gen.h"
 
-// Used in data structures to indicate number of attributes to store without having to allocate
-// memory.
-constexpr size_t kNumStaticAttrs = 16;
+namespace mongo {
+namespace logv2 {
 
-// Field names used in the JSON and BSON formatter
-constexpr StringData kTimestampFieldName = "t"_sd;
-constexpr StringData kSeverityFieldName = "s"_sd;
-constexpr StringData kComponentFieldName = "c"_sd;
-constexpr StringData kContextFieldName = "ctx"_sd;
-constexpr StringData kIdFieldName = "id"_sd;
-constexpr StringData kMessageFieldName = "msg"_sd;
-constexpr StringData kAttributesFieldName = "attr"_sd;
-constexpr StringData kTruncatedFieldName = "truncated"_sd;
-constexpr StringData kTagsFieldName = "tags"_sd;
+size_t getMaxLogAttributeSize() {
+    return gMaxLogAttributeSizeKB.loadRelaxed() * 1024;
+}
 
-// String to be used when logging empty boost::optional with the text formatter
-constexpr StringData kNullOptionalString = "(nothing)"_sd;
-
-constexpr LogTruncation kDefaultTruncation = LogTruncation::Enabled;
-constexpr int32_t kDefaultMaxAttributeOutputSizeKB = 10;
-
-}  // namespace mongo::logv2::constants
+}  // namespace logv2
+}  // namespace mongo
