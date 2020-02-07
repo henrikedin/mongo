@@ -95,31 +95,42 @@ struct JSONValueExtractor {
             val.BSONAppend(builder, name);
             // This is a JSON subobject, no quotes needed
             storeUnquoted(name);
-            BSONObj truncated = builder.done().getField(name).jsonStringBuffer(
-                JsonStringFormat::ExtendedRelaxedV2_0_0,
-                false,
-                false,
-                0,
-                _buffer,
-                _attributeMaxSize);
-            if (!truncated.isEmpty())
+            BSONElement element = builder.done().getField(name);
+            BSONObj truncated = element.jsonStringBuffer(JsonStringFormat::ExtendedRelaxedV2_0_0,
+                                                         false,
+                                                         false,
+                                                         0,
+                                                         _buffer,
+                                                         _attributeMaxSize);
+            if (!truncated.isEmpty()) {
                 _truncated.append(name, truncated);
+                _truncatedSizes.append(name, element.size());
+            }
+
         } else if (val.BSONSerialize) {
             // This is a JSON subobject, no quotes needed
             storeUnquoted(name);
             BSONObjBuilder builder;
             val.BSONSerialize(builder);
-            BSONObj truncated = builder.done().jsonStringBuffer(
+            BSONObj obj = builder.done();
+            BSONObj truncated = obj.jsonStringBuffer(
                 JsonStringFormat::ExtendedRelaxedV2_0_0, 0, false, _buffer, _attributeMaxSize);
-            if (!truncated.isEmpty())
+            if (!truncated.isEmpty()) {
                 _truncated.append(name, truncated);
+                _truncatedSizes.append(name, builder.done().objsize());
+            }
+
         } else if (val.toBSONArray) {
             // This is a JSON subarray, no quotes needed
             storeUnquoted(name);
-            BSONObj truncated = val.toBSONArray().jsonStringBuffer(
+            BSONArray arr = val.toBSONArray();
+            BSONObj truncated = arr.jsonStringBuffer(
                 JsonStringFormat::ExtendedRelaxedV2_0_0, 0, true, _buffer, _attributeMaxSize);
-            if (!truncated.isEmpty())
+            if (!truncated.isEmpty()) {
                 _truncated.append(name, truncated);
+                _truncatedSizes.append(name, arr.objsize());
+            }
+
         } else if (val.stringSerialize) {
             fmt::memory_buffer intermediate;
             val.stringSerialize(intermediate);
@@ -135,8 +146,10 @@ struct JSONValueExtractor {
         storeUnquoted(name);
         BSONObj truncated = val->jsonStringBuffer(
             JsonStringFormat::ExtendedRelaxedV2_0_0, 0, false, _buffer, _attributeMaxSize);
-        if (!truncated.isEmpty())
+        if (!truncated.isEmpty()) {
             _truncated.append(name, truncated);
+            _truncatedSizes.append(name, val->objsize());
+        }
     }
 
     void operator()(StringData name, const BSONArray* val) {
@@ -144,8 +157,10 @@ struct JSONValueExtractor {
         storeUnquoted(name);
         BSONObj truncated = val->jsonStringBuffer(
             JsonStringFormat::ExtendedRelaxedV2_0_0, 0, true, _buffer, _attributeMaxSize);
-        if (!truncated.isEmpty())
+        if (!truncated.isEmpty()) {
             _truncated.append(name, truncated);
+            _truncatedSizes.append(name, val->objsize());
+        }
     }
 
     void operator()(StringData name, StringData value) {
@@ -168,6 +183,10 @@ struct JSONValueExtractor {
         return _truncated.done();
     }
 
+    BSONObj truncatedSizes() {
+        return _truncatedSizes.done();
+    }
+
 private:
     void storeUnquoted(StringData name) {
         fmt::format_to(_buffer, R"({}"{}":)", _separator, name);
@@ -188,8 +207,11 @@ private:
         if (_attributeMaxSize != 0) {
             auto truncatedEnd =
                 UTF8SafeTruncation(_buffer.begin() + before, _buffer.end(), _attributeMaxSize);
-            if (truncatedEnd != _buffer.end())
+            if (truncatedEnd != _buffer.end()) {
                 _truncated.append(name, typeName(BSONType::String));
+                _truncatedSizes.append(name, _buffer.end() - before);
+            }
+
             _buffer.resize(truncatedEnd - _buffer.begin());
         }
 
@@ -199,6 +221,7 @@ private:
 
     fmt::memory_buffer& _buffer;
     BSONObjBuilder _truncated;
+    BSONObjBuilder _truncatedSizes;
     StringData _separator = ""_sd;
     size_t _attributeMaxSize;
 };
@@ -269,10 +292,15 @@ void JSONFormatter::operator()(boost::log::record_view const& rec,
         attrs.apply(extractor);
         buffer.push_back('}');
 
-        BSONObj truncated = extractor.truncated();
-        if (!truncated.isEmpty()) {
+        if (BSONObj truncated = extractor.truncated(); !truncated.isEmpty()) {
             fmt::format_to(buffer, R"(,"{}":)", constants::kTruncatedFieldName);
             truncated.jsonStringBuffer(
+                JsonStringFormat::ExtendedRelaxedV2_0_0, 0, false, buffer, 0);
+        }
+
+        if (BSONObj truncatedSizes = extractor.truncatedSizes(); !truncatedSizes.isEmpty()) {
+            fmt::format_to(buffer, R"(,"{}":)", constants::kTruncatedSizeFieldName);
+            truncatedSizes.jsonStringBuffer(
                 JsonStringFormat::ExtendedRelaxedV2_0_0, 0, false, buffer, 0);
         }
     }
