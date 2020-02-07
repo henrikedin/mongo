@@ -51,7 +51,6 @@
 
 namespace mongo::logv2 {
 namespace {
-constexpr std::size_t kMaxAttributeSize = 10000;
 template <typename Iterator>
 Iterator UTF8SafeTruncation(Iterator begin, Iterator end, std::size_t maximum) {
     const auto rbegin =

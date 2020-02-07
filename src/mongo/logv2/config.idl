@@ -36,6 +36,8 @@ server_parameters:
     cpp_vartype: AtomicWord<int32_t>
     default:
       expr: constants::kDefaultMaxAttributeOutputSizeKB
+    validator:
+      gte: 0
     description: 'Max log attribute size in kilobytes'
     set_at: [ startup, runtime ]
 

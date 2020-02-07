@@ -220,6 +220,7 @@ BSONObj BSONElement::_jsonStringGenerator(const Generator& g,
         default:
             MONGO_UNREACHABLE;
     }
+    // If a write limit is enabled and we went over it, record truncation info and roll back buffer.
     if (writeLimit > 0 && buffer.size() > writeLimit) {
         buffer.resize(before);
 
