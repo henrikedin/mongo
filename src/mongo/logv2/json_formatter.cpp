@@ -208,8 +208,10 @@ private:
             auto truncatedEnd =
                 UTF8SafeTruncation(_buffer.begin() + before, _buffer.end(), _attributeMaxSize);
             if (truncatedEnd != _buffer.end()) {
-                _truncated.append(name, typeName(BSONType::String));
-                _truncatedSizes.append(name, _buffer.end() - before);
+                BSONObjBuilder truncationInfo = _truncated.subobjStart(name);
+                truncationInfo.append("type"_sd, typeName(BSONType::String));
+                truncationInfo.append("size"_sd, static_cast<int64_t>(_buffer.size() - before));
+                truncationInfo.done();
             }
 
             _buffer.resize(truncatedEnd - _buffer.begin());

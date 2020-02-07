@@ -158,6 +158,7 @@ BSONObj BSONElement::_jsonStringGenerator(const Generator& g,
                 builder.append(fieldNameStringData(), truncated);
                 return builder.obj();
             }
+            // return to not check the write limit below, we're not in a leaf
             return truncated;
         }
         case mongo::Array: {
@@ -168,6 +169,7 @@ BSONObj BSONElement::_jsonStringGenerator(const Generator& g,
                 builder.append(fieldNameStringData(), truncated);
                 return builder.obj();
             }
+            // return to not check the write limit below, we're not in a leaf
             return truncated;
         }
         case DBRef:
@@ -221,7 +223,10 @@ BSONObj BSONElement::_jsonStringGenerator(const Generator& g,
         buffer.resize(before);
 
         BSONObjBuilder builder;
-        builder.append(fieldNameStringData(), typeName(type()));
+        BSONObjBuilder truncationInfo = builder.subobjStart(fieldNameStringData());
+        truncationInfo.append("type"_sd, typeName(type()));
+        truncationInfo.append("size"_sd, valuesize());
+        truncationInfo.done();
         return builder.obj();
     }
     return BSONObj();
