@@ -249,6 +249,8 @@ public:
     /** @return a new full (and owned) copy of the object. */
     BSONObj copy() const;
 
+    BSONObj redact() const;
+
     /** Readable representation of a BSON object in an extended JSON-style notation.
         This is an abbreviated representation which might be used for logging.
     */

@@ -143,6 +143,44 @@ BSONObj BSONObj::getOwned(const BSONObj& obj) {
     return obj.getOwned();
 }
 
+BSONObj BSONObj::redact() const {
+    // Same checks as for copy(), see that function for further information
+    int size = objsize();
+    if (!isOwned() && (size < kMinBSONLength || size > BufferMaxSize)) {
+        severe() << "BSONObj::redact() - size " << size
+                 << " of unowned BSONObj is invalid and differs from previously validated size.";
+        fassertFailed(51772);
+    }
+
+    // Helper to get an "internal function" to be able to do recursion
+    struct redactor {
+        void operator()(BSONObjBuilder& builder, const BSONObj& obj) {
+            BSONObjIterator i(obj);
+            BSONElement e = i.next();
+            BSONObj truncation;
+            if (!e.eoo()) {
+                while (1) {
+                    if (e.type() == Object || e.type() == Array) {
+                        BSONObjBuilder subBuilder = builder.subobjStart(e.fieldNameStringData());
+                        operator()(subBuilder, e.Obj());
+                        subBuilder.done();
+                    } else {
+                        builder.append(e.fieldNameStringData(), "###"_sd);
+                    }
+                    e = i.next();
+                    if (e.eoo()) {
+                        break;
+                    }
+                }
+            }
+        }
+    };
+
+    BSONObjBuilder builder;
+    redactor()(builder, *this);
+    return builder.obj();
+}
+
 template <typename Generator>
 BSONObj BSONObj::_jsonStringGenerator(const Generator& g,
                                       int pretty,
