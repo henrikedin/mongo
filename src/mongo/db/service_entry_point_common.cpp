@@ -130,7 +130,7 @@ void generateLegacyQueryErrorResponse(const AssertionException& exception,
 
     LOGV2_OPTIONS(21673, {logComponentV1toV2(LogComponent::kQuery)}, "assertion {exception_toString} ns:{queryMessage_ns} query:{queryMessage_query_valid_BSONVersion_kLatest_redact_queryMessage_query_query_object_is_corrupt}", "exception_toString"_attr = exception.toString(), "queryMessage_ns"_attr = queryMessage.ns, "queryMessage_query_valid_BSONVersion_kLatest_redact_queryMessage_query_query_object_is_corrupt"_attr = (queryMessage.query.valid(BSONVersion::kLatest)
                                       ? redact(queryMessage.query)
-                                      : "query object is corrupt"));
+                                      : BSONObj()));
     if (queryMessage.ntoskip || queryMessage.ntoreturn) {
         LOGV2_OPTIONS(21674, {logComponentV1toV2(LogComponent::kQuery)}, " ntoskip:{queryMessage_ntoskip} ntoreturn:{queryMessage_ntoreturn}", "queryMessage_ntoskip"_attr = queryMessage.ntoskip, "queryMessage_ntoreturn"_attr = queryMessage.ntoreturn);
     }

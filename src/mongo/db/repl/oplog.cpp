@@ -1450,8 +1450,8 @@ Status applyCommand_inlock(OperationContext* opCtx,
                 opCtx->recoveryUnit()->abandonSnapshot();
                 opCtx->checkForInterrupt();
 
-                LOGV2_DEBUG(21024, 1, "{Acceptable_error_during_oplog_application_background_operation_in_progress_for_DB_from_oplog_entry_format_nss_db_redact_entry_toBSON}", "Acceptable_error_during_oplog_application_background_operation_in_progress_for_DB_from_oplog_entry_format_nss_db_redact_entry_toBSON"_attr = "Acceptable error during oplog application: background operation in progress for DB '{}' from oplog entry {}"_format(
-                           nss.db(), redact(entry.toBSON())));
+                LOGV2_DEBUG(21024, 1, "Acceptable error during oplog application: background operation in progress for DB '{ns}' from oplog entry {entry}",
+                           "ns"_attr=nss.db(), "entry"_attr=redact(entry.toBSON()));
                 break;
             }
             case ErrorCodes::BackgroundOperationInProgressForNamespace: {
@@ -1474,8 +1474,8 @@ Status applyCommand_inlock(OperationContext* opCtx,
                 opCtx->recoveryUnit()->abandonSnapshot();
                 opCtx->checkForInterrupt();
 
-                LOGV2_DEBUG(21025, 1, "{Acceptable_error_during_oplog_application_background_operation_in_progress_for_ns_from_oplog_entry_format_ns_redact_entry_toBSON}", "Acceptable_error_during_oplog_application_background_operation_in_progress_for_ns_from_oplog_entry_format_ns_redact_entry_toBSON"_attr = "Acceptable error during oplog application: background operation in progress for ns '{}' from oplog entry {}"_format(
-                           ns, redact(entry.toBSON())));
+                LOGV2_DEBUG(21025, 1, "Acceptable error during oplog application: background operation in progress for ns '{ns}' from oplog entry {entry}",
+                           "ns"_attr=ns, "entry"_attr=redact(entry.toBSON()));
                 break;
             }
             default: {
@@ -1484,8 +1484,8 @@ Status applyCommand_inlock(OperationContext* opCtx,
                     return status;
                 }
 
-                LOGV2_DEBUG(21026, 1, "{Acceptable_error_during_oplog_application_on_db_with_status_from_oplog_entry_format_nss_db_status_toString_redact_entry_toBSON}", "Acceptable_error_during_oplog_application_on_db_with_status_from_oplog_entry_format_nss_db_status_toString_redact_entry_toBSON"_attr = "Acceptable error during oplog application on db '{}' with status '{}' from oplog entry {}"_format(
-                           nss.db(), status.toString(), redact(entry.toBSON())));
+                LOGV2_DEBUG(21026, 1, "Acceptable error during oplog application on db '{db}' with status '{status}' from oplog entry {entry}",
+                           "db"_attr=nss.db(), "status"_attr=status, "entry"_attr=redact(entry.toBSON()));
             }
             // fallthrough
             case ErrorCodes::OK:
