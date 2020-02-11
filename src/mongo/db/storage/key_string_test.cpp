@@ -1753,7 +1753,7 @@ void perfTest(KeyString::Version version, const Numbers& numbers) {
     auto minmax = std::minmax_element(
         numbers.begin(), numbers.end(), SimpleBSONObjComparator::kInstance.makeLessThan());
 
-    LOGV2(21952, "{1E3_micros_static_cast_double_iters_numbers_size} ns per {mongo_KeyString_keyStringVersionToString_version} roundtrip{kDebugBuild_DEBUG_BUILD} min {minmax_first}, max{minmax_second}", "1E3_micros_static_cast_double_iters_numbers_size"_attr = 1E3 * micros / static_cast<double>(iters * numbers.size()), "mongo_KeyString_keyStringVersionToString_version"_attr = mongo::KeyString::keyStringVersionToString(version), "kDebugBuild_DEBUG_BUILD"_attr = (kDebugBuild ? " (DEBUG BUILD!)" : ""), "minmax_first"_attr = (*minmax.first)[""], "minmax_second"_attr = (*minmax.second)[""]);
+    LOGV2(21952, "{E3_micros_static_cast_double_iters_numbers_size} ns per {mongo_KeyString_keyStringVersionToString_version} roundtrip{kDebugBuild_DEBUG_BUILD} min {minmax_first}, max{minmax_second}", "E3_micros_static_cast_double_iters_numbers_size"_attr = 1E3 * micros / static_cast<double>(iters * numbers.size()), "mongo_KeyString_keyStringVersionToString_version"_attr = mongo::KeyString::keyStringVersionToString(version), "kDebugBuild_DEBUG_BUILD"_attr = (kDebugBuild ? " (DEBUG BUILD!)" : ""), "minmax_first"_attr = (*minmax.first)[""], "minmax_second"_attr = (*minmax.second)[""]);
 }
 }  // namespace
 
