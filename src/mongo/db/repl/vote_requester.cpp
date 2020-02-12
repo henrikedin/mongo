@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::logger::LogComponent::kReplicationElection
+#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kReplicationElection
 
 #include "mongo/platform/basic.h"
 
@@ -38,8 +38,8 @@
 #include "mongo/base/status.h"
 #include "mongo/db/repl/repl_set_request_votes_args.h"
 #include "mongo/db/repl/scatter_gather_runner.h"
+#include "mongo/logv2/log.h"
 #include "mongo/rpc/get_status_from_command_result.h"
-#include "mongo/util/log.h"
 
 namespace mongo {
 namespace repl {
@@ -113,11 +113,16 @@ std::vector<RemoteCommandRequest> VoteRequester::Algorithm::getRequests() const 
 
 void VoteRequester::Algorithm::processResponse(const RemoteCommandRequest& request,
                                                const RemoteCommandResponse& response) {
-    auto logLine = log();
-    logLine << "VoteRequester(term " << _term << (_dryRun ? " dry run" : "") << ") ";
+    logv2::DynamicAttributes attrs;
+    auto logAtExit = makeGuard([&attrs]() { LOGV2(51776, "VoteRequester response", attrs); });
+    attrs.add("term", _term);
+    attrs.add("dryRun", _dryRun);
+
     _responsesProcessed++;
     if (!response.isOK()) {  // failed response
-        logLine << "failed to receive response from " << request.target << ": " << response.status;
+        attrs.add("failReason", "failed to receive response"_sd);
+        attrs.add("error", response.status);
+        attrs.add("from", request.target);
         return;
     }
     _responders.insert(request.target);
@@ -132,26 +137,30 @@ void VoteRequester::Algorithm::processResponse(const RemoteCommandRequest& reque
         status = voteResponse.initialize(response.data);
     }
     if (!status.isOK()) {
-        logLine << "received an invalid response from " << request.target << ": " << status;
-        logLine << "; response message: " << response.data;
+        attrs.add("failReason", "received an invalid response"_sd);
+        attrs.add("error", status);
+        attrs.add("from", request.target);
+        attrs.add("message", response.data);
         return;
     }
 
     if (voteResponse.getVoteGranted()) {
-        logLine << "received a yes vote from " << request.target;
+        attrs.add("vote", "yes"_sd);
+        attrs.add("from", request.target);
         if (_primaryHost == request.target) {
             _primaryVote = PrimaryVote::Yes;
         }
         _votes++;
     } else {
-        logLine << "received a no vote from " << request.target << " with reason \""
-                << voteResponse.getReason() << '"';
+        attrs.add("vote", "no"_sd);
+        attrs.add("from", request.target);
+        attrs.add("reason", voteResponse.getReason());
     }
 
     if (voteResponse.getTerm() > _term) {
         _staleTerm = true;
     }
-    logLine << "; response message: " << response.data;
+    attrs.add("message", response.data);
 }
 
 bool VoteRequester::Algorithm::hasReceivedSufficientResponses() const {
