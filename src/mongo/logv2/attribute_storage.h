@@ -147,14 +147,14 @@ struct HasToString : std::false_type {};
 
 template <class T>
 struct HasToString<T, std::void_t<decltype(std::declval<T>().toString())>>
-    : std::is_same<decltype(toString(std::declval<T>())), std::string> {};
+    : std::is_same<decltype(std::declval<T>().toString()), std::string> {};
 
 template <class T, class = void>
 struct HasToStringReturnStringData : std::false_type {};
 
 template <class T>
 struct HasToStringReturnStringData<T, std::void_t<decltype(std::declval<T>().toString())>>
-    : std::is_same<decltype(toString(std::declval<T>())), StringData> {};
+    : std::is_same<decltype(std::declval<T>().toString()), StringData> {};
 
 template <class T, class = void>
 struct HasNonMemberToString : std::false_type {};
@@ -314,7 +314,7 @@ CustomAttributeValue mapValue(const T& val) {
     } else if constexpr (HasToString<T>::value) {
         custom.toString = [&val]() { return val.toString(); };
     } else if constexpr (HasToStringReturnStringData<T>::value) {
-        custom.stringSerialize = [&val]() {
+        custom.stringSerialize = [&val](fmt::memory_buffer& buffer) {
             StringData sd = toString(val);
             buffer.append(sd.begin(), sd.end());
         };
