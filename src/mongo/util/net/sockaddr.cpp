@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::logger::LogComponent::kNetwork
+#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kNetwork
 
 #include "mongo/platform/basic.h"
 
@@ -54,8 +54,8 @@
 #endif
 
 #include "mongo/bson/util/builder.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/itoa.h"
-#include "mongo/util/log.h"
 
 namespace mongo {
 namespace {
@@ -157,8 +157,10 @@ SockAddr::SockAddr(StringData target, int port, sa_family_t familyHint)
         // we were unsuccessful
         if (_hostOrIp != "0.0.0.0") {  // don't log if this as it is a
                                        // CRT construction and log() may not work yet.
-            log() << "getaddrinfo(\"" << _hostOrIp
-                  << "\") failed: " << getAddrInfoStrError(addrErr.err);
+            LOGV2(51774,
+                  "getaddrinfo(\"{host}\") failed: {reason}",
+                  "host"_attr = _hostOrIp,
+                  "reason"_attr = getAddrInfoStrError(addrErr.err));
             _isValid = false;
             return;
         }
@@ -187,7 +189,10 @@ std::vector<SockAddr> SockAddr::createAll(StringData target, int port, sa_family
 
     auto addrErr = resolveAddrInfo(hostOrIp, port, familyHint);
     if (addrErr.err) {
-        log() << "getaddrinfo(\"" << hostOrIp << "\") failed: " << getAddrInfoStrError(addrErr.err);
+        LOGV2(51775,
+                  "getaddrinfo(\"{host}\") failed: {reason}",
+                  "host"_attr = hostOrIp,
+                  "reason"_attr = getAddrInfoStrError(addrErr.err));
         return {};
     }
 
