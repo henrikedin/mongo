@@ -154,7 +154,7 @@ struct HasToStringReturnStringData : std::false_type {};
 
 template <class T>
 struct HasToStringReturnStringData<T, std::void_t<decltype(std::declval<T>().toString())>>
-    : std::is_same<decltype(std::declval<T>().toString()), StringData> {};
+    : std::is_convertible<decltype(std::declval<T>().toString()), StringData> {};
 
 template <class T, class = void>
 struct HasNonMemberToString : std::false_type {};
@@ -168,7 +168,7 @@ struct HasNonMemberToStringReturnStringData : std::false_type {};
 
 template <class T>
 struct HasNonMemberToStringReturnStringData<T, std::void_t<decltype(toString(std::declval<T>()))>>
-    : std::is_same<decltype(toString(std::declval<T>())), StringData> {};
+    : std::is_convertible<decltype(toString(std::declval<T>())), StringData> {};
 
 template <class T, class = void>
 struct HasNonMemberToBSON : std::false_type {};
@@ -315,7 +315,7 @@ CustomAttributeValue mapValue(const T& val) {
         custom.toString = [&val]() { return val.toString(); };
     } else if constexpr (HasToStringReturnStringData<T>::value) {
         custom.stringSerialize = [&val](fmt::memory_buffer& buffer) {
-            StringData sd = toString(val);
+            StringData sd = val.toString();
             buffer.append(sd.begin(), sd.end());
         };
     } else if constexpr (HasNonMemberToString<T>::value) {
