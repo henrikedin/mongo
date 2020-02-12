@@ -33,6 +33,7 @@
 
 #include "mongo/util/latch_analyzer.h"
 
+#include <boost/iterator/transform_iterator.hpp>
 #include <deque>
 
 #include <fmt/format.h>
@@ -149,13 +150,10 @@ void dumpLevels(const LatchSetState& state) {
         return;
     }
 
-    std::vector<StringData> identityNames;
-    identityNames.reserve(state.identities->size());
-    std::transform(state.identities->begin(),
-                   state.identities->end(),
-                   std::back_insert_iterator(identityNames),
-                   [](const auto& identity) { return identity->name(); });
-    LOGV2(51772, "Dumping Latch Identities", "names"_attr = identityNames);
+    auto identityName = [](const auto& identity) { return identity->name(); };
+    auto begin = boost::make_transform_iterator(state.identities->begin(), identityName);
+    auto end = boost::make_transform_iterator(state.identities->end(), identityName);
+    LOGV2(51772, "Dumping Latch Identities", "names"_attr = logv2::seqLog(begin, end));
 }
 
 }  // namespace
