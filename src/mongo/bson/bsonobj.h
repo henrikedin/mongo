@@ -431,8 +431,6 @@ public:
         return objsize() <= kMinBSONLength;
     }
 
-    void dump() const;
-
     /** Alternative output format */
     std::string hexDump() const;
 
