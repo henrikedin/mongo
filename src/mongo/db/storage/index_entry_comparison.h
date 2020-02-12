@@ -67,6 +67,16 @@ struct IndexKeyEntry {
 
     IndexKeyEntry(BSONObj key, RecordId loc) : key(std::move(key)), loc(std::move(loc)) {}
 
+    // TODO toString can be removed when logv2 text format go away
+    std::string toString() const {
+        return str::stream() << key << ' ' << loc;
+    }
+
+    void serialize(BSONObjBuilder* builder) const {
+        builder->append("key"_sd, key);
+        loc.serialize(builder);
+    }
+
     BSONObj key;
     RecordId loc;
 };
