@@ -27,6 +27,7 @@
  *    it in the license file.
  */
 
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::logger::LogComponent::kReplicationElection
 #define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kReplicationElection
 
 #include "mongo/platform/basic.h"
@@ -40,6 +41,7 @@
 #include "mongo/db/repl/scatter_gather_runner.h"
 #include "mongo/logv2/log.h"
 #include "mongo/rpc/get_status_from_command_result.h"
+#include "mongo/util/log.h"
 
 namespace mongo {
 namespace repl {
@@ -113,6 +115,8 @@ std::vector<RemoteCommandRequest> VoteRequester::Algorithm::getRequests() const 
 
 void VoteRequester::Algorithm::processResponse(const RemoteCommandRequest& request,
                                                const RemoteCommandResponse& response) {
+    // TODO SERVER-45138: This function logs in both old and new log system. When we have switched
+    // over to JSON logs it should be cleaned up and tests that rely on this log should be fixed.
     ReplSetRequestVotesResponse voteResponse;
     Status status = Status::OK();
 
@@ -123,8 +127,11 @@ void VoteRequester::Algorithm::processResponse(const RemoteCommandRequest& reque
     logAttrs.add("term", _term);
     logAttrs.add("dryRun", _dryRun);
 
+    auto logLine = log();
+    logLine << "VoteRequester(term " << _term << (_dryRun ? " dry run" : "") << ") ";
     _responsesProcessed++;
     if (!response.isOK()) {  // failed response
+        logLine << "failed to receive response from " << request.target << ": " << response.status;
         logAttrs.add("failReason", "failed to receive response"_sd);
         logAttrs.add("error", response.status);
         logAttrs.add("from", request.target);
@@ -136,12 +143,14 @@ void VoteRequester::Algorithm::processResponse(const RemoteCommandRequest& reque
     if (_primaryHost == request.target) {
         _primaryVote = PrimaryVote::No;
     }
-    
+
     status = getStatusFromCommandResult(response.data);
     if (status.isOK()) {
         status = voteResponse.initialize(response.data);
     }
     if (!status.isOK()) {
+        logLine << "received an invalid response from " << request.target << ": " << status;
+        logLine << "; response message: " << response.data;
         logAttrs.add("failReason", "received an invalid response"_sd);
         logAttrs.add("error", status);
         logAttrs.add("from", request.target);
@@ -150,6 +159,7 @@ void VoteRequester::Algorithm::processResponse(const RemoteCommandRequest& reque
     }
 
     if (voteResponse.getVoteGranted()) {
+        logLine << "received a yes vote from " << request.target;
         logAttrs.add("vote", "yes"_sd);
         logAttrs.add("from", request.target);
         if (_primaryHost == request.target) {
@@ -157,6 +167,8 @@ void VoteRequester::Algorithm::processResponse(const RemoteCommandRequest& reque
         }
         _votes++;
     } else {
+        logLine << "received a no vote from " << request.target << " with reason \""
+                << voteResponse.getReason() << '"';
         logAttrs.add("vote", "no"_sd);
         logAttrs.add("from", request.target);
         logAttrs.add("reason", voteResponse.getReason());
@@ -165,6 +177,7 @@ void VoteRequester::Algorithm::processResponse(const RemoteCommandRequest& reque
     if (voteResponse.getTerm() > _term) {
         _staleTerm = true;
     }
+    logLine << "; response message: " << response.data;
     logAttrs.add("message", response.data);
 }
 
