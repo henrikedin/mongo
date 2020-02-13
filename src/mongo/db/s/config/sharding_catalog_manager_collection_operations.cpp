@@ -28,6 +28,7 @@
  */
 
 #define MONGO_LOG_DEFAULT_COMPONENT ::mongo::logger::LogComponent::kSharding
+#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kSharding
 
 #include "mongo/platform/basic.h"
 
@@ -56,6 +57,7 @@
 #include "mongo/db/s/sharding_logging.h"
 #include "mongo/executor/network_interface.h"
 #include "mongo/executor/task_executor.h"
+#include "mongo/logv2/log.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/s/balancer_configuration.h"
 #include "mongo/s/catalog/sharding_catalog_client_impl.h"
@@ -703,10 +705,11 @@ void ShardingCatalogManager::refineCollectionShardKey(OperationContext* opCtx,
     try {
         triggerFireAndForgetShardRefreshes(opCtx, nss);
     } catch (const DBException& ex) {
-        log() << ex.toStatus().withContext(str::stream()
-                                           << "refineCollectionShardKey: failed to best-effort "
-                                              "refresh all shards containing chunks in '"
-                                           << nss.ns() << "'");
+        LOGV2(51798,
+              "refineCollectionShardKey: failed to best-effort refresh all shards containing "
+              "chunks in '{ns}'",
+              "error"_attr = ex.toStatus(),
+              "ns"_attr = nss.ns());
     }
 }
 
