@@ -79,16 +79,17 @@ function runTestWithoutSubset(client) {
         let found = false;
         for (let logMsg of lines) {
             const logJson = JSON.parse(logMsg);
-            if (logJson.id === 23218 && /1\.\d/.test(logJson.attr.version) && /127.0.0.1:\d+/.test(logJson.attr.connection)) {
+            if (logJson.id === 23218 && /1\.\d/.test(logJson.attr.version) &&
+                /127.0.0.1:\d+/.test(logJson.attr.connection)) {
                 found = true;
                 break;
             }
         }
         assert(found,
-            "'Accepted connection with TLS Version' log line missing in log file!\n" +
-                "Log file contents: " + conn.fullOptions.logFile +
-                "\n************************************************************\n" + log +
-                "\n************************************************************");
+               "'Accepted connection with TLS Version' log line missing in log file!\n" +
+                   "Log file contents: " + conn.fullOptions.logFile +
+                   "\n************************************************************\n" + log +
+                   "\n************************************************************");
 
     } else {
         // Find the last line in the log file and verify it has the right version
@@ -101,10 +102,10 @@ function runTestWithoutSubset(client) {
         }
 
         assert(lastResult !== null,
-            "'Accepted connection with TLS Version' log line missing in log file!\n" +
-                "Log file contents: " + conn.fullOptions.logFile +
-                "\n************************************************************\n" + log +
-                "\n************************************************************");
+               "'Accepted connection with TLS Version' log line missing in log file!\n" +
+                   "Log file contents: " + conn.fullOptions.logFile +
+                   "\n************************************************************\n" + log +
+                   "\n************************************************************");
 
         assert.eq(lastResult['1'], version_number);
     }

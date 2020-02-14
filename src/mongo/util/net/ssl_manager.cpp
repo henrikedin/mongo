@@ -1128,11 +1128,10 @@ void recordTLSVersion(TLSVersion version, const HostAndPort& hostForLogging) {
     }
 
     if (!versionString.empty()) {
-        LOGV2(
-            23218,
-            "Accepted connection with TLS Version {version} from connection {connection}",
-            "version"_attr = versionString,
-            "connection"_attr = hostForLogging);
+        LOGV2(23218,
+              "Accepted connection with TLS Version {version} from connection {connection}",
+              "version"_attr = versionString,
+              "connection"_attr = hostForLogging);
     }
 }
 
