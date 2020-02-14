@@ -1,8 +1,8 @@
 // This test just checks that the success/failure messages for authentication include the IP
 // address of the client attempting to authenticate.
-load("jstests/libs/logv2_helpers.js");
 
 (function() {
+load("jstests/libs/logv2_helpers.js");
 const conn = MongoRunner.runMongod({auth: ""});
 const admin = conn.getDB("admin");
 
