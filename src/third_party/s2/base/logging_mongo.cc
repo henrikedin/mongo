@@ -28,6 +28,7 @@
  */
 
 #define MONGO_LOG_DEFAULT_COMPONENT ::mongo::logger::LogComponent::kGeo
+#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kGeo
 
 #include "logging.h"
 
@@ -37,6 +38,7 @@
 #include "mongo/logger/logger.h"
 #include "mongo/logger/log_severity.h"
 #include "mongo/logger/logstream_builder.h"
+#include "mongo/logv2/log.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/concurrency/thread_name.h"
 #include "mongo/util/log.h"
@@ -50,15 +52,17 @@ namespace ml = mongo::logger;
 class VLogSink : public s2_env::LogMessageSink {
 public:
   explicit VLogSink(int verbosity)
-    : _v(verbosity),
-      _lsb(ml::globalLogDomain(),
-           mongo::getThreadName(),
-           ml::LogSeverity::Debug(5),
-           ml::LogComponent::kGeo) {}
-  std::ostream& stream() override { return _lsb.stream(); }
-private:
+    : _v(verbosity) {}
+    ~VLogSink() {
+        LOGV2_DEBUG_OPTIONS(
+            40048, 5, {mongo::logv2::LogComponent::kGeo}, "{message}", "message"_attr = os.str());
+  }
+
+  std::ostream& stream() override { return os; }
+
+  private:
   int _v;
-  ml::LogstreamBuilder _lsb;
+  std::ostringstream os;
 };
 
 class SeverityLogSink : public s2_env::LogMessageSink {
