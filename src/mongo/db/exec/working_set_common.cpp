@@ -103,7 +103,7 @@ bool WorkingSetCommon::fetch(OperationContext* opCtx,
                 return builder.obj();
             };
             LOGV2_ERROR(
-                51806,
+                51817,
                 "Erroneous index key found with reference to non-existent record id "
                 "{recordId}: "
                 "{indexKeyData}. Consider dropping and then re-creating the index with key "

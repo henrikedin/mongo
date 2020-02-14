@@ -370,7 +370,7 @@ void ThreadPool::_consumeTasks() {
         _threads.pop_back();
         return;
     }
-    LOGV2_FATAL(51802,
+    LOGV2_FATAL(51806,
                 "Could not find this thread, with id {threadId} in pool {pool}",
                 "threadId"_attr = (std::ostringstream() << stdx::this_thread::get_id()).str(),
                 "pool"_attr = _options.poolName);

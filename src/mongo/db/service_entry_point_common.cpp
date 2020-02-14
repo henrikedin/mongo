@@ -1075,7 +1075,7 @@ void execCommandDatabase(OperationContext* opCtx,
 
         if (shouldLog(logger::LogComponent::kTracking, logger::LogSeverity::Debug(1)) &&
             rpc::TrackingMetadata::get(opCtx).getParentOperId()) {
-            LOGV2_DEBUG_OPTIONS(51803,
+            LOGV2_DEBUG_OPTIONS(51816,
                                 1,
                                 {logv2::LogComponent::kTracking},
                                 "{trackingMetadata}",
@@ -1345,9 +1345,9 @@ void receivedKillCursors(OperationContext* opCtx, const Message& m) {
 
     if (n > 2000) {
         if (n < 30000)
-            LOGV2_WARNING(51804, "receivedKillCursors, n={n}", "n"_attr = n);
+            LOGV2_WARNING(51813, "receivedKillCursors, n={n}", "n"_attr = n);
         else
-            LOGV2_ERROR(51805, "receivedKillCursors, n={n}", "n"_attr = n);
+            LOGV2_ERROR(51814, "receivedKillCursors, n={n}", "n"_attr = n);
         uassert(51250, "must kill fewer than 30000 cursors", n < 30000);
     }
 
