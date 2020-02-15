@@ -78,13 +78,14 @@ function authAndTest(mongo) {
 
     if (isJsonLog(mongo)) {
         function checkAuthSuccess(element, index, array) {
+            // TODO SERVER-46018: Parse can show because RamLog may return a truncated log
             try {
                 const logJson = JSON.parse(element);
 
                 return logJson.id === 20429 && logJson.attr.principalName === CLIENT_USER &&
-                    logJson.attr.DB === "$external" && /(?:\d{1,3}\.){3}\d{1,3}:\d+/.test(logJson.attr.client);
-            }
-            catch (exception) {
+                    logJson.attr.DB === "$external" &&
+                    /(?:\d{1,3}\.){3}\d{1,3}:\d+/.test(logJson.attr.client);
+            } catch (exception) {
                 return false;
             }
         }
