@@ -1333,7 +1333,6 @@ BSONObj TransactionRouter::Router::_commitWithRecoveryToken(OperationContext* op
 
 void TransactionRouter::Router::_logSlowTransaction(OperationContext* opCtx,
                                                     TerminationCause terminationCause) const {
-    if (logV2IsJson(serverGlobalParams.logFormat)) {
         logv2::DynamicAttributes attrs;
         BSONObjBuilder parametersBuilder;
 
@@ -1411,12 +1410,10 @@ void TransactionRouter::Router::_logSlowTransaction(OperationContext* opCtx,
 
         LOGV2(51805, "transaction", attrs);
 
-    } else {
         LOGV2(22899,
               "transaction {transactionInfoForLog_opCtx_terminationCause}",
               "transactionInfoForLog_opCtx_terminationCause"_attr =
                   _transactionInfoForLog(opCtx, terminationCause));
-    }
 }
 
 std::string TransactionRouter::Router::_transactionInfoForLog(
