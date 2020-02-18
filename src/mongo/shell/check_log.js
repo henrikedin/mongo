@@ -50,23 +50,6 @@ checkLog = (function() {
         return false;
     };
 
-    const checkContainsOnceJson = function(conn, id, attrName, msg) {
-        const logMessages = getGlobalLog(conn);
-        if (logMessages === null) {
-            return false;
-        }
-
-        for (let logMsg of logMessages) {
-            if (logMsg.search(`\"id\":${id},`) != -1) {
-                if (logMsg.search(`\"${attrName}\":\"?[^\"|\\\"]*` + msg) != -1) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
-    };
-
     /*
      * Calls the 'getLog' function on the provided connection 'conn' to see if a log with the
      * provided id is found in the logs. If the id is found it looks up the specified attrribute by
