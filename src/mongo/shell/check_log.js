@@ -56,7 +56,7 @@ checkLog = (function() {
      * attrName and checks if the msg is found in its value. Note: this function does not throw an
      * exception, so the return value should not be ignored.
      */
-    const checkContainsOnceJson = function(conn, id, attrName, msg) {
+    const checkContainsOnceJsonStringMatch = function(conn, id, attrName, msg) {
         const logMessages = getGlobalLog(conn);
         if (logMessages === null) {
             return false;
@@ -192,7 +192,7 @@ checkLog = (function() {
     return {
         getGlobalLog: getGlobalLog,
         checkContainsOnce: checkContainsOnce,
-        checkContainsOnceJson: checkContainsOnceJson,
+        checkContainsOnceJsonStringMatch: checkContainsOnceJsonStringMatch,
         contains: contains,
         containsWithCount: containsWithCount,
         containsWithAtLeastCount: containsWithAtLeastCount,
