@@ -46,6 +46,7 @@
 
 #include "asio.hpp"
 #ifdef MONGO_CONFIG_SSL
+#include "mongo/logv2/log.h"
 #include "mongo/util/net/ssl.hpp"
 #endif
 
@@ -145,7 +146,7 @@ public:
             std::error_code ec;
             getSocket().shutdown(GenericSocket::shutdown_both, ec);
             if ((ec) && (ec != asio::error::not_connected)) {
-                error() << "Error shutting down socket: " << ec.message();
+                LOGV2_ERROR(23841, "Error shutting down socket: {ec_message}", "ec_message"_attr = ec.message());
             }
         }
     }
@@ -183,7 +184,7 @@ public:
     }
 
     void cancelAsyncOperations(const BatonHandle& baton = nullptr) override {
-        LOG(3) << "Cancelling outstanding I/O operations on connection to " << _remote;
+        LOGV2_DEBUG(23836, 3, "Cancelling outstanding I/O operations on connection to {remote}", "remote"_attr = _remote);
         if (baton && baton->networking()) {
             baton->networking()->cancelSession(*this);
         } else {
@@ -205,8 +206,7 @@ public:
         auto swPollEvents = pollASIOSocket(getSocket(), POLLIN, Milliseconds{0});
         if (!swPollEvents.isOK()) {
             if (swPollEvents != ErrorCodes::NetworkTimeout) {
-                warning() << "Failed to poll socket for connectivity check: "
-                          << swPollEvents.getStatus();
+                LOGV2_WARNING(23839, "Failed to poll socket for connectivity check: {swPollEvents_getStatus}", "swPollEvents_getStatus"_attr = swPollEvents.getStatus());
                 return false;
             }
             return true;
@@ -220,7 +220,7 @@ public:
                 return true;
             } else if (size == -1) {
                 auto errDesc = errnoWithDescription(errno);
-                warning() << "Failed to check socket connectivity: " << errDesc;
+                LOGV2_WARNING(23840, "Failed to check socket connectivity: {errDesc}", "errDesc"_attr = errDesc);
             }
             // If size == 0 then we got disconnected and we should return false.
         }
@@ -380,7 +380,7 @@ private:
                     sb << "recv(): message msgLen " << msgLen << " is invalid. "
                        << "Min " << kHeaderSize << " Max: " << MaxMessageSizeBytes;
                     const auto str = sb.str();
-                    LOG(0) << str;
+                    LOGV2(23837, "{str}", "str"_attr = str);
 
                     return Future<Message>::makeReady(Status(ErrorCodes::ProtocolError, str));
                 }
@@ -655,8 +655,7 @@ private:
         } else {
             if (!sslGlobalParams.disableNonSSLConnectionLogging &&
                 _tl->_sslMode() == SSLParams::SSLMode_preferSSL) {
-                LOG(0) << "SSL mode is set to 'preferred' and connection " << id() << " to "
-                       << remote() << " is not using SSL.";
+                LOGV2(23838, "SSL mode is set to 'preferred' and connection {id} to {remote} is not using SSL.", "id"_attr = id(), "remote"_attr = remote());
             }
             return Future<bool>::makeReady(false);
         }
