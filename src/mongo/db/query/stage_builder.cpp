@@ -62,7 +62,7 @@
 #include "mongo/db/matcher/extensions_callback_real.h"
 #include "mongo/db/s/collection_sharding_state.h"
 #include "mongo/db/storage/oplog_hack.h"
-#include "mongo/util/log.h"
+#include "mongo/logv2/log.h"
 
 namespace mongo {
 
@@ -370,7 +370,8 @@ std::unique_ptr<PlanStage> buildStages(OperationContext* opCtx,
             str::stream ss;
             root->appendToString(&ss, 0);
             string nodeStr(ss);
-            warning() << "Can't build exec tree for node " << nodeStr << endl;
+            LOGV2_WARNING(
+                23876, "Can't build exec tree for node {nodeStr}", "nodeStr"_attr = nodeStr);
         }
     }
 

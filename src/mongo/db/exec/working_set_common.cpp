@@ -39,7 +39,8 @@
 #include "mongo/db/index/index_access_method.h"
 #include "mongo/db/query/canonical_query.h"
 #include "mongo/db/service_context.h"
-#include "mongo/util/log.h"
+#include "mongo/logger/redaction.h"
+#include "mongo/logv2/log.h"
 
 namespace mongo {
 
@@ -93,7 +94,7 @@ bool WorkingSetCommon::fetch(OperationContext* opCtx,
                << ". Consider dropping and then re-creating the index with key pattern "
                << keyDataIt->indexKeyPattern << " and then running the validate command on the "
                << ns << " collection.";
-            error() << ss.str();
+            LOGV2_ERROR(23877, "{ss_str}", "ss_str"_attr = ss.str());
             uasserted(ErrorCodes::DataCorruptionDetected, ss.str());
         }
         return false;

@@ -44,7 +44,6 @@
 #include "mongo/db/repl/topology_version_observer.h"
 #include "mongo/unittest/unittest.h"
 #include "mongo/util/assert_util.h"
-#include "mongo/util/log.h"
 #include "mongo/util/time_support.h"
 
 namespace mongo {

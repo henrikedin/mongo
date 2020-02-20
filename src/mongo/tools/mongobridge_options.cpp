@@ -36,7 +36,6 @@
 
 #include "mongo/base/status.h"
 #include "mongo/platform/random.h"
-#include "mongo/util/log.h"
 #include "mongo/util/options_parser/startup_options.h"
 
 namespace mongo {

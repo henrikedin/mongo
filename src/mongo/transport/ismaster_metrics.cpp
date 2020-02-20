@@ -28,7 +28,6 @@
  */
 #define MONGO_LOG_DEFAULT_COMPONENT ::mongo::logger::LogComponent::kNetwork
 #include "mongo/transport/ismaster_metrics.h"
-#include "mongo/util/log.h"
 
 namespace mongo {
 namespace {

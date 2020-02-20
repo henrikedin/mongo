@@ -45,7 +45,6 @@
 #include "mongo/shell/shell_utils.h"
 #include "mongo/util/concurrency/thread_name.h"
 #include "mongo/util/future.h"
-#include "mongo/util/log.h"
 #include "mongo/util/time_support.h"
 #include "mongo/util/timer.h"
 
