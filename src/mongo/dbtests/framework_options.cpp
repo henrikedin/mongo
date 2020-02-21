@@ -45,6 +45,7 @@
 #include "mongo/dbtests/dbtests.h"
 #include "mongo/logv2/log.h"
 #include "mongo/unittest/unittest.h"
+#include "mongo/util/log.h"
 #include "mongo/util/options_parser/startup_options.h"
 #include "mongo/util/password.h"
 
