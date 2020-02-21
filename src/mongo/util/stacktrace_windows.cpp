@@ -53,6 +53,7 @@
 #include "mongo/stdx/mutex.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/concurrency/mutex.h"
+#include "mongo/util/log.h"
 #include "mongo/util/text.h"
 
 namespace mongo {
