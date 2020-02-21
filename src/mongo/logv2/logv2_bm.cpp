@@ -38,6 +38,7 @@
 #include "mongo/logv2/log_domain_global.h"
 #include "mongo/logv2/text_formatter.h"
 #include "mongo/platform/basic.h"
+#include "mongo/util/log.h"
 
 #include <benchmark/benchmark.h>
 #include <boost/iostreams/device/null.hpp>
