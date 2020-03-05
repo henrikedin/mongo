@@ -309,7 +309,7 @@ public:
         // Try a quick win first
         if (m_enabled) try
         {
-            thread_data* tsd = get_thread_data();
+            //thread_data* tsd = get_thread_data();
 
             // Lock the core to be safe against any attribute or sink set modifications
             BOOST_LOG_EXPR_IF_MT(scoped_read_lock lock(m_mutex);)
@@ -317,7 +317,7 @@ public:
             if (m_enabled)
             {
                 // Compose a view of attribute values (unfrozen, yet)
-                attribute_value_set attr_values(boost::forward< SourceAttributesT >(source_attributes), tsd->m_thread_attributes, m_global_attributes);
+                attribute_value_set attr_values(boost::forward< SourceAttributesT >(source_attributes), m_global_attributes);
                 if (m_filter(attr_values))
                 {
                     // The global filter passed, trying the sinks

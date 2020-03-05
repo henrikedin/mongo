@@ -307,8 +307,6 @@ private:
         string_type m_FormattedRecord;
         //! Formatting stream
         stream_type m_FormattingStream;
-        //! Formatter functor
-        formatter_type m_Formatter;
 
         formatting_context() :
 #if !defined(BOOST_LOG_NO_THREADS)
@@ -319,10 +317,9 @@ private:
             m_FormattingStream.exceptions(std::ios_base::badbit | std::ios_base::failbit);
         }
 #if !defined(BOOST_LOG_NO_THREADS)
-        formatting_context(unsigned int version, std::locale const& loc, formatter_type const& formatter) :
+        formatting_context(unsigned int version, std::locale const& loc) :
             m_Version(version),
-            m_FormattingStream(m_FormattedRecord),
-            m_Formatter(formatter)
+            m_FormattingStream(m_FormattedRecord)
         {
             m_FormattingStream.exceptions(std::ios_base::badbit | std::ios_base::failbit);
             m_FormattingStream.imbue(loc);
@@ -331,13 +328,14 @@ private:
     };
 
 private:
+    //! Formatter functor
+    formatter_type m_Formatter;
+
 #if !defined(BOOST_LOG_NO_THREADS)
 
     //! State version
     volatile unsigned int m_Version;
 
-    //! Formatter functor
-    formatter_type m_Formatter;
     //! Locale to perform formatting
     std::locale m_Locale;
 
@@ -423,11 +421,7 @@ protected:
     //! Returns reference to the formatter
     formatter_type& formatter()
     {
-#if !defined(BOOST_LOG_NO_THREADS)
         return m_Formatter;
-#else
-        return m_Context.m_Formatter;
-#endif
     }
 
     //! Feeds log record to the backend
@@ -442,7 +436,7 @@ protected:
         {
             {
                 boost::log::aux::shared_lock_guard< mutex_type > lock(this->frontend_mutex());
-                context = new formatting_context(m_Version, m_Locale, m_Formatter);
+                context = new formatting_context(m_Version, m_Locale);
             }
             m_pContext.reset(context);
         }
@@ -455,7 +449,7 @@ protected:
         try
         {
             // Perform the formatting
-            context->m_Formatter(rec, context->m_FormattingStream);
+            m_Formatter(rec, context->m_FormattingStream);
             context->m_FormattingStream.flush();
 
             // Feed the record

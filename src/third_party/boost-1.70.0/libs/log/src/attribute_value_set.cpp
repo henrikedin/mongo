@@ -113,8 +113,6 @@ private:
 private:
     //! Pointer to the source-specific attributes
     attribute_set_impl_type* m_pSourceAttributes;
-    //! Pointer to the thread-specific attributes
-    attribute_set_impl_type* m_pThreadAttributes;
     //! Pointer to the global attributes
     attribute_set_impl_type* m_pGlobalAttributes;
 
@@ -134,11 +132,9 @@ private:
         node* storage,
         node* eos,
         attribute_set_impl_type* source_attrs,
-        attribute_set_impl_type* thread_attrs,
         attribute_set_impl_type* global_attrs
     ) :
         m_pSourceAttributes(source_attrs),
-        m_pThreadAttributes(thread_attrs),
         m_pGlobalAttributes(global_attrs),
         m_pEnd(storage),
         m_pEOS(eos)
@@ -155,7 +151,6 @@ private:
     static implementation* create(
         size_type element_count,
         attribute_set_impl_type* source_attrs,
-        attribute_set_impl_type* thread_attrs,
         attribute_set_impl_type* global_attrs)
     {
         // Calculate the buffer size
@@ -165,7 +160,7 @@ private:
 
         implementation* p = reinterpret_cast< implementation* >(stateless_allocator().allocate(buffer_size));
         node* const storage = reinterpret_cast< node* >(reinterpret_cast< char* >(p) + header_size);
-        new (p) implementation(storage, storage + element_count, source_attrs, thread_attrs, global_attrs);
+        new (p) implementation(storage, storage + element_count, source_attrs, global_attrs);
 
         return p;
     }
@@ -174,28 +169,24 @@ public:
     //! The function allocates memory and creates the object
     static implementation* create(
         attribute_set const& source_attrs,
-        attribute_set const& thread_attrs,
         attribute_set const& global_attrs,
         size_type reserve_count)
     {
         return create(
-            source_attrs.m_pImpl->size() + thread_attrs.m_pImpl->size() + global_attrs.m_pImpl->size() + reserve_count,
+            source_attrs.m_pImpl->size() + global_attrs.m_pImpl->size() + reserve_count,
             source_attrs.m_pImpl,
-            thread_attrs.m_pImpl,
             global_attrs.m_pImpl);
     }
 
     //! The function allocates memory and creates the object
     static implementation* create(
         attribute_value_set const& source_attrs,
-        attribute_set const& thread_attrs,
         attribute_set const& global_attrs,
         size_type reserve_count)
     {
         implementation* p = create(
-            source_attrs.m_pImpl->size() + thread_attrs.m_pImpl->size() + global_attrs.m_pImpl->size() + reserve_count,
+            source_attrs.m_pImpl->size() + global_attrs.m_pImpl->size() + reserve_count,
             NULL,
-            thread_attrs.m_pImpl,
             global_attrs.m_pImpl);
         p->copy_nodes_from(source_attrs.m_pImpl);
         return p;
@@ -204,13 +195,11 @@ public:
     //! The function allocates memory and creates the object
     static implementation* create(
         BOOST_RV_REF(attribute_value_set) source_attrs,
-        attribute_set const& thread_attrs,
         attribute_set const& global_attrs,
         size_type reserve_count)
     {
         implementation* p = source_attrs.m_pImpl;
         source_attrs.m_pImpl = NULL;
-        p->m_pThreadAttributes = thread_attrs.m_pImpl;
         p->m_pGlobalAttributes = global_attrs.m_pImpl;
         return p;
     }
@@ -218,14 +207,14 @@ public:
     //! The function allocates memory and creates the object
     static implementation* create(size_type reserve_count)
     {
-        return create(reserve_count, NULL, NULL, NULL);
+        return create(reserve_count, NULL, NULL);
     }
 
     //! Creates a copy of the object
     static implementation* copy(implementation* that)
     {
         // Create new object
-        implementation* p = create(that->size(), NULL, NULL, NULL);
+        implementation* p = create(that->size(), NULL, NULL);
 
         // Copy all elements
         p->copy_nodes_from(that);
@@ -286,11 +275,6 @@ public:
             freeze_nodes_from(m_pSourceAttributes);
             m_pSourceAttributes = NULL;
         }
-        if (m_pThreadAttributes)
-        {
-            freeze_nodes_from(m_pThreadAttributes);
-            m_pThreadAttributes = NULL;
-        }
         if (m_pGlobalAttributes)
         {
             freeze_nodes_from(m_pGlobalAttributes);
@@ -345,16 +329,6 @@ private:
         {
             it = m_pSourceAttributes->find(key);
             if (it != m_pSourceAttributes->end())
-            {
-                // The attribute is found, acquiring the value
-                return insert_node(key, b, where, it->second.get_value());
-            }
-        }
-
-        if (m_pThreadAttributes)
-        {
-            it = m_pThreadAttributes->find(key);
-            if (it != m_pThreadAttributes->end())
             {
                 // The attribute is found, acquiring the value
                 return insert_node(key, b, where, it->second.get_value());
@@ -473,34 +447,31 @@ BOOST_LOG_API attribute_value_set::attribute_value_set(
 //! The constructor adopts three attribute sets to the set
 BOOST_LOG_API attribute_value_set::attribute_value_set(
     attribute_set const& source_attrs,
-    attribute_set const& thread_attrs,
     attribute_set const& global_attrs,
     size_type reserve_count
 ) :
-    m_pImpl(implementation::create(source_attrs, thread_attrs, global_attrs, reserve_count))
+    m_pImpl(implementation::create(source_attrs, global_attrs, reserve_count))
 {
 }
 
 //! The constructor adopts three attribute sets to the set
 BOOST_LOG_API attribute_value_set::attribute_value_set(
     attribute_value_set const& source_attrs,
-    attribute_set const& thread_attrs,
     attribute_set const& global_attrs,
     size_type reserve_count
 ) :
-    m_pImpl(implementation::create(source_attrs, thread_attrs, global_attrs, reserve_count))
+    m_pImpl(implementation::create(source_attrs, global_attrs, reserve_count))
 {
 }
 
 //! The constructor adopts three attribute sets to the set
 BOOST_LOG_API void attribute_value_set::construct(
     attribute_value_set& source_attrs,
-    attribute_set const& thread_attrs,
     attribute_set const& global_attrs,
     size_type reserve_count
 )
 {
-    m_pImpl = implementation::create(boost::move(source_attrs), thread_attrs, global_attrs, reserve_count);
+    m_pImpl = implementation::create(boost::move(source_attrs), global_attrs, reserve_count);
 }
 
 //! Copy constructor
