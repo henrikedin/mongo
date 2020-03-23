@@ -653,7 +653,7 @@ Collection* DatabaseImpl::createCollection(OperationContext* opCtx,
     if (!optionsWithUUID.uuid) {
         if (!canAcceptWrites) {
             LOGV2_ERROR_OPTIONS(20329,
-                                {UserAssertAfterLog(ErrorCodes::InvalidOptions)},
+                                {logv2::UserAssertAfterLog(ErrorCodes::InvalidOptions)},
                                 "Attempted to create a new collection {nss} without a UUID",
                                 "nss"_attr = nss);
         } else {

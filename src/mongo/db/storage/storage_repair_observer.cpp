@@ -128,7 +128,6 @@ void StorageRepairObserver::_touchRepairIncompleteFile() {
             "Failed to write to file {repairIncompleteFilePath_string}: {errnoWithDescription}",
             "repairIncompleteFilePath_string"_attr = _repairIncompleteFilePath.string(),
             "errnoWithDescription"_attr = errnoWithDescription());
-        fassertFailedNoTrace(50920);
     }
     fileStream.close();
 

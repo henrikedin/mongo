@@ -414,8 +414,7 @@ void checkFile(OperationContext* opCtx, const boost::filesystem::path& file) {
         }
 
         if (bytesRead != bytesWrittenTotal) {
-            LOGV2_FATAL_OPTIONS(50724,
-                                {FatalMode::kNoTrace},
+            LOGV2_FATAL_NOTRACE(50724,
                                 "Read wrong number of bytes for '{file_generic_string}' expected "
                                 "{bytesWrittenTotal} bytes but read {bytesRead} bytes",
                                 "file_generic_string"_attr = file.generic_string(),
@@ -424,9 +423,8 @@ void checkFile(OperationContext* opCtx, const boost::filesystem::path& file) {
         }
 
         if (memcmp(nowStr.c_str(), readBuffer.get(), nowStr.size()) != 0) {
-            LOGV2_FATAL_OPTIONS(
+            LOGV2_FATAL_NOTRACE(
                 50717,
-                {FatalMode::kNoTrace},
                 "Read wrong string from file '{file_generic_string}{nowStr_size} bytes (in "
                 "hex) '{toHexLower_nowStr_c_str_nowStr_size}' but read bytes "
                 "'{toHexLower_readBuffer_get_bytesRead}'",
@@ -489,7 +487,7 @@ void checkFile(OperationContext* opCtx, const boost::filesystem::path& file) {
             }
 
             LOGV2_FATAL_CONTINUE(
-                4081,
+                23425,
                 "write failed for '{file_generic_string}' with error: {errnoWithDescription_err}",
                 "file_generic_string"_attr = file.generic_string(),
                 "errnoWithDescription_err"_attr = errnoWithDescription(err));

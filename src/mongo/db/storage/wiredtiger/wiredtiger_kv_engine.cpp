@@ -869,8 +869,10 @@ void WiredTigerKVEngine::_openWiredTiger(const std::string& path, const std::str
         }
     }
 
+    logv2::FatalMode assertMode =
+        _inRepairMode ? logv2::FatalMode::kContinue : logv2::FatalMode::kAssertNoTrace;
     LOGV2_FATAL_OPTIONS(28595,
-                        {_inRepairMode ? FatalMode::kContinue : FatalMode::kAssertNoTrace},
+                        {assertMode},
                         "Reason: {wtRCToStatus_ret_reason}",
                         "wtRCToStatus_ret_reason"_attr = wtRCToStatus(ret).reason());
 

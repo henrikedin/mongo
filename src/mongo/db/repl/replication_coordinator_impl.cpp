@@ -505,7 +505,6 @@ bool ReplicationCoordinatorImpl::_startLoadLocalConfig(OperationContext* opCtx) 
             "for information on how to recover from this",
             "error"_attr = status,
             "config"_attr = cfg.getValue());
-        fassertFailedNoTrace(28545);
     }
 
     // Read the last op from the oplog after cleaning up any partially applied batches.

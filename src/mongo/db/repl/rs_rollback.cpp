@@ -690,7 +690,7 @@ Status rollback_internal::updateFixUpInfoFromLocalOplogEntry(OperationContext* o
                     }
                     // Some collMod fields cannot be rolled back, such as the index field.
                     static constexpr char message[] = "Cannot roll back a collMod command";
-                    LOGV2_FATAL_CONTINUE(21733, , message, "oplogEntry"_attr = redact(obj));
+                    LOGV2_FATAL_CONTINUE(21733, message, "oplogEntry"_attr = redact(obj));
                     throw RSFatalException(message);
                 }
                 return Status::OK();

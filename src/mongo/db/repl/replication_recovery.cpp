@@ -266,7 +266,6 @@ void ReplicationRecoveryImpl::_assertNoRecoveryNeededOnUnstableCheckpoint(Operat
 
     if (_consistencyMarkers->getInitialSyncFlag(opCtx)) {
         LOGV2_FATAL_NOTRACE(31362, "Unexpected recovery needed, initial sync flag set");
-        fassertFailedNoTrace(31362);
     }
 
     const auto truncateAfterPoint = _consistencyMarkers->getOplogTruncateAfterPoint(opCtx);

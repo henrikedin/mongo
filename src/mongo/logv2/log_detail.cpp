@@ -69,18 +69,6 @@ void doLogImpl(int32_t id,
 
         source.push_record(std::move(record));
     }
-    if (severity == LogSeverity::Severe()) {
-        switch (options.fatalMode()) {
-            case FatalMode::kAssert:
-                fassertFailed(id);
-                break;
-            case FatalMode::kAssertNoTrace:
-                fassertFailedNoTrace(id);
-                break;
-            case FatalMode::kContinue:
-                break;
-        }
-    }
 }
 
 }  // namespace detail
