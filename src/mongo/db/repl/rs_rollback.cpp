@@ -394,10 +394,10 @@ Status rollback_internal::updateFixUpInfoFromLocalOplogEntry(OperationContext* o
                 auto status = bsonExtractStringField(obj, "index", &indexName);
                 if (!status.isOK()) {
                     LOGV2_FATAL_CONTINUE(21731,
-                                "Missing index name in dropIndexes operation on rollback, "
-                                "document: {oplogEntry}",
-                                "Missing index name in dropIndexes operation on rollback",
-                                "oplogEntry"_attr = redact(oplogEntry.toBSON()));
+                                         "Missing index name in dropIndexes operation on rollback, "
+                                         "document: {oplogEntry}",
+                                         "Missing index name in dropIndexes operation on rollback",
+                                         "oplogEntry"_attr = redact(oplogEntry.toBSON()));
                     throw RSFatalException(
                         "Missing index name in dropIndexes operation on rollback.");
                 }
@@ -433,11 +433,12 @@ Status rollback_internal::updateFixUpInfoFromLocalOplogEntry(OperationContext* o
                 string indexName;
                 auto status = bsonExtractStringField(obj, "name", &indexName);
                 if (!status.isOK()) {
-                    LOGV2_FATAL_CONTINUE(21732,
-                                "Missing index name in createIndexes operation on rollback, "
-                                "document: {oplogEntry}",
-                                "Missing index name in createIndexes operation on rollback",
-                                "oplogEntry"_attr = redact(oplogEntry.toBSON()));
+                    LOGV2_FATAL_CONTINUE(
+                        21732,
+                        "Missing index name in createIndexes operation on rollback, "
+                        "document: {oplogEntry}",
+                        "Missing index name in createIndexes operation on rollback",
+                        "oplogEntry"_attr = redact(oplogEntry.toBSON()));
                     throw RSFatalException(
                         "Missing index name in createIndexes operation on rollback.");
                 }
@@ -689,7 +690,7 @@ Status rollback_internal::updateFixUpInfoFromLocalOplogEntry(OperationContext* o
                     }
                     // Some collMod fields cannot be rolled back, such as the index field.
                     static constexpr char message[] = "Cannot roll back a collMod command";
-                    LOGV2_FATAL_CONTINUE(21733, ,message, "oplogEntry"_attr = redact(obj));
+                    LOGV2_FATAL_CONTINUE(21733, , message, "oplogEntry"_attr = redact(obj));
                     throw RSFatalException(message);
                 }
                 return Status::OK();
@@ -725,7 +726,8 @@ Status rollback_internal::updateFixUpInfoFromLocalOplogEntry(OperationContext* o
                     if (operations.type() != Array) {
                         static constexpr char message[] =
                             "Expected applyOps argument to be an array";
-                        LOGV2_FATAL_CONTINUE(21734, message, "operations"_attr = redact(operations));
+                        LOGV2_FATAL_CONTINUE(
+                            21734, message, "operations"_attr = redact(operations));
                         return Status(ErrorCodes::UnrecoverableRollbackError,
                                       str::stream() << message << "; found " << redact(operations));
                     }
@@ -770,9 +772,9 @@ Status rollback_internal::updateFixUpInfoFromLocalOplogEntry(OperationContext* o
             default: {
                 static constexpr char message[] = "Can't roll back this command yet";
                 LOGV2_FATAL_CONTINUE(21736,
-                            message,
-                            "commandName"_attr = first.fieldName(),
-                            "command"_attr = redact(obj));
+                                     message,
+                                     "commandName"_attr = first.fieldName(),
+                                     "command"_attr = redact(obj));
                 throw RSFatalException(str::stream()
                                        << message << ": cmdname = " << first.fieldName());
             }
@@ -787,9 +789,9 @@ Status rollback_internal::updateFixUpInfoFromLocalOplogEntry(OperationContext* o
     if (doc._id.eoo()) {
         static constexpr char message[] = "Cannot roll back op with no _id";
         LOGV2_FATAL_CONTINUE(21737,
-                    message,
-                    "namespace"_attr = nss.ns(),
-                    "oplogEntry"_attr = redact(oplogEntry.toBSON()));
+                             message,
+                             "namespace"_attr = nss.ns(),
+                             "oplogEntry"_attr = redact(oplogEntry.toBSON()));
         throw RSFatalException(str::stream() << message << ". ns: " << nss.ns());
     }
     fixUpInfo.docsToRefetch.insert(doc);
@@ -1058,20 +1060,22 @@ void dropCollection(OperationContext* opCtx,
             if (execState == PlanExecutor::FAILURE &&
                 WorkingSetCommon::isValidStatusMemberObject(curObj)) {
                 Status errorStatus = WorkingSetCommon::getMemberObjectStatus(curObj);
-                LOGV2_FATAL_CONTINUE(21741,
-                            "Rolling back createCollection on {namespace} failed with {error}. A "
-                            "full resync is necessary.",
-                            "Rolling back createCollection failed. A full resync is necessary",
-                            "namespace"_attr = nss,
-                            "error"_attr = redact(errorStatus));
+                LOGV2_FATAL_CONTINUE(
+                    21741,
+                    "Rolling back createCollection on {namespace} failed with {error}. A "
+                    "full resync is necessary.",
+                    "Rolling back createCollection failed. A full resync is necessary",
+                    "namespace"_attr = nss,
+                    "error"_attr = redact(errorStatus));
                 throw RSFatalException(
                     "Rolling back createCollection failed. A full resync is necessary.");
             } else {
-                LOGV2_FATAL_CONTINUE(21742,
-                            "Rolling back createCollection on {namespace} failed. A full resync is "
-                            "necessary.",
-                            "Rolling back createCollection failed. A full resync is necessary",
-                            "namespace"_attr = nss);
+                LOGV2_FATAL_CONTINUE(
+                    21742,
+                    "Rolling back createCollection on {namespace} failed. A full resync is "
+                    "necessary.",
+                    "Rolling back createCollection failed. A full resync is necessary",
+                    "namespace"_attr = nss);
                 throw RSFatalException(
                     "Rolling back createCollection failed. A full resync is necessary.");
             }
@@ -1136,11 +1140,12 @@ void renameOutOfTheWay(OperationContext* opCtx, RenameCollectionInfo info, Datab
     auto renameStatus = renameCollectionForRollback(opCtx, tempNss, uuid);
 
     if (!renameStatus.isOK()) {
-        LOGV2_FATAL_CONTINUE(21744,
-                    "Unable to rename collection {renameTo} out of the way to {tempNamespace}",
-                    "Unable to rename renameTo collection out of the way to a temporary namespace",
-                    "renameTo"_attr = info.renameTo,
-                    "tempNamespace"_attr = tempNss);
+        LOGV2_FATAL_CONTINUE(
+            21744,
+            "Unable to rename collection {renameTo} out of the way to {tempNamespace}",
+            "Unable to rename renameTo collection out of the way to a temporary namespace",
+            "renameTo"_attr = info.renameTo,
+            "tempNamespace"_attr = tempNss);
         throw RSFatalException("Unable to rename collection out of the way");
     }
 }
@@ -1178,22 +1183,23 @@ void rollbackRenameCollection(OperationContext* opCtx, UUID uuid, RenameCollecti
         status = renameCollectionForRollback(opCtx, info.renameTo, uuid);
 
         if (!status.isOK()) {
-            LOGV2_FATAL_CONTINUE(21745,
-                        "Rename collection failed to roll back twice. We were unable to rename "
-                        "collection {renameFrom} to {renameTo}. {error}",
-                        "Rename collection failed to roll back twice",
-                        "renameFrom"_attr = info.renameFrom,
-                        "renameTo"_attr = info.renameTo,
-                        "error"_attr = status.toString());
+            LOGV2_FATAL_CONTINUE(
+                21745,
+                "Rename collection failed to roll back twice. We were unable to rename "
+                "collection {renameFrom} to {renameTo}. {error}",
+                "Rename collection failed to roll back twice",
+                "renameFrom"_attr = info.renameFrom,
+                "renameTo"_attr = info.renameTo,
+                "error"_attr = status.toString());
             throw RSFatalException(
                 "Rename collection failed to roll back twice. We were unable to rename "
                 "the collection.");
         }
     } else if (!status.isOK()) {
         LOGV2_FATAL_CONTINUE(21746,
-                    "Unable to roll back renameCollection command: {error}",
-                    "Unable to roll back renameCollection command",
-                    "error"_attr = status.toString());
+                             "Unable to roll back renameCollection command: {error}",
+                             "Unable to roll back renameCollection command",
+                             "error"_attr = status.toString());
         throw RSFatalException("Unable to rollback renameCollection command");
     }
 
@@ -1756,7 +1762,7 @@ void rollback_internal::syncFixUp(OperationContext* opCtx,
                         auto status = removeSaver->goingToDelete(obj);
                         if (!status.isOK()) {
                             LOGV2_FATAL_CONTINUE(
-                                21747, 
+                                21747,
                                 "Rollback cannot write document in namespace {namespace} to "
                                 "archive file: {error}",
                                 "Rollback cannot write document to archive file",
@@ -1996,9 +2002,9 @@ void rollback_internal::syncFixUp(OperationContext* opCtx,
     Status status = AuthorizationManager::get(opCtx->getServiceContext())->initialize(opCtx);
     if (!status.isOK()) {
         LOGV2_FATAL_NOTRACE(40496,
-                    "Failed to reinitialize auth data after rollback: {error}",
-                    "Failed to reinitialize auth data after rollback",
-                    "error"_attr = redact(status));
+                            "Failed to reinitialize auth data after rollback: {error}",
+                            "Failed to reinitialize auth data after rollback",
+                            "error"_attr = redact(status));
     }
 
     // If necessary, clear the memory of existing sessions.
@@ -2122,9 +2128,9 @@ void rollback(OperationContext* opCtx,
         // so we need to check here first.
         if (ErrorCodes::UnrecoverableRollbackError == status.code()) {
             LOGV2_FATAL_NOTRACE(40507,
-                        "Unable to complete rollback. A full resync may be needed: {error}",
-                        "Unable to complete rollback. A full resync may be needed",
-                        "error"_attr = redact(status));
+                                "Unable to complete rollback. A full resync may be needed: {error}",
+                                "Unable to complete rollback. A full resync may be needed",
+                                "error"_attr = redact(status));
         }
 
         // In other cases, we log the message contained in the error status and retry later.
@@ -2149,8 +2155,8 @@ void rollback(OperationContext* opCtx,
         // stopped index builds gets lost after the first attempt.
         if (stoppedIndexBuilds.size()) {
             LOGV2_FATAL_NOTRACE(4655800,
-                        "Index builds stopped prior to rollback cannot be restarted by "
-                        "subsequent rollback attempts");
+                                "Index builds stopped prior to rollback cannot be restarted by "
+                                "subsequent rollback attempts");
         }
 
         // Sleep a bit to allow upstream node to coalesce, if that was the cause of the failure. If
@@ -2173,20 +2179,21 @@ void rollback(OperationContext* opCtx,
     // then we must shut down to clear the in-memory ShardingState associated with the
     // shardIdentity document.
     if (ShardIdentityRollbackNotifier::get(opCtx)->didRollbackHappen()) {
-        LOGV2_FATAL_NOTRACE(40498,
-                    "shardIdentity document rollback detected.  Shutting down to clear "
-                    "in-memory sharding state.  Restarting this process should safely return it "
-                    "to a healthy state");
+        LOGV2_FATAL_NOTRACE(
+            40498,
+            "shardIdentity document rollback detected.  Shutting down to clear "
+            "in-memory sharding state.  Restarting this process should safely return it "
+            "to a healthy state");
     }
 
     auto status = replCoord->setFollowerMode(MemberState::RS_RECOVERING);
     if (!status.isOK()) {
         LOGV2_FATAL_NOTRACE(40499,
-                    "Failed to perform replica set state transition",
-                    "targetState"_attr = MemberState(MemberState::RS_RECOVERING),
-                    "expectedState"_attr = MemberState(MemberState::RS_ROLLBACK),
-                    "actualState"_attr = replCoord->getMemberState(),
-                    "error"_attr = status);
+                            "Failed to perform replica set state transition",
+                            "targetState"_attr = MemberState(MemberState::RS_RECOVERING),
+                            "expectedState"_attr = MemberState(MemberState::RS_ROLLBACK),
+                            "actualState"_attr = replCoord->getMemberState(),
+                            "error"_attr = status);
     }
 }
 

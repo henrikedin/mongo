@@ -1597,8 +1597,7 @@ Status SSLManagerWindows::_validateCertificate(PCCERT_CONTEXT cert,
 
         if ((FiletimeToULL(cert->pCertInfo->NotBefore) > currentTimeLong) ||
             (currentTimeLong > FiletimeToULL(cert->pCertInfo->NotAfter))) {
-            LOGV2_FATAL_NOTRACE(50755,
-                                "The provided SSL certificate is expired or not yet valid.");
+            LOGV2_FATAL_NOTRACE(50755, "The provided SSL certificate is expired or not yet valid.");
         }
 
         *serverCertificateExpirationDate =

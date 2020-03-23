@@ -924,7 +924,8 @@ void TransactionParticipant::Participant::_releaseTransactionResourcesToOpCtx(
         stdx::lock_guard<Client> lk(*opCtx->getClient());
         swap(trs, o(lk).txnResourceStash);
         return trs;
-    }();
+    }
+    ();
 
     auto releaseOnError = makeGuard([&] {
         // Restore the lock resources back to transaction participant.
@@ -1104,12 +1105,12 @@ Timestamp TransactionParticipant::Participant::prepareTransaction(
             // It is illegal for aborting a prepared transaction to fail for any reason, so we crash
             // instead.
             LOGV2_FATAL_CONTINUE(22525,
-                                "Caught exception during abort of prepared transaction "
-                                "{txnNumber} on {lsid}: {error}",
-                                "Caught exception during abort of prepared transaction",
-                                "txnNumber"_attr = opCtx->getTxnNumber(),
-                                "lsid"_attr = _sessionId().toBSON(),
-                                "error"_attr = exceptionToStatus());
+                                 "Caught exception during abort of prepared transaction "
+                                 "{txnNumber} on {lsid}: {error}",
+                                 "Caught exception during abort of prepared transaction",
+                                 "txnNumber"_attr = opCtx->getTxnNumber(),
+                                 "lsid"_attr = _sessionId().toBSON(),
+                                 "error"_attr = exceptionToStatus());
             std::terminate();
         }
     });
@@ -1429,13 +1430,13 @@ void TransactionParticipant::Participant::commitPreparedTransaction(
     } catch (...) {
         // It is illegal for committing a prepared transaction to fail for any reason, other than an
         // invalid command, so we crash instead.
-        LOGV2_FATAL_CONTINUE(22526, 
-                    "Caught exception during commit of prepared transaction {txnNumber} "
-                    "on {lsid}: {error}",
-                    "Caught exception during commit of prepared transaction",
-                    "txnNumber"_attr = opCtx->getTxnNumber(),
-                    "lsid"_attr = _sessionId().toBSON(),
-                    "error"_attr = exceptionToStatus());
+        LOGV2_FATAL_CONTINUE(22526,
+                             "Caught exception during commit of prepared transaction {txnNumber} "
+                             "on {lsid}: {error}",
+                             "Caught exception during commit of prepared transaction",
+                             "txnNumber"_attr = opCtx->getTxnNumber(),
+                             "lsid"_attr = _sessionId().toBSON(),
+                             "error"_attr = exceptionToStatus());
         std::terminate();
     }
 }

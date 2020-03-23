@@ -149,17 +149,19 @@ namespace mongo {
                MESSAGE,                                                          \
                ##__VA_ARGS__)
 
-#define LOGV2_FATAL_NOTRACE(ID, MESSAGE, ...)                                            \
-    LOGV2_IMPL(ID,                                                               \
-               ::mongo::logv2::LogSeverity::Severe(),                            \
-               ::mongo::logv2::LogOptions{MongoLogV2DefaultComponent_component, ::mongo::logv2::FatalMode::kAssertNoTrace}, \
-               MESSAGE,                                                          \
+#define LOGV2_FATAL_NOTRACE(ID, MESSAGE, ...)                                         \
+    LOGV2_IMPL(ID,                                                                    \
+               ::mongo::logv2::LogSeverity::Severe(),                                 \
+               ::mongo::logv2::LogOptions{MongoLogV2DefaultComponent_component,       \
+                                          ::mongo::logv2::FatalMode::kAssertNoTrace}, \
+               MESSAGE,                                                               \
                ##__VA_ARGS__)
 
-#define LOGV2_FATAL_CONTINUE(ID, MESSAGE, ...)                                            \
+#define LOGV2_FATAL_CONTINUE(ID, MESSAGE, ...)                                   \
     LOGV2_IMPL(ID,                                                               \
                ::mongo::logv2::LogSeverity::Severe(),                            \
-               ::mongo::logv2::LogOptions{MongoLogV2DefaultComponent_component, ::mongo::logv2::FatalMode::kContinue}, \
+               ::mongo::logv2::LogOptions{MongoLogV2DefaultComponent_component,  \
+                                          ::mongo::logv2::FatalMode::kContinue}, \
                MESSAGE,                                                          \
                ##__VA_ARGS__)
 

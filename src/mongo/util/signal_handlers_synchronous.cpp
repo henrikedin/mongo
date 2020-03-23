@@ -251,12 +251,13 @@ void myInvalidParameterHandler(const wchar_t* expression,
                                const wchar_t* file,
                                unsigned int line,
                                uintptr_t pReserved) {
-    LOGV2_FATAL_CONTINUE(23815,
-                "Invalid parameter detected in function {function} File: "
-                "{file} Line: {line} Expression: {expression}. Immediate exit due to invalid parameter",
-                "function"_attr = toUtf8String(function),
-                "file"_attr = toUtf8String(file),
-                "line"_attr = line,
+    LOGV2_FATAL_CONTINUE(
+        23815,
+        "Invalid parameter detected in function {function} File: "
+        "{file} Line: {line} Expression: {expression}. Immediate exit due to invalid parameter",
+        "function"_attr = toUtf8String(function),
+        "file"_attr = toUtf8String(file),
+        "line"_attr = line,
         "expression"_attr = toUtf8String(expression));
 
     abruptQuit(SIGABRT);
@@ -264,7 +265,7 @@ void myInvalidParameterHandler(const wchar_t* expression,
 
 void myPureCallHandler() {
     LOGV2_FATAL_CONTINUE(23818,
-                        "Pure call handler invoked. Immediate exit due to invalid pure call");
+                         "Pure call handler invoked. Immediate exit due to invalid pure call");
     abruptQuit(SIGABRT);
 }
 

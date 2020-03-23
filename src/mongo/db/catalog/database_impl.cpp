@@ -652,10 +652,10 @@ Collection* DatabaseImpl::createCollection(OperationContext* opCtx,
     bool generatedUUID = false;
     if (!optionsWithUUID.uuid) {
         if (!canAcceptWrites) {
-            LOGV2_ERROR_OPTIONS(
-                20329,
-                {UserAssertAfterLog(ErrorCodes::InvalidOptions)}, "Attempted to create a new collection {nss} without a UUID",
-                "nss"_attr = nss);
+            LOGV2_ERROR_OPTIONS(20329,
+                                {UserAssertAfterLog(ErrorCodes::InvalidOptions)},
+                                "Attempted to create a new collection {nss} without a UUID",
+                                "nss"_attr = nss);
         } else {
             optionsWithUUID.uuid.emplace(CollectionUUID::gen());
             generatedUUID = true;

@@ -58,11 +58,11 @@ void KVDropPendingIdentReaper::addDropPendingIdent(const Timestamp& dropTimestam
         _dropPendingIdents.insert(std::make_pair(dropTimestamp, info));
     } else {
         LOGV2_FATAL_NOTRACE(51023,
-                    "Failed to add drop-pending ident {ident} ({nss}) with drop timestamp "
-                    "{dropTimestamp}: duplicate timestamp and ident pair.",
-                    "ident"_attr = ident,
-                    "nss"_attr = nss,
-                    "dropTimestamp"_attr = dropTimestamp);
+                            "Failed to add drop-pending ident {ident} ({nss}) with drop timestamp "
+                            "{dropTimestamp}: duplicate timestamp and ident pair.",
+                            "ident"_attr = ident,
+                            "nss"_attr = nss,
+                            "dropTimestamp"_attr = dropTimestamp);
     }
 }
 

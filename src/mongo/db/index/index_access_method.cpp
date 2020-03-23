@@ -633,11 +633,12 @@ Status AbstractIndexAccessMethod::commitBulk(OperationContext* opCtx,
         if (kDebugBuild || _descriptor->unique()) {
             cmpData = data.first.compareWithoutRecordId(previousKey);
             if (cmpData < 0) {
-                LOGV2_FATAL_NOTRACE(31171,
-                            "expected the next key{data_first} to be greater than or equal to the "
-                            "previous key{previousKey}",
-                            "data_first"_attr = data.first.toString(),
-                            "previousKey"_attr = previousKey.toString());
+                LOGV2_FATAL_NOTRACE(
+                    31171,
+                    "expected the next key{data_first} to be greater than or equal to the "
+                    "previous key{previousKey}",
+                    "data_first"_attr = data.first.toString(),
+                    "previousKey"_attr = previousKey.toString());
             }
         }
 

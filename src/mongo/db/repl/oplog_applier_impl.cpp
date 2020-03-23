@@ -708,19 +708,19 @@ StatusWith<OpTime> OplogApplierImpl::_applyOplogBatch(OperationContext* opCtx,
             for (auto it = statusVector.cbegin(); it != statusVector.cend(); ++it) {
                 const auto& status = *it;
                 if (!status.isOK()) {
-                    LOGV2_FATAL_CONTINUE(21235,
-                                "Failed to apply batch of operations. Number of operations in "
-                                "batch: {numOperationsInBatch}. First operation: {firstOperation}. "
-                                "Last operation: "
-                                "{lastOperation}. Oplog application failed in writer thread "
-                                "{failedWriterThread}: {error}",
-                                "Failed to apply batch of operations",
-                                "numOperationsInBatch"_attr = ops.size(),
-                                "firstOperation"_attr = redact(ops.front().toBSON()),
-                                "lastOperation"_attr = redact(ops.back().toBSON()),
-                                "failedWriterThread"_attr =
-                                    std::distance(statusVector.cbegin(), it),
-                                "error"_attr = redact(status));
+                    LOGV2_FATAL_CONTINUE(
+                        21235,
+                        "Failed to apply batch of operations. Number of operations in "
+                        "batch: {numOperationsInBatch}. First operation: {firstOperation}. "
+                        "Last operation: "
+                        "{lastOperation}. Oplog application failed in writer thread "
+                        "{failedWriterThread}: {error}",
+                        "Failed to apply batch of operations",
+                        "numOperationsInBatch"_attr = ops.size(),
+                        "firstOperation"_attr = redact(ops.front().toBSON()),
+                        "lastOperation"_attr = redact(ops.back().toBSON()),
+                        "failedWriterThread"_attr = std::distance(statusVector.cbegin(), it),
+                        "error"_attr = redact(status));
                     return status;
                 }
             }
@@ -741,9 +741,10 @@ StatusWith<OpTime> OplogApplierImpl::_applyOplogBatch(OperationContext* opCtx,
               "point is disabled");
         while (MONGO_unlikely(pauseBatchApplicationBeforeCompletion.shouldFail())) {
             if (inShutdown()) {
-                LOGV2_FATAL_NOTRACE(50798,
-                            "Turn off pauseBatchApplicationBeforeCompletion before attempting "
-                            "clean shutdown");
+                LOGV2_FATAL_NOTRACE(
+                    50798,
+                    "Turn off pauseBatchApplicationBeforeCompletion before attempting "
+                    "clean shutdown");
             }
             sleepmillis(100);
         }
@@ -1067,10 +1068,10 @@ Status OplogApplierImpl::applyOplogBatchPerWorker(OperationContext* opCtx,
                     }
 
                     LOGV2_FATAL_CONTINUE(21237,
-                                "Error applying operation ({oplogEntry}): {error}",
-                                "Error applying operation",
-                                "oplogEntry"_attr = redact(entry.toBSON()),
-                                "error"_attr = causedBy(redact(status)));
+                                         "Error applying operation ({oplogEntry}): {error}",
+                                         "Error applying operation",
+                                         "oplogEntry"_attr = redact(entry.toBSON()),
+                                         "error"_attr = causedBy(redact(status)));
                     return status;
                 }
             } catch (const DBException& e) {
@@ -1082,10 +1083,10 @@ Status OplogApplierImpl::applyOplogBatchPerWorker(OperationContext* opCtx,
                 }
 
                 LOGV2_FATAL_CONTINUE(21238,
-                            "writer worker caught exception: {error} on: {oplogEntry}",
-                            "Writer worker caught exception",
-                            "error"_attr = redact(e),
-                            "oplogEntry"_attr = redact(entry.toBSON()));
+                                     "writer worker caught exception: {error} on: {oplogEntry}",
+                                     "Writer worker caught exception",
+                                     "error"_attr = redact(e),
+                                     "oplogEntry"_attr = redact(entry.toBSON()));
                 return e.toStatus();
             }
         }

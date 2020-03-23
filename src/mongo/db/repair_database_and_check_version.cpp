@@ -267,10 +267,10 @@ void checkForCappedOplog(OperationContext* opCtx, Database* db) {
     Collection* oplogCollection =
         CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, oplogNss);
     if (oplogCollection && !oplogCollection->isCapped()) {
-        LOGV2_FATAL_NOTRACE(40115, 
-                    "The oplog collection {oplogNss} is not capped; a capped oplog is a "
-                    "requirement for replication to function.",
-                    "oplogNss"_attr = oplogNss);
+        LOGV2_FATAL_NOTRACE(40115,
+                            "The oplog collection {oplogNss} is not capped; a capped oplog is a "
+                            "requirement for replication to function.",
+                            "oplogNss"_attr = oplogNss);
     }
 }
 

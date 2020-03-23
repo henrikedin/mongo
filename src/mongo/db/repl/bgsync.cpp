@@ -783,11 +783,10 @@ void BackgroundSync::_runRollbackViaRecoverToCheckpoint(
     if (status.isOK()) {
         LOGV2(21105, "Rollback successful");
     } else if (status == ErrorCodes::UnrecoverableRollbackError) {
-        LOGV2_FATAL_CONTINUE(
-            21128,
-            "Rollback failed with unrecoverable error: {error}",
-            "Rollback failed with unrecoverable error",
-            "error"_attr = status);
+        LOGV2_FATAL_CONTINUE(21128,
+                             "Rollback failed with unrecoverable error: {error}",
+                             "Rollback failed with unrecoverable error",
+                             "error"_attr = status);
         fassertFailedWithStatusNoTrace(50666, status);
     } else {
         LOGV2_WARNING(21124,

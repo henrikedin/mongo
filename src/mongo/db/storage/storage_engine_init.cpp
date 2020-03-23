@@ -209,8 +209,8 @@ void createLockFile(ServiceContext* service) {
     if (wasUnclean) {
         if (storageGlobalParams.readOnly) {
             LOGV2_FATAL_NOTRACE(34416,
-                        "Attempted to open dbpath in readOnly mode, but the server was "
-                        "previously not shut down cleanly.");
+                                "Attempted to open dbpath in readOnly mode, but the server was "
+                                "previously not shut down cleanly.");
         }
         LOGV2_WARNING(22271,
                       "Detected unclean shutdown - Lock file is not empty.",

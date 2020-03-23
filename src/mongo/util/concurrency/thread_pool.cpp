@@ -368,11 +368,10 @@ void ThreadPool::_consumeTasks() {
 
     std::ostringstream threadId;
     threadId << stdx::this_thread::get_id();
-    LOGV2_FATAL_NOTRACE(
-        28703,
-        "Could not find this thread, with id {threadId} in pool {pool}",
-        "threadId"_attr = threadId.str(),
-        "pool"_attr = _options.poolName);
+    LOGV2_FATAL_NOTRACE(28703,
+                        "Could not find this thread, with id {threadId} in pool {pool}",
+                        "threadId"_attr = threadId.str(),
+                        "pool"_attr = _options.poolName);
 }
 
 void ThreadPool::_doOneTask(stdx::unique_lock<Latch>* lk) noexcept {

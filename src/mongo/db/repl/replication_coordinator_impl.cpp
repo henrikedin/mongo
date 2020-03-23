@@ -444,11 +444,10 @@ bool ReplicationCoordinatorImpl::_startLoadLocalConfig(OperationContext* opCtx) 
 
     StatusWith<LastVote> lastVote = _externalState->loadLocalLastVoteDocument(opCtx);
     if (!lastVote.isOK()) {
-        LOGV2_FATAL_NOTRACE(
-            40367,
-                    "Error loading local voted for document at startup; {error}",
-                    "Error loading local voted for document at startup",
-                    "error"_attr = lastVote.getStatus());
+        LOGV2_FATAL_NOTRACE(40367,
+                            "Error loading local voted for document at startup; {error}",
+                            "Error loading local voted for document at startup",
+                            "error"_attr = lastVote.getStatus());
     }
     if (lastVote.getValue().getTerm() == OpTime::kInitialTerm) {
         // This log line is checked in unit tests.
@@ -468,9 +467,9 @@ bool ReplicationCoordinatorImpl::_startLoadLocalConfig(OperationContext* opCtx) 
             fassert(40424, initializingStatus);
         } else {
             LOGV2_FATAL_NOTRACE(40428,
-                        "Error loading local Rollback ID document at startup; {error}",
-                        "Error loading local Rollback ID document at startup",
-                        "error"_attr = status);
+                                "Error loading local Rollback ID document at startup; {error}",
+                                "Error loading local Rollback ID document at startup",
+                                "error"_attr = status);
         }
     }
 
@@ -487,7 +486,7 @@ bool ReplicationCoordinatorImpl::_startLoadLocalConfig(OperationContext* opCtx) 
     if (!status.isOK()) {
         if (status.code() == ErrorCodes::RepairedReplicaSetNode) {
             LOGV2_FATAL_NOTRACE(
-                50923, 
+                50923,
                 "This instance has been repaired and may contain modified replicated data that "
                 "would not match other replica set members. To see your repaired data, start "
                 "mongod without the --replSet option. When you are finished recovering your "
@@ -495,16 +494,17 @@ bool ReplicationCoordinatorImpl::_startLoadLocalConfig(OperationContext* opCtx) 
                 "documentation here: "
                 "https://docs.mongodb.com/manual/tutorial/resync-replica-set-member/");
         }
-        LOGV2_FATAL_NOTRACE(28545,
-                    "Locally stored replica set configuration does not parse; See "
-                    "http://www.mongodb.org/dochub/core/recover-replica-set-from-invalid-config "
-                    "for information on how to recover from this. Got \"{error}\" while parsing "
-                    "{config}",
-                    "Locally stored replica set configuration does not parse; See "
-                    "hhttp://www.mongodb.org/dochub/core/recover-replica-set-from-invalid-config "
-                    "for information on how to recover from this",
-                    "error"_attr = status,
-                    "config"_attr = cfg.getValue());
+        LOGV2_FATAL_NOTRACE(
+            28545,
+            "Locally stored replica set configuration does not parse; See "
+            "http://www.mongodb.org/dochub/core/recover-replica-set-from-invalid-config "
+            "for information on how to recover from this. Got \"{error}\" while parsing "
+            "{config}",
+            "Locally stored replica set configuration does not parse; See "
+            "hhttp://www.mongodb.org/dochub/core/recover-replica-set-from-invalid-config "
+            "for information on how to recover from this",
+            "error"_attr = status,
+            "config"_attr = cfg.getValue());
         fassertFailedNoTrace(28545);
     }
 
@@ -1160,8 +1160,8 @@ void ReplicationCoordinatorImpl::signalDrainComplete(OperationContext* opCtx,
                 // the term appropriately.
                 if (reconfigStatus != ErrorCodes::ConfigurationInProgress) {
                     LOGV2_FATAL_CONTINUE(4508101,
-                                "Reconfig on stepup failed for unknown reasons",
-                                "error"_attr = reconfigStatus);
+                                         "Reconfig on stepup failed for unknown reasons",
+                                         "error"_attr = reconfigStatus);
                     fassertFailedWithStatus(31477, reconfigStatus);
                 }
             }

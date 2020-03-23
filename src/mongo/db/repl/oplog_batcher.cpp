@@ -181,10 +181,10 @@ StatusWith<std::vector<OplogEntry>> OplogBatcher::getNextApplierBatch(
         if (entry.getVersion() != OplogEntry::kOplogVersion) {
             static constexpr char message[] = "Unexpected oplog version";
             LOGV2_FATAL_CONTINUE(21240,
-                        message,
-                        "expectedVersion"_attr = OplogEntry::kOplogVersion,
-                        "foundVersion"_attr = entry.getVersion(),
-                        "oplogEntry"_attr = redact(entry.toBSON()));
+                                 message,
+                                 "expectedVersion"_attr = OplogEntry::kOplogVersion,
+                                 "foundVersion"_attr = entry.getVersion(),
+                                 "oplogEntry"_attr = redact(entry.toBSON()));
             return {ErrorCodes::BadValue,
                     str::stream() << message << ", expected oplog version "
                                   << OplogEntry::kOplogVersion << ", found version "

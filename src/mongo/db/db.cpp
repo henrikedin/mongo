@@ -445,10 +445,11 @@ ExitCode _initAndListen(ServiceContext* serviceContext, int listenPort) {
     try {
         nonLocalDatabases = repairDatabasesAndCheckVersion(startupOpCtx.get());
     } catch (const ExceptionFor<ErrorCodes::MustDowngrade>& error) {
-        LOGV2_FATAL_OPTIONS(20573,
-                            logv2::LogOptions(logv2::LogComponent::kControl, logv2::FatalMode::kContinue),
-                            "** IMPORTANT: {error_toStatus_reason}",
-                            "error_toStatus_reason"_attr = error.toStatus().reason());
+        LOGV2_FATAL_OPTIONS(
+            20573,
+            logv2::LogOptions(logv2::LogComponent::kControl, logv2::FatalMode::kContinue),
+            "** IMPORTANT: {error_toStatus_reason}",
+            "error_toStatus_reason"_attr = error.toStatus().reason());
         exitCleanly(EXIT_NEED_DOWNGRADE);
     }
 
@@ -1256,11 +1257,12 @@ int mongoDbMain(int argc, char* argv[], char** envp) {
 
     Status status = mongo::runGlobalInitializers(argc, argv, envp);
     if (!status.isOK()) {
-        LOGV2_FATAL_OPTIONS(20574,
-                            logv2::LogOptions(logv2::LogComponent::kControl, logv2::FatalMode::kContinue),
-                            "Error during global initialization: {error}",
-                            "Error during global initialization",
-                            "error"_attr = status);
+        LOGV2_FATAL_OPTIONS(
+            20574,
+            logv2::LogOptions(logv2::LogComponent::kControl, logv2::FatalMode::kContinue),
+            "Error during global initialization: {error}",
+            "Error during global initialization",
+            "error"_attr = status);
         quickExit(EXIT_FAILURE);
     }
 
@@ -1273,11 +1275,12 @@ int mongoDbMain(int argc, char* argv[], char** envp) {
             return serviceContext;
         } catch (...) {
             auto cause = exceptionToStatus();
-            LOGV2_FATAL_OPTIONS(20575,
-                                logv2::LogOptions(logv2::LogComponent::kControl, logv2::FatalMode::kContinue),
-                                "Error creating service context: {error}",
-                                "Error creating service context",
-                                "error"_attr = redact(cause));
+            LOGV2_FATAL_OPTIONS(
+                20575,
+                logv2::LogOptions(logv2::LogComponent::kControl, logv2::FatalMode::kContinue),
+                "Error creating service context: {error}",
+                "Error creating service context",
+                "error"_attr = redact(cause));
             quickExit(EXIT_FAILURE);
         }
     }();

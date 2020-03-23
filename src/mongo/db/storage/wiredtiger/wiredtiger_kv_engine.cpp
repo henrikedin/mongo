@@ -865,9 +865,7 @@ void WiredTigerKVEngine::_openWiredTiger(const std::string& path, const std::str
         LOGV2_WARNING(22348, "WiredTiger metadata corruption detected");
 
         if (!_inRepairMode) {
-            LOGV2_FATAL_NOTRACE(50944,
-                                "{kWTRepairMsg}",
-                                "kWTRepairMsg"_attr = kWTRepairMsg);
+            LOGV2_FATAL_NOTRACE(50944, "{kWTRepairMsg}", "kWTRepairMsg"_attr = kWTRepairMsg);
         }
     }
 
@@ -887,11 +885,10 @@ void WiredTigerKVEngine::_openWiredTiger(const std::string& path, const std::str
         return;
     }
 
-    LOGV2_FATAL_NOTRACE(
-        50947,
-        "{Failed_to_salvage_WiredTiger_metadata_wtRCToStatus_ret_reason}",
-        "Failed_to_salvage_WiredTiger_metadata_wtRCToStatus_ret_reason"_attr =
-            "Failed to salvage WiredTiger metadata: " + wtRCToStatus(ret).reason());
+    LOGV2_FATAL_NOTRACE(50947,
+                        "{Failed_to_salvage_WiredTiger_metadata_wtRCToStatus_ret_reason}",
+                        "Failed_to_salvage_WiredTiger_metadata_wtRCToStatus_ret_reason"_attr =
+                            "Failed to salvage WiredTiger metadata: " + wtRCToStatus(ret).reason());
 }
 
 void WiredTigerKVEngine::cleanShutdown() {

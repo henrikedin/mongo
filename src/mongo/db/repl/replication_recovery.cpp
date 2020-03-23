@@ -158,9 +158,7 @@ public:
             }
 
             LOGV2_FATAL_NOTRACE(
-                40293,
-                "Couldn't find any entries in the oplog, which should be impossible",
-                attrs);
+                40293, "Couldn't find any entries in the oplog, which should be impossible", attrs);
         }
 
         auto firstTimestampFound =
@@ -250,8 +248,7 @@ boost::optional<Timestamp> recoverFromOplogPrecursor(OperationContext* opCtx,
     auto recoveryTS = storageInterface->getRecoveryTimestamp(opCtx->getServiceContext());
     if (recoveryTS && recoveryTS->isNull()) {
         LOGV2_FATAL_NOTRACE(
-            50806,
-            "Cannot recover from the oplog with stable checkpoint at null timestamp");
+            50806, "Cannot recover from the oplog with stable checkpoint at null timestamp");
     }
 
     return recoveryTS;
@@ -268,8 +265,7 @@ void ReplicationRecoveryImpl::_assertNoRecoveryNeededOnUnstableCheckpoint(Operat
     invariant(!_storageInterface->getRecoveryTimestamp(opCtx->getServiceContext()));
 
     if (_consistencyMarkers->getInitialSyncFlag(opCtx)) {
-        LOGV2_FATAL_NOTRACE(31362,
-                            "Unexpected recovery needed, initial sync flag set");
+        LOGV2_FATAL_NOTRACE(31362, "Unexpected recovery needed, initial sync flag set");
         fassertFailedNoTrace(31362);
     }
 
@@ -339,8 +335,7 @@ void ReplicationRecoveryImpl::recoverFromOplogAsStandalone(OperationContext* opC
                   "to date");
         } else {
             LOGV2_FATAL_NOTRACE(
-                31229,
-                "Cannot use 'recoverFromOplogAsStandalone' without a stable checkpoint");
+                31229, "Cannot use 'recoverFromOplogAsStandalone' without a stable checkpoint");
         }
     }
 
@@ -463,11 +458,10 @@ void ReplicationRecoveryImpl::recoverFromOplog(OperationContext* opCtx,
         _recoverFromUnstableCheckpoint(opCtx, appliedThrough, topOfOplog);
     }
 } catch (...) {
-    LOGV2_FATAL_CONTINUE(
-        21570,
-        "Caught exception during replication recovery: {error}",
-        "Caught exception during replication recovery",
-        "error"_attr = exceptionToStatus());
+    LOGV2_FATAL_CONTINUE(21570,
+                         "Caught exception during replication recovery: {error}",
+                         "Caught exception during replication recovery",
+                         "error"_attr = exceptionToStatus());
     std::terminate();
 }
 

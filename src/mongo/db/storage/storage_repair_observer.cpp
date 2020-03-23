@@ -141,11 +141,11 @@ void StorageRepairObserver::_removeRepairIncompleteFile() {
     boost::filesystem::remove(_repairIncompleteFilePath, ec);
 
     if (ec) {
-        LOGV2_FATAL_NOTRACE(
-            50921,
-            "Failed to remove file {repairIncompleteFilePath_string}: {ec_message}",
-            "repairIncompleteFilePath_string"_attr = _repairIncompleteFilePath.string(),
-            "ec_message"_attr = ec.message());
+        LOGV2_FATAL_NOTRACE(50921,
+                            "Failed to remove file {repairIncompleteFilePath_string}: {ec_message}",
+                            "repairIncompleteFilePath_string"_attr =
+                                _repairIncompleteFilePath.string(),
+                            "ec_message"_attr = ec.message());
     }
     fassertNoTrace(50927, fsyncParentDirectory(_repairIncompleteFilePath));
 }
