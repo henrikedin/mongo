@@ -463,9 +463,9 @@ void ReplicationRecoveryImpl::recoverFromOplog(OperationContext* opCtx,
         _recoverFromUnstableCheckpoint(opCtx, appliedThrough, topOfOplog);
     }
 } catch (...) {
-    LOGV2_FATAL_OPTIONS(
+    LOGV2_FATAL_CONTINUE(
         21570,
-        {FatalMode::kContinue}, "Caught exception during replication recovery: {error}",
+        "Caught exception during replication recovery: {error}",
         "Caught exception during replication recovery",
         "error"_attr = exceptionToStatus());
     std::terminate();

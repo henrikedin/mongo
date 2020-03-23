@@ -841,9 +841,9 @@ BenchRunWorker::~BenchRunWorker() {
         // before returning from BenchRunWorker's destructor.
         _thread.join();
     } catch (...) {
-        LOGV2_FATAL_OPTIONS(
+        LOGV2_FATAL_CONTINUE(
             22807,
-            {FatalMode::kContinue}, "caught exception in destructor: {exceptionToStatus}",
+            "caught exception in destructor: {exceptionToStatus}",
             "exceptionToStatus"_attr = exceptionToStatus());
         std::terminate();
     }

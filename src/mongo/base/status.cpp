@@ -125,7 +125,7 @@ StringBuilderImpl<Allocator>& operator<<(StringBuilderImpl<Allocator>& sb, const
             // This really shouldn't happen but it would be really annoying if it broke error
             // logging in production.
             if (kDebugBuild) {
-                LOGV2_FATAL_OPTIONS(23806,{logv2::FatalMode::kContinue},
+                LOGV2_FATAL_CONTINUE(23806,
                             "Error serializing extra info for {status_code} in Status::toString()",
                             "status_code"_attr = status.code());
                 std::terminate();

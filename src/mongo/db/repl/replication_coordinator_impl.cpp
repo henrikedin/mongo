@@ -1159,7 +1159,7 @@ void ReplicationCoordinatorImpl::signalDrainComplete(OperationContext* opCtx,
                 // occurred after the node became primary and so the concurrent reconfig has updated
                 // the term appropriately.
                 if (reconfigStatus != ErrorCodes::ConfigurationInProgress) {
-                    LOGV2_FATAL_OPTIONS(4508101,{FatalMode::kContinue},
+                    LOGV2_FATAL_CONTINUE(4508101,
                                 "Reconfig on stepup failed for unknown reasons",
                                 "error"_attr = reconfigStatus);
                     fassertFailedWithStatus(31477, reconfigStatus);

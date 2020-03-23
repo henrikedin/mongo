@@ -1702,9 +1702,8 @@ void InitialSyncer::_finishInitialSyncAttempt(const StatusWith<OpTimeAndWallTime
 
     // Check if need to do more retries.
     if (_stats.failedInitialSyncAttempts >= _stats.maxFailedInitialSyncAttempts) {
-        LOGV2_FATAL_OPTIONS(
+        LOGV2_FATAL_CONTINUE(
             21202,
-            { FatalMode::kContinue},
             "The maximum number of retries have been exhausted for initial sync");
 
         initialSyncFailures.increment();

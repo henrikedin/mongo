@@ -530,9 +530,8 @@ bool repairDatabasesAndCheckVersion(OperationContext* opCtx) {
                 // current version of mongod with --repair and then proceed with normal startup.
                 status = {ErrorCodes::MustUpgrade, status.reason()};
             }
-            LOGV2_FATAL_OPTIONS(
+            LOGV2_FATAL_CONTINUE(
                 21023,
-                {FatalMode::kContinue},
                 "Unable to start mongod due to an incompatibility with the data files and"
                 " this version of mongod: {status}. Please consult our documentation when trying "
                 "to downgrade to a previous major release",

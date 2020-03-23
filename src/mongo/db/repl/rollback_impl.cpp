@@ -1099,7 +1099,7 @@ boost::optional<BSONObj> RollbackImpl::_findDocumentById(OperationContext* opCtx
     } else if (document.getStatus().code() == ErrorCodes::NoSuchKey) {
         return boost::none;
     } else {
-        LOGV2_FATAL_OPTIONS(21645, {FatalMode::kContinue}
+        LOGV2_FATAL_CONTINUE(21645,
                     "Rollback failed to read document with {id} in namespace {namespace} with uuid "
                     "{uuid}{error}",
                     "Rollback failed to read document",

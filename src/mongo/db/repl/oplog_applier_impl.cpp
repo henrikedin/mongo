@@ -618,7 +618,7 @@ StatusWith<OpTime> OplogApplierImpl::_applyOplogBatch(OperationContext* opCtx,
 
     invariant(_replCoord);
     if (_replCoord->getApplierState() == ReplicationCoordinator::ApplierState::Stopped) {
-        LOGV2_FATAL_OPTIONS(21234, {FatalMode::kContinue}, "Attempting to replicate ops while primary");
+        LOGV2_FATAL_CONTINUE(21234, "Attempting to replicate ops while primary");
         return {ErrorCodes::CannotApplyOplogWhilePrimary,
                 "attempting to replicate ops while primary"};
     }
@@ -708,7 +708,7 @@ StatusWith<OpTime> OplogApplierImpl::_applyOplogBatch(OperationContext* opCtx,
             for (auto it = statusVector.cbegin(); it != statusVector.cend(); ++it) {
                 const auto& status = *it;
                 if (!status.isOK()) {
-                    LOGV2_FATAL_OPTIONS(21235, {FatalMode::kContinue},
+                    LOGV2_FATAL_CONTINUE(21235,
                                 "Failed to apply batch of operations. Number of operations in "
                                 "batch: {numOperationsInBatch}. First operation: {firstOperation}. "
                                 "Last operation: "
@@ -1066,7 +1066,7 @@ Status OplogApplierImpl::applyOplogBatchPerWorker(OperationContext* opCtx,
                         continue;
                     }
 
-                    LOGV2_FATAL_OPTIONS(21237,{FatalMode::kContinue},
+                    LOGV2_FATAL_CONTINUE(21237,
                                 "Error applying operation ({oplogEntry}): {error}",
                                 "Error applying operation",
                                 "oplogEntry"_attr = redact(entry.toBSON()),
@@ -1081,7 +1081,7 @@ Status OplogApplierImpl::applyOplogBatchPerWorker(OperationContext* opCtx,
                     continue;
                 }
 
-                LOGV2_FATAL_OPTIONS(21238, {FatalMode::kContinue},
+                LOGV2_FATAL_CONTINUE(21238,
                             "writer worker caught exception: {error} on: {oplogEntry}",
                             "Writer worker caught exception",
                             "error"_attr = redact(e),

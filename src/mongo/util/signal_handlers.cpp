@@ -179,9 +179,9 @@ bool waitForSignal(const sigset_t& sigset, SignalWaitResult* result) {
         if (result->sig == -1) {
             if (errsv == EINTR)
                 continue;
-            LOGV2_FATAL_OPTIONS(
+            LOGV2_FATAL_CONTINUE(
                 23385,
-                {FatalMode::kContinue}, "sigwaitinfo failed with error:{strerror_errsv}",
+                "sigwaitinfo failed with error:{strerror_errsv}",
                 "strerror_errsv"_attr = strerror(errsv));
             return false;
         }

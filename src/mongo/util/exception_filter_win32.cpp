@@ -144,7 +144,7 @@ LONG WINAPI exceptionFilter(struct _EXCEPTION_POINTERS* excPointers) {
               sizeof(addressString),
               "0x%p",
               excPointers->ExceptionRecord->ExceptionAddress);
-    LOGV2_FATAL_OPTIONS(23134,{FatalMode::kContinue},
+    LOGV2_FATAL_CONTINUE(23134,
                 "*** unhandled exception {exceptionString} at {addressString}, terminating",
                 "exceptionString"_attr = exceptionString,
                 "addressString"_attr = addressString);
@@ -169,14 +169,14 @@ LONG WINAPI exceptionFilter(struct _EXCEPTION_POINTERS* excPointers) {
                   sizeof(addressString),
                   " 0x%llx",
                   excPointers->ExceptionRecord->ExceptionInformation[1]);
-        LOGV2_FATAL_OPTIONS(
+        LOGV2_FATAL_CONTINUE(
             23135,
-            {FatalMode::kContinue}, "*** access violation was a {acTypeString}{addressString}",
+            "*** access violation was a {acTypeString}{addressString}",
             "acTypeString"_attr = acTypeString,
             "addressString"_attr = addressString);
     }
 
-    LOGV2_FATAL_OPTIONS(23136, {FatalMode::kContinue}, "*** stack trace for unhandled exception:");
+    LOGV2_FATAL_CONTINUE(23136, "*** stack trace for unhandled exception:");
 
     // Create a copy of context record because printWindowsStackTrace will mutate it.
     CONTEXT contextCopy(*(excPointers->ContextRecord));
@@ -187,7 +187,7 @@ LONG WINAPI exceptionFilter(struct _EXCEPTION_POINTERS* excPointers) {
 
     // Don't go through normal shutdown procedure. It may make things worse.
     // Do not go through _exit or ExitProcess(), terminate immediately
-    LOGV2_FATAL_OPTIONS(23137, {FatalMode::kContinue},"*** immediate exit due to unhandled exception");
+    LOGV2_FATAL_CONTINUE(23137, "*** immediate exit due to unhandled exception");
     TerminateProcess(GetCurrentProcess(), EXIT_ABRUPT);
 
     // We won't reach here

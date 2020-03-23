@@ -1103,8 +1103,7 @@ Timestamp TransactionParticipant::Participant::prepareTransaction(
         } catch (...) {
             // It is illegal for aborting a prepared transaction to fail for any reason, so we crash
             // instead.
-            LOGV2_FATAL_OPTIONS(22525,
-                                {FatalMode::kContinue},
+            LOGV2_FATAL_CONTINUE(22525,
                                 "Caught exception during abort of prepared transaction "
                                 "{txnNumber} on {lsid}: {error}",
                                 "Caught exception during abort of prepared transaction",
@@ -1430,7 +1429,7 @@ void TransactionParticipant::Participant::commitPreparedTransaction(
     } catch (...) {
         // It is illegal for committing a prepared transaction to fail for any reason, other than an
         // invalid command, so we crash instead.
-        LOGV2_FATAL_OPTIONS(22526, {FatalMode::kContinue},
+        LOGV2_FATAL_CONTINUE(22526, 
                     "Caught exception during commit of prepared transaction {txnNumber} "
                     "on {lsid}: {error}",
                     "Caught exception during commit of prepared transaction",
@@ -1562,9 +1561,8 @@ void TransactionParticipant::Participant::_abortActiveTransaction(
         } catch (...) {
             // It is illegal for aborting a transaction that must write an abort oplog entry to fail
             // after aborting the storage transaction, so we crash instead.
-            LOGV2_FATAL_OPTIONS(
+            LOGV2_FATAL_CONTINUE(
                 22527,
-                {FatalMode::kContinue},
                 "Caught exception during abort of transaction that must write abort oplog "
                 "entry {txnNumber} on {lsid}: {error}",
                 "Caught exception during abort of transaction that must write abort oplog "
