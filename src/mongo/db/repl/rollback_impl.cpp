@@ -1025,7 +1025,7 @@ StatusWith<RollBackLocalOperations::RollbackCommonPoint> RollbackImpl::_findComm
     if (commonPointOpTime.getTimestamp() < *stableTimestamp) {
         // This is an fassert rather than an invariant, since it can happen if the server was
         // recently upgraded to enableMajorityReadConcern=true.
-        LOGV2_FATAL_OPTIONS(51121, {FatalMode::kAssertNoTrace}
+        LOGV2_FATAL_NOTRACE(51121, 
                     "Common point must be at least stable timestamp, common point: "
                     "{commonPoint}, stable timestamp: {stableTimestamp}",
                     "Common point must be at least stable timestamp",
@@ -1218,7 +1218,7 @@ void RollbackImpl::_transitionFromRollbackToSecondary(OperationContext* opCtx) {
 
     auto status = _replicationCoordinator->setFollowerMode(MemberState::RS_SECONDARY);
     if (!status.isOK()) {
-        LOGV2_FATAL_OPTIONS(40408, {FatalMode::kAssertNoTrace},
+        LOGV2_FATAL_NOTRACE(40408, 
                     "Failed to transition into {targetState}; expected to be in "
                     "state {expectedState}; found self in "
                     "{actualState} {error}",

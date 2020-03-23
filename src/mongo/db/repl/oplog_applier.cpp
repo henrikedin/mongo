@@ -75,7 +75,7 @@ Future<void> OplogApplier::startup() {
 void OplogApplier::shutdown() {
     // Shutdown will hang if this failpoint is enabled.
     if (globalFailPointRegistry().find("rsSyncApplyStop")->shouldFail()) {
-        LOGV2_FATAL_OPTIONS(40304, {FatalMode::kAssertNoTrace}, "Turn off rsSyncApplyStop before attempting clean shutdown");
+        LOGV2_FATAL_NOTRACE(40304, "Turn off rsSyncApplyStop before attempting clean shutdown");
     }
 
     stdx::lock_guard<Latch> lock(_mutex);

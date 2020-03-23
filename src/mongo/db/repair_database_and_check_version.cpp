@@ -267,7 +267,7 @@ void checkForCappedOplog(OperationContext* opCtx, Database* db) {
     Collection* oplogCollection =
         CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, oplogNss);
     if (oplogCollection && !oplogCollection->isCapped()) {
-        LOGV2_FATAL_OPTIONS(40115, {FatalMode::kAssertNoTrace},
+        LOGV2_FATAL_NOTRACE(40115, 
                     "The oplog collection {oplogNss} is not capped; a capped oplog is a "
                     "requirement for replication to function.",
                     "oplogNss"_attr = oplogNss);
@@ -641,8 +641,7 @@ bool repairDatabasesAndCheckVersion(OperationContext* opCtx) {
     // Fail to start up if there is no featureCompatibilityVersion document and there are non-local
     // databases present and we do not need to start up via initial sync.
     if (!fcvDocumentExists && nonLocalDatabases && !needInitialSync) {
-        LOGV2_FATAL_OPTIONS(40652,
-                            {FatalMode::kAssertNoTrace},
+        LOGV2_FATAL_NOTRACE(40652,
                             "Unable to start up mongod due to missing featureCompatibilityVersion "
                             "document. Please run with --repair to restore the document.");
     }

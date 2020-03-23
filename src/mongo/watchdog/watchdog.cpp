@@ -545,9 +545,8 @@ void checkFile(OperationContext* opCtx, const boost::filesystem::path& file) {
                 "errnoWithDescription_err"_attr = errnoWithDescription(err));
             fassertNoTrace(4083, err == 0);
         } else if (bytesReadInRead == 0) {
-            LOGV2_FATAL_OPTIONS(
+            LOGV2_FATAL_NOTRACE(
                 50719,
-                {FatalMode::kAssertNoTrace},
                 "read failed for '{file_generic_string}' with unexpected end of file",
                 "file_generic_string"_attr = file.generic_string());
         }
@@ -566,7 +565,7 @@ void checkFile(OperationContext* opCtx, const boost::filesystem::path& file) {
     }
 
     if (memcmp(nowStr.c_str(), readBuffer.get(), nowStr.size()) != 0) {
-        LOGV2_FATAL(50718, {FatalMode::kAssertNoTrace},
+        LOGV2_FATAL_NOTRACE(50718, 
                     "Read wrong string from file '{file_generic_string}' expected {nowStr_size} "
                     "bytes (in hex) '{toHexLower_nowStr_c_str_nowStr_size}' but read bytes "
                     "'{toHexLower_readBuffer_get_bytesReadTotal}'",

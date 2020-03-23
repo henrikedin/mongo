@@ -123,9 +123,8 @@ void StorageRepairObserver::_touchRepairIncompleteFile() {
     boost::filesystem::ofstream fileStream(_repairIncompleteFilePath);
     fileStream << "This file indicates that a repair operation is in progress or incomplete.";
     if (fileStream.fail()) {
-        LOGV2_FATAL_OPTIONS(
+        LOGV2_FATAL_NOTRACE(
             50920,
-            {FatalMode::kAssertNoTrace},
             "Failed to write to file {repairIncompleteFilePath_string}: {errnoWithDescription}",
             "repairIncompleteFilePath_string"_attr = _repairIncompleteFilePath.string(),
             "errnoWithDescription"_attr = errnoWithDescription());
@@ -142,9 +141,9 @@ void StorageRepairObserver::_removeRepairIncompleteFile() {
     boost::filesystem::remove(_repairIncompleteFilePath, ec);
 
     if (ec) {
-        LOGV2_FATAL_OPTIONS(
+        LOGV2_FATAL_NOTRACE(
             50921,
-            {FatalMode::kAssertNoTrace}, "Failed to remove file {repairIncompleteFilePath_string}: {ec_message}",
+            "Failed to remove file {repairIncompleteFilePath_string}: {ec_message}",
             "repairIncompleteFilePath_string"_attr = _repairIncompleteFilePath.string(),
             "ec_message"_attr = ec.message());
     }

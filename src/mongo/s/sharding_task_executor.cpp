@@ -191,7 +191,7 @@ StatusWith<TaskExecutor::CallbackHandle> ShardingTaskExecutor::scheduleRemoteCom
             }
 
             if (isMongos() && args.response.status == ErrorCodes::IncompatibleWithUpgradedServer) {
-                LOGV2_FATAL_OPTIONS(50710, {FatalMode::kAssertNoTrace},
+                LOGV2_FATAL_NOTRACE(50710, 
                             "This mongos server must be upgraded. It is attempting to communicate "
                             "with "
                             "an upgraded cluster with which it is incompatible. Error: "

@@ -57,7 +57,7 @@ void KVDropPendingIdentReaper::addDropPendingIdent(const Timestamp& dropTimestam
         info.ident = ident.toString();
         _dropPendingIdents.insert(std::make_pair(dropTimestamp, info));
     } else {
-        LOGV2_FATAL_OPTIONS(51023,{FatalMode::kAssertNoTrace},
+        LOGV2_FATAL_NOTRACE(51023,
                     "Failed to add drop-pending ident {ident} ({nss}) with drop timestamp "
                     "{dropTimestamp}: duplicate timestamp and ident pair.",
                     "ident"_attr = ident,
@@ -120,9 +120,8 @@ void KVDropPendingIdentReaper::dropIdentsOlderThan(OperationContext* opCtx, cons
             WriteUnitOfWork wuow(opCtx);
             auto status = _engine->dropIdent(opCtx, opCtx->recoveryUnit(), ident);
             if (!status.isOK()) {
-                LOGV2_FATAL_OPTIONS(
+                LOGV2_FATAL_NOTRACE(
                     51022,
-                    {FatalMode::kAssertNoTrace},
                     "Failed to remove drop-pending ident {ident}(ns: {nss}) with drop "
                     "timestamp {dropTimestamp}: {status}",
                     "ident"_attr = ident,

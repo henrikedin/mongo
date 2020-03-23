@@ -1995,7 +1995,7 @@ void rollback_internal::syncFixUp(OperationContext* opCtx,
 
     Status status = AuthorizationManager::get(opCtx->getServiceContext())->initialize(opCtx);
     if (!status.isOK()) {
-        LOGV2_FATAL_OPTIONS(40496,{FatalMode::kAssertNoTrace},
+        LOGV2_FATAL_NOTRACE(40496,
                     "Failed to reinitialize auth data after rollback: {error}",
                     "Failed to reinitialize auth data after rollback",
                     "error"_attr = redact(status));
@@ -2121,7 +2121,7 @@ void rollback(OperationContext* opCtx,
         // WARNING: these statuses sometimes have location codes which are lost with uassertStatusOK
         // so we need to check here first.
         if (ErrorCodes::UnrecoverableRollbackError == status.code()) {
-            LOGV2_FATAL_OPTIONS(40507,{FatalMode::kAssertNoTrace},
+            LOGV2_FATAL_NOTRACE(40507,
                         "Unable to complete rollback. A full resync may be needed: {error}",
                         "Unable to complete rollback. A full resync may be needed",
                         "error"_attr = redact(status));
@@ -2148,7 +2148,7 @@ void rollback(OperationContext* opCtx,
         // will be unable to successfully perform any more rollback attempts. The knowledge of these
         // stopped index builds gets lost after the first attempt.
         if (stoppedIndexBuilds.size()) {
-            LOGV2_FATAL_OPTIONS(4655800,{FatalMode::kAssertNoTrace},
+            LOGV2_FATAL_NOTRACE(4655800,
                         "Index builds stopped prior to rollback cannot be restarted by "
                         "subsequent rollback attempts");
         }
@@ -2173,7 +2173,7 @@ void rollback(OperationContext* opCtx,
     // then we must shut down to clear the in-memory ShardingState associated with the
     // shardIdentity document.
     if (ShardIdentityRollbackNotifier::get(opCtx)->didRollbackHappen()) {
-        LOGV2_FATAL_OPTIONS(40498,{FatalMode::kAssertNoTrace},
+        LOGV2_FATAL_NOTRACE(40498,
                     "shardIdentity document rollback detected.  Shutting down to clear "
                     "in-memory sharding state.  Restarting this process should safely return it "
                     "to a healthy state");
@@ -2181,7 +2181,7 @@ void rollback(OperationContext* opCtx,
 
     auto status = replCoord->setFollowerMode(MemberState::RS_RECOVERING);
     if (!status.isOK()) {
-        LOGV2_FATAL_OPTIONS(40499,{FatalMode::kAssertNoTrace},
+        LOGV2_FATAL_NOTRACE(40499,
                     "Failed to perform replica set state transition",
                     "targetState"_attr = MemberState(MemberState::RS_RECOVERING),
                     "expectedState"_attr = MemberState(MemberState::RS_ROLLBACK),

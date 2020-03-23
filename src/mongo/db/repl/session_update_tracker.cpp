@@ -191,7 +191,7 @@ void SessionUpdateTracker::_updateSessionInfo(const OplogEntry& entry) {
         return;
     }
 
-    LOGV2_FATAL_OPTIONS(50843, {FatalMode::kAssertNoTrace},
+    LOGV2_FATAL_NOTRACE(50843, 
                 "Entry for session {lsid} has txnNumber {sessionInfo_getTxnNumber} < "
                 "{existingSessionInfo_getTxnNumber}. New oplog entry: {newEntry}, Existing oplog entry: {existingEntry}",
                 "lsid"_attr = lsid->toBSON(),

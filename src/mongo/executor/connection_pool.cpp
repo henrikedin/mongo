@@ -340,7 +340,7 @@ public:
 
     void fassertSSLModeIs(transport::ConnectSSLMode desired) const {
         if (desired != _sslMode) {
-            LOGV2_FATAL_OPTIONS(51043, {FatalMode::kAssertNoTrace} ,"Mixing ssl modes for a single host is not supported");
+            LOGV2_FATAL_NOTRACE(51043, "Mixing ssl modes for a single host is not supported");
         }
     }
 

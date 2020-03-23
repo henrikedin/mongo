@@ -344,9 +344,8 @@ void ThreadPool::_consumeTasks() {
     --_numIdleThreads;
 
     if (_state != running) {
-        LOGV2_FATAL_OPTIONS(
+        LOGV2_FATAL_NOTRACE(
             28701,
-            {FatalMode::kAssertNoTrace},
             "State of pool {options_poolName} is {static_cast_int32_t_state}, but expected "
             "{static_cast_int32_t_running}",
             "options_poolName"_attr = _options.poolName,
@@ -369,9 +368,9 @@ void ThreadPool::_consumeTasks() {
 
     std::ostringstream threadId;
     threadId << stdx::this_thread::get_id();
-    LOGV2_FATAL_OPTIONS(
+    LOGV2_FATAL_NOTRACE(
         28703,
-        {FatalMode::kAssertNoTrace}, "Could not find this thread, with id {threadId} in pool {pool}",
+        "Could not find this thread, with id {threadId} in pool {pool}",
         "threadId"_attr = threadId.str(),
         "pool"_attr = _options.poolName);
 }

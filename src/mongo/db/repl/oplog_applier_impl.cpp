@@ -741,7 +741,7 @@ StatusWith<OpTime> OplogApplierImpl::_applyOplogBatch(OperationContext* opCtx,
               "point is disabled");
         while (MONGO_unlikely(pauseBatchApplicationBeforeCompletion.shouldFail())) {
             if (inShutdown()) {
-                LOGV2_FATAL_OPTIONS(50798,{FatalMode::kAssertNoTrace},
+                LOGV2_FATAL_NOTRACE(50798,
                             "Turn off pauseBatchApplicationBeforeCompletion before attempting "
                             "clean shutdown");
             }

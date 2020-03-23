@@ -157,9 +157,8 @@ public:
                 attrs.add("oplogApplicationEndPoint", _oplogApplicationEndPoint->toBSON());
             }
 
-            LOGV2_FATAL_OPTIONS(
+            LOGV2_FATAL_NOTRACE(
                 40293,
-                {FatalMode::kAssertNoTrace},
                 "Couldn't find any entries in the oplog, which should be impossible",
                 attrs);
         }
@@ -167,9 +166,8 @@ public:
         auto firstTimestampFound =
             fassert(40291, OpTime::parseFromOplogEntry(_cursor->nextSafe())).getTimestamp();
         if (firstTimestampFound != _oplogApplicationStartPoint) {
-            LOGV2_FATAL_OPTIONS(
+            LOGV2_FATAL_NOTRACE(
                 40292,
-                {FatalMode::kAssertNoTrace},
                 "Oplog entry at {oplogApplicationStartPoint} is missing; actual entry "
                 "found is {firstTimestampFound}",
                 "Oplog entry at oplogApplicationStartPoint is missing",
@@ -240,9 +238,8 @@ private:
 boost::optional<Timestamp> recoverFromOplogPrecursor(OperationContext* opCtx,
                                                      StorageInterface* storageInterface) {
     if (!storageInterface->supportsRecoveryTimestamp(opCtx->getServiceContext())) {
-        LOGV2_FATAL_OPTIONS(
+        LOGV2_FATAL_NOTRACE(
             50805,
-            {FatalMode::kAssertNoTrace},
             "Cannot recover from the oplog with a storage engine that does not support "
             "recover to stable timestamp");
     }
@@ -252,9 +249,8 @@ boost::optional<Timestamp> recoverFromOplogPrecursor(OperationContext* opCtx,
     // happen.
     auto recoveryTS = storageInterface->getRecoveryTimestamp(opCtx->getServiceContext());
     if (recoveryTS && recoveryTS->isNull()) {
-        LOGV2_FATAL_OPTIONS(
+        LOGV2_FATAL_NOTRACE(
             50806,
-            {FatalMode::kAssertNoTrace},
             "Cannot recover from the oplog with stable checkpoint at null timestamp");
     }
 
@@ -272,17 +268,15 @@ void ReplicationRecoveryImpl::_assertNoRecoveryNeededOnUnstableCheckpoint(Operat
     invariant(!_storageInterface->getRecoveryTimestamp(opCtx->getServiceContext()));
 
     if (_consistencyMarkers->getInitialSyncFlag(opCtx)) {
-        LOGV2_FATAL_OPTIONS(31362,
-                            {FatalMode::kAssertNoTrace},
+        LOGV2_FATAL_NOTRACE(31362,
                             "Unexpected recovery needed, initial sync flag set");
         fassertFailedNoTrace(31362);
     }
 
     const auto truncateAfterPoint = _consistencyMarkers->getOplogTruncateAfterPoint(opCtx);
     if (!truncateAfterPoint.isNull()) {
-        LOGV2_FATAL_OPTIONS(
+        LOGV2_FATAL_NOTRACE(
             31363,
-            {FatalMode::kAssertNoTrace},
             "Unexpected recovery needed, oplog requires truncation. Truncate after point: "
             "{oplogTruncateAfterPoint}",
             "Unexpected recovery needed, oplog requires truncation",
@@ -291,8 +285,7 @@ void ReplicationRecoveryImpl::_assertNoRecoveryNeededOnUnstableCheckpoint(Operat
 
     auto topOfOplogSW = _getTopOfOplog(opCtx);
     if (!topOfOplogSW.isOK()) {
-        LOGV2_FATAL_OPTIONS(31364,
-                            {FatalMode::kAssertNoTrace},
+        LOGV2_FATAL_NOTRACE(31364,
                             "Recovery not possible, no oplog found: {error}",
                             "Recovery not possible, no oplog found",
                             "error"_attr = topOfOplogSW.getStatus());
@@ -301,9 +294,8 @@ void ReplicationRecoveryImpl::_assertNoRecoveryNeededOnUnstableCheckpoint(Operat
 
     const auto appliedThrough = _consistencyMarkers->getAppliedThrough(opCtx);
     if (!appliedThrough.isNull() && appliedThrough != topOfOplog) {
-        LOGV2_FATAL_OPTIONS(
+        LOGV2_FATAL_NOTRACE(
             31365,
-            {FatalMode::kAssertNoTrace},
             "Unexpected recovery needed, appliedThrough is not at top of oplog, indicating "
             "oplog has not been fully applied. appliedThrough: {appliedThrough}",
             "Unexpected recovery needed, appliedThrough is not at top of oplog, indicating "
@@ -313,9 +305,8 @@ void ReplicationRecoveryImpl::_assertNoRecoveryNeededOnUnstableCheckpoint(Operat
 
     const auto minValid = _consistencyMarkers->getMinValid(opCtx);
     if (minValid > topOfOplog) {
-        LOGV2_FATAL_OPTIONS(
+        LOGV2_FATAL_NOTRACE(
             31366,
-            {FatalMode::kAssertNoTrace},
             "Unexpected recovery needed, top of oplog is not consistent. topOfOplog: "
             "{topOfOplog}, minValid: {minValid}",
             "Unexpected recovery needed, top of oplog is not consistent",
@@ -347,9 +338,8 @@ void ReplicationRecoveryImpl::recoverFromOplogAsStandalone(OperationContext* opC
                   "Not doing any oplog recovery since there is an unstable checkpoint that is up "
                   "to date");
         } else {
-            LOGV2_FATAL_OPTIONS(
+            LOGV2_FATAL_NOTRACE(
                 31229,
-                {FatalMode::kAssertNoTrace},
                 "Cannot use 'recoverFromOplogAsStandalone' without a stable checkpoint");
         }
     }
@@ -370,8 +360,7 @@ void ReplicationRecoveryImpl::recoverFromOplogUpTo(OperationContext* opCtx, Time
 
     auto recoveryTS = recoverFromOplogPrecursor(opCtx, _storageInterface);
     if (!recoveryTS) {
-        LOGV2_FATAL_OPTIONS(31399,
-                            {FatalMode::kAssertNoTrace},
+        LOGV2_FATAL_NOTRACE(31399,
                             "Cannot use 'recoverToOplogTimestamp' without a stable checkpoint");
     }
 
@@ -585,9 +574,8 @@ void ReplicationRecoveryImpl::_applyToEndOfOplog(OperationContext* opCtx,
               "No oplog entries to apply for recovery. Start point is at the top of the oplog");
         return;  // We've applied all the valid oplog we have.
     } else if (oplogApplicationStartPoint > topOfOplog) {
-        LOGV2_FATAL_OPTIONS(
+        LOGV2_FATAL_NOTRACE(
             40313,
-            {FatalMode::kAssertNoTrace},
             "Applied op {oplogApplicationStartPoint} not found. Top of oplog is {topOfOplog}.",
             "Applied op oplogApplicationStartPoint not found",
             "oplogApplicationStartPoint"_attr = oplogApplicationStartPoint.toBSON(),
@@ -692,8 +680,7 @@ void ReplicationRecoveryImpl::_truncateOplogTo(OperationContext* opCtx,
         _storageInterface->findOplogEntryLessThanOrEqualToTimestamp(
             opCtx, oplogCollection, truncateAfterTimestamp);
     if (!truncateAfterOplogEntryBSON) {
-        LOGV2_FATAL_OPTIONS(40296,
-                            {FatalMode::kAssertNoTrace},
+        LOGV2_FATAL_NOTRACE(40296,
                             "Reached end of oplog looking for an oplog entry lte to "
                             "{oplogTruncateAfterPoint} but did not find one",
                             "Reached end of oplog looking for an oplog entry lte to "

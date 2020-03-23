@@ -444,9 +444,8 @@ bool ReplicationCoordinatorImpl::_startLoadLocalConfig(OperationContext* opCtx) 
 
     StatusWith<LastVote> lastVote = _externalState->loadLocalLastVoteDocument(opCtx);
     if (!lastVote.isOK()) {
-        LOGV2_FATAL_OPTIONS(
+        LOGV2_FATAL_NOTRACE(
             40367,
-            {FatalMode::kAssertNoTrace},
                     "Error loading local voted for document at startup; {error}",
                     "Error loading local voted for document at startup",
                     "error"_attr = lastVote.getStatus());
@@ -468,7 +467,7 @@ bool ReplicationCoordinatorImpl::_startLoadLocalConfig(OperationContext* opCtx) 
             auto initializingStatus = _replicationProcess->initializeRollbackID(opCtx);
             fassert(40424, initializingStatus);
         } else {
-            LOGV2_FATAL_OPTIONS(40428,{FatalMode::kAssertNoTrace},
+            LOGV2_FATAL_NOTRACE(40428,
                         "Error loading local Rollback ID document at startup; {error}",
                         "Error loading local Rollback ID document at startup",
                         "error"_attr = status);
@@ -487,8 +486,8 @@ bool ReplicationCoordinatorImpl::_startLoadLocalConfig(OperationContext* opCtx) 
     status = localConfig.initialize(cfg.getValue());
     if (!status.isOK()) {
         if (status.code() == ErrorCodes::RepairedReplicaSetNode) {
-            LOGV2_FATAL_OPTIONS(
-                50923, {FatalMode::kAssertNoTrace},
+            LOGV2_FATAL_NOTRACE(
+                50923, 
                 "This instance has been repaired and may contain modified replicated data that "
                 "would not match other replica set members. To see your repaired data, start "
                 "mongod without the --replSet option. When you are finished recovering your "
@@ -496,7 +495,7 @@ bool ReplicationCoordinatorImpl::_startLoadLocalConfig(OperationContext* opCtx) 
                 "documentation here: "
                 "https://docs.mongodb.com/manual/tutorial/resync-replica-set-member/");
         }
-        LOGV2_FATAL_OPTIONS(28545,{FatalMode::kAssertNoTrace},
+        LOGV2_FATAL_NOTRACE(28545,
                     "Locally stored replica set configuration does not parse; See "
                     "http://www.mongodb.org/dochub/core/recover-replica-set-from-invalid-config "
                     "for information on how to recover from this. Got \"{error}\" while parsing "
