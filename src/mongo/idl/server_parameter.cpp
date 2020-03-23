@@ -82,9 +82,10 @@ ServerParameterSet* ServerParameterSet::getGlobal() {
 void ServerParameterSet::add(ServerParameter* sp) {
     ServerParameter*& x = _map[sp->name()];
     if (x) {
-        LOGV2_FATAL(23784,
-                    "'{x_name}' already exists in the server parameter set.",
-                    "x_name"_attr = x->name());
+        LOGV2_FATAL_OPTIONS(
+            23784,
+            {FatalMode::kContinue}, "'{x_name}' already exists in the server parameter set.",
+            "x_name"_attr = x->name());
         abort();
     }
     x = sp;

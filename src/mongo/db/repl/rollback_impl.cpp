@@ -1025,13 +1025,12 @@ StatusWith<RollBackLocalOperations::RollbackCommonPoint> RollbackImpl::_findComm
     if (commonPointOpTime.getTimestamp() < *stableTimestamp) {
         // This is an fassert rather than an invariant, since it can happen if the server was
         // recently upgraded to enableMajorityReadConcern=true.
-        LOGV2_FATAL(21644,
+        LOGV2_FATAL_OPTIONS(51121, {FatalMode::kAssertNoTrace}
                     "Common point must be at least stable timestamp, common point: "
                     "{commonPoint}, stable timestamp: {stableTimestamp}",
                     "Common point must be at least stable timestamp",
                     "commonPoint"_attr = commonPointOpTime.getTimestamp(),
                     "stableTimestamp"_attr = *stableTimestamp);
-        fassertFailedNoTrace(51121);
     }
 
     return commonPointSW.getValue();
@@ -1100,7 +1099,7 @@ boost::optional<BSONObj> RollbackImpl::_findDocumentById(OperationContext* opCtx
     } else if (document.getStatus().code() == ErrorCodes::NoSuchKey) {
         return boost::none;
     } else {
-        LOGV2_FATAL(21645,
+        LOGV2_FATAL_OPTIONS(21645, {FatalMode::kContinue}
                     "Rollback failed to read document with {id} in namespace {namespace} with uuid "
                     "{uuid}{error}",
                     "Rollback failed to read document",
@@ -1219,7 +1218,7 @@ void RollbackImpl::_transitionFromRollbackToSecondary(OperationContext* opCtx) {
 
     auto status = _replicationCoordinator->setFollowerMode(MemberState::RS_SECONDARY);
     if (!status.isOK()) {
-        LOGV2_FATAL(21646,
+        LOGV2_FATAL_OPTIONS(40408, {FatalMode::kAssertNoTrace},
                     "Failed to transition into {targetState}; expected to be in "
                     "state {expectedState}; found self in "
                     "{actualState} {error}",
@@ -1228,7 +1227,6 @@ void RollbackImpl::_transitionFromRollbackToSecondary(OperationContext* opCtx) {
                     "expectedState"_attr = MemberState(MemberState::RS_ROLLBACK),
                     "actualState"_attr = _replicationCoordinator->getMemberState(),
                     "error"_attr = causedBy(status));
-        fassertFailedNoTrace(40408);
     }
 }
 

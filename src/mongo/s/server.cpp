@@ -819,7 +819,7 @@ ExitCode mongoSMain(int argc, char* argv[], char** envp) {
     Status status = runGlobalInitializers(argc, argv, envp);
     if (!status.isOK()) {
         LOGV2_FATAL_OPTIONS(22865,
-                            {logComponentV1toV2(LogComponent::kDefault)},
+                            logv2::LogOptions(LogComponent::kDefault, FatalMode::kContinue),
                             "Error during global initialization: {error}",
                             "Error during global initialization",
                             "error"_attr = status);
@@ -831,7 +831,7 @@ ExitCode mongoSMain(int argc, char* argv[], char** envp) {
     } catch (...) {
         auto cause = exceptionToStatus();
         LOGV2_FATAL_OPTIONS(22866,
-                            {logComponentV1toV2(LogComponent::kDefault)},
+                            logv2::LogOptions(LogComponent::kDefault, FatalMode::kContinue),
                             "Error creating service context: {error}",
                             "Error creating service context",
                             "error"_attr = redact(cause));

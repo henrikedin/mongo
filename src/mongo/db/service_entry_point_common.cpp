@@ -529,7 +529,7 @@ void _abortUnpreparedOrStashPreparedTransaction(
             txnParticipant->abortTransaction(opCtx);
     } catch (...) {
         // It is illegal for this to throw so we catch and log this here for diagnosability.
-        LOGV2_FATAL(21974,
+        LOGV2_FATAL_OPTIONS(21974, {FatalMode::kContinue},
                     "Caught exception during transaction "
                     "{opCtx_getTxnNumber}{isPrepared_stash_abort}{opCtx_getLogicalSessionId}: "
                     "{exceptionToStatus}",

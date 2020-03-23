@@ -444,11 +444,12 @@ bool ReplicationCoordinatorImpl::_startLoadLocalConfig(OperationContext* opCtx) 
 
     StatusWith<LastVote> lastVote = _externalState->loadLocalLastVoteDocument(opCtx);
     if (!lastVote.isOK()) {
-        LOGV2_FATAL(21429,
+        LOGV2_FATAL_OPTIONS(
+            40367,
+            {FatalMode::kAssertNoTrace},
                     "Error loading local voted for document at startup; {error}",
                     "Error loading local voted for document at startup",
                     "error"_attr = lastVote.getStatus());
-        fassertFailedNoTrace(40367);
     }
     if (lastVote.getValue().getTerm() == OpTime::kInitialTerm) {
         // This log line is checked in unit tests.
@@ -467,11 +468,10 @@ bool ReplicationCoordinatorImpl::_startLoadLocalConfig(OperationContext* opCtx) 
             auto initializingStatus = _replicationProcess->initializeRollbackID(opCtx);
             fassert(40424, initializingStatus);
         } else {
-            LOGV2_FATAL(21430,
+            LOGV2_FATAL_OPTIONS(40428,{FatalMode::kAssertNoTrace},
                         "Error loading local Rollback ID document at startup; {error}",
                         "Error loading local Rollback ID document at startup",
                         "error"_attr = status);
-            fassertFailedNoTrace(40428);
         }
     }
 
@@ -487,17 +487,16 @@ bool ReplicationCoordinatorImpl::_startLoadLocalConfig(OperationContext* opCtx) 
     status = localConfig.initialize(cfg.getValue());
     if (!status.isOK()) {
         if (status.code() == ErrorCodes::RepairedReplicaSetNode) {
-            LOGV2_FATAL(
-                21431,
+            LOGV2_FATAL_OPTIONS(
+                50923, {FatalMode::kAssertNoTrace},
                 "This instance has been repaired and may contain modified replicated data that "
                 "would not match other replica set members. To see your repaired data, start "
                 "mongod without the --replSet option. When you are finished recovering your "
                 "data and would like to perform a complete re-sync, please refer to the "
                 "documentation here: "
                 "https://docs.mongodb.com/manual/tutorial/resync-replica-set-member/");
-            fassertFailedNoTrace(50923);
         }
-        LOGV2_ERROR(21414,
+        LOGV2_FATAL_OPTIONS(28545,{FatalMode::kAssertNoTrace},
                     "Locally stored replica set configuration does not parse; See "
                     "http://www.mongodb.org/dochub/core/recover-replica-set-from-invalid-config "
                     "for information on how to recover from this. Got \"{error}\" while parsing "
@@ -1161,7 +1160,7 @@ void ReplicationCoordinatorImpl::signalDrainComplete(OperationContext* opCtx,
                 // occurred after the node became primary and so the concurrent reconfig has updated
                 // the term appropriately.
                 if (reconfigStatus != ErrorCodes::ConfigurationInProgress) {
-                    LOGV2_FATAL(4508101,
+                    LOGV2_FATAL_OPTIONS(4508101,{FatalMode::kContinue},
                                 "Reconfig on stepup failed for unknown reasons",
                                 "error"_attr = reconfigStatus);
                     fassertFailedWithStatus(31477, reconfigStatus);
@@ -3243,11 +3242,10 @@ Status ReplicationCoordinatorImpl::doReplSetReconfig(OperationContext* opCtx,
                           "Cannot run replSetReconfig because the node is currently updating "
                           "its configuration");
         default:
-            LOGV2_FATAL(21432,
+            LOGV2_FATAL(18914,
                         "Unexpected _rsConfigState {_rsConfigState}",
                         "Unexpected _rsConfigState",
                         "_rsConfigState"_attr = int(_rsConfigState));
-            fassertFailed(18914);
     }
 
     invariant(_rsConfig.isInitialized());
@@ -3855,11 +3853,10 @@ void ReplicationCoordinatorImpl::_performPostMemberStateUpdateAction(
             _startElectSelfV1(StartElectionReasonEnum::kElectionTimeout);
             break;
         default:
-            LOGV2_FATAL(21433,
+            LOGV2_FATAL(26010,
                         "Unknown post member state update action {action}",
                         "Unknown post member state update action",
                         "action"_attr = static_cast<int>(action));
-            fassertFailed(26010);
     }
 }
 

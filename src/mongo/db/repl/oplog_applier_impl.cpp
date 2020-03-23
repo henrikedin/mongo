@@ -618,7 +618,7 @@ StatusWith<OpTime> OplogApplierImpl::_applyOplogBatch(OperationContext* opCtx,
 
     invariant(_replCoord);
     if (_replCoord->getApplierState() == ReplicationCoordinator::ApplierState::Stopped) {
-        LOGV2_FATAL(21234, "Attempting to replicate ops while primary");
+        LOGV2_FATAL_OPTIONS(21234, {FatalMode::kContinue}, "Attempting to replicate ops while primary");
         return {ErrorCodes::CannotApplyOplogWhilePrimary,
                 "attempting to replicate ops while primary"};
     }
@@ -708,7 +708,7 @@ StatusWith<OpTime> OplogApplierImpl::_applyOplogBatch(OperationContext* opCtx,
             for (auto it = statusVector.cbegin(); it != statusVector.cend(); ++it) {
                 const auto& status = *it;
                 if (!status.isOK()) {
-                    LOGV2_FATAL(21235,
+                    LOGV2_FATAL_OPTIONS(21235, {FatalMode::kContinue},
                                 "Failed to apply batch of operations. Number of operations in "
                                 "batch: {numOperationsInBatch}. First operation: {firstOperation}. "
                                 "Last operation: "
@@ -741,10 +741,9 @@ StatusWith<OpTime> OplogApplierImpl::_applyOplogBatch(OperationContext* opCtx,
               "point is disabled");
         while (MONGO_unlikely(pauseBatchApplicationBeforeCompletion.shouldFail())) {
             if (inShutdown()) {
-                LOGV2_FATAL(21236,
+                LOGV2_FATAL_OPTIONS(50798,{FatalMode::kAssertNoTrace},
                             "Turn off pauseBatchApplicationBeforeCompletion before attempting "
                             "clean shutdown");
-                fassertFailedNoTrace(50798);
             }
             sleepmillis(100);
         }
@@ -1067,7 +1066,7 @@ Status OplogApplierImpl::applyOplogBatchPerWorker(OperationContext* opCtx,
                         continue;
                     }
 
-                    LOGV2_FATAL(21237,
+                    LOGV2_FATAL_OPTIONS(21237,{FatalMode::kContinue},
                                 "Error applying operation ({oplogEntry}): {error}",
                                 "Error applying operation",
                                 "oplogEntry"_attr = redact(entry.toBSON()),
@@ -1082,7 +1081,7 @@ Status OplogApplierImpl::applyOplogBatchPerWorker(OperationContext* opCtx,
                     continue;
                 }
 
-                LOGV2_FATAL(21238,
+                LOGV2_FATAL_OPTIONS(21238, {FatalMode::kContinue},
                             "writer worker caught exception: {error} on: {oplogEntry}",
                             "Writer worker caught exception",
                             "error"_attr = redact(e),

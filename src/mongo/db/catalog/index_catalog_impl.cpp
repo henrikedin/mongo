@@ -387,13 +387,12 @@ IndexCatalogEntry* IndexCatalogImpl::createIndexEntry(OperationContext* opCtx,
                                                       CreateIndexEntryFlags flags) {
     Status status = _isSpecOk(opCtx, descriptor->infoObj());
     if (!status.isOK()) {
-        LOGV2_FATAL(20378,
+        LOGV2_FATAL_OPTIONS(28782, {FatalMode::kAssertNoTrace},
                     "Found an invalid index {descriptor_infoObj} on the {collection_ns} "
                     "collection: {status}",
                     "descriptor_infoObj"_attr = descriptor->infoObj(),
                     "collection_ns"_attr = _collection->ns(),
                     "status"_attr = redact(status));
-        fassertFailedNoTrace(28782);
     }
 
     auto engine = opCtx->getServiceContext()->getStorageEngine();

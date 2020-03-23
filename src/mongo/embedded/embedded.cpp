@@ -295,7 +295,7 @@ ServiceContext* initialize(const char* yaml_config) {
         repairDatabasesAndCheckVersion(startupOpCtx.get());
     } catch (const ExceptionFor<ErrorCodes::MustDowngrade>& error) {
         LOGV2_FATAL_OPTIONS(22555,
-                            {logComponentV1toV2(LogComponent::kControl)},
+                            logv2::LogOptions(LogComponent::kControl, FatalMode::kContinue),
                             "** IMPORTANT: {error_toStatus_reason}",
                             "error_toStatus_reason"_attr = error.toStatus().reason());
         quickExit(EXIT_NEED_DOWNGRADE);

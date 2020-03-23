@@ -101,7 +101,7 @@ void fassertOnRepeatedExecution(const LogicalSessionId& lsid,
                                 const repl::OpTime& firstOpTime,
                                 const repl::OpTime& secondOpTime) {
     LOGV2_FATAL(
-        22524,
+        40526,
         "Statement id {stmtId} from transaction [ {lsid}:{txnNumber} ] was committed once "
         "with opTime {firstCommitOpTime} and a second time with opTime {secondCommitOpTime}. This "
         "indicates possible data corruption or server bug and the process will be "
@@ -113,7 +113,6 @@ void fassertOnRepeatedExecution(const LogicalSessionId& lsid,
         "txnNumber"_attr = txnNumber,
         "firstCommitOpTime"_attr = firstOpTime,
         "secondCommitOpTime"_attr = secondOpTime);
-    fassertFailed(40526);
 }
 
 struct ActiveTransactionHistory {
@@ -925,8 +924,7 @@ void TransactionParticipant::Participant::_releaseTransactionResourcesToOpCtx(
         stdx::lock_guard<Client> lk(*opCtx->getClient());
         swap(trs, o(lk).txnResourceStash);
         return trs;
-    }
-    ();
+    }();
 
     auto releaseOnError = makeGuard([&] {
         // Restore the lock resources back to transaction participant.
@@ -1105,13 +1103,14 @@ Timestamp TransactionParticipant::Participant::prepareTransaction(
         } catch (...) {
             // It is illegal for aborting a prepared transaction to fail for any reason, so we crash
             // instead.
-            LOGV2_FATAL(22525,
-                        "Caught exception during abort of prepared transaction "
-                        "{txnNumber} on {lsid}: {error}",
-                        "Caught exception during abort of prepared transaction",
-                        "txnNumber"_attr = opCtx->getTxnNumber(),
-                        "lsid"_attr = _sessionId().toBSON(),
-                        "error"_attr = exceptionToStatus());
+            LOGV2_FATAL_OPTIONS(22525,
+                                {FatalMode::kContinue},
+                                "Caught exception during abort of prepared transaction "
+                                "{txnNumber} on {lsid}: {error}",
+                                "Caught exception during abort of prepared transaction",
+                                "txnNumber"_attr = opCtx->getTxnNumber(),
+                                "lsid"_attr = _sessionId().toBSON(),
+                                "error"_attr = exceptionToStatus());
             std::terminate();
         }
     });
@@ -1431,7 +1430,7 @@ void TransactionParticipant::Participant::commitPreparedTransaction(
     } catch (...) {
         // It is illegal for committing a prepared transaction to fail for any reason, other than an
         // invalid command, so we crash instead.
-        LOGV2_FATAL(22526,
+        LOGV2_FATAL_OPTIONS(22526, {FatalMode::kContinue},
                     "Caught exception during commit of prepared transaction {txnNumber} "
                     "on {lsid}: {error}",
                     "Caught exception during commit of prepared transaction",
@@ -1563,14 +1562,16 @@ void TransactionParticipant::Participant::_abortActiveTransaction(
         } catch (...) {
             // It is illegal for aborting a transaction that must write an abort oplog entry to fail
             // after aborting the storage transaction, so we crash instead.
-            LOGV2_FATAL(22527,
-                        "Caught exception during abort of transaction that must write abort oplog "
-                        "entry {txnNumber} on {lsid}: {error}",
-                        "Caught exception during abort of transaction that must write abort oplog "
-                        "entry",
-                        "txnNumber"_attr = opCtx->getTxnNumber(),
-                        "lsid"_attr = _sessionId().toBSON(),
-                        "error"_attr = exceptionToStatus());
+            LOGV2_FATAL_OPTIONS(
+                22527,
+                {FatalMode::kContinue},
+                "Caught exception during abort of transaction that must write abort oplog "
+                "entry {txnNumber} on {lsid}: {error}",
+                "Caught exception during abort of transaction that must write abort oplog "
+                "entry",
+                "txnNumber"_attr = opCtx->getTxnNumber(),
+                "lsid"_attr = _sessionId().toBSON(),
+                "error"_attr = exceptionToStatus());
             std::terminate();
         }
     } else {

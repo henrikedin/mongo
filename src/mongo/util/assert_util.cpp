@@ -96,7 +96,7 @@ MONGO_COMPILER_NOINLINE void verifyFailed(const char* expr, const char* file, un
     breakpoint();
 #if defined(MONGO_CONFIG_DEBUG_BUILD)
     // this is so we notice in buildbot
-    LOGV2_FATAL(23078, "\n\n***aborting after verify() failure as this is a debug/test build\n\n");
+    LOGV2_FATAL_OPTIONS(23078, {logv2::FatalMode::kContinue},"\n\n***aborting after verify() failure as this is a debug/test build\n\n");
     std::abort();
 #endif
     error_details::throwExceptionForStatus(Status(ErrorCodes::UnknownError, temp.str()));
@@ -105,13 +105,13 @@ MONGO_COMPILER_NOINLINE void verifyFailed(const char* expr, const char* file, un
 MONGO_COMPILER_NOINLINE void invariantFailed(const char* expr,
                                              const char* file,
                                              unsigned line) noexcept {
-    LOGV2_FATAL(23079,
+    LOGV2_FATAL_OPTIONS(23079,{logv2::FatalMode::kContinue},
                 "Invariant failure {expr} {file} {line}",
                 "expr"_attr = expr,
                 "file"_attr = file,
                 "line"_attr = line);
     breakpoint();
-    LOGV2_FATAL(23080, "\n\n***aborting after invariant() failure\n\n");
+    LOGV2_FATAL_OPTIONS(23080, {logv2::FatalMode::kContinue},"\n\n***aborting after invariant() failure\n\n");
     std::abort();
 }
 
@@ -119,14 +119,14 @@ MONGO_COMPILER_NOINLINE void invariantFailedWithMsg(const char* expr,
                                                     const std::string& msg,
                                                     const char* file,
                                                     unsigned line) noexcept {
-    LOGV2_FATAL(23081,
+    LOGV2_FATAL_OPTIONS(23081,{logv2::FatalMode::kContinue},
                 "Invariant failure {expr} {msg} {file} {line}",
                 "expr"_attr = expr,
                 "msg"_attr = msg,
                 "file"_attr = file,
                 "line"_attr = line);
     breakpoint();
-    LOGV2_FATAL(23082, "\n\n***aborting after invariant() failure\n\n");
+    LOGV2_FATAL_OPTIONS(23082, {logv2::FatalMode::kContinue},"\n\n***aborting after invariant() failure\n\n");
     std::abort();
 }
 
@@ -134,14 +134,14 @@ MONGO_COMPILER_NOINLINE void invariantOKFailed(const char* expr,
                                                const Status& status,
                                                const char* file,
                                                unsigned line) noexcept {
-    LOGV2_FATAL(23083,
+    LOGV2_FATAL_OPTIONS(23083,{logv2::FatalMode::kContinue},
                 "Invariant failure: {expr} resulted in status {status} at {file} {line}",
                 "expr"_attr = expr,
                 "status"_attr = redact(status),
                 "file"_attr = file,
                 "line"_attr = line);
     breakpoint();
-    LOGV2_FATAL(23084, "\n\n***aborting after invariant() failure\n\n");
+    LOGV2_FATAL_OPTIONS(23084, {logv2::FatalMode::kContinue},"\n\n***aborting after invariant() failure\n\n");
     std::abort();
 }
 
@@ -150,7 +150,7 @@ MONGO_COMPILER_NOINLINE void invariantOKFailedWithMsg(const char* expr,
                                                       const std::string& msg,
                                                       const char* file,
                                                       unsigned line) noexcept {
-    LOGV2_FATAL(23085,
+    LOGV2_FATAL_OPTIONS(23085,{logv2::FatalMode::kContinue},
                 "Invariant failure: {expr} {msg} resulted in status {status} at {file} {line}",
                 "expr"_attr = expr,
                 "msg"_attr = msg,
@@ -158,46 +158,47 @@ MONGO_COMPILER_NOINLINE void invariantOKFailedWithMsg(const char* expr,
                 "file"_attr = file,
                 "line"_attr = line);
     breakpoint();
-    LOGV2_FATAL(23086, "\n\n***aborting after invariant() failure\n\n");
+    LOGV2_FATAL_OPTIONS(23086, {logv2::FatalMode::kContinue},"\n\n***aborting after invariant() failure\n\n");
     std::abort();
 }
 
 MONGO_COMPILER_NOINLINE void invariantStatusOKFailed(const Status& status,
                                                      const char* file,
                                                      unsigned line) noexcept {
-    LOGV2_FATAL(23087,
+    LOGV2_FATAL_OPTIONS(23087, {logv2::FatalMode::kContinue},
                 "Invariant failure {status} at {file} {line}",
                 "status"_attr = redact(status),
                 "file"_attr = file,
                 "line"_attr = line);
     breakpoint();
-    LOGV2_FATAL(23088, "\n\n***aborting after invariant() failure\n\n");
+    LOGV2_FATAL_OPTIONS(23088, {logv2::FatalMode::kContinue},"\n\n***aborting after invariant() failure\n\n");
     std::abort();
 }
 
 MONGO_COMPILER_NOINLINE void fassertFailedWithLocation(int msgid,
                                                        const char* file,
                                                        unsigned line) noexcept {
-    LOGV2_FATAL(23089,
-                "Fatal Assertion {msgid} at {file} {line}",
-                "msgid"_attr = msgid,
-                "file"_attr = file,
-                "line"_attr = line);
+    LOGV2_FATAL_OPTIONS(
+        23089,
+        {logv2::FatalMode::kContinue}, "Fatal Assertion {msgid} at {file} {line}",
+        "msgid"_attr = msgid,
+        "file"_attr = file,
+        "line"_attr = line);
     breakpoint();
-    LOGV2_FATAL(23090, "\n\n***aborting after fassert() failure\n\n");
+    LOGV2_FATAL_OPTIONS(23090, {logv2::FatalMode::kContinue}, "\n\n***aborting after fassert() failure\n\n");
     std::abort();
 }
 
 MONGO_COMPILER_NOINLINE void fassertFailedNoTraceWithLocation(int msgid,
                                                               const char* file,
                                                               unsigned line) noexcept {
-    LOGV2_FATAL(23091,
+    LOGV2_FATAL_OPTIONS(23091,{logv2::FatalMode::kContinue},
                 "Fatal Assertion {msgid} at {file} {line}",
                 "msgid"_attr = msgid,
                 "file"_attr = file,
                 "line"_attr = line);
     breakpoint();
-    LOGV2_FATAL(23092, "\n\n***aborting after fassert() failure\n\n");
+    LOGV2_FATAL_OPTIONS(23092, {logv2::FatalMode::kContinue},"\n\n***aborting after fassert() failure\n\n");
     quickExit(EXIT_ABRUPT);
 }
 
@@ -205,14 +206,14 @@ MONGO_COMPILER_NORETURN void fassertFailedWithStatusWithLocation(int msgid,
                                                                  const Status& status,
                                                                  const char* file,
                                                                  unsigned line) noexcept {
-    LOGV2_FATAL(23093,
+    LOGV2_FATAL_OPTIONS(23093,{logv2::FatalMode::kContinue},
                 "Fatal assertion {msgid} {status} at {file} {line}",
                 "msgid"_attr = msgid,
                 "status"_attr = redact(status),
                 "file"_attr = file,
                 "line"_attr = line);
     breakpoint();
-    LOGV2_FATAL(23094, "\n\n***aborting after fassert() failure\n\n");
+    LOGV2_FATAL_OPTIONS(23094, {logv2::FatalMode::kContinue},"\n\n***aborting after fassert() failure\n\n");
     std::abort();
 }
 
@@ -220,14 +221,14 @@ MONGO_COMPILER_NORETURN void fassertFailedWithStatusNoTraceWithLocation(int msgi
                                                                         const Status& status,
                                                                         const char* file,
                                                                         unsigned line) noexcept {
-    LOGV2_FATAL(23095,
+    LOGV2_FATAL_OPTIONS(23095,{logv2::FatalMode::kContinue},
                 "Fatal assertion {msgid} {status} at {file} {line}",
                 "msgid"_attr = msgid,
                 "status"_attr = redact(status),
                 "file"_attr = file,
                 "line"_attr = line);
     breakpoint();
-    LOGV2_FATAL(23096, "\n\n***aborting after fassert() failure\n\n");
+    LOGV2_FATAL_OPTIONS(23096, {logv2::FatalMode::kContinue},"\n\n***aborting after fassert() failure\n\n");
     quickExit(EXIT_ABRUPT);
 }
 
@@ -317,7 +318,7 @@ Status exceptionToStatus() noexcept {
                           << boost::diagnostic_information(ex));
 
     } catch (...) {
-        LOGV2_FATAL(23097, "Caught unknown exception in exceptionToStatus()");
+        LOGV2_FATAL_OPTIONS(23097, {logv2::FatalMode::kContinue},"Caught unknown exception in exceptionToStatus()");
         std::terminate();
     }
 }

@@ -57,6 +57,8 @@ public:
 
     LogOptions(LogComponent component) : _component(component) {}
 
+    LogOptions(LogComponent component, FatalMode mode) : _component(component), _fatalMode(mode) {}
+
     LogOptions(LogDomain* domain) : _domain(domain) {}
 
     LogOptions(LogTag tags) : _tags(tags) {}
@@ -73,8 +75,8 @@ public:
     LogOptions(LogComponent component, LogDomain* domain, LogTag tags)
         : _domain(domain), _tags(tags), _component(component) {}
 
-    LogOptions(LogComponent component, LogDomain* domain, LogTag tags, LogTruncation truncation)
-        : _domain(domain), _tags(tags), _component(component), _truncation(truncation) {}
+    LogOptions(LogComponent component, LogDomain* domain, LogTag tags, LogTruncation truncation, FatalMode fatalMode)
+        : _domain(domain), _tags(tags), _component(component), _truncation(truncation), _fatalMode(fatalMode) {}
 
     LogComponent component() const {
         return _component;

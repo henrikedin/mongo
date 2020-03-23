@@ -180,7 +180,7 @@ StatusWith<std::vector<OplogEntry>> OplogBatcher::getNextApplierBatch(
         // Check for oplog version change.
         if (entry.getVersion() != OplogEntry::kOplogVersion) {
             static constexpr char message[] = "Unexpected oplog version";
-            LOGV2_FATAL(21240,
+            LOGV2_FATAL_OPTIONS(21240,{FatalMode::kContinue},
                         message,
                         "expectedVersion"_attr = OplogEntry::kOplogVersion,
                         "foundVersion"_attr = entry.getVersion(),
