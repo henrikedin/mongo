@@ -31,6 +31,7 @@
 
 #include <cstddef>
 #include <set>
+#include <boost/container/flat_set.hpp>
 
 #include "mongo/bson/bsonelement_comparator_interface.h"
 #include "mongo/bson/bsonobj.h"
@@ -102,13 +103,13 @@ void extractAllElementsAlongPath(const BSONObj& obj,
                                  StringData path,
                                  BSONElementSet& elements,
                                  bool expandArrayOnTrailingField = true,
-                                 std::set<std::size_t>* arrayComponents = nullptr);
+                                 boost::container::flat_set<std::size_t>* arrayComponents = nullptr);
 
 void extractAllElementsAlongPath(const BSONObj& obj,
                                  StringData path,
                                  BSONElementMultiSet& elements,
                                  bool expandArrayOnTrailingField = true,
-                                 std::set<std::size_t>* arrayComponents = nullptr);
+                                 boost::container::flat_set<std::size_t>* arrayComponents = nullptr);
 
 /**
  * Returns an owned BSONObj with elements in the same order as they appear in the 'pattern' object
