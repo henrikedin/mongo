@@ -61,7 +61,9 @@ public:
     virtual Status validateRecord(OperationContext* opCtx,
                                   const RecordId& recordId,
                                   const RecordData& record,
-                                  size_t* dataSize);
+                                  size_t* dataSize, KeyStringSet& documentKeySet,
+    KeyStringSet& multikeyMetadataKeys,
+    MultikeyPaths& multikeyPaths);
 
     /**
      * Traverses the index getting index entries to validate them and keep track of the index keys

@@ -674,7 +674,8 @@ Status CollectionImpl::aboutToDeleteCapped(OperationContext* opCtx,
                                            RecordData data) {
     BSONObj doc = data.releaseToBson();
     int64_t* const nullKeysDeleted = nullptr;
-    _indexCatalog->unindexRecord(opCtx, doc, loc, false, nullKeysDeleted);
+    KeyStringSet keys;
+    _indexCatalog->unindexRecord(opCtx, doc, loc, false, nullKeysDeleted, keys);
 
     // We are not capturing and reporting to OpDebug the 'keysDeleted' by unindexRecord(). It is
     // questionable whether reporting will add diagnostic value to users and may instead be
@@ -689,8 +690,10 @@ void CollectionImpl::deleteDocument(OperationContext* opCtx,
                                     StmtId stmtId,
                                     RecordId loc,
                                     OpDebug* opDebug,
+    KeyStringSet& keys,
                                     bool fromMigrate,
                                     bool noWarn,
+    
                                     Collection::StoreDeletedDoc storeDeletedDoc) {
     if (isCapped()) {
         LOGV2(20291, "failing remove on a capped ns {ns}", "ns"_attr = _ns);
@@ -708,7 +711,7 @@ void CollectionImpl::deleteDocument(OperationContext* opCtx,
     }
 
     int64_t keysDeleted;
-    _indexCatalog->unindexRecord(opCtx, doc.value(), loc, noWarn, &keysDeleted);
+    _indexCatalog->unindexRecord(opCtx, doc.value(), loc, noWarn, &keysDeleted, keys);
     _recordStore->deleteRecord(opCtx, loc);
 
     getGlobalServiceContext()->getOpObserver()->onDelete(

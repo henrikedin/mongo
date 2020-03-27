@@ -1551,11 +1551,11 @@ void IndexCatalogImpl::_unindexRecord(OperationContext* opCtx,
                                       const BSONObj& obj,
                                       const RecordId& loc,
                                       bool logIfError,
-                                      int64_t* keysDeletedOut) {
+                                      int64_t* keysDeletedOut, KeyStringSet& keys) {
     // There's no need to compute the prefixes of the indexed fields that cause the index to be
     // multikey when removing a document since the index metadata isn't updated when keys are
     // deleted.
-    KeyStringSet keys;
+    keys.clear();
 
     entry->accessMethod()->getKeys(obj,
                                    IndexAccessMethod::GetKeysMode::kRelaxConstraintsUnfiltered,
@@ -1637,7 +1637,7 @@ void IndexCatalogImpl::unindexRecord(OperationContext* opCtx,
                                      const BSONObj& obj,
                                      const RecordId& loc,
                                      bool noWarn,
-                                     int64_t* keysDeletedOut) {
+                                     int64_t* keysDeletedOut, KeyStringSet& keys) {
     if (keysDeletedOut) {
         *keysDeletedOut = 0;
     }
@@ -1648,7 +1648,7 @@ void IndexCatalogImpl::unindexRecord(OperationContext* opCtx,
         IndexCatalogEntry* entry = it->get();
 
         bool logIfError = !noWarn;
-        _unindexRecord(opCtx, entry, obj, loc, logIfError, keysDeletedOut);
+        _unindexRecord(opCtx, entry, obj, loc, logIfError, keysDeletedOut, keys);
     }
 
     for (IndexCatalogEntryContainer::const_iterator it = _buildingIndexes.begin();
@@ -1658,7 +1658,7 @@ void IndexCatalogImpl::unindexRecord(OperationContext* opCtx,
 
         // If it's a background index, we DO NOT want to log anything.
         bool logIfError = entry->isReady(opCtx) ? !noWarn : false;
-        _unindexRecord(opCtx, entry, obj, loc, logIfError, keysDeletedOut);
+        _unindexRecord(opCtx, entry, obj, loc, logIfError, keysDeletedOut, keys);
     }
 }
 

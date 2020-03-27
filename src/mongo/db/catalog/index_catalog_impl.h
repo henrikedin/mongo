@@ -271,7 +271,7 @@ public:
                        const BSONObj& obj,
                        const RecordId& loc,
                        bool noWarn,
-                       int64_t* keysDeletedOut) override;
+                       int64_t* keysDeletedOut, KeyStringSet& keys) override;
 
     Status compactIndexes(OperationContext* opCtx) override;
 
@@ -347,7 +347,7 @@ private:
                         const BSONObj& obj,
                         const RecordId& loc,
                         bool logIfError,
-                        int64_t* keysDeletedOut);
+                        int64_t* keysDeletedOut, KeyStringSet& keys);
 
     /**
      * Applies a set of transformations to the user-provided index object 'spec' to make it

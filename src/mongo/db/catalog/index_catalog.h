@@ -39,6 +39,7 @@
 #include "mongo/db/operation_context.h"
 #include "mongo/db/record_id.h"
 #include "mongo/db/server_options.h"
+#include "mongo/db/storage/key_string.h"
 #include "mongo/db/storage/record_store.h"
 
 namespace mongo {
@@ -470,7 +471,7 @@ public:
                                const BSONObj& obj,
                                const RecordId& loc,
                                const bool noWarn,
-                               int64_t* const keysDeletedOut) = 0;
+                               int64_t* const keysDeletedOut, KeyStringSet& keys) = 0;
 
     /*
      * Attempt compaction on all ready indexes to regain disk space, if the storage engine's index

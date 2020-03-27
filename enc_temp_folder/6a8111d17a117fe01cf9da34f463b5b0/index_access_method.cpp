@@ -491,9 +491,6 @@ private:
     // These are inserted into the sorter after all normal data keys have been added, just
     // before the bulk build is committed.
     KeyStringSet _multikeyMetadataKeys;
-
-    KeyStringSet keysCache;
-    MultikeyPaths multikeyPathsCache;
 };
 
 std::unique_ptr<IndexAccessMethod::BulkBuilder> AbstractIndexAccessMethod::initiateBulk(
@@ -519,17 +516,17 @@ Status AbstractIndexAccessMethod::BulkBuilderImpl::insert(OperationContext* opCt
                                                           const BSONObj& obj,
                                                           const RecordId& loc,
                                                           const InsertDeleteOptions& options) {
-    keysCache.clear();
-    multikeyPathsCache.clear();
+    KeyStringSet keys;
+    MultikeyPaths multikeyPaths;
 
     try {
         _indexCatalogEntry->accessMethod()->getKeys(
             obj,
             options.getKeysMode,
             GetKeysContext::kAddingKeys,
-            &keysCache,
+            &keys,
             &_multikeyMetadataKeys,
-            &multikeyPathsCache,
+            &multikeyPaths,
             loc,
             [&](Status status, const BSONObj&, boost::optional<RecordId>) {
                 // If a key generation error was suppressed, record the document as "skipped" so the
@@ -550,27 +547,27 @@ Status AbstractIndexAccessMethod::BulkBuilderImpl::insert(OperationContext* opCt
         return exceptionToStatus();
     }
 
-    if (!multikeyPathsCache.empty()) {
+    if (!multikeyPaths.empty()) {
         if (_indexMultikeyPaths.empty()) {
-            _indexMultikeyPaths = multikeyPathsCache;
+            _indexMultikeyPaths = multikeyPaths;
         } else {
-            invariant(_indexMultikeyPaths.size() == multikeyPathsCache.size());
-            for (size_t i = 0; i < multikeyPathsCache.size(); ++i) {
-                _indexMultikeyPaths[i].insert(multikeyPathsCache[i].begin(), multikeyPathsCache[i].end());
+            invariant(_indexMultikeyPaths.size() == multikeyPaths.size());
+            for (size_t i = 0; i < multikeyPaths.size(); ++i) {
+                _indexMultikeyPaths[i].insert(multikeyPaths[i].begin(), multikeyPaths[i].end());
             }
         }
     }
 
-    for (const auto& keyString : keysCache) {
+    for (const auto& keyString : keys) {
         _sorter->add(keyString, mongo::NullValue());
         ++_keysInserted;
     }
 
     _isMultiKey = _isMultiKey ||
         _indexCatalogEntry->accessMethod()->shouldMarkIndexAsMultikey(
-            keysCache.size(),
+            keys.size(),
             {_multikeyMetadataKeys.begin(), _multikeyMetadataKeys.end()},
-            multikeyPathsCache);
+            multikeyPaths);
 
     return Status::OK();
 }

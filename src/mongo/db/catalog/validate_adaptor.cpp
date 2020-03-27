@@ -61,7 +61,9 @@ const long long kInterruptIntervalNumBytes = 50 * 1024 * 1024;  // 50MB.
 Status ValidateAdaptor::validateRecord(OperationContext* opCtx,
                                        const RecordId& recordId,
                                        const RecordData& record,
-                                       size_t* dataSize) {
+                                       size_t* dataSize,     KeyStringSet& documentKeySet,
+    KeyStringSet& multikeyMetadataKeys,
+    MultikeyPaths& multikeyPaths) {
     BSONObj recordBson;
     try {
         recordBson = record.toBson();
@@ -88,10 +90,6 @@ Status ValidateAdaptor::validateRecord(OperationContext* opCtx,
     if (!indexCatalog->haveAnyIndexes()) {
         return status;
     }
-
-    KeyStringSet documentKeySet;
-    KeyStringSet multikeyMetadataKeys;
-    MultikeyPaths multikeyPaths;
 
     for (const auto& index : _validateState->getIndexes()) {
         const IndexDescriptor* descriptor = index->descriptor();
@@ -300,6 +298,10 @@ void ValidateAdaptor::traverseRecordStore(OperationContext* opCtx,
         _progress.set(CurOp::get(opCtx)->setProgress_inlock(curopMessage, totalRecords));
     }
 
+    KeyStringSet documentKeySet;
+    KeyStringSet multikeyMetadataKeys;
+    MultikeyPaths multikeyPath;
+
     const std::unique_ptr<SeekableRecordThrottleCursor>& traverseRecordStoreCursor =
         _validateState->getTraverseRecordStoreCursor();
     for (auto record =
@@ -312,7 +314,7 @@ void ValidateAdaptor::traverseRecordStore(OperationContext* opCtx,
         interruptIntervalNumBytes += dataSize;
         dataSizeTotal += dataSize;
         size_t validatedSize = 0;
-        Status status = validateRecord(opCtx, record->id, record->data, &validatedSize);
+        Status status = validateRecord(opCtx, record->id, record->data, &validatedSize, documentKeySet,multikeyMetadataKeys, multikeyPath );
 
         // Checks to ensure isInRecordIdOrder() is being used properly.
         if (prevRecordId.isValid()) {

@@ -36,6 +36,7 @@
 #include "mongo/db/exec/document_value/document_metadata_fields.h"
 #include "mongo/db/jsobj.h"
 #include "mongo/db/record_id.h"
+#include "mongo/db/storage/key_string.h"
 #include "mongo/db/storage/snapshot.h"
 #include "mongo/stdx/unordered_set.h"
 
@@ -153,6 +154,8 @@ public:
     RecordId recordId;
     Snapshotted<Document> doc;
     std::vector<IndexKeyDatum> keyData;
+
+    KeyStringSet keysCache;
 
     bool hasRecordId() const;
     bool hasObj() const;

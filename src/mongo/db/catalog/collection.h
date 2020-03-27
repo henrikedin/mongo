@@ -292,8 +292,10 @@ public:
                                 StmtId stmtId,
                                 RecordId loc,
                                 OpDebug* const opDebug,
+        KeyStringSet& keys,
                                 const bool fromMigrate = false,
                                 const bool noWarn = false,
+        
                                 StoreDeletedDoc storeDeletedDoc = StoreDeletedDoc::Off) = 0;
 
     /*
