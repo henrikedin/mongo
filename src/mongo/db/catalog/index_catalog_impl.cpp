@@ -1378,6 +1378,10 @@ Status IndexCatalogImpl::_indexFilteredRecords(OperationContext* opCtx,
     InsertDeleteOptions options;
     prepareInsertDeleteOptions(opCtx, index->descriptor(), &options);
 
+    KeyStringSet keys;
+    KeyStringSet multikeyMetadataKeys;
+    MultikeyPaths multikeyPaths;
+
     for (auto bsonRecord : bsonRecords) {
         invariant(bsonRecord.id != RecordId());
 
@@ -1387,9 +1391,9 @@ Status IndexCatalogImpl::_indexFilteredRecords(OperationContext* opCtx,
                 return status;
         }
 
-        KeyStringSet keys;
-        KeyStringSet multikeyMetadataKeys;
-        MultikeyPaths multikeyPaths;
+        keys.clear();
+        multikeyMetadataKeys.clear();
+        multikeyPaths.clear();
 
         index->accessMethod()->getKeys(*bsonRecord.docPtr,
                                        options.getKeysMode,

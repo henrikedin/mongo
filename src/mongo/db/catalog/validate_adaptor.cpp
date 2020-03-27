@@ -89,6 +89,10 @@ Status ValidateAdaptor::validateRecord(OperationContext* opCtx,
         return status;
     }
 
+    KeyStringSet documentKeySet;
+    KeyStringSet multikeyMetadataKeys;
+    MultikeyPaths multikeyPaths;
+
     for (const auto& index : _validateState->getIndexes()) {
         const IndexDescriptor* descriptor = index->descriptor();
         const IndexAccessMethod* iam = index->accessMethod();
@@ -100,9 +104,10 @@ Status ValidateAdaptor::validateRecord(OperationContext* opCtx,
             }
         }
 
-        KeyStringSet documentKeySet;
-        KeyStringSet multikeyMetadataKeys;
-        MultikeyPaths multikeyPaths;
+        documentKeySet.clear();
+        multikeyMetadataKeys.clear();
+        multikeyPaths.clear();
+
         iam->getKeys(recordBson,
                      IndexAccessMethod::GetKeysMode::kEnforceConstraints,
                      IndexAccessMethod::GetKeysContext::kAddingKeys,
