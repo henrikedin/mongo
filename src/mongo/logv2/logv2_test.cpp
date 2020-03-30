@@ -1574,42 +1574,35 @@ TEST_F(LogV2Test, UserAssert) {
     sink->set_formatter(PlainFormatter());
     attachSink(sink);
 
-    bool gotUassert = false;
-    try {
-        LOGV2_OPTIONS(4652000, {UserAssertAfterLog(ErrorCodes::BadValue)}, "uasserting log");
-    } catch (const DBException& ex) {
-        ASSERT_EQUALS(ex.code(), ErrorCodes::BadValue);
+    ASSERT_THROWS_WITH_CHECK(
+    LOGV2_OPTIONS(4652000, {UserAssertAfterLog(ErrorCodes::BadValue)}, "uasserting log"),
+    DBException,
+    [&lines](const DBException& ex) {
+         ASSERT_EQUALS(ex.code(), ErrorCodes::BadValue);
         ASSERT_EQUALS(ex.reason(), "uasserting log");
         ASSERT_EQUALS(lines.back(), ex.reason());
-        gotUassert = true;
-    }
-    ASSERT(gotUassert);
+    });
 
-
-    bool gotUassertWithReplacementFields = false;
-    try {
-        LOGV2_OPTIONS(4652001,
+    ASSERT_THROWS_WITH_CHECK(
+    LOGV2_OPTIONS(4652001,
                       {UserAssertAfterLog(ErrorCodes::BadValue)},
                       "uasserting log {name}",
-                      "name"_attr = 1);
-    } catch (const DBException& ex) {
+                      "name"_attr = 1),
+    DBException,
+    [&lines](const DBException& ex) {
         ASSERT_EQUALS(ex.code(), ErrorCodes::BadValue);
         ASSERT_EQUALS(ex.reason(), "uasserting log 1");
         ASSERT_EQUALS(lines.back(), ex.reason());
-        gotUassertWithReplacementFields = true;
-    }
-    ASSERT(gotUassertWithReplacementFields);
+    });
 
-    bool gotUassertLogIdAssertCode = false;
-    try {
-        LOGV2_OPTIONS(4716000, {UserAssertAfterLog()}, "uasserting log");
-    } catch (const DBException& ex) {
+    ASSERT_THROWS_WITH_CHECK(
+    LOGV2_OPTIONS(4716000, {UserAssertAfterLog()}, "uasserting log"),
+    DBException,
+    [&lines](const DBException& ex) {
         ASSERT_EQUALS(ex.code(), 4716000);
         ASSERT_EQUALS(ex.reason(), "uasserting log");
         ASSERT_EQUALS(lines.back(), ex.reason());
-        gotUassertLogIdAssertCode = true;
-    }
-    ASSERT(gotUassertLogIdAssertCode);
+    });
 }
 
 }  // namespace
