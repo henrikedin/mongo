@@ -308,8 +308,16 @@ class Value {
 public:
     Value() : _version(Version::kLatestVersion), _ksSize(0), _bufSize(0) {}
 
-    Value(Version version, int32_t ksSize, int32_t bufSize, ConstSharedBuffer buffer)
-        : _version(version), _ksSize(ksSize), _bufSize(bufSize), _buffer(std::move(buffer)) {
+    Value(Version version,
+          int32_t ksSize,
+          int32_t bufSize,
+          int32_t bufOffset,
+          ConstSharedBuffer buffer)
+        : _version(version),
+          _ksSize(ksSize),
+          _bufSize(bufSize),
+          _bufOffset(bufOffset),
+          _buffer(std::move(buffer)) {
         invariant(ksSize >= 0);
         invariant(ksSize <= bufSize);
     }
@@ -322,6 +330,7 @@ public:
         _version = copy._version;
         _ksSize = copy._ksSize;
         _bufSize = copy._bufSize;
+        _bufOffset = copy._bufOffset;
         std::swap(_buffer, copy._buffer);
         return *this;
     }
@@ -343,19 +352,19 @@ public:
     }
 
     const char* getBuffer() const {
-        return _buffer.get();
+        return _buffer.get() + _bufOffset;
     }
 
     // Returns the stored TypeBits.
     TypeBits getTypeBits() const {
-        const char* buf = _buffer.get() + _ksSize;
+        const char* buf = _buffer.get() + _bufOffset + _ksSize;
         BufReader reader(buf, _bufSize - _ksSize);
         return TypeBits::fromBuffer(_version, &reader);
     }
 
     // Compute hash over key
     uint64_t hash(uint64_t seed = 0) const {
-        return absl::hash_internal::CityHash64WithSeed(_buffer.get(), _bufSize, seed);
+        return absl::hash_internal::CityHash64WithSeed(_buffer.get() + _bufOffset, _bufSize, seed);
     }
 
     /**
@@ -368,7 +377,7 @@ public:
     //   [keystring size][keystring encoding][typebits encoding]
     void serialize(BufBuilder& buf) const {
         buf.appendNum(_ksSize);                  // Serialize size of Keystring
-        buf.appendBuf(_buffer.get(), _bufSize);  // Serialize Keystring + Typebits
+        buf.appendBuf(_buffer.get() + _bufOffset, _bufSize);  // Serialize Keystring + Typebits
     }
 
     // Deserialize the Value from a serialized format.
@@ -385,7 +394,7 @@ public:
         } else {
             newBuf.appendBuf(typeBits.getBuffer(), typeBits.getSize());
         }
-        return {version, sizeOfKeystring, newBuf.len(), newBuf.release()};
+        return {version, sizeOfKeystring, newBuf.len(), 0, newBuf.release()};
     }
 
     /// Members for Sorter
@@ -404,7 +413,7 @@ public:
 
     int memUsageForSorter() const {
         // Use buffer capacity as a more accurate measure of memory usage.
-        return sizeof(Value) + _buffer.capacity();
+        return sizeof(Value) + _bufSize;
     }
 
     Value getOwned() const {
@@ -419,6 +428,7 @@ private:
     // _bufSize is the total length of _buffer. If this is greater than the _ksSize, then
     // TypeBits are appended.
     int32_t _bufSize;
+    int32_t _bufOffset;
     ConstSharedBuffer _buffer;
 };
 
@@ -539,7 +549,7 @@ public:
         } else {
             _buffer.appendBuf(_typeBits.getBuffer(), _typeBits.getSize());
         }
-        return {version, ksSize, _buffer.len(), _buffer.release()};
+        return {version, ksSize, _buffer.len(), 0, _buffer.release()};
     }
 
     /**
@@ -557,7 +567,45 @@ public:
         } else {
             newBuf.appendBuf(_typeBits.getBuffer(), _typeBits.getSize());
         }
-        return {version, _buffer.len(), newBuf.len(), newBuf.release()};
+        return {version, _buffer.len(), newBuf.len(), 0, newBuf.release()};
+    }
+
+    Value getValueCopy2() {
+        _doneAppending();
+
+        //// Create a new buffer that is a concatenation of the KeyString and its TypeBits.
+        // BufBuilder newBuf(_buffer.len() + _typeBits.getSize());
+        // newBuf.appendBuf(_buffer.buf(), _buffer.len());
+        // if (_typeBits.isAllZeros()) {
+        //    newBuf.appendChar(0);
+        //} else {
+        //    newBuf.appendBuf(_typeBits.getBuffer(), _typeBits.getSize());
+        //}
+        // return {version, _buffer.len(), newBuf.len(), 0, newBuf.release()};
+
+        thread_local SharedBuffer buffer;
+        thread_local int32_t offset = 0;
+
+        auto needed = _buffer.len() + _typeBits.getSize();
+        if (buffer.capacity() < (needed + offset)) {
+            buffer = SharedBuffer::allocate(std::max(static_cast<size_t>(1024 * 1024), needed));
+            offset = 0;
+        }
+
+        memcpy(buffer.get() + offset, _buffer.buf(), _buffer.len());
+        auto write_offset = offset + _buffer.len();
+        if (_typeBits.isAllZeros()) {
+            DataView(buffer.get() + offset + _buffer.len()).write(tagLittleEndian(static_cast<char>(0)));
+            write_offset += 1;
+        } else {
+            memcpy(
+                buffer.get() + offset + _buffer.len(), _typeBits.getBuffer(), _typeBits.getSize());
+            write_offset += _typeBits.getSize();
+        }
+
+        auto old_offset = offset;
+        offset += needed; 
+        return {version, _buffer.len(), write_offset - old_offset, old_offset, buffer};
     }
 
     void appendRecordId(RecordId loc);

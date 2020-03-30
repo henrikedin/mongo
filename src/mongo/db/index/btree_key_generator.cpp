@@ -215,7 +215,7 @@ void BtreeKeyGenerator::getKeys(const BSONObj& obj,
             /*
              * Insert a copy so its buffer size fits the key size.
              */
-            keys->insert(keyString.getValueCopy());
+            keys->insert(keyString.getValueCopy2());
         }
 
         // The {_id: 1} index can never be multikey because the _id field isn't allowed to be an
