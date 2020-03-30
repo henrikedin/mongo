@@ -583,8 +583,8 @@ public:
         //}
         // return {version, _buffer.len(), newBuf.len(), 0, newBuf.release()};
 
-        thread_local SharedBuffer buffer;
-        thread_local int32_t offset = 0;
+        static SharedBuffer buffer;
+        static int32_t offset = 0;
 
         auto needed = _buffer.len() + _typeBits.getSize();
         if (buffer.capacity() < (needed + offset)) {
