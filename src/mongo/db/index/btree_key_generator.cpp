@@ -251,7 +251,7 @@ void BtreeKeyGenerator::_getKeysWithoutArray(const BSONObj& obj,
                                              boost::optional<RecordId> id,
                                              KeyStringSet* keys) const {
 
-    KeyString::HeapBuilder keyString{_keyStringVersion, _ordering};
+    KeyString::Builder keyString{_keyStringVersion, _ordering};
     size_t numNotFound{0};
 
     for (auto&& fieldName : _fieldNames) {
@@ -276,7 +276,7 @@ void BtreeKeyGenerator::_getKeysWithoutArray(const BSONObj& obj,
     if (id) {
         keyString.appendRecordId(*id);
     }
-    keys->insert(keyString.release());
+    keys->insert(keyString.getValueCopy2());
 }
 
 void BtreeKeyGenerator::_getKeysWithArray(std::vector<const char*> fieldNames,
