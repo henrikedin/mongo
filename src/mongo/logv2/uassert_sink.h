@@ -44,7 +44,7 @@ class UserAssertSink
 public:
     void consume(boost::log::record_view const& rec, string_type const& formatted_string) {
         using boost::log::extract;
-        int32_t code = extract<int32_t>(attributes::userassert(), rec).get();
+        auto code = extract<int32_t>(attributes::userassert(), rec).get();
         if (code != ErrorCodes::OK) {
             fmt::memory_buffer buffer;
             PlainFormatter()(rec, buffer);

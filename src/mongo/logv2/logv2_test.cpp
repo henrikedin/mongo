@@ -1575,34 +1575,32 @@ TEST_F(LogV2Test, UserAssert) {
     attachSink(sink);
 
     ASSERT_THROWS_WITH_CHECK(
-    LOGV2_OPTIONS(4652000, {UserAssertAfterLog(ErrorCodes::BadValue)}, "uasserting log"),
-    DBException,
-    [&lines](const DBException& ex) {
-         ASSERT_EQUALS(ex.code(), ErrorCodes::BadValue);
-        ASSERT_EQUALS(ex.reason(), "uasserting log");
-        ASSERT_EQUALS(lines.back(), ex.reason());
-    });
+        LOGV2_OPTIONS(4652000, {UserAssertAfterLog(ErrorCodes::BadValue)}, "uasserting log"),
+        DBException,
+        [&lines](const DBException& ex) {
+            ASSERT_EQUALS(ex.code(), ErrorCodes::BadValue);
+            ASSERT_EQUALS(ex.reason(), "uasserting log");
+            ASSERT_EQUALS(lines.back(), ex.reason());
+        });
 
-    ASSERT_THROWS_WITH_CHECK(
-    LOGV2_OPTIONS(4652001,
-                      {UserAssertAfterLog(ErrorCodes::BadValue)},
-                      "uasserting log {name}",
-                      "name"_attr = 1),
-    DBException,
-    [&lines](const DBException& ex) {
-        ASSERT_EQUALS(ex.code(), ErrorCodes::BadValue);
-        ASSERT_EQUALS(ex.reason(), "uasserting log 1");
-        ASSERT_EQUALS(lines.back(), ex.reason());
-    });
+    ASSERT_THROWS_WITH_CHECK(LOGV2_OPTIONS(4652001,
+                                           {UserAssertAfterLog(ErrorCodes::BadValue)},
+                                           "uasserting log {name}",
+                                           "name"_attr = 1),
+                             DBException,
+                             [&lines](const DBException& ex) {
+                                 ASSERT_EQUALS(ex.code(), ErrorCodes::BadValue);
+                                 ASSERT_EQUALS(ex.reason(), "uasserting log 1");
+                                 ASSERT_EQUALS(lines.back(), ex.reason());
+                             });
 
-    ASSERT_THROWS_WITH_CHECK(
-    LOGV2_OPTIONS(4716000, {UserAssertAfterLog()}, "uasserting log"),
-    DBException,
-    [&lines](const DBException& ex) {
-        ASSERT_EQUALS(ex.code(), 4716000);
-        ASSERT_EQUALS(ex.reason(), "uasserting log");
-        ASSERT_EQUALS(lines.back(), ex.reason());
-    });
+    ASSERT_THROWS_WITH_CHECK(LOGV2_OPTIONS(4716000, {UserAssertAfterLog()}, "uasserting log"),
+                             DBException,
+                             [&lines](const DBException& ex) {
+                                 ASSERT_EQUALS(ex.code(), 4716000);
+                                 ASSERT_EQUALS(ex.reason(), "uasserting log");
+                                 ASSERT_EQUALS(lines.back(), ex.reason());
+                             });
 }
 
 }  // namespace
