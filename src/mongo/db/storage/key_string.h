@@ -376,7 +376,7 @@ public:
     // format takes the following form:
     //   [keystring size][keystring encoding][typebits encoding]
     void serialize(BufBuilder& buf) const {
-        buf.appendNum(_ksSize);                  // Serialize size of Keystring
+        buf.appendNum(_ksSize);                               // Serialize size of Keystring
         buf.appendBuf(_buffer.get() + _bufOffset, _bufSize);  // Serialize Keystring + Typebits
     }
 
@@ -570,6 +570,16 @@ public:
         return {version, _buffer.len(), newBuf.len(), 0, newBuf.release()};
     }
 
+    struct tlbuffer {
+        SharedBuffer buffer;
+        int32_t offset = 0;
+    };
+
+    tlbuffer& getTlsBuffer() {
+        thread_local tlbuffer buf;
+        return buf;
+    }
+
     Value getValueCopy2() {
         _doneAppending();
 
@@ -583,29 +593,43 @@ public:
         //}
         // return {version, _buffer.len(), newBuf.len(), 0, newBuf.release()};
 
-        static SharedBuffer buffer;
-        static int32_t offset = 0;
+        tlbuffer& tlsbuf = getTlsBuffer();
 
         auto needed = _buffer.len() + _typeBits.getSize();
-        if (buffer.capacity() < (needed + offset)) {
-            buffer = SharedBuffer::allocate(std::max(static_cast<size_t>(1024 * 1024), needed));
-            offset = 0;
-        }
+        auto check_and_allocate_memory = [&]() {
+            if (tlsbuf.buffer.capacity() < (needed + tlsbuf.offset)) {
+                tlsbuf.buffer =
+                    SharedBuffer::allocate(std::max(static_cast<size_t>(1024 * 1024), needed));
+                tlsbuf.offset = 0;
+            }
+        };
+        check_and_allocate_memory();
+        char* destination = tlsbuf.buffer.get() + tlsbuf.offset;
 
-        memcpy(buffer.get() + offset, _buffer.buf(), _buffer.len());
-        auto write_offset = offset + _buffer.len();
-        if (_typeBits.isAllZeros()) {
-            DataView(buffer.get() + offset + _buffer.len()).write(tagLittleEndian(static_cast<char>(0)));
-            write_offset += 1;
-        } else {
-            memcpy(
-                buffer.get() + offset + _buffer.len(), _typeBits.getBuffer(), _typeBits.getSize());
-            write_offset += _typeBits.getSize();
-        }
+        auto copy_main_buffer = [&]() {
+            memcpy(destination, _buffer.buf(), _buffer.len());
+        };
+        copy_main_buffer();
 
-        auto old_offset = offset;
-        offset += needed; 
-        return {version, _buffer.len(), write_offset - old_offset, old_offset, buffer};
+        auto write_offset = tlsbuf.offset + _buffer.len();
+        destination += _buffer.len();
+        auto copy_type_buffer = [&]() {
+            if (_typeBits.isAllZeros()) {
+               /* DataView(destination)
+                    .write(tagLittleEndian(static_cast<char>(0)));*/
+                *destination = static_cast<char>(0);
+                write_offset += 1;
+            } else {
+                memcpy(
+                    destination, _typeBits.getBuffer(), _typeBits.getSize());
+                write_offset += _typeBits.getSize();
+            }
+        };
+        copy_type_buffer();
+       
+        auto old_offset = tlsbuf.offset;
+        tlsbuf.offset += needed;
+        return {version, _buffer.len(), write_offset - old_offset, old_offset, tlsbuf.buffer};
     }
 
     void appendRecordId(RecordId loc);
