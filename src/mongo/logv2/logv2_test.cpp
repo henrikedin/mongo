@@ -1599,6 +1599,17 @@ TEST_F(LogV2Test, UserAssert) {
         gotUassertWithReplacementFields = true;
     }
     ASSERT(gotUassertWithReplacementFields);
+
+    bool gotUassertLogIdAssertCode = false;
+    try {
+        LOGV2_OPTIONS(4716000, {UserAssertAfterLog()}, "uasserting log");
+    } catch (const DBException& ex) {
+        ASSERT_EQUALS(ex.code(), 4716000);
+        ASSERT_EQUALS(ex.reason(), "uasserting log");
+        ASSERT_EQUALS(lines.back(), ex.reason());
+        gotUassertLogIdAssertCode = true;
+    }
+    ASSERT(gotUassertLogIdAssertCode);
 }
 
 }  // namespace
