@@ -2565,6 +2565,7 @@ int compare(const char* leftBuf, const char* rightBuf, size_t leftSize, size_t r
 }
 
 template class BuilderBase<BufBuilder>;
+template class BuilderBase<PooledBufBuilder>;
 template class BuilderBase<StackBufBuilder>;
 
 }  // namespace KeyString

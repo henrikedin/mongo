@@ -471,7 +471,7 @@ public:
     BuilderBase(Version version,
                 Ordering ord,
                 Discriminator discriminator,
-                typename std::enable_if<std::is_same<T, BufBuilder>::value>::type* = nullptr)
+                typename std::enable_if<!std::is_same<T, StackBufBuilder>::value>::type* = nullptr)
         : version(version),
           _typeBits(version),
           _buffer(kHeapAllocatorDefaultBytes),
@@ -550,6 +550,26 @@ public:
             _buffer.appendBuf(_typeBits.getBuffer(), _typeBits.getSize());
         }
         return {version, ksSize, _buffer.len(), 0, _buffer.release()};
+    }
+
+    template <typename T = BufferT>
+    typename std::enable_if<std::is_same<T, PooledBufBuilder>::value, Value>::type release() {
+        _doneAppending();
+        _transition(BuildState::kReleased);
+
+        // Before releasing, append the TypeBits.
+        int32_t ksSize = _buffer.len();
+        if (_typeBits.isAllZeros()) {
+            _buffer.appendChar(0);
+        } else {
+            _buffer.appendBuf(_typeBits.getBuffer(), _typeBits.getSize());
+        }
+        auto bufferWithOffset = _buffer.release();
+        return {version,
+                ksSize,
+                _buffer.len(),
+                bufferWithOffset.second,
+                std::move(bufferWithOffset.first)};
     }
 
     /**
@@ -844,6 +864,7 @@ private:
 
 using Builder = BuilderBase<StackBufBuilder>;
 using HeapBuilder = BuilderBase<BufBuilder>;
+using PooledBuilder = BuilderBase<PooledBufBuilder>;
 
 /*
  * The isKeyString struct allows the operators below to only be enabled if the types being operated

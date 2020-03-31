@@ -199,7 +199,7 @@ void BtreeKeyGenerator::getKeys(const BSONObj& obj,
         if (e.eoo()) {
             keys->insert(_nullKeyString);
         } else {
-            KeyString::Builder keyString(_keyStringVersion, _ordering);
+            KeyString::PooledBuilder keyString(_keyStringVersion, _ordering);
 
             if (_collator) {
                 keyString.appendBSONElement(e, [&](StringData stringData) {
@@ -215,7 +215,7 @@ void BtreeKeyGenerator::getKeys(const BSONObj& obj,
             /*
              * Insert a copy so its buffer size fits the key size.
              */
-            keys->insert(keyString.getValueCopy2());
+            keys->insert(keyString.release());
         }
 
         // The {_id: 1} index can never be multikey because the _id field isn't allowed to be an
@@ -251,7 +251,7 @@ void BtreeKeyGenerator::_getKeysWithoutArray(const BSONObj& obj,
                                              boost::optional<RecordId> id,
                                              KeyStringSet* keys) const {
 
-    KeyString::Builder keyString{_keyStringVersion, _ordering};
+    KeyString::PooledBuilder keyString{_keyStringVersion, _ordering};
     size_t numNotFound{0};
 
     for (auto&& fieldName : _fieldNames) {
@@ -276,7 +276,7 @@ void BtreeKeyGenerator::_getKeysWithoutArray(const BSONObj& obj,
     if (id) {
         keyString.appendRecordId(*id);
     }
-    keys->insert(keyString.getValueCopy2());
+    keys->insert(keyString.release());
 }
 
 void BtreeKeyGenerator::_getKeysWithArray(std::vector<const char*> fieldNames,
@@ -355,7 +355,7 @@ void BtreeKeyGenerator::_getKeysWithArray(std::vector<const char*> fieldNames,
         if (_isSparse && numNotFound == fieldNames.size()) {
             return;
         }
-        KeyString::HeapBuilder keyString(_keyStringVersion, _ordering);
+        KeyString::PooledBuilder keyString(_keyStringVersion, _ordering);
         for (const auto& elem : fixed) {
             if (_collator) {
                 keyString.appendBSONElement(elem, [&](StringData stringData) {
@@ -499,7 +499,7 @@ KeyString::Value BtreeKeyGenerator::_buildNullKeyString() const {
     for (size_t i = 0; i < _fieldNames.size(); ++i) {
         nullKeyBuilder.appendNull("");
     }
-    KeyString::HeapBuilder nullKeyString(_keyStringVersion, nullKeyBuilder.obj(), _ordering);
+    KeyString::PooledBuilder nullKeyString(_keyStringVersion, nullKeyBuilder.obj(), _ordering);
     return nullKeyString.release();
 }
 

@@ -219,7 +219,7 @@ void ValidateAdaptor::traverseIndex(OperationContext* opCtx,
 
     const KeyString::Version version =
         index->accessMethod()->getSortedDataInterface()->getKeyStringVersion();
-    KeyString::Builder firstKeyString(
+    KeyString::PooledBuilder firstKeyString(
         version, BSONObj(), indexInfo.ord, KeyString::Discriminator::kExclusiveBefore);
 
     KeyString::Value prevIndexKeyStringValue;
@@ -229,7 +229,7 @@ void ValidateAdaptor::traverseIndex(OperationContext* opCtx,
     invariant(indexCursorIt != _validateState->getIndexCursors().end());
 
     const std::unique_ptr<SortedDataInterfaceThrottleCursor>& indexCursor = indexCursorIt->second;
-    for (auto indexEntry = indexCursor->seekForKeyString(opCtx, firstKeyString.getValueCopy());
+    for (auto indexEntry = indexCursor->seekForKeyString(opCtx, firstKeyString.release());
          indexEntry;
          indexEntry = indexCursor->nextKeyString(opCtx)) {
 

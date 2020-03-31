@@ -123,8 +123,8 @@ Status DuplicateKeyTracker::checkConstraints(OperationContext* opCtx) const {
         BSONObj conflict = record->data.toBson();
         BSONObj keyObj = conflict[kKeyField].Obj();
 
-        KeyString::Builder keyString(index->getKeyStringVersion(), keyObj, index->getOrdering());
-        auto status = index->dupKeyCheck(opCtx, keyString.getValueCopy());
+        KeyString::PooledBuilder keyString(index->getKeyStringVersion(), keyObj, index->getOrdering());
+        auto status = index->dupKeyCheck(opCtx, keyString.release());
         if (!status.isOK())
             return status;
 
