@@ -220,7 +220,7 @@ private:
 template <class BufferAllocator>
 class BasicBufBuilder {
 public:
-    BasicBufBuilder(int initsize = 512) : size(initsize) {
+    BasicBufBuilder(size_t initsize = 512) : size(initsize) {
         if (size > 0) {
             size = _buf.malloc(size);
         }
@@ -236,7 +236,7 @@ public:
         l = 0;
         reservedBytes = 0;
     }
-    void reset(int maxSize) {
+    void reset(size_t maxSize) {
         l = 0;
         reservedBytes = 0;
         if (maxSize && size > maxSize) {
@@ -355,7 +355,7 @@ public:
     inline char* grow(int by) {
         int oldlen = l;
         int newLen = l + by;
-        int minSize = newLen + reservedBytes;
+        size_t minSize = newLen + reservedBytes;
         if (minSize > size) {
             grow_reallocate(minSize);
         }
@@ -366,8 +366,8 @@ public:
     /**
      * Reserve room for some number of bytes to be claimed at a later time.
      */
-    void reserveBytes(int bytes) {
-        int minSize = l + reservedBytes + bytes;
+    void reserveBytes(size_t bytes) {
+        size_t minSize = l + reservedBytes + bytes;
         if (minSize > size)
             grow_reallocate(minSize);
 
@@ -423,8 +423,8 @@ private:
 
 
     BufferAllocator _buf;
+    size_t size;
     int l;
-    int size;
     int reservedBytes;  // eagerly grow_reallocate to keep this many bytes of spare room.
 
     friend class StringBuilderImpl<BufferAllocator>;
