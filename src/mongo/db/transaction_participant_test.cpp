@@ -4106,6 +4106,7 @@ TEST_F(TxnParticipantTest, OldestActiveTransactionTimestamp) {
         auto coll = CollectionCatalog::get(opCtx()).lookupCollectionByNamespace(opCtx(), nss);
         ASSERT(coll);
         auto cursor = coll->getCursor(opCtx());
+        KeyStringSet keys;
         while (auto record = cursor->next()) {
             auto bson = record.get().data.toBson();
             if (bson["state"].String() != "prepared"_sd) {
@@ -4113,7 +4114,7 @@ TEST_F(TxnParticipantTest, OldestActiveTransactionTimestamp) {
             }
 
             if (bson["startOpTime"]["ts"].timestamp() == ts) {
-                coll->deleteDocument(opCtx(), kUninitializedStmtId, record->id, nullptr);
+                coll->deleteDocument(opCtx(), kUninitializedStmtId, record->id, nullptr, keys);
                 wuow.commit();
                 return;
             }

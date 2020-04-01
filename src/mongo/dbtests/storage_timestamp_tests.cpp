@@ -1957,7 +1957,7 @@ public:
             ASSERT(indexMetaData.multikey);
 
             ASSERT_EQ(std::size_t(1), indexMetaData.multikeyPaths.size());
-            const bool match = indexMetaData.multikeyPaths[0] == std::set<std::size_t>({0});
+            const bool match = indexMetaData.multikeyPaths[0] == boost::container::flat_set<std::size_t>({0});
             if (!match) {
                 FAIL(str::stream() << "Expected: [ [ 0 ] ] Actual: "
                                    << dumpMultikeyPaths(indexMetaData.multikeyPaths));
@@ -2727,10 +2727,11 @@ public:
         // to the side writes table and must be drained.
         Helpers::upsert(_opCtx, collection->ns().ns(), BSON("_id" << 0 << "a" << 1 << "b" << 1));
         {
+            KeyStringSet keys;
             RecordId badRecord =
                 Helpers::findOne(_opCtx, collection, BSON("_id" << 1), false /* requireIndex */);
             WriteUnitOfWork wuow(_opCtx);
-            collection->deleteDocument(_opCtx, kUninitializedStmtId, badRecord, nullptr);
+            collection->deleteDocument(_opCtx, kUninitializedStmtId, badRecord, nullptr, keys);
             wuow.commit();
         }
 
