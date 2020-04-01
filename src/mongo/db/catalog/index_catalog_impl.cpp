@@ -70,6 +70,7 @@
 #include "mongo/db/server_options.h"
 #include "mongo/db/service_context.h"
 #include "mongo/db/storage/durable_catalog.h"
+#include "mongo/db/storage/execution_context.h"
 #include "mongo/db/storage/kv/kv_engine.h"
 #include "mongo/db/storage/storage_engine_init.h"
 #include "mongo/db/ttl_collection_cache.h"
@@ -1375,12 +1376,10 @@ Status IndexCatalogImpl::_indexFilteredRecords(OperationContext* opCtx,
                                                IndexCatalogEntry* index,
                                                const std::vector<BsonRecord>& bsonRecords,
                                                int64_t* keysInsertedOut) {
+    auto& executionCtx = StorageExecutionContext::get(opCtx);
+
     InsertDeleteOptions options;
     prepareInsertDeleteOptions(opCtx, index->descriptor(), &options);
-
-    KeyStringSet keys;
-    KeyStringSet multikeyMetadataKeys;
-    MultikeyPaths multikeyPaths;
 
     for (auto bsonRecord : bsonRecords) {
         invariant(bsonRecord.id != RecordId());
@@ -1391,24 +1390,24 @@ Status IndexCatalogImpl::_indexFilteredRecords(OperationContext* opCtx,
                 return status;
         }
 
-        keys.clear();
-        multikeyMetadataKeys.clear();
-        multikeyPaths.clear();
+        executionCtx.keys.clear();
+        executionCtx.multikeyMetadataKeys.clear();
+        executionCtx.multikeyPaths.clear();
 
         index->accessMethod()->getKeys(*bsonRecord.docPtr,
                                        options.getKeysMode,
                                        IndexAccessMethod::GetKeysContext::kAddingKeys,
-                                       &keys,
-                                       &multikeyMetadataKeys,
-                                       &multikeyPaths,
+                                       &executionCtx.keys,
+                                       &executionCtx.multikeyMetadataKeys,
+                                       &executionCtx.multikeyPaths,
                                        bsonRecord.id,
                                        IndexAccessMethod::kNoopOnSuppressedErrorFn);
 
         Status status = _indexKeys(opCtx,
                                    index,
-                                   {keys.begin(), keys.end()},
-                                   multikeyMetadataKeys,
-                                   multikeyPaths,
+                                   {executionCtx.keys.begin(), executionCtx.keys.end()},
+                                   executionCtx.multikeyMetadataKeys,
+                                   executionCtx.multikeyPaths,
                                    *bsonRecord.docPtr,
                                    bsonRecord.id,
                                    options,
@@ -1551,12 +1550,13 @@ void IndexCatalogImpl::_unindexRecord(OperationContext* opCtx,
                                       const BSONObj& obj,
                                       const RecordId& loc,
                                       bool logIfError,
-                                      int64_t* keysDeletedOut, KeyStringSet& keys) {
-    // There's no need to compute the prefixes of the indexed fields that cause the index to be
-    // multikey when removing a document since the index metadata isn't updated when keys are
-    // deleted.
+                                      int64_t* keysDeletedOut) {
+    auto& executionCtx = StorageExecutionContext::get(opCtx);
+    KeyStringSet& keys = executionCtx.keys;
     keys.clear();
-
+        // There's no need to compute the prefixes of the indexed fields that cause the index to be
+        // multikey when removing a document since the index metadata isn't updated when keys are
+        // deleted.
     entry->accessMethod()->getKeys(obj,
                                    IndexAccessMethod::GetKeysMode::kRelaxConstraintsUnfiltered,
                                    IndexAccessMethod::GetKeysContext::kRemovingKeys,
@@ -1637,7 +1637,7 @@ void IndexCatalogImpl::unindexRecord(OperationContext* opCtx,
                                      const BSONObj& obj,
                                      const RecordId& loc,
                                      bool noWarn,
-                                     int64_t* keysDeletedOut, KeyStringSet& keys) {
+                                     int64_t* keysDeletedOut) {
     if (keysDeletedOut) {
         *keysDeletedOut = 0;
     }
@@ -1648,7 +1648,7 @@ void IndexCatalogImpl::unindexRecord(OperationContext* opCtx,
         IndexCatalogEntry* entry = it->get();
 
         bool logIfError = !noWarn;
-        _unindexRecord(opCtx, entry, obj, loc, logIfError, keysDeletedOut, keys);
+        _unindexRecord(opCtx, entry, obj, loc, logIfError, keysDeletedOut);
     }
 
     for (IndexCatalogEntryContainer::const_iterator it = _buildingIndexes.begin();
@@ -1658,7 +1658,7 @@ void IndexCatalogImpl::unindexRecord(OperationContext* opCtx,
 
         // If it's a background index, we DO NOT want to log anything.
         bool logIfError = entry->isReady(opCtx) ? !noWarn : false;
-        _unindexRecord(opCtx, entry, obj, loc, logIfError, keysDeletedOut, keys);
+        _unindexRecord(opCtx, entry, obj, loc, logIfError, keysDeletedOut);
     }
 }
 

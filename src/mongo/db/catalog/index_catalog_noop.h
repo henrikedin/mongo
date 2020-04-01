@@ -214,7 +214,7 @@ public:
                        const BSONObj& obj,
                        const RecordId& loc,
                        const bool noWarn,
-                       int64_t* const keysDeletedOut, KeyStringSet& keys) override {}
+                       int64_t* const keysDeletedOut) override {}
 
     virtual Status compactIndexes(OperationContext* opCtx) override {
         return Status::OK();

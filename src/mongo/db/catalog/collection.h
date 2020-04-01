@@ -292,7 +292,6 @@ public:
                                 StmtId stmtId,
                                 RecordId loc,
                                 OpDebug* const opDebug,
-        KeyStringSet& keys,
                                 const bool fromMigrate = false,
                                 const bool noWarn = false,
         

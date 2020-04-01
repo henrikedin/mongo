@@ -264,16 +264,14 @@ Status CollectionBulkLoaderImpl::commit() {
             // RecordId. By deleting documents before committing the index build, the index removal
             // code uses 'dupsAllowed', which forces the storage engine to only unindex records that
             // match the same key and RecordId.
-            KeyStringSet keys;
             for (auto&& it : dups) {
                 writeConflictRetry(
-                    _opCtx.get(), "CollectionBulkLoaderImpl::commit", _nss.ns(), [this, &it, &keys] {
+                    _opCtx.get(), "CollectionBulkLoaderImpl::commit", _nss.ns(), [this, &it] {
                         WriteUnitOfWork wunit(_opCtx.get());
                         _autoColl->getCollection()->deleteDocument(_opCtx.get(),
                                                                    kUninitializedStmtId,
                                                                    it,
                                                                    nullptr /** OpDebug **/,
-                            keys,
                                                                    false /* fromMigrate */,
                                                                    true /* noWarn */);
                         wunit.commit();

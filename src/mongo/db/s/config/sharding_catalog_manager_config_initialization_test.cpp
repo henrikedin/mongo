@@ -251,13 +251,12 @@ TEST_F(ConfigInitializationTest, ReRunsIfDocRolledBackThenReElected) {
             ASSERT_TRUE(coll);
             auto cursor = coll->getCursor(opCtx);
             std::vector<RecordId> recordIds;
-            KeyStringSet keys;
             while (auto recordId = cursor->next()) {
                 recordIds.push_back(recordId->id);
             }
             mongo::WriteUnitOfWork wuow(opCtx);
             for (auto recordId : recordIds) {
-                coll->deleteDocument(opCtx, kUninitializedStmtId, recordId, nullptr, keys);
+                coll->deleteDocument(opCtx, kUninitializedStmtId, recordId, nullptr);
             }
             wuow.commit();
             ASSERT_EQUALS(0UL, coll->numRecords(opCtx));

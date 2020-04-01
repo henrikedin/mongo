@@ -471,7 +471,7 @@ public:
                                const BSONObj& obj,
                                const RecordId& loc,
                                const bool noWarn,
-                               int64_t* const keysDeletedOut, KeyStringSet& keys) = 0;
+                               int64_t* const keysDeletedOut) = 0;
 
     /*
      * Attempt compaction on all ready indexes to regain disk space, if the storage engine's index

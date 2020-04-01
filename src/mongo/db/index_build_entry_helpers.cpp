@@ -250,11 +250,10 @@ Status removeIndexBuildEntry(OperationContext* opCtx, UUID indexBuildUUID) {
                 ss << "No matching IndexBuildEntry found with indexBuildUUID: " << indexBuildUUID;
                 return Status(ErrorCodes::NoMatchingDocument, ss);
             }
-            KeyStringSet keys;
 
             WriteUnitOfWork wuow(opCtx);
             OpDebug opDebug;
-            collection->deleteDocument(opCtx, kUninitializedStmtId, rid, &opDebug, keys);
+            collection->deleteDocument(opCtx, kUninitializedStmtId, rid, &opDebug);
             wuow.commit();
             return Status::OK();
         });

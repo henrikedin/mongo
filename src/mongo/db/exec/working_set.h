@@ -155,8 +155,6 @@ public:
     Snapshotted<Document> doc;
     std::vector<IndexKeyDatum> keyData;
 
-    KeyStringSet keysCache;
-
     bool hasRecordId() const;
     bool hasObj() const;
     bool hasOwnedObj() const;

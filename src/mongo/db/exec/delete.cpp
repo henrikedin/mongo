@@ -153,7 +153,6 @@ PlanStage::StageState DeleteStage::doWork(WorkingSetID* out) {
 
     invariant(member->hasRecordId());
     RecordId recordId = member->recordId;
-    KeyStringSet& keys = member->keysCache;
     // Deletes can't have projections. This means that covering analysis will always add
     // a fetch. We should always get fetched data, and never just key data.
     invariant(member->hasObj());
@@ -207,7 +206,6 @@ PlanStage::StageState DeleteStage::doWork(WorkingSetID* out) {
                                          _params->stmtId,
                                          recordId,
                                          _params->opDebug,
-                keys,
                                          _params->fromMigrate,
                                          false,
                                          _params->returnDeleted ? Collection::StoreDeletedDoc::On

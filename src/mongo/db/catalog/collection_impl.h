@@ -129,10 +129,8 @@ public:
         StmtId stmtId,
         RecordId loc,
         OpDebug* opDebug,
-        KeyStringSet& keys,
         bool fromMigrate = false,
         bool noWarn = false,
-        
         Collection::StoreDeletedDoc storeDeletedDoc = Collection::StoreDeletedDoc::Off) final;
 
     /*
