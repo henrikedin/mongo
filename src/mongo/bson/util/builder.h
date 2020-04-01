@@ -138,7 +138,11 @@ public:
     size_t realloc(size_t sz) {
         auto& bo = _bufWithOffset();
         size_t allocSize = std::max(static_cast<size_t>(1024 * 1024), sz);
-        bo.buf.realloc(allocSize);
+        auto newBuffer = SharedBuffer::allocate(allocSize);
+        memcpy(newBuffer.get(),
+               bo.buf.get() + bo.offset,
+               std::min(bo.buf.capacity() - bo.offset, newBuffer.capacity()));
+        bo.buf = std::move(newBuffer);
         bo.offset = 0;
         return allocSize;
     }
