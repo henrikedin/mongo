@@ -464,7 +464,7 @@ using StringTransformFn = std::function<std::string(StringData)>;
 template <class BuilderT>
 class BuilderBase {
 public:
-    static const uint8_t kHeapAllocatorDefaultBytes = 32;
+    //static const uint8_t kHeapAllocatorDefaultBytes = 32;
 
     /*
      * This constructor is enabled only for KeyString::HeapBuilder.
@@ -905,6 +905,8 @@ public:
 };
 class HeapBuilder : protected BufferHolder<BufBuilder>, public BuilderBase<HeapBuilder> {
 public:
+    static constexpr uint8_t kHeapAllocatorDefaultBytes = 32;
+
     // using BuilderBase::BuilderBase;
     template <typename... Args>
     HeapBuilder(Args&&... args) : BufferHolder(kHeapAllocatorDefaultBytes), BuilderBase(std::forward<Args>(args)...) {}
