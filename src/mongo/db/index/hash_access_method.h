@@ -55,7 +55,7 @@ private:
      * This function ignores the 'multikeyPaths' and 'multikeyMetadataKeys' pointers because hashed
      * indexes don't support tracking path-level multikey information.
      */
-    void doGetKeys(const BSONObj& obj,
+    void doGetKeys(SharedBufferFragmentBuilder& allocator, const BSONObj& obj,
                    GetKeysContext context,
                    KeyStringSet* keys,
                    KeyStringSet* multikeyMetadataKeys,

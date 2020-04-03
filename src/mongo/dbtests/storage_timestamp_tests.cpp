@@ -2727,11 +2727,10 @@ public:
         // to the side writes table and must be drained.
         Helpers::upsert(_opCtx, collection->ns().ns(), BSON("_id" << 0 << "a" << 1 << "b" << 1));
         {
-            KeyStringSet keys;
             RecordId badRecord =
                 Helpers::findOne(_opCtx, collection, BSON("_id" << 1), false /* requireIndex */);
             WriteUnitOfWork wuow(_opCtx);
-            collection->deleteDocument(_opCtx, kUninitializedStmtId, badRecord, nullptr, keys);
+            collection->deleteDocument(_opCtx, kUninitializedStmtId, badRecord, nullptr);
             wuow.commit();
         }
 

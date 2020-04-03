@@ -161,6 +161,7 @@ BSONElement BtreeKeyGenerator::_extractNextElement(const BSONObj& obj,
 
 void BtreeKeyGenerator::_getKeysArrEltFixed(std::vector<const char*>* fieldNames,
                                             std::vector<BSONElement>* fixed,
+    SharedBufferFragmentBuilder& allocator,
                                             const BSONElement& arrEntry,
                                             KeyStringSet* keys,
                                             unsigned numNotFound,
@@ -180,6 +181,7 @@ void BtreeKeyGenerator::_getKeysArrEltFixed(std::vector<const char*>* fieldNames
     // Recurse.
     _getKeysWithArray(*fieldNames,
                       *fixed,
+        allocator,
                       arrEntry.type() == Object ? arrEntry.embeddedObject() : BSONObj(),
                       keys,
                       numNotFound,
@@ -188,7 +190,7 @@ void BtreeKeyGenerator::_getKeysArrEltFixed(std::vector<const char*>* fieldNames
                       id);
 }
 
-void BtreeKeyGenerator::getKeys(const BSONObj& obj,
+void BtreeKeyGenerator::getKeys(SharedBufferFragmentBuilder& allocator, const BSONObj& obj,
                                 bool skipMultikey,
                                 KeyStringSet* keys,
                                 MultikeyPaths* multikeyPaths,
@@ -199,7 +201,7 @@ void BtreeKeyGenerator::getKeys(const BSONObj& obj,
         if (e.eoo()) {
             keys->insert(_nullKeyString);
         } else {
-            KeyString::PooledBuilder keyString(_keyStringVersion, _ordering);
+            KeyString::PooledBuilder keyString(allocator, _keyStringVersion, _ordering);
 
             if (_collator) {
                 keyString.appendBSONElement(e, [&](StringData stringData) {
@@ -230,7 +232,7 @@ void BtreeKeyGenerator::getKeys(const BSONObj& obj,
             invariant(multikeyPaths->empty());
             multikeyPaths->resize(_fieldNames.size());
         }
-        _getKeysWithoutArray(obj, id, keys);
+        _getKeysWithoutArray(allocator, obj, id, keys);
     } else {
         if (multikeyPaths) {
             invariant(multikeyPaths->empty());
@@ -239,7 +241,7 @@ void BtreeKeyGenerator::getKeys(const BSONObj& obj,
         // '_fieldNames' and '_fixed' are passed by value so that their copies can be mutated as
         // part of the _getKeysWithArray method.
         _getKeysWithArray(
-            _fieldNames, _fixed, obj, keys, 0, _emptyPositionalInfo, multikeyPaths, id);
+            _fieldNames, _fixed, allocator, obj, keys, 0, _emptyPositionalInfo, multikeyPaths, id);
     }
 
     if (keys->empty() && !_isSparse) {
@@ -247,11 +249,11 @@ void BtreeKeyGenerator::getKeys(const BSONObj& obj,
     }
 }
 
-void BtreeKeyGenerator::_getKeysWithoutArray(const BSONObj& obj,
+void BtreeKeyGenerator::_getKeysWithoutArray(SharedBufferFragmentBuilder& allocator, const BSONObj& obj,
                                              boost::optional<RecordId> id,
                                              KeyStringSet* keys) const {
 
-    KeyString::PooledBuilder keyString{_keyStringVersion, _ordering};
+    KeyString::PooledBuilder keyString{allocator, _keyStringVersion, _ordering};
     size_t numNotFound{0};
 
     for (auto&& fieldName : _fieldNames) {
@@ -281,6 +283,7 @@ void BtreeKeyGenerator::_getKeysWithoutArray(const BSONObj& obj,
 
 void BtreeKeyGenerator::_getKeysWithArray(std::vector<const char*> fieldNames,
                                           std::vector<BSONElement> fixed,
+    SharedBufferFragmentBuilder& allocator,
                                           const BSONObj& obj,
                                           KeyStringSet* keys,
                                           unsigned numNotFound,
@@ -355,7 +358,7 @@ void BtreeKeyGenerator::_getKeysWithArray(std::vector<const char*> fieldNames,
         if (_isSparse && numNotFound == fieldNames.size()) {
             return;
         }
-        KeyString::PooledBuilder keyString(_keyStringVersion, _ordering);
+        KeyString::PooledBuilder keyString(allocator, _keyStringVersion, _ordering);
         for (const auto& elem : fixed) {
             if (_collator) {
                 keyString.appendBSONElement(elem, [&](StringData stringData) {
@@ -389,6 +392,7 @@ void BtreeKeyGenerator::_getKeysWithArray(std::vector<const char*> fieldNames,
         // For an empty array, set matching fields to undefined.
         _getKeysArrEltFixed(&fieldNames,
                             &fixed,
+            allocator,
                             undefinedElt,
                             keys,
                             numNotFound,
@@ -472,6 +476,7 @@ void BtreeKeyGenerator::_getKeysWithArray(std::vector<const char*> fieldNames,
         for (const auto arrObjElem : arrObj) {
             _getKeysArrEltFixed(&fieldNames,
                                 &fixed,
+                allocator,
                                 arrObjElem,
                                 keys,
                                 numNotFound,
@@ -499,7 +504,7 @@ KeyString::Value BtreeKeyGenerator::_buildNullKeyString() const {
     for (size_t i = 0; i < _fieldNames.size(); ++i) {
         nullKeyBuilder.appendNull("");
     }
-    KeyString::PooledBuilder nullKeyString(_keyStringVersion, nullKeyBuilder.obj(), _ordering);
+    KeyString::HeapBuilder nullKeyString(_keyStringVersion, nullKeyBuilder.obj(), _ordering);
     return nullKeyString.release();
 }
 

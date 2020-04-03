@@ -287,7 +287,6 @@ TEST_F(MultikeyPathsTest, PathsNotUpdatedOnDocumentDelete) {
     assertMultikeyPaths(collection, keyPattern, {boost::container::flat_set<size_t>{}, {0U}});
 
     {
-        KeyStringSet keys;
         auto cursor = collection->getCursor(_opCtx.get());
         auto record = cursor->next();
         invariant(record);
@@ -295,7 +294,7 @@ TEST_F(MultikeyPathsTest, PathsNotUpdatedOnDocumentDelete) {
         {
             WriteUnitOfWork wuow(_opCtx.get());
             OpDebug* const nullOpDebug = nullptr;
-            collection->deleteDocument(_opCtx.get(), kUninitializedStmtId, record->id, nullOpDebug, keys);
+            collection->deleteDocument(_opCtx.get(), kUninitializedStmtId, record->id, nullOpDebug);
             wuow.commit();
         }
     }

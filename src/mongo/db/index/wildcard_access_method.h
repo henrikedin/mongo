@@ -93,7 +93,7 @@ public:
                                           MultikeyMetadataAccessStats* stats) const final;
 
 private:
-    void doGetKeys(const BSONObj& obj,
+    void doGetKeys(SharedBufferFragmentBuilder& allocator, const BSONObj& obj,
                    GetKeysContext context,
                    KeyStringSet* keys,
                    KeyStringSet* multikeyMetadataKeys,

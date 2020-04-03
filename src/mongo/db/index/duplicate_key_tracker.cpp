@@ -37,6 +37,7 @@
 #include "mongo/db/curop.h"
 #include "mongo/db/index/index_access_method.h"
 #include "mongo/db/keypattern.h"
+#include "mongo/db/storage/execution_context.h"
 #include "mongo/logv2/log.h"
 #include "mongo/util/assert_util.h"
 
@@ -116,14 +117,14 @@ Status DuplicateKeyTracker::checkConstraints(OperationContext* opCtx) const {
             CurOp::get(opCtx)->setProgress_inlock(curopMessage, _duplicateCounter.load(), 1));
     }
 
-
+    auto& executionCtx = StorageExecutionContext::get(opCtx);
     int resolved = 0;
     while (record) {
         resolved++;
         BSONObj conflict = record->data.toBson();
         BSONObj keyObj = conflict[kKeyField].Obj();
 
-        KeyString::PooledBuilder keyString(index->getKeyStringVersion(), keyObj, index->getOrdering());
+        KeyString::PooledBuilder keyString(executionCtx.memoryPool, index->getKeyStringVersion(), keyObj, index->getOrdering());
         auto status = index->dupKeyCheck(opCtx, keyString.release());
         if (!status.isOK())
             return status;

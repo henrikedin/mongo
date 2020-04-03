@@ -75,7 +75,7 @@ public:
      * this parameter must be set to 'false'. In this case a generic algorithm will be used, which
      * can handle both multikey and non-multikey indexes.
      */
-    void getKeys(const BSONObj& obj,
+    void getKeys(SharedBufferFragmentBuilder& allocator, const BSONObj& obj,
                  bool skipMultikey,
                  KeyStringSet* keys,
                  MultikeyPaths* multikeyPaths,
@@ -149,6 +149,7 @@ private:
      */
     void _getKeysWithArray(std::vector<const char*> fieldNames,
                            std::vector<BSONElement> fixed,
+        SharedBufferFragmentBuilder& allocator,
                            const BSONObj& obj,
                            KeyStringSet* keys,
                            unsigned numNotFound,
@@ -160,7 +161,7 @@ private:
      * An optimized version of the key generation algorithm to be used when it is known that 'obj'
      * doesn't contain an array value in any of the fields in the key pattern.
      */
-    void _getKeysWithoutArray(const BSONObj& obj,
+    void _getKeysWithoutArray(SharedBufferFragmentBuilder& allocator, const BSONObj& obj,
                               boost::optional<RecordId> id,
                               KeyStringSet* keys) const;
 
@@ -209,6 +210,7 @@ private:
      */
     void _getKeysArrEltFixed(std::vector<const char*>* fieldNames,
                              std::vector<BSONElement>* fixed,
+        SharedBufferFragmentBuilder& allocator,
                              const BSONElement& arrEntry,
                              KeyStringSet* keys,
                              unsigned numNotFound,

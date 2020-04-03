@@ -116,10 +116,9 @@ public:
     }
 
     void remove(const RecordId& recordId) {
-        KeyStringSet keys;
         WriteUnitOfWork wunit(&_opCtx);
         OpDebug* const nullOpDebug = nullptr;
-        _coll->deleteDocument(&_opCtx, kUninitializedStmtId, recordId, nullOpDebug, keys);
+        _coll->deleteDocument(&_opCtx, kUninitializedStmtId, recordId, nullOpDebug);
         wunit.commit();
     }
 

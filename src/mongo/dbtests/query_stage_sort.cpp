@@ -455,7 +455,6 @@ public:
 
         // The data we're going to later invalidate.
         set<RecordId> recordIds;
-        KeyStringSet keys;
         getRecordIds(&recordIds, coll);
 
         auto exec = makePlanExecutorWithSortStage(coll);
@@ -479,7 +478,7 @@ public:
         set<RecordId>::iterator it = recordIds.begin();
         {
             WriteUnitOfWork wuow(&_opCtx);
-            coll->deleteDocument(&_opCtx, kUninitializedStmtId, *it++, nullOpDebug, keys);
+            coll->deleteDocument(&_opCtx, kUninitializedStmtId, *it++, nullOpDebug);
             wuow.commit();
         }
         exec->restoreState();
@@ -495,7 +494,7 @@ public:
         while (it != recordIds.end()) {
             {
                 WriteUnitOfWork wuow(&_opCtx);
-                coll->deleteDocument(&_opCtx, kUninitializedStmtId, *it++, nullOpDebug, keys);
+                coll->deleteDocument(&_opCtx, kUninitializedStmtId, *it++, nullOpDebug);
                 wuow.commit();
             }
         }

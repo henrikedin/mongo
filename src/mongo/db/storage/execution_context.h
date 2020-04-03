@@ -32,6 +32,7 @@
 #include "mongo/db/operation_context.h"
 #include "mongo/db/storage/key_string.h"
 #include "mongo/db/index/multikey_paths.h"
+#include "mongo/util/shared_buffer_fragment.h"
 
 namespace mongo {
 
@@ -39,9 +40,13 @@ class StorageExecutionContext {
 public:
     static const OperationContext::Decoration<StorageExecutionContext> get;
 
+    StorageExecutionContext();
+
     KeyStringSet keys;
     KeyStringSet multikeyMetadataKeys;
     MultikeyPaths multikeyPaths;
+
+    SharedBufferFragmentBuilder memoryPool;
 };
 
 }  // namespace mongo
