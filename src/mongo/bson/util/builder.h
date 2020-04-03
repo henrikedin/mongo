@@ -448,7 +448,6 @@ public:
     StackBufBuilderBase() : BasicBufBuilder<StackAllocator<SZ>>() {}
     StackBufBuilderBase(const StackBufBuilderBase&) = delete;
     StackBufBuilderBase(StackBufBuilderBase&&) = delete;
-    void release() = delete;  // not allowed. not implemented.
 };
 using StackBufBuilder = StackBufBuilderBase<StackSizeDefault>;
 MONGO_STATIC_ASSERT(!std::is_move_constructible<StackBufBuilder>::value);

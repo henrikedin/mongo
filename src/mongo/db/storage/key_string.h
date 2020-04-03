@@ -308,17 +308,8 @@ class Value {
 public:
     Value() : _version(Version::kLatestVersion), _ksSize(0) {}
 
-    Value(Version version,
-          int32_t ksSize,
-        SharedBufferFragment buffer
-          /*int32_t bufSize,
-          int32_t bufOffset,
-          ConstSharedBuffer buffer*/)
-        : _version(version),
-          _ksSize(ksSize),
-          /*_bufSize(bufSize),
-          _bufOffset(bufOffset),*/
-          _buffer(std::move(buffer)) {
+    Value(Version version, int32_t ksSize, SharedBufferFragment buffer)
+        : _version(version), _ksSize(ksSize), _buffer(std::move(buffer)) {
         invariant(ksSize >= 0);
         invariant(ksSize <= static_cast<int32_t>(_buffer.size()));
     }
@@ -330,8 +321,6 @@ public:
     Value& operator=(Value copy) noexcept {
         _version = copy._version;
         _ksSize = copy._ksSize;
-        /*_bufSize = copy._bufSize;
-        _bufOffset = copy._bufOffset;*/
         std::swap(_buffer, copy._buffer);
         return *this;
     }
@@ -426,11 +415,6 @@ private:
     Version _version;
     // _ksSize is the total length that the KeyString takes up in the buffer.
     int32_t _ksSize;
-    // _bufSize is the total length of _buffer. If this is greater than the _ksSize, then
-    // TypeBits are appended.
-    /*int32_t _bufSize;
-    int32_t _bufOffset;
-    ConstSharedBuffer _buffer;*/
     SharedBufferFragment _buffer;
 };
 
@@ -464,30 +448,9 @@ using StringTransformFn = std::function<std::string(StringData)>;
 template <class BuilderT>
 class BuilderBase {
 public:
-    //static const uint8_t kHeapAllocatorDefaultBytes = 32;
-
-    /*
-     * This constructor is enabled only for KeyString::HeapBuilder.
-     */
-    /*BuilderBase(Version version,
-                Ordering ord,
-                Discriminator discriminator,
-                typename std::enable_if<std::is_same<BufferT, BufBuilder>::value>::type* = nullptr)
-        : version(version),
-          _typeBits(version),
-          _buffer(kHeapAllocatorDefaultBytes),
-          _state(BuildState::kEmpty),
-          _elemCount(0),
-          _ordering(ord),
-          _discriminator(discriminator) {}*/
-
-    /*
-     * This constructor is enabled only for KeyString::Builder.
-     */
     BuilderBase(Version version, Ordering ord, Discriminator discriminator)
         : version(version),
           _typeBits(version),
-          //_buffer(std::forward<BufferArgs>(args)...),
           _state(BuildState::kEmpty),
           _elemCount(0),
           _ordering(ord),
@@ -526,47 +489,6 @@ public:
     }
 
     /**
-     * Releases the data held in this buffer into a Value type, releasing and transfering ownership
-     * of the buffer _buffer and TypeBits _typeBits to the returned Value object from the current
-     * Builder.
-     *
-     * The std::enable_if<std::is_same<T,BufBuilder>::value, Value>::type defines that the release
-     * function will only be a part of a given template instantiation if the template parameter
-     * BufferT is BufBuilder.
-     *
-     */
-    // template <typename T = BufferT>
-    // typename std::enable_if<std::is_same<T, BufBuilder>::value, Value>::type release() {
-    //    _doneAppending();
-    //    _transition(BuildState::kReleased);
-
-    //    // Before releasing, append the TypeBits.
-    //    int32_t ksSize = _buffer().len();
-    //    if (_typeBits.isAllZeros()) {
-    //        _buffer().appendChar(0);
-    //    } else {
-    //        _buffer().appendBuf(_typeBits.getBuffer(), _typeBits.getSize());
-    //    }
-    //    return {version, ksSize, _buffer().len(), 0, _buffer().release()};
-    //}
-
-    // template <typename T = BufferT>
-    // typename std::enable_if<std::is_same<T, PooledFragmentBuilder>::value, Value>::type release()
-    // {
-    //    _doneAppending();
-    //    _transition(BuildState::kReleased);
-
-    //    // Before releasing, append the TypeBits.
-    //    int32_t ksSize = _buffer().len();
-    //    if (_typeBits.isAllZeros()) {
-    //        _buffer().appendChar(0);
-    //    } else {
-    //        _buffer().appendBuf(_typeBits.getBuffer(), _typeBits.getSize());
-    //    }
-    //    return {version, ksSize, _buffer().done()};
-    //}
-
-    /**
      * Copies the data held in this buffer into a Value type that holds and owns a copy of the
      * buffer.
      */
@@ -583,65 +505,6 @@ public:
         }
         return {version, _buffer().len(), SharedBufferFragment(newBuf.release(), 0, newBuf.len())};
     }
-
-    // struct tlbuffer {
-    //    SharedBuffer buffer;
-    //    int32_t offset = 0;
-    //};
-
-    // tlbuffer& getTlsBuffer() {
-    //    thread_local tlbuffer buf;
-    //    return buf;
-    //}
-
-    // Value getValueCopy2() {
-    //    _doneAppending();
-
-    //    //// Create a new buffer that is a concatenation of the KeyString and its TypeBits.
-    //    // BufBuilder newBuf(_buffer.len() + _typeBits.getSize());
-    //    // newBuf.appendBuf(_buffer.buf(), _buffer.len());
-    //    // if (_typeBits.isAllZeros()) {
-    //    //    newBuf.appendChar(0);
-    //    //} else {
-    //    //    newBuf.appendBuf(_typeBits.getBuffer(), _typeBits.getSize());
-    //    //}
-    //    // return {version, _buffer.len(), newBuf.len(), 0, newBuf.release()};
-
-    //    tlbuffer& tlsbuf = getTlsBuffer();
-
-    //    auto needed = _buffer().len() + _typeBits.getSize();
-    //    auto check_and_allocate_memory = [&]() {
-    //        if (tlsbuf.buffer.capacity() < (needed + tlsbuf.offset)) {
-    //            tlsbuf.buffer =
-    //                SharedBuffer::allocate(std::max(static_cast<size_t>(1024 * 1024), needed));
-    //            tlsbuf.offset = 0;
-    //        }
-    //    };
-    //    check_and_allocate_memory();
-    //    char* destination = tlsbuf.buffer.get() + tlsbuf.offset;
-
-    //    auto copy_main_buffer = [&]() { memcpy(destination, _buffer().buf(), _buffer().len()); };
-    //    copy_main_buffer();
-
-    //    auto write_offset = tlsbuf.offset + _buffer().len();
-    //    destination += _buffer().len();
-    //    auto copy_type_buffer = [&]() {
-    //        if (_typeBits.isAllZeros()) {
-    //            /* DataView(destination)
-    //                 .write(tagLittleEndian(static_cast<char>(0)));*/
-    //            *destination = static_cast<char>(0);
-    //            write_offset += 1;
-    //        } else {
-    //            memcpy(destination, _typeBits.getBuffer(), _typeBits.getSize());
-    //            write_offset += _typeBits.getSize();
-    //        }
-    //    };
-    //    copy_type_buffer();
-
-    //    auto old_offset = tlsbuf.offset;
-    //    tlsbuf.offset += needed;
-    //    return {version, _buffer().len(), write_offset - old_offset, old_offset, tlsbuf.buffer};
-    //}
 
     void appendRecordId(RecordId loc);
     void appendTypeBits(const TypeBits& bits);
@@ -670,12 +533,7 @@ public:
      */
     void resetToEmpty(Ordering ord = ALL_ASCENDING,
                       Discriminator discriminator = Discriminator::kInclusive) {
-        /*if constexpr (std::is_same<BuilderT, HeapBuilder>::value) {
-            if (_state == BuildState::kReleased) {
-                _buffer() = BufferT();
-            }
-        }*/
-        reset_buffer();
+        _reinstantiateBufferIfNeeded();
         _buffer().reset();
         _typeBits.reset();
 
@@ -845,21 +703,33 @@ protected:
         return _ordering.get(_elemCount) == -1;
     }
 
+    int32_t _appendTypeBits() {
+        _doneAppending();
+
+        // append the TypeBits.
+        int32_t ksSize = _buffer().len();
+        if (_typeBits.isAllZeros()) {
+            _buffer().appendChar(0);
+        } else {
+            _buffer().appendBuf(_typeBits.getBuffer(), _typeBits.getSize());
+        }
+        return ksSize;
+    }
+
     auto& _buffer() {
-        return static_cast<BuilderT*>(this)->_builder();
+        return static_cast<BuilderT*>(this)->_buffer();
     }
 
     const auto& _buffer() const {
-        return static_cast<const BuilderT*>(this)->_builder();
+        return static_cast<const BuilderT*>(this)->_buffer();
     }
 
-    void reset_buffer() {
-        static_cast<BuilderT*>(this)->reset_buffer();
+    void _reinstantiateBufferIfNeeded() {
+        static_cast<BuilderT*>(this)->_reinstantiateBufferIfNeeded();
     }
 
 
     TypeBits _typeBits;
-    // BufferT _buffer;
     BuildState _state;
     int _elemCount;
     Ordering _ordering;
@@ -870,8 +740,8 @@ template <typename BufferBuilderT>
 class BufferHolder {
 protected:
     template <typename... Args>
-    BufferHolder(Args&&... args) : _builder2(std::forward<Args>(args)...) {}
-    BufferBuilderT _builder2;
+    BufferHolder(Args&&... args) : _bufferBuilder(std::forward<Args>(args)...) {}
+    BufferBuilderT _bufferBuilder;
 };
 
 class Builder : protected BufferHolder<StackBufBuilder>, public BuilderBase<Builder> {
@@ -880,28 +750,17 @@ public:
 
     Builder(const Builder& other) : BuilderBase(other) {}
 
-    StackBufBuilder& _builder() {
-        return _builder2;
-    }
-    const StackBufBuilder& _builder() const {
-        return _builder2;
-    }
-    void reset_buffer() {}
+public:
+    friend class BuilderBase;
 
-    // Value getValueCopy() {
-    //    _doneAppending();
+    StackBufBuilder& _buffer() {
+        return _bufferBuilder;
+    }
+    const StackBufBuilder& _buffer() const {
+        return _bufferBuilder;
+    }
 
-    //    // Create a new buffer that is a concatenation of the KeyString and its TypeBits.
-    //    BufBuilder newBuf(_buffer().len() + _typeBits.getSize());
-    //    newBuf.appendBuf(_buffer().buf(), _buffer().len());
-    //    if (_typeBits.isAllZeros()) {
-    //        newBuf.appendChar(0);
-    //    } else {
-    //        newBuf.appendBuf(_typeBits.getBuffer(), _typeBits.getSize());
-    //    }
-    //    return {version, _buffer().len(), SharedBufferFragment(newBuf.release(), 0,
-    //    newBuf.len())};
-    //}
+    void _reinstantiateBufferIfNeeded() {}
 };
 class HeapBuilder : protected BufferHolder<BufBuilder>, public BuilderBase<HeapBuilder> {
 public:
@@ -909,86 +768,67 @@ public:
 
     // using BuilderBase::BuilderBase;
     template <typename... Args>
-    HeapBuilder(Args&&... args) : BufferHolder(kHeapAllocatorDefaultBytes), BuilderBase(std::forward<Args>(args)...) {}
+    HeapBuilder(Args&&... args)
+        : BufferHolder(kHeapAllocatorDefaultBytes), BuilderBase(std::forward<Args>(args)...) {}
 
     HeapBuilder(const HeapBuilder& other)
         : BufferHolder(kHeapAllocatorDefaultBytes), BuilderBase(other) {}
 
-    // BufBuilder _builder;
-    BufBuilder& _builder() {
-        return _builder2;
-    }
-    const BufBuilder& _builder() const {
-        return _builder2;
+    /**
+     * Releases the data held in this buffer into a Value type, releasing and transfering ownership
+     * of the buffer _buffer and TypeBits _typeBits to the returned Value object from the current
+     * Builder.
+     */
+    Value release() {
+        int32_t ksSize = _appendTypeBits();
+        _transition(BuildState::kReleased);
+
+        return {version, ksSize, SharedBufferFragment(_bufferBuilder.release(), 0, _bufferBuilder.len())};
     }
 
-    void reset_buffer() {
+protected:
+    friend class BuilderBase;
+
+    BufBuilder& _buffer() {
+        return _bufferBuilder;
+    }
+    const BufBuilder& _buffer() const {
+        return _bufferBuilder;
+    }
+
+    void _reinstantiateBufferIfNeeded() {
         if (_state == BuildState::kReleased) {
-            _builder2 = BufBuilder(kHeapAllocatorDefaultBytes);
+            _bufferBuilder = BufBuilder(kHeapAllocatorDefaultBytes);
         }
-    }
-
-    Value release() {
-        _doneAppending();
-        _transition(BuildState::kReleased);
-
-        // Before releasing, append the TypeBits.
-        int32_t ksSize = _buffer().len();
-        if (_typeBits.isAllZeros()) {
-            _buffer().appendChar(0);
-        } else {
-            _buffer().appendBuf(_typeBits.getBuffer(), _typeBits.getSize());
-        }
-        return {version, ksSize, SharedBufferFragment(_buffer().release(), 0, _buffer().len())};
     }
 };
-class PooledBuilder : protected BufferHolder<PooledFragmentBuilder>, public BuilderBase<PooledBuilder> {
+class PooledBuilder : protected BufferHolder<PooledFragmentBuilder>,
+                      public BuilderBase<PooledBuilder> {
 public:
-   /* PooledBuilder(SharedBufferFragmentBuilder& memoryPool, Version version, Ordering ord)
-        : BuilderBase(version, ord, Discriminator::kInclusive), _builder2(memoryPool) {}
-
-    PooledBuilder(SharedBufferFragmentBuilder& memoryPool,
-                  Version version,
-                  const BSONObj& obj,
-                  Ordering ord,
-                  Discriminator discriminator = Discriminator::kInclusive)
-        : BuilderBase(version, obj, ord, discriminator), _builder2(memoryPool) {}*/
-
     template <typename... Args>
-    PooledBuilder(SharedBufferFragmentBuilder& memoryPool, Args&&... args) : BufferHolder(memoryPool), BuilderBase(std::forward<Args>(args)...) {}
+    PooledBuilder(SharedBufferFragmentBuilder& memoryPool, Args&&... args)
+        : BufferHolder(memoryPool), BuilderBase(std::forward<Args>(args)...) {}
 
-    /*HeapBuilder(const HeapBuilder& other)
-        : BufferHolder(kHeapAllocatorDefaultBytes), BuilderBase(other) {}*/
+    PooledBuilder(const PooledBuilder&) = delete;
 
     Value release() {
-        _doneAppending();
+        int32_t ksSize = _appendTypeBits();
         _transition(BuildState::kReleased);
-
-        // Before releasing, append the TypeBits.
-        int32_t ksSize = _buffer().len();
-        if (_typeBits.isAllZeros()) {
-            _builder2.appendChar(0);
-        } else {
-            _builder2.appendBuf(_typeBits.getBuffer(), _typeBits.getSize());
-        }
-        return {version, ksSize, _builder2.done()};
+        return {version, ksSize, _bufferBuilder.done()};
     }
 
-    PooledFragmentBuilder& _builder() {
-        return _builder2;
+public:
+    friend class BuilderBase;
+
+    PooledFragmentBuilder& _buffer() {
+        return _bufferBuilder;
     }
-    const PooledFragmentBuilder& _builder() const {
-        return _builder2;
+    const PooledFragmentBuilder& _buffer() const {
+        return _bufferBuilder;
     }
 
-    //PooledFragmentBuilder _builder2;
-
-    void reset_buffer() {}
+    void _reinstantiateBufferIfNeeded() {}
 };
-
-// using Builder = BuilderBase<StackBufBuilder>;
-// using HeapBuilder = BuilderBase<BufBuilder>;
-// using PooledBuilder = BuilderBase<PooledFragmentBuilder>;
 
 /*
  * The isKeyString struct allows the operators below to only be enabled if the types being operated
