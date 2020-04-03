@@ -153,21 +153,10 @@ public:
     }
 
     char* get() const {
-        auto& bo = _bufWithOffset();
-        return bo.buf.get() + bo.offset;
+        return _fragmentBuilder.get();
     }
 
 private:
-    struct BufferWithOffset {
-        SharedBuffer buf;
-        int offset{0};
-    };
-
-    BufferWithOffset& _bufWithOffset() const {
-        thread_local BufferWithOffset buf;
-        return buf;
-    }
-
     SharedBufferFragmentBuilder& _fragmentBuilder;
 };
 

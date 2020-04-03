@@ -535,8 +535,8 @@ public:
      * BufferT is BufBuilder.
      *
      */
-    //template <typename T = BufferT>
-    //typename std::enable_if<std::is_same<T, BufBuilder>::value, Value>::type release() {
+    // template <typename T = BufferT>
+    // typename std::enable_if<std::is_same<T, BufBuilder>::value, Value>::type release() {
     //    _doneAppending();
     //    _transition(BuildState::kReleased);
 
@@ -550,8 +550,9 @@ public:
     //    return {version, ksSize, _buffer().len(), 0, _buffer().release()};
     //}
 
-    //template <typename T = BufferT>
-    //typename std::enable_if<std::is_same<T, PooledFragmentBuilder>::value, Value>::type release() {
+    // template <typename T = BufferT>
+    // typename std::enable_if<std::is_same<T, PooledFragmentBuilder>::value, Value>::type release()
+    // {
     //    _doneAppending();
     //    _transition(BuildState::kReleased);
 
@@ -583,17 +584,17 @@ public:
         return {version, _buffer().len(), SharedBufferFragment(newBuf.release(), 0, newBuf.len())};
     }
 
-    //struct tlbuffer {
+    // struct tlbuffer {
     //    SharedBuffer buffer;
     //    int32_t offset = 0;
     //};
 
-    //tlbuffer& getTlsBuffer() {
+    // tlbuffer& getTlsBuffer() {
     //    thread_local tlbuffer buf;
     //    return buf;
     //}
 
-    //Value getValueCopy2() {
+    // Value getValueCopy2() {
     //    _doneAppending();
 
     //    //// Create a new buffer that is a concatenation of the KeyString and its TypeBits.
@@ -669,11 +670,12 @@ public:
      */
     void resetToEmpty(Ordering ord = ALL_ASCENDING,
                       Discriminator discriminator = Discriminator::kInclusive) {
-        /*if constexpr (std::is_same<BufferT, BufBuilder>::value) {
+        /*if constexpr (std::is_same<BuilderT, HeapBuilder>::value) {
             if (_state == BuildState::kReleased) {
-                _buffer = BufferT();
+                _buffer() = BufferT();
             }
         }*/
+        reset_buffer();
         _buffer().reset();
         _typeBits.reset();
 
@@ -844,11 +846,15 @@ protected:
     }
 
     auto& _buffer() {
-        return static_cast<BuilderT*>(this)->_builder;
+        return static_cast<BuilderT*>(this)->_builder();
     }
 
     const auto& _buffer() const {
-        return static_cast<const BuilderT*>(this)->_builder;
+        return static_cast<const BuilderT*>(this)->_builder();
+    }
+
+    void reset_buffer() {
+        static_cast<BuilderT*>(this)->reset_buffer();
     }
 
 
@@ -860,17 +866,29 @@ protected:
     Discriminator _discriminator;
 };
 
-class Builder : public BuilderBase<Builder> {
+template <typename BufferBuilderT>
+class BufferHolder {
+protected:
+    template <typename... Args>
+    BufferHolder(Args&&... args) : _builder2(std::forward<Args>(args)...) {}
+    BufferBuilderT _builder2;
+};
+
+class Builder : protected BufferHolder<StackBufBuilder>, public BuilderBase<Builder> {
 public:
     using BuilderBase::BuilderBase;
 
-    Builder(const Builder& other)
-        : BuilderBase(other) {
+    Builder(const Builder& other) : BuilderBase(other) {}
+
+    StackBufBuilder& _builder() {
+        return _builder2;
     }
+    const StackBufBuilder& _builder() const {
+        return _builder2;
+    }
+    void reset_buffer() {}
 
-    StackBufBuilder _builder;
-
-    //Value getValueCopy() {
+    // Value getValueCopy() {
     //    _doneAppending();
 
     //    // Create a new buffer that is a concatenation of the KeyString and its TypeBits.
@@ -881,18 +899,32 @@ public:
     //    } else {
     //        newBuf.appendBuf(_typeBits.getBuffer(), _typeBits.getSize());
     //    }
-    //    return {version, _buffer().len(), SharedBufferFragment(newBuf.release(), 0, newBuf.len())};
+    //    return {version, _buffer().len(), SharedBufferFragment(newBuf.release(), 0,
+    //    newBuf.len())};
     //}
 };
-class HeapBuilder : public BuilderBase<HeapBuilder> {
+class HeapBuilder : protected BufferHolder<BufBuilder>, public BuilderBase<HeapBuilder> {
 public:
-    using BuilderBase::BuilderBase;
+    // using BuilderBase::BuilderBase;
+    template <typename... Args>
+    HeapBuilder(Args&&... args) : BufferHolder(kHeapAllocatorDefaultBytes), BuilderBase(std::forward<Args>(args)...) {}
 
     HeapBuilder(const HeapBuilder& other)
-        : BuilderBase(other) {
+        : BufferHolder(kHeapAllocatorDefaultBytes), BuilderBase(other) {}
+
+    // BufBuilder _builder;
+    BufBuilder& _builder() {
+        return _builder2;
+    }
+    const BufBuilder& _builder() const {
+        return _builder2;
     }
 
-    BufBuilder _builder{kHeapAllocatorDefaultBytes};
+    void reset_buffer() {
+        if (_state == BuildState::kReleased) {
+            _builder2 = BufBuilder(kHeapAllocatorDefaultBytes);
+        }
+    }
 
     Value release() {
         _doneAppending();
@@ -908,16 +940,23 @@ public:
         return {version, ksSize, SharedBufferFragment(_buffer().release(), 0, _buffer().len())};
     }
 };
-class PooledBuilder : public BuilderBase<PooledBuilder> {
+class PooledBuilder : protected BufferHolder<PooledFragmentBuilder>, public BuilderBase<PooledBuilder> {
 public:
-    PooledBuilder(SharedBufferFragmentBuilder& memoryPool, Version version, Ordering ord)
-        : BuilderBase(version, ord, Discriminator::kInclusive), _builder(memoryPool) {}
+   /* PooledBuilder(SharedBufferFragmentBuilder& memoryPool, Version version, Ordering ord)
+        : BuilderBase(version, ord, Discriminator::kInclusive), _builder2(memoryPool) {}
 
-    PooledBuilder(SharedBufferFragmentBuilder& memoryPool, Version version,
+    PooledBuilder(SharedBufferFragmentBuilder& memoryPool,
+                  Version version,
                   const BSONObj& obj,
                   Ordering ord,
                   Discriminator discriminator = Discriminator::kInclusive)
-        : BuilderBase(version, obj, ord, discriminator), _builder(memoryPool) {}
+        : BuilderBase(version, obj, ord, discriminator), _builder2(memoryPool) {}*/
+
+    template <typename... Args>
+    PooledBuilder(SharedBufferFragmentBuilder& memoryPool, Args&&... args) : BufferHolder(memoryPool), BuilderBase(std::forward<Args>(args)...) {}
+
+    /*HeapBuilder(const HeapBuilder& other)
+        : BufferHolder(kHeapAllocatorDefaultBytes), BuilderBase(other) {}*/
 
     Value release() {
         _doneAppending();
@@ -926,14 +965,23 @@ public:
         // Before releasing, append the TypeBits.
         int32_t ksSize = _buffer().len();
         if (_typeBits.isAllZeros()) {
-            _builder.appendChar(0);
+            _builder2.appendChar(0);
         } else {
-            _builder.appendBuf(_typeBits.getBuffer(), _typeBits.getSize());
+            _builder2.appendBuf(_typeBits.getBuffer(), _typeBits.getSize());
         }
-        return {version, ksSize, _builder.done()};
+        return {version, ksSize, _builder2.done()};
     }
 
-    PooledFragmentBuilder _builder;
+    PooledFragmentBuilder& _builder() {
+        return _builder2;
+    }
+    const PooledFragmentBuilder& _builder() const {
+        return _builder2;
+    }
+
+    //PooledFragmentBuilder _builder2;
+
+    void reset_buffer() {}
 };
 
 // using Builder = BuilderBase<StackBufBuilder>;
