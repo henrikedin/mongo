@@ -1,5 +1,5 @@
 /**
- *    Copyright (C) 2018-present MongoDB, Inc.
+ *    Copyright (C) 2020-present MongoDB, Inc.
  *
  *    This program is free software: you can redistribute it and/or modify
  *    it under the terms of the Server Side Public License, version 1,
@@ -34,13 +34,16 @@
 namespace mongo {
 
 /**
- * A mutable, ref-counted buffer.
+ * Immutable view of a fragment of a ref-counted buffer. 
+ * Shares reference count with the underlying buffer.
  */
 class SharedBufferFragment {
 public:
     SharedBufferFragment() : _offset(0), _size(0) {}
+    explicit SharedBufferFragment(SharedBuffer buffer, size_t size)
+        : _buffer(std::move(buffer)), _offset(0), _size(size) {}
     explicit SharedBufferFragment(SharedBuffer buffer, ptrdiff_t offset, size_t size)
-        : _buffer(buffer), _offset(offset), _size(size) {}
+        : _buffer(std::move(buffer)), _offset(offset), _size(size) {}
 
     void swap(SharedBufferFragment& other) {
         _buffer.swap(other._buffer);
@@ -48,50 +51,12 @@ public:
         std::swap(_size, other._size);
     }
 
-    /*static SharedBuffer allocate(size_t bytes) {
-        return takeOwnership(mongoMalloc(sizeof(Holder) + bytes), bytes);
-    }*/
-
-    /**
-     * Resizes the buffer, copying the current contents.
-     *
-     * Like ::realloc() this can be called on a null SharedBuffer.
-     *
-     * This method is illegal to call if any other SharedBuffer instances share this buffer since
-     * they wouldn't be updated and would still try to delete the original buffer.
-     */
-    // void realloc(size_t size) {
-    //    invariant(!_holder || !_holder->isShared());
-
-    //    const size_t realSize = size + sizeof(Holder);
-    //    void* newPtr = mongoRealloc(_holder.get(), realSize);
-
-    //    // Get newPtr into _holder with a ref-count of 1 without touching the current pointee of
-    //    // _holder which is now invalid.
-    //    auto tmp = SharedBuffer::takeOwnership(newPtr, size);
-    //    _holder.detach();
-    //    _holder = std::move(tmp._holder);
-    //}
-
-    /**
-     * Resizes the buffer, copying the current contents. If shared, an exclusive copy is made.
-     */
-    /*void reallocOrCopy(size_t size) {
-        if (isShared()) {
-            auto tmp = SharedBuffer::allocate(size);
-            memcpy(tmp._holder->data(),
-                   _holder->data(),
-                   std::min(size, static_cast<size_t>(_holder->_capacity)));
-            swap(tmp);
-        } else if (_holder) {
-            realloc(size);
-        } else {
-            *this = SharedBuffer::allocate(size);
-        }
-    }*/
-
-    char* get() const {
+    const char* get() const {
         return _buffer.get() + _offset;
+    }
+
+    size_t size() const {
+        return _size;
     }
 
     explicit operator bool() const {
@@ -102,19 +67,18 @@ public:
      * Returns true if this object has exclusive access to the underlying buffer.
      * (That is, reference count == 1).
      */
-    /*bool isShared() const {
-        return _holder && _holder->isShared();
-    }*/
+    bool isShared() const {
+        return _buffer.isShared();
+    }
 
     /**
      * Returns the allocation size of the underlying buffer.
-     * Users of this type must maintain the "used" size separately.
      */
-    size_t size() const {
-        return _size;
+    size_t underlyingCapacity() const {
+        return _buffer.capacity();
     }
 
-private:
+private: 
     SharedBuffer _buffer;
     ptrdiff_t _offset;
     size_t _size;

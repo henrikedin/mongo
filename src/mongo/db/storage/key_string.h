@@ -403,13 +403,12 @@ public:
 
     int memUsageForSorter() const {
         // Use buffer capacity as a more accurate measure of memory usage.
-        return sizeof(Value) + _buffer.size();
+        return sizeof(Value) + _buffer.isShared() ? _buffer.size() : _buffer.underlyingCapacity();
     }
 
     Value getOwned() const {
         return *this;
     }
-    /// Members for Sorter
 
 private:
     Version _version;
@@ -503,7 +502,7 @@ public:
         } else {
             newBuf.appendBuf(_typeBits.getBuffer(), _typeBits.getSize());
         }
-        return {version, _buffer().len(), SharedBufferFragment(newBuf.release(), 0, newBuf.len())};
+        return {version, _buffer().len(), SharedBufferFragment(newBuf.release(), newBuf.len())};
     }
 
     void appendRecordId(RecordId loc);
@@ -703,6 +702,7 @@ protected:
         return _ordering.get(_elemCount) == -1;
     }
 
+    // Appends the TypeBits buffer to the main buffer and returns the offset of where the TypeBits begin
     int32_t _appendTypeBits() {
         _doneAppending();
 
@@ -728,7 +728,6 @@ protected:
         static_cast<BuilderT*>(this)->_reinstantiateBufferIfNeeded();
     }
 
-
     TypeBits _typeBits;
     BuildState _state;
     int _elemCount;
@@ -736,6 +735,7 @@ protected:
     Discriminator _discriminator;
 };
 
+// Helper class to hold a buffer builder. This class needs to be before BuilderBase when inheriting to ensure the buffer is constructed first
 template <typename BufferBuilderT>
 class BufferHolder {
 protected:
@@ -744,7 +744,7 @@ protected:
     BufferBuilderT _bufferBuilder;
 };
 
-class Builder : protected BufferHolder<StackBufBuilder>, public BuilderBase<Builder> {
+class Builder : private BufferHolder<StackBufBuilder>, public BuilderBase<Builder> {
 public:
     using BuilderBase::BuilderBase;
 
@@ -762,17 +762,18 @@ public:
 
     void _reinstantiateBufferIfNeeded() {}
 };
-class HeapBuilder : protected BufferHolder<BufBuilder>, public BuilderBase<HeapBuilder> {
+class HeapBuilder : private BufferHolder<BufBuilder>, public BuilderBase<HeapBuilder> {
 public:
     static constexpr uint8_t kHeapAllocatorDefaultBytes = 32;
 
-    // using BuilderBase::BuilderBase;
+    // Forwarding constructor to BuilderBase
     template <typename... Args>
     HeapBuilder(Args&&... args)
         : BufferHolder(kHeapAllocatorDefaultBytes), BuilderBase(std::forward<Args>(args)...) {}
 
+    // When copying don't allocate memory by default. Copy-constractor will request the right amount of memory
     HeapBuilder(const HeapBuilder& other)
-        : BufferHolder(kHeapAllocatorDefaultBytes), BuilderBase(other) {}
+        : BufferHolder(0), BuilderBase(other) {}
 
     /**
      * Releases the data held in this buffer into a Value type, releasing and transfering ownership
@@ -783,7 +784,7 @@ public:
         int32_t ksSize = _appendTypeBits();
         _transition(BuildState::kReleased);
 
-        return {version, ksSize, SharedBufferFragment(_bufferBuilder.release(), 0, _bufferBuilder.len())};
+        return {version, ksSize, SharedBufferFragment(_bufferBuilder.release(), _bufferBuilder.len())};
     }
 
 protected:
@@ -802,13 +803,14 @@ protected:
         }
     }
 };
-class PooledBuilder : protected BufferHolder<PooledFragmentBuilder>,
+class PooledBuilder : private BufferHolder<PooledFragmentBuilder>,
                       public BuilderBase<PooledBuilder> {
 public:
     template <typename... Args>
     PooledBuilder(SharedBufferFragmentBuilder& memoryPool, Args&&... args)
         : BufferHolder(memoryPool), BuilderBase(std::forward<Args>(args)...) {}
 
+    // Underlying SharedBufferFragmentBuilder can only build one buffer at the time, so copy does not work for the PooledBuilder.
     PooledBuilder(const PooledBuilder&) = delete;
 
     Value release() {
