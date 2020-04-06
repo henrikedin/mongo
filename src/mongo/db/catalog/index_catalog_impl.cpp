@@ -70,6 +70,7 @@
 #include "mongo/db/server_options.h"
 #include "mongo/db/service_context.h"
 #include "mongo/db/storage/durable_catalog.h"
+#include "mongo/db/storage/execution_context.h"
 #include "mongo/db/storage/kv/kv_engine.h"
 #include "mongo/db/storage/storage_engine_init.h"
 #include "mongo/db/ttl_collection_cache.h"
@@ -1375,6 +1376,8 @@ Status IndexCatalogImpl::_indexFilteredRecords(OperationContext* opCtx,
                                                IndexCatalogEntry* index,
                                                const std::vector<BsonRecord>& bsonRecords,
                                                int64_t* keysInsertedOut) {
+    auto& executionCtx = StorageExecutionContext::get(opCtx);
+
     InsertDeleteOptions options;
     prepareInsertDeleteOptions(opCtx, index->descriptor(), &options);
 
@@ -1387,24 +1390,25 @@ Status IndexCatalogImpl::_indexFilteredRecords(OperationContext* opCtx,
                 return status;
         }
 
-        KeyStringSet keys;
-        KeyStringSet multikeyMetadataKeys;
-        MultikeyPaths multikeyPaths;
+        executionCtx.keys.clear();
+        executionCtx.multikeyMetadataKeys.clear();
+        executionCtx.multikeyPaths.clear();
 
-        index->accessMethod()->getKeys(*bsonRecord.docPtr,
+        index->accessMethod()->getKeys(executionCtx.memoryPool,
+                                       *bsonRecord.docPtr,
                                        options.getKeysMode,
                                        IndexAccessMethod::GetKeysContext::kAddingKeys,
-                                       &keys,
-                                       &multikeyMetadataKeys,
-                                       &multikeyPaths,
+                                       &executionCtx.keys,
+                                       &executionCtx.multikeyMetadataKeys,
+                                       &executionCtx.multikeyPaths,
                                        bsonRecord.id,
                                        IndexAccessMethod::kNoopOnSuppressedErrorFn);
 
         Status status = _indexKeys(opCtx,
                                    index,
-                                   {keys.begin(), keys.end()},
-                                   multikeyMetadataKeys,
-                                   multikeyPaths,
+                                   {executionCtx.keys.begin(), executionCtx.keys.end()},
+                                   executionCtx.multikeyMetadataKeys,
+                                   executionCtx.multikeyPaths,
                                    *bsonRecord.docPtr,
                                    bsonRecord.id,
                                    options,
@@ -1548,12 +1552,14 @@ void IndexCatalogImpl::_unindexRecord(OperationContext* opCtx,
                                       const RecordId& loc,
                                       bool logIfError,
                                       int64_t* keysDeletedOut) {
+    auto& executionCtx = StorageExecutionContext::get(opCtx);
+    KeyStringSet& keys = executionCtx.keys;
+    keys.clear();
     // There's no need to compute the prefixes of the indexed fields that cause the index to be
     // multikey when removing a document since the index metadata isn't updated when keys are
     // deleted.
-    KeyStringSet keys;
-
-    entry->accessMethod()->getKeys(obj,
+    entry->accessMethod()->getKeys(executionCtx.memoryPool,
+                                   obj,
                                    IndexAccessMethod::GetKeysMode::kRelaxConstraintsUnfiltered,
                                    IndexAccessMethod::GetKeysContext::kRemovingKeys,
                                    &keys,

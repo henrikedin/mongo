@@ -44,6 +44,7 @@
 #include "mongo/db/index/wildcard_access_method.h"
 #include "mongo/db/matcher/expression.h"
 #include "mongo/db/operation_context.h"
+#include "mongo/db/storage/execution_context.h"
 #include "mongo/db/storage/key_string.h"
 #include "mongo/db/storage/record_store.h"
 #include "mongo/logv2/log.h"
@@ -89,6 +90,8 @@ Status ValidateAdaptor::validateRecord(OperationContext* opCtx,
         return status;
     }
 
+    auto& executionCtx = StorageExecutionContext::get(opCtx);
+
     for (const auto& index : _validateState->getIndexes()) {
         const IndexDescriptor* descriptor = index->descriptor();
         const IndexAccessMethod* iam = index->accessMethod();
@@ -100,23 +103,25 @@ Status ValidateAdaptor::validateRecord(OperationContext* opCtx,
             }
         }
 
-        KeyStringSet documentKeySet;
-        KeyStringSet multikeyMetadataKeys;
-        MultikeyPaths multikeyPaths;
-        iam->getKeys(recordBson,
+        executionCtx.keys.clear();
+        executionCtx.multikeyMetadataKeys.clear();
+        executionCtx.multikeyPaths.clear();
+
+        iam->getKeys(executionCtx.memoryPool,
+                     recordBson,
                      IndexAccessMethod::GetKeysMode::kEnforceConstraints,
                      IndexAccessMethod::GetKeysContext::kAddingKeys,
-                     &documentKeySet,
-                     &multikeyMetadataKeys,
-                     &multikeyPaths,
+                     &executionCtx.keys,
+                     &executionCtx.multikeyMetadataKeys,
+                     &executionCtx.multikeyPaths,
                      recordId,
                      IndexAccessMethod::kNoopOnSuppressedErrorFn);
 
         if (!descriptor->isMultikey() &&
-            iam->shouldMarkIndexAsMultikey(
-                documentKeySet.size(),
-                {multikeyMetadataKeys.begin(), multikeyMetadataKeys.end()},
-                multikeyPaths)) {
+            iam->shouldMarkIndexAsMultikey(executionCtx.keys.size(),
+                                           {executionCtx.multikeyMetadataKeys.begin(),
+                                            executionCtx.multikeyMetadataKeys.end()},
+                                           executionCtx.multikeyPaths)) {
             std::string msg = str::stream()
                 << "Index " << descriptor->indexName() << " is not multi-key but has more than one"
                 << " key in document " << recordId;
@@ -126,7 +131,7 @@ Status ValidateAdaptor::validateRecord(OperationContext* opCtx,
         }
 
         IndexInfo& indexInfo = _indexConsistency->getIndexInfo(descriptor->indexName());
-        for (const auto& keyString : multikeyMetadataKeys) {
+        for (const auto& keyString : executionCtx.multikeyMetadataKeys) {
             try {
                 _indexConsistency->addMultikeyMetadataPath(keyString, &indexInfo);
             } catch (...) {
@@ -134,7 +139,7 @@ Status ValidateAdaptor::validateRecord(OperationContext* opCtx,
             }
         }
 
-        for (const auto& keyString : documentKeySet) {
+        for (const auto& keyString : executionCtx.keys) {
             try {
                 _totalIndexKeys++;
                 _indexConsistency->addDocKey(opCtx, keyString, &indexInfo, recordId);
@@ -216,8 +221,13 @@ void ValidateAdaptor::traverseIndex(OperationContext* opCtx,
 
     const KeyString::Version version =
         index->accessMethod()->getSortedDataInterface()->getKeyStringVersion();
-    KeyString::Builder firstKeyString(
-        version, BSONObj(), indexInfo.ord, KeyString::Discriminator::kExclusiveBefore);
+
+    auto& executionCtx = StorageExecutionContext::get(opCtx);
+    KeyString::PooledBuilder firstKeyString(executionCtx.memoryPool,
+                                            version,
+                                            BSONObj(),
+                                            indexInfo.ord,
+                                            KeyString::Discriminator::kExclusiveBefore);
 
     KeyString::Value prevIndexKeyStringValue;
 
@@ -226,7 +236,7 @@ void ValidateAdaptor::traverseIndex(OperationContext* opCtx,
     invariant(indexCursorIt != _validateState->getIndexCursors().end());
 
     const std::unique_ptr<SortedDataInterfaceThrottleCursor>& indexCursor = indexCursorIt->second;
-    for (auto indexEntry = indexCursor->seekForKeyString(opCtx, firstKeyString.getValueCopy());
+    for (auto indexEntry = indexCursor->seekForKeyString(opCtx, firstKeyString.release());
          indexEntry;
          indexEntry = indexCursor->nextKeyString(opCtx)) {
 

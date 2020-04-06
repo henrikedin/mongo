@@ -1,5 +1,5 @@
 /**
- *    Copyright (C) 2018-present MongoDB, Inc.
+ *    Copyright (C) 2020-present MongoDB, Inc.
  *
  *    This program is free software: you can redistribute it and/or modify
  *    it under the terms of the Server Side Public License, version 1,
@@ -29,38 +29,24 @@
 
 #pragma once
 
-#include "mongo/base/status.h"
-#include "mongo/db/fts/fts_spec.h"
-#include "mongo/db/index/index_access_method.h"
-#include "mongo/db/index/index_descriptor.h"
-#include "mongo/db/jsobj.h"
+#include "mongo/db/index/multikey_paths.h"
+#include "mongo/db/operation_context.h"
+#include "mongo/db/storage/key_string.h"
+#include "mongo/util/shared_buffer_fragment.h"
 
 namespace mongo {
 
-class FTSAccessMethod : public AbstractIndexAccessMethod {
+class StorageExecutionContext {
 public:
-    FTSAccessMethod(IndexCatalogEntry* btreeState, std::unique_ptr<SortedDataInterface> btree);
+    static const OperationContext::Decoration<StorageExecutionContext> get;
 
-    const fts::FTSSpec& getSpec() const {
-        return _ftsSpec;
-    }
+    StorageExecutionContext();
 
-private:
-    /**
-     * Fills 'keys' with the keys that should be generated for 'obj' on this index.
-     *
-     * This function ignores the 'multikeyPaths' and 'multikeyMetadataKeys' pointers because text
-     * indexes don't support tracking path-level multikey information.
-     */
-    void doGetKeys(SharedBufferFragmentBuilder& allocator,
-                   const BSONObj& obj,
-                   GetKeysContext context,
-                   KeyStringSet* keys,
-                   KeyStringSet* multikeyMetadataKeys,
-                   MultikeyPaths* multikeyPaths,
-                   boost::optional<RecordId> id) const final;
+    KeyStringSet keys;
+    KeyStringSet multikeyMetadataKeys;
+    MultikeyPaths multikeyPaths;
 
-    fts::FTSSpec _ftsSpec;
+    SharedBufferFragmentBuilder memoryPool;
 };
 
 }  // namespace mongo

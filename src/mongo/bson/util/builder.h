@@ -52,6 +52,7 @@
 #include "mongo/util/concepts.h"
 #include "mongo/util/itoa.h"
 #include "mongo/util/shared_buffer.h"
+#include "mongo/util/shared_buffer_fragment.h"
 
 namespace mongo {
 
@@ -81,6 +82,9 @@ class SharedBufferAllocator {
 
 public:
     SharedBufferAllocator() = default;
+    SharedBufferAllocator(size_t sz) {
+        malloc(sz);
+    }
     SharedBufferAllocator(SharedBuffer buf) : _buf(std::move(buf)) {
         invariant(!_buf.isShared());
     }
@@ -99,8 +103,13 @@ public:
     void free() {
         _buf = {};
     }
+
     SharedBuffer release() {
         return std::move(_buf);
+    }
+
+    size_t capacity() const {
+        return _buf.capacity();
     }
 
     char* get() const {
@@ -111,11 +120,54 @@ private:
     SharedBuffer _buf;
 };
 
+class SharedBufferFragmentAllocator {
+    SharedBufferFragmentAllocator(const SharedBufferFragmentAllocator&) = delete;
+    SharedBufferFragmentAllocator& operator=(const SharedBufferFragmentAllocator&) = delete;
+
+public:
+    SharedBufferFragmentAllocator(SharedBufferFragmentBuilder& fragmentBuilder)
+        : _fragmentBuilder(fragmentBuilder) {}
+
+    // Allow moving but not copying. It would be an error for two SharedBufferAllocators to use the
+    // same underlying buffer.
+    SharedBufferFragmentAllocator(SharedBufferFragmentAllocator&&) = default;
+    SharedBufferFragmentAllocator& operator=(SharedBufferFragmentAllocator&&) = default;
+
+    void malloc(size_t sz) {
+        _fragmentBuilder.start(sz);
+    }
+    void realloc(size_t sz) {
+        auto capacity = _fragmentBuilder.capacity();
+        if (capacity < sz)
+            _fragmentBuilder.grow(sz);
+    }
+    void free() {
+        _fragmentBuilder.discard();
+    }
+
+    SharedBufferFragment finish(int size) {
+        return _fragmentBuilder.finish(size);
+    }
+
+    size_t capacity() const {
+        return _fragmentBuilder.capacity();
+    }
+
+    char* get() const {
+        return _fragmentBuilder.get();
+    }
+
+private:
+    SharedBufferFragmentBuilder& _fragmentBuilder;
+};
+
 enum { StackSizeDefault = 512 };
 template <size_t SZ>
 class StackAllocator {
     StackAllocator(const StackAllocator&) = delete;
     StackAllocator& operator=(const StackAllocator&) = delete;
+    StackAllocator(StackAllocator&&) = delete;
+    StackAllocator& operator=(StackAllocator&&) = delete;
 
 public:
     StackAllocator() = default;
@@ -124,27 +176,38 @@ public:
     }
 
     void malloc(size_t sz) {
-        if (sz > SZ)
+        if (sz > SZ) {
             _ptr = mongoMalloc(sz);
+            _capacity = sz;
+        }
     }
     void realloc(size_t sz) {
         if (_ptr == _buf) {
             if (sz > SZ) {
                 _ptr = mongoMalloc(sz);
                 memcpy(_ptr, _buf, SZ);
+                _capacity = sz;
+            } else {
+                _capacity = SZ;
             }
         } else {
             _ptr = mongoRealloc(_ptr, sz);
+            _capacity = sz;
         }
     }
     void free() {
         if (_ptr != _buf)
             ::free(_ptr);
         _ptr = _buf;
+        _capacity = SZ;
     }
 
     // Not supported on this allocator.
     void release() = delete;
+
+    size_t capacity() const {
+        return _capacity;
+    }
 
     char* get() const {
         return static_cast<char*>(_ptr);
@@ -152,19 +215,16 @@ public:
 
 private:
     char _buf[SZ];
+    size_t _capacity = SZ;
+
     void* _ptr = _buf;
 };
 
 template <class BufferAllocator>
 class BasicBufBuilder {
 public:
-    BasicBufBuilder(int initsize = 512) : size(initsize) {
-        if (size > 0) {
-            _buf.malloc(size);
-        }
-        l = 0;
-        reservedBytes = 0;
-    }
+    template <typename... AllocatorArgs>
+    BasicBufBuilder(AllocatorArgs&&... args) : _buf(std::forward<AllocatorArgs>(args)...) {}
 
     void kill() {
         _buf.free();
@@ -174,13 +234,12 @@ public:
         l = 0;
         reservedBytes = 0;
     }
-    void reset(int maxSize) {
+    void reset(size_t maxSize) {
         l = 0;
         reservedBytes = 0;
-        if (maxSize && size > maxSize) {
+        if (maxSize && _buf.capacity() > maxSize) {
             _buf.free();
             _buf.malloc(maxSize);
-            size = maxSize;
         }
     }
 
@@ -198,12 +257,6 @@ public:
     }
     const char* buf() const {
         return _buf.get();
-    }
-
-    /* assume ownership of the buffer */
-    REQUIRES_FOR_NON_TEMPLATE(std::is_same_v<BufferAllocator, SharedBufferAllocator>)
-    SharedBuffer release() {
-        return _buf.release();
     }
 
     void appendUChar(unsigned char j) {
@@ -282,15 +335,15 @@ public:
     }
     /** @return size of the buffer */
     int getSize() const {
-        return size;
+        return _buf.capacity();
     }
 
     /* returns the pre-grow write position */
     inline char* grow(int by) {
         int oldlen = l;
         int newLen = l + by;
-        int minSize = newLen + reservedBytes;
-        if (minSize > size) {
+        size_t minSize = newLen + reservedBytes;
+        if (minSize > _buf.capacity()) {
             grow_reallocate(minSize);
         }
         l = newLen;
@@ -300,9 +353,9 @@ public:
     /**
      * Reserve room for some number of bytes to be claimed at a later time.
      */
-    void reserveBytes(int bytes) {
-        int minSize = l + reservedBytes + bytes;
-        if (minSize > size)
+    void reserveBytes(size_t bytes) {
+        size_t minSize = l + reservedBytes + bytes;
+        if (minSize > _buf.capacity())
             grow_reallocate(minSize);
 
         // This must happen *after* any attempt to grow.
@@ -327,11 +380,10 @@ public:
     void useSharedBuffer(SharedBuffer buf) {
         invariant(l == 0);  // Can only do this while empty.
         invariant(reservedBytes == 0);
-        size = buf.capacity();
         _buf = SharedBufferAllocator(std::move(buf));
     }
 
-private:
+protected:
     template <typename T>
     void appendNumImpl(T t) {
         // NOTE: For now, we assume that all things written
@@ -353,19 +405,34 @@ private:
             a = a * 2;
 
         _buf.realloc(a);
-        size = a;
     }
 
 
     BufferAllocator _buf;
-    int l;
-    int size;
-    int reservedBytes;  // eagerly grow_reallocate to keep this many bytes of spare room.
+    int l{0};
+    int reservedBytes{0};  // eagerly grow_reallocate to keep this many bytes of spare room.
 
     friend class StringBuilderImpl<BufferAllocator>;
 };
 
-using BufBuilder = BasicBufBuilder<SharedBufferAllocator>;
+class BufBuilder : public BasicBufBuilder<SharedBufferAllocator> {
+public:
+    BufBuilder(size_t initsize = 512) : BasicBufBuilder(initsize) {}
+
+    /* assume ownership of the buffer */
+    SharedBuffer release() {
+        return _buf.release();
+    }
+};
+class PooledFragmentBuilder : public BasicBufBuilder<SharedBufferFragmentAllocator> {
+public:
+    PooledFragmentBuilder(SharedBufferFragmentBuilder& fragmentBuilder)
+        : BasicBufBuilder(fragmentBuilder) {}
+
+    SharedBufferFragment done() {
+        return _buf.finish(l);
+    }
+};
 MONGO_STATIC_ASSERT(std::is_move_constructible_v<BufBuilder>);
 
 /** The StackBufBuilder builds smaller datasets on the stack instead of using malloc.
@@ -378,8 +445,9 @@ MONGO_STATIC_ASSERT(std::is_move_constructible_v<BufBuilder>);
 template <size_t SZ>
 class StackBufBuilderBase : public BasicBufBuilder<StackAllocator<SZ>> {
 public:
-    StackBufBuilderBase() : BasicBufBuilder<StackAllocator<SZ>>(SZ) {}
-    void release() = delete;  // not allowed. not implemented.
+    StackBufBuilderBase() : BasicBufBuilder<StackAllocator<SZ>>() {}
+    StackBufBuilderBase(const StackBufBuilderBase&) = delete;
+    StackBufBuilderBase(StackBufBuilderBase&&) = delete;
 };
 using StackBufBuilder = StackBufBuilderBase<StackSizeDefault>;
 MONGO_STATIC_ASSERT(!std::is_move_constructible<StackBufBuilder>::value);

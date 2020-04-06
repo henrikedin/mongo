@@ -1,5 +1,5 @@
 /**
- *    Copyright (C) 2018-present MongoDB, Inc.
+ *    Copyright (C) 2020-present MongoDB, Inc.
  *
  *    This program is free software: you can redistribute it and/or modify
  *    it under the terms of the Server Side Public License, version 1,
@@ -27,40 +27,12 @@
  *    it in the license file.
  */
 
-#pragma once
-
-#include "mongo/base/status.h"
-#include "mongo/db/fts/fts_spec.h"
-#include "mongo/db/index/index_access_method.h"
-#include "mongo/db/index/index_descriptor.h"
-#include "mongo/db/jsobj.h"
+#include "mongo/db/storage/execution_context.h"
 
 namespace mongo {
+const OperationContext::Decoration<StorageExecutionContext> StorageExecutionContext::get =
+    OperationContext::declareDecoration<StorageExecutionContext>();
 
-class FTSAccessMethod : public AbstractIndexAccessMethod {
-public:
-    FTSAccessMethod(IndexCatalogEntry* btreeState, std::unique_ptr<SortedDataInterface> btree);
-
-    const fts::FTSSpec& getSpec() const {
-        return _ftsSpec;
-    }
-
-private:
-    /**
-     * Fills 'keys' with the keys that should be generated for 'obj' on this index.
-     *
-     * This function ignores the 'multikeyPaths' and 'multikeyMetadataKeys' pointers because text
-     * indexes don't support tracking path-level multikey information.
-     */
-    void doGetKeys(SharedBufferFragmentBuilder& allocator,
-                   const BSONObj& obj,
-                   GetKeysContext context,
-                   KeyStringSet* keys,
-                   KeyStringSet* multikeyMetadataKeys,
-                   MultikeyPaths* multikeyPaths,
-                   boost::optional<RecordId> id) const final;
-
-    fts::FTSSpec _ftsSpec;
-};
+StorageExecutionContext::StorageExecutionContext() : memoryPool(1024 * 1024) {}
 
 }  // namespace mongo
