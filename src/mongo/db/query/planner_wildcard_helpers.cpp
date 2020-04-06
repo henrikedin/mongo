@@ -52,9 +52,10 @@ namespace {
  * 'a.0.b', it will match 'staticComparisonPath' 'a.0.b', and it will also match 'a.b' but only if
  * 'multikeyPathComponents' indicates that 'a' is an array.
  */
-bool fieldNameOrArrayIndexPathMatches(const FieldRef& fieldNameOrArrayIndexPath,
-                                      const FieldRef& staticComparisonPath,
-                                      const std::set<size_t>& multikeyPathComponents) {
+bool fieldNameOrArrayIndexPathMatches(
+    const FieldRef& fieldNameOrArrayIndexPath,
+    const FieldRef& staticComparisonPath,
+    const boost::container::flat_set<size_t>& multikeyPathComponents) {
     // Can't be equal if 'staticComparisonPath' has more parts than 'fieldNameOrArrayIndexPath'.
     if (staticComparisonPath.numParts() > fieldNameOrArrayIndexPath.numParts()) {
         return false;
@@ -81,9 +82,10 @@ bool fieldNameOrArrayIndexPathMatches(const FieldRef& fieldNameOrArrayIndexPath,
  * Returns true if 'multikeyPathSet' contains a FieldRef that matches 'pathToLookup' exactly, or
  * matches 'pathToLookup' when the latter's array indices are ignored.
  */
-bool fieldNameOrArrayIndexPathSetContains(const std::set<FieldRef>& multikeyPathSet,
-                                          const std::set<std::size_t>& multikeyPathComponents,
-                                          const FieldRef& pathToLookup) {
+bool fieldNameOrArrayIndexPathSetContains(
+    const std::set<FieldRef>& multikeyPathSet,
+    const boost::container::flat_set<std::size_t>& multikeyPathComponents,
+    const FieldRef& pathToLookup) {
     // Fast-path check for an exact match. If there is no exact match and 'pathToLookup' has no
     // numeric path components, then 'multikeyPathSet' does not contain the path.
     if (multikeyPathSet.count(pathToLookup)) {
@@ -107,8 +109,8 @@ bool fieldNameOrArrayIndexPathSetContains(const std::set<FieldRef>& multikeyPath
  * prefix of the full path used to generate 'multikeyPaths', and so we must avoid checking path
  * components beyond the end of 'queryPath'.
  */
-std::vector<size_t> findArrayIndexPathComponents(const std::set<std::size_t>& multikeyPaths,
-                                                 const FieldRef& queryPath) {
+std::vector<size_t> findArrayIndexPathComponents(
+    const boost::container::flat_set<std::size_t>& multikeyPaths, const FieldRef& queryPath) {
     std::vector<size_t> arrayIndices;
     for (auto i : multikeyPaths) {
         if (i < queryPath.numParts() - 1 && queryPath.isNumericPathComponentStrict(i + 1)) {
@@ -144,7 +146,7 @@ FieldRef pathWithoutSpecifiedComponents(const FieldRef& path,
 MultikeyPaths buildMultiKeyPathsForExpandedWildcardIndexEntry(
     const FieldRef& indexedPath, const std::set<FieldRef>& multikeyPathSet) {
     FieldRef pathToLookup;
-    std::set<std::size_t> multikeyPaths;
+    boost::container::flat_set<std::size_t> multikeyPaths;
     for (size_t i = 0; i < indexedPath.numParts(); ++i) {
         pathToLookup.appendPart(indexedPath.getPart(i));
         if (fieldNameOrArrayIndexPathSetContains(multikeyPathSet, multikeyPaths, pathToLookup)) {
@@ -154,9 +156,10 @@ MultikeyPaths buildMultiKeyPathsForExpandedWildcardIndexEntry(
     return {multikeyPaths};
 }
 
-std::set<FieldRef> generateFieldNameOrArrayIndexPathSet(const std::set<std::size_t>& multikeyPaths,
-                                                        const FieldRef& queryPath,
-                                                        bool requiresSubpathBounds) {
+std::set<FieldRef> generateFieldNameOrArrayIndexPathSet(
+    const boost::container::flat_set<std::size_t>& multikeyPaths,
+    const FieldRef& queryPath,
+    bool requiresSubpathBounds) {
     // We iterate over the power set of array index positions to generate all necessary paths.
     // The algorithm is unavoidably O(n2^n), but we enforce that 'n' is never more than single
     // digits during the planner's index selection phase.
@@ -466,7 +469,8 @@ void finalizeWildcardIndexScanConfiguration(IndexScanNode* scan) {
     // field in each key is 'path.to.field'. We push a new entry into the bounds vector for the
     // leading '$_path' bound here. We also push corresponding fields into the IndexScanNode's
     // keyPattern and its multikeyPaths vector.
-    index->multikeyPaths.insert(index->multikeyPaths.begin(), std::set<std::size_t>{});
+    index->multikeyPaths.insert(index->multikeyPaths.begin(),
+                                boost::container::flat_set<std::size_t>{});
     bounds->fields.insert(bounds->fields.begin(), {"$_path"});
     index->keyPattern =
         BSON("$_path" << index->keyPattern.firstElement() << index->keyPattern.firstElement());

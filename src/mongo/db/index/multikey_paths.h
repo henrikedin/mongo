@@ -29,8 +29,8 @@
 
 #pragma once
 
+#include <boost/container/flat_set.hpp>
 #include <cstddef>
-#include <set>
 #include <vector>
 
 namespace mongo {
@@ -54,6 +54,7 @@ namespace mongo {
 // {a: 1, b: 1}           no multikey metadata  {}
 //
 // An empty vector is used to represent that the index doesn't support path-level multikey tracking.
-using MultikeyPaths = std::vector<std::set<std::size_t>>;
+using MultikeyComponents = boost::container::flat_set<std::size_t>;
+using MultikeyPaths = std::vector<MultikeyComponents>;
 
 }  // namespace mongo

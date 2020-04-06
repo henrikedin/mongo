@@ -170,7 +170,9 @@ TEST_F(DurableCatalogTest, MultikeyPathsForBtreeIndexInitializedToVectorOfEmptyS
     {
         MultikeyPaths multikeyPaths;
         ASSERT(!catalog->isIndexMultikey(opCtx.get(), getCatalogId(), indexName, &multikeyPaths));
-        assertMultikeyPathsAreEqual(multikeyPaths, {std::set<size_t>{}, std::set<size_t>{}});
+        assertMultikeyPathsAreEqual(
+            multikeyPaths,
+            {boost::container::flat_set<size_t>{}, boost::container::flat_set<size_t>{}});
     }
 }
 
@@ -179,12 +181,12 @@ TEST_F(DurableCatalogTest, CanSetIndividualPathComponentOfBtreeIndexAsMultikey) 
     auto opCtx = newOperationContext();
     DurableCatalog* catalog = getCatalog();
     ASSERT(catalog->setIndexIsMultikey(
-        opCtx.get(), getCatalogId(), indexName, {std::set<size_t>{}, {0U}}));
+        opCtx.get(), getCatalogId(), indexName, {boost::container::flat_set<size_t>{}, {0U}}));
 
     {
         MultikeyPaths multikeyPaths;
         ASSERT(catalog->isIndexMultikey(opCtx.get(), getCatalogId(), indexName, &multikeyPaths));
-        assertMultikeyPathsAreEqual(multikeyPaths, {std::set<size_t>{}, {0U}});
+        assertMultikeyPathsAreEqual(multikeyPaths, {boost::container::flat_set<size_t>{}, {0U}});
     }
 }
 
@@ -193,16 +195,16 @@ TEST_F(DurableCatalogTest, MultikeyPathsAccumulateOnDifferentFields) {
     auto opCtx = newOperationContext();
     DurableCatalog* catalog = getCatalog();
     ASSERT(catalog->setIndexIsMultikey(
-        opCtx.get(), getCatalogId(), indexName, {std::set<size_t>{}, {0U}}));
+        opCtx.get(), getCatalogId(), indexName, {boost::container::flat_set<size_t>{}, {0U}}));
 
     {
         MultikeyPaths multikeyPaths;
         ASSERT(catalog->isIndexMultikey(opCtx.get(), getCatalogId(), indexName, &multikeyPaths));
-        assertMultikeyPathsAreEqual(multikeyPaths, {std::set<size_t>{}, {0U}});
+        assertMultikeyPathsAreEqual(multikeyPaths, {boost::container::flat_set<size_t>{}, {0U}});
     }
 
     ASSERT(catalog->setIndexIsMultikey(
-        opCtx.get(), getCatalogId(), indexName, {{0U}, std::set<size_t>{}}));
+        opCtx.get(), getCatalogId(), indexName, {{0U}, boost::container::flat_set<size_t>{}}));
 
     {
         MultikeyPaths multikeyPaths;
@@ -283,7 +285,10 @@ DEATH_TEST_REGEX_F(DurableCatalogTest,
     auto opCtx = newOperationContext();
     DurableCatalog* catalog = getCatalog();
     catalog->setIndexIsMultikey(
-        opCtx.get(), getCatalogId(), indexName, {std::set<size_t>{}, std::set<size_t>{}});
+        opCtx.get(),
+        getCatalogId(),
+        indexName,
+        {boost::container::flat_set<size_t>{}, boost::container::flat_set<size_t>{}});
 }
 
 TEST_F(DurableCatalogTest, PathLevelMultikeyTrackingIsSupportedBy2dsphereIndexes) {
@@ -294,7 +299,9 @@ TEST_F(DurableCatalogTest, PathLevelMultikeyTrackingIsSupportedBy2dsphereIndexes
     {
         MultikeyPaths multikeyPaths;
         ASSERT(!catalog->isIndexMultikey(opCtx.get(), getCatalogId(), indexName, &multikeyPaths));
-        assertMultikeyPathsAreEqual(multikeyPaths, {std::set<size_t>{}, std::set<size_t>{}});
+        assertMultikeyPathsAreEqual(
+            multikeyPaths,
+            {boost::container::flat_set<size_t>{}, boost::container::flat_set<size_t>{}});
     }
 }
 

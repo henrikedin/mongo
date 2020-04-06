@@ -29,8 +29,8 @@
 
 #pragma once
 
+#include <boost/container/flat_set.hpp>
 #include <cstddef>
-#include <set>
 
 #include "mongo/bson/bsonelement_comparator_interface.h"
 #include "mongo/bson/bsonobj.h"
@@ -98,17 +98,19 @@ BSONElement extractElementAtPathOrArrayAlongPath(const BSONObj& obj, const char*
  *   {b: [2, 3]} would be added to the set and 'arrayComponents' would be set as
  *   std::set<size_t>{0U} if 'expandArrayOnTrailingField' is false.
  */
-void extractAllElementsAlongPath(const BSONObj& obj,
-                                 StringData path,
-                                 BSONElementSet& elements,
-                                 bool expandArrayOnTrailingField = true,
-                                 std::set<std::size_t>* arrayComponents = nullptr);
+void extractAllElementsAlongPath(
+    const BSONObj& obj,
+    StringData path,
+    BSONElementSet& elements,
+    bool expandArrayOnTrailingField = true,
+    boost::container::flat_set<std::size_t>* arrayComponents = nullptr);
 
-void extractAllElementsAlongPath(const BSONObj& obj,
-                                 StringData path,
-                                 BSONElementMultiSet& elements,
-                                 bool expandArrayOnTrailingField = true,
-                                 std::set<std::size_t>* arrayComponents = nullptr);
+void extractAllElementsAlongPath(
+    const BSONObj& obj,
+    StringData path,
+    BSONElementMultiSet& elements,
+    bool expandArrayOnTrailingField = true,
+    boost::container::flat_set<std::size_t>* arrayComponents = nullptr);
 
 /**
  * Returns an owned BSONObj with elements in the same order as they appear in the 'pattern' object

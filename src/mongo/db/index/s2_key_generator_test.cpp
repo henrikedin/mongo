@@ -212,7 +212,8 @@ TEST(S2KeyGeneratorTest, GetS2KeysFromArrayOfNonGeoSubobjectsWithArrayValues) {
     KeyStringSet expectedKeys{keyString1.release(), keyString2.release(), keyString3.release()};
 
     ASSERT_TRUE(areKeysetsEqual(expectedKeys, actualKeys));
-    assertMultikeyPathsEqual(MultikeyPaths{{0U, 1U}, std::set<size_t>{}}, actualMultikeyPaths);
+    assertMultikeyPathsEqual(MultikeyPaths{{0U, 1U}, boost::container::flat_set<size_t>{}},
+                             actualMultikeyPaths);
 }
 
 TEST(S2KeyGeneratorTest, GetS2KeysFromMultiPointInGeoField) {
@@ -247,7 +248,8 @@ TEST(S2KeyGeneratorTest, GetS2KeysFromMultiPointInGeoField) {
     KeyStringSet expectedKeys{keyString1.release(), keyString2.release(), keyString3.release()};
 
     ASSERT_TRUE(areKeysetsEqual(expectedKeys, actualKeys));
-    assertMultikeyPathsEqual(MultikeyPaths{std::set<size_t>{}, {0U}}, actualMultikeyPaths);
+    assertMultikeyPathsEqual(MultikeyPaths{boost::container::flat_set<size_t>{}, {0U}},
+                             actualMultikeyPaths);
 }
 
 TEST(S2KeyGeneratorTest, CollationAppliedToNonGeoStringFieldAfterGeoField) {
@@ -275,8 +277,9 @@ TEST(S2KeyGeneratorTest, CollationAppliedToNonGeoStringFieldAfterGeoField) {
     KeyStringSet expectedKeys{keyString.release()};
 
     ASSERT_TRUE(areKeysetsEqual(expectedKeys, actualKeys));
-    assertMultikeyPathsEqual(MultikeyPaths{std::set<size_t>{}, std::set<size_t>{}},
-                             actualMultikeyPaths);
+    assertMultikeyPathsEqual(
+        MultikeyPaths{boost::container::flat_set<size_t>{}, boost::container::flat_set<size_t>{}},
+        actualMultikeyPaths);
 }
 
 TEST(S2KeyGeneratorTest, CollationAppliedToNonGeoStringFieldBeforeGeoField) {
@@ -305,8 +308,9 @@ TEST(S2KeyGeneratorTest, CollationAppliedToNonGeoStringFieldBeforeGeoField) {
     KeyStringSet expectedKeys{keyString.release()};
 
     ASSERT_TRUE(areKeysetsEqual(expectedKeys, actualKeys));
-    assertMultikeyPathsEqual(MultikeyPaths{std::set<size_t>{}, std::set<size_t>{}},
-                             actualMultikeyPaths);
+    assertMultikeyPathsEqual(
+        MultikeyPaths{boost::container::flat_set<size_t>{}, boost::container::flat_set<size_t>{}},
+        actualMultikeyPaths);
 }
 
 TEST(S2KeyGeneratorTest, CollationAppliedToAllNonGeoStringFields) {
@@ -336,9 +340,10 @@ TEST(S2KeyGeneratorTest, CollationAppliedToAllNonGeoStringFields) {
     KeyStringSet expectedKeys{keyString.release()};
 
     ASSERT_TRUE(areKeysetsEqual(expectedKeys, actualKeys));
-    assertMultikeyPathsEqual(
-        MultikeyPaths{std::set<size_t>{}, std::set<size_t>{}, std::set<size_t>{}},
-        actualMultikeyPaths);
+    assertMultikeyPathsEqual(MultikeyPaths{boost::container::flat_set<size_t>{},
+                                           boost::container::flat_set<size_t>{},
+                                           boost::container::flat_set<size_t>{}},
+                             actualMultikeyPaths);
 }
 
 TEST(S2KeyGeneratorTest, CollationAppliedToNonGeoStringFieldWithMultiplePathComponents) {
@@ -366,8 +371,9 @@ TEST(S2KeyGeneratorTest, CollationAppliedToNonGeoStringFieldWithMultiplePathComp
     KeyStringSet expectedKeys{keyString.release()};
 
     ASSERT_TRUE(areKeysetsEqual(expectedKeys, actualKeys));
-    assertMultikeyPathsEqual(MultikeyPaths{std::set<size_t>{}, std::set<size_t>{}},
-                             actualMultikeyPaths);
+    assertMultikeyPathsEqual(
+        MultikeyPaths{boost::container::flat_set<size_t>{}, boost::container::flat_set<size_t>{}},
+        actualMultikeyPaths);
 }
 
 TEST(S2KeyGeneratorTest, CollationAppliedToStringsInArray) {
@@ -399,7 +405,8 @@ TEST(S2KeyGeneratorTest, CollationAppliedToStringsInArray) {
     KeyStringSet expectedKeys{keyString1.release(), keyString2.release()};
 
     ASSERT_TRUE(areKeysetsEqual(expectedKeys, actualKeys));
-    assertMultikeyPathsEqual(MultikeyPaths{std::set<size_t>{}, {0U}}, actualMultikeyPaths);
+    assertMultikeyPathsEqual(MultikeyPaths{boost::container::flat_set<size_t>{}, {0U}},
+                             actualMultikeyPaths);
 }
 
 TEST(S2KeyGeneratorTest, CollationAppliedToStringsInAllArrays) {
@@ -449,7 +456,8 @@ TEST(S2KeyGeneratorTest, CollationAppliedToStringsInAllArrays) {
         keyString1.release(), keyString2.release(), keyString3.release(), keyString4.release()};
 
     ASSERT_TRUE(areKeysetsEqual(expectedKeys, actualKeys));
-    assertMultikeyPathsEqual(MultikeyPaths{std::set<size_t>{}, {0U}, {0U}}, actualMultikeyPaths);
+    assertMultikeyPathsEqual(MultikeyPaths{boost::container::flat_set<size_t>{}, {0U}, {0U}},
+                             actualMultikeyPaths);
 }
 
 TEST(S2KeyGeneratorTest, CollationDoesNotAffectNonStringFields) {
@@ -476,8 +484,9 @@ TEST(S2KeyGeneratorTest, CollationDoesNotAffectNonStringFields) {
     KeyStringSet expectedKeys{keyString.release()};
 
     ASSERT_TRUE(areKeysetsEqual(expectedKeys, actualKeys));
-    assertMultikeyPathsEqual(MultikeyPaths{std::set<size_t>{}, std::set<size_t>{}},
-                             actualMultikeyPaths);
+    assertMultikeyPathsEqual(
+        MultikeyPaths{boost::container::flat_set<size_t>{}, boost::container::flat_set<size_t>{}},
+        actualMultikeyPaths);
 }
 
 TEST(S2KeyGeneratorTest, CollationAppliedToStringsInNestedObjects) {
@@ -506,8 +515,9 @@ TEST(S2KeyGeneratorTest, CollationAppliedToStringsInNestedObjects) {
     KeyStringSet expectedKeys{keyString.release()};
 
     ASSERT_TRUE(areKeysetsEqual(expectedKeys, actualKeys));
-    assertMultikeyPathsEqual(MultikeyPaths{std::set<size_t>{}, std::set<size_t>{}},
-                             actualMultikeyPaths);
+    assertMultikeyPathsEqual(
+        MultikeyPaths{boost::container::flat_set<size_t>{}, boost::container::flat_set<size_t>{}},
+        actualMultikeyPaths);
 }
 
 TEST(S2KeyGeneratorTest, NoCollation) {
@@ -535,8 +545,9 @@ TEST(S2KeyGeneratorTest, NoCollation) {
     KeyStringSet expectedKeys{keyString.release()};
 
     ASSERT_TRUE(areKeysetsEqual(expectedKeys, actualKeys));
-    assertMultikeyPathsEqual(MultikeyPaths{std::set<size_t>{}, std::set<size_t>{}},
-                             actualMultikeyPaths);
+    assertMultikeyPathsEqual(
+        MultikeyPaths{boost::container::flat_set<size_t>{}, boost::container::flat_set<size_t>{}},
+        actualMultikeyPaths);
 }
 
 TEST(S2KeyGeneratorTest, EmptyArrayForLeadingFieldIsConsideredMultikey) {
@@ -563,7 +574,8 @@ TEST(S2KeyGeneratorTest, EmptyArrayForLeadingFieldIsConsideredMultikey) {
     KeyStringSet expectedKeys{keyString.release()};
 
     ASSERT_TRUE(areKeysetsEqual(expectedKeys, actualKeys));
-    assertMultikeyPathsEqual(MultikeyPaths{{0U}, std::set<size_t>{}}, actualMultikeyPaths);
+    assertMultikeyPathsEqual(MultikeyPaths{{0U}, boost::container::flat_set<size_t>{}},
+                             actualMultikeyPaths);
 }
 
 TEST(S2KeyGeneratorTest, EmptyArrayForTrailingFieldIsConsideredMultikey) {
@@ -590,7 +602,8 @@ TEST(S2KeyGeneratorTest, EmptyArrayForTrailingFieldIsConsideredMultikey) {
     KeyStringSet expectedKeys{keyString.release()};
 
     ASSERT_TRUE(areKeysetsEqual(expectedKeys, actualKeys));
-    assertMultikeyPathsEqual(MultikeyPaths{std::set<size_t>{}, {0U}}, actualMultikeyPaths);
+    assertMultikeyPathsEqual(MultikeyPaths{boost::container::flat_set<size_t>{}, {0U}},
+                             actualMultikeyPaths);
 }
 
 TEST(S2KeyGeneratorTest, SingleElementTrailingArrayIsConsideredMultikey) {
@@ -617,7 +630,8 @@ TEST(S2KeyGeneratorTest, SingleElementTrailingArrayIsConsideredMultikey) {
     KeyStringSet expectedKeys{keyString.release()};
 
     ASSERT_TRUE(areKeysetsEqual(expectedKeys, actualKeys));
-    assertMultikeyPathsEqual(MultikeyPaths{{1U}, std::set<size_t>{}}, actualMultikeyPaths);
+    assertMultikeyPathsEqual(MultikeyPaths{{1U}, boost::container::flat_set<size_t>{}},
+                             actualMultikeyPaths);
 }
 
 TEST(S2KeyGeneratorTest, MidPathSingleElementArrayIsConsideredMultikey) {
@@ -644,7 +658,8 @@ TEST(S2KeyGeneratorTest, MidPathSingleElementArrayIsConsideredMultikey) {
     KeyStringSet expectedKeys{keyString.release()};
 
     ASSERT_TRUE(areKeysetsEqual(expectedKeys, actualKeys));
-    assertMultikeyPathsEqual(MultikeyPaths{{0U}, std::set<size_t>{}}, actualMultikeyPaths);
+    assertMultikeyPathsEqual(MultikeyPaths{{0U}, boost::container::flat_set<size_t>{}},
+                             actualMultikeyPaths);
 }
 
 }  // namespace

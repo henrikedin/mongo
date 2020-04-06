@@ -148,10 +148,10 @@ void QueryPlannerTest::addIndex(BSONObj keyPattern, const MultikeyPaths& multike
     invariant(multikeyPaths.size() == static_cast<size_t>(keyPattern.nFields()));
 
     const auto type = IndexNames::nameToType(IndexNames::findPluginName(keyPattern));
-    const bool multikey =
-        std::any_of(multikeyPaths.cbegin(),
-                    multikeyPaths.cend(),
-                    [](const std::set<size_t>& components) { return !components.empty(); });
+    const bool multikey = std::any_of(
+        multikeyPaths.cbegin(),
+        multikeyPaths.cend(),
+        [](const boost::container::flat_set<size_t>& components) { return !components.empty(); });
     const bool sparse = false;
     const bool unique = false;
     const char name[] = "my_index_with_path_level_multikey_info";
