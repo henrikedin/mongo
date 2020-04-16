@@ -39,6 +39,7 @@
 #include "mongo/bson/bsonelement.h"
 #include "mongo/bson/bsonmisc.h"
 #include "mongo/bson/bsonobj.h"
+#include "mongo/logv2/log_attr.h"
 
 namespace mongo {
 
@@ -231,5 +232,9 @@ inline StringBuilder& operator<<(StringBuilder& s, const UUID& uuid) {
  */
 template <>
 BSONObjBuilder& BSONObjBuilderValueStream::operator<<<UUID>(UUID value);
+
+inline auto attr(const UUID& uuid) {
+    return "uuid"_attr = uuid;
+}
 
 }  // namespace mongo

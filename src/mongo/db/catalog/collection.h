@@ -51,6 +51,7 @@
 #include "mongo/db/storage/capped_callback.h"
 #include "mongo/db/storage/record_store.h"
 #include "mongo/db/storage/snapshot.h"
+#include "mongo/logv2/log_attr.h"
 #include "mongo/platform/mutex.h"
 #include "mongo/stdx/condition_variable.h"
 #include "mongo/util/decorable.h"
@@ -538,5 +539,9 @@ public:
         return false;
     }
 };
+
+inline auto attr(const Collection& col) {
+    return logv2::cat(attr(col.ns()), attr(col.uuid()));
+}
 
 }  // namespace mongo

@@ -32,6 +32,7 @@
 #include "mongo/base/status.h"
 #include "mongo/bson/util/builder.h"
 #include "mongo/logv2/attribute_storage.h"
+#include "mongo/logv2/log_attr.h"
 #include "mongo/logv2/log_component.h"
 #include "mongo/logv2/log_domain.h"
 #include "mongo/logv2/log_options.h"
@@ -49,11 +50,11 @@ void doLogImpl(int32_t id,
 
 
 template <typename S, typename... Args>
-void doLog(int32_t id,
-           LogSeverity const& severity,
-           LogOptions const& options,
-           S const& message,
-           const fmt::internal::named_arg<Args, char>&... args) {
+void doLogUnpacked(int32_t id,
+                   LogSeverity const& severity,
+                   LogOptions const& options,
+                   const S& message,
+                   const fmt::internal::named_arg<Args, char>&... args) {
     auto attributes = makeAttributeStorage(args...);
 
     fmt::string_view msg{message};
@@ -61,31 +62,48 @@ void doLog(int32_t id,
 }
 
 template <typename S, size_t N, typename... Args>
-void doLog(int32_t id,
-           LogSeverity const& severity,
-           LogOptions const& options,
-           S const& fmtmsg,
-           const char (&msg)[N],
-           const fmt::internal::named_arg<Args, char>&... args) {
-    doLog(id, severity, options, msg, args...);
+void doLogUnpacked(int32_t id,
+                   LogSeverity const& severity,
+                   LogOptions const& options,
+                   const S& message,
+                   const char (&msg)[N],
+                   const fmt::internal::named_arg<Args, char>&... args) {
+    doLogUnpacked(id, severity, options, msg, args...);
 }
 
 template <typename S>
-void doLog(int32_t id,
-           LogSeverity const& severity,
-           LogOptions const& options,
-           S const& message,
-           const DynamicAttributes& dynamicAttrs) {
+void doLogUnpacked(int32_t id,
+                   LogSeverity const& severity,
+                   LogOptions const& options,
+                   const S& message,
+                   const DynamicAttributes& dynamicAttrs) {
     fmt::string_view msg{message};
     doLogImpl(id, severity, options, StringData(msg.data(), msg.size()), dynamicAttrs);
 }
 
-}  // namespace logv2::detail
-
-inline namespace literals {
-inline fmt::internal::udl_arg<char> operator"" _attr(const char* s, std::size_t) {
-    return {s};
+template <typename S, typename... Args>
+void doLog(int32_t id,
+           LogSeverity const& severity,
+           LogOptions const& options,
+           const S& message,
+           const Args&... args) {
+    std::apply([id, &severity, &options, &message](
+                   auto&&... args) { doLogUnpacked(id, severity, options, message, args...); },
+               std::tuple_cat(flattenRef(args)...));
 }
-}  // namespace literals
+
+template <typename S, size_t N, typename... Args>
+void doLog(int32_t id,
+           LogSeverity const& severity,
+           LogOptions const& options,
+           const S& message,
+           const char (&msg)[N],
+           const Args&... args) {
+    std::apply([id, &severity, &options, &message, &msg](
+                   auto&&... args) { doLogUnpacked(id, severity, options, message, msg, args...); },
+               std::tuple_cat(flattenRef(args)...));
+}
+
+}  // namespace logv2::detail
 
 }  // namespace mongo

@@ -75,10 +75,9 @@ MinVisibleTimestampMap closeCatalog(OperationContext* opCtx) {
             if (uuid && minVisible) {
                 LOGV2_DEBUG(20269,
                             1,
-                            "closeCatalog: preserving min visible timestamp. Collection: {coll_ns} "
+                            "closeCatalog: preserving min visible timestamp. Collection: {namespace} "
                             "UUID: {uuid} TS: {minVisible}",
-                            "coll_ns"_attr = coll->ns(),
-                            "uuid"_attr = uuid,
+                            attr(*coll),
                             "minVisible"_attr = minVisible);
                 minVisibleTimestampMap[*uuid] = *minVisible;
             }

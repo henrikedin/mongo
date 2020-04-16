@@ -961,6 +961,129 @@ TEST_F(LogV2JsonBsonTest, DynamicAttributes) {
     });
 }
 
+
+struct A {
+    std::string toString() const {
+        return "A";
+    }
+};
+auto attr(const A& a) {
+    return "a"_attr = a;
+}
+
+TEST_F(LogV2JsonBsonTest, AttrWrapperOne) {
+    A a;
+    LOGV2(4759400, "{}", attr(a));
+    validate([&a](const BSONObj& obj) {
+        ASSERT_EQUALS(obj.getField(kAttributesFieldName).Obj().getField("a").String(),
+                      a.toString());
+    });
+}
+
+struct B {
+    std::string toString() const {
+        return "B";
+    }
+};
+auto attr(const B& b) {
+    return "b"_attr = b;
+}
+
+TEST_F(LogV2JsonBsonTest, AttrWrapperTwo) {
+    A a;
+    B b;
+    LOGV2(4759401, "{}", attr(a), attr(b));
+    validate([&a, &b](const BSONObj& obj) {
+        ASSERT_EQUALS(obj.getField(kAttributesFieldName).Obj().getField("a").String(),
+                      a.toString());
+        ASSERT_EQUALS(obj.getField(kAttributesFieldName).Obj().getField("b").String(),
+                      b.toString());
+    });
+}
+
+struct C {
+    std::string toString() const {
+        return "C";
+    }
+};
+auto attr(const C& c) {
+    return "c"_attr = c;
+}
+
+TEST_F(LogV2JsonBsonTest, AttrWrapperRvalue) {
+    A a;
+    B b;
+    LOGV2(4759402, "{}", attr(a), attr(b), attr(C()));
+    validate([&a, &b](const BSONObj& obj) {
+        ASSERT_EQUALS(obj.getField(kAttributesFieldName).Obj().getField("a").String(),
+                      a.toString());
+        ASSERT_EQUALS(obj.getField(kAttributesFieldName).Obj().getField("b").String(),
+                      b.toString());
+        ASSERT_EQUALS(obj.getField(kAttributesFieldName).Obj().getField("c").String(),
+                      C().toString());
+    });
+}
+
+struct D {
+    std::string toString() const {
+        return "D";
+    }
+
+    A a() const {
+        return A();
+    }
+    const B& b() const {
+        return _b;
+    }
+
+    B _b;
+};
+auto attr(const D& d) {
+    return cat("d"_attr = d, d.a(), d.b());
+}
+
+TEST_F(LogV2JsonBsonTest, AttrWrapperComplex) {
+    D d;
+    LOGV2(4759403, "{}", attr(d));
+    validate([&d](const BSONObj& obj) {
+        ASSERT_EQUALS(obj.getField(kAttributesFieldName).Obj().getField("a").String(),
+                      d.a().toString());
+        ASSERT_EQUALS(obj.getField(kAttributesFieldName).Obj().getField("b").String(),
+                      d.b().toString());
+        ASSERT_EQUALS(obj.getField(kAttributesFieldName).Obj().getField("d").String(),
+                      d.toString());
+    });
+}
+
+struct E {
+    D d() const {
+        return D();
+    }
+    const C& c() const {
+        return _c;
+    }
+
+    C _c;
+};
+auto attr(const E& e) {
+    return cat(e.d(), e.c());
+}
+
+TEST_F(LogV2JsonBsonTest, AttrWrapperComplexHierarchy) {
+    E e;
+    LOGV2(4759404, "{}", attr(e));
+    validate([&e](const BSONObj& obj) {
+        ASSERT_EQUALS(obj.getField(kAttributesFieldName).Obj().getField("a").String(),
+                      e.d().a().toString());
+        ASSERT_EQUALS(obj.getField(kAttributesFieldName).Obj().getField("b").String(),
+                      e.d().b().toString());
+        ASSERT_EQUALS(obj.getField(kAttributesFieldName).Obj().getField("c").String(),
+                      e.c().toString());
+        ASSERT_EQUALS(obj.getField(kAttributesFieldName).Obj().getField("d").String(),
+                      e.d().toString());
+    });
+}
+
 class LogV2ContainerTest : public LogV2TypesTest {
 public:
     using LogV2TypesTest::LogV2TypesTest;
