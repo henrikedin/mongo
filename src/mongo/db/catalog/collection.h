@@ -541,7 +541,7 @@ public:
 };
 
 inline auto attr(const Collection& col) {
-    return logv2::cat(attr(col.ns()), attr(col.uuid()));
+    return logv2::cat(col.ns(), col.uuid());
 }
 
 }  // namespace mongo
