@@ -29,9 +29,9 @@
 
 #pragma once
 
+#include <fmt/format.h>
 #include <tuple>
 #include <type_traits>
-#include <fmt/format.h>
 
 namespace mongo {
 namespace logv2 {
@@ -56,7 +56,7 @@ struct IsComposedAttr : std::false_type {};
 template <class... T>
 struct IsComposedAttr<ComposedAttr<T...>> : std::true_type {};
 
-// Helper to make regular attributes composable with cat()
+// Helper to make regular attributes composable with combine()
 template <class T>
 auto attr(const fmt::internal::named_arg<T, char>& a) {
     return a;
@@ -92,9 +92,9 @@ auto ComposedAttr<T...>::attributes() const {
 
 }  // namespace detail
 
-// Concatenates multiple attributes to be returned in user defined attr() functions
+// Combines multiple attributes to be returned in user defined attr() functions
 template <class... T>
-auto cat(T&&... args) {
+auto combine(T&&... args) {
     return detail::ComposedAttr<
         std::conditional_t<std::is_lvalue_reference_v<T>, T, std::remove_reference_t<T>>...>(
         std::forward<T>(args)...);

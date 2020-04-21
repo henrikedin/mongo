@@ -1039,7 +1039,7 @@ struct D {
     B _b;
 };
 auto attr(const D& d) {
-    return cat("d"_attr = d, d.a(), d.b());
+    return combine("d"_attr = d, d.a(), d.b());
 }
 
 TEST_F(LogV2JsonBsonTest, AttrWrapperComplex) {
@@ -1066,7 +1066,7 @@ struct E {
     C _c;
 };
 auto attr(const E& e) {
-    return cat(e.d(), e.c());
+    return combine(e.d(), e.c());
 }
 
 TEST_F(LogV2JsonBsonTest, AttrWrapperComplexHierarchy) {
