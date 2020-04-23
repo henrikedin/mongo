@@ -121,6 +121,12 @@ auto combine(const char (&prefix)[N], T&&... args) {
         prefix, std::forward<T>(args)...);
 }
 
+template <typename V, size_t N>
+fmt::internal::named_arg<V, char> addPrefix(fmt::internal::named_arg<V, char> attribute,
+    const char(&prefix)[N]) {
+    return attribute;
+}
+
 }  // namespace logv2
 
 inline namespace literals {

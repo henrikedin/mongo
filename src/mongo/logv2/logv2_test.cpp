@@ -967,13 +967,19 @@ struct A {
         return "A";
     }
 };
+
+template <size_t N>
+auto attr(const A& a, const char (&prefix)[N]) {
+    return "a"_attr = a;
+}
+
 auto attr(const A& a) {
     return "a"_attr = a;
 }
 
 TEST_F(LogV2JsonBsonTest, AttrWrapperOne) {
     A a;
-    LOGV2(4759400, "{}", attr(a));
+    LOGV2(4759400, "{}", attr(a, "asd"));
     validate([&a](const BSONObj& obj) {
         ASSERT_EQUALS(obj.getField(kAttributesFieldName).Obj().getField("a").String(),
                       a.toString());
@@ -985,6 +991,11 @@ struct B {
         return "B";
     }
 };
+template <size_t N>
+auto attr(const B& b, const char (&prefix)[N]) {
+    return "b"_attr = b;
+}
+
 auto attr(const B& b) {
     return "b"_attr = b;
 }
@@ -1006,6 +1017,11 @@ struct C {
         return "C";
     }
 };
+template <size_t N>
+auto attr(const C& c, const char (&prefix)[N]) {
+    return "c"_attr = c;
+}
+
 auto attr(const C& c) {
     return "c"_attr = c;
 }
@@ -1038,13 +1054,18 @@ struct D {
 
     B _b;
 };
+template <size_t N>
+auto attr(const D& d, const char (&prefix)[N]) {
+    return combine(prefix, "d"_attr = d, d.a(), d.b());
+}
+
 auto attr(const D& d) {
     return combine("d"_attr = d, d.a(), d.b());
 }
 
 TEST_F(LogV2JsonBsonTest, AttrWrapperComplex) {
     D d;
-    LOGV2(4759403, "{}", attr(d));
+    LOGV2(4759403, "{}", attr(d, "test"));
     validate([&d](const BSONObj& obj) {
         ASSERT_EQUALS(obj.getField(kAttributesFieldName).Obj().getField("a").String(),
                       d.a().toString());
@@ -1065,6 +1086,11 @@ struct E {
 
     C _c;
 };
+template <size_t N>
+auto attr(const E& e, const char (&prefix)[N]) {
+    return combine(prefix, e.d(), e.c());
+}
+
 auto attr(const E& e) {
     return combine(e.d(), e.c());
 }
