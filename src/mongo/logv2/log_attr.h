@@ -38,27 +38,34 @@ namespace logv2 {
 namespace detail {
 // Helper to be used inside attr() functions, captures rvalues by value so they don't go out of
 // scope Can create a tuple of loggable named attributes for the logger
-template <typename... T>
+template <size_t N, typename... T>
 class ComposedAttr {
 public:
-    ComposedAttr(T&&... args) : _values(std::forward<T>(args)...) {}
+    ComposedAttr(const char (&prefix)[N], T&&... args)
+        : _values(std::forward<T>(args)...), _prefix(prefix) {}
 
     // Creates a flattend tuple of loggable named attributes
     auto attributes() const;
 
 private:
     std::tuple<T...> _values;
+    const char (&_prefix)[N];
 };
 
 template <class T>
 struct IsComposedAttr : std::false_type {};
 
-template <class... T>
-struct IsComposedAttr<ComposedAttr<T...>> : std::true_type {};
+template <size_t N, class... T>
+struct IsComposedAttr<ComposedAttr<N, T...>> : std::true_type {};
 
 // Helper to make regular attributes composable with combine()
 template <class T>
 auto attr(const fmt::internal::named_arg<T, char>& a) {
+    return a;
+}
+
+template <class T, size_t N>
+auto attr(const fmt::internal::named_arg<T, char>& a, const char (&prefix)[N]) {
     return a;
 }
 
@@ -83,11 +90,16 @@ decltype(auto) flatten(const T& arg) {
         return std::make_tuple(arg);
 }
 
-template <typename... T>
-auto ComposedAttr<T...>::attributes() const {
+template <size_t N, typename... T>
+auto ComposedAttr<N, T...>::attributes() const {
     // attr() converts the input to a loggable named attribute, user implementation
-    return std::apply([this](auto&&... args) { return std::tuple_cat(flatten(attr(args))...); },
-                      _values);
+    if constexpr (N > 1)
+        return std::apply(
+            [this](auto&&... args) { return std::tuple_cat(flatten(attr(args, _prefix))...); },
+            _values);
+    else
+        return std::apply([this](auto&&... args) { return std::tuple_cat(flatten(attr(args))...); },
+                          _values);
 }
 
 }  // namespace detail
@@ -96,8 +108,17 @@ auto ComposedAttr<T...>::attributes() const {
 template <class... T>
 auto combine(T&&... args) {
     return detail::ComposedAttr<
+        1,
         std::conditional_t<std::is_lvalue_reference_v<T>, T, std::remove_reference_t<T>>...>(
-        std::forward<T>(args)...);
+        "", std::forward<T>(args)...);
+}
+
+template <size_t N, class... T>
+auto combine(const char (&prefix)[N], T&&... args) {
+    return detail::ComposedAttr<
+        N,
+        std::conditional_t<std::is_lvalue_reference_v<T>, T, std::remove_reference_t<T>>...>(
+        prefix, std::forward<T>(args)...);
 }
 
 }  // namespace logv2
