@@ -1899,13 +1899,14 @@ WiredTigerRecoveryUnit* WiredTigerRecordStore::_getRecoveryUnit(OperationContext
 class WiredTigerRecordStore::NumRecordsChange : public RecoveryUnit::Change {
 public:
     NumRecordsChange(WiredTigerRecordStore* rs, int64_t diff) : _rs(rs), _diff(diff) {}
-    virtual void commit(boost::optional<Timestamp>) {}
-    virtual void rollback() {
+    virtual void commit(boost::optional<Timestamp>) {
         LOGV2_DEBUG(22404,
                     3,
-                    "WiredTigerRecordStore: rolling back NumRecordsChange {diff}",
-                    "diff"_attr = -_diff);
-        _rs->_sizeInfo->numRecords.fetchAndAdd(-_diff);
+                    "WiredTigerRecordStore: committing NumRecordsChange {diff}",
+                    "diff"_attr = _diff);
+        _rs->_sizeInfo->numRecords.fetchAndAdd(_diff);
+    }
+    virtual void rollback() {
     }
 
 private:
@@ -1923,16 +1924,16 @@ void WiredTigerRecordStore::_changeNumRecords(OperationContext* opCtx, int64_t d
     }
 
     opCtx->recoveryUnit()->registerChange(std::make_unique<NumRecordsChange>(this, diff));
-    if (_sizeInfo->numRecords.fetchAndAdd(diff) < 0)
-        _sizeInfo->numRecords.store(std::max(diff, int64_t(0)));
 }
 
 class WiredTigerRecordStore::DataSizeChange : public RecoveryUnit::Change {
 public:
     DataSizeChange(WiredTigerRecordStore* rs, int64_t amount) : _rs(rs), _amount(amount) {}
-    virtual void commit(boost::optional<Timestamp>) {}
+    virtual void commit(boost::optional<Timestamp>) {
+        _rs->_increaseDataSize(nullptr, _amount);
+    }
     virtual void rollback() {
-        _rs->_increaseDataSize(nullptr, -_amount);
+        
     }
 
 private:
@@ -1949,9 +1950,11 @@ void WiredTigerRecordStore::_increaseDataSize(OperationContext* opCtx, int64_t a
         return;
     }
 
-    if (opCtx)
+    if (opCtx) {
         opCtx->recoveryUnit()->registerChange(std::make_unique<DataSizeChange>(this, amount));
-
+        return;
+    }
+        
     if (_sizeInfo->dataSize.fetchAndAdd(amount) < 0)
         _sizeInfo->dataSize.store(std::max(amount, int64_t(0)));
 
