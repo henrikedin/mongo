@@ -587,8 +587,8 @@ TEST_F(WiredTigerRecoveryUnitTestFixture, CheckpointCursorsAreNotCached) {
     ru->beginUnitOfWork(opCtx);
     StatusWith<RecordId> s = rs->insertRecord(opCtx, "data", 4, Timestamp());
     ASSERT_TRUE(s.isOK());
-    ASSERT_EQUALS(1, rs->numRecords(opCtx));
     ru->commitUnitOfWork();
+    ASSERT_EQUALS(1, rs->numRecords(opCtx));
 
     // Test 1: A normal read should create a new cursor and release it into the session cache.
 
@@ -641,8 +641,8 @@ TEST_F(WiredTigerRecoveryUnitTestFixture, ReadOnceCursorsAreNotCached) {
     ru->beginUnitOfWork(opCtx);
     StatusWith<RecordId> s = rs->insertRecord(opCtx, "data", 4, Timestamp());
     ASSERT_TRUE(s.isOK());
-    ASSERT_EQUALS(1, rs->numRecords(opCtx));
     ru->commitUnitOfWork();
+    ASSERT_EQUALS(1, rs->numRecords(opCtx));
 
     // Test 1: A normal read should create a new cursor and release it into the session cache.
 
@@ -695,8 +695,8 @@ TEST_F(WiredTigerRecoveryUnitTestFixture, CheckpointCursorNotChanged) {
     ru->beginUnitOfWork(opCtx);
     StatusWith<RecordId> s1 = rs->insertRecord(opCtx, "data", 4, Timestamp());
     ASSERT_TRUE(s1.isOK());
-    ASSERT_EQUALS(1, rs->numRecords(opCtx));
     ru->commitUnitOfWork();
+    ASSERT_EQUALS(1, rs->numRecords(opCtx));
 
     // Force a checkpoint.
     engine->flushAllFiles(opCtx, /*callerHoldsReadLock*/ false);
@@ -710,8 +710,8 @@ TEST_F(WiredTigerRecoveryUnitTestFixture, CheckpointCursorNotChanged) {
     ru->beginUnitOfWork(opCtx);
     StatusWith<RecordId> s2 = rs->insertRecord(opCtx, "data_2", 6, Timestamp());
     ASSERT_TRUE(s2.isOK());
-    ASSERT_EQUALS(2, rs->numRecords(opCtx));
     ru->commitUnitOfWork();
+    ASSERT_EQUALS(2, rs->numRecords(opCtx));
 
     // Test 2: New record does not appear in original checkpoint cursor.
     ASSERT(!originalCheckpointCursor->seekExact(s2.getValue()));

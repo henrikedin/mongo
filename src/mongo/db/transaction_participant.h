@@ -50,6 +50,7 @@
 #include "mongo/db/stats/single_transaction_stats.h"
 #include "mongo/db/storage/recovery_unit.h"
 #include "mongo/db/storage/storage_engine.h"
+#include "mongo/db/transaction_isolation_context.h"
 #include "mongo/db/transaction_metrics_observer.h"
 #include "mongo/idl/mutable_observer_registry.h"
 #include "mongo/logv2/attribute_storage.h"
@@ -221,6 +222,7 @@ public:
         repl::ReadConcernArgs _readConcernArgs;
         WriteUnitOfWork::RecoveryUnitState _ruState;
         std::shared_ptr<UncommittedCollections::UncommittedCollectionsMap> _uncommittedCollections;
+        std::unique_ptr<TransactionIsolationContext> _isolationContext;
     };
 
     /**

@@ -464,12 +464,14 @@ void TransactionParticipant::Participant::_beginMultiDocumentTransaction(Operati
 
     stdx::lock_guard<Client> lk(*opCtx->getClient());
     o(lk).txnState.transitionTo(TransactionState::kInProgress);
+    TransactionIsolationContextStorage::get(opCtx).context =
+        std::make_unique<TransactionIsolationContext>();
 
     // Start tracking various transactions metrics.
     //
     // We measure the start time in both microsecond and millisecond resolution. The TickSource
-    // provides microsecond resolution to record the duration of the transaction. The start "wall
-    // clock" time can be considered an approximation to the microsecond measurement.
+    // provides microsecond resolution to record the duration of the transaction. The start
+    // "wall clock" time can be considered an approximation to the microsecond measurement.
     auto now = opCtx->getServiceContext()->getPreciseClockSource()->now();
     auto tickSource = opCtx->getServiceContext()->getTickSource();
 
@@ -744,6 +746,7 @@ TransactionParticipant::TxnResources::TxnResources(WithLock wl,
 
     _readConcernArgs = repl::ReadConcernArgs::get(opCtx);
     _uncommittedCollections = UncommittedCollections::get(opCtx).shareResources();
+    _isolationContext = std::move(TransactionIsolationContextStorage::get(opCtx).context);
 }
 
 TransactionParticipant::TxnResources::~TxnResources() {
@@ -810,6 +813,8 @@ void TransactionParticipant::TxnResources::release(OperationContext* opCtx) {
     // Transfer ownership of UncommittedCollections
     UncommittedCollections::get(opCtx).receiveResources(_uncommittedCollections);
     _uncommittedCollections = nullptr;
+
+    TransactionIsolationContextStorage::get(opCtx).context = std::move(_isolationContext);
 
     auto oldState = opCtx->setRecoveryUnit(std::move(_recoveryUnit),
                                            WriteUnitOfWork::RecoveryUnitState::kNotInUnitOfWork);
@@ -924,8 +929,7 @@ void TransactionParticipant::Participant::_releaseTransactionResourcesToOpCtx(
         stdx::lock_guard<Client> lk(*opCtx->getClient());
         swap(trs, o(lk).txnResourceStash);
         return trs;
-    }
-    ();
+    }();
 
     auto releaseOnError = makeGuard([&] {
         // Restore the lock resources back to transaction participant.

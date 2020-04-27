@@ -69,6 +69,7 @@
 #include "mongo/db/storage/durable_catalog.h"
 #include "mongo/db/storage/key_string.h"
 #include "mongo/db/storage/record_store.h"
+#include "mongo/db/transaction_isolation_context.h"
 #include "mongo/db/update/update_driver.h"
 
 #include "mongo/db/auth/user_document_parser.h"  // XXX-ANDY
@@ -235,6 +236,25 @@ Status validatePreImageRecording(OperationContext* opCtx, const NamespaceString&
 
     return Status::OK();
 }
+
+struct PendingCollectionCounts {
+    static boost::optional<PendingCollectionCounts&> get(OperationContext* opCtx) {
+        return TransactionIsolationContext::get(opCtx, decoration);
+    }
+    static const TransactionIsolationContext::Decoration<PendingCollectionCounts> decoration;
+
+    std::map<UUID, int64_t> num;
+};
+
+const TransactionIsolationContext::Decoration<PendingCollectionCounts>
+    PendingCollectionCounts::decoration =
+        TransactionIsolationContext::declareDecoration<PendingCollectionCounts>();
+
+// PendingCollectionCounts& PendingCollectionCounts::get(OperationContext* opCtx) {
+//    /*return PendingCollectionCounts::getDecoration(
+//        TransactionIsolationContextStorage::get(opCtx).context.get());*/
+//    return TransactionIsolationContext::get(opCtx, PendingCollectionCounts::getDecoration);
+//}
 
 }  // namespace
 
@@ -459,6 +479,10 @@ Status CollectionImpl::insertDocumentsForOplog(OperationContext* opCtx,
     if (!status.isOK())
         return status;
 
+    if (auto pending = PendingCollectionCounts::get(opCtx)) {
+        pending->num[_uuid] += records->size();
+    }
+
     opCtx->recoveryUnit()->onCommit(
         [this](boost::optional<Timestamp>) { notifyCappedWaitersIfNeeded(); });
 
@@ -568,6 +592,10 @@ Status CollectionImpl::insertDocumentForBulkLoader(OperationContext* opCtx,
     if (!loc.isOK())
         return loc.getStatus();
 
+    if (auto pending = PendingCollectionCounts::get(opCtx)) {
+        pending->num[_uuid] += 1;
+    }
+
     status = onRecordInserted(loc.getValue());
 
     if (MONGO_unlikely(failAfterBulkLoadDocInsert.shouldFail())) {
@@ -633,6 +661,9 @@ Status CollectionImpl::_insertDocuments(OperationContext* opCtx,
     Status status = _recordStore->insertRecords(opCtx, &records, timestamps);
     if (!status.isOK())
         return status;
+    if (auto pending = PendingCollectionCounts::get(opCtx)) {
+        pending->num[_uuid] += std::distance(begin, end);
+    }
 
     std::vector<BsonRecord> bsonRecords;
     bsonRecords.reserve(count);
@@ -718,6 +749,9 @@ void CollectionImpl::deleteDocument(OperationContext* opCtx,
     int64_t keysDeleted;
     _indexCatalog->unindexRecord(opCtx, doc.value(), loc, noWarn, &keysDeleted);
     _recordStore->deleteRecord(opCtx, loc);
+    if (auto pending = PendingCollectionCounts::get(opCtx)) {
+        pending->num[_uuid] -= 1;
+    }
 
     getGlobalServiceContext()->getOpObserver()->onDelete(
         opCtx, ns(), uuid(), stmtId, fromMigrate, deletedDoc);
@@ -883,7 +917,13 @@ std::shared_ptr<CappedInsertNotifier> CollectionImpl::getCappedInsertNotifier() 
 }
 
 uint64_t CollectionImpl::numRecords(OperationContext* opCtx) const {
-    return _recordStore->numRecords(opCtx);
+    int64_t extra = 0;
+    if (auto pending = PendingCollectionCounts::get(opCtx)) {
+        if (auto it = pending->num.find(_uuid); it != pending->num.end()) {
+            extra = it->second;
+        }
+    }
+    return _recordStore->numRecords(opCtx) + extra;
 }
 
 uint64_t CollectionImpl::dataSize(OperationContext* opCtx) const {
