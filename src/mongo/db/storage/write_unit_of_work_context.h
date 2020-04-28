@@ -35,20 +35,53 @@
 #include "mongo/db/operation_context.h"
 
 namespace mongo {
+/**
+ * Decorable type to store contexts local to an active WriteUnitOfWork.
+ * Transfers with multi-document transactions.
+ * Can be used to implement local isolation for transactions in progress.
+ */
 class WriteUnitOfWorkContext : public Decorable<WriteUnitOfWorkContext> {
 public:
+    /**
+     * Get decoration for the provided OperationContext.
+     * Returns boost::none if called outside of an WriteUnitOfWork
+     */
     template <class DecorationT>
     static boost::optional<DecorationT&> get(
         OperationContext* opCtx, const WriteUnitOfWorkContext::Decoration<DecorationT>& decoration);
 };
 
+/**
+ * Provides storage of WriteUnitOfWorkContext as a decoration of OperationContext.
+ */
 class WriteUnitOfWorkContextStorage {
 public:
     static const OperationContext::Decoration<WriteUnitOfWorkContextStorage> get;
 
+    /**
+     * Creates a new WriteUnitOfWorkContext in this storage.
+     * This happens when we enter a WriteUnitOfWork.
+     */
     void create();
+
+    /**
+     * Discards the owned WriteUnitOfWorkContext in this storage.
+     * This happens when the active WriteUnitOfWork is committed, aborted or abandoned.
+     */
     void discard();
+
+    /**
+     * Restores this storage with an external WriteUnitOfWorkContext.
+     * This happens when the TransactionParticipant releases its state at the beginning of a network
+     * operation.
+     */
     void restore(std::unique_ptr<WriteUnitOfWorkContext> ctx);
+
+    /**
+     * Releases the owned WriteUnitOfWorkContext from this storage.
+     * This happens when the TransactionParticipant stores the state at the end of a network
+     * operation.
+     */
     std::unique_ptr<WriteUnitOfWorkContext> release();
 
 private:
