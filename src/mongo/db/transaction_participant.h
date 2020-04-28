@@ -242,6 +242,7 @@ public:
         Locker::WUOWLockSnapshot _WUOWLockSnapshot;
         std::unique_ptr<RecoveryUnit> _recoveryUnit;
         WriteUnitOfWork::RecoveryUnitState _ruState;
+        std::unique_ptr<WriteUnitOfWorkContext> _writeUnitOfWorkContext;
         OperationContext* _opCtx;
     };
 

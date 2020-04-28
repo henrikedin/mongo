@@ -812,7 +812,7 @@ void TransactionParticipant::TxnResources::release(OperationContext* opCtx) {
     UncommittedCollections::get(opCtx).receiveResources(_uncommittedCollections);
     _uncommittedCollections = nullptr;
 
-    WriteUnitOfWorkContextStorage::get(opCtx).context = std::move(_writeUnitOfWorkContext);
+    WriteUnitOfWorkContextStorage::get(opCtx).restore(std::move(_writeUnitOfWorkContext));
 
     auto oldState = opCtx->setRecoveryUnit(std::move(_recoveryUnit),
                                            WriteUnitOfWork::RecoveryUnitState::kNotInUnitOfWork);
@@ -846,6 +846,11 @@ TransactionParticipant::SideTransactionBlock::SideTransactionBlock(OperationCont
     opCtx->setRecoveryUnit(std::unique_ptr<RecoveryUnit>(
                                opCtx->getServiceContext()->getStorageEngine()->newRecoveryUnit()),
                            WriteUnitOfWork::RecoveryUnitState::kNotInUnitOfWork);
+
+    WriteUnitOfWorkContextStorage& writeUnitOfWorkContextStorage =
+        WriteUnitOfWorkContextStorage::get(opCtx);
+    _writeUnitOfWorkContext = writeUnitOfWorkContextStorage.release();
+    writeUnitOfWorkContextStorage.create();
 }
 
 TransactionParticipant::SideTransactionBlock::~SideTransactionBlock() {
@@ -864,6 +869,7 @@ TransactionParticipant::SideTransactionBlock::~SideTransactionBlock() {
 
     // Restore WUOW.
     _opCtx->setWriteUnitOfWork(WriteUnitOfWork::createForSnapshotResume(_opCtx, _ruState));
+    WriteUnitOfWorkContextStorage::get(_opCtx).restore(std::move(_writeUnitOfWorkContext));
 }
 
 void TransactionParticipant::Participant::_stashActiveTransaction(OperationContext* opCtx) {

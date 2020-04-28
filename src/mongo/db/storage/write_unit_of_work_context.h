@@ -46,10 +46,17 @@ class WriteUnitOfWorkContextStorage {
 public:
     static const OperationContext::Decoration<WriteUnitOfWorkContextStorage> get;
 
+    void create();
+    void discard();
+    void restore(std::unique_ptr<WriteUnitOfWorkContext> ctx);
     std::unique_ptr<WriteUnitOfWorkContext> release();
 
-public:
-    std::unique_ptr<WriteUnitOfWorkContext> context;
+private:
+    template <class DecorationT>
+    friend boost::optional<DecorationT&> WriteUnitOfWorkContext::get(
+        OperationContext* opCtx, const WriteUnitOfWorkContext::Decoration<DecorationT>& decoration);
+
+    std::unique_ptr<WriteUnitOfWorkContext> _context;
 };
 
 template <class DecorationT>
@@ -57,8 +64,8 @@ boost::optional<DecorationT&> WriteUnitOfWorkContext::get(
     OperationContext* opCtx,
     const WriteUnitOfWorkContext::Decoration<DecorationT>& decoration) {
     auto& storage = WriteUnitOfWorkContextStorage::get(opCtx);
-    if (storage.context) {
-        return decoration(storage.context.get());
+    if (storage._context) {
+        return decoration(storage._context.get());
     } else {
         return boost::none;
     }

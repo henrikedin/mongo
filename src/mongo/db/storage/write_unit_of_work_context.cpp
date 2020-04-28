@@ -34,8 +34,20 @@ const OperationContext::Decoration<WriteUnitOfWorkContextStorage>
     WriteUnitOfWorkContextStorage::get =
         OperationContext::declareDecoration<WriteUnitOfWorkContextStorage>();
 
+void WriteUnitOfWorkContextStorage::create() {
+    _context = std::make_unique<WriteUnitOfWorkContext>();
+}
+
+void WriteUnitOfWorkContextStorage::discard() {
+    _context.reset();
+}
+
+void WriteUnitOfWorkContextStorage::restore(std::unique_ptr<WriteUnitOfWorkContext> ctx) {
+    _context = std::move(ctx);
+}
+
 std::unique_ptr<WriteUnitOfWorkContext> WriteUnitOfWorkContextStorage::release() {
-    return std::move(context);
+    return std::move(_context);
 }
 
 }  // namespace mongo
