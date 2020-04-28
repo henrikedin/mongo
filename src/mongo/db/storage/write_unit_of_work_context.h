@@ -61,8 +61,7 @@ private:
 
 template <class DecorationT>
 boost::optional<DecorationT&> WriteUnitOfWorkContext::get(
-    OperationContext* opCtx,
-    const WriteUnitOfWorkContext::Decoration<DecorationT>& decoration) {
+    OperationContext* opCtx, const WriteUnitOfWorkContext::Decoration<DecorationT>& decoration) {
     auto& storage = WriteUnitOfWorkContextStorage::get(opCtx);
     if (storage._context) {
         return decoration(storage._context.get());

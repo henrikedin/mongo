@@ -30,7 +30,8 @@
 #include "mongo/db/storage/transaction_isolation_context.h"
 
 namespace mongo {
-const OperationContext::Decoration<TransactionIsolationContextStorage> TransactionIsolationContextStorage::get =
-    OperationContext::declareDecoration<TransactionIsolationContextStorage>();
+const OperationContext::Decoration<TransactionIsolationContextStorage>
+    TransactionIsolationContextStorage::get =
+        OperationContext::declareDecoration<TransactionIsolationContextStorage>();
 
 }  // namespace mongo

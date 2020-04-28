@@ -113,9 +113,8 @@ struct UncommittedCounts {
     std::map<const WiredTigerRecordStore*, int64_t> numRecords;
 };
 
-const WriteUnitOfWorkContext::Decoration<UncommittedCounts>
-    UncommittedCounts::decoration =
-        WriteUnitOfWorkContext::declareDecoration<UncommittedCounts>();
+const WriteUnitOfWorkContext::Decoration<UncommittedCounts> UncommittedCounts::decoration =
+    WriteUnitOfWorkContext::declareDecoration<UncommittedCounts>();
 
 }  // namespace
 
@@ -952,7 +951,8 @@ long long WiredTigerRecordStore::dataSize(OperationContext* opCtx) const {
 long long WiredTigerRecordStore::numRecords(OperationContext* opCtx) const {
     int64_t uncommitted = 0;
     if (auto uncommittedCounts = UncommittedCounts::get(opCtx)) {
-        if (auto it = uncommittedCounts->numRecords.find(this); it != uncommittedCounts->numRecords.end()) {
+        if (auto it = uncommittedCounts->numRecords.find(this);
+            it != uncommittedCounts->numRecords.end()) {
             uncommitted = it->second;
         }
     }
@@ -1927,8 +1927,7 @@ public:
                     "diff"_attr = _diff);
         _rs->_sizeInfo->numRecords.fetchAndAdd(_diff);
     }
-    virtual void rollback() {
-    }
+    virtual void rollback() {}
 
 private:
     WiredTigerRecordStore* _rs;
@@ -1954,9 +1953,7 @@ public:
     virtual void commit(boost::optional<Timestamp>) {
         _rs->_increaseDataSize(nullptr, _amount);
     }
-    virtual void rollback() {
-        
-    }
+    virtual void rollback() {}
 
 private:
     WiredTigerRecordStore* _rs;
@@ -1976,7 +1973,7 @@ void WiredTigerRecordStore::_increaseDataSize(OperationContext* opCtx, int64_t a
         opCtx->recoveryUnit()->registerChange(std::make_unique<DataSizeChange>(this, amount));
         return;
     }
-        
+
     if (_sizeInfo->dataSize.fetchAndAdd(amount) < 0)
         _sizeInfo->dataSize.store(std::max(amount, int64_t(0)));
 
