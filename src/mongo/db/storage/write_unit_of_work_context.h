@@ -66,7 +66,7 @@ public:
 
     /**
      * Discards the owned WriteUnitOfWorkContext in this storage.
-     * This happens when the active WriteUnitOfWork is committed, aborted or abandoned.
+     * This happens when the active WriteUnitOfWork is committed or abandoned.
      */
     void discard();
 
