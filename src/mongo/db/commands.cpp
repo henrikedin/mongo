@@ -114,6 +114,7 @@ const StringMap<int> txnCmdWhitelist = {{"abortTransaction", 1},
                                         {"aggregate", 1},
                                         {"commitTransaction", 1},
                                         {"coordinateCommitTransaction", 1},
+                                        {"count", 1},
                                         {"create", 1},
                                         {"createIndexes", 1},
                                         {"delete", 1},
@@ -473,11 +474,6 @@ bool CommandHelpers::uassertShouldAttemptParse(OperationContext* opCtx,
 void CommandHelpers::canUseTransactions(const NamespaceString& nss,
                                         StringData cmdName,
                                         bool allowTransactionsOnConfigDatabase) {
-
-    uassert(ErrorCodes::OperationNotSupportedInTransaction,
-            "Cannot run 'count' in a multi-document transaction. Please see "
-            "http://dochub.mongodb.org/core/transaction-count for a recommended alternative.",
-            cmdName != "count"_sd);
 
     auto inTxnWhitelist = txnCmdWhitelist.find(cmdName) != txnCmdWhitelist.cend();
 
