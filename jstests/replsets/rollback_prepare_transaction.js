@@ -41,6 +41,7 @@ session1.startTransaction();
 assert.commandWorked(session1Coll.insert({_id: "t2_a"}));
 assert.commandWorked(session1Coll.insert({_id: "t2_b"}));
 assert.commandWorked(session1Coll.insert({_id: "t2_c"}));
+assert.eq(4, session1Coll.count());
 let prepareTs = PrepareHelpers.prepareTransaction(session1);
 
 rollbackTest.transitionToRollbackOperations();
@@ -57,9 +58,8 @@ PrepareHelpers.prepareTransaction(session2, {w: 1});
 // Commit the transaction that was prepared before the common point.
 PrepareHelpers.commitTransaction(session1, prepareTs);
 
-// This is not exactly correct, but characterizes the current behavior of fastcount, which
-// includes the prepared but uncommitted transaction in the collection count.
-assert.eq(6, testColl.count());
+// fastcount, should not include the prepared but uncommitted transaction in the collection count.
+assert.eq(5, testColl.count());
 
 // Check the visible documents.
 arrayEq([{_id: "a"}, {_id: "b"}, {_id: "t2_a"}, {_id: "t2_b"}, {_id: "t2_c"}],

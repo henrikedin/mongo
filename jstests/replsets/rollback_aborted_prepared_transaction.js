@@ -45,9 +45,7 @@ assert.commandWorked(sessionColl.insert({_id: 1}));
 PrepareHelpers.prepareTransaction(session, {w: 1});
 
 assert.eq(testColl.find().itcount(), 1);
-// This characterizes the current fastcount behavior, which is that active prepared transactions
-// contribute to the fastcount.
-assert.eq(testColl.count(), 2);
+assert.eq(testColl.count(), 1);
 
 // Abort the transaction explicitly.
 assert.commandWorked(session.abortTransaction_forTesting());
