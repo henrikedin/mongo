@@ -313,7 +313,7 @@ env.Library(
     target="write_unit_of_work",
     source=[
         "write_unit_of_work.cpp",
-        'transaction_isolation_context.cpp',
+        'write_unit_of_work_context.cpp',
     ],
     LIBDEPS_PRIVATE=[
         "$BUILD_DIR/mongo/base",

@@ -35,25 +35,28 @@
 #include "mongo/db/operation_context.h"
 
 namespace mongo {
-class TransactionIsolationContext : public Decorable<TransactionIsolationContext> {
+class WriteUnitOfWorkContext : public Decorable<WriteUnitOfWorkContext> {
 public:
     template <class DecorationT>
-    static boost::optional<DecorationT&> get(OperationContext* opCtx,
-                            const TransactionIsolationContext::Decoration<DecorationT>& decoration);
+    static boost::optional<DecorationT&> get(
+        OperationContext* opCtx, const WriteUnitOfWorkContext::Decoration<DecorationT>& decoration);
 };
 
-class TransactionIsolationContextStorage {
+class WriteUnitOfWorkContextStorage {
 public:
-    static const OperationContext::Decoration<TransactionIsolationContextStorage> get;
+    static const OperationContext::Decoration<WriteUnitOfWorkContextStorage> get;
 
-    std::unique_ptr<TransactionIsolationContext> context;
+    std::unique_ptr<WriteUnitOfWorkContext> release();
+
+public:
+    std::unique_ptr<WriteUnitOfWorkContext> context;
 };
 
 template <class DecorationT>
-boost::optional<DecorationT&> TransactionIsolationContext::get(
+boost::optional<DecorationT&> WriteUnitOfWorkContext::get(
     OperationContext* opCtx,
-    const TransactionIsolationContext::Decoration<DecorationT>& decoration) {
-    auto& storage = TransactionIsolationContextStorage::get(opCtx);
+    const WriteUnitOfWorkContext::Decoration<DecorationT>& decoration) {
+    auto& storage = WriteUnitOfWorkContextStorage::get(opCtx);
     if (storage.context) {
         return decoration(storage.context.get());
     } else {

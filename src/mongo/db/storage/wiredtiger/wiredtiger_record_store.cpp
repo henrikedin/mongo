@@ -63,7 +63,7 @@
 #include "mongo/db/storage/wiredtiger/wiredtiger_recovery_unit.h"
 #include "mongo/db/storage/wiredtiger/wiredtiger_session_cache.h"
 #include "mongo/db/storage/wiredtiger/wiredtiger_util.h"
-#include "mongo/db/storage/transaction_isolation_context.h"
+#include "mongo/db/storage/write_unit_of_work_context.h"
 #include "mongo/logv2/log.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/concurrency/idle_thread_block.h"
@@ -104,18 +104,18 @@ void checkOplogFormatVersion(OperationContext* opCtx, const std::string& uri) {
     fassertNoTrace(39998, appMetadata.getValue().getIntField("oplogKeyExtractionVersion") == 1);
 }
 
-struct TransactionIsolationCounts {
-    static boost::optional<TransactionIsolationCounts&> get(OperationContext* opCtx) {
-        return TransactionIsolationContext::get(opCtx, decoration);
+struct UncommittedCounts {
+    static boost::optional<UncommittedCounts&> get(OperationContext* opCtx) {
+        return WriteUnitOfWorkContext::get(opCtx, decoration);
     }
-    static const TransactionIsolationContext::Decoration<TransactionIsolationCounts> decoration;
+    static const WriteUnitOfWorkContext::Decoration<UncommittedCounts> decoration;
 
     std::map<const WiredTigerRecordStore*, int64_t> numRecords;
 };
 
-const TransactionIsolationContext::Decoration<TransactionIsolationCounts>
-    TransactionIsolationCounts::decoration =
-        TransactionIsolationContext::declareDecoration<TransactionIsolationCounts>();
+const WriteUnitOfWorkContext::Decoration<UncommittedCounts>
+    UncommittedCounts::decoration =
+        WriteUnitOfWorkContext::declareDecoration<UncommittedCounts>();
 
 }  // namespace
 
@@ -950,13 +950,13 @@ long long WiredTigerRecordStore::dataSize(OperationContext* opCtx) const {
 }
 
 long long WiredTigerRecordStore::numRecords(OperationContext* opCtx) const {
-    int64_t extra = 0;
-    if (auto pending = TransactionIsolationCounts::get(opCtx)) {
-        if (auto it = pending->numRecords.find(this); it != pending->numRecords.end()) {
-            extra = it->second;
+    int64_t uncommitted = 0;
+    if (auto uncommittedCounts = UncommittedCounts::get(opCtx)) {
+        if (auto it = uncommittedCounts->numRecords.find(this); it != uncommittedCounts->numRecords.end()) {
+            uncommitted = it->second;
         }
     }
-    return _sizeInfo->numRecords.load() + extra;
+    return _sizeInfo->numRecords.load() + uncommitted;
 }
 
 bool WiredTigerRecordStore::isCapped() const {
@@ -1944,10 +1944,8 @@ void WiredTigerRecordStore::_changeNumRecords(OperationContext* opCtx, int64_t d
         return;
     }
 
+    UncommittedCounts::get(opCtx)->numRecords[this] += diff;
     opCtx->recoveryUnit()->registerChange(std::make_unique<NumRecordsChange>(this, diff));
-    if (auto pending = TransactionIsolationCounts::get(opCtx)) {
-        pending->numRecords[this] += diff;
-    }
 }
 
 class WiredTigerRecordStore::DataSizeChange : public RecoveryUnit::Change {

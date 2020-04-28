@@ -27,10 +27,15 @@
  *    it in the license file.
  */
 
-#include "mongo/db/storage/transaction_isolation_context.h"
+#include "mongo/db/storage/write_unit_of_work_context.h"
 
 namespace mongo {
-const OperationContext::Decoration<TransactionIsolationContextStorage> TransactionIsolationContextStorage::get =
-    OperationContext::declareDecoration<TransactionIsolationContextStorage>();
+const OperationContext::Decoration<WriteUnitOfWorkContextStorage>
+    WriteUnitOfWorkContextStorage::get =
+        OperationContext::declareDecoration<WriteUnitOfWorkContextStorage>();
+
+std::unique_ptr<WriteUnitOfWorkContext> WriteUnitOfWorkContextStorage::release() {
+    return std::move(context);
+}
 
 }  // namespace mongo
