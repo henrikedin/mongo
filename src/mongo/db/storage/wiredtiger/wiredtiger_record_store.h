@@ -292,7 +292,7 @@ private:
                           size_t nRecords);
 
     RecordId _nextId(OperationContext* opCtx);
-    bool cappedAndNeedDelete() const;
+    bool _cappedAndNeedDelete(OperationContext* opCtx) const;
     RecordData _getData(const WiredTigerCursor& cursor) const;
 
 

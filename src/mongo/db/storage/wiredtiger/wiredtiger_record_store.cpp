@@ -1063,14 +1063,14 @@ void WiredTigerRecordStore::deleteRecord(OperationContext* opCtx, const RecordId
     _increaseDataSize(opCtx, -old_length);
 }
 
-bool WiredTigerRecordStore::cappedAndNeedDelete() const {
+bool WiredTigerRecordStore::_cappedAndNeedDelete(OperationContext* opCtx) const {
     if (!_isCapped)
         return false;
 
     if (_sizeInfo->dataSize.load() >= _cappedMaxSize)
         return true;
 
-    if ((_cappedMaxDocs != -1) && (_sizeInfo->numRecords.load() > _cappedMaxDocs))
+    if ((_cappedMaxDocs != -1) && (numRecords(opCtx) > _cappedMaxDocs))
         return true;
 
     return false;
@@ -1108,7 +1108,7 @@ int64_t WiredTigerRecordStore::_cappedDeleteAsNeeded(OperationContext* opCtx,
     // This variable isn't thread safe, but has loose semantics anyway.
     dassert(!_isOplog || _cappedMaxDocs == -1);
 
-    if (!cappedAndNeedDelete())
+    if (!_cappedAndNeedDelete(opCtx))
         return 0;
 
     // ensure only one thread at a time can do deletes, otherwise they'll conflict.
@@ -1189,13 +1189,13 @@ int64_t WiredTigerRecordStore::_cappedDeleteAsNeeded_inlock(OperationContext* op
     WT_SESSION* session = WiredTigerRecoveryUnit::get(opCtx)->getSession()->getSession();
 
     int64_t dataSize = _sizeInfo->dataSize.load();
-    int64_t numRecords = _sizeInfo->numRecords.load();
+    int64_t numRecs = numRecords(opCtx);
 
     int64_t sizeOverCap = (dataSize > _cappedMaxSize) ? dataSize - _cappedMaxSize : 0;
     int64_t sizeSaved = 0;
     int64_t docsOverCap = 0, docsRemoved = 0;
-    if (_cappedMaxDocs != -1 && numRecords > _cappedMaxDocs)
-        docsOverCap = numRecords - _cappedMaxDocs;
+    if (_cappedMaxDocs != -1 && numRecs > _cappedMaxDocs)
+        docsOverCap = numRecs - _cappedMaxDocs;
 
     try {
         WriteUnitOfWork wuow(opCtx);
@@ -1424,7 +1424,7 @@ void WiredTigerRecordStore::reclaimOplog(OperationContext* opCtx, Timestamp mayT
                 1,
                 "Finished truncating the oplog, it now contains approximately "
                 "{sizeInfo_numRecords_load} records totaling to {sizeInfo_dataSize_load} bytes",
-                "sizeInfo_numRecords_load"_attr = _sizeInfo->numRecords.load(),
+                "sizeInfo_numRecords_load"_attr = numRecords(opCtx),
                 "sizeInfo_dataSize_load"_attr = _sizeInfo->dataSize.load());
     auto elapsedMicros = timer.micros();
     auto elapsedMillis = elapsedMicros / 1000;
