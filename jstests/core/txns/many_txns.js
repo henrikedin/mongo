@@ -51,6 +51,9 @@ for (let txnNr = 0; txnNr < numTxns; ++txnNr) {
 
     // Insert a doc within a transaction.
     assert.commandWorked(sessionColl.insert(doc(2)));
+
+    // Count reflects inserts made by the same transaction, but not from other txns.
+    assert.eq(sessionColl.count(), 3);
 }
 const secondDoc = {
     _id: "midtransactions",
@@ -84,6 +87,7 @@ for (let txnNr = 0; txnNr < numTxns; ++txnNr) {
 
 assert.eq(initialDoc, coll.findOne(initialDoc));
 assert.eq(secondDoc, coll.findOne(secondDoc));
+assert.eq(coll.count(), numTxns*2 + 2);
 
 const elapsedTime = new Date() - startTime;
 jsTest.log("Test completed with " + numAborted + " aborted transactions in " + elapsedTime + " ms");
