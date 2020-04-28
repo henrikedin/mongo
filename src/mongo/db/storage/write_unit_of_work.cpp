@@ -38,6 +38,7 @@
 #include "mongo/logv2/log.h"
 #include "mongo/util/fail_point.h"
 #include "mongo/util/time_support.h"
+#include "mongo/db/transaction_isolation_context.h"
 
 namespace mongo {
 
@@ -51,6 +52,8 @@ WriteUnitOfWork::WriteUnitOfWork(OperationContext* opCtx)
     _opCtx->lockState()->beginWriteUnitOfWork();
     if (_toplevel) {
         _opCtx->recoveryUnit()->beginUnitOfWork(_opCtx);
+        TransactionIsolationContextStorage::get(opCtx).context =
+            std::make_unique<TransactionIsolationContext>();
         _opCtx->_ruState = RecoveryUnitState::kActiveUnitOfWork;
     }
     // Make sure we don't silently proceed after a previous WriteUnitOfWork under the same parent
@@ -64,6 +67,7 @@ WriteUnitOfWork::~WriteUnitOfWork() {
         invariant(_opCtx->_ruState != RecoveryUnitState::kNotInUnitOfWork);
         if (_toplevel) {
             _opCtx->recoveryUnit()->abortUnitOfWork();
+            TransactionIsolationContextStorage::get(_opCtx).context.reset();
             _opCtx->_ruState = RecoveryUnitState::kNotInUnitOfWork;
         } else {
             _opCtx->_ruState = RecoveryUnitState::kFailedUnitOfWork;
@@ -114,6 +118,8 @@ void WriteUnitOfWork::commit() {
 
         _opCtx->recoveryUnit()->runPreCommitHooks(_opCtx);
         _opCtx->recoveryUnit()->commitUnitOfWork();
+        TransactionIsolationContextStorage::get(_opCtx).context.reset();
+
         _opCtx->_ruState = RecoveryUnitState::kNotInUnitOfWork;
     }
     _opCtx->lockState()->endWriteUnitOfWork();

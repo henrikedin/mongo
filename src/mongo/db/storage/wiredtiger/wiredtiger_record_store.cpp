@@ -63,6 +63,7 @@
 #include "mongo/db/storage/wiredtiger/wiredtiger_recovery_unit.h"
 #include "mongo/db/storage/wiredtiger/wiredtiger_session_cache.h"
 #include "mongo/db/storage/wiredtiger/wiredtiger_util.h"
+#include "mongo/db/transaction_isolation_context.h"
 #include "mongo/logv2/log.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/concurrency/idle_thread_block.h"
@@ -102,6 +103,20 @@ void checkOplogFormatVersion(OperationContext* opCtx, const std::string& uri) {
 
     fassertNoTrace(39998, appMetadata.getValue().getIntField("oplogKeyExtractionVersion") == 1);
 }
+
+struct TransactionIsolationCounts {
+    static boost::optional<TransactionIsolationCounts&> get(OperationContext* opCtx) {
+        return TransactionIsolationContext::get(opCtx, decoration);
+    }
+    static const TransactionIsolationContext::Decoration<TransactionIsolationCounts> decoration;
+
+    std::map<const WiredTigerRecordStore*, int64_t> numRecords;
+};
+
+const TransactionIsolationContext::Decoration<TransactionIsolationCounts>
+    TransactionIsolationCounts::decoration =
+        TransactionIsolationContext::declareDecoration<TransactionIsolationCounts>();
+
 }  // namespace
 
 MONGO_FAIL_POINT_DEFINE(WTWriteConflictException);
@@ -935,7 +950,13 @@ long long WiredTigerRecordStore::dataSize(OperationContext* opCtx) const {
 }
 
 long long WiredTigerRecordStore::numRecords(OperationContext* opCtx) const {
-    return _sizeInfo->numRecords.load();
+    int64_t extra = 0;
+    if (auto pending = TransactionIsolationCounts::get(opCtx)) {
+        if (auto it = pending->numRecords.find(this); it != pending->numRecords.end()) {
+            extra = it->second;
+        }
+    }
+    return _sizeInfo->numRecords.load() + extra;
 }
 
 bool WiredTigerRecordStore::isCapped() const {
@@ -1924,6 +1945,9 @@ void WiredTigerRecordStore::_changeNumRecords(OperationContext* opCtx, int64_t d
     }
 
     opCtx->recoveryUnit()->registerChange(std::make_unique<NumRecordsChange>(this, diff));
+    if (auto pending = TransactionIsolationCounts::get(opCtx)) {
+        pending->numRecords[this] += diff;
+    }
 }
 
 class WiredTigerRecordStore::DataSizeChange : public RecoveryUnit::Change {

@@ -464,8 +464,8 @@ void TransactionParticipant::Participant::_beginMultiDocumentTransaction(Operati
 
     stdx::lock_guard<Client> lk(*opCtx->getClient());
     o(lk).txnState.transitionTo(TransactionState::kInProgress);
-    TransactionIsolationContextStorage::get(opCtx).context =
-        std::make_unique<TransactionIsolationContext>();
+    /*TransactionIsolationContextStorage::get(opCtx).context =
+        std::make_unique<TransactionIsolationContext>();*/
 
     // Start tracking various transactions metrics.
     //
