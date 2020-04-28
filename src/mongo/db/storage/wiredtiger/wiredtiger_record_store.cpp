@@ -111,6 +111,7 @@ struct UncommittedCounts {
     static const WriteUnitOfWorkContext::Decoration<UncommittedCounts> decoration;
 
     std::map<const WiredTigerRecordStore*, int64_t> numRecords;
+    std::map<const WiredTigerRecordStore*, int64_t> dataSize;
 };
 
 const WriteUnitOfWorkContext::Decoration<UncommittedCounts> UncommittedCounts::decoration =
@@ -945,7 +946,14 @@ bool WiredTigerRecordStore::inShutdown() const {
 }
 
 long long WiredTigerRecordStore::dataSize(OperationContext* opCtx) const {
-    return _sizeInfo->dataSize.load();
+    int64_t uncommitted = 0;
+    if (auto uncommittedCounts = UncommittedCounts::get(opCtx)) {
+        if (auto it = uncommittedCounts->dataSize.find(this);
+            it != uncommittedCounts->dataSize.end()) {
+            uncommitted = it->second;
+        }
+    }
+    return _sizeInfo->dataSize.load() + uncommitted;
 }
 
 long long WiredTigerRecordStore::numRecords(OperationContext* opCtx) const {
@@ -1067,7 +1075,7 @@ bool WiredTigerRecordStore::_cappedAndNeedDelete(OperationContext* opCtx) const 
     if (!_isCapped)
         return false;
 
-    if (_sizeInfo->dataSize.load() >= _cappedMaxSize)
+    if (dataSize(opCtx) >= _cappedMaxSize)
         return true;
 
     if ((_cappedMaxDocs != -1) && (numRecords(opCtx) > _cappedMaxDocs))
@@ -1120,7 +1128,7 @@ int64_t WiredTigerRecordStore::_cappedDeleteAsNeeded(OperationContext* opCtx,
         if (!lock.try_lock()) {
             // Someone else is deleting old records. Apply back-pressure if too far behind,
             // otherwise continue.
-            if ((_sizeInfo->dataSize.load() - _cappedMaxSize) < _cappedMaxSizeSlack)
+            if ((dataSize(opCtx) - _cappedMaxSize) < _cappedMaxSizeSlack)
                 return 0;
 
             // Don't wait forever: we're in a transaction, we could block eviction.
@@ -1135,7 +1143,7 @@ int64_t WiredTigerRecordStore::_cappedDeleteAsNeeded(OperationContext* opCtx,
 
             // If we already waited, let someone else do cleanup unless we are significantly
             // over the limit.
-            if ((_sizeInfo->dataSize.load() - _cappedMaxSize) < (2 * _cappedMaxSizeSlack))
+            if ((dataSize(opCtx) - _cappedMaxSize) < (2 * _cappedMaxSizeSlack))
                 return 0;
         }
     }
@@ -1188,10 +1196,10 @@ int64_t WiredTigerRecordStore::_cappedDeleteAsNeeded_inlock(OperationContext* op
 
     WT_SESSION* session = WiredTigerRecoveryUnit::get(opCtx)->getSession()->getSession();
 
-    int64_t dataSize = _sizeInfo->dataSize.load();
+    int64_t dataSz = dataSize(opCtx);
     int64_t numRecs = numRecords(opCtx);
 
-    int64_t sizeOverCap = (dataSize > _cappedMaxSize) ? dataSize - _cappedMaxSize : 0;
+    int64_t sizeOverCap = (dataSz > _cappedMaxSize) ? dataSz - _cappedMaxSize : 0;
     int64_t sizeSaved = 0;
     int64_t docsOverCap = 0, docsRemoved = 0;
     if (_cappedMaxDocs != -1 && numRecs > _cappedMaxDocs)
@@ -1425,7 +1433,7 @@ void WiredTigerRecordStore::reclaimOplog(OperationContext* opCtx, Timestamp mayT
                 "Finished truncating the oplog, it now contains approximately "
                 "{sizeInfo_numRecords_load} records totaling to {sizeInfo_dataSize_load} bytes",
                 "sizeInfo_numRecords_load"_attr = numRecords(opCtx),
-                "sizeInfo_dataSize_load"_attr = _sizeInfo->dataSize.load());
+                "sizeInfo_dataSize_load"_attr = dataSize(opCtx));
     auto elapsedMicros = timer.micros();
     auto elapsedMillis = elapsedMicros / 1000;
     _totalTimeTruncating.fetchAndAdd(elapsedMicros);
@@ -1971,6 +1979,7 @@ void WiredTigerRecordStore::_increaseDataSize(OperationContext* opCtx, int64_t a
 
     if (opCtx) {
         opCtx->recoveryUnit()->registerChange(std::make_unique<DataSizeChange>(this, amount));
+        UncommittedCounts::get(opCtx)->dataSize[this] += amount;
         return;
     }
 
