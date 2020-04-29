@@ -85,11 +85,11 @@ private:
 
 TEST_F(RecoveryUnitTestHarness, CommitUnitOfWork) {
     const auto rs = harnessHelper->createRecordStore(opCtx.get(), "table1");
-    ru->beginUnitOfWork(opCtx.get());
+    WriteUnitOfWork wuow(opCtx.get());
     StatusWith<RecordId> s = rs->insertRecord(opCtx.get(), "data", 4, Timestamp());
     ASSERT_TRUE(s.isOK());
-    ASSERT_EQUALS(0, rs->numRecords(opCtx.get()));
-    ru->commitUnitOfWork();
+    ASSERT_EQUALS(1, rs->numRecords(opCtx.get()));
+    wuow.commit();
     ASSERT_EQUALS(1, rs->numRecords(opCtx.get()));
     RecordData rd;
     ASSERT_TRUE(rs->findRecord(opCtx.get(), s.getValue(), &rd));
@@ -97,13 +97,16 @@ TEST_F(RecoveryUnitTestHarness, CommitUnitOfWork) {
 
 TEST_F(RecoveryUnitTestHarness, AbortUnitOfWork) {
     const auto rs = harnessHelper->createRecordStore(opCtx.get(), "table1");
-    ru->beginUnitOfWork(opCtx.get());
-    StatusWith<RecordId> s = rs->insertRecord(opCtx.get(), "data", 4, Timestamp());
-    ASSERT_TRUE(s.isOK());
+    RecordId recordId;
+    {
+        WriteUnitOfWork wuow(opCtx.get());
+        StatusWith<RecordId> s = rs->insertRecord(opCtx.get(), "data", 4, Timestamp());
+        ASSERT_TRUE(s.isOK());
+        ASSERT_EQUALS(1, rs->numRecords(opCtx.get()));
+        recordId = s.getValue();
+    }
     ASSERT_EQUALS(0, rs->numRecords(opCtx.get()));
-    ru->abortUnitOfWork();
-    ASSERT_EQUALS(0, rs->numRecords(opCtx.get()));
-    ASSERT_FALSE(rs->findRecord(opCtx.get(), s.getValue(), nullptr));
+    ASSERT_FALSE(rs->findRecord(opCtx.get(), recordId, nullptr));
 }
 
 TEST_F(RecoveryUnitTestHarness, CommitAndRollbackChanges) {

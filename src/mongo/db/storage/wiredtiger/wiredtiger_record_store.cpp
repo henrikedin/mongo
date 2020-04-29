@@ -1185,6 +1185,9 @@ void WiredTigerRecordStore::_positionAtFirstRecordId(OperationContext* opCtx,
 
 int64_t WiredTigerRecordStore::_cappedDeleteAsNeeded_inlock(OperationContext* opCtx,
                                                             const RecordId& justInserted) {
+    int64_t dataSz = dataSize(opCtx);
+    int64_t numRecs = numRecords(opCtx);
+
     // we do this in a side transaction in case it aborts
     WiredTigerRecoveryUnit* realRecoveryUnit =
         checked_cast<WiredTigerRecoveryUnit*>(opCtx->releaseRecoveryUnit().release());
@@ -1193,11 +1196,10 @@ int64_t WiredTigerRecordStore::_cappedDeleteAsNeeded_inlock(OperationContext* op
     WriteUnitOfWork::RecoveryUnitState const realRUstate =
         opCtx->setRecoveryUnit(std::make_unique<WiredTigerRecoveryUnit>(sc),
                                WriteUnitOfWork::RecoveryUnitState::kNotInUnitOfWork);
+    auto realWUOWContextStore = WriteUnitOfWorkContextStorage::get(opCtx).release();
 
     WT_SESSION* session = WiredTigerRecoveryUnit::get(opCtx)->getSession()->getSession();
 
-    int64_t dataSz = dataSize(opCtx);
-    int64_t numRecs = numRecords(opCtx);
 
     int64_t sizeOverCap = (dataSz > _cappedMaxSize) ? dataSz - _cappedMaxSize : 0;
     int64_t sizeSaved = 0;
@@ -1322,16 +1324,19 @@ int64_t WiredTigerRecordStore::_cappedDeleteAsNeeded_inlock(OperationContext* op
     } catch (const WriteConflictException&) {
         opCtx->releaseRecoveryUnit();
         opCtx->setRecoveryUnit(std::unique_ptr<RecoveryUnit>(realRecoveryUnit), realRUstate);
+        WriteUnitOfWorkContextStorage::get(opCtx).restore(std::move(realWUOWContextStore));
         LOGV2(22398, "got conflict truncating capped, ignoring");
         return 0;
     } catch (...) {
         opCtx->releaseRecoveryUnit();
         opCtx->setRecoveryUnit(std::unique_ptr<RecoveryUnit>(realRecoveryUnit), realRUstate);
+        WriteUnitOfWorkContextStorage::get(opCtx).restore(std::move(realWUOWContextStore));
         throw;
     }
 
     opCtx->releaseRecoveryUnit();
     opCtx->setRecoveryUnit(std::unique_ptr<RecoveryUnit>(realRecoveryUnit), realRUstate);
+    WriteUnitOfWorkContextStorage::get(opCtx).restore(std::move(realWUOWContextStore));
     return docsRemoved;
 }
 
