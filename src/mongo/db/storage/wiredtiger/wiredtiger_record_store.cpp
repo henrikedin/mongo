@@ -1951,8 +1951,9 @@ void WiredTigerRecordStore::_changeNumRecords(OperationContext* opCtx, int64_t d
         return;
     }
 
-    UncommittedCounts::get(opCtx)->numRecords[this] += diff;
     opCtx->recoveryUnit()->registerChange(std::make_unique<NumRecordsChange>(this, diff));
+    if (auto uncommitted = UncommittedCounts::get(opCtx))
+        uncommitted->numRecords[this] += diff;
 }
 
 class WiredTigerRecordStore::DataSizeChange : public RecoveryUnit::Change {
@@ -1979,7 +1980,8 @@ void WiredTigerRecordStore::_increaseDataSize(OperationContext* opCtx, int64_t a
 
     if (opCtx) {
         opCtx->recoveryUnit()->registerChange(std::make_unique<DataSizeChange>(this, amount));
-        UncommittedCounts::get(opCtx)->dataSize[this] += amount;
+        if (auto uncommitted = UncommittedCounts::get(opCtx))
+            uncommitted->dataSize[this] += amount;
         return;
     }
 
