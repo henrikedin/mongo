@@ -584,11 +584,11 @@ TEST_F(WiredTigerRecoveryUnitTestFixture, CheckpointCursorsAreNotCached) {
     WiredTigerKVEngine* engine = harnessHelper->getEngine();
 
     // Insert a record.
-    ru->beginUnitOfWork(opCtx);
+    WriteUnitOfWork wuow(opCtx);
     StatusWith<RecordId> s = rs->insertRecord(opCtx, "data", 4, Timestamp());
     ASSERT_TRUE(s.isOK());
     ASSERT_EQUALS(1, rs->numRecords(opCtx));
-    ru->commitUnitOfWork();
+    wuow.commit();
 
     // Test 1: A normal read should create a new cursor and release it into the session cache.
 
@@ -638,11 +638,11 @@ TEST_F(WiredTigerRecoveryUnitTestFixture, ReadOnceCursorsAreNotCached) {
     auto uri = dynamic_cast<WiredTigerRecordStore*>(rs.get())->getURI();
 
     // Insert a record.
-    ru->beginUnitOfWork(opCtx);
+    WriteUnitOfWork wuow(opCtx);
     StatusWith<RecordId> s = rs->insertRecord(opCtx, "data", 4, Timestamp());
     ASSERT_TRUE(s.isOK());
     ASSERT_EQUALS(1, rs->numRecords(opCtx));
-    ru->commitUnitOfWork();
+    wuow.commit();
 
     // Test 1: A normal read should create a new cursor and release it into the session cache.
 
@@ -692,11 +692,11 @@ TEST_F(WiredTigerRecoveryUnitTestFixture, CheckpointCursorNotChanged) {
     WiredTigerKVEngine* engine = harnessHelper->getEngine();
 
     // Insert a record.
-    ru->beginUnitOfWork(opCtx);
+    WriteUnitOfWork wuow1(opCtx);
     StatusWith<RecordId> s1 = rs->insertRecord(opCtx, "data", 4, Timestamp());
     ASSERT_TRUE(s1.isOK());
     ASSERT_EQUALS(1, rs->numRecords(opCtx));
-    ru->commitUnitOfWork();
+    wuow1.commit();
 
     // Force a checkpoint.
     engine->flushAllFiles(opCtx, /*callerHoldsReadLock*/ false);
@@ -707,11 +707,11 @@ TEST_F(WiredTigerRecoveryUnitTestFixture, CheckpointCursorNotChanged) {
     ASSERT(originalCheckpointCursor->seekExact(s1.getValue()));
 
     // Insert a new record.
-    ru->beginUnitOfWork(opCtx);
+    WriteUnitOfWork wuow2(opCtx);
     StatusWith<RecordId> s2 = rs->insertRecord(opCtx, "data_2", 6, Timestamp());
     ASSERT_TRUE(s2.isOK());
     ASSERT_EQUALS(2, rs->numRecords(opCtx));
-    ru->commitUnitOfWork();
+    wuow2.commit();
 
     // Test 2: New record does not appear in original checkpoint cursor.
     ASSERT(!originalCheckpointCursor->seekExact(s2.getValue()));

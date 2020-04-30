@@ -104,6 +104,7 @@ TEST_F(RecoveryUnitTestHarness, AbortUnitOfWork) {
         ASSERT_TRUE(s.isOK());
         ASSERT_EQUALS(1, rs->numRecords(opCtx.get()));
         recordId = s.getValue();
+        // abort
     }
     ASSERT_EQUALS(0, rs->numRecords(opCtx.get()));
     ASSERT_FALSE(rs->findRecord(opCtx.get(), recordId, nullptr));
@@ -113,42 +114,48 @@ TEST_F(RecoveryUnitTestHarness, CommitAndRollbackChanges) {
     int count = 0;
     const auto rs = harnessHelper->createRecordStore(opCtx.get(), "table1");
 
-    ru->beginUnitOfWork(opCtx.get());
-    ru->registerChange(std::make_unique<TestChange>(&count));
-    ASSERT_EQUALS(count, 0);
-    ru->commitUnitOfWork();
-    ASSERT_EQUALS(count, 1);
+    {
+        WriteUnitOfWork wuow(opCtx.get());
+        ru->registerChange(std::make_unique<TestChange>(&count));
+        ASSERT_EQUALS(count, 0);
+        wuow.commit();
+        ASSERT_EQUALS(count, 1);
+    }
 
-    ru->beginUnitOfWork(opCtx.get());
-    ru->registerChange(std::make_unique<TestChange>(&count));
-    ASSERT_EQUALS(count, 1);
-    ru->abortUnitOfWork();
+    {
+        WriteUnitOfWork wuow(opCtx.get());
+        ru->registerChange(std::make_unique<TestChange>(&count));
+        ASSERT_EQUALS(count, 1);
+        // abort
+    }
     ASSERT_EQUALS(count, 0);
 }
 
 TEST_F(RecoveryUnitTestHarness, CheckInActiveTxnWithCommit) {
     const auto rs = harnessHelper->createRecordStore(opCtx.get(), "table1");
-    ru->beginUnitOfWork(opCtx.get());
+    WriteUnitOfWork wuow(opCtx.get());
     ASSERT_TRUE(ru->inActiveTxn());
     StatusWith<RecordId> s = rs->insertRecord(opCtx.get(), "data", 4, Timestamp());
-    ru->commitUnitOfWork();
+    wuow.commit();
     ASSERT_FALSE(ru->inActiveTxn());
 }
 
 TEST_F(RecoveryUnitTestHarness, CheckInActiveTxnWithAbort) {
     const auto rs = harnessHelper->createRecordStore(opCtx.get(), "table1");
-    ru->beginUnitOfWork(opCtx.get());
-    ASSERT_TRUE(ru->inActiveTxn());
-    StatusWith<RecordId> s = rs->insertRecord(opCtx.get(), "data", 4, Timestamp());
-    ru->abortUnitOfWork();
+    {
+        WriteUnitOfWork wuow(opCtx.get());
+        ASSERT_TRUE(ru->inActiveTxn());
+        StatusWith<RecordId> s = rs->insertRecord(opCtx.get(), "data", 4, Timestamp());
+        // abort
+    }
     ASSERT_FALSE(ru->inActiveTxn());
 }
 
 TEST_F(RecoveryUnitTestHarness, BeginningUnitOfWorkDoesNotIncrementSnapshotId) {
     auto snapshotIdBefore = ru->getSnapshotId();
-    ru->beginUnitOfWork(opCtx.get());
+    WriteUnitOfWork wuow(opCtx.get());
     ASSERT_EQ(snapshotIdBefore, ru->getSnapshotId());
-    ru->abortUnitOfWork();
+    // abort
 }
 
 TEST_F(RecoveryUnitTestHarness, NewlyAllocatedRecoveryUnitHasNewSnapshotId) {
@@ -171,8 +178,10 @@ TEST_F(RecoveryUnitTestHarness, CommitUnitOfWorkIncrementsSnapshotId) {
 
 TEST_F(RecoveryUnitTestHarness, AbortUnitOfWorkIncrementsSnapshotId) {
     auto snapshotIdBefore = ru->getSnapshotId();
-    ru->beginUnitOfWork(opCtx.get());
-    ru->abortUnitOfWork();
+    {
+        WriteUnitOfWork wuow(opCtx.get());
+        // abort
+    }
     ASSERT_NE(snapshotIdBefore, ru->getSnapshotId());
 }
 
