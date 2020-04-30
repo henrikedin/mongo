@@ -65,8 +65,8 @@ WriteUnitOfWork::~WriteUnitOfWork() {
     if (!_released && !_committed) {
         invariant(_opCtx->_ruState != RecoveryUnitState::kNotInUnitOfWork);
         if (_toplevel) {
-            WriteUnitOfWorkContextStorage::get(_opCtx).discard();
             _opCtx->recoveryUnit()->abortUnitOfWork();
+            WriteUnitOfWorkContextStorage::get(_opCtx).discard();
             _opCtx->_ruState = RecoveryUnitState::kNotInUnitOfWork;
         } else {
             _opCtx->_ruState = RecoveryUnitState::kFailedUnitOfWork;

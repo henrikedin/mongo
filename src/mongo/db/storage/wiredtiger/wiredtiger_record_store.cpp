@@ -104,18 +104,21 @@ void checkOplogFormatVersion(OperationContext* opCtx, const std::string& uri) {
     fassertNoTrace(39998, appMetadata.getValue().getIntField("oplogKeyExtractionVersion") == 1);
 }
 
-struct UncommittedCounts {
-    static boost::optional<UncommittedCounts&> get(OperationContext* opCtx) {
+struct Uncommitted {
+    static boost::optional<Uncommitted&> get(OperationContext* opCtx) {
         return WriteUnitOfWorkContext::get(opCtx, decoration);
     }
-    static const WriteUnitOfWorkContext::Decoration<UncommittedCounts> decoration;
+    static const WriteUnitOfWorkContext::Decoration<Uncommitted> decoration;
 
-    std::map<const WiredTigerRecordStore*, int64_t> numRecords;
-    std::map<const WiredTigerRecordStore*, int64_t> dataSize;
+    struct Counts {
+        int64_t numRecords{0};
+        int64_t dataSize{0};
+    };
+    std::map<const WiredTigerRecordStore*, Counts> counts;
 };
 
-const WriteUnitOfWorkContext::Decoration<UncommittedCounts> UncommittedCounts::decoration =
-    WriteUnitOfWorkContext::declareDecoration<UncommittedCounts>();
+const WriteUnitOfWorkContext::Decoration<Uncommitted> Uncommitted::decoration =
+    WriteUnitOfWorkContext::declareDecoration<Uncommitted>();
 
 }  // namespace
 
@@ -946,25 +949,23 @@ bool WiredTigerRecordStore::inShutdown() const {
 }
 
 long long WiredTigerRecordStore::dataSize(OperationContext* opCtx) const {
-    int64_t uncommitted = 0;
-    if (auto uncommittedCounts = UncommittedCounts::get(opCtx)) {
-        if (auto it = uncommittedCounts->dataSize.find(this);
-            it != uncommittedCounts->dataSize.end()) {
-            uncommitted = it->second;
+    int64_t sizeUncommitted = 0;
+    if (auto uncommitted = Uncommitted::get(opCtx)) {
+        if (auto it = uncommitted->counts.find(this); it != uncommitted->counts.end()) {
+            sizeUncommitted = it->second.dataSize;
         }
     }
-    return _sizeInfo->dataSize.load() + uncommitted;
+    return _sizeInfo->dataSize.load() + sizeUncommitted;
 }
 
 long long WiredTigerRecordStore::numRecords(OperationContext* opCtx) const {
-    int64_t uncommitted = 0;
-    if (auto uncommittedCounts = UncommittedCounts::get(opCtx)) {
-        if (auto it = uncommittedCounts->numRecords.find(this);
-            it != uncommittedCounts->numRecords.end()) {
-            uncommitted = it->second;
+    int64_t numUncommitted = 0;
+    if (auto uncommitted = Uncommitted::get(opCtx)) {
+        if (auto it = uncommitted->counts.find(this); it != uncommitted->counts.end()) {
+            numUncommitted = it->second.numRecords;
         }
     }
-    return _sizeInfo->numRecords.load() + uncommitted;
+    return _sizeInfo->numRecords.load() + numUncommitted;
 }
 
 bool WiredTigerRecordStore::isCapped() const {
@@ -1957,7 +1958,7 @@ void WiredTigerRecordStore::_changeNumRecords(OperationContext* opCtx, int64_t d
     }
 
     opCtx->recoveryUnit()->registerChange(std::make_unique<NumRecordsChange>(this, diff));
-    UncommittedCounts::get(opCtx)->numRecords[this] += diff;
+    Uncommitted::get(opCtx)->counts[this].numRecords += diff;
 }
 
 class WiredTigerRecordStore::DataSizeChange : public RecoveryUnit::Change {
@@ -1984,7 +1985,7 @@ void WiredTigerRecordStore::_increaseDataSize(OperationContext* opCtx, int64_t a
 
     if (opCtx) {
         opCtx->recoveryUnit()->registerChange(std::make_unique<DataSizeChange>(this, amount));
-        UncommittedCounts::get(opCtx)->dataSize[this] += amount;
+        Uncommitted::get(opCtx)->counts[this].dataSize += amount;
         return;
     }
 
