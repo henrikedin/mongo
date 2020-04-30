@@ -34,6 +34,8 @@
 
 #include "mongo/platform/basic.h"
 
+#include <boost/container/flat_map.hpp>
+#include <boost/container/small_vector.hpp>
 #include <fmt/format.h>
 
 #include "mongo/db/storage/wiredtiger/wiredtiger_record_store.h"
@@ -109,12 +111,23 @@ struct Uncommitted {
         return WriteUnitOfWorkContext::get(opCtx, decoration);
     }
     static const WriteUnitOfWorkContext::Decoration<Uncommitted> decoration;
+    // Number of different WiredTigerRecordStore* this WriteUnitOfWorkContext can keep track of
+    // without allocating memory
+    static constexpr std::size_t kStaticSize = 2;
 
+    typedef const WiredTigerRecordStore* Key;
     struct Counts {
         int64_t numRecords{0};
         int64_t dataSize{0};
     };
-    std::map<const WiredTigerRecordStore*, Counts> counts;
+    boost::container::flat_map<
+        Key,
+        Counts,
+        std::less<Key>,
+        boost::container::small_vector<std::pair<Key, Counts>,
+                                       kStaticSize,
+                                       std::allocator<std::pair<Key, Counts>>>>
+        counts;
 };
 
 const WriteUnitOfWorkContext::Decoration<Uncommitted> Uncommitted::decoration =
