@@ -34,6 +34,7 @@
 namespace mongo {
 
 class OperationContext;
+class WriteUnitOfWorkContext;
 
 /**
  * The WriteUnitOfWork is an RAII type that begins a storage engine write unit of work on both the
@@ -59,6 +60,11 @@ public:
         kFailedUnitOfWork   // in a unit of work that has failed and must be aborted
     };
 
+    struct WriteUnitOfWorkState {
+        std::unique_ptr<WriteUnitOfWorkContext> context;
+        RecoveryUnitState ruState;
+    };
+
     WriteUnitOfWork(OperationContext* opCtx);
 
     ~WriteUnitOfWork();
@@ -68,14 +74,14 @@ public:
      * when the RecoveryUnit and Locker are in active or failed state.
      */
     static std::unique_ptr<WriteUnitOfWork> createForSnapshotResume(OperationContext* opCtx,
-                                                                    RecoveryUnitState ruState);
+                                                                    WriteUnitOfWorkState state);
 
     /**
      * Releases the OperationContext RecoveryUnit and Locker objects from management without
      * changing state. Allows for use of these objects beyond the WriteUnitOfWork lifespan. Prepared
      * units of work are not allowed be released. Returns the state of the RecoveryUnit.
      */
-    RecoveryUnitState release();
+    WriteUnitOfWorkState release();
 
     /**
      * Transitions the WriteUnitOfWork to the "prepared" state. The RecoveryUnit state in the
@@ -95,10 +101,15 @@ public:
      */
     void commit();
 
+    WriteUnitOfWorkContext& context() {
+        return *_context;
+    }
+
 private:
     WriteUnitOfWork() = default;  // for createForSnapshotResume
 
     OperationContext* _opCtx;
+    std::unique_ptr<WriteUnitOfWorkContext> _context;
 
     bool _toplevel;
 

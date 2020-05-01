@@ -54,53 +54,59 @@ public:
 /**
  * Provides storage of WriteUnitOfWorkContext as a decoration of OperationContext.
  */
-class WriteUnitOfWorkContextStorage {
-public:
-    static const OperationContext::Decoration<WriteUnitOfWorkContextStorage> get;
-
-    /**
-     * Creates a new WriteUnitOfWorkContext in this storage.
-     * This happens when we enter a WriteUnitOfWork.
-     */
-    void create();
-
-    /**
-     * Discards the owned WriteUnitOfWorkContext in this storage.
-     * This happens when the active WriteUnitOfWork is committed or abandoned.
-     */
-    void discard();
-
-    /**
-     * Restores this storage with an external WriteUnitOfWorkContext.
-     * This happens when the TransactionParticipant releases its state at the beginning of a network
-     * operation.
-     */
-    void restore(std::unique_ptr<WriteUnitOfWorkContext> ctx);
-
-    /**
-     * Releases the owned WriteUnitOfWorkContext from this storage.
-     * This happens when the TransactionParticipant stores the state at the end of a network
-     * operation.
-     */
-    std::unique_ptr<WriteUnitOfWorkContext> release();
-
-private:
-    template <class DecorationT>
-    friend boost::optional<DecorationT&> WriteUnitOfWorkContext::get(
-        OperationContext* opCtx, const WriteUnitOfWorkContext::Decoration<DecorationT>& decoration);
-
-    std::unique_ptr<WriteUnitOfWorkContext> _context;
-};
+//class WriteUnitOfWorkContextStorage {
+//public:
+//    static const OperationContext::Decoration<WriteUnitOfWorkContextStorage> get;
+//
+//    /**
+//     * Creates a new WriteUnitOfWorkContext in this storage.
+//     * This happens when we enter a WriteUnitOfWork.
+//     */
+//    void create();
+//
+//    /**
+//     * Discards the owned WriteUnitOfWorkContext in this storage.
+//     * This happens when the active WriteUnitOfWork is committed or abandoned.
+//     */
+//    void discard();
+//
+//    /**
+//     * Restores this storage with an external WriteUnitOfWorkContext.
+//     * This happens when the TransactionParticipant releases its state at the beginning of a network
+//     * operation.
+//     */
+//    void restore(std::unique_ptr<WriteUnitOfWorkContext> ctx);
+//
+//    /**
+//     * Releases the owned WriteUnitOfWorkContext from this storage.
+//     * This happens when the TransactionParticipant stores the state at the end of a network
+//     * operation.
+//     */
+//    std::unique_ptr<WriteUnitOfWorkContext> release();
+//
+//private:
+//    template <class DecorationT>
+//    friend boost::optional<DecorationT&> WriteUnitOfWorkContext::get(
+//        OperationContext* opCtx, const WriteUnitOfWorkContext::Decoration<DecorationT>& decoration);
+//
+//    std::unique_ptr<WriteUnitOfWorkContext> _context;
+//};
 
 template <class DecorationT>
 boost::optional<DecorationT&> WriteUnitOfWorkContext::get(
     OperationContext* opCtx, const WriteUnitOfWorkContext::Decoration<DecorationT>& decoration) {
-    auto& storage = WriteUnitOfWorkContextStorage::get(opCtx);
-    if (storage._context) {
-        return decoration(storage._context.get());
-    } else {
+    auto wuow = opCtx->getWriteUnitOfWork();
+    if (wuow)
+        return decoration(wuow->context());
+    else
         return boost::none;
-    }
+    //auto& storage = WriteUnitOfWorkContextStorage::get(opCtx);
+    //if (storage._context) {
+    //    return decoration(storage._context.get());
+    //} else {
+    //    return boost::none;
+    //}
+    //return boost::none;
 }
 
 }  // namespace mongo

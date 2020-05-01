@@ -1210,7 +1210,7 @@ int64_t WiredTigerRecordStore::_cappedDeleteAsNeeded_inlock(OperationContext* op
     WriteUnitOfWork::RecoveryUnitState const realRUstate =
         opCtx->setRecoveryUnit(std::make_unique<WiredTigerRecoveryUnit>(sc),
                                WriteUnitOfWork::RecoveryUnitState::kNotInUnitOfWork);
-    auto realWUOWContextStore = WriteUnitOfWorkContextStorage::get(opCtx).release();
+    //auto realWUOWContextStore = WriteUnitOfWorkContextStorage::get(opCtx).release();
 
     WT_SESSION* session = WiredTigerRecoveryUnit::get(opCtx)->getSession()->getSession();
 
@@ -1338,19 +1338,19 @@ int64_t WiredTigerRecordStore::_cappedDeleteAsNeeded_inlock(OperationContext* op
     } catch (const WriteConflictException&) {
         opCtx->releaseRecoveryUnit();
         opCtx->setRecoveryUnit(std::unique_ptr<RecoveryUnit>(realRecoveryUnit), realRUstate);
-        WriteUnitOfWorkContextStorage::get(opCtx).restore(std::move(realWUOWContextStore));
+        //WriteUnitOfWorkContextStorage::get(opCtx).restore(std::move(realWUOWContextStore));
         LOGV2(22398, "got conflict truncating capped, ignoring");
         return 0;
     } catch (...) {
         opCtx->releaseRecoveryUnit();
         opCtx->setRecoveryUnit(std::unique_ptr<RecoveryUnit>(realRecoveryUnit), realRUstate);
-        WriteUnitOfWorkContextStorage::get(opCtx).restore(std::move(realWUOWContextStore));
+        //WriteUnitOfWorkContextStorage::get(opCtx).restore(std::move(realWUOWContextStore));
         throw;
     }
 
     opCtx->releaseRecoveryUnit();
     opCtx->setRecoveryUnit(std::unique_ptr<RecoveryUnit>(realRecoveryUnit), realRUstate);
-    WriteUnitOfWorkContextStorage::get(opCtx).restore(std::move(realWUOWContextStore));
+    //WriteUnitOfWorkContextStorage::get(opCtx).restore(std::move(realWUOWContextStore));
     return docsRemoved;
 }
 

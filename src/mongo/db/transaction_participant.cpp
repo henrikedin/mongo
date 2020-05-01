@@ -671,7 +671,7 @@ TransactionParticipant::OplogSlotReserver::OplogSlotReserver(OperationContext* o
     _oplogSlots = oplogInfo->getNextOpTimes(opCtx, numSlotsToReserve);
 
     // Release the WUOW state since this WUOW is no longer in use.
-    wuow.release();
+    //wuow.release();
 
     // We must lock the Client to change the Locker on the OperationContext.
     stdx::lock_guard<Client> lk(*opCtx->getClient());
@@ -707,7 +707,7 @@ TransactionParticipant::TxnResources::TxnResources(WithLock wl,
     // We must hold the Client lock to change the Locker on the OperationContext. Hence the
     // WithLock.
 
-    _ruState = opCtx->getWriteUnitOfWork()->release();
+    //_ruState = opCtx->getWriteUnitOfWork()->release();
     opCtx->setWriteUnitOfWork(nullptr);
 
     _locker = opCtx->swapLockState(std::make_unique<LockerImpl>(), wl);
@@ -744,7 +744,7 @@ TransactionParticipant::TxnResources::TxnResources(WithLock wl,
 
     _readConcernArgs = repl::ReadConcernArgs::get(opCtx);
     _uncommittedCollections = UncommittedCollections::get(opCtx).shareResources();
-    _writeUnitOfWorkContext = WriteUnitOfWorkContextStorage::get(opCtx).release();
+    //_writeUnitOfWorkContext = WriteUnitOfWorkContextStorage::get(opCtx).release();
 }
 
 TransactionParticipant::TxnResources::~TxnResources() {
@@ -812,14 +812,14 @@ void TransactionParticipant::TxnResources::release(OperationContext* opCtx) {
     UncommittedCollections::get(opCtx).receiveResources(_uncommittedCollections);
     _uncommittedCollections = nullptr;
 
-    WriteUnitOfWorkContextStorage::get(opCtx).restore(std::move(_writeUnitOfWorkContext));
+    //WriteUnitOfWorkContextStorage::get(opCtx).restore(std::move(_writeUnitOfWorkContext));
 
     auto oldState = opCtx->setRecoveryUnit(std::move(_recoveryUnit),
                                            WriteUnitOfWork::RecoveryUnitState::kNotInUnitOfWork);
     invariant(oldState == WriteUnitOfWork::RecoveryUnitState::kNotInUnitOfWork,
               str::stream() << "RecoveryUnit state was " << oldState);
 
-    opCtx->setWriteUnitOfWork(WriteUnitOfWork::createForSnapshotResume(opCtx, _ruState));
+    opCtx->setWriteUnitOfWork(WriteUnitOfWork::createForSnapshotResume(opCtx, std::move(_wuowState)));
 
     auto& readConcernArgs = repl::ReadConcernArgs::get(opCtx);
     readConcernArgs = _readConcernArgs;
@@ -834,7 +834,7 @@ TransactionParticipant::SideTransactionBlock::SideTransactionBlock(OperationCont
     }
 
     // Release WUOW.
-    _ruState = opCtx->getWriteUnitOfWork()->release();
+    _wuowState = opCtx->getWriteUnitOfWork()->release();
     opCtx->setWriteUnitOfWork(nullptr);
 
     // Remember the locking state of WUOW, opt out two-phase locking, but don't release locks.
@@ -846,11 +846,6 @@ TransactionParticipant::SideTransactionBlock::SideTransactionBlock(OperationCont
     opCtx->setRecoveryUnit(std::unique_ptr<RecoveryUnit>(
                                opCtx->getServiceContext()->getStorageEngine()->newRecoveryUnit()),
                            WriteUnitOfWork::RecoveryUnitState::kNotInUnitOfWork);
-
-    WriteUnitOfWorkContextStorage& writeUnitOfWorkContextStorage =
-        WriteUnitOfWorkContextStorage::get(opCtx);
-    _writeUnitOfWorkContext = writeUnitOfWorkContextStorage.release();
-    writeUnitOfWorkContextStorage.create();
 }
 
 TransactionParticipant::SideTransactionBlock::~SideTransactionBlock() {
@@ -868,8 +863,7 @@ TransactionParticipant::SideTransactionBlock::~SideTransactionBlock() {
               str::stream() << "RecoveryUnit state was " << oldState);
 
     // Restore WUOW.
-    _opCtx->setWriteUnitOfWork(WriteUnitOfWork::createForSnapshotResume(_opCtx, _ruState));
-    WriteUnitOfWorkContextStorage::get(_opCtx).restore(std::move(_writeUnitOfWorkContext));
+    _opCtx->setWriteUnitOfWork(WriteUnitOfWork::createForSnapshotResume(_opCtx, std::move(_wuowState)));
 }
 
 void TransactionParticipant::Participant::_stashActiveTransaction(OperationContext* opCtx) {

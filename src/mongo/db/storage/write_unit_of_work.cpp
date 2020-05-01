@@ -52,7 +52,7 @@ WriteUnitOfWork::WriteUnitOfWork(OperationContext* opCtx)
     _opCtx->lockState()->beginWriteUnitOfWork();
     if (_toplevel) {
         _opCtx->recoveryUnit()->beginUnitOfWork(_opCtx);
-        WriteUnitOfWorkContextStorage::get(opCtx).create();
+        _context = std::make_unique<WriteUnitOfWorkContext>();
         _opCtx->_ruState = RecoveryUnitState::kActiveUnitOfWork;
     }
     // Make sure we don't silently proceed after a previous WriteUnitOfWork under the same parent
@@ -66,7 +66,7 @@ WriteUnitOfWork::~WriteUnitOfWork() {
         invariant(_opCtx->_ruState != RecoveryUnitState::kNotInUnitOfWork);
         if (_toplevel) {
             _opCtx->recoveryUnit()->abortUnitOfWork();
-            WriteUnitOfWorkContextStorage::get(_opCtx).discard();
+            _context.reset();
             _opCtx->_ruState = RecoveryUnitState::kNotInUnitOfWork;
         } else {
             _opCtx->_ruState = RecoveryUnitState::kFailedUnitOfWork;
@@ -76,24 +76,26 @@ WriteUnitOfWork::~WriteUnitOfWork() {
 }
 
 std::unique_ptr<WriteUnitOfWork> WriteUnitOfWork::createForSnapshotResume(
-    OperationContext* opCtx, RecoveryUnitState ruState) {
+    OperationContext* opCtx, WriteUnitOfWorkState state) {
     auto wuow = std::unique_ptr<WriteUnitOfWork>(new WriteUnitOfWork());
     wuow->_opCtx = opCtx;
     wuow->_toplevel = true;
-    wuow->_opCtx->_ruState = ruState;
+    wuow->_context = std::move(state.context);
+    wuow->_opCtx->_ruState = state.ruState;
     return wuow;
 }
 
-WriteUnitOfWork::RecoveryUnitState WriteUnitOfWork::release() {
+WriteUnitOfWork::WriteUnitOfWorkState WriteUnitOfWork::release() {
     auto ruState = _opCtx->_ruState;
     invariant(ruState == RecoveryUnitState::kActiveUnitOfWork ||
               ruState == RecoveryUnitState::kFailedUnitOfWork);
     invariant(!_committed);
     invariant(_toplevel);
+    auto context = std::move(_context);
 
     _released = true;
     _opCtx->_ruState = RecoveryUnitState::kNotInUnitOfWork;
-    return ruState;
+    return {std::move(context), ruState};
 }
 
 void WriteUnitOfWork::prepare() {
@@ -117,7 +119,7 @@ void WriteUnitOfWork::commit() {
 
         _opCtx->recoveryUnit()->runPreCommitHooks(_opCtx);
         _opCtx->recoveryUnit()->commitUnitOfWork();
-        WriteUnitOfWorkContextStorage::get(_opCtx).discard();
+        _context.reset();
 
         _opCtx->_ruState = RecoveryUnitState::kNotInUnitOfWork;
     }

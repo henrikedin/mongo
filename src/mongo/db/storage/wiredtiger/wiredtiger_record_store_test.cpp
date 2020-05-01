@@ -874,15 +874,15 @@ TEST(WiredTigerRecordStoreTest, GetLatestOplogTest) {
 
     // 1) Initialize the top of oplog to "1".
     ServiceContext::UniqueOperationContext op1(harnessHelper->newOperationContext());
-    op1->recoveryUnit()->beginUnitOfWork(op1.get());
+    WriteUnitOfWork wuow1(op1.get());
     Timestamp tsOne =
         Timestamp(static_cast<unsigned long long>(_oplogOrderInsertOplog(op1.get(), rs, 1).repr()));
-    op1->recoveryUnit()->commitUnitOfWork();
+    wuow1.commit();
     // Asserting on a recovery unit without a snapshot.
     ASSERT_EQ(tsOne, wtrs->getLatestOplogTimestamp(op1.get()));
 
     // 2) Open a hole at time "2".
-    op1->recoveryUnit()->beginUnitOfWork(op1.get());
+    WriteUnitOfWork wuow2(op1.get());
     // Don't save the return value because the compiler complains about unused variables.
     _oplogOrderInsertOplog(op1.get(), rs, 2);
     // Querying with the recovery unit with a snapshot will not return the uncommitted value.
@@ -893,12 +893,12 @@ TEST(WiredTigerRecordStoreTest, GetLatestOplogTest) {
     Client::initThread("client2");
 
     ServiceContext::UniqueOperationContext op2(harnessHelper->newOperationContext());
-    op2->recoveryUnit()->beginUnitOfWork(op2.get());
+    WriteUnitOfWork wuowOp2(op2.get());
     Timestamp tsThree =
         Timestamp(static_cast<unsigned long long>(_oplogOrderInsertOplog(op2.get(), rs, 3).repr()));
     // Before committing, the query still only sees timestamp "1".
     ASSERT_EQ(tsOne, wtrs->getLatestOplogTimestamp(op2.get()));
-    op2->recoveryUnit()->commitUnitOfWork();
+    wuowOp2.commit();
     // After committing, three is the top of oplog.
     ASSERT_EQ(tsThree, wtrs->getLatestOplogTimestamp(op2.get()));
 
@@ -910,7 +910,7 @@ TEST(WiredTigerRecordStoreTest, GetLatestOplogTest) {
 
     // A new query with client 1 will see timestamp "3".
     ASSERT_EQ(tsThree, wtrs->getLatestOplogTimestamp(op1.get()));
-    op1->recoveryUnit()->commitUnitOfWork();
+    wuow2.commit();
     // Committing the write at timestamp "2" does not change the top of oplog result.
     ASSERT_EQ(tsThree, wtrs->getLatestOplogTimestamp(op1.get()));
 }

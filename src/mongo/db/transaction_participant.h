@@ -220,9 +220,8 @@ public:
         std::unique_ptr<Locker::LockSnapshot> _lockSnapshot;
         std::unique_ptr<RecoveryUnit> _recoveryUnit;
         repl::ReadConcernArgs _readConcernArgs;
-        WriteUnitOfWork::RecoveryUnitState _ruState;
+        WriteUnitOfWork::WriteUnitOfWorkState _wuowState;
         std::shared_ptr<UncommittedCollections::UncommittedCollectionsMap> _uncommittedCollections;
-        std::unique_ptr<WriteUnitOfWorkContext> _writeUnitOfWorkContext;
     };
 
     /**
@@ -241,8 +240,7 @@ public:
     private:
         Locker::WUOWLockSnapshot _WUOWLockSnapshot;
         std::unique_ptr<RecoveryUnit> _recoveryUnit;
-        WriteUnitOfWork::RecoveryUnitState _ruState;
-        std::unique_ptr<WriteUnitOfWorkContext> _writeUnitOfWorkContext;
+        WriteUnitOfWork::WriteUnitOfWorkState _wuowState;
         OperationContext* _opCtx;
     };
 
