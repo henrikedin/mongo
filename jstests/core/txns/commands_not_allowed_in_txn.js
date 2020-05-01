@@ -116,6 +116,8 @@ function testCommand(command) {
 //
 
 const commands = [
+    {count: collName},
+    {count: collName, query: {a: 1}},
     {explain: {find: collName}},
     {filemd5: 1, root: "fs"},
     {isMaster: 1},
