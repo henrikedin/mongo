@@ -41,7 +41,6 @@ session1.startTransaction();
 assert.commandWorked(session1Coll.insert({_id: "t2_a"}));
 assert.commandWorked(session1Coll.insert({_id: "t2_b"}));
 assert.commandWorked(session1Coll.insert({_id: "t2_c"}));
-assert.eq(4, session1Coll.count());
 let prepareTs = PrepareHelpers.prepareTransaction(session1);
 
 rollbackTest.transitionToRollbackOperations();
