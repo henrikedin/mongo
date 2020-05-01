@@ -113,7 +113,7 @@ struct Uncommitted {
     static const WriteUnitOfWorkContext::Decoration<Uncommitted> decoration;
     // Number of different WiredTigerRecordStore* this WriteUnitOfWorkContext can keep track of
     // without allocating memory
-    static constexpr std::size_t kStaticSize = 2;
+    static constexpr std::size_t kStaticSize = 4;
 
     typedef const WiredTigerRecordStore* Key;
     struct Counts {
