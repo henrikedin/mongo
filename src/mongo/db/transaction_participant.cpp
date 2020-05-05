@@ -468,8 +468,8 @@ void TransactionParticipant::Participant::_beginMultiDocumentTransaction(Operati
     // Start tracking various transactions metrics.
     //
     // We measure the start time in both microsecond and millisecond resolution. The TickSource
-    // provides microsecond resolution to record the duration of the transaction. The start
-    // "wall clock" time can be considered an approximation to the microsecond measurement.
+    // provides microsecond resolution to record the duration of the transaction. The start "wall
+    // clock" time can be considered an approximation to the microsecond measurement.
     auto now = opCtx->getServiceContext()->getPreciseClockSource()->now();
     auto tickSource = opCtx->getServiceContext()->getTickSource();
 

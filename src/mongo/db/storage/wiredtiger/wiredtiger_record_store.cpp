@@ -106,6 +106,10 @@ void checkOplogFormatVersion(OperationContext* opCtx, const std::string& uri) {
     fassertNoTrace(39998, appMetadata.getValue().getIntField("oplogKeyExtractionVersion") == 1);
 }
 
+/**
+ * Decorates WriteUnitOfWorkContext to provide per-transaction storage to keep track of uncommitted
+ * data while the transaction is still in progress.
+ */
 struct Uncommitted {
     static boost::optional<Uncommitted&> get(OperationContext* opCtx) {
         return WriteUnitOfWorkContext::get(opCtx, decoration);
@@ -115,7 +119,7 @@ struct Uncommitted {
     // without allocating memory
     static constexpr std::size_t kStaticSize = 4;
 
-    typedef const WiredTigerRecordStore* Key;
+    using Key = const WiredTigerRecordStore*;
     struct Counts {
         int64_t numRecords{0};
         int64_t dataSize{0};

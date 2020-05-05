@@ -57,7 +57,7 @@ PrepareHelpers.prepareTransaction(session2, {w: 1});
 // Commit the transaction that was prepared before the common point.
 PrepareHelpers.commitTransaction(session1, prepareTs);
 
-// fastcount, should not include the prepared but uncommitted transaction in the collection count.
+// fastcount should not include the prepared but uncommitted transaction in the collection count.
 assert.eq(5, testColl.count());
 
 // Check the visible documents.
