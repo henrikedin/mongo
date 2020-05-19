@@ -44,7 +44,7 @@
 #include "mongo/db/service_context_d_test_fixture.h"
 #include "mongo/db/storage/devnull/devnull_kv_engine.h"
 #include "mongo/db/storage/durable_catalog.h"
-#include "mongo/db/storage/ephemeral_for_test/ephemeral_for_test_engine.h"
+//#include "mongo/db/storage/ephemeral_for_test/ephemeral_for_test_engine.h"
 #include "mongo/db/storage/kv/kv_engine.h"
 #include "mongo/db/storage/storage_engine_impl.h"
 #include "mongo/db/storage/storage_engine_test_fixture.h"
@@ -80,8 +80,15 @@ TEST_F(StorageEngineTest, ReconcileIdentsTest) {
     ASSERT_TRUE(idents.find("_mdb_catalog") != idents.end());
 
     // Create a catalog entry for the `_id` index. Drop the created the table.
-    ASSERT_OK(createIndex(
-        opCtx.get(), NamespaceString("db.coll1"), "_id", false /* isBackgroundSecondaryBuild */));
+    {
+        WriteUnitOfWork wuow(opCtx.get());
+        ASSERT_OK(createIndex(opCtx.get(),
+                              NamespaceString("db.coll1"),
+                              "_id",
+                              false /* isBackgroundSecondaryBuild */));
+        wuow.commit();
+    }
+
     ASSERT_OK(dropIndexTable(opCtx.get(), NamespaceString("db.coll1"), "_id"));
     // The reconcile response should include this index as needing to be rebuilt.
     reconcileResult = unittest::assertGet(reconcile(opCtx.get()));
@@ -181,7 +188,12 @@ TEST_F(StorageEngineTest, ReconcileUnfinishedIndex) {
     // Start an non-backgroundSecondary single-phase (i.e. no build UUID) index.
     const bool isBackgroundSecondaryBuild = false;
     const boost::optional<UUID> buildUUID = boost::none;
-    ASSERT_OK(startIndexBuild(opCtx.get(), ns, indexName, isBackgroundSecondaryBuild, buildUUID));
+    {
+        WriteUnitOfWork wuow(opCtx.get());
+        ASSERT_OK(
+            startIndexBuild(opCtx.get(), ns, indexName, isBackgroundSecondaryBuild, buildUUID));
+        wuow.commit();
+    }
 
     const auto indexIdent = _storageEngine->getCatalog()->getIndexIdent(
         opCtx.get(), swCollInfo.getValue().catalogId, indexName);
@@ -213,7 +225,12 @@ TEST_F(StorageEngineTest, ReconcileUnfinishedBackgroundSecondaryIndex) {
     // Start a backgroundSecondary single-phase (i.e. no build UUID) index.
     const bool isBackgroundSecondaryBuild = true;
     const boost::optional<UUID> buildUUID = boost::none;
-    ASSERT_OK(startIndexBuild(opCtx.get(), ns, indexName, isBackgroundSecondaryBuild, buildUUID));
+    {
+        WriteUnitOfWork wuow(opCtx.get());
+        ASSERT_OK(
+            startIndexBuild(opCtx.get(), ns, indexName, isBackgroundSecondaryBuild, buildUUID));
+        wuow.commit();
+    }
 
     const auto indexIdent = _storageEngine->getCatalog()->getIndexIdent(
         opCtx.get(), swCollInfo.getValue().catalogId, indexName);
@@ -254,8 +271,16 @@ TEST_F(StorageEngineTest, ReconcileTwoPhaseIndexBuilds) {
 
     // Start two indexes with the same buildUUID to simulate building multiple indexes within the
     // same build.
-    ASSERT_OK(startIndexBuild(opCtx.get(), ns, indexA, isBackgroundSecondaryBuild, buildUUID));
-    ASSERT_OK(startIndexBuild(opCtx.get(), ns, indexB, isBackgroundSecondaryBuild, buildUUID));
+    {
+        WriteUnitOfWork wuow(opCtx.get());
+        ASSERT_OK(startIndexBuild(opCtx.get(), ns, indexA, isBackgroundSecondaryBuild, buildUUID));
+        wuow.commit();
+    }
+    {
+        WriteUnitOfWork wuow(opCtx.get());
+        ASSERT_OK(startIndexBuild(opCtx.get(), ns, indexB, isBackgroundSecondaryBuild, buildUUID));
+        wuow.commit();
+    }
 
     const auto indexIdentA = _storageEngine->getCatalog()->getIndexIdent(
         opCtx.get(), swCollInfo.getValue().catalogId, indexA);
@@ -343,7 +368,12 @@ TEST_F(StorageEngineRepairTest, LoadCatalogRecoversOrphansInCatalog) {
     // Only drop the catalog entry; storage engine still knows about this ident.
     // This simulates an unclean shutdown happening between dropping the catalog entry and
     // the actual drop in storage engine.
-    ASSERT_OK(removeEntry(opCtx.get(), collNs.ns(), _storageEngine->getCatalog()));
+    {
+        WriteUnitOfWork wuow(opCtx.get());
+        ASSERT_OK(removeEntry(opCtx.get(), collNs.ns(), _storageEngine->getCatalog()));
+        wuow.commit();
+    }
+
     ASSERT(!collectionExists(opCtx.get(), collNs));
 
     // When in a repair context, loadCatalog() recreates catalog entries for orphaned idents.
@@ -371,7 +401,11 @@ TEST_F(StorageEngineTest, LoadCatalogDropsOrphans) {
     // Only drop the catalog entry; storage engine still knows about this ident.
     // This simulates an unclean shutdown happening between dropping the catalog entry and
     // the actual drop in storage engine.
-    ASSERT_OK(removeEntry(opCtx.get(), collNs.ns(), _storageEngine->getCatalog()));
+    {
+        WriteUnitOfWork wuow(opCtx.get());
+        ASSERT_OK(removeEntry(opCtx.get(), collNs.ns(), _storageEngine->getCatalog()));
+        wuow.commit();
+    }
     ASSERT(!collectionExists(opCtx.get(), collNs));
 
     // When in a normal startup context, loadCatalog() does not recreate catalog entries for
