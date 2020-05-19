@@ -55,7 +55,7 @@ public:
                          int64_t cappedMaxDocs = -1,
                          CappedCallback* cappedCallback = nullptr,
                          VisibilityManager* visibilityManager = nullptr);
-    ~RecordStore() = default;
+    ~RecordStore();
 
     virtual const char* name() const;
     virtual const std::string& getIdent() const;
@@ -142,7 +142,7 @@ private:
 
     mutable Mutex _cappedDeleterMutex = MONGO_MAKE_LATCH("RecordStore::_cappedDeleterMutex");
 
-    AtomicWord<long long> _highestRecordId{1};
+    static AtomicWord<long long> _highestRecordId;
     AtomicWord<long long> _numRecords{0};
     AtomicWord<long long> _dataSize{0};
 
