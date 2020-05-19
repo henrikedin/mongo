@@ -58,7 +58,7 @@ public:
                          int64_t cappedMaxDocs = -1,
                          CappedCallback* cappedCallback = nullptr,
                          VisibilityManager* visibilityManager = nullptr);
-    ~RecordStore() = default;
+    ~RecordStore();
 
     virtual const char* name() const;
     virtual const std::string& getIdent() const;

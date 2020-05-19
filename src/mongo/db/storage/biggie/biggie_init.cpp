@@ -73,7 +73,7 @@ public:
     }
 
     virtual StringData getCanonicalName() const {
-        return kBiggieEngineName;
+        return "ephemeralForTest";
     }
 
     virtual Status validateMetadata(const StorageEngineMetadata& metadata,

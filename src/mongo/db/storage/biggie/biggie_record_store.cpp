@@ -101,6 +101,8 @@ RecordStore::RecordStore(StringData ns,
     }
 }
 
+RecordStore::~RecordStore() {}
+
 const char* RecordStore::name() const {
     return "biggie";
 }

@@ -1695,7 +1695,7 @@ env.Library(
         'service_context_d',
         'storage/storage_control',
         'storage/devnull/storage_devnull',
-        'storage/ephemeral_for_test/storage_ephemeral_for_test',
+        'storage/biggie/storage_biggie',
         'storage/storage_options',
     ],
 )
