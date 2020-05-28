@@ -71,8 +71,6 @@ RecordId extractRecordId(const std::string& keyStr) {
 }
 }  // namespace
 
-AtomicWord<long long> RecordStore::_highestRecordId{1};
-
 RecordStore::RecordStore(StringData ns,
                          StringData ident,
                          bool isCapped,
