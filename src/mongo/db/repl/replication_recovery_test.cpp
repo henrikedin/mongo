@@ -186,6 +186,8 @@ private:
 
         ASSERT_OK(
             ReplicationCoordinator::get(_opCtx.get())->setFollowerMode(MemberState::RS_PRIMARY));
+        repl::setOplogCollectionName(service);
+        repl::createOplog(_opCtx.get());
 
         ASSERT_OK(_storageInterface->createCollection(
             getOperationContext(), testNs, generateOptionsWithUuid()));

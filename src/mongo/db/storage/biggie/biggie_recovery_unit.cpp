@@ -97,6 +97,14 @@ bool RecoveryUnit::waitUntilDurable(OperationContext* opCtx) {
     return true;  // This is an in-memory storage engine.
 }
 
+Status RecoveryUnit::obtainMajorityCommittedSnapshot() {
+    return Status::OK();
+}
+
+void RecoveryUnit::prepareUnitOfWork() {
+    invariant(_inUnitOfWork());
+}
+
 void RecoveryUnit::doAbandonSnapshot() {
     invariant(!_inUnitOfWork(), toString(_getState()));
     _forked = false;

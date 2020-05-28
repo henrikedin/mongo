@@ -55,6 +55,30 @@ public:
 
     virtual void setOrderedCommit(bool orderedCommit) override;
 
+    Status obtainMajorityCommittedSnapshot() final;
+
+    void prepareUnitOfWork() override;
+
+    virtual void setPrepareTimestamp(Timestamp ts) override {
+        _prepareTimestamp = ts;
+    }
+
+    virtual Timestamp getPrepareTimestamp() const override {
+        return _prepareTimestamp;
+    }
+
+    virtual void setCommitTimestamp(Timestamp ts) override {
+        _commitTimestamp = ts;
+    }
+
+    virtual Timestamp getCommitTimestamp() const override {
+        return _commitTimestamp;
+    }
+
+    virtual void clearCommitTimestamp() override {
+        _commitTimestamp = Timestamp::min();
+    }
+
     Status setTimestamp(Timestamp timestamp) override;
 
     // Biggie specific function declarations below.
@@ -92,6 +116,9 @@ private:
 
     bool _forked = false;
     bool _dirty = false;  // Whether or not we have written to this _workingCopy.
+
+    Timestamp _prepareTimestamp = Timestamp::min();
+    Timestamp _commitTimestamp = Timestamp::min();
 };
 
 }  // namespace biggie
