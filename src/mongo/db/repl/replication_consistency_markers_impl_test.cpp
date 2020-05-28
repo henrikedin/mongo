@@ -230,9 +230,9 @@ TEST_F(ReplicationConsistencyMarkersTest, ReplicationConsistencyMarkers) {
     ASSERT_EQUALS(endOpTime.getTimestamp(), consistencyMarkers.getOplogTruncateAfterPoint(opCtx));
 
     // Recovery unit will be owned by "opCtx".
-    RecoveryUnitWithDurabilityTracking* recoveryUnit = new RecoveryUnitWithDurabilityTracking();
+    /*RecoveryUnitWithDurabilityTracking* recoveryUnit = new RecoveryUnitWithDurabilityTracking();
     opCtx->setRecoveryUnit(std::unique_ptr<RecoveryUnit>(recoveryUnit),
-                           WriteUnitOfWork::RecoveryUnitState::kNotInUnitOfWork);
+                           WriteUnitOfWork::RecoveryUnitState::kNotInUnitOfWork);*/
 
     // Set min valid without waiting for the changes to be durable.
     OpTime endOpTime2({Seconds(789), 0}, 1LL);
@@ -240,7 +240,7 @@ TEST_F(ReplicationConsistencyMarkersTest, ReplicationConsistencyMarkers) {
     consistencyMarkers.clearAppliedThrough(opCtx, {});
     ASSERT_EQUALS(consistencyMarkers.getAppliedThrough(opCtx), OpTime());
     ASSERT_EQUALS(consistencyMarkers.getMinValid(opCtx), endOpTime2);
-    ASSERT_FALSE(recoveryUnit->waitUntilDurableCalled);
+    //ASSERT_FALSE(recoveryUnit->waitUntilDurableCalled);
 }
 
 TEST_F(ReplicationConsistencyMarkersTest, InitialSyncId) {
