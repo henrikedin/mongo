@@ -172,10 +172,15 @@ private:
     class Cursor final : public SeekableRecordCursor {
         OperationContext* opCtx;
         const RecordStore& _rs;
+        StringData _ident;
+        std::string _prefix;
+        std::string _postfix;
         StringStore::const_iterator it;
         boost::optional<std::string> _savedPosition;
         bool _needFirstSeek = true;
         bool _lastMoveWasRestore = false;
+        bool _isCapped;
+        bool _isOplog;
         VisibilityManager* _visibilityManager;
 
     public:
@@ -197,10 +202,15 @@ private:
     class ReverseCursor final : public SeekableRecordCursor {
         OperationContext* opCtx;
         const RecordStore& _rs;
+        StringData _ident;
+        std::string _prefix;
+        std::string _postfix;
         StringStore::const_reverse_iterator it;
         boost::optional<std::string> _savedPosition;
         bool _needFirstSeek = true;
         bool _lastMoveWasRestore = false;
+        bool _isCapped;
+        bool _isOplog;
         VisibilityManager* _visibilityManager;
 
     public:
