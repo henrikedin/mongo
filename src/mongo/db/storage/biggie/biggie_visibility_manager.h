@@ -49,7 +49,7 @@ public:
      * Removes the RecordId from the uncommitted records and notifies other threads that a chunk of
      * the oplog became visible.
      */
-    void dealtWithRecord(RecordId rid);
+    void dealtWithRecord(const RecordStore* rs, RecordId rid);
 
     /**
      * Adds a RecordId to be tracked while its Record is uncommitted. Upon commit or rollback of
@@ -64,6 +64,11 @@ public:
     RecordId getAllCommittedRecord();
 
     /**
+     * Returns true if the given RecordId is visible for the provided RecordStore.
+     */
+    bool isVisible(const RecordStore* rs, RecordId rid);
+
+    /**
      * Returns true if the given RecordId is the earliest uncommitted Record being tracked by the
      * visibility manager, otherwise it returns false.
      */
@@ -76,6 +81,7 @@ public:
     void waitForAllEarlierOplogWritesToBeVisible(OperationContext* opCtx);
 
 private:
+    RecordId _getAllCommittedRecord(WithLock);
     mutable Mutex _stateLock =
         MONGO_MAKE_LATCH("VisibilityManager::_stateLock");  // Protects the values below.
     RecordId _highestSeen = RecordId();
@@ -83,6 +89,7 @@ private:
     // Used to wait for all earlier oplog writes to be visible.
     mutable stdx::condition_variable _opsBecameVisibleCV;
     std::set<RecordId> _uncommittedRecords;  // RecordIds that have yet to be committed/rolled back.
+    std::map<const RecordStore*, std::set<RecordId>> _uncommittedLocal;
 };
 
 }  // namespace biggie

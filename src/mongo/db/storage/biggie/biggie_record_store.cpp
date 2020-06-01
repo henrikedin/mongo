@@ -387,7 +387,7 @@ void RecordStore::_cappedDeleteAsNeeded(OperationContext* opCtx, StringStore* wo
 RecordStore::Cursor::Cursor(OperationContext* opCtx,
                             const RecordStore& rs,
                             VisibilityManager* visibilityManager)
-    : opCtx(opCtx), _visibilityManager(visibilityManager) {
+    : opCtx(opCtx), _rs(rs), _visibilityManager(visibilityManager) {
     _ident = rs._ident;
     _prefix = rs._prefix;
     _postfix = rs._postfix;
@@ -405,14 +405,16 @@ boost::optional<Record> RecordStore::Cursor::next() {
         ++it;
     }
     _lastMoveWasRestore = false;
-    if (it != workingCopy->end() && inPrefix(it->first)) {
+    while (it != workingCopy->end() && inPrefix(it->first)) {
         _savedPosition = it->first;
         Record nextRecord;
         nextRecord.id = RecordId(extractRecordId(it->first));
         nextRecord.data = RecordData(it->second.c_str(), it->second.length());
 
-        if (_isOplog && nextRecord.id > _visibilityManager->getAllCommittedRecord())
-            return boost::none;
+        if (_isOplog && !_visibilityManager->isVisible(&_rs, nextRecord.id)) {
+            ++it;
+            continue;
+        }
         return nextRecord;
     }
     return boost::none;
@@ -428,7 +430,7 @@ boost::optional<Record> RecordStore::Cursor::seekExact(const RecordId& id) {
     if (it == workingCopy->end() || !inPrefix(it->first))
         return boost::none;
 
-    if (_isOplog && id > _visibilityManager->getAllCommittedRecord())
+    if (_isOplog && !_visibilityManager->isVisible(&_rs, id))
         return boost::none;
 
     _needFirstSeek = false;
@@ -466,7 +468,7 @@ bool RecordStore::Cursor::inPrefix(const std::string& key_string) {
 RecordStore::ReverseCursor::ReverseCursor(OperationContext* opCtx,
                                           const RecordStore& rs,
                                           VisibilityManager* visibilityManager)
-    : opCtx(opCtx), _visibilityManager(visibilityManager) {
+    : opCtx(opCtx), _rs(rs), _visibilityManager(visibilityManager) {
     _savedPosition = boost::none;
     _ident = rs._ident;
     _prefix = rs._prefix;
@@ -486,14 +488,16 @@ boost::optional<Record> RecordStore::ReverseCursor::next() {
     }
     _lastMoveWasRestore = false;
 
-    if (it != workingCopy->rend() && inPrefix(it->first)) {
+    while (it != workingCopy->rend() && inPrefix(it->first)) {
         _savedPosition = it->first;
         Record nextRecord;
         nextRecord.id = RecordId(extractRecordId(it->first));
         nextRecord.data = RecordData(it->second.c_str(), it->second.length());
 
-        if (_isOplog && nextRecord.id > _visibilityManager->getAllCommittedRecord())
-            return boost::none;
+        if (_isOplog && !_visibilityManager->isVisible(&_rs, nextRecord.id)) {
+            ++it;
+            continue;
+        }
         return nextRecord;
     }
     return boost::none;
@@ -510,7 +514,7 @@ boost::optional<Record> RecordStore::ReverseCursor::seekExact(const RecordId& id
         return boost::none;
     }
 
-    if (_isOplog && id > _visibilityManager->getAllCommittedRecord())
+    if (_isOplog && !_visibilityManager->isVisible(&_rs, id))
         return boost::none;
 
     it = StringStore::const_reverse_iterator(++canFind);  // reverse iterator returns item 1 before
