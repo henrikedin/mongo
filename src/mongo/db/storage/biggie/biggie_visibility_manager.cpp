@@ -51,11 +51,11 @@ public:
     ~VisibilityManagerChange() = default;
 
     virtual void commit(boost::optional<Timestamp>) {
-        _visibilityManager->dealtWithRecord(_rs, _rid);
+        _visibilityManager->dealtWithRecord(_rid);
     }
 
     virtual void rollback() {
-        _visibilityManager->dealtWithRecord(_rs, _rid);
+        _visibilityManager->dealtWithRecord(_rid);
         stdx::lock_guard<Latch> lk(_rs->_cappedCallbackMutex);
         if (_rs->_cappedCallback)
             _rs->_cappedCallback->notifyCappedWaitersIfNeeded();
@@ -67,16 +67,9 @@ private:
     const RecordId _rid;
 };
 
-void VisibilityManager::dealtWithRecord(const RecordStore* rs, RecordId rid) {
+void VisibilityManager::dealtWithRecord(RecordId rid) {
     stdx::lock_guard<Latch> lock(_stateLock);
     _uncommittedRecords.erase(rid);
-
-    auto& uncommittedLocal = _uncommittedLocal[rs];
-    uncommittedLocal.erase(rid);
-    if (uncommittedLocal.empty()) {
-        _uncommittedLocal.erase(rs);
-    }
-
     _opsBecameVisibleCV.notify_all();
 }
 
@@ -85,36 +78,16 @@ void VisibilityManager::addUncommittedRecord(OperationContext* opCtx,
                                              RecordId rid) {
     stdx::lock_guard<Latch> lock(_stateLock);
     _uncommittedRecords.insert(rid);
-    _uncommittedLocal[rs].insert(rid);
     opCtx->recoveryUnit()->registerChange(std::make_unique<VisibilityManagerChange>(this, rs, rid));
 
     if (rid > _highestSeen)
         _highestSeen = rid;
 }
 
-RecordId VisibilityManager::_getAllCommittedRecord(WithLock) {
-    return _uncommittedRecords.empty() ? _highestSeen
-                                       : RecordId(_uncommittedRecords.begin()->repr() - 1);
-}
-
 RecordId VisibilityManager::getAllCommittedRecord() {
     stdx::lock_guard<Latch> lock(_stateLock);
-    return _getAllCommittedRecord(lock);
-}
-
-bool VisibilityManager::isVisible(const RecordStore* rs, RecordId rid) {
-    stdx::lock_guard<Latch> lock(_stateLock);
-    auto allCommitted = _getAllCommittedRecord(lock);
-    if (rid <= allCommitted)
-        return true;
-
-    auto it = _uncommittedLocal.find(rs);
-    if (it != _uncommittedLocal.end()) {
-        const auto& uncommitted = it->second;
-        return uncommitted.find(rid) != uncommitted.end();
-    }
-    
-    return false;
+    return _uncommittedRecords.empty() ? _highestSeen
+                                       : RecordId(_uncommittedRecords.begin()->repr() - 1);
 }
 
 bool VisibilityManager::isFirstHidden(RecordId rid) {

@@ -171,7 +171,6 @@ private:
 
     class Cursor final : public SeekableRecordCursor {
         OperationContext* opCtx;
-        const RecordStore& _rs;
         StringData _ident;
         std::string _prefix;
         std::string _postfix;
@@ -201,7 +200,6 @@ private:
 
     class ReverseCursor final : public SeekableRecordCursor {
         OperationContext* opCtx;
-        const RecordStore& _rs;
         StringData _ident;
         std::string _prefix;
         std::string _postfix;
