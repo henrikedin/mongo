@@ -931,7 +931,7 @@ private:
 
         // If the root node's triekey is not empty then the tree is a subtree, and so we examine it.
         for (unsigned int i = 0; i < _root->_trieKey.size(); i++) {
-            if (charKey[i + initialDepthOffset] != _root->_trieKey[i]) {
+            if (static_cast<uint8_t>(charKey[i + initialDepthOffset]) != _root->_trieKey[i]) {
                 return nullptr;
             }
             depth++;
@@ -1408,8 +1408,12 @@ private:
                 }
             } else if (baseNode && otherNode && baseNode != otherNode) {
                 // If all three are unique and leaf nodes, then it is a merge conflict.
-                if (node->isLeaf() && baseNode->isLeaf() && otherNode->isLeaf())
-                    throw merge_conflict_exception();
+                if (node->isLeaf() && baseNode->isLeaf() && otherNode->isLeaf()) {
+                    if (node->_data != baseNode->_data || baseNode->_data != otherNode->_data)
+                        throw merge_conflict_exception();
+                    else
+                        continue;
+                }
 
                 // If the keys and data are all the exact same, then we can keep recursing.
                 // Otherwise, we manually resolve the differences element by element. The
