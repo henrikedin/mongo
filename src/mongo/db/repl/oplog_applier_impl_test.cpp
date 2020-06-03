@@ -949,11 +949,12 @@ TEST_F(MultiOplogEntryOplogApplierImplTest, MultiApplyTwoTransactionsOneBatch) {
                   boost::none,
                   DurableTxnStateEnum::kCommitted);
 
-    // Check docs and ordering of docs in nss1.
-    ASSERT_BSONOBJ_EQ(BSON("_id" << 1), _insertedDocs[_nss1][0]);
-    ASSERT_BSONOBJ_EQ(BSON("_id" << 2), _insertedDocs[_nss1][1]);
-    ASSERT_BSONOBJ_EQ(BSON("_id" << 3), _insertedDocs[_nss1][2]);
-    ASSERT_BSONOBJ_EQ(BSON("_id" << 4), _insertedDocs[_nss1][3]);
+    // Check docs in nss1.
+    auto nss1It = _insertedDocs[_nss1].begin();
+    ASSERT_BSONOBJ_EQ(BSON("_id" << 1), *(nss1It++));
+    ASSERT_BSONOBJ_EQ(BSON("_id" << 2), *(nss1It++));
+    ASSERT_BSONOBJ_EQ(BSON("_id" << 3), *(nss1It++));
+    ASSERT_BSONOBJ_EQ(BSON("_id" << 4), *(nss1It++));
 }
 
 
