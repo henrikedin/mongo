@@ -186,6 +186,7 @@ private:
 
         ASSERT_OK(
             ReplicationCoordinator::get(_opCtx.get())->setFollowerMode(MemberState::RS_PRIMARY));
+
         repl::setOplogCollectionName(service);
         repl::createOplog(_opCtx.get());
 
@@ -329,10 +330,10 @@ CollectionOptions _createOplogCollectionOptions() {
  * Creates an oplog with insert entries at the given timestamps.
  */
 void _setUpOplog(OperationContext* opCtx, StorageInterface* storage, std::vector<int> timestamps) {
-    ASSERT_OK(storage->createCollection(opCtx, oplogNs, _createOplogCollectionOptions()));
+    // ASSERT_OK(storage->createCollection(opCtx, oplogNs, _createOplogCollectionOptions()));
 
-    // Initialize the cached pointer to the oplog collection.
-    acquireOplogCollectionForLogging(opCtx);
+    //// Initialize the cached pointer to the oplog collection.
+    // acquireOplogCollectionForLogging(opCtx);
 
     for (int ts : timestamps) {
         ASSERT_OK(storage->insertDocument(
