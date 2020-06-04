@@ -87,7 +87,7 @@ public:
                           bool dupsAllowed) override;
     virtual void unindex(OperationContext* opCtx,
                          const KeyString::Value& keyString,
-                         bool dupsAllowed) override;
+                         bool dupsAllowed, bool fromIndexBuilder) override;
     virtual Status dupKeyCheck(OperationContext* opCtx, const KeyString::Value& keyString) override;
     virtual void fullValidate(OperationContext* opCtx,
                               long long* numKeysOut,

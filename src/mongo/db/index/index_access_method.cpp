@@ -192,10 +192,10 @@ Status AbstractIndexAccessMethod::insertKeys(OperationContext* opCtx,
 void AbstractIndexAccessMethod::removeOneKey(OperationContext* opCtx,
                                              const KeyString::Value& keyString,
                                              const RecordId& loc,
-                                             bool dupsAllowed) {
+                                             bool dupsAllowed, bool fromIndexBuilder) {
 
     try {
-        _newInterface->unindex(opCtx, keyString, dupsAllowed);
+        _newInterface->unindex(opCtx, keyString, dupsAllowed, fromIndexBuilder);
     } catch (AssertionException& e) {
         LOGV2(20682,
               "Assertion failure: _unindex failed on: {descriptor_parentNS} for index: "
@@ -228,7 +228,7 @@ Status AbstractIndexAccessMethod::removeKeys(OperationContext* opCtx,
                                              int64_t* numDeleted) {
 
     for (const auto& key : keys) {
-        removeOneKey(opCtx, key, loc, options.dupsAllowed);
+        removeOneKey(opCtx, key, loc, options.dupsAllowed, options.fromIndexBuilder);
     }
 
     *numDeleted = keys.size();
@@ -414,7 +414,7 @@ Status AbstractIndexAccessMethod::update(OperationContext* opCtx,
     }
 
     for (const auto& remKey : ticket.removed) {
-        _newInterface->unindex(opCtx, remKey, ticket.dupsAllowed);
+        _newInterface->unindex(opCtx, remKey, ticket.dupsAllowed, false);
     }
 
     // Add all new data keys, and all new multikey metadata keys, into the index. When iterating

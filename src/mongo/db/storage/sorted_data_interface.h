@@ -101,10 +101,11 @@ public:
      * @param opCtx the transaction under which the remove takes place
      * @param dupsAllowed true if duplicate keys are allowed, and false
      *        otherwise
+     * @param fromIndexBuilder true if the call is coming from an index builder
      */
     virtual void unindex(OperationContext* opCtx,
                          const KeyString::Value& keyString,
-                         bool dupsAllowed) = 0;
+                         bool dupsAllowed, bool fromIndexBuilder) = 0;
 
     /**
      * Return ErrorCodes::DuplicateKey if there is more than one occurence of 'KeyString' in this

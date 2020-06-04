@@ -391,7 +391,7 @@ Status SortedDataInterface::insert(OperationContext* opCtx,
 
 void SortedDataInterface::unindex(OperationContext* opCtx,
                                   const KeyString::Value& keyString,
-                                  bool dupsAllowed) {
+                                  bool dupsAllowed, bool fromIndexBuilder) {
     RecordId loc = KeyString::decodeRecordIdAtEnd(keyString.getBuffer(), keyString.getSize());
 
     StringStore* workingCopy(RecoveryUnit::get(opCtx)->getHead());
@@ -421,7 +421,7 @@ void SortedDataInterface::unindex(OperationContext* opCtx,
             return;
         erased = workingCopy->erase(removeKeyString);
 
-        if (!erased) {
+        if (!erased && !fromIndexBuilder) {
             // If nothing above was erased, then we have to generate the KeyString with or without
             // the RecordId in it, and erase that. This could only happen on unique indexes where
             // duplicate index entries were/are allowed.

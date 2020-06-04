@@ -61,7 +61,7 @@ void mongo::removeFromIndex(unowned_ptr<OperationContext> opCtx,
                             std::initializer_list<IndexKeyEntry> toRemove) {
     WriteUnitOfWork wuow(opCtx);
     for (auto&& entry : toRemove) {
-        index->unindex(opCtx, makeKeyString(index.get(), entry.key, entry.loc), true);
+        index->unindex(opCtx, makeKeyString(index.get(), entry.key, entry.loc), true, false);
     }
     wuow.commit();
 }
@@ -291,7 +291,7 @@ TEST(SortedDataInterface, Unindex1) {
         {
             WriteUnitOfWork uow(opCtx.get());
             sorted->unindex(
-                opCtx.get(), makeKeyString(sorted.get(), BSON("" << 1), RecordId(5, 20)), true);
+                opCtx.get(), makeKeyString(sorted.get(), BSON("" << 1), RecordId(5, 20)), true, false);
             ASSERT_EQUALS(1, sorted->numEntries(opCtx.get()));
             uow.commit();
         }
@@ -307,7 +307,7 @@ TEST(SortedDataInterface, Unindex1) {
         {
             WriteUnitOfWork uow(opCtx.get());
             sorted->unindex(
-                opCtx.get(), makeKeyString(sorted.get(), BSON("" << 2), RecordId(5, 18)), true);
+                opCtx.get(), makeKeyString(sorted.get(), BSON("" << 2), RecordId(5, 18)), true, false);
             ASSERT_EQUALS(1, sorted->numEntries(opCtx.get()));
             uow.commit();
         }
@@ -324,7 +324,7 @@ TEST(SortedDataInterface, Unindex1) {
         {
             WriteUnitOfWork uow(opCtx.get());
             sorted->unindex(
-                opCtx.get(), makeKeyString(sorted.get(), BSON("" << 1), RecordId(5, 18)), true);
+                opCtx.get(), makeKeyString(sorted.get(), BSON("" << 1), RecordId(5, 18)), true, false);
             ASSERT(sorted->isEmpty(opCtx.get()));
             uow.commit();
         }
@@ -361,7 +361,7 @@ TEST(SortedDataInterface, Unindex2Rollback) {
         {
             WriteUnitOfWork uow(opCtx.get());
             sorted->unindex(
-                opCtx.get(), makeKeyString(sorted.get(), BSON("" << 1), RecordId(5, 18)), true);
+                opCtx.get(), makeKeyString(sorted.get(), BSON("" << 1), RecordId(5, 18)), true, false);
             ASSERT(sorted->isEmpty(opCtx.get()));
             // no commit
         }
