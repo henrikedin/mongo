@@ -359,7 +359,7 @@ void _assertDocumentsInCollectionEqualsUnordered(OperationContext* opCtx,
                                                  const SimpleBSONObjSet& docs) {
     SimpleBSONObjSet actualDocs;
     CollectionReader reader(opCtx, nss);
-    for (const auto& doc : docs) {
+    for (std::size_t i = 0; i < docs.size(); ++i) {
         actualDocs.insert(unittest::assertGet(reader.next()));
     }
     auto docIt = docs.begin();
@@ -447,22 +447,6 @@ TEST_F(ReplicationRecoveryTest, RecoveryWithEmptyOplogSucceedsWithStableTimestam
 
     _assertDocsInOplog(opCtx, {});
     _assertDocsInTestCollection(opCtx, {});
-}
-
-DEATH_TEST_REGEX_F(ReplicationRecoveryTest,
-                   TruncateFassertsWithoutOplogCollection,
-                   "Fatal assertion.*34418.*NamespaceNotFound: Can't find local.oplog.rs") {
-    ReplicationRecoveryImpl recovery(getStorageInterface(), getConsistencyMarkers());
-    auto opCtx = getOperationContext();
-
-    getConsistencyMarkers()->setOplogTruncateAfterPoint(opCtx, Timestamp(4, 4));
-    getConsistencyMarkers()->setAppliedThrough(opCtx, OpTime(Timestamp(3, 3), 1));
-
-    // Create the database.
-    ASSERT_OK(getStorageInterface()->createCollection(
-        opCtx, NamespaceString("local.other"), generateOptionsWithUuid()));
-
-    recovery.recoverFromOplog(opCtx, boost::none);
 }
 
 DEATH_TEST_F(ReplicationRecoveryTest,
