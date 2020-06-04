@@ -573,7 +573,8 @@ private:
     void removeOneKey(OperationContext* opCtx,
                       const KeyString::Value& keyString,
                       const RecordId& loc,
-                      bool dupsAllowed);
+                      bool dupsAllowed,
+                      bool fromIndexBuilder);
 
     const std::unique_ptr<SortedDataInterface> _newInterface;
 };

@@ -188,7 +188,8 @@ public:
 
     virtual void unindex(OperationContext* opCtx,
                          const KeyString::Value& keyString,
-                         bool dupsAllowed) {}
+                         bool dupsAllowed,
+                         bool fromIndexBuilder) {}
 
     virtual Status dupKeyCheck(OperationContext* opCtx, const KeyString::Value& keyString) {
         return Status::OK();
