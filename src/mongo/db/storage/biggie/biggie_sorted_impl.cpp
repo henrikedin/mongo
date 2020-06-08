@@ -54,6 +54,16 @@ namespace mongo {
 namespace biggie {
 namespace {
 
+class IndexData {
+public:
+    void addKey(RecordId loc, const KeyString::TypeBits& typeBits) {}
+
+    std::string serialize();
+    static IndexData deserialize(const std::string& serializedIndexData) {}
+
+private:
+};
+
 const Ordering allAscending = Ordering::make(BSONObj());
 
 // This just checks to see if the field names are empty or not.
