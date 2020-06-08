@@ -111,7 +111,7 @@ TEST(SortedDataInterface, UnindexWithoutCommit) {
         const ServiceContext::UniqueOperationContext opCtx(harnessHelper->newOperationContext());
         {
             WriteUnitOfWork uow(opCtx.get());
-            sorted->unindex(opCtx.get(), makeKeyString(sorted.get(), key2, loc2), true, false);
+            sorted->unindex(opCtx.get(), makeKeyString(sorted.get(), key2, loc2), true);
             ASSERT_EQUALS(1, sorted->numEntries(opCtx.get()));
             // no commit
         }
@@ -140,9 +140,9 @@ TEST(SortedDataInterface, UnindexWithoutCommit) {
         const ServiceContext::UniqueOperationContext opCtx(harnessHelper->newOperationContext());
         {
             WriteUnitOfWork uow(opCtx.get());
-            sorted->unindex(opCtx.get(), makeKeyString(sorted.get(), key1, loc1), true, false);
+            sorted->unindex(opCtx.get(), makeKeyString(sorted.get(), key1, loc1), true);
             ASSERT_EQUALS(2, sorted->numEntries(opCtx.get()));
-            sorted->unindex(opCtx.get(), makeKeyString(sorted.get(), key3, loc3), true, false);
+            sorted->unindex(opCtx.get(), makeKeyString(sorted.get(), key3, loc3), true);
             ASSERT_EQUALS(1, sorted->numEntries(opCtx.get()));
             // no commit
         }
