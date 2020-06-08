@@ -33,8 +33,55 @@
 #include "mongo/db/storage/key_string.h"
 #include "mongo/db/storage/sorted_data_interface.h"
 
+#include <boost/container/flat_map.hpp>
+
 namespace mongo {
 namespace biggie {
+
+class IndexData {
+public:
+    using container_t = boost::container::flat_map<RecordId, KeyString::TypeBits>;
+    using iterator = container_t::iterator;
+    using const_iterator = container_t::const_iterator;
+    using reverse_iterator = container_t::reverse_iterator;
+    using const_reverse_iterator = container_t::const_reverse_iterator;
+
+    void add(RecordId loc, KeyString::TypeBits typeBits);
+
+    bool empty() const {
+        return _keys.empty();
+    }
+    iterator begin() {
+        return _keys.begin();
+    }
+    iterator end() {
+        return _keys.end();
+    }
+    const_iterator begin() const {
+        return _keys.begin();
+    }
+    const_iterator end() const {
+        return _keys.end();
+    }
+    reverse_iterator rbegin() {
+        return _keys.rbegin();
+    }
+    reverse_iterator rend() {
+        return _keys.rend();
+    }
+    const_reverse_iterator rbegin() const {
+        return _keys.rbegin();
+    }
+    const_reverse_iterator rend() const {
+        return _keys.rend();
+    }
+
+    std::string serialize() const;
+    static IndexData deserialize(const std::string& serializedIndexData);
+
+private:
+    container_t _keys;
+};
 
 class SortedDataBuilderInterface : public ::mongo::SortedDataBuilderInterface {
 public:
@@ -175,6 +222,12 @@ public:
         // The next two are the same as above.
         std::string _KSForIdentStart;
         std::string _KSForIdentEnd;
+
+        IndexData _indexData;
+        IndexData::const_iterator _forwardIndexDataIt;
+        IndexData::const_iterator _forwardIndexDataEnd;
+        IndexData::const_reverse_iterator _reverseIndexDataIt;
+        IndexData::const_reverse_iterator _reverseIndexDataEnd;
     };
 
 private:

@@ -71,6 +71,8 @@ public:
     static const uint8_t kStoredDecimalExponentBits = 6;
     static const uint32_t kStoredDecimalExponentMask = (1U << kStoredDecimalExponentBits) - 1;
 
+    TypeBits() : TypeBits(Version::kLatestVersion) {}
+
     explicit TypeBits(Version version) : version(version) {
         reset();
     }

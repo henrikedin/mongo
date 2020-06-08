@@ -33,6 +33,7 @@
 
 #include <cstring>
 #include <memory>
+#include <sstream>
 #include <string>
 
 #include "mongo/bson/bsonobj.h"
@@ -53,16 +54,15 @@
 namespace mongo {
 namespace biggie {
 namespace {
+/*
+std::string internalTbString(keyString.getTypeBits().getBuffer(),
+                                 keyString.getTypeBits().getSize());
 
-class IndexData {
-public:
-    void addKey(RecordId loc, const KeyString::TypeBits& typeBits) {}
-
-    std::string serialize();
-    static IndexData deserialize(const std::string& serializedIndexData) {}
-
-private:
-};
+    int64_t recIdRepr = loc.repr();
+    std::string data(sizeof(int64_t) + internalTbString.length(), '\0');
+    std::memcpy(&data[0], &recIdRepr, sizeof(int64_t));
+    std::memcpy(&data[0] + sizeof(int64_t), internalTbString.data(), internalTbString.length());
+*/
 
 const Ordering allAscending = Ordering::make(BSONObj());
 
@@ -173,6 +173,41 @@ BSONObj getKeyFromKeyString(const std::string& keyString,
     return key;
 }
 
+BSONObj createKeyObj(const std::string& keyStringWithoutRecordId,
+                     const KeyString::TypeBits& typeBits,
+                     const Ordering& order) {
+    /*std::string typeBitsString(data.length() - sizeof(int64_t), '\0');
+    std::memcpy(&typeBitsString[0], data.data() + sizeof(int64_t), data.length() - sizeof(int64_t));
+
+    BufReader brTbInternal(typeBitsString.c_str(), typeBitsString.length());
+
+    KeyString::Version version = KeyString::Version::V1;
+    KeyString::TypeBits tbInternal = KeyString::TypeBits(version);
+
+    tbInternal.resetFromBuffer(&brTbInternal);*/
+
+    KeyString::Version version = KeyString::Version::kLatestVersion;
+    KeyString::TypeBits tbOuter = KeyString::TypeBits(version);
+    BSONObj bsonObj = KeyString::toBsonSafe(
+        keyStringWithoutRecordId.data(), keyStringWithoutRecordId.size(), allAscending, tbOuter);
+
+    SharedBuffer sb;
+    auto it = BSONObjIterator(bsonObj);
+    ++it;  // We want the second part
+    KeyString::Builder ks(version);
+    ks.resetFromBuffer((*it).valuestr(), (*it).valuestrsize());
+
+    BSONObj originalKey = KeyString::toBsonSafe(ks.getBuffer(), ks.getSize(), order, typeBits);
+
+    /*sb = SharedBuffer::allocate(originalKey.objsize());
+    std::memcpy(sb.get(), originalKey.objdata(), originalKey.objsize());
+
+    BSONObj key(ConstSharedBuffer{sb});
+
+    return key;*/
+    return originalKey;
+}
+
 IndexKeyEntry keyStringToIndexKeyEntry(const std::string keyString,
                                        std::string data,
                                        const Ordering order) {
@@ -195,7 +230,79 @@ boost::optional<KeyStringEntry> keyStringToKeyStringEntry(const std::string keyS
     ksFinal.appendRecordId(rid);
     return KeyStringEntry(ksFinal.getValueCopy(), rid);
 }
+boost::optional<KeyStringEntry> keyStringToKeyStringEntry(
+    const std::string& keyStringWithoutRecordId,
+    RecordId loc,
+    const KeyString::TypeBits& typeBits,
+    const Ordering& order) {
+    auto key = createKeyObj(keyStringWithoutRecordId, typeBits, order);
+    /*int64_t ridRepr;
+    std::memcpy(&ridRepr, data.data(), sizeof(int64_t));
+    RecordId rid(ridRepr);*/
+    KeyString::Builder ksFinal(KeyString::Version::kLatestVersion, key, order);
+    ksFinal.appendRecordId(loc);
+    return KeyStringEntry(ksFinal.getValueCopy(), loc);
+}
 }  // namespace
+
+void IndexData::add(RecordId loc, KeyString::TypeBits typeBits) {
+    _keys[loc] = std::move(typeBits);
+}
+
+std::string IndexData::serialize() const {
+    std::stringstream buffer;
+    uint64_t num = _keys.size();
+    buffer.write(reinterpret_cast<const char*>(&num), sizeof(num));
+
+    for (const auto& [recordId, typeBits] : _keys) {
+        uint64_t repr = recordId.repr();
+        buffer.write(reinterpret_cast<const char*>(&repr), sizeof(repr));
+
+        uint64_t typeBitsSize = typeBits.getSize();
+        buffer.write(reinterpret_cast<const char*>(&typeBitsSize), sizeof(typeBitsSize));
+
+        auto typeBitsBuffer = typeBits.getBuffer();
+        buffer.write(typeBitsBuffer, typeBitsSize);
+    }
+
+    auto str = buffer.str();
+    return str;
+}
+IndexData IndexData::deserialize(const std::string& serializedIndexData) {
+    auto begin = serializedIndexData.begin();
+    auto end = serializedIndexData.end();
+
+    auto readBytes = [&](std::size_t num) {
+        invariant((end - begin) >= static_cast<ptrdiff_t>(num));
+        auto before = begin;
+        begin += num;
+        return &*before;
+    };
+
+    auto readUInt64 = [&]() {
+        uint64_t val;
+        auto ptr = readBytes(sizeof(val));
+        std::memcpy(&val, ptr, sizeof(val));
+        return val;
+    };
+
+    IndexData indexData;
+    boost::container::flat_map<RecordId, KeyString::TypeBits>::sequence_type keys;
+    auto numKeys = readUInt64();
+    keys.reserve(numKeys);
+    for (auto i = 0; i < numKeys; ++i) {
+        auto repr = readUInt64();
+        auto typeBitsSize = readUInt64();
+        auto typeBitsBuffer = readBytes(typeBitsSize);
+
+        BufReader reader(typeBitsBuffer, typeBitsSize);
+        keys.emplace_back(
+            RecordId(repr),
+            KeyString::TypeBits::fromBuffer(KeyString::Version::kLatestVersion, &reader));
+    }
+    indexData._keys.adopt_sequence(boost::container::ordered_unique_range, std::move(keys));
+    return indexData;
+}
 
 SortedDataBuilderInterface::SortedDataBuilderInterface(OperationContext* opCtx,
                                                        bool unique,
@@ -263,16 +370,9 @@ Status SortedDataBuilderInterface::addKey(const KeyString::Value& keyString) {
             createKeyString(keyString, sizeWithoutRecordId, loc, _prefix, /* isUnique */ false);
     }
 
-    std::string internalTbString(keyString.getTypeBits().getBuffer(),
-                                 keyString.getTypeBits().getSize());
-
-    // Since this is an in-memory storage engine, we don't need to take endianness into account.
-    int64_t recIdRepr = loc.repr();
-    std::string data(sizeof(int64_t) + internalTbString.length(), '\0');
-    std::memcpy(&data[0], &recIdRepr, sizeof(int64_t));
-    std::memcpy(&data[0] + sizeof(int64_t), internalTbString.data(), internalTbString.length());
-
-    workingCopy->insert(StringStore::value_type(workingCopyInsertKey, data));
+    IndexData data;
+    data.add(loc, keyString.getTypeBits());
+    workingCopy->insert(StringStore::value_type(workingCopyInsertKey, data.serialize()));
 
     _hasLast = true;
     _lastKeyToString = newKSToString;
@@ -384,16 +484,19 @@ Status SortedDataInterface::insert(OperationContext* opCtx,
         return Status::OK();
 
     // The value we insert is the RecordId followed by the typebits.
-    std::string internalTbString =
-        std::string(keyString.getTypeBits().getBuffer(), keyString.getTypeBits().getSize());
+    // std::string internalTbString =
+    //    std::string(keyString.getTypeBits().getBuffer(), keyString.getTypeBits().getSize());
 
-    // Since this is an in-memory storage engine, we don't need to take endianness into account.
-    int64_t recIdRepr = loc.repr();
-    std::string data(sizeof(int64_t) + internalTbString.length(), '\0');
-    std::memcpy(&data[0], &recIdRepr, sizeof(int64_t));
-    std::memcpy(&data[0] + sizeof(int64_t), internalTbString.data(), internalTbString.length());
+    //// Since this is an in-memory storage engine, we don't need to take endianness into account.
+    // int64_t recIdRepr = loc.repr();
+    // std::string data(sizeof(int64_t) + internalTbString.length(), '\0');
+    // std::memcpy(&data[0], &recIdRepr, sizeof(int64_t));
+    // std::memcpy(&data[0] + sizeof(int64_t), internalTbString.data(), internalTbString.length());
 
-    workingCopy->insert(StringStore::value_type(insertKeyString, data));
+    IndexData data;
+    data.add(loc, keyString.getTypeBits());
+
+    workingCopy->insert(StringStore::value_type(insertKeyString, data.serialize()));
     RecoveryUnit::get(opCtx)->makeDirty();
 
     return Status::OK();
@@ -622,6 +725,15 @@ bool SortedDataInterface::Cursor::advanceNext() {
         if (_lastMoveWasRestore) {
             _lastMoveWasRestore = false;
         } else {
+            if (!_indexData.empty()) {
+                if (_forward) {
+                    if (++_forwardIndexDataIt != _forwardIndexDataEnd)
+                        return true;
+                } else {
+                    if (++_reverseIndexDataIt != _reverseIndexDataEnd)
+                        return true;
+                }
+            }
             // We basically just check to make sure the cursor is in the ident.
             if (_forward && checkCursorValid()) {
                 ++_forwardIt;
@@ -850,12 +962,25 @@ boost::optional<KeyStringEntry> SortedDataInterface::Cursor::seekAfterProcessing
         }
     }
 
-    // Everything checks out, so we have successfullly seeked and now return.
-    boost::optional<IndexKeyEntry> indexKeyEntry;
     if (_forward) {
-        return keyStringToKeyStringEntry(_forwardIt->first, _forwardIt->second, _order);
+        _indexData = IndexData::deserialize(_forwardIt->second);
+        _forwardIndexDataIt = _indexData.begin();
+        _forwardIndexDataEnd = _indexData.end();
+        return keyStringToKeyStringEntry(
+            _forwardIt->first, _forwardIndexDataIt->first, _forwardIndexDataIt->second, _order);
+    } else {
+        _indexData = IndexData::deserialize(_reverseIt->second);
+        _reverseIndexDataIt = _indexData.rbegin();
+        _reverseIndexDataEnd = _indexData.rend();
+        return keyStringToKeyStringEntry(
+            _reverseIt->first, _reverseIndexDataIt->first, _reverseIndexDataEnd->second, _order);
     }
-    return keyStringToKeyStringEntry(_reverseIt->first, _reverseIt->second, _order);
+
+    //// Everything checks out, so we have successfullly seeked and now return.
+    // if (_forward) {
+    //    return keyStringToKeyStringEntry(_forwardIt->first, _forwardIt->second, _order);
+    //}
+    // return keyStringToKeyStringEntry(_reverseIt->first, _reverseIt->second, _order);
 }
 
 boost::optional<IndexKeyEntry> SortedDataInterface::Cursor::seek(const KeyString::Value& keyString,
