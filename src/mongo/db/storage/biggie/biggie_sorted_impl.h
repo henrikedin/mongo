@@ -33,8 +33,53 @@
 #include "mongo/db/storage/key_string.h"
 #include "mongo/db/storage/sorted_data_interface.h"
 
+#include <map>
+
 namespace mongo {
 namespace biggie {
+
+class IndexData {
+public:
+    using container_t = std::map<RecordId, KeyString::TypeBits>;
+    using const_iterator = container_t::const_iterator;
+    using const_reverse_iterator = container_t::const_reverse_iterator;
+
+    bool add(RecordId loc, KeyString::TypeBits typeBits);
+    bool add_hint(const_iterator hint, RecordId loc, KeyString::TypeBits typeBits);
+    bool remove(RecordId loc);
+
+    size_t size() const {
+        return _keys.size();
+    }
+    bool empty() const {
+        return _keys.empty();
+    }
+    const_iterator begin() const {
+        return _keys.begin();
+    }
+    const_iterator end() const {
+        return _keys.end();
+    }
+    const_reverse_iterator rbegin() const {
+        return _keys.rbegin();
+    }
+    const_reverse_iterator rend() const {
+        return _keys.rend();
+    }
+    const_iterator lower_bound(RecordId loc) const {
+        return _keys.lower_bound(loc);
+    }
+    const_iterator upper_bound(RecordId loc) const {
+        return _keys.upper_bound(loc);
+    }
+
+    std::string serialize() const;
+    static IndexData deserialize(const std::string& serializedIndexData);
+    static size_t decodeSize(const std::string& serializedIndexData);
+
+private:
+    container_t _keys;
+};
 
 class SortedDataBuilderInterface : public ::mongo::SortedDataBuilderInterface {
 public:
@@ -65,12 +110,6 @@ private:
     const std::string _indexName;
     const BSONObj _keyPattern;
     const BSONObj _collation;
-    // Whether or not we've already added something before.
-    bool _hasLast;
-    // This is the KeyString of the last key added.
-    std::string _lastKeyToString;
-    // This is the last recordId added.
-    int64_t _lastRID;
 };
 
 class SortedDataInterface : public ::mongo::SortedDataInterface {
@@ -157,6 +196,7 @@ public:
         bool _lastMoveWasRestore;
         // This is the keystring for the saved location.
         std::string _saveKey;
+        RecordId _saveLoc;
         // These are the same as before.
         std::string _prefix;
         std::string _identEnd;
@@ -175,21 +215,16 @@ public:
         // The next two are the same as above.
         std::string _KSForIdentStart;
         std::string _KSForIdentEnd;
+        // Unpacked data from current position in the radix tree. Needed to iterate over indexes
+        // containing duplicates
+        IndexData _indexData;
+        IndexData::const_iterator _forwardIndexDataIt;
+        IndexData::const_iterator _forwardIndexDataEnd;
+        IndexData::const_reverse_iterator _reverseIndexDataIt;
+        IndexData::const_reverse_iterator _reverseIndexDataEnd;
     };
 
 private:
-    /**
-     * Returns false only when the index is partial and the IndexKeyEntry's record id does not match
-     * the provided rid from the given key.
-     *
-     * Returns true in all other cases.
-     */
-    bool ifPartialCheckRecordIdEquals(OperationContext* opCtx,
-                                      const std::string key,
-                                      const RecordId rid) const;
-
-    bool keyExists(OperationContext* opCtx, const BSONObj& key);
-
     // These two are the same as before.
     std::string _prefix;
     std::string _identEnd;
