@@ -49,6 +49,9 @@ public:
     bool add(RecordId loc, KeyString::TypeBits typeBits);
     bool remove(RecordId loc);
 
+    size_t size() const {
+        return _keys.size();
+    }
     bool empty() const {
         return _keys.empty();
     }
@@ -76,9 +79,22 @@ public:
     const_reverse_iterator rend() const {
         return _keys.rend();
     }
+    iterator lower_bound(RecordId loc) {
+        return _keys.lower_bound(loc);
+    }
+    const_iterator lower_bound(RecordId loc) const {
+        return _keys.lower_bound(loc);
+    }
+    iterator upper_bound(RecordId loc) {
+        return _keys.upper_bound(loc);
+    }
+    const_iterator upper_bound(RecordId loc) const {
+        return _keys.upper_bound(loc);
+    }
 
     std::string serialize() const;
     static IndexData deserialize(const std::string& serializedIndexData);
+    static size_t decodeSize(const std::string& serializedIndexData);
 
 private:
     container_t _keys;
@@ -205,6 +221,7 @@ public:
         bool _lastMoveWasRestore;
         // This is the keystring for the saved location.
         std::string _saveKey;
+        RecordId _saveLoc;
         // These are the same as before.
         std::string _prefix;
         std::string _identEnd;
