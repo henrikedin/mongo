@@ -46,7 +46,8 @@ public:
     using reverse_iterator = container_t::reverse_iterator;
     using const_reverse_iterator = container_t::const_reverse_iterator;
 
-    void add(RecordId loc, KeyString::TypeBits typeBits);
+    bool add(RecordId loc, KeyString::TypeBits typeBits);
+    bool remove(RecordId loc);
 
     bool empty() const {
         return _keys.empty();

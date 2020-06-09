@@ -219,6 +219,18 @@ IndexKeyEntry keyStringToIndexKeyEntry(const std::string keyString,
     return IndexKeyEntry(key, rid);
 }
 
+IndexKeyEntry keyStringToIndexKeyEntry(const std::string keyStringWithoutRecordId,
+                                       RecordId loc,
+                                       const KeyString::TypeBits& typeBits,
+                                       const Ordering order) {
+
+    auto key = createKeyObj(keyStringWithoutRecordId, typeBits, order);
+    /*int64_t ridRepr;
+    std::memcpy(&ridRepr, data.data(), sizeof(int64_t));
+    RecordId rid(ridRepr);*/
+    return IndexKeyEntry(key, loc);
+}
+
 boost::optional<KeyStringEntry> keyStringToKeyStringEntry(const std::string keyString,
                                                           std::string data,
                                                           const Ordering order) {
@@ -245,28 +257,32 @@ boost::optional<KeyStringEntry> keyStringToKeyStringEntry(
 }
 }  // namespace
 
-void IndexData::add(RecordId loc, KeyString::TypeBits typeBits) {
-    _keys[loc] = std::move(typeBits);
+bool IndexData::add(RecordId loc, KeyString::TypeBits typeBits) {
+    return _keys.emplace(loc, std::move(typeBits)).second;
+}
+
+bool IndexData::remove(RecordId loc) {
+    return _keys.erase(loc) > 0;
 }
 
 std::string IndexData::serialize() const {
     std::stringstream buffer;
-    uint64_t num = _keys.size();
-    buffer.write(reinterpret_cast<const char*>(&num), sizeof(num));
 
+    auto writeBytes = [&](const char* data, size_t size) { buffer.write(data, size); };
+    auto writeUInt64 = [&](uint64_t val) {
+        writeBytes(reinterpret_cast<const char*>(&val), sizeof(val));
+    };
+
+    writeUInt64(_keys.size());
     for (const auto& [recordId, typeBits] : _keys) {
-        uint64_t repr = recordId.repr();
-        buffer.write(reinterpret_cast<const char*>(&repr), sizeof(repr));
+        writeUInt64(recordId.repr());
 
         uint64_t typeBitsSize = typeBits.getSize();
-        buffer.write(reinterpret_cast<const char*>(&typeBitsSize), sizeof(typeBitsSize));
-
-        auto typeBitsBuffer = typeBits.getBuffer();
-        buffer.write(typeBitsBuffer, typeBitsSize);
+        writeUInt64(typeBitsSize);
+        writeBytes(typeBits.getBuffer(), typeBitsSize);
     }
 
-    auto str = buffer.str();
-    return str;
+    return buffer.str();
 }
 IndexData IndexData::deserialize(const std::string& serializedIndexData) {
     auto begin = serializedIndexData.begin();
@@ -442,64 +458,92 @@ Status SortedDataInterface::insert(OperationContext* opCtx,
     auto sizeWithoutRecordId =
         KeyString::sizeWithoutRecordIdAtEnd(keyString.getBuffer(), keyString.getSize());
     std::string insertKeyString =
-        createKeyString(keyString, sizeWithoutRecordId, loc, _prefix, _isUnique);
-    // For unique indexes, if duplicate keys are allowed then we do the following:
-    //   - Create the KeyString without the RecordId in it and see if anything exists with that.
-    //     - If the cursor didn't find anything, we index with this KeyString.
-    //     - If the cursor found a value and it had differing RecordId's, then generate a KeyString
-    //       with the RecordId in it.
-    if (_isUnique) {
-        // Ensure that another index entry without the RecordId in its KeyString doesn't exist with
-        // another RecordId already.
-        auto workingCopyIt = workingCopy->find(insertKeyString);
-        if (workingCopyIt != workingCopy->end()) {
-            IndexKeyEntry entry =
-                keyStringToIndexKeyEntry(workingCopyIt->first, workingCopyIt->second, _ordering);
+        createKeyString(keyString, sizeWithoutRecordId, loc, _prefix, true);
+    auto it = workingCopy->find(insertKeyString);
+    bool found = it != workingCopy->end();
+    invariant(dupsAllowed || !found);
 
-            if (entry.loc != loc) {
-                if (dupsAllowed) {
-                    // Duplicate index entries are allowed on this unique index, so we put the
-                    // RecordId in the KeyString until the unique constraint is resolved.
-                    insertKeyString = createKeyString(keyString,
-                                                      sizeWithoutRecordId,
-                                                      loc,
-                                                      _prefix,
-                                                      /* isUnique */ false);
-                } else {
-                    // There was an attempt to create an index entry with a different RecordId while
-                    // dups were not allowed.
-                    auto key = KeyString::toBson(keyString, _ordering);
-                    return buildDupKeyErrorStatus(
-                        key, _collectionNamespace, _indexName, _keyPattern, _collation);
-                }
-            } else {
-                return Status::OK();
-            }
+    if (found) {
+        if (!dupsAllowed) {
+            // There was an attempt to create an index entry with a different RecordId while
+            // dups were not allowed.
+            auto key = KeyString::toBson(keyString, _ordering);
+            return buildDupKeyErrorStatus(
+                key, _collectionNamespace, _indexName, _keyPattern, _collation);
         }
+
+        IndexData data = IndexData::deserialize(it->second);
+        if (!data.add(loc, keyString.getTypeBits())) {
+            // Already indexed
+            return Status::OK();
+        }
+
+        workingCopy->update({std::move(insertKeyString), data.serialize()});
     } else {
-        invariant(dupsAllowed);
+        IndexData data;
+        data.add(loc, keyString.getTypeBits());
+        workingCopy->insert({std::move(insertKeyString), data.serialize()});
     }
-
-    if (workingCopy->find(insertKeyString) != workingCopy->end())
-        return Status::OK();
-
-    // The value we insert is the RecordId followed by the typebits.
-    // std::string internalTbString =
-    //    std::string(keyString.getTypeBits().getBuffer(), keyString.getTypeBits().getSize());
-
-    //// Since this is an in-memory storage engine, we don't need to take endianness into account.
-    // int64_t recIdRepr = loc.repr();
-    // std::string data(sizeof(int64_t) + internalTbString.length(), '\0');
-    // std::memcpy(&data[0], &recIdRepr, sizeof(int64_t));
-    // std::memcpy(&data[0] + sizeof(int64_t), internalTbString.data(), internalTbString.length());
-
-    IndexData data;
-    data.add(loc, keyString.getTypeBits());
-
-    workingCopy->insert(StringStore::value_type(insertKeyString, data.serialize()));
     RecoveryUnit::get(opCtx)->makeDirty();
-
     return Status::OK();
+    //// For unique indexes, if duplicate keys are allowed then we do the following:
+    ////   - Create the KeyString without the RecordId in it and see if anything exists with that.
+    ////     - If the cursor didn't find anything, we index with this KeyString.
+    ////     - If the cursor found a value and it had differing RecordId's, then generate a
+    ///KeyString /       with the RecordId in it.
+    // if (_isUnique) {
+    //    // Ensure that another index entry without the RecordId in its KeyString doesn't exist
+    //    with
+    //    // another RecordId already.
+    //    auto workingCopyIt = workingCopy->find(insertKeyString);
+    //    if (workingCopyIt != workingCopy->end()) {
+    //        IndexKeyEntry entry =
+    //            keyStringToIndexKeyEntry(workingCopyIt->first, workingCopyIt->second, _ordering);
+
+    //        if (entry.loc != loc) {
+    //            if (dupsAllowed) {
+    //                // Duplicate index entries are allowed on this unique index, so we put the
+    //                // RecordId in the KeyString until the unique constraint is resolved.
+    //                insertKeyString = createKeyString(keyString,
+    //                                                  sizeWithoutRecordId,
+    //                                                  loc,
+    //                                                  _prefix,
+    //                                                  /* isUnique */ false);
+    //            } else {
+    //                // There was an attempt to create an index entry with a different RecordId
+    //                while
+    //                // dups were not allowed.
+    //                auto key = KeyString::toBson(keyString, _ordering);
+    //                return buildDupKeyErrorStatus(
+    //                    key, _collectionNamespace, _indexName, _keyPattern, _collation);
+    //            }
+    //        } else {
+    //            return Status::OK();
+    //        }
+    //    }
+    //} else {
+    //    invariant(dupsAllowed);
+    //}
+
+
+    //// The value we insert is the RecordId followed by the typebits.
+    //// std::string internalTbString =
+    ////    std::string(keyString.getTypeBits().getBuffer(), keyString.getTypeBits().getSize());
+
+    ////// Since this is an in-memory storage engine, we don't need to take endianness into account.
+    //// int64_t recIdRepr = loc.repr();
+    //// std::string data(sizeof(int64_t) + internalTbString.length(), '\0');
+    //// std::memcpy(&data[0], &recIdRepr, sizeof(int64_t));
+    //// std::memcpy(&data[0] + sizeof(int64_t), internalTbString.data(),
+    ///internalTbString.length());
+
+    // IndexData data;
+    // data.add(loc, keyString.getTypeBits());
+
+    // workingCopy->insert(StringStore::value_type(insertKeyString, data.serialize()));
+    // RecoveryUnit::get(opCtx)->makeDirty();
+
+    // return Status::OK();
 }
 
 void SortedDataInterface::unindex(OperationContext* opCtx,
@@ -509,54 +553,73 @@ void SortedDataInterface::unindex(OperationContext* opCtx,
 
     StringStore* workingCopy(RecoveryUnit::get(opCtx)->getHead());
     std::string removeKeyString;
-    bool erased;
+    // bool erased = false;
 
     auto sizeWithoutRecordId =
         KeyString::sizeWithoutRecordIdAtEnd(keyString.getBuffer(), keyString.getSize());
-    if (_isUnique) {
-        // For unique indexes, to unindex them we do the following:
-        //   - Create the KeyString with or without the RecordId in it depending on dupsAllowed
-        //     and try to remove the index entry.
-        //     - If the index entry was removed, we're done.
-        //     - If the index entry was not removed, we generate a KeyString with or without the
-        //       RecordId in it.
-        // This is required because of the way we insert on unique indexes when dups are allowed.
-        if (dupsAllowed)
-            removeKeyString =
-                createKeyString(keyString, sizeWithoutRecordId, loc, _prefix, /* isUnique */ false);
-        else
-            removeKeyString =
-                createKeyString(keyString, sizeWithoutRecordId, loc, _prefix, /* isUnique */ true);
 
-        // Check that the record id matches when using partial indexes. We may be called to unindex
-        // records that are not present in the index due to the partial filter expression.
-        if (!ifPartialCheckRecordIdEquals(opCtx, removeKeyString, loc))
-            return;
-        erased = workingCopy->erase(removeKeyString);
-
-        if (!erased) {
-            // If nothing above was erased, then we have to generate the KeyString with or without
-            // the RecordId in it, and erase that. This could only happen on unique indexes where
-            // duplicate index entries were/are allowed.
-            if (dupsAllowed)
-                removeKeyString = createKeyString(
-                    keyString, sizeWithoutRecordId, loc, _prefix, /* isUnique */ true);
-            else
-                removeKeyString = createKeyString(
-                    keyString, sizeWithoutRecordId, loc, _prefix, /* isUnique */ false);
-
-            if (!ifPartialCheckRecordIdEquals(opCtx, removeKeyString, loc))
-                return;
-            erased = workingCopy->erase(removeKeyString);
+    removeKeyString =
+        createKeyString(keyString, sizeWithoutRecordId, loc, _prefix, /* isUnique */ true);
+    auto it = workingCopy->find(removeKeyString);
+    if (it != workingCopy->end()) {
+        IndexData data = IndexData::deserialize(it->second);
+        if (data.remove(loc)) {
+            if (data.empty()) {
+                workingCopy->erase(removeKeyString);
+            } else {
+                workingCopy->update({std::move(removeKeyString), data.serialize()});
+            }
+            RecoveryUnit::get(opCtx)->makeDirty();
         }
-    } else {
-        removeKeyString =
-            createKeyString(keyString, sizeWithoutRecordId, loc, _prefix, /* isUnique */ false);
-        erased = workingCopy->erase(removeKeyString);
     }
 
-    if (erased)
-        RecoveryUnit::get(opCtx)->makeDirty();
+    // if (_isUnique) {
+    //    // For unique indexes, to unindex them we do the following:
+    //    //   - Create the KeyString with or without the RecordId in it depending on dupsAllowed
+    //    //     and try to remove the index entry.
+    //    //     - If the index entry was removed, we're done.
+    //    //     - If the index entry was not removed, we generate a KeyString with or without the
+    //    //       RecordId in it.
+    //    // This is required because of the way we insert on unique indexes when dups are allowed.
+    //    if (dupsAllowed)
+    //        removeKeyString =
+    //            createKeyString(keyString, sizeWithoutRecordId, loc, _prefix, /* isUnique */
+    //            false);
+    //    else
+    //        removeKeyString =
+    //            createKeyString(keyString, sizeWithoutRecordId, loc, _prefix, /* isUnique */
+    //            true);
+
+    //    // Check that the record id matches when using partial indexes. We may be called to
+    //    unindex
+    //    // records that are not present in the index due to the partial filter expression.
+    //    if (!ifPartialCheckRecordIdEquals(opCtx, removeKeyString, loc))
+    //        return;
+    //    erased = workingCopy->erase(removeKeyString);
+
+    //    if (!erased) {
+    //        // If nothing above was erased, then we have to generate the KeyString with or without
+    //        // the RecordId in it, and erase that. This could only happen on unique indexes where
+    //        // duplicate index entries were/are allowed.
+    //        if (dupsAllowed)
+    //            removeKeyString = createKeyString(
+    //                keyString, sizeWithoutRecordId, loc, _prefix, /* isUnique */ true);
+    //        else
+    //            removeKeyString = createKeyString(
+    //                keyString, sizeWithoutRecordId, loc, _prefix, /* isUnique */ false);
+
+    //        if (!ifPartialCheckRecordIdEquals(opCtx, removeKeyString, loc))
+    //            return;
+    //        erased = workingCopy->erase(removeKeyString);
+    //    }
+    //} else {
+    //    removeKeyString =
+    //        createKeyString(keyString, sizeWithoutRecordId, loc, _prefix, /* isUnique */ false);
+    //    erased = workingCopy->erase(removeKeyString);
+    //}
+
+    /*if (erased)
+        RecoveryUnit::get(opCtx)->makeDirty();*/
 }
 
 // This function is, as of now, not in the interface, but there exists a server ticket to add
@@ -751,6 +814,16 @@ bool SortedDataInterface::Cursor::advanceNext() {
         _lastMoveWasRestore = false;
         return false;
     }
+
+    if (_forward) {
+        _indexData = IndexData::deserialize(_forwardIt->second);
+        _forwardIndexDataIt = _indexData.begin();
+        _forwardIndexDataEnd = _indexData.end();
+    } else {
+        _indexData = IndexData::deserialize(_reverseIt->second);
+        _reverseIndexDataIt = _indexData.rbegin();
+        _reverseIndexDataEnd = _indexData.rend();
+    }
     return true;
 }
 
@@ -853,9 +926,9 @@ boost::optional<IndexKeyEntry> SortedDataInterface::Cursor::next(RequestedInfo p
     }
 
     if (_forward) {
-        return keyStringToIndexKeyEntry(_forwardIt->first, _forwardIt->second, _order);
+        return keyStringToIndexKeyEntry(_forwardIt->first, _forwardIndexDataIt->first, _forwardIndexDataIt->second, _order);
     }
-    return keyStringToIndexKeyEntry(_reverseIt->first, _reverseIt->second, _order);
+    return keyStringToIndexKeyEntry(_reverseIt->first, _reverseIndexDataIt->first, _reverseIndexDataIt->second, _order);
 }
 
 boost::optional<KeyStringEntry> SortedDataInterface::Cursor::nextKeyString() {
@@ -973,7 +1046,7 @@ boost::optional<KeyStringEntry> SortedDataInterface::Cursor::seekAfterProcessing
         _reverseIndexDataIt = _indexData.rbegin();
         _reverseIndexDataEnd = _indexData.rend();
         return keyStringToKeyStringEntry(
-            _reverseIt->first, _reverseIndexDataIt->first, _reverseIndexDataEnd->second, _order);
+            _reverseIt->first, _reverseIndexDataIt->first, _reverseIndexDataIt->second, _order);
     }
 
     //// Everything checks out, so we have successfullly seeked and now return.
