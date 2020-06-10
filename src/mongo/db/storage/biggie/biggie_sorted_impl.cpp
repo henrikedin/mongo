@@ -362,10 +362,10 @@ Status SortedDataBuilderInterface::addKey(const KeyString::Value& keyString) {
     RecordId loc = KeyString::decodeRecordIdAtEnd(keyString.getBuffer(), keyString.getSize());
 
     StringStore* workingCopy(RecoveryUnit::get(_opCtx)->getHead());
+
     auto sizeWithoutRecordId =
         KeyString::sizeWithoutRecordIdAtEnd(keyString.getBuffer(), keyString.getSize());
     std::string newKSToString = std::string(keyString.getBuffer(), sizeWithoutRecordId);
-
     int twoKeyCmp = 1;
     int twoRIDCmp = 1;
 
@@ -379,25 +379,75 @@ Status SortedDataBuilderInterface::addKey(const KeyString::Value& keyString) {
                       "expected ascending (key, RecordId) order in bulk builder");
     }
 
-    std::string workingCopyInsertKey =
-        createKeyString(keyString, sizeWithoutRecordId, loc, _prefix, /* isUnique */ _unique);
+    std::string insertKeyString =
+        createKeyString(keyString, sizeWithoutRecordId, loc, _prefix, true);
+    auto it = workingCopy->find(insertKeyString);
+    bool found = it != workingCopy->end();
+    // invariant(dupsAllowed || !found);
 
-    if (twoKeyCmp == 0 && twoRIDCmp != 0) {
+    if (found) {
         if (!_dupsAllowed) {
+            // There was an attempt to create an index entry with a different RecordId while
+            // dups were not allowed.
             auto key = KeyString::toBson(keyString, _order);
             return buildDupKeyErrorStatus(
                 key, _collectionNamespace, _indexName, _keyPattern, _collation);
         }
-        // Duplicate index entries are allowed on this unique index, so we put the RecordId in the
-        // KeyString until the unique constraint is resolved.
-        workingCopyInsertKey =
-            createKeyString(keyString, sizeWithoutRecordId, loc, _prefix, /* isUnique */ false);
+
+        IndexData data = IndexData::deserialize(it->second);
+        if (!data.add(loc, keyString.getTypeBits())) {
+            // Already indexed
+            return Status::OK();
+        }
+
+        workingCopy->update({std::move(insertKeyString), data.serialize()});
+    } else {
+        IndexData data;
+        data.add(loc, keyString.getTypeBits());
+        workingCopy->insert({std::move(insertKeyString), data.serialize()});
     }
+    // dassert(KeyString::decodeRecordIdAtEnd(keyString.getBuffer(),
+    // keyString.getSize()).isValid()); RecordId loc =
+    // KeyString::decodeRecordIdAtEnd(keyString.getBuffer(), keyString.getSize());
 
-    IndexData data;
-    data.add(loc, keyString.getTypeBits());
-    workingCopy->insert(StringStore::value_type(workingCopyInsertKey, data.serialize()));
+    // StringStore* workingCopy(RecoveryUnit::get(_opCtx)->getHead());
+    // auto sizeWithoutRecordId =
+    //    KeyString::sizeWithoutRecordIdAtEnd(keyString.getBuffer(), keyString.getSize());
+    // std::string newKSToString = std::string(keyString.getBuffer(), sizeWithoutRecordId);
 
+    // int twoKeyCmp = 1;
+    // int twoRIDCmp = 1;
+
+    // if (_hasLast) {
+    //    twoKeyCmp = newKSToString.compare(_lastKeyToString);
+    //    twoRIDCmp = loc.repr() - _lastRID;
+    //}
+
+    // if (twoKeyCmp < 0 || (_dupsAllowed && twoKeyCmp == 0 && twoRIDCmp < 0)) {
+    //    return Status(ErrorCodes::InternalError,
+    //                  "expected ascending (key, RecordId) order in bulk builder");
+    //}
+
+    // std::string workingCopyInsertKey =
+    //    createKeyString(keyString, sizeWithoutRecordId, loc, _prefix, /* isUnique */ true);
+
+    // if (twoKeyCmp == 0 && twoRIDCmp != 0) {
+    //    if (!_dupsAllowed) {
+    //        auto key = KeyString::toBson(keyString, _order);
+    //        return buildDupKeyErrorStatus(
+    //            key, _collectionNamespace, _indexName, _keyPattern, _collation);
+    //    }
+    //    // Duplicate index entries are allowed on this unique index, so we put the RecordId in the
+    //    // KeyString until the unique constraint is resolved.
+    //    workingCopyInsertKey =
+    //        createKeyString(keyString, sizeWithoutRecordId, loc, _prefix, /* isUnique */ true);
+    //}
+
+    // IndexData data;
+    // data.add(loc, keyString.getTypeBits());
+    // workingCopy->insert(StringStore::value_type(workingCopyInsertKey, data.serialize()));
+
+    // NOTE TO SELF, what are these for?
     _hasLast = true;
     _lastKeyToString = newKSToString;
     _lastRID = loc.repr();
@@ -440,10 +490,10 @@ SortedDataInterface::SortedDataInterface(OperationContext* opCtx,
     // This is the string representation of the KeyString before elements in this ident, which is
     // ident + \0. This is before all elements in this ident.
     _KSForIdentStart = createKeyString(
-        BSONObj(), RecordId::min(), ident.toString().append(1, '\0'), _ordering, _isUnique);
+        BSONObj(), RecordId::min(), ident.toString().append(1, '\0'), _ordering, true);
     // Similarly, this is the string representation of the KeyString for something greater than
     // all other elements in this ident.
-    _KSForIdentEnd = createKeyString(BSONObj(), RecordId::min(), _identEnd, _ordering, _isUnique);
+    _KSForIdentEnd = createKeyString(BSONObj(), RecordId::min(), _identEnd, _ordering, true);
 }
 
 SortedDataInterface::SortedDataInterface(const Ordering& ordering, bool isUnique, StringData ident)
@@ -453,8 +503,8 @@ SortedDataInterface::SortedDataInterface(const Ordering& ordering, bool isUnique
       _isUnique(isUnique),
       _isPartial(false) {
     _KSForIdentStart = createKeyString(
-        BSONObj(), RecordId::min(), ident.toString().append(1, '\0'), _ordering, _isUnique);
-    _KSForIdentEnd = createKeyString(BSONObj(), RecordId::min(), _identEnd, _ordering, _isUnique);
+        BSONObj(), RecordId::min(), ident.toString().append(1, '\0'), _ordering, true);
+    _KSForIdentEnd = createKeyString(BSONObj(), RecordId::min(), _identEnd, _ordering, true);
 }
 
 Status SortedDataInterface::insert(OperationContext* opCtx,
@@ -940,19 +990,30 @@ void SortedDataInterface::Cursor::setEndPosition(const BSONObj& key, bool inclus
         _endPosBound = createKeyString(finalKey, RecordId::min(), _prefix, _order, true);
     }
     if (_forward) {
-        _endPos = workingCopy->lower_bound(_endPosBound);
+        /*_endPos = workingCopy->lower_bound(_endPosBound);
         if (inclusive && *_endPos != workingCopy->end() && (*_endPos)->first == _endPosBound) {
             ++(*_endPos);
-        }
+        }*/
+        if (inclusive)
+            _endPos = workingCopy->upper_bound(_endPosBound);
+        else
+            _endPos = workingCopy->lower_bound(_endPosBound);
     } else {
         // Reverse iterators work with upper bound since upper bound will return the first element
         // past the argument, so when it becomes a reverse iterator, it goes backwards one,
         // (according to the C++ standard) and we end up in the right place.
-        _endPosReverse =
+        /*_endPosReverse =
             StringStore::const_reverse_iterator(workingCopy->upper_bound(_endPosBound));
-        if (inclusive && *_endPosReverse != workingCopy->rend() && (*_endPosReverse)->first == _endPosBound) {
+        if (inclusive && *_endPosReverse != workingCopy->rend() && (*_endPosReverse)->first ==
+        _endPosBound) {
             ++(*_endPosReverse);
-        }
+        }*/
+        if (inclusive)
+            _endPosReverse =
+                StringStore::const_reverse_iterator(workingCopy->lower_bound(_endPosBound));
+        else
+            _endPosReverse =
+                StringStore::const_reverse_iterator(workingCopy->upper_bound(_endPosBound));
     }
 }
 
@@ -1032,20 +1093,31 @@ boost::optional<KeyStringEntry> SortedDataInterface::Cursor::seekAfterProcessing
         } else {
             // Otherwise, we just try to find the first element in this ident.
             if (_forward) {
-                _forwardIt = _workingCopy->lower_bound(workingCopyBound);
+                if (inclusive) {
+                    _forwardIt = _workingCopy->lower_bound(workingCopyBound);
+                } else {
+                    _forwardIt = _workingCopy->upper_bound(workingCopyBound);
+                }
+                /*_forwardIt = _workingCopy->lower_bound(workingCopyBound);
                 if (!inclusive && _forwardIt->first == workingCopyBound) {
                     ++_forwardIt;
-                }
+                }*/
             } else {
 
                 // Reverse iterators work with upper bound since upper bound will return the first
                 // element past the argument, so when it becomes a reverse iterator, it goes
                 // backwards one, (according to the C++ standard) and we end up in the right place.
-                _reverseIt = StringStore::const_reverse_iterator(
+                if (inclusive)
+                    _reverseIt = StringStore::const_reverse_iterator(
+                    _workingCopy->upper_bound(workingCopyBound));
+                else
+                    _reverseIt = StringStore::const_reverse_iterator(
+                    _workingCopy->lower_bound(workingCopyBound));
+                /*_reverseIt = StringStore::const_reverse_iterator(
                     _workingCopy->upper_bound(workingCopyBound));
                 if (!inclusive && _reverseIt->first == workingCopyBound) {
                     ++_reverseIt;
-                }
+                }*/
             }
             // Here, we check to make sure the iterator doesn't fall off the data structure and is
             // in the ident. We also check to make sure it is on the correct side of the end
@@ -1211,7 +1283,7 @@ void SortedDataInterface::Cursor::restore() {
                     _forwardIndexDataIt = _indexData.begin();
                     _forwardIndexDataEnd = _indexData.end();
                 }
-                
+
                 _lastMoveWasRestore = true;
             } else {
                 _lastMoveWasRestore = _forwardIndexDataIt->first != _saveLoc;
@@ -1256,7 +1328,7 @@ void SortedDataInterface::Cursor::restore() {
                 _lastMoveWasRestore = true;
             } else {
                 _lastMoveWasRestore = _reverseIndexDataIt->first != _saveLoc;
-            } 
+            }
         } else {
             _lastMoveWasRestore = true;
         }
