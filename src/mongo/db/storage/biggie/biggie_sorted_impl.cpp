@@ -307,7 +307,7 @@ IndexData IndexData::deserialize(const std::string& serializedIndexData) {
     boost::container::flat_map<RecordId, KeyString::TypeBits>::sequence_type keys;
     auto numKeys = readUInt64();
     keys.reserve(numKeys);
-    for (auto i = 0; i < numKeys; ++i) {
+    for (uint64_t i = 0; i < numKeys; ++i) {
         auto repr = readUInt64();
         auto typeBitsSize = readUInt64();
         auto typeBitsBuffer = readBytes(typeBitsSize);
