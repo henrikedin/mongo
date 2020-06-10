@@ -90,73 +90,9 @@ std::string createRadixKeyFromKSWithoutRecordId(const KeyString::Value& keyStrin
     return std::string(ks.getBuffer(), ks.getSize());
 }
 
-// bool keysAreIdentical(std::string ks1, std::string ks2, bool isUnique) {
-//    size_t size1 =
-//        isUnique ? ks1.length() : KeyString::sizeWithoutRecordIdAtEnd(ks1.c_str(), ks1.length());
-//    size_t size2 =
-//        isUnique ? ks2.length() : KeyString::sizeWithoutRecordIdAtEnd(ks2.c_str(), ks2.length());
-//
-//    if (size1 != size2)
-//        return false;
-//    return !ks1.compare(0, size2, ks2);
-//}
-
-/**
- * This function converts a std::string KeyString into a Key. We don't need to store the
- * typebits for the outer key string (the one consisting of the prefix, the key, and the recordId)
- * since those will not be used. However, we do need to store the typebits for the internal
- * keystring (made from the key itself), as those typebits are potentially important.
- *
- * The data which is serialized as a byte array, has the following structure:
- *     [RecordId][TypeBits of internal keystring]
- */
-// BSONObj getKeyFromKeyString(const std::string& keyString,
-//                            const std::string& data,
-//                            const Ordering& order) {
-//    std::string typeBitsString(data.length() - sizeof(int64_t), '\0');
-//    std::memcpy(&typeBitsString[0], data.data() + sizeof(int64_t), data.length() -
-//    sizeof(int64_t));
-//
-//    BufReader brTbInternal(typeBitsString.c_str(), typeBitsString.length());
-//
-//    KeyString::Version version = KeyString::Version::V1;
-//    KeyString::TypeBits tbInternal = KeyString::TypeBits(version);
-//
-//    tbInternal.resetFromBuffer(&brTbInternal);
-//
-//    KeyString::TypeBits tbOuter = KeyString::TypeBits(version);
-//    BSONObj bsonObj =
-//        KeyString::toBsonSafe(keyString.c_str(), keyString.length(), allAscending, tbOuter);
-//
-//    SharedBuffer sb;
-//    auto it = BSONObjIterator(bsonObj);
-//    ++it;  // We want the second part
-//    KeyString::Builder ks(version);
-//    ks.resetFromBuffer((*it).valuestr(), (*it).valuestrsize());
-//
-//    BSONObj originalKey = KeyString::toBsonSafe(ks.getBuffer(), ks.getSize(), order, tbInternal);
-//
-//    sb = SharedBuffer::allocate(originalKey.objsize());
-//    std::memcpy(sb.get(), originalKey.objdata(), originalKey.objsize());
-//
-//    BSONObj key(ConstSharedBuffer{sb});
-//
-//    return key;
-//}
-
 BSONObj createObjFromRadixKey(const std::string& radixKey,
                               const KeyString::TypeBits& typeBits,
                               const Ordering& order) {
-    /*std::string typeBitsString(data.length() - sizeof(int64_t), '\0');
-    std::memcpy(&typeBitsString[0], data.data() + sizeof(int64_t), data.length() - sizeof(int64_t));
-
-    BufReader brTbInternal(typeBitsString.c_str(), typeBitsString.length());
-
-    KeyString::Version version = KeyString::Version::V1;
-    KeyString::TypeBits tbInternal = KeyString::TypeBits(version);
-
-    tbInternal.resetFromBuffer(&brTbInternal);*/
-
     KeyString::Version version = KeyString::Version::kLatestVersion;
     KeyString::TypeBits tbOuter = KeyString::TypeBits(version);
     BSONObj bsonObj =
@@ -168,60 +104,22 @@ BSONObj createObjFromRadixKey(const std::string& radixKey,
     KeyString::Builder ks(version);
     ks.resetFromBuffer((*it).valuestr(), (*it).valuestrsize());
 
-    BSONObj key = KeyString::toBsonSafe(ks.getBuffer(), ks.getSize(), order, typeBits);
-
-    /*sb = SharedBuffer::allocate(originalKey.objsize());
-    std::memcpy(sb.get(), originalKey.objdata(), originalKey.objsize());
-
-    BSONObj key(ConstSharedBuffer{sb});
-
-    return key;*/
-    return key;
+    return KeyString::toBsonSafe(ks.getBuffer(), ks.getSize(), order, typeBits);
 }
-
-// IndexKeyEntry keyStringToIndexKeyEntry(const std::string keyString,
-//                                       std::string data,
-//                                       const Ordering order) {
-//
-//    auto key = getKeyFromKeyString(keyString, data, order);
-//    int64_t ridRepr;
-//    std::memcpy(&ridRepr, data.data(), sizeof(int64_t));
-//    RecordId rid(ridRepr);
-//    return IndexKeyEntry(key, rid);
-//}
 
 IndexKeyEntry createIndexKeyEntryFromRadixKey(const std::string& radixKey,
                                               RecordId loc,
                                               const KeyString::TypeBits& typeBits,
                                               const Ordering order) {
-
-    // auto obj = createObjFromRadixKey(radixKey, typeBits, order);
-    /*int64_t ridRepr;
-    std::memcpy(&ridRepr, data.data(), sizeof(int64_t));
-    RecordId rid(ridRepr);*/
     return IndexKeyEntry(createObjFromRadixKey(radixKey, typeBits, order), loc);
 }
 
-// boost::optional<KeyStringEntry> keyStringToKeyStringEntry(const std::string keyString,
-//                                                          std::string data,
-//                                                          const Ordering order) {
-//    auto key = getKeyFromKeyString(keyString, data, order);
-//    int64_t ridRepr;
-//    std::memcpy(&ridRepr, data.data(), sizeof(int64_t));
-//    RecordId rid(ridRepr);
-//    KeyString::Builder ksFinal(KeyString::Version::V1, key, order);
-//    ksFinal.appendRecordId(rid);
-//    return KeyStringEntry(ksFinal.getValueCopy(), rid);
-//}
 boost::optional<KeyStringEntry> createKeyStringEntryFromRadixKey(
     const std::string& radixKey,
     RecordId loc,
     const KeyString::TypeBits& typeBits,
     const Ordering& order) {
     auto key = createObjFromRadixKey(radixKey, typeBits, order);
-    /*int64_t ridRepr;
-    std::memcpy(&ridRepr, data.data(), sizeof(int64_t));
-    RecordId rid(ridRepr);*/
     KeyString::Builder ksFinal(KeyString::Version::kLatestVersion, key, order);
     ksFinal.appendRecordId(loc);
     return KeyStringEntry(ksFinal.getValueCopy(), loc);
@@ -280,24 +178,18 @@ IndexData IndexData::deserialize(const std::string& serializedIndexData) {
     };
 
     IndexData indexData;
-    // boost::container::flat_map<RecordId, KeyString::TypeBits>::sequence_type keys;
     auto numKeys = readUInt64();
-    // keys.reserve(numKeys);
     for (uint64_t i = 0; i < numKeys; ++i) {
         auto repr = readUInt64();
         auto typeBitsSize = readUInt64();
         auto typeBitsBuffer = readBytes(typeBitsSize);
 
         BufReader reader(typeBitsBuffer, typeBitsSize);
-        /*keys.emplace_back(
-            RecordId(repr),
-            KeyString::TypeBits::fromBuffer(KeyString::Version::kLatestVersion, &reader));*/
         indexData._keys.emplace_hint(
             indexData._keys.end(),
             RecordId(repr),
             KeyString::TypeBits::fromBuffer(KeyString::Version::kLatestVersion, &reader));
     }
-    // indexData._keys.adopt_sequence(boost::container::ordered_unique_range, std::move(keys));
     return indexData;
 }
 
@@ -328,9 +220,6 @@ SortedDataBuilderInterface::SortedDataBuilderInterface(OperationContext* opCtx,
       _indexName(indexName),
       _keyPattern(keyPattern),
       _collation(collation)
-//_hasLast(false),
-//_lastKeyToString(""),
-//_lastRID(-1)
 {}
 
 void SortedDataBuilderInterface::commit(bool mayInterrupt) {
@@ -340,29 +229,11 @@ void SortedDataBuilderInterface::commit(bool mayInterrupt) {
 
 Status SortedDataBuilderInterface::addKey(const KeyString::Value& keyString) {
     dassert(KeyString::decodeRecordIdAtEnd(keyString.getBuffer(), keyString.getSize()).isValid());
-    RecordId loc = KeyString::decodeRecordIdAtEnd(keyString.getBuffer(), keyString.getSize());
-
     StringStore* workingCopy(RecoveryUnit::get(_opCtx)->getHead());
-
-    // std::string newKSToString = std::string(keyString.getBuffer(), sizeWithoutRecordId);
-    // int twoKeyCmp = 1;
-    // int twoRIDCmp = 1;
-
-    // if (_hasLast) {
-    //    //twoKeyCmp = newKSToString.compare(_lastKeyToString);
-    //    twoRIDCmp = loc.repr() - _lastRID;
-    //}
-
-    // if (twoKeyCmp < 0 || (_dupsAllowed && twoKeyCmp == 0 && twoRIDCmp < 0)) {
-    //    return Status(ErrorCodes::InternalError,
-    //                  "expected ascending (key, RecordId) order in bulk builder");
-    //}
+    RecordId loc = KeyString::decodeRecordIdAtEnd(keyString.getBuffer(), keyString.getSize());
 
     std::string key = createRadixKeyFromKS(keyString, _prefix);
     auto it = workingCopy->find(key);
-    //bool found = it != workingCopy->end();
-    // invariant(dupsAllowed || !found);
-
     if (it != workingCopy->end()) {
         if (!_dupsAllowed) {
             // There was an attempt to create an index entry with a different RecordId while dups
@@ -385,52 +256,7 @@ Status SortedDataBuilderInterface::addKey(const KeyString::Value& keyString) {
         data.add(loc, keyString.getTypeBits());
         workingCopy->insert({std::move(key), data.serialize()});
     }
-    // dassert(KeyString::decodeRecordIdAtEnd(keyString.getBuffer(),
-    // keyString.getSize()).isValid()); RecordId loc =
-    // KeyString::decodeRecordIdAtEnd(keyString.getBuffer(), keyString.getSize());
-
-    // StringStore* workingCopy(RecoveryUnit::get(_opCtx)->getHead());
-    // auto sizeWithoutRecordId =
-    //    KeyString::sizeWithoutRecordIdAtEnd(keyString.getBuffer(), keyString.getSize());
-    // std::string newKSToString = std::string(keyString.getBuffer(), sizeWithoutRecordId);
-
-    // int twoKeyCmp = 1;
-    // int twoRIDCmp = 1;
-
-    // if (_hasLast) {
-    //    twoKeyCmp = newKSToString.compare(_lastKeyToString);
-    //    twoRIDCmp = loc.repr() - _lastRID;
-    //}
-
-    // if (twoKeyCmp < 0 || (_dupsAllowed && twoKeyCmp == 0 && twoRIDCmp < 0)) {
-    //    return Status(ErrorCodes::InternalError,
-    //                  "expected ascending (key, RecordId) order in bulk builder");
-    //}
-
-    // std::string workingCopyInsertKey =
-    //    createRadixKey(keyString, sizeWithoutRecordId, loc, _prefix, /* isUnique */ true);
-
-    // if (twoKeyCmp == 0 && twoRIDCmp != 0) {
-    //    if (!_dupsAllowed) {
-    //        auto key = KeyString::toBson(keyString, _order);
-    //        return buildDupKeyErrorStatus(
-    //            key, _collectionNamespace, _indexName, _keyPattern, _collation);
-    //    }
-    //    // Duplicate index entries are allowed on this unique index, so we put the RecordId in the
-    //    // KeyString until the unique constraint is resolved.
-    //    workingCopyInsertKey =
-    //        createRadixKey(keyString, sizeWithoutRecordId, loc, _prefix, /* isUnique */ true);
-    //}
-
-    // IndexData data;
-    // data.add(loc, keyString.getTypeBits());
-    // workingCopy->insert(StringStore::value_type(workingCopyInsertKey, data.serialize()));
-
-    // NOTE TO SELF, what are these for?
-    //_hasLast = true;
-    //_lastKeyToString = newKSToString;
-    //_lastRID = loc.repr();
-
+    
     RecoveryUnit::get(_opCtx)->makeDirty();
     return Status::OK();
 }
@@ -489,15 +315,11 @@ SortedDataInterface::SortedDataInterface(const Ordering& ordering, bool isUnique
 Status SortedDataInterface::insert(OperationContext* opCtx,
                                    const KeyString::Value& keyString,
                                    bool dupsAllowed) {
-    RecordId loc = KeyString::decodeRecordIdAtEnd(keyString.getBuffer(), keyString.getSize());
-
     StringStore* workingCopy(RecoveryUnit::get(opCtx)->getHead());
+    RecordId loc = KeyString::decodeRecordIdAtEnd(keyString.getBuffer(), keyString.getSize());
 
     std::string key = createRadixKeyFromKS(keyString, _prefix);
     auto it = workingCopy->find(key);
-    //bool found = it != workingCopy->end();
-    // invariant(dupsAllowed || !found);
-
     if (it != workingCopy->end()) {
         if (!dupsAllowed) {
             // There was an attempt to create an index entry with a different RecordId while
@@ -521,71 +343,12 @@ Status SortedDataInterface::insert(OperationContext* opCtx,
     }
     RecoveryUnit::get(opCtx)->makeDirty();
     return Status::OK();
-    //// For unique indexes, if duplicate keys are allowed then we do the following:
-    ////   - Create the KeyString without the RecordId in it and see if anything exists with that.
-    ////     - If the cursor didn't find anything, we index with this KeyString.
-    ////     - If the cursor found a value and it had differing RecordId's, then generate a
-    /// KeyString /       with the RecordId in it.
-    // if (_isUnique) {
-    //    // Ensure that another index entry without the RecordId in its KeyString doesn't exist
-    //    with
-    //    // another RecordId already.
-    //    auto workingCopyIt = workingCopy->find(insertKeyString);
-    //    if (workingCopyIt != workingCopy->end()) {
-    //        IndexKeyEntry entry =
-    //            keyStringToIndexKeyEntry(workingCopyIt->first, workingCopyIt->second, _ordering);
-
-    //        if (entry.loc != loc) {
-    //            if (dupsAllowed) {
-    //                // Duplicate index entries are allowed on this unique index, so we put the
-    //                // RecordId in the KeyString until the unique constraint is resolved.
-    //                insertKeyString = createRadixKey(keyString,
-    //                                                  sizeWithoutRecordId,
-    //                                                  loc,
-    //                                                  _prefix,
-    //                                                  /* isUnique */ false);
-    //            } else {
-    //                // There was an attempt to create an index entry with a different RecordId
-    //                while
-    //                // dups were not allowed.
-    //                auto key = KeyString::toBson(keyString, _ordering);
-    //                return buildDupKeyErrorStatus(
-    //                    key, _collectionNamespace, _indexName, _keyPattern, _collation);
-    //            }
-    //        } else {
-    //            return Status::OK();
-    //        }
-    //    }
-    //} else {
-    //    invariant(dupsAllowed);
-    //}
-
-
-    //// The value we insert is the RecordId followed by the typebits.
-    //// std::string internalTbString =
-    ////    std::string(keyString.getTypeBits().getBuffer(), keyString.getTypeBits().getSize());
-
-    ////// Since this is an in-memory storage engine, we don't need to take endianness into account.
-    //// int64_t recIdRepr = loc.repr();
-    //// std::string data(sizeof(int64_t) + internalTbString.length(), '\0');
-    //// std::memcpy(&data[0], &recIdRepr, sizeof(int64_t));
-    //// std::memcpy(&data[0] + sizeof(int64_t), internalTbString.data(),
-    /// internalTbString.length());
-
-    // IndexData data;
-    // data.add(loc, keyString.getTypeBits());
-
-    // workingCopy->insert(StringStore::value_type(insertKeyString, data.serialize()));
-    // RecoveryUnit::get(opCtx)->makeDirty();
-
-    // return Status::OK();
 }
 
 void SortedDataInterface::unindex(OperationContext* opCtx,
                                   const KeyString::Value& keyString,
                                   bool dupsAllowed) {
     StringStore* workingCopy(RecoveryUnit::get(opCtx)->getHead());
-
     RecordId loc = KeyString::decodeRecordIdAtEnd(keyString.getBuffer(), keyString.getSize());
 
     auto key = createRadixKeyFromKS(keyString, _prefix);
@@ -602,54 +365,6 @@ void SortedDataInterface::unindex(OperationContext* opCtx,
         }
         RecoveryUnit::get(opCtx)->makeDirty();
     }
-
-    // if (_isUnique) {
-    //    // For unique indexes, to unindex them we do the following:
-    //    //   - Create the KeyString with or without the RecordId in it depending on dupsAllowed
-    //    //     and try to remove the index entry.
-    //    //     - If the index entry was removed, we're done.
-    //    //     - If the index entry was not removed, we generate a KeyString with or without the
-    //    //       RecordId in it.
-    //    // This is required because of the way we insert on unique indexes when dups are allowed.
-    //    if (dupsAllowed)
-    //        removeKeyString =
-    //            createRadixKey(keyString, sizeWithoutRecordId, loc, _prefix, /* isUnique */
-    //            false);
-    //    else
-    //        removeKeyString =
-    //            createRadixKey(keyString, sizeWithoutRecordId, loc, _prefix, /* isUnique */
-    //            true);
-
-    //    // Check that the record id matches when using partial indexes. We may be called to
-    //    unindex
-    //    // records that are not present in the index due to the partial filter expression.
-    //    if (!ifPartialCheckRecordIdEquals(opCtx, removeKeyString, loc))
-    //        return;
-    //    erased = workingCopy->erase(removeKeyString);
-
-    //    if (!erased) {
-    //        // If nothing above was erased, then we have to generate the KeyString with or without
-    //        // the RecordId in it, and erase that. This could only happen on unique indexes where
-    //        // duplicate index entries were/are allowed.
-    //        if (dupsAllowed)
-    //            removeKeyString = createRadixKey(
-    //                keyString, sizeWithoutRecordId, loc, _prefix, /* isUnique */ true);
-    //        else
-    //            removeKeyString = createRadixKey(
-    //                keyString, sizeWithoutRecordId, loc, _prefix, /* isUnique */ false);
-
-    //        if (!ifPartialCheckRecordIdEquals(opCtx, removeKeyString, loc))
-    //            return;
-    //        erased = workingCopy->erase(removeKeyString);
-    //    }
-    //} else {
-    //    removeKeyString =
-    //        createRadixKey(keyString, sizeWithoutRecordId, loc, _prefix, /* isUnique */ false);
-    //    erased = workingCopy->erase(removeKeyString);
-    //}
-
-    /*if (erased)
-        RecoveryUnit::get(opCtx)->makeDirty();*/
 }
 
 // This function is, as of now, not in the interface, but there exists a server ticket to add
@@ -675,9 +390,6 @@ Status SortedDataInterface::dupKeyCheck(OperationContext* opCtx, const KeyString
     invariant(_isUnique);
     StringStore* workingCopy(RecoveryUnit::get(opCtx)->getHead());
 
-    // auto sizeWithoutRecordId = KeyString::sizeWithoutRecordIdAtEnd(key.getBuffer(),
-    // key.getSize());
-
     std::string radixKey = createRadixKeyFromKSWithoutRecordId(key, _prefix);
     auto it = workingCopy->find(radixKey);
     if (it == workingCopy->end())
@@ -690,43 +402,6 @@ Status SortedDataInterface::dupKeyCheck(OperationContext* opCtx, const KeyString
     }
 
     return Status::OK();
-
-    // std::string minKey = createRadixKey(key, key.getSize(), RecordId::min(), _prefix,
-    // _isUnique); std::string maxKey = createRadixKey(key, key.getSize(), RecordId::max(),
-    // _prefix, _isUnique);
-
-    //// We effectively do the same check as in insert. However, we also check to make sure that
-    //// the iterator returned to us by lower_bound also happens to be inside out ident.
-    // auto lowerBoundIterator = workingCopy->lower_bound(minKey);
-    // if (lowerBoundIterator == workingCopy->end()) {
-    //    return Status::OK();
-    //}
-    // if (lowerBoundIterator->first.compare(maxKey) > 0) {
-    //    return Status::OK();
-    //}
-    // auto lower =
-    //    keyStringToIndexKeyEntry(lowerBoundIterator->first, lowerBoundIterator->second,
-    //    _ordering);
-
-    //++lowerBoundIterator;
-    // if (lowerBoundIterator == workingCopy->end()) {
-    //    return Status::OK();
-    //}
-
-    // auto next =
-    //    keyStringToKeyStringEntry(lowerBoundIterator->first, lowerBoundIterator->second,
-    //    _ordering);
-
-    // if (KeyString::compare(next->keyString.getBuffer(),
-    //                       key.getBuffer(),
-    //                       KeyString::sizeWithoutRecordIdAtEnd(next->keyString.getBuffer(),
-    //                                                           next->keyString.getSize()),
-    //                       key.getSize()) == 0) {
-    //    return buildDupKeyErrorStatus(
-    //        key, _collectionNamespace, _indexName, _keyPattern, _collation, _ordering);
-    //}
-
-    // return Status::OK();
 }
 
 void SortedDataInterface::fullValidate(OperationContext* opCtx,
@@ -786,23 +461,6 @@ Status SortedDataInterface::initAsEmpty(OperationContext* opCtx) {
     return Status::OK();
 }
 
-bool SortedDataInterface::ifPartialCheckRecordIdEquals(OperationContext* opCtx,
-                                                       const std::string key,
-                                                       const RecordId rid) const {
-    /*if (!_isPartial)
-        return true;
-
-    StringStore* workingCopy(RecoveryUnit::get(opCtx)->getHead());
-    auto workingCopyIt = workingCopy->find(key);
-    if (workingCopyIt == workingCopy->end())
-        return true;
-
-    IndexKeyEntry entry =
-        keyStringToIndexKeyEntry(workingCopyIt->first, workingCopyIt->second, _ordering);
-    return entry.loc == rid;*/
-    return true;
-}
-
 // Cursor
 SortedDataInterface::Cursor::Cursor(OperationContext* opCtx,
                                     bool isForward,
@@ -839,6 +497,7 @@ bool SortedDataInterface::Cursor::advanceNext() {
         if (_lastMoveWasRestore) {
             _lastMoveWasRestore = false;
         } else {
+            // Iterate over duplicates before moving to the next item in the radix tree
             if (!_indexData.empty()) {
                 if (_forward) {
                     if (++_forwardIndexDataIt != _forwardIndexDataEnd)
@@ -866,6 +525,7 @@ bool SortedDataInterface::Cursor::advanceNext() {
         return false;
     }
 
+    // We have moved to a new position in the tree, initialize index data for iterating over duplicates
     if (_forward) {
         _indexData = IndexData::deserialize(_forwardIt->second);
         _forwardIndexDataIt = _indexData.begin();
@@ -947,40 +607,18 @@ void SortedDataInterface::Cursor::setEndPosition(const BSONObj& key, bool inclus
     }
     _endPosIncl = inclusive;
     _endPosKey = key;
-    std::string _endPosBound;
+    std::string radixKey = createRadixKeyFromObj(key, _prefix, _order);
     // If forward and inclusive or reverse and not inclusive, then we use the last element in this
     // ident. Otherwise, we use the first as our bound.
-    if (_forward == inclusive) {
-        _endPosBound = createRadixKeyFromObj(key, _prefix, _order);
-    } else {
-        _endPosBound = createRadixKeyFromObj(key, _prefix, _order);
-    }
-    if (_forward) {
-        /*_endPos = workingCopy->lower_bound(_endPosBound);
-        if (inclusive && *_endPos != workingCopy->end() && (*_endPos)->first == _endPosBound) {
-            ++(*_endPos);
-        }*/
-        if (inclusive)
-            _endPos = workingCopy->upper_bound(_endPosBound);
-        else
-            _endPos = workingCopy->lower_bound(_endPosBound);
-    } else {
-        // Reverse iterators work with upper bound since upper bound will return the first element
-        // past the argument, so when it becomes a reverse iterator, it goes backwards one,
-        // (according to the C++ standard) and we end up in the right place.
-        /*_endPosReverse =
-            StringStore::const_reverse_iterator(workingCopy->upper_bound(_endPosBound));
-        if (inclusive && *_endPosReverse != workingCopy->rend() && (*_endPosReverse)->first ==
-        _endPosBound) {
-            ++(*_endPosReverse);
-        }*/
-        if (inclusive)
-            _endPosReverse =
-                StringStore::const_reverse_iterator(workingCopy->lower_bound(_endPosBound));
-        else
-            _endPosReverse =
-                StringStore::const_reverse_iterator(workingCopy->upper_bound(_endPosBound));
-    }
+    StringStore::const_iterator it;
+    if ((_forward && inclusive) || (!_forward && !inclusive))
+        it = workingCopy->upper_bound(radixKey);
+    else
+        it = workingCopy->lower_bound(radixKey);
+    if (_forward)
+        _endPos = it;
+    else
+        _endPosReverse = StringStore::const_reverse_iterator(it);
 }
 
 boost::optional<IndexKeyEntry> SortedDataInterface::Cursor::next(RequestedInfo parts) {
@@ -1041,82 +679,35 @@ boost::optional<KeyStringEntry> SortedDataInterface::Cursor::seekAfterProcessing
             break;
     }
 
-    std::string workingCopyBound;
-    // Similar to above, if forward and inclusive or reverse and not inclusive, then use min() for
-    // recordId. Else, we should use max().
-    if (_forward == inclusive) {
-        workingCopyBound = createRadixKeyFromKSWithoutRecordId(keyStringVal, _prefix);
-    } else {
-        workingCopyBound = createRadixKeyFromKSWithoutRecordId(keyStringVal, _prefix);
+    // If the key is empty and it's not inclusive, then no elements satisfy this seek.
+    if (keyStringVal.isEmpty() && !inclusive) {
+        _atEOF = true;
+        return boost::none;
     }
-    if (keyStringVal.isEmpty()) {
-        // If the key is empty and it's not inclusive, then no elements satisfy this seek.
-        if (!inclusive) {
-            _atEOF = true;
-            return boost::none;
-        } else {
-            // Otherwise, we just try to find the first element in this ident.
-            if (_forward) {
-                if (inclusive) {
-                    _forwardIt = _workingCopy->lower_bound(workingCopyBound);
-                } else {
-                    _forwardIt = _workingCopy->upper_bound(workingCopyBound);
-                }
-                /*_forwardIt = _workingCopy->lower_bound(workingCopyBound);
-                if (!inclusive && _forwardIt->first == workingCopyBound) {
-                    ++_forwardIt;
-                }*/
-            } else {
+    std::string radixKey = createRadixKeyFromKSWithoutRecordId(keyStringVal, _prefix);
 
-                // Reverse iterators work with upper bound since upper bound will return the first
-                // element past the argument, so when it becomes a reverse iterator, it goes
-                // backwards one, (according to the C++ standard) and we end up in the right place.
-                if (inclusive)
-                    _reverseIt = StringStore::const_reverse_iterator(
-                        _workingCopy->upper_bound(workingCopyBound));
-                else
-                    _reverseIt = StringStore::const_reverse_iterator(
-                        _workingCopy->lower_bound(workingCopyBound));
-                /*_reverseIt = StringStore::const_reverse_iterator(
-                    _workingCopy->upper_bound(workingCopyBound));
-                if (!inclusive && _reverseIt->first == workingCopyBound) {
-                    ++_reverseIt;
-                }*/
-            }
-            // Here, we check to make sure the iterator doesn't fall off the data structure and is
-            // in the ident. We also check to make sure it is on the correct side of the end
-            // position, if it was set.
-            if (!checkCursorValid()) {
-                _atEOF = true;
-                return boost::none;
-            }
-        }
-    } else {
-        // Otherwise, we seek to the nearest element to our key, but only to the right.
-        if (_forward) {
-            if (inclusive)
-                _forwardIt = _workingCopy->lower_bound(workingCopyBound);
-            else
-                _forwardIt = _workingCopy->upper_bound(workingCopyBound);
-        } else {
-            // Reverse iterators work with upper bound since upper bound will return the first
-            // element past the argument, so when it becomes a reverse iterator, it goes
-            // backwards one, (according to the C++ standard) and we end up in the right place.
-            if (inclusive)
-                _reverseIt = StringStore::const_reverse_iterator(
-                    _workingCopy->upper_bound(workingCopyBound));
-            else
-                _reverseIt = StringStore::const_reverse_iterator(
-                    _workingCopy->lower_bound(workingCopyBound));
-        }
-        // Once again, we check to make sure the iterator didn't fall off the data structure and
-        // still is in the ident.
-        if (!checkCursorValid()) {
-            _atEOF = true;
-            return boost::none;
-        }
+    StringStore::const_iterator it;
+    // Forward inclusive seek uses lower_bound and exclusive upper_bound. For reverse iterators this
+    // is also reversed.
+    if ((_forward && inclusive) || (!_forward && !inclusive))
+        it = _workingCopy->lower_bound(radixKey);
+    else
+        it = _workingCopy->upper_bound(radixKey);
+    if (_forward)
+        _forwardIt = it;
+    else
+        _reverseIt = StringStore::const_reverse_iterator(it);
+    
+    // Here, we check to make sure the iterator doesn't fall off the data structure and is
+    // in the ident. We also check to make sure it is on the correct side of the end
+    // position, if it was set.
+    if (!checkCursorValid()) {
+        _atEOF = true;
+        return boost::none;
     }
 
+    // We have seeked to an entry in the tree. Now unpack the data and initialize iterators to point
+    // to the first entry if this index contains duplicates
     if (_forward) {
         _indexData = IndexData::deserialize(_forwardIt->second);
         _forwardIndexDataIt = _indexData.begin();
@@ -1130,12 +721,6 @@ boost::optional<KeyStringEntry> SortedDataInterface::Cursor::seekAfterProcessing
         return createKeyStringEntryFromRadixKey(
             _reverseIt->first, _reverseIndexDataIt->first, _reverseIndexDataIt->second, _order);
     }
-
-    //// Everything checks out, so we have successfullly seeked and now return.
-    // if (_forward) {
-    //    return keyStringToKeyStringEntry(_forwardIt->first, _forwardIt->second, _order);
-    //}
-    // return keyStringToKeyStringEntry(_reverseIt->first, _reverseIt->second, _order);
 }
 
 boost::optional<IndexKeyEntry> SortedDataInterface::Cursor::seek(const KeyString::Value& keyString,
@@ -1235,41 +820,33 @@ void SortedDataInterface::Cursor::restore() {
         } else {
             _forwardIt = workingCopy->lower_bound(_saveKey);
         }
+        _lastMoveWasRestore = true;
         if (_saveLoc != RecordId() && _forwardIt != workingCopy->end() &&
             _forwardIt->first == _saveKey) {
             _indexData = IndexData::deserialize(_forwardIt->second);
             _forwardIndexDataIt = _indexData.lower_bound(_saveLoc);
             _forwardIndexDataEnd = _indexData.end();
             if (_forwardIndexDataIt == _forwardIndexDataEnd) {
+                // We reached the end of the index data, so we need to go to the next item in the
+                // radix tree to be positioned on a valid item
                 ++_forwardIt;
                 if (_forwardIt != workingCopy->end()) {
                     _indexData = IndexData::deserialize(_forwardIt->second);
                     _forwardIndexDataIt = _indexData.begin();
                     _forwardIndexDataEnd = _indexData.end();
                 }
-
-                _lastMoveWasRestore = true;
             } else {
-                _lastMoveWasRestore = _forwardIndexDataIt->first != _saveLoc;
+                // If we restore to the exact item that we saved then don't flag that we restored so
+                // we will advance to the next item instead of returning the same twice.
+                // Unique indexes disregard difference in location and forces the cursor to advance
+                // to guarantee that we never return the same key twice
+                _lastMoveWasRestore = !_isUnique && _forwardIndexDataIt->first != _saveLoc;
             }
-        } else {
-            _lastMoveWasRestore = true;
         }
         if (!checkCursorValid()) {
             _atEOF = true;
-            _lastMoveWasRestore = true;
             return;
         }
-
-        if (!_isUnique) {
-            //_lastMoveWasRestore = (_forwardIt->first.compare(_saveKey) != 0);
-        } else {
-            // Unique indexes cannot return the same key twice. Therefore, if we would normally not
-            // advance on the next call to next() by setting _lastMoveWasRestore, we potentially
-            // won't set it if that would cause us to return the same value twice.
-            //_lastMoveWasRestore = !keysAreIdentical(_forwardIt->first, _saveKey, _isUnique);
-        }
-
     } else {
         // Now we are dealing with reverse cursors, and use similar logic.
         if (_saveKey.length() == 0) {
@@ -1277,10 +854,11 @@ void SortedDataInterface::Cursor::restore() {
         } else {
             _reverseIt = StringStore::const_reverse_iterator(workingCopy->upper_bound(_saveKey));
         }
+        _lastMoveWasRestore = true;
         if (_saveLoc != RecordId() && _reverseIt != workingCopy->rend() &&
             _reverseIt->first == _saveKey) {
             _indexData = IndexData::deserialize(_reverseIt->second);
-            _reverseIndexDataIt = IndexData::reverse_iterator(_indexData.upper_bound(_saveLoc));
+            _reverseIndexDataIt = IndexData::const_reverse_iterator(_indexData.upper_bound(_saveLoc));
             _reverseIndexDataEnd = _indexData.rend();
             if (_reverseIndexDataIt == _reverseIndexDataEnd) {
                 ++_reverseIt;
@@ -1289,24 +867,13 @@ void SortedDataInterface::Cursor::restore() {
                     _reverseIndexDataIt = _indexData.rbegin();
                     _reverseIndexDataEnd = _indexData.rend();
                 }
-                _lastMoveWasRestore = true;
             } else {
-                _lastMoveWasRestore = _reverseIndexDataIt->first != _saveLoc;
+                _lastMoveWasRestore = !_isUnique && _reverseIndexDataIt->first != _saveLoc;
             }
-        } else {
-            _lastMoveWasRestore = true;
         }
         if (!checkCursorValid()) {
             _atEOF = true;
-            _lastMoveWasRestore = true;
             return;
-        }
-
-        if (!_isUnique) {
-            //_lastMoveWasRestore = (_reverseIt->first.compare(_saveKey) != 0);
-        } else {
-            // We use similar logic for reverse cursors on unique indexes.
-            //_lastMoveWasRestore = !keysAreIdentical(_reverseIt->first, _saveKey, _isUnique);
         }
     }
 }

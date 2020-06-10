@@ -33,18 +33,15 @@
 #include "mongo/db/storage/key_string.h"
 #include "mongo/db/storage/sorted_data_interface.h"
 
-//#include <boost/container/flat_map.hpp>
+#include <map>
 
 namespace mongo {
 namespace biggie {
 
 class IndexData {
 public:
-    //using container_t = boost::container::flat_map<RecordId, KeyString::TypeBits>;
     using container_t = std::map<RecordId, KeyString::TypeBits>;
-    using iterator = container_t::iterator;
     using const_iterator = container_t::const_iterator;
-    using reverse_iterator = container_t::reverse_iterator;
     using const_reverse_iterator = container_t::const_reverse_iterator;
 
     bool add(RecordId loc, KeyString::TypeBits typeBits);
@@ -57,23 +54,11 @@ public:
     bool empty() const {
         return _keys.empty();
     }
-    iterator begin() {
-        return _keys.begin();
-    }
-    iterator end() {
-        return _keys.end();
-    }
     const_iterator begin() const {
         return _keys.begin();
     }
     const_iterator end() const {
         return _keys.end();
-    }
-    reverse_iterator rbegin() {
-        return _keys.rbegin();
-    }
-    reverse_iterator rend() {
-        return _keys.rend();
     }
     const_reverse_iterator rbegin() const {
         return _keys.rbegin();
@@ -81,14 +66,8 @@ public:
     const_reverse_iterator rend() const {
         return _keys.rend();
     }
-    iterator lower_bound(RecordId loc) {
-        return _keys.lower_bound(loc);
-    }
     const_iterator lower_bound(RecordId loc) const {
         return _keys.lower_bound(loc);
-    }
-    iterator upper_bound(RecordId loc) {
-        return _keys.upper_bound(loc);
     }
     const_iterator upper_bound(RecordId loc) const {
         return _keys.upper_bound(loc);
@@ -131,12 +110,6 @@ private:
     const std::string _indexName;
     const BSONObj _keyPattern;
     const BSONObj _collation;
-    // Whether or not we've already added something before.
-    //bool _hasLast;
-    // This is the KeyString of the last key added.
-    //std::string _lastKeyToString;
-    // This is the last recordId added.
-    //int64_t _lastRID;
 };
 
 class SortedDataInterface : public ::mongo::SortedDataInterface {
@@ -242,7 +215,7 @@ public:
         // The next two are the same as above.
         std::string _KSForIdentStart;
         std::string _KSForIdentEnd;
-
+        // Unpacked data from current position in the radix tree. Needed to iterate over indexes containing duplicates 
         IndexData _indexData;
         IndexData::const_iterator _forwardIndexDataIt;
         IndexData::const_iterator _forwardIndexDataEnd;
@@ -251,18 +224,6 @@ public:
     };
 
 private:
-    /**
-     * Returns false only when the index is partial and the IndexKeyEntry's record id does not match
-     * the provided rid from the given key.
-     *
-     * Returns true in all other cases.
-     */
-    bool ifPartialCheckRecordIdEquals(OperationContext* opCtx,
-                                      const std::string key,
-                                      const RecordId rid) const;
-
-    bool keyExists(OperationContext* opCtx, const BSONObj& key);
-
     // These two are the same as before.
     std::string _prefix;
     std::string _identEnd;
