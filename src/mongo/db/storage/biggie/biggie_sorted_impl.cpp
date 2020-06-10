@@ -941,7 +941,7 @@ void SortedDataInterface::Cursor::setEndPosition(const BSONObj& key, bool inclus
     }
     if (_forward) {
         _endPos = workingCopy->lower_bound(_endPosBound);
-        if (inclusive && (*_endPos)->first == _endPosBound) {
+        if (inclusive && *_endPos != workingCopy->end() && (*_endPos)->first == _endPosBound) {
             ++(*_endPos);
         }
     } else {
@@ -950,7 +950,7 @@ void SortedDataInterface::Cursor::setEndPosition(const BSONObj& key, bool inclus
         // (according to the C++ standard) and we end up in the right place.
         _endPosReverse =
             StringStore::const_reverse_iterator(workingCopy->upper_bound(_endPosBound));
-        if (inclusive && (*_endPosReverse)->first == _endPosBound) {
+        if (inclusive && *_endPosReverse != workingCopy->rend() && (*_endPosReverse)->first == _endPosBound) {
             ++(*_endPosReverse);
         }
     }
