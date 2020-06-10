@@ -33,20 +33,22 @@
 #include "mongo/db/storage/key_string.h"
 #include "mongo/db/storage/sorted_data_interface.h"
 
-#include <boost/container/flat_map.hpp>
+//#include <boost/container/flat_map.hpp>
 
 namespace mongo {
 namespace biggie {
 
 class IndexData {
 public:
-    using container_t = boost::container::flat_map<RecordId, KeyString::TypeBits>;
+    //using container_t = boost::container::flat_map<RecordId, KeyString::TypeBits>;
+    using container_t = std::map<RecordId, KeyString::TypeBits>;
     using iterator = container_t::iterator;
     using const_iterator = container_t::const_iterator;
     using reverse_iterator = container_t::reverse_iterator;
     using const_reverse_iterator = container_t::const_reverse_iterator;
 
     bool add(RecordId loc, KeyString::TypeBits typeBits);
+    bool add_hint(const_iterator hint, RecordId loc, KeyString::TypeBits typeBits);
     bool remove(RecordId loc);
 
     size_t size() const {
@@ -130,11 +132,11 @@ private:
     const BSONObj _keyPattern;
     const BSONObj _collation;
     // Whether or not we've already added something before.
-    bool _hasLast;
+    //bool _hasLast;
     // This is the KeyString of the last key added.
-    std::string _lastKeyToString;
+    //std::string _lastKeyToString;
     // This is the last recordId added.
-    int64_t _lastRID;
+    //int64_t _lastRID;
 };
 
 class SortedDataInterface : public ::mongo::SortedDataInterface {
