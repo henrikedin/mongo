@@ -44,6 +44,9 @@
 namespace mongo {
 namespace biggie {
 
+KVEngine::KVEngine() : mongo::KVEngine(), _visibilityManager(std::make_unique<VisibilityManager>()) {}
+KVEngine::~KVEngine() {}
+
 mongo::RecoveryUnit* KVEngine::newRecoveryUnit() {
     return new RecoveryUnit(this, nullptr);
 }
@@ -71,8 +74,6 @@ std::unique_ptr<mongo::RecordStore> KVEngine::getRecordStore(OperationContext* o
                                                              const CollectionOptions& options) {
     std::unique_ptr<mongo::RecordStore> recordStore;
     if (options.capped) {
-        if (NamespaceString::oplog(ns))
-            _visibilityManager = std::make_unique<VisibilityManager>();
         recordStore = std::make_unique<RecordStore>(
             ns,
             ident,
