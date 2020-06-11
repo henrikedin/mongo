@@ -12132,7 +12132,7 @@ buildvariants:
 - name: linux-64-ephemeralForTest
   display_name: Linux (ephemeralForTest)
   run_on:
-  - rhel62-small
+  - rhel62-large
   expansions:
     # Transactions are not explicitly supported on the ephemeralForTest storage engine.
     # Speculative majority reads are currently only allowed for change streams, which are only supported on WiredTiger.
