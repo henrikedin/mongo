@@ -220,8 +220,7 @@ public:
 
     virtual void unindex(OperationContext* opCtx,
                          const KeyString::Value& keyString,
-                         bool dupsAllowed,
-                         bool fromIndexBuilder) {
+                         bool dupsAllowed) {
         RecordId loc = KeyString::decodeRecordIdAtEnd(keyString.getBuffer(), keyString.getSize());
 
         auto key = KeyString::toBson(keyString, _ordering);

@@ -365,7 +365,7 @@ void _testInsertSameKeyWithDupsAllowed(const RecordId locs[3]) {
                 for (int i = 0; i < 3; i++) {
                     if (i != keeper) {
                         sorted->unindex(
-                            opCtx.get(), makeKeyString(sorted.get(), key1, locs[i]), true, false);
+                            opCtx.get(), makeKeyString(sorted.get(), key1, locs[i]), true);
                     }
                 }
                 uow.commit();

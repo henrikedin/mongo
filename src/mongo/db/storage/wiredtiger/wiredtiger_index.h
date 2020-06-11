@@ -97,8 +97,7 @@ public:
 
     virtual void unindex(OperationContext* opCtx,
                          const KeyString::Value& keyString,
-                         bool dupsAllowed,
-                         bool fromIndexBuilder);
+                         bool dupsAllowed);
 
     virtual void fullValidate(OperationContext* opCtx,
                               long long* numKeysOut,

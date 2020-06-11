@@ -266,8 +266,7 @@ Status WiredTigerIndex::insert(OperationContext* opCtx,
 
 void WiredTigerIndex::unindex(OperationContext* opCtx,
                               const KeyString::Value& keyString,
-                              bool dupsAllowed,
-                              bool fromIndexBuilder) {
+                              bool dupsAllowed) {
     dassert(opCtx->lockState()->isWriteLocked());
     dassert(KeyString::decodeRecordIdAtEnd(keyString.getBuffer(), keyString.getSize()).isValid());
 

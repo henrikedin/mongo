@@ -286,7 +286,7 @@ TEST(SortedDataInterface, DupKeyCheckWithDeletedFirstEntry) {
     {
         const ServiceContext::UniqueOperationContext opCtx(harnessHelper->newOperationContext());
         WriteUnitOfWork uow(opCtx.get());
-        sorted->unindex(opCtx.get(), makeKeyString(sorted.get(), key1, loc1), true, false);
+        sorted->unindex(opCtx.get(), makeKeyString(sorted.get(), key1, loc1), true);
         uow.commit();
     }
 
@@ -315,7 +315,7 @@ TEST(SortedDataInterface, DupKeyCheckWithDeletedSecondEntry) {
     {
         const ServiceContext::UniqueOperationContext opCtx(harnessHelper->newOperationContext());
         WriteUnitOfWork uow(opCtx.get());
-        sorted->unindex(opCtx.get(), makeKeyString(sorted.get(), key1, loc2), true, false);
+        sorted->unindex(opCtx.get(), makeKeyString(sorted.get(), key1, loc2), true);
         uow.commit();
     }
     {
