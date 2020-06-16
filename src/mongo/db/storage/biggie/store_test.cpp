@@ -1617,13 +1617,13 @@ TEST_F(RadixStoreTest, MergeInternalNodeTest) {
     baseStore.insert({"a", "a"});
     baseStore.insert({"aaaa", "a"});
     baseStore.insert({"aaab", "a"});
-    
+
     otherStore = baseStore;
     otherStore.insert({"aaa", "a"});
 
     thisStore = baseStore;
     thisStore.insert({"aa", "a"});
-  
+
     thisStore.merge3(baseStore, otherStore);
 
     expected.insert({"a", "a"});
@@ -1634,7 +1634,7 @@ TEST_F(RadixStoreTest, MergeInternalNodeTest) {
     ASSERT_TRUE(thisStore == expected);
 }
 
- TEST_F(RadixStoreTest, MergeBaseKeyNegativeCharTest) {
+TEST_F(RadixStoreTest, MergeBaseKeyNegativeCharTest) {
     baseStore.insert({"aaa\xffq", "q"});
 
     otherStore = baseStore;
@@ -1647,7 +1647,74 @@ TEST_F(RadixStoreTest, MergeInternalNodeTest) {
     ASSERT_EQ(thisStore.find("aaa\xffq")->second, "q");
     ASSERT_EQ(thisStore.find("aab")->second, "b");
     ASSERT_EQ(thisStore.find("aac")->second, "c");
- }
+}
+
+TEST_F(RadixStoreTest, MergeWillCompressNodes) {
+    baseStore.insert({"aa", "a"});
+    baseStore.insert({"ab", "b"});
+    baseStore.insert({"ac", "c"});
+    baseStore.insert({"ad", "d"});
+
+    otherStore = baseStore;
+    otherStore.erase("ab");
+    otherStore.erase("ac");
+
+    thisStore = baseStore;
+    thisStore.erase("aa");
+
+    thisStore.merge3(baseStore, otherStore);
+
+    // The store is in a valid state that is traversable and we should find a single node
+    ASSERT_EQ(thisStore.find("ad")->second, "d");
+    ASSERT_EQ(std::distance(thisStore.begin(), thisStore.end()), 1);
+
+    // Removing this node should not result in an internal leaf node without data
+    thisStore.erase("ad");
+
+    ASSERT_EQ(std::distance(thisStore.begin(), thisStore.end()), 0);
+}
+
+TEST_F(RadixStoreTest, MergeWillRemoveEmptyInternalLeaf) {
+    baseStore.insert({"aa", "a"});
+    baseStore.insert({"ab", "b"});
+    baseStore.insert({"ac", "c"});
+    baseStore.insert({"ad", "d"});
+
+    otherStore = baseStore;
+    otherStore.erase("ac");
+    otherStore.erase("ad");
+
+    thisStore = baseStore;
+    thisStore.erase("aa");
+    thisStore.erase("ab");
+
+    thisStore.merge3(baseStore, otherStore);
+
+    // The store is in a valid state that is traversable and we should find no nodes
+    ASSERT_EQ(std::distance(thisStore.begin(), thisStore.end()), 0);
+}
+
+TEST_F(RadixStoreTest, MergeWillRemoveEmptyInternalLeafWithUnrelatedBranch) {
+    baseStore.insert({"aa", "a"});
+    baseStore.insert({"ab", "b"});
+    baseStore.insert({"ac", "c"});
+    baseStore.insert({"ad", "d"});
+    baseStore.insert({"b", "b"});
+
+    otherStore = baseStore;
+    otherStore.erase("ac");
+    otherStore.erase("ad");
+    otherStore.erase("b");
+
+    thisStore = baseStore;
+    thisStore.erase("aa");
+    thisStore.erase("ab");
+
+    thisStore.merge3(baseStore, otherStore);
+
+    // The store is in a valid state that is traversable and we should find no nodes
+    ASSERT_EQ(std::distance(thisStore.begin(), thisStore.end()), 0);
+}
 
 TEST_F(RadixStoreTest, MergeConflictingModifications) {
     value_type value1 = std::make_pair("foo", "1");
