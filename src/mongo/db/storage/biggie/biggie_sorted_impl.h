@@ -67,7 +67,7 @@ protected:
 class SortedDataBuilderUnique : public SortedDataBuilderBase {
 public:
     using SortedDataBuilderBase::SortedDataBuilderBase;
-    virtual Status addKey(const KeyString::Value& keyString);
+    Status addKey(const KeyString::Value& keyString) override;
 };
 
 class SortedDataInterfaceBase : public ::mongo::SortedDataInterface {
@@ -77,12 +77,12 @@ public:
     Status truncate(RecoveryUnit* ru);
     SortedDataInterfaceBase(OperationContext* opCtx, StringData ident, const IndexDescriptor* desc);
     SortedDataInterfaceBase(const Ordering& ordering, StringData ident);
-    virtual bool appendCustomStats(OperationContext* opCtx,
+    bool appendCustomStats(OperationContext* opCtx,
                                    BSONObjBuilder* output,
                                    double scale) const override;
-    virtual long long getSpaceUsedBytes(OperationContext* opCtx) const override;
-    virtual bool isEmpty(OperationContext* opCtx) override;
-    virtual Status initAsEmpty(OperationContext* opCtx) override;
+    long long getSpaceUsedBytes(OperationContext* opCtx) const override;
+    bool isEmpty(OperationContext* opCtx) override;
+    Status initAsEmpty(OperationContext* opCtx) override;
 
 protected:
     // These two are the same as before.
@@ -106,19 +106,19 @@ public:
                               StringData ident,
                               const IndexDescriptor* desc);
     SortedDataInterfaceUnique(const Ordering& ordering, StringData ident);
-    virtual SortedDataBuilderInterface* getBulkBuilder(OperationContext* opCtx,
+    SortedDataBuilderInterface* getBulkBuilder(OperationContext* opCtx,
                                                        bool dupsAllowed) override;
-    virtual Status insert(OperationContext* opCtx,
+    Status insert(OperationContext* opCtx,
                           const KeyString::Value& keyString,
                           bool dupsAllowed) override;
-    virtual void unindex(OperationContext* opCtx,
+    void unindex(OperationContext* opCtx,
                          const KeyString::Value& keyString,
                          bool dupsAllowed) override;
-    virtual Status dupKeyCheck(OperationContext* opCtx, const KeyString::Value& keyString) override;
-    virtual void fullValidate(OperationContext* opCtx,
+    Status dupKeyCheck(OperationContext* opCtx, const KeyString::Value& keyString) override;
+    void fullValidate(OperationContext* opCtx,
                               long long* numKeysOut,
                               ValidateResults* fullResults) const override;
-    virtual std::unique_ptr<mongo::SortedDataInterface::Cursor> newCursor(
+    std::unique_ptr<mongo::SortedDataInterface::Cursor> newCursor(
         OperationContext* opCtx, bool isForward = true) const override;
 
 };
@@ -126,7 +126,7 @@ public:
 class SortedDataBuilderStandard : public SortedDataBuilderBase {
 public:
     using SortedDataBuilderBase::SortedDataBuilderBase;
-    virtual Status addKey(const KeyString::Value& keyString);
+    Status addKey(const KeyString::Value& keyString) override;
 };
 
 class SortedDataInterfaceStandard : public SortedDataInterfaceBase {
@@ -135,19 +135,19 @@ public:
                                 StringData ident,
                                 const IndexDescriptor* desc);
     SortedDataInterfaceStandard(const Ordering& ordering, StringData ident);
-    virtual SortedDataBuilderInterface* getBulkBuilder(OperationContext* opCtx,
+    SortedDataBuilderInterface* getBulkBuilder(OperationContext* opCtx,
                                                        bool dupsAllowed) override;
-    virtual Status insert(OperationContext* opCtx,
+    Status insert(OperationContext* opCtx,
                           const KeyString::Value& keyString,
                           bool dupsAllowed) override;
-    virtual void unindex(OperationContext* opCtx,
+    void unindex(OperationContext* opCtx,
                          const KeyString::Value& keyString,
                          bool dupsAllowed) override;
-    virtual Status dupKeyCheck(OperationContext* opCtx, const KeyString::Value& keyString) override;
-    virtual void fullValidate(OperationContext* opCtx,
+    Status dupKeyCheck(OperationContext* opCtx, const KeyString::Value& keyString) override;
+    void fullValidate(OperationContext* opCtx,
                               long long* numKeysOut,
                               ValidateResults* fullResults) const override;
-    virtual std::unique_ptr<mongo::SortedDataInterface::Cursor> newCursor(
+    std::unique_ptr<mongo::SortedDataInterface::Cursor> newCursor(
         OperationContext* opCtx, bool isForward = true) const override;
 };
 }  // namespace biggie
