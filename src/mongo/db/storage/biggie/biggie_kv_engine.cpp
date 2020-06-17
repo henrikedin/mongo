@@ -109,10 +109,7 @@ Status KVEngine::createSortedDataInterface(OperationContext* opCtx,
 
 std::unique_ptr<mongo::SortedDataInterface> KVEngine::getSortedDataInterface(
     OperationContext* opCtx, StringData ident, const IndexDescriptor* desc) {
-    {
-        stdx::lock_guard lock(_identsLock);
-        _idents[ident.toString()] = false;
-    }
+    _idents[ident.toString()] = false;
     if (desc->unique())
         return std::make_unique<SortedDataInterfaceUnique>(opCtx, ident, desc);
     else
