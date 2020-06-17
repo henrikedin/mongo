@@ -44,7 +44,7 @@ public:
     IndexDataEntry() : _buffer(nullptr) {}
     IndexDataEntry(const uint8_t* buffer);
     IndexDataEntry(const std::string& indexDataEntry);
-    
+
     const uint8_t* buffer() const;
     size_t size() const;
     RecordId loc() const;
@@ -110,14 +110,14 @@ private:
 class SortedDataBuilderBase : public ::mongo::SortedDataBuilderInterface {
 public:
     SortedDataBuilderBase(OperationContext* opCtx,
-                                     bool dupsAllowed,
-                                     Ordering order,
-                                     const std::string& prefix,
-                                     const std::string& identEnd,
-                                     const NamespaceString& collectionNamespace,
-                                     const std::string& indexName,
-                                     const BSONObj& keyPattern,
-                                     const BSONObj& collation);
+                          bool dupsAllowed,
+                          Ordering order,
+                          const std::string& prefix,
+                          const std::string& identEnd,
+                          const NamespaceString& collectionNamespace,
+                          const std::string& indexName,
+                          const BSONObj& keyPattern,
+                          const BSONObj& collation);
     void commit(bool mayInterrupt) override;
 
 protected:
@@ -146,9 +146,7 @@ public:
     // Truncate is not required at the time of writing but will be when the truncate command is
     // created
     Status truncate(RecoveryUnit* ru);
-    SortedDataInterfaceBase(OperationContext* opCtx,
-                              StringData ident,
-                              const IndexDescriptor* desc);
+    SortedDataInterfaceBase(OperationContext* opCtx, StringData ident, const IndexDescriptor* desc);
     SortedDataInterfaceBase(const Ordering& ordering, StringData ident);
     virtual bool appendCustomStats(OperationContext* opCtx,
                                    BSONObjBuilder* output,
@@ -157,89 +155,130 @@ public:
     virtual bool isEmpty(OperationContext* opCtx) override;
     virtual Status initAsEmpty(OperationContext* opCtx) override;
 
-    ///*
-    // * This is the cursor class required by the sorted data interface.
-    // */
-    //class Cursor final : public ::mongo::SortedDataInterface::Cursor {
-    //public:
-    //    // All the following public functions just implement the interface.
-    //    Cursor(OperationContext* opCtx,
-    //           bool isForward,
-    //           // This is the ident.
-    //           std::string _prefix,
-    //           // This is a string immediately after the ident and before other idents.
-    //           std::string _identEnd,
-    //           StringStore* workingCopy,
-    //           Ordering order,
-    //           std::string prefixBSON,
-    //           std::string KSForIdentEnd);
-    //    virtual void setEndPosition(const BSONObj& key, bool inclusive) override;
-    //    virtual boost::optional<IndexKeyEntry> next(RequestedInfo parts = kKeyAndLoc) override;
-    //    virtual boost::optional<KeyStringEntry> nextKeyString() override;
-    //    virtual boost::optional<IndexKeyEntry> seek(const KeyString::Value& keyString,
-    //                                                RequestedInfo parts = kKeyAndLoc) override;
-    //    virtual boost::optional<KeyStringEntry> seekForKeyString(
-    //        const KeyString::Value& keyStringValue) override;
-    //    virtual boost::optional<KeyStringEntry> seekExactForKeyString(
-    //        const KeyString::Value& keyStringValue) override;
-    //    virtual boost::optional<IndexKeyEntry> seekExact(const KeyString::Value& keyStringValue,
-    //                                                     RequestedInfo) override;
-    //    virtual void save() override;
-    //    virtual void restore() override;
-    //    virtual void detachFromOperationContext() override;
-    //    virtual void reattachToOperationContext(OperationContext* opCtx) override;
+    /*
+     * This is the cursor class required by the sorted data interface.
+     */
+    template <class CursorImpl>
+    class CursorBase : public ::mongo::SortedDataInterface::Cursor {
+    public:
+        // All the following public functions just implement the interface.
+        CursorBase(OperationContext* opCtx,
+                   bool isForward,
+                   // This is the ident.
+                   std::string _prefix,
+                   // This is a string immediately after the ident and before other idents.
+                   std::string _identEnd,
+                   StringStore* workingCopy,
+                   Ordering order,
+                   std::string prefixBSON,
+                   std::string KSForIdentEnd);
+        virtual void setEndPosition(const BSONObj& key, bool inclusive) override;
+        //virtual boost::optional<IndexKeyEntry> next(RequestedInfo parts = kKeyAndLoc) override;
+        //virtual boost::optional<KeyStringEntry> nextKeyString() override;
+        virtual boost::optional<IndexKeyEntry> seek(const KeyString::Value& keyString,
+                                                    RequestedInfo parts = kKeyAndLoc) override;
+        virtual boost::optional<KeyStringEntry> seekForKeyString(
+            const KeyString::Value& keyStringValue) override;
+        virtual boost::optional<KeyStringEntry> seekExactForKeyString(
+            const KeyString::Value& keyStringValue) override;
+        virtual boost::optional<IndexKeyEntry> seekExact(const KeyString::Value& keyStringValue,
+                                                         RequestedInfo) override;
+        virtual void save() override;
+        virtual void restore() override;
+        virtual void detachFromOperationContext() override;
+        virtual void reattachToOperationContext(OperationContext* opCtx) override;
 
-    //private:
-    //    bool advanceNext();
-    //    // This is a helper function to check if the cursor was explicitly set by the user or not.
-    //    bool endPosSet();
-    //    // This is a helper function to check if the cursor is valid or not.
-    //    bool checkCursorValid();
-    //    // Helper function to set index data iterators to reverse position
-    //    void initReverseDataIterators();
-    //    // This is a helper function for seek.
-    //    boost::optional<IndexKeyEntry> seekAfterProcessing(BSONObj finalKey);
-    //    boost::optional<KeyStringEntry> seekAfterProcessing(const KeyString::Value& keyString);
-    //    OperationContext* _opCtx;
-    //    // This is the "working copy" of the master "branch" in the git analogy.
-    //    StringStore* _workingCopy;
-    //    // These store the end positions.
-    //    boost::optional<StringStore::const_iterator> _endPos;
-    //    boost::optional<StringStore::const_reverse_iterator> _endPosReverse;
-    //    // This means if the cursor is a forward or reverse cursor.
-    //    bool _forward;
-    //    // This means whether the cursor has reached the last EOF (with regard to this index).
-    //    bool _atEOF;
-    //    // This means whether or not the last move was restore.
-    //    bool _lastMoveWasRestore;
-    //    // This is the keystring for the saved location.
-    //    std::string _saveKey;
-    //    RecordId _saveLoc;
-    //    // These are the same as before.
-    //    std::string _prefix;
-    //    std::string _identEnd;
-    //    // These two store the const_iterator, which is the data structure for cursors. The one we
-    //    // use depends on _forward.
-    //    StringStore::const_iterator _forwardIt;
-    //    StringStore::const_reverse_iterator _reverseIt;
-    //    // This is the ordering for the key's values for multi-field keys.
-    //    Ordering _order;
-    //    // This stores whether or not the end position is inclusive for restore.
-    //    bool _endPosIncl;
-    //    // This stores the key for the end position.
-    //    boost::optional<BSONObj> _endPosKey;
-    //    // This stores whether or not the index is unique.
-    //    bool _isUnique{true};
-    //    // The next two are the same as above.
-    //    std::string _KSForIdentStart;
-    //    std::string _KSForIdentEnd;
-    //    // Unpacked data from current position in the radix tree. Needed to iterate over indexes
-    //    // containing duplicates
-    //    IndexData _indexData;
-    //    IndexData::const_iterator _indexDataIt;
-    //    IndexData::const_iterator _indexDataEnd;
-    //    size_t _reversePos;
-    //};
+    private:
+        std::string createRadixKeyFromObj(const BSONObj& key,
+                                          RecordId loc,
+                                          std::string prefixToUse,
+                                          Ordering order) {
+            return static_cast<CursorImpl*>(this)->createRadixKeyFromObj(
+                key, loc, prefixToUse, order);
+        }
+
+        std::string createRadixKeyFromKSWithoutRecordId(const KeyString::Value& keyString,
+                                                        RecordId loc,
+                                                        std::string prefixToUse) {
+            return static_cast<CursorImpl*>(this)->createRadixKeyFromKSWithoutRecordId(
+                keyString, loc, prefixToUse);
+        }
+
+        boost::optional<KeyStringEntry> finishSeekAfterProcessing() {
+            return static_cast<CursorImpl*>(this)->finishSeekAfterProcessing();
+        }
+
+        bool advanceNextInternal() {
+            return static_cast<CursorImpl*>(this)->advanceNextInternal();
+        }
+        void finishAdvanceNext() {
+            static_cast<CursorImpl*>(this)->finishAdvanceNext();
+        }
+
+        bool checkCursorValid() {
+            return static_cast<CursorImpl*>(this)->checkCursorValid();
+        }
+
+        void saveForward() {
+            return static_cast<CursorImpl*>(this)->saveForward();
+        }
+
+        void saveReverse() {
+            return static_cast<CursorImpl*>(this)->saveReverse();
+        }
+
+        void restoreForward() {
+            return static_cast<CursorImpl*>(this)->restoreForward();
+        }
+
+        void restoreReverse() {
+            return static_cast<CursorImpl*>(this)->restoreReverse();
+        }
+
+        protected:
+
+        bool advanceNext();
+        // This is a helper function to check if the cursor was explicitly set by the user or not.
+        bool endPosSet();
+        // This is a helper function to check if the cursor is valid or not.
+        //bool checkCursorValid();
+        // Helper function to set index data iterators to reverse position
+        // void initReverseDataIterators();
+        // This is a helper function for seek.
+        boost::optional<IndexKeyEntry> seekAfterProcessing(BSONObj finalKey);
+        boost::optional<KeyStringEntry> seekAfterProcessing(const KeyString::Value& keyString);
+        OperationContext* _opCtx;
+        // This is the "working copy" of the master "branch" in the git analogy.
+        StringStore* _workingCopy;
+        // These store the end positions.
+        boost::optional<StringStore::const_iterator> _endPos;
+        boost::optional<StringStore::const_reverse_iterator> _endPosReverse;
+        // This means if the cursor is a forward or reverse cursor.
+        bool _forward;
+        // This means whether the cursor has reached the last EOF (with regard to this index).
+        bool _atEOF;
+        // This means whether or not the last move was restore.
+        bool _lastMoveWasRestore;
+        // This is the keystring for the saved location.
+        std::string _saveKey;
+        RecordId _saveLoc;
+        // These are the same as before.
+        std::string _prefix;
+        std::string _identEnd;
+        // These two store the const_iterator, which is the data structure for cursors. The one we
+        // use depends on _forward.
+        StringStore::const_iterator _forwardIt;
+        StringStore::const_reverse_iterator _reverseIt;
+        // This is the ordering for the key's values for multi-field keys.
+        Ordering _order;
+        // This stores whether or not the end position is inclusive for restore.
+        bool _endPosIncl;
+        // This stores the key for the end position.
+        boost::optional<BSONObj> _endPosKey;
+        // The next two are the same as above.
+        std::string _KSForIdentStart;
+        std::string _KSForIdentEnd;
+    };
 
 protected:
     // These two are the same as before.
@@ -281,23 +320,24 @@ public:
     /*
      * This is the cursor class required by the sorted data interface.
      */
-    class Cursor final : public ::mongo::SortedDataInterface::Cursor {
+    class Cursor final : public CursorBase<Cursor> {
     public:
+        using CursorBase::CursorBase;
         // All the following public functions just implement the interface.
-        Cursor(OperationContext* opCtx,
-               bool isForward,
-               // This is the ident.
-               std::string _prefix,
-               // This is a string immediately after the ident and before other idents.
-               std::string _identEnd,
-               StringStore* workingCopy,
-               Ordering order,
-               std::string prefixBSON,
-               std::string KSForIdentEnd);
-        virtual void setEndPosition(const BSONObj& key, bool inclusive) override;
+        // Cursor(OperationContext* opCtx,
+        //       bool isForward,
+        //       // This is the ident.
+        //       std::string _prefix,
+        //       // This is a string immediately after the ident and before other idents.
+        //       std::string _identEnd,
+        //       StringStore* workingCopy,
+        //       Ordering order,
+        //       std::string prefixBSON,
+        //       std::string KSForIdentEnd);
+        //virtual void setEndPosition(const BSONObj& key, bool inclusive) override;
         virtual boost::optional<IndexKeyEntry> next(RequestedInfo parts = kKeyAndLoc) override;
         virtual boost::optional<KeyStringEntry> nextKeyString() override;
-        virtual boost::optional<IndexKeyEntry> seek(const KeyString::Value& keyString,
+        /*virtual boost::optional<IndexKeyEntry> seek(const KeyString::Value& keyString,
                                                     RequestedInfo parts = kKeyAndLoc) override;
         virtual boost::optional<KeyStringEntry> seekForKeyString(
             const KeyString::Value& keyStringValue) override;
@@ -308,52 +348,74 @@ public:
         virtual void save() override;
         virtual void restore() override;
         virtual void detachFromOperationContext() override;
-        virtual void reattachToOperationContext(OperationContext* opCtx) override;
+        virtual void reattachToOperationContext(OperationContext* opCtx) override;*/
+
+    protected:
+        friend class CursorBase;
+
+        bool advanceNextInternal();
+        void finishAdvanceNext();
+
+        std::string createRadixKeyFromObj(const BSONObj& key,
+                                          RecordId loc,
+                                          std::string prefixToUse,
+                                          Ordering order);
+
+        std::string createRadixKeyFromKSWithoutRecordId(const KeyString::Value& keyString,
+                                                        RecordId loc,
+                                                        std::string prefixToUse);
+
+        boost::optional<KeyStringEntry> finishSeekAfterProcessing();
+
+        void saveForward();
+        void saveReverse();
+        void restoreForward();
+        void restoreReverse();
 
     private:
-        bool advanceNext();
-        // This is a helper function to check if the cursor was explicitly set by the user or not.
-        bool endPosSet();
+        // bool advanceNext();
+        //// This is a helper function to check if the cursor was explicitly set by the user or not.
+        // bool endPosSet();
         // This is a helper function to check if the cursor is valid or not.
         bool checkCursorValid();
         // Helper function to set index data iterators to reverse position
         void initReverseDataIterators();
-        // This is a helper function for seek.
-        boost::optional<IndexKeyEntry> seekAfterProcessing(BSONObj finalKey);
-        boost::optional<KeyStringEntry> seekAfterProcessing(const KeyString::Value& keyString);
-        OperationContext* _opCtx;
-        // This is the "working copy" of the master "branch" in the git analogy.
-        StringStore* _workingCopy;
-        // These store the end positions.
-        boost::optional<StringStore::const_iterator> _endPos;
-        boost::optional<StringStore::const_reverse_iterator> _endPosReverse;
-        // This means if the cursor is a forward or reverse cursor.
-        bool _forward;
-        // This means whether the cursor has reached the last EOF (with regard to this index).
-        bool _atEOF;
-        // This means whether or not the last move was restore.
-        bool _lastMoveWasRestore;
-        // This is the keystring for the saved location.
-        std::string _saveKey;
-        RecordId _saveLoc;
-        // These are the same as before.
-        std::string _prefix;
-        std::string _identEnd;
-        // These two store the const_iterator, which is the data structure for cursors. The one we
-        // use depends on _forward.
-        StringStore::const_iterator _forwardIt;
-        StringStore::const_reverse_iterator _reverseIt;
-        // This is the ordering for the key's values for multi-field keys.
-        Ordering _order;
-        // This stores whether or not the end position is inclusive for restore.
-        bool _endPosIncl;
-        // This stores the key for the end position.
-        boost::optional<BSONObj> _endPosKey;
-        // This stores whether or not the index is unique.
-        bool _isUnique{true};
-        // The next two are the same as above.
-        std::string _KSForIdentStart;
-        std::string _KSForIdentEnd;
+        //// This is a helper function for seek.
+        // boost::optional<IndexKeyEntry> seekAfterProcessing(BSONObj finalKey);
+        // boost::optional<KeyStringEntry> seekAfterProcessing(const KeyString::Value& keyString);
+        // OperationContext* _opCtx;
+        //// This is the "working copy" of the master "branch" in the git analogy.
+        // StringStore* _workingCopy;
+        //// These store the end positions.
+        // boost::optional<StringStore::const_iterator> _endPos;
+        // boost::optional<StringStore::const_reverse_iterator> _endPosReverse;
+        //// This means if the cursor is a forward or reverse cursor.
+        // bool _forward;
+        //// This means whether the cursor has reached the last EOF (with regard to this index).
+        // bool _atEOF;
+        //// This means whether or not the last move was restore.
+        // bool _lastMoveWasRestore;
+        //// This is the keystring for the saved location.
+        // std::string _saveKey;
+        // RecordId _saveLoc;
+        //// These are the same as before.
+        // std::string _prefix;
+        // std::string _identEnd;
+        //// These two store the const_iterator, which is the data structure for cursors. The one we
+        //// use depends on _forward.
+        // StringStore::const_iterator _forwardIt;
+        // StringStore::const_reverse_iterator _reverseIt;
+        //// This is the ordering for the key's values for multi-field keys.
+        // Ordering _order;
+        //// This stores whether or not the end position is inclusive for restore.
+        // bool _endPosIncl;
+        //// This stores the key for the end position.
+        // boost::optional<BSONObj> _endPosKey;
+        //// This stores whether or not the index is unique.
+        // bool _isUnique{true};
+        //// The next two are the same as above.
+        // std::string _KSForIdentStart;
+        // std::string _KSForIdentEnd;
         // Unpacked data from current position in the radix tree. Needed to iterate over indexes
         // containing duplicates
         IndexData _indexData;
