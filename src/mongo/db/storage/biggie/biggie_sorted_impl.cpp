@@ -57,12 +57,33 @@ namespace {
 
 const Ordering allAscending = Ordering::make(BSONObj());
 
+std::string createIndexDataEntry(RecordId loc, KeyString::TypeBits typebits) {
+    uint64_t repr = loc.repr();
+    uint64_t typebitsSize = typebits.getSize();
+    std::string output(sizeof(loc) + sizeof(typebitsSize) + typebitsSize, '\0');
+
+    std::memcpy(output.data(), &repr, sizeof(repr));
+    std::memcpy(output.data() + sizeof(repr), &typebitsSize, sizeof(typebitsSize));
+    std::memcpy(
+        output.data() + sizeof(repr) + sizeof(typebitsSize), typebits.getBuffer(), typebitsSize);
+
+    return output;
+}
+
 void prefixKeyString(KeyString::Builder* keyString, std::string prefixToUse) {
     BSONObjBuilder b;
     b.append("", prefixToUse);                                               // prefix
     b.append("", StringData(keyString->getBuffer(), keyString->getSize()));  // key
 
     keyString->resetToKey(b.obj(), allAscending);
+}
+
+void prefixKeyStringStandard(KeyString::Builder* keyString, RecordId loc, std::string prefixToUse) {
+    BSONObjBuilder b;
+    b.append("", prefixToUse);                                               // prefix
+    b.append("", StringData(keyString->getBuffer(), keyString->getSize()));  // key
+
+    keyString->resetToKey(b.obj(), allAscending, loc);
 }
 
 std::string createRadixKeyFromObj(const BSONObj& key, std::string prefixToUse, Ordering order) {
@@ -90,6 +111,37 @@ std::string createRadixKeyFromKSWithoutRecordId(const KeyString::Value& keyStrin
     return std::string(ks.getBuffer(), ks.getSize());
 }
 
+std::string createStandardRadixKeyFromObj(const BSONObj& key,
+                                          RecordId loc,
+                                          std::string prefixToUse,
+                                          Ordering order) {
+    KeyString::Version version = KeyString::Version::kLatestVersion;
+    KeyString::Builder ks(version, BSONObj::stripFieldNames(key), order);
+
+    prefixKeyStringStandard(&ks, loc, prefixToUse);
+    return std::string(ks.getBuffer(), ks.getSize());
+}
+
+std::string createStandardRadixKeyFromKS(const KeyString::Value& keyString,
+                                         RecordId loc,
+                                         std::string prefixToUse) {
+    KeyString::Builder ks(KeyString::Version::kLatestVersion);
+    ks.resetFromBuffer(
+        keyString.getBuffer(),
+        KeyString::sizeWithoutRecordIdAtEnd(keyString.getBuffer(), keyString.getSize()));
+    prefixKeyStringStandard(&ks, loc, prefixToUse);
+    return std::string(ks.getBuffer(), ks.getSize());
+}
+
+std::string createStandardRadixKeyFromKSWithoutRecordId(const KeyString::Value& keyString,
+                                         RecordId loc,
+                                         std::string prefixToUse) {
+    KeyString::Builder ks(KeyString::Version::kLatestVersion);
+    ks.resetFromBuffer(keyString.getBuffer(), keyString.getSize());
+    prefixKeyStringStandard(&ks, loc, prefixToUse);
+    return std::string(ks.getBuffer(), ks.getSize());
+}
+
 BSONObj createObjFromRadixKey(const std::string& radixKey,
                               const KeyString::TypeBits& typeBits,
                               const Ordering& order) {
@@ -114,6 +166,13 @@ IndexKeyEntry createIndexKeyEntryFromRadixKey(const std::string& radixKey,
     return IndexKeyEntry(createObjFromRadixKey(radixKey, typeBits, order), loc);
 }
 
+IndexKeyEntry createIndexKeyEntryFromRadixKeyStandard(const std::string& radixKey,
+                                              const std::string& indexDataEntry,
+                                              const Ordering order) {
+    IndexDataEntry data(indexDataEntry);
+    return IndexKeyEntry(createObjFromRadixKey(radixKey, data.typeBits(), order), data.loc());
+}
+
 boost::optional<KeyStringEntry> createKeyStringEntryFromRadixKey(
     const std::string& radixKey,
     RecordId loc,
@@ -124,7 +183,36 @@ boost::optional<KeyStringEntry> createKeyStringEntryFromRadixKey(
     ksFinal.appendRecordId(loc);
     return KeyStringEntry(ksFinal.getValueCopy(), loc);
 }
+
+boost::optional<KeyStringEntry> createKeyStringEntryFromRadixKeyStandard(
+    const std::string& radixKey,
+    const std::string& indexDataEntry,
+    const Ordering& order) {
+    IndexDataEntry data(indexDataEntry);
+    RecordId loc = data.loc();
+    auto key = createObjFromRadixKey(radixKey, data.typeBits(), order);
+    KeyString::Builder ksFinal(KeyString::Version::kLatestVersion, key, order);
+    ksFinal.appendRecordId(loc);
+    return KeyStringEntry(ksFinal.getValueCopy(), loc);
+}
 }  // namespace
+
+IndexDataEntry::IndexDataEntry(const std::string& indexDataEntry)
+    : _buffer(reinterpret_cast<const uint8_t*>(indexDataEntry.data())) {}
+
+RecordId IndexDataEntry::loc() const {
+    uint64_t repr;
+    std::memcpy(&repr, _buffer, sizeof(uint64_t));
+    return RecordId(repr);
+}
+
+KeyString::TypeBits IndexDataEntry::typeBits() const {
+    uint64_t size;
+    std::memcpy(&size, _buffer + sizeof(uint64_t), sizeof(uint64_t));
+
+    BufReader reader(_buffer + sizeof(uint64_t)*2, size);
+    return KeyString::TypeBits::fromBuffer(KeyString::Version::kLatestVersion, &reader);
+}
 
 bool IndexData::add(RecordId loc, KeyString::TypeBits typeBits) {
     return _keys.emplace(loc, std::move(typeBits)).second;
@@ -200,18 +288,17 @@ size_t IndexData::decodeSize(const std::string& serializedIndexData) {
     return val;
 }
 
-SortedDataBuilderInterface::SortedDataBuilderInterface(OperationContext* opCtx,
-                                                       bool unique,
-                                                       bool dupsAllowed,
-                                                       Ordering order,
-                                                       const std::string& prefix,
-                                                       const std::string& identEnd,
-                                                       const NamespaceString& collectionNamespace,
-                                                       const std::string& indexName,
-                                                       const BSONObj& keyPattern,
-                                                       const BSONObj& collation)
+SortedDataUniqueBuilderInterface::SortedDataUniqueBuilderInterface(
+    OperationContext* opCtx,
+    bool dupsAllowed,
+    Ordering order,
+    const std::string& prefix,
+    const std::string& identEnd,
+    const NamespaceString& collectionNamespace,
+    const std::string& indexName,
+    const BSONObj& keyPattern,
+    const BSONObj& collation)
     : _opCtx(opCtx),
-      _unique(unique),
       _dupsAllowed(dupsAllowed),
       _order(order),
       _prefix(prefix),
@@ -221,12 +308,12 @@ SortedDataBuilderInterface::SortedDataBuilderInterface(OperationContext* opCtx,
       _keyPattern(keyPattern),
       _collation(collation) {}
 
-void SortedDataBuilderInterface::commit(bool mayInterrupt) {
+void SortedDataUniqueBuilderInterface::commit(bool mayInterrupt) {
     WriteUnitOfWork wunit(_opCtx);
     wunit.commit();
 }
 
-Status SortedDataBuilderInterface::addKey(const KeyString::Value& keyString) {
+Status SortedDataUniqueBuilderInterface::addKey(const KeyString::Value& keyString) {
     dassert(KeyString::decodeRecordIdAtEnd(keyString.getBuffer(), keyString.getSize()).isValid());
     StringStore* workingCopy(RecoveryUnit::get(_opCtx)->getHead());
     RecordId loc = KeyString::decodeRecordIdAtEnd(keyString.getBuffer(), keyString.getSize());
@@ -260,26 +347,25 @@ Status SortedDataBuilderInterface::addKey(const KeyString::Value& keyString) {
     return Status::OK();
 }
 
-SortedDataBuilderInterface* SortedDataInterface::getBulkBuilder(OperationContext* opCtx,
-                                                                bool dupsAllowed) {
-    return new SortedDataBuilderInterface(opCtx,
-                                          _isUnique,
-                                          dupsAllowed,
-                                          _ordering,
-                                          _prefix,
-                                          _identEnd,
-                                          _collectionNamespace,
-                                          _indexName,
-                                          _keyPattern,
-                                          _collation);
+SortedDataBuilderInterface* SortedDataInterfaceUnique::getBulkBuilder(OperationContext* opCtx,
+                                                                      bool dupsAllowed) {
+    return new SortedDataUniqueBuilderInterface(opCtx,
+                                                dupsAllowed,
+                                                _ordering,
+                                                _prefix,
+                                                _identEnd,
+                                                _collectionNamespace,
+                                                _indexName,
+                                                _keyPattern,
+                                                _collation);
 }
 
 // We append \1 to all idents we get, and therefore the KeyString with ident + \0 will only be
 // before elements in this ident, and the KeyString with ident + \2 will only be after elements in
 // this ident.
-SortedDataInterface::SortedDataInterface(OperationContext* opCtx,
-                                         StringData ident,
-                                         const IndexDescriptor* desc)
+SortedDataInterfaceUnique::SortedDataInterfaceUnique(OperationContext* opCtx,
+                                                     StringData ident,
+                                                     const IndexDescriptor* desc)
     : ::mongo::SortedDataInterface(KeyString::Version::V1, Ordering::make(desc->keyPattern())),
       // All entries in this ident will have a prefix of ident + \1.
       _prefix(ident.toString().append(1, '\1')),
@@ -289,7 +375,6 @@ SortedDataInterface::SortedDataInterface(OperationContext* opCtx,
       _indexName(desc->indexName()),
       _keyPattern(desc->keyPattern()),
       _collation(desc->collation()),
-      _isUnique(desc->unique()),
       _isPartial(desc->isPartial()) {
     // This is the string representation of the KeyString before elements in this ident, which is
     // ident + \0. This is before all elements in this ident.
@@ -300,20 +385,21 @@ SortedDataInterface::SortedDataInterface(OperationContext* opCtx,
     _KSForIdentEnd = createRadixKeyFromObj(BSONObj(), _identEnd, _ordering);
 }
 
-SortedDataInterface::SortedDataInterface(const Ordering& ordering, bool isUnique, StringData ident)
+SortedDataInterfaceUnique::SortedDataInterfaceUnique(const Ordering& ordering,
+                                                     bool isUnique,
+                                                     StringData ident)
     : ::mongo::SortedDataInterface(KeyString::Version::V1, ordering),
       _prefix(ident.toString().append(1, '\1')),
       _identEnd(ident.toString().append(1, '\2')),
-      _isUnique(isUnique),
       _isPartial(false) {
     _KSForIdentStart =
         createRadixKeyFromObj(BSONObj(), ident.toString().append(1, '\0'), _ordering);
     _KSForIdentEnd = createRadixKeyFromObj(BSONObj(), _identEnd, _ordering);
 }
 
-Status SortedDataInterface::insert(OperationContext* opCtx,
-                                   const KeyString::Value& keyString,
-                                   bool dupsAllowed) {
+Status SortedDataInterfaceUnique::insert(OperationContext* opCtx,
+                                         const KeyString::Value& keyString,
+                                         bool dupsAllowed) {
     StringStore* workingCopy(RecoveryUnit::get(opCtx)->getHead());
     RecordId loc = KeyString::decodeRecordIdAtEnd(keyString.getBuffer(), keyString.getSize());
 
@@ -344,9 +430,9 @@ Status SortedDataInterface::insert(OperationContext* opCtx,
     return Status::OK();
 }
 
-void SortedDataInterface::unindex(OperationContext* opCtx,
-                                  const KeyString::Value& keyString,
-                                  bool dupsAllowed) {
+void SortedDataInterfaceUnique::unindex(OperationContext* opCtx,
+                                        const KeyString::Value& keyString,
+                                        bool dupsAllowed) {
     StringStore* workingCopy(RecoveryUnit::get(opCtx)->getHead());
     RecordId loc = KeyString::decodeRecordIdAtEnd(keyString.getBuffer(), keyString.getSize());
 
@@ -368,7 +454,7 @@ void SortedDataInterface::unindex(OperationContext* opCtx,
 
 // This function is, as of now, not in the interface, but there exists a server ticket to add
 // truncate to the list of commands able to be used.
-Status SortedDataInterface::truncate(mongo::RecoveryUnit* ru) {
+Status SortedDataInterfaceUnique::truncate(mongo::RecoveryUnit* ru) {
     auto bRu = checked_cast<biggie::RecoveryUnit*>(ru);
     StringStore* workingCopy(bRu->getHead());
     std::vector<std::string> toDelete;
@@ -385,8 +471,9 @@ Status SortedDataInterface::truncate(mongo::RecoveryUnit* ru) {
     return Status::OK();
 }
 
-Status SortedDataInterface::dupKeyCheck(OperationContext* opCtx, const KeyString::Value& key) {
-    invariant(_isUnique);
+Status SortedDataInterfaceUnique::dupKeyCheck(OperationContext* opCtx,
+                                              const KeyString::Value& key) {
+    // invariant(_isUnique);
     StringStore* workingCopy(RecoveryUnit::get(opCtx)->getHead());
 
     std::string radixKey = createRadixKeyFromKSWithoutRecordId(key, _prefix);
@@ -402,9 +489,9 @@ Status SortedDataInterface::dupKeyCheck(OperationContext* opCtx, const KeyString
     return Status::OK();
 }
 
-void SortedDataInterface::fullValidate(OperationContext* opCtx,
-                                       long long* numKeysOut,
-                                       ValidateResults* fullResults) const {
+void SortedDataInterfaceUnique::fullValidate(OperationContext* opCtx,
+                                             long long* numKeysOut,
+                                             ValidateResults* fullResults) const {
     StringStore* workingCopy(RecoveryUnit::get(opCtx)->getHead());
     long long numKeys = 0;
     auto it = workingCopy->lower_bound(_KSForIdentStart);
@@ -415,13 +502,13 @@ void SortedDataInterface::fullValidate(OperationContext* opCtx,
     *numKeysOut = numKeys;
 }
 
-bool SortedDataInterface::appendCustomStats(OperationContext* opCtx,
-                                            BSONObjBuilder* output,
-                                            double scale) const {
+bool SortedDataInterfaceUnique::appendCustomStats(OperationContext* opCtx,
+                                                  BSONObjBuilder* output,
+                                                  double scale) const {
     return false;
 }
 
-long long SortedDataInterface::getSpaceUsedBytes(OperationContext* opCtx) const {
+long long SortedDataInterfaceUnique::getSpaceUsedBytes(OperationContext* opCtx) const {
     StringStore* workingCopy(RecoveryUnit::get(opCtx)->getHead());
     size_t totalSize = 0;
     StringStore::const_iterator it = workingCopy->lower_bound(_KSForIdentStart);
@@ -434,41 +521,39 @@ long long SortedDataInterface::getSpaceUsedBytes(OperationContext* opCtx) const 
     return (long long)totalSize;
 }
 
-bool SortedDataInterface::isEmpty(OperationContext* opCtx) {
+bool SortedDataInterfaceUnique::isEmpty(OperationContext* opCtx) {
     StringStore* workingCopy(RecoveryUnit::get(opCtx)->getHead());
     return workingCopy->distance(workingCopy->lower_bound(_KSForIdentStart),
                                  workingCopy->upper_bound(_KSForIdentEnd)) == 0;
 }
 
-std::unique_ptr<mongo::SortedDataInterface::Cursor> SortedDataInterface::newCursor(
+std::unique_ptr<mongo::SortedDataInterface::Cursor> SortedDataInterfaceUnique::newCursor(
     OperationContext* opCtx, bool isForward) const {
     StringStore* workingCopy(RecoveryUnit::get(opCtx)->getHead());
 
-    return std::make_unique<SortedDataInterface::Cursor>(opCtx,
-                                                         isForward,
-                                                         _prefix,
-                                                         _identEnd,
-                                                         workingCopy,
-                                                         _ordering,
-                                                         _isUnique,
-                                                         _KSForIdentStart,
-                                                         _KSForIdentEnd);
+    return std::make_unique<SortedDataInterfaceUnique::Cursor>(opCtx,
+                                                               isForward,
+                                                               _prefix,
+                                                               _identEnd,
+                                                               workingCopy,
+                                                               _ordering,
+                                                               _KSForIdentStart,
+                                                               _KSForIdentEnd);
 }
 
-Status SortedDataInterface::initAsEmpty(OperationContext* opCtx) {
+Status SortedDataInterfaceUnique::initAsEmpty(OperationContext* opCtx) {
     return Status::OK();
 }
 
 // Cursor
-SortedDataInterface::Cursor::Cursor(OperationContext* opCtx,
-                                    bool isForward,
-                                    std::string _prefix,
-                                    std::string _identEnd,
-                                    StringStore* workingCopy,
-                                    Ordering order,
-                                    bool isUnique,
-                                    std::string _KSForIdentStart,
-                                    std::string identEndBSON)
+SortedDataInterfaceUnique::Cursor::Cursor(OperationContext* opCtx,
+                                          bool isForward,
+                                          std::string _prefix,
+                                          std::string _identEnd,
+                                          StringStore* workingCopy,
+                                          Ordering order,
+                                          std::string _KSForIdentStart,
+                                          std::string identEndBSON)
     : _opCtx(opCtx),
       _workingCopy(workingCopy),
       _endPos(boost::none),
@@ -482,11 +567,10 @@ SortedDataInterface::Cursor::Cursor(OperationContext* opCtx,
       _reverseIt(workingCopy->rbegin()),
       _order(order),
       _endPosIncl(false),
-      _isUnique(isUnique),
       _KSForIdentStart(_KSForIdentStart),
       _KSForIdentEnd(identEndBSON) {}
 
-bool SortedDataInterface::Cursor::advanceNext() {
+bool SortedDataInterfaceUnique::Cursor::advanceNext() {
     if (!_atEOF) {
         // If the last move was restore, then we don't need to advance the cursor, since the user
         // never got the value the cursor was pointing to in the first place. However,
@@ -538,14 +622,14 @@ bool SortedDataInterface::Cursor::advanceNext() {
 }
 
 // This function checks whether or not the cursor end position was set by the user or not.
-bool SortedDataInterface::Cursor::endPosSet() {
+bool SortedDataInterfaceUnique::Cursor::endPosSet() {
     return (_forward && _endPos != boost::none) || (!_forward && _endPosReverse != boost::none);
 }
 
 // This function checks whether or not a cursor is valid. In particular, it checks 1) whether the
 // cursor is at end() or rend(), 2) whether the cursor is on the wrong side of the end position
 // if it was set, and 3) whether the cursor is still in the ident.
-bool SortedDataInterface::Cursor::checkCursorValid() {
+bool SortedDataInterfaceUnique::Cursor::checkCursorValid() {
     if (_forward) {
         if (_forwardIt == _workingCopy->end()) {
             return false;
@@ -597,7 +681,7 @@ bool SortedDataInterface::Cursor::checkCursorValid() {
     }
 }
 
-void SortedDataInterface::Cursor::setEndPosition(const BSONObj& key, bool inclusive) {
+void SortedDataInterfaceUnique::Cursor::setEndPosition(const BSONObj& key, bool inclusive) {
     StringStore* workingCopy(RecoveryUnit::get(_opCtx)->getHead());
     if (key.isEmpty()) {
         _endPos = boost::none;
@@ -620,7 +704,7 @@ void SortedDataInterface::Cursor::setEndPosition(const BSONObj& key, bool inclus
         _endPosReverse = StringStore::const_reverse_iterator(it);
 }
 
-boost::optional<IndexKeyEntry> SortedDataInterface::Cursor::next(RequestedInfo parts) {
+boost::optional<IndexKeyEntry> SortedDataInterfaceUnique::Cursor::next(RequestedInfo parts) {
     if (!advanceNext()) {
         return {};
     }
@@ -633,7 +717,7 @@ boost::optional<IndexKeyEntry> SortedDataInterface::Cursor::next(RequestedInfo p
         _reverseIt->first, _reverseIndexDataIt->first, _reverseIndexDataIt->second, _order);
 }
 
-boost::optional<KeyStringEntry> SortedDataInterface::Cursor::nextKeyString() {
+boost::optional<KeyStringEntry> SortedDataInterfaceUnique::Cursor::nextKeyString() {
     if (!advanceNext()) {
         return {};
     }
@@ -646,10 +730,11 @@ boost::optional<KeyStringEntry> SortedDataInterface::Cursor::nextKeyString() {
         _reverseIt->first, _reverseIndexDataIt->first, _reverseIndexDataIt->second, _order);
 }
 
-boost::optional<IndexKeyEntry> SortedDataInterface::Cursor::seekAfterProcessing(BSONObj finalKey) {
+boost::optional<IndexKeyEntry> SortedDataInterfaceUnique::Cursor::seekAfterProcessing(
+    BSONObj finalKey) {
     std::string workingCopyBound;
 
-    KeyString::Builder ks(KeyString::Version::V1, finalKey, _order);
+    KeyString::Builder ks(KeyString::Version::kLatestVersion, finalKey, _order);
     auto ksEntry = seekAfterProcessing(ks.getValueCopy());
 
     const BSONObj bson = KeyString::toBson(ksEntry->keyString.getBuffer(),
@@ -659,7 +744,7 @@ boost::optional<IndexKeyEntry> SortedDataInterface::Cursor::seekAfterProcessing(
     return IndexKeyEntry(bson, ksEntry->loc);
 }
 
-boost::optional<KeyStringEntry> SortedDataInterface::Cursor::seekAfterProcessing(
+boost::optional<KeyStringEntry> SortedDataInterfaceUnique::Cursor::seekAfterProcessing(
     const KeyString::Value& keyStringVal) {
 
     KeyString::Discriminator discriminator = KeyString::decodeDiscriminator(
@@ -722,8 +807,8 @@ boost::optional<KeyStringEntry> SortedDataInterface::Cursor::seekAfterProcessing
     }
 }
 
-boost::optional<IndexKeyEntry> SortedDataInterface::Cursor::seek(const KeyString::Value& keyString,
-                                                                 RequestedInfo parts) {
+boost::optional<IndexKeyEntry> SortedDataInterfaceUnique::Cursor::seek(
+    const KeyString::Value& keyString, RequestedInfo parts) {
     boost::optional<KeyStringEntry> ksValue = seekForKeyString(keyString);
     if (ksValue) {
         BSONObj bson = KeyString::toBson(ksValue->keyString.getBuffer(),
@@ -735,14 +820,14 @@ boost::optional<IndexKeyEntry> SortedDataInterface::Cursor::seek(const KeyString
     return boost::none;
 }
 
-boost::optional<KeyStringEntry> SortedDataInterface::Cursor::seekForKeyString(
+boost::optional<KeyStringEntry> SortedDataInterfaceUnique::Cursor::seekForKeyString(
     const KeyString::Value& keyStringValue) {
     _lastMoveWasRestore = false;
     _atEOF = false;
     return seekAfterProcessing(keyStringValue);
 }
 
-boost::optional<KeyStringEntry> SortedDataInterface::Cursor::seekExactForKeyString(
+boost::optional<KeyStringEntry> SortedDataInterfaceUnique::Cursor::seekExactForKeyString(
     const KeyString::Value& keyStringValue) {
     dassert(KeyString::decodeDiscriminator(keyStringValue.getBuffer(),
                                            keyStringValue.getSize(),
@@ -763,7 +848,7 @@ boost::optional<KeyStringEntry> SortedDataInterface::Cursor::seekExactForKeyStri
     return {};
 }
 
-boost::optional<IndexKeyEntry> SortedDataInterface::Cursor::seekExact(
+boost::optional<IndexKeyEntry> SortedDataInterfaceUnique::Cursor::seekExact(
     const KeyString::Value& keyStringValue, RequestedInfo parts) {
     auto ksEntry = seekExactForKeyString(keyStringValue);
     if (!ksEntry) {
@@ -780,7 +865,7 @@ boost::optional<IndexKeyEntry> SortedDataInterface::Cursor::seekExact(
     return IndexKeyEntry(std::move(bson), ksEntry->loc);
 }
 
-void SortedDataInterface::Cursor::save() {
+void SortedDataInterfaceUnique::Cursor::save() {
     _atEOF = false;
     if (_lastMoveWasRestore) {
         return;
@@ -800,7 +885,7 @@ void SortedDataInterface::Cursor::save() {
     }
 }
 
-void SortedDataInterface::Cursor::restore() {
+void SortedDataInterfaceUnique::Cursor::restore() {
     StringStore* workingCopy(RecoveryUnit::get(_opCtx)->getHead());
 
     this->_workingCopy = workingCopy;
@@ -878,12 +963,567 @@ void SortedDataInterface::Cursor::restore() {
     }
 }
 
-void SortedDataInterface::Cursor::detachFromOperationContext() {
+void SortedDataInterfaceUnique::Cursor::detachFromOperationContext() {
     _opCtx = nullptr;
 }
 
-void SortedDataInterface::Cursor::reattachToOperationContext(OperationContext* opCtx) {
+void SortedDataInterfaceUnique::Cursor::reattachToOperationContext(OperationContext* opCtx) {
     this->_opCtx = opCtx;
 }
+
+SortedDataStandardBuilderInterface::SortedDataStandardBuilderInterface(
+    OperationContext* opCtx,
+    bool dupsAllowed,
+    Ordering order,
+    const std::string& prefix,
+    const std::string& identEnd,
+    const NamespaceString& collectionNamespace,
+    const std::string& indexName,
+    const BSONObj& keyPattern,
+    const BSONObj& collation)
+    : _opCtx(opCtx),
+      _dupsAllowed(dupsAllowed),
+      _order(order),
+      _prefix(prefix),
+      _identEnd(identEnd),
+      _collectionNamespace(collectionNamespace),
+      _indexName(indexName),
+      _keyPattern(keyPattern),
+      _collation(collation) {}
+
+void SortedDataStandardBuilderInterface::commit(bool mayInterrupt) {
+    WriteUnitOfWork wunit(_opCtx);
+    wunit.commit();
+}
+
+Status SortedDataStandardBuilderInterface::addKey(const KeyString::Value& keyString) {
+    dassert(KeyString::decodeRecordIdAtEnd(keyString.getBuffer(), keyString.getSize()).isValid());
+    StringStore* workingCopy(RecoveryUnit::get(_opCtx)->getHead());
+    RecordId loc = KeyString::decodeRecordIdAtEnd(keyString.getBuffer(), keyString.getSize());
+
+    std::string key = createStandardRadixKeyFromKS(keyString, loc, _prefix);
+    bool inserted =
+        workingCopy->insert({std::move(key), createIndexDataEntry(loc, keyString.getTypeBits())})
+            .second;
+    if (inserted)
+        RecoveryUnit::get(_opCtx)->makeDirty();
+    return Status::OK();
+}
+
+SortedDataBuilderInterface* SortedDataInterfaceStandard::getBulkBuilder(OperationContext* opCtx,
+                                                                        bool dupsAllowed) {
+    return new SortedDataStandardBuilderInterface(opCtx,
+                                                  dupsAllowed,
+                                                  _ordering,
+                                                  _prefix,
+                                                  _identEnd,
+                                                  _collectionNamespace,
+                                                  _indexName,
+                                                  _keyPattern,
+                                                  _collation);
+}
+
+// We append \1 to all idents we get, and therefore the KeyString with ident + \0 will only be
+// before elements in this ident, and the KeyString with ident + \2 will only be after elements in
+// this ident.
+SortedDataInterfaceStandard::SortedDataInterfaceStandard(OperationContext* opCtx,
+                                                         StringData ident,
+                                                         const IndexDescriptor* desc)
+    : ::mongo::SortedDataInterface(KeyString::Version::V1, Ordering::make(desc->keyPattern())),
+      // All entries in this ident will have a prefix of ident + \1.
+      _prefix(ident.toString().append(1, '\1')),
+      // Therefore, the string ident + \2 will be greater than all elements in this ident.
+      _identEnd(ident.toString().append(1, '\2')),
+      _collectionNamespace(desc->getCollection()->ns()),
+      _indexName(desc->indexName()),
+      _keyPattern(desc->keyPattern()),
+      _collation(desc->collation()),
+      _isPartial(desc->isPartial()) {
+    // This is the string representation of the KeyString before elements in this ident, which is
+    // ident + \0. This is before all elements in this ident.
+    _KSForIdentStart = createStandardRadixKeyFromObj(
+        BSONObj(), RecordId::min(), ident.toString().append(1, '\0'), _ordering);
+    // Similarly, this is the string representation of the KeyString for something greater than
+    // all other elements in this ident.
+    _KSForIdentEnd =
+        createStandardRadixKeyFromObj(BSONObj(), RecordId::min(), _identEnd, _ordering);
+}
+
+SortedDataInterfaceStandard::SortedDataInterfaceStandard(const Ordering& ordering,
+                                                         bool isUnique,
+                                                         StringData ident)
+    : ::mongo::SortedDataInterface(KeyString::Version::V1, ordering),
+      _prefix(ident.toString().append(1, '\1')),
+      _identEnd(ident.toString().append(1, '\2')),
+      _isPartial(false) {
+    _KSForIdentStart = createStandardRadixKeyFromObj(
+        BSONObj(), RecordId::min(), ident.toString().append(1, '\0'), _ordering);
+    _KSForIdentEnd =
+        createStandardRadixKeyFromObj(BSONObj(), RecordId::min(), _identEnd, _ordering);
+}
+
+Status SortedDataInterfaceStandard::insert(OperationContext* opCtx,
+                                           const KeyString::Value& keyString,
+                                           bool dupsAllowed) {
+    StringStore* workingCopy(RecoveryUnit::get(opCtx)->getHead());
+    RecordId loc = KeyString::decodeRecordIdAtEnd(keyString.getBuffer(), keyString.getSize());
+
+    std::string key = createStandardRadixKeyFromKS(keyString, loc, _prefix);
+    bool inserted =
+        workingCopy->insert({std::move(key), createIndexDataEntry(loc, keyString.getTypeBits())})
+            .second;
+    if (inserted)
+        RecoveryUnit::get(opCtx)->makeDirty();
+    return Status::OK();
+}
+
+void SortedDataInterfaceStandard::unindex(OperationContext* opCtx,
+                                          const KeyString::Value& keyString,
+                                          bool dupsAllowed) {
+    StringStore* workingCopy(RecoveryUnit::get(opCtx)->getHead());
+    RecordId loc = KeyString::decodeRecordIdAtEnd(keyString.getBuffer(), keyString.getSize());
+
+    auto key = createStandardRadixKeyFromKS(keyString, loc, _prefix);
+    if (workingCopy->erase(key))
+        RecoveryUnit::get(opCtx)->makeDirty();
+}
+
+// This function is, as of now, not in the interface, but there exists a server ticket to add
+// truncate to the list of commands able to be used.
+Status SortedDataInterfaceStandard::truncate(mongo::RecoveryUnit* ru) {
+    auto bRu = checked_cast<biggie::RecoveryUnit*>(ru);
+    StringStore* workingCopy(bRu->getHead());
+    std::vector<std::string> toDelete;
+    auto end = workingCopy->upper_bound(_KSForIdentEnd);
+    for (auto it = workingCopy->lower_bound(_KSForIdentStart); it != end; ++it) {
+        toDelete.push_back(it->first);
+    }
+    if (!toDelete.empty()) {
+        for (const auto& key : toDelete)
+            workingCopy->erase(key);
+        bRu->makeDirty();
+    }
+
+    return Status::OK();
+}
+
+Status SortedDataInterfaceStandard::dupKeyCheck(OperationContext* opCtx,
+                                                const KeyString::Value& key) {
+    invariant(false);
+    return Status::OK();
+}
+
+void SortedDataInterfaceStandard::fullValidate(OperationContext* opCtx,
+                                               long long* numKeysOut,
+                                               ValidateResults* fullResults) const {
+    StringStore* workingCopy(RecoveryUnit::get(opCtx)->getHead());
+    long long numKeys = 0;
+    auto it = workingCopy->lower_bound(_KSForIdentStart);
+    while (it != workingCopy->end() && it->first.compare(_KSForIdentEnd) < 0) {
+        ++numKeys;
+        ++it;
+    }
+    *numKeysOut = numKeys;
+}
+
+bool SortedDataInterfaceStandard::appendCustomStats(OperationContext* opCtx,
+                                                    BSONObjBuilder* output,
+                                                    double scale) const {
+    return false;
+}
+
+long long SortedDataInterfaceStandard::getSpaceUsedBytes(OperationContext* opCtx) const {
+    StringStore* workingCopy(RecoveryUnit::get(opCtx)->getHead());
+    size_t totalSize = 0;
+    StringStore::const_iterator it = workingCopy->lower_bound(_KSForIdentStart);
+    StringStore::const_iterator end = workingCopy->upper_bound(_KSForIdentEnd);
+    int64_t numElements = workingCopy->distance(it, end);
+    for (int i = 0; i < numElements; i++) {
+        totalSize += it->first.length();
+        ++it;
+    }
+    return (long long)totalSize;
+}
+
+bool SortedDataInterfaceStandard::isEmpty(OperationContext* opCtx) {
+    StringStore* workingCopy(RecoveryUnit::get(opCtx)->getHead());
+    return workingCopy->distance(workingCopy->lower_bound(_KSForIdentStart),
+                                 workingCopy->upper_bound(_KSForIdentEnd)) == 0;
+}
+
+std::unique_ptr<mongo::SortedDataInterface::Cursor> SortedDataInterfaceStandard::newCursor(
+    OperationContext* opCtx, bool isForward) const {
+    StringStore* workingCopy(RecoveryUnit::get(opCtx)->getHead());
+
+    return std::make_unique<SortedDataInterfaceStandard::Cursor>(opCtx,
+                                                                 isForward,
+                                                                 _prefix,
+                                                                 _identEnd,
+                                                                 workingCopy,
+                                                                 _ordering,
+                                                                 _KSForIdentStart,
+                                                                 _KSForIdentEnd);
+}
+
+Status SortedDataInterfaceStandard::initAsEmpty(OperationContext* opCtx) {
+    return Status::OK();
+}
+
+// Cursor
+SortedDataInterfaceStandard::Cursor::Cursor(OperationContext* opCtx,
+                                            bool isForward,
+                                            std::string _prefix,
+                                            std::string _identEnd,
+                                            StringStore* workingCopy,
+                                            Ordering order,
+                                            std::string _KSForIdentStart,
+                                            std::string identEndBSON)
+    : _opCtx(opCtx),
+      _workingCopy(workingCopy),
+      _endPos(boost::none),
+      _endPosReverse(boost::none),
+      _forward(isForward),
+      _atEOF(false),
+      _lastMoveWasRestore(false),
+      _prefix(_prefix),
+      _identEnd(_identEnd),
+      _forwardIt(workingCopy->begin()),
+      _reverseIt(workingCopy->rbegin()),
+      _order(order),
+      _endPosIncl(false),
+      _KSForIdentStart(_KSForIdentStart),
+      _KSForIdentEnd(identEndBSON) {}
+
+bool SortedDataInterfaceStandard::Cursor::advanceNext() {
+    if (!_atEOF) {
+        // If the last move was restore, then we don't need to advance the cursor, since the user
+        // never got the value the cursor was pointing to in the first place. However,
+        // _lastMoveWasRestore will go through extra logic on a unique index, since unique indexes
+        // are not allowed to return the same key twice.
+        if (_lastMoveWasRestore) {
+            _lastMoveWasRestore = false;
+        } else {
+            // We basically just check to make sure the cursor is in the ident.
+            if (_forward && checkCursorValid()) {
+                ++_forwardIt;
+            } else if (!_forward && checkCursorValid()) {
+                ++_reverseIt;
+            }
+            // We check here to make sure that we are on the correct side of the end position, and
+            // that the cursor is still in the ident after advancing.
+            if (!checkCursorValid()) {
+                _atEOF = true;
+                return false;
+            }
+        }
+    } else {
+        _lastMoveWasRestore = false;
+        return false;
+    }
+
+    return true;
+}
+
+// This function checks whether or not the cursor end position was set by the user or not.
+bool SortedDataInterfaceStandard::Cursor::endPosSet() {
+    return (_forward && _endPos != boost::none) || (!_forward && _endPosReverse != boost::none);
+}
+
+// This function checks whether or not a cursor is valid. In particular, it checks 1) whether the
+// cursor is at end() or rend(), 2) whether the cursor is on the wrong side of the end position
+// if it was set, and 3) whether the cursor is still in the ident.
+bool SortedDataInterfaceStandard::Cursor::checkCursorValid() {
+    if (_forward) {
+        if (_forwardIt == _workingCopy->end()) {
+            return false;
+        }
+        if (endPosSet()) {
+            // The endPos must be in the ident, at most one past the ident, or end. Therefore, the
+            // endPos includes the check for being inside the ident
+            // if (_endPosIncl && _isUnique) {
+            //    if (*_endPos == _workingCopy->end())
+            //        return true;
+
+            //    // For unique indexes, we need to check if the cursor moved up a position when it
+            //    // was restored. This isn't required for non-unique indexes because we store the
+            //    // RecordId in the KeyString and use a "<" comparison instead of "<=" since we
+            //    know
+            //    // that no RecordId will ever reach RecordId::max() so we don't need to check the
+            //    // equal side of things. This assumption doesn't hold for unique index KeyStrings.
+            //    std::string endPosKeyString = createRadixKeyFromObj(*_endPosKey, _prefix, _order);
+
+            //    if (_forwardIt->first.compare(endPosKeyString) <= 0)
+            //        return true;
+            //    return false;
+            //}
+
+            return *_endPos == _workingCopy->end() ||
+                _forwardIt->first.compare((*_endPos)->first) < 0;
+        }
+        return _forwardIt->first.compare(_KSForIdentEnd) <= 0;
+    } else {
+        // This is a reverse cursor
+        if (_reverseIt == _workingCopy->rend()) {
+            return false;
+        }
+        if (endPosSet()) {
+            /*if (_endPosIncl && _isUnique) {
+                if (*_endPosReverse == _workingCopy->rend())
+                    return true;
+
+                std::string endPosKeyString = createRadixKeyFromObj(*_endPosKey, _prefix, _order);
+
+                if (_reverseIt->first.compare(endPosKeyString) >= 0)
+                    return true;
+                return false;
+            }*/
+
+            return *_endPosReverse == _workingCopy->rend() ||
+                _reverseIt->first.compare((*_endPosReverse)->first) > 0;
+        }
+        return _reverseIt->first.compare(_KSForIdentStart) >= 0;
+    }
+}
+
+void SortedDataInterfaceStandard::Cursor::setEndPosition(const BSONObj& key, bool inclusive) {
+    StringStore* workingCopy(RecoveryUnit::get(_opCtx)->getHead());
+    if (key.isEmpty()) {
+        _endPos = boost::none;
+        _endPosReverse = boost::none;
+        return;
+    }
+    _endPosIncl = inclusive;
+    _endPosKey = key;
+    // If forward and inclusive or reverse and not inclusive, then we use the last element in this
+    // ident. Otherwise, we use the first as our bound.
+    StringStore::const_iterator it;
+    if (_forward == inclusive)
+        it = workingCopy->upper_bound(
+            createStandardRadixKeyFromObj(key, RecordId::max(), _prefix, _order));
+    else
+        it = workingCopy->lower_bound(
+            createStandardRadixKeyFromObj(key, RecordId::min(), _prefix, _order));
+    if (_forward)
+        _endPos = it;
+    else
+        _endPosReverse = StringStore::const_reverse_iterator(it);
+}
+
+boost::optional<IndexKeyEntry> SortedDataInterfaceStandard::Cursor::next(RequestedInfo parts) {
+    if (!advanceNext()) {
+        return {};
+    }
+
+    if (_forward) {
+        return createIndexKeyEntryFromRadixKeyStandard(
+            _forwardIt->first, _forwardIt->second, _order);
+    }
+    return createIndexKeyEntryFromRadixKeyStandard(
+        _reverseIt->first, _reverseIt->second, _order);
+}
+
+boost::optional<KeyStringEntry> SortedDataInterfaceStandard::Cursor::nextKeyString() {
+    if (!advanceNext()) {
+        return {};
+    }
+
+    if (_forward) {
+        return createKeyStringEntryFromRadixKeyStandard(
+            _forwardIt->first, _forwardIt->second, _order);
+    }
+    return createKeyStringEntryFromRadixKeyStandard(
+        _reverseIt->first, _reverseIt->second, _order);
+}
+
+boost::optional<IndexKeyEntry> SortedDataInterfaceStandard::Cursor::seekAfterProcessing(
+    BSONObj finalKey) {
+    std::string workingCopyBound;
+
+    KeyString::Builder ks(KeyString::Version::kLatestVersion, finalKey, _order);
+    auto ksEntry = seekAfterProcessing(ks.getValueCopy());
+
+    const BSONObj bson = KeyString::toBson(ksEntry->keyString.getBuffer(),
+                                           ksEntry->keyString.getSize(),
+                                           _order,
+                                           ksEntry->keyString.getTypeBits());
+    return IndexKeyEntry(bson, ksEntry->loc);
+}
+
+boost::optional<KeyStringEntry> SortedDataInterfaceStandard::Cursor::seekAfterProcessing(
+    const KeyString::Value& keyStringVal) {
+
+    KeyString::Discriminator discriminator = KeyString::decodeDiscriminator(
+        keyStringVal.getBuffer(), keyStringVal.getSize(), _order, keyStringVal.getTypeBits());
+
+    bool inclusive;
+    switch (discriminator) {
+        case KeyString::Discriminator::kInclusive:
+            inclusive = true;
+            break;
+        case KeyString::Discriminator::kExclusiveBefore:
+            inclusive = _forward;
+            break;
+        case KeyString::Discriminator::kExclusiveAfter:
+            inclusive = !_forward;
+            break;
+    }
+
+    // If the key is empty and it's not inclusive, then no elements satisfy this seek.
+    if (keyStringVal.isEmpty() && !inclusive) {
+        _atEOF = true;
+        return boost::none;
+    }
+
+    StringStore::const_iterator it;
+    // Forward inclusive seek uses lower_bound and exclusive upper_bound. For reverse iterators this
+    // is also reversed.
+    if (_forward == inclusive)
+        it = _workingCopy->lower_bound(createStandardRadixKeyFromKSWithoutRecordId(keyStringVal, RecordId::min(), _prefix));
+    else
+        it = _workingCopy->upper_bound(createStandardRadixKeyFromKSWithoutRecordId(keyStringVal, RecordId::max(), _prefix));
+    if (_forward)
+        _forwardIt = it;
+    else
+        _reverseIt = StringStore::const_reverse_iterator(it);
+
+    // Here, we check to make sure the iterator doesn't fall off the data structure and is
+    // in the ident. We also check to make sure it is on the correct side of the end
+    // position, if it was set.
+    if (!checkCursorValid()) {
+        _atEOF = true;
+        return boost::none;
+    }
+
+    // We have seeked to an entry in the tree. Now unpack the data and initialize iterators to point
+    // to the first entry if this index contains duplicates
+    if (_forward) {
+        return createKeyStringEntryFromRadixKeyStandard(
+            _forwardIt->first, _forwardIt->second, _order);
+    } else {
+        return createKeyStringEntryFromRadixKeyStandard(
+            _reverseIt->first, _reverseIt->second, _order);
+    }
+}
+
+boost::optional<IndexKeyEntry> SortedDataInterfaceStandard::Cursor::seek(
+    const KeyString::Value& keyString, RequestedInfo parts) {
+    boost::optional<KeyStringEntry> ksValue = seekForKeyString(keyString);
+    if (ksValue) {
+        BSONObj bson = KeyString::toBson(ksValue->keyString.getBuffer(),
+                                         ksValue->keyString.getSize(),
+                                         _order,
+                                         ksValue->keyString.getTypeBits());
+        return IndexKeyEntry(bson, ksValue->loc);
+    }
+    return boost::none;
+}
+
+boost::optional<KeyStringEntry> SortedDataInterfaceStandard::Cursor::seekForKeyString(
+    const KeyString::Value& keyStringValue) {
+    _lastMoveWasRestore = false;
+    _atEOF = false;
+    return seekAfterProcessing(keyStringValue);
+}
+
+boost::optional<KeyStringEntry> SortedDataInterfaceStandard::Cursor::seekExactForKeyString(
+    const KeyString::Value& keyStringValue) {
+    dassert(KeyString::decodeDiscriminator(keyStringValue.getBuffer(),
+                                           keyStringValue.getSize(),
+                                           _order,
+                                           keyStringValue.getTypeBits()) ==
+            KeyString::Discriminator::kInclusive);
+    auto ksEntry = seekForKeyString(keyStringValue);
+    if (!ksEntry) {
+        return {};
+    }
+    if (KeyString::compare(ksEntry->keyString.getBuffer(),
+                           keyStringValue.getBuffer(),
+                           KeyString::sizeWithoutRecordIdAtEnd(ksEntry->keyString.getBuffer(),
+                                                               ksEntry->keyString.getSize()),
+                           keyStringValue.getSize()) == 0) {
+        return KeyStringEntry(ksEntry->keyString, ksEntry->loc);
+    }
+    return {};
+}
+
+boost::optional<IndexKeyEntry> SortedDataInterfaceStandard::Cursor::seekExact(
+    const KeyString::Value& keyStringValue, RequestedInfo parts) {
+    auto ksEntry = seekExactForKeyString(keyStringValue);
+    if (!ksEntry) {
+        return {};
+    }
+
+    BSONObj bson;
+    if (parts & SortedDataInterface::Cursor::kWantKey) {
+        bson = KeyString::toBson(ksEntry->keyString.getBuffer(),
+                                 ksEntry->keyString.getSize(),
+                                 _order,
+                                 ksEntry->keyString.getTypeBits());
+    }
+    return IndexKeyEntry(std::move(bson), ksEntry->loc);
+}
+
+void SortedDataInterfaceStandard::Cursor::save() {
+    _atEOF = false;
+    if (_lastMoveWasRestore) {
+        return;
+    } else if (_forward && _forwardIt != _workingCopy->end()) {
+        _saveKey = _forwardIt->first;
+    } else if (!_forward && _reverseIt != _workingCopy->rend()) {  // reverse
+        _saveKey = _reverseIt->first;
+    } else {
+        _saveKey = "";
+    }
+}
+
+void SortedDataInterfaceStandard::Cursor::restore() {
+    StringStore* workingCopy(RecoveryUnit::get(_opCtx)->getHead());
+
+    this->_workingCopy = workingCopy;
+
+    // Here, we have to reset the end position if one was set earlier.
+    if (endPosSet()) {
+        setEndPosition(*_endPosKey, _endPosIncl);
+    }
+
+    // We reset the cursor, and make sure it's within the end position bounds. It doesn't matter if
+    // the cursor is not in the ident right now, since that will be taken care of upon the call to
+    // next().
+    if (_forward) {
+        if (_saveKey.length() == 0) {
+            _forwardIt = workingCopy->end();
+        } else {
+            _forwardIt = workingCopy->lower_bound(_saveKey);
+        }
+        if (!checkCursorValid()) {
+            _atEOF = true;
+            _lastMoveWasRestore = true;
+            return;
+        }
+        _lastMoveWasRestore = (_forwardIt->first.compare(_saveKey) != 0);
+    } else {
+        // Now we are dealing with reverse cursors, and use similar logic.
+        if (_saveKey.length() == 0) {
+            _reverseIt = workingCopy->rend();
+        } else {
+            _reverseIt = StringStore::const_reverse_iterator(workingCopy->upper_bound(_saveKey));
+        }
+        if (!checkCursorValid()) {
+            _atEOF = true;
+            _lastMoveWasRestore = true;
+            return;
+        }
+        _lastMoveWasRestore = (_reverseIt->first.compare(_saveKey) != 0);
+    }
+}
+
+void SortedDataInterfaceStandard::Cursor::detachFromOperationContext() {
+    _opCtx = nullptr;
+}
+
+void SortedDataInterfaceStandard::Cursor::reattachToOperationContext(OperationContext* opCtx) {
+    this->_opCtx = opCtx;
+}
+
 }  // namespace biggie
 }  // namespace mongo
