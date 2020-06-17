@@ -33,79 +33,8 @@
 #include "mongo/db/storage/key_string.h"
 #include "mongo/db/storage/sorted_data_interface.h"
 
-#include <boost/iterator/iterator_facade.hpp>
-#include <map>
-
 namespace mongo {
 namespace biggie {
-
-class IndexDataEntry {
-public:
-    IndexDataEntry() : _buffer(nullptr) {}
-    IndexDataEntry(const uint8_t* buffer);
-    IndexDataEntry(const std::string& indexDataEntry);
-
-    const uint8_t* buffer() const;
-    size_t size() const;
-    RecordId loc() const;
-    KeyString::TypeBits typeBits() const;
-
-private:
-    const uint8_t* _buffer;
-};
-
-class IndexDataEntryIterator : public boost::iterator_facade<IndexDataEntryIterator,
-                                                             IndexDataEntry const,
-                                                             boost::forward_traversal_tag> {
-public:
-    IndexDataEntryIterator() = default;
-    IndexDataEntryIterator(const uint8_t* entry);
-
-private:
-    friend class boost::iterator_core_access;
-
-    void increment();
-    bool equal(IndexDataEntryIterator const& other) const;
-    const IndexDataEntry& dereference() const;
-
-    IndexDataEntry _entry;
-};
-
-class IndexData {
-public:
-    IndexData() : _begin(nullptr), _end(nullptr), _size(0) {}
-    IndexData(const std::string& indexData) {
-        _begin = reinterpret_cast<const uint8_t*>(indexData.data() + sizeof(uint64_t));
-        _end = reinterpret_cast<const uint8_t*>(indexData.data() + indexData.size());
-        std::memcpy(&_size, indexData.data(), sizeof(uint64_t));
-    }
-
-    using const_iterator = IndexDataEntryIterator;
-
-    size_t size() const {
-        return _size;
-    }
-    bool empty() const {
-        return _size == 0;
-    }
-    const_iterator begin() const {
-        return IndexDataEntryIterator(_begin);
-    }
-    const_iterator end() const {
-        return IndexDataEntryIterator(_end);
-    }
-
-    const_iterator lower_bound(RecordId loc) const;
-    const_iterator upper_bound(RecordId loc) const;
-
-    boost::optional<std::string> add(RecordId loc, KeyString::TypeBits typeBits);
-    boost::optional<std::string> remove(RecordId loc);
-
-private:
-    const uint8_t* _begin;
-    const uint8_t* _end;
-    size_t _size;
-};
 
 class SortedDataBuilderBase : public ::mongo::SortedDataBuilderInterface {
 public:
