@@ -33,6 +33,7 @@
 #include "mongo/db/storage/key_string.h"
 #include "mongo/db/storage/sorted_data_interface.h"
 
+#include <boost/iterator/iterator_facade.hpp>
 #include <map>
 
 namespace mongo {
@@ -40,8 +41,12 @@ namespace biggie {
 
 class IndexDataEntry {
 public:
+    IndexDataEntry() : _buffer(nullptr) {}
+    IndexDataEntry(const uint8_t* buffer);
     IndexDataEntry(const std::string& indexDataEntry);
-
+    
+    const uint8_t* buffer() const;
+    size_t size() const;
     RecordId loc() const;
     KeyString::TypeBits typeBits() const;
 
@@ -49,47 +54,72 @@ private:
     const uint8_t* _buffer;
 };
 
+class IndexDataEntryIterator : public boost::iterator_facade<IndexDataEntryIterator,
+                                                             IndexDataEntry const,
+                                                             boost::forward_traversal_tag> {
+public:
+    IndexDataEntryIterator() = default;
+    IndexDataEntryIterator(const uint8_t* entry);
+
+private:
+    friend class boost::iterator_core_access;
+
+    void increment();
+    bool equal(IndexDataEntryIterator const& other) const;
+    const IndexDataEntry& dereference() const;
+
+    IndexDataEntry _entry;
+};
+
 class IndexData {
 public:
-    using container_t = std::map<RecordId, KeyString::TypeBits>;
-    using const_iterator = container_t::const_iterator;
-    using const_reverse_iterator = container_t::const_reverse_iterator;
+    IndexData() : _begin(nullptr), _end(nullptr), _size(0) {}
+    IndexData(const std::string& indexData) {
+        _begin = reinterpret_cast<const uint8_t*>(indexData.data() + sizeof(uint64_t));
+        _end = reinterpret_cast<const uint8_t*>(indexData.data() + indexData.size());
+        std::memcpy(&_size, indexData.data(), sizeof(uint64_t));
+    }
+    // using container_t = std::map<RecordId, KeyString::TypeBits>;
+    using const_iterator = IndexDataEntryIterator;
+    // using const_reverse_iterator = container_t::const_reverse_iterator;
 
-    bool add(RecordId loc, KeyString::TypeBits typeBits);
-    bool add_hint(const_iterator hint, RecordId loc, KeyString::TypeBits typeBits);
-    bool remove(RecordId loc);
+    // bool add(RecordId loc, KeyString::TypeBits typeBits);
+    // bool add_hint(const_iterator hint, RecordId loc, KeyString::TypeBits typeBits);
+    // bool remove(RecordId loc);
 
     size_t size() const {
-        return _keys.size();
+        return _size;
     }
     bool empty() const {
-        return _keys.empty();
+        return _size == 0;
     }
     const_iterator begin() const {
-        return _keys.begin();
+        return IndexDataEntryIterator(_begin);
     }
     const_iterator end() const {
-        return _keys.end();
+        return IndexDataEntryIterator(_end);
     }
-    const_reverse_iterator rbegin() const {
+    /*const_reverse_iterator rbegin() const {
         return _keys.rbegin();
     }
     const_reverse_iterator rend() const {
         return _keys.rend();
-    }
-    const_iterator lower_bound(RecordId loc) const {
-        return _keys.lower_bound(loc);
-    }
-    const_iterator upper_bound(RecordId loc) const {
-        return _keys.upper_bound(loc);
-    }
+    }*/
+    const_iterator lower_bound(RecordId loc) const;
+    const_iterator upper_bound(RecordId loc) const;
 
-    std::string serialize() const;
-    static IndexData deserialize(const std::string& serializedIndexData);
-    static size_t decodeSize(const std::string& serializedIndexData);
+    boost::optional<std::string> add(RecordId loc, KeyString::TypeBits typeBits);
+    boost::optional<std::string> remove(RecordId loc);
+
+    // std::string serialize() const;
+    /*static IndexData deserialize(const std::string& serializedIndexData);
+    static size_t decodeSize(const std::string& serializedIndexData);*/
 
 private:
-    container_t _keys;
+    // container_t _keys;
+    const uint8_t* _begin;
+    const uint8_t* _end;
+    size_t _size;
 };
 
 class SortedDataUniqueBuilderInterface : public ::mongo::SortedDataBuilderInterface {
@@ -230,8 +260,9 @@ public:
         IndexData _indexData;
         IndexData::const_iterator _forwardIndexDataIt;
         IndexData::const_iterator _forwardIndexDataEnd;
-        IndexData::const_reverse_iterator _reverseIndexDataIt;
-        IndexData::const_reverse_iterator _reverseIndexDataEnd;
+        size_t _reversePos;
+        // IndexData::const_reverse_iterator _reverseIndexDataIt;
+        // IndexData::const_reverse_iterator _reverseIndexDataEnd;
     };
 
 private:

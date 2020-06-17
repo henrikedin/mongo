@@ -134,8 +134,8 @@ std::string createStandardRadixKeyFromKS(const KeyString::Value& keyString,
 }
 
 std::string createStandardRadixKeyFromKSWithoutRecordId(const KeyString::Value& keyString,
-                                         RecordId loc,
-                                         std::string prefixToUse) {
+                                                        RecordId loc,
+                                                        std::string prefixToUse) {
     KeyString::Builder ks(KeyString::Version::kLatestVersion);
     ks.resetFromBuffer(keyString.getBuffer(), keyString.getSize());
     prefixKeyStringStandard(&ks, loc, prefixToUse);
@@ -167,8 +167,8 @@ IndexKeyEntry createIndexKeyEntryFromRadixKey(const std::string& radixKey,
 }
 
 IndexKeyEntry createIndexKeyEntryFromRadixKeyStandard(const std::string& radixKey,
-                                              const std::string& indexDataEntry,
-                                              const Ordering order) {
+                                                      const std::string& indexDataEntry,
+                                                      const Ordering order) {
     IndexDataEntry data(indexDataEntry);
     return IndexKeyEntry(createObjFromRadixKey(radixKey, data.typeBits(), order), data.loc());
 }
@@ -185,9 +185,7 @@ boost::optional<KeyStringEntry> createKeyStringEntryFromRadixKey(
 }
 
 boost::optional<KeyStringEntry> createKeyStringEntryFromRadixKeyStandard(
-    const std::string& radixKey,
-    const std::string& indexDataEntry,
-    const Ordering& order) {
+    const std::string& radixKey, const std::string& indexDataEntry, const Ordering& order) {
     IndexDataEntry data(indexDataEntry);
     RecordId loc = data.loc();
     auto key = createObjFromRadixKey(radixKey, data.typeBits(), order);
@@ -197,8 +195,20 @@ boost::optional<KeyStringEntry> createKeyStringEntryFromRadixKeyStandard(
 }
 }  // namespace
 
+IndexDataEntry::IndexDataEntry(const uint8_t* buffer) : _buffer(buffer) {}
 IndexDataEntry::IndexDataEntry(const std::string& indexDataEntry)
     : _buffer(reinterpret_cast<const uint8_t*>(indexDataEntry.data())) {}
+
+const uint8_t* IndexDataEntry::buffer() const {
+    return _buffer;
+}
+
+size_t IndexDataEntry::size() const {
+    uint64_t typeBitsSize;
+    std::memcpy(&typeBitsSize, _buffer + sizeof(uint64_t), sizeof(uint64_t));
+
+    return sizeof(uint64_t) * 2 + typeBitsSize;
+}
 
 RecordId IndexDataEntry::loc() const {
     uint64_t repr;
@@ -210,83 +220,149 @@ KeyString::TypeBits IndexDataEntry::typeBits() const {
     uint64_t size;
     std::memcpy(&size, _buffer + sizeof(uint64_t), sizeof(uint64_t));
 
-    BufReader reader(_buffer + sizeof(uint64_t)*2, size);
+    BufReader reader(_buffer + sizeof(uint64_t) * 2, size);
     return KeyString::TypeBits::fromBuffer(KeyString::Version::kLatestVersion, &reader);
 }
 
-bool IndexData::add(RecordId loc, KeyString::TypeBits typeBits) {
-    return _keys.emplace(loc, std::move(typeBits)).second;
+IndexDataEntryIterator::IndexDataEntryIterator(const uint8_t* entry) : _entry(IndexDataEntry(entry)) {}
+void IndexDataEntryIterator::increment() {
+    _entry = IndexDataEntry(_entry.buffer() + _entry.size());
+}
+bool IndexDataEntryIterator::equal(IndexDataEntryIterator const& other) const {
+    return _entry.buffer() == other._entry.buffer();
 }
 
-bool IndexData::add_hint(const_iterator hint, RecordId loc, KeyString::TypeBits typeBits) {
-    auto before = _keys.size();
-    _keys.emplace_hint(hint, loc, std::move(typeBits));
-    return _keys.size() > before;
+const IndexDataEntry& IndexDataEntryIterator::dereference() const {
+    return _entry;
 }
 
-bool IndexData::remove(RecordId loc) {
-    return _keys.erase(loc) > 0;
+// bool IndexData::add(RecordId loc, KeyString::TypeBits typeBits) {
+//    return _keys.emplace(loc, std::move(typeBits)).second;
+//}
+//
+// bool IndexData::add_hint(const_iterator hint, RecordId loc, KeyString::TypeBits typeBits) {
+//    auto before = _keys.size();
+//    _keys.emplace_hint(hint, loc, std::move(typeBits));
+//    return _keys.size() > before;
+//}
+
+IndexData::const_iterator IndexData::lower_bound(RecordId loc) const {
+    return std::find_if_not(
+        begin(), end(), [loc](const IndexDataEntry& entry) { return entry.loc() < loc; });
+}
+IndexData::const_iterator IndexData::upper_bound(RecordId loc) const {
+    auto lb = lower_bound(loc);
+    return std::find_if(
+        lb, end(), [loc](const IndexDataEntry& entry) { return loc < entry.loc(); });
 }
 
-std::string IndexData::serialize() const {
-    std::stringstream buffer;
+// bool IndexData::remove(RecordId loc) {
+//    return _keys.erase(loc) > 0;
+//}
 
-    auto writeBytes = [&](const char* data, size_t size) { buffer.write(data, size); };
-    auto writeUInt64 = [&](uint64_t val) {
-        writeBytes(reinterpret_cast<const char*>(&val), sizeof(val));
-    };
+boost::optional<std::string> IndexData::add(RecordId loc, KeyString::TypeBits typeBits) {
+    auto lb = lower_bound(loc);
+    if (lb != end() && lb->loc() == loc)
+        return boost::none;
 
-    writeUInt64(_keys.size());
-    for (const auto& [recordId, typeBits] : _keys) {
-        writeUInt64(recordId.repr());
+    std::string entry = createIndexDataEntry(loc, typeBits);
 
-        uint64_t typeBitsSize = typeBits.getSize();
-        writeUInt64(typeBitsSize);
-        writeBytes(typeBits.getBuffer(), typeBitsSize);
-    }
+    std::string output(sizeof(uint64_t) + end()->buffer() - begin()->buffer() + entry.size(), '\0');
+    auto pos = output.data();
 
-    return buffer.str();
+    uint64_t num = size() + 1;
+    std::memcpy(pos, &num, sizeof(num));
+    pos += sizeof(num);
+
+    std::memcpy(pos, begin()->buffer(), lb->buffer() - begin()->buffer());
+    pos += lb->buffer() - begin()->buffer();
+
+    std::memcpy(pos, entry.data(), entry.size());
+    pos += entry.size();
+
+    std::memcpy(pos, lb->buffer(), end()->buffer() - lb->buffer());
+    return output;
 }
-IndexData IndexData::deserialize(const std::string& serializedIndexData) {
-    auto begin = serializedIndexData.begin();
-    auto end = serializedIndexData.end();
+boost::optional<std::string> IndexData::remove(RecordId loc) {
+    auto lb = lower_bound(loc);
+    if (lb == end() || lb->loc() != loc)
+        return boost::none;
 
-    auto readBytes = [&](std::size_t num) {
-        invariant((end - begin) >= static_cast<ptrdiff_t>(num));
-        auto before = begin;
-        begin += num;
-        return &*before;
-    };
+    std::string output(sizeof(uint64_t) + end()->buffer() - begin()->buffer() - lb->size(), '\0');
+    auto pos = output.data();
 
-    auto readUInt64 = [&]() {
-        uint64_t val;
-        auto ptr = readBytes(sizeof(val));
-        std::memcpy(&val, ptr, sizeof(val));
-        return val;
-    };
+    uint64_t num = size() - 1;
+    std::memcpy(pos, &num, sizeof(num));
+    pos += sizeof(num);
 
-    IndexData indexData;
-    auto numKeys = readUInt64();
-    for (uint64_t i = 0; i < numKeys; ++i) {
-        auto repr = readUInt64();
-        auto typeBitsSize = readUInt64();
-        auto typeBitsBuffer = readBytes(typeBitsSize);
+    std::memcpy(pos, begin()->buffer(), lb->buffer() - begin()->buffer());
+    pos += lb->buffer() - begin()->buffer();
 
-        BufReader reader(typeBitsBuffer, typeBitsSize);
-        indexData._keys.emplace_hint(
-            indexData._keys.end(),
-            RecordId(repr),
-            KeyString::TypeBits::fromBuffer(KeyString::Version::kLatestVersion, &reader));
-    }
-    return indexData;
+    ++lb;
+    std::memcpy(pos, lb->buffer(), end()->buffer() - lb->buffer());
+    return output;
+
 }
 
-size_t IndexData::decodeSize(const std::string& serializedIndexData) {
-    invariant(serializedIndexData.size() >= sizeof(uint64_t));
-    uint64_t val;
-    std::memcpy(&val, serializedIndexData.data(), sizeof(uint64_t));
-    return val;
-}
+// std::string IndexData::serialize() const {
+//    std::stringstream buffer;
+//
+//    auto writeBytes = [&](const char* data, size_t size) { buffer.write(data, size); };
+//    auto writeUInt64 = [&](uint64_t val) {
+//        writeBytes(reinterpret_cast<const char*>(&val), sizeof(val));
+//    };
+//
+//    writeUInt64(_keys.size());
+//    for (const auto& [recordId, typeBits] : _keys) {
+//        writeUInt64(recordId.repr());
+//
+//        uint64_t typeBitsSize = typeBits.getSize();
+//        writeUInt64(typeBitsSize);
+//        writeBytes(typeBits.getBuffer(), typeBitsSize);
+//    }
+//
+//    return buffer.str();
+//}
+// IndexData IndexData::deserialize(const std::string& serializedIndexData) {
+//    auto begin = serializedIndexData.begin();
+//    auto end = serializedIndexData.end();
+//
+//    auto readBytes = [&](std::size_t num) {
+//        invariant((end - begin) >= static_cast<ptrdiff_t>(num));
+//        auto before = begin;
+//        begin += num;
+//        return &*before;
+//    };
+//
+//    auto readUInt64 = [&]() {
+//        uint64_t val;
+//        auto ptr = readBytes(sizeof(val));
+//        std::memcpy(&val, ptr, sizeof(val));
+//        return val;
+//    };
+//
+//    IndexData indexData;
+//    auto numKeys = readUInt64();
+//    for (uint64_t i = 0; i < numKeys; ++i) {
+//        auto repr = readUInt64();
+//        auto typeBitsSize = readUInt64();
+//        auto typeBitsBuffer = readBytes(typeBitsSize);
+//
+//        BufReader reader(typeBitsBuffer, typeBitsSize);
+//        indexData._keys.emplace_hint(
+//            indexData._keys.end(),
+//            RecordId(repr),
+//            KeyString::TypeBits::fromBuffer(KeyString::Version::kLatestVersion, &reader));
+//    }
+//    return indexData;
+//}
+//
+// size_t IndexData::decodeSize(const std::string& serializedIndexData) {
+//    invariant(serializedIndexData.size() >= sizeof(uint64_t));
+//    uint64_t val;
+//    std::memcpy(&val, serializedIndexData.data(), sizeof(uint64_t));
+//    return val;
+//}
 
 SortedDataUniqueBuilderInterface::SortedDataUniqueBuilderInterface(
     OperationContext* opCtx,
@@ -329,18 +405,18 @@ Status SortedDataUniqueBuilderInterface::addKey(const KeyString::Value& keyStrin
                 obj, _collectionNamespace, _indexName, _keyPattern, _collation);
         }
 
-        IndexData data = IndexData::deserialize(it->second);
+        IndexData data(it->second);
         // Bulk builder add keys in ascending order so we should insert at the end
-        if (!data.add_hint(data.end(), loc, keyString.getTypeBits())) {
+        auto added = data.add(loc, keyString.getTypeBits());
+        if (!added) {
             // Already indexed
             return Status::OK();
         }
 
-        workingCopy->update({std::move(key), data.serialize()});
+        workingCopy->update({std::move(key), *added});
     } else {
         IndexData data;
-        data.add(loc, keyString.getTypeBits());
-        workingCopy->insert({std::move(key), data.serialize()});
+        workingCopy->insert({std::move(key), *data.add(loc, keyString.getTypeBits())});
     }
 
     RecoveryUnit::get(_opCtx)->makeDirty();
@@ -414,17 +490,17 @@ Status SortedDataInterfaceUnique::insert(OperationContext* opCtx,
                 obj, _collectionNamespace, _indexName, _keyPattern, _collation);
         }
 
-        IndexData data = IndexData::deserialize(it->second);
-        if (!data.add(loc, keyString.getTypeBits())) {
+        IndexData data(it->second);
+        auto added = data.add(loc, keyString.getTypeBits());
+        if (!added) {
             // Already indexed
             return Status::OK();
         }
 
-        workingCopy->update({std::move(key), data.serialize()});
+        workingCopy->update({std::move(key), *added});
     } else {
         IndexData data;
-        data.add(loc, keyString.getTypeBits());
-        workingCopy->insert({std::move(key), data.serialize()});
+        workingCopy->insert({std::move(key), *data.add(loc, keyString.getTypeBits())});
     }
     RecoveryUnit::get(opCtx)->makeDirty();
     return Status::OK();
@@ -439,14 +515,15 @@ void SortedDataInterfaceUnique::unindex(OperationContext* opCtx,
     auto key = createRadixKeyFromKS(keyString, _prefix);
     auto it = workingCopy->find(key);
     if (it != workingCopy->end()) {
-        IndexData data = IndexData::deserialize(it->second);
-        if (!data.remove(loc))
+        IndexData data(it->second);
+        auto removed = data.remove(loc);
+        if (!removed)
             return;  // loc not found, nothing to unindex
 
-        if (data.empty()) {
+        if (IndexData(*removed).empty()) {
             workingCopy->erase(key);
         } else {
-            workingCopy->update({std::move(key), data.serialize()});
+            workingCopy->update({std::move(key), *removed});
         }
         RecoveryUnit::get(opCtx)->makeDirty();
     }
@@ -481,7 +558,7 @@ Status SortedDataInterfaceUnique::dupKeyCheck(OperationContext* opCtx,
     if (it == workingCopy->end())
         return Status::OK();
 
-    IndexData data = IndexData::deserialize(it->second);
+    IndexData data(it->second);
     if (data.size() > 1) {
         return buildDupKeyErrorStatus(
             key, _collectionNamespace, _indexName, _keyPattern, _collation, _ordering);
@@ -497,7 +574,7 @@ void SortedDataInterfaceUnique::fullValidate(OperationContext* opCtx,
     long long numKeys = 0;
     auto it = workingCopy->lower_bound(_KSForIdentStart);
     while (it != workingCopy->end() && it->first.compare(_KSForIdentEnd) < 0) {
-        numKeys += IndexData::decodeSize(it->second);
+        numKeys += IndexData(it->second).size();
         ++it;
     }
     *numKeysOut = numKeys;
@@ -586,8 +663,12 @@ bool SortedDataInterfaceUnique::Cursor::advanceNext() {
                     if (++_forwardIndexDataIt != _forwardIndexDataEnd)
                         return true;
                 } else {
-                    if (++_reverseIndexDataIt != _reverseIndexDataEnd)
+                    if (++_reversePos < _indexData.size()) {
+                        _forwardIndexDataIt = _indexData.begin();
+                        for (auto i = 1; i < (_indexData.size() - _reversePos); ++i)
+                            ++_forwardIndexDataIt;
                         return true;
+                    }
                 }
             }
             // We basically just check to make sure the cursor is in the ident.
@@ -611,13 +692,16 @@ bool SortedDataInterfaceUnique::Cursor::advanceNext() {
     // We have moved to a new position in the tree, initialize index data for iterating over
     // duplicates
     if (_forward) {
-        _indexData = IndexData::deserialize(_forwardIt->second);
+        _indexData = IndexData(_forwardIt->second);
         _forwardIndexDataIt = _indexData.begin();
         _forwardIndexDataEnd = _indexData.end();
     } else {
-        _indexData = IndexData::deserialize(_reverseIt->second);
-        _reverseIndexDataIt = _indexData.rbegin();
-        _reverseIndexDataEnd = _indexData.rend();
+        _indexData = IndexData(_reverseIt->second);
+        _forwardIndexDataIt = _indexData.begin();
+        _forwardIndexDataEnd = _indexData.end();
+        _reversePos = 0;
+        for (auto i = 1; i < _indexData.size(); ++i)
+            ++_forwardIndexDataIt;
     }
     return true;
 }
@@ -712,10 +796,10 @@ boost::optional<IndexKeyEntry> SortedDataInterfaceUnique::Cursor::next(Requested
 
     if (_forward) {
         return createIndexKeyEntryFromRadixKey(
-            _forwardIt->first, _forwardIndexDataIt->first, _forwardIndexDataIt->second, _order);
+            _forwardIt->first, _forwardIndexDataIt->loc(), _forwardIndexDataIt->typeBits(), _order);
     }
     return createIndexKeyEntryFromRadixKey(
-        _reverseIt->first, _reverseIndexDataIt->first, _reverseIndexDataIt->second, _order);
+        _reverseIt->first, _forwardIndexDataIt->loc(), _forwardIndexDataIt->typeBits(), _order);
 }
 
 boost::optional<KeyStringEntry> SortedDataInterfaceUnique::Cursor::nextKeyString() {
@@ -725,10 +809,10 @@ boost::optional<KeyStringEntry> SortedDataInterfaceUnique::Cursor::nextKeyString
 
     if (_forward) {
         return createKeyStringEntryFromRadixKey(
-            _forwardIt->first, _forwardIndexDataIt->first, _forwardIndexDataIt->second, _order);
+            _forwardIt->first, _forwardIndexDataIt->loc(), _forwardIndexDataIt->typeBits(), _order);
     }
     return createKeyStringEntryFromRadixKey(
-        _reverseIt->first, _reverseIndexDataIt->first, _reverseIndexDataIt->second, _order);
+        _reverseIt->first, _forwardIndexDataIt->loc(), _forwardIndexDataIt->typeBits(), _order);
 }
 
 boost::optional<IndexKeyEntry> SortedDataInterfaceUnique::Cursor::seekAfterProcessing(
@@ -794,17 +878,20 @@ boost::optional<KeyStringEntry> SortedDataInterfaceUnique::Cursor::seekAfterProc
     // We have seeked to an entry in the tree. Now unpack the data and initialize iterators to point
     // to the first entry if this index contains duplicates
     if (_forward) {
-        _indexData = IndexData::deserialize(_forwardIt->second);
+        _indexData = IndexData(_forwardIt->second);
         _forwardIndexDataIt = _indexData.begin();
         _forwardIndexDataEnd = _indexData.end();
         return createKeyStringEntryFromRadixKey(
-            _forwardIt->first, _forwardIndexDataIt->first, _forwardIndexDataIt->second, _order);
+            _forwardIt->first, _forwardIndexDataIt->loc(), _forwardIndexDataIt->typeBits(), _order);
     } else {
-        _indexData = IndexData::deserialize(_reverseIt->second);
-        _reverseIndexDataIt = _indexData.rbegin();
-        _reverseIndexDataEnd = _indexData.rend();
+        _indexData = IndexData(_reverseIt->second);
+        _forwardIndexDataIt = _indexData.begin();
+        _forwardIndexDataEnd = _indexData.end();
+        _reversePos = 0;
+        for (auto i = 1; i < _indexData.size(); ++i)
+            ++_forwardIndexDataIt;
         return createKeyStringEntryFromRadixKey(
-            _reverseIt->first, _reverseIndexDataIt->first, _reverseIndexDataIt->second, _order);
+            _reverseIt->first, _forwardIndexDataIt->loc(), _forwardIndexDataIt->typeBits(), _order);
     }
 }
 
@@ -873,12 +960,12 @@ void SortedDataInterfaceUnique::Cursor::save() {
     } else if (_forward && _forwardIt != _workingCopy->end()) {
         _saveKey = _forwardIt->first;
         if (!_indexData.empty()) {
-            _saveLoc = _forwardIndexDataIt->first;
+            _saveLoc = _forwardIndexDataIt->loc();
         }
     } else if (!_forward && _reverseIt != _workingCopy->rend()) {  // reverse
         _saveKey = _reverseIt->first;
         if (!_indexData.empty()) {
-            _saveLoc = _reverseIndexDataIt->first;
+            _saveLoc = _forwardIndexDataIt->loc();
         }
     } else {
         _saveKey = "";
@@ -908,7 +995,7 @@ void SortedDataInterfaceUnique::Cursor::restore() {
         _lastMoveWasRestore = true;
         if (_saveLoc != RecordId() && _forwardIt != workingCopy->end() &&
             _forwardIt->first == _saveKey) {
-            _indexData = IndexData::deserialize(_forwardIt->second);
+            _indexData = IndexData(_forwardIt->second);
             _forwardIndexDataIt = _indexData.lower_bound(_saveLoc);
             _forwardIndexDataEnd = _indexData.end();
             if (_forwardIndexDataIt == _forwardIndexDataEnd) {
@@ -916,7 +1003,7 @@ void SortedDataInterfaceUnique::Cursor::restore() {
                 // radix tree to be positioned on a valid item
                 ++_forwardIt;
                 if (_forwardIt != workingCopy->end()) {
-                    _indexData = IndexData::deserialize(_forwardIt->second);
+                    _indexData = IndexData(_forwardIt->second);
                     _forwardIndexDataIt = _indexData.begin();
                     _forwardIndexDataEnd = _indexData.end();
                 }
@@ -925,7 +1012,7 @@ void SortedDataInterfaceUnique::Cursor::restore() {
                 // we will advance to the next item instead of returning the same twice.
                 // Unique indexes disregard difference in location and forces the cursor to advance
                 // to guarantee that we never return the same key twice
-                _lastMoveWasRestore = !_isUnique && _forwardIndexDataIt->first != _saveLoc;
+                _lastMoveWasRestore = !_isUnique && _forwardIndexDataIt->loc() != _saveLoc;
             }
         }
         if (!checkCursorValid()) {
@@ -942,19 +1029,23 @@ void SortedDataInterfaceUnique::Cursor::restore() {
         _lastMoveWasRestore = true;
         if (_saveLoc != RecordId() && _reverseIt != workingCopy->rend() &&
             _reverseIt->first == _saveKey) {
-            _indexData = IndexData::deserialize(_reverseIt->second);
-            _reverseIndexDataIt =
-                IndexData::const_reverse_iterator(_indexData.upper_bound(_saveLoc));
-            _reverseIndexDataEnd = _indexData.rend();
-            if (_reverseIndexDataIt == _reverseIndexDataEnd) {
+            _indexData = IndexData(_reverseIt->second);
+            _forwardIndexDataIt = _indexData.upper_bound(_saveLoc);
+            _forwardIndexDataEnd = _indexData.end();
+            if (_forwardIndexDataIt == _forwardIndexDataEnd) {
                 ++_reverseIt;
                 if (_reverseIt != workingCopy->rend()) {
-                    _indexData = IndexData::deserialize(_reverseIt->second);
-                    _reverseIndexDataIt = _indexData.rbegin();
-                    _reverseIndexDataEnd = _indexData.rend();
+                    _indexData = IndexData(_reverseIt->second);
+                    _forwardIndexDataIt = _indexData.begin();
+                    _forwardIndexDataEnd = _indexData.end();
+                    _reversePos = 0;
+                    for (auto i = 1; i < _indexData.size(); ++i)
+                        ++_forwardIndexDataIt;
                 }
             } else {
-                _lastMoveWasRestore = !_isUnique && _reverseIndexDataIt->first != _saveLoc;
+                _reversePos =
+                    _indexData.size() - std::distance(_indexData.begin(), _forwardIndexDataIt) - 1;
+                _lastMoveWasRestore = !_isUnique && _forwardIndexDataIt->loc() != _saveLoc;
             }
         }
         if (!checkCursorValid()) {
@@ -1319,8 +1410,7 @@ boost::optional<IndexKeyEntry> SortedDataInterfaceStandard::Cursor::next(Request
         return createIndexKeyEntryFromRadixKeyStandard(
             _forwardIt->first, _forwardIt->second, _order);
     }
-    return createIndexKeyEntryFromRadixKeyStandard(
-        _reverseIt->first, _reverseIt->second, _order);
+    return createIndexKeyEntryFromRadixKeyStandard(_reverseIt->first, _reverseIt->second, _order);
 }
 
 boost::optional<KeyStringEntry> SortedDataInterfaceStandard::Cursor::nextKeyString() {
@@ -1332,8 +1422,7 @@ boost::optional<KeyStringEntry> SortedDataInterfaceStandard::Cursor::nextKeyStri
         return createKeyStringEntryFromRadixKeyStandard(
             _forwardIt->first, _forwardIt->second, _order);
     }
-    return createKeyStringEntryFromRadixKeyStandard(
-        _reverseIt->first, _reverseIt->second, _order);
+    return createKeyStringEntryFromRadixKeyStandard(_reverseIt->first, _reverseIt->second, _order);
 }
 
 boost::optional<IndexKeyEntry> SortedDataInterfaceStandard::Cursor::seekAfterProcessing(
@@ -1379,9 +1468,11 @@ boost::optional<KeyStringEntry> SortedDataInterfaceStandard::Cursor::seekAfterPr
     // Forward inclusive seek uses lower_bound and exclusive upper_bound. For reverse iterators this
     // is also reversed.
     if (_forward == inclusive)
-        it = _workingCopy->lower_bound(createStandardRadixKeyFromKSWithoutRecordId(keyStringVal, RecordId::min(), _prefix));
+        it = _workingCopy->lower_bound(
+            createStandardRadixKeyFromKSWithoutRecordId(keyStringVal, RecordId::min(), _prefix));
     else
-        it = _workingCopy->upper_bound(createStandardRadixKeyFromKSWithoutRecordId(keyStringVal, RecordId::max(), _prefix));
+        it = _workingCopy->upper_bound(
+            createStandardRadixKeyFromKSWithoutRecordId(keyStringVal, RecordId::max(), _prefix));
     if (_forward)
         _forwardIt = it;
     else
