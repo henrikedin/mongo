@@ -78,8 +78,8 @@ public:
     SortedDataInterfaceBase(OperationContext* opCtx, StringData ident, const IndexDescriptor* desc);
     SortedDataInterfaceBase(const Ordering& ordering, StringData ident);
     bool appendCustomStats(OperationContext* opCtx,
-                                   BSONObjBuilder* output,
-                                   double scale) const override;
+                           BSONObjBuilder* output,
+                           double scale) const override;
     long long getSpaceUsedBytes(OperationContext* opCtx) const override;
     bool isEmpty(OperationContext* opCtx) override;
     Status initAsEmpty(OperationContext* opCtx) override;
@@ -106,21 +106,19 @@ public:
                               StringData ident,
                               const IndexDescriptor* desc);
     SortedDataInterfaceUnique(const Ordering& ordering, StringData ident);
-    SortedDataBuilderInterface* getBulkBuilder(OperationContext* opCtx,
-                                                       bool dupsAllowed) override;
+    SortedDataBuilderInterface* getBulkBuilder(OperationContext* opCtx, bool dupsAllowed) override;
     Status insert(OperationContext* opCtx,
-                          const KeyString::Value& keyString,
-                          bool dupsAllowed) override;
+                  const KeyString::Value& keyString,
+                  bool dupsAllowed) override;
     void unindex(OperationContext* opCtx,
-                         const KeyString::Value& keyString,
-                         bool dupsAllowed) override;
+                 const KeyString::Value& keyString,
+                 bool dupsAllowed) override;
     Status dupKeyCheck(OperationContext* opCtx, const KeyString::Value& keyString) override;
     void fullValidate(OperationContext* opCtx,
-                              long long* numKeysOut,
-                              ValidateResults* fullResults) const override;
+                      long long* numKeysOut,
+                      ValidateResults* fullResults) const override;
     std::unique_ptr<mongo::SortedDataInterface::Cursor> newCursor(
         OperationContext* opCtx, bool isForward = true) const override;
-
 };
 
 class SortedDataBuilderStandard : public SortedDataBuilderBase {
@@ -135,18 +133,17 @@ public:
                                 StringData ident,
                                 const IndexDescriptor* desc);
     SortedDataInterfaceStandard(const Ordering& ordering, StringData ident);
-    SortedDataBuilderInterface* getBulkBuilder(OperationContext* opCtx,
-                                                       bool dupsAllowed) override;
+    SortedDataBuilderInterface* getBulkBuilder(OperationContext* opCtx, bool dupsAllowed) override;
     Status insert(OperationContext* opCtx,
-                          const KeyString::Value& keyString,
-                          bool dupsAllowed) override;
+                  const KeyString::Value& keyString,
+                  bool dupsAllowed) override;
     void unindex(OperationContext* opCtx,
-                         const KeyString::Value& keyString,
-                         bool dupsAllowed) override;
+                 const KeyString::Value& keyString,
+                 bool dupsAllowed) override;
     Status dupKeyCheck(OperationContext* opCtx, const KeyString::Value& keyString) override;
     void fullValidate(OperationContext* opCtx,
-                              long long* numKeysOut,
-                              ValidateResults* fullResults) const override;
+                      long long* numKeysOut,
+                      ValidateResults* fullResults) const override;
     std::unique_ptr<mongo::SortedDataInterface::Cursor> newCursor(
         OperationContext* opCtx, bool isForward = true) const override;
 };
