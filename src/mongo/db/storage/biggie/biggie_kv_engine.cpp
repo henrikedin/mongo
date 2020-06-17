@@ -140,7 +140,7 @@ Status KVEngine::dropIdent(OperationContext* opCtx, mongo::RecoveryUnit* ru, Str
                 checked_cast<RecordStore*>(rs.get())->truncateWithoutUpdatingCount(ru).getStatus();
         } else {  // ident is SortedDataInterface.
             auto sdi =
-                std::make_unique<SortedDataInterfaceUnique>(Ordering::make(BSONObj()), true, ident);
+                std::make_unique<SortedDataInterfaceUnique>(Ordering::make(BSONObj()), ident);
             dropStatus = sdi->truncate(ru);
         }
         lock.lock();
