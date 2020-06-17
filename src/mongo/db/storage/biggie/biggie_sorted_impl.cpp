@@ -63,7 +63,7 @@ public:
     IndexDataEntry(const uint8_t* buffer);
     IndexDataEntry(const std::string& indexDataEntry);
 
-    static std::string create(RecordId loc, KeyString::TypeBits typeBits);
+    static std::string create(RecordId loc, const KeyString::TypeBits& typeBits);
 
     const uint8_t* buffer() const;
     size_t size() const; // returns buffer size
@@ -121,7 +121,7 @@ public:
     const_iterator upper_bound(RecordId loc) const;
 
     // Creates a new UniqueIndexData buffer containing an additional item. Returns boost::none if entry already exists.
-    boost::optional<std::string> add(RecordId loc, KeyString::TypeBits typeBits);
+    boost::optional<std::string> add(RecordId loc, const KeyString::TypeBits& typeBits);
     
     // Creates a new UniqueIndexData buffer with item with RecordId removed. Returns boost::none if entry did not exist.
     boost::optional<std::string> remove(RecordId loc);
@@ -138,7 +138,7 @@ IndexDataEntry::IndexDataEntry(const uint8_t* buffer) : _buffer(buffer) {}
 IndexDataEntry::IndexDataEntry(const std::string& indexDataEntry)
     : _buffer(reinterpret_cast<const uint8_t*>(indexDataEntry.data())) {}
 
-std::string IndexDataEntry::create(RecordId loc, KeyString::TypeBits typeBits) {
+std::string IndexDataEntry::create(RecordId loc, const KeyString::TypeBits& typeBits) {
     uint64_t repr = loc.repr();
     uint64_t typebitsSize = typeBits.getSize();
     std::string output(sizeof(loc) + sizeof(typebitsSize) + typebitsSize, '\0');
@@ -211,7 +211,7 @@ size_t UniqueIndexData::_memoryUsage() const {
     return sizeof(_size) + _end - _begin;
 }
 
-boost::optional<std::string> UniqueIndexData::add(RecordId loc, KeyString::TypeBits typeBits) {
+boost::optional<std::string> UniqueIndexData::add(RecordId loc, const KeyString::TypeBits& typeBits) {
     // If entry already exists then nothing to do
     auto it = lower_bound(loc);
     if (it != end() && it->loc() == loc)
