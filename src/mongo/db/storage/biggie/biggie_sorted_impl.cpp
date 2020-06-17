@@ -277,9 +277,9 @@ void prefixKeyStringWithoutLoc(KeyString::Builder* keyString, const std::string&
     keyString->resetToKey(b.obj(), allAscending);
 }
 
-void prefixKeyStringStandard(KeyString::Builder* keyString,
-                             RecordId loc,
-                             const std::string& prefixToUse) {
+void prefixKeyStringWithLoc(KeyString::Builder* keyString,
+                            RecordId loc,
+                            const std::string& prefixToUse) {
     BSONObjBuilder b;
     b.append("", prefixToUse);                                               // prefix
     b.append("", StringData(keyString->getBuffer(), keyString->getSize()));  // key
@@ -322,7 +322,7 @@ std::string createRadixKeyWithLocFromObj(const BSONObj& key,
     KeyString::Version version = KeyString::Version::kLatestVersion;
     KeyString::Builder ks(version, BSONObj::stripFieldNames(key), order);
 
-    prefixKeyStringStandard(&ks, loc, prefixToUse);
+    prefixKeyStringWithLoc(&ks, loc, prefixToUse);
     return std::string(ks.getBuffer(), ks.getSize());
 }
 
@@ -333,7 +333,7 @@ std::string createRadixKeyWithLocFromKS(const KeyString::Value& keyString,
     ks.resetFromBuffer(
         keyString.getBuffer(),
         KeyString::sizeWithoutRecordIdAtEnd(keyString.getBuffer(), keyString.getSize()));
-    prefixKeyStringStandard(&ks, loc, prefixToUse);
+    prefixKeyStringWithLoc(&ks, loc, prefixToUse);
     return std::string(ks.getBuffer(), ks.getSize());
 }
 
@@ -342,7 +342,7 @@ std::string createRadixKeyWithLocFromKSWithoutRecordId(const KeyString::Value& k
                                                        const std::string& prefixToUse) {
     KeyString::Builder ks(KeyString::Version::kLatestVersion);
     ks.resetFromBuffer(keyString.getBuffer(), keyString.getSize());
-    prefixKeyStringStandard(&ks, loc, prefixToUse);
+    prefixKeyStringWithLoc(&ks, loc, prefixToUse);
     return std::string(ks.getBuffer(), ks.getSize());
 }
 
@@ -1057,7 +1057,9 @@ protected:
     std::string createRadixKeyFromObj(const BSONObj& key,
                                       RecordId loc,
                                       const std::string& prefixToUse,
-                                      Ordering order);
+                                      Ordering order) {
+        return createRadixKeyWithLocFromObj(key, loc, prefixToUse, order);
+    }
     std::string createRadixKeyFromKSWithoutRecordId(const KeyString::Value& keyString,
                                                     RecordId loc,
                                                     const std::string& prefixToUse) {
@@ -1121,17 +1123,6 @@ boost::optional<KeyStringEntry> CursorStandard::nextKeyString() {
         return createKeyStringEntryFromRadixKey(_forwardIt->first, _forwardIt->second, _order);
     }
     return createKeyStringEntryFromRadixKey(_reverseIt->first, _reverseIt->second, _order);
-}
-
-std::string CursorStandard::createRadixKeyFromObj(const BSONObj& key,
-                                                  RecordId loc,
-                                                  const std::string& prefixToUse,
-                                                  Ordering order) {
-    KeyString::Version version = KeyString::Version::kLatestVersion;
-    KeyString::Builder ks(version, BSONObj::stripFieldNames(key), order);
-
-    prefixKeyStringStandard(&ks, loc, prefixToUse);
-    return std::string(ks.getBuffer(), ks.getSize());
 }
 
 boost::optional<KeyStringEntry> CursorStandard::finishSeekAfterProcessing() {
