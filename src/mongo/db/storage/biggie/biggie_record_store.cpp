@@ -337,27 +337,27 @@ boost::optional<RecordId> RecordStore::oplogStartHack(OperationContext* opCtx,
 }
 
 void RecordStore::_initHighestIdIfNeeded(OperationContext* opCtx) {
-    if (_highestRecordId.loadRelaxed() > 0) {
-        return;
-    }
+        if (_highestRecordId.loadRelaxed() > 0) {
+            return;
+        }
 
-    // Only one thread needs to do this.
-    stdx::lock_guard<Latch> lk(_initHighestIdMutex);
-    if (_highestRecordId.load() > 0) {
-        return;
-    }
+        // Only one thread needs to do this.
+        stdx::lock_guard<Latch> lk(_initHighestIdMutex);
+        if (_highestRecordId.load() > 0) {
+            return;
+        }
 
-    // Need to start at 1 so we are always higher than RecordId::min()
-    int64_t nextId = 1;
+        // Need to start at 1 so we are always higher than RecordId::min()
+        int64_t nextId = 1;
 
-    // Find the largest RecordId currently in use.
-    std::unique_ptr<SeekableRecordCursor> cursor = getCursor(opCtx, /*forward=*/false);
-    if (auto record = cursor->next()) {
-        nextId = record->id.repr() + 1;
-    }
+        // Find the largest RecordId currently in use.
+        std::unique_ptr<SeekableRecordCursor> cursor = getCursor(opCtx, /*forward=*/false);
+        if (auto record = cursor->next()) {
+            nextId = record->id.repr() + 1;
+        }
 
-    _highestRecordId.store(nextId);
-};
+        _highestRecordId.store(nextId);
+    };
 
 int64_t RecordStore::_nextRecordId(OperationContext* opCtx) {
     _initHighestIdIfNeeded(opCtx);
@@ -574,13 +574,12 @@ RecordStore::SizeAdjuster::SizeAdjuster(OperationContext* opCtx, RecordStore* rs
 RecordStore::SizeAdjuster::~SizeAdjuster() {
     int64_t deltaNumRecords = _workingCopy->size() - _origNumRecords;
     int64_t deltaDataSize = _workingCopy->dataSize() - _origDataSize;
-    //_rs->_numRecords.fetchAndAdd(deltaNumRecords);
-    //_rs->_dataSize.fetchAndAdd(deltaDataSize);
-
-    RecoveryUnit::get(_opCtx)->onCommit([rs = _rs, deltaNumRecords, deltaDataSize](boost::optional<Timestamp> commitTime) {
-        //invariant(rs->_numRecords.load() >= deltaNumRecords);
-        rs->_numRecords.fetchAndAdd(deltaNumRecords);
-        rs->_dataSize.fetchAndAdd(deltaDataSize);
+    _rs->_numRecords.fetchAndAdd(deltaNumRecords);
+    _rs->_dataSize.fetchAndAdd(deltaDataSize);
+    RecoveryUnit::get(_opCtx)->onRollback([rs = _rs, deltaNumRecords, deltaDataSize]() {
+        invariant(rs->_numRecords.load() >= deltaNumRecords);
+        rs->_numRecords.fetchAndSubtract(deltaNumRecords);
+        rs->_dataSize.fetchAndSubtract(deltaDataSize);
     });
 }
 
