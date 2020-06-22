@@ -66,7 +66,7 @@ public:
     static std::string create(RecordId loc, KeyString::TypeBits typeBits);
 
     const uint8_t* buffer() const;
-    size_t size() const; // returns buffer size
+    size_t size() const;  // returns buffer size
     RecordId loc() const;
     KeyString::TypeBits typeBits() const;
 
@@ -100,7 +100,6 @@ public:
         std::memcpy(&_size, indexData.data(), sizeof(uint64_t));
         _begin = reinterpret_cast<const uint8_t*>(indexData.data() + sizeof(uint64_t));
         _end = reinterpret_cast<const uint8_t*>(indexData.data() + indexData.size());
-        
     }
 
     using const_iterator = IndexDataEntryIterator;
@@ -120,10 +119,12 @@ public:
     const_iterator lower_bound(RecordId loc) const;
     const_iterator upper_bound(RecordId loc) const;
 
-    // Creates a new UniqueIndexData buffer containing an additional item. Returns boost::none if entry already exists.
+    // Creates a new UniqueIndexData buffer containing an additional item. Returns boost::none if
+    // entry already exists.
     boost::optional<std::string> add(RecordId loc, KeyString::TypeBits typeBits);
-    
-    // Creates a new UniqueIndexData buffer with item with RecordId removed. Returns boost::none if entry did not exist.
+
+    // Creates a new UniqueIndexData buffer with item with RecordId removed. Returns boost::none if
+    // entry did not exist.
     boost::optional<std::string> remove(RecordId loc);
 
 private:
@@ -214,7 +215,8 @@ size_t UniqueIndexData::_memoryUsage() const {
 boost::optional<std::string> UniqueIndexData::add(RecordId loc, KeyString::TypeBits typeBits) {
     // If entry already exists then nothing to do
     auto it = lower_bound(loc);
-    if (it != end() && it->loc() == loc)
+    bool itValid = it != end();
+    if (itValid && it->loc() == loc)
         return boost::none;
 
     std::string entry = IndexDataEntry::create(loc, typeBits);
@@ -229,15 +231,20 @@ boost::optional<std::string> UniqueIndexData::add(RecordId loc, KeyString::TypeB
     pos += sizeof(num);
 
     // Write old entries smaller than the new one
-    std::memcpy(pos, _begin, it->buffer() - _begin);
-    pos += it->buffer() - _begin;
+    if (itValid) {
+        std::memcpy(pos, _begin, it->buffer() - _begin);
+        pos += it->buffer() - _begin;
+    }
 
     // Write new entry
     std::memcpy(pos, entry.data(), entry.size());
     pos += entry.size();
 
     // Write old entries larger than the new one
-    std::memcpy(pos, it->buffer(), _end - it->buffer());
+    if (itValid) {
+        std::memcpy(pos, it->buffer(), _end - it->buffer());
+    }
+
     return output;
 }
 boost::optional<std::string> UniqueIndexData::remove(RecordId loc) {
@@ -399,7 +406,8 @@ boost::optional<KeyStringEntry> createKeyStringEntryFromRadixKey(const std::stri
 
 /*
  * This is the base cursor class required by the sorted data interface.
- * Using CRTP (static inheritance) to reuse shared implementation for cursors over unique and standard indexes
+ * Using CRTP (static inheritance) to reuse shared implementation for cursors over unique and
+ * standard indexes
  */
 template <class CursorImpl>
 class CursorBase : public ::mongo::SortedDataInterface::Cursor {
