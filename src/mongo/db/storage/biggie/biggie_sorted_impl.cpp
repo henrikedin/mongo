@@ -215,10 +215,10 @@ size_t UniqueIndexData::_memoryUsage() const {
 boost::optional<std::string> UniqueIndexData::add(RecordId loc, KeyString::TypeBits typeBits) {
     // If entry already exists then nothing to do
     auto it = lower_bound(loc);
-    bool itValid = it != end();
-    if (itValid && it->loc() == loc)
+    if (it != end() && it->loc() == loc)
         return boost::none;
 
+    auto itBuffer = it->buffer();
     std::string entry = IndexDataEntry::create(loc, typeBits);
 
     // Allocate string that fit the new entry
@@ -231,9 +231,9 @@ boost::optional<std::string> UniqueIndexData::add(RecordId loc, KeyString::TypeB
     pos += sizeof(num);
 
     // Write old entries smaller than the new one
-    if (itValid) {
-        std::memcpy(pos, _begin, it->buffer() - _begin);
-        pos += it->buffer() - _begin;
+    if (auto bytes = itBuffer - _begin) {
+        std::memcpy(pos, _begin, bytes);
+        pos += bytes;
     }
 
     // Write new entry
@@ -241,8 +241,8 @@ boost::optional<std::string> UniqueIndexData::add(RecordId loc, KeyString::TypeB
     pos += entry.size();
 
     // Write old entries larger than the new one
-    if (itValid) {
-        std::memcpy(pos, it->buffer(), _end - it->buffer());
+    if (auto bytes = _end - itBuffer) {
+        std::memcpy(pos, itBuffer, bytes);
     }
 
     return output;
