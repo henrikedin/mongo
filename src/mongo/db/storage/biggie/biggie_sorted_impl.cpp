@@ -216,7 +216,8 @@ boost::optional<std::string> UniqueIndexData::add(RecordId loc,
                                                   const KeyString::TypeBits& typeBits) {
     // If entry already exists then nothing to do
     auto it = lower_bound(loc);
-    if (it != end() && it->loc() == loc)
+    bool itValid = it != end();
+    if (itValid && it->loc() == loc)
         return boost::none;
 
     std::string entry = IndexDataEntry::create(loc, typeBits);
@@ -231,15 +232,20 @@ boost::optional<std::string> UniqueIndexData::add(RecordId loc,
     pos += sizeof(num);
 
     // Write old entries smaller than the new one
-    std::memcpy(pos, _begin, it->buffer() - _begin);
-    pos += it->buffer() - _begin;
+    if (itValid) {
+        std::memcpy(pos, _begin, it->buffer() - _begin);
+        pos += it->buffer() - _begin;
+    }
 
     // Write new entry
     std::memcpy(pos, entry.data(), entry.size());
     pos += entry.size();
 
     // Write old entries larger than the new one
-    std::memcpy(pos, it->buffer(), _end - it->buffer());
+    if (itValid) {
+        std::memcpy(pos, it->buffer(), _end - it->buffer());
+    }
+
     return output;
 }
 boost::optional<std::string> UniqueIndexData::remove(RecordId loc) {
