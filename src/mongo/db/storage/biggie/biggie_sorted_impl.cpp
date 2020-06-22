@@ -95,7 +95,7 @@ private:
 // Helper to interpret index data buffer for unique index
 class UniqueIndexData {
 public:
-    UniqueIndexData() : _begin(nullptr), _end(nullptr), _size(0) {}
+    UniqueIndexData() : _size(0), _begin(nullptr), _end(nullptr) {}
     UniqueIndexData(const std::string& indexData) {
         std::memcpy(&_size, indexData.data(), sizeof(uint64_t));
         _begin = reinterpret_cast<const uint8_t*>(indexData.data() + sizeof(uint64_t));
@@ -922,7 +922,7 @@ bool CursorUnique::checkCursorValid() {
 void CursorUnique::initReverseDataIterators() {
     _indexDataIt = _indexData.begin();
     _indexDataEnd = _indexData.end();
-    for (auto i = 1; i < (_indexData.size() - _reversePos); ++i)
+    for (size_t i = 1; i < (_indexData.size() - _reversePos); ++i)
         ++_indexDataIt;
 }
 
