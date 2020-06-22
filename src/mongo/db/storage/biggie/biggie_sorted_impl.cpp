@@ -739,10 +739,10 @@ void CursorBase<CursorImpl>::save() {
     _atEOF = false;
     if (_lastMoveWasRestore) {
         return;
-    } else if (_forward && _forwardIt != _workingCopy->end()) {
+    } else if (_forward && checkCursorValid()) {
         _saveKey = _forwardIt->first;
         saveForward();
-    } else if (!_forward && _reverseIt != _workingCopy->rend()) {  // reverse
+    } else if (!_forward && checkCursorValid()) {  // reverse
         _saveKey = _reverseIt->first;
         saveReverse();
     } else {
