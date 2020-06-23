@@ -603,6 +603,7 @@ public:
             _root = _root->_nextVersion;
             _root->_hasPreviousVersion = true;
             parent = _root.get();
+            context.at(0).first = parent;
         }
 
         size_t sizeOfRemovedData = node->_data->second.size();
@@ -617,6 +618,7 @@ public:
             if (!isUniquelyOwned) {
                 parent->_children[childFirstChar] = std::make_shared<Node>(*child);
                 child = parent->_children[childFirstChar].get();
+                context.at(depth).first = child;
             }
 
             parent = child;
@@ -627,7 +629,11 @@ public:
 
         // 'parent' may only have one child, in which case we need to evaluate whether or not
         // this node is redundant.
-        _compressOnlyChild(parent);
+        for (auto it = context.rbegin(); it != context.rend(); ++it) {
+            if (!_compressOnlyChild(it->first))
+                break;
+        }
+
 
         return true;
     }
@@ -1181,10 +1187,10 @@ private:
      * Compresses a child node into its parent if necessary. This is required when an erase results
      * in a node with no value and only one child.
      */
-    void _compressOnlyChild(Node* node) {
+    bool _compressOnlyChild(Node* node) {
         // Don't compress if this node has an actual value associated with it or is the root.
         if (node->_data || node->_trieKey.empty()) {
-            return;
+            return false;
         }
 
         // Determine if this node has only one child.
@@ -1193,7 +1199,7 @@ private:
         for (size_t i = 0; i < node->_children.size(); ++i) {
             if (node->_children[i] != nullptr) {
                 if (onlyChild != nullptr) {
-                    return;
+                    return false;
                 }
                 onlyChild = node->_children[i];
             }
@@ -1208,6 +1214,7 @@ private:
             node->_data.emplace(onlyChild->_data->first, onlyChild->_data->second);
         }
         node->_children = onlyChild->_children;
+        return true;
     }
 
     /**
@@ -1425,6 +1432,8 @@ private:
                     baseNode->_data == otherNode->_data) {
                     Node* updatedNode =
                         _merge3Helper(node, baseNode, otherNode, context, trieKeyIndex);
+                    if (!updatedNode)
+                        break;
                     if (!updatedNode->_data) {
                         // Drop if leaf node without data, that is not valid. Otherwise we might
                         // need to compress if we have only one child.
@@ -1437,6 +1446,10 @@ private:
                 } else {
                     _mergeResolveConflict(node, baseNode, otherNode);
                     _rebuildContext(context, trieKeyIndex);
+                    if (!context.back()) {
+                        current = nullptr;
+                        break;
+                    }
                 }
             } else if (baseNode && !otherNode) {
                 // Throw a write conflict since current has modified a branch but master has
