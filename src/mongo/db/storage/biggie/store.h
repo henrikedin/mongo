@@ -638,12 +638,15 @@ public:
         difference_type deltaCount = _root->_count - base._root->_count;
         difference_type deltaDataSize = _root->_dataSize - base._root->_dataSize;
 
+        difference_type countBothRemoved = 0;
+        difference_type dataSizeBothRemoved = 0;
+
         invariant(this->_root->_trieKey.size() == 0 && base._root->_trieKey.size() == 0 &&
                   other._root->_trieKey.size() == 0);
         _merge3Helper(
-            this->_root.get(), base._root.get(), other._root.get(), context, trieKeyIndex);
-        _root->_count = other._root->_count + deltaCount;
-        _root->_dataSize = other._root->_dataSize + deltaDataSize;
+            this->_root.get(), base._root.get(), other._root.get(), context, trieKeyIndex, countBothRemoved, dataSizeBothRemoved);
+        _root->_count = other._root->_count + deltaCount + countBothRemoved;
+        _root->_dataSize = other._root->_dataSize + deltaDataSize + dataSizeBothRemoved;
     }
 
     // Iterators
@@ -1181,10 +1184,10 @@ private:
      * Compresses a child node into its parent if necessary. This is required when an erase results
      * in a node with no value and only one child.
      */
-    void _compressOnlyChild(Node* node) {
+    bool _compressOnlyChild(Node* node) {
         // Don't compress if this node has an actual value associated with it or is the root.
         if (node->_data || node->_trieKey.empty()) {
-            return;
+            return false;
         }
 
         // Determine if this node has only one child.
@@ -1193,11 +1196,14 @@ private:
         for (size_t i = 0; i < node->_children.size(); ++i) {
             if (node->_children[i] != nullptr) {
                 if (onlyChild != nullptr) {
-                    return;
+                    return false;
                 }
                 onlyChild = node->_children[i];
             }
         }
+
+        if (!onlyChild)
+            return false;
 
         // Append the child's key onto the parent.
         for (char item : onlyChild->_trieKey) {
@@ -1208,6 +1214,7 @@ private:
             node->_data.emplace(onlyChild->_data->first, onlyChild->_data->second);
         }
         node->_children = onlyChild->_children;
+        return true;
     }
 
     /**
@@ -1262,7 +1269,7 @@ private:
      * Resolves conflicts within subtrees due to the complicated structure of path-compressed radix
      * tries.
      */
-    void _mergeResolveConflict(const Node* current, const Node* baseNode, const Node* otherNode) {
+    void _mergeResolveConflict(const Node* current, const Node* baseNode, const Node* otherNode, difference_type& countBothRemoved, difference_type& dataSizeBothRemoved) {
 
         // Merges all differences between this and other, using base to determine whether operations
         // are allowed or should throw a merge conflict.
@@ -1323,6 +1330,10 @@ private:
                     // The working tree made a change to the node while the master tree removed the
                     // node, resulting in a merge conflict.
                     throw merge_conflict_exception();
+                } else {
+                    // Both removed this node, adjust count so it will be correct in the end.
+                    countBothRemoved++;
+                    dataSizeBothRemoved += baseVal.second.size();
                 }
             }
         }
@@ -1355,7 +1366,7 @@ private:
                         const Node* base,
                         const Node* other,
                         std::vector<Node*>& context,
-                        std::vector<uint8_t>& trieKeyIndex) {
+                        std::vector<uint8_t>& trieKeyIndex, difference_type& countBothRemoved, difference_type& dataSizeBothRemoved) {
         context.push_back(current);
 
         // Root doesn't have a trie key.
@@ -1400,6 +1411,8 @@ private:
                     current = _makeBranchUnique(context);
                     _rebuildContext(context, trieKeyIndex);
                     current->_children[key] = nullptr;
+                    // bool compressed = _compressOnlyChild(current);
+                    // compressed = false;
                 } else if (baseNode && otherNode && baseNode == node) {
                     // If base and current point to the same node, then master changed.
                     current = _makeBranchUnique(context);
@@ -1424,7 +1437,7 @@ private:
                     baseNode->_trieKey == otherNode->_trieKey && node->_data == baseNode->_data &&
                     baseNode->_data == otherNode->_data) {
                     Node* updatedNode =
-                        _merge3Helper(node, baseNode, otherNode, context, trieKeyIndex);
+                        _merge3Helper(node, baseNode, otherNode, context, trieKeyIndex, countBothRemoved, dataSizeBothRemoved);
                     if (!updatedNode->_data) {
                         // Drop if leaf node without data, that is not valid. Otherwise we might
                         // need to compress if we have only one child.
@@ -1435,8 +1448,17 @@ private:
                         }
                     }
                 } else {
-                    _mergeResolveConflict(node, baseNode, otherNode);
+                    _mergeResolveConflict(node, baseNode, otherNode, countBothRemoved, dataSizeBothRemoved);
                     _rebuildContext(context, trieKeyIndex);
+                    if (!context.back()->_data) {
+                        // Drop if leaf node without data, that is not valid. Otherwise we might
+                        // need to compress if we have only one child.
+                        if (context.back()->isLeaf()) {
+                            context[context.size() - 2]->_children[key] = nullptr;
+                        } else {
+                            _compressOnlyChild(context.back());
+                        }
+                    }
                 }
             } else if (baseNode && !otherNode) {
                 // Throw a write conflict since current has modified a branch but master has
