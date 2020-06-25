@@ -1453,8 +1453,8 @@ private:
                     if (!context.back()->_data) {
                         // Drop if leaf node without data, that is not valid. Otherwise we might
                         // need to compress if we have only one child.
-                        if (context.back()->isLeaf()) {
-                            context[context.size() - 2]->_children[key] = nullptr;
+                        if (context.size() > 1 && context.back()->isLeaf()) {
+                            //context[context.size() - 2]->_children[key] = nullptr;
                         } else {
                             _compressOnlyChild(context.back());
                         }
