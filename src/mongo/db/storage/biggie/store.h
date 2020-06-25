@@ -643,8 +643,13 @@ public:
 
         invariant(this->_root->_trieKey.size() == 0 && base._root->_trieKey.size() == 0 &&
                   other._root->_trieKey.size() == 0);
-        _merge3Helper(
-            this->_root.get(), base._root.get(), other._root.get(), context, trieKeyIndex, countBothRemoved, dataSizeBothRemoved);
+        _merge3Helper(this->_root.get(),
+                      base._root.get(),
+                      other._root.get(),
+                      context,
+                      trieKeyIndex,
+                      countBothRemoved,
+                      dataSizeBothRemoved);
         _root->_count = other._root->_count + deltaCount + countBothRemoved;
         _root->_dataSize = other._root->_dataSize + deltaDataSize + dataSizeBothRemoved;
     }
@@ -1269,7 +1274,11 @@ private:
      * Resolves conflicts within subtrees due to the complicated structure of path-compressed radix
      * tries.
      */
-    void _mergeResolveConflict(const Node* current, const Node* baseNode, const Node* otherNode, difference_type& countBothRemoved, difference_type& dataSizeBothRemoved) {
+    void _mergeResolveConflict(const Node* current,
+                               const Node* baseNode,
+                               const Node* otherNode,
+                               difference_type& countBothRemoved,
+                               difference_type& dataSizeBothRemoved) {
 
         // Merges all differences between this and other, using base to determine whether operations
         // are allowed or should throw a merge conflict.
@@ -1366,7 +1375,9 @@ private:
                         const Node* base,
                         const Node* other,
                         std::vector<Node*>& context,
-                        std::vector<uint8_t>& trieKeyIndex, difference_type& countBothRemoved, difference_type& dataSizeBothRemoved) {
+                        std::vector<uint8_t>& trieKeyIndex,
+                        difference_type& countBothRemoved,
+                        difference_type& dataSizeBothRemoved) {
         context.push_back(current);
 
         // Root doesn't have a trie key.
@@ -1402,6 +1413,7 @@ private:
                     // Either the master tree and working tree remove the same branch, or the master
                     // tree updated the branch while the working tree removed the branch, resulting
                     // in a merge conflict.
+                    _compressOnlyChild(current);
                     throw merge_conflict_exception();
                 }
             } else if (!unique) {
@@ -1423,8 +1435,11 @@ private:
                 // If all three are unique and leaf nodes with different data, then it is a merge
                 // conflict.
                 if (node->isLeaf() && baseNode->isLeaf() && otherNode->isLeaf()) {
-                    if (node->_data != baseNode->_data || baseNode->_data != otherNode->_data)
+                    if (node->_data != baseNode->_data || baseNode->_data != otherNode->_data) {
+                        _compressOnlyChild(current);
                         throw merge_conflict_exception();
+                    }
+
                     continue;
                 }
 
@@ -1436,8 +1451,13 @@ private:
                 if (node->_trieKey == baseNode->_trieKey &&
                     baseNode->_trieKey == otherNode->_trieKey && node->_data == baseNode->_data &&
                     baseNode->_data == otherNode->_data) {
-                    Node* updatedNode =
-                        _merge3Helper(node, baseNode, otherNode, context, trieKeyIndex, countBothRemoved, dataSizeBothRemoved);
+                    Node* updatedNode = _merge3Helper(node,
+                                                      baseNode,
+                                                      otherNode,
+                                                      context,
+                                                      trieKeyIndex,
+                                                      countBothRemoved,
+                                                      dataSizeBothRemoved);
                     if (!updatedNode->_data) {
                         // Drop if leaf node without data, that is not valid. Otherwise we might
                         // need to compress if we have only one child.
@@ -1448,13 +1468,20 @@ private:
                         }
                     }
                 } else {
-                    _mergeResolveConflict(node, baseNode, otherNode, countBothRemoved, dataSizeBothRemoved);
+                    try {
+                        _mergeResolveConflict(
+                            node, baseNode, otherNode, countBothRemoved, dataSizeBothRemoved);
+                    } catch (merge_conflict_exception&) {
+                        _compressOnlyChild(current);
+                        throw;
+                    }
+
                     _rebuildContext(context, trieKeyIndex);
                     if (!context.back()->_data) {
                         // Drop if leaf node without data, that is not valid. Otherwise we might
                         // need to compress if we have only one child.
                         if (context.size() > 1 && context.back()->isLeaf()) {
-                            //context[context.size() - 2]->_children[key] = nullptr;
+                            // context[context.size() - 2]->_children[key] = nullptr;
                         } else {
                             _compressOnlyChild(context.back());
                         }
@@ -1463,12 +1490,19 @@ private:
             } else if (baseNode && !otherNode) {
                 // Throw a write conflict since current has modified a branch but master has
                 // removed it.
+                _compressOnlyChild(current);
                 throw merge_conflict_exception();
             } else if (!baseNode && otherNode) {
                 // Both the working tree and master added branches that were nonexistent in base.
                 // This requires us to resolve these differences element by element since the
                 // changes may not be conflicting.
-                _mergeTwoBranches(node, otherNode);
+                try {
+                    _mergeTwoBranches(node, otherNode);
+                } catch (merge_conflict_exception&) {
+                    _compressOnlyChild(current);
+                    throw;
+                }
+                
                 _rebuildContext(context, trieKeyIndex);
             }
         }
