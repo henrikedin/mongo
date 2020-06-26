@@ -43,6 +43,8 @@
 namespace mongo {
 namespace biggie {
 
+constexpr bool aggressiveNodeAlloc = false;
+
 class merge_conflict_exception : std::exception {
     virtual const char* what() const noexcept {
         return "conflicting changes prevent successful merge";
@@ -456,10 +458,21 @@ public:
     using reverse_iterator = reverse_radix_iterator<pointer, value_type&>;
     using const_reverse_iterator = reverse_radix_iterator<const_pointer, const value_type&>;
 
+    static AtomicWord<int64_t>& num() {
+        static AtomicWord<int64_t> n{0};
+        return n;
+    }
+
     // Constructors
-    RadixStore() : _root(std::make_shared<Head>()) {}
-    RadixStore(const RadixStore& other) : _root(std::make_shared<Head>(*(other._root))) {}
-    RadixStore(const Head& other) : _root(std::make_shared<Head>(other)) {}
+    RadixStore() : _root(std::make_shared<Head>()) {
+        num().fetchAndAdd(1);
+    }
+    RadixStore(const RadixStore& other) : _root(std::make_shared<Head>(*(other._root))) {
+        num().fetchAndAdd(1);
+    }
+    RadixStore(const Head& other) : _root(std::make_shared<Head>(other)) {
+        num().fetchAndAdd(1);
+    }
 
     friend void swap(RadixStore& first, RadixStore& second) {
         std::swap(first._root, second._root);
@@ -467,6 +480,11 @@ public:
 
     RadixStore(RadixStore&& other) {
         _root = std::move(other._root);
+        num().fetchAndAdd(1);
+    }
+
+    ~RadixStore() {
+        num().fetchAndSubtract(1);
     }
 
     RadixStore& operator=(RadixStore other) {
@@ -550,7 +568,7 @@ public:
 
         Node* prev = _root.get();
         int rootUseCount = _root->_hasPreviousVersion ? 2 : 1;
-        bool isUniquelyOwned = _root.use_count() == rootUseCount;
+        bool isUniquelyOwned = _root.use_count() == rootUseCount && !aggressiveNodeAlloc;
         context.push_back(std::make_pair(prev, isUniquelyOwned));
 
         Node* node = nullptr;
@@ -598,7 +616,7 @@ public:
 
         if (!isUniquelyOwned) {
             invariant(!_root->_nextVersion);
-            invariant(_root.use_count() > rootUseCount);
+            // invariant(_root.use_count() > rootUseCount);
             _root->_nextVersion = std::make_shared<Head>(*_root);
             _root = _root->_nextVersion;
             _root->_hasPreviousVersion = true;
@@ -614,7 +632,7 @@ public:
             isUniquelyOwned = context.at(depth).second;
 
             uint8_t childFirstChar = child->_trieKey.front();
-            if (!isUniquelyOwned) {
+            if (!isUniquelyOwned || aggressiveNodeAlloc) {
                 parent->_children[childFirstChar] = std::make_shared<Node>(*child);
                 child = parent->_children[childFirstChar].get();
             }
@@ -842,6 +860,17 @@ private:
             return true;
         }
 
+        bool hasOneChild() const {
+            int numChildren = 0;
+            for (auto child : _children) {
+                if (child != nullptr) {
+                    if (++numChildren > 1)
+                        return false;
+                }
+            }
+            return numChildren == 1;
+        }
+
     protected:
         unsigned int _depth = 0;
         std::vector<uint8_t> _trieKey;
@@ -985,12 +1014,15 @@ private:
      * the tree are not considered to be sharing the _root for modifying operations.
      */
     void _makeRootUnique() {
-        int rootUseCount = _root->_hasPreviousVersion ? 2 : 1;
+        if (!aggressiveNodeAlloc) {
 
-        if (_root.use_count() == rootUseCount)
-            return;
+            int rootUseCount = _root->_hasPreviousVersion ? 2 : 1;
 
-        invariant(_root.use_count() > rootUseCount);
+            if (_root.use_count() == rootUseCount)
+                return;
+
+            invariant(_root.use_count() > rootUseCount);
+        }
         // Copy the node on a modifying operation when the root isn't unique.
 
         // There should not be any _nextVersion set in the _root otherwise our tree would have
@@ -1024,7 +1056,7 @@ private:
         Node* prev = _root.get();
         std::shared_ptr<Node> node = prev->_children[childFirstChar];
         while (node != nullptr) {
-            if (node.use_count() - 1 > 1) {
+            if (node.use_count() - 1 > 1 || aggressiveNodeAlloc) {
                 // Copy node on a modifying operation when it isn't owned uniquely.
                 node = std::make_shared<Node>(*node);
                 prev->_children[childFirstChar] = node;
@@ -1257,7 +1289,7 @@ private:
         for (size_t idx = 1; idx < context.size(); idx++) {
             node = context[idx];
 
-            if (prev->_children[node->_trieKey.front()].use_count() > 1) {
+            if (prev->_children[node->_trieKey.front()].use_count() > 1 || aggressiveNodeAlloc) {
                 std::shared_ptr<Node> nodeCopy = std::make_shared<Node>(*node);
                 prev->_children[nodeCopy->_trieKey.front()] = nodeCopy;
                 context[idx] = nodeCopy.get();
@@ -1413,7 +1445,11 @@ private:
                     // Either the master tree and working tree remove the same branch, or the master
                     // tree updated the branch while the working tree removed the branch, resulting
                     // in a merge conflict.
-                    _compressOnlyChild(current);
+                    if (current->hasOneChild()) {
+                        current = _makeBranchUnique(context);
+                        _compressOnlyChild(current);
+                    }
+                    
                     throw merge_conflict_exception();
                 }
             } else if (!unique) {
@@ -1436,7 +1472,11 @@ private:
                 // conflict.
                 if (node->isLeaf() && baseNode->isLeaf() && otherNode->isLeaf()) {
                     if (node->_data != baseNode->_data || baseNode->_data != otherNode->_data) {
-                        _compressOnlyChild(current);
+                        if (current->hasOneChild()) {
+                            current = _makeBranchUnique(context);
+                            _rebuildContext(context, trieKeyIndex);
+                            _compressOnlyChild(current);
+                        }
                         throw merge_conflict_exception();
                     }
 
@@ -1458,39 +1498,63 @@ private:
                                                       trieKeyIndex,
                                                       countBothRemoved,
                                                       dataSizeBothRemoved);
+                    //_rebuildContext(context, trieKeyIndex);
+                    // current = context.back();
                     if (!updatedNode->_data) {
+                        current = context.back();
+                        Node* thenode = current->_children[key].get();
+                        context.push_back(thenode);
+                        trieKeyIndex.push_back(thenode->_trieKey.at(0));
+                        thenode = _makeBranchUnique(context);
+                        _rebuildContext(context, trieKeyIndex);
+                        context.pop_back();
+                        current = context.back();
+                        context.push_back(thenode);
                         // Drop if leaf node without data, that is not valid. Otherwise we might
                         // need to compress if we have only one child.
-                        if (updatedNode->isLeaf()) {
+                        if (thenode->isLeaf()) {
                             current->_children[key] = nullptr;
                         } else {
-                            _compressOnlyChild(updatedNode);
+                            _compressOnlyChild(thenode);
                         }
+                        trieKeyIndex.pop_back();
+                        context.pop_back();
                     }
                 } else {
                     try {
                         _mergeResolveConflict(
                             node, baseNode, otherNode, countBothRemoved, dataSizeBothRemoved);
                     } catch (merge_conflict_exception&) {
-                        _compressOnlyChild(current);
+                        _rebuildContext(context, trieKeyIndex);
+                        current = context.back();
+                        if (current->hasOneChild()) {
+                            current = _makeBranchUnique(context);
+                            _rebuildContext(context, trieKeyIndex);
+                            _compressOnlyChild(current);
+                        }
                         throw;
                     }
 
                     _rebuildContext(context, trieKeyIndex);
-                    if (!context.back()->_data) {
-                        // Drop if leaf node without data, that is not valid. Otherwise we might
-                        // need to compress if we have only one child.
-                        if (context.size() > 1 && context.back()->isLeaf()) {
-                            // context[context.size() - 2]->_children[key] = nullptr;
-                        } else {
-                            _compressOnlyChild(context.back());
-                        }
-                    }
+                    // current = context.back();
+                    // if (!context.back()->_data) {
+                    //    // Drop if leaf node without data, that is not valid. Otherwise we might
+                    //    // need to compress if we have only one child.
+                    //    if (context.size() > 1 && context.back()->isLeaf()) {
+                    //        // context[context.size() - 2]->_children[key] = nullptr;
+                    //    } else {
+                    //        _compressOnlyChild(context.back());
+                    //    }
+                    //}
                 }
             } else if (baseNode && !otherNode) {
                 // Throw a write conflict since current has modified a branch but master has
                 // removed it.
-                _compressOnlyChild(current);
+                if (current->hasOneChild()) {
+                    current = _makeBranchUnique(context);
+                    _rebuildContext(context, trieKeyIndex);
+                    _compressOnlyChild(current);
+                }
                 throw merge_conflict_exception();
             } else if (!baseNode && otherNode) {
                 // Both the working tree and master added branches that were nonexistent in base.
@@ -1499,14 +1563,22 @@ private:
                 try {
                     _mergeTwoBranches(node, otherNode);
                 } catch (merge_conflict_exception&) {
-                    _compressOnlyChild(current);
+                    _rebuildContext(context, trieKeyIndex);
+                    current = context.back();
+                    if (current->hasOneChild()) {
+                        current = _makeBranchUnique(context);
+                        _rebuildContext(context, trieKeyIndex);
+                        _compressOnlyChild(current);
+                    }
                     throw;
                 }
-                
+
                 _rebuildContext(context, trieKeyIndex);
+                // current = context.back();
             }
         }
 
+        current = context.back();
         context.pop_back();
         if (!trieKeyIndex.empty())
             trieKeyIndex.pop_back();

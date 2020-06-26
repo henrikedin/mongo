@@ -108,7 +108,7 @@ void doMinidumpWithException(struct _EXCEPTION_POINTERS* exceptionInfo) {
 #ifdef MONGO_CONFIG_DEBUG_BUILD
         MiniDumpWithFullMemory;
 #else
-        static_cast<MINIDUMP_TYPE>(MiniDumpNormal | MiniDumpWithIndirectlyReferencedMemory |
+        static_cast<MINIDUMP_TYPE>(MiniDumpNormal |
                                    MiniDumpWithProcessThreadData);
 #endif
     LOGV2(23132,
