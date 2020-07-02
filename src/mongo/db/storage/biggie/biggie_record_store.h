@@ -88,6 +88,10 @@ public:
                                                      const char* damageSource,
                                                      const mutablebson::DamageVector& damages);
 
+    Status oplogDiskLocRegister(OperationContext* opCtx,
+                                const Timestamp& opTime,
+                                bool orderedCommit) override;
+
     std::unique_ptr<SeekableRecordCursor> getCursor(OperationContext* opCtx,
                                                     bool forward) const final;
 

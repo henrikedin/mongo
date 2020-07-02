@@ -73,6 +73,11 @@ void VisibilityManager::dealtWithRecord(RecordId rid) {
     _opsBecameVisibleCV.notify_all();
 }
 
+void VisibilityManager::reserveUncommittedRecord(RecordId rid) {
+    stdx::lock_guard<Latch> lock(_stateLock);
+    _uncommittedRecords.insert(rid);
+}
+
 void VisibilityManager::addUncommittedRecord(OperationContext* opCtx,
                                              RecordStore* rs,
                                              RecordId rid) {

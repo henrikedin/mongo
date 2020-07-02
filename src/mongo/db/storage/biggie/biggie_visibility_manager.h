@@ -56,6 +56,7 @@ public:
      * the record, the appropriate actions are taken to change the visibility of the oplog.
      */
     void addUncommittedRecord(OperationContext* opCtx, RecordStore* rs, RecordId rid);
+    void reserveUncommittedRecord(RecordId rid);
 
     /**
      * Returns the highest seen RecordId such that it and all smaller RecordIds are committed or

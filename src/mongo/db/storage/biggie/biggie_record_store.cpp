@@ -336,6 +336,19 @@ boost::optional<RecordId> RecordStore::oplogStartHack(OperationContext* opCtx,
     return rid;
 }
 
+Status RecordStore::oplogDiskLocRegister(OperationContext* opCtx,
+                                         const Timestamp& opTime,
+                                         bool orderedCommit) {
+    if (!orderedCommit) {
+        auto key = oploghack::keyForOptime(opTime);
+        if (!key.isOK())
+            return key.getStatus();
+
+        _visibilityManager->reserveUncommittedRecord(key.getValue());
+    }
+    return Status::OK();
+}
+
 void RecordStore::_initHighestIdIfNeeded(OperationContext* opCtx) {
     // In the normal case, this will already be initialized, so use a weak load. Since this value
     // will only change from 0 to a positive integer, the only risk is reading an outdated value, 0,
