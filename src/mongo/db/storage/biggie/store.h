@@ -834,17 +834,6 @@ private:
             return true;
         }
 
-        bool hasOneChild() const {
-            int num = 0;
-            for (auto child : _children) {
-                if (child != nullptr) {
-                    if (++num > 1)
-                        break;
-                }
-            }
-            return num == 1;
-        }
-
     protected:
         unsigned int _depth = 0;
         std::vector<uint8_t> _trieKey;
@@ -1362,7 +1351,7 @@ private:
      * Merges changes from base to other into current. Throws merge_conflict_exception if there are
      * merge conflicts.
      */
-    std::pair<Node*, bool> _merge3Helper(Node* current,
+    Node* _merge3Helper(Node* current,
                         const Node* base,
                         const Node* other,
                         std::vector<Node*>& context,
@@ -1373,15 +1362,9 @@ private:
         if (!current->_trieKey.empty())
             trieKeyIndex.push_back(current->_trieKey.at(0));
 
-        bool resolveConflictNeeded = false;
         for (size_t key = 0; key < 256; ++key) {
             // Since _makeBranchUnique may make changes to the pointer addresses in recursive calls.
             current = context.back();
-
-            if (current->_trieKey != base->_trieKey || base->_trieKey != other->_trieKey) {
-                resolveConflictNeeded = true;
-                break;
-            }
 
             Node* node = current->_children[key].get();
             Node* baseNode = base->_children[key].get();
@@ -1399,21 +1382,10 @@ private:
                     // merge in the other's branch.
                     current = _makeBranchUnique(context);
 
-                    if (current->_depth + current->_trieKey.size() !=
-                        other->_depth + other->_trieKey.size()) {
-                        std::vector<uint8_t> newKey(current->_trieKey.begin(),
-                                                    std::mismatch(other->_trieKey.begin(),
-                                                                  other->_trieKey.end(),
-                                                                  current->_trieKey.begin())
-                                                        .second);
-                        _addChild(current, newKey, boost::none);
-                    }
-
                     // Need to rebuild our context to have updated pointers due to the
                     // modifications that go on in _makeBranchUnique.
                     _rebuildContext(context, trieKeyIndex);
-                    invariant(current->_depth + current->_trieKey.size() ==
-                              other->_depth + other->_trieKey.size());
+
                     current->_children[key] = other->_children[key];
                 } else if (!otherNode || (baseNode && baseNode != otherNode)) {
                     // Either the master tree and working tree remove the same branch, or the master
@@ -1427,16 +1399,11 @@ private:
 
                     current = _makeBranchUnique(context);
                     _rebuildContext(context, trieKeyIndex);
-                    /*logd("erase2: 0x{:x}, parent: 0x{:x}",
-                         reinterpret_cast<uint64_t>(current->_children[key].get()),
-                         reinterpret_cast<uint64_t>(current));*/
                     current->_children[key] = nullptr;
                 } else if (baseNode && otherNode && baseNode == node) {
                     // If base and current point to the same node, then master changed.
                     current = _makeBranchUnique(context);
                     _rebuildContext(context, trieKeyIndex);
-                    invariant(current->_depth + current->_trieKey.size() ==
-                              other->_depth + other->_trieKey.size());
                     current->_children[key] = other->_children[key];
                 }
             } else if (baseNode && otherNode && baseNode != otherNode) {
@@ -1453,27 +1420,21 @@ private:
                 // structure of compressed radix tries makes it difficult to compare the
                 // trees node by node, hence the reason for resolving these differences
                 // element by element.
-                bool canRecurse = node->_trieKey == baseNode->_trieKey &&
+                if (node->_trieKey == baseNode->_trieKey &&
                     baseNode->_trieKey == otherNode->_trieKey && node->_data == baseNode->_data &&
-                    baseNode->_data == otherNode->_data;
-                bool resolveConflict = !canRecurse;
-                if (canRecurse) {
-                    Node* updatedNode;
-                    std::tie(updatedNode, resolveConflict) =
+                    baseNode->_data == otherNode->_data) {
+                    Node* updatedNode =
                         _merge3Helper(node, baseNode, otherNode, context, trieKeyIndex);
-                    if (!resolveConflict && !updatedNode->_data && updatedNode->isLeaf()) {
+                    if (!updatedNode->_data) {
                         // Drop if leaf node without data, that is not valid. Otherwise we might
                         // need to compress if we have only one child.
-                        current = _makeBranchUnique(context);
-                        _rebuildContext(context, trieKeyIndex);
-                        /*logd("erase3: 0x{:x}, parent: 0x{:x}",
-                             reinterpret_cast<uint64_t>(current->_children[key].get()),
-                             reinterpret_cast<uint64_t>(current));*/
-                        current->_children[key] = nullptr;
+                        if (updatedNode->isLeaf()) {
+                            current->_children[key] = nullptr;
+                        } else {
+                            _compressOnlyChild(updatedNode);
+                        }
                     }
-                }
-                if (resolveConflict)
-                {
+                } else {
                     _mergeResolveConflict(node, baseNode, otherNode);
                     _rebuildContext(context, trieKeyIndex);
                 }
@@ -1490,21 +1451,11 @@ private:
             }
         }
 
-        current = context.back();
-
-        if (!trieKeyIndex.empty()) {
-            if (!current->_data && current->hasOneChild()) {
-                current = _makeBranchUnique(context);
-                _rebuildContext(context, trieKeyIndex);
-                _compressOnlyChild(current);
-            }
-
-            trieKeyIndex.pop_back();
-        }
-
         context.pop_back();
+        if (!trieKeyIndex.empty())
+            trieKeyIndex.pop_back();
 
-        return std::make_pair(current, resolveConflictNeeded);
+        return current;
     }
 
     Node* _begin(Node* root) const noexcept {
