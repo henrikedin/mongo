@@ -80,6 +80,29 @@ protected:
     StringStore expected;
 };
 
+TEST_F(RadixStoreTest, bugfinder) {
+    // This test have a shared 'aa' internal node it forces recursion on by making sure all tree
+    // three touches it. It causes a merge conflict on the 'a' child on 'aa' where an erase of
+    // 'aaaaaa' happens on thisStore causing a node compression. This will lead to current and other inside merge3 having different trieKeys. Make sure children merged in during this state gets expanded correctly.
+    baseStore.insert({"aaaaaa", "a"});
+    baseStore.insert({"aaaabb", "b"});
+    baseStore.insert({"aab", "b"});
+
+    otherStore = baseStore;
+    otherStore.erase("aaaaaa");
+    otherStore.insert({"aadd", "d"});
+    otherStore.insert({"aade", "e"});
+
+    thisStore = baseStore;
+    thisStore.erase("aab");
+    thisStore.erase("aaaabb");
+    thisStore.insert({"aac", "c"});
+
+
+    thisStore.merge3(baseStore, otherStore);
+    ASSERT_EQ(thisStore.find("aadd")->second, "d");
+}
+
 TEST_F(RadixStoreTest, SimpleInsertTest) {
     value_type value1 = std::make_pair("food", "1");
     value_type value2 = std::make_pair("foo", "2");

@@ -1362,6 +1362,33 @@ private:
         if (!current->_trieKey.empty())
             trieKeyIndex.push_back(current->_trieKey.at(0));
 
+        auto splitCurrentBeforeWriteIfNeeded = [&](Node* child, uint8_t key) {
+            if (current->_trieKey == other->_trieKey)
+                return child;
+
+            // This can only happen if we've done previous writes to current so it should already be
+            // unique and safe to write to.
+            size_t mismatchIdx =
+                _comparePrefix(current->_trieKey, other->_trieKey.data(), other->_trieKey.size());
+
+            auto parent = context[context.size() - 2];
+            auto shared_current = std::move(parent->_children[current->_trieKey.front()]);
+            auto newTrieKey = std::vector<uint8_t>(current->_trieKey.begin(),
+                                                   current->_trieKey.begin() + mismatchIdx);
+            current->_trieKey.erase(current->_trieKey.begin(),
+                                    current->_trieKey.begin() + mismatchIdx);
+
+            auto newNode = _addChild(parent, newTrieKey, boost::none);
+            current->_depth += mismatchIdx;
+            // current->_data = boost::none;
+            child = current;
+            newNode->_children[shared_current->_trieKey.front()] = std::move(shared_current);
+
+            current = newNode;
+            context.back() = current;
+            return child;
+        };
+
         for (size_t key = 0; key < 256; ++key) {
             // Since _makeBranchUnique may make changes to the pointer addresses in recursive calls.
             current = context.back();
@@ -1378,6 +1405,7 @@ private:
             // If the current tree does not have this node, check if the other trees do.
             if (!node) {
                 if (!baseNode && otherNode) {
+                    splitCurrentBeforeWriteIfNeeded(nullptr, key);
                     // If base and node do NOT have this branch, but other does, then
                     // merge in the other's branch.
                     current = _makeBranchUnique(context);
@@ -1387,6 +1415,7 @@ private:
                     _rebuildContext(context, trieKeyIndex);
 
                     current->_children[key] = other->_children[key];
+                    
                 } else if (!otherNode || (baseNode && baseNode != otherNode)) {
                     // Either the master tree and working tree remove the same branch, or the master
                     // tree updated the branch while the working tree removed the branch, resulting
@@ -1395,12 +1424,16 @@ private:
                 }
             } else if (!unique) {
                 if (baseNode && !otherNode && baseNode == node) {
+                    node = splitCurrentBeforeWriteIfNeeded(node, key);
+
                     // Other has a deleted branch that must also be removed from current tree.
 
                     current = _makeBranchUnique(context);
                     _rebuildContext(context, trieKeyIndex);
                     current->_children[key] = nullptr;
                 } else if (baseNode && otherNode && baseNode == node) {
+                    node = splitCurrentBeforeWriteIfNeeded(node, key);
+
                     // If base and current point to the same node, then master changed.
                     current = _makeBranchUnique(context);
                     _rebuildContext(context, trieKeyIndex);
@@ -1415,6 +1448,7 @@ private:
                     continue;
                 }
 
+                node = splitCurrentBeforeWriteIfNeeded(node, key);
                 // If the keys and data are all the exact same, then we can keep recursing.
                 // Otherwise, we manually resolve the differences element by element. The
                 // structure of compressed radix tries makes it difficult to compare the
@@ -1446,6 +1480,7 @@ private:
                 // Both the working tree and master added branches that were nonexistent in base.
                 // This requires us to resolve these differences element by element since the
                 // changes may not be conflicting.
+                node = splitCurrentBeforeWriteIfNeeded(node, key);
                 _mergeTwoBranches(node, otherNode);
                 _rebuildContext(context, trieKeyIndex);
             }
