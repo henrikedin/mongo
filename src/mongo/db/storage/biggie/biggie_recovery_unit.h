@@ -67,6 +67,8 @@ public:
         return _prepareTimestamp;
     }
 
+    Status setTimestamp(Timestamp timestamp) override;
+
     virtual void setCommitTimestamp(Timestamp ts) override {
         _commitTimestamp = ts;
     }

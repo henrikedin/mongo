@@ -182,6 +182,7 @@ private:
         bool _needFirstSeek = true;
         bool _lastMoveWasRestore = false;
         VisibilityManager* _visibilityManager;
+        RecordId _oplogVisibility;
 
     public:
         Cursor(OperationContext* opCtx,

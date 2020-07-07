@@ -36,6 +36,7 @@
 #include "mongo/db/storage/biggie/biggie_record_store.h"
 #include "mongo/db/storage/biggie/biggie_visibility_manager.h"
 #include "mongo/db/storage/recovery_unit.h"
+#include "mongo/logv2/log_debug.h"
 
 namespace mongo {
 namespace biggie {
@@ -70,12 +71,33 @@ private:
 void VisibilityManager::dealtWithRecord(RecordId rid) {
     stdx::lock_guard<Latch> lock(_stateLock);
     _uncommittedRecords.erase(rid);
+    //logd("dealtWithRecord {} {}", Timestamp(rid.repr()), rid);
     _opsBecameVisibleCV.notify_all();
 }
 
 void VisibilityManager::reserveUncommittedRecord(RecordId rid) {
     stdx::lock_guard<Latch> lock(_stateLock);
+    //logd("reserveUncommittedRecord {} {}", Timestamp(rid.repr()), rid);
+    /*if (_reservedTimestamp != RecordId()) {
+        logd("clearing previous reserved {}", _reservedTimestamp);
+        _uncommittedRecords.erase(_reservedTimestamp);
+    }*/
+    
     _uncommittedRecords.insert(rid);
+    _reservedTimestamp = rid;
+}
+
+void VisibilityManager::removeAllLowerUncommittedRecord(RecordId rid) {
+    stdx::lock_guard<Latch> lock(_stateLock);
+    while (!_uncommittedRecords.empty() && *_uncommittedRecords.begin() <= rid) {
+        _uncommittedRecords.erase(_uncommittedRecords.begin());
+    }
+}
+
+void VisibilityManager::allowedRead(RecordId rid) {
+    stdx::lock_guard<Latch> lock(_stateLock);
+    if (_highestAllowedRead < rid)
+        _highestAllowedRead = rid;
 }
 
 void VisibilityManager::addUncommittedRecord(OperationContext* opCtx,
@@ -87,6 +109,14 @@ void VisibilityManager::addUncommittedRecord(OperationContext* opCtx,
 
     if (rid > _highestSeen)
         _highestSeen = rid;
+    _reservedTimestamp = RecordId();
+    //logd("addUncommittedRecord {} {}", Timestamp(rid.repr()), rid);
+
+    if (rid < _highestAllowedRead) {
+        logd("CRASHING WRITING SMALLER THAN READ {} {}", rid, _highestAllowedRead);
+        invariant(false);
+    }
+    
 }
 
 RecordId VisibilityManager::getAllCommittedRecord() {
