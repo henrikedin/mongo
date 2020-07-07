@@ -341,8 +341,7 @@ Status RecordStore::oplogDiskLocRegister(OperationContext* opCtx,
                                          const Timestamp& opTime,
                                          bool orderedCommit) {
     if (!orderedCommit) {
-        opCtx->recoveryUnit()->setTimestamp(opTime);
-        return Status::OK();
+        return opCtx->recoveryUnit()->setTimestamp(opTime);
     }
 
     auto key = oploghack::keyForOptime(opTime);
