@@ -1,5 +1,5 @@
 //
-// @tags: [SERVER-40561]
+// @tags: [SERVER-40561, incompatible_with_eft]
 //
 
 t = db.geo_polygon4;
