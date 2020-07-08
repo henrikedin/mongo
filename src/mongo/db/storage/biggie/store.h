@@ -1350,22 +1350,28 @@ private:
     /**
      * Merges changes from base to other into current. Throws merge_conflict_exception if there are
      * merge conflicts.
+     * It returns the updated current node and a boolan indicating that conflict resolution is
+     * required after recursion
      */
-    Node* _merge3Helper(Node* current,
-                        const Node* base,
-                        const Node* other,
-                        std::vector<Node*>& context,
-                        std::vector<uint8_t>& trieKeyIndex) {
+    std::pair<Node*, bool> _merge3Helper(Node* current,
+                                         const Node* base,
+                                         const Node* other,
+                                         std::vector<Node*>& context,
+                                         std::vector<uint8_t>& trieKeyIndex) {
         context.push_back(current);
 
         // Root doesn't have a trie key.
         if (!current->_trieKey.empty())
             trieKeyIndex.push_back(current->_trieKey.at(0));
 
+        auto currentHasBeenCompressed = [&]() {
+            // This can only happen when conflict resultion erases nodes that causes compression on current
+            return current->_trieKey.size() != other->_trieKey.size();
+        };
+
         auto splitCurrentBeforeWriteIfNeeded = [&](Node* child) {
-            // If the trieKey of current and other have the same size then no compression has
-            // happened and there's nothing to do
-            if (current->_trieKey.size() == other->_trieKey.size())
+            // If current has not been compressed there's nothing to do
+            if (!currentHasBeenCompressed())
                 return child;
 
             // This can only happen if we've done previous writes to current so it should already be
@@ -1378,8 +1384,7 @@ private:
             auto newTrieKeyBegin = current->_trieKey.begin();
             auto newTrieKeyEnd = current->_trieKey.begin() + mismatchIdx;
             auto shared_current = std::move(parent->_children[key]);
-            auto newTrieKey = std::vector<uint8_t>(newTrieKeyBegin,
-                                                   newTrieKeyEnd);
+            auto newTrieKey = std::vector<uint8_t>(newTrieKeyBegin, newTrieKeyEnd);
 
             // Replace current with a new node with no data
             auto newNode = _addChild(parent, newTrieKey, boost::none);
@@ -1392,7 +1397,7 @@ private:
             // Add what was the current node as a child to the new internal node
             key = current->_trieKey.front();
             newNode->_children[key] = std::move(shared_current);
-            
+
             // Update current pointer and context
             child = current;
             current = newNode;
@@ -1400,6 +1405,7 @@ private:
             return child;
         };
 
+        bool resolveConflictNeeded = false;
         for (size_t key = 0; key < 256; ++key) {
             // Since _makeBranchUnique may make changes to the pointer addresses in recursive calls.
             current = context.back();
@@ -1426,7 +1432,7 @@ private:
                     _rebuildContext(context, trieKeyIndex);
 
                     current->_children[key] = other->_children[key];
-                    
+
                 } else if (!otherNode || (baseNode && baseNode != otherNode)) {
                     // Either the master tree and working tree remove the same branch, or the master
                     // tree updated the branch while the working tree removed the branch, resulting
@@ -1459,16 +1465,23 @@ private:
                     continue;
                 }
 
-                node = splitCurrentBeforeWriteIfNeeded(node);
+                if (currentHasBeenCompressed()) {
+                    resolveConflictNeeded = true;
+                    break;
+                }
+
                 // If the keys and data are all the exact same, then we can keep recursing.
                 // Otherwise, we manually resolve the differences element by element. The
                 // structure of compressed radix tries makes it difficult to compare the
                 // trees node by node, hence the reason for resolving these differences
                 // element by element.
-                if (node->_trieKey == baseNode->_trieKey &&
-                    baseNode->_trieKey == otherNode->_trieKey && node->_data == baseNode->_data &&
-                    baseNode->_data == otherNode->_data) {
-                    Node* updatedNode =
+                bool resolveConflict =
+                    !(node->_trieKey == baseNode->_trieKey &&
+                      baseNode->_trieKey == otherNode->_trieKey && node->_data == baseNode->_data &&
+                      baseNode->_data == otherNode->_data);
+                if (!resolveConflict) {
+                    Node* updatedNode;
+                    std::tie(updatedNode, resolveConflict) =
                         _merge3Helper(node, baseNode, otherNode, context, trieKeyIndex);
                     if (!updatedNode->_data) {
                         // Drop if leaf node without data, that is not valid. Otherwise we might
@@ -1479,7 +1492,8 @@ private:
                             _compressOnlyChild(updatedNode);
                         }
                     }
-                } else {
+                }
+                if (resolveConflict) {
                     _mergeResolveConflict(node, baseNode, otherNode);
                     _rebuildContext(context, trieKeyIndex);
                 }
@@ -1491,7 +1505,11 @@ private:
                 // Both the working tree and master added branches that were nonexistent in base.
                 // This requires us to resolve these differences element by element since the
                 // changes may not be conflicting.
-                node = splitCurrentBeforeWriteIfNeeded(node);
+                if (currentHasBeenCompressed()) {
+                    resolveConflictNeeded = true;
+                    break;
+                }
+
                 _mergeTwoBranches(node, otherNode);
                 _rebuildContext(context, trieKeyIndex);
             }
@@ -1501,7 +1519,7 @@ private:
         if (!trieKeyIndex.empty())
             trieKeyIndex.pop_back();
 
-        return current;
+        return std::make_pair(current, resolveConflictNeeded);
     }
 
     Node* _begin(Node* root) const noexcept {
