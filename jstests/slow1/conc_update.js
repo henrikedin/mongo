@@ -1,3 +1,5 @@
+// @tags: [incompatible_with_eft]
+
 (function() {
 "use strict";
 
