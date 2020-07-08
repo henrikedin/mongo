@@ -1362,8 +1362,10 @@ private:
         if (!current->_trieKey.empty())
             trieKeyIndex.push_back(current->_trieKey.at(0));
 
-        auto splitCurrentBeforeWriteIfNeeded = [&](Node* child, uint8_t key) {
-            if (current->_trieKey == other->_trieKey)
+        auto splitCurrentBeforeWriteIfNeeded = [&](Node* child) {
+            // If the trieKey of current and other have the same size then no compression has
+            // happened and there's nothing to do
+            if (current->_trieKey.size() == other->_trieKey.size())
                 return child;
 
             // This can only happen if we've done previous writes to current so it should already be
@@ -1372,18 +1374,27 @@ private:
                 _comparePrefix(current->_trieKey, other->_trieKey.data(), other->_trieKey.size());
 
             auto parent = context[context.size() - 2];
-            auto shared_current = std::move(parent->_children[current->_trieKey.front()]);
-            auto newTrieKey = std::vector<uint8_t>(current->_trieKey.begin(),
-                                                   current->_trieKey.begin() + mismatchIdx);
+            auto key = current->_trieKey.front();
+            auto newTrieKeyBegin = current->_trieKey.begin();
+            auto newTrieKeyEnd = current->_trieKey.begin() + mismatchIdx;
+            auto shared_current = std::move(parent->_children[key]);
+            auto newTrieKey = std::vector<uint8_t>(newTrieKeyBegin,
+                                                   newTrieKeyEnd);
+
+            // Replace current with a new node with no data
+            auto newNode = _addChild(parent, newTrieKey, boost::none);
+
+            // Remove the part of the trieKey that is used by the new node.
             current->_trieKey.erase(current->_trieKey.begin(),
                                     current->_trieKey.begin() + mismatchIdx);
-
-            auto newNode = _addChild(parent, newTrieKey, boost::none);
             current->_depth += mismatchIdx;
-            // current->_data = boost::none;
-            child = current;
-            newNode->_children[shared_current->_trieKey.front()] = std::move(shared_current);
 
+            // Add what was the current node as a child to the new internal node
+            key = current->_trieKey.front();
+            newNode->_children[key] = std::move(shared_current);
+            
+            // Update current pointer and context
+            child = current;
             current = newNode;
             context.back() = current;
             return child;
@@ -1405,7 +1416,7 @@ private:
             // If the current tree does not have this node, check if the other trees do.
             if (!node) {
                 if (!baseNode && otherNode) {
-                    splitCurrentBeforeWriteIfNeeded(nullptr, key);
+                    splitCurrentBeforeWriteIfNeeded(nullptr);
                     // If base and node do NOT have this branch, but other does, then
                     // merge in the other's branch.
                     current = _makeBranchUnique(context);
@@ -1424,7 +1435,7 @@ private:
                 }
             } else if (!unique) {
                 if (baseNode && !otherNode && baseNode == node) {
-                    node = splitCurrentBeforeWriteIfNeeded(node, key);
+                    node = splitCurrentBeforeWriteIfNeeded(node);
 
                     // Other has a deleted branch that must also be removed from current tree.
 
@@ -1432,7 +1443,7 @@ private:
                     _rebuildContext(context, trieKeyIndex);
                     current->_children[key] = nullptr;
                 } else if (baseNode && otherNode && baseNode == node) {
-                    node = splitCurrentBeforeWriteIfNeeded(node, key);
+                    node = splitCurrentBeforeWriteIfNeeded(node);
 
                     // If base and current point to the same node, then master changed.
                     current = _makeBranchUnique(context);
@@ -1448,7 +1459,7 @@ private:
                     continue;
                 }
 
-                node = splitCurrentBeforeWriteIfNeeded(node, key);
+                node = splitCurrentBeforeWriteIfNeeded(node);
                 // If the keys and data are all the exact same, then we can keep recursing.
                 // Otherwise, we manually resolve the differences element by element. The
                 // structure of compressed radix tries makes it difficult to compare the
@@ -1480,7 +1491,7 @@ private:
                 // Both the working tree and master added branches that were nonexistent in base.
                 // This requires us to resolve these differences element by element since the
                 // changes may not be conflicting.
-                node = splitCurrentBeforeWriteIfNeeded(node, key);
+                node = splitCurrentBeforeWriteIfNeeded(node);
                 _mergeTwoBranches(node, otherNode);
                 _rebuildContext(context, trieKeyIndex);
             }
