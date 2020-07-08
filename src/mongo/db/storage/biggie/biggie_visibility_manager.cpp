@@ -112,10 +112,10 @@ void VisibilityManager::addUncommittedRecord(OperationContext* opCtx,
     _reservedTimestamp = RecordId();
     //logd("addUncommittedRecord {} {}", Timestamp(rid.repr()), rid);
 
-    if (rid < _highestAllowedRead) {
+    /*if (rid < _highestAllowedRead) {
         logd("CRASHING WRITING SMALLER THAN READ {} {}", rid, _highestAllowedRead);
         invariant(false);
-    }
+    }*/
     
 }
 
