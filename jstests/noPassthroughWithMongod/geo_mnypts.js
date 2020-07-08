@@ -1,4 +1,5 @@
 // Test sanity of geo queries with a lot of points
+// @tags: [incompatible_with_eft]
 
 var coll = db.testMnyPts;
 coll.drop();
