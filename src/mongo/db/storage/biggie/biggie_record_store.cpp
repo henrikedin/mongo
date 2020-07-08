@@ -344,17 +344,6 @@ Status RecordStore::oplogDiskLocRegister(OperationContext* opCtx,
         return opCtx->recoveryUnit()->setTimestamp(opTime);
     }
 
-    auto key = oploghack::keyForOptime(opTime);
-    if (!key.isOK())
-        return key.getStatus();
-    _visibilityManager->removeAllLowerUncommittedRecord(key.getValue());
-
-    stdx::lock_guard<Latch> cappedCallbackLock(_cappedCallbackMutex);
-    // This wakes up cursors blocking for awaitData.
-    if (_cappedCallback) {
-        _cappedCallback->notifyCappedWaitersIfNeeded();
-    }
-
     return Status::OK();
 }
 
@@ -463,20 +452,8 @@ boost::optional<Record> RecordStore::Cursor::next() {
         nextRecord.id = RecordId(extractRecordId(it->first));
         nextRecord.data = RecordData(it->second.c_str(), it->second.length());
 
-        if (_rs._isOplog) {
-            auto allVisible = _oplogVisibility;
-            if (nextRecord.id > allVisible) {
-                /*logd("next() blocking read {} {} {}",
-                     Timestamp(nextRecord.id.repr()),
-                     nextRecord.id,
-                     allVisible);*/
-                return boost::none;
-            }
-            /*logd("next() allowing read {} {} {}",
-                 Timestamp(nextRecord.id.repr()),
-                 nextRecord.id,
-                 allVisible);*/
-            _visibilityManager->allowedRead(nextRecord.id);
+        if (_rs._isOplog && nextRecord.id > _oplogVisibility) {
+            return boost::none;
         }
 
         return nextRecord;
@@ -494,14 +471,8 @@ boost::optional<Record> RecordStore::Cursor::seekExact(const RecordId& id) {
     if (it == workingCopy->end() || !inPrefix(it->first))
         return boost::none;
 
-    if (_rs._isOplog) {
-        auto allVisible = _oplogVisibility;
-        if (id > allVisible) {
-            /*logd("seekExact() blocking read {} {} {}", Timestamp(id.repr()), id, allVisible);*/
+    if (_rs._isOplog && id > _oplogVisibility) {
             return boost::none;
-        }
-        /*logd("seekExact() allowing read {} {} {}", Timestamp(id.repr()), id, allVisible);*/
-        _visibilityManager->allowedRead(id);
     }
 
     _needFirstSeek = false;
@@ -517,21 +488,14 @@ bool RecordStore::Cursor::restore() {
     if (!_savedPosition)
         return true;
 
+    // Get oplog visibility before forking working tree to guarantee that nothing gets committed after we've forked that would update oplog visibility
     if (_rs._isOplog) {
         _oplogVisibility = _visibilityManager->getAllCommittedRecord();
-        /*logd("oplog cursor restore {}", _oplogVisibility);*/
     }
 
     StringStore* workingCopy(RecoveryUnit::get(opCtx)->getHead());
     it = (_savedPosition) ? workingCopy->lower_bound(_savedPosition.value()) : workingCopy->end();
     _lastMoveWasRestore = it == workingCopy->end() || it->first != _savedPosition.value();
-
-    if (_rs._isOplog) {
-        if (it != workingCopy->end()) {
-            /*logd("oplog cursor restore pos {} {}", RecordId(extractRecordId(it->first)), _lastMoveWasRestore);*/
-        }
-        
-    }
 
     // Capped iterators die on invalidation rather than advancing.
     return !(_rs._isCapped && _lastMoveWasRestore);

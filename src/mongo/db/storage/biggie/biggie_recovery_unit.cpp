@@ -132,10 +132,7 @@ Status RecoveryUnit::setTimestamp(Timestamp timestamp) {
         if (!key.isOK())
             return key.getStatus();
 
-    auto rid = key.getValue();
-    _KVEngine->visibilityManager()->reserveUncommittedRecord(rid);
-    onCommit([this, rid](boost::optional<Timestamp>) { _KVEngine->visibilityManager()->dealtWithRecord(rid); });
-    onRollback([this, rid] { _KVEngine->visibilityManager()->dealtWithRecord(rid); });
+    _KVEngine->visibilityManager()->reserveRecord(this, key.getValue());
     return Status::OK();
 }
 void RecoveryUnit::setOrderedCommit(bool orderedCommit) {}

@@ -52,13 +52,15 @@ public:
     void dealtWithRecord(RecordId rid);
 
     /**
+     * Reserves a RecordId to be tracked before it is added. Used to ensure we don't skip over oplog holes when inserting out-of-order
+     */
+    void reserveRecord(RecoveryUnit* recoveryUnit, RecordId rid);
+
+    /**
      * Adds a RecordId to be tracked while its Record is uncommitted. Upon commit or rollback of
      * the record, the appropriate actions are taken to change the visibility of the oplog.
      */
     void addUncommittedRecord(OperationContext* opCtx, RecordStore* rs, RecordId rid);
-    void reserveUncommittedRecord(RecordId rid);
-    void removeAllLowerUncommittedRecord(RecordId rid);
-    void allowedRead(RecordId rid);
 
     /**
      * Returns the highest seen RecordId such that it and all smaller RecordIds are committed or
@@ -87,7 +89,6 @@ private:
     mutable stdx::condition_variable _opsBecameVisibleCV;
     std::set<RecordId> _uncommittedRecords;  // RecordIds that have yet to be committed/rolled back.
     RecordId _reservedTimestamp;
-    RecordId _highestAllowedRead;
 };
 
 }  // namespace biggie
