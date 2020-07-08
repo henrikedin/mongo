@@ -12268,10 +12268,6 @@ buildvariants:
   - name: concurrency_replication_causal_consistency
     distros:
     - rhel62-large
-  - name: concurrency_simultaneous
-  - name: concurrency_simultaneous_replication
-    distros:
-    - rhel62-large
   - name: .integration !.audit
     distros:
     - rhel62-large
