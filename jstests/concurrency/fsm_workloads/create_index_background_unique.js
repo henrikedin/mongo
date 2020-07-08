@@ -12,6 +12,7 @@
  * @tags: [
  *     creates_background_indexes,
  *     requires_persistence,
+ *     incompatible_with_eft,
  * ]
  */
 load("jstests/concurrency/fsm_workload_helpers/assert_handle_fail_in_transaction.js");
