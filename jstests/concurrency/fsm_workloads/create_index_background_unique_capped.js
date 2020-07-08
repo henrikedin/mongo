@@ -5,7 +5,7 @@
  *
  * Creates multiple unique background indexes in parallel, on capped collections.
  *
- * @tags: [creates_background_indexes, requires_capped]
+ * @tags: [creates_background_indexes, requires_capped, incompatible_with_eft]
  */
 
 load('jstests/concurrency/fsm_libs/extend_workload.js');                      // for extendWorkload
