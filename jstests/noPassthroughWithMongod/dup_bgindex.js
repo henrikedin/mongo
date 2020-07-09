@@ -1,4 +1,5 @@
 // Try to create two identical indexes, via background. Shouldn't be allowed by the server.
+// @tags: [incompatible_with_eft]
 (function() {
 var t = db.duplIndexTest;
 t.drop();
