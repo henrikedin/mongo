@@ -1767,6 +1767,29 @@ TEST_F(RadixStoreTest, MergeWillCompressNodes) {
     ASSERT_EQ(std::distance(thisStore.begin(), thisStore.end()), 0);
 }
 
+TEST_F(RadixStoreTest, CompressNodeBeforeResolvingConflict) {
+    baseStore.insert({"aa", "a"});
+    baseStore.insert({"ab", "b"});
+    baseStore.insert({"ac", "c"});
+    baseStore.insert({"ada", "da"});
+    baseStore.insert({"adb", "db"});
+
+    otherStore = baseStore;
+    otherStore.erase("ac");
+    otherStore.erase("adb");
+
+    thisStore = baseStore;
+    thisStore.erase("aa");
+    thisStore.erase("ab");
+    thisStore.erase("ada");
+
+    // 'adb' will need to be compressed after 'ac' is erased in the merge. Make sure conflict resulution can handle this.
+    thisStore.merge3(baseStore, otherStore);
+
+    // The store is in a valid state that is traversable and we should find no nodes
+    ASSERT_EQ(std::distance(thisStore.begin(), thisStore.end()), 0);
+} 
+
 TEST_F(RadixStoreTest, MergeConflictingModifications) {
     value_type value1 = std::make_pair("foo", "1");
     value_type value2 = std::make_pair("foo", "2");

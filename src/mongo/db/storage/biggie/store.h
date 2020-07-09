@@ -834,6 +834,17 @@ private:
             return true;
         }
 
+        bool hasOneChild() const {
+            int num = 0;
+            for (auto child : _children) {
+                if (child != nullptr) {
+                    if (++num > 1)
+                        break;
+                }
+            }
+            return num == 1;
+        }
+
     protected:
         unsigned int _depth = 0;
         std::vector<uint8_t> _trieKey;
@@ -1181,10 +1192,10 @@ private:
      * Compresses a child node into its parent if necessary. This is required when an erase results
      * in a node with no value and only one child.
      */
-    void _compressOnlyChild(Node* node) {
+    bool _compressOnlyChild(Node* node) {
         // Don't compress if this node has an actual value associated with it or is the root.
         if (node->_data || node->_trieKey.empty()) {
-            return;
+            return false;
         }
 
         // Determine if this node has only one child.
@@ -1193,7 +1204,7 @@ private:
         for (size_t i = 0; i < node->_children.size(); ++i) {
             if (node->_children[i] != nullptr) {
                 if (onlyChild != nullptr) {
-                    return;
+                    return false;
                 }
                 onlyChild = node->_children[i];
             }
@@ -1208,6 +1219,7 @@ private:
             node->_data.emplace(onlyChild->_data->first, onlyChild->_data->second);
         }
         node->_children = onlyChild->_children;
+        return true;
     }
 
     /**
@@ -1365,7 +1377,8 @@ private:
             trieKeyIndex.push_back(current->_trieKey.at(0));
 
         auto currentHasBeenCompressed = [&]() {
-            // This can only happen when conflict resultion erases nodes that causes compression on current
+            // This can only happen when conflict resultion erases nodes that causes compression on
+            // current
             return current->_trieKey.size() != other->_trieKey.size();
         };
 
@@ -1480,22 +1493,25 @@ private:
                       baseNode->_trieKey == otherNode->_trieKey && node->_data == baseNode->_data &&
                       baseNode->_data == otherNode->_data);
                 if (!resolveConflict) {
-                    Node* updatedNode;
-                    std::tie(updatedNode, resolveConflict) =
+                    std::tie(node, resolveConflict) =
                         _merge3Helper(node, baseNode, otherNode, context, trieKeyIndex);
-                    if (!updatedNode->_data) {
+                    if (node && !node->_data) {
                         // Drop if leaf node without data, that is not valid. Otherwise we might
                         // need to compress if we have only one child.
-                        if (updatedNode->isLeaf()) {
+                        if (node->isLeaf()) {
                             current->_children[key] = nullptr;
                         } else {
-                            _compressOnlyChild(updatedNode);
+                            _compressOnlyChild(node);
                         }
                     }
                 }
                 if (resolveConflict) {
-                    _mergeResolveConflict(node, baseNode, otherNode);
+                    Node* nodeToResolve = _compressOnlyChild(current) ? current : node;
+                    _mergeResolveConflict(nodeToResolve, baseNode, otherNode);
                     _rebuildContext(context, trieKeyIndex);
+                    // If we compressed above, resolving the conflict resultet can result in erasing current. Then we break out of the recursion
+                    if (!context.back())
+                        break;
                 }
             } else if (baseNode && !otherNode) {
                 // Throw a write conflict since current has modified a branch but master has
@@ -1515,6 +1531,7 @@ private:
             }
         }
 
+        current = context.back();
         context.pop_back();
         if (!trieKeyIndex.empty())
             trieKeyIndex.pop_back();
