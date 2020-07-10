@@ -68,6 +68,8 @@ public:
      */
     RecordId getAllCommittedRecord();
 
+    void clearAllEarlier(RecordId rid);
+
     /**
      * Returns true if the given RecordId is the earliest uncommitted Record being tracked by the
      * visibility manager, otherwise it returns false.

@@ -344,6 +344,17 @@ Status RecordStore::oplogDiskLocRegister(OperationContext* opCtx,
         return opCtx->recoveryUnit()->setTimestamp(opTime);
     }
 
+    auto key = oploghack::keyForOptime(opTime);
+    if (!key.isOK())
+        return key.getStatus();
+    _visibilityManager->clearAllEarlier(key.getValue());
+
+    stdx::lock_guard<Latch> cappedCallbackLock(_cappedCallbackMutex);
+    // This wakes up cursors blocking for awaitData.
+    if (_cappedCallback) {
+        _cappedCallback->notifyCappedWaitersIfNeeded();
+    }
+
     return Status::OK();
 }
 
@@ -453,6 +464,7 @@ boost::optional<Record> RecordStore::Cursor::next() {
         nextRecord.data = RecordData(it->second.c_str(), it->second.length());
 
         if (_rs._isOplog && nextRecord.id > _oplogVisibility) {
+            logd("blocking read due to oplog visibility {} {}", nextRecord.id, _oplogVisibility);
             return boost::none;
         }
 
@@ -472,7 +484,8 @@ boost::optional<Record> RecordStore::Cursor::seekExact(const RecordId& id) {
         return boost::none;
 
     if (_rs._isOplog && id > _oplogVisibility) {
-            return boost::none;
+        logd("blocking read due to oplog visibility {} {}", id, _oplogVisibility);
+        return boost::none;
     }
 
     _needFirstSeek = false;

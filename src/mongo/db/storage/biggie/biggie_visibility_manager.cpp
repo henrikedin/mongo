@@ -73,6 +73,7 @@ private:
 
 void VisibilityManager::dealtWithRecord(RecordId rid) {
     stdx::lock_guard<Latch> lock(_stateLock);
+    logd("dealtWithRecord {}", rid);
     _uncommittedRecords.erase(rid);
     _opsBecameVisibleCV.notify_all();
 }
@@ -83,8 +84,17 @@ void VisibilityManager::reserveRecord(RecoveryUnit* recoveryUnit, RecordId rid) 
     // Just register one change even if reserveRecord is called multiple times
     auto it = _uncommittedRecords.find(rid);
     if (it == _uncommittedRecords.end()) {
+        logd("reserveRecord {}", rid);
         _uncommittedRecords.insert(it, rid);
         recoveryUnit->registerChange(std::make_unique<VisibilityManagerChange>(this, nullptr, rid));
+    }
+}
+
+void VisibilityManager::clearAllEarlier(RecordId rid) {
+    stdx::lock_guard<Latch> lock(_stateLock);
+
+    while (!_uncommittedRecords.empty() && *_uncommittedRecords.begin() <= rid) {
+        _uncommittedRecords.erase(_uncommittedRecords.begin());
     }
 }
 
@@ -92,6 +102,7 @@ void VisibilityManager::addUncommittedRecord(OperationContext* opCtx,
                                              RecordStore* rs,
                                              RecordId rid) {
     stdx::lock_guard<Latch> lock(_stateLock);
+    logd("addUncommittedRecord {}", rid);
     _uncommittedRecords.insert(rid);
     opCtx->recoveryUnit()->registerChange(std::make_unique<VisibilityManagerChange>(this, rs, rid));
 
