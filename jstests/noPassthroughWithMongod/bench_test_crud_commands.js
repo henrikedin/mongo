@@ -1,4 +1,6 @@
 // Tests the "writeCmd" and "readCmd" options to benchRun().
+// @tags: [incompatible_with_eft]
+
 (function() {
 "use strict";
 
