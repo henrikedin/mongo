@@ -105,6 +105,7 @@
 #include "mongo/util/testing_proctor.h"
 #include "mongo/util/time_support.h"
 #include "mongo/util/timer.h"
+#include "mongo/db/storage/oplog_hack.h"
 
 namespace mongo {
 namespace repl {
@@ -1956,10 +1957,14 @@ ReplicationCoordinator::StatusAndDuration ReplicationCoordinatorImpl::awaitRepli
     // potentially block for long time while doing network activity.
     invariant(!opCtx->lockState()->isLocked());
 
+    logd("awaitReplication check for interrupt");
+
     auto interruptStatus = opCtx->checkForInterruptNoAssert();
     if (!interruptStatus.isOK()) {
         return {interruptStatus, duration_cast<Milliseconds>(timer.elapsed())};
     }
+
+    logd("awaitReplication wTimeoutDate");
 
     const auto wTimeoutDate = [&]() -> const Date_t {
         auto clockSource = opCtx->getServiceContext()->getFastClockSource();
@@ -1976,11 +1981,15 @@ ReplicationCoordinator::StatusAndDuration ReplicationCoordinatorImpl::awaitRepli
     const auto opCtxDeadline = opCtx->getDeadline();
     const auto timeoutError = opCtx->getTimeoutError();
 
+    logd("awaitReplication future");
+
     auto future = [&] {
         stdx::lock_guard lock(_mutex);
         return _startWaitingForReplication(lock, opTime, fixedWriteConcern);
     }();
     auto status = futureGetNoThrowWithDeadline(opCtx, future, wTimeoutDate, timeoutError);
+
+    logd("awaitReplication _startWaitingForReplication done");
 
     // If we get a timeout error and the opCtx deadline is >= the writeConcern wtimeout, then we
     // know the timeout was due to wtimeout (not opCtx deadline) and thus we return
@@ -2025,6 +2034,7 @@ BSONObj ReplicationCoordinatorImpl::_getReplicationProgress(WithLock wl) const {
 SharedSemiFuture<void> ReplicationCoordinatorImpl::_startWaitingForReplication(
     WithLock wl, const OpTime& opTime, const WriteConcernOptions& writeConcern) {
 
+    logd("_startWaitingForReplication start");
     const Mode replMode = getReplicationMode();
     if (replMode == modeNone) {
         // no replication check needed (validated above)
@@ -2061,6 +2071,7 @@ SharedSemiFuture<void> ReplicationCoordinatorImpl::_startWaitingForReplication(
         return Status::OK();
     };
 
+    logd("_startWaitingForReplication checkForStepDown");
     Status stepdownStatus = checkForStepDown();
     if (!stepdownStatus.isOK()) {
         return Future<void>::makeReady(stepdownStatus);
@@ -2069,12 +2080,14 @@ SharedSemiFuture<void> ReplicationCoordinatorImpl::_startWaitingForReplication(
     // Check if the given write concern is satisfiable before we add ourself to
     // _replicationWaiterList. On replSetReconfig, waiters that are no longer satisfiable will be
     // notified. See _setCurrentRSConfig.
+    logd("_startWaitingForReplication _checkIfWriteConcernCanBeSatisfied_inlock");
     auto satisfiableStatus = _checkIfWriteConcernCanBeSatisfied_inlock(writeConcern);
     if (!satisfiableStatus.isOK()) {
         return Future<void>::makeReady(satisfiableStatus);
     }
 
     try {
+        logd("_startWaitingForReplication _doneWaitingForReplication_inlock");
         if (_doneWaitingForReplication_inlock(opTime, writeConcern)) {
             return Future<void>::makeReady();
         }
@@ -2087,6 +2100,7 @@ SharedSemiFuture<void> ReplicationCoordinatorImpl::_startWaitingForReplication(
         // We are only waiting for our own lastApplied, add this to _opTimeWaiterList instead. This
         // is because waiters in _replicationWaiterList are not notified on self's lastApplied
         // updates.
+        logd("_startWaitingForReplication _opTimeWaiterList.add_inlock {}", opTime);
         return _opTimeWaiterList.add_inlock(opTime);
     }
 
@@ -2094,6 +2108,7 @@ SharedSemiFuture<void> ReplicationCoordinatorImpl::_startWaitingForReplication(
     // _replicationWaiterList will be checked and notified on remote opTime updates and on self's
     // lastDurable updates (but not on self's lastApplied updates, in which case use
     // _opTimeWaiterList instead).
+    logd("_startWaitingForReplication _replicationWaiterList.add_inlock {}", oploghack::keyForOptime(opTime.getTimestamp()).getValue());
     return _replicationWaiterList.add_inlock(opTime, writeConcern);
 }
 
@@ -4285,11 +4300,13 @@ void ReplicationCoordinatorImpl::CatchupState::abort_inlock(PrimaryCatchUpConclu
 void ReplicationCoordinatorImpl::CatchupState::signalHeartbeatUpdate_inlock() {
     auto targetOpTime = _repl->_topCoord->latestKnownOpTimeSinceHeartbeatRestart();
     // Haven't collected all heartbeat responses.
+    logd("signalHeartbeatUpdate_inlock");
     if (!targetOpTime) {
         return;
     }
 
     // We've caught up.
+    logd("signalHeartbeatUpdate_inlock caught up");
     const auto myLastApplied = _repl->_getMyLastAppliedOpTime_inlock();
     if (*targetOpTime <= myLastApplied) {
         LOGV2(21364,

@@ -73,8 +73,8 @@ private:
 
 void VisibilityManager::dealtWithRecord(RecordId rid) {
     stdx::lock_guard<Latch> lock(_stateLock);
-    logd("dealtWithRecord {}", rid);
     _uncommittedRecords.erase(rid);
+    logd("dealtWithRecord {} {}", rid, logv2::seqLog(_uncommittedRecords.begin(), _uncommittedRecords.end()));
     _opsBecameVisibleCV.notify_all();
 }
 
@@ -128,9 +128,11 @@ void VisibilityManager::waitForAllEarlierOplogWritesToBeVisible(OperationContext
 
     stdx::unique_lock<Latch> lock(_stateLock);
     const RecordId waitFor = _highestSeen;
+    logd("waitForAllEarlierOplogWritesToBeVisible 0x{:x} {}", reinterpret_cast<uint64_t>(opCtx), waitFor);
     opCtx->waitForConditionOrInterrupt(_opsBecameVisibleCV, lock, [&] {
         return _uncommittedRecords.empty() || *_uncommittedRecords.begin() > waitFor;
     });
+    logd("waitForAllEarlierOplogWritesToBeVisible done 0x{:x} {}", reinterpret_cast<uint64_t>(opCtx), waitFor);
 }
 
 }  // namespace biggie

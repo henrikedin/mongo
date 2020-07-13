@@ -10,3 +10,10 @@ executor:
     shell_options:
       nodb: ''
       readMode: commands
+  fixture:
+    class: ReplicaSetFixture
+    mongod_options:
+      set_parameters:
+        enableTestCommands: 1
+        logComponentVerbosity:
+          replication: 4
