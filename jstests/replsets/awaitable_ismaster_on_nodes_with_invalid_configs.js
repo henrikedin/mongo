@@ -1,5 +1,6 @@
 /**
  * Tests the streamable isMaster protocol against nodes with invalid replica set configs.
+ * @tags: [incompatible_with_eft]
  */
 (function() {
 "use strict";

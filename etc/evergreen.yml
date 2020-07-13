@@ -11870,7 +11870,6 @@ buildvariants:
   - name: .read_write_concern .linearize
   - name: replica_sets
   - name: .replica_sets .common
-  - name: rollback_fuzzer_gen
   - name: .updatefuzzer
 
 - name: enterprise-rhel-71-ppc64le-inmem
