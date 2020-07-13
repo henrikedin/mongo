@@ -1,4 +1,5 @@
 // Test sanity of geo queries with a lot of points
+// @tags: [incompatible_with_eft]
 
 (function() {
 "use strict";
