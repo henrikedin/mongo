@@ -1,6 +1,6 @@
 # Log System Overview
 
-The new log system adds capability to produce structured logs in the [Relaxed Extended JSON 2.0.0](https://github.com/mongodb/specifications/blob/master/source/extended-json.rst) format. The new API requires names to be given to variables, forming field names for the variables in structured JSON logs. Named variables are called attributes in the log system. Human readable log messages are built with a [libfmt](https://fmt.dev/6.1.1/index.html) inspired API, where attributes are inserted using replacement fields instead of being streamed together using the streaming operator `<<`.
+The new log system adds capability to produce structured logs in the [Relaxed Extended JSON 2.0.0](https://github.com/mongodb/specifications/blob/master/source/extended-json.rst) format. The new API requires names to be given to variables, called attributes in the log system, forming field names for the variables in structured JSON logs. 
 
 # Style guide
 
@@ -111,13 +111,9 @@ The ID is a signed 32bit integer in the same number space as the error code numb
 
 The message string contains a human readable description of the log event.
 
-Replacement fields are placed in the format string with curly braces `{}`. Everything not surrounded with curly braces is part of the message text. Curly brace characters can be output by escaping them using double braces: `{{` or `}}`. 
-
 Attributes are created with the `_attr` user-defined literal. The intermediate object that gets instantiated provides the assignment operator `=` for assigning a value to the attribute.
 
-It is allowed to have more attributes than replacement fields in a log statement. However, having fewer attributes than replacement fields is not allowed.
-
-As shown above there is also an API taking both a format string and a message string. This is an API to help with the transition from text output to JSON output. JSON logs have no need for embedded replacement fields in the description, if written in a short and descriptive manner providing context for the attribute names. But a format string may still be needed to provide good JSON to human readable text conversion. See the JSON output format and style guide below for more information.
+As shown above there is also an API taking both a format string and a message string. The format string is used to create a human readable string using [libfmt](https://fmt.dev) by inserting attribute values into replacement fields. See [libfmt format syntax](https://fmt.dev/6.1.1/syntax.html#formatspec) for details. This is an API to help with the transition from text output to JSON output. JSON logs have no need for embedded replacement fields in the description, if written in a short and descriptive manner providing context for the attribute names. But a format string may still be needed to provide good JSON to human readable text conversion. See the JSON output format and style guide below for more information.
 
 Both the format string and the message string must be compile time constants. This is to avoid dynamic attribute names in the log output and to be able to add compile time verification of log statements in the future. If the string needs to be shared with anything else (like constructing a Status object) you can use this pattern: 
 
@@ -126,7 +122,7 @@ Both the format string and the message string must be compile time constants. Th
 ##### Examples
 
 ```
-LOGV2(1000, "Logging event, no replacement fields is OK");
+LOGV2(1000, "Logging event, no attributes is OK");
 ```
 ```
 const BSONObj& slowOperation = ...;
@@ -481,7 +477,7 @@ friend auto logAttrs(const SomeType& type) {
 
 Code that emits a high severity log statement may also need to emit a `uassert` after the log. There is the `UserAssertAfterLog` logging option that allows you to re-use the log statement to do the formatting required for the `uassert`. The assertion id can be either the logging ID by passing `UserAssertAfterLog` with no arguments or the assertion id can set by constructing `UserAssertAfterLog` with an `ErrorCodes::Error`. 
 
-The assertion reason string will be a plain text formatted log (replacement fields filled in format-string). If replacement fields are not provided in the message string, attribute values will be missing from the assertion message.
+The assertion reason string will be a plain text formatted log where the message string is treated as a format string. If replacement fields are not provided in the message string, attribute values will be missing from the assertion message.
 
 
 ##### Examples
