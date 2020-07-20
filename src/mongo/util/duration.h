@@ -36,6 +36,7 @@
 #include <ratio>
 
 #include "mongo/base/static_assert.h"
+#include "mongo/logv2/log_attr.h"
 #include "mongo/platform/overflow_arithmetic.h"
 #include "mongo/stdx/chrono.h"
 #include "mongo/stdx/type_traits.h"
@@ -486,6 +487,14 @@ StringBuilderImpl<Allocator>& operator<<(StringBuilderImpl<Allocator>& os, Durat
     MONGO_STATIC_ASSERT_MSG(!Duration<Period>::unit_short().empty(),
                             "Only standard Durations can logged");
     return streamPut(os, dp);
+}
+
+inline auto logAttrs(const Milliseconds& ms) {
+    return "duration"_attr = ms;
+}
+
+inline auto logAttrs(const Seconds& s) {
+    return logAttrs(Milliseconds(s));
 }
 
 }  // namespace mongo
