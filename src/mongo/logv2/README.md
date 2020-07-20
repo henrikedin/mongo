@@ -103,19 +103,17 @@ To be able to include it a default log component needs to be defined in the cpp 
 
 Logging is performed using function style macros:
 
-`LOGV2(ID, format-string, "name0"_attr = var0, ..., "nameN"_attr = varN);`
+`LOGV2(ID, message-string, "name0"_attr = var0, ..., "nameN"_attr = varN);`
 
 `LOGV2(ID, format-string, message-string, "name0"_attr = var0, ..., "nameN"_attr = varN);`
 
 The ID is a signed 32bit integer in the same number space as the error code numbers. It is used to uniquely identify a log statement. If changing existing code, using a new ID is strongly advised to avoid any parsing ambiguity. When selecting ID during work on JIRA ticket `SERVER-ABCDE` you can use the JIRA ticket number to avoid ID collisions with other engineers by taking ID from the range `ABCDE00` - `ABCDE99`.
 
-The format string contains the description of the log event with libfmt style replacement fields optionally embedded within it. The format string must comply with the [format syntax](https://fmt.dev/6.1.1/syntax.html#formatspec) from libfmt. The purpose of embedding the replacement fields is to be able to create a human readable message used by the text output format or a tool that converts JSON logs to a human readable format.
+The message string contains a human readable description of the log event.
 
 Replacement fields are placed in the format string with curly braces `{}`. Everything not surrounded with curly braces is part of the message text. Curly brace characters can be output by escaping them using double braces: `{{` or `}}`. 
 
 Attributes are created with the `_attr` user-defined literal. The intermediate object that gets instantiated provides the assignment operator `=` for assigning a value to the attribute.
-
-Attributes are associated with replacement fields in the format string by name or index, using names is strongly recommended. When using unnamed replacement fields, attributes map to replacement fields in the order they appear in the format string. 
 
 It is allowed to have more attributes than replacement fields in a log statement. However, having fewer attributes than replacement fields is not allowed.
 
@@ -133,7 +131,7 @@ LOGV2(1000, "Logging event, no replacement fields is OK");
 ```
 const BSONObj& slowOperation = ...;
 Milliseconds time = ...;
-LOGV2(1001, "Operation {op} is slow, took: {duration}", "op"_attr = slowOperation, "duration"_attr = time);
+LOGV2(1001, "Operation is slow", "op"_attr = slowOperation, "duration"_attr = time);
 ```
 ```
 LOGV2(1002, "Replication state change", "from"_attr = getOldState(), "to"_attr = getNewState());
@@ -175,11 +173,11 @@ Fatal level log statements using `LOGV2_FATAL` perform `fassert` after logging, 
 
 Debug-level logging is slightly different where an additional parameter (as integer) required to indicate the desired debug level:
 
-`LOGV2_DEBUG(ID, debug-level, format-string, attr0, ..., attrN);`
+`LOGV2_DEBUG(ID, debug-level, message-string, attr0, ..., attrN);`
 
 `LOGV2_DEBUG(ID, debug-level, format-string, message-string, attr0, ..., attrN);`
 
-`LOGV2_DEBUG_OPTIONS(ID, debug-level, options, format-string, attr0, ..., attrN);`
+`LOGV2_DEBUG_OPTIONS(ID, debug-level, options, message-string, attr0, ..., attrN);`
 
 `LOGV2_DEBUG_OPTIONS(ID, debug-level, options, format-string, message-string, attr0, ..., attrN);`
 
@@ -188,7 +186,7 @@ Debug-level logging is slightly different where an additional parameter (as inte
 ```
 Status status = ...;
 int remainingAttempts = ...;
-LOGV2_ERROR(1004, "Initial sync failed. {remaining} attempts left. Reason: {reason}", "reason"_attr = status, "remaining"_attr = remainingAttempts);
+LOGV2_ERROR(1004, "Initial sync failed", "reason"_attr = status, "remainingAttampts"_attr = remainingAttempts);
 ```
 
 ### Log Tags
@@ -332,15 +330,15 @@ mapLog indicates that it is a range coming from an associative container where t
 
 ```
 std::array<int, 20> arrayOfInts = ...;
-LOGV2(1010, "Log container directly: {values}", "values"_attr = arrayOfInts);
-LOGV2(1011, "Log iterator range: {values}", "values"_attr = seqLog(arrayOfInts.begin(), arrayOfInts.end());
-LOGV2(1012, "Log first five elements: {values}", "values"_attr = seqLog(arrayOfInts.data(), arrayOfInts.data() + 5);
+LOGV2(1010, "Log container directly", "values"_attr = arrayOfInts);
+LOGV2(1011, "Log iterator range", "values"_attr = seqLog(arrayOfInts.begin(), arrayOfInts.end());
+LOGV2(1012, "Log first five elements", "values"_attr = seqLog(arrayOfInts.data(), arrayOfInts.data() + 5);
 ``` 
 
 ```
 StringMap<BSONObj> bsonMap = ...;
-LOGV2(1013, "Log map directly: {values}", "values"_attr = bsonMap);
-LOGV2(1014, "Log map iterator range: {values}", "values"_attr = mapLog(bsonMap.begin(), bsonMap.end());
+LOGV2(1013, "Log map directly", "values"_attr = bsonMap);
+LOGV2(1014, "Log map iterator range", "values"_attr = mapLog(bsonMap.begin(), bsonMap.end());
 ``` 
 
 #### Containers and uint64_t
@@ -354,7 +352,7 @@ std::vector<uint64_t> vec = ...;
 
 // If we know casting to signed is safe
 auto asSigned = [](uint64_t i) { return static_cast<int64_t>(i); };
-LOGV2(2000, "As signed array: {values}", "values"_attr = seqLog(
+LOGV2(2000, "As signed array", "values"_attr = seqLog(
   boost::make_transform_iterator(vec.begin(), asSigned), 
   boost::make_transform_iterator(vec.end(), asSigned)
 ));
@@ -496,7 +494,7 @@ uasserted(1050000, "Assertion after log");
 ```
 Using a named error code:
 ```
-LOGV2_ERROR_OPTIONS(1050, {UserAssertAfterLog(ErrorCodes::DataCorruptionDetected)}, "Data corruption detected for {recordId}, "recordId"_attr=RecordId(123456));
+LOGV2_ERROR_OPTIONS(1050, {UserAssertAfterLog(ErrorCodes::DataCorruptionDetected)}, "Data corruption detected for record, "recordId"_attr=RecordId(123456));
 ```
 Would emit a `uassert` after performing the log that is equivalent to:
 ```
@@ -536,7 +534,7 @@ builder.append("second"_sd, "str");
 
 std::vector<int> vec = {1, 2, 3};
 
-LOGV2_ERROR(1020, "Example (b: {bson}), (vec: {vector})", 
+LOGV2_ERROR(1020, "Example log", 
             "bson"_attr = builder.obj(), 
             "vector"_attr = vec,
             "optional"_attr = boost::none);
@@ -551,7 +549,7 @@ LOGV2_ERROR(1020, "Example (b: {bson}), (vec: {vector})",
     "c": "NETWORK",
     "ctx": "conn1",
     "id": 23453,
-    "msg": "Example (b: {bson}), (vec: {vector})",
+    "msg": "Example log",
     "attr": {  
         "bson": {
             "first": 1,
