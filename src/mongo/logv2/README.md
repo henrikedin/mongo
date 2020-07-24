@@ -477,7 +477,7 @@ friend auto logAttrs(const SomeType& type) {
 
 Code that emits a high severity log statement may also need to emit a `uassert` after the log. There is the `UserAssertAfterLog` logging option that allows you to re-use the log statement to do the formatting required for the `uassert`. The assertion id can be either the logging ID by passing `UserAssertAfterLog` with no arguments or the assertion id can set by constructing `UserAssertAfterLog` with an `ErrorCodes::Error`. 
 
-The assertion reason string will be a plain text formatted log where the message string is treated as a format string. If replacement fields are not provided in the message string, attribute values will be missing from the assertion message.
+The assertion reason string will be a plain text formatted log where attribute values are formatted into the format string using replacement fields. If none are provided in the string, attribute values will be missing from the assertion message.
 
 
 ##### Examples
@@ -490,11 +490,20 @@ uasserted(1050000, "Assertion after log");
 ```
 Using a named error code:
 ```
-LOGV2_ERROR_OPTIONS(1050, {UserAssertAfterLog(ErrorCodes::DataCorruptionDetected)}, "Data corruption detected for record, "recordId"_attr=RecordId(123456));
+LOGV2_ERROR_OPTIONS(1050, {UserAssertAfterLog(ErrorCodes::DataCorruptionDetected)}, "Data corruption detected for {recordId}, "recordId"_attr=RecordId(123456));
 ```
 Would emit a `uassert` after performing the log that is equivalent to:
 ```
 uasserted(ErrorCodes::DataCorruptionDetected, "Data corruption detected for RecordId(123456)");
+```
+
+However, writing the log above without replacement fields:
+```
+LOGV2_ERROR_OPTIONS(1050, {UserAssertAfterLog(ErrorCodes::DataCorruptionDetected)}, "Data corruption detected for record, "recordId"_attr=RecordId(123456));
+```
+Would emit the `uassert` without the RecordId:
+```
+uasserted(ErrorCodes::DataCorruptionDetected, "Data corruption detected for record");
 ```
 
 ## Unstructured logging for local development
