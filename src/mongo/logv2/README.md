@@ -1,6 +1,6 @@
 # Log System Overview
 
-The new log system adds capability to produce structured logs in the [Relaxed Extended JSON 2.0.0](https://github.com/mongodb/specifications/blob/master/source/extended-json.rst) format. The new API requires names to be given to variables, called attributes in the log system, forming field names for the variables in structured JSON logs. 
+The new log system adds capability to produce structured logs in the [Relaxed Extended JSON 2.0.0](https://github.com/mongodb/specifications/blob/master/source/extended-json.rst) format. Every log line is formatted to a separate JSON object that is structured as the different parts are separate JSON fields and therefore easy to parse. The parameter values to log statements are called attributes, where the name gets used as the JSON key, and the value gets formatted to a JSON value under a subobject for all the attributes.
 
 # Style guide
 
