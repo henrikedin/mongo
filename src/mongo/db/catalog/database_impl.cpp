@@ -355,7 +355,7 @@ Status DatabaseImpl::dropCollectionEvenIfSystem(OperationContext* opCtx,
             "dropCollection() cannot accept a valid drop optime when writes are replicated.");
     }
 
-    Collection* collection = CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, nss);
+    Collection* collection = CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, nss).get();
 
     if (!collection) {
         return Status::OK();  // Post condition already met.
@@ -521,7 +521,7 @@ Status DatabaseImpl::renameCollection(OperationContext* opCtx,
     }
 
     Collection* collToRename =
-        CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, fromNss);
+        CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, fromNss).get();
     if (!collToRename) {
         return Status(ErrorCodes::NamespaceNotFound, "collection not found to rename");
     }
@@ -678,7 +678,7 @@ Collection* DatabaseImpl::createCollection(OperationContext* opCtx,
         uassertStatusOK(storageEngine->getCatalog()->createCollection(
             opCtx, nss, optionsWithUUID, true /*allocateDefaultSpace*/));
     auto catalogId = catalogIdRecordStorePair.first;
-    std::unique_ptr<Collection> ownedCollection =
+    auto ownedCollection =
         Collection::Factory::get(opCtx)->make(opCtx,
                                               nss,
                                               catalogId,
@@ -807,7 +807,7 @@ void DatabaseImpl::checkForIdIndexesAndDropPendingCollections(OperationContext* 
         if (nss.isSystem())
             continue;
 
-        Collection* coll = CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, nss);
+        auto coll = CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, nss);
         if (!coll)
             continue;
 

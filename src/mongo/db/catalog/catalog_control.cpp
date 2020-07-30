@@ -160,7 +160,7 @@ void openCatalog(OperationContext* opCtx, const MinVisibleTimestampMap& minVisib
         }
 
         std::vector<BSONObj> indexSpecs = entry.second.second;
-        fassert(40690, rebuildIndexesOnCollection(opCtx, collection, indexSpecs, RepairData::kNo));
+        fassert(40690, rebuildIndexesOnCollection(opCtx, collection.get(), indexSpecs, RepairData::kNo));
     }
 
     // Once all unfinished index builds have been dropped and the catalog has been reloaded, resume

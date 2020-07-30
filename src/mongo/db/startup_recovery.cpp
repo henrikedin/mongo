@@ -104,14 +104,14 @@ Status restoreMissingFeatureCompatibilityVersionDocument(OperationContext* opCtx
             createCollection(opCtx, fcvNss.db().toString(), BSON("create" << fcvNss.coll())));
     }
 
-    Collection* fcvColl = CollectionCatalog::get(opCtx).lookupCollectionByNamespace(
+    auto fcvColl = CollectionCatalog::get(opCtx).lookupCollectionByNamespace(
         opCtx, NamespaceString::kServerConfigurationNamespace);
     invariant(fcvColl);
 
     // Restore the featureCompatibilityVersion document if it is missing.
     BSONObj featureCompatibilityVersion;
     if (!Helpers::findOne(opCtx,
-                          fcvColl,
+                          fcvColl.get(),
                           BSON("_id" << FeatureCompatibilityVersionParser::kParameterName),
                           featureCompatibilityVersion)) {
         LOGV2(21000,
@@ -134,7 +134,7 @@ Status restoreMissingFeatureCompatibilityVersionDocument(OperationContext* opCtx
     }
 
     invariant(Helpers::findOne(opCtx,
-                               fcvColl,
+                               fcvColl.get(),
                                BSON("_id" << FeatureCompatibilityVersionParser::kParameterName),
                                featureCompatibilityVersion));
 
@@ -233,7 +233,7 @@ Status ensureCollectionProperties(OperationContext* opCtx,
                   "Collection is missing an _id index",
                   logAttrs(*coll));
             if (EnsureIndexPolicy::kBuildMissing == ensureIndexPolicy) {
-                auto status = buildMissingIdIndex(opCtx, coll);
+                auto status = buildMissingIdIndex(opCtx, coll.get());
                 if (!status.isOK()) {
                     LOGV2_ERROR(21021,
                                 "could not build an _id index on collection {coll_ns}: {error}",
@@ -319,7 +319,7 @@ bool hasReplSetConfigDoc(OperationContext* opCtx) {
 void assertCappedOplog(OperationContext* opCtx, Database* db) {
     const NamespaceString oplogNss(NamespaceString::kRsOplogNamespace);
     invariant(opCtx->lockState()->isDbLockedForMode(oplogNss.db(), MODE_IS));
-    Collection* oplogCollection =
+    auto oplogCollection =
         CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, oplogNss);
     if (oplogCollection && !oplogCollection->isCapped()) {
         LOGV2_FATAL_NOTRACE(
@@ -375,7 +375,7 @@ void reconcileCatalogAndRebuildUnfinishedIndexes(OperationContext* opCtx,
         }
 
         std::vector<BSONObj> indexSpecs = entry.second.second;
-        fassert(40592, rebuildIndexesOnCollection(opCtx, collection, indexSpecs, RepairData::kNo));
+        fassert(40592, rebuildIndexesOnCollection(opCtx, collection.get(), indexSpecs, RepairData::kNo));
     }
 
     // Two-phase index builds depend on an eventually-replicated 'commitIndexBuild' oplog entry to
@@ -408,7 +408,7 @@ void setReplSetMemberInStandaloneMode(OperationContext* opCtx) {
     }
 
     invariant(opCtx->lockState()->isW());
-    Collection* collection = CollectionCatalog::get(opCtx).lookupCollectionByNamespace(
+    auto collection = CollectionCatalog::get(opCtx).lookupCollectionByNamespace(
         opCtx, NamespaceString::kSystemReplSetNamespace);
     if (collection && !collection->isEmpty(opCtx)) {
         setReplSetMemberInStandaloneMode(opCtx->getServiceContext(), true);

@@ -768,7 +768,7 @@ void MigrationDestinationManager::cloneCollectionIndexesAndOptions(
 
         auto collection = CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, nss);
         if (collection) {
-            checkUUIDsMatch(collection);
+            checkUUIDsMatch(collection.get());
         } else {
             // We do not have a collection by this name. Create the collection with the donor's
             // options.
@@ -786,7 +786,7 @@ void MigrationDestinationManager::cloneCollectionIndexesAndOptions(
             collection = CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, nss);
         }
 
-        auto indexSpecs = checkEmptyOrGetMissingIndexesFromDonor(collection);
+        auto indexSpecs = checkEmptyOrGetMissingIndexesFromDonor(collection.get());
         if (!indexSpecs.empty()) {
             WriteUnitOfWork wunit(opCtx);
             auto fromMigrate = true;

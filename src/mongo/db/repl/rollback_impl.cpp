@@ -604,7 +604,7 @@ void RollbackImpl::_correctRecordStoreCounts(OperationContext* opCtx) {
                   "uuid"_attr = uuid.toString());
             AutoGetCollectionForRead autoCollToScan(opCtx, nss);
             auto collToScan = autoCollToScan.getCollection();
-            invariant(coll == collToScan,
+            invariant(coll.get() == collToScan,
                       str::stream() << "Catalog returned invalid collection: " << nss.ns() << " ("
                                     << uuid.toString() << ")");
             auto exec = collToScan->makePlanExecutor(opCtx,

@@ -906,7 +906,7 @@ void rollbackCreateIndexes(OperationContext* opCtx, UUID uuid, std::set<std::str
         CollectionCatalog::get(opCtx).lookupNSSByUUID(opCtx, uuid);
     invariant(nss);
     Lock::DBLock dbLock(opCtx, nss->db(), MODE_X);
-    Collection* collection = CollectionCatalog::get(opCtx).lookupCollectionByUUID(opCtx, uuid);
+    Collection* collection = CollectionCatalog::get(opCtx).lookupCollectionByUUID(opCtx, uuid).get();
 
     // If we cannot find the collection, we skip over dropping the index.
     if (!collection) {
@@ -969,7 +969,7 @@ void rollbackDropIndexes(OperationContext* opCtx,
     invariant(nss);
     Lock::DBLock dbLock(opCtx, nss->db(), MODE_IX);
     Lock::CollectionLock collLock(opCtx, *nss, MODE_X);
-    Collection* collection = CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, *nss);
+    Collection* collection = CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, *nss).get();
 
     // If we cannot find the collection, we skip over dropping the index.
     if (!collection) {
@@ -1497,7 +1497,7 @@ void rollback_internal::syncFixUp(OperationContext* opCtx,
             Database* db = dbLock.getDb();
             if (db) {
                 Collection* collection =
-                    CollectionCatalog::get(opCtx).lookupCollectionByUUID(opCtx, uuid);
+                    CollectionCatalog::get(opCtx).lookupCollectionByUUID(opCtx, uuid).get();
                 dropCollection(opCtx, *nss, collection, db);
                 LOGV2_DEBUG(21698,
                             1,
@@ -1572,7 +1572,7 @@ void rollback_internal::syncFixUp(OperationContext* opCtx,
             invariant(db);
 
             Collection* collection =
-                CollectionCatalog::get(opCtx).lookupCollectionByUUID(opCtx, uuid);
+                CollectionCatalog::get(opCtx).lookupCollectionByUUID(opCtx, uuid).get();
             invariant(collection);
 
             auto infoResult = rollbackSource.getCollectionInfoByUUID(nss->db().toString(), uuid);
@@ -1726,7 +1726,7 @@ void rollback_internal::syncFixUp(OperationContext* opCtx,
                 const NamespaceString docNss(doc.ns);
                 Lock::DBLock docDbLock(opCtx, docNss.db(), MODE_X);
                 OldClientContext ctx(opCtx, doc.ns.toString());
-                Collection* collection = catalog.lookupCollectionByUUID(opCtx, uuid);
+                Collection* collection = catalog.lookupCollectionByUUID(opCtx, uuid).get();
 
                 // Adds the doc to our rollback file if the collection was not dropped while
                 // rolling back createCollection operations. Does not log an error when
@@ -1943,7 +1943,7 @@ void rollback_internal::syncFixUp(OperationContext* opCtx,
         Lock::CollectionLock oplogCollectionLoc(opCtx, oplogNss, MODE_X);
         OldClientContext ctx(opCtx, oplogNss.ns());
         Collection* oplogCollection =
-            CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, oplogNss);
+            CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, oplogNss).get();
         if (!oplogCollection) {
             fassertFailedWithStatusNoTrace(
                 40495,

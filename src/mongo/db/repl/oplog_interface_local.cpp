@@ -52,17 +52,19 @@ public:
 private:
     AutoGetOplog _oplogRead;
     OldClientContext _ctx;
+    std::shared_ptr<Collection> _collection;
     std::unique_ptr<PlanExecutor, PlanExecutor::Deleter> _exec;
 };
 
 OplogIteratorLocal::OplogIteratorLocal(OperationContext* opCtx)
     : _oplogRead(opCtx, OplogAccessMode::kRead),
       _ctx(opCtx, NamespaceString::kRsOplogNamespace.ns()),
+      _collection(CollectionCatalog::get(opCtx).lookupCollectionByNamespace(
+                                              opCtx, NamespaceString::kRsOplogNamespace)),
       _exec(
           InternalPlanner::collectionScan(opCtx,
                                           NamespaceString::kRsOplogNamespace.ns(),
-                                          CollectionCatalog::get(opCtx).lookupCollectionByNamespace(
-                                              opCtx, NamespaceString::kRsOplogNamespace),
+                                          _collection.get(),
                                           PlanYieldPolicy::YieldPolicy::NO_YIELD,
                                           InternalPlanner::BACKWARD)) {}
 

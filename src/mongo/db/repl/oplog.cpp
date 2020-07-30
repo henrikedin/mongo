@@ -506,7 +506,7 @@ void createOplog(OperationContext* opCtx,
     const ReplSettings& replSettings = ReplicationCoordinator::get(opCtx)->getSettings();
 
     OldClientContext ctx(opCtx, oplogCollectionName.ns());
-    Collection* collection =
+    auto collection =
         CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, oplogCollectionName);
 
     if (collection) {
@@ -952,7 +952,7 @@ Status applyOperation_inlock(OperationContext* opCtx,
     Collection* collection = nullptr;
     if (auto uuid = op.getUuid()) {
         CollectionCatalog& catalog = CollectionCatalog::get(opCtx);
-        collection = catalog.lookupCollectionByUUID(opCtx, uuid.get());
+        collection = catalog.lookupCollectionByUUID(opCtx, uuid.get()).get();
         uassert(ErrorCodes::NamespaceNotFound,
                 str::stream() << "Failed to apply operation due to missing collection ("
                               << uuid.get() << "): " << redact(opOrGroupedInserts.toBSON()),
@@ -966,7 +966,7 @@ Status applyOperation_inlock(OperationContext* opCtx,
         dassert(opCtx->lockState()->isCollectionLockedForMode(
                     requestNss, supportsDocLocking() ? MODE_IX : MODE_X),
                 requestNss.ns());
-        collection = CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, requestNss);
+        collection = CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, requestNss).get();
     }
 
     BSONObj o = op.getObject();

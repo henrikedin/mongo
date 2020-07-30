@@ -77,7 +77,7 @@ Status rebuildIndexesForNamespace(OperationContext* opCtx,
         return swIndexNameObjs.getStatus();
 
     std::vector<BSONObj> indexSpecs = swIndexNameObjs.getValue().second;
-    Status status = rebuildIndexesOnCollection(opCtx, collection, indexSpecs, RepairData::kYes);
+    Status status = rebuildIndexesOnCollection(opCtx, collection.get(), indexSpecs, RepairData::kYes);
     if (!status.isOK())
         return status;
 
@@ -213,7 +213,7 @@ Status repairCollection(OperationContext* opCtx,
         // invalidating modifications to our data, it is safe to just drop the indexes entirely
         // to avoid the risk of the index rebuild failing.
         if (getReplSetMemberInStandaloneMode(opCtx->getServiceContext())) {
-            if (auto status = dropUnfinishedIndexes(opCtx, collection); !status.isOK()) {
+            if (auto status = dropUnfinishedIndexes(opCtx, collection.get()); !status.isOK()) {
                 return status;
             }
         }

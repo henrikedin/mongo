@@ -320,10 +320,10 @@ public:
                         }
 
                         Lock::CollectionLock clk(opCtx, nss, MODE_IS);
-                        Collection* collection =
+                        auto collection =
                             CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, nss);
                         BSONObj collBson =
-                            buildCollectionBson(opCtx, collection, includePendingDrops, nameOnly);
+                            buildCollectionBson(opCtx, collection.get(), includePendingDrops, nameOnly);
                         if (!collBson.isEmpty()) {
                             _addWorkingSetMember(
                                 opCtx, collBson, matcher.get(), ws.get(), root.get());

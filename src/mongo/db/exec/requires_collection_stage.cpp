@@ -66,7 +66,7 @@ void RequiresCollectionStageBase<CollectionT>::doRestoreState() {
     // restored locks on the correct name. It is now safe to restore the Collection pointer. The
     // collection must exist, since we already successfully looked up the namespace string by UUID
     // under the correct lock manager locks.
-    _collection = catalog.lookupCollectionByUUID(opCtx(), _collectionUUID);
+    _collection = catalog.lookupCollectionByUUID(opCtx(), _collectionUUID).get();
     invariant(_collection);
 
     uassert(ErrorCodes::QueryPlanKilled,

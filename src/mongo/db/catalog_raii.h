@@ -128,7 +128,7 @@ public:
      * Returns nullptr if the collection didn't exist.
      */
     Collection* getCollection() const {
-        return _coll;
+        return _coll.get();
     }
 
     /**
@@ -156,7 +156,7 @@ private:
     // might need to be relocked for the correct namespace
     boost::optional<Lock::CollectionLock> _collLock;
 
-    Collection* _coll = nullptr;
+    std::shared_ptr<Collection> _coll;
     std::shared_ptr<ViewDefinition> _view;
 };
 

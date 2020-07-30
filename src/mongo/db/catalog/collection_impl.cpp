@@ -266,13 +266,13 @@ CollectionImpl::~CollectionImpl() {
     }
 }
 
-std::unique_ptr<Collection> CollectionImpl::FactoryImpl::make(
+std::shared_ptr<Collection> CollectionImpl::FactoryImpl::make(
     OperationContext* opCtx,
     const NamespaceString& nss,
     RecordId catalogId,
     CollectionUUID uuid,
     std::unique_ptr<RecordStore> rs) const {
-    return std::make_unique<CollectionImpl>(opCtx, nss, catalogId, uuid, std::move(rs));
+    return std::make_shared<CollectionImpl>(opCtx, nss, catalogId, uuid, std::move(rs));
 }
 
 SharedCollectionDecorations* CollectionImpl::getSharedDecorations() const {

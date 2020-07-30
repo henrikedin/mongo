@@ -449,9 +449,9 @@ BSONObj runCreateIndexesOnNewCollection(OperationContext* opCtx,
                           << " in a multi-document transaction.",
             collection->numRecords(opCtx) == 0);
 
-    const int numIndexesBefore = IndexBuildsCoordinator::getNumIndexesTotal(opCtx, collection);
+    const int numIndexesBefore = IndexBuildsCoordinator::getNumIndexesTotal(opCtx, collection.get());
     auto filteredSpecs =
-        IndexBuildsCoordinator::prepareSpecListForCreate(opCtx, collection, ns, specs);
+        IndexBuildsCoordinator::prepareSpecListForCreate(opCtx, collection.get(), ns, specs);
     // It's possible for 'filteredSpecs' to be empty if we receive a createIndexes request for the
     // _id index and also create the collection implicitly. By this point, the _id index has already
     // been created, and there is no more work to be done.
@@ -460,7 +460,7 @@ BSONObj runCreateIndexesOnNewCollection(OperationContext* opCtx,
             opCtx, collection->uuid(), filteredSpecs, false);
     }
 
-    const int numIndexesAfter = IndexBuildsCoordinator::getNumIndexesTotal(opCtx, collection);
+    const int numIndexesAfter = IndexBuildsCoordinator::getNumIndexesTotal(opCtx, collection.get());
 
     if (MONGO_unlikely(createIndexesWriteConflict.shouldFail())) {
         throw WriteConflictException();

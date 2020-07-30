@@ -192,13 +192,13 @@ public:
                                 const NamespaceString& nss,
                                 const OplogEntriesEnum& type);
     Collection* getCollection(void) {
-        return _collection;
+        return _collection.get();
     }
 
 private:
     AutoGetDbForDbCheck _agd;
     Lock::CollectionLock _collLock;
-    Collection* _collection;
+    std::shared_ptr<Collection> _collection;
 };
 
 

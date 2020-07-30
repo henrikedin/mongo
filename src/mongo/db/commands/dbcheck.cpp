@@ -339,11 +339,11 @@ private:
             return false;
         }
 
-        auto [prev, next] = getPrevAndNextUUIDs(opCtx, collection);
+        auto [prev, next] = getPrevAndNextUUIDs(opCtx, collection.get());
 
         // Find and report collection metadata.
-        auto indices = collectionIndexInfo(opCtx, collection);
-        auto options = collectionOptions(opCtx, collection);
+        auto indices = collectionIndexInfo(opCtx, collection.get());
+        auto options = collectionOptions(opCtx, collection.get());
 
         DbCheckOplogCollection entry;
         entry.setNss(collection->ns());

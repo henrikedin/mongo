@@ -484,7 +484,7 @@ Status dbCheckDatabaseOnSecondary(OperationContext* opCtx,
     expected.collectionName = entry.getNss().coll().toString();
     found.collectionName = collection->ns().coll().toString();
 
-    auto prevAndNext = getPrevAndNextUUIDs(opCtx, collection);
+    auto prevAndNext = getPrevAndNextUUIDs(opCtx, collection.get());
 
     // found/expected previous UUID,
     expected.prev = entry.getPrev();
@@ -496,11 +496,11 @@ Status dbCheckDatabaseOnSecondary(OperationContext* opCtx,
 
     // found/expected indices,
     expected.indexes = entry.getIndexes();
-    found.indexes = collectionIndexInfo(opCtx, collection);
+    found.indexes = collectionIndexInfo(opCtx, collection.get());
 
     // and found/expected collection options.
     expected.options = entry.getOptions();
-    found.options = collectionOptions(opCtx, collection);
+    found.options = collectionOptions(opCtx, collection.get());
 
     auto hle = dbCheckCollectionEntry(entry.getNss(), uuid, expected, found, optime);
 

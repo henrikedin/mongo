@@ -133,9 +133,9 @@ Status _abortIndexBuildsAndDropCollection(OperationContext* opCtx,
     // which may have changed when we released the collection lock temporarily.
     opCtx->recoveryUnit()->abandonSnapshot();
 
-    Collection* coll =
+    auto coll =
         CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, startingNss);
-    Status status = _checkNssAndReplState(opCtx, coll);
+    Status status = _checkNssAndReplState(opCtx, coll.get());
     if (!status.isOK()) {
         return status;
     }
@@ -185,7 +185,7 @@ Status _abortIndexBuildsAndDropCollection(OperationContext* opCtx,
         opCtx->recoveryUnit()->abandonSnapshot();
 
         coll = CollectionCatalog::get(opCtx).lookupCollectionByUUID(opCtx, collectionUUID);
-        status = _checkNssAndReplState(opCtx, coll);
+        status = _checkNssAndReplState(opCtx, coll.get());
         if (!status.isOK()) {
             return status;
         }
@@ -231,9 +231,9 @@ Status _dropCollection(OperationContext* opCtx,
                        DropCollectionSystemCollectionMode systemCollectionMode,
                        BSONObjBuilder& result) {
     Lock::CollectionLock collLock(opCtx, collectionName, MODE_X);
-    Collection* coll =
+    auto coll =
         CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, collectionName);
-    Status status = _checkNssAndReplState(opCtx, coll);
+    Status status = _checkNssAndReplState(opCtx, coll.get());
     if (!status.isOK()) {
         return status;
     }
@@ -294,7 +294,7 @@ Status dropCollection(OperationContext* opCtx,
                     return Status(ErrorCodes::NamespaceNotFound, "ns not found");
                 }
 
-                Collection* coll = CollectionCatalog::get(opCtx).lookupCollectionByNamespace(
+                auto coll = CollectionCatalog::get(opCtx).lookupCollectionByNamespace(
                     opCtx, collectionName);
 
                 if (!coll) {
@@ -331,7 +331,7 @@ Status dropCollectionForApplyOps(OperationContext* opCtx,
             return Status(ErrorCodes::NamespaceNotFound, "ns not found");
         }
 
-        Collection* coll =
+        auto coll =
             CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, collectionName);
 
         BSONObjBuilder unusedBuilder;

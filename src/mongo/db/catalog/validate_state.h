@@ -102,7 +102,7 @@ public:
 
     Collection* getCollection() const {
         invariant(_collection);
-        return _collection;
+        return _collection.get();
     }
 
     const std::vector<std::shared_ptr<const IndexCatalogEntry>>& getIndexes() const {
@@ -204,7 +204,7 @@ private:
     boost::optional<Lock::CollectionLock> _collectionLock;
 
     Database* _database;
-    Collection* _collection;
+    std::shared_ptr<Collection> _collection;
 
     // Stores the indexes that are going to be validated. When validate yields periodically we'll
     // use this list to determine if validation should abort when an existing index that was

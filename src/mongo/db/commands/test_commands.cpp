@@ -92,8 +92,10 @@ public:
 
         WriteUnitOfWork wunit(opCtx);
         UnreplicatedWritesBlock unreplicatedWritesBlock(opCtx);
-        Collection* collection =
+        auto collectionSP =
             CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, nss);
+        Collection* collection = collectionSP.get();
+
         if (!collection) {
             collection = db->createCollection(opCtx, nss);
             if (!collection) {

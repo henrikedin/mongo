@@ -52,7 +52,7 @@ public:
 
     class FactoryImpl : public Factory {
     public:
-        std::unique_ptr<Collection> make(OperationContext* opCtx,
+        std::shared_ptr<Collection> make(OperationContext* opCtx,
                                          const NamespaceString& nss,
                                          RecordId catalogId,
                                          CollectionUUID uuid,

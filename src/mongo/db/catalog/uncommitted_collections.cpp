@@ -46,7 +46,7 @@ UncommittedCollections& UncommittedCollections::get(OperationContext* opCtx) {
     return getUncommittedCollections(opCtx);
 }
 
-void UncommittedCollections::addToTxn(OperationContext* opCtx, std::unique_ptr<Collection> coll) {
+void UncommittedCollections::addToTxn(OperationContext* opCtx, std::shared_ptr<Collection> coll) {
     auto collList = getUncommittedCollections(opCtx).getResources().lock();
     auto existingColl = collList->_collections.find(coll->uuid());
     uassert(31370,
@@ -87,7 +87,7 @@ void UncommittedCollections::addToTxn(OperationContext* opCtx, std::unique_ptr<C
         });
 }
 
-Collection* UncommittedCollections::getForTxn(OperationContext* opCtx,
+std::shared_ptr<Collection> UncommittedCollections::getForTxn(OperationContext* opCtx,
                                               const NamespaceStringOrUUID& id) {
     if (id.nss()) {
         return getForTxn(opCtx, id.nss().get());
@@ -96,24 +96,24 @@ Collection* UncommittedCollections::getForTxn(OperationContext* opCtx,
     }
 }
 
-Collection* UncommittedCollections::getForTxn(OperationContext* opCtx, const NamespaceString& nss) {
+std::shared_ptr<Collection> UncommittedCollections::getForTxn(OperationContext* opCtx, const NamespaceString& nss) {
     auto collList = getUncommittedCollections(opCtx).getResources().lock();
     auto it = collList->_nssIndex.find(nss);
     if (it == collList->_nssIndex.end()) {
         return nullptr;
     }
 
-    return collList->_collections[it->second].get();
+    return collList->_collections[it->second];
 }
 
-Collection* UncommittedCollections::getForTxn(OperationContext* opCtx, const UUID& uuid) {
+std::shared_ptr<Collection> UncommittedCollections::getForTxn(OperationContext* opCtx, const UUID& uuid) {
     auto collList = getUncommittedCollections(opCtx).getResources().lock();
     auto it = collList->_collections.find(uuid);
     if (it == collList->_collections.end()) {
         return nullptr;
     }
 
-    return it->second.get();
+    return it->second;
 }
 
 void UncommittedCollections::erase(UUID uuid, NamespaceString nss, UncommittedCollectionsMap* map) {
@@ -139,10 +139,10 @@ void UncommittedCollections::commit(OperationContext* opCtx,
     auto it = map->_collections.find(uuid);
     // Invariant that a collection is found.
     invariant(it->second.get(), uuid.toString());
-    auto collPtr = it->second.get();
+    auto collPtr = it->second;
 
     auto nss = it->second->ns();
-    CollectionCatalog::get(opCtx).registerCollection(uuid, &(it->second));
+    CollectionCatalog::get(opCtx).registerCollection(uuid, std::move(it->second));
     map->_collections.erase(it);
     map->_nssIndex.erase(nss);
     auto svcCtx = opCtx->getServiceContext();

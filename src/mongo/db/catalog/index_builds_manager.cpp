@@ -381,9 +381,9 @@ StatusWith<long long> IndexBuildsManager::_moveDocsToLostAndFound(OperationConte
 
     const NamespaceString lostAndFoundNss =
         NamespaceString(NamespaceString::kLocalDb, "system.lost_and_found." + collUUID.toString());
-    Collection* localCollection =
+    auto localCollectionSP =
         CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, lostAndFoundNss);
-
+    Collection* localCollection = localCollectionSP.get();
     // Create the collection if it doesn't exist.
     if (!localCollection) {
         Status status =

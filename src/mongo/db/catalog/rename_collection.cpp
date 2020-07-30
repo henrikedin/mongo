@@ -110,7 +110,7 @@ Status checkSourceAndTargetNamespaces(OperationContext* opCtx,
                       str::stream()
                           << "Database " << source.db() << " does not exist or is drop pending");
 
-    Collection* const sourceColl =
+    auto sourceColl =
         CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, source);
     if (!sourceColl) {
         if (ViewCatalog::get(db)->lookup(opCtx, source.ns()))
@@ -122,7 +122,7 @@ Status checkSourceAndTargetNamespaces(OperationContext* opCtx,
 
     IndexBuildsCoordinator::get(opCtx)->assertNoIndexBuildInProgForCollection(sourceColl->uuid());
 
-    Collection* targetColl =
+    auto targetColl =
         CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, target);
 
     if (!targetColl) {
@@ -319,9 +319,9 @@ Status renameCollectionWithinDB(OperationContext* opCtx,
         return status;
 
     auto db = DatabaseHolder::get(opCtx)->getDb(opCtx, source.db());
-    Collection* const sourceColl =
+    auto sourceColl =
         CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, source);
-    Collection* const targetColl =
+    auto targetColl =
         CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, target);
 
     AutoStatsTracker statsTracker(
@@ -335,7 +335,7 @@ Status renameCollectionWithinDB(OperationContext* opCtx,
         return renameCollectionDirectly(opCtx, db, sourceColl->uuid(), source, target, options);
     } else {
         return renameCollectionAndDropTarget(
-            opCtx, db, sourceColl->uuid(), source, target, targetColl, options, {});
+            opCtx, db, sourceColl->uuid(), source, target, targetColl.get(), options, {});
     }
 }
 
@@ -362,7 +362,7 @@ Status renameCollectionWithinDBForApplyOps(OperationContext* opCtx,
         return status;
 
     auto db = DatabaseHolder::get(opCtx)->getDb(opCtx, source.db());
-    Collection* const sourceColl =
+    auto sourceColl =
         CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, source);
 
     AutoStatsTracker statsTracker(
@@ -373,7 +373,7 @@ Status renameCollectionWithinDBForApplyOps(OperationContext* opCtx,
         CollectionCatalog::get(opCtx).getDatabaseProfileLevel(source.db()));
 
     return writeConflictRetry(opCtx, "renameCollection", target.ns(), [&] {
-        Collection* targetColl =
+        auto targetColl =
             CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, target);
         WriteUnitOfWork wuow(opCtx);
         if (targetColl) {
@@ -437,7 +437,7 @@ Status renameCollectionWithinDBForApplyOps(OperationContext* opCtx,
                                                 sourceColl->uuid(),
                                                 source,
                                                 target,
-                                                targetColl,
+                                                targetColl.get(),
                                                 options,
                                                 renameOpTimeFromApplyOps);
         }
@@ -491,7 +491,7 @@ Status renameBetweenDBs(OperationContext* opCtx,
         AutoStatsTracker::LogMode::kUpdateCurOp,
         CollectionCatalog::get(opCtx).getDatabaseProfileLevel(source.db()));
 
-    Collection* const sourceColl =
+    auto sourceColl =
         CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, source);
     if (!sourceColl) {
         if (sourceDB && ViewCatalog::get(sourceDB)->lookup(opCtx, source.ns()))
@@ -515,7 +515,7 @@ Status renameBetweenDBs(OperationContext* opCtx,
     // Check if the target namespace exists and if dropTarget is true.
     // Return a non-OK status if target exists and dropTarget is not true or if the collection
     // is sharded.
-    Collection* targetColl = targetDB
+    auto targetColl = targetDB
         ? CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, target)
         : nullptr;
     if (targetColl) {

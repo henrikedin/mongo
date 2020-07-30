@@ -588,7 +588,7 @@ Status MultiIndexBlock::drainBackgroundWrites(
               IndexBuildPhase_serializer(_phase).toString());
     _phase = IndexBuildPhaseEnum::kDrainWrites;
 
-    const Collection* coll =
+    auto coll =
         CollectionCatalog::get(opCtx).lookupCollectionByUUID(opCtx, _collectionUUID.get());
 
     // Drain side-writes table for each index. This only drains what is visible. Assuming intent
@@ -605,7 +605,7 @@ Status MultiIndexBlock::drainBackgroundWrites(
         auto trackDups = !_ignoreUnique ? IndexBuildInterceptor::TrackDuplicates::kTrack
                                         : IndexBuildInterceptor::TrackDuplicates::kNoTrack;
         auto status = interceptor->drainWritesIntoIndex(
-            opCtx, coll, _indexes[i].options, trackDups, drainYieldPolicy);
+            opCtx, coll.get(), _indexes[i].options, trackDups, drainYieldPolicy);
         if (!status.isOK()) {
             return status;
         }

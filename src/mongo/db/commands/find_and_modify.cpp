@@ -528,7 +528,7 @@ public:
         if (!collection && args.isUpsert()) {
             assertCanWrite(opCtx, nsString);
 
-            collection = CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, nsString);
+            collection = CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, nsString).get();
 
             // If someone else beat us to creating the collection, do nothing
             if (!collection) {
@@ -539,7 +539,7 @@ public:
                 wuow.commit();
 
                 collection =
-                    CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, nsString);
+                    CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, nsString).get();
             }
 
             invariant(collection);

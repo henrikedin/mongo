@@ -52,7 +52,7 @@ void forEachCollectionFromDb(OperationContext* opCtx,
         }
 
         boost::optional<Lock::CollectionLock> clk;
-        Collection* collection = nullptr;
+        std::shared_ptr<Collection> collection;
 
         while (auto nss = catalog.lookupNSSByUUID(opCtx, uuid)) {
             // Get a fresh snapshot for each locked collection to see any catalog changes.
@@ -73,7 +73,7 @@ void forEachCollectionFromDb(OperationContext* opCtx,
         if (!collection)
             continue;
 
-        if (!callback(collection))
+        if (!callback(collection.get()))
             break;
 
         hangBeforeGettingNextCollection.pauseWhileSet();
