@@ -134,8 +134,8 @@ Status _abortIndexBuildsAndDropCollection(OperationContext* opCtx,
     opCtx->recoveryUnit()->abandonSnapshot();
 
     auto coll =
-        CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, startingNss);
-    Status status = _checkNssAndReplState(opCtx, coll.get());
+        CollectionCatalog::get(opCtx).lookupCollectionByNamespaceForWrite(opCtx, startingNss);
+    Status status = _checkNssAndReplState(opCtx, coll);
     if (!status.isOK()) {
         return status;
     }
