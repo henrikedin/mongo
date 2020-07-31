@@ -148,7 +148,7 @@ void openCatalog(OperationContext* opCtx, const MinVisibleTimestampMap& minVisib
     for (const auto& entry : nsToIndexNameObjMap) {
         NamespaceString collNss(entry.first);
 
-        Collection* collection = CollectionCatalog::get(opCtx).lookupCollectionByNamespaceForWrite(opCtx, collNss);
+        auto collection = CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, collNss);
         invariant(collection, str::stream() << "couldn't get collection " << collNss.toString());
 
         for (const auto& indexName : entry.second.first) {
@@ -160,7 +160,7 @@ void openCatalog(OperationContext* opCtx, const MinVisibleTimestampMap& minVisib
         }
 
         std::vector<BSONObj> indexSpecs = entry.second.second;
-        fassert(40690, rebuildIndexesOnCollection(opCtx, collection, indexSpecs, RepairData::kNo));
+        fassert(40690, rebuildIndexesOnCollection(opCtx, collection.get(), indexSpecs, RepairData::kNo));
     }
 
     // Once all unfinished index builds have been dropped and the catalog has been reloaded, resume
@@ -182,8 +182,8 @@ void openCatalog(OperationContext* opCtx, const MinVisibleTimestampMap& minVisib
         for (auto&& collNss :
              CollectionCatalog::get(opCtx).getAllCollectionNamesFromDb(opCtx, dbName)) {
             // Note that the collection name already includes the database component.
-            Collection* collection =
-                CollectionCatalog::get(opCtx).lookupCollectionByNamespaceForWrite(opCtx, collNss);
+            auto collection =
+                CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, collNss);
             invariant(collection,
                       str::stream()
                           << "failed to get valid collection pointer for namespace " << collNss);

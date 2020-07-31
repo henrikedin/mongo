@@ -96,12 +96,12 @@ private:
  * NOTE: Must not be used with any locks held, because it needs to block waiting on the committed
  * snapshot to become available.
  */
-class AutoGetCollectionSharedForRead {
-    AutoGetCollectionSharedForRead(const AutoGetCollectionSharedForRead&) = delete;
-    AutoGetCollectionSharedForRead& operator=(const AutoGetCollectionSharedForRead&) = delete;
+class AutoGetCollectionForRead {
+    AutoGetCollectionForRead(const AutoGetCollectionForRead&) = delete;
+    AutoGetCollectionForRead& operator=(const AutoGetCollectionForRead&) = delete;
 
 public:
-    AutoGetCollectionSharedForRead(
+    AutoGetCollectionForRead(
         OperationContext* opCtx,
         const NamespaceStringOrUUID& nsOrUUID,
         AutoGetCollection::ViewMode viewMode = AutoGetCollection::ViewMode::kViewsForbidden,
@@ -111,7 +111,7 @@ public:
         return _autoColl->getDb();
     }
 
-    const Collection* getCollection() const {
+    Collection* getCollection() const {
         return _autoColl->getCollection();
     }
 
@@ -135,93 +135,16 @@ private:
     boost::optional<AutoGetCollection> _autoColl;
 };
 
-class AutoGetCollectionLockFreeForRead {
-    AutoGetCollectionLockFreeForRead(const AutoGetCollectionLockFreeForRead&) = delete;
-    AutoGetCollectionLockFreeForRead& operator=(const AutoGetCollectionLockFreeForRead&) = delete;
-
-public:
-    AutoGetCollectionLockFreeForRead(
-        OperationContext* opCtx,
-        const NamespaceStringOrUUID& nsOrUUID,
-        AutoGetCollection::ViewMode viewMode = AutoGetCollection::ViewMode::kViewsForbidden,
-        Date_t deadline = Date_t::max());
-
-    Database* getDb() const {
-        return _autoColl->getDb();
-    }
-
-    const Collection* getCollection() const {
-        return _autoColl->getCollection();
-    }
-
-    ViewDefinition* getView() const {
-        return _autoColl->getView();
-    }
-
-    const NamespaceString& getNss() const {
-        return _autoColl->getNss();
-    }
-
-private:
-    // If this field is set, the reader will not take the ParallelBatchWriterMode lock and conflict
-    // with secondary batch application. This stays in scope with the _autoColl so that locks are
-    // taken and released in the right order.
-    boost::optional<ShouldNotConflictWithSecondaryBatchApplicationBlock>
-        _shouldNotConflictWithSecondaryBatchApplicationBlock;
-
-    // This field is optional, because the code to wait for majority committed snapshot needs to
-    // release locks in order to block waiting
-    //boost::optional<AutoGetCollection> _autoColl;
-    std::shared_ptr<const Collection> _coll; // Need to acquire this the right way
-};
-
-/**
- * Same as AutoGetCollectionSharedForRead, but in addition will add a Top entry upon destruction and
- * ensure the CurrentOp object has the right namespace and has started its timer.
- */
-class AutoGetCollectionSharedForReadCommand {
-    AutoGetCollectionSharedForReadCommand(const AutoGetCollectionSharedForReadCommand&) = delete;
-    AutoGetCollectionSharedForReadCommand& operator=(const AutoGetCollectionSharedForReadCommand&) = delete;
-
-public:
-    AutoGetCollectionSharedForReadCommand(
-        OperationContext* opCtx,
-        const NamespaceStringOrUUID& nsOrUUID,
-        AutoGetCollection::ViewMode viewMode = AutoGetCollection::ViewMode::kViewsForbidden,
-        Date_t deadline = Date_t::max(),
-        AutoStatsTracker::LogMode logMode = AutoStatsTracker::LogMode::kUpdateTopAndCurOp);
-
-    Database* getDb() const {
-        return _autoCollForRead.getDb();
-    }
-
-    const Collection* getCollection() const {
-        return _autoCollForRead.getCollection();
-    }
-
-    ViewDefinition* getView() const {
-        return _autoCollForRead.getView();
-    }
-
-    const NamespaceString& getNss() const {
-        return _autoCollForRead.getNss();
-    }
-
-private:
-    AutoGetCollectionSharedForRead _autoCollForRead;
-    AutoStatsTracker _statsTracker;
-};
-
 /**
  * Same as AutoGetCollectionForRead, but in addition will add a Top entry upon destruction and
  * ensure the CurrentOp object has the right namespace and has started its timer.
  */
-class AutoGetCollectionLockFreeForReadCommand {
-    AutoGetCollectionLockFreeForReadCommand(const AutoGetCollectionLockFreeForReadCommand&) = delete;
-    AutoGetCollectionLockFreeForReadCommand& operator=(const AutoGetCollectionLockFreeForReadCommand&) = delete;
+class AutoGetCollectionForReadCommand {
+    AutoGetCollectionForReadCommand(const AutoGetCollectionForReadCommand&) = delete;
+    AutoGetCollectionForReadCommand& operator=(const AutoGetCollectionForReadCommand&) = delete;
 
 public:
-    AutoGetCollectionLockFreeForReadCommand(
+    AutoGetCollectionForReadCommand(
         OperationContext* opCtx,
         const NamespaceStringOrUUID& nsOrUUID,
         AutoGetCollection::ViewMode viewMode = AutoGetCollection::ViewMode::kViewsForbidden,
@@ -232,7 +155,7 @@ public:
         return _autoCollForRead.getDb();
     }
 
-    const Collection* getCollection() const {
+    Collection* getCollection() const {
         return _autoCollForRead.getCollection();
     }
 
@@ -245,7 +168,7 @@ public:
     }
 
 private:
-    AutoGetCollectionLockFreeForRead _autoCollForRead;
+    AutoGetCollectionForRead _autoCollForRead;
     AutoStatsTracker _statsTracker;
 };
 
