@@ -103,7 +103,7 @@ struct Cloner::Fun {
         // Make sure database still exists after we resume from the temp release
         auto databaseHolder = DatabaseHolder::get(opCtx);
         auto db = databaseHolder->openDb(opCtx, _dbName);
-        auto collection = CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, nss);
+        Collection* collection = CollectionCatalog::get(opCtx).lookupCollectionByNamespaceForWrite(opCtx, nss);
         if (!collection) {
             writeConflictRetry(opCtx, "createCollection", nss.ns(), [&] {
                 opCtx->checkForInterrupt();
@@ -117,7 +117,7 @@ struct Cloner::Fun {
                           str::stream()
                               << "collection creation failed during clone [" << nss << "]");
                 wunit.commit();
-                collection = CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, nss);
+                collection = CollectionCatalog::get(opCtx).lookupCollectionByNamespaceForWrite(opCtx, nss);
                 invariant(collection,
                           str::stream() << "Missing collection during clone [" << nss << "]");
             });
@@ -153,7 +153,7 @@ struct Cloner::Fun {
                         str::stream() << "Database " << _dbName << " dropped while cloning",
                         db != nullptr);
 
-                collection = CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, nss);
+                collection = CollectionCatalog::get(opCtx).lookupCollectionByNamespaceForWrite(opCtx, nss);
                 uassert(28594,
                         str::stream() << "Collection " << nss << " dropped while cloning",
                         collection != nullptr);

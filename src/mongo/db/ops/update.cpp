@@ -67,8 +67,7 @@ UpdateResult update(OperationContext* opCtx, Database* db, const UpdateRequest& 
     // The update stage does not create its own collection.  As such, if the update is
     // an upsert, create the collection that the update stage inserts into beforehand.
     writeConflictRetry(opCtx, "createCollection", nsString.ns(), [&] {
-        auto collectionSP = CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, nsString);
-        collection = collectionSP.get();
+        collection = CollectionCatalog::get(opCtx).lookupCollectionByNamespaceForWrite(opCtx, nsString);
         if (collection || !request.isUpsert()) {
             return;
         }

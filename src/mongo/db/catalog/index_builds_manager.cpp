@@ -131,7 +131,7 @@ StatusWith<std::pair<long long, long long>> IndexBuildsManager::startBuildingInd
     OperationContext* opCtx, NamespaceString ns, const UUID& buildUUID, RepairData repair) {
     auto builder = invariant(_getBuilder(buildUUID));
 
-    auto coll = CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, ns);
+    Collection* coll = CollectionCatalog::get(opCtx).lookupCollectionByNamespaceForWrite(opCtx, ns);
     auto rs = coll ? coll->getRecordStore() : nullptr;
 
     // Iterate all records in the collection. Validate the records and index them
@@ -376,14 +376,13 @@ StatusWith<long long> IndexBuildsManager::_moveDocsToLostAndFound(OperationConte
         return recordsDeleted;
     }
 
-    auto originalCollection = CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, nss);
+    Collection* originalCollection = CollectionCatalog::get(opCtx).lookupCollectionByNamespaceForWrite(opCtx, nss);
     auto collUUID = originalCollection->uuid();
 
     const NamespaceString lostAndFoundNss =
         NamespaceString(NamespaceString::kLocalDb, "system.lost_and_found." + collUUID.toString());
-    auto localCollectionSP =
-        CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, lostAndFoundNss);
-    Collection* localCollection = localCollectionSP.get();
+    Collection* localCollection =
+        CollectionCatalog::get(opCtx).lookupCollectionByNamespaceForWrite(opCtx, lostAndFoundNss);
     // Create the collection if it doesn't exist.
     if (!localCollection) {
         Status status =

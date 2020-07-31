@@ -233,7 +233,7 @@ Status ensureCollectionProperties(OperationContext* opCtx,
                   "Collection is missing an _id index",
                   logAttrs(*coll));
             if (EnsureIndexPolicy::kBuildMissing == ensureIndexPolicy) {
-                auto status = buildMissingIdIndex(opCtx, coll.get());
+                auto status = buildMissingIdIndex(opCtx, coll);
                 if (!status.isOK()) {
                     LOGV2_ERROR(21021,
                                 "could not build an _id index on collection {coll_ns}: {error}",

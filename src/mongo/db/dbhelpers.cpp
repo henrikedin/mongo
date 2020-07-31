@@ -61,7 +61,7 @@ using std::unique_ptr;
    set your db SavedContext first
 */
 bool Helpers::findOne(OperationContext* opCtx,
-                      Collection* collection,
+                      const Collection* collection,
                       const BSONObj& query,
                       BSONObj& result,
                       bool requireIndex) {
@@ -76,7 +76,7 @@ bool Helpers::findOne(OperationContext* opCtx,
    set your db SavedContext first
 */
 RecordId Helpers::findOne(OperationContext* opCtx,
-                          Collection* collection,
+                          const Collection* collection,
                           const BSONObj& query,
                           bool requireIndex) {
     if (!collection)
@@ -88,7 +88,7 @@ RecordId Helpers::findOne(OperationContext* opCtx,
 }
 
 RecordId Helpers::findOne(OperationContext* opCtx,
-                          Collection* collection,
+                          const Collection* collection,
                           std::unique_ptr<QueryRequest> qr,
                           bool requireIndex) {
     if (!collection)
@@ -138,7 +138,7 @@ bool Helpers::findById(OperationContext* opCtx,
     if (nsFound)
         *nsFound = true;
 
-    IndexCatalog* catalog = collection->getIndexCatalog();
+    const IndexCatalog* catalog = collection->getIndexCatalog();
     const IndexDescriptor* desc = catalog->findIdIndex(opCtx);
 
     if (!desc)
@@ -155,10 +155,10 @@ bool Helpers::findById(OperationContext* opCtx,
 }
 
 RecordId Helpers::findById(OperationContext* opCtx,
-                           Collection* collection,
+                           const Collection* collection,
                            const BSONObj& idquery) {
     verify(collection);
-    IndexCatalog* catalog = collection->getIndexCatalog();
+    const IndexCatalog* catalog = collection->getIndexCatalog();
     const IndexDescriptor* desc = catalog->findIdIndex(opCtx);
     uassert(13430, "no _id index", desc);
     return catalog->getEntry(desc)->accessMethod()->findSingle(opCtx, idquery["_id"].wrap());

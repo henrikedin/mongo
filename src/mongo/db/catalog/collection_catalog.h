@@ -58,7 +58,7 @@ public:
 
     class iterator {
     public:
-        using value_type = std::shared_ptr<Collection>;
+        using value_type = Collection*;
 
         iterator(StringData dbName, uint64_t genNum, const CollectionCatalog& catalog);
         iterator(
@@ -92,7 +92,7 @@ public:
         uint64_t _genNum;
         std::map<std::pair<std::string, CollectionUUID>, std::shared_ptr<Collection>>::const_iterator _mapIter;
         const CollectionCatalog* _catalog;
-        static const std::shared_ptr<Collection> _nullCollection;
+        static constexpr Collection* _nullCollection = nullptr;
     };
 
     static CollectionCatalog& get(ServiceContext* svcCtx);
@@ -141,7 +141,11 @@ public:
      *
      * Returns nullptr if the 'uuid' is not known.
      */
-    std::shared_ptr<Collection> lookupCollectionByUUID(OperationContext* opCtx, CollectionUUID uuid) const;
+    // lookupCollectionByUUIDForWrite will make a copy of the collection before returning
+    Collection* lookupCollectionByUUIDForWrite(OperationContext* opCtx, CollectionUUID uuid) const; // requires IX or X lock
+    const Collection* lookupCollectionByUUIDForRead(OperationContext* opCtx, CollectionUUID uuid) const; // requires IS or S lock
+    std::shared_ptr<const Collection> lookupCollectionByUUID(OperationContext* opCtx, CollectionUUID uuid) const; // can be used without locks
+
 
     void makeCollectionVisible(CollectionUUID uuid);
 
@@ -158,8 +162,13 @@ public:
      *
      * Returns nullptr if the namespace is unknown.
      */
-    std::shared_ptr<Collection> lookupCollectionByNamespace(OperationContext* opCtx,
-                                            const NamespaceString& nss) const;
+    // lookupCollectionByNamespaceForWrite will make a copy of the collection before returning
+    Collection* lookupCollectionByNamespaceForWrite(OperationContext* opCtx,
+                                            const NamespaceString& nss) const; // requires IX or X lock
+    const Collection* lookupCollectionByNamespaceForRead(OperationContext* opCtx,
+                                            const NamespaceString& nss) const; // requires IS or S lock
+    std::shared_ptr<const Collection> lookupCollectionByNamespace(OperationContext* opCtx,
+                                            const NamespaceString& nss) const; // can be used without locks
 
     /**
      * This function gets the NamespaceString from the collection catalog entry that

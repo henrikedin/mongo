@@ -52,7 +52,7 @@ public:
 private:
     AutoGetOplog _oplogRead;
     OldClientContext _ctx;
-    std::shared_ptr<Collection> _collection;
+    std::shared_ptr<const Collection> _collection;
     std::unique_ptr<PlanExecutor, PlanExecutor::Deleter> _exec;
 };
 

@@ -71,8 +71,8 @@ Status emptyCapped(OperationContext* opCtx, const NamespaceString& collectionNam
     Database* db = autoDb.getDb();
     uassert(ErrorCodes::NamespaceNotFound, "no such database", db);
 
-    auto collection =
-        CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, collectionName);
+    Collection* collection =
+        CollectionCatalog::get(opCtx).lookupCollectionByNamespaceForWrite(opCtx, collectionName);
     uassert(ErrorCodes::CommandNotSupportedOnView,
             str::stream() << "emptycapped not supported on view: " << collectionName.ns(),
             collection || !ViewCatalog::get(db)->lookup(opCtx, collectionName.ns()));
@@ -153,8 +153,8 @@ void cloneCollectionAsCapped(OperationContext* opCtx,
         uassertStatusOK(createCollection(opCtx, toNss.db().toString(), cmd.done()));
     }
 
-    auto toCollection =
-        CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, toNss);
+    Collection* toCollection =
+        CollectionCatalog::get(opCtx).lookupCollectionByNamespaceForWrite(opCtx, toNss);
     invariant(toCollection);  // we created above
 
     // how much data to ignore because it won't fit anyway

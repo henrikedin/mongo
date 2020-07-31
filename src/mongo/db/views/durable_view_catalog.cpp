@@ -186,12 +186,12 @@ void DurableViewCatalogImpl::upsert(OperationContext* opCtx,
     NamespaceString systemViewsNs(_db->getSystemViewsName());
     dassert(opCtx->lockState()->isCollectionLockedForMode(systemViewsNs, MODE_X));
 
-    auto systemViews =
-        CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, systemViewsNs);
+    Collection* systemViews =
+        CollectionCatalog::get(opCtx).lookupCollectionByNamespaceForWrite(opCtx, systemViewsNs);
     invariant(systemViews);
 
     const bool requireIndex = false;
-    RecordId id = Helpers::findOne(opCtx, systemViews.get(), BSON("_id" << name.ns()), requireIndex);
+    RecordId id = Helpers::findOne(opCtx, systemViews, BSON("_id" << name.ns()), requireIndex);
 
     Snapshotted<BSONObj> oldView;
     if (!id.isValid() || !systemViews->findDoc(opCtx, id, &oldView)) {
@@ -219,14 +219,14 @@ void DurableViewCatalogImpl::remove(OperationContext* opCtx, const NamespaceStri
     dassert(opCtx->lockState()->isDbLockedForMode(_db->name(), MODE_IX));
     dassert(opCtx->lockState()->isCollectionLockedForMode(name, MODE_IX));
 
-    auto systemViews =
-        CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, _db->getSystemViewsName());
+    Collection* systemViews =
+        CollectionCatalog::get(opCtx).lookupCollectionByNamespaceForWrite(opCtx, _db->getSystemViewsName());
     dassert(opCtx->lockState()->isCollectionLockedForMode(systemViews->ns(), MODE_X));
 
     if (!systemViews)
         return;
     const bool requireIndex = false;
-    RecordId id = Helpers::findOne(opCtx, systemViews.get(), BSON("_id" << name.ns()), requireIndex);
+    RecordId id = Helpers::findOne(opCtx, systemViews, BSON("_id" << name.ns()), requireIndex);
     if (!id.isValid())
         return;
 
