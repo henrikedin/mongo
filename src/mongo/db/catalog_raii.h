@@ -89,22 +89,20 @@ private:
  * |----------+--------------------+----------------+------------------------|
  * | MODE_IX  | MODE_IX            | MODE_IX        | MODE_IX                |
  * | MODE_X   | MODE_IX            | MODE_IX        | MODE_X                 |
- * | MODE_IS  | MODE_IS            | MODE_IS        | MODE_IS                |
- * | MODE_S   | MODE_IS            | MODE_IS        | MODE_S                 |
  *
  * NOTE: Throws NamespaceNotFound if the collection UUID cannot be resolved to a name.
  *
  * Any acquired locks may be released when this object goes out of scope, therefore the database
  * and the collection references returned by this class should not be retained.
  */
-class AutoGetCollection {
-    AutoGetCollection(const AutoGetCollection&) = delete;
-    AutoGetCollection& operator=(const AutoGetCollection&) = delete;
+class AutoGetCollectionExclusive {
+    AutoGetCollectionExclusive(const AutoGetCollectionExclusive&) = delete;
+    AutoGetCollectionExclusive& operator=(const AutoGetCollectionExclusive&) = delete;
 
 public:
     enum ViewMode { kViewsPermitted, kViewsForbidden };
 
-    AutoGetCollection(OperationContext* opCtx,
+    AutoGetCollectionExclusive(OperationContext* opCtx,
                       const NamespaceStringOrUUID& nsOrUUID,
                       LockMode modeColl,
                       ViewMode viewMode = kViewsForbidden,
@@ -156,7 +154,84 @@ private:
     // might need to be relocked for the correct namespace
     boost::optional<Lock::CollectionLock> _collLock;
 
-    std::shared_ptr<Collection> _coll;
+    Collection* _coll;
+    std::shared_ptr<ViewDefinition> _view;
+};
+
+/**
+ * RAII-style class, which acquires global, database, and collection locks according to the chart
+ * below.
+ *
+ * | modeColl | Global Lock Result | DB Lock Result | Collection Lock Result |
+ * |----------+--------------------+----------------+------------------------|
+ * | MODE_IS  | MODE_IS            | MODE_IS        | MODE_IS                |
+ * | MODE_S   | MODE_IS            | MODE_IS        | MODE_S                 |
+ *
+ * NOTE: Throws NamespaceNotFound if the collection UUID cannot be resolved to a name.
+ *
+ * Any acquired locks may be released when this object goes out of scope, therefore the database
+ * and the collection references returned by this class should not be retained.
+ */
+class AutoGetCollectionShared {
+    AutoGetCollectionShared(const AutoGetCollectionShared&) = delete;
+    AutoGetCollectionShared& operator=(const AutoGetCollectionShared&) = delete;
+
+public:
+    enum ViewMode { kViewsPermitted, kViewsForbidden };
+
+    AutoGetCollection(OperationContext* opCtx,
+                      const NamespaceStringOrUUID& nsOrUUID,
+                      LockMode modeColl,
+                      ViewMode viewMode = kViewsForbidden,
+                      Date_t deadline = Date_t::max());
+
+    /**
+     * Returns the database, or nullptr if it didn't exist.
+     */
+    Database* getDb() const {
+        return _autoDb.getDb();
+    }
+
+    /**
+     * Returns the database, creating it if it does not exist.
+     */
+    Database* ensureDbExists() {
+        return _autoDb.ensureDbExists();
+    }
+
+    /**
+     * Returns nullptr if the collection didn't exist.
+     */
+    const Collection* getCollection() const {
+        return _coll.get();
+    }
+
+    /**
+     * Returns nullptr if the view didn't exist.
+     */
+    ViewDefinition* getView() const {
+        return _view.get();
+    }
+
+    /**
+     * Returns the resolved namespace of the collection or view.
+     */
+    const NamespaceString& getNss() const {
+        return _resolvedNss;
+    }
+
+private:
+    AutoGetDb _autoDb;
+
+    // If the object was instantiated with a UUID, contains the resolved namespace, otherwise it is
+    // the same as the input namespace string
+    NamespaceString _resolvedNss;
+
+    // This field is boost::optional, because in the case of lookup by UUID, the collection lock
+    // might need to be relocked for the correct namespace
+    boost::optional<Lock::CollectionLock> _collLock;
+
+    const Collection* _coll;
     std::shared_ptr<ViewDefinition> _view;
 };
 
