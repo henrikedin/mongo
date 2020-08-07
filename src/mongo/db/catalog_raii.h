@@ -185,7 +185,22 @@ struct CatalogCollectionLookupForRead {
     }
 };
 
+struct CatalogCollectionLookupForMetadataWrite {
+    using CollectionStorage = Collection*;
+    using CollectionPtr = Collection*;
+
+    static CollectionStorage lookupCollection(OperationContext* opCtx, const NamespaceString& nss);
+    static CollectionPtr toCollectionPtr(CollectionStorage collection) {
+        return collection;
+    }
+};
+
 class AutoGetCollection : public AutoGetCollectionBase<CatalogCollectionLookup> {
+public:
+    using AutoGetCollectionBase::AutoGetCollectionBase;
+};
+
+class AutoGetCollectionForMetadataWrite : public AutoGetCollectionBase<CatalogCollectionLookupForMetadataWrite> {
 public:
     using AutoGetCollectionBase::AutoGetCollectionBase;
 };
