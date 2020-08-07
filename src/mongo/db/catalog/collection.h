@@ -162,7 +162,7 @@ private:
  */
 class SharedCollectionDecorations : public Decorable<SharedCollectionDecorations> {};
 
-class Collection : public Decorable<Collection> {
+class Collection {
 public:
     enum class StoreDeletedDoc { Off, On };
 
