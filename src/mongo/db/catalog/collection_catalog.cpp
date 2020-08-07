@@ -269,14 +269,18 @@ std::shared_ptr<const Collection> CollectionCatalog::lookupCollectionByUUIDForRe
 }
 
 Collection* CollectionCatalog::lookupCollectionByUUIDForMetadataWrite(OperationContext* opCtx,
-                                                      CollectionUUID uuid) const {
+                                                                      CollectionUUID uuid) const {
     if (auto coll = UncommittedCollections::getForTxn(opCtx, uuid)) {
         return coll.get();
     }
 
     stdx::lock_guard<Latch> lock(_catalogLock);
     auto coll = _lookupCollectionByUUID(lock, uuid);
-    return (coll && coll->isCommitted()) ? coll.get() : nullptr;
+    if (coll && coll->isCommitted()) {
+        invariant(opCtx->lockState()->isCollectionLockedForMode(coll->ns(), MODE_X));
+        return coll.get();
+    }
+    return nullptr;
 }
 
 Collection* CollectionCatalog::lookupCollectionByUUID(OperationContext* opCtx,
@@ -287,7 +291,11 @@ Collection* CollectionCatalog::lookupCollectionByUUID(OperationContext* opCtx,
 
     stdx::lock_guard<Latch> lock(_catalogLock);
     auto coll = _lookupCollectionByUUID(lock, uuid);
-    return (coll && coll->isCommitted()) ? coll.get() : nullptr;
+    if (coll && coll->isCommitted()) {
+        invariant(opCtx->lockState()->wasGlobalLockTakenForWrite() || !opCtx->lockState()->shouldConflictWithSecondaryBatchApplication() || !opCtx->lockState()->isCollectionLockedForMode(coll->ns(), MODE_X));
+        return coll.get();
+    }
+    return nullptr;
 }
 
 void CollectionCatalog::makeCollectionVisible(CollectionUUID uuid) {
@@ -320,8 +328,8 @@ std::shared_ptr<const Collection> CollectionCatalog::lookupCollectionByNamespace
     return (coll && coll->isCommitted()) ? coll : nullptr;
 }
 
-Collection* CollectionCatalog::lookupCollectionByNamespaceForMetadataWrite(OperationContext* opCtx,
-                                                           const NamespaceString& nss) const {
+Collection* CollectionCatalog::lookupCollectionByNamespaceForMetadataWrite(
+    OperationContext* opCtx, const NamespaceString& nss) const {
     if (auto coll = UncommittedCollections::getForTxn(opCtx, nss)) {
         return coll.get();
     }
@@ -329,7 +337,11 @@ Collection* CollectionCatalog::lookupCollectionByNamespaceForMetadataWrite(Opera
     stdx::lock_guard<Latch> lock(_catalogLock);
     auto it = _collections.find(nss);
     auto coll = (it == _collections.end() ? nullptr : it->second);
-    return (coll && coll->isCommitted()) ? coll.get() : nullptr;
+    if (coll && coll->isCommitted()) {
+        invariant(opCtx->lockState()->isCollectionLockedForMode(coll->ns(), MODE_X));
+        return coll.get();
+    }
+    return nullptr;
 }
 
 Collection* CollectionCatalog::lookupCollectionByNamespace(OperationContext* opCtx,
@@ -341,7 +353,12 @@ Collection* CollectionCatalog::lookupCollectionByNamespace(OperationContext* opC
     stdx::lock_guard<Latch> lock(_catalogLock);
     auto it = _collections.find(nss);
     auto coll = (it == _collections.end() ? nullptr : it->second);
-    return (coll && coll->isCommitted()) ? coll.get() : nullptr;
+    if (coll && coll->isCommitted()) {
+        bool correct = opCtx->lockState()->wasGlobalLockTakenForWrite() || !opCtx->lockState()->shouldConflictWithSecondaryBatchApplication() || !opCtx->lockState()->isCollectionLockedForMode(coll->ns(), MODE_X);
+        invariant(correct);
+        return coll.get();
+    }
+    return nullptr;
 }
 
 boost::optional<NamespaceString> CollectionCatalog::lookupNSSByUUID(OperationContext* opCtx,

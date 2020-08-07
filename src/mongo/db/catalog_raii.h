@@ -197,10 +197,19 @@ struct CatalogCollectionLookupForMetadataWrite {
 
 class AutoGetCollection : public AutoGetCollectionBase<CatalogCollectionLookup> {
 public:
-    using AutoGetCollectionBase::AutoGetCollectionBase;
+    // using AutoGetCollectionBase::AutoGetCollectionBase;
+    AutoGetCollection(
+        OperationContext* opCtx,
+        const NamespaceStringOrUUID& nsOrUUID,
+        LockMode modeColl,
+        AutoGetCollectionViewMode viewMode = AutoGetCollectionViewMode::kViewsForbidden,
+        Date_t deadline = Date_t::max()) : AutoGetCollectionBase(opCtx, nsOrUUID, modeColl, viewMode, deadline) {
+        invariant(modeColl != MODE_X);
+    }
 };
 
-class AutoGetCollectionForMetadataWrite : public AutoGetCollectionBase<CatalogCollectionLookupForMetadataWrite> {
+class AutoGetCollectionForMetadataWrite
+    : public AutoGetCollectionBase<CatalogCollectionLookupForMetadataWrite> {
 public:
     using AutoGetCollectionBase::AutoGetCollectionBase;
 };
