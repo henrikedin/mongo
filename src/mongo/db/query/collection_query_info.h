@@ -48,7 +48,11 @@ class CollectionQueryInfo {
 public:
     CollectionQueryInfo();
 
-    inline static const auto get = Collection::declareDecoration<CollectionQueryInfo>();
+    inline static const auto getCollectionQueryInfo =
+        SharedCollectionDecorations::declareDecoration<CollectionQueryInfo>();
+    static CollectionQueryInfo& get(const Collection* collection){
+        return CollectionQueryInfo::getCollectionQueryInfo(collection->getSharedDecorations());
+    }
 
     /**
      * Get the PlanCache for this collection.
