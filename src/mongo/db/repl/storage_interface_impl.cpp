@@ -228,7 +228,7 @@ StorageInterfaceImpl::createCollectionForBulkLoading(
 
         // Get locks and create the collection.
         AutoGetOrCreateDb db(opCtx.get(), nss.db(), MODE_IX);
-        AutoGetCollection coll(opCtx.get(), nss, fixLockModeForSystemDotViewsChanges(nss, MODE_X));
+        AutoGetCollectionForMetadataWrite coll(opCtx.get(), nss, fixLockModeForSystemDotViewsChanges(nss, MODE_X));
 
         if (coll.getCollection()) {
             return Status(ErrorCodes::NamespaceExists,
@@ -514,7 +514,7 @@ Status StorageInterfaceImpl::dropCollection(OperationContext* opCtx, const Names
 Status StorageInterfaceImpl::truncateCollection(OperationContext* opCtx,
                                                 const NamespaceString& nss) {
     return writeConflictRetry(opCtx, "StorageInterfaceImpl::truncateCollection", nss.ns(), [&] {
-        AutoGetCollection autoColl(opCtx, nss, MODE_X);
+        AutoGetCollectionForMetadataWrite autoColl(opCtx, nss, MODE_X);
         auto collectionResult =
             getCollection(autoColl, nss, "The collection must exist before truncating.");
         if (!collectionResult.isOK()) {
@@ -1200,7 +1200,7 @@ StatusWith<StorageInterface::CollectionCount> StorageInterfaceImpl::getCollectio
 Status StorageInterfaceImpl::setCollectionCount(OperationContext* opCtx,
                                                 const NamespaceStringOrUUID& nsOrUUID,
                                                 long long newCount) {
-    AutoGetCollection autoColl(opCtx, nsOrUUID, LockMode::MODE_X);
+    AutoGetCollectionForMetadataWrite autoColl(opCtx, nsOrUUID, LockMode::MODE_X);
 
     auto collectionResult =
         getCollection(autoColl, nsOrUUID, "Unable to set number of documents in collection.");

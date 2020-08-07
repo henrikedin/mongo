@@ -615,7 +615,7 @@ Status ReplicationCoordinatorExternalStateImpl::createLocalLastVoteCollection(
     try {
         writeConflictRetry(
             opCtx, "create initial replica set lastVote", lastVoteCollectionName, [opCtx] {
-                AutoGetCollection coll(opCtx, NamespaceString(lastVoteCollectionName), MODE_X);
+                AutoGetCollectionForMetadataWrite coll(opCtx, NamespaceString(lastVoteCollectionName), MODE_X);
                 BSONObj result;
                 bool exists = Helpers::getSingleton(opCtx, lastVoteCollectionName, result);
                 if (!exists) {

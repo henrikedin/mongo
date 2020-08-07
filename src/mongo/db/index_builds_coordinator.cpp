@@ -1650,7 +1650,7 @@ void IndexBuildsCoordinator::createIndexesOnEmptyCollection(OperationContext* op
                                                             UUID collectionUUID,
                                                             const std::vector<BSONObj>& specs,
                                                             bool fromMigrate) {
-    auto collection = CollectionCatalog::get(opCtx).lookupCollectionByUUID(opCtx, collectionUUID);
+    auto collection = CollectionCatalog::get(opCtx).lookupCollectionByUUIDForMetadataWrite(opCtx, collectionUUID);
 
     invariant(collection, str::stream() << collectionUUID);
     invariant(collection->isEmpty(opCtx), str::stream() << collectionUUID);
@@ -1818,7 +1818,7 @@ IndexBuildsCoordinator::_filterSpecsAndRegisterBuild(OperationContext* opCtx,
 
     // AutoGetCollection throws an exception if it is unable to look up the collection by UUID.
     NamespaceStringOrUUID nssOrUuid{dbName.toString(), collectionUUID};
-    AutoGetCollection autoColl(opCtx, nssOrUuid, MODE_X);
+    AutoGetCollectionForMetadataWrite autoColl(opCtx, nssOrUuid, MODE_X);
     auto collection = autoColl.getCollection();
     const auto& nss = collection->ns();
 
@@ -1905,7 +1905,7 @@ IndexBuildsCoordinator::PostSetupAction IndexBuildsCoordinator::_setUpIndexBuild
     const IndexBuildOptions& indexBuildOptions) {
     const NamespaceStringOrUUID nssOrUuid{replState->dbName, replState->collectionUUID};
 
-    AutoGetCollection autoColl(opCtx, nssOrUuid, MODE_X);
+    AutoGetCollectionForMetadataWrite autoColl(opCtx, nssOrUuid, MODE_X);
 
     auto collection = autoColl.getCollection();
     const auto& nss = collection->ns();

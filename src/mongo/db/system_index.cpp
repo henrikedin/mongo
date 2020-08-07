@@ -143,7 +143,7 @@ Status verifySystemIndexes(OperationContext* opCtx) {
 
     // Create indexes for the admin.system.users collection.
     {
-        AutoGetCollection autoColl(opCtx, systemUsers, MODE_X);
+        AutoGetCollectionForMetadataWrite autoColl(opCtx, systemUsers, MODE_X);
 
         if (Collection* collection = autoColl.getCollection()) {
             IndexCatalog* indexCatalog = collection->getIndexCatalog();
@@ -176,7 +176,7 @@ Status verifySystemIndexes(OperationContext* opCtx) {
 
     // Create indexes for the admin.system.roles collection.
     {
-        AutoGetCollection autoColl(opCtx, systemRoles, MODE_X);
+        AutoGetCollectionForMetadataWrite autoColl(opCtx, systemRoles, MODE_X);
 
         // Ensure that system indexes exist for the roles collection, if it exists.
         if (Collection* collection = autoColl.getCollection()) {
