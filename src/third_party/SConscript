@@ -41,6 +41,9 @@ thirdPartyEnvironmentModifications = {
    },
    'unwind' : {
    },
+   'jbcoe' : {
+       'CPPPATH' : ['#src/third_party/jbcoe'],
+   },
    'variant' : {
         'CPPPATH' : ['#src/third_party/variant' + variantSuffix + '/include'],
    },
@@ -319,6 +322,13 @@ fmtEnv.Library(
     target="shim_fmt",
     source=[
         'shim_fmt.cpp',
+    ])
+
+jbcoeEnv = env.Clone()
+jbcoeEnv.Library(
+    target="shim_jbcoe",
+    source=[
+        'shim_jbcoe.cpp',
     ])
 
 
