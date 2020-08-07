@@ -264,6 +264,7 @@ baseEnv.Library(
         '$BUILD_DIR/third_party/shim_abseil',
         '$BUILD_DIR/third_party/shim_boost',
         '$BUILD_DIR/third_party/shim_fmt',
+        '$BUILD_DIR/third_party/shim_jbcoe',
     ],
     LIBDEPS_PRIVATE=[
         '$BUILD_DIR/third_party/shim_intel_decimal128',
