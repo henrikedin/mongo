@@ -6,7 +6,7 @@ set -o errexit
 
 JBCOE_GIT_URL="https://raw.githubusercontent.com/jbcoe/polymorphic_value"
 JBCOE_GIT_REV=dac4a42db42597362761806ba08aec13b1420f00
-JBCOE_GIT_DIR="$(git rev-parse --show-toplevel)/src/third_party/jbcoe"
+JBCOE_GIT_DIR="$(git rev-parse --show-toplevel)/src/third_party/polymorphic_value/jbcoe"
 
 mkdir -p "${JBCOE_GIT_DIR}"
 
