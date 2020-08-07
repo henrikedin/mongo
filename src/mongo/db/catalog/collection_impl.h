@@ -59,6 +59,7 @@ public:
                                          std::unique_ptr<RecordStore> rs) const final;
     };
 
+    std::shared_ptr<Collection> clone() final;
     SharedCollectionDecorations* getSharedDecorations() const final;
 
     void init(OperationContext* opCtx) final;
@@ -392,7 +393,7 @@ private:
     bool _committed = true;
 
     // The RecordStore may be null during a repair operation.
-    std::unique_ptr<RecordStore> _recordStore;  // owned
+    std::shared_ptr<RecordStore> _recordStore;  // owned
     const bool _needCappedLock;
     std::unique_ptr<IndexCatalog> _indexCatalog;
 

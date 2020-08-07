@@ -252,6 +252,8 @@ public:
     Collection() = default;
     virtual ~Collection() = default;
 
+    virtual std::shared_ptr<Collection> clone() = 0;
+
     /**
      * Fetches the shared state across Collection instances for the a collection. Returns an object
      * decorated by state shared across Collection instances for the same namespace. Its decorations
