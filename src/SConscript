@@ -19,7 +19,6 @@ env.InjectThirdParty(libraries=[
     'abseil-cpp',
     'boost',
     'fmt',
-    'jbcoe',
     'pcre',
     'safeint',
     'variant',
