@@ -269,7 +269,7 @@ std::shared_ptr<const Collection> CollectionCatalog::lookupCollectionByUUIDForRe
 }
 
 Collection* CollectionCatalog::lookupCollectionByUUIDForMetadataWrite(OperationContext* opCtx,
-                                                                      CollectionUUID uuid) const {
+                                                                      CollectionUUID uuid) {
     if (auto coll = UncommittedCollections::getForTxn(opCtx, uuid)) {
         return coll.get();
     }
@@ -277,8 +277,14 @@ Collection* CollectionCatalog::lookupCollectionByUUIDForMetadataWrite(OperationC
     stdx::lock_guard<Latch> lock(_catalogLock);
     auto coll = _lookupCollectionByUUID(lock, uuid);
     if (coll && coll->isCommitted()) {
-        invariant(opCtx->lockState()->isCollectionLockedForMode(coll->ns(), MODE_X));
-        return coll.get();
+        auto cloned = coll->clone();
+        auto ns = cloned->ns();
+        _collections[ns] = cloned;
+        _catalog[uuid] = cloned;
+        auto dbIdPair = std::make_pair(ns.db().toString(), uuid);
+        _orderedCollections[dbIdPair] = cloned;
+
+        return cloned.get();
     }
     return nullptr;
 }
@@ -292,7 +298,6 @@ Collection* CollectionCatalog::lookupCollectionByUUID(OperationContext* opCtx,
     stdx::lock_guard<Latch> lock(_catalogLock);
     auto coll = _lookupCollectionByUUID(lock, uuid);
     if (coll && coll->isCommitted()) {
-        invariant(opCtx->lockState()->wasGlobalLockTakenForWrite() || !opCtx->lockState()->shouldConflictWithSecondaryBatchApplication() || !opCtx->lockState()->isCollectionLockedForMode(coll->ns(), MODE_X));
         return coll.get();
     }
     return nullptr;
@@ -329,7 +334,7 @@ std::shared_ptr<const Collection> CollectionCatalog::lookupCollectionByNamespace
 }
 
 Collection* CollectionCatalog::lookupCollectionByNamespaceForMetadataWrite(
-    OperationContext* opCtx, const NamespaceString& nss) const {
+    OperationContext* opCtx, const NamespaceString& nss) {
     if (auto coll = UncommittedCollections::getForTxn(opCtx, nss)) {
         return coll.get();
     }
@@ -338,8 +343,14 @@ Collection* CollectionCatalog::lookupCollectionByNamespaceForMetadataWrite(
     auto it = _collections.find(nss);
     auto coll = (it == _collections.end() ? nullptr : it->second);
     if (coll && coll->isCommitted()) {
-        invariant(opCtx->lockState()->isCollectionLockedForMode(coll->ns(), MODE_X));
-        return coll.get();
+        auto cloned = coll->clone();
+        it->second = cloned;
+        auto uuid = cloned->uuid();
+        _catalog[uuid] = cloned;
+        auto dbIdPair = std::make_pair(cloned->ns().db().toString(), uuid);
+        _orderedCollections[dbIdPair] = cloned;
+
+        return cloned.get();
     }
     return nullptr;
 }
@@ -354,8 +365,6 @@ Collection* CollectionCatalog::lookupCollectionByNamespace(OperationContext* opC
     auto it = _collections.find(nss);
     auto coll = (it == _collections.end() ? nullptr : it->second);
     if (coll && coll->isCommitted()) {
-        bool correct = opCtx->lockState()->wasGlobalLockTakenForWrite() || !opCtx->lockState()->shouldConflictWithSecondaryBatchApplication() || !opCtx->lockState()->isCollectionLockedForMode(coll->ns(), MODE_X);
-        invariant(correct);
         return coll.get();
     }
     return nullptr;

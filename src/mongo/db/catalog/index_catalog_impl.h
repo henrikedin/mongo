@@ -57,6 +57,10 @@ struct InsertDeleteOptions;
 class IndexCatalogImpl : public IndexCatalog {
 public:
     explicit IndexCatalogImpl(Collection* collection);
+    IndexCatalogImpl(const IndexCatalogImpl& other) = default;
+
+    std::unique_ptr<IndexCatalog> clone() const override;
+    void setCollection(Collection* collection);
 
     // must be called before used
     Status init(OperationContext* opCtx) override;
@@ -385,7 +389,7 @@ private:
                            const std::vector<std::string>& indexNamesToDrop,
                            bool haveIdIndex);
 
-    Collection* const _collection;
+    Collection* _collection;
 
     IndexCatalogEntryContainer _readyIndexes;
     IndexCatalogEntryContainer _buildingIndexes;

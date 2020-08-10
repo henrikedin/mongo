@@ -29,10 +29,12 @@
 
 #pragma once
 
+#include "mongo/base/clonable_ptr.h"
 #include "mongo/bson/timestamp.h"
 #include "mongo/db/catalog/collection.h"
 #include "mongo/db/catalog/index_catalog.h"
 #include "mongo/db/concurrency/d_concurrency.h"
+#include "mongo/util/intrusive_counter.h"
 
 namespace mongo {
 class IndexConsistency;
@@ -90,22 +92,22 @@ public:
     }
 
     const RecordStore* getRecordStore() const final {
-        return _recordStore.get();
+        return _shared->_recordStore.get();
     }
 
     RecordStore* getRecordStore() final {
-        return _recordStore.get();
+        return _shared->_recordStore.get();
     }
 
     const BSONObj getValidatorDoc() const final {
-        return _validator.validatorDoc.getOwned();
+        return _shared->_validator.validatorDoc.getOwned();
     }
 
     bool requiresIdIndex() const final;
 
     Snapshotted<BSONObj> docFor(OperationContext* opCtx, RecordId loc) const final {
         return Snapshotted<BSONObj>(opCtx->recoveryUnit()->getSnapshotId(),
-                                    _recordStore->dataFor(opCtx, loc).releaseToBson());
+                                    _shared->_recordStore->dataFor(opCtx, loc).releaseToBson());
     }
 
     /**
@@ -381,34 +383,38 @@ private:
                             std::vector<InsertStatement>::const_iterator end,
                             OpDebug* opDebug);
 
-    // This object is decorable and decorated with unversioned data related to the collection. Not
-    // associated with any particular Collection instance for the collection, but shared across all
-    // all instances for the same collection. This is a vehicle for users of a collection to cache
-    // unversioned state for a collection that is accessible across all of the Collection instances.
-    std::shared_ptr<SharedCollectionDecorations> _sharedDecorations;
+    // Members shared by all copies of this CollectionImpl. If they are used by read operations they need to implement their own concurrency control
+    struct SharedImpl : public RefCountable {
+        SharedImpl(std::unique_ptr<RecordStore> recordStore);
 
+        // The RecordStore may be null during a repair operation.
+        std::unique_ptr<RecordStore> _recordStore;  // owned
+
+        // This object is decorable and decorated with unversioned data related to the collection.
+        // Not associated with any particular Collection instance for the collection, but shared
+        // across all all instances for the same collection. This is a vehicle for users of a
+        // collection to cache unversioned state for a collection that is accessible across all of
+        // the Collection instances.
+        SharedCollectionDecorations _sharedDecorations;
+
+        // The default collation which is applied to operations and indices which have no collation
+        // of their own. The collection's validator will respect this collation. If null, the
+        // default collation is simple binary compare.
+        std::unique_ptr<CollatorInterface> _collator;
+        Validator _validator;
+        ValidationAction _validationAction;
+        ValidationLevel _validationLevel;
+    };
+    boost::intrusive_ptr<SharedImpl> _shared;
+
+    // Members that is deep copied when we do metadata updates under MODE_X lock.
     NamespaceString _ns;
     RecordId _catalogId;
     UUID _uuid;
     bool _committed = true;
 
-    // The RecordStore may be null during a repair operation.
-    std::shared_ptr<RecordStore> _recordStore;  // owned
     const bool _needCappedLock;
-    std::unique_ptr<IndexCatalog> _indexCatalog;
-
-
-    // The default collation which is applied to operations and indices which have no collation of
-    // their own. The collection's validator will respect this collation.
-    //
-    // If null, the default collation is simple binary compare.
-    std::unique_ptr<CollatorInterface> _collator;
-
-
-    Validator _validator;
-
-    ValidationAction _validationAction;
-    ValidationLevel _validationLevel;
+    clonable_ptr<IndexCatalog> _indexCatalog;
 
     bool _recordPreImages = false;
 
@@ -416,7 +422,7 @@ private:
     // on this object until notified of the arrival of new data.
     //
     // This is non-null if and only if the collection is a capped collection.
-    const std::shared_ptr<CappedInsertNotifier> _cappedNotifier;
+    std::shared_ptr<CappedInsertNotifier> _cappedNotifier;
 
     // The earliest snapshot that is allowed to use this collection.
     boost::optional<Timestamp> _minVisibleSnapshot;

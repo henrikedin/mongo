@@ -235,28 +235,31 @@ Status validatePreImageRecording(OperationContext* opCtx, const NamespaceString&
 
 }  // namespace
 
+CollectionImpl::SharedImpl::SharedImpl(std::unique_ptr<RecordStore> recordStore)
+    : _recordStore(std::move(recordStore)) {}
+
 CollectionImpl::CollectionImpl(OperationContext* opCtx,
                                const NamespaceString& nss,
                                RecordId catalogId,
                                UUID uuid,
                                std::unique_ptr<RecordStore> recordStore)
-    : _sharedDecorations(std::make_shared<SharedCollectionDecorations>()),
+    : _shared(new SharedImpl(std::move(recordStore))),
       _ns(nss),
       _catalogId(catalogId),
       _uuid(uuid),
-      _recordStore(std::move(recordStore)),
-      _needCappedLock(_recordStore && _recordStore->isCapped() && _ns.db() != "local"),
+      _needCappedLock(_shared->_recordStore && _shared->_recordStore->isCapped() &&
+                      _ns.db() != "local"),
       _indexCatalog(std::make_unique<IndexCatalogImpl>(this)),
-      _cappedNotifier(_recordStore && _recordStore->isCapped()
+      _cappedNotifier(_shared->_recordStore && _shared->_recordStore->isCapped()
                           ? std::make_shared<CappedInsertNotifier>()
                           : nullptr) {
     if (isCapped())
-        _recordStore->setCappedCallback(this);
+        _shared->_recordStore->setCappedCallback(this);
 }
 
 CollectionImpl::~CollectionImpl() {
     if (isCapped()) {
-        _recordStore->setCappedCallback(nullptr);
+        _shared->_recordStore->setCappedCallback(nullptr);
         _cappedNotifier->kill();
     }
 }
@@ -276,14 +279,21 @@ std::shared_ptr<Collection> CollectionImpl::FactoryImpl::make(
     return std::make_shared<CollectionImpl>(opCtx, nss, catalogId, uuid, std::move(rs));
 }
 
+std::shared_ptr<Collection> CollectionImpl::clone() {
+    auto cloned = std::make_shared<CollectionImpl>(*this);
+    checked_cast<IndexCatalogImpl*>(cloned->_indexCatalog.get())->setCollection(cloned.get());
+    cloned->_cappedNotifier = std::move(_cappedNotifier);
+    return cloned;
+}
+
 SharedCollectionDecorations* CollectionImpl::getSharedDecorations() const {
-    return _sharedDecorations.get();
+    return &_shared->_sharedDecorations;
 }
 
 void CollectionImpl::init(OperationContext* opCtx) {
     auto collectionOptions =
         DurableCatalog::get(opCtx)->getCollectionOptions(opCtx, getCatalogId());
-    _collator = parseCollation(opCtx, _ns, collectionOptions.collation);
+    _shared->_collator = parseCollation(opCtx, _ns, collectionOptions.collation);
     auto validatorDoc = collectionOptions.validator.getOwned();
 
     // Enforce that the validator can be used on this namespace.
@@ -291,8 +301,10 @@ void CollectionImpl::init(OperationContext* opCtx) {
 
     // Make sure to parse the action and level before the MatchExpression, since certain features
     // are not supported with certain combinations of action and level.
-    _validationAction = uassertStatusOK(_parseValidationAction(collectionOptions.validationAction));
-    _validationLevel = uassertStatusOK(_parseValidationLevel(collectionOptions.validationLevel));
+    _shared->_validationAction =
+        uassertStatusOK(_parseValidationAction(collectionOptions.validationAction));
+    _shared->_validationLevel =
+        uassertStatusOK(_parseValidationLevel(collectionOptions.validationLevel));
     if (collectionOptions.recordPreImages) {
         uassertStatusOK(validatePreImageRecording(opCtx, _ns));
         _recordPreImages = true;
@@ -301,16 +313,16 @@ void CollectionImpl::init(OperationContext* opCtx) {
     // Store the result (OK / error) of parsing the validator, but do not enforce that the result is
     // OK. This is intentional, as users may have validators on disk which were considered well
     // formed in older versions but not in newer versions.
-    _validator =
+    _shared->_validator =
         parseValidator(opCtx, validatorDoc, MatchExpressionParser::kAllowAllSpecialFeatures);
-    if (!_validator.isOK()) {
+    if (!_shared->_validator.isOK()) {
         // Log an error and startup warning if the collection validator is malformed.
         LOGV2_WARNING_OPTIONS(20293,
                               {logv2::LogTag::kStartupWarnings},
                               "Collection {ns} has malformed validator: {validatorStatus}",
                               "Collection has malformed validator",
                               "namespace"_attr = _ns,
-                              "validatorStatus"_attr = _validator.getStatus());
+                              "validatorStatus"_attr = _shared->_validator.getStatus());
     }
 
     getIndexCatalog()->init(opCtx).transitional_ignore();
@@ -350,7 +362,7 @@ std::unique_ptr<SeekableRecordCursor> CollectionImpl::getCursor(OperationContext
                                                                 bool forward) const {
     dassert(opCtx->lockState()->isCollectionLockedForMode(ns(), MODE_IS));
 
-    return _recordStore->getCursor(opCtx, forward);
+    return _shared->_recordStore->getCursor(opCtx, forward);
 }
 
 
@@ -360,22 +372,22 @@ bool CollectionImpl::findDoc(OperationContext* opCtx,
     dassert(opCtx->lockState()->isCollectionLockedForMode(ns(), MODE_IS));
 
     RecordData rd;
-    if (!_recordStore->findRecord(opCtx, loc, &rd))
+    if (!_shared->_recordStore->findRecord(opCtx, loc, &rd))
         return false;
     *out = Snapshotted<BSONObj>(opCtx->recoveryUnit()->getSnapshotId(), rd.releaseToBson());
     return true;
 }
 
 Status CollectionImpl::checkValidation(OperationContext* opCtx, const BSONObj& document) const {
-    if (!_validator.isOK()) {
-        return _validator.getStatus();
+    if (!_shared->_validator.isOK()) {
+        return _shared->_validator.getStatus();
     }
 
-    const auto* const validatorMatchExpr = _validator.filter.getValue().get();
+    const auto* const validatorMatchExpr = _shared->_validator.filter.getValue().get();
     if (!validatorMatchExpr)
         return Status::OK();
 
-    if (_validationLevel == ValidationLevel::OFF)
+    if (_shared->_validationLevel == ValidationLevel::OFF)
         return Status::OK();
 
     if (documentValidationDisabled(opCtx))
@@ -386,7 +398,7 @@ Status CollectionImpl::checkValidation(OperationContext* opCtx, const BSONObj& d
 
     BSONObj generatedError = doc_validation_error::generateError(*validatorMatchExpr, document);
 
-    if (_validationAction == ValidationAction::WARN) {
+    if (_shared->_validationAction == ValidationAction::WARN) {
         LOGV2_WARNING(20294,
                       "Document would fail validation",
                       "namespace"_attr = ns(),
@@ -418,7 +430,7 @@ Collection::Validator CollectionImpl::parseValidator(
     }
 
     auto expCtx = make_intrusive<ExpressionContext>(
-        opCtx, CollatorInterface::cloneCollator(_collator.get()), ns());
+        opCtx, CollatorInterface::cloneCollator(_shared->_collator.get()), ns());
 
     // The MatchExpression and contained ExpressionContext created as part of the validator are
     // owned by the Collection and will outlive the OperationContext they were created under.
@@ -433,8 +445,8 @@ Collection::Validator CollectionImpl::parseValidator(
 
     // If the validation action is "warn" or the level is "moderate", then disallow any encryption
     // keywords. This is to prevent any plaintext data from showing up in the logs.
-    if (_validationAction == CollectionImpl::ValidationAction::WARN ||
-        _validationLevel == CollectionImpl::ValidationLevel::MODERATE)
+    if (_shared->_validationAction == CollectionImpl::ValidationAction::WARN ||
+        _shared->_validationLevel == CollectionImpl::ValidationLevel::MODERATE)
         allowedFeatures &= ~MatchExpressionParser::AllowedFeatures::kEncryptKeywords;
 
     auto statusWithMatcher =
@@ -457,11 +469,11 @@ Status CollectionImpl::insertDocumentsForOplog(OperationContext* opCtx,
     dassert(opCtx->lockState()->isWriteLocked());
 
     // Since this is only for the OpLog, we can assume these for simplicity.
-    invariant(_validator.isOK());
-    invariant(_validator.filter.getValue() == nullptr);
+    invariant(_shared->_validator.isOK());
+    invariant(_shared->_validator.filter.getValue() == nullptr);
     invariant(!_indexCatalog->haveAnyIndexes());
 
-    Status status = _recordStore->insertRecords(opCtx, records, timestamps);
+    Status status = _shared->_recordStore->insertRecords(opCtx, records, timestamps);
     if (!status.isOK())
         return status;
 
@@ -569,7 +581,7 @@ Status CollectionImpl::insertDocumentForBulkLoader(OperationContext* opCtx,
     // Using timestamp 0 for these inserts, which are non-oplog so we don't have an appropriate
     // timestamp to use.
     StatusWith<RecordId> loc =
-        _recordStore->insertRecord(opCtx, doc.objdata(), doc.objsize(), Timestamp());
+        _shared->_recordStore->insertRecord(opCtx, doc.objdata(), doc.objsize(), Timestamp());
 
     if (!loc.isOK())
         return loc.getStatus();
@@ -636,7 +648,7 @@ Status CollectionImpl::_insertDocuments(OperationContext* opCtx,
         records.emplace_back(Record{RecordId(), RecordData(it->doc.objdata(), it->doc.objsize())});
         timestamps.emplace_back(it->oplogSlot.getTimestamp());
     }
-    Status status = _recordStore->insertRecords(opCtx, &records, timestamps);
+    Status status = _shared->_recordStore->insertRecords(opCtx, &records, timestamps);
     if (!status.isOK())
         return status;
 
@@ -723,7 +735,7 @@ void CollectionImpl::deleteDocument(OperationContext* opCtx,
 
     int64_t keysDeleted;
     _indexCatalog->unindexRecord(opCtx, doc.value(), loc, noWarn, &keysDeleted);
-    _recordStore->deleteRecord(opCtx, loc);
+    _shared->_recordStore->deleteRecord(opCtx, loc);
 
     getGlobalServiceContext()->getOpObserver()->onDelete(
         opCtx, ns(), uuid(), stmtId, fromMigrate, deletedDoc);
@@ -746,7 +758,7 @@ RecordId CollectionImpl::updateDocument(OperationContext* opCtx,
     {
         auto status = checkValidation(opCtx, newDoc);
         if (!status.isOK()) {
-            if (_validationLevel == ValidationLevel::STRICT_V) {
+            if (_shared->_validationLevel == ValidationLevel::STRICT_V) {
                 uassertStatusOK(status);
             }
             // moderate means we have to check the old doc
@@ -785,7 +797,7 @@ RecordId CollectionImpl::updateDocument(OperationContext* opCtx,
     // MMAPv1 behavior would require padding shrunk documents on all storage engines. Instead forbid
     // all size changes.
     const auto oldSize = oldDoc.value().objsize();
-    if (_recordStore->isCapped() && oldSize != newDoc.objsize())
+    if (_shared->_recordStore->isCapped() && oldSize != newDoc.objsize())
         uasserted(ErrorCodes::CannotGrowDocumentInCappedNamespace,
                   str::stream() << "Cannot change the size of a document in a capped collection: "
                                 << oldSize << " != " << newDoc.objsize());
@@ -798,8 +810,8 @@ RecordId CollectionImpl::updateDocument(OperationContext* opCtx,
     }
     args->preImageRecordingEnabledForCollection = getRecordPreImages();
 
-    uassertStatusOK(
-        _recordStore->updateRecord(opCtx, oldLocation, newDoc.objdata(), newDoc.objsize()));
+    uassertStatusOK(_shared->_recordStore->updateRecord(
+        opCtx, oldLocation, newDoc.objdata(), newDoc.objsize()));
 
     if (indexesAffected) {
         int64_t keysInserted, keysDeleted;
@@ -823,10 +835,10 @@ RecordId CollectionImpl::updateDocument(OperationContext* opCtx,
 }
 
 bool CollectionImpl::updateWithDamagesSupported() const {
-    if (!_validator.isOK() || _validator.filter.getValue() != nullptr)
+    if (!_shared->_validator.isOK() || _shared->_validator.filter.getValue() != nullptr)
         return false;
 
-    return _recordStore->updateWithDamagesSupported();
+    return _shared->_recordStore->updateWithDamagesSupported();
 }
 
 StatusWith<RecordData> CollectionImpl::updateDocumentWithDamages(
@@ -848,7 +860,7 @@ StatusWith<RecordData> CollectionImpl::updateDocumentWithDamages(
     }
 
     auto newRecStatus =
-        _recordStore->updateWithDamages(opCtx, loc, oldRec.value(), damageSource, damages);
+        _shared->_recordStore->updateWithDamages(opCtx, loc, oldRec.value(), damageSource, damages);
 
     if (newRecStatus.isOK()) {
         args->updatedDoc = newRecStatus.getValue().toBson();
@@ -893,11 +905,11 @@ std::shared_ptr<CappedInsertNotifier> CollectionImpl::getCappedInsertNotifier() 
 }
 
 uint64_t CollectionImpl::numRecords(OperationContext* opCtx) const {
-    return _recordStore->numRecords(opCtx);
+    return _shared->_recordStore->numRecords(opCtx);
 }
 
 uint64_t CollectionImpl::dataSize(OperationContext* opCtx) const {
-    return _recordStore->dataSize(opCtx);
+    return _shared->_recordStore->dataSize(opCtx);
 }
 
 bool CollectionImpl::isEmpty(OperationContext* opCtx) const {
@@ -976,7 +988,7 @@ Status CollectionImpl::truncate(OperationContext* opCtx) {
     _indexCatalog->dropAllIndexes(opCtx, true);
 
     // 3) truncate record store
-    auto status = _recordStore->truncate(opCtx);
+    auto status = _shared->_recordStore->truncate(opCtx);
     if (!status.isOK())
         return status;
 
@@ -995,7 +1007,7 @@ void CollectionImpl::cappedTruncateAfter(OperationContext* opCtx, RecordId end, 
     invariant(isCapped());
     invariant(_indexCatalog->numIndexesInProgress(opCtx) == 0);
 
-    _recordStore->cappedTruncateAfter(opCtx, end, inclusive);
+    _shared->_recordStore->cappedTruncateAfter(opCtx, end, inclusive);
 }
 
 void CollectionImpl::setValidator(OperationContext* opCtx, Validator validator) {
@@ -1007,14 +1019,15 @@ void CollectionImpl::setValidator(OperationContext* opCtx, Validator validator) 
                                                 getValidationLevel(),
                                                 getValidationAction());
 
-    opCtx->recoveryUnit()->onRollback([this, oldValidator = std::move(_validator)]() mutable {
-        this->_validator = std::move(oldValidator);
-    });
-    _validator = std::move(validator);
+    opCtx->recoveryUnit()->onRollback(
+        [this, oldValidator = std::move(_shared->_validator)]() mutable {
+            this->_shared->_validator = std::move(oldValidator);
+        });
+    _shared->_validator = std::move(validator);
 }
 
 StringData CollectionImpl::getValidationLevel() const {
-    switch (_validationLevel) {
+    switch (_shared->_validationLevel) {
         case ValidationLevel::STRICT_V:
             return "strict";
         case ValidationLevel::OFF:
@@ -1026,7 +1039,7 @@ StringData CollectionImpl::getValidationLevel() const {
 }
 
 StringData CollectionImpl::getValidationAction() const {
-    switch (_validationAction) {
+    switch (_shared->_validationAction) {
         case ValidationAction::ERROR_V:
             return "error";
         case ValidationAction::WARN:
@@ -1043,27 +1056,27 @@ Status CollectionImpl::setValidationLevel(OperationContext* opCtx, StringData ne
         return levelSW.getStatus();
     }
 
-    auto oldValidationLevel = _validationLevel;
-    _validationLevel = levelSW.getValue();
+    auto oldValidationLevel = _shared->_validationLevel;
+    _shared->_validationLevel = levelSW.getValue();
 
     // Reparse the validator as there are some features which are only supported with certain
     // validation levels.
     auto allowedFeatures = MatchExpressionParser::kAllowAllSpecialFeatures;
-    if (_validationLevel == CollectionImpl::ValidationLevel::MODERATE)
+    if (_shared->_validationLevel == CollectionImpl::ValidationLevel::MODERATE)
         allowedFeatures &= ~MatchExpressionParser::AllowedFeatures::kEncryptKeywords;
 
-    _validator = parseValidator(opCtx, _validator.validatorDoc, allowedFeatures);
-    if (!_validator.isOK()) {
-        return _validator.getStatus();
+    _shared->_validator = parseValidator(opCtx, _shared->_validator.validatorDoc, allowedFeatures);
+    if (!_shared->_validator.isOK()) {
+        return _shared->_validator.getStatus();
     }
 
     DurableCatalog::get(opCtx)->updateValidator(opCtx,
                                                 getCatalogId(),
-                                                _validator.validatorDoc,
+                                                _shared->_validator.validatorDoc,
                                                 getValidationLevel(),
                                                 getValidationAction());
     opCtx->recoveryUnit()->onRollback(
-        [this, oldValidationLevel]() { this->_validationLevel = oldValidationLevel; });
+        [this, oldValidationLevel]() { this->_shared->_validationLevel = oldValidationLevel; });
 
     return Status::OK();
 }
@@ -1076,27 +1089,27 @@ Status CollectionImpl::setValidationAction(OperationContext* opCtx, StringData n
         return actionSW.getStatus();
     }
 
-    auto oldValidationAction = _validationAction;
-    _validationAction = actionSW.getValue();
+    auto oldValidationAction = _shared->_validationAction;
+    _shared->_validationAction = actionSW.getValue();
 
     // Reparse the validator as there are some features which are only supported with certain
     // validation actions.
     auto allowedFeatures = MatchExpressionParser::kAllowAllSpecialFeatures;
-    if (_validationAction == CollectionImpl::ValidationAction::WARN)
+    if (_shared->_validationAction == CollectionImpl::ValidationAction::WARN)
         allowedFeatures &= ~MatchExpressionParser::AllowedFeatures::kEncryptKeywords;
 
-    _validator = parseValidator(opCtx, _validator.validatorDoc, allowedFeatures);
-    if (!_validator.isOK()) {
-        return _validator.getStatus();
+    _shared->_validator = parseValidator(opCtx, _shared->_validator.validatorDoc, allowedFeatures);
+    if (!_shared->_validator.isOK()) {
+        return _shared->_validator.getStatus();
     }
 
     DurableCatalog::get(opCtx)->updateValidator(opCtx,
                                                 getCatalogId(),
-                                                _validator.validatorDoc,
+                                                _shared->_validator.validatorDoc,
                                                 getValidationLevel(),
                                                 getValidationAction());
     opCtx->recoveryUnit()->onRollback(
-        [this, oldValidationAction]() { this->_validationAction = oldValidationAction; });
+        [this, oldValidationAction]() { this->_shared->_validationAction = oldValidationAction; });
 
     return Status::OK();
 }
@@ -1108,12 +1121,12 @@ Status CollectionImpl::updateValidator(OperationContext* opCtx,
     invariant(opCtx->lockState()->isCollectionLockedForMode(ns(), MODE_X));
 
     opCtx->recoveryUnit()->onRollback([this,
-                                       oldValidator = std::move(_validator),
-                                       oldValidationLevel = _validationLevel,
-                                       oldValidationAction = _validationAction]() mutable {
-        this->_validator = std::move(oldValidator);
-        this->_validationLevel = oldValidationLevel;
-        this->_validationAction = oldValidationAction;
+                                       oldValidator = std::move(_shared->_validator),
+                                       oldValidationLevel = _shared->_validationLevel,
+                                       oldValidationAction = _shared->_validationAction]() mutable {
+        this->_shared->_validator = std::move(oldValidator);
+        this->_shared->_validationLevel = oldValidationLevel;
+        this->_shared->_validationAction = oldValidationAction;
     });
 
     DurableCatalog::get(opCtx)->updateValidator(
@@ -1124,25 +1137,25 @@ Status CollectionImpl::updateValidator(OperationContext* opCtx,
     if (!validator.isOK()) {
         return validator.getStatus();
     }
-    _validator = std::move(validator);
+    _shared->_validator = std::move(validator);
 
     auto levelSW = _parseValidationLevel(newLevel);
     if (!levelSW.isOK()) {
         return levelSW.getStatus();
     }
-    _validationLevel = levelSW.getValue();
+    _shared->_validationLevel = levelSW.getValue();
 
     auto actionSW = _parseValidationAction(newAction);
     if (!actionSW.isOK()) {
         return actionSW.getStatus();
     }
-    _validationAction = actionSW.getValue();
+    _shared->_validationAction = actionSW.getValue();
 
     return Status::OK();
 }
 
 const CollatorInterface* CollectionImpl::getDefaultCollator() const {
-    return _collator.get();
+    return _shared->_collator.get();
 }
 
 StatusWith<std::vector<BSONObj>> CollectionImpl::addCollationDefaultsToIndexSpecsForCreate(
@@ -1203,7 +1216,7 @@ std::unique_ptr<PlanExecutor, PlanExecutor::Deleter> CollectionImpl::makePlanExe
 
 void CollectionImpl::setNs(NamespaceString nss) {
     _ns = std::move(nss);
-    _recordStore.get()->setNs(_ns);
+    _shared->_recordStore.get()->setNs(_ns);
 }
 
 void CollectionImpl::indexBuildSuccess(OperationContext* opCtx, IndexCatalogEntry* index) {
