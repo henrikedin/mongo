@@ -41,8 +41,8 @@ thirdPartyEnvironmentModifications = {
    },
    'unwind' : {
    },
-   'polymorphic_value' : {
-       'CPPPATH' : ['#src/third_party/polymorphic_value'],
+   'jbcoe' : {
+       'CPPPATH' : ['#src/third_party/jbcoe'],
    },
    'variant' : {
         'CPPPATH' : ['#src/third_party/variant' + variantSuffix + '/include'],
@@ -324,11 +324,11 @@ fmtEnv.Library(
         'shim_fmt.cpp',
     ])
 
-polymorphicValueEnv = env.Clone()
-polymorphicValueEnv.Library(
-    target="shim_polymorphic_value",
+jbcoeEnv = env.Clone()
+jbcoeEnv.Library(
+    target="shim_jbcoe",
     source=[
-        'shim_polymorphic_value.cpp',
+        'shim_jbcoe.cpp',
     ])
 
 
