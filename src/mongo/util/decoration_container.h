@@ -40,13 +40,18 @@ class DecorationRegistry;
 template <typename DecoratedType>
 class Decorable;
 
+template <typename DecoratedType>
+class DecorableCopyable;
+
 /**
  * An container for decorations.
  */
 template <typename DecoratedType>
 class DecorationContainer {
-    DecorationContainer(const DecorationContainer&) = delete;
-    DecorationContainer& operator=(const DecorationContainer&) = delete;
+    DecorationContainer(const DecorationContainer&) {}
+    DecorationContainer& operator=(const DecorationContainer&) {
+        return *this;
+    }
 
 public:
     /**
@@ -107,6 +112,37 @@ public:
             reinterpret_cast<Decorable<DecoratedType>**>(_decorationData.get());
         *backLink = decorated;
         _registry->construct(this);
+    }
+
+    explicit DecorationContainer(DecorableCopyable<DecoratedType>* const decorated,
+                                 const DecorationRegistry<DecoratedType>* const registry)
+        : _registry(registry),
+          _decorationData(new unsigned char[registry->getDecorationBufferSizeBytes()]) {
+        // Because the decorations live in the externally allocated storage buffer at
+        // `_decorationData`, there needs to be a way to get back from a known location within this
+        // buffer to the type which owns those decorations.  We place a pointer to ourselves, a
+        // "back link" in the front of this storage buffer, as this is the easiest "well known
+        // location" to compute.
+        DecorableCopyable<DecoratedType>** const backLink =
+            reinterpret_cast<DecorableCopyable<DecoratedType>**>(_decorationData.get());
+        *backLink = decorated;
+        _registry->construct(this);
+    }
+
+    explicit DecorationContainer(DecorableCopyable<DecoratedType>* const decorated,
+                                 const DecorationRegistry<DecoratedType>* const registry,
+                                 const DecorationContainer& other)
+        : _registry(registry),
+          _decorationData(new unsigned char[registry->getDecorationBufferSizeBytes()]) {
+        // Because the decorations live in the externally allocated storage buffer at
+        // `_decorationData`, there needs to be a way to get back from a known location within this
+        // buffer to the type which owns those decorations.  We place a pointer to ourselves, a
+        // "back link" in the front of this storage buffer, as this is the easiest "well known
+        // location" to compute.
+        DecorableCopyable<DecoratedType>** const backLink =
+            reinterpret_cast<DecorableCopyable<DecoratedType>**>(_decorationData.get());
+        *backLink = decorated;
+        _registry->copyConstruct(this, &other);
     }
 
     ~DecorationContainer() {

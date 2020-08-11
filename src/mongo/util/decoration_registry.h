@@ -70,7 +70,17 @@ public:
         return
             typename DecorationContainer<DecoratedType>::template DecorationDescriptorWithType<T>(
                 std::move(declareDecoration(
-                    sizeof(T), std::alignment_of<T>::value, &constructAt<T>, &destroyAt<T>)));
+                    sizeof(T), std::alignment_of<T>::value, &constructAt<T>, nullptr, nullptr, &destroyAt<T>)));
+    }
+
+    template <typename T>
+    auto declareDecorationCopyable() {
+        MONGO_STATIC_ASSERT_MSG(std::is_nothrow_destructible<T>::value,
+                                "Decorations must be nothrow destructible");
+        return
+            typename DecorationContainer<DecoratedType>::template DecorationDescriptorWithType<T>(
+                std::move(declareDecoration(
+                    sizeof(T), std::alignment_of<T>::value, &constructAt<T>, &copyConstructAt<T>, &copyAssignAt<T>, &destroyAt<T>)));
     }
 
     size_t getDecorationBufferSizeBytes() const {
@@ -109,6 +119,44 @@ public:
         cleanup.dismiss();
     }
 
+    void copyConstruct(DecorationContainer<DecoratedType>* const container, const DecorationContainer<DecoratedType>* const other) const {
+        using std::cbegin;
+
+        auto iter = cbegin(_decorationInfo);
+
+        auto cleanupFunction = [&iter, container, this ]() noexcept->void {
+            using std::crend;
+            std::for_each(std::make_reverse_iterator(iter),
+                          crend(this->_decorationInfo),
+                          [&](auto&& decoration) {
+                              decoration.destructor(
+                                  container->getDecoration(decoration.descriptor));
+                          });
+        };
+
+        auto cleanup = makeGuard(std::move(cleanupFunction));
+
+        using std::cend;
+
+        for (; iter != cend(_decorationInfo); ++iter) {
+            iter->copyConstructor(container->getDecoration(iter->descriptor), other->getDecoration(iter->descriptor));
+        }
+
+        cleanup.dismiss();
+    }
+
+    void copyAssign(DecorationContainer<DecoratedType>* const container, const DecorationContainer<DecoratedType>* const rhs) const {
+        using std::cbegin;
+
+        auto iter = cbegin(_decorationInfo);
+
+        using std::cend;
+
+        for (; iter != cend(_decorationInfo); ++iter) {
+            iter->copyAssignment(container->getDecoration(iter->descriptor), rhs->getDecoration(iter->descriptor));
+        }
+    }
+
     /**
      * Destroys the decorations declared in this registry on the given instance of "decorable".
      *
@@ -128,6 +176,9 @@ private:
      */
     using DecorationConstructorFn = void (*)(void*);
 
+    using DecorationCopyConstructorFn = void (*)(void*, const void*);
+    using DecorationCopyAssignmentFn = void (*)(void*, const void*);
+
     /**
      * Function that destroys (deinitializes) a single instance of a decoration.
      */
@@ -138,13 +189,19 @@ private:
         DecorationInfo(
             typename DecorationContainer<DecoratedType>::DecorationDescriptor inDescriptor,
             DecorationConstructorFn inConstructor,
+            DecorationCopyConstructorFn inCopyConstructor,
+            DecorationCopyAssignmentFn inCopyAssignment,
             DecorationDestructorFn inDestructor)
             : descriptor(std::move(inDescriptor)),
               constructor(std::move(inConstructor)),
+              copyConstructor(std::move(inCopyConstructor)),
+            copyAssignment(std::move(inCopyAssignment)),
               destructor(std::move(inDestructor)) {}
 
         typename DecorationContainer<DecoratedType>::DecorationDescriptor descriptor;
         DecorationConstructorFn constructor;
+        DecorationCopyConstructorFn copyConstructor;
+        DecorationCopyAssignmentFn copyAssignment;
         DecorationDestructorFn destructor;
     };
 
@@ -153,6 +210,16 @@ private:
     template <typename T>
     static void constructAt(void* location) {
         new (location) T();
+    }
+
+    template <typename T>
+    static void copyConstructAt(void* location, const void* other) {
+        new (location) T(*static_cast<const T*>(other));
+    }
+
+    template <typename T>
+    static void copyAssignAt(void* location, const void* other) {
+        static_cast<T*>(location)->operator=(*static_cast<const T*>(other));
     }
 
     template <typename T>
@@ -170,13 +237,15 @@ private:
         const size_t sizeBytes,
         const size_t alignBytes,
         const DecorationConstructorFn constructor,
+        const DecorationCopyConstructorFn copyConstructor,
+        const DecorationCopyAssignmentFn copyAssignment,
         const DecorationDestructorFn destructor) {
         const size_t misalignment = _totalSizeBytes % alignBytes;
         if (misalignment) {
             _totalSizeBytes += alignBytes - misalignment;
         }
         typename DecorationContainer<DecoratedType>::DecorationDescriptor result(_totalSizeBytes);
-        _decorationInfo.push_back(DecorationInfo(result, constructor, destructor));
+        _decorationInfo.push_back(DecorationInfo(result, constructor, copyConstructor, copyAssignment, destructor));
         _totalSizeBytes += sizeBytes;
         return result;
     }
