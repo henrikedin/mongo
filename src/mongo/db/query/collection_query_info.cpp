@@ -80,7 +80,7 @@ CoreIndexInfo indexInfoFromIndexCatalogEntry(const IndexCatalogEntry& ice) {
 }  // namespace
 
 CollectionQueryInfo::CollectionQueryInfo()
-    : _keysComputed(false), _planCache(std::make_unique<PlanCache>()) {}
+    : _keysComputed(false), _planCache(std::make_shared<PlanCache>()) {}
 
 const UpdateIndexData& CollectionQueryInfo::getIndexKeys(OperationContext* opCtx) const {
     invariant(_keysComputed);
@@ -188,6 +188,7 @@ void CollectionQueryInfo::clearQueryCache(const Collection* coll) {
                 "Clearing plan cache - collection info cache reset",
                 "namespace"_attr = coll->ns());
     if (nullptr != _planCache.get()) {
+        _planCache = std::make_shared<PlanCache>();
         _planCache->clear();
     }
 }
@@ -213,6 +214,7 @@ void CollectionQueryInfo::updatePlanCacheIndexEntries(OperationContext* opCtx, C
 }
 
 void CollectionQueryInfo::init(OperationContext* opCtx, Collection* coll) {
+
     const bool includeUnfinishedIndexes = false;
     std::unique_ptr<IndexCatalog::IndexIterator> ii =
         coll->getIndexCatalog()->getIndexIterator(opCtx, includeUnfinishedIndexes);
