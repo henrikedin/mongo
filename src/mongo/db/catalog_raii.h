@@ -204,7 +204,6 @@ public:
         LockMode modeColl,
         AutoGetCollectionViewMode viewMode = AutoGetCollectionViewMode::kViewsForbidden,
         Date_t deadline = Date_t::max()) : AutoGetCollectionBase(opCtx, nsOrUUID, modeColl, viewMode, deadline) {
-        invariant(modeColl != MODE_X);
     }
 };
 
