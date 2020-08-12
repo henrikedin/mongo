@@ -48,10 +48,8 @@ class DecorableCopyable;
  */
 template <typename DecoratedType>
 class DecorationContainer {
-    DecorationContainer(const DecorationContainer&) {}
-    DecorationContainer& operator=(const DecorationContainer&) {
-        return *this;
-    }
+    DecorationContainer(const DecorationContainer&) = delete;
+    DecorationContainer& operator=(const DecorationContainer&) = delete;
 
 public:
     /**
@@ -114,6 +112,11 @@ public:
         _registry->construct(this);
     }
 
+    /**
+     * Constructs a copyable decorable built based on the given "registry."
+     *
+     * See above for more details
+     */
     explicit DecorationContainer(DecorableCopyable<DecoratedType>* const decorated,
                                  const DecorationRegistry<DecoratedType>* const registry)
         : _registry(registry),
@@ -129,6 +132,11 @@ public:
         _registry->construct(this);
     }
 
+    /**
+     * Constructs a copyable decorable built based on the given "registry."
+     *
+     * All decorations are copy constructed from provided DecorationContainer.
+     */
     explicit DecorationContainer(DecorableCopyable<DecoratedType>* const decorated,
                                  const DecorationRegistry<DecoratedType>* const registry,
                                  const DecorationContainer& other)

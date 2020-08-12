@@ -73,6 +73,14 @@ public:
                     sizeof(T), std::alignment_of<T>::value, &constructAt<T>, nullptr, nullptr, &destroyAt<T>)));
     }
 
+    /**
+     * Declares a copyable decoration of type T, constructed with T's default constructor, and
+     * returns a descriptor for accessing that decoration.
+     * 
+     * It also binds T's copy constructor and copy assignment operator.
+     *
+     * NOTE: T's destructor must not throw exceptions.
+     */
     template <typename T>
     auto declareDecorationCopyable() {
         MONGO_STATIC_ASSERT_MSG(std::is_nothrow_destructible<T>::value,
@@ -119,6 +127,12 @@ public:
         cleanup.dismiss();
     }
 
+    /**
+     * Copy constructs the decorations declared in this registry on the given instance of
+     * "decorable" from another DecorationContainer. 
+     *
+     * Called by the DecorationContainer constructor. Do not call directly.
+     */
     void copyConstruct(DecorationContainer<DecoratedType>* const container, const DecorationContainer<DecoratedType>* const other) const {
         using std::cbegin;
 
@@ -145,6 +159,12 @@ public:
         cleanup.dismiss();
     }
 
+    /**
+     * Copy assigns the decorations declared in this registry on the given instance of
+     * "decorable" from another DecorationContainer. 
+     *
+     * Called by the DecorableCopyable copy assignment operator. Do not call directly.
+     */
     void copyAssign(DecorationContainer<DecoratedType>* const container, const DecorationContainer<DecoratedType>* const rhs) const {
         using std::cbegin;
 
@@ -176,7 +196,14 @@ private:
      */
     using DecorationConstructorFn = void (*)(void*);
 
+    /**
+     * Function that copy constructs a single instance of a decoration from another instance.
+     */
     using DecorationCopyConstructorFn = void (*)(void*, const void*);
+
+    /**
+     * Function that copy assigns a single instance of a decoration from another instance.
+     */
     using DecorationCopyAssignmentFn = void (*)(void*, const void*);
 
     /**
