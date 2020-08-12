@@ -150,7 +150,7 @@ public:
      */
     using OnCleanUpFn = MultiIndexBlock::OnCleanUpFn;
     bool abortIndexBuild(OperationContext* opCtx,
-                         Collection* collection,
+                         const Collection* collection,
                          const UUID& buildUUID,
                          OnCleanUpFn onCleanUpFn);
 
@@ -162,7 +162,7 @@ public:
      * been cleared away, or not having yet started..
      */
     bool abortIndexBuildWithoutCleanupForRollback(OperationContext* opCtx,
-                                                  Collection* collection,
+                                                  const Collection* collection,
                                                   const UUID& buildUUID);
 
     /**

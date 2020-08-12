@@ -1204,7 +1204,7 @@ void IndexBuildsCoordinator::_completeAbort(OperationContext* opCtx,
                                             IndexBuildAction signalAction,
                                             Status reason) {
     auto coll =
-        CollectionCatalog::get(opCtx).lookupCollectionByUUID(opCtx, replState->collectionUUID);
+        CollectionCatalog::get(opCtx).lookupCollectionByUUIDForRead(opCtx, replState->collectionUUID);
     const NamespaceStringOrUUID dbAndUUID(replState->dbName, replState->collectionUUID);
     auto nss = coll->ns();
     auto replCoord = repl::ReplicationCoordinator::get(opCtx);
@@ -1221,7 +1221,7 @@ void IndexBuildsCoordinator::_completeAbort(OperationContext* opCtx,
                       str::stream() << "singlePhase: "
                                     << (IndexBuildProtocol::kSinglePhase == replState->protocol));
             auto onCleanUpFn = [&] { onAbortIndexBuild(opCtx, coll->ns(), *replState, reason); };
-            _indexBuildsManager.abortIndexBuild(opCtx, coll, replState->buildUUID, onCleanUpFn);
+            _indexBuildsManager.abortIndexBuild(opCtx, coll.get(), replState->buildUUID, onCleanUpFn);
             removeIndexBuildEntryAfterCommitOrAbort(opCtx, dbAndUUID, *replState);
             break;
         }
@@ -1244,7 +1244,7 @@ void IndexBuildsCoordinator::_completeAbort(OperationContext* opCtx,
                   "collectionUUID"_attr = replState->collectionUUID);
 
             _indexBuildsManager.abortIndexBuild(
-                opCtx, coll, replState->buildUUID, MultiIndexBlock::kNoopOnCleanUpFn);
+                opCtx, coll.get(), replState->buildUUID, MultiIndexBlock::kNoopOnCleanUpFn);
             break;
         }
         // Deletes the index from the durable catalog.
@@ -1269,7 +1269,7 @@ void IndexBuildsCoordinator::_completeAbort(OperationContext* opCtx,
                   "collectionUUID"_attr = replState->collectionUUID);
 
             _indexBuildsManager.abortIndexBuild(
-                opCtx, coll, replState->buildUUID, MultiIndexBlock::kNoopOnCleanUpFn);
+                opCtx, coll.get(), replState->buildUUID, MultiIndexBlock::kNoopOnCleanUpFn);
             break;
         }
         // No locks are required when aborting due to rollback. This performs no storage engine
@@ -1278,7 +1278,7 @@ void IndexBuildsCoordinator::_completeAbort(OperationContext* opCtx,
             invariant(replState->protocol == IndexBuildProtocol::kTwoPhase);
             invariant(replCoord->getMemberState().rollback());
             _indexBuildsManager.abortIndexBuildWithoutCleanupForRollback(
-                opCtx, coll, replState->buildUUID);
+                opCtx, coll.get(), replState->buildUUID);
             break;
         }
         case IndexBuildAction::kNoAction:

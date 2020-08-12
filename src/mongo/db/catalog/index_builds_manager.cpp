@@ -313,7 +313,7 @@ Status IndexBuildsManager::commitIndexBuild(OperationContext* opCtx,
 }
 
 bool IndexBuildsManager::abortIndexBuild(OperationContext* opCtx,
-                                         Collection* collection,
+                                         const Collection* collection,
                                          const UUID& buildUUID,
                                          OnCleanUpFn onCleanUpFn) {
     auto builder = _getBuilder(buildUUID);
@@ -331,7 +331,7 @@ bool IndexBuildsManager::abortIndexBuild(OperationContext* opCtx,
 }
 
 bool IndexBuildsManager::abortIndexBuildWithoutCleanupForRollback(OperationContext* opCtx,
-                                                                  Collection* collection,
+                                                                  const Collection* collection,
                                                                   const UUID& buildUUID) {
     auto builder = _getBuilder(buildUUID);
     if (!builder.isOK()) {
