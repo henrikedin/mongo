@@ -351,7 +351,7 @@ bool IndexBuildsManager::abortIndexBuildWithoutCleanupForRollback(OperationConte
 }
 
 bool IndexBuildsManager::abortIndexBuildWithoutCleanupForShutdown(OperationContext* opCtx,
-                                                                  Collection* collection,
+                                                                  const Collection* collection,
                                                                   const UUID& buildUUID) {
     auto builder = _getBuilder(buildUUID);
     if (!builder.isOK()) {

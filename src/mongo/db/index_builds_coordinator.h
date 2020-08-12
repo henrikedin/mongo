@@ -597,7 +597,7 @@ protected:
      * Cleans up a single-phase index build after a failure.
      */
     void _cleanUpSinglePhaseAfterFailure(OperationContext* opCtx,
-                                         Collection* collection,
+                                         const Collection* collection,
                                          std::shared_ptr<ReplIndexBuildState> replState,
                                          const IndexBuildOptions& indexBuildOptions,
                                          const Status& status);
@@ -606,7 +606,7 @@ protected:
      * Cleans up a two-phase index build after a failure.
      */
     void _cleanUpTwoPhaseAfterFailure(OperationContext* opCtx,
-                                      Collection* collection,
+                                      const Collection* collection,
                                       std::shared_ptr<ReplIndexBuildState> replState,
                                       const IndexBuildOptions& indexBuildOptions,
                                       const Status& status);
@@ -631,7 +631,7 @@ protected:
                             Status reason);
     void _completeAbortForShutdown(OperationContext* opCtx,
                                    std::shared_ptr<ReplIndexBuildState> replState,
-                                   Collection* collection);
+                                   const Collection* collection);
 
     /**
      * Waits for the last optime before the interceptors were installed on the node to be majority

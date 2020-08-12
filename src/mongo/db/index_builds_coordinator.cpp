@@ -1309,7 +1309,7 @@ void IndexBuildsCoordinator::_completeSelfAbort(OperationContext* opCtx,
 void IndexBuildsCoordinator::_completeAbortForShutdown(
     OperationContext* opCtx,
     std::shared_ptr<ReplIndexBuildState> replState,
-    Collection* collection) {
+    const Collection* collection) {
     // Leave it as-if kill -9 happened. Startup recovery will restart the index build.
     _indexBuildsManager.abortIndexBuildWithoutCleanupForShutdown(
         opCtx, collection, replState->buildUUID);
@@ -2154,7 +2154,7 @@ void runOnAlternateContext(OperationContext* opCtx, std::string name, Func func)
 
 void IndexBuildsCoordinator::_cleanUpSinglePhaseAfterFailure(
     OperationContext* opCtx,
-    Collection* collection,
+    const Collection* collection,
     std::shared_ptr<ReplIndexBuildState> replState,
     const IndexBuildOptions& indexBuildOptions,
     const Status& status) {
@@ -2182,7 +2182,7 @@ void IndexBuildsCoordinator::_cleanUpSinglePhaseAfterFailure(
 
 void IndexBuildsCoordinator::_cleanUpTwoPhaseAfterFailure(
     OperationContext* opCtx,
-    Collection* collection,
+    const Collection* collection,
     std::shared_ptr<ReplIndexBuildState> replState,
     const IndexBuildOptions& indexBuildOptions,
     const Status& status) {
@@ -2263,7 +2263,7 @@ void IndexBuildsCoordinator::_runIndexBuildInner(
     // is called. The collection can be renamed, but it is OK for the name to be stale just for
     // logging purposes.
     auto collection =
-        CollectionCatalog::get(opCtx).lookupCollectionByUUID(opCtx, replState->collectionUUID);
+        CollectionCatalog::get(opCtx).lookupCollectionByUUIDForRead(opCtx, replState->collectionUUID);
     invariant(collection,
               str::stream() << "Collection with UUID " << replState->collectionUUID
                             << " should exist because an index build is in progress: "
@@ -2286,11 +2286,11 @@ void IndexBuildsCoordinator::_runIndexBuildInner(
                   status.isA<ErrorCategory::ShutdownError>(),
               str::stream() << "Unexpected error code during index build cleanup: " << status);
     if (IndexBuildProtocol::kSinglePhase == replState->protocol) {
-        _cleanUpSinglePhaseAfterFailure(opCtx, collection, replState, indexBuildOptions, status);
+        _cleanUpSinglePhaseAfterFailure(opCtx, collection.get(), replState, indexBuildOptions, status);
     } else {
         invariant(IndexBuildProtocol::kTwoPhase == replState->protocol,
                   str::stream() << replState->buildUUID);
-        _cleanUpTwoPhaseAfterFailure(opCtx, collection, replState, indexBuildOptions, status);
+        _cleanUpTwoPhaseAfterFailure(opCtx, collection.get(), replState, indexBuildOptions, status);
     }
 
     // Any error that escapes at this point is not fatal and can be handled by the caller.
