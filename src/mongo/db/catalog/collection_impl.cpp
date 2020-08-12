@@ -283,6 +283,9 @@ std::shared_ptr<Collection> CollectionImpl::clone() {
     auto cloned = std::make_shared<CollectionImpl>(*this);
     checked_cast<IndexCatalogImpl*>(cloned->_indexCatalog.get())->setCollection(cloned.get());
     cloned->_cappedNotifier = std::move(_cappedNotifier);
+    if (cloned->isCapped()) {
+        _shared->_recordStore->setCappedCallback(cloned.get());
+    }
     return cloned;
 }
 
