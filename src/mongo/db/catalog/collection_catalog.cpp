@@ -277,13 +277,15 @@ Collection* CollectionCatalog::lookupCollectionByUUIDForMetadataWrite(OperationC
     stdx::lock_guard<Latch> lock(_catalogLock);
     auto coll = _lookupCollectionByUUID(lock, uuid);
     if (coll && coll->isCommitted()) {
+        if (coll.use_count() == 4)
+            return coll.get();
+       
         auto cloned = coll->clone();
         auto ns = cloned->ns();
         _collections[ns] = cloned;
         _catalog[uuid] = cloned;
         auto dbIdPair = std::make_pair(ns.db().toString(), uuid);
         _orderedCollections[dbIdPair] = cloned;
-
         return cloned.get();
     }
     return nullptr;
@@ -343,6 +345,9 @@ Collection* CollectionCatalog::lookupCollectionByNamespaceForMetadataWrite(
     auto it = _collections.find(nss);
     auto coll = (it == _collections.end() ? nullptr : it->second);
     if (coll && coll->isCommitted()) {
+        if (coll.use_count() == 4)
+            return coll.get();
+
         auto cloned = coll->clone();
         it->second = cloned;
         auto uuid = cloned->uuid();
