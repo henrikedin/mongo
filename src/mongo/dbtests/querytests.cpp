@@ -159,7 +159,7 @@ protected:
     OldClientContext _context;
 
     Database* _database;
-    Collection* _collection;
+    const Collection* _collection;
 };
 
 class FindOneOr : public Base {

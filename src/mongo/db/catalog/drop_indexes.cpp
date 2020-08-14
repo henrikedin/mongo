@@ -60,7 +60,7 @@ constexpr auto kIndexFieldName = "index"_sd;
 Status checkView(OperationContext* opCtx,
                  const NamespaceString& nss,
                  Database* db,
-                 Collection* collection) {
+                 const Collection* collection) {
     if (!collection) {
         if (db && ViewCatalog::get(db)->lookup(opCtx, nss.ns())) {
             return Status(ErrorCodes::CommandNotSupportedOnView,
@@ -73,7 +73,7 @@ Status checkView(OperationContext* opCtx,
 
 Status checkReplState(OperationContext* opCtx,
                       NamespaceStringOrUUID dbAndUUID,
-                      Collection* collection) {
+                      const Collection* collection) {
     auto replCoord = repl::ReplicationCoordinator::get(opCtx);
     auto canAcceptWrites = replCoord->canAcceptWritesFor(opCtx, dbAndUUID);
     bool writesAreReplicatedAndNotPrimary = opCtx->writesAreReplicated() && !canAcceptWrites;
@@ -142,7 +142,7 @@ StatusWith<const IndexDescriptor*> getDescriptorByKeyPattern(OperationContext* o
  * to be held to look up the index name from the key pattern.
  */
 StatusWith<std::vector<std::string>> getIndexNames(OperationContext* opCtx,
-                                                   Collection* collection,
+                                                   const Collection* collection,
                                                    const BSONElement& indexElem) {
     invariant(opCtx->lockState()->isCollectionLockedForMode(collection->ns(), MODE_IX));
 
@@ -187,7 +187,7 @@ std::vector<UUID> abortIndexBuildByIndexNames(OperationContext* opCtx,
  * Drops single index given a descriptor.
  */
 Status dropIndexByDescriptor(OperationContext* opCtx,
-                             Collection* collection,
+                             const Collection* collection,
                              IndexCatalog* indexCatalog,
                              const IndexDescriptor* desc) {
     if (desc->isIdIndex()) {
@@ -246,7 +246,7 @@ std::vector<UUID> abortActiveIndexBuilders(OperationContext* opCtx,
 }
 
 Status dropReadyIndexes(OperationContext* opCtx,
-                        Collection* collection,
+                        const Collection* collection,
                         const std::vector<std::string>& indexNames,
                         BSONObjBuilder* anObjBuilder) {
     invariant(opCtx->lockState()->isCollectionLockedForMode(collection->ns(), MODE_X));
@@ -324,7 +324,7 @@ Status dropIndexes(OperationContext* opCtx,
     autoColl.emplace(opCtx, nss, MODE_IX);
 
     Database* db = autoColl->getDb();
-    Collection* collection = autoColl->getCollection();
+    const Collection* collection = autoColl->getCollection();
     Status status = checkView(opCtx, nss, db, collection);
     if (!status.isOK()) {
         return status;
@@ -510,7 +510,7 @@ Status dropIndexesForApplyOps(OperationContext* opCtx,
 
         // If db/collection does not exist, short circuit and return.
         Database* db = autoColl.getDb();
-        Collection* collection = autoColl.getCollection();
+        const Collection* collection = autoColl.getCollection();
         Status status = checkView(opCtx, nss, db, collection);
         if (!status.isOK()) {
             return status;

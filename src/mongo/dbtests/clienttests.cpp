@@ -119,7 +119,7 @@ public:
         db.insert(ns(), BSON("x" << 1 << "y" << 2));
         db.insert(ns(), BSON("x" << 2 << "y" << 2));
 
-        Collection* collection = ctx.getCollection();
+        const Collection* collection = ctx.getCollection();
         ASSERT(collection);
         IndexCatalog* indexCatalog = collection->getIndexCatalog();
 

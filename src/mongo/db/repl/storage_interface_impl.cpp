@@ -299,7 +299,7 @@ Status StorageInterfaceImpl::insertDocument(OperationContext* opCtx,
 namespace {
 
 /**
- * Returns Collection* from database RAII object.
+ * Returns const Collection* from database RAII object.
  * Returns NamespaceNotFound if the database or collection does not exist.
  */
 template <typename AutoGetCollectionType>
@@ -329,7 +329,7 @@ Status insertDocumentsSingleBatch(OperationContext* opCtx,
                                   std::vector<InsertStatement>::const_iterator end) {
     boost::optional<AutoGetCollection> autoColl;
     boost::optional<AutoGetOplog> autoOplog;
-    Collection* collection;
+    const Collection* collection;
 
     auto nss = nsOrUUID.nss();
     if (nss && nss->isOplog()) {
@@ -1072,7 +1072,7 @@ Status StorageInterfaceImpl::deleteByFilter(OperationContext* opCtx,
 }
 
 boost::optional<BSONObj> StorageInterfaceImpl::findOplogEntryLessThanOrEqualToTimestamp(
-    OperationContext* opCtx, Collection* oplog, const Timestamp& timestamp) {
+    OperationContext* opCtx, const Collection* oplog, const Timestamp& timestamp) {
     invariant(oplog);
     invariant(opCtx->lockState()->isLocked());
 
@@ -1103,7 +1103,7 @@ boost::optional<BSONObj> StorageInterfaceImpl::findOplogEntryLessThanOrEqualToTi
 }
 
 boost::optional<BSONObj> StorageInterfaceImpl::findOplogEntryLessThanOrEqualToTimestampRetryOnWCE(
-    OperationContext* opCtx, Collection* oplogCollection, const Timestamp& timestamp) {
+    OperationContext* opCtx, const Collection* oplogCollection, const Timestamp& timestamp) {
     // Oplog reads are specially done under only MODE_IS global locks, without database or
     // collection level intent locks. Therefore, reads can run concurrently with validate cmds that
     // take collection MODE_X locks. Validate with {full:true} set calls WT::verify on the
@@ -1295,11 +1295,11 @@ Status StorageInterfaceImpl::isAdminDbValid(OperationContext* opCtx) {
         return Status::OK();
     }
 
-    Collection* const usersCollection = CollectionCatalog::get(opCtx).lookupCollectionByNamespace(
+    const Collection* const usersCollection = CollectionCatalog::get(opCtx).lookupCollectionByNamespace(
         opCtx, AuthorizationManager::usersCollectionNamespace);
     const bool hasUsers =
         usersCollection && !Helpers::findOne(opCtx, usersCollection, BSONObj(), false).isNull();
-    Collection* const adminVersionCollection =
+    const Collection* const adminVersionCollection =
         CollectionCatalog::get(opCtx).lookupCollectionByNamespace(
             opCtx, AuthorizationManager::versionCollectionNamespace);
     BSONObj authSchemaVersionDocument;

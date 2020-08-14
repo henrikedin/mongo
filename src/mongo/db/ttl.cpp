@@ -207,7 +207,7 @@ private:
             }
 
             AutoGetCollection autoColl(&opCtx, *nss, MODE_IS);
-            Collection* coll = autoColl.getCollection();
+            const Collection* coll = autoColl.getCollection();
             // The collection with `uuid` might be renamed before the lock and the wrong
             // namespace would be locked and looked up so we double check here.
             if (!coll || coll->uuid() != uuid)
@@ -297,7 +297,7 @@ private:
         }
 
 
-        Collection* collection = autoGetCollection.getCollection();
+        const Collection* collection = autoGetCollection.getCollection();
         if (!collection) {
             // Collection was dropped.
             return;

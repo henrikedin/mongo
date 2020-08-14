@@ -67,10 +67,10 @@ public:
     /**
      * Creates a collection with the given namespace and options.
      */
-    static Collection* _createCollection(OperationContext* opCtx,
+    static const Collection* _createCollection(OperationContext* opCtx,
                                          const NamespaceString& nss,
                                          const CollectionOptions& options);
-    static Collection* _createCollection(OperationContext* opCtx,
+    static const Collection* _createCollection(OperationContext* opCtx,
                                          const std::string& nss,
                                          const CollectionOptions& options);
 

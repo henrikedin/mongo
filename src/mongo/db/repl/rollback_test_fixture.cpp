@@ -208,7 +208,7 @@ std::pair<BSONObj, RecordId> RollbackTest::makeCommandOpForApplyOps(OptionalColl
     return std::make_pair(bob.obj(), RecordId(recordId));
 }
 
-Collection* RollbackTest::_createCollection(OperationContext* opCtx,
+const Collection* RollbackTest::_createCollection(OperationContext* opCtx,
                                             const NamespaceString& nss,
                                             const CollectionOptions& options) {
     Lock::DBLock dbLock(opCtx, nss.db(), MODE_X);
@@ -223,7 +223,7 @@ Collection* RollbackTest::_createCollection(OperationContext* opCtx,
     return coll;
 }
 
-Collection* RollbackTest::_createCollection(OperationContext* opCtx,
+const Collection* RollbackTest::_createCollection(OperationContext* opCtx,
                                             const std::string& nss,
                                             const CollectionOptions& options) {
     return _createCollection(opCtx, NamespaceString(nss), options);

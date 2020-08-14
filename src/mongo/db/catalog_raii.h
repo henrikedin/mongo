@@ -333,7 +333,7 @@ public:
     /**
      * Returns a pointer to the oplog collection or nullptr if the oplog collection didn't exist.
      */
-    Collection* getCollection() const {
+    const Collection* getCollection() const {
         return _oplog;
     }
 
@@ -344,7 +344,7 @@ private:
     boost::optional<Lock::DBLock> _dbWriteLock;
     boost::optional<Lock::CollectionLock> _collWriteLock;
     repl::LocalOplogInfo* _oplogInfo;
-    Collection* _oplog;
+    const Collection* _oplog;
 };
 
 }  // namespace mongo

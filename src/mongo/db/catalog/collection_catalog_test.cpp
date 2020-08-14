@@ -45,7 +45,7 @@ namespace mongo {
 namespace {
 
 /**
- * A test fixture that creates a CollectionCatalog and Collection* pointer to store in it.
+ * A test fixture that creates a CollectionCatalog and const Collection* pointer to store in it.
  */
 class CollectionCatalogTest : public ServiceContextMongoDTest {
 public:
@@ -78,7 +78,7 @@ protected:
     CollectionCatalog catalog;
     OperationContextNoop opCtx;
     NamespaceString nss;
-    Collection* col;
+    const Collection* col;
     CollectionUUID colUUID;
     CollectionUUID nextUUID;
     CollectionUUID prevUUID;
@@ -112,13 +112,13 @@ public:
         }
     }
 
-    std::map<CollectionUUID, Collection*>::iterator collsIterator(std::string dbName) {
+    std::map<CollectionUUID, const Collection*>::iterator collsIterator(std::string dbName) {
         auto it = dbMap.find(dbName);
         ASSERT(it != dbMap.end());
         return it->second.begin();
     }
 
-    std::map<CollectionUUID, Collection*>::iterator collsIteratorEnd(std::string dbName) {
+    std::map<CollectionUUID, const Collection*>::iterator collsIteratorEnd(std::string dbName) {
         auto it = dbMap.find(dbName);
         ASSERT(it != dbMap.end());
         return it->second.end();
@@ -148,7 +148,7 @@ public:
 protected:
     CollectionCatalog catalog;
     OperationContextNoop opCtx;
-    std::map<std::string, std::map<CollectionUUID, Collection*>> dbMap;
+    std::map<std::string, std::map<CollectionUUID, const Collection*>> dbMap;
 };
 
 class CollectionCatalogResourceMapTest : public unittest::Test {

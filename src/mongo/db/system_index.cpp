@@ -145,7 +145,7 @@ Status verifySystemIndexes(OperationContext* opCtx) {
     {
         AutoGetCollection autoColl(opCtx, systemUsers, MODE_X);
 
-        if (Collection* collection = autoColl.getCollection()) {
+        if (const Collection* collection = autoColl.getCollection()) {
             IndexCatalog* indexCatalog = collection->getIndexCatalog();
             invariant(indexCatalog);
 
@@ -179,7 +179,7 @@ Status verifySystemIndexes(OperationContext* opCtx) {
         AutoGetCollection autoColl(opCtx, systemRoles, MODE_X);
 
         // Ensure that system indexes exist for the roles collection, if it exists.
-        if (Collection* collection = autoColl.getCollection()) {
+        if (const Collection* collection = autoColl.getCollection()) {
             IndexCatalog* indexCatalog = collection->getIndexCatalog();
             invariant(indexCatalog);
 
@@ -199,7 +199,7 @@ Status verifySystemIndexes(OperationContext* opCtx) {
     return Status::OK();
 }
 
-void createSystemIndexes(OperationContext* opCtx, Collection* collection) {
+void createSystemIndexes(OperationContext* opCtx, const Collection* collection) {
     invariant(collection);
     const NamespaceString& ns = collection->ns();
     BSONObj indexSpec;

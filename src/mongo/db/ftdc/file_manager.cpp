@@ -52,7 +52,7 @@ namespace mongo {
 
 FTDCFileManager::FTDCFileManager(const FTDCConfig* config,
                                  const boost::filesystem::path& path,
-                                 FTDCCollectorCollection* collection)
+                                 FTDCCollectorconst Collection* collection)
     : _config(config), _writer(_config), _path(path), _rotateCollectors(collection) {}
 
 FTDCFileManager::~FTDCFileManager() {
@@ -62,7 +62,7 @@ FTDCFileManager::~FTDCFileManager() {
 StatusWith<std::unique_ptr<FTDCFileManager>> FTDCFileManager::create(
     const FTDCConfig* config,
     const boost::filesystem::path& path,
-    FTDCCollectorCollection* collection,
+    FTDCCollectorconst Collection* collection,
     Client* client) {
     const boost::filesystem::path dir = boost::filesystem::absolute(path);
 

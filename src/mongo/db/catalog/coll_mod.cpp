@@ -112,7 +112,7 @@ struct CollModRequest {
 
 StatusWith<CollModRequest> parseCollModRequest(OperationContext* opCtx,
                                                const NamespaceString& nss,
-                                               Collection* coll,
+                                               const Collection* coll,
                                                const BSONObj& cmdObj,
                                                BSONObjBuilder* oplogEntryBuilder) {
 
@@ -351,7 +351,7 @@ Status _collModInternal(OperationContext* opCtx,
         opCtx, NamespaceString(dbName, NamespaceString::kSystemDotViewsCollectionName), MODE_X);
 
     Database* const db = autoColl.getDb();
-    Collection* coll = autoColl.getCollection();
+    const Collection* coll = autoColl.getCollection();
 
     CurOpFailpointHelpers::waitWhileFailPointEnabled(
         &hangAfterDatabaseLock, opCtx, "hangAfterDatabaseLock", []() {}, false, nss);

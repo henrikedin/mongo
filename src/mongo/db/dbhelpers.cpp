@@ -130,7 +130,7 @@ bool Helpers::findById(OperationContext* opCtx,
     invariant(database);
 
     // TODO ForRead?
-    Collection* collection =
+    const Collection* collection =
         CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, NamespaceString(ns));
     if (!collection) {
         return false;
@@ -287,7 +287,7 @@ BSONObj Helpers::inferKeyPattern(const BSONObj& o) {
 void Helpers::emptyCollection(OperationContext* opCtx, const NamespaceString& nss) {
     OldClientContext context(opCtx, nss.ns());
     repl::UnreplicatedWritesBlock uwb(opCtx);
-    Collection* collection = context.db()
+    const Collection* collection = context.db()
         ? CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, nss)
         : nullptr;
     deleteObjects(opCtx, collection, nss, BSONObj(), false);

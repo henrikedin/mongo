@@ -102,7 +102,7 @@ Status createIndex(OperationContext* opCtx, StringData ns, const BSONObj& keys, 
 
 Status createIndexFromSpec(OperationContext* opCtx, StringData ns, const BSONObj& spec) {
     AutoGetOrCreateDb autoDb(opCtx, nsToDatabaseSubstring(ns), MODE_X);
-    Collection* coll;
+    const Collection* coll;
     {
         WriteUnitOfWork wunit(opCtx);
         coll =

@@ -71,7 +71,7 @@ void IndexBuildBlock::finalizeTemporaryTables(OperationContext* opCtx,
     }
 }
 
-void IndexBuildBlock::_completeInit(OperationContext* opCtx, Collection* collection) {
+void IndexBuildBlock::_completeInit(OperationContext* opCtx, const Collection* collection) {
     // Register this index with the CollectionQueryInfo to regenerate the cache. This way, updates
     // occurring while an index is being build in the background will be aware of whether or not
     // they need to modify any indexes.
@@ -80,7 +80,7 @@ void IndexBuildBlock::_completeInit(OperationContext* opCtx, Collection* collect
 }
 
 Status IndexBuildBlock::initForResume(OperationContext* opCtx,
-                                      Collection* collection,
+                                      const Collection* collection,
                                       const IndexSorterInfo& sorterInfo,
                                       IndexBuildPhaseEnum phase) {
 
@@ -118,7 +118,7 @@ Status IndexBuildBlock::initForResume(OperationContext* opCtx,
     return Status::OK();
 }
 
-Status IndexBuildBlock::init(OperationContext* opCtx, Collection* collection) {
+Status IndexBuildBlock::init(OperationContext* opCtx, const Collection* collection) {
     // Being in a WUOW means all timestamping responsibility can be pushed up to the caller.
     invariant(opCtx->lockState()->inAWriteUnitOfWork());
 
@@ -190,7 +190,7 @@ void IndexBuildBlock::fail(OperationContext* opCtx, const Collection* collection
     }
 }
 
-void IndexBuildBlock::success(OperationContext* opCtx, Collection* collection) {
+void IndexBuildBlock::success(OperationContext* opCtx, const Collection* collection) {
     // Being in a WUOW means all timestamping responsibility can be pushed up to the caller.
     invariant(opCtx->lockState()->inAWriteUnitOfWork());
 

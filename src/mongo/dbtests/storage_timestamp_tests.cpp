@@ -257,14 +257,14 @@ public:
         });
     }
 
-    void insertDocument(Collection* coll, const InsertStatement& stmt) {
+    void insertDocument(const Collection* coll, const InsertStatement& stmt) {
         // Insert some documents.
         OpDebug* const nullOpDebug = nullptr;
         const bool fromMigrate = false;
         ASSERT_OK(coll->insertDocument(_opCtx, stmt, nullOpDebug, fromMigrate));
     }
 
-    void createIndex(Collection* coll, std::string indexName, const BSONObj& indexKey) {
+    void createIndex(const Collection* coll, std::string indexName, const BSONObj& indexKey) {
 
         // Build an index.
         MultiIndexBlock indexer;
@@ -382,7 +382,7 @@ public:
                                            const Timestamp& ts,
                                            const repl::MinValidDocument& expectedDoc) {
         AutoGetCollection autoColl(_opCtx, nss, LockMode::MODE_IX);
-        Collection* coll = autoColl.getCollection();
+        const Collection* coll = autoColl.getCollection();
 
         OneOffRead oor(_opCtx, ts);
 
@@ -666,7 +666,7 @@ public:
     }
 
     void assertMultikeyPaths(OperationContext* opCtx,
-                             Collection* collection,
+                             const Collection* collection,
                              StringData indexName,
                              Timestamp ts,
                              bool shouldBeMultikey,

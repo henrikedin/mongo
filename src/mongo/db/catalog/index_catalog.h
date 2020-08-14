@@ -410,7 +410,7 @@ public:
      * See IndexCatalogEntry::setMultikey().
      */
     virtual void setMultikeyPaths(OperationContext* const opCtx,
-                                  Collection* coll,
+                                  const Collection* coll,
                                   const IndexDescriptor* const desc,
                                   const MultikeyPaths& multikeyPaths) = 0;
 
@@ -423,7 +423,7 @@ public:
      * This method may throw.
      */
     virtual Status indexRecords(OperationContext* const opCtx,
-                                Collection* collection,
+                                const Collection* collection,
                                 const std::vector<BsonRecord>& bsonRecords,
                                 int64_t* const keysInsertedOut) = 0;
 
@@ -434,7 +434,7 @@ public:
      * This method may throw.
      */
     virtual Status updateRecord(OperationContext* const opCtx,
-                                Collection* coll,
+                                const Collection* coll,
                                 const BSONObj& oldDoc,
                                 const BSONObj& newDoc,
                                 const RecordId& recordId,

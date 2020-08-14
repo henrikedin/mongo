@@ -81,7 +81,7 @@ public:
      */
     static std::unique_ptr<PlanExecutor, PlanExecutor::Deleter> deleteWithCollectionScan(
         OperationContext* opCtx,
-        Collection* collection,
+        const Collection* collection,
         std::unique_ptr<DeleteStageParams> params,
         PlanYieldPolicy::YieldPolicy yieldPolicy,
         Direction direction = FORWARD);
@@ -105,7 +105,7 @@ public:
      */
     static std::unique_ptr<PlanExecutor, PlanExecutor::Deleter> deleteWithIndexScan(
         OperationContext* opCtx,
-        Collection* collection,
+        const Collection* collection,
         std::unique_ptr<DeleteStageParams> params,
         const IndexDescriptor* descriptor,
         const BSONObj& startKey,
@@ -119,7 +119,7 @@ public:
      */
     static std::unique_ptr<PlanExecutor, PlanExecutor::Deleter> updateWithIdHack(
         OperationContext* opCtx,
-        Collection* collection,
+        const Collection* collection,
         const UpdateStageParams& params,
         const IndexDescriptor* descriptor,
         const BSONObj& key,

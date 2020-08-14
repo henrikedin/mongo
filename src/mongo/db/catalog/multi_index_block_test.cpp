@@ -91,7 +91,7 @@ TEST_F(MultiIndexBlockTest, CommitWithoutInsertingDocuments) {
     auto indexer = getIndexer();
 
     AutoGetCollection autoColl(operationContext(), getNSS(), MODE_X);
-    Collection* coll = autoColl.getCollection();
+    const Collection* coll = autoColl.getCollection();
 
     auto specs = unittest::assertGet(indexer->init(
         operationContext(), coll, std::vector<BSONObj>(), MultiIndexBlock::kNoopOnInitFn));
@@ -114,7 +114,7 @@ TEST_F(MultiIndexBlockTest, CommitAfterInsertingSingleDocument) {
     auto indexer = getIndexer();
 
     AutoGetCollection autoColl(operationContext(), getNSS(), MODE_X);
-    Collection* coll = autoColl.getCollection();
+    const Collection* coll = autoColl.getCollection();
 
     auto specs = unittest::assertGet(indexer->init(
         operationContext(), coll, std::vector<BSONObj>(), MultiIndexBlock::kNoopOnInitFn));
@@ -141,7 +141,7 @@ TEST_F(MultiIndexBlockTest, AbortWithoutCleanupAfterInsertingSingleDocument) {
     auto indexer = getIndexer();
 
     AutoGetCollection autoColl(operationContext(), getNSS(), MODE_X);
-    Collection* coll = autoColl.getCollection();
+    const Collection* coll = autoColl.getCollection();
 
     auto specs = unittest::assertGet(indexer->init(
         operationContext(), coll, std::vector<BSONObj>(), MultiIndexBlock::kNoopOnInitFn));
@@ -154,7 +154,7 @@ TEST_F(MultiIndexBlockTest, InitWriteConflictException) {
     auto indexer = getIndexer();
 
     AutoGetCollection autoColl(operationContext(), getNSS(), MODE_X);
-    Collection* coll = autoColl.getCollection();
+    const Collection* coll = autoColl.getCollection();
 
     BSONObj spec = BSON("key" << BSON("a" << 1) << "name"
                               << "a_1"

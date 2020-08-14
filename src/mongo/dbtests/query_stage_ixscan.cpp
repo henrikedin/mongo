@@ -148,7 +148,7 @@ protected:
 
     Lock::DBLock _dbLock;
     OldClientContext _ctx;
-    Collection* _coll;
+    const Collection* _coll;
 
     WorkingSet _ws;
 

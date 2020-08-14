@@ -74,7 +74,7 @@ const char* DeleteStage::kStageType = "DELETE";
 DeleteStage::DeleteStage(ExpressionContext* expCtx,
                          std::unique_ptr<DeleteStageParams> params,
                          WorkingSet* ws,
-                         Collection* collection,
+                         const Collection* collection,
                          PlanStage* child)
     : RequiresMutableCollectionStage(kStageType, expCtx, collection),
       _params(std::move(params)),

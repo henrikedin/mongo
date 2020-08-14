@@ -906,7 +906,7 @@ void _testPushSentinelsProperly(OperationContext* opCtx,
                                 const NamespaceString& nss,
                                 StorageInterface* storageInterface,
                                 std::function<void(OperationContext* opCtx,
-                                                   OplogBufferCollection* oplogBuffer,
+                                                   OplogBufferconst Collection* oplogBuffer,
                                                    const std::vector<BSONObj>& oplog)> pushDocsFn) {
     OplogBufferCollection oplogBuffer(storageInterface, nss);
     oplogBuffer.startup(opCtx);
@@ -930,7 +930,7 @@ TEST_F(OplogBufferCollectionTest, PushAllNonBlockingPushesOnSentinelsProperly) {
                                nss,
                                _storageInterface,
                                [](OperationContext* opCtx,
-                                  OplogBufferCollection* oplogBuffer,
+                                  OplogBufferconst Collection* oplogBuffer,
                                   const std::vector<BSONObj>& oplog) {
                                    oplogBuffer->push(opCtx, oplog.cbegin(), oplog.cend());
                                    ASSERT_EQUALS(1U, oplogBuffer->getSentinelCount_forTest());

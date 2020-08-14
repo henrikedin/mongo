@@ -267,7 +267,7 @@ public:
      * Tracks the temporary collections mapReduces creates.
      */
     void onCreateCollection(OperationContext* opCtx,
-                            Collection* coll,
+                            const Collection* coll,
                             const NamespaceString& collectionName,
                             const CollectionOptions& options,
                             const BSONObj& idIndex,
@@ -321,7 +321,7 @@ void MapReduceOpObserver::onInserts(OperationContext* opCtx,
 }
 
 void MapReduceOpObserver::onCreateCollection(OperationContext*,
-                                             Collection*,
+                                             const Collection*,
                                              const NamespaceString& collectionName,
                                              const CollectionOptions& options,
                                              const BSONObj&,

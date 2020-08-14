@@ -485,7 +485,7 @@ public:
 
         AutoGetDb autoDb(&opCtx, nss.db(), MODE_X);
 
-        Collection* coll = CollectionCatalog::get(&opCtx).lookupCollectionByNamespace(&opCtx, nss);
+        const Collection* coll = CollectionCatalog::get(&opCtx).lookupCollectionByNamespace(&opCtx, nss);
         IndexCatalog* catalog = coll->getIndexCatalog();
 
         string idxName = "a";
@@ -526,7 +526,7 @@ public:
 
         AutoGetDb autoDb(&opCtx, nss.db(), MODE_X);
 
-        Collection* coll = CollectionCatalog::get(&opCtx).lookupCollectionByNamespace(&opCtx, nss);
+        const Collection* coll = CollectionCatalog::get(&opCtx).lookupCollectionByNamespace(&opCtx, nss);
         IndexCatalog* catalog = coll->getIndexCatalog();
 
         string idxName = "a";
@@ -579,7 +579,7 @@ public:
 
         AutoGetDb autoDb(&opCtx, nss.db(), MODE_X);
 
-        Collection* coll = CollectionCatalog::get(&opCtx).lookupCollectionByNamespace(&opCtx, nss);
+        const Collection* coll = CollectionCatalog::get(&opCtx).lookupCollectionByNamespace(&opCtx, nss);
         IndexCatalog* catalog = coll->getIndexCatalog();
 
         string idxName = "a";
@@ -642,7 +642,7 @@ public:
                 assertGet(CollectionOptions::parse(BSONObj(), CollectionOptions::parseForCommand));
             ASSERT_OK(ctx.db()->userCreateNS(&opCtx, nss, collectionOptions, false));
             ASSERT(collectionExists(&opCtx, &ctx, nss.ns()));
-            Collection* coll =
+            const Collection* coll =
                 CollectionCatalog::get(&opCtx).lookupCollectionByNamespace(&opCtx, nss);
             IndexCatalog* catalog = coll->getIndexCatalog();
 

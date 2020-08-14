@@ -133,7 +133,7 @@ Status _abortIndexBuildsAndDropCollection(OperationContext* opCtx,
     // which may have changed when we released the collection lock temporarily.
     opCtx->recoveryUnit()->abandonSnapshot();
 
-    Collection* coll =
+    const Collection* coll =
         CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, startingNss);
     Status status = _checkNssAndReplState(opCtx, coll);
     if (!status.isOK()) {
@@ -231,7 +231,7 @@ Status _dropCollection(OperationContext* opCtx,
                        DropCollectionSystemCollectionMode systemCollectionMode,
                        BSONObjBuilder& result) {
     Lock::CollectionLock collLock(opCtx, collectionName, MODE_X);
-    Collection* coll =
+    const Collection* coll =
         CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, collectionName);
     Status status = _checkNssAndReplState(opCtx, coll);
     if (!status.isOK()) {
@@ -294,7 +294,7 @@ Status dropCollection(OperationContext* opCtx,
                     return Status(ErrorCodes::NamespaceNotFound, "ns not found");
                 }
 
-                Collection* coll = CollectionCatalog::get(opCtx).lookupCollectionByNamespace(
+                const Collection* coll = CollectionCatalog::get(opCtx).lookupCollectionByNamespace(
                     opCtx, collectionName);
 
                 if (!coll) {
@@ -331,7 +331,7 @@ Status dropCollectionForApplyOps(OperationContext* opCtx,
             return Status(ErrorCodes::NamespaceNotFound, "ns not found");
         }
 
-        Collection* coll =
+        const Collection* coll =
             CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, collectionName);
 
         BSONObjBuilder unusedBuilder;

@@ -200,7 +200,7 @@ void recordStatsForTopCommand(OperationContext* opCtx) {
                 curOp->getReadWriteType());
 }
 
-void checkIfTransactionOnCappedColl(Collection* coll, bool inTransaction) {
+void checkIfTransactionOnCappedColl(const Collection* coll, bool inTransaction) {
     if (coll && coll->isCapped()) {
         uassert(
             ErrorCodes::OperationNotSupportedInTransaction,
@@ -282,7 +282,7 @@ public:
 
             CollectionShardingState::get(opCtx, nsString)->checkShardVersionOrThrow(opCtx);
 
-            Collection* const collection = autoColl.getCollection();
+            const Collection* const collection = autoColl.getCollection();
 
             const auto exec =
                 uassertStatusOK(getExecutorDelete(opDebug, collection, &parsedDelete, verbosity));
@@ -307,7 +307,7 @@ public:
 
             CollectionShardingState::get(opCtx, nsString)->checkShardVersionOrThrow(opCtx);
 
-            Collection* const collection = autoColl.getCollection();
+            const Collection* const collection = autoColl.getCollection();
             const auto exec =
                 uassertStatusOK(getExecutorUpdate(opDebug, collection, &parsedUpdate, verbosity));
 
@@ -465,7 +465,7 @@ public:
 
         assertCanWrite(opCtx, nsString);
 
-        Collection* const collection = autoColl.getCollection();
+        const Collection* const collection = autoColl.getCollection();
         checkIfTransactionOnCappedColl(collection, inTransaction);
 
         const auto exec = uassertStatusOK(
@@ -521,7 +521,7 @@ public:
 
         assertCanWrite(opCtx, nsString);
 
-        Collection* collection = autoColl.getCollection();
+        const Collection* collection = autoColl.getCollection();
 
         // Create the collection if it does not exist when performing an upsert because the
         // update stage does not create its own collection

@@ -58,7 +58,7 @@ public:
     /**
      * Create collection 'nss' and insert some documents. It will possess a default _id index.
      */
-    Collection* createCollectionAndPopulateIt(OperationContext* opCtx, const NamespaceString& nss);
+    const Collection* createCollectionAndPopulateIt(OperationContext* opCtx, const NamespaceString& nss);
 };
 
 void ValidateStateTest::createCollection(OperationContext* opCtx, const NamespaceString& nss) {
@@ -67,13 +67,13 @@ void ValidateStateTest::createCollection(OperationContext* opCtx, const Namespac
     ASSERT_OK(storageInterface()->createCollection(opCtx, nss, defaultCollectionOptions));
 }
 
-Collection* ValidateStateTest::createCollectionAndPopulateIt(OperationContext* opCtx,
+const Collection* ValidateStateTest::createCollectionAndPopulateIt(OperationContext* opCtx,
                                                              const NamespaceString& nss) {
     // Create collection.
     createCollection(opCtx, nss);
 
     AutoGetCollection autoColl(opCtx, nss, MODE_X);
-    Collection* collection = autoColl.getCollection();
+    const Collection* collection = autoColl.getCollection();
     invariant(collection);
 
     // Insert some data.

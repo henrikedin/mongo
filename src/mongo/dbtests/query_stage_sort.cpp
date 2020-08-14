@@ -75,7 +75,7 @@ public:
         _client.insert(ns(), obj);
     }
 
-    void getRecordIds(set<RecordId>* out, Collection* coll) {
+    void getRecordIds(set<RecordId>* out, const Collection* coll) {
         auto cursor = coll->getCursor(&_opCtx);
         while (auto record = cursor->next()) {
             out->insert(record->id);
@@ -85,7 +85,7 @@ public:
     /**
      * We feed a mix of (key, unowned, owned) data to the sort stage.
      */
-    void insertVarietyOfObjects(WorkingSet* ws, QueuedDataStage* ms, Collection* coll) {
+    void insertVarietyOfObjects(WorkingSet* ws, QueuedDataStage* ms, const Collection* coll) {
         set<RecordId> recordIds;
         getRecordIds(&recordIds, coll);
 
@@ -110,7 +110,7 @@ public:
      * which is owned by the caller.
      */
     unique_ptr<PlanExecutor, PlanExecutor::Deleter> makePlanExecutorWithSortStage(
-        Collection* coll) {
+        const Collection* coll) {
         // Build the mock scan stage which feeds the data.
         auto ws = std::make_unique<WorkingSet>();
         _workingSet = ws.get();
@@ -151,7 +151,7 @@ public:
      * If extAllowed is true, sorting will use use external sorting if available.
      * If limit is not zero, we limit the output of the sort stage to 'limit' results.
      */
-    void sortAndCheck(int direction, Collection* coll) {
+    void sortAndCheck(int direction, const Collection* coll) {
         auto ws = std::make_unique<WorkingSet>();
         auto queuedDataStage = std::make_unique<QueuedDataStage>(_expCtx.get(), ws.get());
 
@@ -258,7 +258,7 @@ public:
     void run() {
         dbtests::WriteContextForTests ctx(&_opCtx, ns());
         Database* db = ctx.db();
-        Collection* coll =
+        const Collection* coll =
             CollectionCatalog::get(&_opCtx).lookupCollectionByNamespace(&_opCtx, nss());
         if (!coll) {
             WriteUnitOfWork wuow(&_opCtx);
@@ -281,7 +281,7 @@ public:
     void run() {
         dbtests::WriteContextForTests ctx(&_opCtx, ns());
         Database* db = ctx.db();
-        Collection* coll =
+        const Collection* coll =
             CollectionCatalog::get(&_opCtx).lookupCollectionByNamespace(&_opCtx, nss());
         if (!coll) {
             WriteUnitOfWork wuow(&_opCtx);
@@ -313,7 +313,7 @@ public:
     void run() {
         dbtests::WriteContextForTests ctx(&_opCtx, ns());
         Database* db = ctx.db();
-        Collection* coll =
+        const Collection* coll =
             CollectionCatalog::get(&_opCtx).lookupCollectionByNamespace(&_opCtx, nss());
         if (!coll) {
             WriteUnitOfWork wuow(&_opCtx);
@@ -339,7 +339,7 @@ public:
     void run() {
         dbtests::WriteContextForTests ctx(&_opCtx, ns());
         Database* db = ctx.db();
-        Collection* coll =
+        const Collection* coll =
             CollectionCatalog::get(&_opCtx).lookupCollectionByNamespace(&_opCtx, nss());
         if (!coll) {
             WriteUnitOfWork wuow(&_opCtx);
@@ -448,7 +448,7 @@ public:
     void run() {
         dbtests::WriteContextForTests ctx(&_opCtx, ns());
         Database* db = ctx.db();
-        Collection* coll =
+        const Collection* coll =
             CollectionCatalog::get(&_opCtx).lookupCollectionByNamespace(&_opCtx, nss());
         if (!coll) {
             WriteUnitOfWork wuow(&_opCtx);
@@ -546,7 +546,7 @@ public:
     void run() {
         dbtests::WriteContextForTests ctx(&_opCtx, ns());
         Database* db = ctx.db();
-        Collection* coll =
+        const Collection* coll =
             CollectionCatalog::get(&_opCtx).lookupCollectionByNamespace(&_opCtx, nss());
         if (!coll) {
             WriteUnitOfWork wuow(&_opCtx);

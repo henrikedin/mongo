@@ -76,7 +76,7 @@ public:
                         bool createDefaultIndexes,
                         const BSONObj& idIndex) const final;
 
-    Collection* createCollection(OperationContext* opCtx,
+    const Collection* createCollection(OperationContext* opCtx,
                                  const NamespaceString& nss,
                                  const CollectionOptions& options = CollectionOptions(),
                                  bool createDefaultIndexes = true,
@@ -137,14 +137,14 @@ private:
      */
     Status _finishDropCollection(OperationContext* opCtx,
                                  const NamespaceString& nss,
-                                 Collection* collection) const;
+                                 const Collection* collection) const;
 
     /**
      * Removes all indexes for a collection.
      */
     void _dropCollectionIndexes(OperationContext* opCtx,
                                 const NamespaceString& nss,
-                                Collection* collection) const;
+                                const Collection* collection) const;
 
     const std::string _name;  // "dbname"
 

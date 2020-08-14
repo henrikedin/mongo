@@ -180,7 +180,7 @@ MultiIndexBlock::OnInitFn MultiIndexBlock::makeTimestampedIndexOnInitFn(Operatio
 }
 
 StatusWith<std::vector<BSONObj>> MultiIndexBlock::init(OperationContext* opCtx,
-                                                       Collection* collection,
+                                                       const Collection* collection,
                                                        const BSONObj& spec,
                                                        OnInitFn onInit) {
     const auto indexes = std::vector<BSONObj>(1, spec);
@@ -189,7 +189,7 @@ StatusWith<std::vector<BSONObj>> MultiIndexBlock::init(OperationContext* opCtx,
 
 StatusWith<std::vector<BSONObj>> MultiIndexBlock::init(
     OperationContext* opCtx,
-    Collection* collection,
+    const Collection* collection,
     const std::vector<BSONObj>& indexSpecs,
     OnInitFn onInit,
     const boost::optional<ResumeIndexInfo>& resumeInfo) {
@@ -380,7 +380,7 @@ StatusWith<std::vector<BSONObj>> MultiIndexBlock::init(
 }
 
 Status MultiIndexBlock::insertAllDocumentsInCollection(OperationContext* opCtx,
-                                                       Collection* collection) {
+                                                       const Collection* collection) {
     invariant(!_buildIsCleanedUp);
     invariant(opCtx->lockState()->isNoop() || !opCtx->lockState()->inAWriteUnitOfWork());
 
@@ -677,7 +677,7 @@ Status MultiIndexBlock::drainBackgroundWrites(
     return Status::OK();
 }
 
-Status MultiIndexBlock::retrySkippedRecords(OperationContext* opCtx, Collection* collection) {
+Status MultiIndexBlock::retrySkippedRecords(OperationContext* opCtx, const Collection* collection) {
     invariant(!_buildIsCleanedUp);
     for (auto&& index : _indexes) {
         auto interceptor = index.block->getEntry()->indexBuildInterceptor();
@@ -724,7 +724,7 @@ MultiIndexBlock::OnCreateEachFn MultiIndexBlock::kNoopOnCreateEachFn = [](const 
 MultiIndexBlock::OnCommitFn MultiIndexBlock::kNoopOnCommitFn = []() {};
 
 Status MultiIndexBlock::commit(OperationContext* opCtx,
-                               Collection* collection,
+                               const Collection* collection,
                                OnCreateEachFn onCreateEach,
                                OnCommitFn onCommit) {
     invariant(!_buildIsCleanedUp);

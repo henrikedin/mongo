@@ -80,7 +80,7 @@ public:
         wuow.commit();
     }
 
-    Collection* collection() {
+    const Collection* collection() {
         return CollectionCatalog::get(_opCtx).lookupCollectionByNamespace(_opCtx, _nss);
     }
 
@@ -131,7 +131,7 @@ public:
     void run() {
         AutoGetOrCreateDb dbRaii(_opCtx, _nss.db(), LockMode::MODE_IX);
         Lock::CollectionLock collLk(_opCtx, _nss, LockMode::MODE_X);
-        Collection* coll = collection();
+        const Collection* coll = collection();
         {
             WriteUnitOfWork wunit(_opCtx);
             OpDebug* const nullOpDebug = nullptr;
@@ -182,7 +182,7 @@ public:
         AutoGetOrCreateDb dbRaii(_opCtx, _nss.db(), LockMode::MODE_IX);
         boost::optional<Lock::CollectionLock> collLk;
         collLk.emplace(_opCtx, _nss, LockMode::MODE_IX);
-        Collection* coll = collection();
+        const Collection* coll = collection();
         {
             WriteUnitOfWork wunit(_opCtx);
             OpDebug* const nullOpDebug = nullptr;
@@ -235,7 +235,7 @@ public:
             boost::optional<Lock::CollectionLock> collLk;
             collLk.emplace(_opCtx, _nss, LockMode::MODE_X);
 
-            Collection* coll = collection();
+            const Collection* coll = collection();
             {
                 WriteUnitOfWork wunit(_opCtx);
                 // Drop all indexes including id index.
@@ -290,7 +290,7 @@ public:
             CollectionOptions options;
             options.capped = true;
             options.cappedSize = 10 * 1024;
-            Collection* coll = db->createCollection(_opCtx, _nss, options);
+            const Collection* coll = db->createCollection(_opCtx, _nss, options);
             coll->getIndexCatalog()->dropAllIndexes(_opCtx, true);
             // Insert some documents.
             int32_t nDocs = 1000;

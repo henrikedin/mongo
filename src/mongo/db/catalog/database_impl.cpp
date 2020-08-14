@@ -355,7 +355,7 @@ Status DatabaseImpl::dropCollectionEvenIfSystem(OperationContext* opCtx,
             "dropCollection() cannot accept a valid drop optime when writes are replicated.");
     }
 
-    Collection* collection = CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, nss);
+    const Collection* collection = CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, nss);
 
     if (!collection) {
         return Status::OK();  // Post condition already met.
@@ -470,7 +470,7 @@ Status DatabaseImpl::dropCollectionEvenIfSystem(OperationContext* opCtx,
 
 void DatabaseImpl::_dropCollectionIndexes(OperationContext* opCtx,
                                           const NamespaceString& nss,
-                                          Collection* collection) const {
+                                          const Collection* collection) const {
     invariant(_name == nss.db());
     LOGV2_DEBUG(
         20316, 1, "dropCollection: {namespace} - dropAllIndexes start", "namespace"_attr = nss);
@@ -484,7 +484,7 @@ void DatabaseImpl::_dropCollectionIndexes(OperationContext* opCtx,
 
 Status DatabaseImpl::_finishDropCollection(OperationContext* opCtx,
                                            const NamespaceString& nss,
-                                           Collection* collection) const {
+                                           const Collection* collection) const {
     UUID uuid = collection->uuid();
     LOGV2(20318,
           "Finishing collection drop for {namespace} ({uuid}).",
@@ -520,7 +520,7 @@ Status DatabaseImpl::renameCollection(OperationContext* opCtx,
                                     << "' because the destination namespace already exists");
     }
 
-    Collection* collToRename =
+    const Collection* collToRename =
         CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, fromNss);
     if (!collToRename) {
         return Status(ErrorCodes::NamespaceNotFound, "collection not found to rename");
@@ -604,7 +604,7 @@ Status DatabaseImpl::createView(OperationContext* opCtx,
         opCtx, viewName, viewOnNss, BSONArray(options.pipeline), options.collation);
 }
 
-Collection* DatabaseImpl::createCollection(OperationContext* opCtx,
+const Collection* DatabaseImpl::createCollection(OperationContext* opCtx,
                                            const NamespaceString& nss,
                                            const CollectionOptions& options,
                                            bool createIdIndex,
@@ -807,7 +807,7 @@ void DatabaseImpl::checkForIdIndexesAndDropPendingCollections(OperationContext* 
         if (nss.isSystem())
             continue;
 
-        Collection* coll = CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, nss);
+        const Collection* coll = CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, nss);
         if (!coll)
             continue;
 

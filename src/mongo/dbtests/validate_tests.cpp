@@ -194,7 +194,7 @@ public:
 
         // Create a new collection, insert records {_id: 1} and {_id: 2} and check it's valid.
         lockDb(MODE_X);
-        Collection* coll;
+        const Collection* coll;
         RecordId id1;
         {
             OpDebug* const nullOpDebug = nullptr;
@@ -256,7 +256,7 @@ public:
 
         // Create a new collection, insert two documents.
         lockDb(MODE_X);
-        Collection* coll;
+        const Collection* coll;
         RecordId id1;
         {
             OpDebug* const nullOpDebug = nullptr;
@@ -328,7 +328,7 @@ public:
         // Create a new collection, insert three records.
         lockDb(MODE_X);
         OpDebug* const nullOpDebug = nullptr;
-        Collection* coll;
+        const Collection* coll;
         RecordId id1;
         {
             WriteUnitOfWork wunit(&_opCtx);
@@ -391,7 +391,7 @@ public:
         // Create a new collection, insert records {_id: 1} and {_id: 2} and check it's valid.
         lockDb(MODE_X);
         OpDebug* const nullOpDebug = nullptr;
-        Collection* coll;
+        const Collection* coll;
         RecordId id1;
         {
             WriteUnitOfWork wunit(&_opCtx);
@@ -471,7 +471,7 @@ public:
         // Create a new collection, insert three records and check it's valid.
         lockDb(MODE_X);
         OpDebug* const nullOpDebug = nullptr;
-        Collection* coll;
+        const Collection* coll;
         RecordId id1;
         // {a: [b: 1, c: 2]}, {a: [b: 2, c: 2]}, {a: [b: 1, c: 1]}
         auto doc1 = BSON("_id" << 1 << "a" << BSON_ARRAY(BSON("b" << 1) << BSON("c" << 2)));
@@ -557,7 +557,7 @@ public:
         // Create a new collection, insert three records and check it's valid.
         lockDb(MODE_X);
         OpDebug* const nullOpDebug = nullptr;
-        Collection* coll;
+        const Collection* coll;
         RecordId id1;
         {
             WriteUnitOfWork wunit(&_opCtx);
@@ -621,7 +621,7 @@ public:
         // Create a new collection, insert three records and check it's valid.
         lockDb(MODE_X);
         OpDebug* const nullOpDebug = nullptr;
-        Collection* coll;
+        const Collection* coll;
         RecordId id1;
         {
             WriteUnitOfWork wunit(&_opCtx);
@@ -692,7 +692,7 @@ public:
         // field.
         lockDb(MODE_X);
         OpDebug* const nullOpDebug = nullptr;
-        Collection* coll;
+        const Collection* coll;
         RecordId id1;
         {
             WriteUnitOfWork wunit(&_opCtx);
@@ -754,7 +754,7 @@ public:
         // Create a new collection, insert five records and check it's valid.
         lockDb(MODE_X);
         OpDebug* const nullOpDebug = nullptr;
-        Collection* coll;
+        const Collection* coll;
         RecordId id1;
         {
             WriteUnitOfWork wunit(&_opCtx);
@@ -839,7 +839,7 @@ public:
         // Create a new collection, insert three records and check it's valid.
         lockDb(MODE_X);
         OpDebug* const nullOpDebug = nullptr;
-        Collection* coll;
+        const Collection* coll;
         RecordId id1;
         {
             WriteUnitOfWork wunit(&_opCtx);
@@ -927,7 +927,7 @@ public:
 
         // Create a new collection.
         lockDb(MODE_X);
-        Collection* coll;
+        const Collection* coll;
         {
             WriteUnitOfWork wunit(&_opCtx);
             ASSERT_OK(_db->dropCollection(&_opCtx, _nss));
@@ -1050,7 +1050,7 @@ public:
 
         // Create a new collection.
         lockDb(MODE_X);
-        Collection* coll;
+        const Collection* coll;
         {
             WriteUnitOfWork wunit(&_opCtx);
             ASSERT_OK(_db->dropCollection(&_opCtx, _nss));
@@ -1148,7 +1148,7 @@ public:
 
         // Create a new collection.
         lockDb(MODE_X);
-        Collection* coll;
+        const Collection* coll;
         {
             WriteUnitOfWork wunit(&_opCtx);
             ASSERT_OK(_db->dropCollection(&_opCtx, _nss));
@@ -1244,7 +1244,7 @@ public:
 
         // Create a new collection.
         lockDb(MODE_X);
-        Collection* coll;
+        const Collection* coll;
         {
             WriteUnitOfWork wunit(&_opCtx);
             ASSERT_OK(_db->dropCollection(&_opCtx, _nss));
@@ -1361,7 +1361,7 @@ public:
 
         // Create a new collection.
         lockDb(MODE_X);
-        Collection* coll;
+        const Collection* coll;
         {
             WriteUnitOfWork wunit(&_opCtx);
             ASSERT_OK(_db->dropCollection(&_opCtx, _nss));
@@ -1448,7 +1448,7 @@ public:
     void run() {
         // Create a new collection.
         lockDb(MODE_X);
-        Collection* coll;
+        const Collection* coll;
         {
             WriteUnitOfWork wunit(&_opCtx);
             ASSERT_OK(_db->dropCollection(&_opCtx, _nss));
@@ -1625,7 +1625,7 @@ public:
 
         // Create a new collection.
         lockDb(MODE_X);
-        Collection* coll;
+        const Collection* coll;
         {
             WriteUnitOfWork wunit(&_opCtx);
             ASSERT_OK(_db->dropCollection(&_opCtx, _nss));
@@ -1803,7 +1803,7 @@ public:
     void run() {
         // Create a new collection.
         lockDb(MODE_X);
-        Collection* coll;
+        const Collection* coll;
         {
             WriteUnitOfWork wunit(&_opCtx);
             ASSERT_OK(_db->dropCollection(&_opCtx, _nss));
@@ -1958,7 +1958,7 @@ public:
 
         // Create a new collection and insert a document.
         lockDb(MODE_X);
-        Collection* coll;
+        const Collection* coll;
         OpDebug* const nullOpDebug = nullptr;
         {
             WriteUnitOfWork wunit(&_opCtx);
@@ -2169,7 +2169,7 @@ public:
 
         // Create a new collection and insert non-multikey document.
         lockDb(MODE_X);
-        Collection* coll;
+        const Collection* coll;
         RecordId id1;
         BSONObj doc = BSON("_id" << 1 << "a" << 1);
         {
@@ -2349,7 +2349,7 @@ public:
 
         // Create a new collection.
         lockDb(MODE_X);
-        Collection* coll;
+        const Collection* coll;
         {
             WriteUnitOfWork wunit(&_opCtx);
             ASSERT_OK(_db->dropCollection(&_opCtx, _nss));
@@ -2496,7 +2496,7 @@ public:
 
         // Create a new collection.
         lockDb(MODE_X);
-        Collection* coll;
+        const Collection* coll;
         {
             WriteUnitOfWork wunit(&_opCtx);
             ASSERT_OK(_db->dropCollection(&_opCtx, _nss));
@@ -2684,7 +2684,7 @@ public:
 
         // Create a new collection.
         lockDb(MODE_X);
-        Collection* coll;
+        const Collection* coll;
         {
             WriteUnitOfWork wunit(&_opCtx);
             ASSERT_OK(_db->dropCollection(&_opCtx, _nss));
@@ -2748,7 +2748,7 @@ public:
     void run() {
         // Create a new collection.
         lockDb(MODE_X);
-        Collection* coll;
+        const Collection* coll;
         {
             WriteUnitOfWork wunit(&_opCtx);
             ASSERT_OK(_db->dropCollection(&_opCtx, _nss));
@@ -2918,7 +2918,7 @@ public:
 
         // Create a new collection and insert non-multikey document.
         lockDb(MODE_X);
-        Collection* coll;
+        const Collection* coll;
         RecordId id1;
         BSONObj doc = BSON("_id" << 1 << "a" << 1);
         {
@@ -3140,7 +3140,7 @@ public:
 
         // Create a new collection and insert multikey document.
         lockDb(MODE_X);
-        Collection* coll;
+        const Collection* coll;
         RecordId id1;
         BSONObj doc1 = BSON("_id" << 1 << "a" << BSON_ARRAY(1 << 2) << "b" << 1);
         {

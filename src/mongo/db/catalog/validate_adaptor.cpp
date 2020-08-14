@@ -89,7 +89,7 @@ Status ValidateAdaptor::validateRecord(OperationContext* opCtx,
         LOGV2(4666601, "[validate]", "recordId"_attr = recordId, "recordData"_attr = recordBson);
     }
 
-    Collection* coll = _validateState->getCollection();
+    const Collection* coll = _validateState->getCollection();
     IndexCatalog* indexCatalog = coll->getIndexCatalog();
     if (!indexCatalog->haveAnyIndexes()) {
         return status;

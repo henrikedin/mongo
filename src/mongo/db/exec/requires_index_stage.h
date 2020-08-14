@@ -37,7 +37,7 @@ namespace mongo {
 
 /**
  * A base class for plan stages which require access to a particular index within a particular
- * collection. Provides subclasses access to the index's Collection*, as well as to catalog types
+ * collection. Provides subclasses access to the index's const Collection*, as well as to catalog types
  * representing the index itself such as the IndexDescriptor. This base class is responsible for
  * checking that the collection and index are still valid (e.g. have not been dropped) when
  * recovering from yield.

@@ -661,7 +661,7 @@ void OpObserverImpl::onInternalOpMessage(OperationContext* opCtx,
 }
 
 void OpObserverImpl::onCreateCollection(OperationContext* opCtx,
-                                        Collection* coll,
+                                        const Collection* coll,
                                         const NamespaceString& collectionName,
                                         const CollectionOptions& options,
                                         const BSONObj& idIndex,
@@ -733,7 +733,7 @@ void OpObserverImpl::onCollMod(OperationContext* opCtx,
     if (!db) {
         return;
     }
-    Collection* coll = CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, nss);
+    const Collection* coll = CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, nss);
 
     invariant(coll->uuid() == uuid);
     invariant(DurableCatalog::get(opCtx)->isEqualToMetadataUUID(opCtx, coll->getCatalogId(), uuid));

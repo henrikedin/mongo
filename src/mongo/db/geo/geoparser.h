@@ -91,7 +91,7 @@ public:
                                     MultiPolygonWithCRS* out);
     static Status parseGeometryCollection(const BSONObj& obj,
                                           bool skipValidation,
-                                          GeometryCollection* out);
+                                          Geometryconst Collection* out);
 
     // For geo near
     static Status parseQueryPoint(const BSONElement& elem, PointWithCRS* out);

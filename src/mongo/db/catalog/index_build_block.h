@@ -67,7 +67,7 @@ public:
      *
      * Must be called from within a `WriteUnitOfWork`
      */
-    Status init(OperationContext* opCtx, Collection* collection);
+    Status init(OperationContext* opCtx, const Collection* collection);
 
     /**
      * Makes sure that an entry for the index was created at startup in the IndexCatalog. Returns
@@ -75,7 +75,7 @@ public:
      * to be dropped or recreated in the storage engine.
      */
     Status initForResume(OperationContext* opCtx,
-                         Collection* collection,
+                         const Collection* collection,
                          const IndexSorterInfo& sorterInfo,
                          IndexBuildPhaseEnum phase);
 
@@ -84,7 +84,7 @@ public:
      *
      * Must be called from within a `WriteUnitOfWork`
      */
-    void success(OperationContext* opCtx, Collection* collection);
+    void success(OperationContext* opCtx, const Collection* collection);
 
     /**
      * Aborts the index build and removes any on-disk state where applicable.
@@ -117,7 +117,7 @@ public:
     }
 
 private:
-    void _completeInit(OperationContext* opCtx, Collection* collection);
+    void _completeInit(OperationContext* opCtx, const Collection* collection);
 
     IndexCatalog* const _indexCatalog;
     const NamespaceString _nss;

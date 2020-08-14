@@ -416,7 +416,7 @@ StatusWith<std::pair<long long, long long>> IndexBuildsCoordinator::rebuildIndex
     }
 
     auto& collectionCatalog = CollectionCatalog::get(opCtx->getServiceContext());
-    Collection* collection = collectionCatalog.lookupCollectionByNamespace(opCtx, nss);
+    const Collection* collection = collectionCatalog.lookupCollectionByNamespace(opCtx, nss);
 
     // Complete the index build.
     return _runIndexRebuildForRecovery(opCtx, collection, buildUUID, repair);
@@ -442,7 +442,7 @@ Status IndexBuildsCoordinator::_startIndexBuildForRecovery(OperationContext* opC
     }
 
     auto& collectionCatalog = CollectionCatalog::get(opCtx->getServiceContext());
-    Collection* collection = collectionCatalog.lookupCollectionByNamespace(opCtx, nss);
+    const Collection* collection = collectionCatalog.lookupCollectionByNamespace(opCtx, nss);
     auto indexCatalog = collection->getIndexCatalog();
     {
         // These steps are combined into a single WUOW to ensure there are no commits without
@@ -2668,7 +2668,7 @@ IndexBuildsCoordinator::CommitResult IndexBuildsCoordinator::_insertKeysFromSide
 
 StatusWith<std::pair<long long, long long>> IndexBuildsCoordinator::_runIndexRebuildForRecovery(
     OperationContext* opCtx,
-    Collection* collection,
+    const Collection* collection,
     const UUID& buildUUID,
     RepairData repair) noexcept {
     invariant(opCtx->lockState()->isCollectionLockedForMode(collection->ns(), MODE_X));

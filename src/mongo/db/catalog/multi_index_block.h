@@ -111,16 +111,16 @@ public:
     using OnInitFn = std::function<Status(std::vector<BSONObj>& specs)>;
     StatusWith<std::vector<BSONObj>> init(
         OperationContext* opCtx,
-        Collection* collection,
+        const Collection* collection,
         const std::vector<BSONObj>& specs,
         OnInitFn onInit,
         const boost::optional<ResumeIndexInfo>& resumeInfo = boost::none);
     StatusWith<std::vector<BSONObj>> init(OperationContext* opCtx,
-                                          Collection* collection,
+                                          const Collection* collection,
                                           const BSONObj& spec,
                                           OnInitFn onInit);
     StatusWith<std::vector<BSONObj>> initForResume(OperationContext* opCtx,
-                                                   Collection* collection,
+                                                   const Collection* collection,
                                                    const std::vector<BSONObj>& specs,
                                                    const ResumeIndexInfo& resumeInfo);
 
@@ -149,7 +149,7 @@ public:
      *
      * Should not be called inside of a WriteUnitOfWork.
      */
-    Status insertAllDocumentsInCollection(OperationContext* opCtx, Collection* collection);
+    Status insertAllDocumentsInCollection(OperationContext* opCtx, const Collection* collection);
 
     /**
      * Call this after init() for each document in the collection.
@@ -203,7 +203,7 @@ public:
      * of an index build, so it must ensure that before it finishes, it has indexed all documents in
      * a collection, requiring a call to this function upon completion.
      */
-    Status retrySkippedRecords(OperationContext* opCtx, Collection* collection);
+    Status retrySkippedRecords(OperationContext* opCtx, const Collection* collection);
 
     /**
      * Check any constraits that may have been temporarily violated during the index build for
@@ -229,7 +229,7 @@ public:
     using OnCommitFn = std::function<void()>;
     using OnCreateEachFn = std::function<void(const BSONObj& spec)>;
     Status commit(OperationContext* opCtx,
-                  Collection* collection,
+                  const Collection* collection,
                   OnCreateEachFn onCreateEach,
                   OnCommitFn onCommit);
 

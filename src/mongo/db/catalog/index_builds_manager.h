@@ -80,7 +80,7 @@ public:
      */
     using OnInitFn = MultiIndexBlock::OnInitFn;
     Status setUpIndexBuild(OperationContext* opCtx,
-                           Collection* collection,
+                           const Collection* collection,
                            const std::vector<BSONObj>& specs,
                            const UUID& buildUUID,
                            OnInitFn onInit,
@@ -96,7 +96,7 @@ public:
      * Runs the scanning/insertion phase of the index build..
      */
     Status startBuildingIndex(OperationContext* opCtx,
-                              Collection* collection,
+                              const Collection* collection,
                               const UUID& buildUUID);
 
     Status resumeBuildingIndexFromBulkLoadPhase(OperationContext* opCtx, const UUID& buildUUID);
@@ -125,7 +125,7 @@ public:
      */
     Status retrySkippedRecords(OperationContext* opCtx,
                                const UUID& buildUUID,
-                               Collection* collection);
+                               const Collection* collection);
 
     /**
      * Runs the index constraint violation checking phase of the index build..
@@ -139,7 +139,7 @@ public:
     using OnCreateEachFn = MultiIndexBlock::OnCreateEachFn;
     using OnCommitFn = MultiIndexBlock::OnCommitFn;
     Status commitIndexBuild(OperationContext* opCtx,
-                            Collection* collection,
+                            const Collection* collection,
                             const NamespaceString& nss,
                             const UUID& buildUUID,
                             OnCreateEachFn onCreateEachFn,

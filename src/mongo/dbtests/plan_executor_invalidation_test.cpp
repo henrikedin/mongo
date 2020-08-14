@@ -117,11 +117,11 @@ public:
         return 50;
     }
 
-    Collection* collection() {
+    const Collection* collection() {
         return CollectionCatalog::get(&_opCtx).lookupCollectionByNamespace(&_opCtx, nss);
     }
 
-    void truncateCollection(Collection* collection) const {
+    void truncateCollection(const Collection* collection) const {
         WriteUnitOfWork wunit(&_opCtx);
         ASSERT_OK(collection->truncate(&_opCtx));
         wunit.commit();

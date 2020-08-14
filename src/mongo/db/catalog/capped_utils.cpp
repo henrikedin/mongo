@@ -71,7 +71,7 @@ Status emptyCapped(OperationContext* opCtx, const NamespaceString& collectionNam
     Database* db = autoDb.getDb();
     uassert(ErrorCodes::NamespaceNotFound, "no such database", db);
 
-    Collection* collection =
+    const Collection* collection =
         CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, collectionName);
     uassert(ErrorCodes::CommandNotSupportedOnView,
             str::stream() << "emptycapped not supported on view: " << collectionName.ns(),
@@ -114,7 +114,7 @@ void cloneCollectionAsCapped(OperationContext* opCtx,
                              const NamespaceString& toNss,
                              long long size,
                              bool temp) {
-    Collection* fromCollection =
+    const Collection* fromCollection =
         CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, fromNss);
     if (!fromCollection) {
         uassert(ErrorCodes::CommandNotSupportedOnView,
@@ -153,7 +153,7 @@ void cloneCollectionAsCapped(OperationContext* opCtx,
         uassertStatusOK(createCollection(opCtx, toNss.db().toString(), cmd.done()));
     }
 
-    Collection* toCollection =
+    const Collection* toCollection =
         CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, toNss);
     invariant(toCollection);  // we created above
 
@@ -256,7 +256,7 @@ void convertToCapped(OperationContext* opCtx, const NamespaceString& ns, long lo
     uassert(
         ErrorCodes::NamespaceNotFound, str::stream() << "database " << dbname << " not found", db);
 
-    if (Collection* coll = autoColl.getCollection()) {
+    if (const Collection* coll = autoColl.getCollection()) {
         IndexBuildsCoordinator::get(opCtx)->assertNoIndexBuildInProgForCollection(coll->uuid());
     }
 

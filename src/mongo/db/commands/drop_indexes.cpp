@@ -146,7 +146,7 @@ public:
         }
 
         AutoGetCollection autoColl(opCtx, toReIndexNss, MODE_X);
-        Collection* collection = autoColl.getCollection();
+        const Collection* collection = autoColl.getCollection();
         if (!collection) {
             auto db = autoColl.getDb();
             if (db && ViewCatalog::get(db)->lookup(opCtx, toReIndexNss.ns()))

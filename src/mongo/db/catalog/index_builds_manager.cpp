@@ -80,7 +80,7 @@ IndexBuildsManager::~IndexBuildsManager() {
 }
 
 Status IndexBuildsManager::setUpIndexBuild(OperationContext* opCtx,
-                                           Collection* collection,
+                                           const Collection* collection,
                                            const std::vector<BSONObj>& specs,
                                            const UUID& buildUUID,
                                            OnInitFn onInit,
@@ -121,7 +121,7 @@ Status IndexBuildsManager::setUpIndexBuild(OperationContext* opCtx,
 }
 
 Status IndexBuildsManager::startBuildingIndex(OperationContext* opCtx,
-                                              Collection* collection,
+                                              const Collection* collection,
                                               const UUID& buildUUID) {
     auto builder = invariant(_getBuilder(buildUUID));
 
@@ -277,7 +277,7 @@ Status IndexBuildsManager::drainBackgroundWrites(
 
 Status IndexBuildsManager::retrySkippedRecords(OperationContext* opCtx,
                                                const UUID& buildUUID,
-                                               Collection* collection) {
+                                               const Collection* collection) {
     auto builder = invariant(_getBuilder(buildUUID));
     return builder->retrySkippedRecords(opCtx, collection);
 }
@@ -290,7 +290,7 @@ Status IndexBuildsManager::checkIndexConstraintViolations(OperationContext* opCt
 }
 
 Status IndexBuildsManager::commitIndexBuild(OperationContext* opCtx,
-                                            Collection* collection,
+                                            const Collection* collection,
                                             const NamespaceString& nss,
                                             const UUID& buildUUID,
                                             MultiIndexBlock::OnCreateEachFn onCreateEachFn,
@@ -408,7 +408,7 @@ StatusWith<int> IndexBuildsManager::_moveRecordToLostAndFound(
     invariant(opCtx->lockState()->isCollectionLockedForMode(nss, MODE_IX));
 
     auto originalCollection = CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, nss);
-    Collection* localCollection =
+    const Collection* localCollection =
         CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, lostAndFoundNss);
 
     // Create the collection if it doesn't exist.

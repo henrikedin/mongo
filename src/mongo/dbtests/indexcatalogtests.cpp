@@ -104,7 +104,7 @@ public:
 
 private:
     IndexCatalog* _catalog;
-    Collection* _coll;
+    const Collection* _coll;
     Database* _db;
 };
 
@@ -153,7 +153,7 @@ public:
 
 private:
     IndexCatalog* _catalog;
-    Collection* _coll;
+    const Collection* _coll;
     Database* _db;
 };
 
@@ -227,7 +227,7 @@ public:
 
 private:
     IndexCatalog* _catalog;
-    Collection* _coll;
+    const Collection* _coll;
     Database* _db;
 };
 

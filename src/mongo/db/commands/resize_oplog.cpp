@@ -86,7 +86,7 @@ public:
         AutoGetCollection autoColl(opCtx, NamespaceString::kRsOplogNamespace, MODE_X);
         Database* database = autoColl.getDb();
         uassert(ErrorCodes::NamespaceNotFound, "database local does not exist", database);
-        Collection* coll = autoColl.getCollection();
+        const Collection* coll = autoColl.getCollection();
         uassert(ErrorCodes::NamespaceNotFound, "oplog does not exist", coll);
         uassert(ErrorCodes::IllegalOperation, "oplog isn't capped", coll->isCapped());
 
