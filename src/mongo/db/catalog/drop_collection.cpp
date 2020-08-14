@@ -52,7 +52,7 @@ namespace mongo {
 MONGO_FAIL_POINT_DEFINE(hangDropCollectionBeforeLockAcquisition);
 MONGO_FAIL_POINT_DEFINE(hangDuringDropCollection);
 
-Status _checkNssAndReplState(OperationContext* opCtx, Collection* coll) {
+Status _checkNssAndReplState(OperationContext* opCtx, const Collection* coll) {
     if (!coll) {
         return Status(ErrorCodes::NamespaceNotFound, "ns not found");
     }
@@ -184,7 +184,7 @@ Status _abortIndexBuildsAndDropCollection(OperationContext* opCtx,
         // disk state, which may have changed when we released the collection lock temporarily.
         opCtx->recoveryUnit()->abandonSnapshot();
 
-        coll = CollectionCatalog::get(opCtx).lookupCollectionByUUIDForMetadataWrite(opCtx, collectionUUID);
+        const Collection* coll = CollectionCatalog::get(opCtx).lookupCollectionByUUID(opCtx, collectionUUID);
         status = _checkNssAndReplState(opCtx, coll);
         if (!status.isOK()) {
             return status;

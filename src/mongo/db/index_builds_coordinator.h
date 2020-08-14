@@ -434,7 +434,7 @@ public:
      * This function throws on error. Expects caller to have exclusive access to `collection`.
      */
     static std::vector<BSONObj> prepareSpecListForCreate(OperationContext* opCtx,
-                                                         Collection* collection,
+                                                         const Collection* collection,
                                                          const NamespaceString& nss,
                                                          const std::vector<BSONObj>& indexSpecs);
 
@@ -461,7 +461,7 @@ public:
      *
      * Expects a lock to be held by the caller, so that 'collection' is safe to use.
      */
-    static int getNumIndexesTotal(OperationContext* opCtx, Collection* collection);
+    static int getNumIndexesTotal(OperationContext* opCtx, const Collection* collection);
 
 
     /**

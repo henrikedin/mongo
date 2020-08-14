@@ -110,7 +110,7 @@ void checkShardKeyRestrictions(OperationContext* opCtx,
  * bypass the index build registration.
  */
 bool shouldBuildIndexesOnEmptyCollectionSinglePhased(OperationContext* opCtx,
-                                                     Collection* collection,
+                                                     const Collection* collection,
                                                      IndexBuildProtocol protocol) {
     const auto& nss = collection->ns();
     invariant(opCtx->lockState()->isCollectionLockedForMode(nss, MODE_X), str::stream() << nss);
@@ -1650,7 +1650,7 @@ void IndexBuildsCoordinator::createIndexesOnEmptyCollection(OperationContext* op
                                                             UUID collectionUUID,
                                                             const std::vector<BSONObj>& specs,
                                                             bool fromMigrate) {
-    auto collection = CollectionCatalog::get(opCtx).lookupCollectionByUUIDForMetadataWrite(opCtx, collectionUUID);
+    auto collection = CollectionCatalog::get(opCtx).lookupCollectionByUUID(opCtx, collectionUUID);
 
     invariant(collection, str::stream() << collectionUUID);
     invariant(collection->isEmpty(opCtx), str::stream() << collectionUUID);
@@ -1818,8 +1818,8 @@ IndexBuildsCoordinator::_filterSpecsAndRegisterBuild(OperationContext* opCtx,
 
     // AutoGetCollection throws an exception if it is unable to look up the collection by UUID.
     NamespaceStringOrUUID nssOrUuid{dbName.toString(), collectionUUID};
-    AutoGetCollectionForMetadataWrite autoColl(opCtx, nssOrUuid, MODE_X);
-    auto collection = autoColl.getCollection();
+    AutoGetCollection autoColl(opCtx, nssOrUuid, MODE_X);
+    const Collection* collection = autoColl.getCollection();
     const auto& nss = collection->ns();
 
     // Disallow index builds on drop-pending namespaces (system.drop.*) if we are primary.
@@ -2793,7 +2793,7 @@ std::vector<std::shared_ptr<ReplIndexBuildState>> IndexBuildsCoordinator::_filte
     return indexBuilds;
 }
 
-int IndexBuildsCoordinator::getNumIndexesTotal(OperationContext* opCtx, Collection* collection) {
+int IndexBuildsCoordinator::getNumIndexesTotal(OperationContext* opCtx, const Collection* collection) {
     invariant(collection);
     const auto& nss = collection->ns();
     invariant(opCtx->lockState()->isLocked(),
@@ -2808,7 +2808,7 @@ int IndexBuildsCoordinator::getNumIndexesTotal(OperationContext* opCtx, Collecti
 
 std::vector<BSONObj> IndexBuildsCoordinator::prepareSpecListForCreate(
     OperationContext* opCtx,
-    Collection* collection,
+    const Collection* collection,
     const NamespaceString& nss,
     const std::vector<BSONObj>& indexSpecs) {
     UncommittedCollections::get(opCtx).invariantHasExclusiveAccessToCollection(opCtx,
