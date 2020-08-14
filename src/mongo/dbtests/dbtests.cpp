@@ -102,11 +102,11 @@ Status createIndex(OperationContext* opCtx, StringData ns, const BSONObj& keys, 
 
 Status createIndexFromSpec(OperationContext* opCtx, StringData ns, const BSONObj& spec) {
     AutoGetOrCreateDb autoDb(opCtx, nsToDatabaseSubstring(ns), MODE_X);
-    const Collection* coll;
+    Collection* coll;
     {
         WriteUnitOfWork wunit(opCtx);
         coll =
-            CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, NamespaceString(ns));
+            CollectionCatalog::get(opCtx).lookupCollectionByNamespaceForMetadataWrite(opCtx, NamespaceString(ns));
         if (!coll) {
             coll = autoDb.getDb()->createCollection(opCtx, NamespaceString(ns));
         }

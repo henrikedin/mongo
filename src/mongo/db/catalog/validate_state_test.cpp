@@ -100,7 +100,7 @@ void createIndex(OperationContext* opCtx, const NamespaceString& nss, const BSON
  * Drops index 'indexName' in collection 'nss'.
  */
 void dropIndex(OperationContext* opCtx, const NamespaceString& nss, const std::string& indexName) {
-    AutoGetCollection autoColl(opCtx, nss, MODE_X);
+    AutoGetCollectionForMetadataWrite autoColl(opCtx, nss, MODE_X);
 
     WriteUnitOfWork wuow(opCtx);
 

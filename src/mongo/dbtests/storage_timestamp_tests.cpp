@@ -234,7 +234,7 @@ public:
     void reset(NamespaceString nss) const {
         ::mongo::writeConflictRetry(_opCtx, "deleteAll", nss.ns(), [&] {
             _opCtx->recoveryUnit()->setTimestampReadSource(RecoveryUnit::ReadSource::kUnset);
-            AutoGetCollection collRaii(_opCtx, nss, LockMode::MODE_X);
+            AutoGetCollectionForMetadataWrite collRaii(_opCtx, nss, LockMode::MODE_X);
 
             if (collRaii.getCollection()) {
                 WriteUnitOfWork wunit(_opCtx);
@@ -264,7 +264,7 @@ public:
         ASSERT_OK(coll->insertDocument(_opCtx, stmt, nullOpDebug, fromMigrate));
     }
 
-    void createIndex(const Collection* coll, std::string indexName, const BSONObj& indexKey) {
+    void createIndex(Collection* coll, std::string indexName, const BSONObj& indexKey) {
 
         // Build an index.
         MultiIndexBlock indexer;
@@ -1868,7 +1868,7 @@ public:
         NamespaceString nss("unittests.timestampIndexBuilds");
         reset(nss);
 
-        AutoGetCollection autoColl(_opCtx, nss, LockMode::MODE_X);
+        AutoGetCollectionForMetadataWrite autoColl(_opCtx, nss, LockMode::MODE_X);
         RecordId catalogId = autoColl.getCollection()->getCatalogId();
 
         const LogicalTime insertTimestamp = _clock->tickClusterTime(1);
@@ -2490,7 +2490,7 @@ public:
         NamespaceString nss("unittests.timestampIndexDrops");
         reset(nss);
 
-        AutoGetCollection autoColl(_opCtx, nss, LockMode::MODE_X);
+        AutoGetCollectionForMetadataWrite autoColl(_opCtx, nss, LockMode::MODE_X);
 
         const LogicalTime insertTimestamp = _clock->tickClusterTime(1);
         {
@@ -2569,7 +2569,7 @@ public:
         NamespaceString nss("unittests.timestampIndexDrops");
         reset(nss);
 
-        AutoGetCollection autoColl(_opCtx, nss, LockMode::MODE_X);
+        AutoGetCollectionForMetadataWrite autoColl(_opCtx, nss, LockMode::MODE_X);
 
         const LogicalTime insertTimestamp = _clock->tickClusterTime(1);
         {
@@ -2717,7 +2717,7 @@ public:
         NamespaceString nss("unittests.timestampIndexBuilds");
         reset(nss);
 
-        AutoGetCollection autoColl(_opCtx, nss, LockMode::MODE_X);
+        AutoGetCollectionForMetadataWrite autoColl(_opCtx, nss, LockMode::MODE_X);
         auto collection = autoColl.getCollection();
 
         // Indexing of parallel arrays is not allowed, so these are deemed "bad".

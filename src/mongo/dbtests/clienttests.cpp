@@ -121,7 +121,7 @@ public:
 
         const Collection* collection = ctx.getCollection();
         ASSERT(collection);
-        IndexCatalog* indexCatalog = collection->getIndexCatalog();
+        const IndexCatalog* indexCatalog = collection->getIndexCatalog();
 
         const bool includeBuildUUIDs = false;
         const int options = 0;

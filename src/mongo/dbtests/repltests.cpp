@@ -259,8 +259,8 @@ protected:
             OldClientContext ctx(&_opCtx, ns);
             WriteUnitOfWork wunit(&_opCtx);
             Database* db = ctx.db();
-            const Collection* coll =
-                CollectionCatalog::get(&_opCtx).lookupCollectionByNamespace(&_opCtx, nss);
+            Collection* coll =
+                CollectionCatalog::get(&_opCtx).lookupCollectionByNamespaceForMetadataWrite(&_opCtx, nss);
             if (!coll) {
                 coll = db->createCollection(&_opCtx, nss);
             }

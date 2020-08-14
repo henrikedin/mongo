@@ -129,7 +129,7 @@ void createCollection(OperationContext* opCtx,
  */
 int _createIndexOnEmptyCollection(OperationContext* opCtx, NamespaceString nss, BSONObj indexSpec) {
     Lock::DBLock dbLock(opCtx, nss.db(), MODE_X);
-    AutoGetCollection autoColl(opCtx, nss, MODE_X);
+    AutoGetCollectionForMetadataWrite autoColl(opCtx, nss, MODE_X);
     auto coll = autoColl.getCollection();
 
     auto indexCatalog = coll->getIndexCatalog();

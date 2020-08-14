@@ -200,7 +200,7 @@ protected:
         auto indexSpec = (bob << "v" << kIndexVersion << "background" << background).obj();
 
         Lock::DBLock dbLock(opCtx(), nss.db(), MODE_X);
-        AutoGetCollection autoColl(opCtx(), nss, MODE_X);
+        AutoGetCollectionForMetadataWrite autoColl(opCtx(), nss, MODE_X);
         auto coll = autoColl.getCollection();
 
         MultiIndexBlock indexer;

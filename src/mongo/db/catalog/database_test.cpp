@@ -295,7 +295,7 @@ void _testDropCollectionThrowsExceptionIfThereAreIndexesInProgress(OperationCont
         auto db = autoDb.getDb();
         ASSERT_TRUE(db);
 
-        const Collection* collection = nullptr;
+        Collection* collection = nullptr;
         {
             WriteUnitOfWork wuow(opCtx);
             ASSERT_TRUE((collection = db->createCollection(opCtx, nss)));

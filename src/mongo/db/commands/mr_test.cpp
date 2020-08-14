@@ -530,7 +530,7 @@ TEST_F(MapReduceCommandTest, ReplacingExistingOutputCollectionPreservesIndexes) 
     auto indexSpec = BSON("v" << 2 << "key" << BSON("a" << 1) << "name"
                               << "a_1");
     {
-        AutoGetCollection autoColl(_opCtx.get(), outputNss, MODE_X);
+        AutoGetCollectionForMetadataWrite autoColl(_opCtx.get(), outputNss, MODE_X);
         auto coll = autoColl.getCollection();
         ASSERT(coll);
         auto indexCatalog = coll->getIndexCatalog();

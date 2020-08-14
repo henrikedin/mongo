@@ -870,7 +870,7 @@ public:
         lockDb(MODE_X);
 
         // Replace a correct index entry with a bad one and check it's invalid.
-        IndexCatalog* indexCatalog = coll->getIndexCatalog();
+        const IndexCatalog* indexCatalog = coll->getIndexCatalog();
         auto descriptor = indexCatalog->findIndexByName(&_opCtx, indexName);
         auto iam =
             const_cast<IndexAccessMethod*>(indexCatalog->getEntry(descriptor)->accessMethod());
@@ -987,7 +987,7 @@ public:
         // Insert additional multikey path metadata index keys.
         lockDb(MODE_X);
         const RecordId recordId(RecordId::ReservedId::kWildcardMultikeyMetadataId);
-        IndexCatalog* indexCatalog = coll->getIndexCatalog();
+        const IndexCatalog* indexCatalog = coll->getIndexCatalog();
         auto descriptor = indexCatalog->findIndexByName(&_opCtx, indexName);
         auto accessMethod =
             const_cast<IndexAccessMethod*>(indexCatalog->getEntry(descriptor)->accessMethod());
@@ -1106,7 +1106,7 @@ public:
         ensureValidateWorked();
 
         lockDb(MODE_X);
-        IndexCatalog* indexCatalog = coll->getIndexCatalog();
+        const IndexCatalog* indexCatalog = coll->getIndexCatalog();
         auto descriptor = indexCatalog->findIndexByName(&_opCtx, indexName);
         auto accessMethod =
             const_cast<IndexAccessMethod*>(indexCatalog->getEntry(descriptor)->accessMethod());
@@ -1285,7 +1285,7 @@ public:
         {
             lockDb(MODE_X);
 
-            IndexCatalog* indexCatalog = coll->getIndexCatalog();
+            const IndexCatalog* indexCatalog = coll->getIndexCatalog();
             auto descriptor = indexCatalog->findIndexByName(&_opCtx, indexName);
             auto iam =
                 const_cast<IndexAccessMethod*>(indexCatalog->getEntry(descriptor)->accessMethod());
@@ -1666,7 +1666,7 @@ public:
         {
             lockDb(MODE_X);
 
-            IndexCatalog* indexCatalog = coll->getIndexCatalog();
+            const IndexCatalog* indexCatalog = coll->getIndexCatalog();
             auto descriptor = indexCatalog->findIndexByName(&_opCtx, indexName);
             auto iam =
                 const_cast<IndexAccessMethod*>(indexCatalog->getEntry(descriptor)->accessMethod());
@@ -1997,7 +1997,7 @@ public:
         {
             lockDb(MODE_X);
 
-            IndexCatalog* indexCatalog = coll->getIndexCatalog();
+            const IndexCatalog* indexCatalog = coll->getIndexCatalog();
 
             InsertDeleteOptions options;
             options.logIfError = true;
@@ -2198,7 +2198,7 @@ public:
         // Set up a non-multikey index with multikey document.
         {
             lockDb(MODE_X);
-            IndexCatalog* indexCatalog = coll->getIndexCatalog();
+            const IndexCatalog* indexCatalog = coll->getIndexCatalog();
             auto descriptor = indexCatalog->findIndexByName(&_opCtx, indexName);
             auto iam =
                 const_cast<IndexAccessMethod*>(indexCatalog->getEntry(descriptor)->accessMethod());
@@ -2401,7 +2401,7 @@ public:
         {
             lockDb(MODE_X);
 
-            IndexCatalog* indexCatalog = coll->getIndexCatalog();
+            const IndexCatalog* indexCatalog = coll->getIndexCatalog();
             const std::string indexName = "a";
             auto descriptor = indexCatalog->findIndexByName(&_opCtx, indexName);
             auto iam =
@@ -2438,7 +2438,7 @@ public:
         {
             lockDb(MODE_X);
 
-            IndexCatalog* indexCatalog = coll->getIndexCatalog();
+            const IndexCatalog* indexCatalog = coll->getIndexCatalog();
             const std::string indexName = "b";
             auto descriptor = indexCatalog->findIndexByName(&_opCtx, indexName);
             auto iam =
@@ -2542,7 +2542,7 @@ public:
         {
             lockDb(MODE_X);
 
-            IndexCatalog* indexCatalog = coll->getIndexCatalog();
+            const IndexCatalog* indexCatalog = coll->getIndexCatalog();
 
             InsertDeleteOptions options;
             options.logIfError = true;
@@ -2947,7 +2947,7 @@ public:
         // Set up a non-multikey index with multikey document.
         {
             lockDb(MODE_X);
-            IndexCatalog* indexCatalog = coll->getIndexCatalog();
+            const IndexCatalog* indexCatalog = coll->getIndexCatalog();
             auto descriptor = indexCatalog->findIndexByName(&_opCtx, indexName);
             auto iam =
                 const_cast<IndexAccessMethod*>(indexCatalog->getEntry(descriptor)->accessMethod());
@@ -3171,7 +3171,7 @@ public:
         {
             lockDb(MODE_X);
 
-            IndexCatalog* indexCatalog = coll->getIndexCatalog();
+            const IndexCatalog* indexCatalog = coll->getIndexCatalog();
             auto descriptor = indexCatalog->findIndexByName(&_opCtx, indexName);
             auto iam =
                 const_cast<IndexAccessMethod*>(indexCatalog->getEntry(descriptor)->accessMethod());

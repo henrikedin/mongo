@@ -462,7 +462,7 @@ void _createIndexOnEmptyCollection(OperationContext* opCtx,
                                    const NamespaceString& nss,
                                    const std::string& indexName) {
     writeConflictRetry(opCtx, "_createIndexOnEmptyCollection", nss.ns(), [=] {
-        AutoGetCollection autoColl(opCtx, nss, MODE_X);
+        AutoGetCollectionForMetadataWrite autoColl(opCtx, nss, MODE_X);
         auto collection = autoColl.getCollection();
         ASSERT_TRUE(collection) << "Cannot create index on empty collection " << nss
                                 << " because collection " << nss << " does not exist.";

@@ -77,6 +77,5 @@ void RequiresCollectionStageBase<CollectionT>::doRestoreState() {
 }
 
 template class RequiresCollectionStageBase<const Collection*>;
-template class RequiresCollectionStageBase<const Collection*>;
 
 }  // namespace mongo

@@ -604,7 +604,7 @@ Status DatabaseImpl::createView(OperationContext* opCtx,
         opCtx, viewName, viewOnNss, BSONArray(options.pipeline), options.collation);
 }
 
-const Collection* DatabaseImpl::createCollection(OperationContext* opCtx,
+Collection* DatabaseImpl::createCollection(OperationContext* opCtx,
                                            const NamespaceString& nss,
                                            const CollectionOptions& options,
                                            bool createIdIndex,

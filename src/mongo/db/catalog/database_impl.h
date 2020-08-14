@@ -76,7 +76,7 @@ public:
                         bool createDefaultIndexes,
                         const BSONObj& idIndex) const final;
 
-    const Collection* createCollection(OperationContext* opCtx,
+    Collection* createCollection(OperationContext* opCtx,
                                  const NamespaceString& nss,
                                  const CollectionOptions& options = CollectionOptions(),
                                  bool createDefaultIndexes = true,

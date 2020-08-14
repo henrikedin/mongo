@@ -68,7 +68,7 @@ public:
         return _nss;
     }
 
-    const Collection* coll() const {
+    Collection* coll() const {
         return _coll->getCollection();
     }
 
@@ -89,7 +89,7 @@ protected:
     }
 
 private:
-    boost::optional<AutoGetCollection> _coll;
+    boost::optional<AutoGetCollectionForMetadataWrite> _coll;
     NamespaceString _nss{"fooDB.barColl"};
 };
 

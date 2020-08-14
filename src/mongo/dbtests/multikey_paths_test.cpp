@@ -84,7 +84,7 @@ public:
     void assertMultikeyPaths(const Collection* collection,
                              BSONObj keyPattern,
                              const MultikeyPaths& expectedMultikeyPaths) {
-        IndexCatalog* indexCatalog = collection->getIndexCatalog();
+        const IndexCatalog* indexCatalog = collection->getIndexCatalog();
         std::vector<const IndexDescriptor*> indexes;
         indexCatalog->findIndexesByKeyPattern(_opCtx.get(), keyPattern, false, &indexes);
         ASSERT_EQ(indexes.size(), 1U);

@@ -237,7 +237,7 @@ protected:
     Lock::DBLock _dbLock;
     OldClientContext _ctx;
     boost::intrusive_ptr<ExpressionContext> _expCtx;
-    const Collection* _coll;
+    Collection* _coll;
 };
 
 class QueryStageCountNoChangeDuringYield : public CountStageTest {

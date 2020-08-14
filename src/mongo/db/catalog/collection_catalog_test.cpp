@@ -652,7 +652,7 @@ TEST_F(CollectionCatalogTest, GetAllCollectionNamesAndGetAllDbNamesWithUncommitt
     }
 
     // One dbName with only an invisible collection does not appear in dbNames.
-    auto invisibleCollA = catalog.lookupCollectionByNamespace(&opCtx, aColl);
+    auto invisibleCollA = catalog.lookupCollectionByNamespaceForMetadataWrite(&opCtx, aColl);
     invisibleCollA->setCommitted(false);
 
     auto res = catalog.getAllCollectionNamesFromDb(&opCtx, "dbA");
@@ -669,7 +669,7 @@ TEST_F(CollectionCatalogTest, GetAllCollectionNamesAndGetAllDbNamesWithUncommitt
         std::vector<NamespaceString> dCollList = dbDNss;
         dCollList.erase(std::find(dCollList.begin(), dCollList.end(), nss));
 
-        auto invisibleCollD = catalog.lookupCollectionByNamespace(&opCtx, nss);
+        auto invisibleCollD = catalog.lookupCollectionByNamespaceForMetadataWrite(&opCtx, nss);
         invisibleCollD->setCommitted(false);
 
         res = catalog.getAllCollectionNamesFromDb(&opCtx, "dbD");
@@ -684,7 +684,7 @@ TEST_F(CollectionCatalogTest, GetAllCollectionNamesAndGetAllDbNamesWithUncommitt
 
     // If all dbNames consist only of invisible collections, none of these dbs is visible.
     for (auto& nss : nsss) {
-        auto invisibleColl = catalog.lookupCollectionByNamespace(&opCtx, nss);
+        auto invisibleColl = catalog.lookupCollectionByNamespaceForMetadataWrite(&opCtx, nss);
         invisibleColl->setCommitted(false);
     }
 

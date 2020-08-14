@@ -207,7 +207,7 @@ OplogInterfaceMock::Operation makeOpAndRecordId(long long seconds) {
 // Create an index on an empty collection. Returns the number of indexes that exist on the
 // collection after the given index is created.
 int _createIndexOnEmptyCollection(OperationContext* opCtx,
-                                  const Collection* coll,
+                                  Collection* coll,
                                   NamespaceString nss,
                                   BSONObj indexSpec) {
     Lock::DBLock dbLock(opCtx, nss.db(), MODE_X);

@@ -131,7 +131,7 @@ public:
      * well as creating it. Otherwise the loop will endlessly throw WCEs: the caller must check that
      * the collection exists to break free.
      */
-    virtual const Collection* createCollection(OperationContext* const opCtx,
+    virtual Collection* createCollection(OperationContext* const opCtx,
                                          const NamespaceString& nss,
                                          const CollectionOptions& options = CollectionOptions(),
                                          const bool createDefaultIndexes = true,
