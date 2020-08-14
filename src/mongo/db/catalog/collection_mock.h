@@ -79,10 +79,7 @@ public:
         return _indexCatalog.get();
     }
 
-    const RecordStore* getRecordStore() const {
-        std::abort();
-    }
-    RecordStore* getRecordStore() {
+    RecordStore* getRecordStore() const {
         std::abort();
     }
 

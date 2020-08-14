@@ -88,11 +88,7 @@ public:
         return _indexCatalog.get();
     }
 
-    const RecordStore* getRecordStore() const final {
-        return _recordStore.get();
-    }
-
-    RecordStore* getRecordStore() final {
+    RecordStore* getRecordStore() const final {
         return _recordStore.get();
     }
 
@@ -392,7 +388,7 @@ private:
     bool _committed = true;
 
     // The RecordStore may be null during a repair operation.
-    std::unique_ptr<RecordStore> _recordStore;  // owned
+    mutable std::unique_ptr<RecordStore> _recordStore;  // owned
     const bool _needCappedLock;
     std::unique_ptr<IndexCatalog> _indexCatalog;
 

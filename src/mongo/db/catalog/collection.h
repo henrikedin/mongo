@@ -294,8 +294,7 @@ public:
     virtual const IndexCatalog* getIndexCatalog() const = 0;
     virtual IndexCatalog* getIndexCatalog() = 0;
 
-    virtual const RecordStore* getRecordStore() const = 0;
-    virtual RecordStore* getRecordStore() = 0;
+    virtual RecordStore* getRecordStore() const = 0;
 
     virtual const BSONObj getValidatorDoc() const = 0;
 
