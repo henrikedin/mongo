@@ -275,17 +275,36 @@ Collection* CollectionCatalog::lookupCollectionByUUIDForMetadataWrite(OperationC
     }
 
     stdx::lock_guard<Latch> lock(_catalogLock);
-    auto coll = _lookupCollectionByUUID(lock, uuid);
+    auto coll = _lookupCollectionByUUIDFromStash(lock, uuid);
+    if (coll) {
+        return coll.get();
+    }
+    coll = _lookupCollectionByUUID(lock, uuid);
     if (coll && coll->isCommitted()) {
-        if (coll.use_count() == 4)
-            return coll.get();
-       
         auto cloned = coll->clone();
         auto ns = cloned->ns();
-        _collections[ns] = cloned;
-        _catalog[uuid] = cloned;
+        _collectionsStash[ns] = cloned;
+        _catalogStash[uuid] = cloned;
         auto dbIdPair = std::make_pair(ns.db().toString(), uuid);
-        _orderedCollections[dbIdPair] = cloned;
+        _orderedCollectionsStash[dbIdPair] = cloned;
+
+        opCtx->recoveryUnit()->onCommit(
+            [this, cloned, ns, uuid, dbIdPair](boost::optional<Timestamp> timeStamp) {
+                stdx::lock_guard<Latch> lock(_catalogLock);
+                _collectionsStash.erase(ns);
+                _catalogStash.erase(uuid);
+                _orderedCollectionsStash.erase(dbIdPair);
+
+                _collections[ns] = cloned;
+                _catalog[uuid] = cloned;
+                _orderedCollections[dbIdPair] = cloned;
+            });
+        opCtx->recoveryUnit()->onRollback([this, cloned, ns, uuid, dbIdPair]() {
+            stdx::lock_guard<Latch> lock(_catalogLock);
+            _collectionsStash.erase(ns);
+            _catalogStash.erase(uuid);
+            _orderedCollectionsStash.erase(dbIdPair);
+        });
         return cloned.get();
     }
     return nullptr;
@@ -298,7 +317,11 @@ Collection* CollectionCatalog::lookupCollectionByUUID(OperationContext* opCtx,
     }
 
     stdx::lock_guard<Latch> lock(_catalogLock);
-    auto coll = _lookupCollectionByUUID(lock, uuid);
+    auto coll = _lookupCollectionByUUIDFromStash(lock, uuid);
+    if (coll && coll->isCommitted()) {
+        return coll.get();
+    }
+    coll = _lookupCollectionByUUID(lock, uuid);
     if (coll && coll->isCommitted()) {
         return coll.get();
     }
@@ -315,6 +338,12 @@ bool CollectionCatalog::isCollectionAwaitingVisibility(CollectionUUID uuid) cons
     stdx::lock_guard<Latch> lock(_catalogLock);
     auto coll = _lookupCollectionByUUID(lock, uuid);
     return coll && !coll->isCommitted();
+}
+
+std::shared_ptr<Collection> CollectionCatalog::_lookupCollectionByUUIDFromStash(
+    WithLock withLock, CollectionUUID uuid) const {
+    auto foundIt = _catalogStash.find(uuid);
+    return foundIt == _catalogStash.end() ? nullptr : foundIt->second;
 }
 
 std::shared_ptr<Collection> CollectionCatalog::_lookupCollectionByUUID(WithLock,
@@ -342,19 +371,39 @@ Collection* CollectionCatalog::lookupCollectionByNamespaceForMetadataWrite(
     }
 
     stdx::lock_guard<Latch> lock(_catalogLock);
-    auto it = _collections.find(nss);
-    auto coll = (it == _collections.end() ? nullptr : it->second);
+    auto it = _collectionsStash.find(nss);
+    auto coll = (it == _collectionsStash.end() ? nullptr : it->second);
     if (coll && coll->isCommitted()) {
-        if (coll.use_count() == 4)
-            return coll.get();
+        return coll.get();
+    }
 
+    it = _collections.find(nss);
+    coll = (it == _collections.end() ? nullptr : it->second);
+    if (coll && coll->isCommitted()) {
         auto cloned = coll->clone();
-        it->second = cloned;
         auto uuid = cloned->uuid();
-        _catalog[uuid] = cloned;
-        auto dbIdPair = std::make_pair(cloned->ns().db().toString(), uuid);
-        _orderedCollections[dbIdPair] = cloned;
+        _collectionsStash[nss] = cloned;
+        _catalogStash[uuid] = cloned;
+        auto dbIdPair = std::make_pair(nss.db().toString(), uuid);
+        _orderedCollectionsStash[dbIdPair] = cloned;
 
+        opCtx->recoveryUnit()->onCommit(
+            [this, cloned, nss, uuid, dbIdPair](boost::optional<Timestamp> timeStamp) {
+                stdx::lock_guard<Latch> lock(_catalogLock);
+                _collectionsStash.erase(nss);
+                _catalogStash.erase(uuid);
+                _orderedCollectionsStash.erase(dbIdPair);
+
+                _collections[nss] = cloned;
+                _catalog[uuid] = cloned;
+                _orderedCollections[dbIdPair] = cloned;
+            });
+        opCtx->recoveryUnit()->onRollback([this, cloned, nss, uuid, dbIdPair]() {
+            stdx::lock_guard<Latch> lock(_catalogLock);
+            _collectionsStash.erase(nss);
+            _catalogStash.erase(uuid);
+            _orderedCollectionsStash.erase(dbIdPair);
+        });
         return cloned.get();
     }
     return nullptr;
@@ -367,8 +416,13 @@ Collection* CollectionCatalog::lookupCollectionByNamespace(OperationContext* opC
     }
 
     stdx::lock_guard<Latch> lock(_catalogLock);
-    auto it = _collections.find(nss);
-    auto coll = (it == _collections.end() ? nullptr : it->second);
+    auto it = _collectionsStash.find(nss);
+    auto coll = (it == _collectionsStash.end() ? nullptr : it->second);
+    if (coll && coll->isCommitted()) {
+        return coll.get();
+    }
+    it = _collections.find(nss);
+    coll = (it == _collections.end() ? nullptr : it->second);
     if (coll && coll->isCommitted()) {
         return coll.get();
     }

@@ -295,6 +295,7 @@ public:
 private:
     friend class CollectionCatalog::iterator;
 
+    std::shared_ptr<Collection> _lookupCollectionByUUIDFromStash(WithLock, CollectionUUID uuid) const;
     std::shared_ptr<Collection> _lookupCollectionByUUID(WithLock, CollectionUUID uuid) const;
 
     const std::vector<CollectionUUID>& _getOrdering_inlock(const StringData& db,
@@ -320,6 +321,10 @@ private:
     CollectionCatalogMap _catalog;
     OrderedCollectionMap _orderedCollections;  // Ordered by <dbName, collUUID> pair
     NamespaceCollectionMap _collections;
+
+    CollectionCatalogMap _catalogStash;
+    OrderedCollectionMap _orderedCollectionsStash;  // Ordered by <dbName, collUUID> pair
+    NamespaceCollectionMap _collectionsStash;
 
     /**
      * Generation number to track changes to the catalog that could invalidate iterators.
