@@ -134,7 +134,7 @@ public:
         OpDebug* opDebug,
         bool fromMigrate = false,
         bool noWarn = false,
-        Collection::StoreDeletedDoc storeDeletedDoc = Collection::StoreDeletedDoc::Off) final;
+        Collection::StoreDeletedDoc storeDeletedDoc = Collection::StoreDeletedDoc::Off) const final;
 
     /*
      * Inserts all documents inside one WUOW.
@@ -147,7 +147,7 @@ public:
                            std::vector<InsertStatement>::const_iterator begin,
                            std::vector<InsertStatement>::const_iterator end,
                            OpDebug* opDebug,
-                           bool fromMigrate = false) final;
+                           bool fromMigrate = false) const final;
 
     /**
      * this does NOT modify the doc before inserting
@@ -158,7 +158,7 @@ public:
     Status insertDocument(OperationContext* opCtx,
                           const InsertStatement& doc,
                           OpDebug* opDebug,
-                          bool fromMigrate = false) final;
+                          bool fromMigrate = false) const final;
 
     /**
      * Callers must ensure no document validation is performed for this collection when calling
@@ -166,7 +166,7 @@ public:
      */
     Status insertDocumentsForOplog(OperationContext* opCtx,
                                    std::vector<Record>* records,
-                                   const std::vector<Timestamp>& timestamps) final;
+                                   const std::vector<Timestamp>& timestamps) const final;
 
     /**
      * Inserts a document into the record store for a bulk loader that manages the index building
@@ -177,7 +177,7 @@ public:
      */
     Status insertDocumentForBulkLoader(OperationContext* opCtx,
                                        const BSONObj& doc,
-                                       const OnRecordInsertedFn& onRecordInserted) final;
+                                       const OnRecordInsertedFn& onRecordInserted) const final;
 
     /**
      * Updates the document @ oldLocation with newDoc.
@@ -194,7 +194,7 @@ public:
                             const BSONObj& newDoc,
                             bool indexesAffected,
                             OpDebug* opDebug,
-                            CollectionUpdateArgs* args) final;
+                            CollectionUpdateArgs* args) const final;
 
     bool updateWithDamagesSupported() const final;
 
@@ -210,7 +210,7 @@ public:
                                                      const Snapshotted<RecordData>& oldRec,
                                                      const char* damageSource,
                                                      const mutablebson::DamageVector& damages,
-                                                     CollectionUpdateArgs* args) final;
+                                                     CollectionUpdateArgs* args) const final;
 
     // -----------
 
@@ -374,7 +374,7 @@ private:
     Status _insertDocuments(OperationContext* opCtx,
                             std::vector<InsertStatement>::const_iterator begin,
                             std::vector<InsertStatement>::const_iterator end,
-                            OpDebug* opDebug);
+                            OpDebug* opDebug) const;
 
     // This object is decorable and decorated with unversioned data related to the collection. Not
     // associated with any particular Collection instance for the collection, but shared across all
