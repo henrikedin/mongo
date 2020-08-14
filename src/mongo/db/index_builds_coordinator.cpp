@@ -110,7 +110,7 @@ void checkShardKeyRestrictions(OperationContext* opCtx,
  * bypass the index build registration.
  */
 bool shouldBuildIndexesOnEmptyCollectionSinglePhased(OperationContext* opCtx,
-                                                     Collection* collection,
+                                                     const Collection* collection,
                                                      IndexBuildProtocol protocol) {
     const auto& nss = collection->ns();
     invariant(opCtx->lockState()->isCollectionLockedForMode(nss, MODE_X), str::stream() << nss);
@@ -1204,7 +1204,7 @@ void IndexBuildsCoordinator::_completeAbort(OperationContext* opCtx,
                                             IndexBuildAction signalAction,
                                             Status reason) {
     auto coll =
-        CollectionCatalog::get(opCtx).lookupCollectionByUUID(opCtx, replState->collectionUUID);
+        CollectionCatalog::get(opCtx).lookupCollectionByUUIDForRead(opCtx, replState->collectionUUID);
     const NamespaceStringOrUUID dbAndUUID(replState->dbName, replState->collectionUUID);
     auto nss = coll->ns();
     auto replCoord = repl::ReplicationCoordinator::get(opCtx);
@@ -1221,7 +1221,7 @@ void IndexBuildsCoordinator::_completeAbort(OperationContext* opCtx,
                       str::stream() << "singlePhase: "
                                     << (IndexBuildProtocol::kSinglePhase == replState->protocol));
             auto onCleanUpFn = [&] { onAbortIndexBuild(opCtx, coll->ns(), *replState, reason); };
-            _indexBuildsManager.abortIndexBuild(opCtx, coll, replState->buildUUID, onCleanUpFn);
+            _indexBuildsManager.abortIndexBuild(opCtx, coll.get(), replState->buildUUID, onCleanUpFn);
             removeIndexBuildEntryAfterCommitOrAbort(opCtx, dbAndUUID, *replState);
             break;
         }
@@ -1244,7 +1244,7 @@ void IndexBuildsCoordinator::_completeAbort(OperationContext* opCtx,
                   "collectionUUID"_attr = replState->collectionUUID);
 
             _indexBuildsManager.abortIndexBuild(
-                opCtx, coll, replState->buildUUID, MultiIndexBlock::kNoopOnCleanUpFn);
+                opCtx, coll.get(), replState->buildUUID, MultiIndexBlock::kNoopOnCleanUpFn);
             break;
         }
         // Deletes the index from the durable catalog.
@@ -1269,7 +1269,7 @@ void IndexBuildsCoordinator::_completeAbort(OperationContext* opCtx,
                   "collectionUUID"_attr = replState->collectionUUID);
 
             _indexBuildsManager.abortIndexBuild(
-                opCtx, coll, replState->buildUUID, MultiIndexBlock::kNoopOnCleanUpFn);
+                opCtx, coll.get(), replState->buildUUID, MultiIndexBlock::kNoopOnCleanUpFn);
             break;
         }
         // No locks are required when aborting due to rollback. This performs no storage engine
@@ -1278,7 +1278,7 @@ void IndexBuildsCoordinator::_completeAbort(OperationContext* opCtx,
             invariant(replState->protocol == IndexBuildProtocol::kTwoPhase);
             invariant(replCoord->getMemberState().rollback());
             _indexBuildsManager.abortIndexBuildWithoutCleanupForRollback(
-                opCtx, coll, replState->buildUUID);
+                opCtx, coll.get(), replState->buildUUID);
             break;
         }
         case IndexBuildAction::kNoAction:
@@ -1309,7 +1309,7 @@ void IndexBuildsCoordinator::_completeSelfAbort(OperationContext* opCtx,
 void IndexBuildsCoordinator::_completeAbortForShutdown(
     OperationContext* opCtx,
     std::shared_ptr<ReplIndexBuildState> replState,
-    Collection* collection) {
+    const Collection* collection) {
     // Leave it as-if kill -9 happened. Startup recovery will restart the index build.
     _indexBuildsManager.abortIndexBuildWithoutCleanupForShutdown(
         opCtx, collection, replState->buildUUID);
@@ -1819,7 +1819,7 @@ IndexBuildsCoordinator::_filterSpecsAndRegisterBuild(OperationContext* opCtx,
     // AutoGetCollection throws an exception if it is unable to look up the collection by UUID.
     NamespaceStringOrUUID nssOrUuid{dbName.toString(), collectionUUID};
     AutoGetCollection autoColl(opCtx, nssOrUuid, MODE_X);
-    auto collection = autoColl.getCollection();
+    const Collection* collection = autoColl.getCollection();
     const auto& nss = collection->ns();
 
     // Disallow index builds on drop-pending namespaces (system.drop.*) if we are primary.
@@ -2154,7 +2154,7 @@ void runOnAlternateContext(OperationContext* opCtx, std::string name, Func func)
 
 void IndexBuildsCoordinator::_cleanUpSinglePhaseAfterFailure(
     OperationContext* opCtx,
-    Collection* collection,
+    const Collection* collection,
     std::shared_ptr<ReplIndexBuildState> replState,
     const IndexBuildOptions& indexBuildOptions,
     const Status& status) {
@@ -2182,7 +2182,7 @@ void IndexBuildsCoordinator::_cleanUpSinglePhaseAfterFailure(
 
 void IndexBuildsCoordinator::_cleanUpTwoPhaseAfterFailure(
     OperationContext* opCtx,
-    Collection* collection,
+    const Collection* collection,
     std::shared_ptr<ReplIndexBuildState> replState,
     const IndexBuildOptions& indexBuildOptions,
     const Status& status) {
@@ -2263,7 +2263,7 @@ void IndexBuildsCoordinator::_runIndexBuildInner(
     // is called. The collection can be renamed, but it is OK for the name to be stale just for
     // logging purposes.
     auto collection =
-        CollectionCatalog::get(opCtx).lookupCollectionByUUID(opCtx, replState->collectionUUID);
+        CollectionCatalog::get(opCtx).lookupCollectionByUUIDForRead(opCtx, replState->collectionUUID);
     invariant(collection,
               str::stream() << "Collection with UUID " << replState->collectionUUID
                             << " should exist because an index build is in progress: "
@@ -2286,11 +2286,11 @@ void IndexBuildsCoordinator::_runIndexBuildInner(
                   status.isA<ErrorCategory::ShutdownError>(),
               str::stream() << "Unexpected error code during index build cleanup: " << status);
     if (IndexBuildProtocol::kSinglePhase == replState->protocol) {
-        _cleanUpSinglePhaseAfterFailure(opCtx, collection, replState, indexBuildOptions, status);
+        _cleanUpSinglePhaseAfterFailure(opCtx, collection.get(), replState, indexBuildOptions, status);
     } else {
         invariant(IndexBuildProtocol::kTwoPhase == replState->protocol,
                   str::stream() << replState->buildUUID);
-        _cleanUpTwoPhaseAfterFailure(opCtx, collection, replState, indexBuildOptions, status);
+        _cleanUpTwoPhaseAfterFailure(opCtx, collection.get(), replState, indexBuildOptions, status);
     }
 
     // Any error that escapes at this point is not fatal and can be handled by the caller.
@@ -2793,7 +2793,7 @@ std::vector<std::shared_ptr<ReplIndexBuildState>> IndexBuildsCoordinator::_filte
     return indexBuilds;
 }
 
-int IndexBuildsCoordinator::getNumIndexesTotal(OperationContext* opCtx, Collection* collection) {
+int IndexBuildsCoordinator::getNumIndexesTotal(OperationContext* opCtx, const Collection* collection) {
     invariant(collection);
     const auto& nss = collection->ns();
     invariant(opCtx->lockState()->isLocked(),
@@ -2808,7 +2808,7 @@ int IndexBuildsCoordinator::getNumIndexesTotal(OperationContext* opCtx, Collecti
 
 std::vector<BSONObj> IndexBuildsCoordinator::prepareSpecListForCreate(
     OperationContext* opCtx,
-    Collection* collection,
+    const Collection* collection,
     const NamespaceString& nss,
     const std::vector<BSONObj>& indexSpecs) {
     UncommittedCollections::get(opCtx).invariantHasExclusiveAccessToCollection(opCtx,

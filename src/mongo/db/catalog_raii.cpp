@@ -159,6 +159,11 @@ CatalogCollectionLookupForRead::CollectionStorage CatalogCollectionLookupForRead
     return CollectionCatalog::get(opCtx).lookupCollectionByNamespaceForRead(opCtx, nss);
 }
 
+CatalogCollectionLookupForMetadataWrite::CollectionStorage CatalogCollectionLookupForMetadataWrite::lookupCollection(
+    OperationContext* opCtx, const NamespaceString& nss) {
+    return CollectionCatalog::get(opCtx).lookupCollectionByNamespaceForMetadataWrite(opCtx, nss);
+}
+
 LockMode fixLockModeForSystemDotViewsChanges(const NamespaceString& nss, LockMode mode) {
     return nss.isSystemDotViews() ? MODE_X : mode;
 }
@@ -219,5 +224,6 @@ AutoGetOplog::AutoGetOplog(OperationContext* opCtx, OplogAccessMode mode, Date_t
 
 template class AutoGetCollectionBase<CatalogCollectionLookup>;
 template class AutoGetCollectionBase<CatalogCollectionLookupForRead>;
+template class AutoGetCollectionBase<CatalogCollectionLookupForMetadataWrite>;
 
 }  // namespace mongo

@@ -111,7 +111,7 @@ MultiIndexBlock::~MultiIndexBlock() {
 MultiIndexBlock::OnCleanUpFn MultiIndexBlock::kNoopOnCleanUpFn = []() {};
 
 void MultiIndexBlock::abortIndexBuild(OperationContext* opCtx,
-                                      Collection* collection,
+                                      const Collection* collection,
                                       OnCleanUpFn onCleanUp) noexcept {
     if (_collectionUUID) {
         // init() was previously called with a collection pointer, so ensure that the same

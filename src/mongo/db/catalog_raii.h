@@ -167,8 +167,8 @@ private:
 };
 
 struct CatalogCollectionLookup {
-    using CollectionStorage = Collection*;
-    using CollectionPtr = Collection*;
+    using CollectionStorage = const Collection*;
+    using CollectionPtr = const Collection*;
 
     static CollectionStorage lookupCollection(OperationContext* opCtx, const NamespaceString& nss);
     static CollectionPtr toCollectionPtr(CollectionStorage collection) {
@@ -185,7 +185,30 @@ struct CatalogCollectionLookupForRead {
     }
 };
 
+struct CatalogCollectionLookupForMetadataWrite {
+    using CollectionStorage = Collection*;
+    using CollectionPtr = Collection*;
+
+    static CollectionStorage lookupCollection(OperationContext* opCtx, const NamespaceString& nss);
+    static CollectionPtr toCollectionPtr(CollectionStorage collection) {
+        return collection;
+    }
+};
+
 class AutoGetCollection : public AutoGetCollectionBase<CatalogCollectionLookup> {
+public:
+    // using AutoGetCollectionBase::AutoGetCollectionBase;
+    AutoGetCollection(
+        OperationContext* opCtx,
+        const NamespaceStringOrUUID& nsOrUUID,
+        LockMode modeColl,
+        AutoGetCollectionViewMode viewMode = AutoGetCollectionViewMode::kViewsForbidden,
+        Date_t deadline = Date_t::max()) : AutoGetCollectionBase(opCtx, nsOrUUID, modeColl, viewMode, deadline) {
+    }
+};
+
+class AutoGetCollectionForMetadataWrite
+    : public AutoGetCollectionBase<CatalogCollectionLookupForMetadataWrite> {
 public:
     using AutoGetCollectionBase::AutoGetCollectionBase;
 };
