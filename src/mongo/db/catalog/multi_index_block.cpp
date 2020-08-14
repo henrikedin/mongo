@@ -111,7 +111,7 @@ MultiIndexBlock::~MultiIndexBlock() {
 MultiIndexBlock::OnCleanUpFn MultiIndexBlock::kNoopOnCleanUpFn = []() {};
 
 void MultiIndexBlock::abortIndexBuild(OperationContext* opCtx,
-                                      const Collection* collection,
+                                      Collection* collection,
                                       OnCleanUpFn onCleanUp) noexcept {
     if (_collectionUUID) {
         // init() was previously called with a collection pointer, so ensure that the same
@@ -180,7 +180,7 @@ MultiIndexBlock::OnInitFn MultiIndexBlock::makeTimestampedIndexOnInitFn(Operatio
 }
 
 StatusWith<std::vector<BSONObj>> MultiIndexBlock::init(OperationContext* opCtx,
-                                                       const Collection* collection,
+                                                       Collection* collection,
                                                        const BSONObj& spec,
                                                        OnInitFn onInit) {
     const auto indexes = std::vector<BSONObj>(1, spec);
@@ -189,7 +189,7 @@ StatusWith<std::vector<BSONObj>> MultiIndexBlock::init(OperationContext* opCtx,
 
 StatusWith<std::vector<BSONObj>> MultiIndexBlock::init(
     OperationContext* opCtx,
-    const Collection* collection,
+    Collection* collection,
     const std::vector<BSONObj>& indexSpecs,
     OnInitFn onInit,
     const boost::optional<ResumeIndexInfo>& resumeInfo) {
@@ -724,7 +724,7 @@ MultiIndexBlock::OnCreateEachFn MultiIndexBlock::kNoopOnCreateEachFn = [](const 
 MultiIndexBlock::OnCommitFn MultiIndexBlock::kNoopOnCommitFn = []() {};
 
 Status MultiIndexBlock::commit(OperationContext* opCtx,
-                               const Collection* collection,
+                               Collection* collection,
                                OnCreateEachFn onCreateEach,
                                OnCommitFn onCommit) {
     invariant(!_buildIsCleanedUp);

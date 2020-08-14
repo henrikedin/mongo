@@ -71,8 +71,8 @@ Status emptyCapped(OperationContext* opCtx, const NamespaceString& collectionNam
     Database* db = autoDb.getDb();
     uassert(ErrorCodes::NamespaceNotFound, "no such database", db);
 
-    const Collection* collection =
-        CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, collectionName);
+    Collection* collection =
+        CollectionCatalog::get(opCtx).lookupCollectionByNamespaceForMetadataWrite(opCtx, collectionName);
     uassert(ErrorCodes::CommandNotSupportedOnView,
             str::stream() << "emptycapped not supported on view: " << collectionName.ns(),
             collection || !ViewCatalog::get(db)->lookup(opCtx, collectionName.ns()));

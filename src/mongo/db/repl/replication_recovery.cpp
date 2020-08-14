@@ -647,8 +647,8 @@ void ReplicationRecoveryImpl::_truncateOplogTo(OperationContext* opCtx,
     const NamespaceString oplogNss(NamespaceString::kRsOplogNamespace);
     AutoGetDb autoDb(opCtx, oplogNss.db(), MODE_IX);
     Lock::CollectionLock oplogCollectionLoc(opCtx, oplogNss, MODE_X);
-    const Collection* oplogCollection =
-        CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, oplogNss);
+    Collection* oplogCollection =
+        CollectionCatalog::get(opCtx).lookupCollectionByNamespaceForMetadataWrite(opCtx, oplogNss);
     if (!oplogCollection) {
         fassertFailedWithStatusNoTrace(
             34418,

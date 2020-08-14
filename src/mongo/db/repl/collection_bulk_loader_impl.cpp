@@ -55,7 +55,7 @@ namespace repl {
 
 CollectionBulkLoaderImpl::CollectionBulkLoaderImpl(ServiceContext::UniqueClient&& client,
                                                    ServiceContext::UniqueOperationContext&& opCtx,
-                                                   std::unique_ptr<AutoGetCollection>&& autoColl,
+                                                   std::unique_ptr<AutoGetCollectionForMetadataWrite>&& autoColl,
                                                    const BSONObj& idIndexSpec)
     : _client{std::move(client)},
       _opCtx{std::move(opCtx)},
@@ -89,7 +89,7 @@ Status CollectionBulkLoaderImpl::init(const std::vector<BSONObj>& secondaryIndex
             _secondaryIndexesBlock->ignoreUniqueConstraint();
             auto status =
                 _secondaryIndexesBlock
-                    ->init(_opCtx.get(), _collection, specs, MultiIndexBlock::kNoopOnInitFn)
+                    ->init(_opCtx.get(), _collection, specs, MultiIndexBlock::kNoopOnInitFn) // TODO HEED
                     .getStatus();
             if (!status.isOK()) {
                 return status;
@@ -100,7 +100,7 @@ Status CollectionBulkLoaderImpl::init(const std::vector<BSONObj>& secondaryIndex
         if (!_idIndexSpec.isEmpty()) {
             auto status =
                 _idIndexBlock
-                    ->init(_opCtx.get(), _collection, _idIndexSpec, MultiIndexBlock::kNoopOnInitFn)
+                    ->init(_opCtx.get(), _collection, _idIndexSpec, MultiIndexBlock::kNoopOnInitFn) // TODO HEED
                     .getStatus();
             if (!status.isOK()) {
                 return status;

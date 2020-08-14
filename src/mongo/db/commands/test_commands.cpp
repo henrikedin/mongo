@@ -145,8 +145,8 @@ public:
         }
 
         // Lock the database in mode IX and lock the collection exclusively.
-        AutoGetCollection autoColl(opCtx, fullNs, MODE_X);
-        const Collection* collection = autoColl.getCollection();
+        AutoGetCollectionForMetadataWrite autoColl(opCtx, fullNs, MODE_X);
+        Collection* collection = autoColl.getCollection();
         if (!collection) {
             uasserted(ErrorCodes::NamespaceNotFound,
                       str::stream() << "collection " << fullNs.ns() << " does not exist");

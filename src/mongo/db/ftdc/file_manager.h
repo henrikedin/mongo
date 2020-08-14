@@ -70,7 +70,7 @@ public:
      */
     static StatusWith<std::unique_ptr<FTDCFileManager>> create(const FTDCConfig* config,
                                                                const boost::filesystem::path& path,
-                                                               FTDCCollectorconst Collection* collection,
+                                                               FTDCCollectorCollection* collection,
                                                                Client* client);
 
     /**
@@ -101,7 +101,7 @@ public:
 private:
     FTDCFileManager(const FTDCConfig* config,
                     const boost::filesystem::path& path,
-                    FTDCCollectorconst Collection* collection);
+                    FTDCCollectorCollection* collection);
 
     /**
      * Gets a list of metrics files in a directory.
@@ -153,7 +153,7 @@ private:
     boost::filesystem::path _path;
 
     // collection of collectors to add to new files on rotation, and server restart
-    FTDCCollectorconst Collection* const _rotateCollectors;
+    FTDCCollectorCollection* const _rotateCollectors;
 };
 
 }  // namespace mongo

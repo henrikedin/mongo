@@ -144,7 +144,7 @@ private:
      */
     void _dropCollectionIndexes(OperationContext* opCtx,
                                 const NamespaceString& nss,
-                                const Collection* collection) const;
+                                Collection* collection) const;
 
     const std::string _name;  // "dbname"
 

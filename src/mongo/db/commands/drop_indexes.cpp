@@ -145,8 +145,8 @@ public:
                     << toReIndexNss << "' while replication is active");
         }
 
-        AutoGetCollection autoColl(opCtx, toReIndexNss, MODE_X);
-        const Collection* collection = autoColl.getCollection();
+        AutoGetCollectionForMetadataWrite autoColl(opCtx, toReIndexNss, MODE_X); // TODO HEED (not in wuow)
+        Collection* collection = autoColl.getCollection();
         if (!collection) {
             auto db = autoColl.getDb();
             if (db && ViewCatalog::get(db)->lookup(opCtx, toReIndexNss.ns()))

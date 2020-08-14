@@ -95,7 +95,7 @@ const BSONObj IndexCatalogImpl::_idObj = BSON("_id" << 1);
 
 // -------------
 
-IndexCatalogImpl::IndexCatalogImpl(const Collection* collection) : _collection(collection) {}
+IndexCatalogImpl::IndexCatalogImpl(Collection* collection) : _collection(collection) {}
 
 Status IndexCatalogImpl::init(OperationContext* opCtx) {
     vector<string> indexNames;
@@ -1017,7 +1017,7 @@ namespace {
 class IndexRemoveChange final : public RecoveryUnit::Change {
 public:
     IndexRemoveChange(OperationContext* opCtx,
-                      const Collection* collection,
+                      Collection* collection,
                       IndexCatalogEntryContainer* entries,
                       std::shared_ptr<IndexCatalogEntry> entry)
         : _opCtx(opCtx), _collection(collection), _entries(entries), _entry(std::move(entry)) {}
@@ -1047,7 +1047,7 @@ public:
 
 private:
     OperationContext* _opCtx;
-    const Collection* _collection;
+    Collection* _collection;
     IndexCatalogEntryContainer* _entries;
     std::shared_ptr<IndexCatalogEntry> _entry;
 };

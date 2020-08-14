@@ -139,7 +139,7 @@ bool Helpers::findById(OperationContext* opCtx,
     if (nsFound)
         *nsFound = true;
 
-    IndexCatalog* catalog = collection->getIndexCatalog();
+    const IndexCatalog* catalog = collection->getIndexCatalog();
     const IndexDescriptor* desc = catalog->findIdIndex(opCtx);
 
     if (!desc)

@@ -101,7 +101,7 @@ Status checkReplState(OperationContext* opCtx,
  * Validates the key pattern passed through the command.
  */
 StatusWith<const IndexDescriptor*> getDescriptorByKeyPattern(OperationContext* opCtx,
-                                                             IndexCatalog* indexCatalog,
+                                                             const IndexCatalog* indexCatalog,
                                                              const BSONElement& keyPattern) {
     const bool includeUnfinished = true;
     std::vector<const IndexDescriptor*> indexes;
@@ -246,7 +246,7 @@ std::vector<UUID> abortActiveIndexBuilders(OperationContext* opCtx,
 }
 
 Status dropReadyIndexes(OperationContext* opCtx,
-                        const Collection* collection,
+                        Collection* collection,
                         const std::vector<std::string>& indexNames,
                         BSONObjBuilder* anObjBuilder) {
     invariant(opCtx->lockState()->isCollectionLockedForMode(collection->ns(), MODE_X));
@@ -320,11 +320,11 @@ Status dropIndexes(OperationContext* opCtx,
                    BSONObjBuilder* result) {
     // We only need to hold an intent lock to send abort signals to the active index builder(s) we
     // intend to abort.
-    boost::optional<AutoGetCollection> autoColl;
+    boost::optional<AutoGetCollectionForMetadataWrite> autoColl;
     autoColl.emplace(opCtx, nss, MODE_IX);
 
     Database* db = autoColl->getDb();
-    const Collection* collection = autoColl->getCollection();
+    Collection* collection = autoColl->getCollection();
     Status status = checkView(opCtx, nss, db, collection);
     if (!status.isOK()) {
         return status;
@@ -506,11 +506,11 @@ Status dropIndexesForApplyOps(OperationContext* opCtx,
                               const BSONObj& cmdObj,
                               BSONObjBuilder* result) {
     return writeConflictRetry(opCtx, "dropIndexes", nss.db(), [opCtx, &nss, &cmdObj, result] {
-        AutoGetCollection autoColl(opCtx, nss, MODE_X);
+        AutoGetCollectionForMetadataWrite autoColl(opCtx, nss, MODE_X);
 
         // If db/collection does not exist, short circuit and return.
         Database* db = autoColl.getDb();
-        const Collection* collection = autoColl.getCollection();
+        Collection* collection = autoColl.getCollection();
         Status status = checkView(opCtx, nss, db, collection);
         if (!status.isOK()) {
             return status;

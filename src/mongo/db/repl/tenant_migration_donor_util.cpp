@@ -195,7 +195,7 @@ void updateDonorStateDocument(OperationContext* opCtx,
         [&]() -> Status {
             AutoGetCollection autoCollection(
                 opCtx, NamespaceString::kTenantMigrationDonorsNamespace, MODE_IX);
-            Collection* collection = autoCollection.getCollection();
+            const Collection* collection = autoCollection.getCollection();
 
             if (!collection) {
                 return Status(ErrorCodes::NamespaceNotFound,

@@ -906,7 +906,7 @@ void rollbackCreateIndexes(OperationContext* opCtx, UUID uuid, std::set<std::str
         CollectionCatalog::get(opCtx).lookupNSSByUUID(opCtx, uuid);
     invariant(nss);
     Lock::DBLock dbLock(opCtx, nss->db(), MODE_X);
-    const Collection* collection = CollectionCatalog::get(opCtx).lookupCollectionByUUID(opCtx, uuid);
+    Collection* collection = CollectionCatalog::get(opCtx).lookupCollectionByUUIDForMetadataWrite(opCtx, uuid);
 
     // If we cannot find the collection, we skip over dropping the index.
     if (!collection) {
@@ -1571,8 +1571,8 @@ void rollback_internal::syncFixUp(OperationContext* opCtx,
             auto db = databaseHolder->openDb(opCtx, nss->db().toString());
             invariant(db);
 
-            const Collection* collection =
-                CollectionCatalog::get(opCtx).lookupCollectionByUUID(opCtx, uuid);
+            Collection* collection =
+                CollectionCatalog::get(opCtx).lookupCollectionByUUIDForMetadataWrite(opCtx, uuid);
             invariant(collection);
 
             auto infoResult = rollbackSource.getCollectionInfoByUUID(nss->db().toString(), uuid);
@@ -1726,7 +1726,7 @@ void rollback_internal::syncFixUp(OperationContext* opCtx,
                 const NamespaceString docNss(doc.ns);
                 Lock::DBLock docDbLock(opCtx, docNss.db(), MODE_X);
                 OldClientContext ctx(opCtx, doc.ns.toString());
-                const Collection* collection = catalog.lookupCollectionByUUID(opCtx, uuid);
+                Collection* collection = catalog.lookupCollectionByUUIDForMetadataWrite(opCtx, uuid);
 
                 // Adds the doc to our rollback file if the collection was not dropped while
                 // rolling back createCollection operations. Does not log an error when
@@ -1942,8 +1942,8 @@ void rollback_internal::syncFixUp(OperationContext* opCtx,
         Lock::DBLock oplogDbLock(opCtx, oplogNss.db(), MODE_IX);
         Lock::CollectionLock oplogCollectionLoc(opCtx, oplogNss, MODE_X);
         OldClientContext ctx(opCtx, oplogNss.ns());
-        const Collection* oplogCollection =
-            CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, oplogNss);
+        Collection* oplogCollection =
+            CollectionCatalog::get(opCtx).lookupCollectionByNamespaceForMetadataWrite(opCtx, oplogNss);
         if (!oplogCollection) {
             fassertFailedWithStatusNoTrace(
                 40495,

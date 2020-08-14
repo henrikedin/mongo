@@ -673,7 +673,7 @@ Status GeoParser::parseCenterSphere(const BSONObj& obj, CapWithCRS* out) {
 //  }
 Status GeoParser::parseGeometryCollection(const BSONObj& obj,
                                           bool skipValidation,
-                                          Geometryconst Collection* out) {
+                                          GeometryCollection* out) {
     BSONElement coordElt = dps::extractElementAtPath(obj, GEOJSON_GEOMETRIES);
     if (Array != coordElt.type())
         return BAD_VALUE("GeometryCollection geometries must be an array");

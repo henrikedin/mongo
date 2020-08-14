@@ -111,12 +111,12 @@ public:
     using OnInitFn = std::function<Status(std::vector<BSONObj>& specs)>;
     StatusWith<std::vector<BSONObj>> init(
         OperationContext* opCtx,
-        const Collection* collection,
+        Collection* collection,
         const std::vector<BSONObj>& specs,
         OnInitFn onInit,
         const boost::optional<ResumeIndexInfo>& resumeInfo = boost::none);
     StatusWith<std::vector<BSONObj>> init(OperationContext* opCtx,
-                                          const Collection* collection,
+                                          Collection* collection,
                                           const BSONObj& spec,
                                           OnInitFn onInit);
     StatusWith<std::vector<BSONObj>> initForResume(OperationContext* opCtx,
@@ -229,7 +229,7 @@ public:
     using OnCommitFn = std::function<void()>;
     using OnCreateEachFn = std::function<void(const BSONObj& spec)>;
     Status commit(OperationContext* opCtx,
-                  const Collection* collection,
+                  Collection* collection,
                   OnCreateEachFn onCreateEach,
                   OnCommitFn onCommit);
 
@@ -253,7 +253,7 @@ public:
      */
     using OnCleanUpFn = std::function<void()>;
     void abortIndexBuild(OperationContext* opCtx,
-                         const Collection* collection,
+                         Collection* collection,
                          OnCleanUpFn onCleanUp) noexcept;
 
     /**

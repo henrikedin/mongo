@@ -50,13 +50,13 @@ using logv2::LogComponent;
 
 namespace {
 
-const Collection* getCollectionForCompact(OperationContext* opCtx,
+Collection* getCollectionForCompact(OperationContext* opCtx,
                                     Database* database,
                                     const NamespaceString& collectionNss) {
     invariant(opCtx->lockState()->isCollectionLockedForMode(collectionNss, MODE_IX));
 
     CollectionCatalog& collectionCatalog = CollectionCatalog::get(opCtx);
-    const Collection* collection = collectionCatalog.lookupCollectionByNamespace(opCtx, collectionNss);
+    Collection* collection = collectionCatalog.lookupCollectionByNamespaceForMetadataWrite(opCtx, collectionNss); // TODO HEED (IX above?)
 
     if (!collection) {
         std::shared_ptr<ViewDefinition> view =
@@ -81,7 +81,7 @@ StatusWith<int64_t> compactCollection(OperationContext* opCtx,
     boost::optional<Lock::CollectionLock> collLk;
     collLk.emplace(opCtx, collectionNss, MODE_X);
 
-    const Collection* collection = getCollectionForCompact(opCtx, database, collectionNss);
+    Collection* collection = getCollectionForCompact(opCtx, database, collectionNss);
     DisableDocumentValidation validationDisabler(opCtx);
 
     auto recordStore = collection->getRecordStore();

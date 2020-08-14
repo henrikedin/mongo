@@ -221,14 +221,14 @@ StorageInterfaceImpl::createCollectionForBulkLoading(
 
     documentValidationDisabled(opCtx.get()) = true;
 
-    std::unique_ptr<AutoGetCollection> autoColl;
+    std::unique_ptr<AutoGetCollectionForMetadataWrite> autoColl;
     // Retry if WCE.
     Status status = writeConflictRetry(opCtx.get(), "beginCollectionClone", nss.ns(), [&] {
         UnreplicatedWritesBlock uwb(opCtx.get());
 
         // Get locks and create the collection.
         AutoGetOrCreateDb db(opCtx.get(), nss.db(), MODE_IX);
-        AutoGetCollection coll(opCtx.get(), nss, fixLockModeForSystemDotViewsChanges(nss, MODE_X));
+        AutoGetCollectionForMetadataWrite coll(opCtx.get(), nss, fixLockModeForSystemDotViewsChanges(nss, MODE_X));
 
         if (coll.getCollection()) {
             return Status(ErrorCodes::NamespaceExists,
@@ -241,7 +241,7 @@ StorageInterfaceImpl::createCollectionForBulkLoading(
             wunit.commit();
         }
 
-        autoColl = std::make_unique<AutoGetCollection>(
+        autoColl = std::make_unique<AutoGetCollectionForMetadataWrite>( // TODO HEED (IX?)
             opCtx.get(), nss, fixLockModeForSystemDotViewsChanges(nss, MODE_IX));
 
         // Build empty capped indexes.  Capped indexes cannot be built by the MultiIndexBlock
@@ -514,7 +514,7 @@ Status StorageInterfaceImpl::dropCollection(OperationContext* opCtx, const Names
 Status StorageInterfaceImpl::truncateCollection(OperationContext* opCtx,
                                                 const NamespaceString& nss) {
     return writeConflictRetry(opCtx, "StorageInterfaceImpl::truncateCollection", nss.ns(), [&] {
-        AutoGetCollection autoColl(opCtx, nss, MODE_X);
+        AutoGetCollectionForMetadataWrite autoColl(opCtx, nss, MODE_X);
         auto collectionResult =
             getCollection(autoColl, nss, "The collection must exist before truncating.");
         if (!collectionResult.isOK()) {
@@ -572,7 +572,7 @@ Status StorageInterfaceImpl::setIndexIsMultikey(OperationContext* opCtx,
     }
 
     return writeConflictRetry(opCtx, "StorageInterfaceImpl::setIndexIsMultikey", nss.ns(), [&] {
-        AutoGetCollection autoColl(opCtx, nss, MODE_IX);
+        AutoGetCollectionForMetadataWrite autoColl(opCtx, nss, MODE_IX); // TODO HEED (IX?)
         auto collectionResult = getCollection(
             autoColl, nss, "The collection must exist before setting an index to multikey.");
         if (!collectionResult.isOK()) {

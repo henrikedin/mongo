@@ -111,7 +111,7 @@ Status IndexBuildsManager::setUpIndexBuild(OperationContext* opCtx,
     std::vector<BSONObj> indexes;
     try {
         indexes = writeConflictRetry(opCtx, "IndexBuildsManager::setUpIndexBuild", nss.ns(), [&]() {
-            return uassertStatusOK(builder->init(opCtx, collection, specs, onInit, resumeInfo));
+            return uassertStatusOK(builder->init(opCtx, const_cast<Collection*>(collection), specs, onInit, resumeInfo)); // TODO HEED
         });
     } catch (const DBException& ex) {
         return ex.toStatus();
@@ -290,7 +290,7 @@ Status IndexBuildsManager::checkIndexConstraintViolations(OperationContext* opCt
 }
 
 Status IndexBuildsManager::commitIndexBuild(OperationContext* opCtx,
-                                            const Collection* collection,
+                                            Collection* collection,
                                             const NamespaceString& nss,
                                             const UUID& buildUUID,
                                             MultiIndexBlock::OnCreateEachFn onCreateEachFn,
@@ -313,7 +313,7 @@ Status IndexBuildsManager::commitIndexBuild(OperationContext* opCtx,
 }
 
 bool IndexBuildsManager::abortIndexBuild(OperationContext* opCtx,
-                                         const Collection* collection,
+                                         Collection* collection,
                                          const UUID& buildUUID,
                                          OnCleanUpFn onCleanUpFn) {
     auto builder = _getBuilder(buildUUID);

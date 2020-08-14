@@ -90,7 +90,7 @@ Status ValidateAdaptor::validateRecord(OperationContext* opCtx,
     }
 
     const Collection* coll = _validateState->getCollection();
-    IndexCatalog* indexCatalog = coll->getIndexCatalog();
+    IndexCatalog* indexCatalog = const_cast<IndexCatalog*>(coll->getIndexCatalog()); // TODO HEED
     if (!indexCatalog->haveAnyIndexes()) {
         return status;
     }

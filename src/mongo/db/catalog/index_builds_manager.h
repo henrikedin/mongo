@@ -139,7 +139,7 @@ public:
     using OnCreateEachFn = MultiIndexBlock::OnCreateEachFn;
     using OnCommitFn = MultiIndexBlock::OnCommitFn;
     Status commitIndexBuild(OperationContext* opCtx,
-                            const Collection* collection,
+                            Collection* collection,
                             const NamespaceString& nss,
                             const UUID& buildUUID,
                             OnCreateEachFn onCreateEachFn,
@@ -150,7 +150,7 @@ public:
      */
     using OnCleanUpFn = MultiIndexBlock::OnCleanUpFn;
     bool abortIndexBuild(OperationContext* opCtx,
-                         const Collection* collection,
+                         Collection* collection,
                          const UUID& buildUUID,
                          OnCleanUpFn onCleanUpFn);
 

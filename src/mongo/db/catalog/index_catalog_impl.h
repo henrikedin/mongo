@@ -56,7 +56,7 @@ struct InsertDeleteOptions;
  */
 class IndexCatalogImpl : public IndexCatalog {
 public:
-    explicit IndexCatalogImpl(const Collection* collection);
+    explicit IndexCatalogImpl(Collection* collection);
 
     // must be called before used
     Status init(OperationContext* opCtx) override;
@@ -385,7 +385,7 @@ private:
                            const std::vector<std::string>& indexNamesToDrop,
                            bool haveIdIndex);
 
-    const Collection* const _collection;
+    Collection* const _collection;
 
     IndexCatalogEntryContainer _readyIndexes;
     IndexCatalogEntryContainer _buildingIndexes;

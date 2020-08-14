@@ -770,7 +770,7 @@ protected:
      */
     StatusWith<std::pair<long long, long long>> _runIndexRebuildForRecovery(
         OperationContext* opCtx,
-        const Collection* collection,
+        Collection* collection,
         const UUID& buildUUID,
         RepairData repair) noexcept;
 

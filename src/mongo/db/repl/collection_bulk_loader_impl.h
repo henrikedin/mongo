@@ -62,7 +62,7 @@ public:
 
     CollectionBulkLoaderImpl(ServiceContext::UniqueClient&& client,
                              ServiceContext::UniqueOperationContext&& opCtx,
-                             std::unique_ptr<AutoGetCollection>&& autoColl,
+                             std::unique_ptr<AutoGetCollectionForMetadataWrite>&& autoColl,
                              const BSONObj& idIndexSpec);
     virtual ~CollectionBulkLoaderImpl();
 
@@ -104,8 +104,8 @@ private:
 
     ServiceContext::UniqueClient _client;
     ServiceContext::UniqueOperationContext _opCtx;
-    std::unique_ptr<AutoGetCollection> _autoColl;
-    const Collection* _collection;
+    std::unique_ptr<AutoGetCollectionForMetadataWrite> _autoColl;
+    Collection* _collection;
     NamespaceString _nss;
     std::unique_ptr<MultiIndexBlock> _idIndexBlock;
     std::unique_ptr<MultiIndexBlock> _secondaryIndexesBlock;

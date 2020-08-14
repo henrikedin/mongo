@@ -146,7 +146,7 @@ Status verifySystemIndexes(OperationContext* opCtx) {
         AutoGetCollection autoColl(opCtx, systemUsers, MODE_X);
 
         if (const Collection* collection = autoColl.getCollection()) {
-            IndexCatalog* indexCatalog = collection->getIndexCatalog();
+            const IndexCatalog* indexCatalog = collection->getIndexCatalog();
             invariant(indexCatalog);
 
             // Make sure the old unique index from v2.4 on system.users doesn't exist.
@@ -180,7 +180,7 @@ Status verifySystemIndexes(OperationContext* opCtx) {
 
         // Ensure that system indexes exist for the roles collection, if it exists.
         if (const Collection* collection = autoColl.getCollection()) {
-            IndexCatalog* indexCatalog = collection->getIndexCatalog();
+            const IndexCatalog* indexCatalog = collection->getIndexCatalog();
             invariant(indexCatalog);
 
             std::vector<const IndexDescriptor*> indexes;
