@@ -89,7 +89,7 @@ Status CollectionBulkLoaderImpl::init(const std::vector<BSONObj>& secondaryIndex
             _secondaryIndexesBlock->ignoreUniqueConstraint();
             auto status =
                 _secondaryIndexesBlock
-                    ->init(_opCtx.get(), _collection, specs, MultiIndexBlock::kNoopOnInitFn) // TODO HEED
+                    ->init(_opCtx.get(), _collection, specs, MultiIndexBlock::kNoopOnInitFn)
                     .getStatus();
             if (!status.isOK()) {
                 return status;
@@ -100,7 +100,7 @@ Status CollectionBulkLoaderImpl::init(const std::vector<BSONObj>& secondaryIndex
         if (!_idIndexSpec.isEmpty()) {
             auto status =
                 _idIndexBlock
-                    ->init(_opCtx.get(), _collection, _idIndexSpec, MultiIndexBlock::kNoopOnInitFn) // TODO HEED
+                    ->init(_opCtx.get(), _collection, _idIndexSpec, MultiIndexBlock::kNoopOnInitFn)
                     .getStatus();
             if (!status.isOK()) {
                 return status;

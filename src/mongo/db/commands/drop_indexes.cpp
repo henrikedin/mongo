@@ -145,7 +145,7 @@ public:
                     << toReIndexNss << "' while replication is active");
         }
 
-        AutoGetCollectionForMetadataWrite autoColl(opCtx, toReIndexNss, MODE_X); // TODO HEED (not in wuow)
+        AutoGetCollectionForMetadataWrite autoColl(opCtx, toReIndexNss, MODE_X);
         Collection* collection = autoColl.getCollection();
         if (!collection) {
             auto db = autoColl.getDb();
