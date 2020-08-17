@@ -455,7 +455,7 @@ public:
      * Attempt compaction on all ready indexes to regain disk space, if the storage engine's index
      * supports compaction in-place.
      */
-    virtual Status compactIndexes(OperationContext* opCtx) = 0;
+    virtual Status compactIndexes(OperationContext* opCtx) const = 0;
 
     virtual std::string getAccessMethodName(const BSONObj& keyPattern) = 0;
 

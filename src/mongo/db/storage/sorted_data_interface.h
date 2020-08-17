@@ -119,7 +119,7 @@ public:
      * Attempt to reduce the storage space used by this index via compaction. Only called if the
      * indexed record store supports compaction-in-place.
      */
-    virtual Status compact(OperationContext* opCtx) {
+    virtual Status compact(OperationContext* opCtx) const {
         return Status::OK();
     }
 

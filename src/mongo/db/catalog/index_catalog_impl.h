@@ -258,7 +258,7 @@ public:
                        bool noWarn,
                        int64_t* keysDeletedOut) override;
 
-    Status compactIndexes(OperationContext* opCtx) override;
+    Status compactIndexes(OperationContext* opCtx) const override;
 
     inline std::string getAccessMethodName(const BSONObj& keyPattern) override {
         return _getAccessMethodName(keyPattern);

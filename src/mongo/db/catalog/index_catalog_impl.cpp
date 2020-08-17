@@ -1680,7 +1680,7 @@ void IndexCatalogImpl::unindexRecord(OperationContext* opCtx,
     }
 }
 
-Status IndexCatalogImpl::compactIndexes(OperationContext* opCtx) {
+Status IndexCatalogImpl::compactIndexes(OperationContext* opCtx) const {
     for (IndexCatalogEntryContainer::const_iterator it = _readyIndexes.begin();
          it != _readyIndexes.end();
          ++it) {

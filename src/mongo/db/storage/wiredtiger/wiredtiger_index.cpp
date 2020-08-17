@@ -501,7 +501,7 @@ Status WiredTigerIndex::initAsEmpty(OperationContext* opCtx) {
     return Status::OK();
 }
 
-Status WiredTigerIndex::compact(OperationContext* opCtx) {
+Status WiredTigerIndex::compact(OperationContext* opCtx) const {
     dassert(opCtx->lockState()->isWriteLocked());
     WiredTigerSessionCache* cache = WiredTigerRecoveryUnit::get(opCtx)->getSessionCache();
     if (!cache->isEphemeral()) {
