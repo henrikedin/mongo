@@ -221,7 +221,8 @@ StorageInterfaceImpl::createCollectionForBulkLoading(
 
     documentValidationDisabled(opCtx.get()) = true;
 
-    std::unique_ptr<AutoGetCollectionForMetadataWrite> autoColl;
+    std::unique_ptr<AutoGetCollection> autoColl;
+    Collection* collection = nullptr;
     // Retry if WCE.
     Status status = writeConflictRetry(opCtx.get(), "beginCollectionClone", nss.ns(), [&] {
         UnreplicatedWritesBlock uwb(opCtx.get());
@@ -229,19 +230,20 @@ StorageInterfaceImpl::createCollectionForBulkLoading(
         // Get locks and create the collection.
         AutoGetOrCreateDb db(opCtx.get(), nss.db(), MODE_IX);
         AutoGetCollectionForMetadataWrite coll(opCtx.get(), nss, fixLockModeForSystemDotViewsChanges(nss, MODE_X));
-
-        if (coll.getCollection()) {
+        collection = coll.getCollection();
+        if (collection) {
             return Status(ErrorCodes::NamespaceExists,
                           str::stream() << "Collection " << nss.ns() << " already exists.");
         }
         {
             // Create the collection.
             WriteUnitOfWork wunit(opCtx.get());
-            fassert(40332, db.getDb()->createCollection(opCtx.get(), nss, options, false));
+            collection = db.getDb()->createCollection(opCtx.get(), nss, options, false);
+            fassert(40332, collection);
             wunit.commit();
         }
 
-        autoColl = std::make_unique<AutoGetCollectionForMetadataWrite>( // TODO HEED (IX?)
+        autoColl = std::make_unique<AutoGetCollection>(
             opCtx.get(), nss, fixLockModeForSystemDotViewsChanges(nss, MODE_IX));
 
         // Build empty capped indexes.  Capped indexes cannot be built by the MultiIndexBlock
@@ -251,7 +253,7 @@ StorageInterfaceImpl::createCollectionForBulkLoading(
             WriteUnitOfWork wunit(opCtx.get());
             if (!idIndexSpec.isEmpty()) {
                 auto status =
-                    autoColl->getCollection()->getIndexCatalog()->createIndexOnEmptyCollection(
+                    collection->getIndexCatalog()->createIndexOnEmptyCollection(
                         opCtx.get(), idIndexSpec);
                 if (!status.getStatus().isOK()) {
                     return status.getStatus();
@@ -259,7 +261,7 @@ StorageInterfaceImpl::createCollectionForBulkLoading(
             }
             for (auto&& spec : secondaryIndexSpecs) {
                 auto status =
-                    autoColl->getCollection()->getIndexCatalog()->createIndexOnEmptyCollection(
+                    collection->getIndexCatalog()->createIndexOnEmptyCollection(
                         opCtx.get(), spec);
                 if (!status.getStatus().isOK()) {
                     return status.getStatus();
@@ -279,7 +281,7 @@ StorageInterfaceImpl::createCollectionForBulkLoading(
     auto loader =
         std::make_unique<CollectionBulkLoaderImpl>(Client::releaseCurrent(),
                                                    std::move(opCtx),
-                                                   std::move(autoColl),
+                                                   std::move(autoColl),collection,
                                                    options.capped ? BSONObj() : idIndexSpec);
 
     status = loader->init(options.capped ? std::vector<BSONObj>() : secondaryIndexSpecs);

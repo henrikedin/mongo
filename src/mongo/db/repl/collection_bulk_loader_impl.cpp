@@ -55,17 +55,18 @@ namespace repl {
 
 CollectionBulkLoaderImpl::CollectionBulkLoaderImpl(ServiceContext::UniqueClient&& client,
                                                    ServiceContext::UniqueOperationContext&& opCtx,
-                                                   std::unique_ptr<AutoGetCollectionForMetadataWrite>&& autoColl,
+                                                   std::unique_ptr<AutoGetCollection>&& autoColl,
+    Collection* writableCollection,
                                                    const BSONObj& idIndexSpec)
     : _client{std::move(client)},
       _opCtx{std::move(opCtx)},
       _autoColl{std::move(autoColl)},
-      _collection{_autoColl->getCollection()},
+      _collection{writableCollection},
       _nss{_autoColl->getCollection()->ns()},
       _idIndexBlock(std::make_unique<MultiIndexBlock>()),
       _secondaryIndexesBlock(std::make_unique<MultiIndexBlock>()),
       _idIndexSpec(idIndexSpec.getOwned()) {
-
+    dassert(autoColl->getCollection() == _collection);
     invariant(_opCtx);
     invariant(_collection);
 }
