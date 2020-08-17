@@ -111,7 +111,8 @@ Status IndexBuildsManager::setUpIndexBuild(OperationContext* opCtx,
     std::vector<BSONObj> indexes;
     try {
         indexes = writeConflictRetry(opCtx, "IndexBuildsManager::setUpIndexBuild", nss.ns(), [&]() {
-            return uassertStatusOK(builder->init(opCtx, collection, specs, onInit, resumeInfo)); // TODO HEED
+            return uassertStatusOK(
+                builder->init(opCtx, collection, specs, onInit, resumeInfo));  // TODO HEED
         });
     } catch (const DBException& ex) {
         return ex.toStatus();

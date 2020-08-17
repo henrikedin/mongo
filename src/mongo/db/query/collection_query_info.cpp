@@ -196,7 +196,8 @@ PlanCache* CollectionQueryInfo::getPlanCache() const {
     return _planCache.get();
 }
 
-void CollectionQueryInfo::updatePlanCacheIndexEntries(OperationContext* opCtx, const Collection* coll) {
+void CollectionQueryInfo::updatePlanCacheIndexEntries(OperationContext* opCtx,
+                                                      const Collection* coll) {
     std::vector<CoreIndexInfo> indexCores;
 
     // TODO We shouldn't need to include unfinished indexes, but we must here because the index

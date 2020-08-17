@@ -416,7 +416,8 @@ StatusWith<std::pair<long long, long long>> IndexBuildsCoordinator::rebuildIndex
     }
 
     auto& collectionCatalog = CollectionCatalog::get(opCtx->getServiceContext());
-    Collection* collection = collectionCatalog.lookupCollectionByNamespaceForMetadataWrite(opCtx, nss);
+    Collection* collection =
+        collectionCatalog.lookupCollectionByNamespaceForMetadataWrite(opCtx, nss);
 
     // Complete the index build.
     return _runIndexRebuildForRecovery(opCtx, collection, buildUUID, repair);
@@ -442,7 +443,8 @@ Status IndexBuildsCoordinator::_startIndexBuildForRecovery(OperationContext* opC
     }
 
     auto& collectionCatalog = CollectionCatalog::get(opCtx->getServiceContext());
-    Collection* collection = collectionCatalog.lookupCollectionByNamespaceForMetadataWrite(opCtx, nss);
+    Collection* collection =
+        collectionCatalog.lookupCollectionByNamespaceForMetadataWrite(opCtx, nss);
     auto indexCatalog = collection->getIndexCatalog();
     {
         // These steps are combined into a single WUOW to ensure there are no commits without
@@ -555,8 +557,8 @@ Status IndexBuildsCoordinator::_setUpResumeIndexBuild(OperationContext* opCtx,
     Lock::CollectionLock collLock(opCtx, nssOrUuid, MODE_X);
 
     auto& collectionCatalog = CollectionCatalog::get(opCtx->getServiceContext());
-    auto collection =
-        collectionCatalog.lookupCollectionByUUIDForMetadataWrite(opCtx, resumeInfo.getCollectionUUID());
+    auto collection = collectionCatalog.lookupCollectionByUUIDForMetadataWrite(
+        opCtx, resumeInfo.getCollectionUUID());
     invariant(collection);
     auto durableCatalog = DurableCatalog::get(opCtx);
 
@@ -1203,8 +1205,8 @@ void IndexBuildsCoordinator::_completeAbort(OperationContext* opCtx,
                                             std::shared_ptr<ReplIndexBuildState> replState,
                                             IndexBuildAction signalAction,
                                             Status reason) {
-    auto coll =
-        CollectionCatalog::get(opCtx).lookupCollectionByUUIDForMetadataWrite(opCtx, replState->collectionUUID);
+    auto coll = CollectionCatalog::get(opCtx).lookupCollectionByUUIDForMetadataWrite(
+        opCtx, replState->collectionUUID);
     const NamespaceStringOrUUID dbAndUUID(replState->dbName, replState->collectionUUID);
     auto nss = coll->ns();
     auto replCoord = repl::ReplicationCoordinator::get(opCtx);
@@ -1585,7 +1587,8 @@ void IndexBuildsCoordinator::createIndex(OperationContext* opCtx,
                                          const BSONObj& spec,
                                          IndexBuildsManager::IndexConstraints indexConstraints,
                                          bool fromMigrate) {
-    auto collection = CollectionCatalog::get(opCtx).lookupCollectionByUUIDForMetadataWrite(opCtx, collectionUUID);
+    auto collection =
+        CollectionCatalog::get(opCtx).lookupCollectionByUUIDForMetadataWrite(opCtx, collectionUUID);
     invariant(collection,
               str::stream() << "IndexBuildsCoordinator::createIndexes: " << collectionUUID);
     auto nss = collection->ns();
@@ -1650,7 +1653,8 @@ void IndexBuildsCoordinator::createIndexesOnEmptyCollection(OperationContext* op
                                                             UUID collectionUUID,
                                                             const std::vector<BSONObj>& specs,
                                                             bool fromMigrate) {
-    auto collection = CollectionCatalog::get(opCtx).lookupCollectionByUUIDForMetadataWrite(opCtx, collectionUUID);
+    auto collection =
+        CollectionCatalog::get(opCtx).lookupCollectionByUUIDForMetadataWrite(opCtx, collectionUUID);
 
     invariant(collection, str::stream() << collectionUUID);
     invariant(collection->isEmpty(opCtx), str::stream() << collectionUUID);
@@ -2262,8 +2266,8 @@ void IndexBuildsCoordinator::_runIndexBuildInner(
     // dropped while the index build is still registered for the collection -- until abortIndexBuild
     // is called. The collection can be renamed, but it is OK for the name to be stale just for
     // logging purposes.
-    auto collection =
-        CollectionCatalog::get(opCtx).lookupCollectionByUUIDForRead(opCtx, replState->collectionUUID);
+    auto collection = CollectionCatalog::get(opCtx).lookupCollectionByUUIDForRead(
+        opCtx, replState->collectionUUID);
     invariant(collection,
               str::stream() << "Collection with UUID " << replState->collectionUUID
                             << " should exist because an index build is in progress: "
@@ -2286,7 +2290,8 @@ void IndexBuildsCoordinator::_runIndexBuildInner(
                   status.isA<ErrorCategory::ShutdownError>(),
               str::stream() << "Unexpected error code during index build cleanup: " << status);
     if (IndexBuildProtocol::kSinglePhase == replState->protocol) {
-        _cleanUpSinglePhaseAfterFailure(opCtx, collection.get(), replState, indexBuildOptions, status);
+        _cleanUpSinglePhaseAfterFailure(
+            opCtx, collection.get(), replState, indexBuildOptions, status);
     } else {
         invariant(IndexBuildProtocol::kTwoPhase == replState->protocol,
                   str::stream() << replState->buildUUID);
@@ -2545,8 +2550,8 @@ IndexBuildsCoordinator::CommitResult IndexBuildsCoordinator::_insertKeysFromSide
     }
 
     // The collection object should always exist while an index build is registered.
-    auto collection =
-        CollectionCatalog::get(opCtx).lookupCollectionByUUIDForMetadataWrite(opCtx, replState->collectionUUID);
+    auto collection = CollectionCatalog::get(opCtx).lookupCollectionByUUIDForMetadataWrite(
+        opCtx, replState->collectionUUID);
     invariant(collection,
               str::stream() << "Collection not found after relocking. Index build: "
                             << replState->buildUUID
@@ -2793,7 +2798,8 @@ std::vector<std::shared_ptr<ReplIndexBuildState>> IndexBuildsCoordinator::_filte
     return indexBuilds;
 }
 
-int IndexBuildsCoordinator::getNumIndexesTotal(OperationContext* opCtx, const Collection* collection) {
+int IndexBuildsCoordinator::getNumIndexesTotal(OperationContext* opCtx,
+                                               const Collection* collection) {
     invariant(collection);
     const auto& nss = collection->ns();
     invariant(opCtx->lockState()->isLocked(),

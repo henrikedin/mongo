@@ -48,9 +48,9 @@ namespace mongo {
  * in order to supply custom yield preparation or yield recovery logic.
  *
  * Templated on 'CollectionT', which may be instantiated using either const Collection* or const
- * const Collection*. This abstracts the implementation of this base class for use by derived classes
- * which read (e.g. COLLSCAN and MULTI_ITERATOR) and derived classes that write (e.g. UPDATE and
- * DELETE). Derived classes should use the 'RequiresCollectionStage' or
+ * const Collection*. This abstracts the implementation of this base class for use by derived
+ * classes which read (e.g. COLLSCAN and MULTI_ITERATOR) and derived classes that write (e.g. UPDATE
+ * and DELETE). Derived classes should use the 'RequiresCollectionStage' or
  * 'RequiresMutableCollectionStage' aliases provided below.
  */
 template <typename CollectionT>

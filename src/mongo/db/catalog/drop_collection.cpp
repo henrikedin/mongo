@@ -184,7 +184,8 @@ Status _abortIndexBuildsAndDropCollection(OperationContext* opCtx,
         // disk state, which may have changed when we released the collection lock temporarily.
         opCtx->recoveryUnit()->abandonSnapshot();
 
-        const Collection* coll = CollectionCatalog::get(opCtx).lookupCollectionByUUID(opCtx, collectionUUID);
+        const Collection* coll =
+            CollectionCatalog::get(opCtx).lookupCollectionByUUID(opCtx, collectionUUID);
         status = _checkNssAndReplState(opCtx, coll);
         if (!status.isOK()) {
             return status;

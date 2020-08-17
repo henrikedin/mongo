@@ -550,9 +550,8 @@ Status CollectionImpl::insertDocument(OperationContext* opCtx,
     return insertDocuments(opCtx, docs.begin(), docs.end(), opDebug, fromMigrate);
 }
 
-Status CollectionImpl::insertDocumentForBulkLoader(OperationContext* opCtx,
-                                                   const BSONObj& doc,
-                                                   const OnRecordInsertedFn& onRecordInserted) const {
+Status CollectionImpl::insertDocumentForBulkLoader(
+    OperationContext* opCtx, const BSONObj& doc, const OnRecordInsertedFn& onRecordInserted) const {
 
     auto status = checkFailCollectionInsertsFailPoint(_ns, doc);
     if (!status.isOK()) {

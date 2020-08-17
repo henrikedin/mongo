@@ -127,7 +127,8 @@ Status ValidateAdaptor::validateRecord(OperationContext* opCtx,
                     WriteUnitOfWork wuow(opCtx);
                     CollectionMetadataWrite collectionWrite(opCtx, coll);
                     auto writableColl = collectionWrite.getCollection();
-                    writableColl->getIndexCatalog()->setMultikeyPaths(opCtx, coll, descriptor, *documentMultikeyPaths);
+                    writableColl->getIndexCatalog()->setMultikeyPaths(
+                        opCtx, coll, descriptor, *documentMultikeyPaths);
                     wuow.commit();
                     coll = writableColl;
                 });

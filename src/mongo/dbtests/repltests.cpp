@@ -129,7 +129,8 @@ public:
         dbtests::WriteContextForTests ctx(&_opCtx, ns());
         WriteUnitOfWork wuow(&_opCtx);
 
-        const Collection* c = CollectionCatalog::get(&_opCtx).lookupCollectionByNamespace(&_opCtx, nss());
+        const Collection* c =
+            CollectionCatalog::get(&_opCtx).lookupCollectionByNamespace(&_opCtx, nss());
         if (!c) {
             c = ctx.db()->createCollection(&_opCtx, nss());
         }
@@ -260,7 +261,8 @@ protected:
             WriteUnitOfWork wunit(&_opCtx);
             Database* db = ctx.db();
             Collection* coll =
-                CollectionCatalog::get(&_opCtx).lookupCollectionByNamespaceForMetadataWrite(&_opCtx, nss);
+                CollectionCatalog::get(&_opCtx).lookupCollectionByNamespaceForMetadataWrite(&_opCtx,
+                                                                                            nss);
             if (!coll) {
                 coll = db->createCollection(&_opCtx, nss);
             }

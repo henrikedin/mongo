@@ -229,7 +229,8 @@ StorageInterfaceImpl::createCollectionForBulkLoading(
 
         // Get locks and create the collection.
         AutoGetOrCreateDb db(opCtx.get(), nss.db(), MODE_IX);
-        AutoGetCollectionForMetadataWrite coll(opCtx.get(), nss, fixLockModeForSystemDotViewsChanges(nss, MODE_X));
+        AutoGetCollectionForMetadataWrite coll(
+            opCtx.get(), nss, fixLockModeForSystemDotViewsChanges(nss, MODE_X));
         collection = coll.getCollection();
         if (collection) {
             return Status(ErrorCodes::NamespaceExists,
@@ -252,17 +253,15 @@ StorageInterfaceImpl::createCollectionForBulkLoading(
         if (options.capped) {
             WriteUnitOfWork wunit(opCtx.get());
             if (!idIndexSpec.isEmpty()) {
-                auto status =
-                    collection->getIndexCatalog()->createIndexOnEmptyCollection(
-                        opCtx.get(), idIndexSpec);
+                auto status = collection->getIndexCatalog()->createIndexOnEmptyCollection(
+                    opCtx.get(), idIndexSpec);
                 if (!status.getStatus().isOK()) {
                     return status.getStatus();
                 }
             }
             for (auto&& spec : secondaryIndexSpecs) {
                 auto status =
-                    collection->getIndexCatalog()->createIndexOnEmptyCollection(
-                        opCtx.get(), spec);
+                    collection->getIndexCatalog()->createIndexOnEmptyCollection(opCtx.get(), spec);
                 if (!status.getStatus().isOK()) {
                     return status.getStatus();
                 }
@@ -281,7 +280,8 @@ StorageInterfaceImpl::createCollectionForBulkLoading(
     auto loader =
         std::make_unique<CollectionBulkLoaderImpl>(Client::releaseCurrent(),
                                                    std::move(opCtx),
-                                                   std::move(autoColl),collection,
+                                                   std::move(autoColl),
+                                                   collection,
                                                    options.capped ? BSONObj() : idIndexSpec);
 
     status = loader->init(options.capped ? std::vector<BSONObj>() : secondaryIndexSpecs);
@@ -1297,8 +1297,9 @@ Status StorageInterfaceImpl::isAdminDbValid(OperationContext* opCtx) {
         return Status::OK();
     }
 
-    const Collection* const usersCollection = CollectionCatalog::get(opCtx).lookupCollectionByNamespace(
-        opCtx, AuthorizationManager::usersCollectionNamespace);
+    const Collection* const usersCollection =
+        CollectionCatalog::get(opCtx).lookupCollectionByNamespace(
+            opCtx, AuthorizationManager::usersCollectionNamespace);
     const bool hasUsers =
         usersCollection && !Helpers::findOne(opCtx, usersCollection, BSONObj(), false).isNull();
     const Collection* const adminVersionCollection =

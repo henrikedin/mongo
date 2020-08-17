@@ -274,8 +274,8 @@ Collection* CollectionCatalog::lookupCollectionByUUIDForMetadataWrite(OperationC
 }
 
 const Collection* CollectionCatalog::lookupCollectionByUUID(OperationContext* opCtx,
-                                                      CollectionUUID uuid) const {
-     if (auto coll = UncommittedCollections::getForTxn(opCtx, uuid)) {
+                                                            CollectionUUID uuid) const {
+    if (auto coll = UncommittedCollections::getForTxn(opCtx, uuid)) {
         return coll.get();
     }
 
@@ -320,7 +320,7 @@ Collection* CollectionCatalog::lookupCollectionByNamespaceForMetadataWrite(
 }
 
 const Collection* CollectionCatalog::lookupCollectionByNamespace(OperationContext* opCtx,
-                                                           const NamespaceString& nss) const {
+                                                                 const NamespaceString& nss) const {
     if (auto coll = UncommittedCollections::getForTxn(opCtx, nss)) {
         return coll.get();
     }

@@ -371,9 +371,10 @@ public:
      *
      * NOTE: It is up to caller to commit the indexes.
      */
-    virtual Status insertDocumentForBulkLoader(OperationContext* const opCtx,
-                                               const BSONObj& doc,
-                                               const OnRecordInsertedFn& onRecordInserted) const = 0;
+    virtual Status insertDocumentForBulkLoader(
+        OperationContext* const opCtx,
+        const BSONObj& doc,
+        const OnRecordInsertedFn& onRecordInserted) const = 0;
 
     /**
      * Updates the document @ oldLocation with newDoc.

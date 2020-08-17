@@ -987,7 +987,8 @@ Status applyOperation_inlock(OperationContext* opCtx,
     if (op.getObject2())
         o2 = op.getObject2().get();
 
-    const IndexCatalog* indexCatalog = collection == nullptr ? nullptr : collection->getIndexCatalog();
+    const IndexCatalog* indexCatalog =
+        collection == nullptr ? nullptr : collection->getIndexCatalog();
     const bool haveWrappingWriteUnitOfWork = opCtx->lockState()->inAWriteUnitOfWork();
     uassert(ErrorCodes::CommandNotSupportedOnView,
             str::stream() << "applyOps not supported on view: " << requestNss.ns(),

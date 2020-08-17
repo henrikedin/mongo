@@ -355,7 +355,8 @@ Status DatabaseImpl::dropCollectionEvenIfSystem(OperationContext* opCtx,
             "dropCollection() cannot accept a valid drop optime when writes are replicated.");
     }
 
-    Collection* collection = CollectionCatalog::get(opCtx).lookupCollectionByNamespaceForMetadataWrite(opCtx, nss);
+    Collection* collection =
+        CollectionCatalog::get(opCtx).lookupCollectionByNamespaceForMetadataWrite(opCtx, nss);
 
     if (!collection) {
         return Status::OK();  // Post condition already met.
@@ -807,7 +808,8 @@ void DatabaseImpl::checkForIdIndexesAndDropPendingCollections(OperationContext* 
         if (nss.isSystem())
             continue;
 
-        const Collection* coll = CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, nss);
+        const Collection* coll =
+            CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, nss);
         if (!coll)
             continue;
 

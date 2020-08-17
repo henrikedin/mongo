@@ -56,7 +56,7 @@ namespace repl {
 CollectionBulkLoaderImpl::CollectionBulkLoaderImpl(ServiceContext::UniqueClient&& client,
                                                    ServiceContext::UniqueOperationContext&& opCtx,
                                                    std::unique_ptr<AutoGetCollection>&& autoColl,
-    Collection* writableCollection,
+                                                   Collection* writableCollection,
                                                    const BSONObj& idIndexSpec)
     : _client{std::move(client)},
       _opCtx{std::move(opCtx)},

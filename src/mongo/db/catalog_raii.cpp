@@ -166,9 +166,10 @@ CatalogCollectionLookupForMetadataWrite::lookupCollection(OperationContext* opCt
 }
 
 CollectionMetadataWrite::CollectionMetadataWrite(OperationContext* opCtx,
-    const Collection* collection) {
+                                                 const Collection* collection) {
     // We don't really need lookup here, we just need to register commit/rollback handlers
-    _collection = CollectionCatalog::get(opCtx).lookupCollectionByNamespaceForMetadataWrite(opCtx, collection->ns());
+    _collection = CollectionCatalog::get(opCtx).lookupCollectionByNamespaceForMetadataWrite(
+        opCtx, collection->ns());
 }
 
 

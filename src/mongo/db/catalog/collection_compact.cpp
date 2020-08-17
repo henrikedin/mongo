@@ -51,12 +51,13 @@ using logv2::LogComponent;
 namespace {
 
 const Collection* getCollectionForCompact(OperationContext* opCtx,
-                                    Database* database,
-                                    const NamespaceString& collectionNss) {
+                                          Database* database,
+                                          const NamespaceString& collectionNss) {
     invariant(opCtx->lockState()->isCollectionLockedForMode(collectionNss, MODE_IX));
 
     CollectionCatalog& collectionCatalog = CollectionCatalog::get(opCtx);
-    const Collection* collection = collectionCatalog.lookupCollectionByNamespace(opCtx, collectionNss);
+    const Collection* collection =
+        collectionCatalog.lookupCollectionByNamespace(opCtx, collectionNss);
 
     if (!collection) {
         std::shared_ptr<ViewDefinition> view =

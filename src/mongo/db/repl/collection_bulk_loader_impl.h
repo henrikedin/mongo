@@ -63,7 +63,7 @@ public:
     CollectionBulkLoaderImpl(ServiceContext::UniqueClient&& client,
                              ServiceContext::UniqueOperationContext&& opCtx,
                              std::unique_ptr<AutoGetCollection>&& autoColl,
-        Collection* writableCollection,
+                             Collection* writableCollection,
                              const BSONObj& idIndexSpec);
     virtual ~CollectionBulkLoaderImpl();
 
