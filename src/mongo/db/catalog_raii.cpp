@@ -159,10 +159,18 @@ CatalogCollectionLookupForRead::CollectionStorage CatalogCollectionLookupForRead
     return CollectionCatalog::get(opCtx).lookupCollectionByNamespaceForRead(opCtx, nss);
 }
 
-CatalogCollectionLookupForMetadataWrite::CollectionStorage CatalogCollectionLookupForMetadataWrite::lookupCollection(
-    OperationContext* opCtx, const NamespaceString& nss) {
+CatalogCollectionLookupForMetadataWrite::CollectionStorage
+CatalogCollectionLookupForMetadataWrite::lookupCollection(OperationContext* opCtx,
+                                                          const NamespaceString& nss) {
     return CollectionCatalog::get(opCtx).lookupCollectionByNamespaceForMetadataWrite(opCtx, nss);
 }
+
+CollectionMetadataWrite::CollectionMetadataWrite(OperationContext* opCtx,
+    const Collection* collection) {
+    // We don't really need lookup here, we just need to register commit/rollback handlers
+    _collection = CollectionCatalog::get(opCtx).lookupCollectionByNamespaceForMetadataWrite(opCtx, collection->ns());
+}
+
 
 LockMode fixLockModeForSystemDotViewsChanges(const NamespaceString& nss, LockMode mode) {
     return nss.isSystemDotViews() ? MODE_X : mode;

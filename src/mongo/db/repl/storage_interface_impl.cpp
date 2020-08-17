@@ -572,7 +572,7 @@ Status StorageInterfaceImpl::setIndexIsMultikey(OperationContext* opCtx,
     }
 
     return writeConflictRetry(opCtx, "StorageInterfaceImpl::setIndexIsMultikey", nss.ns(), [&] {
-        AutoGetCollectionForMetadataWrite autoColl(opCtx, nss, MODE_IX); // TODO HEED (IX?)
+        AutoGetCollection autoColl(opCtx, nss, MODE_IX);
         auto collectionResult = getCollection(
             autoColl, nss, "The collection must exist before setting an index to multikey.");
         if (!collectionResult.isOK()) {

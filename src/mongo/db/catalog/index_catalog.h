@@ -412,7 +412,7 @@ public:
     virtual void setMultikeyPaths(OperationContext* const opCtx,
                                   const Collection* coll,
                                   const IndexDescriptor* const desc,
-                                  const MultikeyPaths& multikeyPaths) = 0;
+                                  const MultikeyPaths& multikeyPaths) const = 0;
 
     // ----- data modifiers ------
 

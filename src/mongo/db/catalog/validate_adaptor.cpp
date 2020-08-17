@@ -90,8 +90,7 @@ Status ValidateAdaptor::validateRecord(OperationContext* opCtx,
     }
 
     const Collection* coll = _validateState->getCollection();
-    IndexCatalog* indexCatalog = const_cast<IndexCatalog*>(coll->getIndexCatalog()); // TODO HEED
-    if (!indexCatalog->haveAnyIndexes()) {
+    if (!coll->getIndexCatalog()->haveAnyIndexes()) {
         return status;
     }
 
@@ -126,8 +125,11 @@ Status ValidateAdaptor::validateRecord(OperationContext* opCtx,
             if (_validateState->shouldRunRepair()) {
                 writeConflictRetry(opCtx, "setIndexAsMultikey", coll->ns().ns(), [&] {
                     WriteUnitOfWork wuow(opCtx);
-                    indexCatalog->setMultikeyPaths(opCtx, coll, descriptor, *documentMultikeyPaths);
+                    CollectionMetadataWrite collectionWrite(opCtx, coll);
+                    auto writableColl = collectionWrite.getCollection();
+                    writableColl->getIndexCatalog()->setMultikeyPaths(opCtx, coll, descriptor, *documentMultikeyPaths);
                     wuow.commit();
+                    coll = writableColl;
                 });
 
                 LOGV2(4614700,
@@ -156,9 +158,12 @@ Status ValidateAdaptor::validateRecord(OperationContext* opCtx,
                 if (_validateState->shouldRunRepair()) {
                     writeConflictRetry(opCtx, "increaseMultikeyPathCoverage", coll->ns().ns(), [&] {
                         WriteUnitOfWork wuow(opCtx);
-                        indexCatalog->setMultikeyPaths(
+                        CollectionMetadataWrite collectionWrite(opCtx, coll);
+                        auto writableColl = collectionWrite.getCollection();
+                        writableColl->getIndexCatalog()->setMultikeyPaths(
                             opCtx, coll, descriptor, *documentMultikeyPaths);
                         wuow.commit();
+                        coll = writableColl;
                     });
 
                     LOGV2(4614701,

@@ -203,14 +203,26 @@ public:
         const NamespaceStringOrUUID& nsOrUUID,
         LockMode modeColl,
         AutoGetCollectionViewMode viewMode = AutoGetCollectionViewMode::kViewsForbidden,
-        Date_t deadline = Date_t::max()) : AutoGetCollectionBase(opCtx, nsOrUUID, modeColl, viewMode, deadline) {
-    }
+        Date_t deadline = Date_t::max())
+        : AutoGetCollectionBase(opCtx, nsOrUUID, modeColl, viewMode, deadline) {}
 };
 
 class AutoGetCollectionForMetadataWrite
     : public AutoGetCollectionBase<CatalogCollectionLookupForMetadataWrite> {
 public:
     using AutoGetCollectionBase::AutoGetCollectionBase;
+};
+
+class CollectionMetadataWrite {
+public:
+    CollectionMetadataWrite(OperationContext* opCtx, const Collection* collection);
+
+    Collection* getCollection() {
+        return _collection;
+    }
+
+private:
+    Collection* _collection;
 };
 
 /**

@@ -196,7 +196,7 @@ public:
     void setMultikeyPaths(OperationContext* const opCtx,
                           const Collection* coll,
                           const IndexDescriptor* const desc,
-                          const MultikeyPaths& multikeyPaths) override {}
+                          const MultikeyPaths& multikeyPaths) const override {}
 
     Status indexRecords(OperationContext* const opCtx,
                         const Collection* coll,
