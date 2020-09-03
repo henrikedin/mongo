@@ -169,7 +169,7 @@ public:
         return _resolvedNss;
     }
 
-private:
+protected:
     AutoGetDb _autoDb;
 
     // If the object was instantiated with a UUID, contains the resolved namespace, otherwise it is
@@ -205,15 +205,23 @@ struct CatalogCollectionLookupForRead {
 
 class AutoGetCollection : public AutoGetCollectionBase<CatalogCollectionLookup> {
 public:
-    using AutoGetCollectionBase::AutoGetCollectionBase;
+    AutoGetCollection(
+        OperationContext* opCtx,
+        const NamespaceStringOrUUID& nsOrUUID,
+        LockMode modeColl,
+        AutoGetCollectionViewMode viewMode = AutoGetCollectionViewMode::kViewsForbidden,
+        Date_t deadline = Date_t::max());
 
     /**
      * Returns writable Collection. Necessary Collection lock mode is required.
      * Any previous Collection that has been returned may be invalidated.
      */
-    Collection* getWritableCollection() const {
-        return const_cast<Collection*>(getCollection());
-    }
+    Collection* getWritableCollection();
+
+private:
+    Collection* _writableColl = nullptr;
+    OperationContext* _opCtx = nullptr;
+
 };
 
 /**

@@ -149,6 +149,24 @@ AutoGetCollectionBase<CatalogCollectionLookupT>::AutoGetCollectionBase(
             !_view || viewMode == AutoGetCollectionViewMode::kViewsPermitted);
 }
 
+AutoGetCollection::AutoGetCollection(
+    OperationContext* opCtx,
+    const NamespaceStringOrUUID& nsOrUUID,
+    LockMode modeColl,
+    AutoGetCollectionViewMode viewMode,
+    Date_t deadline) : AutoGetCollectionBase(opCtx, nsOrUUID, modeColl, viewMode, deadline), _opCtx(opCtx) {
+}
+
+Collection* AutoGetCollection::getWritableCollection() {
+    if (_writableColl)
+        return _writableColl;
+
+    _writableColl = CollectionCatalog::get(_opCtx).lookupCollectionByNamespaceForMetadataWrite(_opCtx,
+                                                                               _resolvedNss);
+    _coll = _writableColl;
+    return _writableColl;
+}
+
 CatalogCollectionLookup::CollectionStorage CatalogCollectionLookup::lookupCollection(
     OperationContext* opCtx, const NamespaceString& nss) {
     return CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, nss);
