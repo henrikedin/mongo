@@ -172,7 +172,7 @@ void DatabaseImpl::init(OperationContext* const opCtx) const {
 
     auto& catalog = CollectionCatalog::get(opCtx);
     for (const auto& uuid : catalog.getAllCollectionUUIDsFromDb(_name)) {
-        auto collection = catalog.lookupCollectionByUUIDForMetadataWrite(opCtx, uuid);
+        auto collection = const_cast<Collection*>(catalog.lookupCollectionByUUID(opCtx, uuid)); // TODO HEED
         invariant(collection);
         // If this is called from the repair path, the collection is already initialized.
         if (!collection->isInitialized())

@@ -180,7 +180,7 @@ public:
         IndexBuildsCoordinator::get(opCtx)->assertNoIndexBuildInProgForCollection(
             collection->uuid());
 
-        collection->cappedTruncateAfter(opCtx, end, inc);
+        autoColl.getWritableCollection()->cappedTruncateAfter(opCtx, end, inc);
 
         return true;
     }

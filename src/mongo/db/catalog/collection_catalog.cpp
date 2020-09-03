@@ -270,6 +270,7 @@ std::shared_ptr<const Collection> CollectionCatalog::lookupCollectionByUUIDForRe
 
 Collection* CollectionCatalog::lookupCollectionByUUIDForMetadataWrite(OperationContext* opCtx,
                                                                       CollectionUUID uuid) {
+    invariant(opCtx->recoveryUnit()->_inUnitOfWork());
     if (auto coll = UncommittedCollections::getForTxn(opCtx, uuid)) {
         invariant(opCtx->lockState()->isCollectionLockedForMode(coll->ns(), MODE_IX));
         return coll.get();
@@ -337,6 +338,7 @@ Collection* CollectionCatalog::lookupCollectionByNamespaceForMetadataWrite(
     auto it = _collections.find(nss);
     auto coll = (it == _collections.end() ? nullptr : it->second);
     if (coll && coll->isCommitted()) {
+        invariant(opCtx->recoveryUnit()->_inUnitOfWork());
         invariant(opCtx->lockState()->isCollectionLockedForMode(nss, MODE_X));
         return coll.get();
     }
