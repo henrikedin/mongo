@@ -213,7 +213,7 @@ Status ensureCollectionProperties(OperationContext* opCtx,
                                   Database* db,
                                   EnsureIndexPolicy ensureIndexPolicy) {
     for (auto collIt = db->begin(opCtx); collIt != db->end(opCtx); ++collIt) {
-        auto coll = *collIt;
+        auto coll = collIt.getWritableCollection(opCtx);
         if (!coll) {
             break;
         }

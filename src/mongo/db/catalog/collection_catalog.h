@@ -58,15 +58,17 @@ public:
 
     class iterator {
     public:
-        using value_type = Collection*;
+        using value_type = const Collection*;
 
-        iterator(StringData dbName, uint64_t genNum, const CollectionCatalog& catalog);
+        iterator(StringData dbName, uint64_t genNum, CollectionCatalog& catalog);
         iterator(std::map<std::pair<std::string, CollectionUUID>,
                           std::shared_ptr<Collection>>::const_iterator mapIter);
         value_type operator*();
         iterator operator++();
         iterator operator++(int);
         boost::optional<CollectionUUID> uuid();
+
+        Collection* getWritableCollection(OperationContext* opCtx);
 
         /*
          * Equality operators == and != do not attempt to reposition the iterators being compared.
@@ -92,7 +94,7 @@ public:
         uint64_t _genNum;
         std::map<std::pair<std::string, CollectionUUID>,
                  std::shared_ptr<Collection>>::const_iterator _mapIter;
-        const CollectionCatalog* _catalog;
+        CollectionCatalog* _catalog;
         static constexpr Collection* _nullCollection = nullptr;
     };
 
@@ -273,8 +275,8 @@ public:
      */
     uint64_t getEpoch() const;
 
-    iterator begin(StringData db) const;
-    iterator end() const;
+    iterator begin(StringData db);
+    iterator end();
 
     /**
      * Lookup the name of a resource by its ResourceId. If there are multiple namespaces mapped to
