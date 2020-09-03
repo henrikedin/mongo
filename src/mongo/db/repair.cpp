@@ -173,7 +173,7 @@ Status repairDatabase(OperationContext* opCtx, StorageEngine* engine, const std:
         auto clusterTime = LogicalClock::getClusterTimeForReplicaSet(opCtx).asTimestamp();
 
         for (auto collIt = db->begin(opCtx); collIt != db->end(opCtx); ++collIt) {
-            auto collection = *collIt;
+            auto collection = collIt.getWritableCollection(opCtx);
             if (collection) {
                 collection->setMinimumVisibleSnapshot(clusterTime);
             }

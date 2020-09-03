@@ -72,7 +72,7 @@ private:
 
 CollectionCatalog::iterator::iterator(StringData dbName,
                                       uint64_t genNum,
-                                      const CollectionCatalog& catalog)
+                                      CollectionCatalog& catalog)
     : _dbName(dbName), _genNum(genNum), _catalog(&catalog) {
     auto minUuid = UUID::parse("00000000-0000-0000-0000-000000000000").getValue();
 
@@ -101,6 +101,11 @@ CollectionCatalog::iterator::value_type CollectionCatalog::iterator::operator*()
     }
 
     return _mapIter->second.get();
+}
+
+Collection* CollectionCatalog::iterator::getWritableCollection(OperationContext* opCtx) {
+    auto coll = this->operator*();
+    return _catalog->lookupCollectionByUUIDForMetadataWrite(opCtx, coll->uuid());
 }
 
 boost::optional<CollectionUUID> CollectionCatalog::iterator::uuid() {
@@ -611,11 +616,11 @@ void CollectionCatalog::deregisterAllCollections() {
     _generationNumber++;
 }
 
-CollectionCatalog::iterator CollectionCatalog::begin(StringData db) const {
+CollectionCatalog::iterator CollectionCatalog::begin(StringData db) {
     return iterator(db, _generationNumber, *this);
 }
 
-CollectionCatalog::iterator CollectionCatalog::end() const {
+CollectionCatalog::iterator CollectionCatalog::end() {
     return iterator(_orderedCollections.end());
 }
 
