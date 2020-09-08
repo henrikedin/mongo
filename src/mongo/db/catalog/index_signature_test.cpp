@@ -68,7 +68,7 @@ public:
         return _nss;
     }
 
-    Collection* coll() const {
+    Collection* coll() {
         return _coll->getWritableCollection();
     }
 

@@ -106,7 +106,7 @@ Status createIndexFromSpec(OperationContext* opCtx, StringData ns, const BSONObj
     {
         WriteUnitOfWork wunit(opCtx);
         coll = CollectionCatalog::get(opCtx).lookupCollectionByNamespaceForMetadataWrite(
-            opCtx, NamespaceString(ns));
+            opCtx, CollectionCatalog::LifetimeMode::kInplace, NamespaceString(ns));
         if (!coll) {
             coll = autoDb.getDb()->createCollection(opCtx, NamespaceString(ns));
         }
@@ -115,7 +115,9 @@ Status createIndexFromSpec(OperationContext* opCtx, StringData ns, const BSONObj
     }
     MultiIndexBlock indexer;
     auto abortOnExit =
-        makeGuard([&] { indexer.abortIndexBuild(opCtx, coll, MultiIndexBlock::kNoopOnCleanUpFn); });
+        makeGuard([&] { 
+        CollectionWriter collection(coll);
+        indexer.abortIndexBuild(opCtx, collection, MultiIndexBlock::kNoopOnCleanUpFn); });
     Status status = indexer
                         .init(opCtx,
                               coll,

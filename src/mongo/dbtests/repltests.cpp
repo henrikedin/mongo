@@ -260,7 +260,7 @@ protected:
             WriteUnitOfWork wunit(&_opCtx);
             Database* db = ctx.db();
             Collection* coll =
-                CollectionCatalog::get(&_opCtx).lookupCollectionByNamespaceForMetadataWrite(&_opCtx,
+                CollectionCatalog::get(&_opCtx).lookupCollectionByNamespaceForMetadataWrite(&_opCtx, CollectionCatalog::LifetimeMode::kManagedInWriteUnitOfWork,
                                                                                             nss);
             if (!coll) {
                 coll = db->createCollection(&_opCtx, nss);

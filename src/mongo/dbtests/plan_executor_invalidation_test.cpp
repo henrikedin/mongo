@@ -117,13 +117,16 @@ public:
         return 50;
     }
 
-    Collection* collection() {
-        return CollectionCatalog::get(&_opCtx).lookupCollectionByNamespaceForMetadataWrite(&_opCtx,
+    const Collection* collection() const {
+        return CollectionCatalog::get(&_opCtx).lookupCollectionByNamespace(&_opCtx,
                                                                                            nss);
     }
 
-    void truncateCollection(Collection* collection) const {
+    void truncateCollection() const {
         WriteUnitOfWork wunit(&_opCtx);
+        auto collection =
+            CollectionCatalog::get(&_opCtx).lookupCollectionByNamespaceForMetadataWrite(
+                &_opCtx, CollectionCatalog::LifetimeMode::kManagedInWriteUnitOfWork, nss);
         ASSERT_OK(collection->truncate(&_opCtx));
         wunit.commit();
     }
@@ -414,7 +417,7 @@ TEST_F(PlanExecutorInvalidationTest, IxscanDiesWhenTruncateCollectionDropsAllInd
     // Call truncate() on the Collection during yield, and verify that yield recovery throws the
     // expected error code.
     exec->saveState();
-    truncateCollection(collection());
+    truncateCollection();
     ASSERT_THROWS_CODE(exec->restoreState(), DBException, ErrorCodes::QueryPlanKilled);
 }
 
@@ -431,7 +434,7 @@ TEST_F(PlanExecutorInvalidationTest, CollScanExecutorSurvivesCollectionTruncate)
     // Call truncate() on the Collection during yield. The PlanExecutor should be restored
     // successfully.
     exec->saveState();
-    truncateCollection(collection());
+    truncateCollection();
     exec->restoreState();
 
     // Since all documents in the collection have been deleted, the PlanExecutor should issue EOF.

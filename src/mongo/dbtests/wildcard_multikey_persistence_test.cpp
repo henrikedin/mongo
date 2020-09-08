@@ -200,12 +200,13 @@ protected:
         auto indexSpec = (bob << "v" << kIndexVersion << "background" << background).obj();
 
         Lock::DBLock dbLock(opCtx(), nss.db(), MODE_X);
-        AutoGetCollection coll(opCtx(), nss, MODE_X);
+        AutoGetCollection autoColl(opCtx(), nss, MODE_X);
+        CollectionWriter coll(autoColl);
 
         MultiIndexBlock indexer;
         auto abortOnExit = makeGuard([&] {
             indexer.abortIndexBuild(
-                opCtx(), coll.getWritableCollection(), MultiIndexBlock::kNoopOnCleanUpFn);
+                opCtx(), coll, MultiIndexBlock::kNoopOnCleanUpFn);
         });
 
         // Initialize the index builder and add all documents currently in the collection.
@@ -215,7 +216,7 @@ protected:
                             indexSpec,
                             MultiIndexBlock::kNoopOnInitFn)
                       .getStatus());
-        ASSERT_OK(indexer.insertAllDocumentsInCollection(opCtx(), coll.getCollection()));
+        ASSERT_OK(indexer.insertAllDocumentsInCollection(opCtx(), coll.get()));
         ASSERT_OK(indexer.checkConstraints(opCtx()));
 
         WriteUnitOfWork wunit(opCtx());
