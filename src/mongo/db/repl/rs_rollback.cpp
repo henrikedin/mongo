@@ -907,8 +907,7 @@ void rollbackCreateIndexes(OperationContext* opCtx, UUID uuid, std::set<std::str
         CollectionCatalog::get(opCtx).lookupNSSByUUID(opCtx, uuid);
     invariant(nss);
     Lock::DBLock dbLock(opCtx, nss->db(), MODE_X);
-    Collection* collection =
-        CollectionCatalog::get(opCtx).lookupCollectionByUUIDForMetadataWrite(opCtx, uuid);
+    CollectionWriter collection(opCtx, uuid);
 
     // If we cannot find the collection, we skip over dropping the index.
     if (!collection) {
@@ -923,7 +922,7 @@ void rollbackCreateIndexes(OperationContext* opCtx, UUID uuid, std::set<std::str
     }
 
     // If we cannot find the index catalog, we skip over dropping the index.
-    auto indexCatalog = collection->getIndexCatalog();
+    auto indexCatalog = collection.getWritableCollection()->getIndexCatalog();
     if (!indexCatalog) {
         LOGV2_DEBUG(21671,
                     2,
@@ -1574,8 +1573,7 @@ void rollback_internal::syncFixUp(OperationContext* opCtx,
             auto db = databaseHolder->openDb(opCtx, nss->db().toString());
             invariant(db);
 
-            Collection* collection =
-                CollectionCatalog::get(opCtx).lookupCollectionByUUIDForMetadataWrite(opCtx, uuid);
+            CollectionWriter collection(opCtx, uuid);
             invariant(collection);
 
             auto infoResult = rollbackSource.getCollectionInfoByUUID(nss->db().toString(), uuid);
@@ -1627,7 +1625,7 @@ void rollback_internal::syncFixUp(OperationContext* opCtx,
             // Set any document validation options. We update the validator fields without
             // parsing/validation, since we fetched the options object directly from the sync
             // source, and we should set our validation options to match it exactly.
-            auto validatorStatus = collection->updateValidator(
+            auto validatorStatus = collection.getWritableCollection()->updateValidator(
                 opCtx, options.validator, options.validationLevel, options.validationAction);
             if (!validatorStatus.isOK()) {
                 throw RSFatalException(str::stream()
@@ -1729,8 +1727,7 @@ void rollback_internal::syncFixUp(OperationContext* opCtx,
                 const NamespaceString docNss(doc.ns);
                 Lock::DBLock docDbLock(opCtx, docNss.db(), MODE_X);
                 OldClientContext ctx(opCtx, doc.ns.toString());
-                Collection* collection =
-                    catalog.lookupCollectionByUUIDForMetadataWrite(opCtx, uuid);
+                CollectionWriter collection(opCtx, uuid);
 
                 // Adds the doc to our rollback file if the collection was not dropped while
                 // rolling back createCollection operations. Does not log an error when
@@ -1740,7 +1737,7 @@ void rollback_internal::syncFixUp(OperationContext* opCtx,
 
                 if (collection && removeSaver) {
                     BSONObj obj;
-                    bool found = Helpers::findOne(opCtx, collection, pattern, obj, false);
+                    bool found = Helpers::findOne(opCtx, collection.get(), pattern, obj, false);
                     if (found) {
                         auto status = removeSaver->goingToDelete(obj);
                         if (!status.isOK()) {
@@ -1791,7 +1788,7 @@ void rollback_internal::syncFixUp(OperationContext* opCtx,
 
                                 const auto clock = opCtx->getServiceContext()->getFastClockSource();
                                 const auto findOneStart = clock->now();
-                                RecordId loc = Helpers::findOne(opCtx, collection, pattern, false);
+                                RecordId loc = Helpers::findOne(opCtx, collection.get(), pattern, false);
                                 if (clock->now() - findOneStart > Milliseconds(200))
                                     LOGV2_WARNING(
                                         21726,
@@ -1807,7 +1804,7 @@ void rollback_internal::syncFixUp(OperationContext* opCtx,
                                                            collection->ns().ns(),
                                                            [&] {
                                                                WriteUnitOfWork wunit(opCtx);
-                                                               collection->cappedTruncateAfter(
+                                                               collection.getWritableCollection()->cappedTruncateAfter(
                                                                    opCtx, loc, true);
                                                                wunit.commit();
                                                            });
@@ -1817,7 +1814,7 @@ void rollback_internal::syncFixUp(OperationContext* opCtx,
                                             writeConflictRetry(
                                                 opCtx, "truncate", collection->ns().ns(), [&] {
                                                     WriteUnitOfWork wunit(opCtx);
-                                                    uassertStatusOK(collection->truncate(opCtx));
+                                                    uassertStatusOK(collection.getWritableCollection()->truncate(opCtx));
                                                     wunit.commit();
                                                 });
                                         } else {
@@ -1843,7 +1840,7 @@ void rollback_internal::syncFixUp(OperationContext* opCtx,
                             }
                         } else {
                             deleteObjects(opCtx,
-                                          collection,
+                                          collection.get(),
                                           *nss,
                                           pattern,
                                           true,   // justOne
@@ -1947,9 +1944,7 @@ void rollback_internal::syncFixUp(OperationContext* opCtx,
         Lock::DBLock oplogDbLock(opCtx, oplogNss.db(), MODE_IX);
         Lock::CollectionLock oplogCollectionLoc(opCtx, oplogNss, MODE_X);
         OldClientContext ctx(opCtx, oplogNss.ns());
-        Collection* oplogCollection =
-            CollectionCatalog::get(opCtx).lookupCollectionByNamespaceForMetadataWrite(opCtx,
-                                                                                      oplogNss);
+        CollectionWriter oplogCollection(opCtx, oplogNss);
         if (!oplogCollection) {
             fassertFailedWithStatusNoTrace(
                 40495,
@@ -1957,7 +1952,7 @@ void rollback_internal::syncFixUp(OperationContext* opCtx,
                        str::stream() << "Can't find " << NamespaceString::kRsOplogNamespace.ns()));
         }
         // TODO: fatal error if this throws?
-        oplogCollection->cappedTruncateAfter(opCtx, fixUpInfo.commonPointOurDiskloc, false);
+        oplogCollection.getWritableCollection()->cappedTruncateAfter(opCtx, fixUpInfo.commonPointOurDiskloc, false);
     }
 
     if (!serverGlobalParams.enableMajorityReadConcern) {

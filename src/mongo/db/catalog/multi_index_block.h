@@ -40,6 +40,7 @@
 #include "mongo/base/status_with.h"
 #include "mongo/base/string_data.h"
 #include "mongo/bson/bsonobj.h"
+#include "mongo/db/catalog_raii.h"
 #include "mongo/db/catalog/collection_options.h"
 #include "mongo/db/catalog/index_build_block.h"
 #include "mongo/db/catalog/index_catalog.h"
@@ -111,12 +112,12 @@ public:
     using OnInitFn = std::function<Status(std::vector<BSONObj>& specs)>;
     StatusWith<std::vector<BSONObj>> init(
         OperationContext* opCtx,
-        Collection* collection,
+        const CollectionWriter& collection,
         const std::vector<BSONObj>& specs,
         OnInitFn onInit,
         const boost::optional<ResumeIndexInfo>& resumeInfo = boost::none);
     StatusWith<std::vector<BSONObj>> init(OperationContext* opCtx,
-                                          Collection* collection,
+                                          const CollectionWriter& collection,
                                           const BSONObj& spec,
                                           OnInitFn onInit);
     StatusWith<std::vector<BSONObj>> initForResume(OperationContext* opCtx,

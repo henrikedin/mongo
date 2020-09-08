@@ -87,7 +87,7 @@ Status rebuildIndexesForNamespace(OperationContext* opCtx,
 }
 
 namespace {
-Status dropUnfinishedIndexes(OperationContext* opCtx, Collection* collection) {
+Status dropUnfinishedIndexes(OperationContext* opCtx, const Collection* collection) {
     std::vector<std::string> indexNames;
     auto durableCatalog = DurableCatalog::get(opCtx);
     durableCatalog->getAllIndexes(opCtx, collection->getCatalogId(), &indexNames);
@@ -201,14 +201,16 @@ Status repairCollection(OperationContext* opCtx,
 
     LOGV2(21027, "Repairing collection", "namespace"_attr = nss);
 
-    auto collection =
-        CollectionCatalog::get(opCtx).lookupCollectionByNamespaceForMetadataWrite(opCtx, nss);
-    Status status = engine->repairRecordStore(opCtx, collection->getCatalogId(), nss);
+    Status status = Status::OK();
+    {
+        auto collection = CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, nss);
+        status = engine->repairRecordStore(opCtx, collection->getCatalogId(), nss);
+    }
+    
 
     // Need to lookup from catalog again because the old collection object was invalidated by
     // repairRecordStore.
-    collection =
-        CollectionCatalog::get(opCtx).lookupCollectionByNamespaceForMetadataWrite(opCtx, nss);
+    CollectionWriter collection(opCtx, nss);
 
     // If data was modified during repairRecordStore, we know to rebuild indexes without needing
     // to run an expensive collection validation.
@@ -222,7 +224,7 @@ Status repairCollection(OperationContext* opCtx,
         // invalidating modifications to our data, it is safe to just drop the indexes entirely
         // to avoid the risk of the index rebuild failing.
         if (getReplSetMemberInStandaloneMode(opCtx->getServiceContext())) {
-            if (auto status = dropUnfinishedIndexes(opCtx, collection); !status.isOK()) {
+            if (auto status = dropUnfinishedIndexes(opCtx, collection.get()); !status.isOK()) {
                 return status;
             }
         }
@@ -234,7 +236,7 @@ Status repairCollection(OperationContext* opCtx,
 
     // Run collection validation to avoid unecessarily rebuilding indexes on valid collections
     // with consistent indexes. Initialize the collection prior to validation.
-    collection->init(opCtx);
+    collection.getWritableCollection()->init(opCtx);
 
     ValidateResults validateResults;
     BSONObjBuilder output;

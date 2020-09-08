@@ -218,10 +218,49 @@ public:
      */
     Collection* getWritableCollection();
 
+    OperationContext* getOperationContext() const {
+        return _opCtx;
+    }
+
 private:
     Collection* _writableColl = nullptr;
     OperationContext* _opCtx = nullptr;
+};
 
+class CollectionWriter {
+public:
+    CollectionWriter(OperationContext* opCtx, const CollectionUUID& uuid, bool managedInWUOW = true);
+    CollectionWriter(OperationContext* opCtx, const NamespaceString& nss, bool managedInWUOW = true);
+    CollectionWriter(AutoGetCollection& autoCollection);
+    CollectionWriter(Collection* writableCollection);
+
+    explicit operator bool() const {
+        return get();
+    }
+
+    const Collection* operator->() const {
+        return get();
+    }
+
+    const Collection& operator*() const {
+        return *get();
+    }
+
+    const Collection* get() const {
+        return _collection;
+    }
+
+    Collection* getWritableCollection() const;
+
+    void commitUnmanagedWritableCollection();
+
+private:
+    mutable const Collection* _collection{nullptr};
+    mutable Collection* _writableCollection{nullptr};
+    const OperationContext* _opCtx{nullptr};
+    std::function<Collection*()> _lazyWritableCollectionInitializer;
+    bool _managedInWUOW{true};
+    
 };
 
 /**

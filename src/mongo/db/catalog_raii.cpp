@@ -149,22 +149,82 @@ AutoGetCollectionBase<CatalogCollectionLookupT>::AutoGetCollectionBase(
             !_view || viewMode == AutoGetCollectionViewMode::kViewsPermitted);
 }
 
-AutoGetCollection::AutoGetCollection(
-    OperationContext* opCtx,
-    const NamespaceStringOrUUID& nsOrUUID,
-    LockMode modeColl,
-    AutoGetCollectionViewMode viewMode,
-    Date_t deadline) : AutoGetCollectionBase(opCtx, nsOrUUID, modeColl, viewMode, deadline), _opCtx(opCtx) {
-}
+AutoGetCollection::AutoGetCollection(OperationContext* opCtx,
+                                     const NamespaceStringOrUUID& nsOrUUID,
+                                     LockMode modeColl,
+                                     AutoGetCollectionViewMode viewMode,
+                                     Date_t deadline)
+    : AutoGetCollectionBase(opCtx, nsOrUUID, modeColl, viewMode, deadline), _opCtx(opCtx) {}
 
 Collection* AutoGetCollection::getWritableCollection() {
-    if (_writableColl)
-        return _writableColl;
-
-    _writableColl = CollectionCatalog::get(_opCtx).lookupCollectionByNamespaceForMetadataWrite(_opCtx,
-                                                                               _resolvedNss);
-    _coll = _writableColl;
+    if (!_writableColl) {
+        _writableColl = CollectionCatalog::get(_opCtx).lookupCollectionByNamespaceForMetadataWrite(
+            _opCtx, _resolvedNss, true);
+        _coll = _writableColl;
+    }
     return _writableColl;
+}
+
+CollectionWriter::CollectionWriter(OperationContext* opCtx,
+                                   const CollectionUUID& uuid,
+                                   bool managedInWUOW)
+    : _opCtx(opCtx), _managedInWUOW(managedInWUOW) {
+    if (_managedInWUOW) {
+        _collection = CollectionCatalog::get(opCtx).lookupCollectionByUUID(opCtx, uuid);
+        _lazyWritableCollectionInitializer = [opCtx, uuid] {
+            return CollectionCatalog::get(opCtx).lookupCollectionByUUIDForMetadataWrite(
+                opCtx, uuid, true);
+        };
+    } else {
+        _writableCollection = CollectionCatalog::get(opCtx).lookupCollectionByUUIDForMetadataWrite(
+            opCtx, uuid, false);
+        _collection = _writableCollection;
+    }
+}
+
+CollectionWriter::CollectionWriter(OperationContext* opCtx,
+                                   const NamespaceString& nss,
+                                   bool managedInWUOW)
+    : _opCtx(opCtx), _managedInWUOW(managedInWUOW) {
+    if (_managedInWUOW) {
+        _collection = CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, nss);
+        _lazyWritableCollectionInitializer = [opCtx, nss] {
+            return CollectionCatalog::get(opCtx).lookupCollectionByNamespaceForMetadataWrite(opCtx,
+                                                                                             nss, true);
+        };
+    } else {
+        _writableCollection =
+            CollectionCatalog::get(opCtx).lookupCollectionByNamespaceForMetadataWrite(
+                opCtx, nss, false);
+        _collection = _writableCollection;
+    }
+}
+
+CollectionWriter::CollectionWriter(AutoGetCollection& autoCollection)
+    : _opCtx(autoCollection.getOperationContext()) {
+    _collection = autoCollection.getCollection();
+    _lazyWritableCollectionInitializer = [&autoCollection] {
+        return autoCollection.getWritableCollection();
+    };
+}
+
+CollectionWriter::CollectionWriter(Collection* writableCollection)
+    : _collection(writableCollection),
+      _writableCollection(writableCollection),
+      _managedInWUOW(false) {}
+
+Collection* CollectionWriter::getWritableCollection() const {
+    if (!_writableCollection) {
+        _writableCollection = _lazyWritableCollectionInitializer();
+        _collection = _writableCollection;
+
+        /*if (_managedInWUOW) {
+            _opCtx->recoveryUnit()->onCommit(
+                [this](boost::optional<Timestamp> time) { _writableCollection = nullptr; });
+            _opCtx->recoveryUnit()->onRollback([this]() { _writableCollection = nullptr; });
+        }*/
+    }
+    return _writableCollection;
 }
 
 CatalogCollectionLookup::CollectionStorage CatalogCollectionLookup::lookupCollection(

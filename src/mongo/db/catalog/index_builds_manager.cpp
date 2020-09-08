@@ -80,7 +80,7 @@ IndexBuildsManager::~IndexBuildsManager() {
 }
 
 Status IndexBuildsManager::setUpIndexBuild(OperationContext* opCtx,
-                                           Collection* collection,
+                                           const CollectionWriter& collection,
                                            const std::vector<BSONObj>& specs,
                                            const UUID& buildUUID,
                                            OnInitFn onInit,
@@ -135,7 +135,7 @@ Status IndexBuildsManager::resumeBuildingIndexFromBulkLoadPhase(OperationContext
 }
 
 StatusWith<std::pair<long long, long long>> IndexBuildsManager::startBuildingIndexForRecovery(
-    OperationContext* opCtx, Collection* coll, const UUID& buildUUID, RepairData repair) {
+    OperationContext* opCtx, const Collection* coll, const UUID& buildUUID, RepairData repair) {
     auto builder = invariant(_getBuilder(buildUUID));
 
     // Iterate all records in the collection. Validate the records and index them

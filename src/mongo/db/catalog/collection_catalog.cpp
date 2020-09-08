@@ -105,7 +105,7 @@ CollectionCatalog::iterator::value_type CollectionCatalog::iterator::operator*()
 
 Collection* CollectionCatalog::iterator::getWritableCollection(OperationContext* opCtx) {
     auto coll = this->operator*();
-    return _catalog->lookupCollectionByUUIDForMetadataWrite(opCtx, coll->uuid());
+    return _catalog->lookupCollectionByUUIDForMetadataWrite(opCtx, coll->uuid(), false);
 }
 
 boost::optional<CollectionUUID> CollectionCatalog::iterator::uuid() {
@@ -274,8 +274,8 @@ std::shared_ptr<const Collection> CollectionCatalog::lookupCollectionByUUIDForRe
 }
 
 Collection* CollectionCatalog::lookupCollectionByUUIDForMetadataWrite(OperationContext* opCtx,
-                                                                      CollectionUUID uuid) {
-    invariant(opCtx->recoveryUnit()->_inUnitOfWork());
+                                                                      CollectionUUID uuid, bool managedInWUOW) {
+    invariant(!managedInWUOW || opCtx->recoveryUnit()->_inUnitOfWork());
     if (auto coll = UncommittedCollections::getForTxn(opCtx, uuid)) {
         invariant(opCtx->lockState()->isCollectionLockedForMode(coll->ns(), MODE_IX));
         return coll.get();
@@ -333,7 +333,8 @@ std::shared_ptr<const Collection> CollectionCatalog::lookupCollectionByNamespace
 }
 
 Collection* CollectionCatalog::lookupCollectionByNamespaceForMetadataWrite(
-    OperationContext* opCtx, const NamespaceString& nss) {
+    OperationContext* opCtx, const NamespaceString& nss, bool managedInWUOW) {
+    invariant(!managedInWUOW || opCtx->recoveryUnit()->_inUnitOfWork());
     if (auto coll = UncommittedCollections::getForTxn(opCtx, nss)) {
         invariant(opCtx->lockState()->isCollectionLockedForMode(nss, MODE_IX));
         return coll.get();
@@ -343,7 +344,6 @@ Collection* CollectionCatalog::lookupCollectionByNamespaceForMetadataWrite(
     auto it = _collections.find(nss);
     auto coll = (it == _collections.end() ? nullptr : it->second);
     if (coll && coll->isCommitted()) {
-        invariant(opCtx->recoveryUnit()->_inUnitOfWork());
         invariant(opCtx->lockState()->isCollectionLockedForMode(nss, MODE_X));
         return coll.get();
     }

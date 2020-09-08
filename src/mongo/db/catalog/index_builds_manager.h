@@ -34,6 +34,7 @@
 #include <string>
 #include <vector>
 
+#include "mongo/db/catalog_raii.h"
 #include "mongo/db/catalog/multi_index_block.h"
 #include "mongo/db/namespace_string.h"
 #include "mongo/db/rebuild_indexes.h"
@@ -80,7 +81,7 @@ public:
      */
     using OnInitFn = MultiIndexBlock::OnInitFn;
     Status setUpIndexBuild(OperationContext* opCtx,
-                           Collection* collection,
+                           const CollectionWriter& collection,
                            const std::vector<BSONObj>& specs,
                            const UUID& buildUUID,
                            OnInitFn onInit,
@@ -109,7 +110,7 @@ public:
      * Returns the number of records and the size of the data iterated over.
      */
     StatusWith<std::pair<long long, long long>> startBuildingIndexForRecovery(
-        OperationContext* opCtx, Collection* coll, const UUID& buildUUID, RepairData repair);
+        OperationContext* opCtx, const Collection* coll, const UUID& buildUUID, RepairData repair);
 
     /**
      * Document inserts observed during the scanning/insertion phase of an index build are not

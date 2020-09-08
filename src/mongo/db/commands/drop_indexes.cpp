@@ -222,7 +222,7 @@ public:
             collection.getWritableCollection()->getIndexCatalog()->dropAllIndexes(opCtx, true);
 
             swIndexesToRebuild = indexer->init(
-                opCtx, collection.getWritableCollection(), all, MultiIndexBlock::kNoopOnInitFn);
+                opCtx, collection, all, MultiIndexBlock::kNoopOnInitFn);
             uassertStatusOK(swIndexesToRebuild.getStatus());
             wunit.commit();
         });
