@@ -166,9 +166,8 @@ Collection* AutoGetCollection::getWritableCollection() {
 }
 
 CollectionWriter::CollectionWriter(OperationContext* opCtx,
-                                   const CollectionUUID& uuid,
-                                   bool managedInWUOW)
-    : _opCtx(opCtx), _managedInWUOW(managedInWUOW) {
+                                   const CollectionUUID& uuid)
+    : _opCtx(opCtx), _managedInWUOW(true) {
     if (_managedInWUOW) {
         _collection = CollectionCatalog::get(opCtx).lookupCollectionByUUID(opCtx, uuid);
         _lazyWritableCollectionInitializer = [opCtx, uuid] {
@@ -183,9 +182,8 @@ CollectionWriter::CollectionWriter(OperationContext* opCtx,
 }
 
 CollectionWriter::CollectionWriter(OperationContext* opCtx,
-                                   const NamespaceString& nss,
-                                   bool managedInWUOW)
-    : _opCtx(opCtx), _managedInWUOW(managedInWUOW) {
+                                   const NamespaceString& nss)
+    : _opCtx(opCtx), _managedInWUOW(true) {
     if (_managedInWUOW) {
         _collection = CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, nss);
         _lazyWritableCollectionInitializer = [opCtx, nss] {

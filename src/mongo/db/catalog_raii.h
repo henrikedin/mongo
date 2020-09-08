@@ -229,8 +229,8 @@ private:
 
 class CollectionWriter final {
 public:
-    CollectionWriter(OperationContext* opCtx, const CollectionUUID& uuid, bool managedInWUOW = true);
-    CollectionWriter(OperationContext* opCtx, const NamespaceString& nss, bool managedInWUOW = true);
+    CollectionWriter(OperationContext* opCtx, const CollectionUUID& uuid);
+    CollectionWriter(OperationContext* opCtx, const NamespaceString& nss);
     CollectionWriter(AutoGetCollection& autoCollection);
     CollectionWriter(Collection* writableCollection);
     ~CollectionWriter();
