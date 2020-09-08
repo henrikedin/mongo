@@ -189,8 +189,8 @@ CollectionWriter::CollectionWriter(OperationContext* opCtx,
     if (_managedInWUOW) {
         _collection = CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, nss);
         _lazyWritableCollectionInitializer = [opCtx, nss] {
-            return CollectionCatalog::get(opCtx).lookupCollectionByNamespaceForMetadataWrite(opCtx,
-                                                                                             nss, true);
+            return CollectionCatalog::get(opCtx).lookupCollectionByNamespaceForMetadataWrite(
+                opCtx, nss, true);
         };
     } else {
         _writableCollection =
@@ -213,16 +213,30 @@ CollectionWriter::CollectionWriter(Collection* writableCollection)
       _writableCollection(writableCollection),
       _managedInWUOW(false) {}
 
+CollectionWriter::~CollectionWriter() {
+    *_sharedThis = nullptr;
+}
+
 Collection* CollectionWriter::getWritableCollection() const {
     if (!_writableCollection) {
         _writableCollection = _lazyWritableCollectionInitializer();
-        _collection = _writableCollection;
 
-        /*if (_managedInWUOW) {
-            _opCtx->recoveryUnit()->onCommit(
-                [this](boost::optional<Timestamp> time) { _writableCollection = nullptr; });
-            _opCtx->recoveryUnit()->onRollback([this]() { _writableCollection = nullptr; });
-        }*/
+        if (_managedInWUOW) {
+            auto oldCollection = _collection;
+            auto sharedThis = _sharedThis;
+            _opCtx->recoveryUnit()->onCommit([sharedThis](boost::optional<Timestamp> time) {
+                if (*sharedThis)
+                    (*sharedThis)->_writableCollection = nullptr;
+            });
+            _opCtx->recoveryUnit()->onRollback([sharedThis, oldCollection]() {
+                if (*sharedThis) {
+                    (*sharedThis)->_collection = oldCollection;
+                    (*sharedThis)->_writableCollection = nullptr;
+                }
+            });
+        }
+
+        _collection = _writableCollection;
     }
     return _writableCollection;
 }

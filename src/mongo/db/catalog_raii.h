@@ -227,12 +227,13 @@ private:
     OperationContext* _opCtx = nullptr;
 };
 
-class CollectionWriter {
+class CollectionWriter final {
 public:
     CollectionWriter(OperationContext* opCtx, const CollectionUUID& uuid, bool managedInWUOW = true);
     CollectionWriter(OperationContext* opCtx, const NamespaceString& nss, bool managedInWUOW = true);
     CollectionWriter(AutoGetCollection& autoCollection);
     CollectionWriter(Collection* writableCollection);
+    ~CollectionWriter();
 
     explicit operator bool() const {
         return get();
@@ -257,10 +258,10 @@ public:
 private:
     mutable const Collection* _collection{nullptr};
     mutable Collection* _writableCollection{nullptr};
+    std::shared_ptr<CollectionWriter*> _sharedThis = std::make_shared<CollectionWriter*>(this);
     const OperationContext* _opCtx{nullptr};
     std::function<Collection*()> _lazyWritableCollectionInitializer;
     bool _managedInWUOW{true};
-    
 };
 
 /**
