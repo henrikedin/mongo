@@ -57,6 +57,12 @@ class CollectionCatalog {
 public:
     using CollectionInfoFn = std::function<bool(const Collection* collection)>;
 
+    enum class LifetimeMode {
+        kManagedInWriteUnitOfWork,
+        kUnmanagedClone,
+        kInplace
+    };
+
     class iterator {
     public:
         using value_type = const Collection*;
@@ -69,7 +75,7 @@ public:
         iterator operator++(int);
         boost::optional<CollectionUUID> uuid();
 
-        Collection* getWritableCollection(OperationContext* opCtx);
+        Collection* getWritableCollection(OperationContext* opCtx, LifetimeMode mode);
 
         /*
          * Equality operators == and != do not attempt to reposition the iterators being compared.
@@ -166,7 +172,8 @@ public:
      * Returns nullptr if the 'uuid' is not known.
      */
     Collection* lookupCollectionByUUIDForMetadataWrite(OperationContext* opCtx,
-                                                       CollectionUUID uuid, bool managedInWUOW);
+        LifetimeMode mode,
+                                                       CollectionUUID uuid);
     const Collection* lookupCollectionByUUID(OperationContext* opCtx, CollectionUUID uuid) const;
     std::shared_ptr<const Collection> lookupCollectionByUUIDForRead(OperationContext* opCtx,
                                                                     CollectionUUID uuid) const;
@@ -188,7 +195,8 @@ public:
      * Returns nullptr if the namespace is unknown.
      */
     Collection* lookupCollectionByNamespaceForMetadataWrite(OperationContext* opCtx,
-                                                            const NamespaceString& nss, bool managedInWUOW);
+        LifetimeMode mode,
+                                                            const NamespaceString& nss);
     const Collection* lookupCollectionByNamespace(OperationContext* opCtx,
                                                   const NamespaceString& nss) const;
     std::shared_ptr<const Collection> lookupCollectionByNamespaceForRead(

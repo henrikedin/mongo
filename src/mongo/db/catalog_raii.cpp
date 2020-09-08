@@ -159,7 +159,7 @@ AutoGetCollection::AutoGetCollection(OperationContext* opCtx,
 Collection* AutoGetCollection::getWritableCollection() {
     if (!_writableColl) {
         _writableColl = CollectionCatalog::get(_opCtx).lookupCollectionByNamespaceForMetadataWrite(
-            _opCtx, _resolvedNss, true);
+            _opCtx, CollectionCatalog::LifetimeMode::kManagedInWriteUnitOfWork, _resolvedNss);
         _coll = _writableColl;
     }
     return _writableColl;
@@ -173,11 +173,11 @@ CollectionWriter::CollectionWriter(OperationContext* opCtx,
         _collection = CollectionCatalog::get(opCtx).lookupCollectionByUUID(opCtx, uuid);
         _lazyWritableCollectionInitializer = [opCtx, uuid] {
             return CollectionCatalog::get(opCtx).lookupCollectionByUUIDForMetadataWrite(
-                opCtx, uuid, true);
+                opCtx, CollectionCatalog::LifetimeMode::kManagedInWriteUnitOfWork, uuid);
         };
     } else {
         _writableCollection = CollectionCatalog::get(opCtx).lookupCollectionByUUIDForMetadataWrite(
-            opCtx, uuid, false);
+            opCtx, CollectionCatalog::LifetimeMode::kUnmanagedClone, uuid);
         _collection = _writableCollection;
     }
 }
@@ -190,12 +190,12 @@ CollectionWriter::CollectionWriter(OperationContext* opCtx,
         _collection = CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, nss);
         _lazyWritableCollectionInitializer = [opCtx, nss] {
             return CollectionCatalog::get(opCtx).lookupCollectionByNamespaceForMetadataWrite(
-                opCtx, nss, true);
+                opCtx, CollectionCatalog::LifetimeMode::kManagedInWriteUnitOfWork, nss);
         };
     } else {
         _writableCollection =
             CollectionCatalog::get(opCtx).lookupCollectionByNamespaceForMetadataWrite(
-                opCtx, nss, false);
+                opCtx, CollectionCatalog::LifetimeMode::kUnmanagedClone, nss);
         _collection = _writableCollection;
     }
 }

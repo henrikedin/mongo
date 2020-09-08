@@ -1944,7 +1944,8 @@ void rollback_internal::syncFixUp(OperationContext* opCtx,
         Lock::DBLock oplogDbLock(opCtx, oplogNss.db(), MODE_IX);
         Lock::CollectionLock oplogCollectionLoc(opCtx, oplogNss, MODE_X);
         OldClientContext ctx(opCtx, oplogNss.ns());
-        CollectionWriter oplogCollection(opCtx, oplogNss);
+        auto oplogCollection =
+            CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, oplogNss);
         if (!oplogCollection) {
             fassertFailedWithStatusNoTrace(
                 40495,
@@ -1952,7 +1953,7 @@ void rollback_internal::syncFixUp(OperationContext* opCtx,
                        str::stream() << "Can't find " << NamespaceString::kRsOplogNamespace.ns()));
         }
         // TODO: fatal error if this throws?
-        oplogCollection.getWritableCollection()->cappedTruncateAfter(opCtx, fixUpInfo.commonPointOurDiskloc, false);
+        oplogCollection->cappedTruncateAfter(opCtx, fixUpInfo.commonPointOurDiskloc, false);
     }
 
     if (!serverGlobalParams.enableMajorityReadConcern) {

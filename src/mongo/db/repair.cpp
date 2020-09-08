@@ -173,7 +173,7 @@ Status repairDatabase(OperationContext* opCtx, StorageEngine* engine, const std:
         auto clusterTime = LogicalClock::getClusterTimeForReplicaSet(opCtx).asTimestamp();
 
         for (auto collIt = db->begin(opCtx); collIt != db->end(opCtx); ++collIt) {
-            auto collection = collIt.getWritableCollection(opCtx);
+            auto collection = collIt.getWritableCollection(opCtx, CollectionCatalog::LifetimeMode::kInplace);
             if (collection) {
                 collection->setMinimumVisibleSnapshot(clusterTime);
             }
@@ -210,7 +210,7 @@ Status repairCollection(OperationContext* opCtx,
 
     // Need to lookup from catalog again because the old collection object was invalidated by
     // repairRecordStore.
-    CollectionWriter collection(opCtx, nss);
+    auto collection = CollectionCatalog::get(opCtx).lookupCollectionByNamespaceForMetadataWrite(opCtx, CollectionCatalog::LifetimeMode::kInplace, nss);
 
     // If data was modified during repairRecordStore, we know to rebuild indexes without needing
     // to run an expensive collection validation.
@@ -224,7 +224,7 @@ Status repairCollection(OperationContext* opCtx,
         // invalidating modifications to our data, it is safe to just drop the indexes entirely
         // to avoid the risk of the index rebuild failing.
         if (getReplSetMemberInStandaloneMode(opCtx->getServiceContext())) {
-            if (auto status = dropUnfinishedIndexes(opCtx, collection.get()); !status.isOK()) {
+            if (auto status = dropUnfinishedIndexes(opCtx, collection); !status.isOK()) {
                 return status;
             }
         }
@@ -236,7 +236,7 @@ Status repairCollection(OperationContext* opCtx,
 
     // Run collection validation to avoid unecessarily rebuilding indexes on valid collections
     // with consistent indexes. Initialize the collection prior to validation.
-    collection.getWritableCollection()->init(opCtx);
+    collection->init(opCtx);
 
     ValidateResults validateResults;
     BSONObjBuilder output;

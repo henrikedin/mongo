@@ -103,9 +103,9 @@ CollectionCatalog::iterator::value_type CollectionCatalog::iterator::operator*()
     return _mapIter->second.get();
 }
 
-Collection* CollectionCatalog::iterator::getWritableCollection(OperationContext* opCtx) {
+Collection* CollectionCatalog::iterator::getWritableCollection(OperationContext* opCtx, LifetimeMode mode) {
     auto coll = this->operator*();
-    return _catalog->lookupCollectionByUUIDForMetadataWrite(opCtx, coll->uuid(), false);
+    return _catalog->lookupCollectionByUUIDForMetadataWrite(opCtx, mode, coll->uuid());
 }
 
 boost::optional<CollectionUUID> CollectionCatalog::iterator::uuid() {
@@ -273,9 +273,9 @@ std::shared_ptr<const Collection> CollectionCatalog::lookupCollectionByUUIDForRe
     return (coll && coll->isCommitted()) ? coll : nullptr;
 }
 
-Collection* CollectionCatalog::lookupCollectionByUUIDForMetadataWrite(OperationContext* opCtx,
-                                                                      CollectionUUID uuid, bool managedInWUOW) {
-    invariant(!managedInWUOW || opCtx->recoveryUnit()->_inUnitOfWork());
+Collection* CollectionCatalog::lookupCollectionByUUIDForMetadataWrite(OperationContext* opCtx, LifetimeMode mode,
+                                                                      CollectionUUID uuid) {
+    invariant(mode != LifetimeMode::kManagedInWriteUnitOfWork|| opCtx->recoveryUnit()->_inUnitOfWork());
     if (auto coll = UncommittedCollections::getForTxn(opCtx, uuid)) {
         invariant(opCtx->lockState()->isCollectionLockedForMode(coll->ns(), MODE_IX));
         return coll.get();
@@ -333,8 +333,8 @@ std::shared_ptr<const Collection> CollectionCatalog::lookupCollectionByNamespace
 }
 
 Collection* CollectionCatalog::lookupCollectionByNamespaceForMetadataWrite(
-    OperationContext* opCtx, const NamespaceString& nss, bool managedInWUOW) {
-    invariant(!managedInWUOW || opCtx->recoveryUnit()->_inUnitOfWork());
+    OperationContext* opCtx, LifetimeMode mode, const NamespaceString& nss) {
+    invariant(mode != LifetimeMode::kManagedInWriteUnitOfWork || opCtx->recoveryUnit()->_inUnitOfWork());
     if (auto coll = UncommittedCollections::getForTxn(opCtx, nss)) {
         invariant(opCtx->lockState()->isCollectionLockedForMode(nss, MODE_IX));
         return coll.get();
