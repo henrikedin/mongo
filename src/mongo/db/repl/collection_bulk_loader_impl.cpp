@@ -333,14 +333,16 @@ Status CollectionBulkLoaderImpl::commit() {
 void CollectionBulkLoaderImpl::_releaseResources() {
     invariant(&cc() == _opCtx->getClient());
     if (_secondaryIndexesBlock) {
+        CollectionWriter collWriter(*_collection);
         _secondaryIndexesBlock->abortIndexBuild(
-            _opCtx.get(), _collection->getWritableCollection(), MultiIndexBlock::kNoopOnCleanUpFn);
+            _opCtx.get(), collWriter, MultiIndexBlock::kNoopOnCleanUpFn);
         _secondaryIndexesBlock.reset();
     }
 
     if (_idIndexBlock) {
+        CollectionWriter collWriter(*_collection);
         _idIndexBlock->abortIndexBuild(
-            _opCtx.get(), _collection->getWritableCollection(), MultiIndexBlock::kNoopOnCleanUpFn);
+            _opCtx.get(), collWriter, MultiIndexBlock::kNoopOnCleanUpFn);
         _idIndexBlock.reset();
     }
 

@@ -257,7 +257,7 @@ public:
      */
     using OnCleanUpFn = std::function<void()>;
     void abortIndexBuild(OperationContext* opCtx,
-                         Collection* collection,
+                         CollectionWriter& collection,
                          OnCleanUpFn onCleanUp) noexcept;
 
     /**

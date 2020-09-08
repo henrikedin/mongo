@@ -164,8 +164,10 @@ bool checkIdIndexExists(OperationContext* opCtx, RecordId catalogId) {
 Status buildMissingIdIndex(OperationContext* opCtx, Collection* collection) {
     LOGV2(4805002, "Building missing _id index", logAttrs(*collection));
     MultiIndexBlock indexer;
-    auto abortOnExit = makeGuard(
-        [&] { indexer.abortIndexBuild(opCtx, collection, MultiIndexBlock::kNoopOnCleanUpFn); });
+    auto abortOnExit = makeGuard([&] {
+        CollectionWriter collWriter(collection);
+        indexer.abortIndexBuild(opCtx, collWriter, MultiIndexBlock::kNoopOnCleanUpFn);
+    });
 
     const auto indexCatalog = collection->getIndexCatalog();
     const auto idIndexSpec = indexCatalog->getDefaultIdIndexSpec();

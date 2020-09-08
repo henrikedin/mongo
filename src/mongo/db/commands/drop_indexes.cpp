@@ -229,8 +229,9 @@ public:
 
         // The 'indexer' can throw, so ensure build cleanup occurs.
         auto abortOnExit = makeGuard([&] {
+            CollectionWriter collWriter(collection);
             indexer->abortIndexBuild(
-                opCtx, collection.getWritableCollection(), MultiIndexBlock::kNoopOnCleanUpFn);
+                opCtx, collWriter, MultiIndexBlock::kNoopOnCleanUpFn);
         });
 
         if (MONGO_unlikely(reIndexCrashAfterDrop.shouldFail())) {

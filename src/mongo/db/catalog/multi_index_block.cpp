@@ -118,7 +118,7 @@ MultiIndexBlock::~MultiIndexBlock() {
 MultiIndexBlock::OnCleanUpFn MultiIndexBlock::kNoopOnCleanUpFn = []() {};
 
 void MultiIndexBlock::abortIndexBuild(OperationContext* opCtx,
-                                      Collection* collection,
+                                      CollectionWriter& collection,
                                       OnCleanUpFn onCleanUp) noexcept {
     if (_collectionUUID) {
         // init() was previously called with a collection pointer, so ensure that the same
@@ -139,7 +139,7 @@ void MultiIndexBlock::abortIndexBuild(OperationContext* opCtx,
             // This cleans up all index builds. Because that may need to write, it is done inside of
             // a WUOW. Nothing inside this block can fail, and it is made fatal if it does.
             for (size_t i = 0; i < _indexes.size(); i++) {
-                _indexes[i].block->fail(opCtx, collection);
+                _indexes[i].block->fail(opCtx, collection.getWritableCollection());
                 _indexes[i].block->finalizeTemporaryTables(
                     opCtx, TemporaryRecordStore::FinalizationAction::kDelete);
             }

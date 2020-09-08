@@ -290,7 +290,7 @@ Status IndexBuildsManager::checkIndexConstraintViolations(OperationContext* opCt
 }
 
 Status IndexBuildsManager::commitIndexBuild(OperationContext* opCtx,
-                                            Collection* collection,
+                                            CollectionWriter& collection,
                                             const NamespaceString& nss,
                                             const UUID& buildUUID,
                                             MultiIndexBlock::OnCreateEachFn onCreateEachFn,
@@ -301,9 +301,9 @@ Status IndexBuildsManager::commitIndexBuild(OperationContext* opCtx,
         opCtx,
         "IndexBuildsManager::commitIndexBuild",
         nss.ns(),
-        [this, builder, buildUUID, opCtx, collection, nss, &onCreateEachFn, &onCommitFn] {
+        [this, builder, buildUUID, opCtx, &collection, nss, &onCreateEachFn, &onCommitFn] {
             WriteUnitOfWork wunit(opCtx);
-            auto status = builder->commit(opCtx, collection, onCreateEachFn, onCommitFn);
+            auto status = builder->commit(opCtx, collection.getWritableCollection(), onCreateEachFn, onCommitFn);
             if (!status.isOK()) {
                 return status;
             }
@@ -313,7 +313,7 @@ Status IndexBuildsManager::commitIndexBuild(OperationContext* opCtx,
 }
 
 bool IndexBuildsManager::abortIndexBuild(OperationContext* opCtx,
-                                         Collection* collection,
+                                         CollectionWriter& collection,
                                          const UUID& buildUUID,
                                          OnCleanUpFn onCleanUpFn) {
     auto builder = _getBuilder(buildUUID);
