@@ -1387,7 +1387,7 @@ void IndexBuildsCoordinator::_completeAbort(OperationContext* opCtx,
             invariant(replCoord->getMemberState().rollback());
             auto isResumable = !replState->lastOpTimeBeforeInterceptors.isNull();
             _indexBuildsManager.abortIndexBuildWithoutCleanupForRollback(
-                opCtx, coll.getWritableCollection(), replState->buildUUID, isResumable);
+                opCtx, coll.get(), replState->buildUUID, isResumable);
             break;
         }
         case IndexBuildAction::kNoAction:
