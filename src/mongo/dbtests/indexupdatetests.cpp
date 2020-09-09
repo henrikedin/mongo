@@ -68,8 +68,6 @@ public:
         Lock::CollectionLock lk(_opCtx, _nss, LockMode::MODE_IX);
         db.getDb()->createCollection(_opCtx, _nss);
         wuow.commit();
-
-        _collection.emplace(_opCtx, _nss);
     }
 
     ~IndexBuildBase() {
@@ -83,6 +81,7 @@ public:
     }
 
     CollectionWriter& collection() {
+        _collection.emplace(_opCtx, _nss);
         return *_collection;
     }
 

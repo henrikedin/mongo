@@ -283,7 +283,7 @@ public:
             indexInfoObj = std::move(swIndexInfoObj.getValue()[0]);
         }
 
-        ASSERT_OK(indexer.insertAllDocumentsInCollection(_opCtx, coll.getWritableCollection()));
+        ASSERT_OK(indexer.insertAllDocumentsInCollection(_opCtx, coll.get()));
         ASSERT_OK(indexer.checkConstraints(_opCtx));
 
         {
