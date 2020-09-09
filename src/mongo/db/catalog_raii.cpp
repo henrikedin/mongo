@@ -194,11 +194,8 @@ Collection* AutoGetCollection::getWritableCollection(CollectionCatalog::Lifetime
 
 CollectionWriter::CollectionWriter(OperationContext* opCtx,
                                    const CollectionUUID& uuid,
-                                   bool managed)
-    : _opCtx(opCtx),
-      _mode(managed ? CollectionCatalog::LifetimeMode::kManagedInWriteUnitOfWork
-                    : CollectionCatalog::LifetimeMode::kUnmanagedClone),
-      _sharedThis(std::make_shared<CollectionWriter*>(this)) {
+                                   CollectionCatalog::LifetimeMode mode)
+    : _opCtx(opCtx), _mode(mode), _sharedThis(std::make_shared<CollectionWriter*>(this)) {
 
     _collection = CollectionCatalog::get(opCtx).lookupCollectionByUUID(opCtx, uuid);
     _lazyWritableCollectionInitializer = [opCtx, uuid](CollectionCatalog::LifetimeMode mode) {
@@ -209,11 +206,8 @@ CollectionWriter::CollectionWriter(OperationContext* opCtx,
 
 CollectionWriter::CollectionWriter(OperationContext* opCtx,
                                    const NamespaceString& nss,
-                                   bool managed)
-    : _opCtx(opCtx),
-      _mode(managed ? CollectionCatalog::LifetimeMode::kManagedInWriteUnitOfWork
-                    : CollectionCatalog::LifetimeMode::kUnmanagedClone),
-      _sharedThis(std::make_shared<CollectionWriter*>(this)) {
+                                   CollectionCatalog::LifetimeMode mode)
+    : _opCtx(opCtx), _mode(mode), _sharedThis(std::make_shared<CollectionWriter*>(this)) {
     _collection = CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, nss);
     _lazyWritableCollectionInitializer = [opCtx, nss](CollectionCatalog::LifetimeMode mode) {
         return CollectionCatalog::get(opCtx).lookupCollectionByNamespaceForMetadataWrite(
@@ -221,10 +215,10 @@ CollectionWriter::CollectionWriter(OperationContext* opCtx,
     };
 }
 
-CollectionWriter::CollectionWriter(AutoGetCollection& autoCollection, bool managed)
+CollectionWriter::CollectionWriter(AutoGetCollection& autoCollection,
+                                   CollectionCatalog::LifetimeMode mode)
     : _opCtx(autoCollection.getOperationContext()),
-      _mode(managed ? CollectionCatalog::LifetimeMode::kManagedInWriteUnitOfWork
-                    : CollectionCatalog::LifetimeMode::kUnmanagedClone),
+      _mode(mode),
       _sharedThis(std::make_shared<CollectionWriter*>(this)) {
     _collection = autoCollection.getCollection();
     _lazyWritableCollectionInitializer = [&autoCollection](CollectionCatalog::LifetimeMode mode) {

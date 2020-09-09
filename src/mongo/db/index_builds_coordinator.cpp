@@ -645,7 +645,8 @@ Status IndexBuildsCoordinator::_setUpResumeIndexBuild(OperationContext* opCtx,
     Lock::DBLock dbLock(opCtx, dbName, MODE_IX);
     Lock::CollectionLock collLock(opCtx, nssOrUuid, MODE_X);
 
-    CollectionWriter collection(opCtx, resumeInfo.getCollectionUUID());
+    CollectionWriter collection(
+        opCtx, resumeInfo.getCollectionUUID(), CollectionCatalog::LifetimeMode::kInplace);
     invariant(collection);
     auto durableCatalog = DurableCatalog::get(opCtx);
 

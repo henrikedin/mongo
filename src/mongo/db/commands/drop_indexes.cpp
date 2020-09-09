@@ -154,7 +154,7 @@ public:
                 uasserted(ErrorCodes::NamespaceNotFound, "collection does not exist");
         }
 
-        CollectionWriter collection(autoColl, false);
+        CollectionWriter collection(autoColl, CollectionCatalog::LifetimeMode::kUnmanagedClone);
         IndexBuildsCoordinator::get(opCtx)->assertNoIndexBuildInProgForCollection(
             collection->uuid());
 

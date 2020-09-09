@@ -241,11 +241,19 @@ private:
 class CollectionWriter final {
 public:
     // Gets the collection from the catalog for the provided uuid
-    CollectionWriter(OperationContext* opCtx, const CollectionUUID& uuid, bool managed = true);
+    CollectionWriter(OperationContext* opCtx,
+                     const CollectionUUID& uuid,
+                     CollectionCatalog::LifetimeMode mode =
+                         CollectionCatalog::LifetimeMode::kManagedInWriteUnitOfWork);
     // Gets the collection from the catalog for the provided namespace string
-    CollectionWriter(OperationContext* opCtx, const NamespaceString& nss, bool managed = true);
+    CollectionWriter(OperationContext* opCtx,
+                     const NamespaceString& nss,
+                     CollectionCatalog::LifetimeMode mode =
+                         CollectionCatalog::LifetimeMode::kManagedInWriteUnitOfWork);
     // Acts as an adaptor for AutoGetCollection
-    CollectionWriter(AutoGetCollection& autoCollection, bool managed = true);
+    CollectionWriter(AutoGetCollection& autoCollection,
+                     CollectionCatalog::LifetimeMode mode =
+                         CollectionCatalog::LifetimeMode::kManagedInWriteUnitOfWork);
     // Acts as an adaptor for a writable Collection that has been retrieved elsewhere
     CollectionWriter(Collection* writableCollection);
 
