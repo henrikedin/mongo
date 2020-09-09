@@ -870,7 +870,7 @@ void dropIndex(OperationContext* opCtx,
                       "namespace"_attr = nss.toString());
         return;
     }
-    WriteUnitOfWork wunit(opCtx);
+
     auto entry = indexCatalog->getEntry(indexDescriptor);
     if (entry->isReady(opCtx)) {
         auto status = indexCatalog->dropIndex(opCtx, indexDescriptor);
@@ -894,7 +894,6 @@ void dropIndex(OperationContext* opCtx,
                 "error"_attr = redact(status));
         }
     }
-    wunit.commit();
 }
 
 /**
@@ -922,7 +921,7 @@ void rollbackCreateIndexes(OperationContext* opCtx, UUID uuid, std::set<std::str
     }
 
     // If we cannot find the index catalog, we skip over dropping the index.
-    auto indexCatalog = collection.getWritableCollection()->getIndexCatalog();
+    auto indexCatalog = collection->getIndexCatalog();
     if (!indexCatalog) {
         LOGV2_DEBUG(21671,
                     2,
@@ -945,7 +944,9 @@ void rollbackCreateIndexes(OperationContext* opCtx, UUID uuid, std::set<std::str
               "uuid"_attr = uuid,
               "indexName"_attr = indexName);
 
-        dropIndex(opCtx, indexCatalog, indexName, *nss);
+        WriteUnitOfWork wuow(opCtx);
+        dropIndex(opCtx, collection.getWritableCollection()->getIndexCatalog(), indexName, *nss);
+        wuow.commit();
 
         LOGV2_DEBUG(21673,
                     1,
