@@ -157,7 +157,11 @@ AutoGetCollection::AutoGetCollection(OperationContext* opCtx,
     : AutoGetCollectionBase(opCtx, nsOrUUID, modeColl, viewMode, deadline), _opCtx(opCtx) {}
 
 Collection* AutoGetCollection::getWritableCollection() {
+    // Acquire writable instance if not already available
     if (!_writableColl) {
+
+        // Resets the writable Collection when the write unit of work finishes so we re-fetches and
+        // re-clones the Collection if a new write unit of work is opened.
         class WritableCollectionReset : public RecoveryUnit::Change {
         public:
             WritableCollectionReset(AutoGetCollection& autoColl,
@@ -217,15 +221,21 @@ CollectionWriter::CollectionWriter(Collection* writableCollection)
     : _collection(writableCollection), _writableCollection(writableCollection) {}
 
 CollectionWriter::~CollectionWriter() {
+    // Notify shared state that this instance is destroyed
     if (_sharedThis) {
         *_sharedThis = nullptr;
     }
 }
 
 Collection* CollectionWriter::getWritableCollection() {
+    // Acquire writable instance lazily if not already available
     if (!_writableCollection) {
         _writableCollection = _lazyWritableCollectionInitializer();
 
+        // Resets the writable Collection when the write unit of work finishes so we re-fetches and
+        // re-clones the Collection if a new write unit of work is opened. Holds the back pointer to
+        // the CollectionWriter via a shared_ptr so we can detect if the instance is already
+        // destroyed.
         class WritableCollectionReset : public RecoveryUnit::Change {
         public:
             WritableCollectionReset(std::shared_ptr<CollectionWriter*> sharedThis,

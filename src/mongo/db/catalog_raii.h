@@ -215,6 +215,8 @@ public:
     /**
      * Returns writable Collection. Necessary Collection lock mode is required.
      * Any previous Collection that has been returned may be invalidated.
+     *
+     * It is required to be in an active WriteUnitOfWork when making this call
      */
     Collection* getWritableCollection();
 
@@ -227,14 +229,29 @@ private:
     OperationContext* _opCtx = nullptr;
 };
 
+/**
+ * RAII-style class to handle the lifetime of writable Collections.
+ * It does not take any locks, concurrency needs to be handled separately using explicit locks or
+ * AutoGetCollection. This class can serve as an adaptor to unify different methods of acquiring a
+ * writable collection.
+ *
+ * It is safe to re-use an instance for multiple WriteUnitOfWorks or to destroy it before the active
+ * WriteUnitOfWork finishes.
+ */
 class CollectionWriter final {
 public:
+    // Gets the collection from the catalog for the provided uuid
     CollectionWriter(OperationContext* opCtx, const CollectionUUID& uuid);
+    // Gets the collection from the catalog for the provided namespace string
     CollectionWriter(OperationContext* opCtx, const NamespaceString& nss);
+    // Acts as an adaptor for AutoGetCollection
     CollectionWriter(AutoGetCollection& autoCollection);
+    // Acts as an adaptor for a writable Collection that has been retrieved elsewhere
     CollectionWriter(Collection* writableCollection);
+
     ~CollectionWriter();
 
+    // Not allowed to copy or move.
     CollectionWriter(const CollectionWriter&) = delete;
     CollectionWriter(CollectionWriter&&) = delete;
     CollectionWriter& operator=(const CollectionWriter&) = delete;
@@ -256,6 +273,9 @@ public:
         return _collection;
     }
 
+    // Returns writable Collection, any previous Collection that has been returned may be
+    // invalidated. It is required to be in an active WriteUnitOfWork when making this call unless
+    // the constructor that takes a writable Collection was used.
     Collection* getWritableCollection();
 
 private:

@@ -241,7 +241,7 @@ public:
         // The following function performs its own WriteConflict handling, so don't wrap it in a
         // writeConflictRetry loop.
         uassertStatusOK(
-            indexer->insertAllDocumentsInCollection(opCtx, collection.getWritableCollection()));
+            indexer->insertAllDocumentsInCollection(opCtx, collection.get()));
 
         uassertStatusOK(indexer->checkConstraints(opCtx));
 
@@ -260,7 +260,7 @@ public:
         // tries to read in the intermediate state where all indexes are newer than the current
         // snapshot so are unable to be used.
         auto clusterTime = LogicalClock::getClusterTimeForReplicaSet(opCtx).asTimestamp();
-        collection.getWritableCollection()->setMinimumVisibleSnapshot(clusterTime);
+        collection.getWritableCollection()->setMinimumVisibleSnapshot(clusterTime); // TODO HEED
 
         result.append("nIndexes", static_cast<int>(swIndexesToRebuild.getValue().size()));
         result.append("indexes", swIndexesToRebuild.getValue());

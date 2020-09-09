@@ -57,7 +57,18 @@ class CollectionCatalog {
 public:
     using CollectionInfoFn = std::function<bool(const Collection* collection)>;
 
-    enum class LifetimeMode { kManagedInWriteUnitOfWork, kUnmanagedClone, kInplace };
+    enum class LifetimeMode {
+        // Lifetime of writable Collection is managed by an active write unit of work. The writable
+        // collection is installed in the catalog during commit.
+        kManagedInWriteUnitOfWork,
+
+        // Unmanaged writable Collection usable outside of write unit of work. Users need to commit the Collection to the catalog.
+        kUnmanagedClone,
+
+        // Inplace writable access to the Collection currently installed in the catalog. This is
+        // only safe when the server is in a state where there can be no concurrent readers.
+        kInplace
+    };
 
     class iterator {
     public:
