@@ -118,8 +118,7 @@ public:
     }
 
     const Collection* collection() const {
-        return CollectionCatalog::get(&_opCtx).lookupCollectionByNamespace(&_opCtx,
-                                                                                           nss);
+        return CollectionCatalog::get(&_opCtx).lookupCollectionByNamespace(&_opCtx, nss);
     }
 
     void truncateCollection() const {

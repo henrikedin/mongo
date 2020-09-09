@@ -178,7 +178,8 @@ Collection* AutoGetCollection::getWritableCollection() {
 
         _writableColl = CollectionCatalog::get(_opCtx).lookupCollectionByNamespaceForMetadataWrite(
             _opCtx, CollectionCatalog::LifetimeMode::kManagedInWriteUnitOfWork, _resolvedNss);
-        _opCtx->recoveryUnit()->registerChange(std::make_unique<WritableCollectionReset>(*this, _coll));
+        _opCtx->recoveryUnit()->registerChange(
+            std::make_unique<WritableCollectionReset>(*this, _coll));
         _coll = _writableColl;
     }
     return _writableColl;
@@ -246,7 +247,8 @@ Collection* CollectionWriter::getWritableCollection() {
             const Collection* _rollbackCollection;
         };
 
-        _opCtx->recoveryUnit()->registerChange(std::make_unique<WritableCollectionReset>(_sharedThis, _collection));
+        _opCtx->recoveryUnit()->registerChange(
+            std::make_unique<WritableCollectionReset>(_sharedThis, _collection));
 
         _collection = _writableCollection;
     }

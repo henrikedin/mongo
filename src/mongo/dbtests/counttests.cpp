@@ -52,9 +52,8 @@ public:
             WriteUnitOfWork wunit(&_opCtx);
 
             auto collection =
-                CollectionCatalog::get(&_opCtx).lookupCollectionByNamespaceForMetadataWrite(&_opCtx,
-                    CollectionCatalog::LifetimeMode::kManagedInWriteUnitOfWork,
-                                                                                            nss());
+                CollectionCatalog::get(&_opCtx).lookupCollectionByNamespaceForMetadataWrite(
+                    &_opCtx, CollectionCatalog::LifetimeMode::kManagedInWriteUnitOfWork, nss());
             if (collection) {
                 _database->dropCollection(&_opCtx, nss()).transitional_ignore();
             }

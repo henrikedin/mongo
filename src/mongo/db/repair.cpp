@@ -173,7 +173,8 @@ Status repairDatabase(OperationContext* opCtx, StorageEngine* engine, const std:
         auto clusterTime = LogicalClock::getClusterTimeForReplicaSet(opCtx).asTimestamp();
 
         for (auto collIt = db->begin(opCtx); collIt != db->end(opCtx); ++collIt) {
-            auto collection = collIt.getWritableCollection(opCtx, CollectionCatalog::LifetimeMode::kInplace);
+            auto collection =
+                collIt.getWritableCollection(opCtx, CollectionCatalog::LifetimeMode::kInplace);
             if (collection) {
                 collection->setMinimumVisibleSnapshot(clusterTime);
             }
@@ -206,11 +207,12 @@ Status repairCollection(OperationContext* opCtx,
         auto collection = CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, nss);
         status = engine->repairRecordStore(opCtx, collection->getCatalogId(), nss);
     }
-    
+
 
     // Need to lookup from catalog again because the old collection object was invalidated by
     // repairRecordStore.
-    auto collection = CollectionCatalog::get(opCtx).lookupCollectionByNamespaceForMetadataWrite(opCtx, CollectionCatalog::LifetimeMode::kInplace, nss);
+    auto collection = CollectionCatalog::get(opCtx).lookupCollectionByNamespaceForMetadataWrite(
+        opCtx, CollectionCatalog::LifetimeMode::kInplace, nss);
 
     // If data was modified during repairRecordStore, we know to rebuild indexes without needing
     // to run an expensive collection validation.

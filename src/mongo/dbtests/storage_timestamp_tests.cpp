@@ -1891,10 +1891,8 @@ public:
 
         // Build an index on `{a: 1}`. This index will be multikey.
         MultiIndexBlock indexer;
-        auto abortOnExit = makeGuard([&] {
-            indexer.abortIndexBuild(
-                _opCtx, coll, MultiIndexBlock::kNoopOnCleanUpFn);
-        });
+        auto abortOnExit = makeGuard(
+            [&] { indexer.abortIndexBuild(_opCtx, coll, MultiIndexBlock::kNoopOnCleanUpFn); });
         const LogicalTime beforeIndexBuild = _clock->tickClusterTime(2);
         BSONObj indexInfoObj;
         {
@@ -1933,21 +1931,22 @@ public:
             // All callers of `MultiIndexBlock::commit` are responsible for timestamping index
             // completion  Primaries write an oplog entry. Secondaries explicitly set a
             // timestamp.
-            ASSERT_OK(indexer.commit(
-                _opCtx,
-                autoColl.getWritableCollection(),
-                [&](const BSONObj& indexSpec) {
-                    if (SimulatePrimary) {
-                        // The timestamping responsibility for each index is placed on the caller.
-                        _opCtx->getServiceContext()->getOpObserver()->onCreateIndex(
-                            _opCtx, nss, coll->uuid(), indexSpec, false);
-                    } else {
-                        const auto currentTime = _clock->getTime();
-                        ASSERT_OK(_opCtx->recoveryUnit()->setTimestamp(
-                            currentTime.clusterTime().asTimestamp()));
-                    }
-                },
-                MultiIndexBlock::kNoopOnCommitFn));
+            ASSERT_OK(
+                indexer.commit(_opCtx,
+                               autoColl.getWritableCollection(),
+                               [&](const BSONObj& indexSpec) {
+                                   if (SimulatePrimary) {
+                                       // The timestamping responsibility for each index is placed
+                                       // on the caller.
+                                       _opCtx->getServiceContext()->getOpObserver()->onCreateIndex(
+                                           _opCtx, nss, coll->uuid(), indexSpec, false);
+                                   } else {
+                                       const auto currentTime = _clock->getTime();
+                                       ASSERT_OK(_opCtx->recoveryUnit()->setTimestamp(
+                                           currentTime.clusterTime().asTimestamp()));
+                                   }
+                               },
+                               MultiIndexBlock::kNoopOnCommitFn));
             wuow.commit();
         }
         abortOnExit.dismiss();
@@ -2519,8 +2518,7 @@ public:
         std::vector<std::string> indexIdents;
         // Create an index and get the ident for each index.
         for (auto key : {"a", "b", "c"}) {
-            createIndex(
-                coll, str::stream() << key << "_1", BSON(key << 1));
+            createIndex(coll, str::stream() << key << "_1", BSON(key << 1));
 
             // Timestamps at the completion of each index build.
             afterCreateTimestamps.push_back(_clock->tickClusterTime(1).asTimestamp());
@@ -2600,8 +2598,7 @@ public:
         std::vector<std::string> indexIdents;
         // Create an index and get the ident for each index.
         for (auto key : {"a", "b", "c"}) {
-            createIndex(
-                coll, str::stream() << key << "_1", BSON(key << 1));
+            createIndex(coll, str::stream() << key << "_1", BSON(key << 1));
 
             // Timestamps at the completion of each index build.
             afterCreateTimestamps.push_back(_clock->tickClusterTime(1).asTimestamp());
@@ -2758,8 +2755,7 @@ public:
         const IndexCatalogEntry* buildingIndex = nullptr;
         MultiIndexBlock indexer;
         auto abortOnExit = makeGuard([&] {
-            indexer.abortIndexBuild(
-                _opCtx, collection, MultiIndexBlock::kNoopOnCleanUpFn);
+            indexer.abortIndexBuild(_opCtx, collection, MultiIndexBlock::kNoopOnCleanUpFn);
         });
 
         // Provide a build UUID, indicating that this is a two-phase index build.
@@ -2777,14 +2773,14 @@ public:
             {
                 TimestampBlock tsBlock(_opCtx, indexInit.asTimestamp());
 
-                auto swSpecs = indexer.init(_opCtx,
-                                            collection,
-                                            {BSON("v" << 2 << "name"
-                                                      << "a_1_b_1"
-                                                      << "ns" << collection->ns().ns() << "key"
-                                                      << BSON("a" << 1 << "b" << 1))},
-                                            MultiIndexBlock::makeTimestampedIndexOnInitFn(
-                                                _opCtx, collection.get()));
+                auto swSpecs = indexer.init(
+                    _opCtx,
+                    collection,
+                    {BSON("v" << 2 << "name"
+                              << "a_1_b_1"
+                              << "ns" << collection->ns().ns() << "key"
+                              << BSON("a" << 1 << "b" << 1))},
+                    MultiIndexBlock::makeTimestampedIndexOnInitFn(_opCtx, collection.get()));
                 ASSERT_OK(swSpecs.getStatus());
             }
 

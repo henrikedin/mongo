@@ -169,8 +169,10 @@ public:
         ASSERT_OK(indexer.checkConstraints(_opCtx));
 
         WriteUnitOfWork wunit(_opCtx);
-        ASSERT_OK(indexer.commit(
-            _opCtx, coll.getWritableCollection(), MultiIndexBlock::kNoopOnCreateEachFn, MultiIndexBlock::kNoopOnCommitFn));
+        ASSERT_OK(indexer.commit(_opCtx,
+                                 coll.getWritableCollection(),
+                                 MultiIndexBlock::kNoopOnCreateEachFn,
+                                 MultiIndexBlock::kNoopOnCommitFn));
         wunit.commit();
         abortOnExit.dismiss();
     }
@@ -215,7 +217,8 @@ public:
             indexer.abortIndexBuild(_opCtx, collection(), MultiIndexBlock::kNoopOnCleanUpFn);
         });
 
-        ASSERT_OK(indexer.init(_opCtx, collection(), spec, MultiIndexBlock::kNoopOnInitFn).getStatus());
+        ASSERT_OK(
+            indexer.init(_opCtx, collection(), spec, MultiIndexBlock::kNoopOnInitFn).getStatus());
 
         auto desc =
             coll->getIndexCatalog()->findIndexByName(_opCtx, "a", true /* includeUnfinished */);

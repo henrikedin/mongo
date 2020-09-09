@@ -303,7 +303,8 @@ Status IndexBuildsManager::commitIndexBuild(OperationContext* opCtx,
         nss.ns(),
         [this, builder, buildUUID, opCtx, &collection, nss, &onCreateEachFn, &onCommitFn] {
             WriteUnitOfWork wunit(opCtx);
-            auto status = builder->commit(opCtx, collection.getWritableCollection(), onCreateEachFn, onCommitFn);
+            auto status = builder->commit(
+                opCtx, collection.getWritableCollection(), onCreateEachFn, onCommitFn);
             if (!status.isOK()) {
                 return status;
             }

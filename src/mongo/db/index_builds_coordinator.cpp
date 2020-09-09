@@ -1311,8 +1311,7 @@ void IndexBuildsCoordinator::_completeAbort(OperationContext* opCtx,
                                             std::shared_ptr<ReplIndexBuildState> replState,
                                             IndexBuildAction signalAction,
                                             Status reason) {
-    CollectionWriter coll(
-        opCtx, replState->collectionUUID);
+    CollectionWriter coll(opCtx, replState->collectionUUID);
     const NamespaceStringOrUUID dbAndUUID(replState->dbName, replState->collectionUUID);
     auto nss = coll->ns();
     auto replCoord = repl::ReplicationCoordinator::get(opCtx);
@@ -1773,7 +1772,8 @@ void IndexBuildsCoordinator::createIndex(OperationContext* opCtx,
     // errors on its behalf.
     auto replCoord = repl::ReplicationCoordinator::get(opCtx);
     if (replCoord->canAcceptWritesFor(opCtx, nss)) {
-        uassertStatusOK(_indexBuildsManager.retrySkippedRecords(opCtx, buildUUID, collection.get()));
+        uassertStatusOK(
+            _indexBuildsManager.retrySkippedRecords(opCtx, buildUUID, collection.get()));
     }
     uassertStatusOK(_indexBuildsManager.checkIndexConstraintViolations(opCtx, buildUUID));
 
@@ -2117,12 +2117,8 @@ IndexBuildsCoordinator::PostSetupAction IndexBuildsCoordinator::_setUpIndexBuild
         if (!replSetAndNotPrimary) {
             // On standalones and primaries, call setUpIndexBuild(), which makes the initial catalog
             // write. On primaries, this replicates the startIndexBuild oplog entry.
-            uassertStatusOK(_indexBuildsManager.setUpIndexBuild(opCtx,
-                                                                collection,
-                                                                replState->indexSpecs,
-                                                                replState->buildUUID,
-                                                                onInitFn,
-                                                                options));
+            uassertStatusOK(_indexBuildsManager.setUpIndexBuild(
+                opCtx, collection, replState->indexSpecs, replState->buildUUID, onInitFn, options));
         } else {
             // If we are starting the index build as a secondary, we must suppress calls to write
             // our initial oplog entry in setUpIndexBuild().
@@ -2136,18 +2132,12 @@ IndexBuildsCoordinator::PostSetupAction IndexBuildsCoordinator::_setUpIndexBuild
                 tsBlock.emplace(opCtx, startTimestamp);
             }
 
-            uassertStatusOK(_indexBuildsManager.setUpIndexBuild(opCtx,
-                                                                collection,
-                                                                replState->indexSpecs,
-                                                                replState->buildUUID,
-                                                                onInitFn,
-                                                                options));
+            uassertStatusOK(_indexBuildsManager.setUpIndexBuild(
+                opCtx, collection, replState->indexSpecs, replState->buildUUID, onInitFn, options));
         }
     } catch (DBException& ex) {
-        _indexBuildsManager.abortIndexBuild(opCtx,
-                                            collection,
-                                            replState->buildUUID,
-                                            MultiIndexBlock::kNoopOnCleanUpFn);
+        _indexBuildsManager.abortIndexBuild(
+            opCtx, collection, replState->buildUUID, MultiIndexBlock::kNoopOnCleanUpFn);
 
         const auto& status = ex.toStatus();
         if (status == ErrorCodes::IndexAlreadyExists ||
@@ -2752,8 +2742,7 @@ IndexBuildsCoordinator::CommitResult IndexBuildsCoordinator::_insertKeysFromSide
     }
 
     // The collection object should always exist while an index build is registered.
-    CollectionWriter collection(
-        opCtx, replState->collectionUUID);
+    CollectionWriter collection(opCtx, replState->collectionUUID);
     invariant(collection,
               str::stream() << "Collection not found after relocking. Index build: "
                             << replState->buildUUID
@@ -2790,8 +2779,8 @@ IndexBuildsCoordinator::CommitResult IndexBuildsCoordinator::_insertKeysFromSide
         // Secondaries rely on the primary's decision to commit as assurance that it has checked all
         // key generation errors on its behalf.
         if (isMaster) {
-            uassertStatusOK(
-                _indexBuildsManager.retrySkippedRecords(opCtx, replState->buildUUID, collection.get()));
+            uassertStatusOK(_indexBuildsManager.retrySkippedRecords(
+                opCtx, replState->buildUUID, collection.get()));
         }
 
         // Duplicate key constraint checking phase. Duplicate key errors are tracked for

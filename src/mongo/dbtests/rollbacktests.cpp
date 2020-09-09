@@ -641,8 +641,7 @@ public:
                 assertGet(CollectionOptions::parse(BSONObj(), CollectionOptions::parseForCommand));
             ASSERT_OK(ctx.db()->userCreateNS(&opCtx, nss, collectionOptions, false));
             ASSERT(collectionExists(&opCtx, &ctx, nss.ns()));
-            CollectionWriter coll(&opCtx,
-                                                                                           nss);
+            CollectionWriter coll(&opCtx, nss);
             IndexCatalog* catalog = coll.getWritableCollection()->getIndexCatalog();
 
             ASSERT_OK(catalog->createIndexOnEmptyCollection(&opCtx, specA));

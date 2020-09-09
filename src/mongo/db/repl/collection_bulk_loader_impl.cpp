@@ -85,11 +85,10 @@ Status CollectionBulkLoaderImpl::init(const std::vector<BSONObj>& secondaryIndex
         auto specs = indexCatalog->removeExistingIndexesNoChecks(_opCtx.get(), secondaryIndexSpecs);
         if (specs.size()) {
             _secondaryIndexesBlock->ignoreUniqueConstraint();
-            auto status = _secondaryIndexesBlock
-                              ->init(_opCtx.get(), collWriter,
-                                     specs,
-                                     MultiIndexBlock::kNoopOnInitFn)
-                              .getStatus();
+            auto status =
+                _secondaryIndexesBlock
+                    ->init(_opCtx.get(), collWriter, specs, MultiIndexBlock::kNoopOnInitFn)
+                    .getStatus();
             if (!status.isOK()) {
                 return status;
             }
@@ -97,11 +96,10 @@ Status CollectionBulkLoaderImpl::init(const std::vector<BSONObj>& secondaryIndex
             _secondaryIndexesBlock.reset();
         }
         if (!_idIndexSpec.isEmpty()) {
-            auto status = _idIndexBlock
-                              ->init(_opCtx.get(), collWriter,
-                                     _idIndexSpec,
-                                     MultiIndexBlock::kNoopOnInitFn)
-                              .getStatus();
+            auto status =
+                _idIndexBlock
+                    ->init(_opCtx.get(), collWriter, _idIndexSpec, MultiIndexBlock::kNoopOnInitFn)
+                    .getStatus();
             if (!status.isOK()) {
                 return status;
             }
@@ -342,8 +340,7 @@ void CollectionBulkLoaderImpl::_releaseResources() {
 
     if (_idIndexBlock) {
         CollectionWriter collWriter(*_collection);
-        _idIndexBlock->abortIndexBuild(
-            _opCtx.get(), collWriter, MultiIndexBlock::kNoopOnCleanUpFn);
+        _idIndexBlock->abortIndexBuild(_opCtx.get(), collWriter, MultiIndexBlock::kNoopOnCleanUpFn);
         _idIndexBlock.reset();
     }
 

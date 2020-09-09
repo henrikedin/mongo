@@ -277,7 +277,11 @@ StatusWith<std::vector<BSONObj>> MultiIndexBlock::init(
             boost::optional<IndexSorterInfo> sorterInfo;
             IndexToBuild index;
             index.block = std::make_unique<IndexBuildBlock>(
-                collection.getWritableCollection()->getIndexCatalog(), collection->ns(), info, _method, _buildUUID);
+                collection.getWritableCollection()->getIndexCatalog(),
+                collection->ns(),
+                info,
+                _method,
+                _buildUUID);
             if (resumeInfo) {
                 auto resumeInfoIndexes = resumeInfo->getIndexes();
                 // Find the resume information that corresponds to this spec.

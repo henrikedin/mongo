@@ -204,18 +204,12 @@ protected:
         CollectionWriter coll(autoColl);
 
         MultiIndexBlock indexer;
-        auto abortOnExit = makeGuard([&] {
-            indexer.abortIndexBuild(
-                opCtx(), coll, MultiIndexBlock::kNoopOnCleanUpFn);
-        });
+        auto abortOnExit = makeGuard(
+            [&] { indexer.abortIndexBuild(opCtx(), coll, MultiIndexBlock::kNoopOnCleanUpFn); });
 
         // Initialize the index builder and add all documents currently in the collection.
-        ASSERT_OK(indexer
-                      .init(opCtx(),
-                            coll,
-                            indexSpec,
-                            MultiIndexBlock::kNoopOnInitFn)
-                      .getStatus());
+        ASSERT_OK(
+            indexer.init(opCtx(), coll, indexSpec, MultiIndexBlock::kNoopOnInitFn).getStatus());
         ASSERT_OK(indexer.insertAllDocumentsInCollection(opCtx(), coll.get()));
         ASSERT_OK(indexer.checkConstraints(opCtx()));
 

@@ -84,16 +84,11 @@ TEST_F(IndexBuildsManagerTest, IndexBuildsManagerSetUpAndTearDown) {
     CollectionWriter collection(autoColl);
 
     auto specs = makeSpecs(_nss, {"a", "b"});
-    ASSERT_OK(_indexBuildsManager.setUpIndexBuild(operationContext(),
-                                                  collection,
-                                                  specs,
-                                                  _buildUUID,
-                                                  MultiIndexBlock::kNoopOnInitFn));
+    ASSERT_OK(_indexBuildsManager.setUpIndexBuild(
+        operationContext(), collection, specs, _buildUUID, MultiIndexBlock::kNoopOnInitFn));
 
-    _indexBuildsManager.abortIndexBuild(operationContext(),
-                                        collection,
-                                        _buildUUID,
-                                        MultiIndexBlock::kNoopOnCleanUpFn);
+    _indexBuildsManager.abortIndexBuild(
+        operationContext(), collection, _buildUUID, MultiIndexBlock::kNoopOnCleanUpFn);
     _indexBuildsManager.unregisterIndexBuild(_buildUUID);
 }
 }  // namespace

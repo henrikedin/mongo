@@ -93,10 +93,8 @@ TEST_F(MultiIndexBlockTest, CommitWithoutInsertingDocuments) {
     AutoGetCollection autoColl(operationContext(), getNSS(), MODE_X);
     CollectionWriter coll(autoColl);
 
-    auto specs = unittest::assertGet(indexer->init(operationContext(),
-                                                   coll,
-                                                   std::vector<BSONObj>(),
-                                                   MultiIndexBlock::kNoopOnInitFn));
+    auto specs = unittest::assertGet(indexer->init(
+        operationContext(), coll, std::vector<BSONObj>(), MultiIndexBlock::kNoopOnInitFn));
     ASSERT_EQUALS(0U, specs.size());
 
     ASSERT_OK(indexer->dumpInsertsFromBulk(operationContext()));
@@ -118,10 +116,8 @@ TEST_F(MultiIndexBlockTest, CommitAfterInsertingSingleDocument) {
     AutoGetCollection autoColl(operationContext(), getNSS(), MODE_X);
     CollectionWriter coll(autoColl);
 
-    auto specs = unittest::assertGet(indexer->init(operationContext(),
-                                                   coll,
-                                                   std::vector<BSONObj>(),
-                                                   MultiIndexBlock::kNoopOnInitFn));
+    auto specs = unittest::assertGet(indexer->init(
+        operationContext(), coll, std::vector<BSONObj>(), MultiIndexBlock::kNoopOnInitFn));
     ASSERT_EQUALS(0U, specs.size());
 
     ASSERT_OK(indexer->insertSingleDocumentForInitialSyncOrRecovery(operationContext(), {}, {}));
@@ -138,8 +134,7 @@ TEST_F(MultiIndexBlockTest, CommitAfterInsertingSingleDocument) {
     }
 
     // abort() should have no effect after the index build is committed.
-    indexer->abortIndexBuild(
-        operationContext(), coll, MultiIndexBlock::kNoopOnCleanUpFn);
+    indexer->abortIndexBuild(operationContext(), coll, MultiIndexBlock::kNoopOnCleanUpFn);
 }
 
 TEST_F(MultiIndexBlockTest, AbortWithoutCleanupAfterInsertingSingleDocument) {
@@ -148,10 +143,8 @@ TEST_F(MultiIndexBlockTest, AbortWithoutCleanupAfterInsertingSingleDocument) {
     AutoGetCollection autoColl(operationContext(), getNSS(), MODE_X);
     CollectionWriter coll(autoColl);
 
-    auto specs = unittest::assertGet(indexer->init(operationContext(),
-                                                   coll,
-                                                   std::vector<BSONObj>(),
-                                                   MultiIndexBlock::kNoopOnInitFn));
+    auto specs = unittest::assertGet(indexer->init(
+        operationContext(), coll, std::vector<BSONObj>(), MultiIndexBlock::kNoopOnInitFn));
     ASSERT_EQUALS(0U, specs.size());
     ASSERT_OK(indexer->insertSingleDocumentForInitialSyncOrRecovery(operationContext(), {}, {}));
     auto isResumable = false;
@@ -182,17 +175,12 @@ TEST_F(MultiIndexBlockTest, InitWriteConflictException) {
 
     {
         WriteUnitOfWork wuow(operationContext());
-        ASSERT_OK(indexer
-                      ->init(operationContext(),
-                             coll,
-                             {spec},
-                             MultiIndexBlock::kNoopOnInitFn)
+        ASSERT_OK(indexer->init(operationContext(), coll, {spec}, MultiIndexBlock::kNoopOnInitFn)
                       .getStatus());
         wuow.commit();
     }
 
-    indexer->abortIndexBuild(
-        operationContext(), coll, MultiIndexBlock::kNoopOnCleanUpFn);
+    indexer->abortIndexBuild(operationContext(), coll, MultiIndexBlock::kNoopOnCleanUpFn);
 }
 
 }  // namespace

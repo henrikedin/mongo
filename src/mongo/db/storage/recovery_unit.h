@@ -674,7 +674,6 @@ public:
     }
 
 protected:
-
     /**
      * Returns true if currently running commit or rollback handlers
      */

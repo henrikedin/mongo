@@ -1789,7 +1789,8 @@ void rollback_internal::syncFixUp(OperationContext* opCtx,
 
                                 const auto clock = opCtx->getServiceContext()->getFastClockSource();
                                 const auto findOneStart = clock->now();
-                                RecordId loc = Helpers::findOne(opCtx, collection.get(), pattern, false);
+                                RecordId loc =
+                                    Helpers::findOne(opCtx, collection.get(), pattern, false);
                                 if (clock->now() - findOneStart > Milliseconds(200))
                                     LOGV2_WARNING(
                                         21726,
@@ -1805,8 +1806,9 @@ void rollback_internal::syncFixUp(OperationContext* opCtx,
                                                            collection->ns().ns(),
                                                            [&] {
                                                                WriteUnitOfWork wunit(opCtx);
-                                                               collection.getWritableCollection()->cappedTruncateAfter(
-                                                                   opCtx, loc, true);
+                                                               collection.getWritableCollection()
+                                                                   ->cappedTruncateAfter(
+                                                                       opCtx, loc, true);
                                                                wunit.commit();
                                                            });
                                     } catch (const DBException& e) {
@@ -1815,7 +1817,9 @@ void rollback_internal::syncFixUp(OperationContext* opCtx,
                                             writeConflictRetry(
                                                 opCtx, "truncate", collection->ns().ns(), [&] {
                                                     WriteUnitOfWork wunit(opCtx);
-                                                    uassertStatusOK(collection.getWritableCollection()->truncate(opCtx));
+                                                    uassertStatusOK(
+                                                        collection.getWritableCollection()
+                                                            ->truncate(opCtx));
                                                     wunit.commit();
                                                 });
                                         } else {

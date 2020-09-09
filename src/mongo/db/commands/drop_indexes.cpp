@@ -222,16 +222,15 @@ public:
             WriteUnitOfWork wunit(opCtx);
             collection.getWritableCollection()->getIndexCatalog()->dropAllIndexes(opCtx, true);
 
-            swIndexesToRebuild = indexer->init(
-                opCtx, collection, all, MultiIndexBlock::kNoopOnInitFn);
+            swIndexesToRebuild =
+                indexer->init(opCtx, collection, all, MultiIndexBlock::kNoopOnInitFn);
             uassertStatusOK(swIndexesToRebuild.getStatus());
             wunit.commit();
         });
 
         // The 'indexer' can throw, so ensure build cleanup occurs.
         auto abortOnExit = makeGuard([&] {
-            indexer->abortIndexBuild(
-                opCtx, collection, MultiIndexBlock::kNoopOnCleanUpFn);
+            indexer->abortIndexBuild(opCtx, collection, MultiIndexBlock::kNoopOnCleanUpFn);
         });
 
         if (MONGO_unlikely(reIndexCrashAfterDrop.shouldFail())) {

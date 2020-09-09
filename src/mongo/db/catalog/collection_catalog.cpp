@@ -103,7 +103,8 @@ CollectionCatalog::iterator::value_type CollectionCatalog::iterator::operator*()
     return _mapIter->second.get();
 }
 
-Collection* CollectionCatalog::iterator::getWritableCollection(OperationContext* opCtx, LifetimeMode mode) {
+Collection* CollectionCatalog::iterator::getWritableCollection(OperationContext* opCtx,
+                                                               LifetimeMode mode) {
     auto coll = this->operator*();
     return _catalog->lookupCollectionByUUIDForMetadataWrite(opCtx, mode, coll->uuid());
 }
@@ -273,9 +274,11 @@ std::shared_ptr<const Collection> CollectionCatalog::lookupCollectionByUUIDForRe
     return (coll && coll->isCommitted()) ? coll : nullptr;
 }
 
-Collection* CollectionCatalog::lookupCollectionByUUIDForMetadataWrite(OperationContext* opCtx, LifetimeMode mode,
+Collection* CollectionCatalog::lookupCollectionByUUIDForMetadataWrite(OperationContext* opCtx,
+                                                                      LifetimeMode mode,
                                                                       CollectionUUID uuid) {
-    invariant(mode != LifetimeMode::kManagedInWriteUnitOfWork|| opCtx->recoveryUnit()->_inUnitOfWork());
+    invariant(mode != LifetimeMode::kManagedInWriteUnitOfWork ||
+              opCtx->recoveryUnit()->_inUnitOfWork());
     if (auto coll = UncommittedCollections::getForTxn(opCtx, uuid)) {
         invariant(opCtx->lockState()->isCollectionLockedForMode(coll->ns(), MODE_IX));
         return coll.get();
@@ -334,7 +337,8 @@ std::shared_ptr<const Collection> CollectionCatalog::lookupCollectionByNamespace
 
 Collection* CollectionCatalog::lookupCollectionByNamespaceForMetadataWrite(
     OperationContext* opCtx, LifetimeMode mode, const NamespaceString& nss) {
-    invariant(mode != LifetimeMode::kManagedInWriteUnitOfWork || opCtx->recoveryUnit()->_inUnitOfWork());
+    invariant(mode != LifetimeMode::kManagedInWriteUnitOfWork ||
+              opCtx->recoveryUnit()->_inUnitOfWork());
     if (auto coll = UncommittedCollections::getForTxn(opCtx, nss)) {
         invariant(opCtx->lockState()->isCollectionLockedForMode(nss, MODE_IX));
         return coll.get();

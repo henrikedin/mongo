@@ -453,7 +453,8 @@ Status dropIndexes(OperationContext* opCtx,
                     continue;
                 }
 
-                Status status = dropIndexByDescriptor(opCtx, collection->getCollection(), indexCatalog, desc);
+                Status status =
+                    dropIndexByDescriptor(opCtx, collection->getCollection(), indexCatalog, desc);
                 if (!status.isOK()) {
                     return status;
                 }
@@ -486,7 +487,8 @@ Status dropIndexes(OperationContext* opCtx,
 
             // Use an empty BSONObjBuilder to avoid duplicate appends to result on retry loops.
             BSONObjBuilder tempObjBuilder;
-            Status status = dropReadyIndexes(opCtx, collection->getWritableCollection(), indexNames, &tempObjBuilder);
+            Status status = dropReadyIndexes(
+                opCtx, collection->getWritableCollection(), indexNames, &tempObjBuilder);
             if (!status.isOK()) {
                 return status;
             }
