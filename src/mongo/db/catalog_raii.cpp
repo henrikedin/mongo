@@ -158,8 +158,27 @@ AutoGetCollection::AutoGetCollection(OperationContext* opCtx,
 
 Collection* AutoGetCollection::getWritableCollection() {
     if (!_writableColl) {
+        class WritableCollectionReset : public RecoveryUnit::Change {
+        public:
+            WritableCollectionReset(AutoGetCollection& autoColl,
+                                    const Collection* rollbackCollection)
+                : _autoColl(autoColl), _rollbackCollection(rollbackCollection) {}
+            void commit(boost::optional<Timestamp> commitTime) final {
+                _autoColl._writableColl = nullptr;
+            }
+            void rollback() final {
+                _autoColl._coll = _rollbackCollection;
+                _autoColl._writableColl = nullptr;
+            }
+
+        private:
+            AutoGetCollection& _autoColl;
+            const Collection* _rollbackCollection;
+        };
+
         _writableColl = CollectionCatalog::get(_opCtx).lookupCollectionByNamespaceForMetadataWrite(
             _opCtx, CollectionCatalog::LifetimeMode::kManagedInWriteUnitOfWork, _resolvedNss);
+        _opCtx->recoveryUnit()->registerChange(std::make_unique<WritableCollectionReset>(*this, _coll));
         _coll = _writableColl;
     }
     return _writableColl;
