@@ -156,7 +156,7 @@ AutoGetCollection::AutoGetCollection(OperationContext* opCtx,
                                      Date_t deadline)
     : AutoGetCollectionBase(opCtx, nsOrUUID, modeColl, viewMode, deadline), _opCtx(opCtx) {}
 
-Collection* AutoGetCollection::getWritableCollection() {
+Collection* AutoGetCollection::getWritableCollection(CollectionCatalog::LifetimeMode mode) {
     // Acquire writable instance if not already available
     if (!_writableColl) {
 
@@ -181,59 +181,85 @@ Collection* AutoGetCollection::getWritableCollection() {
         };
 
         _writableColl = CollectionCatalog::get(_opCtx).lookupCollectionByNamespaceForMetadataWrite(
-            _opCtx, CollectionCatalog::LifetimeMode::kManagedInWriteUnitOfWork, _resolvedNss);
-        _opCtx->recoveryUnit()->registerChange(
-            std::make_unique<WritableCollectionReset>(*this, _coll));
+            _opCtx, mode, _resolvedNss);
+        if (mode == CollectionCatalog::LifetimeMode::kManagedInWriteUnitOfWork) {
+            _opCtx->recoveryUnit()->registerChange(
+                std::make_unique<WritableCollectionReset>(*this, _coll));
+        }
+
         _coll = _writableColl;
     }
     return _writableColl;
 }
 
-CollectionWriter::CollectionWriter(OperationContext* opCtx, const CollectionUUID& uuid)
-    : _opCtx(opCtx), _sharedThis(std::make_shared<CollectionWriter*>(this)) {
+CollectionWriter::CollectionWriter(OperationContext* opCtx,
+                                   const CollectionUUID& uuid,
+                                   bool managed)
+    : _opCtx(opCtx),
+      _mode(managed ? CollectionCatalog::LifetimeMode::kManagedInWriteUnitOfWork
+                    : CollectionCatalog::LifetimeMode::kUnmanagedClone),
+      _sharedThis(std::make_shared<CollectionWriter*>(this)) {
 
     _collection = CollectionCatalog::get(opCtx).lookupCollectionByUUID(opCtx, uuid);
-    _lazyWritableCollectionInitializer = [opCtx, uuid] {
+    _lazyWritableCollectionInitializer = [opCtx, uuid](CollectionCatalog::LifetimeMode mode) {
         return CollectionCatalog::get(opCtx).lookupCollectionByUUIDForMetadataWrite(
-            opCtx, CollectionCatalog::LifetimeMode::kManagedInWriteUnitOfWork, uuid);
+            opCtx,
+            mode,
+            uuid);
     };
 }
 
-CollectionWriter::CollectionWriter(OperationContext* opCtx, const NamespaceString& nss)
-    : _opCtx(opCtx), _sharedThis(std::make_shared<CollectionWriter*>(this)) {
+CollectionWriter::CollectionWriter(OperationContext* opCtx,
+                                   const NamespaceString& nss,
+                                   bool managed)
+    : _opCtx(opCtx),
+      _mode(managed ? CollectionCatalog::LifetimeMode::kManagedInWriteUnitOfWork
+                    : CollectionCatalog::LifetimeMode::kUnmanagedClone),
+      _sharedThis(std::make_shared<CollectionWriter*>(this)) {
     _collection = CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, nss);
-    _lazyWritableCollectionInitializer = [opCtx, nss] {
+    _lazyWritableCollectionInitializer = [opCtx, nss](CollectionCatalog::LifetimeMode mode) {
         return CollectionCatalog::get(opCtx).lookupCollectionByNamespaceForMetadataWrite(
-            opCtx, CollectionCatalog::LifetimeMode::kManagedInWriteUnitOfWork, nss);
+            opCtx,
+            mode,
+            nss);
     };
 }
 
-CollectionWriter::CollectionWriter(AutoGetCollection& autoCollection)
+CollectionWriter::CollectionWriter(AutoGetCollection& autoCollection, bool managed)
     : _opCtx(autoCollection.getOperationContext()),
+      _mode(managed ? CollectionCatalog::LifetimeMode::kManagedInWriteUnitOfWork
+                    : CollectionCatalog::LifetimeMode::kUnmanagedClone),
       _sharedThis(std::make_shared<CollectionWriter*>(this)) {
     _collection = autoCollection.getCollection();
-    _lazyWritableCollectionInitializer = [&autoCollection] {
-        return autoCollection.getWritableCollection();
+    _lazyWritableCollectionInitializer = [&autoCollection](CollectionCatalog::LifetimeMode mode) {
+        return autoCollection.getWritableCollection(
+            mode);
     };
 }
 
 CollectionWriter::CollectionWriter(Collection* writableCollection)
-    : _collection(writableCollection), _writableCollection(writableCollection) {}
+    : _collection(writableCollection),
+      _writableCollection(writableCollection),
+      _mode(CollectionCatalog::LifetimeMode::kInplace) {}
 
 CollectionWriter::~CollectionWriter() {
     // Notify shared state that this instance is destroyed
     if (_sharedThis) {
         *_sharedThis = nullptr;
     }
+
+    if (_mode == CollectionCatalog::LifetimeMode::kUnmanagedClone && _writableCollection) {
+        CollectionCatalog::get(_opCtx).discardUnmanagedClone(_writableCollection);
+    }
 }
 
 Collection* CollectionWriter::getWritableCollection() {
     // Acquire writable instance lazily if not already available
     if (!_writableCollection) {
-        _writableCollection = _lazyWritableCollectionInitializer();
+        _writableCollection = _lazyWritableCollectionInitializer(_mode);
 
-        // Resets the writable Collection when the write unit of work finishes so we re-fetches and
-        // re-clones the Collection if a new write unit of work is opened. Holds the back pointer to
+        // Resets the writable Collection when the write unit of work finishes so we re-fetch and
+        // re-clone the Collection if a new write unit of work is opened. Holds the back pointer to
         // the CollectionWriter via a shared_ptr so we can detect if the instance is already
         // destroyed.
         class WritableCollectionReset : public RecoveryUnit::Change {
@@ -257,12 +283,21 @@ Collection* CollectionWriter::getWritableCollection() {
             const Collection* _rollbackCollection;
         };
 
-        _opCtx->recoveryUnit()->registerChange(
-            std::make_unique<WritableCollectionReset>(_sharedThis, _collection));
+        if (_mode == CollectionCatalog::LifetimeMode::kManagedInWriteUnitOfWork) {
+            _opCtx->recoveryUnit()->registerChange(
+                std::make_unique<WritableCollectionReset>(_sharedThis, _collection));
+        }
 
         _collection = _writableCollection;
     }
     return _writableCollection;
+}
+
+void CollectionWriter::commitToCatalog() {
+    dassert(_mode == CollectionCatalog::LifetimeMode::kUnmanagedClone);
+    dassert(_writableCollection);
+    CollectionCatalog::get(_opCtx).commitUnmanagedClone(_writableCollection);
+    _writableCollection = nullptr;
 }
 
 CatalogCollectionLookup::CollectionStorage CatalogCollectionLookup::lookupCollection(

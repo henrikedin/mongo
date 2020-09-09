@@ -343,6 +343,16 @@ public:
      */
     void addResource(const ResourceId& rid, const std::string& entry);
 
+    /**
+     * Commit unmanaged Collection that was acquired by lookupCollectionBy***ForMetadataWrite and lifetime mode kUnmanagedClone.
+     */
+    void commitUnmanagedClone(Collection* collection);
+
+    /**
+     * Discard unmanaged Collection that was acquired by lookupCollectionBy***ForMetadataWrite and lifetime mode kUnmanagedClone.
+     */
+    void discardUnmanagedClone(Collection* collection);
+
 private:
     friend class CollectionCatalog::iterator;
 

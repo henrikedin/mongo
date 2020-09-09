@@ -154,7 +154,7 @@ public:
                 uasserted(ErrorCodes::NamespaceNotFound, "collection does not exist");
         }
 
-        CollectionWriter collection(autoColl);
+        CollectionWriter collection(autoColl, false);
         IndexBuildsCoordinator::get(opCtx)->assertNoIndexBuildInProgForCollection(
             collection->uuid());
 
@@ -217,7 +217,6 @@ public:
         indexer->setIndexBuildMethod(IndexBuildMethod::kForeground);
         StatusWith<std::vector<BSONObj>> swIndexesToRebuild(ErrorCodes::UnknownError,
                                                             "Uninitialized");
-
         writeConflictRetry(opCtx, "dropAllIndexes", toReIndexNss.ns(), [&] {
             WriteUnitOfWork wunit(opCtx);
             collection.getWritableCollection()->getIndexCatalog()->dropAllIndexes(opCtx, true);
@@ -260,7 +259,8 @@ public:
         // tries to read in the intermediate state where all indexes are newer than the current
         // snapshot so are unable to be used.
         auto clusterTime = LogicalClock::getClusterTimeForReplicaSet(opCtx).asTimestamp();
-        collection.getWritableCollection()->setMinimumVisibleSnapshot(clusterTime); // TODO HEED
+        collection.getWritableCollection()->setMinimumVisibleSnapshot(clusterTime);
+        collection.commitToCatalog();
 
         result.append("nIndexes", static_cast<int>(swIndexesToRebuild.getValue().size()));
         result.append("indexes", swIndexesToRebuild.getValue());

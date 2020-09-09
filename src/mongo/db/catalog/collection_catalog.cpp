@@ -685,4 +685,12 @@ void CollectionCatalog::addResource(const ResourceId& rid, const std::string& en
     namespaces.insert(entry);
 }
 
+void CollectionCatalog::commitUnmanagedClone(Collection* collection) {
+    // TODO SERVER-50145
+}
+
+void CollectionCatalog::discardUnmanagedClone(Collection* collection) {
+    // TODO SERVER-50145
+}
+
 }  // namespace mongo

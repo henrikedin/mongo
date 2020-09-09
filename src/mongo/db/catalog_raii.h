@@ -215,10 +215,8 @@ public:
     /**
      * Returns writable Collection. Necessary Collection lock mode is required.
      * Any previous Collection that has been returned may be invalidated.
-     *
-     * It is required to be in an active WriteUnitOfWork when making this call
      */
-    Collection* getWritableCollection();
+    Collection* getWritableCollection(CollectionCatalog::LifetimeMode mode = CollectionCatalog::LifetimeMode::kManagedInWriteUnitOfWork);
 
     OperationContext* getOperationContext() const {
         return _opCtx;
@@ -241,11 +239,11 @@ private:
 class CollectionWriter final {
 public:
     // Gets the collection from the catalog for the provided uuid
-    CollectionWriter(OperationContext* opCtx, const CollectionUUID& uuid);
+    CollectionWriter(OperationContext* opCtx, const CollectionUUID& uuid, bool managed = true);
     // Gets the collection from the catalog for the provided namespace string
-    CollectionWriter(OperationContext* opCtx, const NamespaceString& nss);
+    CollectionWriter(OperationContext* opCtx, const NamespaceString& nss, bool managed = true);
     // Acts as an adaptor for AutoGetCollection
-    CollectionWriter(AutoGetCollection& autoCollection);
+    CollectionWriter(AutoGetCollection& autoCollection, bool managed = true);
     // Acts as an adaptor for a writable Collection that has been retrieved elsewhere
     CollectionWriter(Collection* writableCollection);
 
@@ -274,16 +272,19 @@ public:
     }
 
     // Returns writable Collection, any previous Collection that has been returned may be
-    // invalidated. It is required to be in an active WriteUnitOfWork when making this call unless
-    // the constructor that takes a writable Collection was used.
+    // invalidated. 
     Collection* getWritableCollection();
+
+    // Commits unmanaged Collection to the catalog
+    void commitToCatalog();
 
 private:
     const Collection* _collection{nullptr};
     Collection* _writableCollection{nullptr};
-    const OperationContext* _opCtx{nullptr};
+    OperationContext* _opCtx{nullptr};
+    CollectionCatalog::LifetimeMode _mode;
     std::shared_ptr<CollectionWriter*> _sharedThis;
-    std::function<Collection*()> _lazyWritableCollectionInitializer;
+    std::function<Collection*(CollectionCatalog::LifetimeMode)> _lazyWritableCollectionInitializer;
 };
 
 /**
