@@ -114,13 +114,13 @@ Status createIndexFromSpec(OperationContext* opCtx, StringData ns, const BSONObj
         wunit.commit();
     }
     MultiIndexBlock indexer;
+    CollectionWriter collection(coll);
     auto abortOnExit =
         makeGuard([&] { 
-        CollectionWriter collection(coll);
         indexer.abortIndexBuild(opCtx, collection, MultiIndexBlock::kNoopOnCleanUpFn); });
     Status status = indexer
                         .init(opCtx,
-                              coll,
+                              collection,
                               spec,
                               [opCtx](const std::vector<BSONObj>& specs) -> Status {
                                   if (opCtx->recoveryUnit()->getCommitTimestamp().isNull()) {

@@ -80,7 +80,7 @@ IndexBuildsManager::~IndexBuildsManager() {
 }
 
 Status IndexBuildsManager::setUpIndexBuild(OperationContext* opCtx,
-                                           const CollectionWriter& collection,
+                                           CollectionWriter& collection,
                                            const std::vector<BSONObj>& specs,
                                            const UUID& buildUUID,
                                            OnInitFn onInit,

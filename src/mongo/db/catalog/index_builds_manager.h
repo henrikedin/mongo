@@ -81,7 +81,7 @@ public:
      */
     using OnInitFn = MultiIndexBlock::OnInitFn;
     Status setUpIndexBuild(OperationContext* opCtx,
-                           const CollectionWriter& collection,
+                           CollectionWriter& collection,
                            const std::vector<BSONObj>& specs,
                            const UUID& buildUUID,
                            OnInitFn onInit,

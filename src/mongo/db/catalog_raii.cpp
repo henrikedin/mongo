@@ -215,7 +215,7 @@ CollectionWriter::~CollectionWriter() {
     *_sharedThis = nullptr;
 }
 
-Collection* CollectionWriter::getWritableCollection() const {
+Collection* CollectionWriter::getWritableCollection() {
     if (!_writableCollection) {
         _writableCollection = _lazyWritableCollectionInitializer();
 

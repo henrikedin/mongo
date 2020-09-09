@@ -212,7 +212,7 @@ protected:
         // Initialize the index builder and add all documents currently in the collection.
         ASSERT_OK(indexer
                       .init(opCtx(),
-                            coll.getWritableCollection(),
+                            coll,
                             indexSpec,
                             MultiIndexBlock::kNoopOnInitFn)
                       .getStatus());

@@ -145,15 +145,16 @@ public:
                     << toReIndexNss << "' while replication is active");
         }
 
-        AutoGetCollection collection(opCtx, toReIndexNss, MODE_X);
-        if (!collection) {
-            auto db = collection.getDb();
+        AutoGetCollection autoColl(opCtx, toReIndexNss, MODE_X);
+        if (!autoColl) {
+            auto db = autoColl.getDb();
             if (db && ViewCatalog::get(db)->lookup(opCtx, toReIndexNss.ns()))
                 uasserted(ErrorCodes::CommandNotSupportedOnView, "can't re-index a view");
             else
                 uasserted(ErrorCodes::NamespaceNotFound, "collection does not exist");
         }
 
+        CollectionWriter collection(autoColl);
         IndexBuildsCoordinator::get(opCtx)->assertNoIndexBuildInProgForCollection(
             collection->uuid());
 
@@ -229,9 +230,8 @@ public:
 
         // The 'indexer' can throw, so ensure build cleanup occurs.
         auto abortOnExit = makeGuard([&] {
-            CollectionWriter collWriter(collection);
             indexer->abortIndexBuild(
-                opCtx, collWriter, MultiIndexBlock::kNoopOnCleanUpFn);
+                opCtx, collection, MultiIndexBlock::kNoopOnCleanUpFn);
         });
 
         if (MONGO_unlikely(reIndexCrashAfterDrop.shouldFail())) {

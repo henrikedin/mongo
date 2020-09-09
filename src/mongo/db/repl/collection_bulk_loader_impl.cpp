@@ -80,12 +80,13 @@ Status CollectionBulkLoaderImpl::init(const std::vector<BSONObj>& secondaryIndex
         // The opCtx is accessed indirectly through _secondaryIndexesBlock.
         UnreplicatedWritesBlock uwb(_opCtx.get());
         // This enforces the buildIndexes setting in the replica set configuration.
-        auto indexCatalog = _collection->getWritableCollection()->getIndexCatalog();
+        CollectionWriter collWriter(*_collection);
+        auto indexCatalog = collWriter.getWritableCollection()->getIndexCatalog();
         auto specs = indexCatalog->removeExistingIndexesNoChecks(_opCtx.get(), secondaryIndexSpecs);
         if (specs.size()) {
             _secondaryIndexesBlock->ignoreUniqueConstraint();
             auto status = _secondaryIndexesBlock
-                              ->init(_opCtx.get(), {*_collection},
+                              ->init(_opCtx.get(), collWriter,
                                      specs,
                                      MultiIndexBlock::kNoopOnInitFn)
                               .getStatus();
@@ -97,7 +98,7 @@ Status CollectionBulkLoaderImpl::init(const std::vector<BSONObj>& secondaryIndex
         }
         if (!_idIndexSpec.isEmpty()) {
             auto status = _idIndexBlock
-                              ->init(_opCtx.get(), {*_collection},
+                              ->init(_opCtx.get(), collWriter,
                                      _idIndexSpec,
                                      MultiIndexBlock::kNoopOnInitFn)
                               .getStatus();

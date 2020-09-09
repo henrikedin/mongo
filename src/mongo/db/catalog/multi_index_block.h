@@ -112,12 +112,12 @@ public:
     using OnInitFn = std::function<Status(std::vector<BSONObj>& specs)>;
     StatusWith<std::vector<BSONObj>> init(
         OperationContext* opCtx,
-        const CollectionWriter& collection,
+        CollectionWriter& collection,
         const std::vector<BSONObj>& specs,
         OnInitFn onInit,
         const boost::optional<ResumeIndexInfo>& resumeInfo = boost::none);
     StatusWith<std::vector<BSONObj>> init(OperationContext* opCtx,
-                                          const CollectionWriter& collection,
+                                          CollectionWriter& collection,
                                           const BSONObj& spec,
                                           OnInitFn onInit);
     StatusWith<std::vector<BSONObj>> initForResume(OperationContext* opCtx,

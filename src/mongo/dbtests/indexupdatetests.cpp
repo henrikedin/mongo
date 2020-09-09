@@ -215,7 +215,7 @@ public:
             indexer.abortIndexBuild(_opCtx, collection(), MultiIndexBlock::kNoopOnCleanUpFn);
         });
 
-        ASSERT_OK(indexer.init(_opCtx, coll.getWritableCollection(), spec, MultiIndexBlock::kNoopOnInitFn).getStatus());
+        ASSERT_OK(indexer.init(_opCtx, collection(), spec, MultiIndexBlock::kNoopOnInitFn).getStatus());
 
         auto desc =
             coll->getIndexCatalog()->findIndexByName(_opCtx, "a", true /* includeUnfinished */);

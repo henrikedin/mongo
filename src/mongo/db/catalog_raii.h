@@ -251,13 +251,13 @@ public:
         return _collection;
     }
 
-    Collection* getWritableCollection() const;
+    Collection* getWritableCollection();
 
     void commitUnmanagedWritableCollection();
 
 private:
-    mutable const Collection* _collection{nullptr};
-    mutable Collection* _writableCollection{nullptr};
+    const Collection* _collection{nullptr};
+    Collection* _writableCollection{nullptr};
     std::shared_ptr<CollectionWriter*> _sharedThis = std::make_shared<CollectionWriter*>(this);
     const OperationContext* _opCtx{nullptr};
     std::function<Collection*()> _lazyWritableCollectionInitializer;

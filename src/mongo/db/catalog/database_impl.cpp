@@ -548,12 +548,13 @@ Status DatabaseImpl::renameCollection(OperationContext* opCtx,
     // Set the namespace of 'collToRename' from within the CollectionCatalog. This is necessary
     // because the CollectionCatalog mutex synchronizes concurrent access to the collection's
     // namespace for callers that may not hold a collection lock.
-    CollectionCatalog::get(opCtx).setCollectionNamespace(opCtx, collToRename.getWritableCollection(), fromNss, toNss);
+    auto writableCollection = collToRename.getWritableCollection();
+    CollectionCatalog::get(opCtx).setCollectionNamespace(opCtx, writableCollection, fromNss, toNss);
 
-    opCtx->recoveryUnit()->onCommit([collToRename](auto commitTime) {
+    opCtx->recoveryUnit()->onCommit([writableCollection](auto commitTime) {
         // Ban reading from this collection on committed reads on snapshots before now.
         if (commitTime) {
-            collToRename.getWritableCollection()->setMinimumVisibleSnapshot(commitTime.get());
+            writableCollection->setMinimumVisibleSnapshot(commitTime.get());
         }
     });
 

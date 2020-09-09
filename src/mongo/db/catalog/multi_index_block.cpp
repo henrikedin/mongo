@@ -187,7 +187,7 @@ MultiIndexBlock::OnInitFn MultiIndexBlock::makeTimestampedIndexOnInitFn(Operatio
 }
 
 StatusWith<std::vector<BSONObj>> MultiIndexBlock::init(OperationContext* opCtx,
-                                                       const CollectionWriter& collection,
+                                                       CollectionWriter& collection,
                                                        const BSONObj& spec,
                                                        OnInitFn onInit) {
     const auto indexes = std::vector<BSONObj>(1, spec);
@@ -196,7 +196,7 @@ StatusWith<std::vector<BSONObj>> MultiIndexBlock::init(OperationContext* opCtx,
 
 StatusWith<std::vector<BSONObj>> MultiIndexBlock::init(
     OperationContext* opCtx,
-    const CollectionWriter& collection,
+    CollectionWriter& collection,
     const std::vector<BSONObj>& indexSpecs,
     OnInitFn onInit,
     const boost::optional<ResumeIndexInfo>& resumeInfo) {
