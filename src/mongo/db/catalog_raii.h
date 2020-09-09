@@ -216,7 +216,9 @@ public:
      * Returns writable Collection. Necessary Collection lock mode is required.
      * Any previous Collection that has been returned may be invalidated.
      */
-    Collection* getWritableCollection(CollectionCatalog::LifetimeMode mode = CollectionCatalog::LifetimeMode::kManagedInWriteUnitOfWork);
+    Collection* getWritableCollection(
+        CollectionCatalog::LifetimeMode mode =
+            CollectionCatalog::LifetimeMode::kManagedInWriteUnitOfWork);
 
     OperationContext* getOperationContext() const {
         return _opCtx;
@@ -272,7 +274,7 @@ public:
     }
 
     // Returns writable Collection, any previous Collection that has been returned may be
-    // invalidated. 
+    // invalidated.
     Collection* getWritableCollection();
 
     // Commits unmanaged Collection to the catalog

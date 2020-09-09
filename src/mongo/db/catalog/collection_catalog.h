@@ -62,7 +62,8 @@ public:
         // collection is installed in the catalog during commit.
         kManagedInWriteUnitOfWork,
 
-        // Unmanaged writable Collection usable outside of write unit of work. Users need to commit the Collection to the catalog.
+        // Unmanaged writable Collection usable outside of write unit of work. Users need to commit
+        // the Collection to the catalog.
         kUnmanagedClone,
 
         // Inplace writable access to the Collection currently installed in the catalog. This is
@@ -344,12 +345,14 @@ public:
     void addResource(const ResourceId& rid, const std::string& entry);
 
     /**
-     * Commit unmanaged Collection that was acquired by lookupCollectionBy***ForMetadataWrite and lifetime mode kUnmanagedClone.
+     * Commit unmanaged Collection that was acquired by lookupCollectionBy***ForMetadataWrite and
+     * lifetime mode kUnmanagedClone.
      */
     void commitUnmanagedClone(Collection* collection);
 
     /**
-     * Discard unmanaged Collection that was acquired by lookupCollectionBy***ForMetadataWrite and lifetime mode kUnmanagedClone.
+     * Discard unmanaged Collection that was acquired by lookupCollectionBy***ForMetadataWrite and
+     * lifetime mode kUnmanagedClone.
      */
     void discardUnmanagedClone(Collection* collection);
 

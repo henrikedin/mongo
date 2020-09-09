@@ -203,9 +203,7 @@ CollectionWriter::CollectionWriter(OperationContext* opCtx,
     _collection = CollectionCatalog::get(opCtx).lookupCollectionByUUID(opCtx, uuid);
     _lazyWritableCollectionInitializer = [opCtx, uuid](CollectionCatalog::LifetimeMode mode) {
         return CollectionCatalog::get(opCtx).lookupCollectionByUUIDForMetadataWrite(
-            opCtx,
-            mode,
-            uuid);
+            opCtx, mode, uuid);
     };
 }
 
@@ -219,9 +217,7 @@ CollectionWriter::CollectionWriter(OperationContext* opCtx,
     _collection = CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, nss);
     _lazyWritableCollectionInitializer = [opCtx, nss](CollectionCatalog::LifetimeMode mode) {
         return CollectionCatalog::get(opCtx).lookupCollectionByNamespaceForMetadataWrite(
-            opCtx,
-            mode,
-            nss);
+            opCtx, mode, nss);
     };
 }
 
@@ -232,8 +228,7 @@ CollectionWriter::CollectionWriter(AutoGetCollection& autoCollection, bool manag
       _sharedThis(std::make_shared<CollectionWriter*>(this)) {
     _collection = autoCollection.getCollection();
     _lazyWritableCollectionInitializer = [&autoCollection](CollectionCatalog::LifetimeMode mode) {
-        return autoCollection.getWritableCollection(
-            mode);
+        return autoCollection.getWritableCollection(mode);
     };
 }
 

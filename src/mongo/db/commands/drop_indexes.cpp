@@ -239,8 +239,7 @@ public:
 
         // The following function performs its own WriteConflict handling, so don't wrap it in a
         // writeConflictRetry loop.
-        uassertStatusOK(
-            indexer->insertAllDocumentsInCollection(opCtx, collection.get()));
+        uassertStatusOK(indexer->insertAllDocumentsInCollection(opCtx, collection.get()));
 
         uassertStatusOK(indexer->checkConstraints(opCtx));
 
