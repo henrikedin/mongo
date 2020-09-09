@@ -235,6 +235,11 @@ public:
     CollectionWriter(Collection* writableCollection);
     ~CollectionWriter();
 
+    CollectionWriter(const CollectionWriter&) = delete;
+    CollectionWriter(CollectionWriter&&) = delete;
+    CollectionWriter& operator=(const CollectionWriter&) = delete;
+    CollectionWriter& operator=(CollectionWriter&&) = delete;
+
     explicit operator bool() const {
         return get();
     }
@@ -253,15 +258,12 @@ public:
 
     Collection* getWritableCollection();
 
-    void commitUnmanagedWritableCollection();
-
 private:
     const Collection* _collection{nullptr};
     Collection* _writableCollection{nullptr};
-    std::shared_ptr<CollectionWriter*> _sharedThis = std::make_shared<CollectionWriter*>(this);
     const OperationContext* _opCtx{nullptr};
+    std::shared_ptr<CollectionWriter*> _sharedThis;
     std::function<Collection*()> _lazyWritableCollectionInitializer;
-    bool _managedInWUOW{true};
 };
 
 /**

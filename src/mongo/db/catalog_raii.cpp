@@ -165,41 +165,28 @@ Collection* AutoGetCollection::getWritableCollection() {
     return _writableColl;
 }
 
-CollectionWriter::CollectionWriter(OperationContext* opCtx,
-                                   const CollectionUUID& uuid)
-    : _opCtx(opCtx), _managedInWUOW(true) {
-    if (_managedInWUOW) {
-        _collection = CollectionCatalog::get(opCtx).lookupCollectionByUUID(opCtx, uuid);
-        _lazyWritableCollectionInitializer = [opCtx, uuid] {
-            return CollectionCatalog::get(opCtx).lookupCollectionByUUIDForMetadataWrite(
-                opCtx, CollectionCatalog::LifetimeMode::kManagedInWriteUnitOfWork, uuid);
-        };
-    } else {
-        _writableCollection = CollectionCatalog::get(opCtx).lookupCollectionByUUIDForMetadataWrite(
-            opCtx, CollectionCatalog::LifetimeMode::kUnmanagedClone, uuid);
-        _collection = _writableCollection;
-    }
+CollectionWriter::CollectionWriter(OperationContext* opCtx, const CollectionUUID& uuid)
+    : _opCtx(opCtx), _sharedThis(std::make_shared<CollectionWriter*>(this)) {
+
+    _collection = CollectionCatalog::get(opCtx).lookupCollectionByUUID(opCtx, uuid);
+    _lazyWritableCollectionInitializer = [opCtx, uuid] {
+        return CollectionCatalog::get(opCtx).lookupCollectionByUUIDForMetadataWrite(
+            opCtx, CollectionCatalog::LifetimeMode::kManagedInWriteUnitOfWork, uuid);
+    };
 }
 
-CollectionWriter::CollectionWriter(OperationContext* opCtx,
-                                   const NamespaceString& nss)
-    : _opCtx(opCtx), _managedInWUOW(true) {
-    if (_managedInWUOW) {
-        _collection = CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, nss);
-        _lazyWritableCollectionInitializer = [opCtx, nss] {
-            return CollectionCatalog::get(opCtx).lookupCollectionByNamespaceForMetadataWrite(
-                opCtx, CollectionCatalog::LifetimeMode::kManagedInWriteUnitOfWork, nss);
-        };
-    } else {
-        _writableCollection =
-            CollectionCatalog::get(opCtx).lookupCollectionByNamespaceForMetadataWrite(
-                opCtx, CollectionCatalog::LifetimeMode::kUnmanagedClone, nss);
-        _collection = _writableCollection;
-    }
+CollectionWriter::CollectionWriter(OperationContext* opCtx, const NamespaceString& nss)
+    : _opCtx(opCtx), _sharedThis(std::make_shared<CollectionWriter*>(this)) {
+    _collection = CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, nss);
+    _lazyWritableCollectionInitializer = [opCtx, nss] {
+        return CollectionCatalog::get(opCtx).lookupCollectionByNamespaceForMetadataWrite(
+            opCtx, CollectionCatalog::LifetimeMode::kManagedInWriteUnitOfWork, nss);
+    };
 }
 
 CollectionWriter::CollectionWriter(AutoGetCollection& autoCollection)
-    : _opCtx(autoCollection.getOperationContext()) {
+    : _opCtx(autoCollection.getOperationContext()),
+      _sharedThis(std::make_shared<CollectionWriter*>(this)) {
     _collection = autoCollection.getCollection();
     _lazyWritableCollectionInitializer = [&autoCollection] {
         return autoCollection.getWritableCollection();
@@ -207,32 +194,40 @@ CollectionWriter::CollectionWriter(AutoGetCollection& autoCollection)
 }
 
 CollectionWriter::CollectionWriter(Collection* writableCollection)
-    : _collection(writableCollection),
-      _writableCollection(writableCollection),
-      _managedInWUOW(false) {}
+    : _collection(writableCollection), _writableCollection(writableCollection) {}
 
 CollectionWriter::~CollectionWriter() {
-    *_sharedThis = nullptr;
+    if (_sharedThis) {
+        *_sharedThis = nullptr;
+    }
 }
 
 Collection* CollectionWriter::getWritableCollection() {
     if (!_writableCollection) {
         _writableCollection = _lazyWritableCollectionInitializer();
 
-        if (_managedInWUOW) {
-            auto oldCollection = _collection;
-            auto sharedThis = _sharedThis;
-            _opCtx->recoveryUnit()->onCommit([sharedThis](boost::optional<Timestamp> time) {
-                if (*sharedThis)
-                    (*sharedThis)->_writableCollection = nullptr;
-            });
-            _opCtx->recoveryUnit()->onRollback([sharedThis, oldCollection]() {
-                if (*sharedThis) {
-                    (*sharedThis)->_collection = oldCollection;
-                    (*sharedThis)->_writableCollection = nullptr;
+        class WritableCollectionReset : public RecoveryUnit::Change {
+        public:
+            WritableCollectionReset(std::shared_ptr<CollectionWriter*> sharedThis,
+                                    const Collection* rollbackCollection)
+                : _sharedThis(std::move(sharedThis)), _rollbackCollection(rollbackCollection) {}
+            void commit(boost::optional<Timestamp> commitTime) final {
+                if (*_sharedThis)
+                    (*_sharedThis)->_writableCollection = nullptr;
+            }
+            void rollback() final {
+                if (*_sharedThis) {
+                    (*_sharedThis)->_collection = _rollbackCollection;
+                    (*_sharedThis)->_writableCollection = nullptr;
                 }
-            });
-        }
+            }
+
+        private:
+            std::shared_ptr<CollectionWriter*> _sharedThis;
+            const Collection* _rollbackCollection;
+        };
+
+        _opCtx->recoveryUnit()->registerChange(std::make_unique<WritableCollectionReset>(_sharedThis, _collection));
 
         _collection = _writableCollection;
     }
