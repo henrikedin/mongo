@@ -668,12 +668,10 @@ protected:
     /**
      * Returns true if currently managed by a WriteUnitOfWork.
      */
-public:
     bool _inUnitOfWork() const {
         return State::kInactiveInUnitOfWork == _state || State::kActive == _state;
     }
 
-protected:
     /**
      * Returns true if currently running commit or rollback handlers
      */

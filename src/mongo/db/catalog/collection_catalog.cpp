@@ -277,8 +277,11 @@ std::shared_ptr<const Collection> CollectionCatalog::lookupCollectionByUUIDForRe
 Collection* CollectionCatalog::lookupCollectionByUUIDForMetadataWrite(OperationContext* opCtx,
                                                                       LifetimeMode mode,
                                                                       CollectionUUID uuid) {
-    invariant(mode != LifetimeMode::kManagedInWriteUnitOfWork ||
-              opCtx->recoveryUnit()->_inUnitOfWork());
+    if (mode == LifetimeMode::kManagedInWriteUnitOfWork) {
+        // Placeholder to invariant if not in wuow
+        opCtx->recoveryUnit()->onCommit([](boost::optional<Timestamp>) {});
+    }
+
     if (auto coll = UncommittedCollections::getForTxn(opCtx, uuid)) {
         invariant(opCtx->lockState()->isCollectionLockedForMode(coll->ns(), MODE_IX));
         return coll.get();
@@ -337,8 +340,11 @@ std::shared_ptr<const Collection> CollectionCatalog::lookupCollectionByNamespace
 
 Collection* CollectionCatalog::lookupCollectionByNamespaceForMetadataWrite(
     OperationContext* opCtx, LifetimeMode mode, const NamespaceString& nss) {
-    invariant(mode != LifetimeMode::kManagedInWriteUnitOfWork ||
-              opCtx->recoveryUnit()->_inUnitOfWork());
+    if (mode == LifetimeMode::kManagedInWriteUnitOfWork) {
+        // Placeholder to invariant if not in wuow
+        opCtx->recoveryUnit()->onCommit([](boost::optional<Timestamp>) {});
+    }
+
     if (auto coll = UncommittedCollections::getForTxn(opCtx, nss)) {
         invariant(opCtx->lockState()->isCollectionLockedForMode(nss, MODE_IX));
         return coll.get();

@@ -2001,12 +2001,12 @@ public:
         reset(nss);
 
         AutoGetCollection autoColl(_opCtx, nss, LockMode::MODE_X);
+        CollectionWriter collection(autoColl);
 
         // Build an index on `{a: 1}`.
         MultiIndexBlock indexer;
         auto abortOnExit = makeGuard([&] {
-            indexer.abortIndexBuild(
-                _opCtx, autoColl.getWritableCollection(), MultiIndexBlock::kNoopOnCleanUpFn);
+            indexer.abortIndexBuild(_opCtx, collection, MultiIndexBlock::kNoopOnCleanUpFn);
         });
         const LogicalTime beforeIndexBuild = _clock->tickClusterTime(2);
         BSONObj indexInfoObj;
@@ -2025,11 +2025,11 @@ public:
 
             auto swIndexInfoObj = indexer.init(
                 _opCtx,
-                autoColl.getWritableCollection(),
+                collection.getWritableCollection(),
                 {BSON("v" << 2 << "unique" << true << "name"
                           << "a_1"
                           << "ns" << nss.ns() << "key" << BSON("a" << 1))},
-                MultiIndexBlock::makeTimestampedIndexOnInitFn(_opCtx, autoColl.getCollection()));
+                MultiIndexBlock::makeTimestampedIndexOnInitFn(_opCtx, collection.get()));
             ASSERT_OK(swIndexInfoObj.getStatus());
             indexInfoObj = std::move(swIndexInfoObj.getValue()[0]);
         }
@@ -2041,7 +2041,7 @@ public:
         const LogicalTime firstInsert = _clock->tickClusterTime(1);
         {
             WriteUnitOfWork wuow(_opCtx);
-            insertDocument(autoColl.getCollection(),
+            insertDocument(collection.get(),
                            InsertStatement(BSON("_id" << 0 << "a" << 1),
                                            firstInsert.asTimestamp(),
                                            presentTerm));
@@ -2120,21 +2120,22 @@ public:
 
         {
             WriteUnitOfWork wuow(_opCtx);
-            ASSERT_OK(indexer.commit(
-                _opCtx,
-                autoColl.getCollection(),
-                [&](const BSONObj& indexSpec) {
-                    if (SimulatePrimary) {
-                        // The timestamping responsibility for each index is placed on the caller.
-                        _opCtx->getServiceContext()->getOpObserver()->onCreateIndex(
-                            _opCtx, nss, autoColl.getCollection()->uuid(), indexSpec, false);
-                    } else {
-                        const auto currentTime = _clock->getTime();
-                        ASSERT_OK(_opCtx->recoveryUnit()->setTimestamp(
-                            currentTime.clusterTime().asTimestamp()));
-                    }
-                },
-                MultiIndexBlock::kNoopOnCommitFn));
+            ASSERT_OK(
+                indexer.commit(_opCtx,
+                               collection.get(),
+                               [&](const BSONObj& indexSpec) {
+                                   if (SimulatePrimary) {
+                                       // The timestamping responsibility for each index is placed
+                                       // on the caller.
+                                       _opCtx->getServiceContext()->getOpObserver()->onCreateIndex(
+                                           _opCtx, nss, collection.get()->uuid(), indexSpec, false);
+                                   } else {
+                                       const auto currentTime = _clock->getTime();
+                                       ASSERT_OK(_opCtx->recoveryUnit()->setTimestamp(
+                                           currentTime.clusterTime().asTimestamp()));
+                                   }
+                               },
+                               MultiIndexBlock::kNoopOnCommitFn));
             wuow.commit();
         }
         abortOnExit.dismiss();
