@@ -164,7 +164,7 @@ private:
  */
 class SharedCollectionDecorations : public Decorable<SharedCollectionDecorations> {};
 
-class Collection : public Decorable<Collection> {
+class Collection : public DecorableCopyable<Collection> {
 public:
     enum class StoreDeletedDoc { Off, On };
 
@@ -253,6 +253,8 @@ public:
 
     Collection() = default;
     virtual ~Collection() = default;
+
+    virtual std::shared_ptr<Collection> clone() const = 0;
 
     /**
      * Fetches the shared state across Collection instances for the a collection. Returns an object
