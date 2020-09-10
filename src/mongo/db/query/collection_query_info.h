@@ -105,7 +105,7 @@ private:
     UpdateIndexData _indexedPaths;
 
     // A cache for query plans.
-    std::unique_ptr<PlanCache> _planCache;
+    std::shared_ptr<PlanCache> _planCache;
 };
 
 }  // namespace mongo

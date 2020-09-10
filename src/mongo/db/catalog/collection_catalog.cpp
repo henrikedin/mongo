@@ -47,6 +47,47 @@ namespace {
 const ServiceContext::Decoration<CollectionCatalog> getCatalog =
     ServiceContext::declareDecoration<CollectionCatalog>();
 
+class UncommittedWritableCollections {
+public:
+    ~UncommittedWritableCollections() {
+        invariant(_collections.empty());
+    }
+    Collection* lookup(CollectionUUID uuid) const {
+        auto it = std::find_if(_collections.begin(), _collections.end(), [uuid](auto&& collection) {
+            return collection->uuid() == uuid;
+        });
+        if (it == _collections.end())
+            return nullptr;
+        return it->get();
+    }
+
+    Collection* lookup(const NamespaceString& nss) const {
+        auto it = std::find_if(_collections.begin(), _collections.end(), [&nss](auto&& collection) {
+            return collection->ns() == nss;
+        });
+        if (it == _collections.end())
+            return nullptr;
+        return it->get();
+    }
+
+    void insert(std::shared_ptr<Collection> collection) {
+        _collections.push_back(std::move(collection));
+    }
+    void remove(Collection* collection) {
+        _collections.erase(
+            std::find_if(_collections.begin(), _collections.end(), [collection](auto&& coll) {
+                return coll.get() == collection;
+            }));
+    }
+
+private:
+    std::vector<std::shared_ptr<Collection>> _collections;
+};
+
+const OperationContext::Decoration<UncommittedWritableCollections>
+    getUncommittedWritableCollections =
+        OperationContext::declareDecoration<UncommittedWritableCollections>();
+
 class FinishDropCollectionChange : public RecoveryUnit::Change {
 public:
     FinishDropCollectionChange(CollectionCatalog* catalog,
@@ -277,9 +318,13 @@ std::shared_ptr<const Collection> CollectionCatalog::lookupCollectionByUUIDForRe
 Collection* CollectionCatalog::lookupCollectionByUUIDForMetadataWrite(OperationContext* opCtx,
                                                                       LifetimeMode mode,
                                                                       CollectionUUID uuid) {
-    if (mode == LifetimeMode::kManagedInWriteUnitOfWork) {
-        // Placeholder to invariant if not in wuow
-        opCtx->recoveryUnit()->onCommit([](boost::optional<Timestamp>) {});
+    if (mode == LifetimeMode::kInplace) {
+        return const_cast<Collection*>(lookupCollectionByUUID(opCtx, uuid));
+    }
+
+    auto& uncommittedWritableCollections = getUncommittedWritableCollections(opCtx);
+    if (auto coll = uncommittedWritableCollections.lookup(uuid)) {
+        return coll;
     }
 
     if (auto coll = UncommittedCollections::getForTxn(opCtx, uuid)) {
@@ -291,7 +336,28 @@ Collection* CollectionCatalog::lookupCollectionByUUIDForMetadataWrite(OperationC
     auto coll = _lookupCollectionByUUID(lock, uuid);
     if (coll && coll->isCommitted()) {
         invariant(opCtx->lockState()->isCollectionLockedForMode(coll->ns(), MODE_X));
-        return coll.get();
+        auto cloned = coll->clone();
+        uncommittedWritableCollections.insert(cloned);
+
+        if (mode == LifetimeMode::kManagedInWriteUnitOfWork) {
+            opCtx->recoveryUnit()->onCommit(
+                [this, &uncommittedWritableCollections, cloned](boost::optional<Timestamp>) {
+                    stdx::lock_guard<Latch> lock(_catalogLock);
+                    if (_collections.find(cloned->ns()) != _collections.end()) {
+                        _collections[cloned->ns()] = cloned;
+                        _catalog[cloned->uuid()] = cloned;
+                        auto dbIdPair = std::make_pair(cloned->ns().db().toString(), cloned->uuid());
+                        _orderedCollections[dbIdPair] = cloned;
+                    }
+                    
+                    uncommittedWritableCollections.remove(cloned.get());
+                });
+            opCtx->recoveryUnit()->onRollback([&uncommittedWritableCollections, cloned]() {
+                uncommittedWritableCollections.remove(cloned.get());
+            });
+        }
+
+        return cloned.get();
     }
 
     return nullptr;
@@ -299,6 +365,11 @@ Collection* CollectionCatalog::lookupCollectionByUUIDForMetadataWrite(OperationC
 
 const Collection* CollectionCatalog::lookupCollectionByUUID(OperationContext* opCtx,
                                                             CollectionUUID uuid) const {
+    auto& uncommittedWritableCollections = getUncommittedWritableCollections(opCtx);
+    if (auto coll = uncommittedWritableCollections.lookup(uuid)) {
+        return coll;
+    }
+
     if (auto coll = UncommittedCollections::getForTxn(opCtx, uuid)) {
         return coll.get();
     }
@@ -340,9 +411,13 @@ std::shared_ptr<const Collection> CollectionCatalog::lookupCollectionByNamespace
 
 Collection* CollectionCatalog::lookupCollectionByNamespaceForMetadataWrite(
     OperationContext* opCtx, LifetimeMode mode, const NamespaceString& nss) {
-    if (mode == LifetimeMode::kManagedInWriteUnitOfWork) {
-        // Placeholder to invariant if not in wuow
-        opCtx->recoveryUnit()->onCommit([](boost::optional<Timestamp>) {});
+    if (mode == LifetimeMode::kInplace) {
+        return const_cast<Collection*>(lookupCollectionByNamespace(opCtx, nss));
+    }
+
+    auto& uncommittedWritableCollections = getUncommittedWritableCollections(opCtx);
+    if (auto coll = uncommittedWritableCollections.lookup(nss)) {
+        return coll;
     }
 
     if (auto coll = UncommittedCollections::getForTxn(opCtx, nss)) {
@@ -355,7 +430,27 @@ Collection* CollectionCatalog::lookupCollectionByNamespaceForMetadataWrite(
     auto coll = (it == _collections.end() ? nullptr : it->second);
     if (coll && coll->isCommitted()) {
         invariant(opCtx->lockState()->isCollectionLockedForMode(nss, MODE_X));
-        return coll.get();
+        auto cloned = coll->clone();
+        uncommittedWritableCollections.insert(cloned);
+
+        if (mode == LifetimeMode::kManagedInWriteUnitOfWork) {
+            opCtx->recoveryUnit()->onCommit(
+                [this, &uncommittedWritableCollections, cloned](boost::optional<Timestamp>) {
+                    stdx::lock_guard<Latch> lock(_catalogLock);
+                if (_collections.find(cloned->ns()) != _collections.end()) {
+                    _collections[cloned->ns()] = cloned;
+                    _catalog[cloned->uuid()] = cloned;
+                    auto dbIdPair = std::make_pair(cloned->ns().db().toString(), cloned->uuid());
+                    _orderedCollections[dbIdPair] = cloned;
+                }
+                    uncommittedWritableCollections.remove(cloned.get());
+                });
+            opCtx->recoveryUnit()->onRollback([&uncommittedWritableCollections, cloned]() {
+                uncommittedWritableCollections.remove(cloned.get());
+            });
+        }
+
+        return cloned.get();
     }
 
     return nullptr;
@@ -363,6 +458,11 @@ Collection* CollectionCatalog::lookupCollectionByNamespaceForMetadataWrite(
 
 const Collection* CollectionCatalog::lookupCollectionByNamespace(OperationContext* opCtx,
                                                                  const NamespaceString& nss) const {
+    auto& uncommittedWritableCollections = getUncommittedWritableCollections(opCtx);
+    if (auto coll = uncommittedWritableCollections.lookup(nss)) {
+        return coll;
+    }
+
     if (auto coll = UncommittedCollections::getForTxn(opCtx, nss)) {
         return coll.get();
     }
