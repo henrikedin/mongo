@@ -444,7 +444,6 @@ IndexCatalogEntry* IndexCatalogImpl::createIndexEntry(OperationContext* opCtx,
                                                          _collection->getCatalogId(),
                                                          ident,
                                                          std::move(descriptor),
-                                                         &CollectionQueryInfo::get(_collection),
                                                          frozen);
 
     IndexDescriptor* desc = entry->descriptor();
