@@ -503,7 +503,7 @@ Status DatabaseImpl::_finishDropCollection(OperationContext* opCtx,
     if (!status.isOK())
         return status;
 
-    auto removedColl = CollectionCatalog::get(opCtx).deregisterCollection(uuid);
+    auto removedColl = CollectionCatalog::get(opCtx).deregisterCollection(opCtx, uuid);
     opCtx->recoveryUnit()->registerChange(
         CollectionCatalog::get(opCtx).makeFinishDropCollectionChange(std::move(removedColl), uuid));
 
@@ -738,7 +738,8 @@ Collection* DatabaseImpl::createCollection(OperationContext* opCtx,
     // storage timestamps.  This way both primary and any secondaries will see the index created
     // after the collection is created.
     if (canAcceptWrites && createIdIndex && nss.isSystem()) {
-        createSystemIndexes(opCtx, collection);
+        CollectionWriter collWriter(collection);
+        createSystemIndexes(opCtx, collWriter);
     }
 
     return collection;

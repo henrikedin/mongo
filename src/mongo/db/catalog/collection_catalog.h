@@ -163,7 +163,7 @@ public:
     /**
      * Deregister the collection.
      */
-    std::shared_ptr<Collection> deregisterCollection(CollectionUUID uuid);
+    std::shared_ptr<Collection> deregisterCollection(OperationContext* opCtx, CollectionUUID uuid);
 
     /**
      * Returns the RecoveryUnit's Change for dropping the collection
