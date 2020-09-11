@@ -352,13 +352,13 @@ public:
      * Commit unmanaged Collection that was acquired by lookupCollectionBy***ForMetadataWrite and
      * lifetime mode kUnmanagedClone.
      */
-    void commitUnmanagedClone(Collection* collection);
+    void commitUnmanagedClone(OperationContext* opCtx, Collection* collection);
 
     /**
      * Discard unmanaged Collection that was acquired by lookupCollectionBy***ForMetadataWrite and
      * lifetime mode kUnmanagedClone.
      */
-    void discardUnmanagedClone(Collection* collection);
+    void discardUnmanagedClone(OperationContext* opCtx, Collection* collection);
 
 private:
     friend class CollectionCatalog::iterator;

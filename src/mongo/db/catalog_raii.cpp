@@ -265,7 +265,7 @@ CollectionWriter::~CollectionWriter() {
     }
 
     if (_mode == CollectionCatalog::LifetimeMode::kUnmanagedClone && _writableCollection) {
-        CollectionCatalog::get(_opCtx).discardUnmanagedClone(_writableCollection);
+        CollectionCatalog::get(_opCtx).discardUnmanagedClone(_opCtx, _writableCollection);
     }
 }
 
@@ -316,7 +316,7 @@ Collection* CollectionWriter::getWritableCollection() {
 void CollectionWriter::commitToCatalog() {
     dassert(_mode == CollectionCatalog::LifetimeMode::kUnmanagedClone);
     dassert(_writableCollection);
-    CollectionCatalog::get(_opCtx).commitUnmanagedClone(_writableCollection);
+    CollectionCatalog::get(_opCtx).commitUnmanagedClone(_opCtx, _writableCollection);
     _writableCollection = nullptr;
 }
 
