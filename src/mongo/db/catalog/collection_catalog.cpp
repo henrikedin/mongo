@@ -74,10 +74,12 @@ public:
         _collections.push_back(std::move(collection));
     }
     void remove(Collection* collection) {
-        _collections.erase(
-            std::find_if(_collections.begin(), _collections.end(), [collection](auto&& coll) {
-                return coll.get() == collection;
-            }));
+        auto it = std::find_if(_collections.begin(), _collections.end(), [collection](auto&& coll) {
+            return coll.get() == collection;
+        });
+        if (it != _collections.end()) {
+            _collections.erase(it);
+        }
     }
 
 private:
@@ -340,18 +342,18 @@ Collection* CollectionCatalog::lookupCollectionByUUIDForMetadataWrite(OperationC
         uncommittedWritableCollections.insert(cloned);
 
         if (mode == LifetimeMode::kManagedInWriteUnitOfWork) {
-            opCtx->recoveryUnit()->onCommit(
-                [this, &uncommittedWritableCollections, cloned](boost::optional<Timestamp>) {
-                    stdx::lock_guard<Latch> lock(_catalogLock);
-                    if (_collections.find(cloned->ns()) != _collections.end()) {
-                        _collections[cloned->ns()] = cloned;
-                        _catalog[cloned->uuid()] = cloned;
-                        auto dbIdPair = std::make_pair(cloned->ns().db().toString(), cloned->uuid());
-                        _orderedCollections[dbIdPair] = cloned;
-                    }
-                    
-                    uncommittedWritableCollections.remove(cloned.get());
-                });
+            opCtx->recoveryUnit()->onCommit([this, &uncommittedWritableCollections, cloned](
+                                                boost::optional<Timestamp>) {
+                stdx::lock_guard<Latch> lock(_catalogLock);
+                if (_collections.find(cloned->ns()) != _collections.end()) {
+                    _collections[cloned->ns()] = cloned;
+                    _catalog[cloned->uuid()] = cloned;
+                    auto dbIdPair = std::make_pair(cloned->ns().db().toString(), cloned->uuid());
+                    _orderedCollections[dbIdPair] = cloned;
+                }
+
+                uncommittedWritableCollections.remove(cloned.get());
+            });
             opCtx->recoveryUnit()->onRollback([&uncommittedWritableCollections, cloned]() {
                 uncommittedWritableCollections.remove(cloned.get());
             });
@@ -434,17 +436,17 @@ Collection* CollectionCatalog::lookupCollectionByNamespaceForMetadataWrite(
         uncommittedWritableCollections.insert(cloned);
 
         if (mode == LifetimeMode::kManagedInWriteUnitOfWork) {
-            opCtx->recoveryUnit()->onCommit(
-                [this, &uncommittedWritableCollections, cloned](boost::optional<Timestamp>) {
-                    stdx::lock_guard<Latch> lock(_catalogLock);
+            opCtx->recoveryUnit()->onCommit([this, &uncommittedWritableCollections, cloned](
+                                                boost::optional<Timestamp>) {
+                stdx::lock_guard<Latch> lock(_catalogLock);
                 if (_collections.find(cloned->ns()) != _collections.end()) {
                     _collections[cloned->ns()] = cloned;
                     _catalog[cloned->uuid()] = cloned;
                     auto dbIdPair = std::make_pair(cloned->ns().db().toString(), cloned->uuid());
                     _orderedCollections[dbIdPair] = cloned;
                 }
-                    uncommittedWritableCollections.remove(cloned.get());
-                });
+                uncommittedWritableCollections.remove(cloned.get());
+            });
             opCtx->recoveryUnit()->onRollback([&uncommittedWritableCollections, cloned]() {
                 uncommittedWritableCollections.remove(cloned.get());
             });
@@ -663,7 +665,8 @@ void CollectionCatalog::registerCollection(CollectionUUID uuid, std::shared_ptr<
     addResource(collRid, ns.ns());
 }
 
-std::shared_ptr<Collection> CollectionCatalog::deregisterCollection(CollectionUUID uuid) {
+std::shared_ptr<Collection> CollectionCatalog::deregisterCollection(OperationContext* opCtx,
+                                                                    CollectionUUID uuid) {
     stdx::lock_guard<Latch> lock(_catalogLock);
 
     invariant(_catalog.find(uuid) != _catalog.end());
@@ -682,6 +685,10 @@ std::shared_ptr<Collection> CollectionCatalog::deregisterCollection(CollectionUU
     _orderedCollections.erase(dbIdPair);
     _collections.erase(ns);
     _catalog.erase(uuid);
+    auto& uncommittedWritableCollections = getUncommittedWritableCollections(opCtx);
+    if (auto writableColl = uncommittedWritableCollections.lookup(uuid)) {
+        uncommittedWritableCollections.remove(writableColl);
+    }
 
     coll->onDeregisterFromCatalog();
 
@@ -792,10 +799,12 @@ void CollectionCatalog::addResource(const ResourceId& rid, const std::string& en
 }
 
 void CollectionCatalog::commitUnmanagedClone(Collection* collection) {
+    logd("commitUnmanagedClone commitUnmanagedClone commitUnmanagedClone");
     // TODO SERVER-50145
 }
 
 void CollectionCatalog::discardUnmanagedClone(Collection* collection) {
+    logd("discardUnmanagedClone discardUnmanagedClone discardUnmanagedClone");
     // TODO SERVER-50145
 }
 

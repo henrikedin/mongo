@@ -199,7 +199,7 @@ Status verifySystemIndexes(OperationContext* opCtx) {
     return Status::OK();
 }
 
-void createSystemIndexes(OperationContext* opCtx, const Collection* collection) {
+void createSystemIndexes(OperationContext* opCtx, CollectionWriter& collection) {
     invariant(collection);
     const NamespaceString& ns = collection->ns();
     BSONObj indexSpec;
@@ -219,7 +219,7 @@ void createSystemIndexes(OperationContext* opCtx, const Collection* collection) 
         auto fromMigrate = false;
         try {
             IndexBuildsCoordinator::get(opCtx)->createIndexesOnEmptyCollection(
-                opCtx, collection->uuid(), {indexSpec}, fromMigrate);
+                opCtx, collection, {indexSpec}, fromMigrate);
         } catch (DBException& ex) {
             fassertFailedWithStatus(40456, ex.toStatus());
         }

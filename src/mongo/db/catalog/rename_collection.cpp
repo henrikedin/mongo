@@ -563,7 +563,7 @@ Status renameBetweenDBs(OperationContext* opCtx,
           "temporaryCollection"_attr = tmpName,
           "sourceCollection"_attr = source);
 
-    const Collection* tmpColl = nullptr;
+    Collection* tmpColl = nullptr;
     {
         auto collectionOptions =
             DurableCatalog::get(opCtx)->getCollectionOptions(opCtx, sourceColl->getCatalogId());
@@ -629,8 +629,9 @@ Status renameBetweenDBs(OperationContext* opCtx,
             WriteUnitOfWork wunit(opCtx);
             auto fromMigrate = false;
             try {
+                CollectionWriter tmpCollWriter(tmpColl);
                 IndexBuildsCoordinator::get(opCtx)->createIndexesOnEmptyCollection(
-                    opCtx, tmpColl->uuid(), indexesToCopy, fromMigrate);
+                    opCtx, tmpCollWriter, indexesToCopy, fromMigrate);
             } catch (DBException& ex) {
                 return ex.toStatus();
             }
@@ -645,6 +646,7 @@ Status renameBetweenDBs(OperationContext* opCtx,
     {
         NamespaceStringOrUUID tmpCollUUID =
             NamespaceStringOrUUID(std::string(tmpName.db()), tmpColl->uuid());
+        tmpColl = nullptr;
         statsTracker.reset();
 
         // Copy over all the data from source collection to temporary collection. For this we can
@@ -653,8 +655,7 @@ Status renameBetweenDBs(OperationContext* opCtx,
         targetDBLock.reset();
 
         AutoGetCollection autoTmpColl(opCtx, tmpCollUUID, MODE_IX);
-        tmpColl = autoTmpColl.getCollection();
-        if (!tmpColl) {
+        if (!autoTmpColl) {
             return Status(ErrorCodes::NamespaceNotFound,
                           str::stream() << "Temporary collection '" << tmpName
                                         << "' was removed while renaming collection across DBs");
@@ -675,7 +676,7 @@ Status renameBetweenDBs(OperationContext* opCtx,
                 for (int i = 0; record && (i < internalInsertMaxBatchSize.load()); i++) {
                     const InsertStatement stmt(record->data.releaseToBson());
                     OpDebug* const opDebug = nullptr;
-                    auto status = tmpColl->insertDocument(opCtx, stmt, opDebug, true);
+                    auto status = autoTmpColl->insertDocument(opCtx, stmt, opDebug, true);
                     if (!status.isOK()) {
                         return status;
                     }
