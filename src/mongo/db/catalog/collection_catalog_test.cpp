@@ -107,7 +107,7 @@ public:
     void tearDown() {
         for (auto& it : dbMap) {
             for (auto& kv : it.second) {
-                catalog.deregisterCollection(kv.first);
+                catalog.deregisterCollection(&opCtx, kv.first);
             }
         }
     }
@@ -300,7 +300,7 @@ public:
                 break;
             }
 
-            catalog.deregisterCollection(uuid);
+            catalog.deregisterCollection(&opCtx, uuid);
         }
 
         int numEntries = 0;
@@ -362,7 +362,7 @@ TEST_F(CollectionCatalogResourceTest, LookupMissingCollectionResource) {
 TEST_F(CollectionCatalogResourceTest, RemoveCollection) {
     const std::string collNs = "resourceDb.coll1";
     auto coll = catalog.lookupCollectionByNamespace(&opCtx, NamespaceString(collNs));
-    catalog.deregisterCollection(coll->uuid());
+    catalog.deregisterCollection(&opCtx, coll->uuid());
     auto rid = ResourceId(RESOURCE_COLLECTION, collNs);
     ASSERT(!catalog.lookupResourceName(rid));
 }
@@ -387,7 +387,7 @@ TEST_F(CollectionCatalogIterationTest, InvalidateEntry) {
     // Invalidate bar.coll1.
     for (auto collsIt = collsIterator("bar"); collsIt != collsIteratorEnd("bar"); ++collsIt) {
         if (collsIt->second->ns().ns() == "bar.coll1") {
-            catalog.deregisterCollection(collsIt->first);
+            catalog.deregisterCollection(&opCtx, collsIt->first);
             dropColl("bar", collsIt->first);
             break;
         }
@@ -405,7 +405,7 @@ TEST_F(CollectionCatalogIterationTest, InvalidateAndDereference) {
     auto it = catalog.begin("bar");
     auto collsIt = collsIterator("bar");
     auto uuid = collsIt->first;
-    catalog.deregisterCollection(uuid);
+    catalog.deregisterCollection(&opCtx, uuid);
     ++collsIt;
 
     ASSERT(it != catalog.end());
@@ -435,7 +435,7 @@ TEST_F(CollectionCatalogIterationTest, InvalidateLastEntryAndDereference) {
         }
     }
 
-    catalog.deregisterCollection(*uuid);
+    catalog.deregisterCollection(&opCtx, *uuid);
     dropColl("bar", *uuid);
     ASSERT(*it == nullptr);
 }
@@ -459,7 +459,7 @@ TEST_F(CollectionCatalogIterationTest, InvalidateLastEntryInMapAndDereference) {
         }
     }
 
-    catalog.deregisterCollection(*uuid);
+    catalog.deregisterCollection(&opCtx, *uuid);
     dropColl("foo", *uuid);
     ASSERT(*it == nullptr);
 }
@@ -468,7 +468,7 @@ TEST_F(CollectionCatalogIterationTest, GetUUIDWontRepositionEvenIfEntryIsDropped
     auto it = catalog.begin("bar");
     auto collsIt = collsIterator("bar");
     auto uuid = collsIt->first;
-    catalog.deregisterCollection(uuid);
+    catalog.deregisterCollection(&opCtx, uuid);
     dropColl("bar", uuid);
 
     ASSERT_EQUALS(uuid, it.uuid());
@@ -508,7 +508,7 @@ TEST_F(CollectionCatalogTest, InsertAfterLookup) {
 }
 
 TEST_F(CollectionCatalogTest, OnDropCollection) {
-    catalog.deregisterCollection(colUUID);
+    catalog.deregisterCollection(&opCtx, colUUID);
     // Ensure the lookup returns a null pointer upon removing the colUUID entry.
     ASSERT(catalog.lookupCollectionByUUID(&opCtx, colUUID) == nullptr);
 }
@@ -529,7 +529,7 @@ TEST_F(CollectionCatalogTest, RenameCollection) {
 
 TEST_F(CollectionCatalogTest, LookupNSSByUUIDForClosedCatalogReturnsOldNSSIfDropped) {
     catalog.onCloseCatalog(&opCtx);
-    catalog.deregisterCollection(colUUID);
+    catalog.deregisterCollection(&opCtx, colUUID);
     ASSERT(catalog.lookupCollectionByUUID(&opCtx, colUUID) == nullptr);
     ASSERT_EQUALS(*catalog.lookupNSSByUUID(&opCtx, colUUID), nss);
     catalog.onOpenCatalog(&opCtx);
@@ -562,7 +562,7 @@ TEST_F(CollectionCatalogTest, LookupNSSByUUIDForClosedCatalogReturnsFreshestNSS)
     auto newCol = newCollShared.get();
 
     catalog.onCloseCatalog(&opCtx);
-    catalog.deregisterCollection(colUUID);
+    catalog.deregisterCollection(&opCtx, colUUID);
     ASSERT(catalog.lookupCollectionByUUID(&opCtx, colUUID) == nullptr);
     ASSERT_EQUALS(*catalog.lookupNSSByUUID(&opCtx, colUUID), nss);
     catalog.registerCollection(colUUID, std::move(newCollShared));

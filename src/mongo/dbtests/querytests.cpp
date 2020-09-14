@@ -120,7 +120,7 @@ protected:
             indexer.drainBackgroundWrites(&_opCtx,
                                           RecoveryUnit::ReadSource::kUnset,
                                           IndexBuildInterceptor::DrainYieldPolicy::kNoYield));
-        uassertStatusOK(indexer.checkConstraints(&_opCtx));
+        uassertStatusOK(indexer.checkConstraints(&_opCtx, collection.get()));
         {
             WriteUnitOfWork wunit(&_opCtx);
             uassertStatusOK(indexer.commit(&_opCtx,
