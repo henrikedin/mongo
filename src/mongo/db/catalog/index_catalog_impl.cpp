@@ -1028,8 +1028,9 @@ public:
     IndexRemoveChange(OperationContext* opCtx,
                       Collection* collection,
                       IndexCatalogEntryContainer* entries,
-                      std::shared_ptr<IndexCatalogEntry> entry)
-        : _opCtx(opCtx), _collection(collection), _entries(entries), _entry(std::move(entry)) {}
+                      std::shared_ptr<IndexCatalogEntry> entry,
+        std::string indexName)
+        : _opCtx(opCtx), _collection(collection), _entries(entries), _entry(std::move(entry)), _indexName(std::move(indexName)) {}
 
     void commit(boost::optional<Timestamp> commitTime) final {
         // Ban reading from this collection on committed reads on snapshots before now.
@@ -1041,6 +1042,7 @@ public:
             commitTime = LogicalClock::getClusterTimeForReplicaSet(_opCtx).asTimestamp();
         }
         _entry->setDropped();
+        CollectionQueryInfo::get(_collection).droppedIndex(_opCtx, _collection, _indexName);
         _collection->setMinimumVisibleSnapshot(commitTime.get());
     }
 
@@ -1059,6 +1061,7 @@ private:
     Collection* _collection;
     IndexCatalogEntryContainer* _entries;
     std::shared_ptr<IndexCatalogEntry> _entry;
+    std::string _indexName;
 };
 }  // namespace
 
@@ -1075,15 +1078,14 @@ Status IndexCatalogImpl::dropIndexEntry(OperationContext* opCtx, IndexCatalogEnt
     if (released) {
         invariant(released.get() == entry);
         opCtx->recoveryUnit()->registerChange(std::make_unique<IndexRemoveChange>(
-            opCtx, _collection, &_readyIndexes, std::move(released)));
+            opCtx, _collection, &_readyIndexes, std::move(released), indexName));
     } else {
         released = _buildingIndexes.release(entry->descriptor());
         invariant(released.get() == entry);
         opCtx->recoveryUnit()->registerChange(std::make_unique<IndexRemoveChange>(
-            opCtx, _collection, &_buildingIndexes, std::move(released)));
+            opCtx, _collection, &_buildingIndexes, std::move(released), indexName));
     }
 
-    CollectionQueryInfo::get(_collection).droppedIndex(opCtx, _collection, indexName);
     entry = nullptr;
     deleteIndexFromDisk(opCtx, indexName);
 
@@ -1316,9 +1318,7 @@ const IndexDescriptor* IndexCatalogImpl::refreshEntry(OperationContext* opCtx,
     auto oldEntry = _readyIndexes.release(oldDesc);
     invariant(oldEntry);
     opCtx->recoveryUnit()->registerChange(std::make_unique<IndexRemoveChange>(
-        opCtx, _collection, &_readyIndexes, std::move(oldEntry)));
-    CollectionQueryInfo::get(_collection).droppedIndex(opCtx, _collection, indexName);
-
+        opCtx, _collection, &_readyIndexes, std::move(oldEntry), indexName));
     // Ask the CollectionCatalogEntry for the new index spec.
     BSONObj spec =
         durableCatalog->getIndexSpec(opCtx, _collection->getCatalogId(), indexName).getOwned();
@@ -1331,7 +1331,11 @@ const IndexDescriptor* IndexCatalogImpl::refreshEntry(OperationContext* opCtx,
     const IndexCatalogEntry* newEntry =
         createIndexEntry(opCtx, std::move(newDesc), CreateIndexEntryFlags::kIsReady);
     invariant(newEntry->isReady(opCtx));
-    CollectionQueryInfo::get(_collection).addedIndex(opCtx, _collection, newEntry->descriptor());
+    opCtx->recoveryUnit()->onCommit(
+        [opCtx, collection = _collection, entry = newEntry](boost::optional<Timestamp> timestamp) {
+            CollectionQueryInfo::get(collection).addedIndex(opCtx, collection, entry->descriptor());
+        });
+    
 
     // Return the new descriptor.
     return newEntry->descriptor();

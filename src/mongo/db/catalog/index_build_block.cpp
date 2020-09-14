@@ -73,8 +73,11 @@ void IndexBuildBlock::_completeInit(OperationContext* opCtx, Collection* collect
     // occurring while an index is being build in the background will be aware of whether or not
     // they need to modify any indexes.
     auto indexCatalogEntry = _indexCatalogEntry(opCtx, collection);
-    CollectionQueryInfo::get(collection)
-        .addedIndex(opCtx, collection, indexCatalogEntry->descriptor());
+    opCtx->recoveryUnit()->onCommit([opCtx, entry = indexCatalogEntry, coll = collection](
+                                        boost::optional<Timestamp> commitTime) {
+        CollectionQueryInfo::get(coll).addedIndex(opCtx, coll, entry->descriptor());
+    });
+    
 }
 
 Status IndexBuildBlock::initForResume(OperationContext* opCtx,
