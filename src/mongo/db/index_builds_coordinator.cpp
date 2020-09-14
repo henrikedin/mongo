@@ -1776,7 +1776,7 @@ void IndexBuildsCoordinator::createIndex(OperationContext* opCtx,
         uassertStatusOK(
             _indexBuildsManager.retrySkippedRecords(opCtx, buildUUID, collection.get()));
     }
-    uassertStatusOK(_indexBuildsManager.checkIndexConstraintViolations(opCtx, buildUUID));
+    uassertStatusOK(_indexBuildsManager.checkIndexConstraintViolations(opCtx, collection.get(), buildUUID));
 
     auto opObserver = opCtx->getServiceContext()->getOpObserver();
     auto onCreateEachFn = [&](const BSONObj& spec) {
@@ -2598,8 +2598,9 @@ void IndexBuildsCoordinator::_insertSortedKeysIntoIndexForResume(
 
         _setUpForScanCollectionAndInsertSortedKeysIntoIndex(opCtx, replState);
 
+        auto collection = CollectionCatalog::get(opCtx).lookupCollectionByUUID(opCtx, replState->collectionUUID);
         uassertStatusOK(
-            _indexBuildsManager.resumeBuildingIndexFromBulkLoadPhase(opCtx, replState->buildUUID));
+            _indexBuildsManager.resumeBuildingIndexFromBulkLoadPhase(opCtx, collection, replState->buildUUID));
     }
 
     if (MONGO_unlikely(hangAfterIndexBuildDumpsInsertsFromBulk.shouldFail())) {
@@ -2793,7 +2794,7 @@ IndexBuildsCoordinator::CommitResult IndexBuildsCoordinator::_insertKeysFromSide
         if (IndexBuildProtocol::kSinglePhase == replState->protocol ||
             twoPhaseAndNotInitialSyncing) {
             uassertStatusOK(
-                _indexBuildsManager.checkIndexConstraintViolations(opCtx, replState->buildUUID));
+                _indexBuildsManager.checkIndexConstraintViolations(opCtx, collection.get(), replState->buildUUID));
         }
     } catch (const ExceptionForCat<ErrorCategory::ShutdownError>& e) {
         logFailure(e.toStatus(), collection->ns(), replState);
@@ -2904,7 +2905,7 @@ StatusWith<std::pair<long long, long long>> IndexBuildsCoordinator::_runIndexReb
             IndexBuildInterceptor::DrainYieldPolicy::kNoYield));
 
         uassertStatusOK(
-            _indexBuildsManager.checkIndexConstraintViolations(opCtx, replState->buildUUID));
+            _indexBuildsManager.checkIndexConstraintViolations(opCtx, collection.get(), replState->buildUUID));
 
         // Commit the index build.
         uassertStatusOK(_indexBuildsManager.commitIndexBuild(opCtx,

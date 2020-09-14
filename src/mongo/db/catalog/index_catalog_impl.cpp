@@ -473,7 +473,7 @@ IndexCatalogEntry* IndexCatalogImpl::createIndexEntry(OperationContext* opCtx,
             } else {
                 _buildingIndexes.remove(descriptor);
             }
-            CollectionQueryInfo::get(_collection).droppedIndex(opCtx, _collection, indexName);
+            //CollectionQueryInfo::get(_collection).droppedIndex(opCtx, _collection, indexName);
         });
     }
 
@@ -498,13 +498,13 @@ StatusWith<BSONObj> IndexCatalogImpl::createIndexOnEmptyCollection(OperationCont
     // now going to touch disk
     boost::optional<UUID> buildUUID = boost::none;
     IndexBuildBlock indexBuildBlock(
-        this, _collection->ns(), spec, IndexBuildMethod::kForeground, buildUUID);
+        _collection->ns(), spec, IndexBuildMethod::kForeground, buildUUID);
     status = indexBuildBlock.init(opCtx, _collection);
     if (!status.isOK())
         return status;
 
     // sanity checks, etc...
-    IndexCatalogEntry* entry = indexBuildBlock.getEntry();
+    IndexCatalogEntry* entry = indexBuildBlock.getEntry(opCtx, _collection);
     invariant(entry);
     IndexDescriptor* descriptor = entry->descriptor();
     invariant(descriptor);
@@ -1051,7 +1051,7 @@ public:
         // Refresh the CollectionQueryInfo's knowledge of what indices are present. This must be
         // done after re-adding our IndexCatalogEntry to the '_entries' list, since 'addedIndex()'
         // refreshes its knowledge by iterating the list of indices currently in the catalog.
-        CollectionQueryInfo::get(_collection).addedIndex(_opCtx, _collection, indexDescriptor);
+        //CollectionQueryInfo::get(_collection).addedIndex(_opCtx, _collection, indexDescriptor);
     }
 
 private:

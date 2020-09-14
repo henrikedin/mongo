@@ -222,14 +222,14 @@ Status CollectionBulkLoaderImpl::commit() {
         // Commit before deleting dups, so the dups will be removed from secondary indexes when
         // deleted.
         if (_secondaryIndexesBlock) {
-            auto status = _secondaryIndexesBlock->dumpInsertsFromBulk(_opCtx.get());
+            auto status = _secondaryIndexesBlock->dumpInsertsFromBulk(_opCtx.get(), _collection->getCollection());
             if (!status.isOK()) {
                 return status;
             }
 
             // This should always return Status::OK() as secondary index builds ignore duplicate key
             // constraints causing them to not be recorded.
-            invariant(_secondaryIndexesBlock->checkConstraints(_opCtx.get()));
+            invariant(_secondaryIndexesBlock->checkConstraints(_opCtx.get(), _collection->getCollection()));
 
             status = writeConflictRetry(
                 _opCtx.get(), "CollectionBulkLoaderImpl::commit", _nss.ns(), [this] {
@@ -253,7 +253,7 @@ Status CollectionBulkLoaderImpl::commit() {
         if (_idIndexBlock) {
             // Do not do inside a WriteUnitOfWork (required by dumpInsertsFromBulk).
             auto status =
-                _idIndexBlock->dumpInsertsFromBulk(_opCtx.get(), [&](const RecordId& rid) {
+                _idIndexBlock->dumpInsertsFromBulk(_opCtx.get(), _collection->getCollection(), [&](const RecordId& rid) {
                     return writeConflictRetry(
                         _opCtx.get(), "CollectionBulkLoaderImpl::commit", _nss.ns(), [this, &rid] {
                             WriteUnitOfWork wunit(_opCtx.get());
@@ -287,7 +287,7 @@ Status CollectionBulkLoaderImpl::commit() {
                 return status;
             }
 
-            status = _idIndexBlock->checkConstraints(_opCtx.get());
+            status = _idIndexBlock->checkConstraints(_opCtx.get(), _collection->getCollection());
             if (!status.isOK()) {
                 return status;
             }
