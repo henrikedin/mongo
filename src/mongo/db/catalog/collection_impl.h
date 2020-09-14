@@ -38,7 +38,7 @@
 namespace mongo {
 class IndexConsistency;
 class CollectionCatalog;
-class CollectionImpl final : public Collection, public CappedCallback {
+class CollectionImpl final : public Collection {
 public:
     enum ValidationAction { WARN, ERROR_V };
     enum ValidationLevel { OFF, MODERATE, STRICT_V };
@@ -337,13 +337,6 @@ public:
      */
     void setMinimumVisibleSnapshot(Timestamp newMinimumVisibleSnapshot) final;
 
-    bool haveCappedWaiters() const final;
-
-    /**
-     * Notify (capped collection) waiters of data changes, like an insert.
-     */
-    void notifyCappedWaitersIfNeeded() const final;
-
     /**
      * Get a pointer to the collection's default collator. The pointer must not be used after this
      * Collection is destroyed.
@@ -371,8 +364,6 @@ private:
      */
     Status checkValidation(OperationContext* opCtx, const BSONObj& document) const;
 
-    Status aboutToDeleteCapped(OperationContext* opCtx, const RecordId& loc, RecordData data);
-
     /**
      * same semantics as insertDocument, but doesn't do:
      *  - some user error checks
@@ -385,9 +376,23 @@ private:
                             std::vector<InsertStatement>::const_iterator end,
                             OpDebug* opDebug) const;
 
-    struct SharedImpl {
-        SharedImpl(std::unique_ptr<RecordStore> recordStore);
+    struct SharedImpl : public CappedCallback {
+        SharedImpl(CollectionImpl* collection, std::unique_ptr<RecordStore> recordStore);
         ~SharedImpl();
+
+        void addCollectionClone(CollectionImpl* collection);
+        void removeCollectionClone(CollectionImpl* collection);
+
+        bool haveCappedWaiters() const final;
+
+        /**
+         * Notify (capped collection) waiters of data changes, like an insert.
+         */
+        void notifyCappedWaitersIfNeeded() const final;
+
+        Status aboutToDeleteCapped(OperationContext* opCtx, const RecordId& loc, RecordData data) final;
+
+        boost::container::small_vector<CollectionImpl*, 2> _collectionClones;
 
         // The RecordStore may be null during a repair operation.
         std::unique_ptr<RecordStore> _recordStore;  // owned

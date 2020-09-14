@@ -245,14 +245,31 @@ Status validatePreImageRecording(OperationContext* opCtx, const NamespaceString&
 
 }  // namespace
 
-CollectionImpl::SharedImpl::SharedImpl(std::unique_ptr<RecordStore> recordStore)
-    : _recordStore(std::move(recordStore)),
+CollectionImpl::SharedImpl::SharedImpl(CollectionImpl* collection,
+                                       std::unique_ptr<RecordStore> recordStore)
+    : _collectionClones(1, collection),
+      _recordStore(std::move(recordStore)),
       _cappedNotifier(_recordStore && _recordStore->isCapped()
                           ? std::make_shared<CappedInsertNotifier>()
-                          : nullptr) {}
+                          : nullptr) {
+    if (_cappedNotifier) {
+        _recordStore->setCappedCallback(this);
+    }
+}
 CollectionImpl::SharedImpl::~SharedImpl() {
-    if (_cappedNotifier)
+    if (_cappedNotifier) {
+        _recordStore->setCappedCallback(nullptr);
         _cappedNotifier->kill();
+    }
+}
+
+void CollectionImpl::SharedImpl::addCollectionClone(CollectionImpl* collection) {
+    _collectionClones.push_back(collection);
+}
+void CollectionImpl::SharedImpl::removeCollectionClone(CollectionImpl* collection) {
+    auto it = std::find(_collectionClones.begin(), _collectionClones.end(), collection);
+    if (it != _collectionClones.end())
+        _collectionClones.erase(it);
 }
 
 CollectionImpl::CollectionImpl(OperationContext* opCtx,
@@ -260,21 +277,16 @@ CollectionImpl::CollectionImpl(OperationContext* opCtx,
                                RecordId catalogId,
                                UUID uuid,
                                std::unique_ptr<RecordStore> recordStore)
-    : _shared(new SharedImpl(std::move(recordStore))),
+    : _shared(new SharedImpl(this, std::move(recordStore))),
       _ns(nss),
       _catalogId(catalogId),
       _uuid(uuid),
       _needCappedLock(_shared->_recordStore && _shared->_recordStore->isCapped() &&
                       _ns.db() != "local"),
-      _indexCatalog(std::make_unique<IndexCatalogImpl>(this)) {
-    if (isCapped())
-        _shared->_recordStore->setCappedCallback(this);
-}
+      _indexCatalog(std::make_unique<IndexCatalogImpl>(this)) {}
 
 CollectionImpl::~CollectionImpl() {
-    if (isCapped()) {
-        _shared->_recordStore->setCappedCallback(nullptr);
-    }
+    _shared->removeCollectionClone(this);
 }
 
 void CollectionImpl::onDeregisterFromCatalog() {
@@ -295,10 +307,7 @@ std::shared_ptr<Collection> CollectionImpl::FactoryImpl::make(
 std::shared_ptr<Collection> CollectionImpl::clone() const {
     auto cloned = std::make_shared<CollectionImpl>(*this);
     checked_cast<IndexCatalogImpl*>(cloned->_indexCatalog.get())->setCollection(cloned.get());
-    // cloned->_cappedNotifier = std::move(_cappedNotifier);
-    if (cloned->isCapped()) {
-        cloned->_shared->_recordStore->setCappedCallback(cloned.get());
-    }
+    cloned->_shared->addCollectionClone(cloned.get());
     return cloned;
 }
 
@@ -514,7 +523,7 @@ Status CollectionImpl::insertDocumentsForOplog(OperationContext* opCtx,
         return status;
 
     opCtx->recoveryUnit()->onCommit(
-        [this](boost::optional<Timestamp>) { notifyCappedWaitersIfNeeded(); });
+        [this](boost::optional<Timestamp>) { _shared->notifyCappedWaitersIfNeeded(); });
 
     return status;
 }
@@ -559,7 +568,7 @@ Status CollectionImpl::insertDocuments(OperationContext* opCtx,
         opCtx, ns(), uuid(), begin, end, fromMigrate);
 
     opCtx->recoveryUnit()->onCommit(
-        [this](boost::optional<Timestamp>) { notifyCappedWaitersIfNeeded(); });
+        [this](boost::optional<Timestamp>) { _shared->notifyCappedWaitersIfNeeded(); });
 
     hangAfterCollectionInserts.executeIf(
         [&](const BSONObj& data) {
@@ -645,7 +654,7 @@ Status CollectionImpl::insertDocumentForBulkLoader(
         opCtx, ns(), uuid(), inserts.begin(), inserts.end(), false);
 
     opCtx->recoveryUnit()->onCommit(
-        [this](boost::optional<Timestamp>) { notifyCappedWaitersIfNeeded(); });
+        [this](boost::optional<Timestamp>) { _shared->notifyCappedWaitersIfNeeded(); });
 
     return loc.getStatus();
 }
@@ -723,25 +732,27 @@ void CollectionImpl::setMinimumVisibleSnapshot(Timestamp newMinimumVisibleSnapsh
     }
 }
 
-bool CollectionImpl::haveCappedWaiters() const {
+bool CollectionImpl::SharedImpl::haveCappedWaiters() const {
     // Waiters keep a shared_ptr to '_cappedNotifier', so there are waiters if this CollectionImpl's
     // shared_ptr is not unique (use_count > 1).
-    return _shared->_cappedNotifier.use_count() > 1;
+    return _cappedNotifier.use_count() > 1;
 }
 
-void CollectionImpl::notifyCappedWaitersIfNeeded() const {
+void CollectionImpl::SharedImpl::notifyCappedWaitersIfNeeded() const {
     // If there is a notifier object and another thread is waiting on it, then we notify
     // waiters of this document insert.
     if (haveCappedWaiters())
-        _shared->_cappedNotifier->notifyAll();
+        _cappedNotifier->notifyAll();
 }
 
-Status CollectionImpl::aboutToDeleteCapped(OperationContext* opCtx,
-                                           const RecordId& loc,
-                                           RecordData data) {
+Status CollectionImpl::SharedImpl::aboutToDeleteCapped(OperationContext* opCtx,
+                                                       const RecordId& loc,
+                                                       RecordData data) {
     BSONObj doc = data.releaseToBson();
     int64_t* const nullKeysDeleted = nullptr;
-    _indexCatalog->unindexRecord(opCtx, doc, loc, false, nullKeysDeleted);
+    for (auto&& collection : _collectionClones) {
+        collection->getIndexCatalog()->unindexRecord(opCtx, doc, loc, false, nullKeysDeleted);
+    }
 
     // We are not capturing and reporting to OpDebug the 'keysDeleted' by unindexRecord(). It is
     // questionable whether reporting will add diagnostic value to users and may instead be
@@ -941,11 +952,11 @@ bool CollectionImpl::isCapped() const {
 }
 
 CappedCallback* CollectionImpl::getCappedCallback() {
-    return this;
+    return _shared.get();
 }
 
 const CappedCallback* CollectionImpl::getCappedCallback() const {
-    return this;
+    return _shared.get();
 }
 
 std::shared_ptr<CappedInsertNotifier> CollectionImpl::getCappedInsertNotifier() const {
