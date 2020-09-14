@@ -361,8 +361,8 @@ Collection* CollectionCatalog::lookupCollectionByUUIDForMetadataWrite(OperationC
         if (mode == LifetimeMode::kManagedInWriteUnitOfWork) {
             opCtx->recoveryUnit()->onCommit([this, &uncommittedWritableCollections, cloned](
                                                 boost::optional<Timestamp>) {
-                stdx::lock_guard<Latch> lock(_catalogLock);
                 if (uncommittedWritableCollections.remove(cloned.get())) {
+                    stdx::lock_guard<Latch> lock(_catalogLock);
                     _collections[cloned->ns()] = cloned;
                     _catalog[cloned->uuid()] = cloned;
                     auto dbIdPair = std::make_pair(cloned->ns().db().toString(), cloned->uuid());
@@ -454,8 +454,8 @@ Collection* CollectionCatalog::lookupCollectionByNamespaceForMetadataWrite(
         if (mode == LifetimeMode::kManagedInWriteUnitOfWork) {
             opCtx->recoveryUnit()->onCommit([this, &uncommittedWritableCollections, cloned](
                                                 boost::optional<Timestamp>) {
-                stdx::lock_guard<Latch> lock(_catalogLock);
                 if (uncommittedWritableCollections.remove(cloned.get())) {
+                    stdx::lock_guard<Latch> lock(_catalogLock);
                     _collections[cloned->ns()] = cloned;
                     _catalog[cloned->uuid()] = cloned;
                     auto dbIdPair = std::make_pair(cloned->ns().db().toString(), cloned->uuid());
