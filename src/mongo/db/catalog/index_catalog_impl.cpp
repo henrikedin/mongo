@@ -1047,13 +1047,7 @@ public:
     }
 
     void rollback() final {
-        auto indexDescriptor = _entry->descriptor();
         _entries->add(std::move(_entry));
-
-        // Refresh the CollectionQueryInfo's knowledge of what indices are present. This must be
-        // done after re-adding our IndexCatalogEntry to the '_entries' list, since 'addedIndex()'
-        // refreshes its knowledge by iterating the list of indices currently in the catalog.
-        //CollectionQueryInfo::get(_collection).addedIndex(_opCtx, _collection, indexDescriptor);
     }
 
 private:
