@@ -51,6 +51,7 @@
 #include "mongo/db/introspect.h"
 #include "mongo/db/lasterror.h"
 #include "mongo/db/matcher/extensions_callback_real.h"
+#include "mongo/db/namespace_string_util.h"
 #include "mongo/db/ops/delete_request_gen.h"
 #include "mongo/db/ops/insert.h"
 #include "mongo/db/ops/parsed_delete.h"

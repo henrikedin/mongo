@@ -55,7 +55,7 @@
 #include "mongo/db/index_builds_coordinator.h"
 #include "mongo/db/jsobj.h"
 #include "mongo/db/namespace_string.h"
-#include "mongo/db/ops/insert.h"
+#include "mongo/db/namespace_string_util.h"
 #include "mongo/db/repl/isself.h"
 #include "mongo/db/repl/read_concern_args.h"
 #include "mongo/db/repl/replication_coordinator.h"

@@ -47,7 +47,7 @@
 #include "mongo/db/exec/delete.h"
 #include "mongo/db/index/index_descriptor.h"
 #include "mongo/db/namespace_string.h"
-#include "mongo/db/ops/insert.h"
+#include "mongo/db/namespace_string_util.h"
 #include "mongo/db/query/internal_plans.h"
 #include "mongo/db/repl/replication_coordinator.h"
 #include "mongo/db/service_context.h"

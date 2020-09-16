@@ -33,7 +33,10 @@
 
 #include "mongo/db/catalog/collection_catalog.h"
 #include "mongo/db/catalog/database_holder.h"
+#include "mongo/db/concurrency/write_conflict_exception.h"
+#include "mongo/db/namespace_string_util.h"
 #include "mongo/db/s/database_sharding_state.h"
+#include "mongo/db/s/collection_sharding_state.h"
 #include "mongo/db/views/view_catalog.h"
 #include "mongo/util/fail_point.h"
 
@@ -75,11 +78,18 @@ AutoGetCollectionBase<CatalogCollectionLookupT>::AutoGetCollectionBase(
     const NamespaceStringOrUUID& nsOrUUID,
     LockMode modeColl,
     AutoGetCollectionViewMode viewMode,
-    Date_t deadline)
+    Date_t deadline,
+    AutoGetCollectionEnsureMode ensureMode)
     : _autoDb(opCtx,
               !nsOrUUID.dbname().empty() ? nsOrUUID.dbname() : nsOrUUID.nss()->db(),
               isSharedLockMode(modeColl) ? MODE_IS : MODE_IX,
               deadline) {
+    // EnsureExists may not be used in a WUOW and it requires at least MODE_IX
+    if (ensureMode == AutoGetCollectionEnsureMode::kEnsureExists) {
+        invariant(!opCtx->lockState()->inAWriteUnitOfWork());
+        invariant(modeColl == MODE_IX || modeColl == MODE_X);
+    }
+    
     if (auto& nss = nsOrUUID.nss()) {
         uassert(ErrorCodes::InvalidNamespace,
                 str::stream() << "Namespace " << *nss << " is not a valid collection name",
@@ -108,6 +118,10 @@ AutoGetCollectionBase<CatalogCollectionLookupT>::AutoGetCollectionBase(
             "Modifications to system.views must take an exclusive lock",
             !_resolvedNss.isSystemDotViews() || modeColl != MODE_IX);
 
+    if (ensureMode == AutoGetCollectionEnsureMode::kEnsureExists) {
+        _autoDb.ensureDbExists();
+    }
+
     // If the database doesn't exists, we can't obtain a collection or check for views
     if (!db)
         return;
@@ -117,6 +131,25 @@ AutoGetCollectionBase<CatalogCollectionLookupT>::AutoGetCollectionBase(
               str::stream() << "Collection for " << _resolvedNss.ns()
                             << " disappeared after successufully resolving "
                             << nsOrUUID.toString());
+
+    if (!_coll && ensureMode == AutoGetCollectionEnsureMode::kEnsureExists) {
+        uassertStatusOK(userAllowedCreateNS(_resolvedNss));
+        uassert(ErrorCodes::PrimarySteppedDown,
+            str::stream() << "Not primary while writing to " << _resolvedNss.ns(),
+            repl::ReplicationCoordinator::get(opCtx->getServiceContext())
+                ->canAcceptWritesFor(opCtx, _resolvedNss));
+        CollectionShardingState::get(opCtx, _resolvedNss)->checkShardVersionOrThrow(opCtx);
+        writeConflictRetry(
+            opCtx, "AutoGetCollection ensure collection exists", _resolvedNss.ns(), [this, &opCtx] {
+                WriteUnitOfWork wuow(opCtx);
+                CollectionOptions defaultCollectionOptions;
+                uassertStatusOK(
+                    _autoDb.getDb()->userCreateNS(opCtx, _resolvedNss, defaultCollectionOptions));
+                wuow.commit();
+
+                _coll = CatalogCollectionLookupT::lookupCollection(opCtx, _resolvedNss);
+            });
+    }
 
     if (_coll) {
         // If we are in a transaction, we cannot yield and wait when there are pending catalog
@@ -153,8 +186,10 @@ AutoGetCollection::AutoGetCollection(OperationContext* opCtx,
                                      const NamespaceStringOrUUID& nsOrUUID,
                                      LockMode modeColl,
                                      AutoGetCollectionViewMode viewMode,
-                                     Date_t deadline)
-    : AutoGetCollectionBase(opCtx, nsOrUUID, modeColl, viewMode, deadline), _opCtx(opCtx) {}
+                                     Date_t deadline,
+                                     AutoGetCollectionEnsureMode ensureMode)
+    : AutoGetCollectionBase(opCtx, nsOrUUID, modeColl, viewMode, deadline, ensureMode),
+      _opCtx(opCtx) {}
 
 Collection* AutoGetCollection::getWritableCollection(CollectionCatalog::LifetimeMode mode) {
     // Acquire writable instance if not already available

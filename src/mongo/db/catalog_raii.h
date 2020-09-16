@@ -100,6 +100,7 @@ private:
  */
 
 enum class AutoGetCollectionViewMode { kViewsPermitted, kViewsForbidden };
+enum class AutoGetCollectionEnsureMode { kNone, kEnsureExists };
 
 template <typename CatalogCollectionLookupT>
 class AutoGetCollectionBase : public Yieldable {
@@ -115,7 +116,21 @@ public:
         const NamespaceStringOrUUID& nsOrUUID,
         LockMode modeColl,
         AutoGetCollectionViewMode viewMode = AutoGetCollectionViewMode::kViewsForbidden,
-        Date_t deadline = Date_t::max());
+        Date_t deadline = Date_t::max(),
+        AutoGetCollectionEnsureMode ensureMode =
+            AutoGetCollectionEnsureMode::kNone);
+
+    AutoGetCollectionBase(
+        OperationContext* opCtx,
+        const NamespaceStringOrUUID& nsOrUUID,
+        LockMode modeColl,
+        AutoGetCollectionEnsureMode ensureMode)
+        : AutoGetCollectionBase(opCtx,
+                                nsOrUUID,
+                                modeColl,
+                                AutoGetCollectionViewMode::kViewsForbidden,
+                                Date_t::max(),
+                                ensureMode) {}
 
     explicit operator bool() const {
         return static_cast<bool>(_coll);
@@ -211,7 +226,20 @@ public:
         const NamespaceStringOrUUID& nsOrUUID,
         LockMode modeColl,
         AutoGetCollectionViewMode viewMode = AutoGetCollectionViewMode::kViewsForbidden,
-        Date_t deadline = Date_t::max());
+        Date_t deadline = Date_t::max(),
+        AutoGetCollectionEnsureMode ensureMode =
+            AutoGetCollectionEnsureMode::kNone);
+
+    AutoGetCollection(OperationContext* opCtx,
+                      const NamespaceStringOrUUID& nsOrUUID,
+                      LockMode modeColl,
+                      AutoGetCollectionEnsureMode ensureMode)
+        : AutoGetCollection(opCtx,
+                            nsOrUUID,
+                            modeColl,
+                            AutoGetCollectionViewMode::kViewsForbidden,
+                            Date_t::max(),
+                            ensureMode) {}
 
     /**
      * Returns writable Collection. Necessary Collection lock mode is required.

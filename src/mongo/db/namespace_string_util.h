@@ -1,5 +1,5 @@
 /**
- *    Copyright (C) 2018-present MongoDB, Inc.
+ *    Copyright (C) 2020-present MongoDB, Inc.
  *
  *    This program is free software: you can redistribute it and/or modify
  *    it under the terms of the Server Side Public License, version 1,
@@ -27,21 +27,17 @@
  *    it in the license file.
  */
 
-#include "mongo/db/jsobj.h"
 #include "mongo/db/namespace_string.h"
 
 namespace mongo {
-
-class ServiceContext;
+/**
+ * Returns Status::OK() if this namespace is valid for user write operations.  If not, returns
+ * an error Status.
+ */
+Status userAllowedWriteNS(const NamespaceString& ns);
 
 /**
- * Validates that 'doc' is legal for insertion, possibly with some modifications.
- *
- * This function returns:
- *  - a non-OK status if 'doc' is not valid;
- *  - an empty BSONObj if 'doc' can be inserted as-is; or
- *  - a non-empty BSONObj representing what should be inserted instead of 'doc'.
+ * Checks if the namespace is valid for user create operations.
  */
-StatusWith<BSONObj> fixDocumentForInsert(ServiceContext* service, const BSONObj& doc);
-
+Status userAllowedCreateNS(const NamespaceString& ns);
 }  // namespace mongo

@@ -226,6 +226,22 @@ env.Library(
 )
 
 env.Library(
+    target='namespace_string_util',
+    source=[
+        'namespace_string_util.cpp',
+    ],
+    LIBDEPS=[
+        '$BUILD_DIR/mongo/base',
+        'namespace_string',
+    ],
+    LIBDEPS_PRIVATE=[
+        '$BUILD_DIR/mongo/db/repl/repl_coordinator_interface',
+        'server_options_core',
+        'service_context',
+    ],
+)
+
+env.Library(
     target='update_index_data',
     source=[
         'update_index_data.cpp'
@@ -650,7 +666,9 @@ env.Library(
         'catalog/collection',
         'catalog/collection_catalog',
         'concurrency/lock_manager',
+        'concurrency/write_conflict_exception',
         'namespace_string',
+        'namespace_string_util',
         'views/views',
     ],
     LIBDEPS_PRIVATE=[
