@@ -96,7 +96,7 @@ private:
  * NOTE: Must not be used with any locks held, because it needs to block waiting on the committed
  * snapshot to become available.
  */
-class AutoGetCollectionForRead {
+class AutoGetCollectionForRead : public Yieldable {
     AutoGetCollectionForRead(const AutoGetCollectionForRead&) = delete;
     AutoGetCollectionForRead& operator=(const AutoGetCollectionForRead&) = delete;
 
@@ -139,7 +139,7 @@ private:
  * Same as AutoGetCollectionForRead, but in addition will add a Top entry upon destruction and
  * ensure the CurrentOp object has the right namespace and has started its timer.
  */
-class AutoGetCollectionForReadCommand {
+class AutoGetCollectionForReadCommand : public Yieldable {
     AutoGetCollectionForReadCommand(const AutoGetCollectionForReadCommand&) = delete;
     AutoGetCollectionForReadCommand& operator=(const AutoGetCollectionForReadCommand&) = delete;
 

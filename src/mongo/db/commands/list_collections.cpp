@@ -370,7 +370,7 @@ public:
                                                             std::move(ws),
                                                             std::move(root),
                                                             nullptr,
-                                                            PlanYieldPolicy::YieldPolicy::NO_YIELD,
+                                                            PlanYieldPolicy::YieldPolicy::NO_YIELD, nullptr,
                                                             cursorNss));
 
             for (long long objCount = 0; objCount < batchSize; objCount++) {

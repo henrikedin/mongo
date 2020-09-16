@@ -36,6 +36,7 @@
 #include "mongo/db/namespace_string.h"
 #include "mongo/db/operation_context.h"
 #include "mongo/db/repl/local_oplog_info.h"
+#include "mongo/db/yieldable.h"
 #include "mongo/db/views/view.h"
 
 namespace mongo {
@@ -101,7 +102,7 @@ private:
 enum class AutoGetCollectionViewMode { kViewsPermitted, kViewsForbidden };
 
 template <typename CatalogCollectionLookupT>
-class AutoGetCollectionBase {
+class AutoGetCollectionBase : public Yieldable {
     AutoGetCollectionBase(const AutoGetCollectionBase&) = delete;
     AutoGetCollectionBase& operator=(const AutoGetCollectionBase&) = delete;
 

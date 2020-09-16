@@ -36,6 +36,7 @@
 #include "mongo/db/exec/working_set.h"
 #include "mongo/db/query/plan_executor.h"
 #include "mongo/db/query/query_solution.h"
+#include "mongo/db/yieldable.h"
 
 namespace mongo {
 
@@ -61,7 +62,7 @@ public:
                      const boost::intrusive_ptr<ExpressionContext>& expCtx,
                      const Collection* collection,
                      NamespaceString nss,
-                     PlanYieldPolicy::YieldPolicy yieldPolicy);
+                     PlanYieldPolicy::YieldPolicy yieldPolicy, Yieldable* yieldable);
 
     virtual ~PlanExecutorImpl();
     CanonicalQuery* getCanonicalQuery() const final;

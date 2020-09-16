@@ -38,6 +38,7 @@
 #include "mongo/db/query/plan_yield_policy_sbe.h"
 #include "mongo/db/query/query_solution.h"
 #include "mongo/db/query/sbe_stage_builder.h"
+#include "mongo/db/yieldable.h"
 
 namespace mongo::plan_executor_factory {
 
@@ -67,6 +68,7 @@ StatusWith<std::unique_ptr<PlanExecutor, PlanExecutor::Deleter>> make(
     std::unique_ptr<PlanStage> rt,
     const Collection* collection,
     PlanYieldPolicy::YieldPolicy yieldPolicy,
+    Yieldable* yieldable,
     NamespaceString nss = NamespaceString(),
     std::unique_ptr<QuerySolution> qs = nullptr);
 
@@ -83,6 +85,7 @@ StatusWith<std::unique_ptr<PlanExecutor, PlanExecutor::Deleter>> make(
     std::unique_ptr<PlanStage> rt,
     const Collection* collection,
     PlanYieldPolicy::YieldPolicy yieldPolicy,
+    Yieldable* yieldable,
     NamespaceString nss = NamespaceString(),
     std::unique_ptr<QuerySolution> qs = nullptr);
 
@@ -95,7 +98,7 @@ StatusWith<std::unique_ptr<PlanExecutor, PlanExecutor::Deleter>> make(
     const boost::intrusive_ptr<ExpressionContext>& expCtx,
     const Collection* collection,
     NamespaceString nss,
-    PlanYieldPolicy::YieldPolicy yieldPolicy);
+    PlanYieldPolicy::YieldPolicy yieldPolicy, Yieldable* yieldable);
 
 /**
  * Constructs a PlanExecutor for the query 'cq' which will execute the SBE plan 'root'. A yield

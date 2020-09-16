@@ -184,7 +184,7 @@ public:
                                         std::move(ws),
                                         std::move(rootFetch),
                                         collection,
-                                        PlanYieldPolicy::YieldPolicy::YIELD_AUTO);
+                                        PlanYieldPolicy::YieldPolicy::YIELD_AUTO, &autoColl);
         fassert(28536, statusWithPlanExecutor.getStatus());
         auto exec = std::move(statusWithPlanExecutor.getValue());
 

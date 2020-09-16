@@ -974,6 +974,7 @@ StatusWith<std::unique_ptr<PlanExecutor, PlanExecutor::Deleter>> getClassicExecu
                                        std::move(root),
                                        collection,
                                        yieldPolicy,
+        nullptr,
                                        {},
                                        result->solution());
 }
@@ -1253,7 +1254,7 @@ StatusWith<std::unique_ptr<PlanExecutor, PlanExecutor::Deleter>> getExecutorDele
                     "namespace"_attr = nss.ns(),
                     "query"_attr = redact(request->getQuery()));
         return plan_executor_factory::make(
-            expCtx, std::move(ws), std::make_unique<EOFStage>(expCtx.get()), nullptr, policy, nss);
+            expCtx, std::move(ws), std::make_unique<EOFStage>(expCtx.get()), nullptr, policy, nullptr, nss);
     }
 
     if (!parsedDelete->hasParsedQuery()) {
@@ -1292,7 +1293,7 @@ StatusWith<std::unique_ptr<PlanExecutor, PlanExecutor::Deleter>> getExecutorDele
                                                   collection,
                                                   idHackStage.release());
                 return plan_executor_factory::make(
-                    expCtx, std::move(ws), std::move(root), collection, policy);
+                    expCtx, std::move(ws), std::move(root), collection, policy, nullptr);
             }
         }
 
@@ -1353,6 +1354,7 @@ StatusWith<std::unique_ptr<PlanExecutor, PlanExecutor::Deleter>> getExecutorDele
                                        std::move(root),
                                        collection,
                                        policy,
+                                       nullptr,
                                        NamespaceString(),
                                        std::move(querySolution));
 }
@@ -1421,7 +1423,7 @@ StatusWith<std::unique_ptr<PlanExecutor, PlanExecutor::Deleter>> getExecutorUpda
                     "namespace"_attr = nss.ns(),
                     "query"_attr = redact(request->getQuery()));
         return plan_executor_factory::make(
-            expCtx, std::move(ws), std::make_unique<EOFStage>(expCtx.get()), nullptr, policy, nss);
+            expCtx, std::move(ws), std::make_unique<EOFStage>(expCtx.get()), nullptr, policy, nullptr, nss);
     }
 
     // Pass index information to the update driver, so that it can determine for us whether the
@@ -1518,6 +1520,7 @@ StatusWith<std::unique_ptr<PlanExecutor, PlanExecutor::Deleter>> getExecutorUpda
                                        std::move(root),
                                        collection,
                                        policy,
+                                       nullptr,
                                        NamespaceString(),
                                        std::move(querySolution));
 }
@@ -1703,7 +1706,7 @@ StatusWith<std::unique_ptr<PlanExecutor, PlanExecutor::Deleter>> getExecutorCoun
         std::unique_ptr<PlanStage> root = std::make_unique<CountStage>(
             expCtx.get(), collection, limit, skip, ws.get(), new EOFStage(expCtx.get()));
         return plan_executor_factory::make(
-            expCtx, std::move(ws), std::move(root), nullptr, yieldPolicy, nss);
+            expCtx, std::move(ws), std::move(root), nullptr, yieldPolicy, nullptr, nss);
     }
 
     // If the query is empty, then we can determine the count by just asking the collection
@@ -1719,7 +1722,7 @@ StatusWith<std::unique_ptr<PlanExecutor, PlanExecutor::Deleter>> getExecutorCoun
         std::unique_ptr<PlanStage> root =
             std::make_unique<RecordStoreFastCountStage>(expCtx.get(), collection, skip, limit);
         return plan_executor_factory::make(
-            expCtx, std::move(ws), std::move(root), nullptr, yieldPolicy, nss);
+            expCtx, std::move(ws), std::move(root), nullptr, yieldPolicy, nullptr, nss);
     }
 
     size_t plannerOptions = QueryPlannerParams::IS_COUNT;
@@ -1748,6 +1751,7 @@ StatusWith<std::unique_ptr<PlanExecutor, PlanExecutor::Deleter>> getExecutorCoun
                                        std::move(root),
                                        collection,
                                        yieldPolicy,
+                                       nullptr,
                                        NamespaceString(),
                                        std::move(querySolution));
 }
@@ -2067,6 +2071,7 @@ StatusWith<std::unique_ptr<PlanExecutor, PlanExecutor::Deleter>> getExecutorForS
                                        std::move(root),
                                        collection,
                                        yieldPolicy,
+                                       nullptr,
                                        NamespaceString(),
                                        std::move(soln));
 }
@@ -2111,6 +2116,7 @@ getExecutorDistinctFromIndexSolutions(OperationContext* opCtx,
                                                std::move(root),
                                                collection,
                                                yieldPolicy,
+                                               nullptr,
                                                NamespaceString(),
                                                std::move(currentSolution));
         }
@@ -2160,7 +2166,8 @@ StatusWith<std::unique_ptr<PlanExecutor, PlanExecutor::Deleter>> getExecutorDist
                                            std::make_unique<WorkingSet>(),
                                            std::make_unique<EOFStage>(expCtx.get()),
                                            collection,
-                                           yieldPolicy);
+                                           yieldPolicy,
+                                           nullptr);
     }
 
     // TODO: check for idhack here?

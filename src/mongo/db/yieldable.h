@@ -1,5 +1,5 @@
 /**
- *    Copyright (C) 2020-present MongoDB, Inc.
+ *    Copyright (C) 2018-present MongoDB, Inc.
  *
  *    This program is free software: you can redistribute it and/or modify
  *    it under the terms of the Server Side Public License, version 1,
@@ -29,37 +29,8 @@
 
 #pragma once
 
-#include "mongo/db/query/plan_executor_impl.h"
-#include "mongo/db/query/plan_yield_policy.h"
-#include "mongo/db/yieldable.h"
-
 namespace mongo {
-
-class PlanYieldPolicyImpl final : public PlanYieldPolicy {
+class Yieldable {
 public:
-    PlanYieldPolicyImpl(PlanExecutorImpl* exec, PlanYieldPolicy::YieldPolicy policy, Yieldable* yieldable);
-
-private:
-    Status yield(OperationContext* opCtx, std::function<void()> whileYieldingFn = nullptr) override;
-
-    void preCheckInterruptOnly(OperationContext* opCtx) override;
-
-    /**
-     * If not in a nested context, unlocks all locks, suggests to the operating system to switch to
-     * another thread, and then reacquires all locks.
-     *
-     * If in a nested context (eg DBDirectClient), does nothing.
-     *
-     * The whileYieldingFn will be executed after unlocking the locks and before re-acquiring them.
-     */
-    void _yieldAllLocks(OperationContext* opCtx,
-                        std::function<void()> whileYieldingFn,
-                        const NamespaceString& planExecNS);
-
-    // The plan executor which this yield policy is responsible for yielding. Must not outlive the
-    // plan executor.
-    PlanExecutorImpl* const _planYielding;
-    Yieldable* const _yieldable;
 };
-
-}  // namespace mongo
+}

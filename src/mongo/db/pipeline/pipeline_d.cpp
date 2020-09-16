@@ -169,7 +169,7 @@ StatusWith<unique_ptr<PlanExecutor, PlanExecutor::Deleter>> createRandomCursorEx
     }
 
     auto exec = plan_executor_factory::make(
-        expCtx, std::move(ws), std::move(root), coll, PlanYieldPolicy::YieldPolicy::YIELD_AUTO);
+        expCtx, std::move(ws), std::move(root), coll, PlanYieldPolicy::YieldPolicy::YIELD_AUTO, nullptr);
 
     // For sharded collections, the root of the plan tree is a TrialStage that may have chosen
     // either a random-sampling cursor trial plan or a COLLSCAN backup plan. We can only optimize

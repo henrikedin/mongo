@@ -83,14 +83,14 @@ MONGO_FAIL_POINT_DEFINE(planExecutorHangBeforeShouldWaitForInserts);
  * Constructs a PlanYieldPolicy based on 'policy'.
  */
 std::unique_ptr<PlanYieldPolicy> makeYieldPolicy(PlanExecutorImpl* exec,
-                                                 PlanYieldPolicy::YieldPolicy policy) {
+                                                 PlanYieldPolicy::YieldPolicy policy, Yieldable* yieldable) {
     switch (policy) {
         case PlanYieldPolicy::YieldPolicy::YIELD_AUTO:
         case PlanYieldPolicy::YieldPolicy::YIELD_MANUAL:
         case PlanYieldPolicy::YieldPolicy::NO_YIELD:
         case PlanYieldPolicy::YieldPolicy::WRITE_CONFLICT_RETRY_ONLY:
         case PlanYieldPolicy::YieldPolicy::INTERRUPT_ONLY: {
-            return std::make_unique<PlanYieldPolicyImpl>(exec, policy);
+            return std::make_unique<PlanYieldPolicyImpl>(exec, policy, yieldable);
         }
         case PlanYieldPolicy::YieldPolicy::ALWAYS_TIME_OUT: {
             return std::make_unique<AlwaysTimeOutYieldPolicy>(exec);
@@ -132,7 +132,7 @@ PlanExecutorImpl::PlanExecutorImpl(OperationContext* opCtx,
                                    const boost::intrusive_ptr<ExpressionContext>& expCtx,
                                    const Collection* collection,
                                    NamespaceString nss,
-                                   PlanYieldPolicy::YieldPolicy yieldPolicy)
+                                   PlanYieldPolicy::YieldPolicy yieldPolicy, Yieldable* yieldable)
     : _opCtx(opCtx),
       _cq(std::move(cq)),
       _expCtx(_cq ? _cq->getExpCtx() : expCtx),
@@ -142,7 +142,7 @@ PlanExecutorImpl::PlanExecutorImpl(OperationContext* opCtx,
       _nss(std::move(nss)),
       // There's no point in yielding if the collection doesn't exist.
       _yieldPolicy(makeYieldPolicy(
-          this, collection ? yieldPolicy : PlanYieldPolicy::YieldPolicy::NO_YIELD)) {
+          this, collection ? yieldPolicy : PlanYieldPolicy::YieldPolicy::NO_YIELD, yieldable)) {
     invariant(!_expCtx || _expCtx->opCtx == _opCtx);
     invariant(!_cq || !_expCtx || _cq->getExpCtx() == _expCtx);
 

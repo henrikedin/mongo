@@ -47,6 +47,7 @@ StatusWith<std::unique_ptr<PlanExecutor, PlanExecutor::Deleter>> make(
     std::unique_ptr<PlanStage> rt,
     const Collection* collection,
     PlanYieldPolicy::YieldPolicy yieldPolicy,
+    Yieldable* yieldable,
     NamespaceString nss,
     std::unique_ptr<QuerySolution> qs) {
     auto expCtx = cq->getExpCtx();
@@ -58,7 +59,7 @@ StatusWith<std::unique_ptr<PlanExecutor, PlanExecutor::Deleter>> make(
                 expCtx,
                 collection,
                 nss,
-                yieldPolicy);
+                yieldPolicy, yieldable);
 }
 
 StatusWith<std::unique_ptr<PlanExecutor, PlanExecutor::Deleter>> make(
@@ -67,6 +68,7 @@ StatusWith<std::unique_ptr<PlanExecutor, PlanExecutor::Deleter>> make(
     std::unique_ptr<PlanStage> rt,
     const Collection* collection,
     PlanYieldPolicy::YieldPolicy yieldPolicy,
+    Yieldable* yieldable,
     NamespaceString nss,
     std::unique_ptr<QuerySolution> qs) {
     return make(expCtx->opCtx,
@@ -77,7 +79,7 @@ StatusWith<std::unique_ptr<PlanExecutor, PlanExecutor::Deleter>> make(
                 expCtx,
                 collection,
                 nss,
-                yieldPolicy);
+                yieldPolicy, yieldable);
 }
 
 StatusWith<std::unique_ptr<PlanExecutor, PlanExecutor::Deleter>> make(
@@ -89,7 +91,7 @@ StatusWith<std::unique_ptr<PlanExecutor, PlanExecutor::Deleter>> make(
     const boost::intrusive_ptr<ExpressionContext>& expCtx,
     const Collection* collection,
     NamespaceString nss,
-    PlanYieldPolicy::YieldPolicy yieldPolicy) {
+    PlanYieldPolicy::YieldPolicy yieldPolicy, Yieldable* yieldable) {
 
     try {
         auto execImpl = new PlanExecutorImpl(opCtx,
@@ -100,7 +102,7 @@ StatusWith<std::unique_ptr<PlanExecutor, PlanExecutor::Deleter>> make(
                                              expCtx,
                                              collection,
                                              std::move(nss),
-                                             yieldPolicy);
+                                             yieldPolicy, yieldable);
         PlanExecutor::Deleter planDeleter(opCtx);
         std::unique_ptr<PlanExecutor, PlanExecutor::Deleter> exec(execImpl, std::move(planDeleter));
         return {std::move(exec)};

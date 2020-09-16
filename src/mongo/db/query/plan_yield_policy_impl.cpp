@@ -45,14 +45,15 @@ MONGO_FAIL_POINT_DEFINE(setInterruptOnlyPlansCheckForInterruptHang);
 }  // namespace
 
 PlanYieldPolicyImpl::PlanYieldPolicyImpl(PlanExecutorImpl* exec,
-                                         PlanYieldPolicy::YieldPolicy policy)
+                                         PlanYieldPolicy::YieldPolicy policy,
+                                         Yieldable* yieldable)
     : PlanYieldPolicy(exec->getOpCtx()->lockState()->isGlobalLockedRecursively()
                           ? PlanYieldPolicy::YieldPolicy::NO_YIELD
                           : policy,
                       exec->getOpCtx()->getServiceContext()->getFastClockSource(),
                       internalQueryExecYieldIterations.load(),
                       Milliseconds{internalQueryExecYieldPeriodMS.load()}),
-      _planYielding(exec) {}
+      _planYielding(exec), _yieldable(yieldable) {}
 
 Status PlanYieldPolicyImpl::yield(OperationContext* opCtx, std::function<void()> whileYieldingFn) {
     // Can't use writeConflictRetry since we need to call saveState before reseting the
