@@ -53,39 +53,58 @@ public:
         invariant(_collections.empty());
     }
     Collection* lookup(CollectionUUID uuid) const {
-        auto it = std::find_if(_collections.begin(), _collections.end(), [uuid](auto&& collection) {
-            return collection->uuid() == uuid;
+        auto it = std::find_if(_collections.begin(), _collections.end(), [uuid](auto&& entry) {
+            return entry.collection->uuid() == uuid;
         });
         if (it == _collections.end())
             return nullptr;
-        return it->get();
+        return it->collection.get();
     }
 
-    Collection* lookup(const NamespaceString& nss) const {
-        auto it = std::find_if(_collections.begin(), _collections.end(), [&nss](auto&& collection) {
-            return collection->ns() == nss;
+    std::pair<bool, Collection*> lookup(const NamespaceString& nss) const {
+        auto it = std::find_if(_collections.begin(), _collections.end(), [&nss](auto&& entry) {
+            return entry.nss == nss;
         });
         if (it == _collections.end())
-            return nullptr;
-        return it->get();
+            return {false, nullptr};
+        return {true, it->collection.get()};
     }
 
     void insert(std::shared_ptr<Collection> collection) {
-        _collections.push_back(std::move(collection));
+        auto nss = collection->ns();
+        _collections.push_back(Entry{std::move(collection), std::move(nss)});
+    }
+    void insert(const NamespaceString& nss) {
+        _collections.push_back(Entry{nullptr, nss});
     }
     std::shared_ptr<Collection> remove(Collection* collection) {
-        auto it = std::find_if(_collections.begin(), _collections.end(), [collection](auto&& coll) {
-            return coll.get() == collection;
-        });
+        auto it =
+            std::find_if(_collections.begin(), _collections.end(), [collection](auto&& entry) {
+                return entry.collection.get() == collection;
+            });
         if (it == _collections.end())
             return nullptr;
-        auto coll = std::move(*it);
+        auto coll = std::move(it->collection);
         _collections.erase(it);
         return coll;
     }
 
+    bool remove(const NamespaceString& nss) {
+        auto it = std::find_if(_collections.begin(), _collections.end(), [&nss](auto&& entry) {
+            return entry.nss == nss;
+        });
+        if (it == _collections.end())
+            return false;
+        _collections.erase(it);
+        return true;
+    }
+
 private:
-    std::vector<std::shared_ptr<Collection>> _collections;
+    struct Entry {
+        std::shared_ptr<Collection> collection;
+        NamespaceString nss;
+    };
+    std::vector<Entry> _collections;
 };
 
 const OperationContext::Decoration<UncommittedWritableCollections>
@@ -257,28 +276,23 @@ void CollectionCatalog::setCollectionNamespace(OperationContext* opCtx,
 
     coll->setNs(toCollection);
 
-    _collections[toCollection] = _collections[fromCollection];
-    _collections.erase(fromCollection);
+    auto& uncommittedWritableCollections = getUncommittedWritableCollections(opCtx);
+    uncommittedWritableCollections.insert(fromCollection);
+    
+    opCtx->recoveryUnit()->onCommit(
+        [this, &uncommittedWritableCollections, fromCollection, toCollection](boost::optional<Timestamp> timestamp) {
+            if (uncommittedWritableCollections.remove(fromCollection)) {
+                stdx::lock_guard<Latch> lock(_catalogLock);
 
-    ResourceId oldRid = ResourceId(RESOURCE_COLLECTION, fromCollection.ns());
-    ResourceId newRid = ResourceId(RESOURCE_COLLECTION, toCollection.ns());
+                _collections.erase(fromCollection);
 
-    removeResource(oldRid, fromCollection.ns());
-    addResource(newRid, toCollection.ns());
+                ResourceId oldRid = ResourceId(RESOURCE_COLLECTION, fromCollection.ns());
+                ResourceId newRid = ResourceId(RESOURCE_COLLECTION, toCollection.ns());
 
-    opCtx->recoveryUnit()->onRollback([this, coll, fromCollection, toCollection] {
-        stdx::lock_guard<Latch> lock(_catalogLock);
-        coll->setNs(fromCollection);
-
-        _collections[fromCollection] = _collections[toCollection];
-        _collections.erase(toCollection);
-
-        ResourceId oldRid = ResourceId(RESOURCE_COLLECTION, fromCollection.ns());
-        ResourceId newRid = ResourceId(RESOURCE_COLLECTION, toCollection.ns());
-
-        removeResource(newRid, toCollection.ns());
-        addResource(oldRid, fromCollection.ns());
-    });
+                removeResource(oldRid, fromCollection.ns());
+                addResource(newRid, toCollection.ns());
+            }
+        });
 }
 
 void CollectionCatalog::onCloseDatabase(OperationContext* opCtx, std::string dbName) {
@@ -418,8 +432,9 @@ Collection* CollectionCatalog::lookupCollectionByNamespaceForMetadataWrite(
     }
 
     auto& uncommittedWritableCollections = getUncommittedWritableCollections(opCtx);
-    if (auto coll = uncommittedWritableCollections.lookup(nss)) {
-        return coll;
+    auto [found, uncommittedPtr] = uncommittedWritableCollections.lookup(nss);
+    if (found) {
+        return uncommittedPtr;
     }
 
     if (auto coll = UncommittedCollections::getForTxn(opCtx, nss)) {
@@ -460,8 +475,9 @@ Collection* CollectionCatalog::lookupCollectionByNamespaceForMetadataWrite(
 const Collection* CollectionCatalog::lookupCollectionByNamespace(OperationContext* opCtx,
                                                                  const NamespaceString& nss) const {
     auto& uncommittedWritableCollections = getUncommittedWritableCollections(opCtx);
-    if (auto coll = uncommittedWritableCollections.lookup(nss)) {
-        return coll;
+    auto [found, uncommittedPtr] = uncommittedWritableCollections.lookup(nss);
+    if (found) {
+        return uncommittedPtr;
     }
 
     if (auto coll = UncommittedCollections::getForTxn(opCtx, nss)) {
