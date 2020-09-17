@@ -458,7 +458,7 @@ private:
             AutoGetCollection collection(opCtx, _batch.getNamespace(), MODE_IX);
 
             auto exec = uassertStatusOK(getExecutorUpdate(
-                &CurOp::get(opCtx)->debug(), collection.getCollection(), &parsedUpdate, verbosity));
+                &CurOp::get(opCtx)->debug(), &collection, &parsedUpdate, verbosity));
             auto bodyBuilder = result->getBodyBuilder();
             Explain::explainStages(
                 exec.get(), collection.getCollection(), verbosity, BSONObj(), &bodyBuilder);

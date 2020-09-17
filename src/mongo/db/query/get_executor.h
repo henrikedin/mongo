@@ -29,6 +29,7 @@
 
 #pragma once
 
+#include "mongo/db/catalog_raii.h"
 #include "mongo/db/catalog/index_catalog_entry.h"
 #include "mongo/db/ops/delete_request_gen.h"
 #include "mongo/db/ops/parsed_delete.h"
@@ -267,6 +268,12 @@ StatusWith<std::unique_ptr<PlanExecutor, PlanExecutor::Deleter>> getExecutorDele
 StatusWith<std::unique_ptr<PlanExecutor, PlanExecutor::Deleter>> getExecutorUpdate(
     OpDebug* opDebug,
     const Collection* collection,
+    ParsedUpdate* parsedUpdate,
+    boost::optional<ExplainOptions::Verbosity> verbosity);
+
+StatusWith<std::unique_ptr<PlanExecutor, PlanExecutor::Deleter>> getExecutorUpdate(
+    OpDebug* opDebug,
+    AutoGetCollection* collection,
     ParsedUpdate* parsedUpdate,
     boost::optional<ExplainOptions::Verbosity> verbosity);
 }  // namespace mongo

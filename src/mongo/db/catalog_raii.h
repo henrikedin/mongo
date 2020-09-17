@@ -36,8 +36,8 @@
 #include "mongo/db/namespace_string.h"
 #include "mongo/db/operation_context.h"
 #include "mongo/db/repl/local_oplog_info.h"
-#include "mongo/db/yieldable.h"
 #include "mongo/db/views/view.h"
+#include "mongo/db/yieldable.h"
 
 namespace mongo {
 
@@ -252,6 +252,9 @@ public:
     OperationContext* getOperationContext() const {
         return _opCtx;
     }
+
+    void release() override;
+    void restore() override;
 
 private:
     Collection* _writableColl = nullptr;

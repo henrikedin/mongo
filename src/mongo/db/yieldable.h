@@ -30,7 +30,10 @@
 #pragma once
 
 namespace mongo {
+
 class Yieldable {
 public:
+    virtual void release() {}
+    virtual void restore() {}
 };
-}
+}  // namespace mongo

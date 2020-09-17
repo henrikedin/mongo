@@ -66,7 +66,7 @@ public:
 
     /**
      * Retrieves a database reference if it is already opened, or opens it if it hasn't been
-     * opened/created yet. Must be called with the database locked in X-mode.
+     * opened/created yet. Must be called with the database locked in IX-mode.
      *
      * @param justCreated Returns whether the database was newly created (true) or it already
      *          existed (false). Can be NULL if this information is not necessary.

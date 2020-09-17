@@ -66,12 +66,20 @@ Status PlanYieldPolicyImpl::yield(OperationContext* opCtx, std::function<void()>
                 invariant(!"WriteConflictException not allowed in saveState");
             }
 
+            if (_yieldable) {
+                _yieldable->release();
+            }
+            
             if (getPolicy() == PlanYieldPolicy::YieldPolicy::WRITE_CONFLICT_RETRY_ONLY) {
                 // Just reset the snapshot. Leave all LockManager locks alone.
                 opCtx->recoveryUnit()->abandonSnapshot();
             } else {
                 // Release and reacquire locks.
                 _yieldAllLocks(opCtx, whileYieldingFn, _planYielding->nss());
+            }
+
+            if (_yieldable) {
+                _yieldable->restore();
             }
 
             _planYielding->restoreStateWithoutRetrying();

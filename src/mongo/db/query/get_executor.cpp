@@ -974,7 +974,7 @@ StatusWith<std::unique_ptr<PlanExecutor, PlanExecutor::Deleter>> getClassicExecu
                                        std::move(root),
                                        collection,
                                        yieldPolicy,
-        nullptr,
+                                       nullptr,
                                        {},
                                        result->solution());
 }
@@ -1253,8 +1253,13 @@ StatusWith<std::unique_ptr<PlanExecutor, PlanExecutor::Deleter>> getExecutorDele
                     "Collection does not exist. Using EOF stage",
                     "namespace"_attr = nss.ns(),
                     "query"_attr = redact(request->getQuery()));
-        return plan_executor_factory::make(
-            expCtx, std::move(ws), std::make_unique<EOFStage>(expCtx.get()), nullptr, policy, nullptr, nss);
+        return plan_executor_factory::make(expCtx,
+                                           std::move(ws),
+                                           std::make_unique<EOFStage>(expCtx.get()),
+                                           nullptr,
+                                           policy,
+                                           nullptr,
+                                           nss);
     }
 
     if (!parsedDelete->hasParsedQuery()) {
@@ -1363,9 +1368,10 @@ StatusWith<std::unique_ptr<PlanExecutor, PlanExecutor::Deleter>> getExecutorDele
 // Update
 //
 
-StatusWith<std::unique_ptr<PlanExecutor, PlanExecutor::Deleter>> getExecutorUpdate(
+StatusWith<std::unique_ptr<PlanExecutor, PlanExecutor::Deleter>> _getExecutorUpdate(
     OpDebug* opDebug,
     const Collection* collection,
+    Yieldable* yieldable,
     ParsedUpdate* parsedUpdate,
     boost::optional<ExplainOptions::Verbosity> verbosity) {
     auto expCtx = parsedUpdate->expCtx();
@@ -1422,8 +1428,13 @@ StatusWith<std::unique_ptr<PlanExecutor, PlanExecutor::Deleter>> getExecutorUpda
                     "Collection does not exist. Using EOF stage",
                     "namespace"_attr = nss.ns(),
                     "query"_attr = redact(request->getQuery()));
-        return plan_executor_factory::make(
-            expCtx, std::move(ws), std::make_unique<EOFStage>(expCtx.get()), nullptr, policy, nullptr, nss);
+        return plan_executor_factory::make(expCtx,
+                                           std::move(ws),
+                                           std::make_unique<EOFStage>(expCtx.get()),
+                                           nullptr,
+                                           policy,
+                                           nullptr,
+                                           nss);
     }
 
     // Pass index information to the update driver, so that it can determine for us whether the
@@ -1520,9 +1531,25 @@ StatusWith<std::unique_ptr<PlanExecutor, PlanExecutor::Deleter>> getExecutorUpda
                                        std::move(root),
                                        collection,
                                        policy,
-                                       nullptr,
+                                       yieldable,
                                        NamespaceString(),
                                        std::move(querySolution));
+}
+
+StatusWith<std::unique_ptr<PlanExecutor, PlanExecutor::Deleter>> getExecutorUpdate(
+    OpDebug* opDebug,
+    const Collection* collection,
+    ParsedUpdate* parsedUpdate,
+    boost::optional<ExplainOptions::Verbosity> verbosity) {
+    return _getExecutorUpdate(opDebug, collection, nullptr, parsedUpdate, verbosity);
+}
+
+StatusWith<std::unique_ptr<PlanExecutor, PlanExecutor::Deleter>> getExecutorUpdate(
+    OpDebug* opDebug,
+    AutoGetCollection* collection,
+    ParsedUpdate* parsedUpdate,
+    boost::optional<ExplainOptions::Verbosity> verbosity) {
+    return _getExecutorUpdate(opDebug, collection->getCollection(), collection, parsedUpdate, verbosity);
 }
 
 //

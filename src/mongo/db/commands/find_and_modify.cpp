@@ -310,12 +310,11 @@ public:
 
             CollectionShardingState::get(opCtx, nsString)->checkShardVersionOrThrow(opCtx);
 
-            const Collection* const collection = autoColl.getCollection();
             const auto exec =
-                uassertStatusOK(getExecutorUpdate(opDebug, collection, &parsedUpdate, verbosity));
+                uassertStatusOK(getExecutorUpdate(opDebug, &autoColl, &parsedUpdate, verbosity));
 
             auto bodyBuilder = result->getBodyBuilder();
-            Explain::explainStages(exec.get(), collection, verbosity, BSONObj(), &bodyBuilder);
+            Explain::explainStages(exec.get(), autoColl.getCollection(), verbosity, BSONObj(), &bodyBuilder);
         }
 
         return Status::OK();
@@ -512,8 +511,8 @@ public:
                                          const bool inTransaction,
                                          ParsedUpdate* parsedUpdate,
                                          BSONObjBuilder& result) {
-        AutoGetCollection autoColl(opCtx, nsString, MODE_IX);
-        Database* db = autoColl.ensureDbExists();
+        AutoGetCollection collection(opCtx, nsString, MODE_IX, args.isUpsert() ? AutoGetCollectionEnsureMode::kEnsureExists : AutoGetCollectionEnsureMode::kNone);
+        Database* db = collection.ensureDbExists();
 
         {
             stdx::lock_guard<Client> lk(*opCtx->getClient());
@@ -524,34 +523,10 @@ public:
 
         assertCanWrite(opCtx, nsString);
 
-        const Collection* collection = autoColl.getCollection();
-
-        // Create the collection if it does not exist when performing an upsert because the
-        // update stage does not create its own collection
-        if (!collection && args.isUpsert()) {
-            assertCanWrite(opCtx, nsString);
-
-            collection = CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, nsString);
-
-            // If someone else beat us to creating the collection, do nothing
-            if (!collection) {
-                uassertStatusOK(userAllowedCreateNS(nsString));
-                WriteUnitOfWork wuow(opCtx);
-                CollectionOptions defaultCollectionOptions;
-                uassertStatusOK(db->userCreateNS(opCtx, nsString, defaultCollectionOptions));
-                wuow.commit();
-
-                collection =
-                    CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, nsString);
-            }
-
-            invariant(collection);
-        }
-
-        checkIfTransactionOnCappedColl(collection, inTransaction);
+        checkIfTransactionOnCappedColl(collection.getCollection(), inTransaction);
 
         const auto exec = uassertStatusOK(
-            getExecutorUpdate(opDebug, collection, parsedUpdate, boost::none /* verbosity */));
+            getExecutorUpdate(opDebug, &collection, parsedUpdate, boost::none /* verbosity */));
 
         {
             stdx::lock_guard<Client> lk(*opCtx->getClient());
@@ -566,7 +541,7 @@ public:
         PlanSummaryStats summaryStats;
         exec->getSummaryStats(&summaryStats);
         if (collection) {
-            CollectionQueryInfo::get(collection).notifyOfQuery(opCtx, collection, summaryStats);
+            CollectionQueryInfo::get(collection.getCollection()).notifyOfQuery(opCtx, collection.getCollection(), summaryStats);
         }
         write_ops_exec::recordUpdateResultInOpDebug(exec->getUpdateResult(), opDebug);
         opDebug->setPlanSummaryMetrics(summaryStats);

@@ -911,16 +911,16 @@ Status _updateWithQuery(OperationContext* opCtx,
             return parsedUpdateStatus;
         }
 
-        AutoGetCollection autoColl(opCtx, nss, MODE_IX);
+        AutoGetCollection collection(opCtx, nss, MODE_IX);
         auto collectionResult =
-            getCollection(autoColl,
+            getCollection(collection,
                           nss,
                           str::stream() << "Unable to update documents in " << nss.ns()
                                         << " using query " << request.getQuery());
         if (!collectionResult.isOK()) {
             return collectionResult.getStatus();
         }
-        auto collection = collectionResult.getValue();
+
         WriteUnitOfWork wuow(opCtx);
         if (!ts.isNull()) {
             uassertStatusOK(opCtx->recoveryUnit()->setTimestamp(ts));
@@ -928,7 +928,7 @@ Status _updateWithQuery(OperationContext* opCtx,
         }
 
         auto planExecutorResult = mongo::getExecutorUpdate(
-            nullptr, collection, &parsedUpdate, boost::none /* verbosity */);
+            nullptr, &collection, &parsedUpdate, boost::none /* verbosity */);
         if (!planExecutorResult.isOK()) {
             return planExecutorResult.getStatus();
         }

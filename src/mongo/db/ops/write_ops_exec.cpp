@@ -637,20 +637,16 @@ static SingleWriteResult performSingleUpdateOp(OperationContext* opCtx,
         uasserted(ErrorCodes::InternalError, "failAllUpdates failpoint active!");
     }
 
-    boost::optional<AutoGetCollection> collection;
-    while (true) {
-        collection.emplace(opCtx, ns, fixLockModeForSystemDotViewsChanges(ns, MODE_IX));
+    // If this is an upsert, which is an insert, we must have a collection.
+    // An update on a non-existant collection is okay and handled later.
+    AutoGetCollection collection(opCtx,
+                                 ns,
+                                 fixLockModeForSystemDotViewsChanges(ns, MODE_IX),
+                                 updateRequest.isUpsert()
+                                     ? AutoGetCollectionEnsureMode::kEnsureExists
+                                     : AutoGetCollectionEnsureMode::kNone);
 
-        // If this is an upsert, which is an insert, we must have a collection.
-        // An update on a non-existant collection is okay and handled later.
-        if (collection->getCollection() || !updateRequest.isUpsert())
-            break;
-
-        collection.reset();  // unlock.
-        makeCollection(opCtx, ns);
-    }
-
-    if (auto coll = collection->getCollection()) {
+    if (auto coll = collection.getCollection()) {
         // Transactions are not allowed to operate on capped collections.
         uassertStatusOK(checkIfTransactionOnCappedColl(opCtx, coll));
     }
@@ -660,14 +656,14 @@ static SingleWriteResult performSingleUpdateOp(OperationContext* opCtx,
 
     auto& curOp = *CurOp::get(opCtx);
 
-    if (collection->getDb()) {
+    if (collection.getDb()) {
         curOp.raiseDbProfileLevel(CollectionCatalog::get(opCtx).getDatabaseProfileLevel(ns.db()));
     }
 
     assertCanWrite_inlock(opCtx, ns);
 
     auto exec = uassertStatusOK(getExecutorUpdate(
-        &curOp.debug(), collection->getCollection(), &parsedUpdate, boost::none /* verbosity */));
+        &curOp.debug(), &collection, &parsedUpdate, boost::none /* verbosity */));
 
     {
         stdx::lock_guard<Client> lk(*opCtx->getClient());
@@ -678,7 +674,7 @@ static SingleWriteResult performSingleUpdateOp(OperationContext* opCtx,
 
     PlanSummaryStats summary;
     exec->getSummaryStats(&summary);
-    if (auto coll = collection->getCollection()) {
+    if (auto coll = collection.getCollection()) {
         CollectionQueryInfo::get(coll).notifyOfQuery(opCtx, coll, summary);
     }
 

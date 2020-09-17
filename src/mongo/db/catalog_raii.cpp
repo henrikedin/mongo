@@ -35,8 +35,8 @@
 #include "mongo/db/catalog/database_holder.h"
 #include "mongo/db/concurrency/write_conflict_exception.h"
 #include "mongo/db/namespace_string_util.h"
-#include "mongo/db/s/database_sharding_state.h"
 #include "mongo/db/s/collection_sharding_state.h"
+#include "mongo/db/s/database_sharding_state.h"
 #include "mongo/db/views/view_catalog.h"
 #include "mongo/util/fail_point.h"
 
@@ -89,7 +89,7 @@ AutoGetCollectionBase<CatalogCollectionLookupT>::AutoGetCollectionBase(
         invariant(!opCtx->lockState()->inAWriteUnitOfWork());
         invariant(modeColl == MODE_IX || modeColl == MODE_X);
     }
-    
+
     if (auto& nss = nsOrUUID.nss()) {
         uassert(ErrorCodes::InvalidNamespace,
                 str::stream() << "Namespace " << *nss << " is not a valid collection name",
@@ -135,9 +135,9 @@ AutoGetCollectionBase<CatalogCollectionLookupT>::AutoGetCollectionBase(
     if (!_coll && ensureMode == AutoGetCollectionEnsureMode::kEnsureExists) {
         uassertStatusOK(userAllowedCreateNS(_resolvedNss));
         uassert(ErrorCodes::PrimarySteppedDown,
-            str::stream() << "Not primary while writing to " << _resolvedNss.ns(),
-            repl::ReplicationCoordinator::get(opCtx->getServiceContext())
-                ->canAcceptWritesFor(opCtx, _resolvedNss));
+                str::stream() << "Not primary while writing to " << _resolvedNss.ns(),
+                repl::ReplicationCoordinator::get(opCtx->getServiceContext())
+                    ->canAcceptWritesFor(opCtx, _resolvedNss));
         CollectionShardingState::get(opCtx, _resolvedNss)->checkShardVersionOrThrow(opCtx);
         writeConflictRetry(
             opCtx, "AutoGetCollection ensure collection exists", _resolvedNss.ns(), [this, &opCtx] {
@@ -225,6 +225,14 @@ Collection* AutoGetCollection::getWritableCollection(CollectionCatalog::Lifetime
         _coll = _writableColl;
     }
     return _writableColl;
+}
+
+void AutoGetCollection::release() {
+    invariant(!_writableColl);
+}
+void AutoGetCollection::restore() {
+    _coll = CatalogCollectionLookup::lookupCollection(_opCtx, _resolvedNss);
+
 }
 
 CollectionWriter::CollectionWriter(OperationContext* opCtx,
