@@ -56,6 +56,7 @@ namespace mongo {
 extern FailPoint leaveIndexBuildUnfinishedForShutdown;
 
 class Collection;
+class CollectionPtr;
 class MatchExpression;
 class NamespaceString;
 class OperationContext;
@@ -121,7 +122,7 @@ public:
                                           const BSONObj& spec,
                                           OnInitFn onInit);
     StatusWith<std::vector<BSONObj>> initForResume(OperationContext* opCtx,
-                                                   const Collection* collection,
+                                                   const CollectionPtr& collection,
                                                    const std::vector<BSONObj>& specs,
                                                    const ResumeIndexInfo& resumeInfo);
 
@@ -136,7 +137,8 @@ public:
      * When called on primaries, this generates a new optime, writes a no-op oplog entry, and
      * timestamps the first catalog write. Does nothing on secondaries.
      */
-    static OnInitFn makeTimestampedIndexOnInitFn(OperationContext* opCtx, const Collection* coll);
+    static OnInitFn makeTimestampedIndexOnInitFn(OperationContext* opCtx,
+                                                 const CollectionPtr& coll);
 
     /**
      * Inserts all documents in the Collection into the indexes and logs with timing info.
@@ -152,7 +154,7 @@ public:
      */
     Status insertAllDocumentsInCollection(
         OperationContext* opCtx,
-        const Collection* collection,
+        const CollectionPtr& collection,
         boost::optional<RecordId> resumeAfterRecordId = boost::none);
 
     /**
@@ -207,7 +209,7 @@ public:
      * of an index build, so it must ensure that before it finishes, it has indexed all documents in
      * a collection, requiring a call to this function upon completion.
      */
-    Status retrySkippedRecords(OperationContext* opCtx, const Collection* collection);
+    Status retrySkippedRecords(OperationContext* opCtx, const CollectionPtr& collection);
 
     /**
      * Check any constraits that may have been temporarily violated during the index build for

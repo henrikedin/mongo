@@ -179,7 +179,7 @@ MultiIndexBlock::OnInitFn MultiIndexBlock::kNoopOnInitFn =
     [](std::vector<BSONObj>& specs) -> Status { return Status::OK(); };
 
 MultiIndexBlock::OnInitFn MultiIndexBlock::makeTimestampedIndexOnInitFn(OperationContext* opCtx,
-                                                                        const Collection* coll) {
+                                                                        const CollectionPtr& coll) {
     return [opCtx, ns = coll->ns()](std::vector<BSONObj>& specs) -> Status {
         opCtx->getServiceContext()->getOpObserver()->onStartIndexBuildSinglePhase(opCtx, ns);
         return Status::OK();
@@ -398,7 +398,7 @@ StatusWith<std::vector<BSONObj>> MultiIndexBlock::init(
 
 Status MultiIndexBlock::insertAllDocumentsInCollection(
     OperationContext* opCtx,
-    const Collection* collection,
+    const CollectionPtr& collection,
     boost::optional<RecordId> resumeAfterRecordId) {
     invariant(!_buildIsCleanedUp);
     invariant(opCtx->lockState()->isNoop() || !opCtx->lockState()->inAWriteUnitOfWork());
@@ -459,7 +459,7 @@ Status MultiIndexBlock::insertAllDocumentsInCollection(
         yieldPolicy = PlanYieldPolicy::YieldPolicy::WRITE_CONFLICT_RETRY_ONLY;
     }
     auto exec = collection->makePlanExecutor(
-        opCtx, yieldPolicy, Collection::ScanDirection::kForward, resumeAfterRecordId);
+        opCtx, collection, yieldPolicy, Collection::ScanDirection::kForward, resumeAfterRecordId);
 
     // Hint to the storage engine that this collection scan should not keep data in the cache.
     bool readOnce = useReadOnceCursorsForIndexBuilds.load();
@@ -693,7 +693,7 @@ Status MultiIndexBlock::drainBackgroundWrites(
               IndexBuildPhase_serializer(_phase).toString());
     _phase = IndexBuildPhaseEnum::kDrainWrites;
 
-    const Collection* coll =
+    const CollectionPtr& coll =
         CollectionCatalog::get(opCtx).lookupCollectionByUUID(opCtx, _collectionUUID.get());
 
     // Drain side-writes table for each index. This only drains what is visible. Assuming intent
@@ -718,7 +718,8 @@ Status MultiIndexBlock::drainBackgroundWrites(
     return Status::OK();
 }
 
-Status MultiIndexBlock::retrySkippedRecords(OperationContext* opCtx, const Collection* collection) {
+Status MultiIndexBlock::retrySkippedRecords(OperationContext* opCtx,
+                                            const CollectionPtr& collection) {
     invariant(!_buildIsCleanedUp);
     for (auto&& index : _indexes) {
         auto interceptor = index.block->getEntry()->indexBuildInterceptor();

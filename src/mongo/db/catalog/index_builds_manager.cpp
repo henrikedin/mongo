@@ -121,7 +121,7 @@ Status IndexBuildsManager::setUpIndexBuild(OperationContext* opCtx,
 }
 
 Status IndexBuildsManager::startBuildingIndex(OperationContext* opCtx,
-                                              const Collection* collection,
+                                              const CollectionPtr& collection,
                                               const UUID& buildUUID,
                                               boost::optional<RecordId> resumeAfterRecordId) {
     auto builder = invariant(_getBuilder(buildUUID));
@@ -135,7 +135,7 @@ Status IndexBuildsManager::resumeBuildingIndexFromBulkLoadPhase(OperationContext
 }
 
 StatusWith<std::pair<long long, long long>> IndexBuildsManager::startBuildingIndexForRecovery(
-    OperationContext* opCtx, const Collection* coll, const UUID& buildUUID, RepairData repair) {
+    OperationContext* opCtx, const CollectionPtr& coll, const UUID& buildUUID, RepairData repair) {
     auto builder = invariant(_getBuilder(buildUUID));
 
     // Iterate all records in the collection. Validate the records and index them
@@ -277,7 +277,7 @@ Status IndexBuildsManager::drainBackgroundWrites(
 
 Status IndexBuildsManager::retrySkippedRecords(OperationContext* opCtx,
                                                const UUID& buildUUID,
-                                               const Collection* collection) {
+                                               const CollectionPtr& collection) {
     auto builder = invariant(_getBuilder(buildUUID));
     return builder->retrySkippedRecords(opCtx, collection);
 }
@@ -332,7 +332,7 @@ bool IndexBuildsManager::abortIndexBuild(OperationContext* opCtx,
 }
 
 bool IndexBuildsManager::abortIndexBuildWithoutCleanupForRollback(OperationContext* opCtx,
-                                                                  const Collection* collection,
+                                                                  const CollectionPtr& collection,
                                                                   const UUID& buildUUID,
                                                                   bool isResumable) {
     auto builder = _getBuilder(buildUUID);
@@ -353,7 +353,7 @@ bool IndexBuildsManager::abortIndexBuildWithoutCleanupForRollback(OperationConte
 }
 
 bool IndexBuildsManager::abortIndexBuildWithoutCleanupForShutdown(OperationContext* opCtx,
-                                                                  const Collection* collection,
+                                                                  const CollectionPtr& collection,
                                                                   const UUID& buildUUID,
                                                                   bool isResumable) {
     auto builder = _getBuilder(buildUUID);
@@ -411,7 +411,7 @@ StatusWith<int> IndexBuildsManager::_moveRecordToLostAndFound(
     invariant(opCtx->lockState()->isCollectionLockedForMode(nss, MODE_IX));
 
     auto originalCollection = CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, nss);
-    const Collection* localCollection =
+    CollectionPtr localCollection =
         CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, lostAndFoundNss);
 
     // Create the collection if it doesn't exist.

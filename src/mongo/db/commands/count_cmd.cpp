@@ -173,7 +173,7 @@ public:
                                 result);
         }
 
-        const Collection* const collection = ctx->getCollection();
+        const auto& collection = ctx->getCollection();
 
         // Prevent chunks from being cleaned up during yields - this allows us to only check the
         // version on initial entry into count.
@@ -236,7 +236,7 @@ public:
             return true;
         }
 
-        const Collection* const collection = ctx->getCollection();
+        const auto& collection = ctx->getCollection();
 
         // Prevent chunks from being cleaned up during yields - this allows us to only check the
         // version on initial entry into count.
