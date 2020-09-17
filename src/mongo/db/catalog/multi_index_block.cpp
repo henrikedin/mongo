@@ -179,7 +179,7 @@ MultiIndexBlock::OnInitFn MultiIndexBlock::kNoopOnInitFn =
     [](std::vector<BSONObj>& specs) -> Status { return Status::OK(); };
 
 MultiIndexBlock::OnInitFn MultiIndexBlock::makeTimestampedIndexOnInitFn(OperationContext* opCtx,
-                                                                        const Collection* coll) {
+                                                                        const CollectionPtr& coll) {
     return [opCtx, ns = coll->ns()](std::vector<BSONObj>& specs) -> Status {
         opCtx->getServiceContext()->getOpObserver()->onStartIndexBuildSinglePhase(opCtx, ns);
         return Status::OK();
@@ -389,7 +389,7 @@ StatusWith<std::vector<BSONObj>> MultiIndexBlock::init(
 
 Status MultiIndexBlock::insertAllDocumentsInCollection(
     OperationContext* opCtx,
-    const Collection* collection,
+    const CollectionPtr& collection,
     boost::optional<RecordId> resumeAfterRecordId) {
     invariant(!_buildIsCleanedUp);
     invariant(opCtx->lockState()->isNoop() || !opCtx->lockState()->inAWriteUnitOfWork());
@@ -450,7 +450,7 @@ Status MultiIndexBlock::insertAllDocumentsInCollection(
         yieldPolicy = PlanYieldPolicy::YieldPolicy::WRITE_CONFLICT_RETRY_ONLY;
     }
     auto exec = collection->makePlanExecutor(
-        opCtx, yieldPolicy, Collection::ScanDirection::kForward, resumeAfterRecordId);
+        opCtx, collection, yieldPolicy, Collection::ScanDirection::kForward, resumeAfterRecordId);
 
     // Hint to the storage engine that this collection scan should not keep data in the cache.
     bool readOnce = useReadOnceCursorsForIndexBuilds.load();
@@ -597,13 +597,14 @@ Status MultiIndexBlock::insertSingleDocumentForInitialSyncOrRecovery(OperationCo
     return Status::OK();
 }
 
-Status MultiIndexBlock::dumpInsertsFromBulk(OperationContext* opCtx, const Collection* collection) {
+Status MultiIndexBlock::dumpInsertsFromBulk(OperationContext* opCtx,
+                                            const CollectionPtr& collection) {
     return dumpInsertsFromBulk(opCtx, collection, nullptr);
 }
 
 Status MultiIndexBlock::dumpInsertsFromBulk(
     OperationContext* opCtx,
-    const Collection* collection,
+    const CollectionPtr& collection,
     const IndexAccessMethod::RecordIdHandlerFn& onDuplicateRecord) {
     invariant(!_buildIsCleanedUp);
     invariant(opCtx->lockState()->isNoop() || !opCtx->lockState()->inAWriteUnitOfWork());
@@ -686,7 +687,7 @@ Status MultiIndexBlock::drainBackgroundWrites(
               IndexBuildPhase_serializer(_phase).toString());
     _phase = IndexBuildPhaseEnum::kDrainWrites;
 
-    const Collection* coll =
+    const CollectionPtr& coll =
         CollectionCatalog::get(opCtx).lookupCollectionByUUID(opCtx, _collectionUUID.get());
 
     // Drain side-writes table for each index. This only drains what is visible. Assuming intent
@@ -711,7 +712,8 @@ Status MultiIndexBlock::drainBackgroundWrites(
     return Status::OK();
 }
 
-Status MultiIndexBlock::retrySkippedRecords(OperationContext* opCtx, const Collection* collection) {
+Status MultiIndexBlock::retrySkippedRecords(OperationContext* opCtx,
+                                            const CollectionPtr& collection) {
     invariant(!_buildIsCleanedUp);
     for (auto&& index : _indexes) {
         auto interceptor = index.block->getEntry(opCtx, collection)->indexBuildInterceptor();
@@ -726,7 +728,7 @@ Status MultiIndexBlock::retrySkippedRecords(OperationContext* opCtx, const Colle
     return Status::OK();
 }
 
-Status MultiIndexBlock::checkConstraints(OperationContext* opCtx, const Collection* collection) {
+Status MultiIndexBlock::checkConstraints(OperationContext* opCtx, const CollectionPtr& collection) {
     invariant(!_buildIsCleanedUp);
 
     // For each index that may be unique, check that no recorded duplicates still exist. This can
@@ -746,12 +748,12 @@ Status MultiIndexBlock::checkConstraints(OperationContext* opCtx, const Collecti
 }
 
 boost::optional<ResumeIndexInfo> MultiIndexBlock::abortWithoutCleanupForRollback(
-    OperationContext* opCtx, const Collection* collection, bool isResumable) {
+    OperationContext* opCtx, const CollectionPtr& collection, bool isResumable) {
     return _abortWithoutCleanup(opCtx, collection, false /* shutdown */, isResumable);
 }
 
 void MultiIndexBlock::abortWithoutCleanupForShutdown(OperationContext* opCtx,
-                                                     const Collection* collection,
+                                                     const CollectionPtr& collection,
                                                      bool isResumable) {
     _abortWithoutCleanup(opCtx, collection, true /* shutdown */, isResumable);
 }
@@ -833,10 +835,8 @@ void MultiIndexBlock::setIndexBuildMethod(IndexBuildMethod indexBuildMethod) {
     _method = indexBuildMethod;
 }
 
-boost::optional<ResumeIndexInfo> MultiIndexBlock::_abortWithoutCleanup(OperationContext* opCtx,
-                                                                       const Collection* collection,
-                                                                       bool shutdown,
-                                                                       bool isResumable) {
+boost::optional<ResumeIndexInfo> MultiIndexBlock::_abortWithoutCleanup(
+    OperationContext* opCtx, const CollectionPtr& collection, bool shutdown, bool isResumable) {
     invariant(!_buildIsCleanedUp);
     UninterruptibleLockGuard noInterrupt(opCtx->lockState());
     // Lock if it's not already locked, to ensure storage engine cannot be destructed out from
@@ -873,7 +873,7 @@ boost::optional<ResumeIndexInfo> MultiIndexBlock::_abortWithoutCleanup(Operation
 }
 
 void MultiIndexBlock::_writeStateToDisk(OperationContext* opCtx,
-                                        const Collection* collection) const {
+                                        const CollectionPtr& collection) const {
     auto obj = _constructStateObject(opCtx, collection);
     auto rs = opCtx->getServiceContext()
                   ->getStorageEngine()
@@ -903,7 +903,7 @@ void MultiIndexBlock::_writeStateToDisk(OperationContext* opCtx,
 }
 
 BSONObj MultiIndexBlock::_constructStateObject(OperationContext* opCtx,
-                                               const Collection* collection) const {
+                                               const CollectionPtr& collection) const {
     BSONObjBuilder builder;
     _buildUUID->appendToBuilder(&builder, "_id");
     builder.append("phase", IndexBuildPhase_serializer(_phase));
