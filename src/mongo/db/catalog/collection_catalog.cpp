@@ -334,7 +334,7 @@ Collection* CollectionCatalog::lookupCollectionByUUIDForMetadataWrite(OperationC
                                                                       LifetimeMode mode,
                                                                       CollectionUUID uuid) {
     if (mode == LifetimeMode::kInplace) {
-        return const_cast<Collection*>(lookupCollectionByUUID(opCtx, uuid));
+        return const_cast<Collection*>(lookupCollectionByUUID(opCtx, uuid).get());
     }
 
     auto& uncommittedWritableCollections = getUncommittedWritableCollections(opCtx);
@@ -428,7 +428,7 @@ std::shared_ptr<const Collection> CollectionCatalog::lookupCollectionByNamespace
 Collection* CollectionCatalog::lookupCollectionByNamespaceForMetadataWrite(
     OperationContext* opCtx, LifetimeMode mode, const NamespaceString& nss) {
     if (mode == LifetimeMode::kInplace) {
-        return const_cast<Collection*>(lookupCollectionByNamespace(opCtx, nss));
+        return const_cast<Collection*>(lookupCollectionByNamespace(opCtx, nss).get());
     }
 
     auto& uncommittedWritableCollections = getUncommittedWritableCollections(opCtx);
