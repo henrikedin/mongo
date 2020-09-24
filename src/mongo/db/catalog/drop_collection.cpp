@@ -134,7 +134,7 @@ Status _abortIndexBuildsAndDropCollection(OperationContext* opCtx,
     // which may have changed when we released the collection lock temporarily.
     opCtx->recoveryUnit()->abandonSnapshot();
 
-    const CollectionPtr& coll =
+    CollectionPtr coll =
         CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, startingNss);
     Status status = _checkNssAndReplState(opCtx, coll);
     if (!status.isOK()) {
@@ -185,7 +185,7 @@ Status _abortIndexBuildsAndDropCollection(OperationContext* opCtx,
         // disk state, which may have changed when we released the collection lock temporarily.
         opCtx->recoveryUnit()->abandonSnapshot();
 
-        const CollectionPtr& coll =
+        coll =
             CollectionCatalog::get(opCtx).lookupCollectionByUUID(opCtx, collectionUUID);
         status = _checkNssAndReplState(opCtx, coll);
         if (!status.isOK()) {
