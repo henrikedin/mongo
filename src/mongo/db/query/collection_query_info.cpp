@@ -244,7 +244,7 @@ void CollectionQueryInfo::droppedIndex(OperationContext* opCtx,
 }
 
 void CollectionQueryInfo::rebuildIndexData(OperationContext* opCtx, const CollectionPtr& coll) {
-    clearQueryCache(coll);
+    _planCache = std::make_shared<PlanCache>();
 
     _keysComputed = false;
     computeIndexKeys(opCtx, coll);
