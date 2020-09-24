@@ -50,7 +50,7 @@ const ServiceContext::Decoration<CollectionCatalog> getCatalog =
 class UncommittedWritableCollections {
 public:
     ~UncommittedWritableCollections() {
-        invariant(_collections.empty());
+        //invariant(_collections.empty());
     }
     Collection* lookup(CollectionUUID uuid) const {
         auto it = std::find_if(_collections.begin(), _collections.end(), [uuid](auto&& entry) {
@@ -76,6 +76,15 @@ public:
     }
     void insert(const NamespaceString& nss) {
         _collections.push_back(Entry{nullptr, nss});
+    }
+    void update(const Collection* collection) {
+        auto it =
+            std::find_if(_collections.begin(), _collections.end(), [collection](auto&& entry) {
+                return entry.collection.get() == collection;
+            });
+        if (it == _collections.end())
+            return;
+        it->nss = collection->ns();
     }
     std::shared_ptr<Collection> remove(Collection* collection) {
         auto it =
@@ -106,6 +115,67 @@ private:
     };
     std::vector<Entry> _collections;
 };
+//class UncommittedWritableCollections {
+//public:
+//    ~UncommittedWritableCollections() {
+//        //invariant(_collections.empty());
+//    }
+//    Collection* lookup(CollectionUUID uuid) const {
+//        auto it = std::find_if(_collections.begin(), _collections.end(), [uuid](auto&& entry) {
+//            if (!entry.second)
+//                return false;
+//            return entry.second->uuid() == uuid;
+//        });
+//        if (it == _collections.end())
+//            return nullptr;
+//        return it->second.get();
+//    }
+//
+//    std::pair<bool, Collection*> lookup(const NamespaceString& nss) const {
+//        auto it = _collections.find(nss);
+//        if (it == _collections.end())
+//            return {false, nullptr};
+//        return {true, it->second.get()};
+//    }
+//
+//    void insert(std::shared_ptr<Collection> collection) {
+//        _collections[collection->ns()] = std::move(collection);
+//        /*auto nss = collection->ns();
+//        _collections.push_back(Entry{std::move(collection), std::move(nss)});*/
+//    }
+//    void insert(const NamespaceString& nss) {
+//        _collections[nss] = nullptr;
+//    }
+//    std::shared_ptr<Collection> remove(Collection* collection) {
+//        auto it =
+//            std::find_if(_collections.begin(), _collections.end(), [collection](auto&& entry) {
+//                if (!entry.second)
+//                    return false;
+//                return entry.second.get() == collection;
+//            });
+//        if (it == _collections.end())
+//            return nullptr;
+//        auto coll = std::move(it->second);
+//        _collections.erase(it);
+//        return coll;
+//    }
+//
+//    bool remove(const NamespaceString& nss) {
+//        auto it = _collections.find(nss);
+//        if (it == _collections.end())
+//            return false;
+//        _collections.erase(it);
+//        return true;
+//    }
+//
+//private:
+//    /*struct Entry {
+//        std::shared_ptr<Collection> collection;
+//        NamespaceString nss;
+//    };
+//    std::vector<Entry> _collections;*/
+//    std::map<NamespaceString, std::shared_ptr<Collection>> _collections;
+//};
 
 const OperationContext::Decoration<UncommittedWritableCollections>
     getUncommittedWritableCollections =
@@ -292,21 +362,30 @@ void CollectionCatalog::setCollectionNamespace(OperationContext* opCtx,
     coll->setNs(toCollection);
 
     auto& uncommittedWritableCollections = getUncommittedWritableCollections(opCtx);
+    uncommittedWritableCollections.update(coll);
     uncommittedWritableCollections.insert(fromCollection);
     
     opCtx->recoveryUnit()->onCommit(
-        [this, &uncommittedWritableCollections, fromCollection, toCollection](boost::optional<Timestamp> timestamp) {
-            if (uncommittedWritableCollections.remove(fromCollection)) {
-                stdx::lock_guard<Latch> lock(_catalogLock);
+        [this, &uncommittedWritableCollections, fromCollection, toCollection](
+            boost::optional<Timestamp> timestamp) {
+            uncommittedWritableCollections.remove(fromCollection);
+            uncommittedWritableCollections.remove(toCollection);
 
-                _collections.erase(fromCollection);
+            stdx::lock_guard<Latch> lock(_catalogLock);
 
-                ResourceId oldRid = ResourceId(RESOURCE_COLLECTION, fromCollection.ns());
-                ResourceId newRid = ResourceId(RESOURCE_COLLECTION, toCollection.ns());
+            _collections.erase(fromCollection);
 
-                removeResource(oldRid, fromCollection.ns());
-                addResource(newRid, toCollection.ns());
-            }
+            ResourceId oldRid = ResourceId(RESOURCE_COLLECTION, fromCollection.ns());
+            ResourceId newRid = ResourceId(RESOURCE_COLLECTION, toCollection.ns());
+
+            removeResource(oldRid, fromCollection.ns());
+            addResource(newRid, toCollection.ns());
+        });
+
+    opCtx->recoveryUnit()->onRollback(
+        [&uncommittedWritableCollections, fromCollection, toCollection]() {
+            uncommittedWritableCollections.remove(fromCollection);
+            uncommittedWritableCollections.remove(toCollection);
         });
 }
 
