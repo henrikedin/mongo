@@ -560,7 +560,7 @@ Status renameBetweenDBs(OperationContext* opCtx,
           "temporaryCollection"_attr = tmpName,
           "sourceCollection"_attr = source);
 
-    CollectionPtr tmpColl;
+    Collection* tmpColl = nullptr;
     {
         auto collectionOptions =
             DurableCatalog::get(opCtx)->getCollectionOptions(opCtx, sourceColl->getCatalogId());
@@ -650,7 +650,6 @@ Status renameBetweenDBs(OperationContext* opCtx,
         // drop the exclusive database lock on the target and grab an intent lock on the temporary
         // collection.
         targetDBLock.reset();
-        tmpColl.reset();
 
         AutoGetCollection autoTmpColl(opCtx, tmpCollUUID, MODE_IX);
         if (!autoTmpColl) {
