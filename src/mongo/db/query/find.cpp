@@ -410,7 +410,7 @@ Message getMore(OperationContext* opCtx,
 
     PlanExecutor* exec = cursorPin->getExecutor();
     exec->reattachToOperationContext(opCtx);
-    exec->restoreState(&readLock->getCollection());
+    exec->restoreState(readLock ? &readLock->getCollection() : nullptr);
 
     auto planSummary = exec->getPlanSummary();
     {
