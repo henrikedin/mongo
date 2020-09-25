@@ -54,6 +54,8 @@ public:
     }
     Collection* lookup(CollectionUUID uuid) const {
         auto it = std::find_if(_collections.begin(), _collections.end(), [uuid](auto&& entry) {
+            if (!entry.collection)
+                return false;
             return entry.collection->uuid() == uuid;
         });
         if (it == _collections.end())
@@ -587,6 +589,10 @@ CollectionPtr CollectionCatalog::lookupCollectionByNamespace(OperationContext* o
 
 boost::optional<NamespaceString> CollectionCatalog::lookupNSSByUUID(OperationContext* opCtx,
                                                                     CollectionUUID uuid) const {
+    auto& uncommittedWritableCollections = getUncommittedWritableCollections(opCtx);
+    if (auto coll = uncommittedWritableCollections.lookup(uuid)) {
+        return coll->ns();
+    }
     if (auto coll = UncommittedCollections::getForTxn(opCtx, uuid)) {
         return coll->ns();
     }
@@ -612,6 +618,14 @@ boost::optional<NamespaceString> CollectionCatalog::lookupNSSByUUID(OperationCon
 
 boost::optional<CollectionUUID> CollectionCatalog::lookupUUIDByNSS(
     OperationContext* opCtx, const NamespaceString& nss) const {
+    auto& uncommittedWritableCollections = getUncommittedWritableCollections(opCtx);
+    auto [found, uncommittedPtr] = uncommittedWritableCollections.lookup(nss);
+    if (found) {
+        if (uncommittedPtr)
+            return uncommittedPtr->uuid();
+        return boost::none;
+    }
+
     if (auto coll = UncommittedCollections::getForTxn(opCtx, nss)) {
         return coll->uuid();
     }
