@@ -301,13 +301,12 @@ Collection* CollectionWriter::getWritableCollection() {
 
         // If we are using our stored Collection then we are not managed by an AutoGetCollection and
         // we need to manage lifetime here.
-        if (*_collection == _storedCollection) {
-            if (_mode == CollectionCatalog::LifetimeMode::kManagedInWriteUnitOfWork) {
-                _opCtx->recoveryUnit()->registerChange(std::make_unique<WritableCollectionReset>(
-                    _sharedImpl, std::move(_storedCollection)));
-            }
-
-            _storedCollection = _writableCollection;
+        if (_mode == CollectionCatalog::LifetimeMode::kManagedInWriteUnitOfWork) {
+            bool usingStoredCollection = *_collection == _storedCollection;
+            _opCtx->recoveryUnit()->registerChange(std::make_unique<WritableCollectionReset>(
+                _sharedImpl, usingStoredCollection ? std::move(_storedCollection) : CollectionPtr()));
+            if (usingStoredCollection)
+                _storedCollection = _writableCollection;
         }
     }
     return _writableCollection;
