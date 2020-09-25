@@ -506,19 +506,19 @@ TEST_F(RSRollbackTest, RollbackCreateIndexCommand) {
     CollectionOptions options;
     options.uuid = UUID::gen();
     NamespaceString nss("test", "coll");
-    {
-        auto collection = _createCollection(_opCtx.get(), nss.toString(), options);
-        auto indexSpec =
-            BSON("v" << static_cast<int>(kIndexVersion) << "key" << BSON("a" << 1) << "name"
-                     << "a_1");
+    auto collection = _createCollection(_opCtx.get(), nss.toString(), options);
+    auto indexSpec =
+        BSON("v" << static_cast<int>(kIndexVersion) << "key" << BSON("a" << 1) << "name"
+                    << "a_1");
 
-        int numIndexes = _createIndexOnEmptyCollection(_opCtx.get(), collection, nss, indexSpec);
-        ASSERT_EQUALS(2, numIndexes);
+    int numIndexes = _createIndexOnEmptyCollection(_opCtx.get(), collection, nss, indexSpec);
+    ASSERT_EQUALS(2, numIndexes);
 
-        auto commonOperation = makeOpAndRecordId(1);
-        auto createIndexOperation = makeCreateIndexOplogEntry(collection, BSON("a" << 1), "a_1", 2);
-    }
-  
+    auto commonOperation = makeOpAndRecordId(1);
+    auto createIndexOperation = makeCreateIndexOplogEntry(collection, BSON("a" << 1), "a_1", 2);
+    
+    // Collection pointer will be stale after rollback
+    collection = nullptr;
 
     // Repeat index creation operation and confirm that rollback attempts to drop index just once.
     // This can happen when an index is re-created with different options.
@@ -913,7 +913,7 @@ TEST_F(RSRollbackTest, RollbackDropIndexOnCollectionWithTwoExistingIndexes) {
                            _replicationProcess.get()));
 
     // Make sure the collection indexes are in the proper state post-rollback.
-    ASSERT_EQUALS(1, numIndexesOnColl(_opCtx.get(), nss, coll));
+    ASSERT_EQUALS(1, numIndexesOnColl(_opCtx.get(), nss, CollectionCatalog::get(_opCtx.get()).lookupCollectionByNamespace(_opCtx.get(), nss)));
 }
 
 TEST_F(RSRollbackTest, RollbackTwoIndexDropsPrecededByTwoIndexCreationsOnSameCollection) {
@@ -1056,6 +1056,9 @@ TEST_F(RSRollbackTest, RollbackCommitIndexBuild) {
     auto remoteOplog = {commonOp};
     auto localOplog = {commitIndexBuild, commonOp};
 
+    // Collection pointer will be stale after rollback
+    coll = nullptr;
+
     // Set up the mock rollback source and then run rollback.
     RollbackSourceMock rollbackSource(std::make_unique<OplogInterfaceMock>(remoteOplog));
     ASSERT_OK(syncRollback(_opCtx.get(),
@@ -1066,9 +1069,11 @@ TEST_F(RSRollbackTest, RollbackCommitIndexBuild) {
                            _coordinator,
                            _replicationProcess.get()));
 
+    auto collAfterRollback = CollectionCatalog::get(_opCtx.get()).lookupCollectionByNamespace(_opCtx.get(), nss);
+
     // Make sure the collection indexes are in the proper state post-rollback.
-    ASSERT_EQUALS(1, numIndexesOnColl(_opCtx.get(), nss, coll));
-    ASSERT_EQUALS(1, numIndexesInProgress(_opCtx.get(), nss, coll));
+    ASSERT_EQUALS(1, numIndexesOnColl(_opCtx.get(), nss, collAfterRollback));
+    ASSERT_EQUALS(1, numIndexesInProgress(_opCtx.get(), nss, collAfterRollback));
 
     // Kill the index build we just restarted so the fixture can shut down.
     ASSERT_OK(_coordinator->setFollowerMode(MemberState::RS_ROLLBACK));
@@ -1108,6 +1113,9 @@ TEST_F(RSRollbackTest, RollbackAbortIndexBuild) {
     auto remoteOplog = {commonOp};
     auto localOplog = {abortIndexBuild, commonOp};
 
+    // Collection pointer will be stale after rollback
+    coll = nullptr;
+
     // Set up the mock rollback source and then run rollback.
     RollbackSourceMock rollbackSource(std::make_unique<OplogInterfaceMock>(remoteOplog));
     ASSERT_OK(syncRollback(_opCtx.get(),
@@ -1118,9 +1126,11 @@ TEST_F(RSRollbackTest, RollbackAbortIndexBuild) {
                            _coordinator,
                            _replicationProcess.get()));
 
+    auto collAfterRollback = CollectionCatalog::get(_opCtx.get()).lookupCollectionByNamespace(_opCtx.get(), nss);
+
     // Make sure the collection indexes are in the proper state post-rollback.
-    ASSERT_EQUALS(1, numIndexesOnColl(_opCtx.get(), nss, coll));
-    ASSERT_EQUALS(1, numIndexesInProgress(_opCtx.get(), nss, coll));
+    ASSERT_EQUALS(1, numIndexesOnColl(_opCtx.get(), nss, collAfterRollback));
+    ASSERT_EQUALS(1, numIndexesInProgress(_opCtx.get(), nss, collAfterRollback));
 
     // Kill the index build we just restarted so the fixture can shut down.
     ASSERT_OK(_coordinator->setFollowerMode(MemberState::RS_ROLLBACK));
@@ -1165,6 +1175,9 @@ TEST_F(RSRollbackTest, AbortedIndexBuildsAreRestarted) {
 
     IndexBuilds abortedBuilds{{buildUUID, build}};
 
+    // Collection pointer will be stale after rollback
+    coll = nullptr;
+
     // Set up the mock rollback source and then run rollback.
     RollbackSourceMock rollbackSource(std::make_unique<OplogInterfaceMock>(remoteOplog));
     ASSERT_OK(syncRollback(_opCtx.get(),
@@ -1175,9 +1188,11 @@ TEST_F(RSRollbackTest, AbortedIndexBuildsAreRestarted) {
                            _coordinator,
                            _replicationProcess.get()));
 
+    auto collAfterRollback = CollectionCatalog::get(_opCtx.get()).lookupCollectionByNamespace(_opCtx.get(), nss);
+
     // Make sure the collection indexes are in the proper state post-rollback.
-    ASSERT_EQUALS(1, numIndexesOnColl(_opCtx.get(), nss, coll));
-    ASSERT_EQUALS(1, numIndexesInProgress(_opCtx.get(), nss, coll));
+    ASSERT_EQUALS(1, numIndexesOnColl(_opCtx.get(), nss, collAfterRollback));
+    ASSERT_EQUALS(1, numIndexesInProgress(_opCtx.get(), nss, collAfterRollback));
 
     // Kill the index build we just restarted so the fixture can shut down.
     ASSERT_OK(_coordinator->setFollowerMode(MemberState::RS_ROLLBACK));
@@ -1217,6 +1232,9 @@ TEST_F(RSRollbackTest, AbortedIndexBuildsAreNotRestartedWhenStartIsRolledBack) {
     build.indexSpecs.push_back(indexSpec);
     IndexBuilds abortedBuilds{{buildUUID, build}};
 
+    // Collection pointer will be stale after rollback
+    coll = nullptr;
+
     // Set up the mock rollback source and then run rollback.
     RollbackSourceMock rollbackSource(std::make_unique<OplogInterfaceMock>(remoteOplog));
     ASSERT_OK(syncRollback(_opCtx.get(),
@@ -1227,9 +1245,11 @@ TEST_F(RSRollbackTest, AbortedIndexBuildsAreNotRestartedWhenStartIsRolledBack) {
                            _coordinator,
                            _replicationProcess.get()));
 
+    auto collAfterRollback = CollectionCatalog::get(_opCtx.get()).lookupCollectionByNamespace(_opCtx.get(), nss);
+
     // The aborted index build should have been dropped.
-    ASSERT_EQUALS(1, numIndexesOnColl(_opCtx.get(), nss, coll));
-    ASSERT_EQUALS(0, numIndexesInProgress(_opCtx.get(), nss, coll));
+    ASSERT_EQUALS(1, numIndexesOnColl(_opCtx.get(), nss, collAfterRollback));
+    ASSERT_EQUALS(0, numIndexesInProgress(_opCtx.get(), nss, collAfterRollback));
 }
 
 TEST_F(RSRollbackTest, RollbackUnknownCommand) {
