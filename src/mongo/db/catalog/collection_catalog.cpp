@@ -449,6 +449,9 @@ Collection* CollectionCatalog::lookupCollectionByUUIDForMetadataWrite(OperationC
     stdx::lock_guard<Latch> lock(_catalogLock);
     auto coll = _lookupCollectionByUUID(lock, uuid);
     if (coll && coll->isCommitted()) {
+        if (coll->ns().isOplog())
+            return coll.get();
+
         invariant(opCtx->lockState()->isCollectionLockedForMode(coll->ns(), MODE_X));
         auto cloned = coll->clone();
         uncommittedWritableCollections.insert(cloned);
@@ -524,7 +527,7 @@ std::shared_ptr<const Collection> CollectionCatalog::lookupCollectionByNamespace
 
 Collection* CollectionCatalog::lookupCollectionByNamespaceForMetadataWrite(
     OperationContext* opCtx, LifetimeMode mode, const NamespaceString& nss) {
-    if (mode == LifetimeMode::kInplace) {
+    if (mode == LifetimeMode::kInplace || nss.isOplog()) {
         return const_cast<Collection*>(lookupCollectionByNamespace(opCtx, nss).get());
     }
 
