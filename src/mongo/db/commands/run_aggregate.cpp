@@ -501,7 +501,8 @@ Status runAggregate(OperationContext* opCtx,
     // If emplaced, AutoGetCollectionForReadCommand will throw if the sharding version for this
     // connection is out of date. If the namespace is a view, the lock will be released before
     // re-running the expanded aggregation.
-    boost::optional<AutoGetCollectionForReadCommand> ctx;
+    boost::optional<AutoGetCollectionForReadCommandMaybeLockFree> ctx;
+    // boost::optional<AutoGetCollectionForReadCommand> ctx;
 
     std::vector<unique_ptr<PlanExecutor, PlanExecutor::Deleter>> execs;
     boost::intrusive_ptr<ExpressionContext> expCtx;
@@ -600,6 +601,8 @@ Status runAggregate(OperationContext* opCtx,
             auto resolvedView = uassertStatusOK(DatabaseHolder::get(opCtx)
                                                     ->getSharedViewCatalog(opCtx, nss.db())
                                                     ->resolveView(opCtx, nss));
+            /* auto resolvedView =
+                 uassertStatusOK(ViewCatalog::get(ctx->getDb())->resolveView(opCtx, nss));*/
             uassert(std::move(resolvedView),
                     "On sharded systems, resolved views must be executed by mongos",
                     !ShardingState::get(opCtx)->enabled());
@@ -639,10 +642,13 @@ Status runAggregate(OperationContext* opCtx,
         // Check that the view's collation matches the collation of any views involved in the
         // pipeline.
         if (!pipelineInvolvedNamespaces.empty()) {
-            auto pipelineCollationStatus = collatorCompatibleWithPipeline(
-                opCtx, nss.db(), expCtx->getCollator(), liteParsedPipeline);
-            if (!pipelineCollationStatus.isOK()) {
-                return pipelineCollationStatus;
+            invariant(ctx);
+            if (*ctx) {
+                auto pipelineCollationStatus = collatorCompatibleWithPipeline(
+                    opCtx, ctx.get()->ns().db(), expCtx->getCollator(), liteParsedPipeline);
+                if (!pipelineCollationStatus.isOK()) {
+                    return pipelineCollationStatus;
+                }
             }
         }
 

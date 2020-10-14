@@ -384,7 +384,8 @@ public:
             // CurOp and Top. We avoid using AutoGetCollectionForReadCommand because we may need to
             // drop and reacquire locks when the cursor is awaitData, but we don't want to update
             // the stats twice.
-            boost::optional<AutoGetCollectionForRead> readLock;
+            boost::optional<AutoGetCollectionForReadMaybeLockFree> readLock;
+            // boost::optional<AutoGetCollectionForRead> readLock;
             boost::optional<AutoStatsTracker> statsTracker;
 
             if (cursorPin->getExecutor()->lockPolicy() ==

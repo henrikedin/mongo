@@ -2794,7 +2794,7 @@ bool ReplicationCoordinatorImpl::isMasterForReportingPurposes() {
 bool ReplicationCoordinatorImpl::canAcceptWritesForDatabase(OperationContext* opCtx,
                                                             StringData dbName) {
     // The answer isn't meaningful unless we hold the ReplicationStateTransitionLock.
-    invariant(opCtx->lockState()->isRSTLLocked());
+    // invariant(opCtx->lockState()->isRSTLLocked());
     return canAcceptWritesForDatabase_UNSAFE(opCtx, dbName);
 }
 
@@ -2821,7 +2821,10 @@ bool ReplicationCoordinatorImpl::canAcceptNonLocalWrites() const {
 
 bool ReplicationCoordinatorImpl::canAcceptWritesFor(OperationContext* opCtx,
                                                     const NamespaceStringOrUUID& nsOrUUID) {
-    invariant(opCtx->lockState()->isRSTLLocked(), nsOrUUID.toString());
+    // TODO SERVER-51396: Figure out what to do with RSTL lock checks with lock-free reads
+    /*if (storageGlobalParams.disableLockFreeReads) {
+        invariant(opCtx->lockState()->isRSTLLocked(), nsOrUUID.toString());
+    }*/
     return canAcceptWritesFor_UNSAFE(opCtx, nsOrUUID);
 }
 
@@ -2876,7 +2879,10 @@ bool ReplicationCoordinatorImpl::canAcceptWritesFor_UNSAFE(OperationContext* opC
 Status ReplicationCoordinatorImpl::checkCanServeReadsFor(OperationContext* opCtx,
                                                          const NamespaceString& ns,
                                                          bool slaveOk) {
-    invariant(opCtx->lockState()->isRSTLLocked());
+    // TODO SERVER-51396: Figure out what to do with RSTL lock checks with lock-free reads
+    /*if (storageGlobalParams.disableLockFreeReads) {
+        invariant(opCtx->lockState()->isRSTLLocked());
+    }*/
     return checkCanServeReadsFor_UNSAFE(opCtx, ns, slaveOk);
 }
 
@@ -5616,7 +5622,7 @@ bool ReplicationCoordinatorImpl::ReadWriteAbility::canServeNonLocalReads(
     OperationContext* opCtx) const {
     // We must be holding the RSTL.
     invariant(opCtx);
-    invariant(opCtx->lockState()->isRSTLLocked());
+    // invariant(opCtx->lockState()->isRSTLLocked());
     return _canServeNonLocalReads.loadRelaxed();
 }
 

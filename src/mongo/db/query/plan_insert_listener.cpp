@@ -81,7 +81,11 @@ std::shared_ptr<CappedInsertNotifier> getCappedInsertNotifier(OperationContext* 
 
     // We can only wait if we have a collection; otherwise we should retry immediately when
     // we hit EOF.
-    auto collection = CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, nss);
+    // dassert(opCtx->lockState()->isCollectionLockedForMode(nss, MODE_IS));
+    // auto databaseHolder = DatabaseHolder::get(opCtx);
+    // auto db = databaseHolder->getDb(opCtx, nss.db());
+    // invariant(db);
+    auto collection = CollectionCatalog::get(opCtx).lookupCollectionByNamespaceForRead(opCtx, nss);
     invariant(collection);
 
     return collection->getCappedInsertNotifier();

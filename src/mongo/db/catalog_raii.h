@@ -269,7 +269,7 @@ public:
         return _resolvedNss;
     }
 
-private:
+    // private:
     Lock::GlobalLock _globalLock;
 
     // If the object was instantiated with a UUID, contains the resolved namespace, otherwise it is

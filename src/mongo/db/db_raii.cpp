@@ -266,6 +266,16 @@ AutoGetCollectionForReadLockFree::AutoGetCollectionForReadLockFree(
     invariant(supportsLockFreeRead(opCtx) && !opCtx->recoveryUnit()->isActive());
 
     while (true) {
+        if (_autoGetCollectionForReadBase) {
+            LOGV2_DEBUG(
+                5067701,
+                3,
+                "Retrying acquiring state for lock-free read because collection or replication "
+                "state changed.");
+            _autoGetCollectionForReadBase.reset();
+            opCtx->recoveryUnit()->abandonSnapshot();
+        }
+
         // AutoGetCollectionForReadBase can choose a read source based on the current replication
         // state. Therefore we must fetch the repl state beforehand, to compare with afterwards.
         long long replTerm = repl::ReplicationCoordinator::get(opCtx)->getTerm();
@@ -278,19 +288,19 @@ AutoGetCollectionForReadLockFree::AutoGetCollectionForReadLockFree(
         }
 
         // We must open a storage snapshot consistent with the fetched in-memory Collection instance
-        // and chosen read source. The Collection instance and replication state after opening a
-        // snapshot will be compared with the previously acquired state. If either does not match,
-        // then this loop will retry lock acquisition and read source selection until there is a
-        // match.
+        // and chosen read source based on replication state because we are not holding the RSTL.
+        // The Collection instance and replication state after opening a snapshot will be compared
+        // with the previously acquired state. If either does not match, then this loop will retry
+        // lock acquisition and read source selection until there is a match.
+        //
+        // When reading the oplog we indicate this when the snapshot is opened. Normally the
+        // snapshot is opened from a cursor that can take special action when reading from the
+        // oplog.
         //
         // Note: AutoGetCollectionForReadBase may open a snapshot for PIT reads, so
         // preallocateSnapshot() may be a no-op, but that is OK because the snapshot is established
         // by _autoGetCollectionForReadBase after it fetches a Collection instance.
-
-        if (_autoGetCollectionForReadBase->getNss().isOplog()) {
-            // Signal to the RecoveryUnit that the snapshot will be used for reading the oplog.
-            // Normally the snapshot is opened from a cursor that can take special action when
-            // reading from the oplog.
+        if (_autoGetCollectionForReadBase.get()->ns().isOplog()) {
             opCtx->recoveryUnit()->preallocateSnapshotForOplogRead();
         } else {
             opCtx->recoveryUnit()->preallocateSnapshot();
@@ -300,20 +310,16 @@ AutoGetCollectionForReadLockFree::AutoGetCollectionForReadLockFree(
             opCtx, _autoGetCollectionForReadBase.get()->uuid());
 
         // The collection may have been dropped since the previous lookup, run the loop one more
-        // time to cleanup if newCollection is nullptr
-        if (newCollection &&
-            _autoGetCollectionForReadBase.get()->getMinimumVisibleSnapshot() ==
+        // time to cleanup
+        if (!newCollection) {
+            continue;
+        }
+
+        if (_autoGetCollectionForReadBase.get()->getMinimumVisibleSnapshot() ==
                 newCollection->getMinimumVisibleSnapshot() &&
             replTerm == repl::ReplicationCoordinator::get(opCtx)->getTerm()) {
             break;
         }
-
-        LOGV2_DEBUG(5067701,
-                    3,
-                    "Retrying acquiring state for lock-free read because collection or replication "
-                    "state changed.");
-        _autoGetCollectionForReadBase.reset();
-        opCtx->recoveryUnit()->abandonSnapshot();
     }
 }
 

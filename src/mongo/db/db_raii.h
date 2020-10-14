@@ -104,10 +104,6 @@ public:
         return getCollection().get();
     }
 
-    const CollectionPtr& operator*() const {
-        return getCollection();
-    }
-
     const CollectionPtr& getCollection() const {
         return _autoColl->getCollection();
     }
@@ -120,7 +116,7 @@ public:
         return _autoColl->getNss();
     }
 
-protected:
+    // protected:
     // If this field is set, the reader will not take the ParallelBatchWriterMode lock and conflict
     // with secondary batch application. This stays in scope with the _autoColl so that locks are
     // taken and released in the right order.
@@ -179,10 +175,6 @@ public:
         return getCollection().get();
     }
 
-    const CollectionPtr& operator*() const {
-        return getCollection();
-    }
-
     const CollectionPtr& getCollection() const {
         return _autoGetCollectionForReadBase->getCollection();
     }
@@ -221,9 +213,6 @@ public:
     const Collection* operator->() const {
         return getCollection().get();
     }
-    const CollectionPtr& operator*() const {
-        return getCollection();
-    }
     const CollectionPtr& getCollection() const;
     ViewDefinition* getView() const;
     const NamespaceString& getNss() const;
@@ -246,10 +235,6 @@ public:
 
     const Collection* operator->() const {
         return getCollection().get();
-    }
-
-    const CollectionPtr& operator*() const {
-        return getCollection();
     }
 
     const CollectionPtr& getCollection() const {
@@ -333,9 +318,6 @@ public:
     }
     const Collection* operator->() const {
         return getCollection().get();
-    }
-    const CollectionPtr& operator*() const {
-        return getCollection();
     }
     const CollectionPtr& getCollection() const;
     ViewDefinition* getView() const;
