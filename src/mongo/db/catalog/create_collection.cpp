@@ -253,7 +253,7 @@ Status createCollectionForApplyOps(OperationContext* opCtx,
     // We need to do the renaming part in a separate transaction, as we cannot transactionally
     // create a database, which could result in createCollection failing if the database
     // does not yet exist.
-    if (ui) {
+    if (ui && db) {
         auto uuid = ui.get();
         uassert(ErrorCodes::InvalidUUID,
                 "Invalid UUID in applyOps create command: " + uuid.toString(),
@@ -284,9 +284,7 @@ Status createCollectionForApplyOps(OperationContext* opCtx,
         // a random temporary name is correct: once all entries are replayed no temporary
         // names will remain.
         const bool stayTemp = true;
-        auto futureColl = db
-            ? CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, newCollName)
-            : nullptr;
+        auto futureColl = CollectionCatalog::get(opCtx).lookupCollectionByNamespace(opCtx, newCollName);
         bool needsRenaming = static_cast<bool>(futureColl);
         invariant(!needsRenaming || allowRenameOutOfTheWay);
 
