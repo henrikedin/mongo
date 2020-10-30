@@ -1049,16 +1049,16 @@ Status IndexCatalogImpl::dropIndexEntry(OperationContext* opCtx, IndexCatalogEnt
     if (released) {
         invariant(released.get() == entry);
         opCtx->recoveryUnit()->registerChange(
-            std::make_unique<IndexRemoveChange>(&_readyIndexes, released));
+            std::make_unique<IndexRemoveChange>(&_readyIndexes, std::move(released)));
     } else {
         released = _buildingIndexes.release(entry->descriptor());
         invariant(released.get() == entry);
         opCtx->recoveryUnit()->registerChange(
-            std::make_unique<IndexRemoveChange>(&_buildingIndexes, released));
+            std::make_unique<IndexRemoveChange>(&_buildingIndexes, std::move(released)));
     }
 
     CollectionQueryInfo::get(_collection).droppedIndex(opCtx, _collection, indexName);
-    _deleteIndexFromDisk(opCtx, indexName, entry->accessMethod()->getSharedIdent());
+    _deleteIndexFromDisk(opCtx, indexName, entry->getSharedIdent());
 
     return Status::OK();
 }
@@ -1072,10 +1072,9 @@ void IndexCatalogImpl::deleteIndexFromDisk(OperationContext* opCtx, const string
     auto ident = [&]() -> std::shared_ptr<Ident> {
         auto indexDesc = findIndexByName(opCtx, indexName, true /* includeUnfinishedIndexes */);
         if (!indexDesc) {
-            logd("deleteIndexFromDisk return nullptr! {}", indexName);
             return nullptr;
         }
-        return getEntry(indexDesc)->accessMethod()->getSharedIdent();
+        return getEntry(indexDesc)->getSharedIdent();
     }();
 
     _deleteIndexFromDisk(opCtx, indexName, std::move(ident));

@@ -84,7 +84,7 @@ void removeIndex(OperationContext* opCtx,
                                      nss,
                                      indexNameStr = indexName.toString(),
                                      ident](boost::optional<Timestamp> commitTimestamp) {
-        if (storageEngine->supportsPendingDrops() && commitTimestamp) {
+        if (storageEngine->supportsPendingDrops()) {
             LOGV2(22206,
                   "Deferring table drop for index '{index}' on collection "
                   "'{namespace}{uuid}. Ident: '{ident}', commit timestamp: '{commitTimestamp}'",
@@ -94,7 +94,7 @@ void removeIndex(OperationContext* opCtx,
                   "uuid"_attr = collectionUUID,
                   "ident"_attr = ident->getIdent(),
                   "commitTimestamp"_attr = commitTimestamp);
-            storageEngine->addDropPendingIdent(*commitTimestamp, nss, ident);
+            storageEngine->addDropPendingIdent(commitTimestamp ? *commitTimestamp : Timestamp::min(), nss, ident);
         } else {
             auto kvEngine = storageEngine->getEngine();
             kvEngine->dropIdent(recoveryUnit, ident->getIdent()).ignore();

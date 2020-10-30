@@ -759,12 +759,13 @@ Status StorageEngineImpl::_dropCollectionsNoTimestamp(OperationContext* opCtx,
             coll->getIndexCatalog()->getIndexIterator(opCtx, true /* includeUnfinishedIndexes */);
         while (ii->more()) {
             const IndexCatalogEntry* ice = ii->next();
-            catalog::removeIndex(opCtx,
-                                 ice->descriptor()->indexName(),
-                                 coll->getCatalogId(),
-                                 coll->uuid(),
-                                 coll->ns(),
-                                 ice->accessMethod()->getSharedIdent());
+            catalog::removeIndex(
+                opCtx,
+                ice->descriptor()->indexName(),
+                coll->getCatalogId(),
+                coll->uuid(),
+                coll->ns(),
+                ice->getSharedIdent());
         }
 
         Status result = catalog::dropCollection(
