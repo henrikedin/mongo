@@ -359,6 +359,10 @@ private:
                         bool logIfError,
                         int64_t* keysDeletedOut);
 
+    void _deleteIndexFromDisk(OperationContext* opCtx,
+                              const std::string& indexName,
+                              std::shared_ptr<Ident> ident);
+
     /**
      * Applies a set of transformations to the user-provided index object 'spec' to make it
      * conform to the standard for insertion.  Removes the '_id' field if it exists, applies

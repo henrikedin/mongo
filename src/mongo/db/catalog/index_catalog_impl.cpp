@@ -1021,29 +1021,16 @@ Status IndexCatalogImpl::dropUnfinishedIndex(OperationContext* opCtx, const Inde
 namespace {
 class IndexRemoveChange final : public RecoveryUnit::Change {
 public:
-    IndexRemoveChange(OperationContext* opCtx,
-                      Collection* collection,
-                      IndexCatalogEntryContainer* entries,
-                      std::shared_ptr<IndexCatalogEntry> entry)
-        : _opCtx(opCtx), _collection(collection), _entries(entries), _entry(std::move(entry)) {}
+    IndexRemoveChange(IndexCatalogEntryContainer* entries, std::shared_ptr<IndexCatalogEntry> entry)
+        : _entries(entries), _entry(std::move(entry)) {}
 
     void commit(boost::optional<Timestamp> commitTime) final {
         _entry->setDropped();
     }
 
-    void rollback() final {
-        auto indexDescriptor = _entry->descriptor();
-        _entries->add(std::move(_entry));
-
-        // Refresh the CollectionQueryInfo's knowledge of what indices are present. This must be
-        // done after re-adding our IndexCatalogEntry to the '_entries' list, since 'addedIndex()'
-        // refreshes its knowledge by iterating the list of indices currently in the catalog.
-        CollectionQueryInfo::get(_collection).addedIndex(_opCtx, _collection, indexDescriptor);
-    }
+    void rollback() final {}
 
 private:
-    OperationContext* _opCtx;
-    Collection* _collection;
     IndexCatalogEntryContainer* _entries;
     std::shared_ptr<IndexCatalogEntry> _entry;
 };
@@ -1061,18 +1048,17 @@ Status IndexCatalogImpl::dropIndexEntry(OperationContext* opCtx, IndexCatalogEnt
     auto released = _readyIndexes.release(entry->descriptor());
     if (released) {
         invariant(released.get() == entry);
-        opCtx->recoveryUnit()->registerChange(std::make_unique<IndexRemoveChange>(
-            opCtx, _collection, &_readyIndexes, std::move(released)));
+        opCtx->recoveryUnit()->registerChange(
+            std::make_unique<IndexRemoveChange>(&_readyIndexes, released));
     } else {
         released = _buildingIndexes.release(entry->descriptor());
         invariant(released.get() == entry);
-        opCtx->recoveryUnit()->registerChange(std::make_unique<IndexRemoveChange>(
-            opCtx, _collection, &_buildingIndexes, std::move(released)));
+        opCtx->recoveryUnit()->registerChange(
+            std::make_unique<IndexRemoveChange>(&_buildingIndexes, released));
     }
 
     CollectionQueryInfo::get(_collection).droppedIndex(opCtx, _collection, indexName);
-    entry = nullptr;
-    deleteIndexFromDisk(opCtx, indexName);
+    _deleteIndexFromDisk(opCtx, indexName, entry->accessMethod()->getSharedIdent());
 
     return Status::OK();
 }
@@ -1086,17 +1072,24 @@ void IndexCatalogImpl::deleteIndexFromDisk(OperationContext* opCtx, const string
     auto ident = [&]() -> std::shared_ptr<Ident> {
         auto indexDesc = findIndexByName(opCtx, indexName, true /* includeUnfinishedIndexes */);
         if (!indexDesc) {
+            logd("deleteIndexFromDisk return nullptr! {}", indexName);
             return nullptr;
         }
         return getEntry(indexDesc)->accessMethod()->getSharedIdent();
     }();
 
+    _deleteIndexFromDisk(opCtx, indexName, std::move(ident));
+}
+
+void IndexCatalogImpl::_deleteIndexFromDisk(OperationContext* opCtx,
+                                            const string& indexName,
+                                            std::shared_ptr<Ident> ident) {
     catalog::removeIndex(opCtx,
                          indexName,
                          _collection->getCatalogId(),
                          _collection->uuid(),
                          _collection->ns(),
-                         ident);
+                         std::move(ident));
 }
 
 void IndexCatalogImpl::setMultikeyPaths(OperationContext* const opCtx,
@@ -1259,8 +1252,8 @@ const IndexDescriptor* IndexCatalogImpl::refreshEntry(OperationContext* opCtx,
     // CollectionQueryInfo.
     auto oldEntry = _readyIndexes.release(oldDesc);
     invariant(oldEntry);
-    opCtx->recoveryUnit()->registerChange(std::make_unique<IndexRemoveChange>(
-        opCtx, _collection, &_readyIndexes, std::move(oldEntry)));
+    opCtx->recoveryUnit()->registerChange(
+        std::make_unique<IndexRemoveChange>(&_readyIndexes, std::move(oldEntry)));
     CollectionQueryInfo::get(_collection).droppedIndex(opCtx, _collection, indexName);
 
     // Ask the CollectionCatalogEntry for the new index spec.
