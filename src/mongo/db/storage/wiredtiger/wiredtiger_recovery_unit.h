@@ -113,10 +113,7 @@ public:
     bool waitUntilUnjournaledWritesDurable(OperationContext* opCtx, bool stableCheckpoint) override;
 
     void preallocateSnapshot() override;
-    void preallocateSnapshotForOplogRead() override {
-        setIsOplogReader();
-        preallocateSnapshot();
-    }
+    void preallocateSnapshotForOplogRead() override;
 
     Status majorityCommittedSnapshotAvailable() const override;
 
