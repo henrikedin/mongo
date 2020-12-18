@@ -155,7 +155,7 @@ public:
      * This function should only be used internally. "nss", "uuid", "o2", and the opTimes should
      * never be exposed to users (for instance through the appendOplogNote command).
      */
-    virtual void onInternalOpMessage(
+    virtual repl::OpTime onInternalOpMessage(
         OperationContext* opCtx,
         const NamespaceString& nss,
         const boost::optional<UUID> uuid,
@@ -169,16 +169,16 @@ public:
     /**
      * Logs a no-op with "msgObj" in the o field into oplog.
      */
-    void onOpMessage(OperationContext* opCtx, const BSONObj& msgObj) {
-        onInternalOpMessage(opCtx,
-                            {},
-                            boost::none,
-                            msgObj,
-                            boost::none,
-                            boost::none,
-                            boost::none,
-                            boost::none,
-                            boost::none);
+    repl::OpTime onOpMessage(OperationContext* opCtx, const BSONObj& msgObj) {
+        return onInternalOpMessage(opCtx,
+                                   {},
+                                   boost::none,
+                                   msgObj,
+                                   boost::none,
+                                   boost::none,
+                                   boost::none,
+                                   boost::none,
+                                   boost::none);
     }
 
     virtual void onCreateCollection(OperationContext* opCtx,

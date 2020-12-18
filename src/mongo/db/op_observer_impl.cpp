@@ -659,7 +659,7 @@ void OpObserverImpl::onDelete(OperationContext* opCtx,
     }
 }
 
-void OpObserverImpl::onInternalOpMessage(
+repl::OpTime OpObserverImpl::onInternalOpMessage(
     OperationContext* opCtx,
     const NamespaceString& nss,
     const boost::optional<UUID> uuid,
@@ -681,7 +681,7 @@ void OpObserverImpl::onInternalOpMessage(
     if (slot) {
         oplogEntry.setOpTime(*slot);
     }
-    logOperation(opCtx, &oplogEntry);
+    return logOperation(opCtx, &oplogEntry);
 }
 
 void OpObserverImpl::onCreateCollection(OperationContext* opCtx,

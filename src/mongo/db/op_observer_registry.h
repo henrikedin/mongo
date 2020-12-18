@@ -149,15 +149,16 @@ public:
             o->onDelete(opCtx, nss, uuid, stmtId, fromMigrate, deletedDoc);
     }
 
-    void onInternalOpMessage(OperationContext* const opCtx,
-                             const NamespaceString& nss,
-                             const boost::optional<UUID> uuid,
-                             const BSONObj& msgObj,
-                             const boost::optional<BSONObj> o2MsgObj,
-                             const boost::optional<repl::OpTime> preImageOpTime,
-                             const boost::optional<repl::OpTime> postImageOpTime,
-                             const boost::optional<repl::OpTime> prevWriteOpTimeInTransaction,
-                             const boost::optional<OplogSlot> slot) override {
+    repl::OpTime onInternalOpMessage(
+        OperationContext* const opCtx,
+        const NamespaceString& nss,
+        const boost::optional<UUID> uuid,
+        const BSONObj& msgObj,
+        const boost::optional<BSONObj> o2MsgObj,
+        const boost::optional<repl::OpTime> preImageOpTime,
+        const boost::optional<repl::OpTime> postImageOpTime,
+        const boost::optional<repl::OpTime> prevWriteOpTimeInTransaction,
+        const boost::optional<OplogSlot> slot) override {
         ReservedTimes times{opCtx};
         for (auto& o : _observers)
             o->onInternalOpMessage(opCtx,
@@ -169,6 +170,7 @@ public:
                                    postImageOpTime,
                                    prevWriteOpTimeInTransaction,
                                    slot);
+        return _getOpTimeToReturn(times.get().reservedOpTimes);
     }
 
     void onCreateCollection(OperationContext* const opCtx,

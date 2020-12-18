@@ -95,15 +95,18 @@ public:
                   bool fromMigrate,
                   const boost::optional<BSONObj>& deletedDoc) final;
 
-    void onInternalOpMessage(OperationContext* opCtx,
-                             const NamespaceString& nss,
-                             const boost::optional<UUID> uuid,
-                             const BSONObj& msgObj,
-                             const boost::optional<BSONObj> o2MsgObj,
-                             const boost::optional<repl::OpTime> preImageOpTime,
-                             const boost::optional<repl::OpTime> postImageOpTime,
-                             const boost::optional<repl::OpTime> prevWriteOpTimeInTransaction,
-                             const boost::optional<OplogSlot> slot) final{};
+    repl::OpTime onInternalOpMessage(
+        OperationContext* opCtx,
+        const NamespaceString& nss,
+        const boost::optional<UUID> uuid,
+        const BSONObj& msgObj,
+        const boost::optional<BSONObj> o2MsgObj,
+        const boost::optional<repl::OpTime> preImageOpTime,
+        const boost::optional<repl::OpTime> postImageOpTime,
+        const boost::optional<repl::OpTime> prevWriteOpTimeInTransaction,
+        const boost::optional<OplogSlot> slot) final {
+        return {};
+    };
 
     void onCreateCollection(OperationContext* opCtx,
                             const CollectionPtr& coll,

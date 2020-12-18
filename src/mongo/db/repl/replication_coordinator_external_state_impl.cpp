@@ -501,22 +501,18 @@ OpTime ReplicationCoordinatorExternalStateImpl::onTransitionToPrimary(OperationC
     // previously majority confirmed to the user.
     _replicationProcess->getConsistencyMarkers()->startUsingOplogTruncateAfterPointForPrimary();
 
-    // Clear the appliedThrough marker so on startup we'll use the top of the oplog. This must be
-    // done before we add anything to our oplog.
-    // We record this update at the 'lastAppliedOpTime'. If there are any outstanding
-    // checkpoints being taken, they should only reflect this write if they see all writes up
-    // to our 'lastAppliedOpTime'.
-    auto lastAppliedOpTime = repl::ReplicationCoordinator::get(opCtx)->getMyLastAppliedOpTime();
-    _replicationProcess->getConsistencyMarkers()->clearAppliedThrough(
-        opCtx, lastAppliedOpTime.getTimestamp());
 
     writeConflictRetry(opCtx, "logging transition to primary to oplog", "local.oplog.rs", [&] {
         AutoGetOplog oplogWrite(opCtx, OplogAccessMode::kWrite);
         WriteUnitOfWork wuow(opCtx);
-        opCtx->getClient()->getServiceContext()->getOpObserver()->onOpMessage(
+
+        // Clear the appliedThrough marker so on startup we'll use the top of the oplog.
+        auto optime = opCtx->getClient()->getServiceContext()->getOpObserver()->onOpMessage(
             opCtx,
             BSON(ReplicationCoordinator::newPrimaryMsgField
                  << ReplicationCoordinator::newPrimaryMsg));
+        _replicationProcess->getConsistencyMarkers()->clearAppliedThrough(opCtx,
+                                                                          optime.getTimestamp());
         wuow.commit();
     });
     const auto loadLastOpTimeAndWallTimeResult = loadLastOpTimeAndWallTime(opCtx);

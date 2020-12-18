@@ -61,7 +61,7 @@ namespace repl {
 
 class TenantOplogApplierTestOpObserver : public OplogApplierImplOpObserver {
 public:
-    void onInternalOpMessage(OperationContext* opCtx,
+    OpTime onInternalOpMessage(OperationContext* opCtx,
                              const NamespaceString& nss,
                              const boost::optional<UUID> uuid,
                              const BSONObj& msgObj,
@@ -90,6 +90,7 @@ public:
         }
         stdx::lock_guard lk(_mutex);
         _entries.push_back(oplogEntry);
+        return oplogEntry.getOpTime();
     }
 
     // Returns a vector of the oplog entries recorded, in optime order.
