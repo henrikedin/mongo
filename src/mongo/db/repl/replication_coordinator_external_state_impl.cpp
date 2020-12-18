@@ -505,9 +505,7 @@ OpTime ReplicationCoordinatorExternalStateImpl::onTransitionToPrimary(OperationC
     // We record this update at the 'lastAppliedOpTime'. If there are any outstanding
     // checkpoints being taken, they should only reflect this write if they see all writes up
     // to our 'lastAppliedOpTime'.
-    auto lastAppliedOpTime = repl::ReplicationCoordinator::get(opCtx)->getMyLastAppliedOpTime();
-    _replicationProcess->getConsistencyMarkers()->clearAppliedThrough(
-        opCtx, lastAppliedOpTime.getTimestamp());
+    _replicationProcess->getConsistencyMarkers()->clearAppliedThrough(opCtx, Timestamp());
 
     writeConflictRetry(opCtx, "logging transition to primary to oplog", "local.oplog.rs", [&] {
         AutoGetOplog oplogWrite(opCtx, OplogAccessMode::kWrite);
