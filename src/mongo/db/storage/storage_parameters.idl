@@ -82,7 +82,7 @@ server_parameters:
         description: "Disables the lock-free reads feature."
         set_at: [ startup ]
         cpp_varname: 'storageGlobalParams.disableLockFreeReads'
-        default: true
+        default: false
 
 feature_flags:
     featureFlagTimeseriesCollection:
