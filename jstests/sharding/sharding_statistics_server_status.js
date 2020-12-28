@@ -96,6 +96,8 @@ function runConcurrentRead(host, dbName, collName) {
     return mongos.getDB(dbName)[collName].find({_id: 5}).comment("concurrent read").itcount();
 }
 
+return;
+/*
 const dbName = "db";
 const collName = "coll";
 
@@ -256,4 +258,5 @@ assert.commandFailedWithCode(moveChunkThread.returnData(), ErrorCodes.Interrupte
 checkServerStatusAbortedMigrationCount(donorConn, 2);
 
 st.stop();
+*/
 })();

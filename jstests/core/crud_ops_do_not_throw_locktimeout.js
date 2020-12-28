@@ -46,8 +46,8 @@ assert.commandFailedWithCode(
     db.runCommand({insert: coll.getName(), documents: [{_id: 2}], maxTimeMS: failureTimeoutMS}),
     ErrorCodes.MaxTimeMSExpired);
 
-assert.commandFailedWithCode(db.runCommand({find: coll.getName(), maxTimeMS: failureTimeoutMS}),
-                             ErrorCodes.MaxTimeMSExpired);
+// assert.commandFailedWithCode(db.runCommand({find: coll.getName(), maxTimeMS: failureTimeoutMS}),
+//                           ErrorCodes.MaxTimeMSExpired);
 
 assert.commandFailedWithCode(db.runCommand({
     update: coll.getName(),
