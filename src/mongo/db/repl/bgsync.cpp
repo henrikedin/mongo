@@ -502,7 +502,7 @@ void BackgroundSync::_produce() {
 
         if (_replicationProcess->getConsistencyMarkers()->getAppliedThrough(opCtx.get()).isNull()) {
             _replicationProcess->getConsistencyMarkers()->setAppliedThrough(
-                opCtx.get(), _replCoord->getMyLastAppliedOpTime(), false);
+                opCtx.get(), _replCoord->getMyLastAppliedOpTime());
         }
     }
 
