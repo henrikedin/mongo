@@ -501,8 +501,12 @@ void BackgroundSync::_produce() {
         }
 
         if (_replicationProcess->getConsistencyMarkers()->getAppliedThrough(opCtx.get()).isNull()) {
+            // TODO SERVER-53436: With Lock-Free Reads there may be readers on lastAppliedOpTime so
+            // we can't write to that timestamp.
             _replicationProcess->getConsistencyMarkers()->setAppliedThrough(
-                opCtx.get(), _replCoord->getMyLastAppliedOpTime());
+                opCtx.get(),
+                _replCoord->getMyLastAppliedOpTime(),
+                storageGlobalParams.disableLockFreeReads);
         }
     }
 

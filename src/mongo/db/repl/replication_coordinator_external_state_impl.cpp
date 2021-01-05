@@ -369,8 +369,12 @@ void ReplicationCoordinatorExternalStateImpl::clearAppliedThroughIfCleanShutdown
         invariant(opCtx->lockState()->isRSTLExclusive());
         // Since we acquired RSTL in mode X, there can't be any active readers. So, it's safe to
         // write the minvalid document to the storage.
+        // TODO SERVER-53436: With Lock-Free Reads the assumptions above do not hold. As we can have
+        // readers on lastAppliedOpTime we can't write to that timestamp.
         _replicationProcess->getConsistencyMarkers()->clearAppliedThrough(
-            opCtx, lastAppliedOpTime.getTimestamp());
+            opCtx,
+            storageGlobalParams.disableLockFreeReads ? lastAppliedOpTime.getTimestamp()
+                                                     : Timestamp());
     }
 }
 
@@ -505,9 +509,12 @@ OpTime ReplicationCoordinatorExternalStateImpl::onTransitionToPrimary(OperationC
     // We record this update at the 'lastAppliedOpTime'. If there are any outstanding
     // checkpoints being taken, they should only reflect this write if they see all writes up
     // to our 'lastAppliedOpTime'.
+    // TODO SERVER-53436: With Lock-Free Reads the assumptions above do not hold. As we can have
+    // readers on lastAppliedOpTime we can't write to that timestamp.
     auto lastAppliedOpTime = repl::ReplicationCoordinator::get(opCtx)->getMyLastAppliedOpTime();
     _replicationProcess->getConsistencyMarkers()->clearAppliedThrough(
-        opCtx, lastAppliedOpTime.getTimestamp());
+        opCtx,
+        storageGlobalParams.disableLockFreeReads ? lastAppliedOpTime.getTimestamp() : Timestamp());
 
     writeConflictRetry(opCtx, "logging transition to primary to oplog", "local.oplog.rs", [&] {
         AutoGetOplog oplogWrite(opCtx, OplogAccessMode::kWrite);
