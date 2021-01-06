@@ -79,8 +79,20 @@ cache of the [durable catalog](#durable-catalog) state. It provides the followin
  * Allow closing/reopening the catalog while still providing limited `UUID` to `NamespaceString`
    lookup to support rollback to a point in time.
 
-All catalog access is internally synchronized, and use of iterators after catalog changes generally
-results in automatic repositioning.
+### Synchronization
+Catalog access is synchronized using
+[read-copy-update](https://en.wikipedia.org/wiki/Read-copy-update) where reads operate on an
+immutable instance and writes on a new instance with its contents copied from the previous immutable
+instance used for reads.
+
+Readers holding on to a catalog instance will thus not observe any writes that happens after the
+read operation request its instance. If observing writes are desired the reader must refresh its
+catalog instance.
+
+Catalog writes are handled with the `CollectionCatalog::write(callback)` interface. It provides the
+necessary read-copy-update abstractions. The actual write is implemented in the supplied callback
+which is allowed to throw. Execution of the write callbacks are serialized and may run on a
+different thread than the thread calling `CollectionCatalog::write`.
 
 ### Collection objects
 Objects of the `Collection` class provide access to a collection's main properties across some range
