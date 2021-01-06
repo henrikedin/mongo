@@ -371,6 +371,8 @@ bool CollectionImpl::requiresIdIndex() const {
 
 std::unique_ptr<SeekableRecordCursor> CollectionImpl::getCursor(OperationContext* opCtx,
                                                                 bool forward) const {
+    dassert(opCtx->lockState()->isCollectionLockedForMode(ns(), MODE_IS));
+
     return _shared->_recordStore->getCursor(opCtx, forward);
 }
 
@@ -378,6 +380,8 @@ std::unique_ptr<SeekableRecordCursor> CollectionImpl::getCursor(OperationContext
 bool CollectionImpl::findDoc(OperationContext* opCtx,
                              RecordId loc,
                              Snapshotted<BSONObj>* out) const {
+    dassert(opCtx->lockState()->isCollectionLockedForMode(ns(), MODE_IS));
+
     RecordData rd;
     if (!_shared->_recordStore->findRecord(opCtx, loc, &rd))
         return false;
