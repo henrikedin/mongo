@@ -102,18 +102,13 @@ enum class AutoGetCollectionViewMode { kViewsPermitted, kViewsForbidden };
  * Any acquired locks may be released when this object goes out of scope, therefore the database
  * and the collection references returned by this class should not be retained.
  */
-class AutoGetCollection {
-    AutoGetCollection(const AutoGetCollection&) = delete;
-    AutoGetCollection& operator=(const AutoGetCollection&) = delete;
+class AutoGetCollectionBase {
+protected:
+    AutoGetCollectionBase() = default;
+    AutoGetCollectionBase(const AutoGetCollectionBase&) = delete;
+    AutoGetCollectionBase& operator=(const AutoGetCollectionBase&) = delete;
 
 public:
-    AutoGetCollection(
-        OperationContext* opCtx,
-        const NamespaceStringOrUUID& nsOrUUID,
-        LockMode modeColl,
-        AutoGetCollectionViewMode viewMode = AutoGetCollectionViewMode::kViewsForbidden,
-        Date_t deadline = Date_t::max());
-
     explicit operator bool() const {
         return static_cast<bool>(getCollection());
     }
@@ -127,20 +122,6 @@ public:
 
     const CollectionPtr& operator*() const {
         return getCollection();
-    }
-
-    /**
-     * Returns the database, or nullptr if it didn't exist.
-     */
-    Database* getDb() const {
-        return _autoDb.getDb();
-    }
-
-    /**
-     * Returns the database, creating it if it does not exist.
-     */
-    Database* ensureDbExists() {
-        return _autoDb.ensureDbExists();
     }
 
     /**
@@ -166,6 +147,42 @@ public:
         return _resolvedNss;
     }
 
+protected:
+    CollectionPtr _coll = nullptr;
+    std::shared_ptr<const ViewDefinition> _view;
+
+    // If the object was instantiated with a UUID, contains the resolved namespace, otherwise it is
+    // the same as the input namespace string
+    NamespaceString _resolvedNss;
+
+};
+
+class AutoGetCollection : public AutoGetCollectionBase {
+    AutoGetCollection(const AutoGetCollection&) = delete;
+    AutoGetCollection& operator=(const AutoGetCollection&) = delete;
+
+public:
+    AutoGetCollection(
+        OperationContext* opCtx,
+        const NamespaceStringOrUUID& nsOrUUID,
+        LockMode modeColl,
+        AutoGetCollectionViewMode viewMode = AutoGetCollectionViewMode::kViewsForbidden,
+        Date_t deadline = Date_t::max());
+
+    /**
+     * Returns the database, or nullptr if it didn't exist.
+     */
+    Database* getDb() const {
+        return _autoDb.getDb();
+    }
+
+    /**
+     * Returns the database, creating it if it does not exist.
+     */
+    Database* ensureDbExists() {
+        return _autoDb.ensureDbExists();
+    }
+
     /**
      * Returns a writable Collection copy that will be returned by current and future calls to this
      * function as well as getCollection(). Any previous Collection pointers that were returned may
@@ -187,12 +204,6 @@ protected:
     OperationContext* _opCtx = nullptr;
     AutoGetDb _autoDb;
     boost::optional<Lock::CollectionLock> _collLock;
-    CollectionPtr _coll = nullptr;
-    std::shared_ptr<const ViewDefinition> _view;
-
-    // If the object was instantiated with a UUID, contains the resolved namespace, otherwise it is
-    // the same as the input namespace string
-    NamespaceString _resolvedNss;
 
     // Populated if getWritableCollection() is called.
     Collection* _writableColl = nullptr;
@@ -211,7 +222,7 @@ protected:
  * example, it does not perform database or collection level shard version checks; nor does it
  * establish a consistent storage snapshot with which to read.
  */
-class AutoGetCollectionLockFree {
+class AutoGetCollectionLockFree : public AutoGetCollectionBase {
     AutoGetCollectionLockFree(const AutoGetCollectionLockFree&) = delete;
     AutoGetCollectionLockFree& operator=(const AutoGetCollectionLockFree&) = delete;
 
@@ -233,46 +244,6 @@ public:
         AutoGetCollectionViewMode viewMode = AutoGetCollectionViewMode::kViewsForbidden,
         Date_t deadline = Date_t::max());
 
-    explicit operator bool() const {
-        // Use the CollectionPtr because it is updated if it yields whereas _collection is not until
-        // restore.
-        return static_cast<bool>(_collectionPtr);
-    }
-
-    /**
-     * AutoGetCollectionLockFree can be used as a Collection pointer with the -> operator.
-     */
-    const Collection* operator->() const {
-        return getCollection().get();
-    }
-
-    const CollectionPtr& operator*() const {
-        return getCollection();
-    }
-
-    /**
-     * Returns nullptr if the collection didn't exist.
-     *
-     * Deprecated in favor of the new ->(), *() and bool() accessors above!
-     */
-    const CollectionPtr& getCollection() const {
-        return _collectionPtr;
-    }
-
-    /**
-     * Returns nullptr if the view didn't exist.
-     */
-    const ViewDefinition* getView() const {
-        return _view.get();
-    }
-
-    /**
-     * Returns the resolved namespace of the collection or view.
-     */
-    const NamespaceString& getNss() const {
-        return _resolvedNss;
-    }
-
 private:
     // Indicate that we are lock-free on code paths that can run either lock-free or locked for
     // different kinds of operations. Note: this class member is currently declared first so that it
@@ -281,18 +252,9 @@ private:
 
     Lock::GlobalLock _globalLock;
 
-    // If the object was instantiated with a UUID, contains the resolved namespace, otherwise it is
-    // the same as the input namespace string
-    NamespaceString _resolvedNss;
-
     // The Collection shared_ptr will keep the Collection instance alive even if it is removed from
     // the CollectionCatalog while this lock-free operation runs.
     std::shared_ptr<const Collection> _collection;
-
-    // The CollectionPtr is the access point to the Collection instance for callers.
-    CollectionPtr _collectionPtr;
-
-    std::shared_ptr<const ViewDefinition> _view;
 };
 
 /**

@@ -240,7 +240,7 @@ AutoGetCollectionLockFree::AutoGetCollectionLockFree(OperationContext* opCtx,
 
     // When we restore from yield on this CollectionPtr we will update _collection above and use its
     // new pointer in the CollectionPtr
-    _collectionPtr = CollectionPtr(opCtx,
+    _coll = CollectionPtr(opCtx,
                                    _collection.get(),
                                    [this, restoreFromYield = std::move(restoreFromYield)](
                                        OperationContext* opCtx, CollectionUUID uuid) {
@@ -265,7 +265,7 @@ AutoGetCollectionLockFree::AutoGetCollectionLockFree(OperationContext* opCtx,
         auto collDesc = CollectionShardingState::getSharedForLockFreeReads(opCtx, _collection->ns())
                             ->getCollectionDescription(opCtx);
         if (collDesc.isSharded()) {
-            _collectionPtr.setShardKeyPattern(collDesc.getKeyPattern());
+            _coll.setShardKeyPattern(collDesc.getKeyPattern());
         }
 
         // If the collection exists, there is no need to check for views.
