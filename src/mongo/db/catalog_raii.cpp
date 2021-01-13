@@ -241,12 +241,12 @@ AutoGetCollectionLockFree::AutoGetCollectionLockFree(OperationContext* opCtx,
     // When we restore from yield on this CollectionPtr we will update _collection above and use its
     // new pointer in the CollectionPtr
     _coll = CollectionPtr(opCtx,
-                                   _collection.get(),
-                                   [this, restoreFromYield = std::move(restoreFromYield)](
-                                       OperationContext* opCtx, CollectionUUID uuid) {
-                                       restoreFromYield(_collection, opCtx, uuid);
-                                       return _collection.get();
-                                   });
+                          _collection.get(),
+                          [this, restoreFromYield = std::move(restoreFromYield)](
+                              OperationContext* opCtx, CollectionUUID uuid) {
+                              restoreFromYield(_collection, opCtx, uuid);
+                              return _collection.get();
+                          });
 
     {
         // Check that the sharding database version matches our read.

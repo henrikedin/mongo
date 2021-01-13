@@ -88,14 +88,40 @@ private:
  * Shared base class for AutoGetCollectionForRead and AutoGetCollectionForReadLockFree.
  * Do not use directly.
  */
-template <typename AutoGetCollectionType, typename EmplaceAutoGetCollectionFunc>
 class AutoGetCollectionForReadBase {
     AutoGetCollectionForReadBase(const AutoGetCollectionForReadBase&) = delete;
     AutoGetCollectionForReadBase& operator=(const AutoGetCollectionForReadBase&) = delete;
 
 public:
-    AutoGetCollectionForReadBase(OperationContext* opCtx,
-                                 const EmplaceAutoGetCollectionFunc& emplaceAutoColl);
+    AutoGetCollectionForReadBase(OperationContext* opCtx);
+
+protected:
+    // If this field is set, the reader will not take the ParallelBatchWriterMode lock and conflict
+    // with secondary batch application. This stays in scope with the _autoColl so that locks are
+    // taken and released in the right order.
+    boost::optional<ShouldNotConflictWithSecondaryBatchApplicationBlock>
+        _shouldNotConflictWithSecondaryBatchApplicationBlock;
+};
+
+/**
+ * Same as calling AutoGetCollection with MODE_IS, but in addition ensures that the read will be
+ * performed against an appropriately committed snapshot if the operation is using a readConcern of
+ * 'majority'.
+ *
+ * Use this when you want to read the contents of a collection, but you are not at the top-level of
+ * some command. This will ensure your reads obey any requested readConcern, but will not update the
+ * status of CurrentOp, or add a Top entry.
+ *
+ * NOTE: Must not be used with any locks held, because it needs to block waiting on the committed
+ * snapshot to become available, and can potentially release and reacquire locks.
+ */
+class AutoGetCollectionForRead {
+public:
+    AutoGetCollectionForRead(
+        OperationContext* opCtx,
+        const NamespaceStringOrUUID& nsOrUUID,
+        AutoGetCollectionViewMode viewMode = AutoGetCollectionViewMode::kViewsForbidden,
+        Date_t deadline = Date_t::max());
 
     explicit operator bool() const {
         return static_cast<bool>(getCollection());
@@ -113,6 +139,10 @@ public:
         return _autoColl->getCollection();
     }
 
+    Database* getDb() const {
+        return _autoColl->getDb();
+    }
+
     const ViewDefinition* getView() const {
         return _autoColl->getView();
     }
@@ -121,63 +151,8 @@ public:
         return _autoColl->getNss();
     }
 
-protected:
-    // If this field is set, the reader will not take the ParallelBatchWriterMode lock and conflict
-    // with secondary batch application. This stays in scope with the _autoColl so that locks are
-    // taken and released in the right order.
-    boost::optional<ShouldNotConflictWithSecondaryBatchApplicationBlock>
-        _shouldNotConflictWithSecondaryBatchApplicationBlock;
-
-    // This field is optional, because the code to wait for majority committed snapshot needs to
-    // release locks in order to block waiting
-    boost::optional<AutoGetCollectionType> _autoColl;
-};
-
-/**
- * Helper for AutoGetCollectionForRead below. Contains implementation on how contained
- * AutoGetCollection is instantiated by AutoGetCollectionForReadBase.
- */
-class EmplaceAutoGetCollectionForRead {
-public:
-    EmplaceAutoGetCollectionForRead(OperationContext* opCtx,
-                                    const NamespaceStringOrUUID& nsOrUUID,
-                                    AutoGetCollectionViewMode viewMode,
-                                    Date_t deadline);
-
-    void emplace(boost::optional<AutoGetCollection>& autoColl) const;
-
 private:
-    OperationContext* _opCtx;
-    const NamespaceStringOrUUID& _nsOrUUID;
-    AutoGetCollectionViewMode _viewMode;
-    Date_t _deadline;
-    LockMode _collectionLockMode;
-};
-
-/**
- * Same as calling AutoGetCollection with MODE_IS, but in addition ensures that the read will be
- * performed against an appropriately committed snapshot if the operation is using a readConcern of
- * 'majority'.
- *
- * Use this when you want to read the contents of a collection, but you are not at the top-level of
- * some command. This will ensure your reads obey any requested readConcern, but will not update the
- * status of CurrentOp, or add a Top entry.
- *
- * NOTE: Must not be used with any locks held, because it needs to block waiting on the committed
- * snapshot to become available, and can potentially release and reacquire locks.
- */
-class AutoGetCollectionForRead
-    : public AutoGetCollectionForReadBase<AutoGetCollection, EmplaceAutoGetCollectionForRead> {
-public:
-    AutoGetCollectionForRead(
-        OperationContext* opCtx,
-        const NamespaceStringOrUUID& nsOrUUID,
-        AutoGetCollectionViewMode viewMode = AutoGetCollectionViewMode::kViewsForbidden,
-        Date_t deadline = Date_t::max());
-
-    Database* getDb() const {
-        return _autoColl->getDb();
-    }
+    boost::optional<AutoGetCollection> _autoColl;
 };
 
 /**
@@ -206,46 +181,19 @@ public:
     }
 
     const CollectionPtr& getCollection() const {
-        return _autoGetCollectionForReadBase->getCollection();
+        return _autoColl->getCollection();
     }
 
     const ViewDefinition* getView() const {
-        return _autoGetCollectionForReadBase->getView();
+        return _autoColl->getView();
     }
 
     const NamespaceString& getNss() const {
-        return _autoGetCollectionForReadBase->getNss();
+        return _autoColl->getNss();
     }
 
 private:
-    /**
-     * Helper for how AutoGetCollectionForReadBase instantiates its owned AutoGetCollectionLockFree.
-     */
-    class EmplaceHelper {
-    public:
-        EmplaceHelper(OperationContext* opCtx,
-                      CollectionCatalogStasher& catalogStasher,
-                      const NamespaceStringOrUUID& nsOrUUID,
-                      AutoGetCollectionViewMode viewMode,
-                      Date_t deadline,
-                      bool isLockFreeReadSubOperation);
-
-        void emplace(boost::optional<AutoGetCollectionLockFree>& autoColl) const;
-
-    private:
-        OperationContext* _opCtx;
-        CollectionCatalogStasher& _catalogStasher;
-        const NamespaceStringOrUUID& _nsOrUUID;
-        AutoGetCollectionViewMode _viewMode;
-        Date_t _deadline;
-
-        // Set to true if the lock helper using this EmplaceHelper is nested under another lock-free
-        // helper.
-        bool _isLockFreeReadSubOperation;
-    };
-
-    boost::optional<AutoGetCollectionForReadBase<AutoGetCollectionLockFree, EmplaceHelper>>
-        _autoGetCollectionForReadBase;
+    boost::optional<AutoGetCollectionLockFree> _autoColl;
     CollectionCatalogStasher _catalogStash;
 };
 

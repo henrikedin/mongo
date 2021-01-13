@@ -87,20 +87,7 @@ private:
 enum class AutoGetCollectionViewMode { kViewsPermitted, kViewsForbidden };
 
 /**
- * RAII-style class, which acquires global, database, and collection locks according to the chart
- * below.
- *
- * | modeColl | Global Lock Result | DB Lock Result | Collection Lock Result |
- * |----------+--------------------+----------------+------------------------|
- * | MODE_IX  | MODE_IX            | MODE_IX        | MODE_IX                |
- * | MODE_X   | MODE_IX            | MODE_IX        | MODE_X                 |
- * | MODE_IS  | MODE_IS            | MODE_IS        | MODE_IS                |
- * | MODE_S   | MODE_IS            | MODE_IS        | MODE_S                 |
- *
- * NOTE: Throws NamespaceNotFound if the collection UUID cannot be resolved to a name.
- *
- * Any acquired locks may be released when this object goes out of scope, therefore the database
- * and the collection references returned by this class should not be retained.
+ * Helper for RAII-style AutoGetCollection classes, provides a common interface.
  */
 class AutoGetCollectionBase {
 protected:
@@ -154,9 +141,24 @@ protected:
     // If the object was instantiated with a UUID, contains the resolved namespace, otherwise it is
     // the same as the input namespace string
     NamespaceString _resolvedNss;
-
 };
 
+/**
+ * RAII-style class, which acquires global, database, and collection locks according to the chart
+ * below.
+ *
+ * | modeColl | Global Lock Result | DB Lock Result | Collection Lock Result |
+ * |----------+--------------------+----------------+------------------------|
+ * | MODE_IX  | MODE_IX            | MODE_IX        | MODE_IX                |
+ * | MODE_X   | MODE_IX            | MODE_IX        | MODE_X                 |
+ * | MODE_IS  | MODE_IS            | MODE_IS        | MODE_IS                |
+ * | MODE_S   | MODE_IS            | MODE_IS        | MODE_S                 |
+ *
+ * NOTE: Throws NamespaceNotFound if the collection UUID cannot be resolved to a name.
+ *
+ * Any acquired locks may be released when this object goes out of scope, therefore the database
+ * and the collection references returned by this class should not be retained.
+ */
 class AutoGetCollection : public AutoGetCollectionBase {
     AutoGetCollection(const AutoGetCollection&) = delete;
     AutoGetCollection& operator=(const AutoGetCollection&) = delete;
