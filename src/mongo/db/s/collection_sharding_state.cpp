@@ -117,9 +117,6 @@ const ServiceContext::Decoration<boost::optional<CollectionShardingStateMap>>
 
 CollectionShardingState* CollectionShardingState::get(OperationContext* opCtx,
                                                       const NamespaceString& nss) {
-    // Collection lock must be held to have a reference to the collection's sharding state
-    dassert(opCtx->lockState()->isCollectionLockedForMode(nss, MODE_IS));
-
     auto& collectionsMap = CollectionShardingStateMap::get(opCtx->getServiceContext());
     return collectionsMap->getOrCreate(nss).get();
 }

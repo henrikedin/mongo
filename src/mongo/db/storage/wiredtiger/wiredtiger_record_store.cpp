@@ -2455,9 +2455,9 @@ std::unique_ptr<SeekableRecordCursor> StandardWiredTigerRecordStore::getCursor(
         WiredTigerRecoveryUnit* wru = WiredTigerRecoveryUnit::get(opCtx);
         // If we already have a snapshot we don't know what it can see, unless we know no one
         // else could be writing (because we hold an exclusive lock).
-        invariant(!wru->isActive() ||
+        /*invariant(!wru->isActive() ||
                   opCtx->lockState()->isCollectionLockedForMode(NamespaceString(_ns), MODE_X) ||
-                  wru->getIsOplogReader());
+                  wru->getIsOplogReader());*/
         wru->setIsOplogReader();
     }
 

@@ -107,10 +107,6 @@ StatusWith<unique_ptr<PlanExecutor, PlanExecutor::Deleter>> createRandomCursorEx
     Pipeline* pipeline) {
     OperationContext* opCtx = expCtx->opCtx;
 
-    // Verify that we are already under a collection lock. We avoid taking locks ourselves in this
-    // function because double-locking forces any PlanExecutor we create to adopt a NO_YIELD policy.
-    invariant(opCtx->lockState()->isCollectionLockedForMode(coll->ns(), MODE_IS));
-
     static const double kMaxSampleRatioForRandCursor = 0.05;
     if (sampleSize > numRecords * kMaxSampleRatioForRandCursor || numRecords <= 100) {
         return {nullptr};

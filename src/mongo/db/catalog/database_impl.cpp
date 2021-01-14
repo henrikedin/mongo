@@ -526,8 +526,8 @@ Status DatabaseImpl::renameCollection(OperationContext* opCtx,
                                       bool stayTemp) const {
     audit::logRenameCollection(&cc(), fromNss.ns(), toNss.ns());
 
-    invariant(opCtx->lockState()->isCollectionLockedForMode(fromNss, MODE_X));
-    invariant(opCtx->lockState()->isCollectionLockedForMode(toNss, MODE_X));
+    invariant(stayTemp || opCtx->lockState()->isCollectionLockedForMode(fromNss, MODE_X));
+    invariant(stayTemp || opCtx->lockState()->isCollectionLockedForMode(toNss, MODE_X));
 
     invariant(fromNss.db() == _name);
     invariant(toNss.db() == _name);

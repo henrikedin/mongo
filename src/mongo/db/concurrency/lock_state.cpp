@@ -623,12 +623,17 @@ bool LockerImpl::isCollectionLockedForMode(const NamespaceString& nss, LockMode 
         return true;
     if (isR() && isSharedLockMode(mode))
         return true;
+    if (nss.isOplog()) {
+        if (mode == MODE_IX || mode == MODE_X)
+            return wasGlobalLockTakenForWrite();
+        else
+            return wasGlobalLockTaken();
+    }
+
 
     const ResourceId resIdDb(RESOURCE_DATABASE, nss.db());
 
     LockMode dbMode = getLockMode(resIdDb);
-    if (!shouldConflictWithSecondaryBatchApplication())
-        return true;
 
     switch (dbMode) {
         case MODE_NONE:
