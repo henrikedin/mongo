@@ -71,12 +71,20 @@ bool supportsLockFreeRead(OperationContext* opCtx) {
  * boost::optional.
  */
 template <typename AutoGetCollectionType, typename AutoGetCollectionInstantiationFunc>
-void instantiateAutoCollAndEstablishReadSource(OperationContext* opCtx,
-                                               boost::optional<AutoGetCollectionType>& autoColl,
-                                               AutoGetCollectionInstantiationFunc instantiate) {
+void instantiateAutoCollAndEstablishReadSource(
+    OperationContext* opCtx,
+    boost::optional<AutoGetCollectionType>& autoColl,
+    boost::optional<ShouldNotConflictWithSecondaryBatchApplicationBlock>&
+        shouldNotConflictWithSecondaryBatchApplication,
+    AutoGetCollectionInstantiationFunc instantiate) {
     // The caller was expecting to conflict with batch application before entering this function.
     // i.e. the caller does not currently have a ShouldNotConflict... block in scope.
     bool callerWasConflicting = opCtx->lockState()->shouldConflictWithSecondaryBatchApplication();
+
+    if (allowSecondaryReadsDuringBatchApplication_DONT_USE(opCtx).value_or(true) &&
+        opCtx->getServiceContext()->getStorageEngine()->supportsReadConcernSnapshot()) {
+        shouldNotConflictWithSecondaryBatchApplication.emplace(opCtx->lockState());
+    }
 
     instantiate(autoColl);
 
@@ -347,21 +355,14 @@ AutoStatsTracker::~AutoStatsTracker() {
                 curOp->getReadWriteType());
 }
 
-AutoGetCollectionForReadBase::AutoGetCollectionForReadBase(OperationContext* opCtx) {
-    if (allowSecondaryReadsDuringBatchApplication_DONT_USE(opCtx).value_or(true) &&
-        opCtx->getServiceContext()->getStorageEngine()->supportsReadConcernSnapshot()) {
-        _shouldNotConflictWithSecondaryBatchApplicationBlock.emplace(opCtx->lockState());
-    }
-}
-
 AutoGetCollectionForRead::AutoGetCollectionForRead(OperationContext* opCtx,
                                                    const NamespaceStringOrUUID& nsOrUUID,
                                                    AutoGetCollectionViewMode viewMode,
-                                                   Date_t deadline)
-    : AutoGetCollectionForReadBase(opCtx) {
+                                                   Date_t deadline) {
     instantiateAutoCollAndEstablishReadSource(
         opCtx,
         _autoColl,
+        _shouldNotConflictWithSecondaryBatchApplicationBlock,
         [&, collectionLockMode = getLockModeForQuery(opCtx, nsOrUUID.nss())](
             boost::optional<AutoGetCollection>& autoColl) {
             autoColl.emplace(opCtx, nsOrUUID, collectionLockMode, viewMode, deadline);
@@ -373,7 +374,7 @@ AutoGetCollectionForReadLockFree::AutoGetCollectionForReadLockFree(
     const NamespaceStringOrUUID& nsOrUUID,
     AutoGetCollectionViewMode viewMode,
     Date_t deadline)
-    : AutoGetCollectionForReadBase(opCtx), _catalogStash(opCtx) {
+    : _catalogStash(opCtx) {
     bool isLockFreeReadSubOperation = opCtx->isLockFreeReadsOp();
 
     // Supported lock-free reads should only ever have an open storage snapshot prior to calling
@@ -431,6 +432,7 @@ AutoGetCollectionForReadLockFree::AutoGetCollectionForReadLockFree(
             instantiateAutoCollAndEstablishReadSource(
                 opCtx,
                 _autoColl,
+                _shouldNotConflictWithSecondaryBatchApplicationBlock,
                 /* AutoGetCollectionInstantiationFunc, copy restoreFromYield as it is a stack
                    variable */
                 [&, restoreFromYield](boost::optional<AutoGetCollectionLockFree>& autoColl) {

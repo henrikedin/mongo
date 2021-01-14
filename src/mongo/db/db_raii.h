@@ -85,25 +85,6 @@ private:
 };
 
 /**
- * Shared base class for AutoGetCollectionForRead and AutoGetCollectionForReadLockFree.
- * Do not use directly.
- */
-class AutoGetCollectionForReadBase {
-    AutoGetCollectionForReadBase(const AutoGetCollectionForReadBase&) = delete;
-    AutoGetCollectionForReadBase& operator=(const AutoGetCollectionForReadBase&) = delete;
-
-public:
-    AutoGetCollectionForReadBase(OperationContext* opCtx);
-
-protected:
-    // If this field is set, the reader will not take the ParallelBatchWriterMode lock and conflict
-    // with secondary batch application. This stays in scope with the _autoColl so that locks are
-    // taken and released in the right order.
-    boost::optional<ShouldNotConflictWithSecondaryBatchApplicationBlock>
-        _shouldNotConflictWithSecondaryBatchApplicationBlock;
-};
-
-/**
  * Same as calling AutoGetCollection with MODE_IS, but in addition ensures that the read will be
  * performed against an appropriately committed snapshot if the operation is using a readConcern of
  * 'majority'.
@@ -115,7 +96,7 @@ protected:
  * NOTE: Must not be used with any locks held, because it needs to block waiting on the committed
  * snapshot to become available, and can potentially release and reacquire locks.
  */
-class AutoGetCollectionForRead : public AutoGetCollectionForReadBase {
+class AutoGetCollectionForRead {
 public:
     AutoGetCollectionForRead(
         OperationContext* opCtx,
@@ -153,6 +134,12 @@ public:
 
 private:
     boost::optional<AutoGetCollection> _autoColl;
+
+    // If this field is set, the reader will not take the ParallelBatchWriterMode lock and conflict
+    // with secondary batch application. This stays in scope with the _autoColl so that locks are
+    // taken and released in the right order.
+    boost::optional<ShouldNotConflictWithSecondaryBatchApplicationBlock>
+        _shouldNotConflictWithSecondaryBatchApplicationBlock;
 };
 
 /**
@@ -160,7 +147,7 @@ private:
  * Takes the global lock and may take the PBWM, same as AutoGetCollectionForRead. Ensures a
  * consistent in-memory and on-disk view of the collection.
  */
-class AutoGetCollectionForReadLockFree : public AutoGetCollectionForReadBase {
+class AutoGetCollectionForReadLockFree {
 public:
     AutoGetCollectionForReadLockFree(
         OperationContext* opCtx,
@@ -195,6 +182,12 @@ public:
 private:
     boost::optional<AutoGetCollectionLockFree> _autoColl;
     CollectionCatalogStasher _catalogStash;
+
+    // If this field is set, the reader will not take the ParallelBatchWriterMode lock and conflict
+    // with secondary batch application. This stays in scope with the _autoColl so that locks are
+    // taken and released in the right order.
+    boost::optional<ShouldNotConflictWithSecondaryBatchApplicationBlock>
+        _shouldNotConflictWithSecondaryBatchApplicationBlock;
 };
 
 /**
