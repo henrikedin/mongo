@@ -357,7 +357,8 @@ AutoGetCollectionForReadBase::AutoGetCollectionForReadBase(OperationContext* opC
 AutoGetCollectionForRead::AutoGetCollectionForRead(OperationContext* opCtx,
                                                    const NamespaceStringOrUUID& nsOrUUID,
                                                    AutoGetCollectionViewMode viewMode,
-                                                   Date_t deadline) {
+                                                   Date_t deadline)
+    : AutoGetCollectionForReadBase(opCtx) {
     instantiateAutoCollAndEstablishReadSource(
         opCtx,
         _autoColl,
@@ -372,7 +373,7 @@ AutoGetCollectionForReadLockFree::AutoGetCollectionForReadLockFree(
     const NamespaceStringOrUUID& nsOrUUID,
     AutoGetCollectionViewMode viewMode,
     Date_t deadline)
-    : _catalogStash(opCtx) {
+    : AutoGetCollectionForReadBase(opCtx), _catalogStash(opCtx) {
     bool isLockFreeReadSubOperation = opCtx->isLockFreeReadsOp();
 
     // Supported lock-free reads should only ever have an open storage snapshot prior to calling

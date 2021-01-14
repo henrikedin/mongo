@@ -115,7 +115,7 @@ protected:
  * NOTE: Must not be used with any locks held, because it needs to block waiting on the committed
  * snapshot to become available, and can potentially release and reacquire locks.
  */
-class AutoGetCollectionForRead {
+class AutoGetCollectionForRead : public AutoGetCollectionForReadBase {
 public:
     AutoGetCollectionForRead(
         OperationContext* opCtx,
@@ -160,7 +160,7 @@ private:
  * Takes the global lock and may take the PBWM, same as AutoGetCollectionForRead. Ensures a
  * consistent in-memory and on-disk view of the collection.
  */
-class AutoGetCollectionForReadLockFree {
+class AutoGetCollectionForReadLockFree : public AutoGetCollectionForReadBase {
 public:
     AutoGetCollectionForReadLockFree(
         OperationContext* opCtx,
