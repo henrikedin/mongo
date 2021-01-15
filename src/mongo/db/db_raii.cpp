@@ -586,6 +586,39 @@ const NamespaceString& AutoGetCollectionForReadCommandMaybeLockFree::getNss() co
     }
 }
 
+AutoLockFreeRead::AutoLockFreeRead(OperationContext* opCtx, Date_t deadline)
+    : _lockFreeReadsBlock(opCtx),
+      _globalLock(
+          opCtx, MODE_IS, deadline, Lock::InterruptBehavior::kThrow, true /* skipRSTLLock */),
+      _catalogStash(opCtx) {
+    class FakeCollection {
+    public:
+        const NamespaceString& ns() const {
+            return _ns;
+        };
+        boost::optional<Timestamp> getMinimumVisibleSnapshot() const {
+            return boost::none;
+        }
+
+    private:
+        NamespaceString _ns;
+    };
+
+    FakeCollection fake;
+    acquireCollectionAndConsistentSnapshot(
+        opCtx,
+        /* isLockFreeReadSubOperation */
+        false,
+        /* CollectionCatalogStasher */
+        _catalogStash,
+        /* GetCollectionAndEstablishReadSourceFunc */
+        [&fake](OperationContext* opCtx, const CollectionCatalog&) { return &fake; },
+        /* GetCollectionAfterSnapshotFunc */
+        [&fake](OperationContext* opCtx, const CollectionCatalog& catalog) { return &fake; },
+        /* ResetFunc */
+        [this]() {});
+}
+
 OldClientContext::~OldClientContext() {
     // If in an interrupt, don't record any stats.
     // It is possible to have no lock after saving the lock state and being interrupted while

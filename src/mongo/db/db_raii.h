@@ -395,6 +395,16 @@ private:
     boost::optional<AutoGetCollectionForReadCommandLockFree> _autoGetLockFree;
 };
 
+class AutoLockFreeRead {
+public:
+    AutoLockFreeRead(OperationContext* opCtx, Date_t deadline = Date_t::max());
+
+private:
+    LockFreeReadsBlock _lockFreeReadsBlock;
+    Lock::GlobalLock _globalLock;
+    CollectionCatalogStasher _catalogStash;
+};
+
 /**
  * Opens the database that we want to use and sets the appropriate namespace on the
  * current operation.

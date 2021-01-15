@@ -43,6 +43,7 @@
 #include "mongo/db/catalog/collection.h"
 #include "mongo/db/catalog/collection_catalog_helper.h"
 #include "mongo/db/catalog/database.h"
+#include "mongo/db/catalog/database_holder.h"
 #include "mongo/db/catalog/index_catalog.h"
 #include "mongo/db/clientcursor.h"
 #include "mongo/db/commands.h"
@@ -299,8 +300,9 @@ public:
         std::unique_ptr<PlanExecutor, PlanExecutor::Deleter> exec;
         std::vector<mongo::ListCollectionsReplyItem> firstBatch;
         {
-            AutoGetDb autoDb(opCtx, dbname, MODE_IS);
-            Database* db = autoDb.getDb();
+            AutoLockFreeRead lockFreeReadBlock(opCtx);
+            auto collectionCatalog = CollectionCatalog::get(opCtx);
+            auto viewCatalog = DatabaseHolder::get(opCtx)->getViewCatalog(opCtx, dbname);
 
             CurOpFailpointHelpers::waitWhileFailPointEnabled(&hangBeforeListCollections,
                                                              opCtx,
@@ -312,10 +314,10 @@ public:
             auto ws = std::make_unique<WorkingSet>();
             auto root = std::make_unique<QueuedDataStage>(expCtx.get(), ws.get());
 
-            if (db) {
+            if (viewCatalog) {
                 if (auto collNames = _getExactNameMatches(matcher.get())) {
                     for (auto&& collName : *collNames) {
-                        auto nss = NamespaceString(db->name(), collName);
+                        auto nss = NamespaceString(dbname, collName);
 
                         // Only validate on a per-collection basis if the user requested
                         // a list of authorized collections
@@ -325,7 +327,6 @@ public:
                             continue;
                         }
 
-                        Lock::CollectionLock clk(opCtx, nss, MODE_IS);
                         CollectionPtr collection =
                             CollectionCatalog::get(opCtx)->lookupCollectionByNamespace(opCtx, nss);
                         BSONObj collBson =
@@ -336,21 +337,22 @@ public:
                         }
                     }
                 } else {
-                    mongo::catalog::forEachCollectionFromDb(
-                        opCtx, dbname, MODE_IS, [&](const CollectionPtr& collection) {
-                            if (authorizedCollections &&
-                                (!as->isAuthorizedForAnyActionOnResource(
-                                    ResourcePattern::forExactNamespace(collection->ns())))) {
-                                return true;
-                            }
-                            BSONObj collBson = buildCollectionBson(
-                                opCtx, collection, includePendingDrops, nameOnly);
-                            if (!collBson.isEmpty()) {
-                                _addWorkingSetMember(
-                                    opCtx, collBson, matcher.get(), ws.get(), root.get());
-                            }
-                            return true;
-                        });
+                    for (auto it = collectionCatalog->begin(opCtx, dbname);
+                         it != collectionCatalog->end(opCtx);
+                         ++it) {
+                        CollectionPtr collection = *it;
+                        if (authorizedCollections &&
+                            (!as->isAuthorizedForAnyActionOnResource(
+                                ResourcePattern::forExactNamespace(collection->ns())))) {
+                            continue;
+                        }
+                        BSONObj collBson =
+                            buildCollectionBson(opCtx, collection, includePendingDrops, nameOnly);
+                        if (!collBson.isEmpty()) {
+                            _addWorkingSetMember(
+                                opCtx, collBson, matcher.get(), ws.get(), root.get());
+                        }
+                    }
                 }
 
                 // Skipping views is only necessary for internal cloning operations.
@@ -359,7 +361,7 @@ public:
                         *parsed.getFilter() == ListCollectionsFilter::makeTypeCollectionFilter());
 
                 if (!skipViews) {
-                    ViewCatalog::get(db)->iterate(opCtx, [&](const ViewDefinition& view) {
+                    viewCatalog->iterate(opCtx, [&](const ViewDefinition& view) {
                         if (authorizedCollections &&
                             !as->isAuthorizedForAnyActionOnResource(
                                 ResourcePattern::forExactNamespace(view.name()))) {
