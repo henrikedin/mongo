@@ -38,6 +38,7 @@
 #include "mongo/db/curop.h"
 #include "mongo/db/repl/replication_coordinator.h"
 #include "mongo/db/s/collection_sharding_state.h"
+#include "mongo/db/s/database_sharding_state.h"
 #include "mongo/db/storage/snapshot_helper.h"
 #include "mongo/logv2/log.h"
 
@@ -586,7 +587,7 @@ const NamespaceString& AutoGetCollectionForReadCommandMaybeLockFree::getNss() co
     }
 }
 
-AutoLockFreeRead::AutoLockFreeRead(OperationContext* opCtx, Date_t deadline)
+AutoLockFreeRead::AutoLockFreeRead(OperationContext* opCtx, StringData dbName, Date_t deadline)
     : _lockFreeReadsBlock(opCtx),
       _globalLock(
           opCtx, MODE_IS, deadline, Lock::InterruptBehavior::kThrow, true /* skipRSTLLock */),
@@ -612,9 +613,18 @@ AutoLockFreeRead::AutoLockFreeRead(OperationContext* opCtx, Date_t deadline)
         /* CollectionCatalogStasher */
         _catalogStash,
         /* GetCollectionAndEstablishReadSourceFunc */
-        [&fake](OperationContext* opCtx, const CollectionCatalog&) { return &fake; },
+        [&](OperationContext* opCtx, const CollectionCatalog&) {
+            // Check that the sharding database version matches our read.
+            // Note: this must always be checked, regardless of whether the collection exists, so
+            // that the dbVersion of this node or the caller gets updated quickly in case either is
+            // stale.
+            auto dss = DatabaseShardingState::getSharedForLockFreeReads(opCtx, dbName);
+            auto dssLock = DatabaseShardingState::DSSLock::lockShared(opCtx, dss.get());
+            dss->checkDbVersion(opCtx, dssLock);
+            return &fake;
+        },
         /* GetCollectionAfterSnapshotFunc */
-        [&fake](OperationContext* opCtx, const CollectionCatalog& catalog) { return &fake; },
+        [&](OperationContext* opCtx, const CollectionCatalog& catalog) { return &fake; },
         /* ResetFunc */
         [this]() {});
 }

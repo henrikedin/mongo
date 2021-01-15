@@ -300,7 +300,7 @@ public:
         std::unique_ptr<PlanExecutor, PlanExecutor::Deleter> exec;
         std::vector<mongo::ListCollectionsReplyItem> firstBatch;
         {
-            AutoLockFreeRead lockFreeReadBlock(opCtx);
+            AutoLockFreeRead lockFreeReadBlock(opCtx, dbname);
             auto collectionCatalog = CollectionCatalog::get(opCtx);
             auto viewCatalog = DatabaseHolder::get(opCtx)->getViewCatalog(opCtx, dbname);
 

@@ -397,7 +397,7 @@ private:
 
 class AutoLockFreeRead {
 public:
-    AutoLockFreeRead(OperationContext* opCtx, Date_t deadline = Date_t::max());
+    AutoLockFreeRead(OperationContext* opCtx, StringData dbName, Date_t deadline = Date_t::max());
 
 private:
     LockFreeReadsBlock _lockFreeReadsBlock;
