@@ -396,6 +396,29 @@ private:
 };
 
 /**
+ * Establishes a consistent CollectionCatalog with a storage snapshot. Also verifies Database
+ * sharding state for the provided Db.
+ *
+ * Similar to AutoGetCollectionForReadLockFree but does not ensure that reads will be performed
+ * against an appropriately committed snapshot if the operation is using a readConcern of
+ * 'majority'.
+ *
+ * Should only be used to read catalog metadata for a particular Db and not for reading from
+ * Collection(s).
+ */
+class AutoDbForReadLockFree {
+public:
+    AutoDbForReadLockFree(OperationContext* opCtx,
+                          StringData dbName,
+                          Date_t deadline = Date_t::max());
+
+private:
+    LockFreeReadsBlock _lockFreeReadsBlock;
+    Lock::GlobalLock _globalLock;
+    CollectionCatalogStasher _catalogStash;
+};
+
+/**
  * Opens the database that we want to use and sets the appropriate namespace on the
  * current operation.
  */
