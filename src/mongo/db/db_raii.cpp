@@ -643,6 +643,16 @@ AutoDbForReadLockFree::AutoDbForReadLockFree(OperationContext* opCtx,
         []() {});
 }
 
+AutoDbForReadMaybeLockFree::AutoDbForReadMaybeLockFree(OperationContext* opCtx,
+                                                       StringData dbName,
+                                                       Date_t deadline) {
+    if (supportsLockFreeRead(opCtx)) {
+        _autoGetLockFree.emplace(opCtx, dbName, deadline);
+    } else {
+        _autoGet.emplace(opCtx, dbName, MODE_IS, deadline);
+    }
+}
+
 OldClientContext::~OldClientContext() {
     // If in an interrupt, don't record any stats.
     // It is possible to have no lock after saving the lock state and being interrupted while

@@ -419,6 +419,21 @@ private:
 };
 
 /**
+ * Creates either an AutoGetDb with MODE_IS lock or AutoDbForReadLockFree depending on whether a
+ * lock-free read is supported in the situation per the results of supportsLockFreeRead().
+ */
+class AutoDbForReadMaybeLockFree {
+public:
+    AutoDbForReadMaybeLockFree(OperationContext* opCtx,
+                               StringData dbName,
+                               Date_t deadline = Date_t::max());
+
+private:
+    boost::optional<AutoGetDb> _autoGet;
+    boost::optional<AutoDbForReadLockFree> _autoGetLockFree;
+};
+
+/**
  * Opens the database that we want to use and sets the appropriate namespace on the
  * current operation.
  */

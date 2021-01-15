@@ -300,8 +300,7 @@ public:
         std::unique_ptr<PlanExecutor, PlanExecutor::Deleter> exec;
         std::vector<mongo::ListCollectionsReplyItem> firstBatch;
         {
-            AutoDbForReadLockFree lockFreeReadBlock(opCtx, dbname);
-            auto collectionCatalog = CollectionCatalog::get(opCtx);
+            AutoDbForReadMaybeLockFree lockFreeReadBlock(opCtx, dbname);
             auto viewCatalog = DatabaseHolder::get(opCtx)->getViewCatalog(opCtx, dbname);
 
             CurOpFailpointHelpers::waitWhileFailPointEnabled(&hangBeforeListCollections,
@@ -328,6 +327,10 @@ public:
                             continue;
                         }
 
+                        boost::optional<Lock::CollectionLock> clk;
+                        if (!opCtx->isLockFreeReadsOp()) {
+                            clk.emplace(opCtx, nss, MODE_IS);
+                        }
                         CollectionPtr collection =
                             CollectionCatalog::get(opCtx)->lookupCollectionByNamespace(opCtx, nss);
                         BSONObj collBson =
@@ -338,14 +341,11 @@ public:
                         }
                     }
                 } else {
-                    for (auto it = collectionCatalog->begin(opCtx, dbname);
-                         it != collectionCatalog->end(opCtx);
-                         ++it) {
-                        CollectionPtr collection = *it;
+                    auto perCollectionWork = [&](const CollectionPtr& collection) {
                         if (authorizedCollections &&
                             (!as->isAuthorizedForAnyActionOnResource(
                                 ResourcePattern::forExactNamespace(collection->ns())))) {
-                            continue;
+                            return true;
                         }
                         BSONObj collBson =
                             buildCollectionBson(opCtx, collection, includePendingDrops, nameOnly);
@@ -353,6 +353,21 @@ public:
                             _addWorkingSetMember(
                                 opCtx, collBson, matcher.get(), ws.get(), root.get());
                         }
+                        return true;
+                    };
+
+                    // If we are lock-free we can just iterate over our collection catalog without
+                    // needing to yield as we don't take any locks.
+                    if (opCtx->isLockFreeReadsOp()) {
+                        auto collectionCatalog = CollectionCatalog::get(opCtx);
+                        for (auto it = collectionCatalog->begin(opCtx, dbname);
+                             it != collectionCatalog->end(opCtx);
+                             ++it) {
+                            perCollectionWork(*it);
+                        }
+                    } else {
+                        mongo::catalog::forEachCollectionFromDb(
+                            opCtx, dbname, MODE_IS, perCollectionWork);
                     }
                 }
 
