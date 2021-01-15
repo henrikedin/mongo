@@ -300,7 +300,7 @@ public:
         std::unique_ptr<PlanExecutor, PlanExecutor::Deleter> exec;
         std::vector<mongo::ListCollectionsReplyItem> firstBatch;
         {
-            AutoLockFreeRead lockFreeReadBlock(opCtx, dbname);
+            AutoDbForReadLockFree lockFreeReadBlock(opCtx, dbname);
             auto collectionCatalog = CollectionCatalog::get(opCtx);
             auto viewCatalog = DatabaseHolder::get(opCtx)->getViewCatalog(opCtx, dbname);
 
@@ -314,6 +314,7 @@ public:
             auto ws = std::make_unique<WorkingSet>();
             auto root = std::make_unique<QueuedDataStage>(expCtx.get(), ws.get());
 
+            // If the Db exists then we will have a valid viewCatalog pointer
             if (viewCatalog) {
                 if (auto collNames = _getExactNameMatches(matcher.get())) {
                     for (auto&& collName : *collNames) {

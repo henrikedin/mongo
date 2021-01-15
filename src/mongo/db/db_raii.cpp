@@ -587,16 +587,26 @@ const NamespaceString& AutoGetCollectionForReadCommandMaybeLockFree::getNss() co
     }
 }
 
-AutoLockFreeRead::AutoLockFreeRead(OperationContext* opCtx, StringData dbName, Date_t deadline)
+AutoDbForReadLockFree::AutoDbForReadLockFree(OperationContext* opCtx,
+                                             StringData dbName,
+                                             Date_t deadline)
     : _lockFreeReadsBlock(opCtx),
       _globalLock(
           opCtx, MODE_IS, deadline, Lock::InterruptBehavior::kThrow, true /* skipRSTLLock */),
       _catalogStash(opCtx) {
+
+    // Type that pretends to be a Collection. It implements the minimal interface used by
+    // acquireCollectionAndConsistentSnapshot(). We are tricking
+    // acquireCollectionAndConsistentSnapshot to establish a consistent snapshot with just the
+    // catalog and not for a specific Collection.
     class FakeCollection {
     public:
+        // We just need to return something that would not considered to be the oplog. A default
+        // constructed NamespaceString is fine.
         const NamespaceString& ns() const {
             return _ns;
         };
+        // We just need to return something that compares equal with itself here.
         boost::optional<Timestamp> getMinimumVisibleSnapshot() const {
             return boost::none;
         }
@@ -605,7 +615,11 @@ AutoLockFreeRead::AutoLockFreeRead(OperationContext* opCtx, StringData dbName, D
         NamespaceString _ns;
     };
 
-    FakeCollection fake;
+    // Return the same fakeColl instance before and after establishing the snapshot so
+    // acquireCollectionAndConsistentSnapshot considers the snapshot consistent with the
+    // "Collection".
+    // The catalog will be stashed inside the CollectionCatalogStasher
+    FakeCollection fakeColl;
     acquireCollectionAndConsistentSnapshot(
         opCtx,
         /* isLockFreeReadSubOperation */
@@ -621,12 +635,12 @@ AutoLockFreeRead::AutoLockFreeRead(OperationContext* opCtx, StringData dbName, D
             auto dss = DatabaseShardingState::getSharedForLockFreeReads(opCtx, dbName);
             auto dssLock = DatabaseShardingState::DSSLock::lockShared(opCtx, dss.get());
             dss->checkDbVersion(opCtx, dssLock);
-            return &fake;
+            return &fakeColl;
         },
         /* GetCollectionAfterSnapshotFunc */
-        [&](OperationContext* opCtx, const CollectionCatalog& catalog) { return &fake; },
+        [&](OperationContext* opCtx, const CollectionCatalog& catalog) { return &fakeColl; },
         /* ResetFunc */
-        [this]() {});
+        []() {});
 }
 
 OldClientContext::~OldClientContext() {
