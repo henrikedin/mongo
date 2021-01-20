@@ -221,64 +221,63 @@ void instantiateAutoCollAndEstablishReadSource(OperationContext* opCtx,
     }
 }
 
+enum class EstablishReadSourceResult { NotFound, PreallocateSnapshot, PreallocateSnapshotForOplog };
+
+EstablishReadSourceResult snapshotRequiredForCollection(const Collection* collection) {
+    if (!collection)
+        return EstablishReadSourceResult::NotFound;
+    return collection->ns().isOplog() ? EstablishReadSourceResult::PreallocateSnapshotForOplog
+                                      : EstablishReadSourceResult::PreallocateSnapshot;
+}
+
 /**
- * Helper function to acquire a collection and consistent snapshot without holding the RSTL or
- * collection locks.
+ * Helper function to establish an in-memory catalog instance consistent with a storage snapshot
+ * without holding the RSTL or collection locks.
  *
- * GetCollectionAndEstablishReadSourceFunc is called before we open a snapshot, it needs to fetch
- * the Collection from the catalog and select the read source.
- *
- * GetCollectionAfterSnapshotFunc is called after the snapshot is opened, it needs to fetch the
- * Collection from the catalog that is used to compare consistency with the Collection returned by
- * GetCollectionAndEstablishReadSourceFunc.
+ * EstablishReadSourceFunc is called before we open a snapshot. It needs to fetch the Collection
+ * from the catalog and select the read source. It should return 'EstablishReadSourceResult' that
+ * decides how this algorithm should continue.
  *
  * ResetFunc is called when we failed to achieve consistency and need to retry.
  */
-template <typename GetCollectionAndEstablishReadSourceFunc,
-          typename GetCollectionAfterSnapshotFunc,
-          typename ResetFunc>
-auto acquireCollectionAndConsistentSnapshot(
-    OperationContext* opCtx,
-    bool isLockFreeReadSubOperation,
-    CollectionCatalogStasher& catalogStasher,
-    GetCollectionAndEstablishReadSourceFunc getCollectionAndEstablishReadSource,
-    GetCollectionAfterSnapshotFunc getCollectionAfterSnapshot,
-    ResetFunc reset) {
-    // Figure out what type of Collection GetCollectionAndEstablishReadSourceFunc returns. It needs
-    // to behave like a pointer.
-    using CollectionPtrT = decltype(std::declval<GetCollectionAndEstablishReadSourceFunc>()(
-        std::declval<OperationContext*>(), std::declval<const CollectionCatalog&>()));
-
-    CollectionPtrT collection;
+template <typename EstablishReadSourceFunc, typename ResetFunc>
+void establishConsistentSnapshotWithCatalog(OperationContext* opCtx,
+                                            bool isLockFreeReadSubOperation,
+                                            CollectionCatalogStasher& catalogStasher,
+                                            EstablishReadSourceFunc establishReadSource,
+                                            ResetFunc reset) {
+    // This is a no-op if nothing is stashed on this stasher. We will have something stashed if this
+    // call is coming from restoring after yield.
     catalogStasher.reset();
+
     while (true) {
         // AutoGetCollectionForReadBase can choose a read source based on the current replication
         // state. Therefore we must fetch the repl state beforehand, to compare with afterwards.
         long long replTerm = repl::ReplicationCoordinator::get(opCtx)->getTerm();
 
         auto catalog = CollectionCatalog::get(opCtx);
-        collection = getCollectionAndEstablishReadSource(opCtx, *catalog);
+        EstablishReadSourceResult result = establishReadSource(opCtx, catalog);
 
         // A lock request does not always find a collection to lock.
-        if (!collection)
+        if (result == EstablishReadSourceResult::NotFound)
             break;
 
         // If this is a nested lock acquisition, then we already have a consistent stashed catalog
         // and snapshot from which to read and we can skip the below logic.
         if (isLockFreeReadSubOperation) {
-            return collection;
+            break;
         }
 
-        // We must open a storage snapshot consistent with the fetched in-memory Collection instance
-        // and chosen read source. The Collection instance and replication state after opening a
+        // We must open a storage snapshot consistent with the fetched in-memory Catalog instance
+        // and chosen read source. The Catalog instance and replication state after opening a
         // snapshot will be compared with the previously acquired state. If either does not match,
         // then this loop will retry lock acquisition and read source selection until there is a
         // match.
         //
-        // Note: getCollectionAndEstablishReadSource() may open a snapshot for PIT reads, so
-        // preallocateSnapshot() may be a no-op, but that is OK because the snapshot is established
-        // by getCollectionAndEstablishReadSource() after it fetches a Collection instance.
-        if (collection->ns().isOplog()) {
+        // Note: establishReadSource() may open a snapshot for PIT reads, so preallocateSnapshot()
+        // may be a no-op, but that is OK because the snapshot is established by
+        // establishReadSource() after we fetched the Catalog instance.
+        if (result == EstablishReadSourceResult::PreallocateSnapshotForOplog) {
             // Signal to the RecoveryUnit that the snapshot will be used for reading the oplog.
             // Normally the snapshot is opened from a cursor that can take special action when
             // reading from the oplog.
@@ -287,14 +286,11 @@ auto acquireCollectionAndConsistentSnapshot(
             opCtx->recoveryUnit()->preallocateSnapshot();
         }
 
-        // The collection may have been dropped since the previous lookup, run the loop one more
-        // time to cleanup if newCollection is nullptr
+        // The catalog may have been changed since the previous lookup, drop the acquired state and
+        // retry.
         auto newCatalog = CollectionCatalog::get(opCtx);
         if (catalog == newCatalog) {
-            auto newCollection = getCollectionAfterSnapshot(opCtx, *catalog);
-            if (newCollection && catalog == newCatalog &&
-                collection->getMinimumVisibleSnapshot() ==
-                    newCollection->getMinimumVisibleSnapshot() &&
+            if (catalog == newCatalog &&
                 replTerm == repl::ReplicationCoordinator::get(opCtx)->getTerm()) {
                 catalogStasher.stash(std::move(catalog));
                 break;
@@ -303,13 +299,11 @@ auto acquireCollectionAndConsistentSnapshot(
 
         LOGV2_DEBUG(5067701,
                     3,
-                    "Retrying acquiring state for lock-free read because collection or replication "
+                    "Retrying acquiring state for lock-free read because catalog or replication "
                     "state changed.");
         reset();
         opCtx->recoveryUnit()->abandonSnapshot();
     }
-
-    return collection;
 }
 
 }  // namespace
@@ -395,15 +389,16 @@ AutoGetCollectionForReadLockFree::AutoGetCollectionForReadLockFree(
                                 std::shared_ptr<const Collection>& collection,
                                 OperationContext* opCtx,
                                 CollectionUUID uuid) {
-        collection = acquireCollectionAndConsistentSnapshot(
+        establishConsistentSnapshotWithCatalog(
             opCtx,
             /* isLockFreeReadSubOperation */
             isLockFreeReadSubOperation,
             /* CollectionCatalogStasher */
             catalogStasher,
-            /* GetCollectionAndEstablishReadSourceFunc */
-            [uuid](OperationContext* opCtx, const CollectionCatalog& catalog) {
-                auto coll = catalog.lookupCollectionByUUIDForRead(opCtx, uuid);
+            /* EstablishReadSourceFunc */
+            [&collection, uuid](OperationContext* opCtx,
+                                const std::shared_ptr<const CollectionCatalog>& catalog) {
+                collection = catalog->lookupCollectionByUUIDForRead(opCtx, uuid);
 
                 // After yielding and reacquiring locks, the preconditions that were used to
                 // select our ReadSource initially need to be checked again. We select a
@@ -411,32 +406,33 @@ AutoGetCollectionForReadLockFree::AutoGetCollectionForReadLockFree(
                 // the replication state may have changed, invalidating our current choice
                 // of ReadSource. Using the same preconditions, change our ReadSource if
                 // necessary.
-                if (coll) {
+                if (collection) {
                     auto [newReadSource, _] =
-                        SnapshotHelper::shouldChangeReadSource(opCtx, coll->ns());
+                        SnapshotHelper::shouldChangeReadSource(opCtx, collection->ns());
                     if (newReadSource) {
                         opCtx->recoveryUnit()->setTimestampReadSource(*newReadSource);
                     }
                 }
 
-                return coll;
-            },
-            /* GetCollectionAfterSnapshotFunc */
-            [uuid](OperationContext* opCtx, const CollectionCatalog& catalog) {
-                return catalog.lookupCollectionByUUIDForRead(opCtx, uuid);
+                return snapshotRequiredForCollection(collection.get());
             },
             /* ResetFunc */
             []() {});
     };
 
-    acquireCollectionAndConsistentSnapshot(
+    establishConsistentSnapshotWithCatalog(
         opCtx,
         /* isLockFreeReadSubOperation */
         isLockFreeReadSubOperation,
         /* CollectionCatalogStasher */
         _catalogStash,
-        /* GetCollectionAndEstablishReadSourceFunc */
-        [&](OperationContext* opCtx, const CollectionCatalog&) {
+        /* EstablishReadSourceFunc */
+        [&](OperationContext* opCtx, const std::shared_ptr<const CollectionCatalog>& catalog) {
+            // Temporary stash the catalog so lookups in AutoGetCollection below uses this instance
+            CollectionCatalogStasher catalogStasher(opCtx);
+            if (!isLockFreeReadSubOperation) {
+                catalogStasher.stash(catalog);
+            }
             instantiateAutoCollAndEstablishReadSource(
                 opCtx,
                 _autoColl,
@@ -446,11 +442,7 @@ AutoGetCollectionForReadLockFree::AutoGetCollectionForReadLockFree(
                 [&, restoreFromYield](boost::optional<AutoGetCollectionLockFree>& autoColl) {
                     autoColl.emplace(opCtx, nsOrUUID, restoreFromYield, viewMode, deadline);
                 });
-            return _autoColl->getCollection().get();
-        },
-        /* GetCollectionAfterSnapshotFunc */
-        [this](OperationContext* opCtx, const CollectionCatalog& catalog) {
-            return catalog.lookupCollectionByUUIDForRead(opCtx, _autoColl.get()->uuid());
+            return snapshotRequiredForCollection(_autoColl->getCollection().get());
         },
         /* ResetFunc */
         [this]() { _autoColl.reset(); });
