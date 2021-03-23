@@ -193,6 +193,10 @@ void ReplicationCoordinatorNoOp::signalDrainComplete(OperationContext*, long lon
     MONGO_UNREACHABLE;
 }
 
+Status ReplicationCoordinatorNoOp::waitForDrainFinish(Milliseconds) {
+    MONGO_UNREACHABLE;
+}
+
 void ReplicationCoordinatorNoOp::signalUpstreamUpdater() {
     MONGO_UNREACHABLE;
 }

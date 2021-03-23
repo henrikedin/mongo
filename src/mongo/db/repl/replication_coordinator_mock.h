@@ -185,6 +185,8 @@ public:
 
     virtual void signalDrainComplete(OperationContext*, long long);
 
+    virtual Status waitForDrainFinish(Milliseconds timeout) override;
+
     virtual void signalUpstreamUpdater();
 
     virtual StatusWith<BSONObj> prepareReplSetUpdatePositionCommand() const override;
