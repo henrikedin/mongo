@@ -116,6 +116,14 @@ bool shouldReadAtLastApplied(OperationContext* opCtx,
         return false;
     }
 
+    const auto readConcernLevel = repl::ReadConcernArgs::get(opCtx).getLevel();
+    if (readConcernLevel == repl::ReadConcernLevel::kLinearizableReadConcern) {
+        if (reason) {
+            *reason = "linearizable read concern";
+        }
+        return false;
+    }
+
     return true;
 }
 }  // namespace

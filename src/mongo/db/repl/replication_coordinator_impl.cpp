@@ -138,6 +138,8 @@ MONGO_FAIL_POINT_DEFINE(doNotRemoveNewlyAddedOnHeartbeats);
 MONGO_FAIL_POINT_DEFINE(hangDuringAutomaticReconfig);
 // Make reconfig command hang before validating new config.
 MONGO_FAIL_POINT_DEFINE(ReconfigHangBeforeConfigValidationCheck);
+// Will hang right after transitioning to primary but before accepting writes.
+MONGO_FAIL_POINT_DEFINE(hangAfterTransitionToPrimaryBeforeAcceptingWritesOnDrainComplete);
 
 // Number of times we tried to go live as a secondary.
 Counter64 attemptsToBecomeSecondary;
@@ -1217,6 +1219,13 @@ void ReplicationCoordinatorImpl::signalDrainComplete(OperationContext* opCtx,
         OpTime firstOpTime = _externalState->onTransitionToPrimary(opCtx);
         ReplicaSetAwareServiceRegistry::get(_service).onStepUpComplete(opCtx,
                                                                        firstOpTime.getTerm());
+
+        if (MONGO_unlikely(hangAfterTransitionToPrimaryBeforeAcceptingWritesOnDrainComplete.shouldFail())) {
+            LOGV2(4635720,
+                  "Failpoint 'hangAfterTransitionToPrimaryBeforeAcceptingWritesOnDrainComplete' enabled. Blocking until it is disabled.");
+            hangAfterTransitionToPrimaryBeforeAcceptingWritesOnDrainComplete.pauseWhileSet();
+        }
+
         lk.lock();
 
         _topCoord->completeTransitionToPrimary(firstOpTime);
@@ -5635,6 +5644,13 @@ void ReplicationCoordinatorImpl::ReadWriteAbility::setCanAcceptNonLocalWrites(
     if (canAcceptWrites == canAcceptNonLocalWrites(lk)) {
         return;
     }
+    
+    //static int asdf = 0;
+    //asdf++;
+   // if (asdf==3) {
+        
+    //}
+    
     _canAcceptNonLocalWrites.store(canAcceptWrites);
 }
 

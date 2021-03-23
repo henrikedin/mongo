@@ -62,9 +62,17 @@ bool supportsLockFreeRead(OperationContext* opCtx) {
     // holding operations).
     // Lock-free reads are not supported if a storage txn is already open w/o the lock-free reads
     // operation flag set.
+    auto linearizable = repl::ReadConcernArgs::get(opCtx).getLevel() ==
+        repl::ReadConcernLevel::kLinearizableReadConcern;
+    if (linearizable) {
+        logd("disabling lock free read for read concern linearizable");
+    }
+    
     return !storageGlobalParams.disableLockFreeReads && !opCtx->inMultiDocumentTransaction() &&
         !opCtx->lockState()->isWriteLocked() &&
-        !(opCtx->recoveryUnit()->isActive() && !opCtx->isLockFreeReadsOp());
+        !(opCtx->recoveryUnit()->isActive() && !opCtx->isLockFreeReadsOp()) &&
+        repl::ReadConcernArgs::get(opCtx).getLevel() !=
+        repl::ReadConcernLevel::kLinearizableReadConcern;
 }
 
 /**
@@ -254,6 +262,14 @@ AutoGetCollectionForReadBase<AutoGetCollectionType, EmplaceAutoCollFunc>::
         const NamespaceString nss = coll->ns();
         auto readSource = opCtx->recoveryUnit()->getTimestampReadSource();
 
+        const auto readConcernLevel = repl::ReadConcernArgs::get(opCtx).getLevel();
+        if (readConcernLevel == repl::ReadConcernLevel::kMajorityReadConcern) {
+            while (!IsDebuggerPresent()) {
+                logd("waiting for debugger {}", GetCurrentProcessId());
+                ::Sleep(100);
+            }
+        }
+
         // Once we have our locks, check whether or not we should override the ReadSource that was
         // set before acquiring locks.
         auto [newReadSource, shouldReadAtLastApplied] =
@@ -297,6 +313,10 @@ AutoGetCollectionForReadBase<AutoGetCollectionType, EmplaceAutoCollFunc>::
         // lock or reading at a timestamp.
         if (readSource == RecoveryUnit::ReadSource::kNoTimestamp && callerWasConflicting &&
             !nss.mustBeAppliedInOwnOplogBatch() && shouldReadAtLastApplied) {
+            while (!IsDebuggerPresent()) {
+                logd("waiting for debugger {}", GetCurrentProcessId());
+                ::Sleep(100);
+            }
             LOGV2_FATAL(4728700,
                         "Reading from replicated collection on a secondary without read timestamp "
                         "or PBWM lock",
