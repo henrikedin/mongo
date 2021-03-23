@@ -62,17 +62,17 @@ bool supportsLockFreeRead(OperationContext* opCtx) {
     // holding operations).
     // Lock-free reads are not supported if a storage txn is already open w/o the lock-free reads
     // operation flag set.
-    auto linearizable = repl::ReadConcernArgs::get(opCtx).getLevel() ==
+    /*auto linearizable = repl::ReadConcernArgs::get(opCtx).getLevel() ==
         repl::ReadConcernLevel::kLinearizableReadConcern;
     if (linearizable) {
         logd("disabling lock free read for read concern linearizable");
-    }
+    }*/
     
     return !storageGlobalParams.disableLockFreeReads && !opCtx->inMultiDocumentTransaction() &&
         !opCtx->lockState()->isWriteLocked() &&
-        !(opCtx->recoveryUnit()->isActive() && !opCtx->isLockFreeReadsOp()) &&
+        !(opCtx->recoveryUnit()->isActive() && !opCtx->isLockFreeReadsOp()) /*&&
         repl::ReadConcernArgs::get(opCtx).getLevel() !=
-        repl::ReadConcernLevel::kLinearizableReadConcern;
+        repl::ReadConcernLevel::kLinearizableReadConcern*/;
 }
 
 /**
@@ -277,6 +277,14 @@ AutoGetCollectionForReadBase<AutoGetCollectionType, EmplaceAutoCollFunc>::
         if (newReadSource) {
             opCtx->recoveryUnit()->setTimestampReadSource(*newReadSource);
             readSource = *newReadSource;
+        } else if (shouldReadAtLastApplied &&
+                   repl::ReadConcernArgs::get(opCtx).getLevel() ==
+                       repl::ReadConcernLevel::kLinearizableReadConcern) {
+            logd("waiting for drain to finish...");
+            repl::ReplicationCoordinator::get(opCtx)->waitForDrainFinish(Seconds(60));
+            logd("drain finished!");
+            shouldReadAtLastApplied =
+                SnapshotHelper::shouldChangeReadSource(opCtx, nss).shouldReadAtLastApplied;
         }
 
         const auto readTimestamp = opCtx->recoveryUnit()->getPointInTimeReadTimestamp(opCtx);
