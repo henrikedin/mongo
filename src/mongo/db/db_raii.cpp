@@ -283,8 +283,7 @@ AutoGetCollectionForReadBase<AutoGetCollectionType, EmplaceAutoCollFunc>::
             logd("waiting for drain to finish...");
             repl::ReplicationCoordinator::get(opCtx)->waitForDrainFinish(Seconds(60));
             logd("drain finished!");
-            shouldReadAtLastApplied =
-                SnapshotHelper::shouldChangeReadSource(opCtx, nss).shouldReadAtLastApplied;
+            shouldReadAtLastApplied = false;
         }
 
         const auto readTimestamp = opCtx->recoveryUnit()->getPointInTimeReadTimestamp(opCtx);
