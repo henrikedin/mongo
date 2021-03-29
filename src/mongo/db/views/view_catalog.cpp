@@ -58,6 +58,7 @@
 #include "mongo/db/views/view_graph.h"
 #include "mongo/logv2/log.h"
 #include "mongo/util/fail_point.h"
+#include <boost/iterator/transform_iterator.hpp>
 
 namespace mongo {
 
@@ -182,6 +183,7 @@ Status ViewCatalog::reload(OperationContext* opCtx,
 Status ViewCatalog::_reload(OperationContext* opCtx, ViewCatalogLookupBehavior lookupBehavior) {
     LOGV2_DEBUG(22546, 1, "Reloading view catalog for database", "db"_attr = _durable->getName());
 
+    logd("reload viewcatalog for db {}", _durable->getName());
     _viewMap.clear();
     _valid = false;
     _viewGraphNeedsRefresh = true;
@@ -246,6 +248,7 @@ Status ViewCatalog::_reload(OperationContext* opCtx, ViewCatalogLookupBehavior l
 }
 
 void ViewCatalog::clear(const Database* db) {
+    logd("ViewCatalog::clear");
     auto catalog = getViewCatalog(db).writer();
 
     // First, iterate through the views on this database and audit them before they are dropped.
@@ -297,6 +300,8 @@ Status ViewCatalog::_createOrUpdateView(OperationContext* opCtx,
     invariant(opCtx->lockState()->isCollectionLockedForMode(
         NamespaceString(viewName.db(), NamespaceString::kSystemDotViewsCollectionName), MODE_X));
 
+    logd("_createOrUpdateView: {}", viewName);
+
     _requireValidCatalog();
 
     // Build the BSON definition for this view to be saved in the durable view catalog. If the
@@ -326,6 +331,7 @@ Status ViewCatalog::_createOrUpdateView(OperationContext* opCtx,
         return graphStatus;
     }
 
+    logd("_createOrUpdateView upsert: {}", viewName);
     _durable->upsert(opCtx, viewName, viewDefBuilder.obj());
     _viewMap[viewName.ns()] = view;
 
@@ -335,6 +341,7 @@ Status ViewCatalog::_createOrUpdateView(OperationContext* opCtx,
         opCtx, [&](CollectionCatalog& catalog) { catalog.addResource(viewRid, viewName.ns()); });
 
     opCtx->recoveryUnit()->onRollback([viewName, opCtx, viewRid]() {
+        logd("_createOrUpdateView rollback: {}", viewName);
         CollectionCatalog::write(opCtx, [&](CollectionCatalog& catalog) {
             catalog.removeResource(viewRid, viewName.ns());
         });
@@ -518,6 +525,8 @@ Status ViewCatalog::createView(OperationContext* opCtx,
     invariant(opCtx->lockState()->isCollectionLockedForMode(
         NamespaceString(viewName.db(), NamespaceString::kSystemDotViewsCollectionName), MODE_X));
 
+    logd("createView: {}", viewName);
+
     const auto& catalogStorage = getViewCatalog(db);
     auto catalog = catalogStorage.writer();
 
@@ -613,6 +622,8 @@ Status ViewCatalog::dropView(OperationContext* opCtx,
     invariant(opCtx->lockState()->isCollectionLockedForMode(
         NamespaceString(viewName.db(), NamespaceString::kSystemDotViewsCollectionName), MODE_X));
 
+    logd("dropView: {}", viewName);
+
     const auto& catalogStorage = getViewCatalog(db);
     auto catalog = catalogStorage.writer();
     catalog->_requireValidCatalog();
@@ -658,6 +669,12 @@ Status ViewCatalog::dropView(OperationContext* opCtx,
 
 std::shared_ptr<const ViewDefinition> ViewCatalog::_lookup(
     OperationContext* opCtx, StringData ns, ViewCatalogLookupBehavior lookupBehavior) const {
+
+    auto indexBuildToUUID = [](const auto& indexBuild) { return indexBuild.first; };
+    auto begin = boost::make_transform_iterator(_viewMap.begin(), indexBuildToUUID);
+    auto end = boost::make_transform_iterator(_viewMap.end(), indexBuildToUUID);
+
+    logd("lookup view {} in {}", ns, logv2::seqLog(begin, end));
     ViewMap::const_iterator it = _viewMap.find(ns);
     if (it != _viewMap.end()) {
         return it->second;

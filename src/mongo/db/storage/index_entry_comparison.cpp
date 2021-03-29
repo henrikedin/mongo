@@ -38,6 +38,7 @@
 #include "mongo/db/storage/key_string.h"
 #include "mongo/util/hex.h"
 #include "mongo/util/text.h"
+#include "mongo/util/stacktrace.h"
 
 namespace mongo {
 
@@ -189,6 +190,7 @@ Status buildDupKeyErrorStatus(const BSONObj& key,
                               const std::string& indexName,
                               const BSONObj& keyPattern,
                               const BSONObj& indexCollation) {
+    printStackTrace();
     const bool hasCollation = !indexCollation.isEmpty();
 
     StringBuilder sb;

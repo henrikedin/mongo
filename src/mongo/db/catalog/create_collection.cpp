@@ -122,6 +122,73 @@ Status runWithTransaction(OperationContext* opCtx, std::function<Status(Operatio
     return ret;
 }
 
+class MultiDocumentTransactionBlock {
+public:
+    MultiDocumentTransactionBlock(OperationContext* opCtx);
+    ~MultiDocumentTransactionBlock();
+
+    OperationContext* opCtx() {
+        return asr.opCtx();
+    }
+    void commit();
+
+
+private:
+    AlternativeSessionRegion asr;
+    boost::optional<MongoDOperationContextSession> ocs;
+    bool needAbort = false;
+};
+
+MultiDocumentTransactionBlock::MultiDocumentTransactionBlock(OperationContext* opCtx) : asr(opCtx) {
+    auto* const client = asr.opCtx()->getClient();
+    {
+        stdx::lock_guard<Client> lk(*client);
+        client->setSystemOperationKillableByStepdown(lk);
+    }
+    asr.opCtx()->setAlwaysInterruptAtStepDownOrUp();
+
+    AuthorizationSession::get(client)->grantInternalAuthorization(client);
+    TxnNumber txnNumber = 0;
+    asr.opCtx()->setTxnNumber(txnNumber);
+    asr.opCtx()->setInMultiDocumentTransaction();
+
+    ocs.emplace(asr.opCtx());
+    needAbort = true;
+
+    auto txnParticipant = TransactionParticipant::get(asr.opCtx());
+    txnParticipant.beginOrContinue(asr.opCtx(), txnNumber, false, true);
+    txnParticipant.unstashTransactionResources(asr.opCtx(), "createTimeseriesCollection");
+}
+
+MultiDocumentTransactionBlock::~MultiDocumentTransactionBlock() {
+    if (needAbort) {
+        auto txnParticipant = TransactionParticipant::get(asr.opCtx());
+        try {
+            logd("transaction abort due to throw");
+            txnParticipant.abortTransaction(asr.opCtx());
+        } catch (DBException& e) {
+            LOGV2_WARNING(5490201,
+                          "Failed to abort transaction in AlternativeSessionRegion",
+                          "error"_attr = redact(e));
+        }
+    }
+}
+
+void MultiDocumentTransactionBlock::commit() {
+    auto txnParticipant = TransactionParticipant::get(asr.opCtx());
+    if (txnParticipant.retrieveCompletedTransactionOperations(asr.opCtx()).size() > 0) {
+        // Similar to the `isTimestamped` check in `applyOperation`, we only want to commit the
+        // transaction if we're doing replicated writes.
+        logd("transaction commit");
+        txnParticipant.commitUnpreparedTransaction(asr.opCtx());
+    } else {
+        logd("transaction abort");
+        txnParticipant.abortTransaction(asr.opCtx());
+    }
+    txnParticipant.stashTransactionResources(asr.opCtx());
+    needAbort = false;
+}
+
 void _createSystemDotViewsIfNecessary(OperationContext* opCtx, const Database* db) {
     // Create 'system.views' in a separate WUOW if it does not exist.
     if (!CollectionCatalog::get(opCtx)->lookupCollectionByNamespace(opCtx,
@@ -184,6 +251,12 @@ Status _createView(OperationContext* opCtx,
 Status _createTimeseries(OperationContext* opCtx,
                          const NamespaceString& ns,
                          CollectionOptions&& options) {
+
+    /*while (!IsDebuggerPresent()) {
+        logd("waiting for debugger {}", GetCurrentProcessId());
+        ::Sleep(1000);
+    }*/
+
     auto bucketsNs = ns.makeTimeseriesBucketsNamespace();
 
     options.viewOn = bucketsNs.coll().toString();
@@ -212,8 +285,9 @@ Status _createTimeseries(OperationContext* opCtx,
 
     return writeConflictRetry(opCtx, "create", ns.ns(), [&]() -> Status {
         try {
-
-            return runWithTransaction(opCtx, [&](OperationContext* opCtx) -> Status {
+            //return runWithTransaction(opCtx, [&](OperationContext* opCtx) -> Status {
+            MultiDocumentTransactionBlock mdtb(opCtx);
+            opCtx = mdtb.opCtx();
                 AutoGetCollection autoColl(
                     opCtx, ns, MODE_IX, AutoGetCollectionViewMode::kViewsPermitted);
                 Lock::CollectionLock bucketsCollLock(opCtx, bucketsNs, MODE_IX);
@@ -366,10 +440,10 @@ Status _createTimeseries(OperationContext* opCtx,
                             return ex.toStatus();
                         }
                     }
-                    /*wuow.commit();
+                    wuow.commit();
                 }
                 {
-                    WriteUnitOfWork wuow(opCtx);*/
+                    WriteUnitOfWork wuow(opCtx);
                     // Create the time-series view. Even though 'options' is passed by rvalue
                     // reference, it is not safe to move because 'userCreateNS' may throw a
                     // WriteConflictException.
@@ -383,9 +457,10 @@ Status _createTimeseries(OperationContext* opCtx,
                     wuow.commit();
                 }
 
-
+                mdtb.commit();
                 return Status::OK();
-            });
+            //});
+                
         } catch (...) {
             logd("transaction failed with: {}", exceptionToStatus());
             throw;

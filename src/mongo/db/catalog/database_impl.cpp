@@ -636,7 +636,7 @@ Collection* DatabaseImpl::createCollection(OperationContext* opCtx,
                                            const CollectionOptions& options,
                                            bool createIdIndex,
                                            const BSONObj& idIndex) const {
-    printStackTrace();
+    //printStackTrace();
 
     invariant(!options.isView());
 

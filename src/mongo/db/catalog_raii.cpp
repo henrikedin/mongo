@@ -171,6 +171,12 @@ AutoGetCollection::AutoGetCollection(OperationContext* opCtx,
     }
 
     _view = ViewCatalog::get(db)->lookup(opCtx, _resolvedNss.ns());
+    /*if (!_view && _resolvedNss.ns().find("create_timeseries_collection") != std::string::npos) {
+        while (!IsDebuggerPresent()) {
+            logd("waiting for debugger {}", GetCurrentProcessId());
+            ::Sleep(1000);
+        }
+    }*/
     uassert(ErrorCodes::CommandNotSupportedOnView,
             str::stream() << "Namespace " << _resolvedNss.ns() << " is a timeseries collection",
             !_view || viewMode == AutoGetCollectionViewMode::kViewsPermitted ||

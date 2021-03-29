@@ -76,7 +76,7 @@ var $config = (function() {
     };
 
     return {
-        threadCount: 4,
+        threadCount: 2,
         iterations: 1000,
         data: data,
         states: states,
