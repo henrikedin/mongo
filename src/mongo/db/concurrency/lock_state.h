@@ -36,6 +36,7 @@
 #include "mongo/db/operation_context.h"
 #include "mongo/platform/atomic_word.h"
 #include "mongo/util/concurrency/spin_lock.h"
+#include "mongo/logv2/log_debug.h"
 
 namespace mongo {
 
@@ -118,6 +119,7 @@ public:
     }
 
     void setMaxLockTimeout(Milliseconds maxTimeout) override {
+        logd("setMaxLockTimeout {}", maxTimeout);
         _maxLockTimeout = maxTimeout;
     }
 
@@ -126,6 +128,7 @@ public:
     }
 
     void unsetMaxLockTimeout() override {
+        logd("unsetMaxLockTimeout");
         _maxLockTimeout = boost::none;
     }
 

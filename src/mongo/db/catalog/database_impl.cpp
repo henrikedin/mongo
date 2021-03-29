@@ -79,6 +79,7 @@
 #include "mongo/platform/random.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/fail_point.h"
+#include "mongo/util/stacktrace.h"
 
 namespace mongo {
 namespace {
@@ -635,6 +636,8 @@ Collection* DatabaseImpl::createCollection(OperationContext* opCtx,
                                            const CollectionOptions& options,
                                            bool createIdIndex,
                                            const BSONObj& idIndex) const {
+    printStackTrace();
+
     invariant(!options.isView());
 
     invariant(opCtx->lockState()->isCollectionLockedForMode(nss, MODE_IX));

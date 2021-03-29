@@ -1055,7 +1055,7 @@ void TransactionParticipant::Participant::unstashTransactionResources(OperationC
     // operation performance degradations.
     auto maxTransactionLockMillis = gMaxTransactionLockRequestTimeoutMillis.load();
     if (opCtx->writesAreReplicated() && maxTransactionLockMillis >= 0) {
-        opCtx->lockState()->setMaxLockTimeout(Milliseconds(maxTransactionLockMillis));
+        //opCtx->lockState()->setMaxLockTimeout(Milliseconds(maxTransactionLockMillis));
     }
 
     // On secondaries, max lock timeout must not be set.

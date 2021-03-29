@@ -71,9 +71,8 @@ var $config = (function() {
 
     var transitions = {
         init: {create: 1},
-        create: {insert: 0.8, drop: 0.2},
-        insert: {insert: 0.8, drop: 0.2},
-        drop: {create: 1}
+        create: {insert: 1},
+        insert: {insert: 1}
     };
 
     return {
