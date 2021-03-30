@@ -32,13 +32,26 @@
 namespace mongo {
 
 void ValidateResults::appendToResultObj(BSONObjBuilder* resultObj, bool debugging) const {
+    static constexpr std::size_t kMaxErrorWarningSizeBytes = 2 * 1024 * 1024;
+
     resultObj->appendBool("valid", valid);
     resultObj->appendBool("repaired", repaired);
     if (readTimestamp) {
         resultObj->append("readTimestamp", readTimestamp.get());
     }
-    resultObj->append("warnings", warnings);
-    resultObj->append("errors", errors);
+    std::size_t warningSize = 0;
+    auto warningEnd =
+        std::find_if(warnings.begin(), warnings.end(), [&warningSize](const std::string& elem) {
+            return (warningSize += elem.size()) > kMaxErrorWarningSizeBytes;
+        });
+    resultObj->appendRange("warnings", warnings.begin(), warningEnd);
+
+    std::size_t errorSize = 0;
+    auto errorEnd =
+        std::find_if(errors.begin(), errors.end(), [&errorSize](const std::string& elem) {
+            return (errorSize += elem.size()) > kMaxErrorWarningSizeBytes;
+        });
+    resultObj->appendRange("errors", errors.begin(), errorEnd);
     resultObj->append("extraIndexEntries", extraIndexEntries);
     resultObj->append("missingIndexEntries", missingIndexEntries);
 

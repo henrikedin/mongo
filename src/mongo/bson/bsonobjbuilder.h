@@ -535,6 +535,10 @@ public:
     template <class T>
     Derived& append(StringData fieldName, const std::set<T>& vals);
 
+    /** Append a range of values. */
+    template <class ForwardIterator>
+    Derived& appendRange(StringData fieldName, ForwardIterator begin, ForwardIterator end);
+
     /**
      * Append a map of values as a sub-object.
      * Note: the keys of the map should be StringData-compatible (i.e. strings).
@@ -926,6 +930,9 @@ public:
     template <class T>
     Derived& append(const std::set<T>& vals);
 
+    template <class ForwardIterator>
+    Derived& appendRange(ForwardIterator begin, ForwardIterator end);
+
     // These two just use next position
     auto& subobjStart() {
         return _b.subobjStart(_fieldCount++);
@@ -1054,11 +1061,14 @@ inline Derived& BSONObjBuilderBase<Derived, B>::append(StringData fieldName,
     return static_cast<Derived&>(*this);
 }
 
-template <class Builder, class L>
-inline void _appendIt(Builder& _this, StringData fieldName, const L& vals) {
+template <class Builder, class ForwardIterator>
+inline void _appendIt(Builder& _this,
+                      StringData fieldName,
+                      ForwardIterator begin,
+                      ForwardIterator end) {
     typename std::remove_reference<Builder>::type arrBuilder;
     DecimalCounter<size_t> n;
-    for (typename L::const_iterator i = vals.begin(); i != vals.end(); i++) {
+    for (auto i = begin; i != end; i++) {
         arrBuilder.append(StringData{n}, *i);
         ++n;
     }
@@ -1070,7 +1080,7 @@ template <class T>
 inline Derived& BSONObjBuilderBase<Derived, B>::append(StringData fieldName,
                                                        const std::list<T>& vals) {
     auto& derivedThis = static_cast<Derived&>(*this);
-    _appendIt<Derived, std::list<T>>(derivedThis, fieldName, vals);
+    _appendIt(derivedThis, fieldName, vals.begin(), vals.end());
     return derivedThis;
 }
 
@@ -1079,7 +1089,17 @@ template <class T>
 inline Derived& BSONObjBuilderBase<Derived, B>::append(StringData fieldName,
                                                        const std::set<T>& vals) {
     auto& derivedThis = static_cast<Derived&>(*this);
-    _appendIt<Derived, std::set<T>>(derivedThis, fieldName, vals);
+    _appendIt(derivedThis, fieldName, vals.begin(), vals.end());
+    return derivedThis;
+}
+
+template <class Derived, class B>
+template <class ForwardIterator>
+inline Derived& BSONObjBuilderBase<Derived, B>::appendRange(StringData fieldName,
+                                                            ForwardIterator begin,
+                                                            ForwardIterator end) {
+    auto& derivedThis = static_cast<Derived&>(*this);
+    _appendIt(derivedThis, fieldName, begin, end);
     return derivedThis;
 }
 
@@ -1095,9 +1115,11 @@ inline Derived& BSONObjBuilderBase<Derived, BufBuilderType>::append(StringData f
     return static_cast<Derived&>(*this);
 }
 
-template <class BSONArrayBuilderType, class L>
-inline void _appendArrayIt(BSONArrayBuilderType& arrBuilder, const L& vals) {
-    for (typename L::const_iterator i = vals.begin(); i != vals.end(); i++)
+template <class BSONArrayBuilderType, class ForwardIterator>
+inline void _appendArrayIt(BSONArrayBuilderType& arrBuilder,
+                           ForwardIterator begin,
+                           ForwardIterator end) {
+    for (auto i = begin; i != end; i++)
         arrBuilder.append(*i);
 }
 
@@ -1106,7 +1128,7 @@ template <class T>
 inline Derived& BSONArrayBuilderBase<Derived, BSONObjBuilderType>::append(
     const std::list<T>& vals) {
     auto& derivedThis = static_cast<Derived&>(*this);
-    _appendArrayIt<Derived, std::list<T>>(derivedThis, vals);
+    _appendArrayIt(derivedThis, vals.begin(), vals.end());
     return derivedThis;
 }
 
@@ -1114,7 +1136,16 @@ template <class Derived, class BSONObjBuilderType>
 template <class T>
 inline Derived& BSONArrayBuilderBase<Derived, BSONObjBuilderType>::append(const std::set<T>& vals) {
     auto& derivedThis = static_cast<Derived&>(*this);
-    _appendArrayIt<Derived, std::set<T>>(derivedThis, vals);
+    _appendArrayIt(derivedThis, vals.begin(), vals.end());
+    return derivedThis;
+}
+
+template <class Derived, class BSONObjBuilderType>
+template <class ForwardIterator>
+inline Derived& BSONArrayBuilderBase<Derived, BSONObjBuilderType>::appendRange(
+    ForwardIterator begin, ForwardIterator end) {
+    auto& derivedThis = static_cast<Derived&>(*this);
+    _appendArrayIt(derivedThis, begin, end);
     return derivedThis;
 }
 
