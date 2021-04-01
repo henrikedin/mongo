@@ -293,19 +293,20 @@ private:
          */
         void update(const BSONObj& doc,
                     boost::optional<StringData> metaField,
-                    const StringData::ComparatorInterface* stringComparator,
-                    const std::function<bool(int, int)>& comp);
+                    const StringData::ComparatorInterface* stringComparator);
 
         /**
          * Returns the full min/max object.
          */
-        BSONObj toBSON() const;
+        BSONObj min() const;
+        BSONObj max() const;
 
         /**
          * Returns the updates since the previous time this function was called in the format for
          * an update op.
          */
-        BSONObj getUpdates();
+        BSONObj minUpdates();
+        BSONObj maxUpdates();
 
         /*
          * Returns the approximate memory usage of this MinMax.
@@ -321,34 +322,39 @@ private:
         };
 
         void _update(BSONElement elem,
-                     const StringData::ComparatorInterface* stringComparator,
-                     const std::function<bool(int, int)>& comp);
+                     const StringData::ComparatorInterface* stringComparator);
         void _updateWithMemoryUsage(MinMax* minMax,
                                     BSONElement elem,
-                                    const StringData::ComparatorInterface* stringComparator,
-                                    const std::function<bool(int, int)>& comp);
+                                    const StringData::ComparatorInterface* stringComparator);
 
-        void _append(BSONObjBuilder* builder) const;
-        void _append(BSONArrayBuilder* builder) const;
+        void _appendMin(BSONObjBuilder* builder) const;
+        void _appendMin(BSONArrayBuilder* builder) const;
+        void _appendMax(BSONObjBuilder* builder) const;
+        void _appendMax(BSONArrayBuilder* builder) const;
 
         /*
          * Appends updates, if any, to the builder. Returns whether any updates were appended by
          * this MinMax or any MinMaxes below it.
          */
-        bool _appendUpdates(BSONObjBuilder* builder);
+        bool _appendMinUpdates(BSONObjBuilder* builder);
+        bool _appendMaxUpdates(BSONObjBuilder* builder);
 
         /*
          * Clears the '_updated' flag on this MinMax and all MinMaxes below it.
          */
-        void _clearUpdated();
+        void _clearUpdatedMin();
+        void _clearUpdatedMax();
 
         StringMap<MinMax> _object;
         std::vector<MinMax> _array;
-        BSONObj _value;
+        BSONObj _min;
+        BSONObj _max;
 
-        Type _type = Type::kUnset;
+        Type _typeMin = Type::kUnset;
+        Type _typeMax = Type::kUnset;
 
-        bool _updated = false;
+        bool _updatedMin = false;
+        bool _updatedMax = false;
 
         uint64_t _memoryUsage = 0;
     };
@@ -408,11 +414,8 @@ public:
         // Top-level field names of the measurements that have been inserted into the bucket.
         StringSet _fieldNames;
 
-        // The minimum values for each field in the bucket.
-        MinMax _min;
-
-        // The maximum values for each field in the bucket.
-        MinMax _max;
+        // The minimum and maximum values for each field in the bucket.
+        MinMax _minmax;
 
         // The latest time that has been inserted into the bucket.
         Date_t _latestTime;
