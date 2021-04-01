@@ -207,8 +207,9 @@ Status _createTimeseries(OperationContext* opCtx,
                 });
 
 
-            // Prepare collection option and index spec using the provided options. In case the collection already exist we use
-            // these to validate that they are the same as being requested here.
+            // Prepare collection option and index spec using the provided options. In case the
+            // collection already exist we use these to validate that they are the same as being
+            // requested here.
             CollectionOptions bucketsOptions = options;
             bucketsOptions.validator = validatorObj;
 
