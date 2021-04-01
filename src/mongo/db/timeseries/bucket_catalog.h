@@ -321,8 +321,7 @@ private:
             kUnset,
         };
 
-        void _update(BSONElement elem,
-                     const StringData::ComparatorInterface* stringComparator);
+        void _update(BSONElement elem, const StringData::ComparatorInterface* stringComparator);
         void _updateWithMemoryUsage(MinMax* minMax,
                                     BSONElement elem,
                                     const StringData::ComparatorInterface* stringComparator);

@@ -767,53 +767,53 @@ void BucketCatalog::MinMax::_update(BSONElement elem,
     };
 
     if (elem.type() == Object) {
-        auto less = _min._type == Type::kObject || _min._type == Type::kUnset ||
-            (_min._type == Type::kArray && typeComp(Array) < 0) ||
-            (_min._type == Type::kValue && typeComp(_min._value.firstElement().type()) < 0);
-        auto more = _max._type == Type::kObject || _max._type == Type::kUnset ||
-            (_max._type == Type::kArray && typeComp(Array) > 0) ||
-            (_max._type == Type::kValue && typeComp(_max._value.firstElement().type()) > 0);
-        if (less) {
-            // Compare objects element-wise.
+        auto shouldUpdateObject = [&](Data& data, auto compare) {
+            return data._type == Type::kObject || data._type == Type::kUnset ||
+                (data._type == Type::kArray && compare(typeComp(Array), 0)) ||
+                (data._type == Type::kValue &&
+                 compare(typeComp(data._value.firstElement().type()), 0));
+        };
+        bool updateMin = shouldUpdateObject(_min, std::less<int>{});
+        if (updateMin) {
             if (std::exchange(_min._type, Type::kObject) != Type::kObject) {
                 _min._updated = true;
             }
         }
-        if (more) {
-            // Compare objects element-wise.
+        bool updateMax = shouldUpdateObject(_max, std::greater<int>{});
+        if (updateMax) {
             if (std::exchange(_max._type, Type::kObject) != Type::kObject) {
                 _max._updated = true;
             }
         }
-        if (less || more) {
+
+        if (updateMin || updateMax) {
             for (auto&& subElem : elem.Obj()) {
-                _updateWithMemoryUsage(
-                    &_object[subElem.fieldName()], subElem, stringComparator);
+                _updateWithMemoryUsage(&_object[subElem.fieldName()], subElem, stringComparator);
             }
         }
         return;
     }
 
     if (elem.type() == Array) {
-        auto less = _min._type == Type::kArray || _min._type == Type::kUnset ||
-            (_min._type == Type::kObject && typeComp(Object) < 0) ||
-            (_min._type == Type::kValue && typeComp(_min._value.firstElement().type()) < 0);
-        auto more = _max._type == Type::kArray || _max._type == Type::kUnset ||
-            (_max._type == Type::kObject && typeComp(Object) > 0) ||
-            (_max._type == Type::kValue && typeComp(_max._value.firstElement().type()) > 0);
-        if (less) {
-            // Compare arrays element-wise.
+        auto shouldUpdateArray = [&](Data& data, auto compare) {
+            return data._type == Type::kArray || data._type == Type::kUnset ||
+                (data._type == Type::kObject && compare(typeComp(Object), 0)) ||
+                (data._type == Type::kValue &&
+                 compare(typeComp(data._value.firstElement().type()), 0));
+        };
+        bool updateMin = shouldUpdateArray(_min, std::less<int>{});
+        if (updateMin) {
             if (std::exchange(_min._type, Type::kArray) != Type::kArray) {
                 _min._updated = true;
             }
         }
-        if (more) {
-            // Compare arrays element-wise.
+        bool updateMax = shouldUpdateArray(_max, std::greater<int>{});
+        if (updateMax) {
             if (std::exchange(_max._type, Type::kArray) != Type::kArray) {
                 _max._updated = true;
             }
         }
-        if (less || more) {
+        if (updateMin || updateMax) {
             auto elemArray = elem.Array();
             if (_array.size() < elemArray.size()) {
                 _array.resize(elemArray.size());
@@ -825,28 +825,23 @@ void BucketCatalog::MinMax::_update(BSONElement elem,
         return;
     }
 
-    if (_min._type == Type::kUnset || (_min._type == Type::kObject && typeComp(Object) < 0) ||
-        (_min._type == Type::kArray && typeComp(Array) < 0) ||
-        (_min._type == Type::kValue &&
-         elem.woCompare(_min._value.firstElement(), false, stringComparator) < 0)) {
-        _min._type = Type::kValue;
-        _min._value = elem.wrap();
-        _min._updated = true;
-    } 
-    if (_max._type == Type::kUnset || (_max._type == Type::kObject && typeComp(Object) > 0) ||
-        (_max._type == Type::kArray && typeComp(Array) > 0) ||
-        (_max._type == Type::kValue &&
-         elem.woCompare(_max._value.firstElement(), false, stringComparator) > 0)) {
-        _max._type = Type::kValue;
-        _max._value = elem.wrap();
-        _max._updated = true;
-    }
+    auto tryUpdateValue = [&](Data& data, auto compare) {
+        if (data._type == Type::kUnset ||
+            (data._type == Type::kObject && compare(typeComp(Object), 0)) ||
+            (data._type == Type::kArray && compare(typeComp(Array), 0)) ||
+            (data._type == Type::kValue &&
+             compare(elem.woCompare(data._value.firstElement(), false, stringComparator), 0))) {
+            data._type = Type::kValue;
+            data._value = elem.wrap();
+            data._updated = true;
+        }
+    };
+    tryUpdateValue(_min, std::less<int>{});
+    tryUpdateValue(_max, std::greater<int>{});
 }
 
 void BucketCatalog::MinMax::_updateWithMemoryUsage(
-    MinMax* minMax,
-    BSONElement elem,
-    const StringData::ComparatorInterface* stringComparator) {
+    MinMax* minMax, BSONElement elem, const StringData::ComparatorInterface* stringComparator) {
     _memoryUsage -= minMax->getMemoryUsage();
     minMax->_update(elem, stringComparator);
     _memoryUsage += minMax->getMemoryUsage();
@@ -889,7 +884,7 @@ void BucketCatalog::MinMax::_append(BSONObjBuilder* builder, GetDataFn getData) 
 
 template <typename GetDataFn>
 void BucketCatalog::MinMax::_append(BSONArrayBuilder* builder, GetDataFn getData) const {
-    invariant(getData(*this)._type == Type::kObject);
+    invariant(getData(*this)._type == Type::kArray);
 
     for (const auto& minMax : _array) {
         const Data& data = getData(minMax);
@@ -1020,7 +1015,8 @@ void BucketCatalog::MinMax::_clearUpdated(GetDataFn getData) {
 }
 
 uint64_t BucketCatalog::MinMax::getMemoryUsage() const {
-    return _memoryUsage + _min._value.objsize() + _min._value.objsize() + (sizeof(MinMax) * (_object.size() + _array.size()));
+    return _memoryUsage + _min._value.objsize() + _min._value.objsize() +
+        (sizeof(MinMax) * (_object.size() + _array.size()));
 }
 
 BucketCatalog::WriteBatch::WriteBatch(Bucket* bucket,
@@ -1114,9 +1110,8 @@ void BucketCatalog::WriteBatch::_prepareCommit() {
 
     _bucket->_memoryUsage -= _bucket->_minmax.getMemoryUsage();
     for (const auto& doc : _measurements) {
-        _bucket->_minmax.update(doc,
-                             _bucket->_metadata.getMetaField(),
-                             _bucket->_metadata.getComparator());
+        _bucket->_minmax.update(
+            doc, _bucket->_metadata.getMetaField(), _bucket->_metadata.getComparator());
     }
     _bucket->_memoryUsage += _bucket->_minmax.getMemoryUsage();
 
