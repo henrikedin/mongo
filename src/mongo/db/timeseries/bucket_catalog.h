@@ -347,15 +347,15 @@ private:
 
         StringMap<MinMax> _object;
         std::vector<MinMax> _array;
-        BSONObj _min;
-        BSONObj _max;
 
-        Type _typeMin = Type::kUnset;
-        Type _typeMax = Type::kUnset;
+        struct Data {
+            BSONObj _value;
+            Type _type = Type::kUnset;
+            bool _updated = false;
+        };
 
-        bool _updatedMin = false;
-        bool _updatedMax = false;
-
+        Data _min;
+        Data _max;
         uint64_t _memoryUsage = 0;
     };
 
