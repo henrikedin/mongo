@@ -327,23 +327,23 @@ private:
                                     BSONElement elem,
                                     const StringData::ComparatorInterface* stringComparator);
 
-        void _appendMin(BSONObjBuilder* builder) const;
-        void _appendMin(BSONArrayBuilder* builder) const;
-        void _appendMax(BSONObjBuilder* builder) const;
-        void _appendMax(BSONArrayBuilder* builder) const;
+        template <typename GetDataFn>
+        void _append(BSONObjBuilder* builder, GetDataFn getData) const;
+        template <typename GetDataFn>
+        void _append(BSONArrayBuilder* builder, GetDataFn getData) const;
 
         /*
          * Appends updates, if any, to the builder. Returns whether any updates were appended by
          * this MinMax or any MinMaxes below it.
          */
-        bool _appendMinUpdates(BSONObjBuilder* builder);
-        bool _appendMaxUpdates(BSONObjBuilder* builder);
+        template <typename GetDataFn>
+        bool _appendUpdates(BSONObjBuilder* builder, GetDataFn getData);
 
         /*
          * Clears the '_updated' flag on this MinMax and all MinMaxes below it.
          */
-        void _clearUpdatedMin();
-        void _clearUpdatedMax();
+        template <typename GetDataFn>
+        void _clearUpdated(GetDataFn getData);
 
         StringMap<MinMax> _object;
         std::vector<MinMax> _array;
@@ -352,6 +352,24 @@ private:
             BSONObj _value;
             Type _type = Type::kUnset;
             bool _updated = false;
+        };
+
+        struct GetMin {
+            Data& operator()(MinMax& minmax) const {
+                return minmax._min;
+            }
+            const Data& operator()(const MinMax& minmax) const {
+                return minmax._min;
+            }
+        };
+
+        struct GetMax {
+            Data& operator()(MinMax& minmax) const {
+                return minmax._max;
+            }
+            const Data& operator()(const MinMax& minmax) const {
+                return minmax._max;
+            }
         };
 
         Data _min;
