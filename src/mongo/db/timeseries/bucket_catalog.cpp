@@ -756,7 +756,7 @@ void BucketCatalog::MinMax::update(const BSONObj& doc,
         if (metaField && elem.fieldNameStringData() == metaField) {
             continue;
         }
-        _updateWithMemoryUsage(&_object[elem.fieldName()], elem, stringComparator);
+        _updateWithMemoryUsage(&_object[elem.fieldNameStringData()], elem, stringComparator);
     }
 }
 
@@ -788,7 +788,7 @@ void BucketCatalog::MinMax::_update(BSONElement elem,
 
         if (updateMin || updateMax) {
             for (auto&& subElem : elem.Obj()) {
-                _updateWithMemoryUsage(&_object[subElem.fieldName()], subElem, stringComparator);
+                _updateWithMemoryUsage(&_object[subElem.fieldNameStringData()], subElem, stringComparator);
             }
         }
         return;
