@@ -752,7 +752,6 @@ void BucketCatalog::MinMax::Data::set(const BSONElement& elem) {
     _value[1] = '\0';
     memcpy(_value.get() + 2, elem.rawdata() + elem.fieldNameSize() + 1, elem.valuesize());
     _totalSize = requiredSize;
-    _elemType = elem.type();
 }
 
 BSONElement BucketCatalog::MinMax::Data::value() const {
@@ -760,8 +759,7 @@ BSONElement BucketCatalog::MinMax::Data::value() const {
 }
 
 BSONType BucketCatalog::MinMax::Data::elemType() const {
-    //return (BSONType)_value[0];
-    return _elemType;
+    return (BSONType)_value[0];
 }
 
 void BucketCatalog::MinMax::update(const BSONObj& doc,

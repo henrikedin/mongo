@@ -352,8 +352,6 @@ private:
             BSONElement value() const;
             BSONType elemType() const;
 
-            BSONType _elemType = BSONType::EOO;
-
             std::unique_ptr<char[]> _value;
             int _totalSize = 0;
 
