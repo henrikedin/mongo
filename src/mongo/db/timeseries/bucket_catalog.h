@@ -352,9 +352,9 @@ private:
             BSONElement value() const;
 
             std::unique_ptr<char[]> _value;
-            int _fieldNameSize;
-            int _totalSize;
-            BSONType _elemType;
+            int _fieldNameSize = 0;
+            int _totalSize = 0;
+            BSONType _elemType = BSONType::EOO;
             
             Type _type = Type::kUnset;
             bool _updated = false;
