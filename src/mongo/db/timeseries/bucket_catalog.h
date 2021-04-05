@@ -348,7 +348,14 @@ private:
         std::vector<MinMax> _array;
 
         struct Data {
-            BSONObj _value;
+            void set(const BSONElement& elem);
+            BSONElement value() const;
+
+            std::unique_ptr<char[]> _value;
+            int _fieldNameSize;
+            int _totalSize;
+            BSONType _elemType;
+            
             Type _type = Type::kUnset;
             bool _updated = false;
         };

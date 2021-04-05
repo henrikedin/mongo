@@ -743,6 +743,20 @@ Date_t BucketCatalog::BucketAccess::getTime() const {
     return _bucket->id().asDateT();
 }
 
+void BucketCatalog::MinMax::Data::set(const BSONElement& elem) {
+    if (_totalSize < elem.size()) {
+        _value = std::make_unique<char[]>(elem.size());
+    }
+    memcpy(_value.get(), elem.rawdata(), elem.size());
+    _totalSize = elem.size();
+    _fieldNameSize = elem.fieldNameSize();
+    _elemType = elem.type();
+}
+
+BSONElement BucketCatalog::MinMax::Data::value() const {
+    return BSONElement(_value.get(), _fieldNameSize, _totalSize, BSONElement::CachedSizeTag{});
+}
+
 void BucketCatalog::MinMax::update(const BSONObj& doc,
                                    boost::optional<StringData> metaField,
                                    const StringData::ComparatorInterface* stringComparator) {
@@ -771,7 +785,7 @@ void BucketCatalog::MinMax::_update(BSONElement elem,
             return data._type == Type::kObject || data._type == Type::kUnset ||
                 (data._type == Type::kArray && compare(typeComp(Array), 0)) ||
                 (data._type == Type::kValue &&
-                 compare(typeComp(data._value.firstElement().type()), 0));
+                 compare(typeComp(data._elemType), 0));
         };
         bool updateMin = shouldUpdateObject(_min, std::less<int>{});
         if (updateMin) {
@@ -799,7 +813,7 @@ void BucketCatalog::MinMax::_update(BSONElement elem,
             return data._type == Type::kArray || data._type == Type::kUnset ||
                 (data._type == Type::kObject && compare(typeComp(Object), 0)) ||
                 (data._type == Type::kValue &&
-                 compare(typeComp(data._value.firstElement().type()), 0));
+                 compare(typeComp(data._elemType), 0));
         };
         bool updateMin = shouldUpdateArray(_min, std::less<int>{});
         if (updateMin) {
@@ -830,9 +844,9 @@ void BucketCatalog::MinMax::_update(BSONElement elem,
             (data._type == Type::kObject && compare(typeComp(Object), 0)) ||
             (data._type == Type::kArray && compare(typeComp(Array), 0)) ||
             (data._type == Type::kValue &&
-             compare(elem.woCompare(data._value.firstElement(), false, stringComparator), 0))) {
+             compare(elem.woCompare(data.value(), false, stringComparator), 0))) {
             data._type = Type::kValue;
-            data._value = elem.wrap();
+            data.set(elem);
             data._updated = true;
         }
     };
@@ -877,7 +891,7 @@ void BucketCatalog::MinMax::_append(BSONObjBuilder* builder, GetDataFn getData) 
             BSONArrayBuilder subArr(builder->subarrayStart(minMax.first));
             minMax.second._append(&subArr, getData);
         } else {
-            builder->append(data._value.firstElement());
+            builder->append(data.value());
         }
     }
 }
@@ -896,7 +910,7 @@ void BucketCatalog::MinMax::_append(BSONArrayBuilder* builder, GetDataFn getData
             BSONArrayBuilder subArr(builder->subarrayStart());
             minMax._append(&subArr, getData);
         } else {
-            builder->append(data._value.firstElement());
+            builder->append(data.value());
         }
     }
 }
@@ -938,7 +952,7 @@ bool BucketCatalog::MinMax::_appendUpdates(BSONObjBuilder* builder, GetDataFn ge
                     BSONArrayBuilder subArr(updateSection.subarrayStart(minMax.first));
                     minMax.second._append(&subArr, getData);
                 } else {
-                    updateSection.append(subdata._value.firstElement());
+                    updateSection.append(subdata.value());
                 }
                 minMax.second._clearUpdated(getData);
                 appended = true;
@@ -976,7 +990,7 @@ bool BucketCatalog::MinMax::_appendUpdates(BSONObjBuilder* builder, GetDataFn ge
                     BSONArrayBuilder subArr(builder->subarrayStart(updateFieldName));
                     minMax._append(&subArr, getData);
                 } else {
-                    builder->appendAs(subdata._value.firstElement(), updateFieldName);
+                    builder->appendAs(subdata.value(), updateFieldName);
                 }
                 minMax._clearUpdated(getData);
                 appended = true;
@@ -1015,7 +1029,7 @@ void BucketCatalog::MinMax::_clearUpdated(GetDataFn getData) {
 }
 
 uint64_t BucketCatalog::MinMax::getMemoryUsage() const {
-    return _memoryUsage + _min._value.objsize() + _min._value.objsize() +
+    return _memoryUsage + _min._totalSize + _min._totalSize +
         (sizeof(MinMax) * (_object.size() + _array.size()));
 }
 
