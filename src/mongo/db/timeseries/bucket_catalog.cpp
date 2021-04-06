@@ -32,6 +32,7 @@
 #include "mongo/db/timeseries/bucket_catalog.h"
 
 #include <algorithm>
+#include <boost/iterator/transform_iterator.hpp>
 
 #include "mongo/db/catalog/database_holder.h"
 #include "mongo/db/commands/server_status.h"
@@ -53,15 +54,60 @@ uint8_t numDigits(uint32_t num) {
 }
 
 void normalizeObject(BSONObjBuilder* builder, const BSONObj& obj) {
-    BSONObjIteratorSorted iter(obj);
-    while (iter.more()) {
-        auto elem = iter.next();
+    // BSONObjIteratorSorted provides an abstraction similar to what this function does. However it
+    // is using a lexical comparison that is slower than just doing a binary comparison of the field
+    // names. That is all we need here as we are looking to create something that is binary
+    // comparable no matter of field order provided by the user.
+
+    // Helper that extracts the necessary data from a BSONElement that we can sort and re-construct
+    // the same BSONElement from.
+    struct Field {
+        BSONElement element() const {
+            return BSONElement(fieldName.rawData() - 1,  // Include type byte before field name
+                               fieldName.size() + 1,     // Include null terminator after field name
+                               valueSize,
+                               BSONElement::CachedSizeTag{});
+        }
+        bool operator<(const Field& rhs) const {
+            return fieldName < rhs.fieldName;
+        }
+        StringData fieldName;
+        int valueSize;
+    };
+
+    // Helper to normalize an element. Performs recursion if needed
+    auto normalizeElement = [&builder](const BSONElement& elem) {
         if (elem.type() != BSONType::Object) {
             builder->append(elem);
         } else {
             BSONObjBuilder subObject(builder->subobjStart(elem.fieldNameStringData()));
             normalizeObject(&subObject, elem.Obj());
         }
+    };
+
+    auto num = obj.nFields();
+    if (num == 0) {
+        // Nothing to do
+        return;
+    }
+    if (num == 1) {
+        // We don't need to allocate a separate buffer and sort
+        normalizeElement(obj.firstElement());
+        return;
+    }
+    // Put all elements in a buffer, sort it and then continue normalize in sorted order
+    auto fields = std::make_unique<Field[]>(num);
+    BSONObjIterator bsonIt(obj);
+    int i = 0;
+    while (bsonIt.more()) {
+        auto elem = bsonIt.next();
+        fields[i++] = {elem.fieldNameStringData(), elem.valuesize()};
+    }
+    auto it = fields.get();
+    auto end = fields.get() + num;
+    std::sort(it, end);
+    for (; it != end; ++it) {
+        normalizeElement(it->element());
     }
 }
 
@@ -108,7 +154,7 @@ StatusWith<std::shared_ptr<BucketCatalog::WriteBatch>> BucketCatalog::insert(
     BSONObjBuilder metadata;
     if (auto metaField = options.getMetaField()) {
         if (auto elem = doc[*metaField]) {
-            metadata.appendAs(elem, *metaField);
+            metadata.append(elem);
         } else {
             metadata.appendNull(*metaField);
         }
@@ -129,7 +175,7 @@ StatusWith<std::shared_ptr<BucketCatalog::WriteBatch>> BucketCatalog::insert(
 
     BucketAccess bucket{this, key, stats.get(), time};
 
-    StringSet newFieldNamesToBeInserted;
+    std::vector<StringMapHashedKey> newFieldNamesToBeInserted;
     uint32_t newFieldNamesSize = 0;
     uint32_t sizeToBeAdded = 0;
     bucket->_calculateBucketFieldsAndSizeChange(doc,
@@ -552,24 +598,32 @@ const OID& BucketCatalog::Bucket::id() const {
 void BucketCatalog::Bucket::_calculateBucketFieldsAndSizeChange(
     const BSONObj& doc,
     boost::optional<StringData> metaField,
-    StringSet* newFieldNamesToBeInserted,
+    std::vector<StringMapHashedKey>* newFieldNamesToBeInserted,
     uint32_t* newFieldNamesSize,
     uint32_t* sizeToBeAdded) const {
+    // BSON size for an object with an empty object field where field name is empty string.
+    // We can use this as an offset to know the size when we have real field names.
+    static constexpr int emptyObjSize = 11;
+    // Validate in debug builds that this size is correct
+    dassert(emptyObjSize == BSON("" << BSONObj()).objsize());
+
     newFieldNamesToBeInserted->clear();
     *newFieldNamesSize = 0;
     *sizeToBeAdded = 0;
     auto numMeasurementsFieldLength = numDigits(_numMeasurements);
     for (const auto& elem : doc) {
-        if (elem.fieldNameStringData() == metaField) {
+        auto fieldName = elem.fieldNameStringData();
+        if (fieldName == metaField) {
             // Ignore the metadata field since it will not be inserted.
             continue;
         }
 
         // If the field name is new, add the size of an empty object with that field name.
-        if (!_fieldNames.contains(elem.fieldName())) {
-            newFieldNamesToBeInserted->insert(elem.fieldName());
+        auto hashedKey = StringSet::hasher().hashed_key(fieldName);
+        if (!_fieldNames.contains(hashedKey)) {
+            newFieldNamesToBeInserted->push_back(hashedKey);
             *newFieldNamesSize += elem.fieldNameSize();
-            *sizeToBeAdded += BSON(elem.fieldName() << BSONObj()).objsize();
+            *sizeToBeAdded += emptyObjSize + fieldName.size();
         }
 
         // Add the element size, taking into account that the name will be changed to its
@@ -1088,7 +1142,7 @@ const BSONObj& BucketCatalog::WriteBatch::max() const {
     return _max;
 }
 
-const StringSet& BucketCatalog::WriteBatch::newFieldNamesToBeInserted() const {
+const StringMap<std::size_t>& BucketCatalog::WriteBatch::newFieldNamesToBeInserted() const {
     invariant(!_active);
     return _newFieldNamesToBeInserted;
 }
@@ -1107,11 +1161,15 @@ bool BucketCatalog::WriteBatch::finished() const {
 }
 
 BSONObj BucketCatalog::WriteBatch::toBSON() const {
+    auto toFieldName = [](const auto& nameHashPair) { return nameHashPair.first; };
     return BSON("docs" << _measurements << "bucketMin" << _min << "bucketMax" << _max
                        << "numCommittedMeasurements" << int(_numPreviouslyCommittedMeasurements)
                        << "newFieldNamesToBeInserted"
-                       << std::set<std::string>(_newFieldNamesToBeInserted.begin(),
-                                                _newFieldNamesToBeInserted.end()));
+                       << std::set<std::string>(
+                              boost::make_transform_iterator(_newFieldNamesToBeInserted.begin(),
+                                                             toFieldName),
+                              boost::make_transform_iterator(_newFieldNamesToBeInserted.end(),
+                                                             toFieldName)));
 }
 
 void BucketCatalog::WriteBatch::_addMeasurement(const BSONObj& doc) {
@@ -1119,9 +1177,11 @@ void BucketCatalog::WriteBatch::_addMeasurement(const BSONObj& doc) {
     _measurements.push_back(doc);
 }
 
-void BucketCatalog::WriteBatch::_recordNewFields(StringSet&& fields) {
+void BucketCatalog::WriteBatch::_recordNewFields(std::vector<StringMapHashedKey>&& fields) {
     invariant(_active);
-    _newFieldNamesToBeInserted.merge(fields);
+    for (auto&& field : fields) {
+        _newFieldNamesToBeInserted[field] = field.hash();
+    }
 }
 
 void BucketCatalog::WriteBatch::_prepareCommit() {
@@ -1132,14 +1192,16 @@ void BucketCatalog::WriteBatch::_prepareCommit() {
 
     // Filter out field names that were new at the time of insertion, but have since been committed
     // by someone else.
-    StringSet newFieldNamesToBeInserted;
-    for (auto& fieldName : _newFieldNamesToBeInserted) {
-        if (!_bucket->_fieldNames.contains(fieldName)) {
-            _bucket->_fieldNames.insert(fieldName);
-            newFieldNamesToBeInserted.insert(std::move(fieldName));
+    for (auto it = _newFieldNamesToBeInserted.begin(); it != _newFieldNamesToBeInserted.end();) {
+        StringMapHashedKey fieldName(it->first, it->second);
+        if (_bucket->_fieldNames.contains(fieldName)) {
+            _newFieldNamesToBeInserted.erase(it++);
+            continue;
         }
+
+        _bucket->_fieldNames.emplace(fieldName);
+        ++it;
     }
-    _newFieldNamesToBeInserted = std::move(newFieldNamesToBeInserted);
 
     _bucket->_memoryUsage -= _bucket->_minmax.getMemoryUsage();
     for (const auto& doc : _measurements) {

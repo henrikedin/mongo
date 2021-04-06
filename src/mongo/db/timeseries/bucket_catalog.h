@@ -95,7 +95,7 @@ public:
         const std::vector<BSONObj>& measurements() const;
         const BSONObj& min() const;
         const BSONObj& max() const;
-        const StringSet& newFieldNamesToBeInserted() const;
+        const StringMap<std::size_t>& newFieldNamesToBeInserted() const;
         uint32_t numPreviouslyCommittedMeasurements() const;
 
         /**
@@ -119,7 +119,7 @@ public:
         /**
          * Record a set of new-to-the-bucket fields. Active batches only.
          */
-        void _recordNewFields(StringSet&& fields);
+        void _recordNewFields(std::vector<StringMapHashedKey>&& fields);
 
         /**
          * Prepare the batch for commit. Sets min/max appropriately, records the number of documents
@@ -149,7 +149,7 @@ public:
         BSONObj _min;  // Batch-local min; full if first batch, updates otherwise.
         BSONObj _max;  // Batch-local max; full if first batch, updates otherwise.
         uint32_t _numPreviouslyCommittedMeasurements;
-        StringSet _newFieldNamesToBeInserted;
+        StringMap<std::size_t> _newFieldNamesToBeInserted;
 
         bool _active = true;
 
@@ -274,7 +274,7 @@ private:
         template <typename H>
         friend H AbslHashValue(H h, const BucketMetadata& metadata) {
             return H::combine(std::move(h),
-                              std::hash<std::string_view>()(std::string_view(
+                              absl::Hash<absl::string_view>()(absl::string_view(
                                   metadata._sorted.objdata(), metadata._sorted.objsize())));
         }
 
@@ -471,11 +471,12 @@ public:
          * to overflow, we will create a new bucket and recalculate the change to the bucket size
          * and data fields.
          */
-        void _calculateBucketFieldsAndSizeChange(const BSONObj& doc,
-                                                 boost::optional<StringData> metaField,
-                                                 StringSet* newFieldNamesToBeInserted,
-                                                 uint32_t* newFieldNamesSize,
-                                                 uint32_t* sizeToBeAdded) const;
+        void _calculateBucketFieldsAndSizeChange(
+            const BSONObj& doc,
+            boost::optional<StringData> metaField,
+            std::vector<StringMapHashedKey>* newFieldNamesToBeInserted,
+            uint32_t* newFieldNamesSize,
+            uint32_t* sizeToBeAdded) const;
 
         /**
          * Returns whether BucketCatalog::commit has been called at least once on this bucket.
