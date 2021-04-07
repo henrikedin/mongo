@@ -175,7 +175,8 @@ StatusWith<std::shared_ptr<BucketCatalog::WriteBatch>> BucketCatalog::insert(
 
     BucketAccess bucket{this, key, stats.get(), time};
 
-    std::vector<StringMapHashedKey> newFieldNamesToBeInserted;
+    boost::container::small_vector<StringMapHashedKey, kNumStaticNewFields>
+        newFieldNamesToBeInserted;
     uint32_t newFieldNamesSize = 0;
     uint32_t sizeToBeAdded = 0;
     bucket->_calculateBucketFieldsAndSizeChange(doc,
@@ -598,7 +599,8 @@ const OID& BucketCatalog::Bucket::id() const {
 void BucketCatalog::Bucket::_calculateBucketFieldsAndSizeChange(
     const BSONObj& doc,
     boost::optional<StringData> metaField,
-    std::vector<StringMapHashedKey>* newFieldNamesToBeInserted,
+    boost::container::small_vector<StringMapHashedKey, kNumStaticNewFields>*
+        newFieldNamesToBeInserted,
     uint32_t* newFieldNamesSize,
     uint32_t* sizeToBeAdded) const {
     // BSON size for an object with an empty object field where field name is empty string.
@@ -1177,7 +1179,8 @@ void BucketCatalog::WriteBatch::_addMeasurement(const BSONObj& doc) {
     _measurements.push_back(doc);
 }
 
-void BucketCatalog::WriteBatch::_recordNewFields(std::vector<StringMapHashedKey>&& fields) {
+void BucketCatalog::WriteBatch::_recordNewFields(
+    boost::container::small_vector<StringMapHashedKey, kNumStaticNewFields>&& fields) {
     invariant(_active);
     for (auto&& field : fields) {
         _newFieldNamesToBeInserted[field] = field.hash();

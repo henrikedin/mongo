@@ -29,6 +29,7 @@
 
 #pragma once
 
+#include <boost/container/small_vector.hpp>
 #include <queue>
 
 #include "mongo/bson/unordered_fields_bsonobj_comparator.h"
@@ -44,6 +45,8 @@ namespace mongo {
 class BucketCatalog {
     struct ExecutionStats;
     class MinMax;
+
+    static constexpr std::size_t kNumStaticNewFields = 10;
 
 public:
     class Bucket;
@@ -119,7 +122,8 @@ public:
         /**
          * Record a set of new-to-the-bucket fields. Active batches only.
          */
-        void _recordNewFields(std::vector<StringMapHashedKey>&& fields);
+        void _recordNewFields(
+            boost::container::small_vector<StringMapHashedKey, kNumStaticNewFields>&& fields);
 
         /**
          * Prepare the batch for commit. Sets min/max appropriately, records the number of documents
@@ -474,7 +478,8 @@ public:
         void _calculateBucketFieldsAndSizeChange(
             const BSONObj& doc,
             boost::optional<StringData> metaField,
-            std::vector<StringMapHashedKey>* newFieldNamesToBeInserted,
+            boost::container::small_vector<StringMapHashedKey, kNumStaticNewFields>*
+                newFieldNamesToBeInserted,
             uint32_t* newFieldNamesSize,
             uint32_t* sizeToBeAdded) const;
 
