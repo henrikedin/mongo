@@ -77,12 +77,7 @@ void normalizeObject(BSONObjBuilder* builder, const BSONObj& obj) {
 
     // Helper to normalize an element. Performs recursion if needed
     auto normalizeElement = [&builder](const BSONElement& elem) {
-        if (elem.type() != BSONType::Object) {
-            builder->append(elem);
-        } else {
-            BSONObjBuilder subObject(builder->subobjStart(elem.fieldNameStringData()));
-            normalizeObject(&subObject, elem.Obj());
-        }
+        
     };
 
     auto num = obj.nFields();
@@ -109,7 +104,13 @@ void normalizeObject(BSONObjBuilder* builder, const BSONObj& obj) {
     auto end = fields.end();
     std::sort(it, end);
     for (; it != end; ++it) {
-        normalizeElement(it->element());
+        auto elem = it->element();
+        if (elem.type() != BSONType::Object) {
+            builder->append(elem);
+        } else {
+            BSONObjBuilder subObject(builder->subobjStart(elem.fieldNameStringData()));
+            normalizeObject(&subObject, elem.Obj());
+        }
     }
 }
 
