@@ -75,8 +75,27 @@ void normalizeObject(BSONObjBuilder* builder, const BSONObj& obj) {
         int totalSize;
     };
 
-    // Put all elements in a buffer, sort it and then continue normalize in sorted order
+    // Helper to normalize an element. Performs recursion if needed
+    auto normalizeElement = [&builder](const BSONElement& elem) {
+        if (elem.type() != BSONType::Object) {
+            builder->append(elem);
+        } else {
+            BSONObjBuilder subObject(builder->subobjStart(elem.fieldNameStringData()));
+            normalizeObject(&subObject, elem.Obj());
+        }
+    };
+
     auto num = obj.nFields();
+    if (num == 0) {
+        // Nothing to do
+        return;
+    }
+    if (num == 1) {
+        // We don't need to allocate a separate buffer and sort
+        normalizeElement(obj.firstElement());
+        return;
+    }
+    // Put all elements in a buffer, sort it and then continue normalize in sorted order
     static constexpr std::size_t kNumStaticElements = 16;
     boost::container::small_vector<Field, kNumStaticElements> fields;
     fields.reserve(num);
@@ -85,13 +104,7 @@ void normalizeObject(BSONObjBuilder* builder, const BSONObj& obj) {
     });
     std::sort(fields.begin(), fields.end());
     for (auto&& field : fields) {
-        auto elem = field.element();
-        if (elem.type() != BSONType::Object) {
-            builder->append(elem);
-        } else {
-            BSONObjBuilder subObject(builder->subobjStart(elem.fieldNameStringData()));
-            normalizeObject(&subObject, elem.Obj());
-        }
+        normalizeElement(field.element());
     }
 }
 
