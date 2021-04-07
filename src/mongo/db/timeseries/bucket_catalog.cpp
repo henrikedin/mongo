@@ -65,14 +65,14 @@ void normalizeObject(BSONObjBuilder* builder, const BSONObj& obj) {
         BSONElement element() const {
             return BSONElement(fieldName.rawData() - 1,  // Include type byte before field name
                                fieldName.size() + 1,     // Include null terminator after field name
-                               valueSize,
+                               totalSize,
                                BSONElement::CachedSizeTag{});
         }
         bool operator<(const Field& rhs) const {
             return fieldName < rhs.fieldName;
         }
         StringData fieldName;
-        int valueSize;
+        int totalSize;
     };
 
     // Helper to normalize an element. Performs recursion if needed
@@ -101,7 +101,7 @@ void normalizeObject(BSONObjBuilder* builder, const BSONObj& obj) {
     int i = 0;
     while (bsonIt.more()) {
         auto elem = bsonIt.next();
-        fields[i++] = {elem.fieldNameStringData(), elem.valuesize()};
+        fields[i++] = {elem.fieldNameStringData(), elem.size()};
     }
     auto it = fields.get();
     auto end = fields.get() + num;
