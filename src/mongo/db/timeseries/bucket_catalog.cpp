@@ -561,6 +561,8 @@ BucketCatalog::BucketMetadata::BucketMetadata(BSONObj&& obj,
                                               const StringData::ComparatorInterface* comparator)
     : _metadata(obj), _comparator(comparator) {
     BSONObjBuilder objBuilder;
+    // We will get an object of equal size, just with reordered fields.
+    objBuilder.bb().reserveBytes(obj.objsize());
     normalizeObject(&objBuilder, _metadata);
     _sorted = objBuilder.obj();
 }
