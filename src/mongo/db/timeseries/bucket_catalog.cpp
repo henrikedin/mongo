@@ -97,29 +97,28 @@ void normalizeObject(BSONObjBuilder* builder, const BSONObj& obj) {
     }
     // Put all elements in a buffer, sort it and then continue normalize in sorted order
     boost::container::small_vector<Field, 16> fields;
-    fields.resize(num);
-    /*fields.reserve(num);
+    fields.reserve(num);
     std::transform(obj.begin(), obj.end(), std::back_inserter(fields), [](const BSONElement& elem) {
         return Field{elem.fieldNameStringData(), elem.size()};
     });
     std::sort(fields.begin(), fields.end());
     for (auto&& field : fields) {
         normalizeElement(field.element());
-    }*/
+    }
 
-    /*auto fields = std::make_unique<Field[]>(num);*/
+    /*auto fields = std::make_unique<Field[]>(num);
     BSONObjIterator bsonIt(obj);
     int i = 0;
     while (bsonIt.more()) {
         auto elem = bsonIt.next();
         fields[i++] = {elem.fieldNameStringData(), elem.size()};
     }
-    auto it = fields.begin();
-    auto end = fields.end();
+    auto it = fields.get();
+    auto end = fields.get() + num;
     std::sort(it, end);
     for (; it != end; ++it) {
         normalizeElement(it->element());
-    }
+    }*/
 }
 
 UUID getLsid(OperationContext* opCtx, BucketCatalog::CombineWithInsertsFromOtherClients combine) {
