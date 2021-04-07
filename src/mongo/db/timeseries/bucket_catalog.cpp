@@ -75,25 +75,11 @@ void normalizeObject(BSONObjBuilder* builder, const BSONObj& obj) {
         int totalSize;
     };
 
-    // Helper to normalize an element. Performs recursion if needed
-    auto normalizeElement = [&builder](const BSONElement& elem) {
-        
-    };
-
-    auto num = obj.nFields();
     // Put all elements in a buffer, sort it and then continue normalize in sorted order
-    boost::container::small_vector<Field, 16> fields;
+    auto num = obj.nFields();
+    static constexpr std::size_t kNumStaticFields = 16;
+    boost::container::small_vector<Field, kNumStaticFields> fields;
     fields.resize(num);
-    /*fields.reserve(num);
-    std::transform(obj.begin(), obj.end(), std::back_inserter(fields), [](const BSONElement& elem) {
-        return Field{elem.fieldNameStringData(), elem.size()};
-    });
-    std::sort(fields.begin(), fields.end());
-    for (auto&& field : fields) {
-        normalizeElement(field.element());
-    }*/
-
-    /*auto fields = std::make_unique<Field[]>(num);*/
     BSONObjIterator bsonIt(obj);
     int i = 0;
     while (bsonIt.more()) {
