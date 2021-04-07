@@ -86,15 +86,6 @@ void normalizeObject(BSONObjBuilder* builder, const BSONObj& obj) {
     };
 
     auto num = obj.nFields();
-    if (num == 0) {
-        // Nothing to do
-        return;
-    }
-    if (num == 1) {
-        // We don't need to allocate a separate buffer and sort
-        normalizeElement(obj.firstElement());
-        return;
-    }
     // Put all elements in a buffer, sort it and then continue normalize in sorted order
     boost::container::small_vector<Field, 16> fields;
     fields.resize(num);
