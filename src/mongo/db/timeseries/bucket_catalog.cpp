@@ -605,7 +605,7 @@ void BucketCatalog::Bucket::_calculateBucketFieldsAndSizeChange(
     uint32_t* sizeToBeAdded) const {
     // BSON size for an object with an empty object field where field name is empty string.
     // We can use this as an offset to know the size when we have real field names.
-    static constexpr int emptyObjSize = 11;
+    static constexpr int emptyObjSize = 12;
     // Validate in debug builds that this size is correct
     dassert(emptyObjSize == BSON("" << BSONObj()).objsize());
 
