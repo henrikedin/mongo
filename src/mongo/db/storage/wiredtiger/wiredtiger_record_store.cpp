@@ -1029,7 +1029,7 @@ int64_t WiredTigerRecordStore::freeStorageSize(OperationContext* opCtx) const {
 RecordData WiredTigerRecordStore::_getData(const WiredTigerCursor& cursor) const {
     WT_ITEM value;
     invariantWTOK(cursor->get_value(cursor.get(), &value));
-    return RecordData(static_cast<const char*>(value.data), value.size).getOwned();
+    return RecordData(static_cast<const char*>(value.data), value.size);
 }
 
 bool WiredTigerRecordStore::findRecord(OperationContext* opCtx,
