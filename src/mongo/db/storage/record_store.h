@@ -340,7 +340,7 @@ public:
         if (!record)
             return false;
 
-        record->data.makeOwned();  // Unowned data expires when cursor goes out of scope.
+        //record->data.makeOwned();  // Unowned data expires when cursor goes out of scope.
         *out = std::move(record->data);
         return true;
     }
