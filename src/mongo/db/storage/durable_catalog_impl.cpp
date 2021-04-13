@@ -601,7 +601,7 @@ BSONObj DurableCatalogImpl::_findEntry(OperationContext* opCtx, RecordId catalog
         return BSONObj();
     }
 
-    return data.releaseToBson().getOwned();
+    return data.releaseToBson();
 }
 
 BSONCollectionCatalogEntry::MetaData DurableCatalogImpl::getMetaData(OperationContext* opCtx,
