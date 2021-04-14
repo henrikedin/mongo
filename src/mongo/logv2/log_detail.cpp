@@ -163,19 +163,24 @@ void doLogImpl(int32_t id,
     }
 }
 
+std::string doFormatImpl(StringData message, TypeErasedAttributeStorage const& attrs) {
+    UnstructuredValueExtractor extractor;
+    extractor.args.reserve(attrs.size());
+    attrs.apply(extractor);
+    return fmt::vformat(
+        to_string_view(message),
+        fmt::basic_format_args<fmt::format_context>(extractor.args.data(), extractor.args.size()));
+}
+
 void doUnstructuredLogImpl(LogSeverity const& severity,  // NOLINT
                            LogOptions const& options,
                            StringData message,
                            TypeErasedAttributeStorage const& attrs) {
-
-    UnstructuredValueExtractor extractor;
-    extractor.args.reserve(attrs.size());
-    attrs.apply(extractor);
-    auto formatted = fmt::vformat(
-        to_string_view(message),
-        fmt::basic_format_args<fmt::format_context>(extractor.args.data(), extractor.args.size()));
-
-    doLogImpl(0, severity, options, formatted, TypeErasedAttributeStorage());
+    doLogImpl(constants::kUnstructuredLogID,
+              severity,
+              options,
+              doFormatImpl(message, attrs),
+              TypeErasedAttributeStorage());
 }
 
 }  // namespace mongo::logv2::detail

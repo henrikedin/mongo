@@ -1746,11 +1746,29 @@ TEST_F(LogV2Test, UserAssert) {
                              });
 }
 
-class UnstructuredLoggingTest : public LogV2JsonBsonTest {};
+class UnstructuredLoggingTest : public LogV2JsonBsonTest {
+public:
+    using LogV2JsonBsonTest::LogV2JsonBsonTest;
+
+    template <typename... Args>
+    void log(StringData message, const Args&... args) {
+        logd(message, args...);  // NOLINT
+        auto formatted = format(message, args...);
+
+        // logd() and format() should produce the same string
+        ASSERT_EQ(plain.back(), formatted);
+
+        // We can loop the string through the logger again unchanged. i.e. no escaping is performed.
+        logd("{}", formatted);  // NOLINT
+        ASSERT_EQ(plain.back(), formatted);
+    }
+
+    LineCapture plain = makeLineCapture(PlainFormatter());
+};
 
 TEST_F(UnstructuredLoggingTest, NoArgs) {
     std::string message = "no arguments";
-    logd(message);  // NOLINT
+    log(message);
     validate([&message](const BSONObj& obj) {
         ASSERT_EQUALS(obj.getField(kMessageFieldName).String(), message);
     });
@@ -1758,7 +1776,7 @@ TEST_F(UnstructuredLoggingTest, NoArgs) {
 
 TEST_F(UnstructuredLoggingTest, Args) {
     std::string format_str = "format {} str {} fields";
-    logd(format_str, 1, "str");  // NOLINT
+    log(format_str, 1, "str");
     validate([&format_str](const BSONObj& obj) {
         ASSERT_EQUALS(obj.getField(kMessageFieldName).String(), fmt::format(format_str, 1, "str"));
     });
@@ -1769,7 +1787,7 @@ TEST_F(UnstructuredLoggingTest, ArgsLikeFormatSpecifier) {
     startCapturingLogMessages();
 
     std::string format_str = "format {} str {} fields";
-    logd(format_str, 1, "{ x : 1}");  // NOLINT
+    log(format_str, 1, "{ x : 1}");
     validate([&format_str](const BSONObj& obj) {
         ASSERT_EQUALS(obj.getField(kMessageFieldName).String(),
                       fmt::format(format_str, 1, "{ x : 1}"));
@@ -1778,7 +1796,7 @@ TEST_F(UnstructuredLoggingTest, ArgsLikeFormatSpecifier) {
 
 TEST_F(UnstructuredLoggingTest, ManyArgs) {
     std::string format_str = "{}{}{}{}{}{}{}{}{}{}{}";
-    logd(format_str, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11);  // NOLINT
+    log(format_str, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11);
     validate([&format_str](const BSONObj& obj) {
         ASSERT_EQUALS(obj.getField(kMessageFieldName).String(),
                       fmt::format(format_str, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11));
@@ -1787,7 +1805,7 @@ TEST_F(UnstructuredLoggingTest, ManyArgs) {
 
 TEST_F(UnstructuredLoggingTest, UserToString) {
     TypeWithoutBSON arg(1.0, 2.0);
-    logd("{}", arg);  // NOLINT
+    log("{}", arg);
     validate([&arg](const BSONObj& obj) {
         ASSERT_EQUALS(obj.getField(kMessageFieldName).String(), arg.toString());
     });
@@ -1800,7 +1818,7 @@ TEST_F(UnstructuredLoggingTest, UserToBSON) {
         }
     };
     TypeWithOnlyBSON arg;
-    logd("{}", arg);  // NOLINT
+    log("{}", arg);
     validate([&arg](const BSONObj& obj) {
         ASSERT_EQUALS(obj.getField(kMessageFieldName).String(), arg.toBSON().toString());
     });
@@ -1808,7 +1826,7 @@ TEST_F(UnstructuredLoggingTest, UserToBSON) {
 
 TEST_F(UnstructuredLoggingTest, UserBothStringAndBSON) {
     TypeWithBSON arg(1.0, 2.0);
-    logd("{}", arg);  // NOLINT
+    log("{}", arg);
     validate([&arg](const BSONObj& obj) {
         ASSERT_EQUALS(obj.getField(kMessageFieldName).String(), arg.toString());
     });
@@ -1819,7 +1837,7 @@ TEST_F(UnstructuredLoggingTest, VectorBSON) {
                                             << "str2"),
                                        BSON("str3"
                                             << "str4")};
-    logd("{}", vectorBSON);  // NOLINT
+    log("{}", vectorBSON);
     validate([&vectorBSON](const BSONObj& obj) {
         ASSERT_EQUALS(obj.getField(kMessageFieldName).String(),
                       "({\"str1\":\"str2\"}, {\"str3\":\"str4\"})");
@@ -1833,7 +1851,7 @@ TEST_F(UnstructuredLoggingTest, MapBSON) {
                                               {"key2",
                                                BSON("str3"
                                                     << "str4")}};
-    logd("{}", mapBSON);  // NOLINT
+    log("{}", mapBSON);
     validate([&mapBSON](const BSONObj& obj) {
         ASSERT_EQUALS(obj.getField(kMessageFieldName).String(),
                       "(key1: {\"str1\":\"str2\"}, key2: {\"str3\":\"str4\"})");

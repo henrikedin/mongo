@@ -154,7 +154,7 @@ void PlainFormatter::operator()(boost::log::record_view const& rec,
 
     // Log messages logged via logd are already formatted and have the id == 0
     if (attrs.empty()) {
-        if (extract<int32_t>(attributes::id(), rec).get() == 0) {
+        if (extract<int32_t>(attributes::id(), rec).get() == constants::kUnstructuredLogID) {
             buffer.append(message.rawData(), message.rawData() + message.size());
 
             return;

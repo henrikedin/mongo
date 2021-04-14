@@ -36,7 +36,7 @@
 #include "mongo/logv2/log_detail.h"
 
 namespace mongo {
-namespace logv2::logd_detail {
+namespace logv2::detail {
 
 // We want to provide unique names even though we are not using the names.
 template <std::size_t I>
@@ -50,13 +50,22 @@ constexpr auto attrName = fmt::string_view{attrNameData<N>.data(), attrNameData<
 template <std::size_t... Is, typename... Args>
 void logd(std::index_sequence<Is...>, StringData message, const Args&... args) {  // NOLINT
     using attrType = fmt::internal::udl_arg<char>;
-    auto attributes = detail::makeAttributeStorage((attrType{attrName<Is>} = args)...);
-    detail::doUnstructuredLogImpl(LogSeverity::Log(),  // NOLINT
-                                  LogOptions{LogComponent::kDefault},
-                                  message,
-                                  attributes);
+    auto attributes = makeAttributeStorage((attrType{attrName<Is>} = args)...);
+    doUnstructuredLogImpl(LogSeverity::Log(),  // NOLINT
+                          LogOptions{LogComponent::kDefault},
+                          message,
+                          attributes);
 }
-}  // namespace logv2::logd_detail
+
+template <std::size_t... Is, typename... Args>
+std::string format(std::index_sequence<Is...>, StringData message, const Args&... args) {
+    using attrType = fmt::internal::udl_arg<char>;
+    auto attributes = makeAttributeStorage((attrType{attrName<Is>} = args)...);
+
+    return doFormatImpl(message, attributes);
+}
+
+}  // namespace logv2::detail
 
 /**
  * Prototype-only unstructured logging, not allowed to commit to master
@@ -65,8 +74,23 @@ void logd(std::index_sequence<Is...>, StringData message, const Args&... args) {
  * Will emit a log with a single formatted string as "msg", and no attributes.
  */
 template <typename... Args>
-void logd(StringData message, const Args&... args) {                                 // NOLINT
-    logv2::logd_detail::logd(std::index_sequence_for<Args...>{}, message, args...);  // NOLINT
+void logd(StringData message, const Args&... args) {                            // NOLINT
+    logv2::detail::logd(std::index_sequence_for<Args...>{}, message, args...);  // NOLINT
 }
 
+namespace logv2 {
+/**
+ * Prototype-only unstructured logging based formatting
+ *
+ * Formats like logd() above but returns the result as a string. Useful for creating unstructured
+ * hierachies of loggable objects.
+ *
+ * Not built for performance and will be slower than other types of formatting (ostream, fmt).
+ * Should be used for convenience during prototyping.
+ */
+template <typename... Args>
+std::string format(StringData message, const Args&... args) {
+    return detail::format(std::index_sequence_for<Args...>{}, message, args...);
+}
+}  // namespace logv2
 }  // namespace mongo

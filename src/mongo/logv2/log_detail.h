@@ -53,6 +53,8 @@ void doUnstructuredLogImpl(LogSeverity const& severity,  // NOLINT
                            StringData message,
                            TypeErasedAttributeStorage const& attrs);
 
+std::string doFormatImpl(StringData message, TypeErasedAttributeStorage const& attrs);
+
 
 // doLogUnpacked overloads require the arguments to be flattened attributes
 template <typename S, typename... Args>
