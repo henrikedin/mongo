@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kCommand
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kCommand
 
 #include "mongo/platform/basic.h"
 
@@ -49,7 +49,7 @@
 #include "mongo/db/s/database_sharding_state.h"
 #include "mongo/db/service_context.h"
 #include "mongo/db/views/view_catalog.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/visit_helper.h"
 
 namespace mongo {
@@ -289,7 +289,7 @@ void assertMovePrimaryInProgress(OperationContext* opCtx, const NamespaceString&
             auto mpsm = dss->getMovePrimarySourceManager(dssLock);
 
             if (mpsm) {
-                LOGV2(4976500, "assertMovePrimaryInProgress", "namespace"_attr = ns.toString());
+                LOG(4976500, "assertMovePrimaryInProgress", "namespace"_attr = ns.toString());
 
                 uasserted(ErrorCodes::MovePrimaryInProgress,
                           "movePrimary is in progress for namespace " + ns.toString());
@@ -297,7 +297,7 @@ void assertMovePrimaryInProgress(OperationContext* opCtx, const NamespaceString&
         }
     } catch (const DBException& ex) {
         if (ex.toStatus() != ErrorCodes::MovePrimaryInProgress) {
-            LOGV2(4976501, "Error when getting collection description", "what"_attr = ex.what());
+            LOG(4976501, "Error when getting collection description", "what"_attr = ex.what());
             return;
         }
         throw;
@@ -320,17 +320,17 @@ DropIndexesReply dropIndexes(OperationContext* opCtx,
     const NamespaceStringOrUUID dbAndUUID = {nss.db().toString(), collectionUUID};
     uassertStatusOK(checkReplState(opCtx, dbAndUUID, collection->getCollection()));
     if (!serverGlobalParams.quiet.load()) {
-        LOGV2(51806,
-              "CMD: dropIndexes",
-              "namespace"_attr = nss,
-              "uuid"_attr = collectionUUID,
-              "indexes"_attr = stdx::visit(
-                  visit_helper::Overloaded{[](const std::string& arg) { return arg; },
-                                           [](const std::vector<std::string>& arg) {
-                                               return boost::algorithm::join(arg, ",");
-                                           },
-                                           [](const BSONObj& arg) { return arg.toString(); }},
-                  index));
+        LOG(51806,
+            "CMD: dropIndexes",
+            "namespace"_attr = nss,
+            "uuid"_attr = collectionUUID,
+            "indexes"_attr = stdx::visit(
+                visit_helper::Overloaded{[](const std::string& arg) { return arg; },
+                                         [](const std::vector<std::string>& arg) {
+                                             return boost::algorithm::join(arg, ",");
+                                         },
+                                         [](const BSONObj& arg) { return arg.toString(); }},
+                index));
     }
 
     DropIndexesReply reply;
@@ -364,7 +364,7 @@ DropIndexesReply dropIndexes(OperationContext* opCtx,
             abortedIndexBuilders.end(), justAborted.begin(), justAborted.end());
 
         if (MONGO_unlikely(hangAfterAbortingIndexes.shouldFail())) {
-            LOGV2(4731900, "Hanging on hangAfterAbortingIndexes fail point");
+            LOG(4731900, "Hanging on hangAfterAbortingIndexes fail point");
             hangAfterAbortingIndexes.pauseWhileSet();
         }
 
@@ -481,10 +481,10 @@ Status dropIndexesForApplyOps(OperationContext* opCtx,
         }
 
         if (!serverGlobalParams.quiet.load()) {
-            LOGV2(20344,
-                  "CMD: dropIndexes",
-                  "namespace"_attr = nss,
-                  "indexes"_attr = cmdObj[kIndexFieldName].toString(false));
+            LOG(20344,
+                "CMD: dropIndexes",
+                "namespace"_attr = nss,
+                "indexes"_attr = cmdObj[kIndexFieldName].toString(false));
         }
 
         IndexBuildsCoordinator::get(opCtx)->assertNoIndexBuildInProgForCollection(

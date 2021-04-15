@@ -39,7 +39,7 @@
 #include "mongo/bson/bsonelement.h"
 #include "mongo/bson/bsonmisc.h"
 #include "mongo/bson/bsonobj.h"
-#include "mongo/logv2/log_attr.h"
+#include "mongo/log/log_attr.h"
 
 namespace mongo {
 

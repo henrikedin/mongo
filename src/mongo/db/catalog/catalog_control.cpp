@@ -26,10 +26,10 @@
  *    exception statement from all source files in the program, then also delete
  *    it in the license file.
  */
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kStorage
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kStorage
 
-#define LOGV2_FOR_RECOVERY(ID, DLEVEL, MESSAGE, ...) \
-    LOGV2_DEBUG_OPTIONS(ID, DLEVEL, {logv2::LogComponent::kStorageRecovery}, MESSAGE, ##__VA_ARGS__)
+#define LOG_FOR_RECOVERY(ID, DLEVEL, MESSAGE, ...) \
+    LOG_DEBUG_OPTIONS(ID, DLEVEL, {log::LogComponent::kStorageRecovery}, MESSAGE, ##__VA_ARGS__)
 
 #include "mongo/platform/basic.h"
 
@@ -43,7 +43,7 @@
 #include "mongo/db/index_builds_coordinator.h"
 #include "mongo/db/namespace_string.h"
 #include "mongo/db/rebuild_indexes.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace mongo {
 namespace catalog {
@@ -70,12 +70,12 @@ MinVisibleTimestampMap closeCatalog(OperationContext* opCtx) {
 
             // If there's a minimum visible, invariant there's also a UUID.
             if (minVisible) {
-                LOGV2_DEBUG(20269,
-                            1,
-                            "closeCatalog: preserving min visible timestamp.",
-                            "coll_ns"_attr = coll->ns(),
-                            "uuid"_attr = coll->uuid(),
-                            "minVisible"_attr = minVisible);
+                LOG_DEBUG(20269,
+                          1,
+                          "closeCatalog: preserving min visible timestamp.",
+                          "coll_ns"_attr = coll->ns(),
+                          "uuid"_attr = coll->uuid(),
+                          "minVisible"_attr = minVisible);
                 minVisibleTimestampMap[coll->uuid()] = *minVisible;
             }
         }
@@ -93,14 +93,14 @@ MinVisibleTimestampMap closeCatalog(OperationContext* opCtx) {
     CollectionCatalog::write(opCtx,
                              [&](CollectionCatalog& catalog) { catalog.onCloseCatalog(opCtx); });
 
-    LOGV2_DEBUG(20270, 1, "closeCatalog: closing collection catalog");
+    LOG_DEBUG(20270, 1, "closeCatalog: closing collection catalog");
 
     // Close all databases.
-    LOGV2(20271, "closeCatalog: closing all databases");
+    LOG(20271, "closeCatalog: closing all databases");
     databaseHolder->closeAll(opCtx);
 
     // Close the storage engine's catalog.
-    LOGV2(20272, "closeCatalog: closing storage engine catalog");
+    LOG(20272, "closeCatalog: closing storage engine catalog");
     opCtx->getServiceContext()->getStorageEngine()->closeCatalog(opCtx);
 
     reopenOnFailure.dismiss();
@@ -113,14 +113,14 @@ void openCatalog(OperationContext* opCtx,
     invariant(opCtx->lockState()->isW());
 
     // Load the catalog in the storage engine.
-    LOGV2(20273, "openCatalog: loading storage engine catalog");
+    LOG(20273, "openCatalog: loading storage engine catalog");
     auto storageEngine = opCtx->getServiceContext()->getStorageEngine();
     // Ignore orphaned idents because this function is used during rollback and not at
     // startup recovery, when we may try to recover orphaned idents.
     auto loadingFromUncleanShutdown = false;
     storageEngine->loadCatalog(opCtx, loadingFromUncleanShutdown);
 
-    LOGV2(20274, "openCatalog: reconciling catalog and idents");
+    LOG(20274, "openCatalog: reconciling catalog and idents");
     // Retain unknown internal idents because this function is used during rollback and not at
     // startup recovery, when we may drop unknown internal idents.
     auto internalIdentReconcilePolicy = StorageEngine::InternalIdentReconcilePolicy::kRetain;
@@ -165,11 +165,11 @@ void openCatalog(OperationContext* opCtx,
         invariant(collection, str::stream() << "couldn't get collection " << collNss.toString());
 
         for (const auto& indexName : entry.second.first) {
-            LOGV2(20275,
-                  "openCatalog: rebuilding index: collection: {collNss}, index: {indexName}",
-                  "openCatalog: rebuilding index",
-                  "namespace"_attr = collNss.toString(),
-                  "index"_attr = indexName);
+            LOG(20275,
+                "openCatalog: rebuilding index: collection: {collNss}, index: {indexName}",
+                "openCatalog: rebuilding index",
+                "namespace"_attr = collNss.toString(),
+                "index"_attr = indexName);
         }
 
         std::vector<BSONObj> indexSpecs = entry.second.second;
@@ -184,12 +184,11 @@ void openCatalog(OperationContext* opCtx,
         opCtx, reconcileResult.indexBuildsToRestart, reconcileResult.indexBuildsToResume);
 
     // Open all databases and repopulate the CollectionCatalog.
-    LOGV2(20276, "openCatalog: reopening all databases");
+    LOG(20276, "openCatalog: reopening all databases");
     auto databaseHolder = DatabaseHolder::get(opCtx);
     std::vector<std::string> databasesToOpen = storageEngine->listDatabases();
     for (auto&& dbName : databasesToOpen) {
-        LOGV2_FOR_RECOVERY(
-            23992, 1, "openCatalog: dbholder reopening database", "db"_attr = dbName);
+        LOG_FOR_RECOVERY(23992, 1, "openCatalog: dbholder reopening database", "db"_attr = dbName);
         auto db = databaseHolder->openDb(opCtx, dbName);
         invariant(db, str::stream() << "failed to reopen database " << dbName);
         for (auto&& collNss : catalog->getAllCollectionNamesFromDb(opCtx, dbName)) {
@@ -218,7 +217,7 @@ void openCatalog(OperationContext* opCtx,
             // If this is the oplog collection, re-establish the replication system's cached pointer
             // to the oplog.
             if (collNss.isOplog()) {
-                LOGV2(20277, "openCatalog: updating cached oplog pointer");
+                LOG(20277, "openCatalog: updating cached oplog pointer");
                 collection->establishOplogCollectionForLogging(opCtx);
             }
         }
@@ -229,7 +228,7 @@ void openCatalog(OperationContext* opCtx,
     CollectionCatalog::write(opCtx,
                              [&](CollectionCatalog& catalog) { catalog.onOpenCatalog(opCtx); });
     opCtx->getServiceContext()->incrementCatalogGeneration();
-    LOGV2(20278, "openCatalog: finished reloading collection catalog");
+    LOG(20278, "openCatalog: finished reloading collection catalog");
 }
 
 }  // namespace catalog

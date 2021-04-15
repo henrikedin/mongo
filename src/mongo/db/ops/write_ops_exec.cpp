@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kWrite
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kWrite
 
 #include "mongo/platform/basic.h"
 
@@ -76,7 +76,7 @@
 #include "mongo/db/transaction_participant.h"
 #include "mongo/db/update/path_support.h"
 #include "mongo/db/write_concern.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/s/would_change_owning_shard_exception.h"
 #include "mongo/util/fail_point.h"
@@ -128,18 +128,18 @@ void finishCurOp(OperationContext* opCtx, CurOp* curOp) {
                     curOp->getReadWriteType());
 
         if (!curOp->debug().errInfo.isOK()) {
-            LOGV2_DEBUG(20886,
-                        3,
-                        "Caught Assertion in finishCurOp. Op: {operation}, error: {error}",
-                        "Caught Assertion in finishCurOp",
-                        "operation"_attr = redact(logicalOpToString(curOp->getLogicalOp())),
-                        "error"_attr = curOp->debug().errInfo.toString());
+            LOG_DEBUG(20886,
+                      3,
+                      "Caught Assertion in finishCurOp. Op: {operation}, error: {error}",
+                      "Caught Assertion in finishCurOp",
+                      "operation"_attr = redact(logicalOpToString(curOp->getLogicalOp())),
+                      "error"_attr = curOp->debug().errInfo.toString());
         }
 
         // Mark the op as complete, and log it if appropriate. Returns a boolean indicating whether
         // this op should be sampled for profiling.
         const bool shouldProfile =
-            curOp->completeAndLogOperation(opCtx, MONGO_LOGV2_DEFAULT_COMPONENT);
+            curOp->completeAndLogOperation(opCtx, MONGO_LOG_DEFAULT_COMPONENT);
 
         if (shouldProfile) {
             // Stash the current transaction so that writes to the profile collection are not
@@ -151,10 +151,10 @@ void finishCurOp(OperationContext* opCtx, CurOp* curOp) {
         // We need to ignore all errors here. We don't want a successful op to fail because of a
         // failure to record stats. We also don't want to replace the error reported for an op that
         // is failing.
-        LOGV2(20887,
-              "Ignoring error from finishCurOp: {error}",
-              "Ignoring error from finishCurOp",
-              "error"_attr = redact(ex));
+        LOG(20887,
+            "Ignoring error from finishCurOp: {error}",
+            "Ignoring error from finishCurOp",
+            "error"_attr = redact(ex));
     }
 }
 
@@ -178,11 +178,11 @@ public:
             // guard to fire in that case. Operations on the local DB aren't replicated, so they
             // don't need to bump the lastOp.
             replClientInfo().setLastOpToSystemLastOpTimeIgnoringInterrupt(_opCtx);
-            LOGV2_DEBUG(20888,
-                        5,
-                        "Set last op to system time: {timestamp}",
-                        "Set last op to system time",
-                        "timestamp"_attr = replClientInfo().getLastOp().getTimestamp());
+            LOG_DEBUG(20888,
+                      5,
+                      "Set last op to system time: {timestamp}",
+                      "Set last op to system time",
+                      "timestamp"_attr = replClientInfo().getLastOp().getTimestamp());
         }
     }
 
@@ -395,12 +395,12 @@ bool insertBatchAndHandleErrors(OperationContext* opCtx,
         opCtx,
         "hangDuringBatchInsert",
         [&wholeOp]() {
-            LOGV2(20889,
-                  "Batch insert - hangDuringBatchInsert fail point enabled for namespace "
-                  "{namespace}. Blocking until fail point is disabled",
-                  "Batch insert - hangDuringBatchInsert fail point enabled for a namespace. "
-                  "Blocking until fail point is disabled",
-                  "namespace"_attr = wholeOp.getNamespace());
+            LOG(20889,
+                "Batch insert - hangDuringBatchInsert fail point enabled for namespace "
+                "{namespace}. Blocking until fail point is disabled",
+                "Batch insert - hangDuringBatchInsert fail point enabled for a namespace. "
+                "Blocking until fail point is disabled",
+                "namespace"_attr = wholeOp.getNamespace());
         },
         wholeOp.getNamespace());
 
@@ -684,12 +684,12 @@ static SingleWriteResult performSingleUpdateOp(OperationContext* opCtx,
         opCtx,
         "hangDuringBatchUpdate",
         [&ns]() {
-            LOGV2(20890,
-                  "Batch update - hangDuringBatchUpdate fail point enabled for namespace "
-                  "{namespace}. Blocking until fail point is disabled",
-                  "Batch update - hangDuringBatchUpdate fail point enabled for a namespace. "
-                  "Blocking until fail point is disabled",
-                  "namespace"_attr = ns);
+            LOG(20890,
+                "Batch update - hangDuringBatchUpdate fail point enabled for namespace "
+                "{namespace}. Blocking until fail point is disabled",
+                "Batch update - hangDuringBatchUpdate fail point enabled for a namespace. "
+                "Blocking until fail point is disabled",
+                "namespace"_attr = ns);
         },
         ns);
 
@@ -827,8 +827,8 @@ static SingleWriteResult performSingleUpdateOpWithDupKeyRetry(
             }
 
             logAndBackoff(4640402,
-                          ::mongo::logv2::LogComponent::kWrite,
-                          logv2::LogSeverity::Debug(1),
+                          ::mongo::log::LogComponent::kWrite,
+                          log::LogSeverity::Debug(1),
                           numAttempts,
                           "Caught DuplicateKey exception during upsert",
                           "namespace"_attr = ns.ns());
@@ -960,9 +960,9 @@ static SingleWriteResult performSingleDeleteOp(OperationContext* opCtx,
 
     CurOpFailpointHelpers::waitWhileFailPointEnabled(
         &hangDuringBatchRemove, opCtx, "hangDuringBatchRemove", []() {
-            LOGV2(20891,
-                  "Batch remove - hangDuringBatchRemove fail point enabled. Blocking until fail "
-                  "point is disabled");
+            LOG(20891,
+                "Batch remove - hangDuringBatchRemove fail point enabled. Blocking until fail "
+                "point is disabled");
         });
     if (MONGO_unlikely(failAllRemoves.shouldFail())) {
         uasserted(ErrorCodes::InternalError, "failAllRemoves failpoint active!");

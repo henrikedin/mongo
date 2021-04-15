@@ -29,7 +29,7 @@
 
 // CHECK_LOG_REDACTION
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kDefault
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kDefault
 
 #include "mongo/platform/basic.h"
 
@@ -50,7 +50,7 @@
 #include "mongo/db/profile_filter.h"
 #include "mongo/db/query/getmore_request.h"
 #include "mongo/db/query/plan_summary_stats.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/metadata/client_metadata.h"
 #include "mongo/rpc/metadata/impersonated_user_metadata.h"
 #include "mongo/transport/service_executor.h"
@@ -403,11 +403,11 @@ void CurOp::setGenericOpRequestDetails(OperationContext* opCtx,
 
 void CurOp::setMessage_inlock(StringData message) {
     if (_progressMeter.isActive()) {
-        LOGV2_ERROR(20527,
-                    "Changing message from {old} to {new}",
-                    "Updating message",
-                    "old"_attr = redact(_message),
-                    "new"_attr = redact(message));
+        LOG_ERROR(20527,
+                  "Changing message from {old} to {new}",
+                  "Updating message",
+                  "old"_attr = redact(_message),
+                  "new"_attr = redact(message));
         verify(!_progressMeter.isActive());
     }
     _message = message.toString();  // copy
@@ -484,7 +484,7 @@ void CurOp::raiseDbProfileLevel(int dbProfileLevel) {
 static constexpr size_t appendMaxElementSize = 50 * 1024;
 
 bool CurOp::completeAndLogOperation(OperationContext* opCtx,
-                                    logv2::LogComponent component,
+                                    log::LogComponent component,
                                     boost::optional<size_t> responseLength,
                                     boost::optional<long long> slowMsOverride,
                                     bool forceLog) {
@@ -546,7 +546,7 @@ bool CurOp::completeAndLogOperation(OperationContext* opCtx,
                 if (lk.isLocked()) {
                     _debug.storageStats = opCtx->recoveryUnit()->getOperationStatistics();
                 } else {
-                    LOGV2_WARNING_OPTIONS(
+                    LOG_WARNING_OPTIONS(
                         20525,
                         {component},
                         "Failed to gather storage statistics for {opId} due to {reason}",
@@ -555,7 +555,7 @@ bool CurOp::completeAndLogOperation(OperationContext* opCtx,
                         "error"_attr = "lock acquire timeout"_sd);
                 }
             } catch (const ExceptionForCat<ErrorCategory::Interruption>& ex) {
-                LOGV2_WARNING_OPTIONS(
+                LOG_WARNING_OPTIONS(
                     20526,
                     {component},
                     "Failed to gather storage statistics for {opId} due to {reason}",
@@ -579,11 +579,11 @@ bool CurOp::completeAndLogOperation(OperationContext* opCtx,
             return nullptr;
         }();
 
-        logv2::DynamicAttributes attr;
+        log::DynamicAttributes attr;
         _debug.report(
             opCtx, (lockerInfo ? &lockerInfo->stats : nullptr), operationMetricsPtr, &attr);
 
-        LOGV2_OPTIONS(51803, {component}, "Slow query", attr);
+        LOG_OPTIONS(51803, {component}, "Slow query", attr);
 
         _checkForFailpointsAfterCommandLogged();
     }
@@ -612,15 +612,15 @@ void CurOp::_checkForFailpointsAfterCommandLogged() {
     auto cmdName = getCommand()->getName();
     if (cmdName == kPrepareTransactionCmdName) {
         if (MONGO_unlikely(waitForPrepareTransactionCommandLogged.shouldFail())) {
-            LOGV2(31481, "waitForPrepareTransactionCommandLogged failpoint enabled");
+            LOG(31481, "waitForPrepareTransactionCommandLogged failpoint enabled");
         }
     } else if (cmdName == kHelloCmdName) {
         if (MONGO_unlikely(waitForHelloCommandLogged.shouldFail())) {
-            LOGV2(31482, "waitForHelloCommandLogged failpoint enabled");
+            LOG(31482, "waitForHelloCommandLogged failpoint enabled");
         }
     } else if (cmdName == kIsMasterCmdName) {
         if (MONGO_unlikely(waitForIsMasterCommandLogged.shouldFail())) {
-            LOGV2(31483, "waitForIsMasterCommandLogged failpoint enabled");
+            LOG(31483, "waitForIsMasterCommandLogged failpoint enabled");
         }
     }
 }
@@ -985,7 +985,7 @@ string OpDebug::report(OperationContext* opCtx, const SingleThreadedLockStats* l
 void OpDebug::report(OperationContext* opCtx,
                      const SingleThreadedLockStats* lockStats,
                      const ResourceConsumption::OperationMetrics* operationMetrics,
-                     logv2::DynamicAttributes* pAttrs) const {
+                     log::DynamicAttributes* pAttrs) const {
     Client* client = opCtx->getClient();
     auto& curop = *CurOp::get(opCtx);
     auto flowControlStats = opCtx->lockState()->getFlowControlStats();
@@ -1737,7 +1737,7 @@ string OpDebug::AdditiveMetrics::report() const {
     return s.str();
 }
 
-void OpDebug::AdditiveMetrics::report(logv2::DynamicAttributes* pAttrs) const {
+void OpDebug::AdditiveMetrics::report(log::DynamicAttributes* pAttrs) const {
     OPDEBUG_TOATTR_HELP_OPTIONAL("keysExamined", keysExamined);
     OPDEBUG_TOATTR_HELP_OPTIONAL("docsExamined", docsExamined);
     OPDEBUG_TOATTR_HELP_OPTIONAL("nMatched", nMatched);

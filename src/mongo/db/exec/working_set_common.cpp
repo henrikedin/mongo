@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kQuery
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kQuery
 
 #include "mongo/platform/basic.h"
 
@@ -43,7 +43,7 @@
 #include "mongo/db/service_context.h"
 #include "mongo/db/storage/execution_context.h"
 #include "mongo/db/storage/index_entry_comparison.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace mongo {
 
@@ -105,15 +105,15 @@ bool WorkingSetCommon::fetch(OperationContext* opCtx,
                 builder.append("pattern"_sd, ikd.indexKeyPattern);
                 return builder.obj();
             };
-            LOGV2_ERROR_OPTIONS(
+            LOG_ERROR_OPTIONS(
                 4615603,
-                {logv2::UserAssertAfterLog(ErrorCodes::DataCorruptionDetected)},
+                {log::UserAssertAfterLog(ErrorCodes::DataCorruptionDetected)},
                 "Erroneous index key found with reference to non-existent record id. Consider "
                 "dropping and then re-creating the index and then running the validate command "
                 "on the collection.",
                 "namespace"_attr = ns,
                 "recordId"_attr = member->recordId,
-                "indexKeyData"_attr = logv2::seqLog(
+                "indexKeyData"_attr = log::seqLog(
                     boost::make_transform_iterator(member->keyData.begin(), indexKeyEntryToObjFn),
                     boost::make_transform_iterator(member->keyData.end(), indexKeyEntryToObjFn)));
         }

@@ -27,14 +27,14 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kQuery
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kQuery
 
 #include "mongo/platform/basic.h"
 
 #include "mongo/db/exec/plan_cache_util.h"
 
 #include "mongo/db/query/explain.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace mongo::plan_cache_util {
 namespace log_detail {
@@ -43,30 +43,30 @@ void logTieForBest(std::string&& query,
                    double runnerUpScore,
                    std::string winnerPlanSummary,
                    std::string runnerUpPlanSummary) {
-    LOGV2_DEBUG(20594,
-                1,
-                "Winning plan tied with runner-up, skip caching",
-                "query"_attr = redact(query),
-                "winnerScore"_attr = winnerScore,
-                "winnerPlanSummary"_attr = winnerPlanSummary,
-                "runnerUpScore"_attr = runnerUpScore,
-                "runnerUpPlanSummary"_attr = runnerUpPlanSummary);
+    LOG_DEBUG(20594,
+              1,
+              "Winning plan tied with runner-up, skip caching",
+              "query"_attr = redact(query),
+              "winnerScore"_attr = winnerScore,
+              "winnerPlanSummary"_attr = winnerPlanSummary,
+              "runnerUpScore"_attr = runnerUpScore,
+              "runnerUpPlanSummary"_attr = runnerUpPlanSummary);
 }
 
 void logNotCachingZeroResults(std::string&& query, double score, std::string winnerPlanSummary) {
-    LOGV2_DEBUG(20595,
-                1,
-                "Winning plan had zero results, skip caching",
-                "query"_attr = redact(query),
-                "winnerScore"_attr = score,
-                "winnerPlanSummary"_attr = winnerPlanSummary);
+    LOG_DEBUG(20595,
+              1,
+              "Winning plan had zero results, skip caching",
+              "query"_attr = redact(query),
+              "winnerScore"_attr = score,
+              "winnerPlanSummary"_attr = winnerPlanSummary);
 }
 
 void logNotCachingNoData(std::string&& solution) {
-    LOGV2_DEBUG(20596,
-                5,
-                "Not caching query because this solution has no cache data",
-                "solutions"_attr = redact(solution));
+    LOG_DEBUG(20596,
+              5,
+              "Not caching query because this solution has no cache data",
+              "solutions"_attr = redact(solution));
 }
 }  // namespace log_detail
 }  // namespace mongo::plan_cache_util

@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTransaction
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTransaction
 
 #include "mongo/platform/basic.h"
 
@@ -40,7 +40,7 @@
 #include "mongo/db/s/transaction_coordinator_service.h"
 #include "mongo/db/session_catalog_mongod.h"
 #include "mongo/db/transaction_participant.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 
 namespace mongo {
@@ -100,12 +100,12 @@ public:
                     "prepareTransaction must be run within a transaction",
                     txnParticipant);
 
-            LOGV2_DEBUG(22483,
-                        3,
-                        "{sessionId}:{txnNumber} Participant shard received prepareTransaction",
-                        "Participant shard received prepareTransaction",
-                        "sessionId"_attr = opCtx->getLogicalSessionId()->toBSON(),
-                        "txnNumber"_attr = opCtx->getTxnNumber());
+            LOG_DEBUG(22483,
+                      3,
+                      "{sessionId}:{txnNumber} Participant shard received prepareTransaction",
+                      "Participant shard received prepareTransaction",
+                      "sessionId"_attr = opCtx->getLogicalSessionId()->toBSON(),
+                      "txnNumber"_attr = opCtx->getTxnNumber());
 
             // TODO(SERVER-46105) remove
             uassert(ErrorCodes::OperationNotSupportedInTransaction,
@@ -207,7 +207,7 @@ std::set<ShardId> validateParticipants(OperationContext* opCtx,
     }
     ss << ']';
 
-    LOGV2_DEBUG(
+    LOG_DEBUG(
         22484,
         3,
         "{sessionId}:{txnNumber} Coordinator shard received request to coordinate commit with "
@@ -247,7 +247,7 @@ public:
                                         validateParticipants(opCtx, cmd.getParticipants()));
 
             if (MONGO_unlikely(hangAfterStartingCoordinateCommit.shouldFail())) {
-                LOGV2(22485, "Hit hangAfterStartingCoordinateCommit failpoint");
+                LOG(22485, "Hit hangAfterStartingCoordinateCommit failpoint");
                 hangAfterStartingCoordinateCommit.pauseWhileSet(opCtx);
             }
 
@@ -290,12 +290,12 @@ public:
 
             // No coordinator was found in memory. Recover the decision from the local participant.
 
-            LOGV2_DEBUG(22486,
-                        3,
-                        "{sessionId}:{txnNumber} Going to recover decision from local participant",
-                        "Going to recover decision from local participant",
-                        "sessionId"_attr = opCtx->getLogicalSessionId()->getId(),
-                        "txnNumber"_attr = opCtx->getTxnNumber());
+            LOG_DEBUG(22486,
+                      3,
+                      "{sessionId}:{txnNumber} Going to recover decision from local participant",
+                      "Going to recover decision from local participant",
+                      "sessionId"_attr = opCtx->getLogicalSessionId()->getId(),
+                      "txnNumber"_attr = opCtx->getTxnNumber());
 
             boost::optional<SharedSemiFuture<void>> participantExitPrepareFuture;
             {

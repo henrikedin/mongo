@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kControl
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kControl
 
 #include "mongo/db/mongod_options.h"
 
@@ -55,9 +55,9 @@
 #include "mongo/db/server_options_nongeneral_gen.h"
 #include "mongo/db/server_options_server_helpers.h"
 #include "mongo/db/storage/storage_parameters_gen.h"
-#include "mongo/logv2/log.h"
-#include "mongo/logv2/log_domain_global.h"
-#include "mongo/logv2/log_manager.h"
+#include "mongo/log/log.h"
+#include "mongo/log/log_domain_global.h"
+#include "mongo/log/log_manager.h"
 #include "mongo/util/net/ssl_options.h"
 #include "mongo/util/options_parser/startup_options.h"
 #include "mongo/util/str.h"
@@ -139,13 +139,13 @@ bool handlePreValidationMongodOptions(const moe::Environment& params,
     }
 
     if (params.count("master") || params.count("slave")) {
-        LOGV2_FATAL_CONTINUE(20881, "Master/slave replication is no longer supported");
+        LOG_FATAL_CONTINUE(20881, "Master/slave replication is no longer supported");
         return false;
     }
 
     if (params.count("replication.enableMajorityReadConcern") &&
         params["replication.enableMajorityReadConcern"].as<bool>() == false) {
-        LOGV2_FATAL_CONTINUE(5324700, "enableMajorityReadConcern:false is no longer supported");
+        LOG_FATAL_CONTINUE(5324700, "enableMajorityReadConcern:false is no longer supported");
         return false;
     }
 
@@ -533,10 +533,10 @@ Status storeMongodOptions(const moe::Environment& params) {
     if (storageGlobalParams.engineSetByUser &&
         (storageGlobalParams.engine == "ephemeralForTest" ||
          storageGlobalParams.engine == "devnull")) {
-        LOGV2(5324701,
-              "Test storage engine does not support enableMajorityReadConcern=true, forcibly "
-              "setting to false",
-              "storageEngine"_attr = storageGlobalParams.engine);
+        LOG(5324701,
+            "Test storage engine does not support enableMajorityReadConcern=true, forcibly "
+            "setting to false",
+            "storageEngine"_attr = storageGlobalParams.engine);
         serverGlobalParams.enableMajorityReadConcern = false;
     }
 
@@ -546,9 +546,9 @@ Status storeMongodOptions(const moe::Environment& params) {
         // disableLockFreeReads=false, log a warning so that the user knows these are not
         // compatible settings.
         if (!storageGlobalParams.disableLockFreeReads) {
-            LOGV2_WARNING(4788401,
-                          "Lock-free reads is not compatible with "
-                          "enableMajorityReadConcern=false: disabling lock-free reads.");
+            LOG_WARNING(4788401,
+                        "Lock-free reads is not compatible with "
+                        "enableMajorityReadConcern=false: disabling lock-free reads.");
             storageGlobalParams.disableLockFreeReads = true;
         }
     }
@@ -668,9 +668,9 @@ Status storeMongodOptions(const moe::Environment& params) {
 
     // Check if we are 32 bit and have not explicitly specified any journaling options
     if (sizeof(void*) == 4 && !params.count("storage.journal.enabled")) {
-        LOGV2_WARNING(20880,
-                      "32-bit servers don't have journaling enabled by default. Please use "
-                      "--journal if you want durability");
+        LOG_WARNING(20880,
+                    "32-bit servers don't have journaling enabled by default. Please use "
+                    "--journal if you want durability");
     }
 
     bool isClusterRoleShard = params.count("shardsvr");

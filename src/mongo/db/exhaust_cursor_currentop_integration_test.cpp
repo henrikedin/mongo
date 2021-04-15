@@ -27,14 +27,14 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTest
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTest
 
 #include "mongo/platform/basic.h"
 
 #include "mongo/client/dbclient_connection.h"
 #include "mongo/client/dbclient_rs.h"
 #include "mongo/db/query/cursor_response.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/stdx/future.h"
 #include "mongo/unittest/integration_test.h"
@@ -116,12 +116,12 @@ bool confirmCurrentOpContents(DBClientBase* conn,
         sleepFor(intervalMS);
     }
     auto currentOp = BSON("currentOp" << BSON("idleCursors" << true));
-    LOGV2(20606,
-          "confirmCurrentOpContents fails with curOpMatch: {curOpMatch} currentOp: "
-          "{conn_runCommand_OpMsgRequest_fromDBAndBody_admin_currentOp_getCommandReply}",
-          "curOpMatch"_attr = curOpMatch,
-          "conn_runCommand_OpMsgRequest_fromDBAndBody_admin_currentOp_getCommandReply"_attr =
-              conn->runCommand(OpMsgRequest::fromDBAndBody("admin", currentOp))->getCommandReply());
+    LOG(20606,
+        "confirmCurrentOpContents fails with curOpMatch: {curOpMatch} currentOp: "
+        "{conn_runCommand_OpMsgRequest_fromDBAndBody_admin_currentOp_getCommandReply}",
+        "curOpMatch"_attr = curOpMatch,
+        "conn_runCommand_OpMsgRequest_fromDBAndBody_admin_currentOp_getCommandReply"_attr =
+            conn->runCommand(OpMsgRequest::fromDBAndBody("admin", currentOp))->getCommandReply());
     return false;
 }
 
@@ -181,9 +181,9 @@ auto startExhaustQuery(
         sleepFor(Milliseconds(10));
     }
     ASSERT(queryCursor);
-    LOGV2(20607,
-          "Started exhaust query with cursorId: {queryCursor_getCursorId}",
-          "queryCursor_getCursorId"_attr = queryCursor->getCursorId());
+    LOG(20607,
+        "Started exhaust query with cursorId: {queryCursor_getCursorId}",
+        "queryCursor_getCursorId"_attr = queryCursor->getCursorId());
     return queryThread;
 }
 
@@ -304,7 +304,7 @@ void testClientDisconnect(bool disconnectAfterGetMoreBatch) {
 
     // Kill the client connection while the exhaust getMore is blocked on the failpoint.
     queryConnection->shutdownAndDisallowReconnect();
-    LOGV2(20608, "Killed exhaust connection.");
+    LOG(20608, "Killed exhaust connection.");
 
     if (disconnectAfterGetMoreBatch) {
         // Disable the failpoint to allow the exhaust getMore to continue sending out the response

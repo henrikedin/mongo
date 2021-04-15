@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kDefault
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kDefault
 
 #include "mongo/platform/basic.h"
 
@@ -41,7 +41,7 @@
 #include "mongo/db/query/cursor_response.h"
 #include "mongo/db/query/getmore_request.h"
 #include "mongo/db/query/query_request_helper.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/scripting/bson_template_evaluator.h"
 #include "mongo/stdx/thread.h"
 #include "mongo/util/md5.h"
@@ -761,7 +761,7 @@ void BenchRunConfig::initializeFromBson(const BSONObj& args) {
                 ops.push_back(opFromBson(i.next().Obj()));
             }
         } else {
-            LOGV2_INFO(22793, "benchRun passed an unsupported field", "name"_attr = name);
+            LOG_INFO(22793, "benchRun passed an unsupported field", "name"_attr = name);
             uassert(34376, "benchRun passed an unsupported configuration field", false);
         }
     }
@@ -786,9 +786,9 @@ BenchRunState::BenchRunState(unsigned numWorkers)
 
 BenchRunState::~BenchRunState() {
     if (_numActiveWorkers != 0)
-        LOGV2_WARNING(22802, "Destroying BenchRunState with active workers");
+        LOG_WARNING(22802, "Destroying BenchRunState with active workers");
     if (_numUnstartedWorkers != 0)
-        LOGV2_WARNING(22803, "Destroying BenchRunState with unstarted workers");
+        LOG_WARNING(22803, "Destroying BenchRunState with unstarted workers");
 }
 
 void BenchRunState::waitForState(State awaitedState) {
@@ -864,7 +864,7 @@ BenchRunWorker::~BenchRunWorker() {
         // before returning from BenchRunWorker's destructor.
         _thread.join();
     } catch (...) {
-        LOGV2_FATAL_CONTINUE(
+        LOG_FATAL_CONTINUE(
             22807, "Caught exception in destructor", "error"_attr = exceptionToStatus());
         std::terminate();
     }
@@ -939,10 +939,10 @@ void BenchRunWorker::generateLoadOnConnection(DBClientBase* conn) {
                         (!_config->noWatchPattern && _config->watchPattern &&
                          yesWatch) ||  // If we're just watching things
                         (_config->watchPattern && _config->noWatchPattern && yesWatch && !noWatch))
-                        LOGV2_INFO(22794,
-                                   "Error in benchRun thread for op",
-                                   "op"_attr = kOpTypeNames.find(op.op)->second,
-                                   "error"_attr = causedBy(ex));
+                        LOG_INFO(22794,
+                                 "Error in benchRun thread for op",
+                                 "op"_attr = kOpTypeNames.find(op.op)->second,
+                                 "error"_attr = causedBy(ex));
                 }
 
                 bool yesTrap = (_config->trapPattern && _config->trapPattern->FullMatch(ex.what()));
@@ -968,9 +968,9 @@ void BenchRunWorker::generateLoadOnConnection(DBClientBase* conn) {
                 ++opState.stats->errCount;
             } catch (...) {
                 if (!_config->hideErrors || op.showError)
-                    LOGV2_INFO(22795,
-                               "Error in benchRun thread caused by unknown error for op",
-                               "op"_attr = kOpTypeNames.find(op.op)->second);
+                    LOG_INFO(22795,
+                             "Error in benchRun thread caused by unknown error for op",
+                             "op"_attr = kOpTypeNames.find(op.op)->second);
                 if (!_config->handleErrors && !op.handleError)
                     return;
 
@@ -1044,7 +1044,7 @@ void BenchRunOp::executeOnce(DBClientBase* conn,
             }
 
             if (!config.hideResults || this->showResult)
-                LOGV2_INFO(22796, "Result from benchRun thread [findOne]", "result"_attr = result);
+                LOG_INFO(22796, "Result from benchRun thread [findOne]", "result"_attr = result);
         } break;
         case OpType::COMMAND: {
             bool ok;
@@ -1179,17 +1179,17 @@ void BenchRunOp::executeOnce(DBClientBase* conn,
             }
 
             if (this->expected >= 0 && count != this->expected) {
-                LOGV2_INFO(22797,
-                           "Bench query on: {namespace} expected: {expected} got: {got}",
-                           "Bench query on namespace got diffrent results then expected",
-                           "namespace"_attr = this->ns,
-                           "expected"_attr = this->expected,
-                           "got"_attr = count);
+                LOG_INFO(22797,
+                         "Bench query on: {namespace} expected: {expected} got: {got}",
+                         "Bench query on namespace got diffrent results then expected",
+                         "namespace"_attr = this->ns,
+                         "expected"_attr = this->expected,
+                         "got"_attr = count);
                 verify(false);
             }
 
             if (!config.hideResults || this->showResult)
-                LOGV2_INFO(22798, "Result from benchRun thread [query]", "count"_attr = count);
+                LOG_INFO(22798, "Result from benchRun thread [query]", "count"_attr = count);
         } break;
         case OpType::UPDATE: {
             BSONObj result;
@@ -1264,7 +1264,7 @@ void BenchRunOp::executeOnce(DBClientBase* conn,
 
             if (this->safe) {
                 if (!config.hideResults || this->showResult)
-                    LOGV2_INFO(
+                    LOG_INFO(
                         22799, "Result from benchRun thread [safe update]", "result"_attr = result);
 
                 if (!result["err"].eoo() && result["err"].type() == String &&
@@ -1329,7 +1329,7 @@ void BenchRunOp::executeOnce(DBClientBase* conn,
 
             if (this->safe) {
                 if (!config.hideResults || this->showResult)
-                    LOGV2_INFO(
+                    LOG_INFO(
                         22800, "Result from benchRun thread [safe insert]", "result"_attr = result);
 
                 if (!result["err"].eoo() && result["err"].type() == String &&
@@ -1375,7 +1375,7 @@ void BenchRunOp::executeOnce(DBClientBase* conn,
 
             if (this->safe) {
                 if (!config.hideResults || this->showResult)
-                    LOGV2_INFO(
+                    LOG_INFO(
                         22801, "Result from benchRun thread [safe remove]", "result"_attr = result);
 
                 if (!result["err"].eoo() && result["err"].type() == String &&
@@ -1419,13 +1419,12 @@ void BenchRunWorker::run() {
         BenchRunWorkerStateGuard workerStateGuard(_brState);
         generateLoadOnConnection(conn.get());
     } catch (const DBException& e) {
-        LOGV2_ERROR(
-            22804, "DBException not handled in benchRun thread", "error"_attr = causedBy(e));
+        LOG_ERROR(22804, "DBException not handled in benchRun thread", "error"_attr = causedBy(e));
     } catch (const std::exception& e) {
-        LOGV2_ERROR(
+        LOG_ERROR(
             22805, "std::exception not handled in benchRun thread", "error"_attr = causedBy(e));
     } catch (...) {
-        LOGV2_ERROR(22806, "Unknown exception not handled in benchRun thread.");
+        LOG_ERROR(22806, "Unknown exception not handled in benchRun thread.");
     }
 }
 

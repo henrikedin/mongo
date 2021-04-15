@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kDefault
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kDefault
 
 #include "mongo/platform/basic.h"
 
@@ -41,7 +41,7 @@
 #include "mongo/db/namespace_string.h"
 #include "mongo/db/service_context.h"
 #include "mongo/db/storage/flow_control.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/platform/compiler.h"
 #include "mongo/stdx/new.h"
 #include "mongo/util/background.h"
@@ -215,11 +215,11 @@ void LockerImpl::dump() const {
         for (auto it = _requests.begin(); !it.finished(); it.next())
             entries.push_back({it.key(), it->status, it->mode});
     }
-    LOGV2(20523,
-          "Locker id {id} status: {requests}",
-          "Locker status",
-          "id"_attr = _id,
-          "requests"_attr = entries);
+    LOG(20523,
+        "Locker id {id} status: {requests}",
+        "Locker status",
+        "id"_attr = _id,
+        "requests"_attr = entries);
 }
 
 
@@ -1091,7 +1091,7 @@ public:
     }
 
     void taskDoWork() {
-        LOGV2_DEBUG(20524, 2, "cleaning up unused lock buckets of the global lock manager");
+        LOG_DEBUG(20524, 2, "cleaning up unused lock buckets of the global lock manager");
         getGlobalLockManager()->cleanupUnusedLocks();
     }
 } unusedLockCleaner;

@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kControl
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kControl
 
 #include "mongo/platform/basic.h"
 
@@ -39,7 +39,7 @@
 #include "mongo/config.h"
 #include "mongo/db/auth/auth_options_gen.h"
 #include "mongo/db/server_options.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/options_parser/startup_option_init.h"
 #include "mongo/util/options_parser/startup_options.h"
 #include "mongo/util/text.h"
@@ -139,7 +139,7 @@ MONGO_STARTUP_OPTIONS_POST(SSLServerOptions)(InitializerContext*) {
     }
 
     if (params.count("net.tls.tlsCipherConfig")) {
-        LOGV2_WARNING(
+        LOG_WARNING(
             23286,
             "net.tls.tlsCipherConfig is deprecated. It will be removed in a future release.");
         if (sslGlobalParams.sslCipherConfig != kSSLCipherConfigDefault) {
@@ -331,9 +331,9 @@ MONGO_STARTUP_OPTIONS_VALIDATE(SSLServerOptions)(InitializerContext*) {
 MONGO_INITIALIZER_WITH_PREREQUISITES(ImplicitDisableTLS10Warning, ("ServerLogRedirection"))
 (InitializerContext*) {
     if (gImplicitDisableTLS10) {
-        LOGV2(23285,
-              "Automatically disabling TLS 1.0, to force-enable TLS 1.0 "
-              "specify --sslDisabledProtocols 'none'");
+        LOG(23285,
+            "Automatically disabling TLS 1.0, to force-enable TLS 1.0 "
+            "specify --sslDisabledProtocols 'none'");
     }
 }
 

@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kSharding
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kSharding
 
 #include "mongo/platform/basic.h"
 
@@ -44,7 +44,7 @@
 #include "mongo/db/stats/counters.h"
 #include "mongo/db/storage/duplicate_key_error_info.h"
 #include "mongo/executor/task_executor_pool.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/s/chunk_manager_targeter.h"
 #include "mongo/s/client/num_hosts_targeted_metrics.h"
@@ -207,7 +207,7 @@ bool handleWouldChangeOwningShardError(OperationContext* opCtx,
     boost::optional<BSONObj> upsertedId;
     if (isRetryableWrite) {
         if (MONGO_unlikely(hangAfterThrowWouldChangeOwningShardRetryableWrite.shouldFail())) {
-            LOGV2(22759, "Hit hangAfterThrowWouldChangeOwningShardRetryableWrite failpoint");
+            LOG(22759, "Hit hangAfterThrowWouldChangeOwningShardRetryableWrite failpoint");
             hangAfterThrowWouldChangeOwningShardRetryableWrite.pauseWhileSet(opCtx);
         }
         RouterOperationContextSession routerSession(opCtx);

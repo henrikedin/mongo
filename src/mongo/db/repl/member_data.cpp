@@ -27,14 +27,14 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kReplication
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kReplication
 
 #include "mongo/platform/basic.h"
 
 #include <climits>
 
 #include "mongo/db/repl/member_data.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace mongo {
 namespace repl {
@@ -68,11 +68,11 @@ bool MemberData::setUpValues(Date_t now, ReplSetHeartbeatResponse&& hbResponse) 
     }
     // Log if the state changes
     if (_lastResponse.getState() != hbResponse.getState()) {
-        LOGV2(21215,
-              "Member {hostAndPort} is now in state {newState}",
-              "Member is in new state",
-              "hostAndPort"_attr = _hostAndPort.toString(),
-              "newState"_attr = hbResponse.getState().toString());
+        LOG(21215,
+            "Member {hostAndPort} is now in state {newState}",
+            "Member is in new state",
+            "hostAndPort"_attr = _hostAndPort.toString(),
+            "newState"_attr = hbResponse.getState().toString());
     }
 
     bool opTimeAdvanced =
@@ -101,11 +101,11 @@ void MemberData::setDownValues(Date_t now, const std::string& heartbeatMessage) 
     _lastHeartbeatMessage = heartbeatMessage;
 
     if (_lastResponse.getState() != MemberState::RS_DOWN) {
-        LOGV2(21216,
-              "Member {hostAndPort} is now in state RS_DOWN - {heartbeatMessage}",
-              "Member is now in state RS_DOWN",
-              "hostAndPort"_attr = _hostAndPort.toString(),
-              "heartbeatMessage"_attr = redact(heartbeatMessage));
+        LOG(21216,
+            "Member {hostAndPort} is now in state RS_DOWN - {heartbeatMessage}",
+            "Member is now in state RS_DOWN",
+            "hostAndPort"_attr = _hostAndPort.toString(),
+            "heartbeatMessage"_attr = redact(heartbeatMessage));
     }
 
     _lastResponse = ReplSetHeartbeatResponse();
@@ -127,10 +127,10 @@ void MemberData::setAuthIssue(Date_t now) {
     _lastHeartbeatMessage.clear();
 
     if (_lastResponse.getState() != MemberState::RS_UNKNOWN) {
-        LOGV2(21217,
-              "Member {hostAndPort} is now in state RS_UNKNOWN due to authentication issue.",
-              "Member is now in state RS_UNKNOWN due to authentication issue",
-              "hostAndPort"_attr = _hostAndPort.toString());
+        LOG(21217,
+            "Member {hostAndPort} is now in state RS_UNKNOWN due to authentication issue.",
+            "Member is now in state RS_UNKNOWN due to authentication issue",
+            "hostAndPort"_attr = _hostAndPort.toString());
     }
 
     _lastResponse = ReplSetHeartbeatResponse();

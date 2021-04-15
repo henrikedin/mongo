@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kStorage
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kStorage
 
 #include "mongo/platform/basic.h"
 
@@ -62,7 +62,7 @@
 #include "mongo/db/s/operation_sharding_state.h"
 #include "mongo/db/service_context.h"
 #include "mongo/db/storage/durable_catalog.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/fail_point.h"
 #include "mongo/util/str.h"
@@ -131,7 +131,7 @@ struct Cloner::Fun {
                 if (now - lastLog >= 60) {
                     // report progress
                     if (lastLog)
-                        LOGV2(20412, "clone", logAttrs(nss), "numSeen"_attr = numSeen);
+                        LOG(20412, "clone", logAttrs(nss), "numSeen"_attr = numSeen);
                     lastLog = now;
                 }
                 opCtx->checkForInterrupt();
@@ -168,10 +168,10 @@ struct Cloner::Fun {
             const Status status = validateBSON(tmp.objdata(), tmp.objsize());
             if (!status.isOK()) {
                 if (gSkipCorruptDocumentsWhenCloning.load()) {
-                    LOGV2_WARNING(20423,
-                                  "Cloner: found corrupt document; skipping",
-                                  logAttrs(nss),
-                                  "error"_attr = redact(status));
+                    LOG_WARNING(20423,
+                                "Cloner: found corrupt document; skipping",
+                                logAttrs(nss),
+                                "error"_attr = redact(status));
                     continue;
                 }
                 str::stream ss;
@@ -192,12 +192,12 @@ struct Cloner::Fun {
                 Status status =
                     collection->insertDocument(opCtx, InsertStatement(doc), nullOpDebug, true);
                 if (!status.isOK() && status.code() != ErrorCodes::DuplicateKey) {
-                    LOGV2_ERROR(20424,
-                                "error: exception cloning object",
-                                "Exception cloning document",
-                                logAttrs(nss),
-                                "error"_attr = redact(status),
-                                "document"_attr = redact(doc));
+                    LOG_ERROR(20424,
+                              "error: exception cloning object",
+                              "Exception cloning document",
+                              logAttrs(nss),
+                              "error"_attr = redact(status),
+                              "document"_attr = redact(doc));
                     uassertStatusOK(status);
                 }
                 if (status.isOK()) {
@@ -207,10 +207,10 @@ struct Cloner::Fun {
 
             static Rarely sampler;
             if (sampler.tick() && (time(nullptr) - saveLast > 60)) {
-                LOGV2(20413,
-                      "Number of objects cloned so far from collection",
-                      "number"_attr = numSeen,
-                      logAttrs(nss));
+                LOG(20413,
+                    "Number of objects cloned so far from collection",
+                    "number"_attr = numSeen,
+                    logAttrs(nss));
                 saveLast = time(nullptr);
             }
         }
@@ -236,12 +236,12 @@ void Cloner::_copy(OperationContext* opCtx,
                    const BSONObj& from_id_index,
                    Query query,
                    DBClientBase* conn) {
-    LOGV2_DEBUG(20414,
-                2,
-                "\t\tcloning collection with filter",
-                "ns"_attr = nss,
-                "conn_getServerAddress"_attr = conn->getServerAddress(),
-                "query"_attr = redact(query.toString()));
+    LOG_DEBUG(20414,
+              2,
+              "\t\tcloning collection with filter",
+              "ns"_attr = nss,
+              "conn_getServerAddress"_attr = conn->getServerAddress(),
+              "query"_attr = redact(query.toString()));
 
     Fun f(opCtx, toDBName);
     f.numSeen = 0;
@@ -275,11 +275,11 @@ void Cloner::_copyIndexes(OperationContext* opCtx,
                           const BSONObj& from_opts,
                           const std::list<BSONObj>& from_indexes,
                           DBClientBase* conn) {
-    LOGV2_DEBUG(20415,
-                2,
-                "\t\t copyIndexes",
-                "ns"_attr = nss,
-                "conn_getServerAddress"_attr = conn->getServerAddress());
+    LOG_DEBUG(20415,
+              2,
+              "\t\t copyIndexes",
+              "ns"_attr = nss,
+              "conn_getServerAddress"_attr = conn->getServerAddress());
 
     uassert(ErrorCodes::PrimarySteppedDown,
             str::stream() << "Not primary while copying indexes from " << nss << " (Cloner)",
@@ -312,7 +312,7 @@ StatusWith<std::vector<BSONObj>> Cloner::_filterCollectionsForClone(
     const std::string& fromDBName, const std::list<BSONObj>& initialCollections) {
     std::vector<BSONObj> finalCollections;
     for (auto&& collection : initialCollections) {
-        LOGV2_DEBUG(20418, 2, "\t cloner got {collection}", "collection"_attr = collection);
+        LOG_DEBUG(20418, 2, "\t cloner got {collection}", "collection"_attr = collection);
 
         BSONElement collectionOptions = collection["options"];
         if (collectionOptions.isABSONObj()) {
@@ -332,7 +332,7 @@ StatusWith<std::vector<BSONObj>> Cloner::_filterCollectionsForClone(
         const NamespaceString ns(fromDBName, collectionName.c_str());
         if (ns.isSystem()) {
             if (!ns.isLegalClientSystemNS(serverGlobalParams.featureCompatibility)) {
-                LOGV2_DEBUG(20419, 2, "\t\t not cloning because system collection");
+                LOG_DEBUG(20419, 2, "\t\t not cloning because system collection");
                 continue;
             }
         }
@@ -547,10 +547,10 @@ Status Cloner::copyDb(OperationContext* opCtx,
 
     // now build the secondary indexes
     for (auto&& params : createCollectionParams) {
-        LOGV2(20422,
-              "copying indexes for: {collectionInfo}",
-              "Copying indexes",
-              "collectionInfo"_attr = params.collectionInfo);
+        LOG(20422,
+            "copying indexes for: {collectionInfo}",
+            "Copying indexes",
+            "collectionInfo"_attr = params.collectionInfo);
 
         const NamespaceString nss(dBName, params.collectionName);
 
@@ -568,16 +568,16 @@ Status Cloner::copyDb(OperationContext* opCtx,
             continue;
         }
 
-        LOGV2_DEBUG(20420,
-                    2,
-                    "  really will clone: {params_collectionInfo}",
-                    "params_collectionInfo"_attr = params.collectionInfo);
+        LOG_DEBUG(20420,
+                  2,
+                  "  really will clone: {params_collectionInfo}",
+                  "params_collectionInfo"_attr = params.collectionInfo);
 
         const NamespaceString nss(dBName, params.collectionName);
 
         clonedColls->insert(nss.ns());
 
-        LOGV2_DEBUG(20421, 1, "\t\t cloning", "ns"_attr = nss, "host"_attr = masterHost);
+        LOG_DEBUG(20421, 1, "\t\t cloning", "ns"_attr = nss, "host"_attr = masterHost);
 
         _copy(opCtx,
               dBName,

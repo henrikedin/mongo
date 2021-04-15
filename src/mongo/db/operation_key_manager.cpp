@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kCommand
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kCommand
 
 #include "mongo/platform/basic.h"
 
@@ -36,7 +36,7 @@
 #include <fmt/format.h>
 
 #include "mongo/base/error_codes.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/assert_util.h"
 
 namespace mongo {
@@ -57,11 +57,11 @@ OperationKeyManager& OperationKeyManager::get(ServiceContext* serviceContext) {
 void OperationKeyManager::add(const OperationKey& key, OperationId id) {
     using namespace fmt::literals;
 
-    LOGV2_DEBUG(4615636,
-                2,
-                "Mapping OperationKey {operationKey} to OperationId {operationId}",
-                "operationKey"_attr = key.toString(),
-                "operationId"_attr = id);
+    LOG_DEBUG(4615636,
+              2,
+              "Mapping OperationKey {operationKey} to OperationId {operationId}",
+              "operationKey"_attr = key.toString(),
+              "operationId"_attr = id);
 
     stdx::lock_guard lk(_mutex);
     auto result = _idByOperationKey.emplace(key, id).second;

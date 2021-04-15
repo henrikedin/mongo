@@ -27,13 +27,13 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kCommand
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kCommand
 
 #include "mongo/platform/basic.h"
 
 #include "mongo/db/commands.h"
 #include "mongo/db/drop_indexes_gen.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/s/cluster_commands_helpers.h"
 #include "mongo/s/grid.h"
@@ -126,12 +126,12 @@ public:
                               const RequestParser& requestParser,
                               BSONObjBuilder& output) final {
         auto nss = requestParser.request().getNamespace();
-        LOGV2_DEBUG(22751,
-                    1,
-                    "dropIndexes: {namespace} cmd: {command}",
-                    "CMD: dropIndexes",
-                    "namespace"_attr = nss,
-                    "command"_attr = redact(cmdObj));
+        LOG_DEBUG(22751,
+                  1,
+                  "dropIndexes: {namespace} cmd: {command}",
+                  "CMD: dropIndexes",
+                  "namespace"_attr = nss,
+                  "command"_attr = redact(cmdObj));
 
         // dropIndexes can be retried on a stale config error. If a previous attempt already
         // successfully dropped the index on shards, those shards will return an IndexNotFound

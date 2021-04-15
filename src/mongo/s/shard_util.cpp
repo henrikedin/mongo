@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kSharding
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kSharding
 
 #include "mongo/platform/basic.h"
 
@@ -38,7 +38,7 @@
 #include "mongo/client/read_preference.h"
 #include "mongo/client/remote_command_targeter.h"
 #include "mongo/db/namespace_string.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/s/client/shard_registry.h"
 #include "mongo/s/grid.h"
 #include "mongo/s/shard_key_pattern.h"
@@ -203,12 +203,12 @@ StatusWith<boost::optional<ChunkRange>> splitChunkAtMultiplePoints(
     }
 
     if (!status.isOK()) {
-        LOGV2(22878,
-              "Split chunk {request} failed: {error}",
-              "Split chunk request against shard failed",
-              "request"_attr = redact(cmdObj),
-              "shardId"_attr = shardId,
-              "error"_attr = redact(status));
+        LOG(22878,
+            "Split chunk {request} failed: {error}",
+            "Split chunk request against shard failed",
+            "request"_attr = redact(cmdObj),
+            "shardId"_attr = shardId,
+            "error"_attr = redact(status));
         return status.withContext("split failed");
     }
 
@@ -222,7 +222,7 @@ StatusWith<boost::optional<ChunkRange>> splitChunkAtMultiplePoints(
 
         return boost::optional<ChunkRange>(std::move(chunkRangeStatus.getValue()));
     } else if (status != ErrorCodes::NoSuchKey) {
-        LOGV2_WARNING(
+        LOG_WARNING(
             22879,
             "Chunk migration will be skipped because splitChunk returned invalid response: "
             "{response}. Extracting {field} field failed: {error}",

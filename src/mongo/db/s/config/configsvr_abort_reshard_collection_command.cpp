@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kCommand
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kCommand
 
 #include "mongo/platform/basic.h"
 
@@ -37,7 +37,7 @@
 #include "mongo/db/s/config/sharding_catalog_manager.h"
 #include "mongo/db/s/resharding/resharding_coordinator_service.h"
 #include "mongo/db/s/resharding/resharding_donor_recipient_common.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/s/grid.h"
 #include "mongo/s/request_types/abort_reshard_collection_gen.h"
 #include "mongo/s/resharding/resharding_feature_flag_gen.h"
@@ -113,10 +113,10 @@ public:
 
             const auto reshardingUUID = retrieveReshardingUUID(opCtx, ns());
 
-            LOGV2(5403501,
-                  "Aborting resharding operation",
-                  "namespace"_attr = ns(),
-                  "reshardingUUID"_attr = reshardingUUID);
+            LOG(5403501,
+                "Aborting resharding operation",
+                "namespace"_attr = ns(),
+                "reshardingUUID"_attr = reshardingUUID);
 
             assertExistsReshardingDocument(opCtx, reshardingUUID);
 

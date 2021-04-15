@@ -51,8 +51,8 @@ protected:
     const UUID _migrationId = UUID::gen();
 
 private:
-    unittest::MinimumLoggedSeverityGuard _verboseGuard{logv2::LogComponent::kTenantMigration,
-                                                       logv2::LogSeverity::Debug(1)};
+    unittest::MinimumLoggedSeverityGuard _verboseGuard{log::LogComponent::kTenantMigration,
+                                                       log::LogSeverity::Debug(1)};
 };
 
 }  // namespace repl

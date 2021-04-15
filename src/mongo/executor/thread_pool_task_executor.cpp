@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT mongo::logv2::LogComponent::kExecutor
+#define MONGO_LOG_DEFAULT_COMPONENT mongo::log::LogComponent::kExecutor
 
 #include "mongo/platform/basic.h"
 
@@ -42,7 +42,7 @@
 #include "mongo/db/operation_context.h"
 #include "mongo/executor/connection_pool_stats.h"
 #include "mongo/executor/network_interface.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/platform/atomic_word.h"
 #include "mongo/transport/baton.h"
 #include "mongo/util/concurrency/thread_pool_interface.h"
@@ -443,11 +443,11 @@ StatusWith<TaskExecutor::CallbackHandle> ThreadPoolTaskExecutor::scheduleRemoteC
     if (!swCbHandle.isOK())
         return swCbHandle;
     const auto cbState = _networkInProgressQueue.back();
-    LOGV2_DEBUG(22607,
-                3,
-                "Scheduling remote command request: {request}",
-                "Scheduling remote command request",
-                "request"_attr = redact(scheduledRequest.toString()));
+    LOG_DEBUG(22607,
+              3,
+              "Scheduling remote command request: {request}",
+              "Scheduling remote command request",
+              "request"_attr = redact(scheduledRequest.toString()));
     lk.unlock();
 
     auto commandStatus = _net->startCommand(
@@ -462,12 +462,12 @@ StatusWith<TaskExecutor::CallbackHandle> ThreadPoolTaskExecutor::scheduleRemoteC
             if (_inShutdown_inlock()) {
                 return;
             }
-            LOGV2_DEBUG(22608,
-                        3,
-                        "Received remote response: {response}",
-                        "Received remote response",
-                        "response"_attr = redact(response.isOK() ? response.toString()
-                                                                 : response.status.toString()));
+            LOG_DEBUG(22608,
+                      3,
+                      "Received remote response: {response}",
+                      "Received remote response",
+                      "response"_attr = redact(response.isOK() ? response.toString()
+                                                               : response.status.toString()));
             swap(cbState->callback, newCb);
             scheduleIntoPool_inlock(&_networkInProgressQueue, cbState->iter, std::move(lk));
         },
@@ -683,11 +683,11 @@ StatusWith<TaskExecutor::CallbackHandle> ThreadPoolTaskExecutor::scheduleExhaust
         return swCbHandle;
     std::shared_ptr<CallbackState> cbState = _networkInProgressQueue.back();
     lk.unlock();
-    LOGV2_DEBUG(4495133,
-                3,
-                "Scheduling exhaust remote command request: {request}",
-                "Scheduling exhaust remote command request",
-                "request"_attr = redact(scheduledRequest.toString()));
+    LOG_DEBUG(4495133,
+              3,
+              "Scheduling exhaust remote command request: {request}",
+              "Scheduling exhaust remote command request",
+              "request"_attr = redact(scheduledRequest.toString()));
 
     auto commandStatus = _net->startExhaustCommand(
         swCbHandle.getValue(),
@@ -695,12 +695,12 @@ StatusWith<TaskExecutor::CallbackHandle> ThreadPoolTaskExecutor::scheduleExhaust
         [this, scheduledRequest, cbState, cb, baton](const ResponseOnAnyStatus& response) {
             using std::swap;
 
-            LOGV2_DEBUG(4495134,
-                        3,
-                        "Received remote response: {response}",
-                        "Received remote response",
-                        "response"_attr = redact(response.isOK() ? response.toString()
-                                                                 : response.status.toString()));
+            LOG_DEBUG(4495134,
+                      3,
+                      "Received remote response: {response}",
+                      "Received remote response",
+                      "response"_attr = redact(response.isOK() ? response.toString()
+                                                               : response.status.toString()));
 
             // The cbState remains in the '_networkInProgressQueue' for the entirety of the
             // request's lifetime and is added to and removed from the '_poolInProgressQueue' each

@@ -48,9 +48,9 @@ _CODE_PATTERNS = [
         r"\s*\(",
         # DBException and AssertionException constructors
         r"(?:DB|Assertion)Exception\s*[({]",
-        # Calls to all LOGV2* variants
-        r"LOGV2(?:\w*)?\s*\(",
-        # Forwards a dynamic code to LOGV2
+        # Calls to all LOG* variants
+        r"LOG(?:\w*)?\s*\(",
+        # Forwards a dynamic code to LOG
         r"logAndBackoff\(",
         # Error coersions
         r"ErrorCodes::Error\s*[({]",

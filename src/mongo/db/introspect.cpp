@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kDefault
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kDefault
 
 #include "mongo/platform/basic.h"
 
@@ -44,7 +44,7 @@
 #include "mongo/db/db_raii.h"
 #include "mongo/db/jsobj.h"
 #include "mongo/db/stats/resource_consumption_metrics.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/metadata/client_metadata.h"
 #include "mongo/util/scopeguard.h"
 
@@ -118,10 +118,10 @@ void profile(OperationContext* opCtx, NetworkOp op) {
         Database* const db = autoColl.getDb();
         if (!db) {
             // Database disappeared.
-            LOGV2(20700,
-                  "note: not profiling because db went away for {namespace}",
-                  "note: not profiling because db went away for namespace",
-                  "namespace"_attr = CurOp::get(opCtx)->getNS());
+            LOG(20700,
+                "note: not profiling because db went away for {namespace}",
+                "note: not profiling because db went away for namespace",
+                "namespace"_attr = CurOp::get(opCtx)->getNS());
             return;
         }
 
@@ -145,13 +145,13 @@ void profile(OperationContext* opCtx, NetworkOp op) {
         uassertStatusOK(coll->insertDocument(opCtx, InsertStatement(p), nullOpDebug, false));
         wuow.commit();
     } catch (const AssertionException& assertionEx) {
-        LOGV2_WARNING(20703,
-                      "Caught Assertion while trying to profile {operation} against "
-                      "{namespace}: {assertion}",
-                      "Caught Assertion while trying to profile operation",
-                      "operation"_attr = networkOpToString(op),
-                      "namespace"_attr = CurOp::get(opCtx)->getNS(),
-                      "assertion"_attr = redact(assertionEx));
+        LOG_WARNING(20703,
+                    "Caught Assertion while trying to profile {operation} against "
+                    "{namespace}: {assertion}",
+                    "Caught Assertion while trying to profile operation",
+                    "operation"_attr = networkOpToString(op),
+                    "namespace"_attr = CurOp::get(opCtx)->getNS(),
+                    "assertion"_attr = redact(assertionEx));
     }
 }
 
@@ -178,10 +178,10 @@ Status createProfileCollection(OperationContext* opCtx, Database* db) {
         }
 
         // system.profile namespace doesn't exist; create it
-        LOGV2(20701,
-              "Creating profile collection: {namespace}",
-              "Creating profile collection",
-              "namespace"_attr = dbProfilingNS);
+        LOG(20701,
+            "Creating profile collection: {namespace}",
+            "Creating profile collection",
+            "namespace"_attr = dbProfilingNS);
 
         CollectionOptions collectionOptions;
         collectionOptions.capped = true;

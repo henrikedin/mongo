@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kStorage
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kStorage
 
 #include "mongo/platform/basic.h"
 
@@ -38,7 +38,7 @@
 #include <ostream>
 #include <sstream>
 
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/str.h"
 #include "mongo/util/text.h"
 
@@ -183,16 +183,16 @@ void StorageEngineLockFile::clearPidAndUnlock() {
     if (!_lockFileHandle->isValid()) {
         return;
     }
-    LOGV2(22281, "shutdown: removing fs lock...");
+    LOG(22281, "shutdown: removing fs lock...");
     // This ought to be an unlink(), but Eliot says the last
     // time that was attempted, there was a race condition
     // with StorageEngineLockFile::open().
     Status status = _truncateFile(_lockFileHandle->_handle);
     if (!status.isOK()) {
-        LOGV2(22282,
-              "couldn't remove fs lock: {error}",
-              "Couldn't remove fs lock",
-              "error"_attr = status);
+        LOG(22282,
+            "couldn't remove fs lock: {error}",
+            "Couldn't remove fs lock",
+            "error"_attr = status);
     }
     CloseHandle(_lockFileHandle->_handle);
     _lockFileHandle->clear();

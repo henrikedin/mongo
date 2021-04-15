@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kSharding
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kSharding
 
 #include "mongo/platform/basic.h"
 
@@ -38,7 +38,7 @@
 #include "mongo/db/s/operation_sharding_state.h"
 #include "mongo/db/s/sharding_runtime_d_params_gen.h"
 #include "mongo/db/s/sharding_state.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/duration.h"
 
 namespace mongo {
@@ -184,10 +184,10 @@ void CollectionShardingRuntime::setFilteringMetadata(OperationContext* opCtx,
     stdx::lock_guard lk(_metadataManagerLock);
 
     if (!newMetadata.isSharded()) {
-        LOGV2(21917,
-              "Marking collection {namespace} as unsharded",
-              "Marking collection as unsharded",
-              "namespace"_attr = _nss.ns());
+        LOG(21917,
+            "Marking collection {namespace} as unsharded",
+            "Marking collection as unsharded",
+            "namespace"_attr = _nss.ns());
         _metadataType = MetadataType::kUnsharded;
         _metadataManager.reset();
         ++_numMetadataManagerChanges;
@@ -206,11 +206,11 @@ void CollectionShardingRuntime::clearFilteringMetadata(OperationContext* opCtx) 
     const auto csrLock = CSRLock::lockExclusive(opCtx, this);
     stdx::lock_guard lk(_metadataManagerLock);
     if (!_nss.isNamespaceAlwaysUnsharded()) {
-        LOGV2_DEBUG(4798530,
-                    1,
-                    "Clearing metadata for collection {namespace}",
-                    "Clearing collection metadata",
-                    "namespace"_attr = _nss);
+        LOG_DEBUG(4798530,
+                  1,
+                  "Clearing metadata for collection {namespace}",
+                  "Clearing collection metadata",
+                  "namespace"_attr = _nss);
         _metadataType = MetadataType::kUnknown;
         _metadataManager.reset();
     }
@@ -247,22 +247,22 @@ Status CollectionShardingRuntime::waitForClean(OperationContext* opCtx,
 
             stillScheduled = self->_metadataManager->trackOrphanedDataCleanup(orphanRange);
             if (!stillScheduled) {
-                LOGV2_OPTIONS(21918,
-                              {logv2::LogComponent::kShardingMigration},
-                              "Finished waiting for deletion of {namespace} range {orphanRange}",
-                              "Finished waiting for deletion of orphans",
-                              "namespace"_attr = nss.ns(),
-                              "orphanRange"_attr = redact(orphanRange.toString()));
+                LOG_OPTIONS(21918,
+                            {log::LogComponent::kShardingMigration},
+                            "Finished waiting for deletion of {namespace} range {orphanRange}",
+                            "Finished waiting for deletion of orphans",
+                            "namespace"_attr = nss.ns(),
+                            "orphanRange"_attr = redact(orphanRange.toString()));
                 return Status::OK();
             }
         }
 
-        LOGV2_OPTIONS(21919,
-                      {logv2::LogComponent::kShardingMigration},
-                      "Waiting for deletion of {namespace} range {orphanRange}",
-                      "Waiting for deletion of orphans",
-                      "namespace"_attr = nss.ns(),
-                      "orphanRange"_attr = orphanRange);
+        LOG_OPTIONS(21919,
+                    {log::LogComponent::kShardingMigration},
+                    "Waiting for deletion of {namespace} range {orphanRange}",
+                    "Waiting for deletion of orphans",
+                    "namespace"_attr = nss.ns(),
+                    "orphanRange"_attr = orphanRange);
 
         Status result = stillScheduled->getNoThrow(opCtx);
 

@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kControl
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kControl
 
 #include "mongo/db/server_options_helpers.h"
 
@@ -48,9 +48,9 @@
 #include "mongo/config.h"
 #include "mongo/db/server_options.h"
 #include "mongo/idl/server_parameter.h"
-#include "mongo/logv2/log_component.h"
-#include "mongo/logv2/log_component_settings.h"
-#include "mongo/logv2/log_manager.h"
+#include "mongo/log/log_component.h"
+#include "mongo/log/log_component_settings.h"
+#include "mongo/log/log_manager.h"
 #include "mongo/transport/message_compressor_registry.h"
 #include "mongo/util/cmdline_utils/censor_cmdline.h"
 #include "mongo/util/fail_point.h"
@@ -270,14 +270,14 @@ Status storeBaseOptions(const moe::Environment& params) {
             return Status(ErrorCodes::BadValue,
                           "systemLog.verbosity YAML Config cannot be negative");
         }
-        logv2::LogManager::global().getGlobalSettings().setMinimumLoggedSeverity(
-            mongo::logv2::LogComponent::kDefault, logv2::LogSeverity::Debug(verbosity));
+        log::LogManager::global().getGlobalSettings().setMinimumLoggedSeverity(
+            mongo::log::LogComponent::kDefault, log::LogSeverity::Debug(verbosity));
     }
 
     // log component hierarchy verbosity levels
-    for (int i = 0; i < int(logv2::LogComponent::kNumLogComponents); ++i) {
-        logv2::LogComponent component = static_cast<logv2::LogComponent::Value>(i);
-        if (component == logv2::LogComponent::kDefault) {
+    for (int i = 0; i < int(log::LogComponent::kNumLogComponents); ++i) {
+        log::LogComponent component = static_cast<log::LogComponent::Value>(i);
+        if (component == log::LogComponent::kDefault) {
             continue;
         }
         const string dottedName = "systemLog.component." + component.getDottedName() + ".verbosity";
@@ -285,11 +285,10 @@ Status storeBaseOptions(const moe::Environment& params) {
             int verbosity = params[dottedName].as<int>();
             // Clear existing log level if log level is negative.
             if (verbosity < 0) {
-                logv2::LogManager::global().getGlobalSettings().clearMinimumLoggedSeverity(
-                    component);
+                log::LogManager::global().getGlobalSettings().clearMinimumLoggedSeverity(component);
             } else {
-                logv2::LogManager::global().getGlobalSettings().setMinimumLoggedSeverity(
-                    component, logv2::LogSeverity::Debug(verbosity));
+                log::LogManager::global().getGlobalSettings().setMinimumLoggedSeverity(
+                    component, log::LogSeverity::Debug(verbosity));
             }
         }
     }
@@ -310,10 +309,10 @@ Status storeBaseOptions(const moe::Environment& params) {
     if (params.count("systemLog.timeStampFormat")) {
         std::string formatterName = params["systemLog.timeStampFormat"].as<string>();
         if (formatterName == "iso8601-utc") {
-            serverGlobalParams.logTimestampFormat = logv2::LogTimestampFormat::kISO8601UTC;
+            serverGlobalParams.logTimestampFormat = log::LogTimestampFormat::kISO8601UTC;
             setDateFormatIsLocalTimezone(false);
         } else if (formatterName == "iso8601-local") {
-            serverGlobalParams.logTimestampFormat = logv2::LogTimestampFormat::kISO8601Local;
+            serverGlobalParams.logTimestampFormat = log::LogTimestampFormat::kISO8601Local;
             setDateFormatIsLocalTimezone(true);
         } else {
             StringBuilder sb;

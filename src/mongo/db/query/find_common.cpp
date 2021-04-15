@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kQuery
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kQuery
 
 #include "mongo/platform/basic.h"
 
@@ -38,7 +38,7 @@
 #include "mongo/db/curop_failpoint_helpers.h"
 #include "mongo/db/query/canonical_query.h"
 #include "mongo/db/query/query_request_helper.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/assert_util.h"
 
 namespace mongo {
@@ -83,9 +83,9 @@ bool FindCommon::haveSpaceForNext(const BSONObj& nextDoc, long long numDocs, int
 void FindCommon::waitInFindBeforeMakingBatch(OperationContext* opCtx, const CanonicalQuery& cq) {
     auto whileWaitingFunc = [&, hasLogged = false]() mutable {
         if (!std::exchange(hasLogged, true)) {
-            LOGV2(20908,
-                  "Waiting in find before making batch for query",
-                  "query"_attr = redact(cq.toStringShort()));
+            LOG(20908,
+                "Waiting in find before making batch for query",
+                "query"_attr = redact(cq.toStringShort()));
         }
     };
 

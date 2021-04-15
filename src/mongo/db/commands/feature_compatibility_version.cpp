@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kCommand
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kCommand
 
 #include "mongo/platform/basic.h"
 
@@ -53,7 +53,7 @@
 #include "mongo/db/storage/storage_engine.h"
 #include "mongo/db/wire_version.h"
 #include "mongo/db/write_concern_options.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/transport/service_entry_point.h"
 
@@ -389,9 +389,9 @@ void FeatureCompatibilityVersion::initializeForStartup(OperationContext* opCtx) 
 
     // On startup, if the version is in an upgrading or downgrading state, print a warning.
     if (serverGlobalParams.featureCompatibility.isUpgradingOrDowngrading()) {
-        LOGV2_WARNING_OPTIONS(
+        LOG_WARNING_OPTIONS(
             4978301,
-            {logv2::LogTag::kStartupWarnings},
+            {log::LogTag::kStartupWarnings},
             "A featureCompatibilityVersion upgrade/downgrade did not complete. To fix this, use "
             "the setFeatureCompatibilityVersion command to resume the upgrade/downgrade",
             "currentfeatureCompatibilityVersion"_attr =
@@ -425,9 +425,9 @@ void FeatureCompatibilityVersion::fassertInitializedAfterStartup(OperationContex
     // Fail to start up if there is no featureCompatibilityVersion document and there are non-local
     // databases present.
     if (!fcvDocument && nonLocalDatabases) {
-        LOGV2_FATAL_NOTRACE(40652,
-                            "Unable to start up mongod due to missing featureCompatibilityVersion "
-                            "document. Please run with --repair to restore the document.");
+        LOG_FATAL_NOTRACE(40652,
+                          "Unable to start up mongod due to missing featureCompatibilityVersion "
+                          "document. Please run with --repair to restore the document.");
     }
 
     // If we are part of a replica set and are started up with no data files, we do not set the

@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kASIO
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kASIO
 
 #include "mongo/platform/basic.h"
 
@@ -36,7 +36,7 @@
 #include "mongo/client/authenticate.h"
 #include "mongo/config.h"
 #include "mongo/db/auth/authorization_manager.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace mongo {
 namespace executor {
@@ -59,7 +59,7 @@ void TLTypeFactory::shutdown() {
 
     stdx::lock_guard<Latch> lk(_mutex);
 
-    LOGV2(22582, "Killing all outstanding egress activity.");
+    LOG(22582, "Killing all outstanding egress activity.");
     for (auto collar : _collars) {
         collar->kill();
     }
@@ -95,7 +95,7 @@ void TLTimer::setTimeout(Milliseconds timeoutVal, TimeoutCallback cb) {
     // We will not wait on a timeout if we are in shutdown.
     // The clients will be canceled as an inevitable consequence of pools shutting down.
     if (inShutdown()) {
-        LOGV2_DEBUG(22583, 2, "Skipping timeout due to impending shutdown.");
+        LOG_DEBUG(22583, 2, "Skipping timeout due to impending shutdown.");
         return;
     }
 
@@ -380,16 +380,16 @@ void TLConnection::setup(Milliseconds timeout, SetupCallback cb) {
             if (status.isOK()) {
                 handler->promise.emplaceValue();
             } else {
-                LOGV2_DEBUG(22584,
-                            2,
-                            "Failed to connect to {hostAndPort} - {error}",
-                            "Failed to connect",
-                            "hostAndPort"_attr = _peer,
-                            "error"_attr = redact(status));
+                LOG_DEBUG(22584,
+                          2,
+                          "Failed to connect to {hostAndPort} - {error}",
+                          "Failed to connect",
+                          "hostAndPort"_attr = _peer,
+                          "error"_attr = redact(status));
                 handler->promise.setError(status);
             }
         });
-    LOGV2_DEBUG(22585, 2, "Finished connection setup.");
+    LOG_DEBUG(22585, 2, "Finished connection setup.");
 }
 
 void TLConnection::refresh(Milliseconds timeout, RefreshCallback cb) {

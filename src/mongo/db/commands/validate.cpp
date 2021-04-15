@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kCommand
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kCommand
 
 #include "mongo/platform/basic.h"
 
@@ -38,7 +38,7 @@
 #include "mongo/db/query/internal_plans.h"
 #include "mongo/db/storage/durable_catalog.h"
 #include "mongo/db/storage/record_store.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/fail_point.h"
 #include "mongo/util/scopeguard.h"
 
@@ -128,9 +128,9 @@ public:
         // Background validation is not supported on the ephemeralForTest storage engine due to its
         // lack of support for timestamps. Switch the mode to foreground validation instead.
         if (background && storageGlobalParams.engine == "ephemeralForTest") {
-            LOGV2(4775400,
-                  "ephemeralForTest does not support background validation, switching to "
-                  "foreground validation");
+            LOG(4775400,
+                "ephemeralForTest does not support background validation, switching to "
+                "foreground validation");
             background = false;
         }
 
@@ -169,13 +169,13 @@ public:
         }
 
         if (!serverGlobalParams.quiet.load()) {
-            LOGV2(20514,
-                  "CMD: validate",
-                  "namespace"_attr = nss,
-                  "background"_attr = background,
-                  "full"_attr = fullValidate,
-                  "enforceFastCount"_attr = enforceFastCount,
-                  "repair"_attr = repair);
+            LOG(20514,
+                "CMD: validate",
+                "namespace"_attr = nss,
+                "background"_attr = background,
+                "full"_attr = fullValidate,
+                "enforceFastCount"_attr = enforceFastCount,
+                "repair"_attr = repair);
         }
 
         // Only one validation per collection can be in progress, the rest wait.

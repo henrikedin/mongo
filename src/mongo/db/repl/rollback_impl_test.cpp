@@ -26,7 +26,7 @@
  *    exception statement from all source files in the program, then also delete
  *    it in the license file.
  */
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kReplicationRollback
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kReplicationRollback
 
 #include "mongo/platform/basic.h"
 
@@ -48,7 +48,7 @@
 #include "mongo/db/s/operation_sharding_state.h"
 #include "mongo/db/s/type_shard_identity.h"
 #include "mongo/db/service_context.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/s/catalog/type_config_version.h"
 #include "mongo/stdx/thread.h"
 #include "mongo/transport/session.h"
@@ -112,15 +112,15 @@ protected:
                                         UUID uuid,
                                         NamespaceString nss,
                                         const SimpleBSONObjUnorderedSet& idSet) final {
-        LOGV2(21647,
-              "Simulating writing a rollback file for namespace {nss_ns} with uuid {uuid}",
-              "nss_ns"_attr = nss.ns(),
-              "uuid"_attr = uuid);
+        LOG(21647,
+            "Simulating writing a rollback file for namespace {nss_ns} with uuid {uuid}",
+            "nss_ns"_attr = nss.ns(),
+            "uuid"_attr = uuid);
         for (auto&& id : idSet) {
-            LOGV2(21648,
-                  "Looking up {id_jsonString_JsonStringFormat_LegacyStrict}",
-                  "id_jsonString_JsonStringFormat_LegacyStrict"_attr =
-                      id.jsonString(JsonStringFormat::LegacyStrict));
+            LOG(21648,
+                "Looking up {id_jsonString_JsonStringFormat_LegacyStrict}",
+                "id_jsonString_JsonStringFormat_LegacyStrict"_attr =
+                    id.jsonString(JsonStringFormat::LegacyStrict));
             auto document = _findDocumentById(opCtx, uuid, nss, id.firstElement());
             if (document) {
                 _uuidToObjsMap[uuid].push_back(*document);
@@ -541,12 +541,12 @@ TEST_F(RollbackImplTest, RollbackKillsNecessaryOperations) {
     }
 
     // We assume that an interrupted opCtx would release its locks.
-    LOGV2(21649, "Both opCtx's marked for kill");
+    LOG(21649, "Both opCtx's marked for kill");
     ASSERT_EQ(ErrorCodes::InterruptedDueToReplStateChange, writeOpCtx->checkForInterruptNoAssert());
     globalWrite = boost::none;
     ASSERT_EQ(ErrorCodes::InterruptedDueToReplStateChange, readOpCtx->checkForInterruptNoAssert());
     globalRead = boost::none;
-    LOGV2(21650, "Both opCtx's were interrupted");
+    LOG(21650, "Both opCtx's were interrupted");
 
     rollbackThread.join();
     ASSERT_OK(status);
@@ -888,7 +888,7 @@ DEATH_TEST_REGEX_F(RollbackImplTest,
     _storageInterface->setStableTimestamp(nullptr, Timestamp(1, 1));
 
     auto status = _rollback->runRollback(_opCtx.get());
-    LOGV2(21651, "Mongod did not crash. Status: {status}", "status"_attr = status);
+    LOG(21651, "Mongod did not crash. Status: {status}", "status"_attr = status);
     MONGO_UNREACHABLE;
 }
 
@@ -1243,7 +1243,7 @@ DEATH_TEST_F(RollbackImplTest,
     }
 
     auto status = _rollback->runRollback(_opCtx.get());
-    LOGV2(21652, "mongod did not crash when expected; status: {status}", "status"_attr = status);
+    LOG(21652, "mongod did not crash when expected; status: {status}", "status"_attr = status);
 }
 
 DEATH_TEST_F(RollbackImplTest,
@@ -1257,7 +1257,7 @@ DEATH_TEST_F(RollbackImplTest,
     _storageInterface->setStableTimestamp(nullptr, Timestamp(1, 1));
 
     auto status = _rollback->runRollback(_opCtx.get());
-    LOGV2(21653, "mongod did not crash when expected; status: {status}", "status"_attr = status);
+    LOG(21653, "mongod did not crash when expected; status: {status}", "status"_attr = status);
 }
 
 TEST_F(RollbackImplTest, RollbackSetsMultipleCollectionCounts) {
@@ -1758,9 +1758,9 @@ DEATH_TEST_F(RollbackImplObserverInfoTest,
         Timestamp(2, 2), boost::none, "admin.$cmd", BSON("applyOps" << subops.arr()), 2);
 
     auto status = _rollback->_namespacesForOp_forTest(OplogEntry(applyOpsCmdOp.first));
-    LOGV2(21654,
-          "Mongod did not crash. Status: {status_getStatus}",
-          "status_getStatus"_attr = status.getStatus());
+    LOG(21654,
+        "Mongod did not crash. Status: {status_getStatus}",
+        "status_getStatus"_attr = status.getStatus());
     MONGO_UNREACHABLE;
 }
 

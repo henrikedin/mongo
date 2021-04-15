@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kResharding
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kResharding
 
 #include "mongo/platform/basic.h"
 
@@ -38,7 +38,7 @@
 #include "mongo/db/s/collection_sharding_runtime.h"
 #include "mongo/db/s/resharding/donor_document_gen.h"
 #include "mongo/db/s/resharding/resharding_coordinator_service.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace mongo {
 
@@ -153,18 +153,18 @@ void _doPin(OperationContext* opCtx) {
             // the oldest timestamp can race ahead of the pin request. It's not ideal this
             // node cannot participate in donating documents for the cloning phase, but this
             // is the most robust path forward. Ignore this case.
-            LOGV2_WARNING(5384104,
-                          "This node is unable to pin history for resharding",
-                          "requestedTs"_attr = pin.get());
+            LOG_WARNING(5384104,
+                        "This node is unable to pin history for resharding",
+                        "requestedTs"_attr = pin.get());
         } else {
             // For recovery cases we also ignore the error. The expected scenario is the pin
             // request is no longer needed, but the write to delete the pin was rolled
             // back. The write to delete the pin won't be issued until the collection
             // cloning phase of resharding is majority committed. Thus there should be no
             // consequence to observing this error. Ignore this case.
-            LOGV2(5384103,
-                  "The requested pin was unavailable, but should also be unnecessary",
-                  "requestedTs"_attr = pin.get());
+            LOG(5384103,
+                "The requested pin was unavailable, but should also be unnecessary",
+                "requestedTs"_attr = pin.get());
         }
     }
 }

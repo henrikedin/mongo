@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kAccessControl
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kAccessControl
 
 #include "mongo/platform/basic.h"
 
@@ -40,7 +40,7 @@
 #include "mongo/db/auth/authorization_manager.h"
 #include "mongo/db/auth/user_cache_invalidator_job_parameters_gen.h"
 #include "mongo/db/client.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/s/grid.h"
 #include "mongo/util/duration.h"
@@ -97,11 +97,11 @@ std::string oidOrTimestampToString(const OIDorTimestamp& oidOrTimestamp) {
 }  // namespace
 
 Status userCacheInvalidationIntervalSecsNotify(const int& value) {
-    LOGV2_DEBUG(20259,
-                5,
-                "setInterval: new={newInterval}",
-                "setInterval",
-                "newInterval"_attr = loadInterval());
+    LOG_DEBUG(20259,
+              5,
+              "setInterval: new={newInterval}",
+              "setInterval",
+              "newInterval"_attr = loadInterval());
     if (hasGlobalServiceContext()) {
         auto service = getGlobalServiceContext();
         if (getUserCacheInvalidator(service)) {
@@ -125,10 +125,10 @@ void UserCacheInvalidator::initialize(OperationContext* opCtx) {
         return;
     }
 
-    LOGV2_WARNING(20265,
-                  "An error occurred while fetching initial user cache generation from config "
-                  "servers",
-                  "error"_attr = swCurrentGeneration.getStatus());
+    LOG_WARNING(20265,
+                "An error occurred while fetching initial user cache generation from config "
+                "servers",
+                "error"_attr = swCurrentGeneration.getStatus());
     _previousGeneration = OID();
 }
 
@@ -157,31 +157,31 @@ void UserCacheInvalidator::run() {
     auto opCtx = cc().makeOperationContext();
     auto swCurrentGeneration = getCurrentCacheGeneration(opCtx.get());
     if (!swCurrentGeneration.isOK()) {
-        LOGV2_WARNING(20266,
-                      "An error occurred while fetching current user cache generation from "
-                      "config servers",
-                      "error"_attr = swCurrentGeneration.getStatus());
+        LOG_WARNING(20266,
+                    "An error occurred while fetching current user cache generation from "
+                    "config servers",
+                    "error"_attr = swCurrentGeneration.getStatus());
 
         // When in doubt, invalidate the cache
         try {
             _authzManager->invalidateUserCache(opCtx.get());
         } catch (const DBException& e) {
-            LOGV2_WARNING(20267, "Error invalidating user cache", "error"_attr = e.toStatus());
+            LOG_WARNING(20267, "Error invalidating user cache", "error"_attr = e.toStatus());
         }
         return;
     }
 
     if (swCurrentGeneration.getValue() != _previousGeneration) {
-        LOGV2(20263,
-              "User cache generation changed from {previousGeneration} to "
-              "{currentGeneration}; invalidating user cache",
-              "User cache generation changed; invalidating user cache",
-              "previousGeneration"_attr = oidOrTimestampToString(_previousGeneration),
-              "currentGeneration"_attr = oidOrTimestampToString(swCurrentGeneration.getValue()));
+        LOG(20263,
+            "User cache generation changed from {previousGeneration} to "
+            "{currentGeneration}; invalidating user cache",
+            "User cache generation changed; invalidating user cache",
+            "previousGeneration"_attr = oidOrTimestampToString(_previousGeneration),
+            "currentGeneration"_attr = oidOrTimestampToString(swCurrentGeneration.getValue()));
         try {
             _authzManager->invalidateUserCache(opCtx.get());
         } catch (const DBException& e) {
-            LOGV2_WARNING(20268, "Error invalidating user cache", "error"_attr = e.toStatus());
+            LOG_WARNING(20268, "Error invalidating user cache", "error"_attr = e.toStatus());
         }
         _previousGeneration = swCurrentGeneration.getValue();
     }

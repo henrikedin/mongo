@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kDefault
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kDefault
 
 #include "mongo/platform/basic.h"
 
@@ -39,7 +39,7 @@
 #include "mongo/db/dbdirectclient.h"
 #include "mongo/db/operation_context.h"
 #include "mongo/dbtests/dbtests.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/op_msg.h"
 
 using namespace mongo;
@@ -180,7 +180,7 @@ public:
 
             BSONObj result;
             bool ok = db.runCommand(nsDb(), cmd.obj(), result);
-            LOGV2(24181, "{result_jsonString}", "result_jsonString"_attr = result.jsonString());
+            LOG(24181, "{result_jsonString}", "result_jsonString"_attr = result.jsonString());
             ASSERT(ok);
         }
     }
@@ -197,7 +197,7 @@ public:
 
         BSONObj result;
         bool ok = db.runCommand(nsDb(), cmd.obj(), result);
-        LOGV2(24182, "{result_jsonString}", "result_jsonString"_attr = result.jsonString());
+        LOG(24182, "{result_jsonString}", "result_jsonString"_attr = result.jsonString());
         ASSERT(ok);
     }
 };
@@ -218,7 +218,7 @@ public:
 
         BSONObj result;
         bool ok = db.runCommand(nsDb(), cmd.obj(), result);
-        LOGV2(24183, "{result_jsonString}", "result_jsonString"_attr = result.jsonString());
+        LOG(24183, "{result_jsonString}", "result_jsonString"_attr = result.jsonString());
         ASSERT(!ok);
     }
 };
@@ -240,7 +240,7 @@ public:
 
         BSONObj result;
         bool ok = db.runCommand(nsDb(), cmd.obj(), result);
-        LOGV2(24184, "{result_jsonString}", "result_jsonString"_attr = result.jsonString());
+        LOG(24184, "{result_jsonString}", "result_jsonString"_attr = result.jsonString());
         ASSERT(!ok);
     }
 };
@@ -265,7 +265,7 @@ public:
 
         BSONObj result;
         bool ok = db.runCommand(nsDb(), cmd.obj(), result);
-        LOGV2(24185, "{result_jsonString}", "result_jsonString"_attr = result.jsonString());
+        LOG(24185, "{result_jsonString}", "result_jsonString"_attr = result.jsonString());
         ASSERT(!ok);
     }
 };
@@ -289,7 +289,7 @@ public:
 
         BSONObj result;
         bool ok = db.runCommand(nsDb(), cmd.obj(), result);
-        LOGV2(24186, "{result_jsonString}", "result_jsonString"_attr = result.jsonString());
+        LOG(24186, "{result_jsonString}", "result_jsonString"_attr = result.jsonString());
         ASSERT(ok);
         // TODO(kangas) test that Tom's score is 1
     }

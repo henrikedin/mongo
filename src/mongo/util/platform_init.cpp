@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kControl
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kControl
 
 #include "mongo/platform/basic.h"
 
@@ -39,7 +39,7 @@
 #endif
 
 #include "mongo/base/init.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/stacktrace.h"
 
 #ifdef _WIN32
@@ -71,11 +71,11 @@ extern "C" {
 int __cdecl crtDebugCallback(int nRptType, char* originalMessage, int* returnValue) noexcept {
     *returnValue = 0;  // Returned by _CrtDbgReport. (1: starts the debugger).
     bool die = (nRptType != _CRT_WARN);
-    LOGV2(23325,
-          "*** C runtime {severity_nRptType}: {firstLine_originalMessage}{die_terminating_sd_sd}",
-          "severity_nRptType"_attr = severity(nRptType),
-          "firstLine_originalMessage"_attr = firstLine(originalMessage),
-          "die_terminating_sd_sd"_attr = (die ? ", terminating"_sd : ""_sd));
+    LOG(23325,
+        "*** C runtime {severity_nRptType}: {firstLine_originalMessage}{die_terminating_sd_sd}",
+        "severity_nRptType"_attr = severity(nRptType),
+        "firstLine_originalMessage"_attr = firstLine(originalMessage),
+        "die_terminating_sd_sd"_attr = (die ? ", terminating"_sd : ""_sd));
     if (die) {
         fassertFailed(17006);
     }
@@ -92,7 +92,7 @@ MONGO_INITIALIZER(Behaviors_Win32)(InitializerContext*) {
     _CrtSetReportHook(&crtDebugCallback);
 
     if (_setmaxstdio(2048) == -1) {
-        LOGV2_WARNING(23326, "Failed to increase max open files limit from default of 512 to 2048");
+        LOG_WARNING(23326, "Failed to increase max open files limit from default of 512 to 2048");
     }
 
     // Let's try to set minimum Windows Kernel quantum length to smallest viable timer resolution in
@@ -104,9 +104,9 @@ MONGO_INITIALIZER(Behaviors_Win32)(InitializerContext*) {
     int timerResolution;
 
     if (timeGetDevCaps(&tc, sizeof(TIMECAPS)) != TIMERR_NOERROR) {
-        LOGV2_WARNING(23327, "Failed to read timer resolution range.");
+        LOG_WARNING(23327, "Failed to read timer resolution range.");
         if (timeBeginPeriod(1) != TIMERR_NOERROR) {
-            LOGV2_WARNING(23328, "Failed to set minimum timer resolution to 1 millisecond.");
+            LOG_WARNING(23328, "Failed to set minimum timer resolution to 1 millisecond.");
         }
     } else {
         timerResolution =

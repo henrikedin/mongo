@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTransaction
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTransaction
 
 #include "mongo/platform/basic.h"
 
@@ -45,7 +45,7 @@
 #include "mongo/db/session_txn_record_gen.h"
 #include "mongo/db/sessions_collection.h"
 #include "mongo/db/transaction_participant.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/s/write_ops/batched_command_response.h"
 #include "mongo/util/concurrency/thread_pool.h"
@@ -195,7 +195,7 @@ void abortInProgressTransactions(OperationContext* opCtx) {
                      << DurableTxnState_serializer(DurableTxnStateEnum::kInProgress)));
     auto cursor = client.query(NamespaceString::kSessionTransactionsTableNamespace, query);
     if (cursor->more()) {
-        LOGV2_DEBUG(21977, 3, "Aborting in-progress transactions on stepup.");
+        LOG_DEBUG(21977, 3, "Aborting in-progress transactions on stepup.");
     }
     while (cursor->more()) {
         auto txnRecord = SessionTxnRecord::parse(
@@ -205,12 +205,12 @@ void abortInProgressTransactions(OperationContext* opCtx) {
         opCtx->setInMultiDocumentTransaction();
         MongoDOperationContextSessionWithoutRefresh ocs(opCtx);
         auto txnParticipant = TransactionParticipant::get(opCtx);
-        LOGV2_DEBUG(21978,
-                    3,
-                    "Aborting transaction sessionId: {sessionId} txnNumber {txnNumber}",
-                    "Aborting transaction",
-                    "sessionId"_attr = txnRecord.getSessionId().toBSON(),
-                    "txnNumber"_attr = txnRecord.getTxnNum());
+        LOG_DEBUG(21978,
+                  3,
+                  "Aborting transaction sessionId: {sessionId} txnNumber {txnNumber}",
+                  "Aborting transaction",
+                  "sessionId"_attr = txnRecord.getSessionId().toBSON(),
+                  "txnNumber"_attr = txnRecord.getTxnNum());
         txnParticipant.abortTransaction(opCtx);
         opCtx->resetMultiDocumentTransactionState();
     }
@@ -253,13 +253,13 @@ void MongoDSessionCatalog::onStepUp(OperationContext* opCtx) {
             newOpCtx->setLogicalSessionId(sessionId);
             MongoDOperationContextSession ocs(newOpCtx.get());
             auto txnParticipant = TransactionParticipant::get(newOpCtx.get());
-            LOGV2_DEBUG(21979,
-                        3,
-                        "Restoring locks of prepared transaction. SessionId: {sessionId} "
-                        "TxnNumber: {txnNumber}",
-                        "Restoring locks of prepared transaction",
-                        "sessionId"_attr = sessionId.getId(),
-                        "txnNumber"_attr = txnParticipant.getActiveTxnNumber());
+            LOG_DEBUG(21979,
+                      3,
+                      "Restoring locks of prepared transaction. SessionId: {sessionId} "
+                      "TxnNumber: {txnNumber}",
+                      "Restoring locks of prepared transaction",
+                      "sessionId"_attr = sessionId.getId(),
+                      "txnNumber"_attr = txnParticipant.getActiveTxnNumber());
             txnParticipant.refreshLocksForPreparedTransaction(newOpCtx.get(), false);
         }
     }

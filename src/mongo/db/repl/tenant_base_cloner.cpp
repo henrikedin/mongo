@@ -27,12 +27,12 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTenantMigration
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTenantMigration
 
 #include "mongo/platform/basic.h"
 
 #include "mongo/db/repl/tenant_base_cloner.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace mongo {
 namespace repl {
@@ -45,8 +45,8 @@ TenantBaseCloner::TenantBaseCloner(StringData clonerName,
                                    ThreadPool* dbPool)
     : BaseCloner(clonerName, sharedData, source, client, storageInterface, dbPool) {}
 
-logv2::LogComponent TenantBaseCloner::getLogComponent() {
-    return logv2::LogComponent::kTenantMigration;
+log::LogComponent TenantBaseCloner::getLogComponent() {
+    return log::LogComponent::kTenantMigration;
 }
 
 }  // namespace repl

@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kWrite
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kWrite
 
 #include "mongo/platform/basic.h"
 
@@ -36,7 +36,7 @@
 #include <memory>
 
 #include "mongo/db/service_context.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace mongo {
 namespace {
@@ -157,11 +157,11 @@ void SessionCatalog::scanSessions(const SessionKiller::Matcher& matcher,
     {
         stdx::lock_guard<Latch> lg(_mutex);
 
-        LOGV2_DEBUG(21976,
-                    2,
-                    "Scanning {sessionCount} sessions",
-                    "Scanning sessions",
-                    "sessionCount"_attr = _sessions.size());
+        LOG_DEBUG(21976,
+                  2,
+                  "Scanning {sessionCount} sessions",
+                  "Scanning sessions",
+                  "sessionCount"_attr = _sessions.size());
 
         for (auto it = _sessions.begin(); it != _sessions.end(); ++it) {
             if (matcher.match(it->first)) {

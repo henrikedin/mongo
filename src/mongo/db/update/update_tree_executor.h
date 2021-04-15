@@ -46,7 +46,7 @@ public:
     ApplyResult applyUpdate(ApplyParams applyParams) const final {
         mutablebson::Document logDocument;
         boost::optional<V1LogBuilder> optV1LogBuilder;
-        boost::optional<v2_log_builder::V2LogBuilder> optV2LogBuilder;
+        boost::optional<v2_LOG_builder::V2LogBuilder> optV2LogBuilder;
 
         UpdateNode::UpdateNodeApplyParams updateNodeApplyParams;
 

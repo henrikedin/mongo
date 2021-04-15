@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kIndex
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kIndex
 
 #include "mongo/db/index/expression_keys_private.h"
 
@@ -46,7 +46,7 @@
 #include "mongo/db/index/s2_common.h"
 #include "mongo/db/index_names.h"
 #include "mongo/db/query/collation/collation_index_key.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/str.h"
 
@@ -637,12 +637,12 @@ void ExpressionKeysPrivate::getS2Keys(SharedBufferFragmentBuilder& pooledBufferB
     }
 
     if (keysToAdd.size() > params.maxKeysPerInsert) {
-        LOGV2_WARNING(23755,
-                      "Insert of geo object generated a high number of keys. num keys: "
-                      "{numKeys} obj inserted: {obj}",
-                      "Insert of geo object generated a large number of keys",
-                      "obj"_attr = redact(obj),
-                      "numKeys"_attr = keysToAdd.size());
+        LOG_WARNING(23755,
+                    "Insert of geo object generated a high number of keys. num keys: "
+                    "{numKeys} obj inserted: {obj}",
+                    "Insert of geo object generated a large number of keys",
+                    "obj"_attr = redact(obj),
+                    "numKeys"_attr = keysToAdd.size());
     }
 
     invariant(keys->empty());

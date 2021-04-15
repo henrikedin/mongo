@@ -29,7 +29,7 @@
 
 #include "kms_message/kms_request.h"
 #include "mongo/shell/kms_gen.h"
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::logv2::LogComponent::kControl
+#define MONGO_LOG_DEFAULT_COMPONENT ::log::LogComponent::kControl
 
 #include "mongo/platform/basic.h"
 

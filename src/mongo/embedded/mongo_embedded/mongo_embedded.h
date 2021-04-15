@@ -362,11 +362,11 @@ typedef struct mongo_embedded_v1_init_params mongo_embedded_v1_init_params;
  * Log = 0
  * Debug = 1 to 5
  */
-typedef void(MONGO_API_CALL* mongo_embedded_v1_log_callback)(
+typedef void(MONGO_API_CALL* mongo_embedded_v1_LOG_callback)(
     void* user_data, const char* message, const char* component, const char* context, int severity);
 
 /**
- * Valid bits for the log_flags bitfield in mongo_embedded_v1_init_params.
+ * Valid bits for the LOG_flags bitfield in mongo_embedded_v1_init_params.
  */
 typedef enum {
     /** Placeholder for no logging */
@@ -380,7 +380,7 @@ typedef enum {
 
     /** Logs via log callback that must be provided when this bit is set. */
     MONGO_EMBEDDED_V1_LOG_CALLBACK = 4
-} mongo_embedded_v1_log_flags;
+} mongo_embedded_v1_LOG_flags;
 
 // See the documentation of this object on the comments above its forward declaration
 struct mongo_embedded_v1_init_params {
@@ -391,21 +391,21 @@ struct mongo_embedded_v1_init_params {
     const char* yaml_config;
 
     /**
-     * Bitfield of log destinations, accepts values from mongo_embedded_v1_log_flags.
+     * Bitfield of log destinations, accepts values from mongo_embedded_v1_LOG_flags.
      * Default is stdout.
      */
-    uint64_t log_flags;
+    uint64_t LOG_flags;
 
     /**
      * Optional log callback to the mongo_embedded_capi library, it is not legal to reenter the
      * library from the callback.
      */
-    mongo_embedded_v1_log_callback log_callback;
+    mongo_embedded_v1_LOG_callback LOG_callback;
 
     /**
      * Optional user data to be returned in the log callback.
      */
-    void* log_user_data;
+    void* LOG_user_data;
 };
 
 /**

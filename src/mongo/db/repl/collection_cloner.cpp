@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kReplicationInitialSync
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kReplicationInitialSync
 
 #include "mongo/platform/basic.h"
 
@@ -40,7 +40,7 @@
 #include "mongo/db/repl/database_cloner_gen.h"
 #include "mongo/db/repl/repl_server_parameters_gen.h"
 #include "mongo/db/wire_version.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 
 #include "mongo/util/assert_util.h"
@@ -129,12 +129,12 @@ void CollectionCloner::preStage() {
             _stats.avgObjSize = res.getField("avgObjSize").safeNumberLong();
         }
     } else {
-        LOGV2_DEBUG(4786302,
-                    1,
-                    "Skipping the recording of some initial sync metrics due to failure in the "
-                    "'collStats' command",
-                    "ns"_attr = _sourceNss.coll().toString(),
-                    "status"_attr = status);
+        LOG_DEBUG(4786302,
+                  1,
+                  "Skipping the recording of some initial sync metrics due to failure in the "
+                  "'collStats' command",
+                  "ns"_attr = _sourceNss.coll().toString(),
+                  "status"_attr = status);
     }
 }
 
@@ -148,12 +148,12 @@ BaseCloner::AfterStageBehavior CollectionCloner::CollectionClonerStage::run() {
     try {
         return ClonerStage<CollectionCloner>::run();
     } catch (const ExceptionFor<ErrorCodes::NamespaceNotFound>&) {
-        LOGV2(21132,
-              "CollectionCloner ns: '{namespace}' uuid: "
-              "UUID(\"{uuid}\") stopped because collection was dropped on source.",
-              "CollectionCloner stopped because collection was dropped on source",
-              "namespace"_attr = getCloner()->getSourceNss(),
-              "uuid"_attr = getCloner()->getSourceUuid());
+        LOG(21132,
+            "CollectionCloner ns: '{namespace}' uuid: "
+            "UUID(\"{uuid}\") stopped because collection was dropped on source.",
+            "CollectionCloner stopped because collection was dropped on source",
+            "namespace"_attr = getCloner()->getSourceNss(),
+            "uuid"_attr = getCloner()->getSourceUuid());
         getCloner()->waitForDatabaseWorkToComplete();
         return kSkipRemainingStages;
     } catch (const DBException&) {
@@ -174,9 +174,9 @@ BaseCloner::AfterStageBehavior CollectionCloner::countStage() {
     // so we set it to zero here to avoid aborting the collection clone.
     // Note that this count value is only used for reporting purposes.
     if (count < 0) {
-        LOGV2_WARNING(21142,
-                      "Count command returned negative value. Updating to 0 to allow progress "
-                      "meter to function properly");
+        LOG_WARNING(21142,
+                    "Count command returned negative value. Updating to 0 to allow progress "
+                    "meter to function properly");
         count = 0;
     }
 
@@ -193,11 +193,11 @@ BaseCloner::AfterStageBehavior CollectionCloner::listIndexesStage() {
     auto indexSpecs =
         getClient()->getIndexSpecs(_sourceDbAndUuid, includeBuildUUIDs, QueryOption_SecondaryOk);
     if (indexSpecs.empty()) {
-        LOGV2_WARNING(21143,
-                      "No indexes found for collection {namespace} while cloning from {source}",
-                      "No indexes found for collection while cloning",
-                      "namespace"_attr = _sourceNss.ns(),
-                      "source"_attr = getSource());
+        LOG_WARNING(21143,
+                    "No indexes found for collection {namespace} while cloning from {source}",
+                    "No indexes found for collection while cloning",
+                    "namespace"_attr = _sourceNss.ns(),
+                    "source"_attr = getSource());
     }
 
     // Parse the index specs into their respective state, ready or unfinished.
@@ -218,11 +218,11 @@ BaseCloner::AfterStageBehavior CollectionCloner::listIndexesStage() {
     };
 
     if (!_idIndexSpec.isEmpty() && _collectionOptions.autoIndexId == CollectionOptions::NO) {
-        LOGV2_WARNING(21144,
-                      "Found the _id_ index spec but the collection specified autoIndexId of false "
-                      "on ns:{namespace}",
-                      "Found the _id index spec but the collection specified autoIndexId of false",
-                      "namespace"_attr = this->_sourceNss);
+        LOG_WARNING(21144,
+                    "Found the _id_ index spec but the collection specified autoIndexId of false "
+                    "on ns:{namespace}",
+                    "Found the _id index spec but the collection specified autoIndexId of false",
+                    "namespace"_attr = this->_sourceNss);
     }
     return kContinueNormally;
 }
@@ -307,12 +307,12 @@ void CollectionCloner::runQuery() {
     if (_resumeSupported) {
         if (_resumeToken) {
             // Resume the query from where we left off.
-            LOGV2_DEBUG(21133, 1, "Collection cloner will resume the last successful query");
+            LOG_DEBUG(21133, 1, "Collection cloner will resume the last successful query");
             query = QUERY("query" << BSONObj() << "$_requestResumeToken" << true << "$_resumeAfter"
                                   << _resumeToken.get());
         } else {
             // New attempt at a resumable query.
-            LOGV2_DEBUG(21134, 1, "Collection cloner will run a new query");
+            LOG_DEBUG(21134, 1, "Collection cloner will run a new query");
             query = QUERY("query" << BSONObj() << "$_requestResumeToken" << true);
         }
         query.hint(BSON("$natural" << 1));
@@ -354,10 +354,10 @@ void CollectionCloner::runQuery() {
             // Collection has changed upstream. This will trigger the code block above next round,
             // (unless we find out the collection was dropped via getting a NamespaceNotFound).
             if (_queryStage.isCursorError(status)) {
-                LOGV2(21135,
-                      "Lost cursor during non-resumable query: {error}",
-                      "Lost cursor during non-resumable query",
-                      "error"_attr = status);
+                LOG(21135,
+                    "Lost cursor during non-resumable query: {error}",
+                    "Lost cursor during non-resumable query",
+                    "error"_attr = status);
                 _lostNonResumableCursor = true;
                 throw;
             }
@@ -377,7 +377,7 @@ void CollectionCloner::handleNextBatch(DBClientCursorBatchIterator& iter) {
         if (!getSharedData()->getStatus(lk).isOK()) {
             static constexpr char message[] =
                 "Collection cloning cancelled due to initial sync failure";
-            LOGV2(21136, message, "error"_attr = getSharedData()->getStatus(lk));
+            LOG(21136, message, "error"_attr = getSharedData()->getStatus(lk));
             uasserted(ErrorCodes::CallbackCanceled,
                       str::stream() << message << ": " << getSharedData()->getStatus(lk));
         }
@@ -426,12 +426,12 @@ void CollectionCloner::handleNextBatch(DBClientCursorBatchIterator& iter) {
             while (MONGO_unlikely(
                        initialSyncHangCollectionClonerAfterHandlingBatchResponse.shouldFail()) &&
                    !mustExit()) {
-                LOGV2(21137,
-                      "initialSyncHangCollectionClonerAfterHandlingBatchResponse fail point "
-                      "enabled for {namespace}. Blocking until fail point is disabled.",
-                      "initialSyncHangCollectionClonerAfterHandlingBatchResponse fail point "
-                      "enabled. Blocking until fail point is disabled",
-                      "namespace"_attr = _sourceNss.toString());
+                LOG(21137,
+                    "initialSyncHangCollectionClonerAfterHandlingBatchResponse fail point "
+                    "enabled for {namespace}. Blocking until fail point is disabled.",
+                    "initialSyncHangCollectionClonerAfterHandlingBatchResponse fail point "
+                    "enabled. Blocking until fail point is disabled",
+                    "namespace"_attr = _sourceNss.toString());
                 mongo::sleepsecs(1);
             }
         },
@@ -452,10 +452,10 @@ void CollectionCloner::insertDocumentsCallback(const executor::TaskExecutor::Cal
         // 'receivedBatches'.
         ++_stats.fetchedBatches;
         if (_documentsToInsert.size() == 0) {
-            LOGV2_WARNING(21145,
-                          "insertDocumentsCallback, but no documents to insert for ns:{namespace}",
-                          "insertDocumentsCallback, but no documents to insert",
-                          "namespace"_attr = _sourceNss);
+            LOG_WARNING(21145,
+                        "insertDocumentsCallback, but no documents to insert for ns:{namespace}",
+                        "insertDocumentsCallback, but no documents to insert",
+                        "namespace"_attr = _sourceNss);
             return;
         }
         _documentsToInsert.swap(docs);
@@ -471,9 +471,9 @@ void CollectionCloner::insertDocumentsCallback(const executor::TaskExecutor::Cal
 
     initialSyncHangDuringCollectionClone.executeIf(
         [&](const BSONObj&) {
-            LOGV2(21138,
-                  "initial sync - initialSyncHangDuringCollectionClone fail point "
-                  "enabled. Blocking until fail point is disabled");
+            LOG(21138,
+                "initial sync - initialSyncHangDuringCollectionClone fail point "
+                "enabled. Blocking until fail point is disabled");
             while (MONGO_unlikely(initialSyncHangDuringCollectionClone.shouldFail()) &&
                    !mustExit()) {
                 mongo::sleepsecs(1);
@@ -497,10 +497,10 @@ void CollectionCloner::waitForDatabaseWorkToComplete() {
 // Throws.
 void CollectionCloner::abortNonResumableClone(const Status& status) {
     invariant(!_resumeSupported);
-    LOGV2(21141,
-          "Error during non-resumable clone: {error}",
-          "Error during non-resumable clone",
-          "error"_attr = status);
+    LOG(21141,
+        "Error during non-resumable clone: {error}",
+        "Error during non-resumable clone",
+        "error"_attr = status);
     std::string message = str::stream()
         << "Collection clone failed and is not resumable. nss: " << _sourceNss;
     uasserted(ErrorCodes::InitialSyncFailure, message);

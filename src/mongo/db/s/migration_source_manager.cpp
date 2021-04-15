@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kShardingMigration
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kShardingMigration
 
 #include "mongo/platform/basic.h"
 
@@ -56,7 +56,7 @@
 #include "mongo/db/vector_clock.h"
 #include "mongo/executor/task_executor.h"
 #include "mongo/executor/task_executor_pool.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/s/catalog/type_chunk.h"
 #include "mongo/s/catalog_cache_loader.h"
 #include "mongo/s/grid.h"
@@ -128,12 +128,12 @@ MigrationSourceManager::MigrationSourceManager(OperationContext* opCtx,
       _stats(ShardingStatistics::get(_opCtx)) {
     invariant(!_opCtx->lockState()->isLocked());
 
-    LOGV2(22016,
-          "Starting chunk migration donation {requestParameters} with expected collection epoch "
-          "{collectionEpoch}",
-          "Starting chunk migration donation",
-          "requestParameters"_attr = redact(_args.toString()),
-          "collectionEpoch"_attr = _args.getVersionEpoch());
+    LOG(22016,
+        "Starting chunk migration donation {requestParameters} with expected collection epoch "
+        "{collectionEpoch}",
+        "Starting chunk migration donation",
+        "requestParameters"_attr = redact(_args.toString()),
+        "collectionEpoch"_attr = _args.getVersionEpoch());
 
     // Make sure the latest shard version is recovered as of the time of the invocation of the
     // command.
@@ -327,11 +327,11 @@ Status MigrationSourceManager::enterCriticalSection() {
         return status;
     }
 
-    LOGV2_DEBUG_OPTIONS(4817402,
-                        2,
-                        {logv2::LogComponent::kShardMigrationPerf},
-                        "Starting critical section",
-                        "migrationId"_attr = _coordinator->getMigrationId());
+    LOG_DEBUG_OPTIONS(4817402,
+                      2,
+                      {log::LogComponent::kShardMigrationPerf},
+                      "Starting critical section",
+                      "migrationId"_attr = _coordinator->getMigrationId());
 
     _critSec.emplace(_opCtx, _args.getNss());
 
@@ -356,9 +356,9 @@ Status MigrationSourceManager::enterCriticalSection() {
                           << signalStatus.toString()};
     }
 
-    LOGV2(22017,
-          "Migration successfully entered critical section",
-          "migrationId"_attr = _coordinator->getMigrationId());
+    LOG(22017,
+        "Migration successfully entered critical section",
+        "migrationId"_attr = _coordinator->getMigrationId());
 
     scopedGuard.dismiss();
     return Status::OK();
@@ -458,26 +458,26 @@ Status MigrationSourceManager::commitChunkMetadataOnConfig() {
     hangBeforePostMigrationCommitRefresh.pauseWhileSet();
 
     try {
-        LOGV2_DEBUG_OPTIONS(4817404,
-                            2,
-                            {logv2::LogComponent::kShardMigrationPerf},
-                            "Starting post-migration commit refresh on the shard",
-                            "migrationId"_attr = _coordinator->getMigrationId());
+        LOG_DEBUG_OPTIONS(4817404,
+                          2,
+                          {log::LogComponent::kShardMigrationPerf},
+                          "Starting post-migration commit refresh on the shard",
+                          "migrationId"_attr = _coordinator->getMigrationId());
 
         forceShardFilteringMetadataRefresh(_opCtx, getNss());
 
-        LOGV2_DEBUG_OPTIONS(4817405,
-                            2,
-                            {logv2::LogComponent::kShardMigrationPerf},
-                            "Finished post-migration commit refresh on the shard",
-                            "migrationId"_attr = _coordinator->getMigrationId());
+        LOG_DEBUG_OPTIONS(4817405,
+                          2,
+                          {log::LogComponent::kShardMigrationPerf},
+                          "Finished post-migration commit refresh on the shard",
+                          "migrationId"_attr = _coordinator->getMigrationId());
     } catch (const DBException& ex) {
-        LOGV2_DEBUG_OPTIONS(4817410,
-                            2,
-                            {logv2::LogComponent::kShardMigrationPerf},
-                            "Finished post-migration commit refresh on the shard with error",
-                            "migrationId"_attr = _coordinator->getMigrationId(),
-                            "error"_attr = redact(ex));
+        LOG_DEBUG_OPTIONS(4817410,
+                          2,
+                          {log::LogComponent::kShardMigrationPerf},
+                          "Finished post-migration commit refresh on the shard with error",
+                          "migrationId"_attr = _coordinator->getMigrationId(),
+                          "error"_attr = redact(ex));
         {
             UninterruptibleLockGuard noInterrupt(_opCtx->lockState());
             AutoGetCollection autoColl(_opCtx, getNss(), MODE_IX);
@@ -494,11 +494,11 @@ Status MigrationSourceManager::commitChunkMetadataOnConfig() {
 
     const auto refreshedMetadata = _getCurrentMetadataAndCheckEpoch();
 
-    LOGV2(22018,
-          "Migration succeeded and updated collection version to {updatedCollectionVersion}",
-          "Migration succeeded and updated collection version",
-          "updatedCollectionVersion"_attr = refreshedMetadata.getCollVersion(),
-          "migrationId"_attr = _coordinator->getMigrationId());
+    LOG(22018,
+        "Migration succeeded and updated collection version to {updatedCollectionVersion}",
+        "Migration succeeded and updated collection version",
+        "updatedCollectionVersion"_attr = refreshedMetadata.getCollVersion(),
+        "migrationId"_attr = _coordinator->getMigrationId());
 
     _coordinator->setMigrationDecision(DecisionEnum::kCommitted);
 
@@ -535,13 +535,13 @@ Status MigrationSourceManager::commitChunkMetadataOnConfig() {
         << redact(range.toString()) << " due to: ";
 
     if (_args.getWaitForDelete()) {
-        LOGV2(22019,
-              "Waiting for migration cleanup after chunk commit for the namespace {namespace} "
-              "and range {range}",
-              "Waiting for migration cleanup after chunk commit",
-              "namespace"_attr = getNss().ns(),
-              "range"_attr = redact(range.toString()),
-              "migrationId"_attr = _coordinator->getMigrationId());
+        LOG(22019,
+            "Waiting for migration cleanup after chunk commit for the namespace {namespace} "
+            "and range {range}",
+            "Waiting for migration cleanup after chunk commit",
+            "namespace"_attr = getNss().ns(),
+            "range"_attr = redact(range.toString()),
+            "migrationId"_attr = _coordinator->getMigrationId());
 
         Status deleteStatus = _cleanupCompleteFuture
             ? _cleanupCompleteFuture->getNoThrow(_opCtx)
@@ -671,11 +671,11 @@ void MigrationSourceManager::_cleanup(bool completeMigration) noexcept {
     }();
 
     if (_state == kCriticalSection || _state == kCloneCompleted || _state == kCommittingOnConfig) {
-        LOGV2_DEBUG_OPTIONS(4817403,
-                            2,
-                            {logv2::LogComponent::kShardMigrationPerf},
-                            "Finished critical section",
-                            "migrationId"_attr = _coordinator->getMigrationId());
+        LOG_DEBUG_OPTIONS(4817403,
+                          2,
+                          {log::LogComponent::kShardMigrationPerf},
+                          "Finished critical section",
+                          "migrationId"_attr = _coordinator->getMigrationId());
     }
 
     // The cleanup operations below are potentially blocking or acquire other locks, so perform them
@@ -732,13 +732,13 @@ void MigrationSourceManager::_cleanup(bool completeMigration) noexcept {
 
         _state = kDone;
     } catch (const DBException& ex) {
-        LOGV2_WARNING(5089001,
-                      "Failed to complete the migration {migrationId} with "
-                      "{chunkMigrationRequestParameters} due to: {error}",
-                      "Failed to complete the migration",
-                      "chunkMigrationRequestParameters"_attr = redact(_args.toString()),
-                      "error"_attr = redact(ex),
-                      "migrationId"_attr = _coordinator->getMigrationId());
+        LOG_WARNING(5089001,
+                    "Failed to complete the migration {migrationId} with "
+                    "{chunkMigrationRequestParameters} due to: {error}",
+                    "Failed to complete the migration",
+                    "chunkMigrationRequestParameters"_attr = redact(_args.toString()),
+                    "error"_attr = redact(ex),
+                    "migrationId"_attr = _coordinator->getMigrationId());
         // Something went really wrong when completing the migration just unset the metadata and let
         // the next op to recover.
         UninterruptibleLockGuard noInterrupt(_opCtx->lockState());

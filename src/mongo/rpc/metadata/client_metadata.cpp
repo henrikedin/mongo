@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kNetwork
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kNetwork
 
 #include "mongo/platform/basic.h"
 
@@ -41,7 +41,7 @@
 #include "mongo/bson/bsonobj.h"
 #include "mongo/bson/bsonobjbuilder.h"
 #include "mongo/db/operation_context.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/s/is_mongos.h"
 #include "mongo/util/debug_util.h"
 #include "mongo/util/net/socket_utils.h"
@@ -402,12 +402,12 @@ void ClientMetadata::logClientMetadata(Client* client) const {
         return;
     }
 
-    LOGV2(51800,
-          "received client metadata from {remote} {client}: {doc}",
-          "client metadata",
-          "remote"_attr = client->getRemote(),
-          "client"_attr = client->desc(),
-          "doc"_attr = getDocument());
+    LOG(51800,
+        "received client metadata from {remote} {client}: {doc}",
+        "client metadata",
+        "remote"_attr = client->getRemote(),
+        "client"_attr = client->desc(),
+        "doc"_attr = getDocument());
 }
 
 StringData ClientMetadata::fieldName() {

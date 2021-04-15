@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kResharding
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kResharding
 
 #include "mongo/db/s/resharding/resharding_donor_service.h"
 
@@ -51,7 +51,7 @@
 #include "mongo/db/s/resharding/resharding_server_parameters_gen.h"
 #include "mongo/db/s/resharding_util.h"
 #include "mongo/db/s/sharding_state.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/s/catalog/sharding_catalog_client.h"
 #include "mongo/s/grid.h"
 #include "mongo/util/future_util.h"
@@ -244,11 +244,11 @@ ExecutorFuture<void> ReshardingDonorService::DonorStateMachine::_runUntilBlockin
                 return ExecutorFuture<void>(**executor, status);
             }
 
-            LOGV2(4956400,
-                  "Resharding operation donor state machine failed",
-                  "namespace"_attr = _metadata.getSourceNss(),
-                  "reshardingUUID"_attr = _metadata.getReshardingUUID(),
-                  "error"_attr = status);
+            LOG(4956400,
+                "Resharding operation donor state machine failed",
+                "namespace"_attr = _metadata.getSourceNss(),
+                "reshardingUUID"_attr = _metadata.getReshardingUUID(),
+                "error"_attr = status);
 
             return withAutomaticRetry(**executor, abortToken, [this, status] {
                 // It is illegal to transition into kError if state has already surpassed
@@ -345,10 +345,10 @@ SemiFuture<void> ReshardingDonorService::DonorStateMachine::run(
                 return status;
             }
 
-            LOGV2_FATAL(5160600,
-                        "Unrecoverable error occurred past the point donor was prepared to "
-                        "complete the resharding operation",
-                        "error"_attr = redact(status));
+            LOG_FATAL(5160600,
+                      "Unrecoverable error occurred past the point donor was prepared to "
+                      "complete the resharding operation",
+                      "error"_attr = redact(status));
         })
         // The shared_ptr stored in the PrimaryOnlyService's map for the ReshardingDonorService
         // Instance is removed when the donor state document tied to the instance is deleted. It is
@@ -453,14 +453,14 @@ void ReshardingDonorService::DonorStateMachine::
         return generateMinFetchTimestamp(opCtx.get(), _metadata.getSourceNss());
     }();
 
-    LOGV2_DEBUG(5390702,
-                2,
-                "Collection being resharded now ready for recipients to begin cloning",
-                "namespace"_attr = _metadata.getSourceNss(),
-                "minFetchTimestamp"_attr = minFetchTimestamp,
-                "bytesToClone"_attr = bytesToClone,
-                "documentsToClone"_attr = documentsToClone,
-                "reshardingUUID"_attr = _metadata.getReshardingUUID());
+    LOG_DEBUG(5390702,
+              2,
+              "Collection being resharded now ready for recipients to begin cloning",
+              "namespace"_attr = _metadata.getSourceNss(),
+              "minFetchTimestamp"_attr = minFetchTimestamp,
+              "bytesToClone"_attr = bytesToClone,
+              "documentsToClone"_attr = documentsToClone,
+              "reshardingUUID"_attr = _metadata.getReshardingUUID());
 
     _transitionToDonatingInitialData(minFetchTimestamp, bytesToClone, documentsToClone);
 }
@@ -551,22 +551,22 @@ void ReshardingDonorService::DonorStateMachine::
 
             {
                 stdx::lock_guard<Latch> lg(_mutex);
-                LOGV2_DEBUG(5279504,
-                            0,
-                            "Committed oplog entries to temporarily block writes for resharding",
-                            "namespace"_attr = _metadata.getSourceNss(),
-                            "reshardingUUID"_attr = _metadata.getReshardingUUID(),
-                            "numRecipients"_attr = _recipientShardIds.size(),
-                            "duration"_attr = duration_cast<Milliseconds>(latency.elapsed()));
+                LOG_DEBUG(5279504,
+                          0,
+                          "Committed oplog entries to temporarily block writes for resharding",
+                          "namespace"_attr = _metadata.getSourceNss(),
+                          "reshardingUUID"_attr = _metadata.getReshardingUUID(),
+                          "numRecipients"_attr = _recipientShardIds.size(),
+                          "duration"_attr = duration_cast<Milliseconds>(latency.elapsed()));
                 ensureFulfilledPromise(lg, _finalOplogEntriesWritten);
             }
         } catch (const DBException& e) {
             const auto& status = e.toStatus();
             stdx::lock_guard<Latch> lg(_mutex);
-            LOGV2_ERROR(5279508,
-                        "Exception while writing resharding final oplog entries",
-                        "reshardingUUID"_attr = _metadata.getReshardingUUID(),
-                        "error"_attr = status);
+            LOG_ERROR(5279508,
+                      "Exception while writing resharding final oplog entries",
+                      "reshardingUUID"_attr = _metadata.getReshardingUUID(),
+                      "error"_attr = status);
             ensureFulfilledPromise(lg, _finalOplogEntriesWritten, status);
             uassertStatusOK(status);
         }
@@ -623,13 +623,13 @@ void ReshardingDonorService::DonorStateMachine::_transitionState(DonorShardConte
 
     _updateDonorDocument(std::move(newDonorCtx));
 
-    LOGV2_INFO(5279505,
-               "Transitioned resharding donor state",
-               "newState"_attr = DonorState_serializer(newState),
-               "oldState"_attr = DonorState_serializer(oldState),
-               "namespace"_attr = _metadata.getSourceNss(),
-               "collectionUUID"_attr = _metadata.getSourceUUID(),
-               "reshardingUUID"_attr = _metadata.getReshardingUUID());
+    LOG_INFO(5279505,
+             "Transitioned resharding donor state",
+             "newState"_attr = DonorState_serializer(newState),
+             "oldState"_attr = DonorState_serializer(oldState),
+             "namespace"_attr = _metadata.getSourceNss(),
+             "collectionUUID"_attr = _metadata.getSourceUUID(),
+             "reshardingUUID"_attr = _metadata.getReshardingUUID());
 }
 
 void ReshardingDonorService::DonorStateMachine::_transitionToDonatingInitialData(

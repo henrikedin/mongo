@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTenantMigration
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTenantMigration
 
 #include "mongo/platform/basic.h"
 
@@ -53,7 +53,7 @@
 #include "mongo/db/repl/tenant_oplog_batcher.h"
 #include "mongo/db/session_catalog_mongod.h"
 #include "mongo/db/transaction_participant.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/concurrency/thread_pool.h"
 
 namespace mongo {
@@ -235,12 +235,12 @@ void TenantOplogApplier::_finishShutdown(WithLock lk, Status status) {
     // shouldStopApplying() might have already set the final status. So, don't mask the original
     // error.
     _setFinalStatusIfOk(lk, status);
-    LOGV2_DEBUG(4886005,
-                1,
-                "TenantOplogApplier::_finishShutdown",
-                "tenant"_attr = _tenantId,
-                "migrationUuid"_attr = _migrationUuid,
-                "error"_attr = redact(_finalStatus));
+    LOG_DEBUG(4886005,
+              1,
+              "TenantOplogApplier::_finishShutdown",
+              "tenant"_attr = _tenantId,
+              "migrationUuid"_attr = _migrationUuid,
+              "error"_attr = redact(_finalStatus));
 
     invariant(!_finalStatus.isOK());
     // Any unfulfilled notifications are errored out.
@@ -252,13 +252,13 @@ void TenantOplogApplier::_finishShutdown(WithLock lk, Status status) {
 }
 
 void TenantOplogApplier::_applyOplogBatch(TenantOplogBatch* batch) {
-    LOGV2_DEBUG(4886004,
-                1,
-                "Tenant Oplog Applier starting to apply batch",
-                "tenant"_attr = _tenantId,
-                "migrationUuid"_attr = _migrationUuid,
-                "firstDonorOptime"_attr = batch->ops.front().entry.getOpTime(),
-                "lastDonorOptime"_attr = batch->ops.back().entry.getOpTime());
+    LOG_DEBUG(4886004,
+              1,
+              "Tenant Oplog Applier starting to apply batch",
+              "tenant"_attr = _tenantId,
+              "migrationUuid"_attr = _migrationUuid,
+              "firstDonorOptime"_attr = batch->ops.front().entry.getOpTime(),
+              "lastDonorOptime"_attr = batch->ops.back().entry.getOpTime());
     auto opCtx = cc().makeOperationContext();
     _checkNsAndUuidsBelongToTenant(opCtx.get(), *batch);
     auto writerVectors = _fillWriterVectors(opCtx.get(), batch);
@@ -281,22 +281,22 @@ void TenantOplogApplier::_applyOplogBatch(TenantOplogBatch* batch) {
     // Make sure all the workers succeeded.
     for (const auto& status : statusVector) {
         if (!status.isOK()) {
-            LOGV2_ERROR(4886012,
-                        "Failed to apply operation in tenant migration",
-                        "tenant"_attr = _tenantId,
-                        "migrationUuid"_attr = _migrationUuid,
-                        "error"_attr = redact(status));
+            LOG_ERROR(4886012,
+                      "Failed to apply operation in tenant migration",
+                      "tenant"_attr = _tenantId,
+                      "migrationUuid"_attr = _migrationUuid,
+                      "error"_attr = redact(status));
         }
         uassertStatusOK(status);
     }
 
     fpBeforeTenantOplogApplyingBatch.pauseWhileSet();
 
-    LOGV2_DEBUG(4886011,
-                1,
-                "Tenant Oplog Applier starting to write no-ops",
-                "tenant"_attr = _tenantId,
-                "migrationUuid"_attr = _migrationUuid);
+    LOG_DEBUG(4886011,
+              1,
+              "Tenant Oplog Applier starting to write no-ops",
+              "tenant"_attr = _tenantId,
+              "migrationUuid"_attr = _migrationUuid);
     auto lastBatchCompletedOpTimes = _writeNoOpEntries(opCtx.get(), *batch);
     stdx::lock_guard lk(_mutex);
     _lastAppliedOpTimesUpToLastBatch.donorOpTime = lastBatchCompletedOpTimes.donorOpTime;
@@ -309,12 +309,12 @@ void TenantOplogApplier::_applyOplogBatch(TenantOplogBatch* batch) {
 
     _numOpsApplied += batch->ops.size();
 
-    LOGV2_DEBUG(4886002,
-                1,
-                "Tenant Oplog Applier finished applying batch",
-                "tenant"_attr = _tenantId,
-                "migrationUuid"_attr = _migrationUuid,
-                "lastBatchCompletedOpTimes"_attr = lastBatchCompletedOpTimes);
+    LOG_DEBUG(4886002,
+              1,
+              "Tenant Oplog Applier finished applying batch",
+              "tenant"_attr = _tenantId,
+              "migrationUuid"_attr = _migrationUuid,
+              "lastBatchCompletedOpTimes"_attr = lastBatchCompletedOpTimes);
 
     // Notify all the waiters on optimes before and including _lastAppliedOpTimesUpToLastBatch.
     auto firstUnexpiredIter =
@@ -326,8 +326,7 @@ void TenantOplogApplier::_applyOplogBatch(TenantOplogBatch* batch) {
 
     hangInTenantOplogApplication.executeIf(
         [&](const BSONObj& data) {
-            LOGV2(
-                5272315,
+            LOG(5272315,
                 "hangInTenantOplogApplication failpoint enabled -- blocking until it is disabled.",
                 "tenant"_attr = _tenantId,
                 "migrationUuid"_attr = _migrationUuid,
@@ -341,11 +340,11 @@ void TenantOplogApplier::_checkNsAndUuidsBelongToTenant(OperationContext* opCtx,
                                                         const TenantOplogBatch& batch) {
     auto checkNsAndUuid = [&](const OplogEntry& op) {
         if (!op.getNss().isEmpty() && !ClonerUtils::isNamespaceForTenant(op.getNss(), _tenantId)) {
-            LOGV2_ERROR(4886015,
-                        "Namespace does not belong to tenant being migrated",
-                        "tenant"_attr = _tenantId,
-                        "migrationUuid"_attr = _migrationUuid,
-                        "nss"_attr = op.getNss());
+            LOG_ERROR(4886015,
+                      "Namespace does not belong to tenant being migrated",
+                      "tenant"_attr = _tenantId,
+                      "migrationUuid"_attr = _migrationUuid,
+                      "nss"_attr = op.getNss());
             uasserted(4886016, "Namespace does not belong to tenant being migrated");
         }
         if (!op.getUuid())
@@ -355,23 +354,23 @@ void TenantOplogApplier::_checkNsAndUuidsBelongToTenant(OperationContext* opCtx,
         try {
             auto nss = OplogApplierUtils::parseUUIDOrNs(opCtx, op);
             if (!ClonerUtils::isNamespaceForTenant(nss, _tenantId)) {
-                LOGV2_ERROR(4886013,
-                            "UUID does not belong to tenant being migrated",
-                            "tenant"_attr = _tenantId,
-                            "migrationUuid"_attr = _migrationUuid,
-                            "UUID"_attr = *op.getUuid(),
-                            "nss"_attr = nss.ns());
+                LOG_ERROR(4886013,
+                          "UUID does not belong to tenant being migrated",
+                          "tenant"_attr = _tenantId,
+                          "migrationUuid"_attr = _migrationUuid,
+                          "UUID"_attr = *op.getUuid(),
+                          "nss"_attr = nss.ns());
                 uasserted(4886014, "UUID does not belong to tenant being migrated");
             }
             _knownGoodUuids.insert(*op.getUuid());
         } catch (const ExceptionFor<ErrorCodes::NamespaceNotFound>&) {
-            LOGV2_DEBUG(4886017,
-                        2,
-                        "UUID for tenant being migrated does not exist",
-                        "tenant"_attr = _tenantId,
-                        "migrationUuid"_attr = _migrationUuid,
-                        "UUID"_attr = *op.getUuid(),
-                        "nss"_attr = op.getNss().ns());
+            LOG_DEBUG(4886017,
+                      2,
+                      "UUID for tenant being migrated does not exist",
+                      "tenant"_attr = _tenantId,
+                      "migrationUuid"_attr = _migrationUuid,
+                      "UUID"_attr = *op.getUuid(),
+                      "nss"_attr = op.getNss().ns());
         }
     };
 
@@ -438,17 +437,17 @@ TenantOplogApplier::OpTimePair TenantOplogApplier::_writeNoOpEntries(
     const size_t numOplogThreads = _writerPool->getStats().numThreads;
     const size_t numOpsPerThread = std::max(std::size_t(minOplogEntriesPerThread.load()),
                                             (nonSessionOps.size() / numOplogThreads));
-    LOGV2_DEBUG(4886003,
-                1,
-                "Tenant Oplog Applier scheduling no-ops ",
-                "tenant"_attr = _tenantId,
-                "migrationUuid"_attr = _migrationUuid,
-                "firstDonorOptime"_attr = batch.ops.front().entry.getOpTime(),
-                "lastDonorOptime"_attr = batch.ops.back().entry.getOpTime(),
-                "numOplogThreads"_attr = numOplogThreads,
-                "numOpsPerThread"_attr = numOpsPerThread,
-                "numOplogEntries"_attr = batch.ops.size(),
-                "numSessionsInBatch"_attr = sessionOps.size());
+    LOG_DEBUG(4886003,
+              1,
+              "Tenant Oplog Applier scheduling no-ops ",
+              "tenant"_attr = _tenantId,
+              "migrationUuid"_attr = _migrationUuid,
+              "firstDonorOptime"_attr = batch.ops.front().entry.getOpTime(),
+              "lastDonorOptime"_attr = batch.ops.back().entry.getOpTime(),
+              "numOplogThreads"_attr = numOplogThreads,
+              "numOpsPerThread"_attr = numOpsPerThread,
+              "numOplogEntries"_attr = batch.ops.size(),
+              "numSessionsInBatch"_attr = sessionOps.size());
 
     // Vector to store errors from each writer thread. The first numOplogThreads entries store
     // errors from the noop writes for non-session oplog entries. And the rest store errors from the
@@ -502,11 +501,11 @@ TenantOplogApplier::OpTimePair TenantOplogApplier::_writeNoOpEntries(
     // Make sure all the workers succeeded.
     for (const auto& status : statusVector) {
         if (!status.isOK()) {
-            LOGV2_ERROR(5333900,
-                        "Failed to write noop in tenant migration",
-                        "tenant"_attr = _tenantId,
-                        "migrationUuid"_attr = _migrationUuid,
-                        "error"_attr = redact(status));
+            LOG_ERROR(5333900,
+                      "Failed to write noop in tenant migration",
+                      "tenant"_attr = _tenantId,
+                      "migrationUuid"_attr = _migrationUuid,
+                      "error"_attr = redact(status));
         }
         uassertStatusOK(status);
     }
@@ -568,14 +567,14 @@ void TenantOplogApplier::_writeSessionNoOpsForRange(
             opCtx->setLogicalSessionId(sessionId);
             opCtx->setTxnNumber(txnNumber);
             opCtx->setInMultiDocumentTransaction();
-            LOGV2_DEBUG(5351502,
-                        1,
-                        "Tenant Oplog Applier committing transaction",
-                        "sessionId"_attr = sessionId,
-                        "txnNumber"_attr = txnNumber,
-                        "tenant"_attr = _tenantId,
-                        "migrationUuid"_attr = _migrationUuid,
-                        "op"_attr = redact(entry.toBSONForLogging()));
+            LOG_DEBUG(5351502,
+                      1,
+                      "Tenant Oplog Applier committing transaction",
+                      "sessionId"_attr = sessionId,
+                      "txnNumber"_attr = txnNumber,
+                      "tenant"_attr = _tenantId,
+                      "migrationUuid"_attr = _migrationUuid,
+                      "op"_attr = redact(entry.toBSONForLogging()));
 
             // Check out the session.
             if (!scopedSession)
@@ -613,15 +612,15 @@ void TenantOplogApplier::_writeSessionNoOpsForRange(
             auto sessionId = *entry.getSessionId();
             auto txnNumber = *entry.getTxnNumber();
             auto entryStmtIds = entry.getStatementIds();
-            LOGV2_DEBUG(5351000,
-                        2,
-                        "Tenant Oplog Applier processing retryable write",
-                        "entry"_attr = redact(entry.toBSONForLogging()),
-                        "sessionId"_attr = sessionId,
-                        "txnNumber"_attr = txnNumber,
-                        "statementIds"_attr = entryStmtIds,
-                        "tenant"_attr = _tenantId,
-                        "migrationUuid"_attr = _migrationUuid);
+            LOG_DEBUG(5351000,
+                      2,
+                      "Tenant Oplog Applier processing retryable write",
+                      "entry"_attr = redact(entry.toBSONForLogging()),
+                      "sessionId"_attr = sessionId,
+                      "txnNumber"_attr = txnNumber,
+                      "statementIds"_attr = entryStmtIds,
+                      "tenant"_attr = _tenantId,
+                      "migrationUuid"_attr = _migrationUuid);
             if (entry.getOpType() == repl::OpTypeEnum::kNoop) {
                 // There are two types of no-ops we expect here.  One is pre/post image, which
                 // will have an empty o2 field.  The other is previously transformed oplog
@@ -765,12 +764,12 @@ void TenantOplogApplier::_writeSessionNoOpsForRange(
 
         noopEntry.setPrevWriteOpTimeInTransaction(prevWriteOpTime);
 
-        LOGV2_DEBUG(5535700,
-                    2,
-                    "Tenant Oplog Applier writing session no-op",
-                    "tenant"_attr = _tenantId,
-                    "migrationUuid"_attr = _migrationUuid,
-                    "op"_attr = redact(noopEntry.toBSON()));
+        LOG_DEBUG(5535700,
+                  2,
+                  "Tenant Oplog Applier writing session no-op",
+                  "tenant"_attr = _tenantId,
+                  "migrationUuid"_attr = _migrationUuid,
+                  "op"_attr = redact(noopEntry.toBSON()));
 
         AutoGetOplog oplogWrite(opCtx.get(), OplogAccessMode::kWrite);
         writeConflictRetry(
@@ -916,12 +915,12 @@ Status TenantOplogApplier::_applyOplogEntryOrGroupedInserts(
     auto op = entryOrGroupedInserts.getOp();
     if (op.isIndexCommandType() && op.getCommandType() != OplogEntry::CommandType::kCreateIndexes &&
         op.getCommandType() != OplogEntry::CommandType::kDropIndexes) {
-        LOGV2_ERROR(488610,
-                    "Index creation, except createIndex on empty collections, is not supported in "
-                    "tenant migration",
-                    "tenant"_attr = _tenantId,
-                    "migrationUuid"_attr = _migrationUuid,
-                    "op"_attr = redact(op.toBSONForLogging()));
+        LOG_ERROR(488610,
+                  "Index creation, except createIndex on empty collections, is not supported in "
+                  "tenant migration",
+                  "tenant"_attr = _tenantId,
+                  "migrationUuid"_attr = _migrationUuid,
+                  "op"_attr = redact(op.toBSONForLogging()));
 
         uasserted(5434700,
                   "Index creation, except createIndex on empty collections, is not supported in "
@@ -937,13 +936,13 @@ Status TenantOplogApplier::_applyOplogEntryOrGroupedInserts(
         OplogApplication::Mode::kInitialSync,
         incrementOpsAppliedStats,
         nullptr /* opCounters*/);
-    LOGV2_DEBUG(4886009,
-                2,
-                "Applied tenant operation",
-                "tenant"_attr = _tenantId,
-                "migrationUuid"_attr = _migrationUuid,
-                "error"_attr = status,
-                "op"_attr = redact(op.toBSONForLogging()));
+    LOG_DEBUG(4886009,
+              2,
+              "Applied tenant operation",
+              "tenant"_attr = _tenantId,
+              "migrationUuid"_attr = _migrationUuid,
+              "error"_attr = status,
+              "op"_attr = redact(op.toBSONForLogging()));
     return status;
 }
 
@@ -967,11 +966,11 @@ Status TenantOplogApplier::_applyOplogBatchPerWorker(std::vector<const OplogEntr
             return _applyOplogEntryOrGroupedInserts(opCtx, opOrInserts, mode);
         });
     if (!status.isOK()) {
-        LOGV2_ERROR(4886008,
-                    "Tenant migration writer worker batch application failed",
-                    "tenant"_attr = _tenantId,
-                    "migrationUuid"_attr = _migrationUuid,
-                    "error"_attr = redact(status));
+        LOG_ERROR(4886008,
+                  "Tenant migration writer worker batch application failed",
+                  "tenant"_attr = _tenantId,
+                  "migrationUuid"_attr = _migrationUuid,
+                  "error"_attr = redact(status));
     }
     return status;
 }

@@ -28,14 +28,14 @@
 global:
     cpp_namespace: mongo
     cpp_includes:
-      - mongo/logv2/constants.h
+      - mongo/log/constants.h
 
 server_parameters:
   maxLogSizeKB:
     cpp_varname: gMaxLogAttributeSizeKB
     cpp_vartype: AtomicWord<int32_t>
     default:
-      expr: logv2::constants::kDefaultMaxAttributeOutputSizeKB
+      expr: log::constants::kDefaultMaxAttributeOutputSizeKB
     validator:
       gte: 0
     description: 'Max log attribute size in kilobytes'

@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kSharding
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kSharding
 
 #include "mongo/platform/basic.h"
 
@@ -42,7 +42,7 @@
 #include "mongo/db/s/sharding_state_recovery.h"
 #include "mongo/db/s/sharding_statistics.h"
 #include "mongo/db/s/type_shard_database.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/s/catalog_cache.h"
 #include "mongo/s/grid.h"
@@ -77,12 +77,12 @@ Status MovePrimarySourceManager::clone(OperationContext* opCtx) {
     invariant(_state == kCreated);
     auto scopedGuard = makeGuard([&] { cleanupOnError(opCtx); });
 
-    LOGV2(22042,
-          "Moving {db} primary from: {fromShard} to: {toShard}",
-          "Moving primary for database",
-          "db"_attr = _dbname,
-          "fromShard"_attr = _fromShard,
-          "toShard"_attr = _toShard);
+    LOG(22042,
+        "Moving {db} primary from: {fromShard} to: {toShard}",
+        "Moving primary for database",
+        "db"_attr = _dbname,
+        "fromShard"_attr = _fromShard,
+        "toShard"_attr = _toShard);
 
     // Record start in changelog
     auto logChangeCheckedStatus = ShardingLogging::get(opCtx)->logChangeChecked(
@@ -110,7 +110,7 @@ Status MovePrimarySourceManager::clone(OperationContext* opCtx) {
     _state = kCloning;
 
     if (MONGO_unlikely(hangInCloneStage.shouldFail())) {
-        LOGV2(4908700, "Hit hangInCloneStage");
+        LOG(4908700, "Hit hangInCloneStage");
         hangInCloneStage.pauseWhileSet(opCtx);
     }
 
@@ -198,7 +198,7 @@ Status MovePrimarySourceManager::enterCriticalSection(OperationContext* opCtx) {
                           << signalStatus.toString()};
     }
 
-    LOGV2(22043, "movePrimary successfully entered critical section");
+    LOG(22043, "movePrimary successfully entered critical section");
 
     scopedGuard.dismiss();
 
@@ -241,12 +241,12 @@ Status MovePrimarySourceManager::commitOnConfig(OperationContext* opCtx) {
         // Need to get the latest optime in case the refresh request goes to a secondary --
         // otherwise the read won't wait for the write that _commitOnConfig may have
         // done
-        LOGV2(22044,
-              "Error occurred while committing the movePrimary. Performing a majority write "
-              "against the config server to obtain its latest optime: {error}",
-              "Error occurred while committing the movePrimary. Performing a majority write "
-              "against the config server to obtain its latest optime",
-              "error"_attr = redact(commitStatus));
+        LOG(22044,
+            "Error occurred while committing the movePrimary. Performing a majority write "
+            "against the config server to obtain its latest optime: {error}",
+            "Error occurred while committing the movePrimary. Performing a majority write "
+            "against the config server to obtain its latest optime",
+            "error"_attr = redact(commitStatus));
 
         Status validateStatus = ShardingLogging::get(opCtx)->logChangeChecked(
             opCtx,
@@ -367,11 +367,11 @@ Status MovePrimarySourceManager::_commitOnConfig(OperationContext* opCtx) {
         ShardingCatalogClient::kMajorityWriteConcern);
 
     if (!updateStatus.isOK()) {
-        LOGV2(5448803,
-              "Error committing movePrimary for {db}: {error}",
-              "Error committing movePrimary",
-              "db"_attr = _dbname,
-              "error"_attr = redact(updateStatus.getStatus()));
+        LOG(5448803,
+            "Error committing movePrimary for {db}: {error}",
+            "Error committing movePrimary",
+            "db"_attr = _dbname,
+            "error"_attr = redact(updateStatus.getStatus()));
         return updateStatus.getStatus();
     }
 
@@ -383,7 +383,7 @@ Status MovePrimarySourceManager::cleanStaleData(OperationContext* opCtx) {
     invariant(_state == kNeedCleanStaleData);
 
     if (MONGO_unlikely(hangInCleanStaleDataStage.shouldFail())) {
-        LOGV2(4908701, "Hit hangInCleanStaleDataStage");
+        LOG(4908701, "Hit hangInCleanStaleDataStage");
         hangInCleanStaleDataStage.pauseWhileSet(opCtx);
     }
 
@@ -394,11 +394,11 @@ Status MovePrimarySourceManager::cleanStaleData(OperationContext* opCtx) {
         client.runCommand(_dbname.toString(), BSON("drop" << coll.coll()), dropCollResult);
         Status dropStatus = getStatusFromCommandResult(dropCollResult);
         if (!dropStatus.isOK()) {
-            LOGV2(22045,
-                  "Failed to drop cloned collection {namespace} in movePrimary: {error}",
-                  "Failed to drop cloned collection in movePrimary",
-                  "namespace"_attr = coll,
-                  "error"_attr = redact(dropStatus));
+            LOG(22045,
+                "Failed to drop cloned collection {namespace} in movePrimary: {error}",
+                "Failed to drop cloned collection in movePrimary",
+                "namespace"_attr = coll,
+                "error"_attr = redact(dropStatus));
         }
     }
 
@@ -424,12 +424,12 @@ void MovePrimarySourceManager::cleanupOnError(OperationContext* opCtx) {
     } catch (const ExceptionForCat<ErrorCategory::NotPrimaryError>& ex) {
         BSONObjBuilder requestArgsBSON;
         _requestArgs.serialize(&requestArgsBSON);
-        LOGV2_WARNING(22046,
-                      "Failed to clean up movePrimary with request parameters {request} due to: "
-                      "{error}",
-                      "Failed to clean up movePrimary",
-                      "request"_attr = redact(requestArgsBSON.obj()),
-                      "error"_attr = redact(ex));
+        LOG_WARNING(22046,
+                    "Failed to clean up movePrimary with request parameters {request} due to: "
+                    "{error}",
+                    "Failed to clean up movePrimary",
+                    "request"_attr = redact(requestArgsBSON.obj()),
+                    "error"_attr = redact(ex));
     }
 }
 

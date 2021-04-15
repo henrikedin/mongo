@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kIndex
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kIndex
 
 #include "mongo/platform/basic.h"
 
@@ -53,7 +53,7 @@
 #include "mongo/db/service_context.h"
 #include "mongo/db/storage/durable_catalog.h"
 #include "mongo/db/transaction_participant.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/scopeguard.h"
 
 namespace mongo {
@@ -109,12 +109,12 @@ IndexCatalogEntryImpl::IndexCatalogEntryImpl(OperationContext* const opCtx,
                                                      _expCtxForFilter,
                                                      ExtensionsCallbackNoop(),
                                                      MatchExpressionParser::kBanAllSpecialFeatures);
-        LOGV2_DEBUG(20350,
-                    2,
-                    "have filter expression for {namespace} {indexName} {filter}",
-                    "namespace"_attr = nss,
-                    "indexName"_attr = _descriptor->indexName(),
-                    "filter"_attr = redact(filter));
+        LOG_DEBUG(20350,
+                  2,
+                  "have filter expression for {namespace} {indexName} {filter}",
+                  "namespace"_attr = nss,
+                  "indexName"_attr = _descriptor->indexName(),
+                  "filter"_attr = redact(filter));
     }
 }
 
@@ -396,11 +396,11 @@ void IndexCatalogEntryImpl::_catalogSetMultikey(OperationContext* opCtx,
         }
     }
     if (indexMetadataHasChanged) {
-        LOGV2_DEBUG(4718705,
-                    1,
-                    "Index set to multi key, clearing query plan cache",
-                    "namespace"_attr = collection->ns(),
-                    "keyPattern"_attr = _descriptor->keyPattern());
+        LOG_DEBUG(4718705,
+                  1,
+                  "Index set to multi key, clearing query plan cache",
+                  "namespace"_attr = collection->ns(),
+                  "keyPattern"_attr = _descriptor->keyPattern());
         CollectionQueryInfo::get(collection).clearQueryCacheForSetMultikey(collection);
     }
 

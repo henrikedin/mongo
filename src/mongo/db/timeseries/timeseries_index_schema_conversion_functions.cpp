@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kStorage
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kStorage
 
 #include "mongo/platform/basic.h"
 
@@ -35,8 +35,8 @@
 
 #include "mongo/db/timeseries/timeseries_field_names.h"
 #include "mongo/db/timeseries/timeseries_gen.h"
-#include "mongo/logv2/log.h"
-#include "mongo/logv2/redaction.h"
+#include "mongo/log/log.h"
+#include "mongo/log/redaction.h"
 
 namespace mongo {
 

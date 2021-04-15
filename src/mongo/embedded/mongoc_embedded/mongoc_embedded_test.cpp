@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTest
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTest
 
 #include "mongo/platform/basic.h"
 
@@ -43,7 +43,7 @@
 #include "mongo/db/server_options.h"
 #include "mongo/embedded/mongo_embedded/mongo_embedded.h"
 #include "mongo/embedded/mongoc_embedded/mongoc_embedded_test_gen.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/unittest/temp_dir.h"
 #include "mongo/unittest/unittest.h"
 #include "mongo/util/options_parser/environment.h"
@@ -88,7 +88,7 @@ bool insert_data(mongoc_collection_t* collection) {
     bool ret = mongoc_bulk_operation_execute(bulk, NULL, &error);
 
     if (!ret) {
-        LOGV2(22556, "Error inserting data: {error_message}", "error_message"_attr = error.message);
+        LOG(22556, "Error inserting data: {error_message}", "error_message"_attr = error.message);
     }
 
     mongoc_bulk_operation_destroy(bulk);
@@ -119,7 +119,7 @@ bool explain(mongoc_collection_t* collection) {
                        "}");
     res = mongoc_collection_command_simple(collection, command, NULL, &reply, &error);
     if (!res) {
-        LOGV2(22557, "Error with explain: {error_message}", "error_message"_attr = error.message);
+        LOG(22557, "Error with explain: {error_message}", "error_message"_attr = error.message);
         goto explain_cleanup;
     }
 

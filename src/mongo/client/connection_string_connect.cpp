@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kNetwork
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kNetwork
 
 #include "mongo/platform/basic.h"
 
@@ -39,7 +39,7 @@
 #include "mongo/client/dbclient_rs.h"
 #include "mongo/client/mongo_uri.h"
 #include "mongo/config.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/assert_util.h"
 
 namespace mongo {
@@ -68,11 +68,11 @@ StatusWith<std::unique_ptr<DBClientBase>> ConnectionString::connect(
                     true, 0, newURI, DBClientConnection::HandshakeValidationHook(), apiParameters);
 
                 c->setSoTimeout(socketTimeout);
-                LOGV2_DEBUG(20109,
-                            1,
-                            "Creating new connection to: {hostAndPort}",
-                            "Creating new connection",
-                            "hostAndPort"_attr = server);
+                LOG_DEBUG(20109,
+                          1,
+                          "Creating new connection to: {hostAndPort}",
+                          "Creating new connection",
+                          "hostAndPort"_attr = server);
                 lastError = c->connect(
                     server,
                     applicationName,
@@ -84,7 +84,7 @@ StatusWith<std::unique_ptr<DBClientBase>> ConnectionString::connect(
 #ifdef MONGO_CONFIG_SSL
                 invariant((transientSSLParams != nullptr) == c->isUsingTransientSSLParams());
 #endif
-                LOGV2_DEBUG(20110, 1, "Connected connection!");
+                LOG_DEBUG(20110, 1, "Connected connection!");
                 return std::move(c);
             }
             return lastError;
@@ -124,12 +124,12 @@ StatusWith<std::unique_ptr<DBClientBase>> ConnectionString::connect(
             auto replacementConn =
                 _connectHook->connect(*this, errmsg, socketTimeout, apiParameters);
 
-            LOGV2(20111,
-                  "Replacing connection to {oldConnString} with {newConnString}",
-                  "Replacing connection string",
-                  "oldConnString"_attr = this->toString(),
-                  "newConnString"_attr =
-                      (replacementConn ? replacementConn->getServerAddress() : "(empty)"));
+            LOG(20111,
+                "Replacing connection to {oldConnString} with {newConnString}",
+                "Replacing connection string",
+                "oldConnString"_attr = this->toString(),
+                "newConnString"_attr =
+                    (replacementConn ? replacementConn->getServerAddress() : "(empty)"));
 
             if (replacementConn) {
                 return std::move(replacementConn);

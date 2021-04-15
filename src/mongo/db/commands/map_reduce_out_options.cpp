@@ -27,14 +27,14 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kCommand
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kCommand
 
 #include <string>
 #include <utility>
 
 #include "mongo/db/commands/map_reduce_out_options.h"
 #include "mongo/db/namespace_string.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace mongo {
 
@@ -68,7 +68,7 @@ MapReduceOutOptions MapReduceOutOptions::parseFromBSON(const BSONElement& elemen
                 uassert(
                     ErrorCodes::BadValue, "sharded field value must be true", sharded.boolean());
                 if (shardedDeprecationSampler.tick()) {
-                    LOGV2_WARNING(23703, "The out.sharded option in MapReduce is deprecated");
+                    LOG_WARNING(23703, "The out.sharded option in MapReduce is deprecated");
                 }
                 return true;
             } else {

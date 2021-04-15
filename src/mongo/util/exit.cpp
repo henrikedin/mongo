@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kControl
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kControl
 
 #include "mongo/platform/basic.h"
 
@@ -37,7 +37,7 @@
 #include <functional>
 #include <stack>
 
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/platform/mutex.h"
 #include "mongo/stdx/condition_variable.h"
 #include "mongo/stdx/thread.h"
@@ -68,7 +68,7 @@ void runTasks(decltype(shutdownTasks) tasks, const ShutdownTaskArgs& shutdownArg
 // has its own 'quickExitMutex' to prohibit multiple threads from attempting to call _exit().
 MONGO_COMPILER_NORETURN void logAndQuickExit_inlock() {
     ExitCode code = shutdownExitCode.get();
-    LOGV2(23138, "Shutting down with code: {exitCode}", "Shutting down", "exitCode"_attr = code);
+    LOG(23138, "Shutting down with code: {exitCode}", "Shutting down", "exitCode"_attr = code);
     quickExit(code);
 }
 
@@ -113,14 +113,14 @@ void shutdown(ExitCode code, const ShutdownTaskArgs& shutdownArgs) {
 
             ExitCode originallyRequestedCode = shutdownExitCode.get();
             if (code != originallyRequestedCode) {
-                LOGV2(23139,
-                      "While running shutdown tasks with the intent to exit with code "
-                      "{originalExitCode}, an additional shutdown request arrived with "
-                      "the intent to exit with a different exit code {newExitCode}; "
-                      "ignoring the conflicting exit code",
-                      "Conflicting exit code at shutdown",
-                      "originalExitCode"_attr = originallyRequestedCode,
-                      "newExitCode"_attr = code);
+                LOG(23139,
+                    "While running shutdown tasks with the intent to exit with code "
+                    "{originalExitCode}, an additional shutdown request arrived with "
+                    "the intent to exit with a different exit code {newExitCode}; "
+                    "ignoring the conflicting exit code",
+                    "Conflicting exit code at shutdown",
+                    "originalExitCode"_attr = originallyRequestedCode,
+                    "newExitCode"_attr = code);
             }
 
             // Wait for the shutdown tasks to complete

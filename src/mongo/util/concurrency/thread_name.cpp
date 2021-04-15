@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kControl
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kControl
 
 #include "mongo/platform/basic.h"
 
@@ -53,7 +53,7 @@
 
 #include "mongo/base/init.h"
 #include "mongo/config.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/platform/atomic_word.h"
 #include "mongo/util/str.h"
 
@@ -141,10 +141,10 @@ void setOSThreadName(StringData threadName) {
     }
     int error = pthread_setname_np(threadNameCopy.c_str());
     if (error) {
-        LOGV2(23102,
-              "Ignoring error from setting thread name: {error}",
-              "Ignoring error from setting thread name",
-              "error"_attr = errnoWithDescription(error));
+        LOG(23102,
+            "Ignoring error from setting thread name: {error}",
+            "Ignoring error from setting thread name",
+            "error"_attr = errnoWithDescription(error));
     }
 #elif defined(__linux__) && defined(MONGO_CONFIG_HAVE_PTHREAD_SETNAME_NP)
     // Do not set thread name on the main() thread. Setting the name on main thread breaks
@@ -165,10 +165,10 @@ void setOSThreadName(StringData threadName) {
         }
 
         if (error) {
-            LOGV2(23103,
-                  "Ignoring error from setting thread name: {error}",
-                  "Ignoring error from setting thread name",
-                  "error"_attr = errnoWithDescription(error));
+            LOG(23103,
+                "Ignoring error from setting thread name: {error}",
+                "Ignoring error from setting thread name",
+                "error"_attr = errnoWithDescription(error));
         }
     }
 #endif

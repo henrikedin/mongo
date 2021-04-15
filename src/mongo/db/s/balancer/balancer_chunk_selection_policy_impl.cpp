@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kSharding
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kSharding
 
 #include "mongo/platform/basic.h"
 
@@ -40,7 +40,7 @@
 #include "mongo/base/status_with.h"
 #include "mongo/bson/bsonobj_comparator_interface.h"
 #include "mongo/db/s/sharding_config_server_parameters_gen.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/platform/bits.h"
 #include "mongo/s/balancer_configuration.h"
 #include "mongo/s/catalog/type_chunk.h"
@@ -306,12 +306,12 @@ StatusWith<SplitInfoVector> BalancerChunkSelectionPolicyImpl::selectChunksToSpli
             continue;
         } else if (!candidatesStatus.isOK()) {
             if (nss == NamespaceString::kLogicalSessionsNamespace) {
-                LOGV2_WARNING(4562402,
-                              "Unable to split sessions collection chunks",
-                              "error"_attr = candidatesStatus.getStatus());
+                LOG_WARNING(4562402,
+                            "Unable to split sessions collection chunks",
+                            "error"_attr = candidatesStatus.getStatus());
 
             } else {
-                LOGV2_WARNING(
+                LOG_WARNING(
                     21852,
                     "Unable to enforce tag range policy for collection {namespace}: {error}",
                     "Unable to enforce tag range policy for collection",
@@ -374,13 +374,13 @@ StatusWith<MigrateInfoVector> BalancerChunkSelectionPolicyImpl::selectChunksToMo
         const NamespaceString& nss(coll.getNss());
 
         if (!coll.getAllowBalance() || !coll.getAllowMigrations()) {
-            LOGV2_DEBUG(21851,
-                        1,
-                        "Not balancing collection {namespace}; explicitly disabled.",
-                        "Not balancing explicitly disabled collection",
-                        "namespace"_attr = nss,
-                        "allowBalance"_attr = coll.getAllowBalance(),
-                        "allowMigrations"_attr = coll.getAllowMigrations());
+            LOG_DEBUG(21851,
+                      1,
+                      "Not balancing collection {namespace}; explicitly disabled.",
+                      "Not balancing explicitly disabled collection",
+                      "namespace"_attr = nss,
+                      "allowBalance"_attr = coll.getAllowBalance(),
+                      "allowMigrations"_attr = coll.getAllowMigrations());
             continue;
         }
 
@@ -390,11 +390,11 @@ StatusWith<MigrateInfoVector> BalancerChunkSelectionPolicyImpl::selectChunksToMo
             // Namespace got dropped before we managed to get to it, so just skip it
             continue;
         } else if (!candidatesStatus.isOK()) {
-            LOGV2_WARNING(21853,
-                          "Unable to balance collection {namespace}: {error}",
-                          "Unable to balance collection",
-                          "namespace"_attr = nss.ns(),
-                          "error"_attr = candidatesStatus.getStatus());
+            LOG_WARNING(21853,
+                        "Unable to balance collection {namespace}: {error}",
+                        "Unable to balance collection",
+                        "namespace"_attr = nss.ns(),
+                        "error"_attr = candidatesStatus.getStatus());
             continue;
         }
 
@@ -526,9 +526,9 @@ StatusWith<SplitInfoVector> BalancerChunkSelectionPolicyImpl::_getSplitCandidate
 
     if (nss == NamespaceString::kLogicalSessionsNamespace) {
         if (!distribution.tags().empty()) {
-            LOGV2_WARNING(4562401,
-                          "Ignoring zones for the sessions collection",
-                          "tags"_attr = distribution.tags());
+            LOG_WARNING(4562401,
+                        "Ignoring zones for the sessions collection",
+                        "tags"_attr = distribution.tags());
         }
 
         getSplitCandidatesForSessionsCollection(opCtx, cm, &splitCandidates);

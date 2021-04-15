@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTest
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTest
 
 #include "mongo/platform/basic.h"
 
@@ -41,7 +41,7 @@
 #include "mongo/db/dbmessage.h"
 #include "mongo/db/service_context.h"
 #include "mongo/db/service_context_test_fixture.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/platform/mutex.h"
 #include "mongo/rpc/op_msg.h"
 #include "mongo/transport/mock_session.h"
@@ -246,7 +246,7 @@ public:
     void endSession() {
         auto lk = stdx::lock_guard(_data->mutex);
         if (_data->isConnected.swap(false)) {
-            LOGV2(5014101, "Ending session");
+            LOG(5014101, "Ending session");
             _data->cv.notify_one();
         }
     }
@@ -369,7 +369,7 @@ private:
             return *std::exchange(_data->processResult, {});
         }();
 
-        LOGV2(5014100, "Handled request", "error"_attr = result.getStatus());
+        LOG(5014100, "Handled request", "error"_attr = result.getStatus());
 
         return result;
     }
@@ -391,7 +391,7 @@ private:
             return *std::exchange(_data->pollResult, {});
         }();
 
-        LOGV2(5014102, "Finished waiting for data", "error"_attr = result);
+        LOG(5014102, "Finished waiting for data", "error"_attr = result);
         return result;
     }
 
@@ -413,7 +413,7 @@ private:
             return *std::exchange(_data->sourceResult, {});
         }();
 
-        LOGV2(5014103, "Sourced message", "error"_attr = result.getStatus());
+        LOG(5014103, "Sourced message", "error"_attr = result.getStatus());
 
         return result;
     }
@@ -436,7 +436,7 @@ private:
             return *std::exchange(_data->sinkResult, {});
         }();
 
-        LOGV2(5014104, "Sunk message", "error"_attr = result);
+        LOG(5014104, "Sunk message", "error"_attr = result);
         return result;
     }
 
@@ -649,7 +649,7 @@ public:
         };
 
         // Do one entirely clean run.
-        LOGV2(5014106, "Running success case");
+        LOG(5014106, "Running success case");
         _fixture->_runWithNewSession([&] {
             for (auto iter = _steps.begin(); iter != _steps.end(); ++iter) {
                 ASSERT_EQ(iter->func(FailureCondition::kNone), getExpectedPostState(iter));
@@ -668,11 +668,11 @@ public:
         for (auto failIter = _steps.begin(); failIter != _steps.end(); ++failIter) {
             // Incrementally push forward the step where we fail.
             for (auto fail : failList) {
-                LOGV2(5014105,
-                      "Running failure case",
-                      "failureCase"_attr = fail,
-                      "ingressState"_attr = failIter->state,
-                      "ingressMode"_attr = failIter->mode);
+                LOG(5014105,
+                    "Running failure case",
+                    "failureCase"_attr = fail,
+                    "ingressState"_attr = failIter->state,
+                    "ingressMode"_attr = failIter->mode);
 
                 _fixture->_runWithNewSession([&] {
                     auto iter = _steps.begin();

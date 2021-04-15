@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kQuery
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kQuery
 
 #include "mongo/platform/basic.h"
 
@@ -38,7 +38,7 @@
 #include "mongo/db/curop_failpoint_helpers.h"
 #include "mongo/db/ops/write_ops.h"
 #include "mongo/db/pipeline/document_path_support.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/util/destructor_guard.h"
 #include "mongo/util/fail_point.h"
@@ -144,8 +144,7 @@ void DocumentSourceOut::initialize() {
         pExpCtx->opCtx,
         "outWaitAfterTempCollectionCreation",
         []() {
-            LOGV2(20901,
-                  "Hanging aggregation due to 'outWaitAfterTempCollectionCreation' failpoint");
+            LOG(20901, "Hanging aggregation due to 'outWaitAfterTempCollectionCreation' failpoint");
         });
     if (_originalIndexes.empty()) {
         return;
@@ -215,8 +214,8 @@ void DocumentSourceOut::waitWhileFailPointEnabled() {
         pExpCtx->opCtx,
         "hangWhileBuildingDocumentSourceOutBatch",
         []() {
-            LOGV2(20902,
-                  "Hanging aggregation due to 'hangWhileBuildingDocumentSourceOutBatch' failpoint");
+            LOG(20902,
+                "Hanging aggregation due to 'hangWhileBuildingDocumentSourceOutBatch' failpoint");
         });
 }
 

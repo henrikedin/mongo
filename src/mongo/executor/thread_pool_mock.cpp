@@ -27,14 +27,14 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT mongo::logv2::LogComponent::kExecutor
+#define MONGO_LOG_DEFAULT_COMPONENT mongo::log::LogComponent::kExecutor
 
 #include "mongo/platform/basic.h"
 
 #include "mongo/executor/thread_pool_mock.h"
 
 #include "mongo/executor/network_interface_mock.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace mongo {
 namespace executor {
@@ -52,7 +52,7 @@ ThreadPoolMock::~ThreadPoolMock() {
 }
 
 void ThreadPoolMock::startup() {
-    LOGV2_DEBUG(22602, 1, "Starting pool");
+    LOG_DEBUG(22602, 1, "Starting pool");
     stdx::lock_guard<Latch> lk(_mutex);
     invariant(!_started);
     invariant(!_worker.joinable());
@@ -61,7 +61,7 @@ void ThreadPoolMock::startup() {
         _options.onCreateThread();
         stdx::unique_lock<Latch> lk(_mutex);
 
-        LOGV2_DEBUG(22603, 1, "Starting to consume tasks");
+        LOG_DEBUG(22603, 1, "Starting to consume tasks");
         while (!_joining) {
             if (_tasks.empty()) {
                 lk.unlock();
@@ -72,7 +72,7 @@ void ThreadPoolMock::startup() {
 
             _consumeOneTask(lk);
         }
-        LOGV2_DEBUG(22604, 1, "Done consuming tasks");
+        LOG_DEBUG(22604, 1, "Done consuming tasks");
     });
 }
 
@@ -115,14 +115,14 @@ void ThreadPoolMock::_consumeOneTask(stdx::unique_lock<Latch>& lk) {
 }
 
 void ThreadPoolMock::_shutdown(stdx::unique_lock<Latch>& lk) {
-    LOGV2_DEBUG(22605, 1, "Shutting down pool");
+    LOG_DEBUG(22605, 1, "Shutting down pool");
 
     _inShutdown = true;
     _net->signalWorkAvailable();
 }
 
 void ThreadPoolMock::_join(stdx::unique_lock<Latch>& lk) {
-    LOGV2_DEBUG(22606, 1, "Joining pool");
+    LOG_DEBUG(22606, 1, "Joining pool");
 
     _joining = true;
     _net->signalWorkAvailable();

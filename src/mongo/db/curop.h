@@ -41,8 +41,8 @@
 #include "mongo/db/server_options.h"
 #include "mongo/db/stats/resource_consumption_metrics.h"
 #include "mongo/db/write_concern_options.h"
-#include "mongo/logv2/attribute_storage.h"
-#include "mongo/logv2/log_component.h"
+#include "mongo/log/attribute_storage.h"
+#include "mongo/log/log_component.h"
 #include "mongo/platform/atomic_word.h"
 #include "mongo/util/progress_meter.h"
 #include "mongo/util/time_support.h"
@@ -133,7 +133,7 @@ public:
         std::string report() const;
         BSONObj reportBSON() const;
 
-        void report(logv2::DynamicAttributes* pAttrs) const;
+        void report(log::DynamicAttributes* pAttrs) const;
 
         boost::optional<long long> keysExamined;
         boost::optional<long long> docsExamined;
@@ -168,7 +168,7 @@ public:
     void report(OperationContext* opCtx,
                 const SingleThreadedLockStats* lockStats,
                 const ResourceConsumption::OperationMetrics* operationMetrics,
-                logv2::DynamicAttributes* pAttrs) const;
+                log::DynamicAttributes* pAttrs) const;
 
     /**
      * Appends information about the current operation to "builder"
@@ -354,7 +354,7 @@ public:
      * operation should also be profiled.
      */
     bool completeAndLogOperation(OperationContext* opCtx,
-                                 logv2::LogComponent logComponent,
+                                 log::LogComponent logComponent,
                                  boost::optional<size_t> responseLength = boost::none,
                                  boost::optional<long long> slowMsOverride = boost::none,
                                  bool forceLog = false);

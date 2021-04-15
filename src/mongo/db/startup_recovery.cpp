@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kStorage
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kStorage
 
 #include "mongo/platform/basic.h"
 
@@ -55,7 +55,7 @@
 #include "mongo/db/server_options.h"
 #include "mongo/db/storage/durable_catalog.h"
 #include "mongo/db/storage/storage_repair_observer.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/exit.h"
 #include "mongo/util/fail_point.h"
 #include "mongo/util/quick_exit.h"
@@ -86,7 +86,7 @@ Status restoreMissingFeatureCompatibilityVersionDocument(OperationContext* opCtx
     auto databaseHolder = DatabaseHolder::get(opCtx);
     auto db = databaseHolder->getDb(opCtx, fcvNss.db());
     if (!db) {
-        LOGV2(20998, "Re-creating admin database that was dropped.");
+        LOG(20998, "Re-creating admin database that was dropped.");
     }
     db = databaseHolder->openDb(opCtx, fcvNss.db());
     invariant(db);
@@ -97,10 +97,10 @@ Status restoreMissingFeatureCompatibilityVersionDocument(OperationContext* opCtx
     if (!catalog->lookupCollectionByNamespace(opCtx,
                                               NamespaceString::kServerConfigurationNamespace)) {
         // (Generic FCV reference): This FCV reference should exist across LTS binary versions.
-        LOGV2(4926905,
-              "Re-creating featureCompatibilityVersion document that was deleted. Creating new "
-              "document with last LTS version.",
-              "version"_attr = FeatureCompatibilityVersionParser::kLastLTS);
+        LOG(4926905,
+            "Re-creating featureCompatibilityVersion document that was deleted. Creating new "
+            "document with last LTS version.",
+            "version"_attr = FeatureCompatibilityVersionParser::kLastLTS);
         uassertStatusOK(
             createCollection(opCtx, fcvNss.db().toString(), BSON("create" << fcvNss.coll())));
     }
@@ -116,12 +116,12 @@ Status restoreMissingFeatureCompatibilityVersionDocument(OperationContext* opCtx
                           BSON("_id" << FeatureCompatibilityVersionParser::kParameterName),
                           featureCompatibilityVersion)) {
         // (Generic FCV reference): This FCV reference should exist across LTS binary versions.
-        LOGV2(21000,
-              "Re-creating featureCompatibilityVersion document that was deleted. Creating new "
-              "document with version "
-              "{FeatureCompatibilityVersionParser_kLastLTS}.",
-              "Re-creating featureCompatibilityVersion document that was deleted",
-              "version"_attr = FeatureCompatibilityVersionParser::kLastLTS);
+        LOG(21000,
+            "Re-creating featureCompatibilityVersion document that was deleted. Creating new "
+            "document with version "
+            "{FeatureCompatibilityVersionParser_kLastLTS}.",
+            "Re-creating featureCompatibilityVersion document that was deleted",
+            "version"_attr = FeatureCompatibilityVersionParser::kLastLTS);
 
         FeatureCompatibilityVersionDocument fcvDoc;
         // (Generic FCV reference): This FCV reference should exist across LTS binary versions.
@@ -163,7 +163,7 @@ bool checkIdIndexExists(OperationContext* opCtx, RecordId catalogId) {
 }
 
 Status buildMissingIdIndex(OperationContext* opCtx, Collection* collection) {
-    LOGV2(4805002, "Building missing _id index", logAttrs(*collection));
+    LOG(4805002, "Building missing _id index", logAttrs(*collection));
     MultiIndexBlock indexer;
     auto abortOnExit = makeGuard([&] {
         CollectionWriter collWriter(collection);
@@ -234,18 +234,18 @@ Status ensureCollectionProperties(OperationContext* opCtx,
         // does not exist before attempting to build it or returning an error.
         if (requiresIndex && !hasAutoIndexIdField &&
             !checkIdIndexExists(opCtx, coll->getCatalogId())) {
-            LOGV2(21001,
-                  "collection {coll_ns} is missing an _id index",
-                  "Collection is missing an _id index",
-                  logAttrs(*coll));
+            LOG(21001,
+                "collection {coll_ns} is missing an _id index",
+                "Collection is missing an _id index",
+                logAttrs(*coll));
             if (EnsureIndexPolicy::kBuildMissing == ensureIndexPolicy) {
                 auto status = buildMissingIdIndex(opCtx, coll);
                 if (!status.isOK()) {
-                    LOGV2_ERROR(21021,
-                                "could not build an _id index on collection {coll_ns}: {error}",
-                                "Could not build an _id index on collection",
-                                logAttrs(*coll),
-                                "error"_attr = status);
+                    LOG_ERROR(21021,
+                              "could not build an _id index on collection {coll_ns}: {error}",
+                              "Could not build an _id index on collection",
+                              logAttrs(*coll),
+                              "error"_attr = status);
                     return downgradeError;
                 }
             } else {
@@ -266,7 +266,7 @@ void openDatabases(OperationContext* opCtx, const StorageEngine* storageEngine, 
     auto databaseHolder = DatabaseHolder::get(opCtx);
     auto dbNames = storageEngine->listDatabases();
     for (const auto& dbName : dbNames) {
-        LOGV2_DEBUG(21010, 1, "    Opening database: {dbName}", "dbName"_attr = dbName);
+        LOG_DEBUG(21010, 1, "    Opening database: {dbName}", "dbName"_attr = dbName);
         auto db = databaseHolder->openDb(opCtx, dbName);
         invariant(db);
 
@@ -289,7 +289,7 @@ void assertFilesCompatible(OperationContext* opCtx, StorageEngine* storageEngine
         // version of mongod with --repair and then proceed with normal startup.
         status = {ErrorCodes::MustUpgrade, status.reason()};
     }
-    LOGV2_FATAL_CONTINUE(
+    LOG_FATAL_CONTINUE(
         21023,
         "Unable to start mongod due to an incompatibility with the data files and this version "
         "of mongod: {error}. Please consult our documentation when trying to downgrade to a "
@@ -327,7 +327,7 @@ void assertCappedOplog(OperationContext* opCtx, Database* db) {
     const CollectionPtr& oplogCollection =
         CollectionCatalog::get(opCtx)->lookupCollectionByNamespace(opCtx, oplogNss);
     if (oplogCollection && !oplogCollection->isCapped()) {
-        LOGV2_FATAL_NOTRACE(
+        LOG_FATAL_NOTRACE(
             40115,
             "The oplog collection {oplogNamespace} is not capped; a capped oplog is a "
             "requirement for replication to function.",
@@ -355,13 +355,13 @@ void reconcileCatalogAndRebuildUnfinishedIndexes(
     // shutdown, nothing in the temp directory will be used. Thus, we can clear it.
     if (reconcileResult.indexBuildsToResume.empty() ||
         lastStorageEngineShutdownState == LastStorageEngineShutdownState::kUnclean) {
-        LOGV2(5071100, "Clearing temp directory");
+        LOG(5071100, "Clearing temp directory");
 
         boost::system::error_code ec;
         boost::filesystem::remove_all(storageGlobalParams.dbpath + "/_tmp/", ec);
 
         if (ec) {
-            LOGV2(5071101, "Failed to clear temp directory", "error"_attr = ec.message());
+            LOG(5071101, "Failed to clear temp directory", "error"_attr = ec.message());
         }
     }
 
@@ -397,11 +397,11 @@ void reconcileCatalogAndRebuildUnfinishedIndexes(
 
         auto collection = catalog->lookupCollectionByNamespace(opCtx, collNss);
         for (const auto& indexName : entry.second.first) {
-            LOGV2(21004,
-                  "Rebuilding index. Collection: {collNss} Index: {indexName}",
-                  "Rebuilding index",
-                  "namespace"_attr = collNss,
-                  "index"_attr = indexName);
+            LOG(21004,
+                "Rebuilding index. Collection: {collNss} Index: {indexName}",
+                "Rebuilding index",
+                "namespace"_attr = collNss,
+                "index"_attr = indexName);
         }
 
         std::vector<BSONObj> indexSpecs = entry.second.second;
@@ -412,7 +412,7 @@ void reconcileCatalogAndRebuildUnfinishedIndexes(
     // complete. Therefore, when a replica set member is started in standalone mode, we cannot
     // restart the index build because it will never complete.
     if (getReplSetMemberInStandaloneMode(opCtx->getServiceContext())) {
-        LOGV2(21005, "Not restarting unfinished index builds because we are in standalone mode");
+        LOG(21005, "Not restarting unfinished index builds because we are in standalone mode");
         return;
     }
 
@@ -453,7 +453,7 @@ void startupRepair(OperationContext* opCtx, StorageEngine* storageEngine) {
     invariant(!storageGlobalParams.readOnly);
 
     if (MONGO_unlikely(exitBeforeDataRepair.shouldFail())) {
-        LOGV2(21006, "Exiting because 'exitBeforeDataRepair' fail point was set.");
+        LOG(21006, "Exiting because 'exitBeforeDataRepair' fail point was set.");
         quickExit(EXIT_ABRUPT);
     }
 
@@ -503,7 +503,7 @@ void startupRepair(OperationContext* opCtx, StorageEngine* storageEngine) {
     });
 
     if (MONGO_unlikely(exitBeforeRepairInvalidatesConfig.shouldFail())) {
-        LOGV2(21008, "Exiting because 'exitBeforeRepairInvalidatesConfig' fail point was set.");
+        LOG(21008, "Exiting because 'exitBeforeRepairInvalidatesConfig' fail point was set.");
         quickExit(EXIT_ABRUPT);
     }
 
@@ -512,22 +512,22 @@ void startupRepair(OperationContext* opCtx, StorageEngine* storageEngine) {
     if (repairObserver->getModifications().size() > 0) {
         const auto& mods = repairObserver->getModifications();
         for (const auto& mod : mods) {
-            LOGV2_WARNING(21019, "repairModification", "description"_attr = mod.getDescription());
+            LOG_WARNING(21019, "repairModification", "description"_attr = mod.getDescription());
         }
     }
     if (repairObserver->isDataInvalidated()) {
         if (hasReplSetConfigDoc(opCtx)) {
-            LOGV2_WARNING(21020,
-                          "WARNING: Repair may have modified replicated data. This node will no "
-                          "longer be able to join a replica set without a full re-sync");
+            LOG_WARNING(21020,
+                        "WARNING: Repair may have modified replicated data. This node will no "
+                        "longer be able to join a replica set without a full re-sync");
         }
     }
 
     // There were modifications, but only benign ones.
     if (repairObserver->getModifications().size() > 0 && !repairObserver->isDataInvalidated()) {
-        LOGV2(21009,
-              "Repair has made modifications to unreplicated data. The data is healthy and "
-              "the node is eligible to be returned to the replica set.");
+        LOG(21009,
+            "Repair has made modifications to unreplicated data. The data is healthy and "
+            "the node is eligible to be returned to the replica set.");
     }
 }
 

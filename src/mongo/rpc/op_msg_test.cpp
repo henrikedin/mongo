@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTest
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTest
 
 #include "mongo/platform/basic.h"
 
@@ -37,7 +37,7 @@
 #include "mongo/bson/json.h"
 #include "mongo/bson/util/builder.h"
 #include "mongo/db/jsobj.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/op_msg.h"
 #include "mongo/unittest/log_test.h"
 #include "mongo/unittest/unittest.h"
@@ -159,8 +159,8 @@ public:
 
 // Fixture class to raise log verbosity so that invalid messages are printed by the parser.
 class OpMsgParser : public unittest::Test {
-    unittest::MinimumLoggedSeverityGuard _severityGuard{logv2::LogComponent::kNetwork,
-                                                        logv2::LogSeverity::Debug(1)};
+    unittest::MinimumLoggedSeverityGuard _severityGuard{log::LogComponent::kNetwork,
+                                                        log::LogSeverity::Debug(1)};
 };
 
 // Section bytes
@@ -653,18 +653,18 @@ void testSerializer(const Message& fromSerializer, OpMsgBytes&& expected) {
         std::mismatch(gotSD.begin(), gotSD.end(), expectedSD.begin(), expectedSD.end()).first -
         gotSD.begin();
 
-    LOGV2(22636, "Mismatch after {commonLength} bytes.", "commonLength"_attr = commonLength);
-    LOGV2(22637,
-          "Common prefix: {hexdump_gotSD_rawData_commonLength}",
-          "hexdump_gotSD_rawData_commonLength"_attr = hexdump(gotSD.substr(0, commonLength)));
-    LOGV2(22638,
-          "Got suffix     : {hexdump_gotSD_rawData_commonLength_gotSD_size_commonLength}",
-          "hexdump_gotSD_rawData_commonLength_gotSD_size_commonLength"_attr =
-              hexdump(gotSD.substr(commonLength)));
-    LOGV2(22639,
-          "Expected suffix: {hexdump_expectedSD_rawData_commonLength_expectedSD_size_commonLength}",
-          "hexdump_expectedSD_rawData_commonLength_expectedSD_size_commonLength"_attr =
-              hexdump(expectedSD.substr(commonLength)));
+    LOG(22636, "Mismatch after {commonLength} bytes.", "commonLength"_attr = commonLength);
+    LOG(22637,
+        "Common prefix: {hexdump_gotSD_rawData_commonLength}",
+        "hexdump_gotSD_rawData_commonLength"_attr = hexdump(gotSD.substr(0, commonLength)));
+    LOG(22638,
+        "Got suffix     : {hexdump_gotSD_rawData_commonLength_gotSD_size_commonLength}",
+        "hexdump_gotSD_rawData_commonLength_gotSD_size_commonLength"_attr =
+            hexdump(gotSD.substr(commonLength)));
+    LOG(22639,
+        "Expected suffix: {hexdump_expectedSD_rawData_commonLength_expectedSD_size_commonLength}",
+        "hexdump_expectedSD_rawData_commonLength_expectedSD_size_commonLength"_attr =
+            hexdump(expectedSD.substr(commonLength)));
     FAIL("Serialization didn't match expected data. See above for details.");
 }
 

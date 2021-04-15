@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kSharding
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kSharding
 
 #include "mongo/platform/basic.h"
 
@@ -47,7 +47,7 @@
 #include "mongo/db/query/query_request_helper.h"
 #include "mongo/db/repl/read_concern_args.h"
 #include "mongo/executor/task_executor_pool.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/rpc/metadata/repl_set_metadata.h"
 #include "mongo/rpc/metadata/tracking_metadata.h"
@@ -166,17 +166,17 @@ std::string ShardRemote::toString() const {
 BSONObj ShardRemote::_appendMetadataForCommand(OperationContext* opCtx,
                                                const ReadPreferenceSetting& readPref) {
     BSONObjBuilder builder;
-    if (shouldLog(logv2::LogComponent::kTracking,
-                  logv2::LogSeverity::Debug(1))) {  // avoid performance overhead if not logging
+    if (shouldLog(log::LogComponent::kTracking,
+                  log::LogSeverity::Debug(1))) {  // avoid performance overhead if not logging
         if (!TrackingMetadata::get(opCtx).getIsLogged()) {
             if (!TrackingMetadata::get(opCtx).getOperId()) {
                 TrackingMetadata::get(opCtx).initWithOperName("NotSet");
             }
-            LOGV2_DEBUG_OPTIONS(20164,
-                                1,
-                                logv2::LogOptions{logv2::LogComponent::kTracking},
-                                "{trackingMetadata}",
-                                "trackingMetadata"_attr = TrackingMetadata::get(opCtx));
+            LOG_DEBUG_OPTIONS(20164,
+                              1,
+                              log::LogOptions{log::LogComponent::kTracking},
+                              "{trackingMetadata}",
+                              "trackingMetadata"_attr = TrackingMetadata::get(opCtx));
             TrackingMetadata::get(opCtx).setIsLogged(true);
         }
 
@@ -235,10 +235,10 @@ StatusWith<Shard::CommandResponse> ShardRemote::_runCommand(OperationContext* op
 
     if (!response.status.isOK()) {
         if (ErrorCodes::isExceededTimeLimitError(response.status.code())) {
-            LOGV2(22739,
-                  "Operation timed out {error}",
-                  "Operation timed out",
-                  "error"_attr = redact(response.status));
+            LOG(22739,
+                "Operation timed out {error}",
+                "Operation timed out",
+                "error"_attr = redact(response.status));
         }
         return response.status;
     }
@@ -336,8 +336,7 @@ StatusWith<Shard::QueryResponse> ShardRemote::_runExhaustiveCursorCommand(
 
     if (!status.isOK()) {
         if (ErrorCodes::isExceededTimeLimitError(status.code())) {
-            LOGV2(
-                22740, "Operation timed out {error}", "Operation timed out", "error"_attr = status);
+            LOG(22740, "Operation timed out {error}", "Operation timed out", "error"_attr = status);
         }
         return status;
     }

@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kSharding
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kSharding
 
 #include "mongo/platform/basic.h"
 
@@ -51,7 +51,7 @@
 #include "mongo/db/s/type_shard_database.h"
 #include "mongo/db/s/type_shard_identity.h"
 #include "mongo/db/update/update_oplog_entry_serialization.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/s/balancer_configuration.h"
 #include "mongo/s/cannot_implicitly_create_collection_info.h"
 #include "mongo/s/catalog_cache_loader.h"
@@ -479,9 +479,9 @@ void ShardServerOpObserver::onDelete(OperationContext* opCtx,
                     uasserted(40070,
                               "cannot delete shardIdentity document while in --shardsvr mode");
                 } else {
-                    LOGV2_WARNING(23779,
-                                  "Shard identity document rolled back.  Will shut down after "
-                                  "finishing rollback.");
+                    LOG_WARNING(23779,
+                                "Shard identity document rolled back.  Will shut down after "
+                                "finishing rollback.");
                     ShardIdentityRollbackNotifier::get(opCtx)->recordThatRollbackHappened();
                 }
             }
@@ -560,9 +560,9 @@ repl::OpTime ShardServerOpObserver::onDropCollection(OperationContext* opCtx,
 
         // Can't confirm whether there was a ShardIdentity document or not yet, so assume there was
         // one and shut down the process to clear the in-memory sharding state
-        LOGV2_WARNING(23780,
-                      "admin.system.version collection rolled back. Will shut down after finishing "
-                      "rollback");
+        LOG_WARNING(23780,
+                    "admin.system.version collection rolled back. Will shut down after finishing "
+                    "rollback");
 
         ShardIdentityRollbackNotifier::get(opCtx)->recordThatRollbackHappened();
     }

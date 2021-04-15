@@ -27,13 +27,13 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTest
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTest
 
 #include "mongo/platform/basic.h"
 
 #include <boost/optional.hpp>
 
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/unittest/unittest.h"
 #include "mongo/util/base64.h"
 #include "mongo/util/hex.h"
@@ -87,10 +87,10 @@ TEST(Base64Test, encodeAllPossibleGroups) {
             std::string s = base64::encode(buf);
             ASSERT_EQ(s.size(), 4);
             if (kSuperVerbose) {
-                LOGV2(23509,
-                      "buf=[{buf}] s=`{s}`",
-                      "buf"_attr = mongo::hexblob::encode(buf),
-                      "s"_attr = s);
+                LOG(23509,
+                    "buf=[{buf}] s=`{s}`",
+                    "buf"_attr = mongo::hexblob::encode(buf),
+                    "s"_attr = s);
             }
             std::string recovered = base64::decode(s);
             ASSERT_EQ(buf, recovered);

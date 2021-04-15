@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTest
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTest
 
 #include <memory>
 
@@ -37,7 +37,7 @@
 #include "mongo/db/query/wildcard_multikey_paths.h"
 #include "mongo/db/repl/storage_interface_impl.h"
 #include "mongo/db/storage/sorted_data_interface.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/unittest/unittest.h"
 
 namespace mongo {
@@ -118,12 +118,12 @@ protected:
             // Confirm that there are no further keys in the index.
             ASSERT(!indexKey);
         } catch (const TestAssertionFailureException& ex) {
-            LOGV2(22518, "Writing remaining index keys to debug log:");
+            LOG(22518, "Writing remaining index keys to debug log:");
             while (indexKey) {
-                LOGV2(22519,
-                      "{{ key: {indexKey_key}, loc: {indexKey_loc} }}",
-                      "indexKey_key"_attr = indexKey->key,
-                      "indexKey_loc"_attr = indexKey->loc);
+                LOG(22519,
+                    "{{ key: {indexKey_key}, loc: {indexKey_loc} }}",
+                    "indexKey_key"_attr = indexKey->key,
+                    "indexKey_loc"_attr = indexKey->loc);
                 indexKey = indexCursor->next();
             }
             throw ex;

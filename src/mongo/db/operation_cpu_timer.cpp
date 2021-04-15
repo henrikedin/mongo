@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kDefault
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kDefault
 
 #include <boost/optional.hpp>
 #include <fmt/format.h>
@@ -41,7 +41,7 @@
 #include "mongo/base/error_codes.h"
 #include "mongo/db/client.h"
 #include "mongo/db/operation_context.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/stdx/thread.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/errno_util.h"
@@ -152,7 +152,7 @@ Nanoseconds PosixTimer::_getThreadTime() const try {
     // Abort the process as the timer cannot account for the elapsed time. This path is only
     // reachable if the platform supports CPU time measurement at startup, but returns an error
     // for a subsequent attempt to get thread-specific CPU consumption.
-    LOGV2_FATAL(4744601, "Failed to read the CPU time for the current thread", "error"_attr = ex);
+    LOG_FATAL(4744601, "Failed to read the CPU time for the current thread", "error"_attr = ex);
 }
 
 static auto getCPUTimer = OperationContext::declareDecoration<PosixTimer>();

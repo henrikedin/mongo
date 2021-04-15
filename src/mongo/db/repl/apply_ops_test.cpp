@@ -81,7 +81,7 @@ private:
 
 protected:
     // Reset default log level when each test is over in case it was changed.
-    unittest::MinimumLoggedSeverityGuard _verbosityGuard{logv2::LogComponent::kReplication};
+    unittest::MinimumLoggedSeverityGuard _verbosityGuard{log::LogComponent::kReplication};
 
     OpObserverMock* _opObserver = nullptr;
     std::unique_ptr<StorageInterface> _storage;
@@ -288,8 +288,8 @@ TEST_F(ApplyOpsTest, ApplyOpsPropagatesOplogApplicationMode) {
     auto opCtx = cc().makeOperationContext();
 
     // Increase log component verbosity to check for op application messages.
-    auto verbosityGuard = unittest::MinimumLoggedSeverityGuard{logv2::LogComponent::kReplication,
-                                                               logv2::LogSeverity::Debug(3)};
+    auto verbosityGuard = unittest::MinimumLoggedSeverityGuard{log::LogComponent::kReplication,
+                                                               log::LogSeverity::Debug(3)};
 
     // Test that the 'applyOps' function passes the oplog application mode through correctly to the
     // underlying op application functions.

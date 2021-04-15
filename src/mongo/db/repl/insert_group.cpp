@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kReplication
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kReplication
 
 #include "mongo/platform/basic.h"
 
@@ -40,7 +40,7 @@
 #include "mongo/db/ops/write_ops.h"
 #include "mongo/db/repl/oplog_applier_impl.h"
 #include "mongo/db/repl/oplog_entry.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/assert_util.h"
 
 namespace mongo {
@@ -147,16 +147,16 @@ StatusWith<InsertGroup::ConstIterator> InsertGroup::groupAndApplyInserts(
 
         // It's not an error during initial sync to encounter DuplicateKey errors.
         if (Mode::kInitialSync == _mode && ErrorCodes::DuplicateKey == status) {
-            LOGV2_DEBUG(21203,
-                        2,
-                        message,
-                        "groupedInserts"_attr = redact(groupedInserts.toBSON()),
-                        "firstInsert"_attr = redact(entry.toBSONForLogging()));
+            LOG_DEBUG(21203,
+                      2,
+                      message,
+                      "groupedInserts"_attr = redact(groupedInserts.toBSON()),
+                      "firstInsert"_attr = redact(entry.toBSONForLogging()));
         } else {
-            LOGV2_ERROR(21204,
-                        message,
-                        "groupedInserts"_attr = redact(groupedInserts.toBSON()),
-                        "firstInsert"_attr = redact(entry.toBSONForLogging()));
+            LOG_ERROR(21204,
+                      message,
+                      "groupedInserts"_attr = redact(groupedInserts.toBSON()),
+                      "firstInsert"_attr = redact(entry.toBSONForLogging()));
         }
 
         // Avoid quadratic run time from failed insert by not retrying until we

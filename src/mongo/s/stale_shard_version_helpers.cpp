@@ -27,22 +27,22 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kSharding
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kSharding
 
 #include "mongo/platform/basic.h"
 
 #include "mongo/s/stale_shard_version_helpers.h"
 
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace mongo {
 
 void logFailedRetryAttempt(StringData taskDescription, const DBException& exception) {
-    LOGV2_DEBUG(4553800,
-                3,
-                "Retrying {task_description}. Got error: {exception}",
-                "task_description"_attr = taskDescription,
-                "exception"_attr = exception);
+    LOG_DEBUG(4553800,
+              3,
+              "Retrying {task_description}. Got error: {exception}",
+              "task_description"_attr = taskDescription,
+              "exception"_attr = exception);
 }
 
 }  // namespace mongo

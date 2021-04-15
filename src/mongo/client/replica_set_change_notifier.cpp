@@ -27,13 +27,13 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kNetwork
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kNetwork
 
 #include "mongo/platform/basic.h"
 
 #include "mongo/client/replica_set_change_notifier.h"
 
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/fail_point.h"
 #include "mongo/util/stacktrace.h"
 
@@ -47,11 +47,11 @@ void ReplicaSetChangeNotifier::_addListener(std::shared_ptr<Listener> listener) 
 }
 
 void ReplicaSetChangeNotifier::onFoundSet(const std::string& name) noexcept {
-    LOGV2_DEBUG(20158,
-                2,
-                "Signaling found set {replicaSet}",
-                "Signaling found set",
-                "replicaSet"_attr = name);
+    LOG_DEBUG(20158,
+              2,
+              "Signaling found set {replicaSet}",
+              "Signaling found set",
+              "replicaSet"_attr = name);
 
     stdx::unique_lock<Latch> lk(_mutex);
 
@@ -68,11 +68,11 @@ void ReplicaSetChangeNotifier::onFoundSet(const std::string& name) noexcept {
 }
 
 void ReplicaSetChangeNotifier::onPossibleSet(ConnectionString connectionString) noexcept {
-    LOGV2_DEBUG(20159,
-                2,
-                "Signaling possible set {connectionString}",
-                "Signaling possible set",
-                "connectionString"_attr = connectionString);
+    LOG_DEBUG(20159,
+              2,
+              "Signaling possible set {connectionString}",
+              "Signaling possible set",
+              "connectionString"_attr = connectionString);
 
     const auto& name = connectionString.getSetName();
 
@@ -101,12 +101,12 @@ void ReplicaSetChangeNotifier::onPossibleSet(ConnectionString connectionString) 
 void ReplicaSetChangeNotifier::onConfirmedSet(ConnectionString connectionString,
                                               HostAndPort primary,
                                               std::set<HostAndPort> passives) noexcept {
-    LOGV2_DEBUG(20160,
-                2,
-                "Signaling confirmed set {connectionString} with primary {primary}",
-                "Signaling confirmed set with primary",
-                "connectionString"_attr = connectionString,
-                "primary"_attr = primary);
+    LOG_DEBUG(20160,
+              2,
+              "Signaling confirmed set {connectionString} with primary {primary}",
+              "Signaling confirmed set with primary",
+              "connectionString"_attr = connectionString,
+              "primary"_attr = primary);
 
     const auto& name = connectionString.getSetName();
     stdx::unique_lock<Latch> lk(_mutex);
@@ -133,11 +133,11 @@ void ReplicaSetChangeNotifier::onConfirmedSet(ConnectionString connectionString,
 }
 
 void ReplicaSetChangeNotifier::onDroppedSet(const std::string& name) noexcept {
-    LOGV2_DEBUG(20161,
-                2,
-                "Signaling dropped set {replicaSet}",
-                "Signaling dropped set",
-                "replicaSet"_attr = name);
+    LOG_DEBUG(20161,
+              2,
+              "Signaling dropped set {replicaSet}",
+              "Signaling dropped set",
+              "replicaSet"_attr = name);
 
     stdx::unique_lock<Latch> lk(_mutex);
 

@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kSharding
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kSharding
 
 #include "mongo/platform/basic.h"
 
@@ -38,7 +38,7 @@
 #include "mongo/db/commands.h"
 #include "mongo/db/lasterror.h"
 #include "mongo/executor/task_executor_pool.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/s/client/shard_registry.h"
 #include "mongo/s/cluster_commands_helpers.h"
 #include "mongo/s/cluster_last_error_info.h"
@@ -105,15 +105,15 @@ Status enforceLegacyWriteConcern(OperationContext* opCtx,
             return swShard.getStatus();
         }
 
-        LOGV2_DEBUG(22752,
-                    3,
-                    "Enforcing write concern {options} on {shardId} at opTime "
-                    "{opTime} with electionID {electionId}",
-                    "Enforcing write concern on shard",
-                    "options"_attr = options,
-                    "shardId"_attr = swShard.getValue()->getId(),
-                    "opTime"_attr = opTime.getTimestamp().toStringPretty(),
-                    "electionId"_attr = electionId);
+        LOG_DEBUG(22752,
+                  3,
+                  "Enforcing write concern {options} on {shardId} at opTime "
+                  "{opTime} with electionID {electionId}",
+                  "Enforcing write concern on shard",
+                  "options"_attr = options,
+                  "shardId"_attr = swShard.getValue()->getId(),
+                  "opTime"_attr = opTime.getTimestamp().toStringPretty(),
+                  "electionId"_attr = electionId);
 
         BSONObj gleCmd = buildGLECmdWithOpTime(options, opTime, electionId);
         requests.emplace_back(swShard.getValue()->getId(), gleCmd);

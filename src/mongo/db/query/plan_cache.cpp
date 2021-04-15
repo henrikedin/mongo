@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kQuery
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kQuery
 
 #include "mongo/platform/basic.h"
 
@@ -51,7 +51,7 @@
 #include "mongo/db/query/planner_ixselect.h"
 #include "mongo/db/query/query_knobs_gen.h"
 #include "mongo/db/query/query_solution.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/hex.h"
 #include "mongo/util/transitional_tools_do_not_use/vector_spooling.h"
@@ -440,10 +440,10 @@ PlanCache::~PlanCache() {}
 std::unique_ptr<CachedSolution> PlanCache::getCacheEntryIfActive(const PlanCacheKey& key) const {
     PlanCache::GetResult res = get(key);
     if (res.state == PlanCache::CacheEntryState::kPresentInactive) {
-        LOGV2_DEBUG(20936,
-                    2,
-                    "Not using cached entry since it is inactive",
-                    "cacheKey"_attr = redact(key.toString()));
+        LOG_DEBUG(20936,
+                  2,
+                  "Not using cached entry since it is inactive",
+                  "cacheKey"_attr = redact(key.toString()));
         return nullptr;
     }
 
@@ -464,13 +464,13 @@ PlanCache::NewEntryState PlanCache::getNewEntryState(const CanonicalQuery& query
                                                      double growthCoefficient) {
     NewEntryState res;
     if (!oldEntry) {
-        LOGV2_DEBUG(20937,
-                    1,
-                    "Creating inactive cache entry for query",
-                    "query"_attr = redact(query.toStringShort()),
-                    "queryHash"_attr = zeroPaddedHex(queryHash),
-                    "planCacheKey"_attr = zeroPaddedHex(planCacheKey),
-                    "newWorks"_attr = newWorks);
+        LOG_DEBUG(20937,
+                  1,
+                  "Creating inactive cache entry for query",
+                  "query"_attr = redact(query.toStringShort()),
+                  "queryHash"_attr = zeroPaddedHex(queryHash),
+                  "planCacheKey"_attr = zeroPaddedHex(planCacheKey),
+                  "newWorks"_attr = newWorks);
         res.shouldBeCreated = true;
         res.shouldBeActive = false;
         return res;
@@ -480,26 +480,26 @@ PlanCache::NewEntryState PlanCache::getNewEntryState(const CanonicalQuery& query
         // The new plan did better than the currently stored active plan. This case may
         // occur if many MultiPlanners are run simultaneously.
 
-        LOGV2_DEBUG(20938,
-                    1,
-                    "Replacing active cache entry for query",
-                    "query"_attr = redact(query.toStringShort()),
-                    "queryHash"_attr = zeroPaddedHex(queryHash),
-                    "planCacheKey"_attr = zeroPaddedHex(planCacheKey),
-                    "oldWorks"_attr = oldEntry->works,
-                    "newWorks"_attr = newWorks);
+        LOG_DEBUG(20938,
+                  1,
+                  "Replacing active cache entry for query",
+                  "query"_attr = redact(query.toStringShort()),
+                  "queryHash"_attr = zeroPaddedHex(queryHash),
+                  "planCacheKey"_attr = zeroPaddedHex(planCacheKey),
+                  "oldWorks"_attr = oldEntry->works,
+                  "newWorks"_attr = newWorks);
         res.shouldBeCreated = true;
         res.shouldBeActive = true;
     } else if (oldEntry->isActive) {
-        LOGV2_DEBUG(20939,
-                    1,
-                    "Attempt to write to the planCache resulted in a noop, since there's already "
-                    "an active cache entry with a lower works value",
-                    "query"_attr = redact(query.toStringShort()),
-                    "queryHash"_attr = zeroPaddedHex(queryHash),
-                    "planCacheKey"_attr = zeroPaddedHex(planCacheKey),
-                    "newWorks"_attr = newWorks,
-                    "oldWorks"_attr = oldEntry->works);
+        LOG_DEBUG(20939,
+                  1,
+                  "Attempt to write to the planCache resulted in a noop, since there's already "
+                  "an active cache entry with a lower works value",
+                  "query"_attr = redact(query.toStringShort()),
+                  "queryHash"_attr = zeroPaddedHex(queryHash),
+                  "planCacheKey"_attr = zeroPaddedHex(planCacheKey),
+                  "newWorks"_attr = newWorks,
+                  "oldWorks"_attr = oldEntry->works);
         // There is already an active cache entry with a lower works value.
         // We do nothing.
         res.shouldBeCreated = false;
@@ -515,14 +515,14 @@ PlanCache::NewEntryState PlanCache::getNewEntryState(const CanonicalQuery& query
         const double increasedWorks = std::max(
             oldEntry->works + 1u, static_cast<size_t>(oldEntry->works * growthCoefficient));
 
-        LOGV2_DEBUG(20940,
-                    1,
-                    "Increasing work value associated with cache entry",
-                    "query"_attr = redact(query.toStringShort()),
-                    "queryHash"_attr = zeroPaddedHex(queryHash),
-                    "planCacheKey"_attr = zeroPaddedHex(planCacheKey),
-                    "oldWorks"_attr = oldEntry->works,
-                    "increasedWorks"_attr = increasedWorks);
+        LOG_DEBUG(20940,
+                  1,
+                  "Increasing work value associated with cache entry",
+                  "query"_attr = redact(query.toStringShort()),
+                  "queryHash"_attr = zeroPaddedHex(queryHash),
+                  "planCacheKey"_attr = zeroPaddedHex(planCacheKey),
+                  "oldWorks"_attr = oldEntry->works,
+                  "increasedWorks"_attr = increasedWorks);
         oldEntry->works = increasedWorks;
 
         // Don't create a new entry.
@@ -531,14 +531,14 @@ PlanCache::NewEntryState PlanCache::getNewEntryState(const CanonicalQuery& query
         // This plan performed just as well or better than we expected, based on the
         // inactive entry's works. We use this as an indicator that it's safe to
         // cache (as an active entry) the plan this query used for the future.
-        LOGV2_DEBUG(20941,
-                    1,
-                    "Inactive cache entry for query is being promoted to active entry",
-                    "query"_attr = redact(query.toStringShort()),
-                    "queryHash"_attr = zeroPaddedHex(queryHash),
-                    "planCacheKey"_attr = zeroPaddedHex(planCacheKey),
-                    "oldWorks"_attr = oldEntry->works,
-                    "newWorks"_attr = newWorks);
+        LOG_DEBUG(20941,
+                  1,
+                  "Inactive cache entry for query is being promoted to active entry",
+                  "query"_attr = redact(query.toStringShort()),
+                  "queryHash"_attr = zeroPaddedHex(queryHash),
+                  "planCacheKey"_attr = zeroPaddedHex(planCacheKey),
+                  "oldWorks"_attr = oldEntry->works,
+                  "newWorks"_attr = newWorks);
         // We'll replace the old inactive entry with an active entry.
         res.shouldBeCreated = true;
         res.shouldBeActive = true;
@@ -627,11 +627,11 @@ Status PlanCache::set(const CanonicalQuery& query,
     std::unique_ptr<PlanCacheEntry> evictedEntry = _cache.add(key, newEntry.release());
 
     if (nullptr != evictedEntry.get()) {
-        LOGV2_DEBUG(20942,
-                    1,
-                    "Plan cache maximum size exceeded - removed least recently used entry",
-                    "namespace"_attr = query.nss(),
-                    "evictedEntry"_attr = redact(evictedEntry->debugString()));
+        LOG_DEBUG(20942,
+                  1,
+                  "Plan cache maximum size exceeded - removed least recently used entry",
+                  "namespace"_attr = query.nss(),
+                  "evictedEntry"_attr = redact(evictedEntry->debugString()));
     }
 
     return Status::OK();

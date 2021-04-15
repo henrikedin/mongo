@@ -37,7 +37,7 @@ class ServiceContext;
 
 /**
  * Writes useful information about the running process.
- * If `os` is nonnull, print to it, else to LOGV2.
+ * If `os` is nonnull, print to it, else to log.
  */
 void logProcessDetails(std::ostream* os);
 

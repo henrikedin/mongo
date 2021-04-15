@@ -27,14 +27,14 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kSharding
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kSharding
 
 #include "mongo/platform/basic.h"
 
 #include "mongo/db/read_write_concern_defaults.h"
 
 #include "mongo/db/vector_clock.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace mongo {
 namespace {
@@ -177,7 +177,7 @@ void ReadWriteConcernDefaults::refreshIfNecessary(OperationContext* opCtx) {
         (possibleNewDefaults->getUpdateOpTime() > currentDefaultsHandle->getUpdateOpTime())) {
         // Use the new defaults if they have a higher epoch, if there are no defaults in the cache,
         // or if the found defaults have no epoch, meaning there are no defaults in config.settings.
-        LOGV2(20997, "Refreshed RWC defaults", "newDefaults"_attr = possibleNewDefaults->toBSON());
+        LOG(20997, "Refreshed RWC defaults", "newDefaults"_attr = possibleNewDefaults->toBSON());
         setDefault(opCtx, std::move(*possibleNewDefaults));
     }
 }

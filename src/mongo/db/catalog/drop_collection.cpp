@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kCommand
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kCommand
 
 #include "mongo/platform/basic.h"
 
@@ -47,7 +47,7 @@
 #include "mongo/db/service_context.h"
 #include "mongo/db/timeseries/bucket_catalog.h"
 #include "mongo/db/views/view_catalog.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/fail_point.h"
 
 namespace mongo {
@@ -95,9 +95,9 @@ Status _dropView(OperationContext* opCtx,
     Lock::CollectionLock systemViewsLock(opCtx, db->getSystemViewsName(), MODE_X);
 
     if (MONGO_unlikely(hangDuringDropCollection.shouldFail())) {
-        LOGV2(20330,
-              "hangDuringDropCollection fail point enabled. Blocking until fail point is "
-              "disabled.");
+        LOG(20330,
+            "hangDuringDropCollection fail point enabled. Blocking until fail point is "
+            "disabled.");
         hangDuringDropCollection.pauseWhileSet();
     }
 
@@ -157,9 +157,9 @@ Status _abortIndexBuildsAndDrop(OperationContext* opCtx,
     }
 
     if (MONGO_unlikely(hangDuringDropCollection.shouldFail())) {
-        LOGV2(518090,
-              "hangDuringDropCollection fail point enabled. Blocking until fail point is "
-              "disabled.");
+        LOG(518090,
+            "hangDuringDropCollection fail point enabled. Blocking until fail point is "
+            "disabled.");
         hangDuringDropCollection.pauseWhileSet();
     }
 
@@ -255,9 +255,9 @@ Status _dropCollection(OperationContext* opCtx,
     }
 
     if (MONGO_unlikely(hangDuringDropCollection.shouldFail())) {
-        LOGV2(20331,
-              "hangDuringDropCollection fail point enabled. Blocking until fail point is "
-              "disabled.");
+        LOG(20331,
+            "hangDuringDropCollection fail point enabled. Blocking until fail point is "
+            "disabled.");
         hangDuringDropCollection.pauseWhileSet();
     }
 
@@ -293,11 +293,11 @@ Status dropCollection(OperationContext* opCtx,
                       DropReply* reply,
                       DropCollectionSystemCollectionMode systemCollectionMode) {
     if (!serverGlobalParams.quiet.load()) {
-        LOGV2(518070, "CMD: drop", logAttrs(collectionName));
+        LOG(518070, "CMD: drop", logAttrs(collectionName));
     }
 
     if (MONGO_unlikely(hangDropCollectionBeforeLockAcquisition.shouldFail())) {
-        LOGV2(518080, "Hanging drop collection before lock acquisition while fail point is set");
+        LOG(518080, "Hanging drop collection before lock acquisition while fail point is set");
         hangDropCollectionBeforeLockAcquisition.pauseWhileSet();
     }
 
@@ -394,11 +394,11 @@ Status dropCollectionForApplyOps(OperationContext* opCtx,
                                  const repl::OpTime& dropOpTime,
                                  DropCollectionSystemCollectionMode systemCollectionMode) {
     if (!serverGlobalParams.quiet.load()) {
-        LOGV2(20332, "CMD: drop", logAttrs(collectionName));
+        LOG(20332, "CMD: drop", logAttrs(collectionName));
     }
 
     if (MONGO_unlikely(hangDropCollectionBeforeLockAcquisition.shouldFail())) {
-        LOGV2(20333, "Hanging drop collection before lock acquisition while fail point is set");
+        LOG(20333, "Hanging drop collection before lock acquisition while fail point is set");
         hangDropCollectionBeforeLockAcquisition.pauseWhileSet();
     }
     return writeConflictRetry(opCtx, "drop", collectionName.ns(), [&] {

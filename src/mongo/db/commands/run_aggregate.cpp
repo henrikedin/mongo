@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kCommand
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kCommand
 
 #include "mongo/platform/basic.h"
 
@@ -78,7 +78,7 @@
 #include "mongo/db/storage/storage_options.h"
 #include "mongo/db/views/view.h"
 #include "mongo/db/views/view_catalog.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/scopeguard.h"
 #include "mongo/util/string_map.h"
 
@@ -193,12 +193,12 @@ bool handleCursorCommand(OperationContext* opCtx,
             auto&& explainer = exec->getPlanExplainer();
             auto&& [stats, _] =
                 explainer.getWinningPlanStats(ExplainOptions::Verbosity::kExecStats);
-            LOGV2_WARNING(23799,
-                          "Aggregate command executor error: {error}, stats: {stats}, cmd: {cmd}",
-                          "Aggregate command executor error",
-                          "error"_attr = exception.toStatus(),
-                          "stats"_attr = redact(stats),
-                          "cmd"_attr = cmdObj);
+            LOG_WARNING(23799,
+                        "Aggregate command executor error: {error}, stats: {stats}, cmd: {cmd}",
+                        "Aggregate command executor error",
+                        "error"_attr = exception.toStatus(),
+                        "stats"_attr = redact(stats),
+                        "cmd"_attr = cmdObj);
 
             exception.addContext("PlanExecutor error during aggregation");
             throw;

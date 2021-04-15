@@ -26,7 +26,7 @@
  *    exception statement from all source files in the program, then also delete
  *    it in the license file.
  */
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kDefault
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kDefault
 
 #include <fstream>
 #include <iostream>
@@ -44,7 +44,7 @@
 #include "mongo/client/sdam/server_description_builder.h"
 #include "mongo/client/sdam/server_selector.h"
 #include "mongo/client/sdam/topology_manager.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/stdx/unordered_set.h"
 #include "mongo/util/clock_source_mock.h"
 #include "mongo/util/ctype.h"
@@ -117,7 +117,7 @@ public:
     ~JsonRttTestCase() = default;
 
     TestCaseResult execute() {
-        LOGV2(4333500, "### Running Test ###", "testFilePath"_attr = _testFilePath);
+        LOG(4333500, "### Running Test ###", "testFilePath"_attr = _testFilePath);
 
         ServerDescriptionPtr updatedServerDescription;
         if (_serverDescription) {
@@ -138,7 +138,7 @@ public:
         validateNewAvgRtt(&result, updatedServerDescription);
 
         if (!result.Success()) {
-            LOGV2(4333501, "Test failed", "testFilePath"_attr = _testFilePath);
+            LOG(4333501, "Test failed", "testFilePath"_attr = _testFilePath);
         }
 
         return result;
@@ -151,7 +151,7 @@ public:
 private:
     void parseTest(fs::path testFilePath) {
         _testFilePath = testFilePath.string();
-        LOGV2(4333503, "### Parsing Test ###", "testFilePath"_attr = testFilePath.string());
+        LOG(4333503, "### Parsing Test ###", "testFilePath"_attr = testFilePath.string());
         {
             std::ifstream testFile(_testFilePath);
             std::ostringstream json;
@@ -221,7 +221,7 @@ public:
     ~JsonServerSelectionTestCase() = default;
 
     TestCaseResult execute() {
-        LOGV2(4333504, "### Running Test ###", "testFilePath"_attr = _testFilePath);
+        LOG(4333504, "### Running Test ###", "testFilePath"_attr = _testFilePath);
         if (_parseError)
             return *_parseError;
 
@@ -242,7 +242,7 @@ public:
                                    return server->getAddress().toString();
                                });
             }
-            LOGV2(5017006, "Servers selected", "servers"_attr = selectedHosts);
+            LOG(5017006, "Servers selected", "servers"_attr = selectedHosts);
 
             validateServersInLatencyWindow(&result, selectedServers);
         } catch (const DBException& ex) {
@@ -251,7 +251,7 @@ public:
         }
 
         if (!result.Success() && !_errorExpected) {
-            LOGV2(4333505, "Test failed", "testFilePath"_attr = _testFilePath);
+            LOG(4333505, "Test failed", "testFilePath"_attr = _testFilePath);
         }
 
         return result;
@@ -268,7 +268,7 @@ public:
 private:
     void parseTest(fs::path testFilePath) {
         _testFilePath = testFilePath.string();
-        LOGV2(4333507, "### Parsing Test ###", "testFilePath"_attr = testFilePath.string());
+        LOG(4333507, "### Parsing Test ###", "testFilePath"_attr = testFilePath.string());
         {
             std::ifstream testFile(_testFilePath);
             std::ostringstream json;
@@ -278,7 +278,7 @@ private:
 
         // Do this first to save the state
         if (_jsonTest.hasField("error")) {
-            LOGV2(5017004, "Expecting test case to generate an error.");
+            LOG(5017004, "Expecting test case to generate an error.");
             _errorExpected = _jsonTest.getBoolField("error");
         }
 
@@ -323,11 +323,11 @@ private:
             uassert(ErrorCodes::MaxStalenessOutOfRange, "max staleness should be >= 0", false);
         }
         _readPreference = uassertStatusOK(stalenessParseResult);
-        LOGV2(5017007, "Read Preference", "value"_attr = _readPreference);
+        LOG(5017007, "Read Preference", "value"_attr = _readPreference);
 
         if (_jsonTest.hasField("heartbeatFrequencyMS")) {
             sdamHeartBeatFrequencyMs = _jsonTest.getIntField("heartbeatFrequencyMS");
-            LOGV2(5017003, "Set heartbeatFrequencyMs", "value"_attr = sdamHeartBeatFrequencyMs);
+            LOG(5017003, "Set heartbeatFrequencyMs", "value"_attr = sdamHeartBeatFrequencyMs);
         }
 
         std::vector<ServerDescriptionPtr> serverDescriptions;
@@ -368,9 +368,9 @@ private:
             }
 
             serverDescriptions.push_back(serverDescription.instance());
-            LOGV2(5017002,
-                  "Server Description",
-                  "description"_attr = serverDescriptions.back()->toBson());
+            LOG(5017002,
+                "Server Description",
+                "description"_attr = serverDescriptions.back()->toBson());
             serverAddresses.push_back(HostAndPort(server.getStringField("address")));
         }
 
@@ -474,8 +474,7 @@ public:
                     }
                     return std::make_unique<JsonServerSelectionTestCase>(jsonTest);
                 }();
-                LOGV2(
-                    4333508, "### Executing Test ###", "testFilePath"_attr = testCase->FilePath());
+                LOG(4333508, "### Executing Test ###", "testFilePath"_attr = testCase->FilePath());
                 auto executionResult = testCase->execute();
                 if (testCase->errorIsExpected() && executionResult.Success()) {
                     auto errorDescription =
@@ -526,7 +525,7 @@ public:
                 results.begin(), results.end(), [](const JsonTestCase::TestCaseResult& result) {
                     return !result.Success();
                 })) {
-            LOGV2(4333509, "### Failed Test Results ###");
+            LOG(4333509, "### Failed Test Results ###");
         }
 
         for (const auto& result : results) {
@@ -534,18 +533,18 @@ public:
             if (result.Success()) {
                 ++numSuccess;
             } else {
-                LOGV2(4333510,
-                      "### Failed Test File ###",
-                      "testFilePath"_attr = file,
-                      "errors"_attr = collectErrorStr(result.errorDescriptions));
+                LOG(4333510,
+                    "### Failed Test File ###",
+                    "testFilePath"_attr = file,
+                    "errors"_attr = collectErrorStr(result.errorDescriptions));
                 ++numFailed;
             }
         }
-        LOGV2(4333513,
-              "Results summary",
-              "numTestCases"_attr = numTestCases,
-              "numSuccess"_attr = numSuccess,
-              "numFailed"_attr = numFailed);
+        LOG(4333513,
+            "Results summary",
+            "numTestCases"_attr = numTestCases,
+            "numSuccess"_attr = numSuccess,
+            "numFailed"_attr = numFailed);
 
         return numFailed;
     }
@@ -580,10 +579,10 @@ private:
             if (filePath.string().find(filter) != std::string::npos) {
                 return true;
             } else {
-                LOGV2_DEBUG(4333514,
-                            2,
-                            "Test skipped due to filter configuration",
-                            "filePath"_attr = filePath.string());
+                LOG_DEBUG(4333514,
+                          2,
+                          "Test skipped due to filter configuration",
+                          "filePath"_attr = filePath.string());
             }
         }
 
@@ -597,8 +596,8 @@ private:
 int main(int argc, char* argv[]) {
     ArgParser args(argc, argv);
 
-    ::mongo::logv2::LogManager::global().getGlobalSettings().setMinimumLoggedSeverity(
-        MONGO_LOGV2_DEFAULT_COMPONENT, ::mongo::logv2::LogSeverity::Debug(args.Verbose()));
+    ::mongo::log::LogManager::global().getGlobalSettings().setMinimumLoggedSeverity(
+        MONGO_LOG_DEFAULT_COMPONENT, ::mongo::log::LogSeverity::Debug(args.Verbose()));
     args.LogParams();
 
     ServerSelectionJsonTestRunner testRunner(args.SourceDirectory(), args.TestFilters());

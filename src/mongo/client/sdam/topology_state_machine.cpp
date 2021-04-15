@@ -26,13 +26,13 @@
  *    exception statement from all source files in the program, then also delete
  *    it in the license file.
  */
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kNetwork
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kNetwork
 #include "mongo/client/sdam/topology_state_machine.h"
 
 #include <ostream>
 
 #include "mongo/client/sdam/sdam_test_base.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace mongo::sdam {
 namespace {
@@ -150,12 +150,12 @@ void mongo::sdam::TopologyStateMachine::initTransitionTable() {
 void TopologyStateMachine::onServerDescription(TopologyDescription& topologyDescription,
                                                const ServerDescriptionPtr& serverDescription) {
     if (!topologyDescription.containsServerAddress(serverDescription->getAddress())) {
-        LOGV2_DEBUG(20219,
-                    kLogLevel,
-                    "Ignoring isMaster reply from server that is not in the topology: "
-                    "{serverAddress}",
-                    "Ignoring isMaster reply from server that is not in the topology",
-                    "serverAddress"_attr = serverDescription->getAddress());
+        LOG_DEBUG(20219,
+                  kLogLevel,
+                  "Ignoring isMaster reply from server that is not in the topology: "
+                  "{serverAddress}",
+                  "Ignoring isMaster reply from server that is not in the topology",
+                  "serverAddress"_attr = serverDescription->getAddress());
         return;
     }
 
@@ -381,11 +381,11 @@ void TopologyStateMachine::setTopologyTypeAndUpdateRSWithoutPrimary(
 void TopologyStateMachine::removeServerDescription(TopologyDescription& topologyDescription,
                                                    const HostAndPort serverAddress) {
     topologyDescription.removeServerDescription(serverAddress);
-    LOGV2_DEBUG(20220,
-                kLogLevel,
-                "Server '{serverAddress}' was removed from the topology",
-                "Server was removed from the topology",
-                "serverAddress"_attr = serverAddress);
+    LOG_DEBUG(20220,
+              kLogLevel,
+              "Server '{serverAddress}' was removed from the topology",
+              "Server was removed from the topology",
+              "serverAddress"_attr = serverAddress);
 }
 
 void TopologyStateMachine::modifyTopologyType(TopologyDescription& topologyDescription,

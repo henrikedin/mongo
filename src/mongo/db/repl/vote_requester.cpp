@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kReplicationElection
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kReplicationElection
 
 #include "mongo/platform/basic.h"
 
@@ -38,7 +38,7 @@
 #include "mongo/base/status.h"
 #include "mongo/db/repl/repl_set_request_votes_args.h"
 #include "mongo/db/repl/scatter_gather_runner.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 
 namespace mongo {
@@ -115,9 +115,9 @@ void VoteRequester::Algorithm::processResponse(const RemoteCommandRequest& reque
     Status status = Status::OK();
 
     // All local variables captured in logAttrs needs to be above the guard that logs.
-    logv2::DynamicAttributes logAttrs;
+    log::DynamicAttributes logAttrs;
     auto logAtExit =
-        makeGuard([&logAttrs]() { LOGV2(51799, "VoteRequester processResponse", logAttrs); });
+        makeGuard([&logAttrs]() { LOG(51799, "VoteRequester processResponse", logAttrs); });
     logAttrs.add("term", _term);
     logAttrs.add("dryRun", _dryRun);
 

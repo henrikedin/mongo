@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kStorage
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kStorage
 
 #include "mongo/platform/basic.h"
 
@@ -35,7 +35,7 @@
 
 #include "mongo/db/repl/read_concern_args.h"
 #include "mongo/db/repl/replication_coordinator.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace mongo {
 namespace {
@@ -80,7 +80,7 @@ bool shouldReadAtLastApplied(OperationContext* opCtx,
         if (reason) {
             *reason = "PBWM lock is held";
         }
-        LOGV2_DEBUG(20577, 1, "not reading at lastApplied because the PBWM lock is held");
+        LOG_DEBUG(20577, 1, "not reading at lastApplied because the PBWM lock is held");
         return false;
     }
 
@@ -149,7 +149,7 @@ ReadSourceChange shouldChangeReadSource(OperationContext* opCtx, const Namespace
         // If a query recovers from a yield and the node is no longer primary, it must start reading
         // at the lastApplied point because reading without a timestamp is not safe.
         if (readAtLastApplied) {
-            LOGV2_DEBUG(4452901, 2, "Changing ReadSource to kLastApplied", logAttrs(nss));
+            LOG_DEBUG(4452901, 2, "Changing ReadSource to kLastApplied", logAttrs(nss));
             return {RecoveryUnit::ReadSource::kLastApplied, readAtLastApplied};
         }
     } else if (existing == RecoveryUnit::ReadSource::kLastApplied) {
@@ -159,11 +159,11 @@ ReadSourceChange shouldChangeReadSource(OperationContext* opCtx, const Namespace
         // Given readers do not survive rollbacks, it's okay to go from reading with a timestamp to
         // reading without one. More writes will become visible.
         if (!readAtLastApplied) {
-            LOGV2_DEBUG(4452902,
-                        2,
-                        "Changing ReadSource to kNoTimestamp",
-                        logAttrs(nss),
-                        "reason"_attr = reason);
+            LOG_DEBUG(4452902,
+                      2,
+                      "Changing ReadSource to kNoTimestamp",
+                      logAttrs(nss),
+                      "reason"_attr = reason);
             // This shift to kNoTimestamp assumes that callers will not make future attempts to
             // manipulate their ReadSources after performing reads at an un-timetamped snapshot. The
             // only exception is callers of this function that may need to change from kNoTimestamp

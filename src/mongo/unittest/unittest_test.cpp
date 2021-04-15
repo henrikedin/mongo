@@ -31,7 +31,7 @@
  * Unit tests of the unittest framework itself.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTest
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTest
 
 #include "mongo/platform/basic.h"
 
@@ -40,7 +40,7 @@
 #include <string>
 
 #include "mongo/bson/bsonobjbuilder.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/unittest/death_test.h"
 #include "mongo/unittest/unittest.h"
 #include "mongo/util/assert_util.h"
@@ -273,7 +273,7 @@ class DeathTestSelfTestFixture : public ::mongo::unittest::Test {
 public:
     void setUp() override {}
     void tearDown() override {
-        LOGV2(24148, "Died in tear-down");
+        LOG(24148, "Died in tear-down");
         invariant(false);
     }
 };

@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kQuery
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kQuery
 
 #include "mongo/db/query/plan_enumerator.h"
 
@@ -35,7 +35,7 @@
 
 #include "mongo/db/query/index_tag.h"
 #include "mongo/db/query/indexability.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/string_map.h"
 
 namespace {
@@ -359,7 +359,7 @@ PlanEnumerator::MemoID PlanEnumerator::memoIDForNode(MatchExpression* node) {
     stdx::unordered_map<MatchExpression*, MemoID>::iterator it = _nodeToId.find(node);
 
     if (_nodeToId.end() == it) {
-        LOGV2_ERROR(20945, "Trying to look up memo entry for node, none found");
+        LOG_ERROR(20945, "Trying to look up memo entry for node, none found");
         MONGO_UNREACHABLE;
     }
 
@@ -378,7 +378,7 @@ unique_ptr<MatchExpression> PlanEnumerator::getNext() {
     tagForSort(tree.get());
 
     _root->resetTag();
-    LOGV2_DEBUG(20943, 5, "Enumerator: memo just before moving", "memo"_attr = dumpMemo());
+    LOG_DEBUG(20943, 5, "Enumerator: memo just before moving", "memo"_attr = dumpMemo());
     _done = nextMemo(memoIDForNode(_root));
     return tree;
 }
@@ -411,10 +411,10 @@ bool PlanEnumerator::prepMemo(MatchExpression* node, PrepMemoContext context) {
 
     if (MatchExpression::OR == node->matchType()) {
         if (_orLimit == 0) {
-            LOGV2_DEBUG(4862501,
-                        1,
-                        "plan enumerator exceeded threshold for OR enumerations",
-                        "orEnumerationLimit"_attr = _orLimit);
+            LOG_DEBUG(4862501,
+                      1,
+                      "plan enumerator exceeded threshold for OR enumerations",
+                      "orEnumerationLimit"_attr = _orLimit);
             _explainInfo.hitIndexedOrLimit = true;
             return false;
         }
@@ -1103,10 +1103,10 @@ void PlanEnumerator::enumerateAndIntersect(const IndexToPredMap& idxToFirst,
             // Limit n^2.
             if (andAssignment->choices.size() - sizeBefore > _intersectLimit) {
 
-                LOGV2_DEBUG(4862502,
-                            1,
-                            "plan enumerator exceeded threshold for AND enumerations",
-                            "intersectLimit"_attr = _intersectLimit);
+                LOG_DEBUG(4862502,
+                          1,
+                          "plan enumerator exceeded threshold for AND enumerations",
+                          "intersectLimit"_attr = _intersectLimit);
                 _explainInfo.hitIndexedAndLimit = true;
                 return;
             }
@@ -1122,10 +1122,10 @@ void PlanEnumerator::enumerateAndIntersect(const IndexToPredMap& idxToFirst,
 
             // Limit n^2.
             if (andAssignment->choices.size() - sizeBefore > _intersectLimit) {
-                LOGV2_DEBUG(4862503,
-                            1,
-                            "plan enumerator exceeded threshold for AND enumerations",
-                            "intersectLimit"_attr = _intersectLimit);
+                LOG_DEBUG(4862503,
+                          1,
+                          "plan enumerator exceeded threshold for AND enumerations",
+                          "intersectLimit"_attr = _intersectLimit);
                 _explainInfo.hitIndexedAndLimit = true;
                 return;
             }
@@ -1325,10 +1325,10 @@ bool PlanEnumerator::prepSubNodes(MatchExpression* node,
         MatchExpression* child = node->getChild(i);
         if (MatchExpression::OR == child->matchType()) {
             if (_orLimit == 0) {
-                LOGV2_DEBUG(4862500,
-                            1,
-                            "plan enumerator exceeded threshold for OR enumerations",
-                            "orEnumerationLimit"_attr = _orLimit);
+                LOG_DEBUG(4862500,
+                          1,
+                          "plan enumerator exceeded threshold for OR enumerations",
+                          "orEnumerationLimit"_attr = _orLimit);
                 _explainInfo.hitIndexedOrLimit = true;
                 return false;
             }
@@ -1622,7 +1622,7 @@ void PlanEnumerator::compound(const vector<MatchExpression*>& tryCompound,
 //
 
 void PlanEnumerator::tagMemo(size_t id) {
-    LOGV2_DEBUG(20944, 5, "Tagging memoID", "id"_attr = id);
+    LOG_DEBUG(20944, 5, "Tagging memoID", "id"_attr = id);
     NodeAssignment* assign = _memo[id];
     verify(nullptr != assign);
 
@@ -1800,10 +1800,10 @@ bool PlanEnumerator::nextMemo(size_t id) {
         // Limit the number of OR enumerations.
         oa->counter++;
         if (oa->counter >= _orLimit) {
-            LOGV2_DEBUG(3639300,
-                        1,
-                        "plan enumerator exceeded threshold for OR enumerations",
-                        "orEnumerationLimit"_attr = _orLimit);
+            LOG_DEBUG(3639300,
+                      1,
+                      "plan enumerator exceeded threshold for OR enumerations",
+                      "orEnumerationLimit"_attr = _orLimit);
             _explainInfo.hitIndexedOrLimit = true;
             return true;
         }
@@ -1824,10 +1824,10 @@ bool PlanEnumerator::nextMemo(size_t id) {
         // Limit the number of OR enumerations.
         ++assignment->totalEnumerated;
         if (assignment->totalEnumerated >= _orLimit) {
-            LOGV2_DEBUG(3639301,
-                        1,
-                        "plan enumerator exceeded threshold for OR enumerations",
-                        "orEnumerationLimit"_attr = _orLimit);
+            LOG_DEBUG(3639301,
+                      1,
+                      "plan enumerator exceeded threshold for OR enumerations",
+                      "orEnumerationLimit"_attr = _orLimit);
             _explainInfo.hitIndexedOrLimit = true;
             return true;
         }

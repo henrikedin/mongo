@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kNetwork
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kNetwork
 
 #include "mongo/db/commands.h"
 #include "mongo/db/operation_context.h"
@@ -35,7 +35,7 @@
 #include "mongo/db/repl/replication_coordinator.h"
 #include "mongo/executor/network_interface_factory.h"
 #include "mongo/executor/network_interface_tl.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/duration.h"
 #include "mongo/util/net/hostandport.h"
 
@@ -62,13 +62,13 @@ HostAndPort validateTarget(OperationContext* opCtx, StringData targetStr) {
     for (const auto& member : members) {
         if (target == member.getHostAndPort()) {
             if (member.isSelf()) {
-                LOGV2_WARNING(4697200,
-                              "Using replSetTestEgress to connect to self",
-                              "target"_attr = targetStr);
+                LOG_WARNING(4697200,
+                            "Using replSetTestEgress to connect to self",
+                            "target"_attr = targetStr);
             } else if (!member.up()) {
-                LOGV2_WARNING(4697201,
-                              "replSetTestEgress connecting to node which appears down",
-                              "target"_attr = targetStr);
+                LOG_WARNING(4697201,
+                            "replSetTestEgress connecting to node which appears down",
+                            "target"_attr = targetStr);
             }
 
             return target;
@@ -113,14 +113,14 @@ public:
             // at the ready so that we never have to wait for an outgoing request.
             // We must thwart that.
             auto net = getNetworkInterface();
-            LOGV2_DEBUG(
+            LOG_DEBUG(
                 4697203, 4, "Dropping any existing connections", "target"_attr = target.toString());
             net->dropConnections(target);
-            LOGV2_DEBUG(4697204,
-                        4,
-                        "Opening test egress connection",
-                        "target"_attr = target.toString(),
-                        "timeout"_attr = timeout);
+            LOG_DEBUG(4697204,
+                      4,
+                      "Opening test egress connection",
+                      "target"_attr = target.toString(),
+                      "timeout"_attr = timeout);
             net->testEgress(
                 target, transport::ConnectSSLMode::kGlobalSSLMode, timeout, kDisconnectStatus);
 

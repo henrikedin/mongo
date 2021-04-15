@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kNetwork
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kNetwork
 #include "mongo/platform/basic.h"
 
 #include "mongo/client/streamable_replica_set_monitor.h"
@@ -45,7 +45,7 @@
 #include "mongo/db/repl/bson_extract_optime.h"
 #include "mongo/db/server_options.h"
 #include "mongo/executor/thread_pool_task_executor.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/platform/atomic_word.h"
 #include "mongo/platform/mutex.h"
 #include "mongo/rpc/metadata/egress_metadata_hook_list.h"
@@ -228,12 +228,12 @@ ReplicaSetMonitorPtr StreamableReplicaSetMonitor::make(
 
 void StreamableReplicaSetMonitor::init() {
     stdx::lock_guard lock(_mutex);
-    LOGV2_DEBUG(4333206,
-                kLowerLogLevel,
-                "Starting Replica Set Monitor {uri}",
-                "Starting Replica Set Monitor",
-                "uri"_attr = _uri,
-                "config"_attr = _sdamConfig.toBson());
+    LOG_DEBUG(4333206,
+              kLowerLogLevel,
+              "Starting Replica Set Monitor {uri}",
+              "Starting Replica Set Monitor",
+              "uri"_attr = _uri,
+              "config"_attr = _sdamConfig.toBson());
 
     invariant(shared_from_this().use_count() > 1,
               "StreamableReplicaSetMonitor::init() is invoked when there is no owner");
@@ -280,10 +280,10 @@ void StreamableReplicaSetMonitor::drop() {
             lock, Status{ErrorCodes::ShutdownInProgress, "the ReplicaSetMonitor is shutting down"});
     }
 
-    LOGV2(4333209,
-          "Closing Replica Set Monitor {replicaSet}",
-          "Closing Replica Set Monitor",
-          "replicaSet"_attr = getName());
+    LOG(4333209,
+        "Closing Replica Set Monitor {replicaSet}",
+        "Closing Replica Set Monitor",
+        "replicaSet"_attr = getName());
     _queryProcessor->shutdown();
 
     if (_pingMonitor) {
@@ -295,10 +295,10 @@ void StreamableReplicaSetMonitor::drop() {
     }
 
     ReplicaSetMonitorManager::get()->getNotifier().onDroppedSet(getName());
-    LOGV2(4333210,
-          "Done closing Replica Set Monitor {replicaSet}",
-          "Done closing Replica Set Monitor",
-          "replicaSet"_attr = getName());
+    LOG(4333210,
+        "Done closing Replica Set Monitor {replicaSet}",
+        "Done closing Replica Set Monitor",
+        "replicaSet"_attr = getName());
 }
 
 SemiFuture<HostAndPort> StreamableReplicaSetMonitor::getHostOrRefresh(
@@ -346,12 +346,12 @@ SemiFuture<std::vector<HostAndPort>> StreamableReplicaSetMonitor::getHostsOrRefr
         _serverDiscoveryMonitor->requestImmediateCheck();
     }
 
-    LOGV2_DEBUG(4333212,
-                kLowerLogLevel,
-                "RSM {replicaSet} start async getHosts with {readPref}",
-                "RSM start async getHosts",
-                "replicaSet"_attr = getName(),
-                "readPref"_attr = readPrefToStringFull(criteria));
+    LOG_DEBUG(4333212,
+              kLowerLogLevel,
+              "RSM {replicaSet} start async getHosts with {readPref}",
+              "RSM start async getHosts",
+              "replicaSet"_attr = getName(),
+              "readPref"_attr = readPrefToStringFull(criteria));
 
     // Fail fast on timeout or cancellation.
     const Date_t& now = _executor->now();
@@ -419,11 +419,11 @@ SemiFuture<std::vector<HostAndPort>> StreamableReplicaSetMonitor::_enqueueOutsta
                 // Mark query as done, and if it wasn't already done, remove it from the list of
                 // outstanding queries.
                 if (query->tryCancel(errorStatus)) {
-                    LOGV2_INFO(4333208,
-                               "RSM {replicaSet} host selection timeout: {error}",
-                               "RSM host selection timeout",
-                               "replicaSet"_attr = self->getName(),
-                               "error"_attr = errorStatus.toString());
+                    LOG_INFO(4333208,
+                             "RSM {replicaSet} host selection timeout: {error}",
+                             "RSM host selection timeout",
+                             "replicaSet"_attr = self->getName(),
+                             "error"_attr = errorStatus.toString());
 
                     stdx::lock_guard lk(_mutex);
                     // Check that the RSM hasn't been dropped (and _outstandingQueries has not
@@ -674,12 +674,12 @@ void StreamableReplicaSetMonitor::onTopologyDescriptionChangedEvent(
 
     // Notify external components if there are membership changes in the topology.
     if (hasMembershipChange(previousDescription, newDescription)) {
-        LOGV2(4333213,
-              "RSM {replicaSet} Topology Change: {newTopologyDescription}",
-              "RSM Topology Change",
-              "replicaSet"_attr = getName(),
-              "newTopologyDescription"_attr = newDescription->toString(),
-              "previousTopologyDescription"_attr = previousDescription->toString());
+        LOG(4333213,
+            "RSM {replicaSet} Topology Change: {newTopologyDescription}",
+            "RSM Topology Change",
+            "replicaSet"_attr = getName(),
+            "newTopologyDescription"_attr = newDescription->toString(),
+            "previousTopologyDescription"_attr = previousDescription->toString());
 
         auto maybePrimary = newDescription->getPrimary();
         if (maybePrimary) {
@@ -700,11 +700,11 @@ void StreamableReplicaSetMonitor::onTopologyDescriptionChangedEvent(
                 const auto& primaryAndSecondaries =
                     newDescription->findServers(primaryOrSecondaryPredicate);
                 if (primaryAndSecondaries.size() == 0) {
-                    LOGV2_DEBUG(4645401,
-                                kLowerLogLevel,
-                                "Skip publishing unconfirmed replica set members since there are "
-                                "no primaries or secondaries in the new topology",
-                                "replicaSet"_attr = getName());
+                    LOG_DEBUG(4645401,
+                              kLowerLogLevel,
+                              "Skip publishing unconfirmed replica set members since there are "
+                              "no primaries or secondaries in the new topology",
+                              "replicaSet"_attr = getName());
                     return;
                 }
 
@@ -745,12 +745,12 @@ void StreamableReplicaSetMonitor::onServerHandshakeFailedEvent(const HostAndPort
 
 void StreamableReplicaSetMonitor::onServerPingSucceededEvent(sdam::HelloRTT durationMS,
                                                              const HostAndPort& hostAndPort) {
-    LOGV2_DEBUG(4668132,
-                kLowerLogLevel,
-                "ReplicaSetMonitor ping success",
-                "host"_attr = hostAndPort,
-                "replicaSet"_attr = getName(),
-                "duration"_attr = durationMS);
+    LOG_DEBUG(4668132,
+              kLowerLogLevel,
+              "ReplicaSetMonitor ping success",
+              "host"_attr = hostAndPort,
+              "replicaSet"_attr = getName(),
+              "duration"_attr = durationMS);
     _topologyManager->onServerRTTUpdated(hostAndPort, durationMS);
 }
 
@@ -810,13 +810,13 @@ void StreamableReplicaSetMonitor::_processOutstanding(
             if (result) {
                 if (query->tryResolveWithSuccess(std::move(*result))) {
                     const auto latency = _executor->now() - query->start;
-                    LOGV2_DEBUG(433214,
-                                kLowerLogLevel,
-                                "RSM {replicaSet} finished async getHosts: {readPref} ({duration})",
-                                "RSM finished async getHosts",
-                                "replicaSet"_attr = getName(),
-                                "readPref"_attr = readPrefToStringFull(query->criteria),
-                                "duration"_attr = Milliseconds(latency));
+                    LOG_DEBUG(433214,
+                              kLowerLogLevel,
+                              "RSM {replicaSet} finished async getHosts: {readPref} ({duration})",
+                              "RSM finished async getHosts",
+                              "replicaSet"_attr = getName(),
+                              "readPref"_attr = readPrefToStringFull(query->criteria),
+                              "duration"_attr = Milliseconds(latency));
 
                     it = _eraseQueryFromOutstandingQueries(lock, it);
                 } else {

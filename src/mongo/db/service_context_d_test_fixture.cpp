@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTest
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTest
 
 #include "mongo/platform/basic.h"
 
@@ -49,7 +49,7 @@
 #include "mongo/db/storage/control/storage_control.h"
 #include "mongo/db/storage/storage_engine_init.h"
 #include "mongo/db/storage/storage_options.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/periodic_runner_factory.h"
 
@@ -74,9 +74,9 @@ ServiceContextMongoDTest::ServiceContextMongoDTest(std::string engine, RepairAct
     if (storageGlobalParams.engine == "ephemeralForTest" ||
         storageGlobalParams.engine == "devnull") {
         // The ephemeralForTest and devnull storage engines do not support majority read concern.
-        LOGV2(4939201,
-              "Disabling majority read concern as it isn't supported by the storage engine",
-              "storageEngine"_attr = storageGlobalParams.engine);
+        LOG(4939201,
+            "Disabling majority read concern as it isn't supported by the storage engine",
+            "storageEngine"_attr = storageGlobalParams.engine);
         serverGlobalParams.enableMajorityReadConcern = false;
     }
 

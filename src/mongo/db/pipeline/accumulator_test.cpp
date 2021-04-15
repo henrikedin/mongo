@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kDefault
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kDefault
 
 #include "mongo/platform/basic.h"
 
@@ -41,7 +41,7 @@
 #include "mongo/db/pipeline/expression_context_for_test.h"
 #include "mongo/db/query/collation/collator_interface_mock.h"
 #include "mongo/dbtests/dbtests.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace AccumulatorTests {
 
@@ -98,7 +98,7 @@ static void assertExpectedResults(
                 ASSERT_EQUALS(op.second.getType(), result.getType());
             }
         } catch (...) {
-            LOGV2(24180, "failed", "argument"_attr = Value(op.first));
+            LOG(24180, "failed", "argument"_attr = Value(op.first));
             throw;
         }
     }
@@ -546,7 +546,7 @@ TEST(Accumulators, SampleCovariance) {
 
 std::vector<Value> generateRandomVariables() {
     auto seed = Date_t::now().asInt64();
-    LOGV2(5424001, "Generated new seed is {seed}", "seed"_attr = seed);
+    LOG(5424001, "Generated new seed is {seed}", "seed"_attr = seed);
 
     std::vector<Value> output;
     PseudoRandom prng(seed);

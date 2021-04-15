@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kQuery
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kQuery
 
 #include "mongo/platform/basic.h"
 
@@ -43,7 +43,7 @@
 #include "mongo/base/error_codes.h"
 #include "mongo/config.h"
 #include "mongo/db/operation_context.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/platform/decimal128.h"
 #include "mongo/platform/mutex.h"
 #include "mongo/platform/stack_locator.h"
@@ -233,16 +233,16 @@ bool MozJSImplScope::_interruptCallback(JSContext* cx) {
 }
 
 void MozJSImplScope::_gcCallback(JSContext* rt, JSGCStatus status, void* data) {
-    if (!shouldLog(MONGO_LOGV2_DEFAULT_COMPONENT, logv2::LogSeverity::Debug(1))) {
+    if (!shouldLog(MONGO_LOG_DEFAULT_COMPONENT, log::LogSeverity::Debug(1))) {
         // don't collect stats unless verbose
         return;
     }
 
-    LOGV2_INFO(22787,
-               "MozJS GC heap stats",
-               "phase"_attr = (status == JSGC_BEGIN ? "prologue" : "epilogue"),
-               "total"_attr = mongo::sm::get_total_bytes(),
-               "limit"_attr = mongo::sm::get_max_bytes());
+    LOG_INFO(22787,
+             "MozJS GC heap stats",
+             "phase"_attr = (status == JSGC_BEGIN ? "prologue" : "epilogue"),
+             "total"_attr = mongo::sm::get_total_bytes(),
+             "limit"_attr = mongo::sm::get_max_bytes());
 }
 
 #if __has_feature(address_sanitizer)
@@ -292,8 +292,8 @@ MozJSImplScope::MozRuntime::MozRuntime(const MozJSScriptEngine* engine,
         jsHeapLimitMB ? std::min(*jsHeapLimitMB, engineJsHeapLimit) : engineJsHeapLimit;
 
     if (jsHeapLimit != 0 && jsHeapLimit < 10) {
-        LOGV2_WARNING(22788,
-                      "JavaScript may not be able to initialize with a heap limit less than 10MB.");
+        LOG_WARNING(22788,
+                    "JavaScript may not be able to initialize with a heap limit less than 10MB.");
     }
     size_t mallocMemoryLimit = 1024ul * 1024 * jsHeapLimit;
     mongo::sm::reset(mallocMemoryLimit);
@@ -728,7 +728,7 @@ int MozJSImplScope::invoke(ScriptingFunction func,
             // must validate the handle because TerminateExecution may have
             // been thrown after the above checks
             if (out.isObject() && _nativeFunctionProto.instanceOf(out)) {
-                LOGV2_WARNING(22789, "storing native function as return value");
+                LOG_WARNING(22789, "storing native function as return value");
                 _lastRetIsNativeCode = true;
             } else {
                 _lastRetIsNativeCode = false;
@@ -946,11 +946,10 @@ bool MozJSImplScope::_checkErrorState(bool success, bool reportError, bool asser
     }
 
     if (reportError)
-        LOGV2_INFO_OPTIONS(
-            20163,
-            logv2::LogOptions(logv2::LogTag::kPlainShell, logv2::LogTruncation::Disabled),
-            "{jsError}",
-            "jsError"_attr = redact(_error));
+        LOG_INFO_OPTIONS(20163,
+                         log::LogOptions(log::LogTag::kPlainShell, log::LogTruncation::Disabled),
+                         "{jsError}",
+                         "jsError"_attr = redact(_error));
 
     // Clear the status state
     auto status = std::move(_status);

@@ -49,8 +49,8 @@
 
 #include "mongo/base/status_with.h"
 #include "mongo/base/string_data.h"
-#include "mongo/logv2/log_debug.h"
-#include "mongo/logv2/log_detail.h"
+#include "mongo/log/log_debug.h"
+#include "mongo/log/log_detail.h"
 #include "mongo/unittest/bson_test_util.h"
 #include "mongo/unittest/unittest_helpers.h"
 #include "mongo/util/assert_util.h"

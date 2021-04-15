@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kDefault
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kDefault
 
 #include "mongo/platform/basic.h"
 
@@ -41,7 +41,7 @@
 #include "mongo/base/init.h"
 #include "mongo/db/client.h"
 #include "mongo/db/operation_context.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/platform/mutex.h"
 #include "mongo/util/clock_source.h"
 #include "mongo/util/fail_point.h"
@@ -102,29 +102,29 @@ void BlockedOp::start(ServiceContext* serviceContext) {
     _latchState.thread = stdx::thread([this, serviceContext]() mutable {
         ThreadClient tc("DiagnosticCaptureTestLatch", serviceContext);
 
-        LOGV2(23123, "Entered currentOpSpawnsThreadWaitingForLatch thread");
+        LOG(23123, "Entered currentOpSpawnsThreadWaitingForLatch thread");
 
         stdx::lock_guard testLock(_latchState.mutex);
 
-        LOGV2(23124, "Joining currentOpSpawnsThreadWaitingForLatch thread");
+        LOG(23124, "Joining currentOpSpawnsThreadWaitingForLatch thread");
     });
 
     _interruptibleState.thread = stdx::thread([this, serviceContext]() mutable {
         ThreadClient tc("DiagnosticCaptureTestInterruptible", serviceContext);
         auto opCtx = tc->makeOperationContext();
 
-        LOGV2(23125, "Entered currentOpSpawnsThreadWaitingForLatch thread for interruptibles");
+        LOG(23125, "Entered currentOpSpawnsThreadWaitingForLatch thread for interruptibles");
         stdx::unique_lock lk(_interruptibleState.mutex);
         opCtx->waitForConditionOrInterrupt(
             _interruptibleState.cv, lk, [&] { return _interruptibleState.isDone; });
         _interruptibleState.isDone = false;
 
-        LOGV2(23126, "Joining currentOpSpawnsThreadWaitingForLatch thread for interruptibles");
+        LOG(23126, "Joining currentOpSpawnsThreadWaitingForLatch thread for interruptibles");
     });
 
 
     _cv.wait(lk, [this] { return _latchState.isContended && _interruptibleState.isWaiting; });
-    LOGV2(23127, "Started threads for currentOpSpawnsThreadWaitingForLatch");
+    LOG(23127, "Started threads for currentOpSpawnsThreadWaitingForLatch");
 }
 
 // This function unlocks testMutex and joins if there are no more callers of BlockedOp::start()
@@ -157,20 +157,20 @@ void BlockedOp::join() {
 }
 
 void BlockedOp::setIsContended(bool value) {
-    LOGV2(23128,
-          "Setting isContended to {value}",
-          "Setting isContended",
-          "value"_attr = (value ? "true" : "false"));
+    LOG(23128,
+        "Setting isContended to {value}",
+        "Setting isContended",
+        "value"_attr = (value ? "true" : "false"));
     stdx::lock_guard lk(_m);
     _latchState.isContended = value;
     _cv.notify_one();
 }
 
 void BlockedOp::setIsWaiting(bool value) {
-    LOGV2(23129,
-          "Setting isWaiting to {value}",
-          "Setting isWaiting",
-          "value"_attr = (value ? "true" : "false"));
+    LOG(23129,
+        "Setting isWaiting to {value}",
+        "Setting isWaiting",
+        "value"_attr = (value ? "true" : "false"));
     stdx::lock_guard lk(_m);
     _interruptibleState.isWaiting = value;
     _cv.notify_one();

@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kStorage
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kStorage
 
 #include "mongo/platform/basic.h"
 
@@ -40,7 +40,7 @@
 #include "mongo/db/service_context.h"
 #include "mongo/db/storage/encryption_hooks.h"
 #include "mongo/db/storage/storage_options.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/errno_util.h"
 
 
@@ -89,26 +89,26 @@ RemoveSaver::~RemoveSaver() {
         size_t resultLen;
         Status status = _protector->finalize(protectedBuffer.get(), protectedSizeMax, &resultLen);
         if (!status.isOK()) {
-            LOGV2_FATAL(34350,
-                        "Unable to finalize DataProtector while closing RemoveSaver: {error}",
-                        "Unable to finalize DataProtector while closing RemoveSaver",
-                        "error"_attr = redact(status));
+            LOG_FATAL(34350,
+                      "Unable to finalize DataProtector while closing RemoveSaver: {error}",
+                      "Unable to finalize DataProtector while closing RemoveSaver",
+                      "error"_attr = redact(status));
         }
 
         _out->write(reinterpret_cast<const char*>(protectedBuffer.get()), resultLen);
         if (_out->fail()) {
-            LOGV2_FATAL(34351,
-                        "Couldn't write finalized DataProtector data to: {file} for remove "
-                        "saving: {error}",
-                        "Couldn't write finalized DataProtector for remove saving",
-                        "file"_attr = _file.generic_string(),
-                        "error"_attr = redact(errnoWithDescription()));
+            LOG_FATAL(34351,
+                      "Couldn't write finalized DataProtector data to: {file} for remove "
+                      "saving: {error}",
+                      "Couldn't write finalized DataProtector for remove saving",
+                      "file"_attr = _file.generic_string(),
+                      "error"_attr = redact(errnoWithDescription()));
         }
 
         protectedBuffer.reset(new uint8_t[protectedSizeMax]);
         status = _protector->finalizeTag(protectedBuffer.get(), protectedSizeMax, &resultLen);
         if (!status.isOK()) {
-            LOGV2_FATAL(
+            LOG_FATAL(
                 34352,
                 "Unable to get finalizeTag from DataProtector while closing RemoveSaver: {error}",
                 "Unable to get finalizeTag from DataProtector while closing RemoveSaver",
@@ -116,24 +116,24 @@ RemoveSaver::~RemoveSaver() {
         }
 
         if (resultLen != _protector->getNumberOfBytesReservedForTag()) {
-            LOGV2_FATAL(34353,
-                        "Attempted to write tag of size {sizeBytes} when DataProtector only "
-                        "reserved {reservedBytes} bytes",
-                        "Attempted to write tag of larger size than DataProtector reserved size",
-                        "sizeBytes"_attr = resultLen,
-                        "reservedBytes"_attr = _protector->getNumberOfBytesReservedForTag());
+            LOG_FATAL(34353,
+                      "Attempted to write tag of size {sizeBytes} when DataProtector only "
+                      "reserved {reservedBytes} bytes",
+                      "Attempted to write tag of larger size than DataProtector reserved size",
+                      "sizeBytes"_attr = resultLen,
+                      "reservedBytes"_attr = _protector->getNumberOfBytesReservedForTag());
         }
 
         _out->seekp(0);
         _out->write(reinterpret_cast<const char*>(protectedBuffer.get()), resultLen);
 
         if (_out->fail()) {
-            LOGV2_FATAL(34354,
-                        "Couldn't write finalizeTag from DataProtector to: {file} for "
-                        "remove saving: {error}",
-                        "Couldn't write finalizeTag from DataProtector for remove saving",
-                        "file"_attr = _file.generic_string(),
-                        "error"_attr = redact(errnoWithDescription()));
+            LOG_FATAL(34354,
+                      "Couldn't write finalizeTag from DataProtector to: {file} for "
+                      "remove saving: {error}",
+                      "Couldn't write finalizeTag from DataProtector for remove saving",
+                      "file"_attr = _file.generic_string(),
+                      "error"_attr = redact(errnoWithDescription()));
         }
 
         _storage->dumpBuffer();
@@ -147,10 +147,10 @@ Status RemoveSaver::goingToDelete(const BSONObj& o) {
         if (_out->fail()) {
             string msg = str::stream() << "couldn't create file: " << _file.string()
                                        << " for remove saving: " << redact(errnoWithDescription());
-            LOGV2_ERROR(23734,
-                        "Failed to create file for remove saving",
-                        "file"_attr = _file.generic_string(),
-                        "error"_attr = redact(errnoWithDescription()));
+            LOG_ERROR(23734,
+                      "Failed to create file for remove saving",
+                      "file"_attr = _file.generic_string(),
+                      "error"_attr = redact(errnoWithDescription()));
             _out.reset();
             _out = nullptr;
             return Status(ErrorCodes::FileNotOpen, msg);
@@ -186,10 +186,10 @@ Status RemoveSaver::goingToDelete(const BSONObj& o) {
         auto errorStr = redact(errnoWithDescription());
         string msg = str::stream() << "couldn't write document to file: " << _file.string()
                                    << " for remove saving: " << errorStr;
-        LOGV2_ERROR(23735,
-                    "Couldn't write document to file for remove saving",
-                    "file"_attr = _file.generic_string(),
-                    "error"_attr = errorStr);
+        LOG_ERROR(23735,
+                  "Couldn't write document to file for remove saving",
+                  "file"_attr = _file.generic_string(),
+                  "error"_attr = errorStr);
         return Status(ErrorCodes::OperationFailed, msg);
     }
 

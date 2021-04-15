@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kResharding
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kResharding
 
 #include "mongo/platform/basic.h"
 
@@ -60,8 +60,8 @@
 #include "mongo/db/session_catalog_mongod.h"
 #include "mongo/db/session_txn_record_gen.h"
 #include "mongo/db/transaction_participant.h"
-#include "mongo/logv2/log.h"
-#include "mongo/logv2/redaction.h"
+#include "mongo/log/log.h"
+#include "mongo/log/redaction.h"
 #include "mongo/util/future_util.h"
 
 namespace mongo {
@@ -274,21 +274,21 @@ SemiFuture<void> ReshardingTxnCloner::run(
                 status == ErrorCodes::Interrupted) {
                 // Do retry on any other types of retryable errors though. Also retry on errors from
                 // stray killCursors and killOp commands being run.
-                LOGV2(5461600,
-                      "Transient error while cloning config.transactions collection",
-                      "sourceId"_attr = _sourceId,
-                      "fetchTimestamp"_attr = _fetchTimestamp,
-                      "error"_attr = redact(status));
+                LOG(5461600,
+                    "Transient error while cloning config.transactions collection",
+                    "sourceId"_attr = _sourceId,
+                    "fetchTimestamp"_attr = _fetchTimestamp,
+                    "error"_attr = redact(status));
                 return false;
             }
 
             if (!status.isOK()) {
-                LOGV2(5461601,
-                      "Operation-fatal error for resharding while cloning config.transactions"
-                      " collection",
-                      "sourceId"_attr = _sourceId,
-                      "fetchTimestamp"_attr = _fetchTimestamp,
-                      "error"_attr = redact(status));
+                LOG(5461601,
+                    "Operation-fatal error for resharding while cloning config.transactions"
+                    " collection",
+                    "sourceId"_attr = _sourceId,
+                    "fetchTimestamp"_attr = _fetchTimestamp,
+                    "error"_attr = redact(status));
             }
 
             return true;

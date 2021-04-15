@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kCommand
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kCommand
 
 #include "mongo/platform/basic.h"
 
@@ -48,7 +48,7 @@
 #include "mongo/idl/command_generic_argument.h"
 #include "mongo/util/background.h"
 
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace mongo {
 
@@ -211,7 +211,7 @@ protected:
             }
 
             if (_done) {
-                LOGV2(20451, "dbCheck terminated due to stepdown");
+                LOG(20451, "dbCheck terminated due to stepdown");
                 return;
             }
         }

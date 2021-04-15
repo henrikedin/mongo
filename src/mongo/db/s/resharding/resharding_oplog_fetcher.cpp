@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kResharding
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kResharding
 
 #include "mongo/platform/basic.h"
 
@@ -49,7 +49,7 @@
 #include "mongo/db/s/resharding_util.h"
 #include "mongo/db/storage/write_unit_of_work.h"
 #include "mongo/executor/task_executor.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/s/grid.h"
 #include "mongo/stdx/mutex.h"
 
@@ -140,7 +140,7 @@ ExecutorFuture<void> ReshardingOplogFetcher::schedule(
             return _reschedule(std::move(executor), cancelToken, factory);
         })
         .onError([](Status status) {
-            LOGV2_INFO(5192101, "Resharding oplog fetcher aborting", "reason"_attr = status);
+            LOG_INFO(5192101, "Resharding oplog fetcher aborting", "reason"_attr = status);
             return status;
         });
 }
@@ -189,9 +189,9 @@ bool ReshardingOplogFetcher::iterate(Client* client, CancelableOperationContextF
         StatusWith<std::shared_ptr<Shard>> swDonor =
             Grid::get(opCtxRaii.get())->shardRegistry()->getShard(opCtxRaii.get(), _donorShard);
         if (!swDonor.isOK()) {
-            LOGV2_WARNING(5127203,
-                          "Error finding shard in registry, retrying.",
-                          "error"_attr = swDonor.getStatus());
+            LOG_WARNING(5127203,
+                        "Error finding shard in registry, retrying.",
+                        "error"_attr = swDonor.getStatus());
             return true;
         }
         targetShard = swDonor.getValue();
@@ -202,12 +202,11 @@ bool ReshardingOplogFetcher::iterate(Client* client, CancelableOperationContextF
     } catch (const ExceptionForCat<ErrorCategory::Interruption>&) {
         return false;
     } catch (const ExceptionFor<ErrorCodes::OplogQueryMinTsMissing>&) {
-        LOGV2_ERROR(
+        LOG_ERROR(
             5192103, "Fatal resharding error while fetching.", "error"_attr = exceptionToStatus());
         throw;
     } catch (const DBException&) {
-        LOGV2_WARNING(
-            5127200, "Error while fetching, retrying.", "error"_attr = exceptionToStatus());
+        LOG_WARNING(5127200, "Error while fetching, retrying.", "error"_attr = exceptionToStatus());
         return true;
     }
 }

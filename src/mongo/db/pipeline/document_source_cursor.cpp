@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kQuery
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kQuery
 
 #include "mongo/platform/basic.h"
 
@@ -40,7 +40,7 @@
 #include "mongo/db/query/explain.h"
 #include "mongo/db/query/find_common.h"
 #include "mongo/db/storage/storage_options.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/s/resharding/resume_token_gen.h"
 #include "mongo/util/fail_point.h"
 #include "mongo/util/scopeguard.h"
@@ -129,8 +129,8 @@ void DocumentSourceCursor::loadBatch() {
     }
 
     while (MONGO_unlikely(hangBeforeDocumentSourceCursorLoadBatch.shouldFail())) {
-        LOGV2(20895,
-              "Hanging aggregation due to 'hangBeforeDocumentSourceCursorLoadBatch' failpoint");
+        LOG(20895,
+            "Hanging aggregation due to 'hangBeforeDocumentSourceCursorLoadBatch' failpoint");
         sleepmillis(10);
     }
 

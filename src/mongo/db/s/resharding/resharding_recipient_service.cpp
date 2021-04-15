@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kResharding
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kResharding
 
 #include "mongo/db/s/resharding/resharding_recipient_service.h"
 
@@ -54,7 +54,7 @@
 #include "mongo/db/s/sharding_state.h"
 #include "mongo/executor/network_interface_factory.h"
 #include "mongo/executor/thread_pool_task_executor.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/s/cluster_commands_helpers.h"
 #include "mongo/s/grid.h"
@@ -104,7 +104,7 @@ void createTemporaryReshardingCollectionLocally(OperationContext* opCtx,
                                                 const UUID& reshardingUUID,
                                                 const UUID& existingUUID,
                                                 Timestamp fetchTimestamp) {
-    LOGV2_DEBUG(
+    LOG_DEBUG(
         5002300, 1, "Creating temporary resharding collection", "originalNss"_attr = originalNss);
 
     auto catalogCache = Grid::get(opCtx)->catalogCache();
@@ -239,11 +239,11 @@ SemiFuture<void> ReshardingRecipientService::RecipientStateMachine::run(
                     error = *_abortStatus;
             }
 
-            LOGV2(4956500,
-                  "Resharding operation recipient state machine failed",
-                  "namespace"_attr = _metadata.getSourceNss(),
-                  "reshardingUUID"_attr = _metadata.getReshardingUUID(),
-                  "error"_attr = error);
+            LOG(4956500,
+                "Resharding operation recipient state machine failed",
+                "namespace"_attr = _metadata.getSourceNss(),
+                "reshardingUUID"_attr = _metadata.getReshardingUUID(),
+                "error"_attr = error);
 
             _transitionToError(error);
             auto opCtx = _cancelableOpCtxFactory->makeOperationContext(&cc());
@@ -643,13 +643,13 @@ void ReshardingRecipientService::RecipientStateMachine::_transitionState(
 
     _metrics()->setRecipientState(newState);
 
-    LOGV2_INFO(5279506,
-               "Transitioned resharding recipient state",
-               "newState"_attr = RecipientState_serializer(newState),
-               "oldState"_attr = RecipientState_serializer(oldState),
-               "namespace"_attr = _metadata.getSourceNss(),
-               "collectionUUID"_attr = _metadata.getSourceUUID(),
-               "reshardingUUID"_attr = _metadata.getReshardingUUID());
+    LOG_INFO(5279506,
+             "Transitioned resharding recipient state",
+             "newState"_attr = RecipientState_serializer(newState),
+             "oldState"_attr = RecipientState_serializer(oldState),
+             "namespace"_attr = _metadata.getSourceNss(),
+             "collectionUUID"_attr = _metadata.getSourceUUID(),
+             "reshardingUUID"_attr = _metadata.getReshardingUUID());
 }
 
 void ReshardingRecipientService::RecipientStateMachine::_transitionToCreatingCollection(

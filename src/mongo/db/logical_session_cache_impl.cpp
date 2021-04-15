@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kControl
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kControl
 
 #include "mongo/platform/basic.h"
 
@@ -39,8 +39,8 @@
 #include "mongo/db/repl/replication_coordinator.h"
 #include "mongo/db/s/operation_sharding_state.h"
 #include "mongo/db/service_context.h"
-#include "mongo/logv2/log.h"
-#include "mongo/logv2/log_severity_suppressor.h"
+#include "mongo/log/log.h"
+#include "mongo/log/log_severity_suppressor.h"
 #include "mongo/platform/atomic_word.h"
 #include "mongo/util/duration.h"
 #include "mongo/util/scopeguard.h"
@@ -126,8 +126,7 @@ void LogicalSessionCacheImpl::_periodicRefresh(Client* client) {
     try {
         _refresh(client);
     } catch (const DBException& ex) {
-        LOGV2(
-            20710,
+        LOG(20710,
             "Failed to refresh session cache: {error}, will try again at the next refresh interval",
             "Failed to refresh session cache, will try again at the next refresh interval",
             "error"_attr = redact(ex));
@@ -137,10 +136,10 @@ void LogicalSessionCacheImpl::_periodicRefresh(Client* client) {
 void LogicalSessionCacheImpl::_periodicReap(Client* client) {
     auto res = _reap(client);
     if (!res.isOK()) {
-        LOGV2(20711,
-              "Failed to reap transaction table: {error}",
-              "Failed to reap transaction table",
-              "error"_attr = redact(res));
+        LOG(20711,
+            "Failed to reap transaction table: {error}",
+            "Failed to reap transaction table",
+            "error"_attr = redact(res));
     }
 
     return;
@@ -182,11 +181,11 @@ Status LogicalSessionCacheImpl::_reap(Client* client) {
         try {
             _sessionsColl->checkSessionsCollectionExists(opCtx);
         } catch (const DBException& ex) {
-            LOGV2(20712,
-                  "Sessions collection is not set up: {error}; waiting until next sessions reap "
-                  "interval",
-                  "Sessions collection is not set up; waiting until next sessions reap interval",
-                  "error"_attr = redact(ex));
+            LOG(20712,
+                "Sessions collection is not set up: {error}; waiting until next sessions reap "
+                "interval",
+                "Sessions collection is not set up; waiting until next sessions reap interval",
+                "error"_attr = redact(ex));
             return Status::OK();
         }
         numReaped = _reapSessionsOlderThanFn(opCtx,
@@ -259,8 +258,7 @@ void LogicalSessionCacheImpl::_refresh(Client* client) {
     try {
         _sessionsColl->setupSessionsCollection(opCtx);
     } catch (const DBException& ex) {
-        LOGV2(
-            20714,
+        LOG(20714,
             "Failed to refresh session cache, will try again at the next refresh interval {error}",
             "Failed to refresh session cache, will try again at the next refresh interval",
             "error"_attr = redact(ex));
@@ -393,16 +391,16 @@ Status LogicalSessionCacheImpl::_addToCacheIfNotFull(WithLock, LogicalSessionRec
                                 "high"};
         // Returns Info() unless it was called in the past second.
         // In that case it will return the quieter Debug(2) */
-        static auto& bumpedSeverity = *new logv2::SeveritySuppressor{
-            Seconds{1}, logv2::LogSeverity::Info(), logv2::LogSeverity::Debug(2)};
-        LOGV2_DEBUG(20715,
-                    bumpedSeverity().toInt(),
-                    "Unable to add session {sessionId} into the cache, too many active sessions: "
-                    "{sessionCount}, maximum: {maxSessions}",
-                    "Unable to add session into the cache, too many active sessions",
-                    "sessionId"_attr = record.getId(),
-                    "sessionCount"_attr = _activeSessions.size(),
-                    "maxSessions"_attr = maxSessions);
+        static auto& bumpedSeverity = *new log::SeveritySuppressor{
+            Seconds{1}, log::LogSeverity::Info(), log::LogSeverity::Debug(2)};
+        LOG_DEBUG(20715,
+                  bumpedSeverity().toInt(),
+                  "Unable to add session {sessionId} into the cache, too many active sessions: "
+                  "{sessionCount}, maximum: {maxSessions}",
+                  "Unable to add session into the cache, too many active sessions",
+                  "sessionId"_attr = record.getId(),
+                  "sessionCount"_attr = _activeSessions.size(),
+                  "maxSessions"_attr = maxSessions);
         return status;
     }
 

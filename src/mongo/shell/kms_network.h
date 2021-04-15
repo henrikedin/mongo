@@ -48,7 +48,7 @@ public:
 
     KMSNetworkConnection(SSLManagerInterface* ssl)
         : _sslManager(ssl),
-          _socket(std::make_unique<Socket>(so_timeout_seconds, logv2::LogSeverity::Info())) {}
+          _socket(std::make_unique<Socket>(so_timeout_seconds, log::LogSeverity::Info())) {}
 
     UniqueKmsResponse makeOneRequest(const HostAndPort& host, ConstDataRange request);
 

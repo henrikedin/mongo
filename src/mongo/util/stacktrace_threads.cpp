@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kCommand
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kCommand
 
 #include "mongo/util/stacktrace.h"
 
@@ -53,7 +53,7 @@
 #include "mongo/base/string_data.h"
 #include "mongo/bson/json.h"
 #include "mongo/config.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/stdx/mutex.h"
 #include "mongo/stdx/thread.h"
 #include "mongo/stdx/unordered_map.h"
@@ -140,11 +140,11 @@ public:
     CachedMetaGenerator() = default;
 
     ~CachedMetaGenerator() {
-        LOGV2(23393,
-              "CachedMetaGenerator: {hits}/{hitsAndMisses}",
-              "CachedMetaGenerator",
-              "hits"_attr = _hits,
-              "hitsAndMisses"_attr = (_hits + _misses));
+        LOG(23393,
+            "CachedMetaGenerator: {hits}/{hitsAndMisses}",
+            "CachedMetaGenerator",
+            "hits"_attr = _hits,
+            "hitsAndMisses"_attr = (_hits + _misses));
     }
 
     const RedactedMeta& load(void* addr) {
@@ -406,10 +406,10 @@ void State::collectStacks(std::vector<ThreadBacktrace>& messageStorage,
                           std::vector<int>& missedTids) {
     std::set<int> pendingTids;
     iterateTids([&](int tid) { pendingTids.insert(tid); });
-    LOGV2(23394,
-          "Preparing to dump up to {numThreads} thread stacks",
-          "Preparing to dump thread stacks",
-          "numThreads"_attr = pendingTids.size());
+    LOG(23394,
+        "Preparing to dump up to {numThreads} thread stacks",
+        "Preparing to dump thread stacks",
+        "numThreads"_attr = pendingTids.size());
 
     messageStorage.resize(pendingTids.size());
     received.reserve(pendingTids.size());
@@ -425,21 +425,21 @@ void State::collectStacks(std::vector<ThreadBacktrace>& messageStorage,
         errno = 0;
         if (int r = tgkill(getpid(), *iter, _signal); r < 0) {
             int errsv = errno;
-            LOGV2(23395,
-                  "Failed to signal thread ({tid}): {error}",
-                  "Failed to signal thread",
-                  "tid"_attr = *iter,
-                  "error"_attr = strerror(errsv));
+            LOG(23395,
+                "Failed to signal thread ({tid}): {error}",
+                "Failed to signal thread",
+                "tid"_attr = *iter,
+                "error"_attr = strerror(errsv));
             missedTids.push_back(*iter);
             iter = pendingTids.erase(iter);
         } else {
             ++iter;
         }
     }
-    LOGV2(23396,
-          "Signalled {numThreads} threads",
-          "Signalled threads",
-          "numThreads"_attr = pendingTids.size());
+    LOG(23396,
+        "Signalled {numThreads} threads",
+        "Signalled threads",
+        "numThreads"_attr = pendingTids.size());
 
     size_t napMicros = 0;
     while (!pendingTids.empty()) {
@@ -503,24 +503,24 @@ void State::printStacks(StackTraceSink& sink) {
 void State::printStacks() {
     struct LogEmitter : public AbstractEmitter {
         void open() override {
-            LOGV2(31423, "===== multithread stacktrace session begin =====");
+            LOG(31423, "===== multithread stacktrace session begin =====");
         }
         void prologue(const BSONObj& obj) override {
-            LOGV2(31424,
-                  "Stacktrace Prologue: {prologue}",
-                  "Stacktrace Prologue",
-                  "prologue"_attr = obj);
+            LOG(31424,
+                "Stacktrace Prologue: {prologue}",
+                "Stacktrace Prologue",
+                "prologue"_attr = obj);
         }
         void threadRecordsOpen() override {}
         void threadRecord(const BSONObj& obj) override {
-            LOGV2(31425,  //
-                  "Stacktrace Record: {record}",
-                  "Stacktrace Record",
-                  "record"_attr = obj);
+            LOG(31425,  //
+                "Stacktrace Record: {record}",
+                "Stacktrace Record",
+                "record"_attr = obj);
         }
         void threadRecordsClose() override {}
         void close() override {
-            LOGV2(31426, "===== multithread stacktrace session end =====");
+            LOG(31426, "===== multithread stacktrace session end =====");
         }
     };
     LogEmitter emitter;
@@ -657,11 +657,11 @@ void initialize(int signal) {
     sa.sa_flags = SA_SIGINFO | SA_ONSTACK | SA_RESTART;
     if (sigaction(signal, &sa, nullptr) != 0) {
         int savedErr = errno;
-        LOGV2_FATAL(31376,
-                    "Failed to install sigaction for signal {signal}: {error}",
-                    "Failed to install sigaction for signal",
-                    "signal"_attr = signal,
-                    "error"_attr = strerror(savedErr));
+        LOG_FATAL(31376,
+                  "Failed to install sigaction for signal {signal}: {error}",
+                  "Failed to install sigaction for signal",
+                  "signal"_attr = signal,
+                  "error"_attr = strerror(savedErr));
     }
 }
 

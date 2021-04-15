@@ -27,11 +27,11 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kResharding
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kResharding
 
 #include "mongo/db/s/resharding/resharding_manual_cleanup.h"
 
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace mongo {
 
@@ -48,11 +48,11 @@ ReshardingCleaner<Service, StateMachine, ReshardingDocument>::ReshardingCleaner(
 template <class Service, class StateMachine, class ReshardingDocument>
 void ReshardingCleaner<Service, StateMachine, ReshardingDocument>::clean(OperationContext* opCtx) {
 
-    LOGV2(5403503,
-          "Cleaning up resharding operation",
-          "namespace"_attr = _originalCollectionNss,
-          "reshardingUUID"_attr = _reshardingUUID,
-          "serviceType"_attr = Service::kServiceName);
+    LOG(5403503,
+        "Cleaning up resharding operation",
+        "namespace"_attr = _originalCollectionNss,
+        "reshardingUUID"_attr = _reshardingUUID,
+        "serviceType"_attr = Service::kServiceName);
 
     auto reshardingDocument = _fetchReshardingDocumentFromDisk(opCtx);
     if (!reshardingDocument) {

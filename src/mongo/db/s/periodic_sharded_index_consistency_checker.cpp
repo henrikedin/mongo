@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kSharding
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kSharding
 
 #include "mongo/platform/basic.h"
 
@@ -38,7 +38,7 @@
 #include "mongo/db/operation_context.h"
 #include "mongo/db/s/sharding_runtime_d_params_gen.h"
 #include "mongo/db/service_context.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/s/grid.h"
 #include "mongo/s/query/cluster_aggregate.h"
 #include "mongo/s/stale_shard_version_helpers.h"
@@ -79,7 +79,7 @@ void PeriodicShardedIndexConsistencyChecker::_launchShardedIndexConsistencyCheck
                 return;
             }
 
-            LOGV2(22049, "Checking consistency of sharded collection indexes across the cluster");
+            LOG(22049, "Checking consistency of sharded collection indexes across the cluster");
 
             const auto aggRequestBSON = fromjson(
                 "{pipeline: [{$indexStats: {}},"
@@ -171,12 +171,12 @@ void PeriodicShardedIndexConsistencyChecker::_launchShardedIndexConsistencyCheck
                 }
 
                 if (numShardedCollsWithInconsistentIndexes) {
-                    LOGV2_WARNING(22051,
-                                  "Found {numShardedCollectionsWithInconsistentIndexes} sharded "
-                                  "collection(s) with inconsistent indexes",
-                                  "Found sharded collections with inconsistent indexes",
-                                  "numShardedCollectionsWithInconsistentIndexes"_attr =
-                                      numShardedCollsWithInconsistentIndexes);
+                    LOG_WARNING(22051,
+                                "Found {numShardedCollectionsWithInconsistentIndexes} sharded "
+                                "collection(s) with inconsistent indexes",
+                                "Found sharded collections with inconsistent indexes",
+                                "numShardedCollectionsWithInconsistentIndexes"_attr =
+                                    numShardedCollsWithInconsistentIndexes);
                 }
 
                 // Update the count if this node is still primary. This is necessary because a
@@ -188,10 +188,10 @@ void PeriodicShardedIndexConsistencyChecker::_launchShardedIndexConsistencyCheck
                         numShardedCollsWithInconsistentIndexes;
                 }
             } catch (DBException& ex) {
-                LOGV2(22052,
-                      "Checking sharded index consistency failed with {error}",
-                      "Error while checking sharded index consistency",
-                      "error"_attr = ex.toStatus());
+                LOG(22052,
+                    "Checking sharded index consistency failed with {error}",
+                    "Error while checking sharded index consistency",
+                    "error"_attr = ex.toStatus());
             }
         },
         Milliseconds(shardedIndexConsistencyCheckIntervalMS));

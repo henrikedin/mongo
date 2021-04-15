@@ -35,7 +35,7 @@
 #include "mongo/db/dbdirectclient.h"
 #include "mongo/db/namespace_string.h"
 #include "mongo/db/ops/write_ops_gen.h"
-#include "mongo/logv2/redaction.h"
+#include "mongo/log/redaction.h"
 
 namespace mongo {
 namespace {

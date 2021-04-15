@@ -27,12 +27,12 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTest
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTest
 
 #include "mongo/platform/basic.h"
 
 #include "mongo/db/storage/ephemeral_for_test/ephemeral_for_test_radix_store.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/platform/mutex.h"
 #include "mongo/stdx/condition_variable.h"
 #include "mongo/stdx/thread.h"
@@ -95,12 +95,12 @@ public:
         }
 
         if (result != playback) {
-            LOGV2_ERROR_OPTIONS(4785800,
-                                {logv2::LogTruncation::Disabled},
-                                "Execution order of failure",
-                                "order"_attr = _executionOrder,
-                                "concurrent"_attr = result.to_string_for_test(),
-                                "serial"_attr = playback.to_string_for_test());
+            LOG_ERROR_OPTIONS(4785800,
+                              {log::LogTruncation::Disabled},
+                              "Execution order of failure",
+                              "order"_attr = _executionOrder,
+                              "concurrent"_attr = result.to_string_for_test(),
+                              "serial"_attr = playback.to_string_for_test());
             ASSERT(false);
         }
 

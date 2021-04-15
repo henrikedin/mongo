@@ -27,10 +27,10 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kDefault
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kDefault
 
 #include "mongo/base/init.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/testing_options_gen.h"
 #include "mongo/util/testing_proctor.h"
 
@@ -53,10 +53,10 @@ MONGO_INITIALIZER_GENERAL(TestingDiagnostics,
     }
 
     if (TestingProctor::instance().isEnabled()) {
-        LOGV2_OPTIONS(4672602,
-                      {logv2::LogTag::kStartupWarnings},
-                      "Testing behaviors are enabled. This has serious implications for both "
-                      "performance and security.");
+        LOG_OPTIONS(4672602,
+                    {log::LogTag::kStartupWarnings},
+                    "Testing behaviors are enabled. This has serious implications for both "
+                    "performance and security.");
     }
 }
 

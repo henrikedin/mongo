@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kAccessControl
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kAccessControl
 
 #include "mongo/platform/basic.h"
 
@@ -52,7 +52,7 @@
 #include "mongo/db/auth/security_file.h"
 #include "mongo/db/auth/user.h"
 #include "mongo/db/server_options.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/icu.h"
 #include "mongo/util/password_digest.h"
 
@@ -70,7 +70,7 @@ public:
 
     boost::optional<User::CredentialData> generate(const std::string& password) {
         if (password.size() < kMinKeyLength || password.size() > kMaxKeyLength) {
-            LOGV2_ERROR(
+            LOG_ERROR(
                 20255,
                 "Security key in {filename} has length {size}, must be between {minimumLength} "
                 "and {maximumLength} characters",
@@ -84,9 +84,9 @@ public:
 
         auto swSaslPassword = icuSaslPrep(password);
         if (!swSaslPassword.isOK()) {
-            LOGV2_ERROR(20256,
-                        "Could not prep security key file for SCRAM-SHA-256",
-                        "error"_attr = swSaslPassword.getStatus());
+            LOG_ERROR(20256,
+                      "Could not prep security key file for SCRAM-SHA-256",
+                      "error"_attr = swSaslPassword.getStatus());
             return boost::none;
         }
         const auto passwordDigest = mongo::createPasswordDigest(
@@ -117,9 +117,9 @@ private:
         target.storedKey = source[scram::kStoredKeyFieldName].String();
         target.serverKey = source[scram::kServerKeyFieldName].String();
         if (!target.isValid()) {
-            LOGV2_ERROR(20257,
-                        "Could not generate valid credentials from key",
-                        "filename"_attr = _filename);
+            LOG_ERROR(20257,
+                      "Could not generate valid credentials from key",
+                      "filename"_attr = _filename);
             return false;
         }
 
@@ -138,19 +138,19 @@ using std::string;
 bool setUpSecurityKey(const string& filename) {
     auto swKeyStrings = mongo::readSecurityFile(filename);
     if (!swKeyStrings.isOK()) {
-        LOGV2(20254, "Read security file failed", "error"_attr = swKeyStrings.getStatus());
+        LOG(20254, "Read security file failed", "error"_attr = swKeyStrings.getStatus());
         return false;
     }
 
     auto keyStrings = std::move(swKeyStrings.getValue());
 
     if (keyStrings.size() > 2) {
-        LOGV2_ERROR(20258,
-                    "Only two keys are supported in the security key file, {numKeys} are "
-                    "specified in {filename}",
-                    "Only two keys are supported in the security key file",
-                    "numKeys"_attr = keyStrings.size(),
-                    "filename"_attr = filename);
+        LOG_ERROR(20258,
+                  "Only two keys are supported in the security key file, {numKeys} are "
+                  "specified in {filename}",
+                  "Only two keys are supported in the security key file",
+                  "numKeys"_attr = keyStrings.size(),
+                  "filename"_attr = filename);
         return false;
     }
 

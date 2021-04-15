@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kSharding
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kSharding
 
 #include "mongo/platform/basic.h"
 
@@ -46,8 +46,8 @@
 #include "mongo/db/session_catalog_mongod.h"
 #include "mongo/db/transaction_participant.h"
 #include "mongo/db/write_concern.h"
-#include "mongo/logv2/log.h"
-#include "mongo/logv2/redaction.h"
+#include "mongo/log/log.h"
+#include "mongo/log/redaction.h"
 #include "mongo/s/client/shard_registry.h"
 #include "mongo/s/grid.h"
 #include "mongo/s/shard_id.h"
@@ -411,13 +411,13 @@ void SessionCatalogMigrationDestination::_retrieveSessionStateFromSource(Service
                         // this depleted the buffer from the source shard and receiving the commit
                         // command.
                         if (oplogDrainedAfterCommiting) {
-                            LOGV2(5087100,
-                                  "Recipient finished draining oplog entries for retryable writes "
-                                  "and transactions from donor again after receiving "
-                                  "_recvChunkCommit",
-                                  "namespace"_attr = _nss,
-                                  "migrationSessionId"_attr = _migrationSessionId,
-                                  "fromShard"_attr = _fromShard);
+                            LOG(5087100,
+                                "Recipient finished draining oplog entries for retryable writes "
+                                "and transactions from donor again after receiving "
+                                "_recvChunkCommit",
+                                "namespace"_attr = _nss,
+                                "migrationSessionId"_attr = _migrationSessionId,
+                                "fromShard"_attr = _fromShard);
                             break;
                         }
 
@@ -430,8 +430,7 @@ void SessionCatalogMigrationDestination::_retrieveSessionStateFromSource(Service
                     waitForWriteConcern(opCtx, lastResult.oplogTime, kMajorityWC, &unusedWCResult));
 
                 // We depleted the buffer at least once, transition to ready for commit.
-                LOGV2(
-                    5087101,
+                LOG(5087101,
                     "Recipient finished draining oplog entries for retryable writes and "
                     "transactions from donor for the first time, before receiving _recvChunkCommit",
                     "namespace"_attr = _nss,
@@ -477,12 +476,12 @@ std::string SessionCatalogMigrationDestination::getErrMsg() {
 }
 
 void SessionCatalogMigrationDestination::_errorOccurred(StringData errMsg) {
-    LOGV2(5087102,
-          "Recipient failed to copy oplog entries for retryable writes and transactions from donor",
-          "namespace"_attr = _nss,
-          "migrationSessionId"_attr = _migrationSessionId,
-          "fromShard"_attr = _fromShard,
-          "error"_attr = errMsg);
+    LOG(5087102,
+        "Recipient failed to copy oplog entries for retryable writes and transactions from donor",
+        "namespace"_attr = _nss,
+        "migrationSessionId"_attr = _migrationSessionId,
+        "fromShard"_attr = _fromShard,
+        "error"_attr = errMsg);
 
     stdx::lock_guard<Latch> lk(_mutex);
     _state = State::ErrorOccurred;

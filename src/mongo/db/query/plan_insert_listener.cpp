@@ -26,7 +26,7 @@
  *    exception statement from all source files in the program, then also delete
  *    it in the license file.
  */
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kQuery
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kQuery
 
 #include "mongo/platform/basic.h"
 
@@ -36,7 +36,7 @@
 #include "mongo/db/catalog/database_holder.h"
 #include "mongo/db/curop.h"
 #include "mongo/db/query/find_common.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/fail_point.h"
 
 namespace mongo::insert_listener {
@@ -107,9 +107,9 @@ void waitForInserts(OperationContext* opCtx,
         const auto deadline = awaitDataState(opCtx).waitForInsertsDeadline;
         notifierData->notifier->waitUntil(notifierData->lastEOFVersion, deadline);
         if (MONGO_unlikely(planExecutorHangWhileYieldedInWaitForInserts.shouldFail())) {
-            LOGV2(4452903,
-                  "PlanExecutor - planExecutorHangWhileYieldedInWaitForInserts fail point enabled. "
-                  "Blocking until fail point is disabled");
+            LOG(4452903,
+                "PlanExecutor - planExecutorHangWhileYieldedInWaitForInserts fail point enabled. "
+                "Blocking until fail point is disabled");
             planExecutorHangWhileYieldedInWaitForInserts.pauseWhileSet();
         }
     });

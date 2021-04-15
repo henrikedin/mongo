@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kReplication
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kReplication
 
 #include "mongo/platform/basic.h"
 
@@ -39,7 +39,7 @@
 #include "mongo/db/session.h"
 #include "mongo/db/session_txn_record_gen.h"
 #include "mongo/db/transaction_participant_gen.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/assert_util.h"
 
 namespace mongo {
@@ -220,16 +220,15 @@ void SessionUpdateTracker::_updateSessionInfo(const OplogEntry& entry) {
         return;
     }
 
-    LOGV2_FATAL_NOTRACE(50843,
-                        "Entry for session {lsid} has txnNumber {sessionInfo_getTxnNumber} < "
-                        "{existingSessionInfo_getTxnNumber}. New oplog entry: {newEntry}, Existing "
-                        "oplog entry: {existingEntry}",
-                        "lsid"_attr = lsid->toBSON(),
-                        "sessionInfo_getTxnNumber"_attr = *sessionInfo.getTxnNumber(),
-                        "existingSessionInfo_getTxnNumber"_attr =
-                            *existingSessionInfo.getTxnNumber(),
-                        "newEntry"_attr = redact(entry.toBSONForLogging()),
-                        "existingEntry"_attr = redact(iter->second.toBSONForLogging()));
+    LOG_FATAL_NOTRACE(50843,
+                      "Entry for session {lsid} has txnNumber {sessionInfo_getTxnNumber} < "
+                      "{existingSessionInfo_getTxnNumber}. New oplog entry: {newEntry}, Existing "
+                      "oplog entry: {existingEntry}",
+                      "lsid"_attr = lsid->toBSON(),
+                      "sessionInfo_getTxnNumber"_attr = *sessionInfo.getTxnNumber(),
+                      "existingSessionInfo_getTxnNumber"_attr = *existingSessionInfo.getTxnNumber(),
+                      "newEntry"_attr = redact(entry.toBSONForLogging()),
+                      "existingEntry"_attr = redact(iter->second.toBSONForLogging()));
 }
 
 std::vector<OplogEntry> SessionUpdateTracker::_flush(const OplogEntry& entry) {

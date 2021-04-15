@@ -26,7 +26,7 @@
  *    exception statement from all source files in the program, then also delete
  *    it in the license file.
  */
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTest
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTest
 
 #include "mongo/platform/basic.h"
 
@@ -54,7 +54,7 @@
 
 #include <sstream>
 
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/debugger.h"
 #include "mongo/util/quick_exit.h"
@@ -74,13 +74,13 @@ void logAndThrowWithErrnoAt(const StringData expr,
                             const unsigned line,
                             const int err) {
     using namespace fmt::literals;
-    LOGV2_ERROR(24138,
-                "{expr} failed: {error} @{file}:{line}",
-                "expression failed",
-                "expr"_attr = expr,
-                "error"_attr = errnoWithDescription(err),
-                "file"_attr = file,
-                "line"_attr = line);
+    LOG_ERROR(24138,
+              "{expr} failed: {error} @{file}:{line}",
+              "expression failed",
+              "expr"_attr = expr,
+              "error"_attr = errnoWithDescription(err),
+              "file"_attr = file,
+              "line"_attr = line);
     breakpoint();
     throw DeathTestSyscallException(
         "{} failed: {} @{}:{}"_format(expr, errnoWithDescription(err), file, line));
@@ -97,13 +97,13 @@ void sanitizerDieCallback() {
 
 void DeathTestBase::_doTest() {
 #if defined(__has_feature) && (__has_feature(address_sanitizer) || __has_feature(memory_sanitizer))
-    LOGV2(5306900, "Skipping death test in sanitizer build");
+    LOG(5306900, "Skipping death test in sanitizer build");
     return;
 #elif defined(_WIN32)
-    LOGV2(24133, "Skipping death test on Windows");
+    LOG(24133, "Skipping death test on Windows");
     return;
 #elif defined(__APPLE__) && (TARGET_OS_TV || TARGET_OS_WATCH)
-    LOGV2(24134, "Skipping death test on tvOS/watchOS");
+    LOG(24134, "Skipping death test on tvOS/watchOS");
     return;
 #else
     int pipes[2];
@@ -123,8 +123,8 @@ void DeathTestBase::_doTest() {
             if (fclose(pf) != 0)
                 logAndThrowWithErrno("fclose(pf)");
         });
-        LOGV2(5042601, "Death test starting");
-        auto alwaysLogExit = makeGuard([] { LOGV2(5042602, "Death test finishing"); });
+        LOG(5042601, "Death test starting");
+        auto alwaysLogExit = makeGuard([] { LOG(5042602, "Death test finishing"); });
 
         char* lineBuf = nullptr;
         size_t lineBufSize = 0;
@@ -153,9 +153,9 @@ void DeathTestBase::_doTest() {
                 parsedLen = 0;
             }
             if (static_cast<size_t>(parsedLen) == line.size()) {
-                LOGV2(20165, "child", "json"_attr = parsedChildLog);
+                LOG(20165, "child", "json"_attr = parsedChildLog);
             } else {
-                LOGV2(20169, "child", "text"_attr = line);
+                LOG(20169, "child", "text"_attr = line);
             }
             os.write(lineBuf, bytesRead);
             invariant(os);
@@ -191,7 +191,7 @@ void DeathTestBase::_doTest() {
                 ASSERT_STRING_CONTAINS(os.str(), _doGetPattern())
                     << " @" << _getFile() << ":" << _getLine();
             }
-            LOGV2(5042603, "Death test test died as expected");
+            LOG(5042603, "Death test test died as expected");
             return;
         } else {
             invariant(!WIFSTOPPED(stat));
@@ -220,13 +220,13 @@ void DeathTestBase::_doTest() {
 
     try {
         auto test = _doMakeTest();
-        LOGV2(23515, "Running DeathTest in child");
+        LOG(23515, "Running DeathTest in child");
         test->run();
-        LOGV2(20166, "Death test failed to die");
+        LOG(20166, "Death test failed to die");
     } catch (const TestAssertionFailureException& tafe) {
-        LOGV2(24137, "Death test threw test exception instead of dying", "exception"_attr = tafe);
+        LOG(24137, "Death test threw test exception instead of dying", "exception"_attr = tafe);
     } catch (...) {
-        LOGV2(20167, "Death test threw exception instead of dying");
+        LOG(20167, "Death test threw exception instead of dying");
     }
     // To fail the test, we must exit with a successful error code, because the parent process
     // is checking for the child to die with an exit code indicating an error.

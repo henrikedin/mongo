@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTest
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTest
 
 #include <fmt/format.h>
 
@@ -38,7 +38,7 @@
 #include "mongo/db/ops/write_ops.h"
 #include "mongo/db/query/cursor_response.h"
 #include "mongo/db/query/getmore_request.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/rpc/op_msg.h"
 #include "mongo/unittest/integration_test.h"
@@ -1151,14 +1151,14 @@ TEST(OpMsg, ExhaustWithDBClientCursorBehavesCorrectly) {
     conn->dropCollection(nss.toString());
 
     const int nDocs = 5;
-    LOGV2(22634, "Inserting {nDocs} documents.", "nDocs"_attr = nDocs);
+    LOG(22634, "Inserting {nDocs} documents.", "nDocs"_attr = nDocs);
     for (int i = 0; i < nDocs; i++) {
         auto doc = BSON("_id" << i);
         conn->insert(nss.toString(), doc);
     }
 
     ASSERT_EQ(conn->count(nss), size_t(nDocs));
-    LOGV2(22635, "Finished document insertion.");
+    LOG(22635, "Finished document insertion.");
 
     // Open an exhaust cursor.
     int batchSize = 2;

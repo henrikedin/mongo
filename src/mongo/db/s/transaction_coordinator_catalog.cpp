@@ -27,13 +27,13 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTransaction
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTransaction
 
 #include "mongo/platform/basic.h"
 
 #include "mongo/db/s/transaction_coordinator_catalog.h"
 
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/s/grid.h"
 
 namespace mongo {
@@ -46,14 +46,14 @@ TransactionCoordinatorCatalog::~TransactionCoordinatorCatalog() {
 
 void TransactionCoordinatorCatalog::exitStepUp(Status status) {
     if (status.isOK()) {
-        LOGV2(22438, "Incoming coordinateCommit requests are now enabled");
+        LOG(22438, "Incoming coordinateCommit requests are now enabled");
     } else {
-        LOGV2_WARNING(22444,
-                      "Coordinator recovery failed and coordinateCommit requests will not be "
-                      "allowed: {error}",
-                      "Coordinator recovery failed and coordinateCommit requests will not be "
-                      "allowed",
-                      "error"_attr = status);
+        LOG_WARNING(22444,
+                    "Coordinator recovery failed and coordinateCommit requests will not be "
+                    "allowed: {error}",
+                    "Coordinator recovery failed and coordinateCommit requests will not be "
+                    "allowed",
+                    "error"_attr = status);
     }
 
     stdx::lock_guard<Latch> lk(_mutex);
@@ -84,12 +84,12 @@ void TransactionCoordinatorCatalog::insert(OperationContext* opCtx,
                                            TxnNumber txnNumber,
                                            std::shared_ptr<TransactionCoordinator> coordinator,
                                            bool forStepUp) {
-    LOGV2_DEBUG(22439,
-                3,
-                "{sessionId}:{txnNumber} Inserting coordinator into in-memory catalog",
-                "Inserting coordinator into in-memory catalog",
-                "sessionId"_attr = lsid.getId(),
-                "txnNumber"_attr = txnNumber);
+    LOG_DEBUG(22439,
+              3,
+              "{sessionId}:{txnNumber} Inserting coordinator into in-memory catalog",
+              "Inserting coordinator into in-memory catalog",
+              "sessionId"_attr = lsid.getId(),
+              "txnNumber"_attr = txnNumber);
 
     stdx::unique_lock<Latch> ul(_mutex);
     if (!forStepUp) {
@@ -161,12 +161,12 @@ TransactionCoordinatorCatalog::getLatestOnSession(OperationContext* opCtx,
 }
 
 void TransactionCoordinatorCatalog::_remove(const LogicalSessionId& lsid, TxnNumber txnNumber) {
-    LOGV2_DEBUG(22440,
-                3,
-                "{sessionId}:{txnNumber} Removing coordinator from in-memory catalog",
-                "Removing coordinator from in-memory catalog",
-                "sessionId"_attr = lsid.getId(),
-                "txnNumber"_attr = txnNumber);
+    LOG_DEBUG(22440,
+              3,
+              "{sessionId}:{txnNumber} Removing coordinator from in-memory catalog",
+              "Removing coordinator from in-memory catalog",
+              "sessionId"_attr = lsid.getId(),
+              "txnNumber"_attr = txnNumber);
 
     stdx::lock_guard<Latch> lk(_mutex);
 
@@ -187,7 +187,7 @@ void TransactionCoordinatorCatalog::_remove(const LogicalSessionId& lsid, TxnNum
     }
 
     if (_coordinatorsBySession.empty()) {
-        LOGV2_DEBUG(22441, 3, "Signaling last active coordinator removed");
+        LOG_DEBUG(22441, 3, "Signaling last active coordinator removed");
         _noActiveCoordinatorsCV.notify_all();
     }
 }
@@ -197,16 +197,16 @@ void TransactionCoordinatorCatalog::join() {
 
     while (!_noActiveCoordinatorsCV.wait_for(
         ul, stdx::chrono::seconds{5}, [this] { return _coordinatorsBySession.empty(); })) {
-        LOGV2(22442,
-              "After 5 seconds of wait there are still {numSessionsLeft} sessions left "
-              "with active coordinators which have not yet completed",
-              "After 5 seconds of wait there are still sessions left with active coordinators "
-              "which have not yet completed",
-              "numSessionsLeft"_attr = _coordinatorsBySession.size());
-        LOGV2(22443,
-              "Active coordinators remaining: {activeCoordinators}",
-              "Active coordinators remaining",
-              "activeCoordinators"_attr = _toString(ul));
+        LOG(22442,
+            "After 5 seconds of wait there are still {numSessionsLeft} sessions left "
+            "with active coordinators which have not yet completed",
+            "After 5 seconds of wait there are still sessions left with active coordinators "
+            "which have not yet completed",
+            "numSessionsLeft"_attr = _coordinatorsBySession.size());
+        LOG(22443,
+            "Active coordinators remaining: {activeCoordinators}",
+            "Active coordinators remaining",
+            "activeCoordinators"_attr = _toString(ul));
     }
 }
 

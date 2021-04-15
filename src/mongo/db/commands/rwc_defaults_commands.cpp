@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kCommand
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kCommand
 
 #include "mongo/platform/basic.h"
 
@@ -40,7 +40,7 @@
 #include "mongo/db/read_write_concern_defaults.h"
 #include "mongo/db/repl/read_concern_args.h"
 #include "mongo/db/repl/replication_coordinator.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 
 namespace mongo {
@@ -118,10 +118,10 @@ public:
                 opCtx, request().getDefaultReadConcern(), request().getDefaultWriteConcern());
 
             updatePersistedDefaultRWConcernDocument(opCtx, newDefaults);
-            LOGV2(20498,
-                  "Successfully set RWC defaults to {value}",
-                  "Successfully set RWC defaults",
-                  "value"_attr = newDefaults);
+            LOG(20498,
+                "Successfully set RWC defaults to {value}",
+                "Successfully set RWC defaults",
+                "value"_attr = newDefaults);
 
             // Refresh to populate the cache with the latest defaults.
             rwcDefaults.refreshIfNecessary(opCtx);

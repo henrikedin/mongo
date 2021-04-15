@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kCommand
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kCommand
 
 #include "mongo/platform/basic.h"
 
@@ -86,7 +86,7 @@
 #include "mongo/db/repl/replication_coordinator.h"
 #include "mongo/db/stats/storage_stats.h"
 #include "mongo/db/write_concern.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/s/stale_exception.h"
 #include "mongo/scripting/engine.h"
 #include "mongo/util/fail_point.h"
@@ -339,11 +339,11 @@ public:
                         if (partialOk) {
                             break;  // skipped chunk is probably on another shard
                         }
-                        LOGV2(20452,
-                              "Should have chunk: {expected} have: {observed}",
-                              "Unexpected chunk",
-                              "expected"_attr = n,
-                              "observed"_attr = myn);
+                        LOG(20452,
+                            "Should have chunk: {expected} have: {observed}",
+                            "Unexpected chunk",
+                            "expected"_attr = n,
+                            "observed"_attr = myn);
                         dumpChunks(opCtx, nss.ns(), query, sort);
                         uassert(10040, "chunks out of order", n == myn);
                     }
@@ -378,7 +378,7 @@ public:
                         // RELOCKED
                         ctx.reset(new AutoGetCollectionForReadCommand(opCtx, nss));
                     } catch (const StaleConfigException&) {
-                        LOGV2_DEBUG(
+                        LOG_DEBUG(
                             20453,
                             1,
                             "Chunk metadata changed during filemd5, will retarget and continue");
@@ -415,7 +415,7 @@ public:
         q.sort(sort);
         std::unique_ptr<DBClientCursor> c = client.query(NamespaceString(ns), q);
         while (c->more()) {
-            LOGV2(20454, "Chunk: {chunk}", "Dumping chunks", "chunk"_attr = c->nextSafe());
+            LOG(20454, "Chunk: {chunk}", "Dumping chunks", "chunk"_attr = c->nextSafe());
         }
     }
 

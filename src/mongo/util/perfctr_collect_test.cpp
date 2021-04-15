@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTest
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTest
 
 #include "mongo/platform/basic.h"
 
@@ -112,10 +112,10 @@ StringMap toNestedStringMap(BSONObj& obj) {
     BSONObjBuilder builder;                                  \
     ASSERT_OK(collector->collect(&builder));                 \
     auto obj = builder.obj();                                \
-    log() << "OBJ:" << obj;                                  \
+    LOG() << "OBJ:" << obj;                                  \
     auto stringMap = toNestedStringMap(obj);                 \
     for (const auto& kvp : stringMap) {                      \
-        log() << "kvp " << kvp.first << " - " << kvp.second; \
+        LOG() << "kvp " << kvp.first << " - " << kvp.second; \
     }
 
 #define COLLECT_COUNTERS_QUIET               \

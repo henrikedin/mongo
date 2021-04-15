@@ -27,7 +27,8 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kControl
+#define REQUIRE_MONGO_LOG_PREFIX
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kControl
 
 #include "mongo/platform/basic.h"
 
@@ -49,8 +50,8 @@
 #include "mongo/base/init.h"
 #include "mongo/config.h"
 #include "mongo/db/server_options.h"
-#include "mongo/logv2/log.h"
-#include "mongo/logv2/log_domain_global.h"
+#include "mongo/log/log.h"
+#include "mongo/log/log_domain_global.h"
 #include "mongo/platform/process_id.h"
 #include "mongo/util/exit_code.h"
 #include "mongo/util/processinfo.h"
@@ -84,10 +85,10 @@ void signalForkSuccess() {
             if (savedErr == EPIPE)
                 break;  // The pipe read side has closed.
             else {
-                LOGV2_WARNING(4656300,
-                              "Write to child pipe failed",
-                              "errno"_attr = savedErr,
-                              "errnoDesc"_attr = errnoWithDescription(savedErr));
+                MONGO_LOG_WARNING(4656300,
+                                  "Write to child pipe failed",
+                                  "errno"_attr = savedErr,
+                                  "errnoDesc"_attr = errnoWithDescription(savedErr));
                 quickExit(1);
             }
         } else if (nw == 0) {
@@ -98,10 +99,10 @@ void signalForkSuccess() {
     }
     if (close(*f) == -1) {
         int savedErr = errno;
-        LOGV2_WARNING(4656301,
-                      "Closing write pipe failed",
-                      "errno"_attr = savedErr,
-                      "errnoDesc"_attr = errnoWithDescription(savedErr));
+        MONGO_LOG_WARNING(4656301,
+                          "Closing write pipe failed",
+                          "errno"_attr = savedErr,
+                          "errnoDesc"_attr = errnoWithDescription(savedErr));
     }
     *f = -1;
 }
@@ -291,8 +292,8 @@ MONGO_INITIALIZER_GENERAL(ServerLogRedirection,
                           ("default"))
 (InitializerContext*) {
     // Hook up this global into our logging encoder
-    auto& lv2Manager = logv2::LogManager::global();
-    logv2::LogDomainGlobal::ConfigurationOptions lv2Config;
+    auto& lv2Manager = log::LogManager::global();
+    log::LogDomainGlobal::ConfigurationOptions lv2Config;
     lv2Config.maxAttributeSizeKB = &gMaxLogAttributeSizeKB;
     bool writeServerRestartedAfterLogConfig = false;
 
@@ -333,11 +334,11 @@ MONGO_INITIALIZER_GENERAL(ServerLogRedirection,
                 boost::system::error_code ec;
                 boost::filesystem::rename(absoluteLogpath, renameTarget, ec);
                 if (!ec) {
-                    LOGV2(20697,
-                          "Moving existing log file \"{oldLogPath}\" to \"{newLogPath}\"",
-                          "Renamed existing log file",
-                          "oldLogPath"_attr = absoluteLogpath,
-                          "newLogPath"_attr = renameTarget);
+                    MONGO_LOG(20697,
+                              "Moving existing log file \"{oldLogPath}\" to \"{newLogPath}\"",
+                              "Renamed existing log file",
+                              "oldLogPath"_attr = absoluteLogpath,
+                              "newLogPath"_attr = renameTarget);
                 } else {
                     uasserted(ErrorCodes::FileRenameFailed,
                               str::stream() << "Could not rename preexisting log file \""
@@ -352,11 +353,11 @@ MONGO_INITIALIZER_GENERAL(ServerLogRedirection,
         lv2Config.fileEnabled = true;
         lv2Config.filePath = absoluteLogpath;
         lv2Config.fileRotationMode = serverGlobalParams.logRenameOnRotate
-            ? logv2::LogDomainGlobal::ConfigurationOptions::RotationMode::kRename
-            : logv2::LogDomainGlobal::ConfigurationOptions::RotationMode::kReopen;
+            ? log::LogDomainGlobal::ConfigurationOptions::RotationMode::kRename
+            : log::LogDomainGlobal::ConfigurationOptions::RotationMode::kReopen;
         lv2Config.fileOpenMode = serverGlobalParams.logAppend
-            ? logv2::LogDomainGlobal::ConfigurationOptions::OpenMode::kAppend
-            : logv2::LogDomainGlobal::ConfigurationOptions::OpenMode::kTruncate;
+            ? log::LogDomainGlobal::ConfigurationOptions::OpenMode::kAppend
+            : log::LogDomainGlobal::ConfigurationOptions::OpenMode::kTruncate;
 
         if (serverGlobalParams.logAppend && exists) {
             writeServerRestartedAfterLogConfig = true;
@@ -366,7 +367,7 @@ MONGO_INITIALIZER_GENERAL(ServerLogRedirection,
     lv2Config.timestampFormat = serverGlobalParams.logTimestampFormat;
     Status result = lv2Manager.getGlobalDomainInternal().configure(lv2Config);
     if (result.isOK() && writeServerRestartedAfterLogConfig) {
-        LOGV2(20698, "***** SERVER RESTARTED *****");
+        MONGO_LOG(20698, "***** SERVER RESTARTED *****");
     }
     uassertStatusOK(result);
 }

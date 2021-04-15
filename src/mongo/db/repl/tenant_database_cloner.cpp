@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTenantMigration
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTenantMigration
 
 #include "mongo/platform/basic.h"
 
@@ -39,7 +39,7 @@
 #include "mongo/db/repl/tenant_collection_cloner.h"
 #include "mongo/db/repl/tenant_database_cloner.h"
 #include "mongo/db/repl/tenant_migration_decoration.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/util/assert_util.h"
 
@@ -93,11 +93,11 @@ BaseCloner::AfterStageBehavior TenantDatabaseCloner::listCollectionsStage() {
         [&](const BSONObj&) {
             while (MONGO_unlikely(tenantDatabaseClonerHangAfterGettingOperationTime.shouldFail()) &&
                    !mustExit()) {
-                LOGV2(4881605,
-                      "tenantDatabaseClonerHangAfterGettingOperationTime fail point "
-                      "enabled. Blocking until fail point is disabled",
-                      "dbName"_attr = _dbName,
-                      "tenantId"_attr = _tenantId);
+                LOG(4881605,
+                    "tenantDatabaseClonerHangAfterGettingOperationTime fail point "
+                    "enabled. Blocking until fail point is disabled",
+                    "dbName"_attr = _dbName,
+                    "tenantId"_attr = _tenantId);
                 mongo::sleepsecs(1);
             }
         },
@@ -142,19 +142,19 @@ BaseCloner::AfterStageBehavior TenantDatabaseCloner::listCollectionsStage() {
         }
         NamespaceString collectionNamespace(_dbName, result.getName());
         if (collectionNamespace.isSystem() && !collectionNamespace.isReplicated()) {
-            LOGV2_DEBUG(4881602,
-                        1,
-                        "Database cloner skipping 'system' collection",
-                        "namespace"_attr = collectionNamespace.ns(),
-                        "tenantId"_attr = _tenantId);
+            LOG_DEBUG(4881602,
+                      1,
+                      "Database cloner skipping 'system' collection",
+                      "namespace"_attr = collectionNamespace.ns(),
+                      "tenantId"_attr = _tenantId);
             continue;
         }
-        LOGV2_DEBUG(4881603,
-                    2,
-                    "Allowing cloning of collectionInfo",
-                    "info"_attr = info,
-                    "db"_attr = _dbName,
-                    "tenantId"_attr = _tenantId);
+        LOG_DEBUG(4881603,
+                  2,
+                  "Allowing cloning of collectionInfo",
+                  "info"_attr = info,
+                  "db"_attr = _dbName,
+                  "tenantId"_attr = _tenantId);
 
         bool isDuplicate = seen.insert(result.getName().toString()).second;
         uassert(4881604,
@@ -195,12 +195,12 @@ BaseCloner::AfterStageBehavior TenantDatabaseCloner::listExistingCollectionsStag
         }
         NamespaceString collectionNamespace(_dbName, result.getName());
         if (collectionNamespace.isSystem() && !collectionNamespace.isReplicated()) {
-            LOGV2_DEBUG(5271600,
-                        1,
-                        "Tenant database cloner skipping 'system' collection",
-                        "migrationId"_attr = getSharedData()->getMigrationId(),
-                        "tenantId"_attr = _tenantId,
-                        "namespace"_attr = collectionNamespace.ns());
+            LOG_DEBUG(5271600,
+                      1,
+                      "Tenant database cloner skipping 'system' collection",
+                      "migrationId"_attr = getSharedData()->getMigrationId(),
+                      "tenantId"_attr = _tenantId,
+                      "namespace"_attr = collectionNamespace.ns());
             continue;
         }
         clonedCollectionUUIDs.emplace_back(result.getInfo().getUuid());
@@ -234,17 +234,17 @@ BaseCloner::AfterStageBehavior TenantDatabaseCloner::listExistingCollectionsStag
         }
         _collections.erase(_collections.begin(), startingCollection);
         if (!_collections.empty()) {
-            LOGV2(5271601,
-                  "Tenant DatabaseCloner resumes cloning",
-                  "migrationId"_attr = getSharedData()->getMigrationId(),
-                  "tenantId"_attr = _tenantId,
-                  "resumeFrom"_attr = _collections.front().first);
+            LOG(5271601,
+                "Tenant DatabaseCloner resumes cloning",
+                "migrationId"_attr = getSharedData()->getMigrationId(),
+                "tenantId"_attr = _tenantId,
+                "resumeFrom"_attr = _collections.front().first);
         } else {
-            LOGV2(5271602,
-                  "Tenant DatabaseCloner has already cloned all collections",
-                  "migrationId"_attr = getSharedData()->getMigrationId(),
-                  "tenantId"_attr = _tenantId,
-                  "dbName"_attr = _dbName);
+            LOG(5271602,
+                "Tenant DatabaseCloner has already cloned all collections",
+                "migrationId"_attr = getSharedData()->getMigrationId(),
+                "tenantId"_attr = _tenantId,
+                "dbName"_attr = _dbName);
         }
     }
 
@@ -282,17 +282,17 @@ void TenantDatabaseCloner::postStage() {
         }
         auto collStatus = _currentCollectionCloner->run();
         if (collStatus.isOK()) {
-            LOGV2_DEBUG(4881600,
-                        1,
-                        "Tenant collection clone finished",
-                        "namespace"_attr = sourceNss,
-                        "tenantId"_attr = _tenantId);
+            LOG_DEBUG(4881600,
+                      1,
+                      "Tenant collection clone finished",
+                      "namespace"_attr = sourceNss,
+                      "tenantId"_attr = _tenantId);
         } else {
-            LOGV2_ERROR(4881601,
-                        "Tenant collection clone failed",
-                        "namespace"_attr = sourceNss,
-                        "error"_attr = collStatus.toString(),
-                        "tenantId"_attr = _tenantId);
+            LOG_ERROR(4881601,
+                      "Tenant collection clone failed",
+                      "namespace"_attr = sourceNss,
+                      "error"_attr = collStatus.toString(),
+                      "tenantId"_attr = _tenantId);
             setSyncFailedStatus({collStatus.code(),
                                  collStatus
                                      .withContext(str::stream() << "Error cloning collection '"

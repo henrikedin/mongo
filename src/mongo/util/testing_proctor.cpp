@@ -27,12 +27,12 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kDefault
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kDefault
 
 #include "mongo/util/testing_proctor.h"
 
 #include "mongo/base/init.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/static_immortal.h"
 
@@ -60,7 +60,7 @@ void TestingProctor::setEnabled(bool enable) {
             "Cannot alter testing diagnostics once initialized",
             _diagnosticsEnabled.get() == enable);
 
-    LOGV2(4672601, "Overriding testing diagnostics", "enabled"_attr = enable);
+    LOG(4672601, "Overriding testing diagnostics", "enabled"_attr = enable);
 }
 
 void TestingProctor::exitAbruptlyIfDeferredErrors(bool verbose) const {
@@ -68,8 +68,8 @@ void TestingProctor::exitAbruptlyIfDeferredErrors(bool verbose) const {
         if (verbose) {
             warnIfTripwireAssertionsOccurred();
         }
-        LOGV2_FATAL_NOTRACE(
-            4457001, "Aborting process during exit due to prior failed tripwire assertions.");
+        LOG_FATAL_NOTRACE(4457001,
+                          "Aborting process during exit due to prior failed tripwire assertions.");
     }
 }
 

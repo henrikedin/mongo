@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kShardingMigration
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kShardingMigration
 
 #include "mongo/platform/basic.h"
 
@@ -38,7 +38,7 @@
 #include "mongo/db/s/migration_session_id.h"
 #include "mongo/db/s/migration_source_manager.h"
 #include "mongo/db/service_context.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace mongo {
 namespace {
@@ -69,7 +69,7 @@ void ActiveMigrationsRegistry::lock(OperationContext* opCtx, StringData reason) 
     opCtx->waitForConditionOrInterrupt(_lockCond, lock, [this] { return !_migrationsBlocked; });
 
     // Setting flag before condvar returns to block new migrations from starting. (Favoring writers)
-    LOGV2(4675601, "Going to start blocking migrations", "reason"_attr = reason);
+    LOG(4675601, "Going to start blocking migrations", "reason"_attr = reason);
     _migrationsBlocked = true;
 
     // Wait for any ongoing migrations to complete.
@@ -80,7 +80,7 @@ void ActiveMigrationsRegistry::lock(OperationContext* opCtx, StringData reason) 
 void ActiveMigrationsRegistry::unlock(StringData reason) {
     stdx::lock_guard<Latch> lock(_mutex);
 
-    LOGV2(4675602, "Going to stop blocking migrations", "reason"_attr = reason);
+    LOG(4675602, "Going to stop blocking migrations", "reason"_attr = reason);
     _migrationsBlocked = false;
 
     _lockCond.notify_all();
@@ -91,7 +91,7 @@ StatusWith<ScopedDonateChunk> ActiveMigrationsRegistry::registerDonateChunk(
     stdx::unique_lock<Latch> lk(_mutex);
 
     if (_migrationsBlocked) {
-        LOGV2(4675603, "Register donate chunk waiting for migrations to be unblocked");
+        LOG(4675603, "Register donate chunk waiting for migrations to be unblocked");
         opCtx->waitForConditionOrInterrupt(_lockCond, lk, [this] { return !_migrationsBlocked; });
     }
 
@@ -101,23 +101,23 @@ StatusWith<ScopedDonateChunk> ActiveMigrationsRegistry::registerDonateChunk(
 
     if (_activeMoveChunkState) {
         if (_activeMoveChunkState->args == args) {
-            LOGV2(5004704,
-                  "registerDonateChunk ",
-                  "keys"_attr = ChunkRange(args.getMinKey(), args.getMaxKey()).toString(),
-                  "toShardId"_attr = args.getToShardId(),
-                  "ns"_attr = args.getNss().ns());
+            LOG(5004704,
+                "registerDonateChunk ",
+                "keys"_attr = ChunkRange(args.getMinKey(), args.getMaxKey()).toString(),
+                "toShardId"_attr = args.getToShardId(),
+                "ns"_attr = args.getNss().ns());
             return {ScopedDonateChunk(nullptr, false, _activeMoveChunkState->notification)};
         }
 
-        LOGV2(5004700,
-              "registerDonateChunk ",
-              "currentKeys"_attr = ChunkRange(_activeMoveChunkState->args.getMinKey(),
-                                              _activeMoveChunkState->args.getMaxKey())
-                                       .toString(),
-              "currentToShardId"_attr = _activeMoveChunkState->args.getToShardId(),
-              "newKeys"_attr = ChunkRange(args.getMinKey(), args.getMaxKey()).toString(),
-              "newToShardId"_attr = args.getToShardId(),
-              "ns"_attr = args.getNss().ns());
+        LOG(5004700,
+            "registerDonateChunk ",
+            "currentKeys"_attr = ChunkRange(_activeMoveChunkState->args.getMinKey(),
+                                            _activeMoveChunkState->args.getMaxKey())
+                                     .toString(),
+            "currentToShardId"_attr = _activeMoveChunkState->args.getToShardId(),
+            "newKeys"_attr = ChunkRange(args.getMinKey(), args.getMaxKey()).toString(),
+            "newToShardId"_attr = args.getToShardId(),
+            "ns"_attr = args.getNss().ns());
         return _activeMoveChunkState->constructErrorStatus();
     }
 
@@ -134,7 +134,7 @@ StatusWith<ScopedReceiveChunk> ActiveMigrationsRegistry::registerReceiveChunk(
     stdx::unique_lock<Latch> lk(_mutex);
 
     if (_migrationsBlocked) {
-        LOGV2(4675604, "Register receive chunk waiting for migrations to be unblocked");
+        LOG(4675604, "Register receive chunk waiting for migrations to be unblocked");
         opCtx->waitForConditionOrInterrupt(_lockCond, lk, [this] { return !_migrationsBlocked; });
     }
 
@@ -143,13 +143,13 @@ StatusWith<ScopedReceiveChunk> ActiveMigrationsRegistry::registerReceiveChunk(
     }
 
     if (_activeMoveChunkState) {
-        LOGV2(5004701,
-              "registerReceiveChink ",
-              "currentKeys"_attr = ChunkRange(_activeMoveChunkState->args.getMinKey(),
-                                              _activeMoveChunkState->args.getMaxKey())
-                                       .toString(),
-              "currentToShardId"_attr = _activeMoveChunkState->args.getToShardId(),
-              "ns"_attr = _activeMoveChunkState->args.getNss().ns());
+        LOG(5004701,
+            "registerReceiveChink ",
+            "currentKeys"_attr = ChunkRange(_activeMoveChunkState->args.getMinKey(),
+                                            _activeMoveChunkState->args.getMaxKey())
+                                     .toString(),
+            "currentToShardId"_attr = _activeMoveChunkState->args.getToShardId(),
+            "ns"_attr = _activeMoveChunkState->args.getNss().ns());
         return _activeMoveChunkState->constructErrorStatus();
     }
 
@@ -198,12 +198,12 @@ BSONObj ActiveMigrationsRegistry::getActiveMigrationStatusReport(OperationContex
 void ActiveMigrationsRegistry::_clearDonateChunk() {
     stdx::lock_guard<Latch> lk(_mutex);
     invariant(_activeMoveChunkState);
-    LOGV2(5004702,
-          "clearDonateChunk ",
-          "currentKeys"_attr = ChunkRange(_activeMoveChunkState->args.getMinKey(),
-                                          _activeMoveChunkState->args.getMaxKey())
-                                   .toString(),
-          "currentToShardId"_attr = _activeMoveChunkState->args.getToShardId());
+    LOG(5004702,
+        "clearDonateChunk ",
+        "currentKeys"_attr = ChunkRange(_activeMoveChunkState->args.getMinKey(),
+                                        _activeMoveChunkState->args.getMaxKey())
+                                 .toString(),
+        "currentToShardId"_attr = _activeMoveChunkState->args.getToShardId());
     _activeMoveChunkState.reset();
     _lockCond.notify_all();
 }
@@ -245,7 +245,7 @@ ScopedDonateChunk::~ScopedDonateChunk() {
         invariant(*_completionNotification);
         _registry->_clearDonateChunk();
     }
-    LOGV2(5004703, "~ScopedDonateChunk", "_shouldExecute"_attr = _shouldExecute);
+    LOG(5004703, "~ScopedDonateChunk", "_shouldExecute"_attr = _shouldExecute);
 }
 
 ScopedDonateChunk::ScopedDonateChunk(ScopedDonateChunk&& other) {

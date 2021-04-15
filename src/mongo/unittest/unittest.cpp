@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTest
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTest
 
 #include "mongo/platform/basic.h"
 
@@ -45,15 +45,15 @@
 #include "mongo/base/checked_cast.h"
 #include "mongo/base/init.h"
 #include "mongo/db/server_options.h"
-#include "mongo/logv2/bson_formatter.h"
-#include "mongo/logv2/component_settings_filter.h"
-#include "mongo/logv2/log.h"
-#include "mongo/logv2/log_capture_backend.h"
-#include "mongo/logv2/log_domain.h"
-#include "mongo/logv2/log_domain_global.h"
-#include "mongo/logv2/log_manager.h"
-#include "mongo/logv2/log_truncation.h"
-#include "mongo/logv2/plain_formatter.h"
+#include "mongo/log/bson_formatter.h"
+#include "mongo/log/component_settings_filter.h"
+#include "mongo/log/log.h"
+#include "mongo/log/log_capture_backend.h"
+#include "mongo/log/log_domain.h"
+#include "mongo/log/log_domain_global.h"
+#include "mongo/log/log_manager.h"
+#include "mongo/log/log_truncation.h"
+#include "mongo/log/plain_formatter.h"
 #include "mongo/platform/mutex.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/signal_handlers_synchronous.h"
@@ -210,11 +210,10 @@ private:
     std::vector<std::string> _capturedBSONLogMessages;
 
     // Capture Sink for Plain Text
-    boost::shared_ptr<boost::log::sinks::synchronous_sink<logv2::LogCaptureBackend>> _captureSink;
+    boost::shared_ptr<boost::log::sinks::synchronous_sink<log::LogCaptureBackend>> _captureSink;
 
     // Capture Sink for BSON
-    boost::shared_ptr<boost::log::sinks::synchronous_sink<logv2::LogCaptureBackend>>
-        _captureBSONSink;
+    boost::shared_ptr<boost::log::sinks::synchronous_sink<log::LogCaptureBackend>> _captureBSONSink;
 };
 
 static CaptureLogs* getCaptureLogs() {
@@ -253,16 +252,15 @@ void CaptureLogs::startCapturingLogMessages() {
     _capturedBSONLogMessages.clear();
 
     if (!_captureSink) {
-        _captureSink = logv2::LogCaptureBackend::create(_capturedLogMessages);
-        _captureSink->set_filter(
-            logv2::AllLogsFilter(logv2::LogManager::global().getGlobalDomain()));
-        _captureSink->set_formatter(logv2::PlainFormatter());
+        _captureSink = log::LogCaptureBackend::create(_capturedLogMessages);
+        _captureSink->set_filter(log::AllLogsFilter(log::LogManager::global().getGlobalDomain()));
+        _captureSink->set_formatter(log::PlainFormatter());
 
-        _captureBSONSink = logv2::LogCaptureBackend::create(_capturedBSONLogMessages);
+        _captureBSONSink = log::LogCaptureBackend::create(_capturedBSONLogMessages);
 
         _captureBSONSink->set_filter(
-            logv2::AllLogsFilter(logv2::LogManager::global().getGlobalDomain()));
-        _captureBSONSink->set_formatter(logv2::BSONFormatter());
+            log::AllLogsFilter(log::LogManager::global().getGlobalDomain()));
+        _captureBSONSink->set_formatter(log::BSONFormatter());
     }
     boost::log::core::get()->add_sink(_captureSink);
     boost::log::core::get()->add_sink(_captureBSONSink);
@@ -297,13 +295,13 @@ std::vector<BSONObj> CaptureLogs::getCapturedBSONFormatLogMessages() const {
     return objs;
 }
 void CaptureLogs::printCapturedTextFormatLogLines() const {
-    LOGV2(23054,
-          "****************************** Captured Lines (start) *****************************");
+    LOG(23054,
+        "****************************** Captured Lines (start) *****************************");
     for (const auto& line : getCapturedTextFormatLogMessages()) {
-        LOGV2(23055, "{line}", "line"_attr = line);
+        LOG(23055, "{line}", "line"_attr = line);
     }
-    LOGV2(23056,
-          "****************************** Captured Lines (end) ******************************");
+    LOG(23056,
+        "****************************** Captured Lines (end) ******************************");
 }
 
 int64_t CaptureLogs::countTextFormatLogLinesContaining(const std::string& needle) {
@@ -391,19 +389,19 @@ std::unique_ptr<Result> Suite::run(const std::string& filter,
 
     for (const auto& tc : _tests) {
         if (filter.size() && tc.name.find(filter) == std::string::npos) {
-            LOGV2_DEBUG(23057, 1, "skipped due to filter", "test"_attr = tc.name);
+            LOG_DEBUG(23057, 1, "skipped due to filter", "test"_attr = tc.name);
             continue;
         }
 
         if (fileNameFilter.size() && tc.fileName.find(fileNameFilter) == std::string::npos) {
-            LOGV2_DEBUG(23058, 1, "skipped due to fileNameFilter", "testFile"_attr = tc.fileName);
+            LOG_DEBUG(23058, 1, "skipped due to fileNameFilter", "testFile"_attr = tc.fileName);
             continue;
         }
 
         // This test hasn't been skipped, and is about to run. If it's the first one in this suite
         // (ie. _tests is zero), then output the suite header before running it.
         if (r->_tests == 0) {
-            LOGV2(23063, "Running", "suite"_attr = _name);
+            LOG(23063, "Running", "suite"_attr = _name);
         }
         ++r->_tests;
 
@@ -415,11 +413,11 @@ std::unique_ptr<Result> Suite::run(const std::string& filter,
         try {
             try {
                 for (int x = 0; x < runsPerTest; x++) {
-                    LOGV2(23059,
-                          "Running",
-                          "test"_attr = tc.name,
-                          "rep"_attr = x + 1,
-                          "reps"_attr = runsPerTest);
+                    LOG(23059,
+                        "Running",
+                        "test"_attr = tc.name,
+                        "rep"_attr = x + 1,
+                        "reps"_attr = runsPerTest);
                     TestSuiteEnvironment environment;
                     tc.fn();
                 }
@@ -433,13 +431,13 @@ std::unique_ptr<Result> Suite::run(const std::string& filter,
                 throw Event{"int", std::to_string(x)};
             }
         } catch (const Event& e) {
-            LOGV2_OPTIONS(4680100,
-                          {logv2::LogTruncation::Disabled},
-                          "FAIL",
-                          "test"_attr = tc.name,
-                          "type"_attr = e.type,
-                          "error"_attr = e.error,
-                          "extra"_attr = e.extra);
+            LOG_OPTIONS(4680100,
+                        {log::LogTruncation::Disabled},
+                        "FAIL",
+                        "test"_attr = tc.name,
+                        "type"_attr = e.type,
+                        "error"_attr = e.error,
+                        "extra"_attr = e.extra);
             r->_fails.push_back(tc.name);
             r->_messages.push_back({tc.name, e.type, e.error, e.extra});
         }
@@ -452,7 +450,7 @@ std::unique_ptr<Result> Suite::run(const std::string& filter,
 
     // Only show the footer if some tests were run in this suite.
     if (r->_tests > 0) {
-        LOGV2(23060, "Done running tests");
+        LOG(23060, "Done running tests");
     }
 
     return r;
@@ -463,15 +461,15 @@ int Suite::run(const std::vector<std::string>& suites,
                const std::string& fileNameFilter,
                int runsPerTest) {
     if (suitesMap().empty()) {
-        LOGV2_ERROR(23061, "no suites registered.");
+        LOG_ERROR(23061, "no suites registered.");
         return EXIT_FAILURE;
     }
 
     for (unsigned int i = 0; i < suites.size(); i++) {
         if (suitesMap().count(suites[i]) == 0) {
-            LOGV2_ERROR(23062,
-                        "invalid test suite, use --list to see valid names",
-                        "suite"_attr = suites[i]);
+            LOG_ERROR(23062,
+                      "invalid test suite, use --list to see valid names",
+                      "suite"_attr = suites[i]);
             return EXIT_FAILURE;
         }
     }
@@ -524,22 +522,22 @@ int Suite::run(const std::vector<std::string>& suites,
     for (const auto& r : results) {
         // Only show results from a suite if some tests were run in it.
         if (r->_tests > 0) {
-            LOGV2_OPTIONS(
-                4680101, {logv2::LogTruncation::Disabled}, "Result", "suite"_attr = r->toBSON());
+            LOG_OPTIONS(
+                4680101, {log::LogTruncation::Disabled}, "Result", "suite"_attr = r->toBSON());
         }
     }
-    LOGV2(23065, "Totals", "totals"_attr = totals.toBSON());
+    LOG(23065, "Totals", "totals"_attr = totals.toBSON());
 
     // summary
     if (!totals._fails.empty()) {
-        LOGV2_OPTIONS(23068,
-                      {logv2::LogTruncation::Disabled},
-                      "FAILURE",
-                      "failedTestsCount"_attr = totals._fails.size(),
-                      "failedSuitesCount"_attr = failedSuites.size(),
-                      "failedTests"_attr = totals._fails);
+        LOG_OPTIONS(23068,
+                    {log::LogTruncation::Disabled},
+                    "FAILURE",
+                    "failedTestsCount"_attr = totals._fails.size(),
+                    "failedSuitesCount"_attr = failedSuites.size(),
+                    "failedTests"_attr = totals._fails);
     } else {
-        LOGV2(23069, "SUCCESS - All tests in all suites passed");
+        LOG(23069, "SUCCESS - All tests in all suites passed");
     }
 
     return rc;
@@ -595,7 +593,7 @@ TestAssertionFailure::~TestAssertionFailure() noexcept(false) {
     if (!_stream.str().empty()) {
         _exception.setMessage(_exception.getMessage() + " " + _stream.str());
     }
-    LOGV2_ERROR(23070, "Throwing exception", "exception"_attr = _exception);
+    LOG_ERROR(23070, "Throwing exception", "exception"_attr = _exception);
     throw _exception;
 }
 

@@ -26,7 +26,7 @@
  *    exception statement from all source files in the program, then also delete
  *    it in the license file.
  */
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kQuery
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kQuery
 
 #include "mongo/platform/basic.h"
 
@@ -40,7 +40,7 @@
 #include "mongo/db/query/plan_ranker_util.h"
 #include "mongo/db/query/query_planner.h"
 #include "mongo/db/query/stage_builder_util.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace mongo::sbe {
 CandidatePlans MultiPlanner::plan(
@@ -80,12 +80,12 @@ CandidatePlans MultiPlanner::finalizeExecutionPlans(
             str::stream() << "winning candidate retruned an error: " << winner.status,
             winner.status.isOK());
 
-    LOGV2_DEBUG(
+    LOG_DEBUG(
         4822875, 5, "Winning solution", "bestSolution"_attr = redact(winner.solution->toString()));
 
     auto explainer =
         plan_explainer_factory::make(winner.root.get(), &winner.data, winner.solution.get());
-    LOGV2_DEBUG(4822876, 2, "Winning plan", "planSummary"_attr = explainer->getPlanSummary());
+    LOG_DEBUG(4822876, 2, "Winning plan", "planSummary"_attr = explainer->getPlanSummary());
 
     // Close all candidate plans but the winner.
     for (size_t ix = 1; ix < decision->candidateOrder.size(); ++ix) {

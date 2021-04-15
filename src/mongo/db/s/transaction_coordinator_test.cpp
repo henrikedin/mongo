@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTest
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTest
 
 #include "mongo/platform/basic.h"
 
@@ -39,7 +39,7 @@
 #include "mongo/db/s/transaction_coordinator_document_gen.h"
 #include "mongo/db/s/transaction_coordinator_metrics_observer.h"
 #include "mongo/db/s/transaction_coordinator_test_fixture.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/unittest/log_test.h"
 #include "mongo/unittest/unittest.h"
 #include "mongo/util/clock_source_mock.h"
@@ -88,7 +88,7 @@ void killClientOpCtx(ServiceContext* service, const std::string& clientName) {
         sleepmillis(50);
     }
 
-    LOGV2_ERROR(
+    LOG_ERROR(
         22462, "Timed out trying to find and kill client opCtx", "clientName"_attr = clientName);
     ASSERT_FALSE(true);
 }
@@ -1518,7 +1518,7 @@ TEST_F(TransactionCoordinatorMetricsTest, SimpleTwoPhaseCommitRealCoordinator) {
 
     checkMetrics(expectedMetrics);
 
-    LOGV2(22455, "Create the coordinator.");
+    LOG(22455, "Create the coordinator.");
 
     expectedStats.createTime = advanceClockSourceAndReturnNewNow();
     expectedStats.totalDuration = Microseconds(0);
@@ -1536,9 +1536,9 @@ TEST_F(TransactionCoordinatorMetricsTest, SimpleTwoPhaseCommitRealCoordinator) {
     checkStats(stats, expectedStats);
     checkMetrics(expectedMetrics);
 
-    LOGV2(22456,
-          "Start two phase commit (allow the coordinator to progress to writing the participant "
-          "list).");
+    LOG(22456,
+        "Start two phase commit (allow the coordinator to progress to writing the participant "
+        "list).");
 
     expectedStats.writingParticipantListStartTime = advanceClockSourceAndReturnNewNow();
     tickSource()->advance(Microseconds(100));
@@ -1558,7 +1558,7 @@ TEST_F(TransactionCoordinatorMetricsTest, SimpleTwoPhaseCommitRealCoordinator) {
     checkStats(stats, expectedStats);
     checkMetrics(expectedMetrics);
 
-    LOGV2(22457, "Allow the coordinator to progress to waiting for votes.");
+    LOG(22457, "Allow the coordinator to progress to waiting for votes.");
 
     expectedStats.waitingForVotesStartTime = advanceClockSourceAndReturnNewNow();
     tickSource()->advance(Microseconds(100));
@@ -1579,7 +1579,7 @@ TEST_F(TransactionCoordinatorMetricsTest, SimpleTwoPhaseCommitRealCoordinator) {
     checkStats(stats, expectedStats);
     checkMetrics(expectedMetrics);
 
-    LOGV2(22458, "Allow the coordinator to progress to writing the decision.");
+    LOG(22458, "Allow the coordinator to progress to writing the decision.");
 
     expectedStats.writingDecisionStartTime = advanceClockSourceAndReturnNewNow();
     tickSource()->advance(Microseconds(100));
@@ -1605,7 +1605,7 @@ TEST_F(TransactionCoordinatorMetricsTest, SimpleTwoPhaseCommitRealCoordinator) {
     checkStats(stats, expectedStats);
     checkMetrics(expectedMetrics);
 
-    LOGV2(22459, "Allow the coordinator to progress to waiting for acks.");
+    LOG(22459, "Allow the coordinator to progress to waiting for acks.");
 
     expectedStats.waitingForDecisionAcksStartTime = advanceClockSourceAndReturnNewNow();
     tickSource()->advance(Microseconds(100));
@@ -1629,7 +1629,7 @@ TEST_F(TransactionCoordinatorMetricsTest, SimpleTwoPhaseCommitRealCoordinator) {
     checkStats(stats, expectedStats);
     checkMetrics(expectedMetrics);
 
-    LOGV2(22460, "Allow the coordinator to progress to deleting the coordinator doc.");
+    LOG(22460, "Allow the coordinator to progress to deleting the coordinator doc.");
 
     expectedStats.deletingCoordinatorDocStartTime = advanceClockSourceAndReturnNewNow();
     tickSource()->advance(Microseconds(100));
@@ -1655,7 +1655,7 @@ TEST_F(TransactionCoordinatorMetricsTest, SimpleTwoPhaseCommitRealCoordinator) {
     checkStats(stats, expectedStats);
     checkMetrics(expectedMetrics);
 
-    LOGV2(22461, "Allow the coordinator to complete.");
+    LOG(22461, "Allow the coordinator to complete.");
 
     expectedStats.endTime = advanceClockSourceAndReturnNewNow();
     tickSource()->advance(Microseconds(100));
@@ -2117,15 +2117,15 @@ TEST_F(TransactionCoordinatorMetricsTest, CoordinatorsAWSIsShutDownWhileCoordina
 }
 
 TEST_F(TransactionCoordinatorMetricsTest, LogsTransactionAtLogLevelOne) {
-    auto severityGuard = unittest::MinimumLoggedSeverityGuard{logv2::LogComponent::kTransaction,
-                                                              logv2::LogSeverity::Debug(1)};
+    auto severityGuard = unittest::MinimumLoggedSeverityGuard{log::LogComponent::kTransaction,
+                                                              log::LogSeverity::Debug(1)};
     runSimpleTwoPhaseCommitWithCommitDecisionAndCaptureLogLines();
     ASSERT_EQUALS(1, countTextFormatLogLinesContaining("two-phase commit"));
 }
 
 TEST_F(TransactionCoordinatorMetricsTest, DoesNotLogTransactionAtLogLevelZero) {
-    auto severityGuard = unittest::MinimumLoggedSeverityGuard{logv2::LogComponent::kTransaction,
-                                                              logv2::LogSeverity::Log()};
+    auto severityGuard = unittest::MinimumLoggedSeverityGuard{log::LogComponent::kTransaction,
+                                                              log::LogSeverity::Log()};
     runSimpleTwoPhaseCommitWithCommitDecisionAndCaptureLogLines();
     ASSERT_EQUALS(0, countTextFormatLogLinesContaining("two-phase commit"));
 }
@@ -2133,8 +2133,8 @@ TEST_F(TransactionCoordinatorMetricsTest, DoesNotLogTransactionAtLogLevelZero) {
 TEST_F(TransactionCoordinatorMetricsTest, DoesNotLogTransactionsUnderSlowMSThreshold) {
     // Set the log level to 0 so that the slow logging is only done if the transaction exceeds the
     // slowMS setting.
-    auto severityGuard = unittest::MinimumLoggedSeverityGuard{logv2::LogComponent::kTransaction,
-                                                              logv2::LogSeverity::Log()};
+    auto severityGuard = unittest::MinimumLoggedSeverityGuard{log::LogComponent::kTransaction,
+                                                              log::LogSeverity::Log()};
     serverGlobalParams.slowMS = 100;
     startCapturingLogMessages();
 
@@ -2165,8 +2165,8 @@ TEST_F(
     DoesNotLogTransactionsUnderSlowMSThresholdEvenIfCoordinatorHasExistedForLongerThanSlowThreshold) {
     // Set the log level to 0 so that the slow logging is only done if the transaction exceeds the
     // slowMS setting.
-    auto severityGuard = unittest::MinimumLoggedSeverityGuard{logv2::LogComponent::kTransaction,
-                                                              logv2::LogSeverity::Log()};
+    auto severityGuard = unittest::MinimumLoggedSeverityGuard{log::LogComponent::kTransaction,
+                                                              log::LogSeverity::Log()};
     serverGlobalParams.slowMS = 100;
     startCapturingLogMessages();
 
@@ -2195,8 +2195,8 @@ TEST_F(
 TEST_F(TransactionCoordinatorMetricsTest, LogsTransactionsOverSlowMSThreshold) {
     // Set the log level to 0 so that the slow logging is only done if the transaction exceeds the
     // slowMS setting.
-    auto severityGuard = unittest::MinimumLoggedSeverityGuard{logv2::LogComponent::kTransaction,
-                                                              logv2::LogSeverity::Log()};
+    auto severityGuard = unittest::MinimumLoggedSeverityGuard{log::LogComponent::kTransaction,
+                                                              log::LogSeverity::Log()};
     serverGlobalParams.slowMS = 100;
     startCapturingLogMessages();
 

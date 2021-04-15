@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kSharding
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kSharding
 
 #include "mongo/platform/basic.h"
 
@@ -42,7 +42,7 @@
 #include "mongo/db/operation_context.h"
 #include "mongo/db/repl/read_concern_args.h"
 #include "mongo/db/s/config/sharding_catalog_manager.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/s/catalog/type_database.h"
 #include "mongo/s/catalog_cache.h"
 #include "mongo/s/client/shard_registry.h"
@@ -117,11 +117,11 @@ public:
             try {
                 return shardingCatalogManager->removeShard(opCtx, shardId);
             } catch (const DBException& ex) {
-                LOGV2(21923,
-                      "Failed to remove shard {shardId} due to {error}",
-                      "Failed to remove shard",
-                      "shardId"_attr = shardId,
-                      "error"_attr = redact(ex));
+                LOG(21923,
+                    "Failed to remove shard {shardId} due to {error}",
+                    "Failed to remove shard",
+                    "shardId"_attr = shardId,
+                    "error"_attr = redact(ex));
                 throw;
             }
         }();

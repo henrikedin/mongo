@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kSharding
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kSharding
 
 #include "mongo/db/read_write_concern_defaults_cache_lookup_mongod.h"
 
@@ -35,7 +35,7 @@
 #include "mongo/db/namespace_string.h"
 #include "mongo/db/read_write_concern_defaults.h"
 #include "mongo/db/server_options.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/fail_point.h"
 
 namespace mongo {
@@ -72,9 +72,9 @@ void readWriteConcernDefaultsMongodStartupChecks(OperationContext* opCtx) {
             client.count(NamespaceString::kConfigSettingsNamespace,
                          BSON("_id" << ReadWriteConcernDefaults::kPersistedDocumentId));
         if (numPersistedDocuments != 0) {
-            LOGV2_OPTIONS(
+            LOG_OPTIONS(
                 4615613,
-                {logv2::LogTag::kStartupWarnings},
+                {log::LogTag::kStartupWarnings},
                 "This node is running as a shard server, but persisted Read/Write Concern (RWC) "
                 "defaults are present in {configSettingsNamespace}. This node was likely "
                 "previously in an unsharded replica set or a config server. The RWC defaults on "

@@ -26,7 +26,7 @@
  *    exception statement from all source files in the program, then also delete
  *    it in the license file.
  */
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kCommand
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kCommand
 
 #include "mongo/platform/basic.h"
 
@@ -43,7 +43,7 @@
 #include "mongo/db/repl/hello_auth.h"
 #include "mongo/db/repl/hello_gen.h"
 #include "mongo/db/wire_version.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/metadata/client_metadata.h"
 #include "mongo/rpc/topology_version_gen.h"
 #include "mongo/s/mongos_topology_coordinator.h"
@@ -128,7 +128,7 @@ public:
             deadline = opCtx->getServiceContext()->getPreciseClockSource()->now() +
                 Milliseconds(*maxAwaitTimeMS);
 
-            LOGV2_DEBUG(23871, 3, "Using maxAwaitTimeMS for awaitable hello protocol.");
+            LOG_DEBUG(23871, 3, "Using maxAwaitTimeMS for awaitable hello protocol.");
             curOp->pauseTimer();
             timerGuard.emplace([curOp]() { curOp->resumeTimer(); });
         } else {
@@ -197,7 +197,7 @@ public:
             .serverNegotiate(cmd.getCompression(), &result);
 
         if (opCtx->isExhaust()) {
-            LOGV2_DEBUG(23872, 3, "Using exhaust for hello protocol");
+            LOG_DEBUG(23872, 3, "Using exhaust for hello protocol");
 
             uassert(51763,
                     "A hello/isMaster request with exhaust must specify 'maxAwaitTimeMS'",

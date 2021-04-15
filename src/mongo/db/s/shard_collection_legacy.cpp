@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kSharding
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kSharding
 
 #include "mongo/platform/basic.h"
 
@@ -57,7 +57,7 @@
 #include "mongo/db/s/sharding_ddl_util.h"
 #include "mongo/db/s/sharding_logging.h"
 #include "mongo/db/s/sharding_state.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/s/balancer_configuration.h"
 #include "mongo/s/catalog/sharding_catalog_client_impl.h"
@@ -100,10 +100,10 @@ const ReadPreferenceSetting kConfigReadSelector(ReadPreference::Nearest, TagSet{
  */
 void uassertStatusOKWithWarning(const Status& status) {
     if (!status.isOK()) {
-        LOGV2_WARNING(22103,
-                      "shardsvrShardCollection failed {error}",
-                      "shardsvrShardCollection failed",
-                      "error"_attr = redact(status));
+        LOG_WARNING(22103,
+                    "shardsvrShardCollection failed {error}",
+                    "shardsvrShardCollection failed",
+                    "error"_attr = redact(status));
         uassertStatusOK(status);
     }
 }
@@ -280,8 +280,7 @@ void logStartShardCollection(OperationContext* opCtx,
                              const ShardsvrShardCollectionRequest& request,
                              const ShardCollectionTargetState& prerequisites,
                              const ShardId& dbPrimaryShardId) {
-    LOGV2(
-        22100, "CMD: shardcollection: {command}", "CMD: shardcollection", "command"_attr = cmdObj);
+    LOG(22100, "CMD: shardcollection: {command}", "CMD: shardcollection", "command"_attr = cmdObj);
 
     audit::logShardCollection(
         opCtx->getClient(), nss.ns(), prerequisites.shardKeyPattern.toBSON(), request.getUnique());
@@ -637,13 +636,13 @@ CreateCollectionResponse shardCollection(OperationContext* opCtx,
         writeChunkDocumentsAndRefreshShards(*targetState, initialChunks);
     }
 
-    LOGV2(22101,
-          "Created {numInitialChunks} chunk(s) for: {namespace}, producing collection version "
-          "{initialCollectionVersion}",
-          "Created initial chunk(s)",
-          "numInitialChunks"_attr = initialChunks.chunks.size(),
-          "namespace"_attr = nss,
-          "initialCollectionVersion"_attr = initialChunks.collVersion());
+    LOG(22101,
+        "Created {numInitialChunks} chunk(s) for: {namespace}, producing collection version "
+        "{initialCollectionVersion}",
+        "Created initial chunk(s)",
+        "numInitialChunks"_attr = initialChunks.chunks.size(),
+        "namespace"_attr = nss,
+        "initialCollectionVersion"_attr = initialChunks.collVersion());
 
     ShardingLogging::get(opCtx)->logChange(
         opCtx,

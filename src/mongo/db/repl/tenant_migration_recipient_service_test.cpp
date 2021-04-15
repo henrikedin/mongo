@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTest
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTest
 
 #include <boost/optional/optional_io.hpp>
 #include <fstream>
@@ -61,7 +61,7 @@
 #include "mongo/executor/network_interface.h"
 #include "mongo/executor/network_interface_factory.h"
 #include "mongo/executor/thread_pool_task_executor.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/metadata/egress_metadata_hook_list.h"
 #include "mongo/unittest/log_test.h"
 #include "mongo/unittest/unittest.h"
@@ -442,10 +442,10 @@ protected:
 private:
     std::shared_ptr<ClockSourceMock> _clkSource = std::make_shared<ClockSourceMock>();
 
-    unittest::MinimumLoggedSeverityGuard _replicationSeverityGuard{
-        logv2::LogComponent::kReplication, logv2::LogSeverity::Debug(1)};
+    unittest::MinimumLoggedSeverityGuard _replicationSeverityGuard{log::LogComponent::kReplication,
+                                                                   log::LogSeverity::Debug(1)};
     unittest::MinimumLoggedSeverityGuard _tenantMigrationSeverityGuard{
-        logv2::LogComponent::kTenantMigration, logv2::LogSeverity::Debug(1)};
+        log::LogComponent::kTenantMigration, log::LogSeverity::Debug(1)};
 };
 
 #ifdef MONGO_CONFIG_SSL
@@ -1524,10 +1524,10 @@ TEST_F(TenantMigrationRecipientServiceTest, OplogFetcherFailsDuringOplogApplicat
         instance->setCreateOplogFetcherFn_forTest(std::make_unique<CreateOplogFetcherMockFn>());
     }
 
-    LOGV2(4881201,
-          "Waiting for recipient service to reach consistent state",
-          "suite"_attr = _agent.getSuiteName(),
-          "test"_attr = _agent.getTestName());
+    LOG(4881201,
+        "Waiting for recipient service to reach consistent state",
+        "suite"_attr = _agent.getSuiteName(),
+        "test"_attr = _agent.getTestName());
     instance->waitUntilMigrationReachesConsistentState(opCtx.get());
 
 
@@ -1633,10 +1633,10 @@ TEST_F(TenantMigrationRecipientServiceTest, OplogFetcherResumesFromTopOfOplogBuf
     oplogFetcher->receiveBatch(
         1, {dataConsistentOplogEntry.getEntry().toBSON()}, dataConsistentOpTime.getTimestamp());
 
-    LOGV2(5272308,
-          "Waiting for recipient service to reach consistent state",
-          "suite"_attr = _agent.getSuiteName(),
-          "test"_attr = _agent.getTestName());
+    LOG(5272308,
+        "Waiting for recipient service to reach consistent state",
+        "suite"_attr = _agent.getSuiteName(),
+        "test"_attr = _agent.getTestName());
     instance->waitUntilMigrationReachesConsistentState(opCtx.get());
 
     // Stop the oplog applier.
@@ -1739,10 +1739,10 @@ TEST_F(TenantMigrationRecipientServiceTest, OplogFetcherNoDocInBufferToResumeFro
 
     // Allow the service to continue.
     hangAfterStartingOplogApplier->setMode(FailPoint::off);
-    LOGV2(5272310,
-          "Waiting for recipient service to reach consistent state",
-          "suite"_attr = _agent.getSuiteName(),
-          "test"_attr = _agent.getTestName());
+    LOG(5272310,
+        "Waiting for recipient service to reach consistent state",
+        "suite"_attr = _agent.getSuiteName(),
+        "test"_attr = _agent.getTestName());
     instance->waitUntilMigrationReachesConsistentState(opCtx.get());
 
     // Stop the oplog applier.
@@ -1858,10 +1858,10 @@ TEST_F(TenantMigrationRecipientServiceTest, OplogApplierResumesFromLastNoOpOplog
 
     // Allow the service to continue.
     hangAfterStartingOplogApplier->setMode(FailPoint::off);
-    LOGV2(5272350,
-          "Waiting for recipient service to reach consistent state",
-          "suite"_attr = _agent.getSuiteName(),
-          "test"_attr = _agent.getTestName());
+    LOG(5272350,
+        "Waiting for recipient service to reach consistent state",
+        "suite"_attr = _agent.getSuiteName(),
+        "test"_attr = _agent.getTestName());
     instance->waitUntilMigrationReachesConsistentState(opCtx.get());
 
     // The oplog applier should have started batching and applying at the donor opTime equal to
@@ -2020,10 +2020,10 @@ TEST_F(TenantMigrationRecipientServiceTest,
 
     // Allow the service to continue.
     hangAfterStartingOplogApplier->setMode(FailPoint::off);
-    LOGV2(5272340,
-          "Waiting for recipient service to reach consistent state",
-          "suite"_attr = _agent.getSuiteName(),
-          "test"_attr = _agent.getTestName());
+    LOG(5272340,
+        "Waiting for recipient service to reach consistent state",
+        "suite"_attr = _agent.getSuiteName(),
+        "test"_attr = _agent.getTestName());
     instance->waitUntilMigrationReachesConsistentState(opCtx.get());
 
     const auto oplogApplier = getTenantOplogApplier(instance.get());
@@ -2164,10 +2164,10 @@ TEST_F(TenantMigrationRecipientServiceTest, OplogApplierResumesFromStartDonorApp
 
     // Allow the service to continue.
     hangAfterStartingOplogApplier->setMode(FailPoint::off);
-    LOGV2(5394602,
-          "Waiting for recipient service to reach consistent state",
-          "suite"_attr = _agent.getSuiteName(),
-          "test"_attr = _agent.getTestName());
+    LOG(5394602,
+        "Waiting for recipient service to reach consistent state",
+        "suite"_attr = _agent.getSuiteName(),
+        "test"_attr = _agent.getTestName());
     instance->waitUntilMigrationReachesConsistentState(opCtx.get());
 
     const auto oplogApplier = getTenantOplogApplier(instance.get());
@@ -2277,10 +2277,10 @@ TEST_F(TenantMigrationRecipientServiceTest,
 
     // Allow the service to continue.
     hangAfterStartingOplogApplier->setMode(FailPoint::off);
-    LOGV2(5272317,
-          "Waiting for recipient service to reach consistent state",
-          "suite"_attr = _agent.getSuiteName(),
-          "test"_attr = _agent.getTestName());
+    LOG(5272317,
+        "Waiting for recipient service to reach consistent state",
+        "suite"_attr = _agent.getSuiteName(),
+        "test"_attr = _agent.getTestName());
     instance->waitUntilMigrationReachesConsistentState(opCtx.get());
 
     // Stop the oplog applier.
@@ -2328,10 +2328,10 @@ TEST_F(TenantMigrationRecipientServiceTest, OplogApplierFails) {
             instance->setCreateOplogFetcherFn_forTest(std::make_unique<CreateOplogFetcherMockFn>());
         }
 
-        LOGV2(4881208,
-              "Waiting for recipient service to reach consistent state",
-              "suite"_attr = _agent.getSuiteName(),
-              "test"_attr = _agent.getTestName());
+        LOG(4881208,
+            "Waiting for recipient service to reach consistent state",
+            "suite"_attr = _agent.getSuiteName(),
+            "test"_attr = _agent.getTestName());
         instance->waitUntilMigrationReachesConsistentState(opCtx.get());
 
         checkStateDocPersisted(opCtx.get(), instance.get());
@@ -2389,10 +2389,10 @@ TEST_F(TenantMigrationRecipientServiceTest, StoppingApplierAllowsCompletion) {
         instance->setCreateOplogFetcherFn_forTest(std::make_unique<CreateOplogFetcherMockFn>());
     }
 
-    LOGV2(4881209,
-          "Waiting for recipient service to reach consistent state",
-          "suite"_attr = _agent.getSuiteName(),
-          "test"_attr = _agent.getTestName());
+    LOG(4881209,
+        "Waiting for recipient service to reach consistent state",
+        "suite"_attr = _agent.getSuiteName(),
+        "test"_attr = _agent.getTestName());
     instance->waitUntilMigrationReachesConsistentState(opCtx.get());
 
     checkStateDocPersisted(opCtx.get(), instance.get());
@@ -2484,21 +2484,21 @@ TEST_F(TenantMigrationRecipientServiceTest, TenantMigrationRecipientAddResumeTok
     {
         BSONObj insertDoc;
         ASSERT_TRUE(oplogBuffer->tryPop(opCtx.get(), &insertDoc));
-        LOGV2(5124601, "Insert oplog entry", "entry"_attr = insertDoc);
+        LOG(5124601, "Insert oplog entry", "entry"_attr = insertDoc);
         ASSERT_BSONOBJ_EQ(insertDoc, oplogEntry1.getEntry().toBSON());
     }
 
     {
         BSONObj insertDoc;
         ASSERT_TRUE(oplogBuffer->tryPop(opCtx.get(), &insertDoc));
-        LOGV2(5124602, "Insert oplog entry", "entry"_attr = insertDoc);
+        LOG(5124602, "Insert oplog entry", "entry"_attr = insertDoc);
         ASSERT_BSONOBJ_EQ(insertDoc, oplogEntry2.getEntry().toBSON());
     }
 
     {
         BSONObj noopDoc;
         ASSERT_TRUE(oplogBuffer->tryPop(opCtx.get(), &noopDoc));
-        LOGV2(5124603, "Noop oplog entry", "entry"_attr = noopDoc);
+        LOG(5124603, "Noop oplog entry", "entry"_attr = noopDoc);
         OplogEntry noopEntry(noopDoc);
         ASSERT_TRUE(noopEntry.getOpType() == OpTypeEnum::kNoop);
         ASSERT_EQUALS(noopEntry.getTimestamp(), resumeToken2);
@@ -2637,10 +2637,10 @@ TEST_F(TenantMigrationRecipientServiceTest, RecipientForgetMigration_WaitUntilSt
     ASSERT_OK(instance->getCompletionFuture().getNoThrow());
 
     const auto doc = getStateDoc(instance.get());
-    LOGV2(4881411,
-          "Test migration complete",
-          "preStateDoc"_attr = initialStateDocument.toBSON(),
-          "postStateDoc"_attr = doc.toBSON());
+    LOG(4881411,
+        "Test migration complete",
+        "preStateDoc"_attr = initialStateDocument.toBSON(),
+        "postStateDoc"_attr = doc.toBSON());
     ASSERT_EQ(doc.getDonorConnectionString(), replSet.getConnectionString());
     ASSERT_EQ(doc.getTenantId(), "tenantA");
     ASSERT_TRUE(doc.getReadPreference().equals(ReadPreferenceSetting(ReadPreference::PrimaryOnly)));
@@ -2700,10 +2700,10 @@ TEST_F(TenantMigrationRecipientServiceTest, RecipientForgetMigration_AfterStartO
     ASSERT_OK(instance->getCompletionFuture().getNoThrow());
 
     const auto doc = getStateDoc(instance.get());
-    LOGV2(4881412,
-          "Test migration complete",
-          "preStateDoc"_attr = initialStateDocument.toBSON(),
-          "postStateDoc"_attr = doc.toBSON());
+    LOG(4881412,
+        "Test migration complete",
+        "preStateDoc"_attr = initialStateDocument.toBSON(),
+        "postStateDoc"_attr = doc.toBSON());
     ASSERT_EQ(doc.getDonorConnectionString(), replSet.getConnectionString());
     ASSERT_EQ(doc.getTenantId(), "tenantA");
     ASSERT_TRUE(doc.getReadPreference().equals(ReadPreferenceSetting(ReadPreference::PrimaryOnly)));
@@ -2761,10 +2761,10 @@ TEST_F(TenantMigrationRecipientServiceTest, RecipientForgetMigration_AfterConsis
 
     {
         const auto doc = getStateDoc(instance.get());
-        LOGV2(4881413,
-              "Test migration after consistent",
-              "preStateDoc"_attr = initialStateDocument.toBSON(),
-              "postStateDoc"_attr = doc.toBSON());
+        LOG(4881413,
+            "Test migration after consistent",
+            "preStateDoc"_attr = initialStateDocument.toBSON(),
+            "postStateDoc"_attr = doc.toBSON());
         ASSERT_EQ(doc.getDonorConnectionString(), replSet.getConnectionString());
         ASSERT_EQ(doc.getTenantId(), "tenantA");
         ASSERT_TRUE(
@@ -2790,10 +2790,10 @@ TEST_F(TenantMigrationRecipientServiceTest, RecipientForgetMigration_AfterConsis
 
     {
         const auto doc = getStateDoc(instance.get());
-        LOGV2(4881414,
-              "Test migration complete",
-              "preStateDoc"_attr = initialStateDocument.toBSON(),
-              "postStateDoc"_attr = doc.toBSON());
+        LOG(4881414,
+            "Test migration complete",
+            "preStateDoc"_attr = initialStateDocument.toBSON(),
+            "postStateDoc"_attr = doc.toBSON());
         ASSERT_EQ(doc.getDonorConnectionString(), replSet.getConnectionString());
         ASSERT_EQ(doc.getTenantId(), "tenantA");
         ASSERT_TRUE(
@@ -2851,10 +2851,10 @@ TEST_F(TenantMigrationRecipientServiceTest, RecipientForgetMigration_AfterFail) 
 
     {
         const auto doc = getStateDoc(instance.get());
-        LOGV2(4881415,
-              "Test migration after collection cloner done",
-              "preStateDoc"_attr = initialStateDocument.toBSON(),
-              "postStateDoc"_attr = doc.toBSON());
+        LOG(4881415,
+            "Test migration after collection cloner done",
+            "preStateDoc"_attr = initialStateDocument.toBSON(),
+            "postStateDoc"_attr = doc.toBSON());
         ASSERT_EQ(doc.getDonorConnectionString(), replSet.getConnectionString());
         ASSERT_EQ(doc.getTenantId(), "tenantA");
         ASSERT_TRUE(
@@ -2873,10 +2873,10 @@ TEST_F(TenantMigrationRecipientServiceTest, RecipientForgetMigration_AfterFail) 
 
     {
         const auto doc = getStateDoc(instance.get());
-        LOGV2(4881416,
-              "Test migration complete",
-              "preStateDoc"_attr = initialStateDocument.toBSON(),
-              "postStateDoc"_attr = doc.toBSON());
+        LOG(4881416,
+            "Test migration complete",
+            "preStateDoc"_attr = initialStateDocument.toBSON(),
+            "postStateDoc"_attr = doc.toBSON());
         ASSERT_EQ(doc.getDonorConnectionString(), replSet.getConnectionString());
         ASSERT_EQ(doc.getTenantId(), "tenantA");
         ASSERT_TRUE(
@@ -2930,10 +2930,10 @@ TEST_F(TenantMigrationRecipientServiceTest, RecipientForgetMigration_FailToMarkG
 
     {
         const auto doc = getStateDoc(instance.get());
-        LOGV2(4881417,
-              "Test migration complete",
-              "preStateDoc"_attr = initialStateDocument.toBSON(),
-              "postStateDoc"_attr = doc.toBSON());
+        LOG(4881417,
+            "Test migration complete",
+            "preStateDoc"_attr = initialStateDocument.toBSON(),
+            "postStateDoc"_attr = doc.toBSON());
         ASSERT_EQ(doc.getDonorConnectionString(), replSet.getConnectionString());
         ASSERT_EQ(doc.getTenantId(), "tenantA");
         ASSERT_TRUE(
@@ -2973,7 +2973,7 @@ TEST_F(TenantMigrationRecipientServiceTest, TenantMigrationRecipientServiceRecor
     auto doc = getStateDoc(instance.get());
     auto docFCV = doc.getRecipientPrimaryStartingFCV();
     auto currentFCV = serverGlobalParams.featureCompatibility.getVersion();
-    LOGV2(5356202, "FCV in doc vs current", "docFCV"_attr = docFCV, "currentFCV"_attr = currentFCV);
+    LOG(5356202, "FCV in doc vs current", "docFCV"_attr = docFCV, "currentFCV"_attr = currentFCV);
     ASSERT(currentFCV == docFCV);
     checkStateDocPersisted(opCtx.get(), instance.get());
 }
@@ -3012,7 +3012,7 @@ TEST_F(TenantMigrationRecipientServiceTest,
 
     auto doc = getStateDoc(instance.get());
     auto docFCV = doc.getRecipientPrimaryStartingFCV();
-    LOGV2(5356203, "FCV in doc vs current", "docFCV"_attr = docFCV, "currentFCV"_attr = currentFCV);
+    LOG(5356203, "FCV in doc vs current", "docFCV"_attr = docFCV, "currentFCV"_attr = currentFCV);
     ASSERT(currentFCV == docFCV);
     checkStateDocPersisted(opCtx.get(), instance.get());
 }

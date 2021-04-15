@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kSharding
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kSharding
 
 #include "mongo/platform/basic.h"
 
@@ -44,7 +44,7 @@
 #include "mongo/db/s/sharding_util.h"
 #include "mongo/db/views/view_catalog.h"
 #include "mongo/idl/idl_parser.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/s/catalog/sharding_catalog_client.h"
 #include "mongo/s/client/shard_registry.h"
 #include "mongo/s/grid.h"
@@ -142,13 +142,13 @@ void RenameCollectionCoordinator::_enterPhase(Phase newPhase) {
     StateDoc newDoc(_doc);
     newDoc.setPhase(newPhase);
 
-    LOGV2_DEBUG(5460501,
-                2,
-                "Rename collection coordinator phase transition",
-                "fromNs"_attr = nss(),
-                "toNs"_attr = _doc.getTo(),
-                "newPhase"_attr = RenameCollectionCoordinatorPhase_serializer(newDoc.getPhase()),
-                "oldPhase"_attr = RenameCollectionCoordinatorPhase_serializer(_doc.getPhase()));
+    LOG_DEBUG(5460501,
+              2,
+              "Rename collection coordinator phase transition",
+              "fromNs"_attr = nss(),
+              "toNs"_attr = _doc.getTo(),
+              "newPhase"_attr = RenameCollectionCoordinatorPhase_serializer(newDoc.getPhase()),
+              "oldPhase"_attr = RenameCollectionCoordinatorPhase_serializer(_doc.getPhase()));
 
     if (_doc.getPhase() == Phase::kUnset) {
         _insertStateDocument(std::move(newDoc));
@@ -323,15 +323,15 @@ ExecutorFuture<void> RenameCollectionCoordinator::_runImpl(
                     BSON("source" << nss().toString() << "destination" << _doc.getTo().toString()),
                     ShardingCatalogClient::kMajorityWriteConcern);
 
-                LOGV2(5460504, "Collection renamed", "namespace"_attr = nss());
+                LOG(5460504, "Collection renamed", "namespace"_attr = nss());
             }))
         .onError([this, anchor = shared_from_this()](const Status& status) {
             if (!status.isA<ErrorCategory::NotPrimaryError>() &&
                 !status.isA<ErrorCategory::ShutdownError>()) {
-                LOGV2_ERROR(5460505,
-                            "Error running rename collection",
-                            "namespace"_attr = nss(),
-                            "error"_attr = redact(status));
+                LOG_ERROR(5460505,
+                          "Error running rename collection",
+                          "namespace"_attr = nss(),
+                          "error"_attr = redact(status));
             }
 
             return status;

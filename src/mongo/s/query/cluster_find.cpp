@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kQuery
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kQuery
 
 #include "mongo/platform/basic.h"
 
@@ -50,7 +50,7 @@
 #include "mongo/db/query/getmore_request.h"
 #include "mongo/db/query/query_planner_common.h"
 #include "mongo/executor/task_executor_pool.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/platform/overflow_arithmetic.h"
 #include "mongo/s/catalog_cache.h"
 #include "mongo/s/client/num_hosts_targeted_metrics.h"
@@ -534,13 +534,13 @@ CursorId ClusterFind::runQuery(OperationContext* opCtx,
                 throw;
             }
 
-            LOGV2_DEBUG(22839,
-                        1,
-                        "Received error status for query",
-                        "query"_attr = redact(query.toStringShort()),
-                        "attemptNumber"_attr = retries,
-                        "maxRetries"_attr = kMaxRetries,
-                        "error"_attr = redact(ex));
+            LOG_DEBUG(22839,
+                      1,
+                      "Received error status for query",
+                      "query"_attr = redact(query.toStringShort()),
+                      "attemptNumber"_attr = retries,
+                      "maxRetries"_attr = kMaxRetries,
+                      "error"_attr = redact(ex));
 
             // Mark database entry in cache as stale.
             Grid::get(opCtx)->catalogCache()->onStaleDatabaseVersion(ex->getDb(),
@@ -575,13 +575,13 @@ CursorId ClusterFind::runQuery(OperationContext* opCtx,
                 throw;
             }
 
-            LOGV2_DEBUG(22840,
-                        1,
-                        "Received error status for query",
-                        "query"_attr = redact(query.toStringShort()),
-                        "attemptNumber"_attr = retries,
-                        "maxRetries"_attr = kMaxRetries,
-                        "error"_attr = redact(ex));
+            LOG_DEBUG(22840,
+                      1,
+                      "Received error status for query",
+                      "query"_attr = redact(query.toStringShort()),
+                      "attemptNumber"_attr = retries,
+                      "maxRetries"_attr = kMaxRetries,
+                      "error"_attr = redact(ex));
 
             if (ex.code() != ErrorCodes::ShardInvalidatedForTargeting) {
                 if (auto staleInfo = ex.extraInfo<StaleConfigInfo>()) {

@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kDefault
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kDefault
 
 #include "mongo/db/jsobj.h"
 
@@ -38,7 +38,7 @@
 #include "mongo/bson/generator_extended_relaxed_2_0_0.h"
 #include "mongo/bson/generator_legacy_strict.h"
 #include "mongo/db/json.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/allocator.h"
 #include "mongo/util/hex.h"
 #include "mongo/util/str.h"
@@ -117,11 +117,10 @@ BSONObj BSONObj::copy() const {
     // that the memory we are reading has changed, and we must exit immediately to avoid further
     // undefined behavior.
     if (int sizeAfter = objsize(); sizeAfter != size) {
-        LOGV2_FATAL(
-            31323,
-            "BSONObj::copy() - size {sizeAfter} differs from previously observed size {size}",
-            "sizeAfter"_attr = sizeAfter,
-            "size"_attr = size);
+        LOG_FATAL(31323,
+                  "BSONObj::copy() - size {sizeAfter} differs from previously observed size {size}",
+                  "sizeAfter"_attr = sizeAfter,
+                  "size"_attr = size);
     }
     memcpy(storage.get(), objdata(), size);
     return BSONObj(std::move(storage));
@@ -165,10 +164,10 @@ void BSONObj::_validateUnownedSize(int size) const {
     // the size to ever be invalid. This means that the unowned memory we are reading has
     // changed, and we must exit immediately to avoid further undefined behavior.
     if (!isOwned() && (size < kMinBSONLength || size > BufferMaxSize)) {
-        LOGV2_FATAL(31322,
-                    "BSONObj::_validateUnownedSize() - size {size} of unowned BSONObj is invalid "
-                    "and differs from previously validated size.",
-                    "size"_attr = size);
+        LOG_FATAL(31322,
+                  "BSONObj::_validateUnownedSize() - size {size} of unowned BSONObj is invalid "
+                  "and differs from previously validated size.",
+                  "size"_attr = size);
     }
 }
 

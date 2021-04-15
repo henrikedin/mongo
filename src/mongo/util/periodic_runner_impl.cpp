@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kDefault
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kDefault
 
 #include "mongo/platform/basic.h"
 
@@ -36,7 +36,7 @@
 #include "mongo/base/error_codes.h"
 #include "mongo/db/client.h"
 #include "mongo/db/service_context.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/clock_source.h"
 #include "mongo/util/scopeguard.h"
@@ -126,7 +126,7 @@ void PeriodicRunnerImpl::PeriodicJobImpl::_run() {
 }
 
 void PeriodicRunnerImpl::PeriodicJobImpl::start() {
-    LOGV2_DEBUG(23323, 2, "Starting periodic job {job_name}", "job_name"_attr = _job.name);
+    LOG_DEBUG(23323, 2, "Starting periodic job {job_name}", "job_name"_attr = _job.name);
 
     _run();
 }
@@ -167,7 +167,7 @@ void PeriodicRunnerImpl::PeriodicJobImpl::stop() {
 
     // Only join once
     if (lastExecStatus != ExecutionStatus::CANCELED) {
-        LOGV2_DEBUG(23324, 2, "Stopping periodic job {job_name}", "job_name"_attr = _job.name);
+        LOG_DEBUG(23324, 2, "Stopping periodic job {job_name}", "job_name"_attr = _job.name);
 
         _condvar.notify_one();
 

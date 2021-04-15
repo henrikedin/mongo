@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kCommand
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kCommand
 
 #include "mongo/platform/basic.h"
 
@@ -37,7 +37,7 @@
 #include "mongo/db/commands/server_status_internal.h"
 #include "mongo/db/service_context.h"
 #include "mongo/db/stats/counters.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/net/http_client.h"
 #include "mongo/util/net/socket_utils.h"
 #include "mongo/util/version.h"
@@ -145,10 +145,10 @@ public:
         timeBuilder.appendNumber("at end", durationCount<Milliseconds>(runElapsed));
         if (runElapsed > Milliseconds(1000)) {
             BSONObj t = timeBuilder.obj();
-            LOGV2(20499,
-                  "serverStatus was very slow: {timeStats}",
-                  "serverStatus was very slow",
-                  "timeStats"_attr = t);
+            LOG(20499,
+                "serverStatus was very slow: {timeStats}",
+                "serverStatus was very slow",
+                "timeStats"_attr = t);
 
             bool include_timing = true;
             const auto& elem = cmdObj[kTimingSection];

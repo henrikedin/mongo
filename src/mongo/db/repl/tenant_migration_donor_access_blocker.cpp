@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTenantMigration
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTenantMigration
 
 #include "mongo/platform/basic.h"
 
@@ -38,7 +38,7 @@
 #include "mongo/db/repl/tenant_migration_access_blocker_executor.h"
 #include "mongo/db/repl/tenant_migration_conflict_info.h"
 #include "mongo/db/repl/tenant_migration_donor_access_blocker.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/cancellation.h"
 #include "mongo/util/fail_point.h"
 #include "mongo/util/future_util.h"
@@ -187,7 +187,7 @@ Status TenantMigrationDonorAccessBlocker::checkIfCanBuildIndex() {
 void TenantMigrationDonorAccessBlocker::startBlockingWrites() {
     stdx::lock_guard<Latch> lg(_mutex);
 
-    LOGV2(5093800, "Tenant migration starting to block writes", "tenantId"_attr = _tenantId);
+    LOG(5093800, "Tenant migration starting to block writes", "tenantId"_attr = _tenantId);
 
     invariant(_state == State::kAllow);
     invariant(!_blockTimestamp);
@@ -200,10 +200,10 @@ void TenantMigrationDonorAccessBlocker::startBlockingWrites() {
 void TenantMigrationDonorAccessBlocker::startBlockingReadsAfter(const Timestamp& blockTimestamp) {
     stdx::lock_guard<Latch> lg(_mutex);
 
-    LOGV2(5093801,
-          "Tenant migration starting to block reads after blockTimestamp",
-          "tenantId"_attr = _tenantId,
-          "blockTimestamp"_attr = blockTimestamp);
+    LOG(5093801,
+        "Tenant migration starting to block reads after blockTimestamp",
+        "tenantId"_attr = _tenantId,
+        "blockTimestamp"_attr = blockTimestamp);
 
     invariant(_state == State::kBlockWrites);
     invariant(!_blockTimestamp);
@@ -238,10 +238,10 @@ void TenantMigrationDonorAccessBlocker::setCommitOpTime(OperationContext* opCtx,
         _commitOpTime = opTime;
     }
 
-    LOGV2(5107300,
-          "Tenant migration starting to wait for commit OpTime to be majority-committed",
-          "tenantId"_attr = _tenantId,
-          "commitOpTime"_attr = opTime);
+    LOG(5107300,
+        "Tenant migration starting to wait for commit OpTime to be majority-committed",
+        "tenantId"_attr = _tenantId,
+        "commitOpTime"_attr = opTime);
 
     if (opTime > repl::ReplicationCoordinator::get(opCtx)->getCurrentCommittedSnapshotOpTime()) {
         return;
@@ -267,10 +267,10 @@ void TenantMigrationDonorAccessBlocker::setAbortOpTime(OperationContext* opCtx,
         _abortOpTime = opTime;
     }
 
-    LOGV2(5107301,
-          "Tenant migration starting to wait for abort OpTime to be majority-committed",
-          "tenantId"_attr = _tenantId,
-          "abortOpTime"_attr = opTime);
+    LOG(5107301,
+        "Tenant migration starting to wait for abort OpTime to be majority-committed",
+        "tenantId"_attr = _tenantId,
+        "abortOpTime"_attr = opTime);
 
     if (opTime > repl::ReplicationCoordinator::get(opCtx)->getCurrentCommittedSnapshotOpTime()) {
         return;
@@ -315,9 +315,9 @@ void TenantMigrationDonorAccessBlocker::_onMajorityCommitCommitOpTime(
     _transitionOutOfBlockingPromise.setFrom(error);
 
     lk.unlock();
-    LOGV2(5093803,
-          "Tenant migration finished waiting for commit OpTime to be majority-committed",
-          "tenantId"_attr = _tenantId);
+    LOG(5093803,
+        "Tenant migration finished waiting for commit OpTime to be majority-committed",
+        "tenantId"_attr = _tenantId);
 }
 
 void TenantMigrationDonorAccessBlocker::_onMajorityCommitAbortOpTime(stdx::unique_lock<Latch>& lk) {
@@ -331,9 +331,9 @@ void TenantMigrationDonorAccessBlocker::_onMajorityCommitAbortOpTime(stdx::uniqu
     _completionPromise.setError({ErrorCodes::TenantMigrationAborted, "Tenant migration aborted"});
 
     lk.unlock();
-    LOGV2(5093805,
-          "Tenant migration finished waiting for abort OpTime to be majority-committed",
-          "tenantId"_attr = _tenantId);
+    LOG(5093805,
+        "Tenant migration finished waiting for abort OpTime to be majority-committed",
+        "tenantId"_attr = _tenantId);
 }
 
 void TenantMigrationDonorAccessBlocker::appendInfoForServerStatus(BSONObjBuilder* builder) const {

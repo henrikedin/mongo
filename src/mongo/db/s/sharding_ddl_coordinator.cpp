@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kSharding
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kSharding
 
 #include "mongo/platform/basic.h"
 
@@ -37,7 +37,7 @@
 #include "mongo/db/s/database_sharding_state.h"
 #include "mongo/db/s/operation_sharding_state.h"
 #include "mongo/db/s/sharding_ddl_coordinator_gen.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/s/grid.h"
 
 namespace mongo {
@@ -59,10 +59,10 @@ ShardingDDLCoordinator::~ShardingDDLCoordinator() {
 void ShardingDDLCoordinator::_removeDocument(OperationContext* opCtx) {
     PersistentTaskStore<ShardingDDLCoordinatorMetadata> store(
         NamespaceString::kShardingDDLCoordinatorsNamespace);
-    LOGV2_DEBUG(5565601,
-                2,
-                "Removing sharding DDL coordinator document",
-                "coordinatorId"_attr = _coorMetadata.getId());
+    LOG_DEBUG(5565601,
+              2,
+              "Removing sharding DDL coordinator document",
+              "coordinatorId"_attr = _coorMetadata.getId());
     store.remove(
         opCtx,
         BSON(ShardingDDLCoordinatorMetadata::kIdFieldName << _coorMetadata.getId().toBSON()),
@@ -70,11 +70,11 @@ void ShardingDDLCoordinator::_removeDocument(OperationContext* opCtx) {
 }
 
 void ShardingDDLCoordinator::interrupt(Status status) {
-    LOGV2_DEBUG(5390535,
-                1,
-                "Sharding DDL Coordinator received an interrupt",
-                "coordinatorId"_attr = _coorMetadata.getId(),
-                "reason"_attr = redact(status));
+    LOG_DEBUG(5390535,
+              1,
+              "Sharding DDL Coordinator received an interrupt",
+              "coordinatorId"_attr = _coorMetadata.getId(),
+              "reason"_attr = redact(status));
     // Resolve any unresolved promises to avoid hanging.
     stdx::lock_guard<Latch> lg(_mutex);
     if (!_constructionCompletionPromise.getFuture().isReady()) {
@@ -127,10 +127,10 @@ SemiFuture<void> ShardingDDLCoordinator::run(std::shared_ptr<executor::ScopedTas
         .onError([this, anchor = shared_from_this()](const Status& status) {
             static constexpr auto& errorMsg =
                 "Failed to complete construction of sharding DDL coordinator";
-            LOGV2_ERROR(5390530,
-                        errorMsg,
-                        "coordinatorId"_attr = _coorMetadata.getId(),
-                        "reason"_attr = redact(status));
+            LOG_ERROR(5390530,
+                      errorMsg,
+                      "coordinatorId"_attr = _coorMetadata.getId(),
+                      "reason"_attr = redact(status));
             interrupt(status.withContext(errorMsg));
             return status;
         })
@@ -156,10 +156,10 @@ SemiFuture<void> ShardingDDLCoordinator::run(std::shared_ptr<executor::ScopedTas
                 } catch (DBException& ex) {
                     static constexpr auto& errMsg =
                         "Failed to remove sharding DDL coordinator document";
-                    LOGV2_WARNING(5565605,
-                                  errMsg,
-                                  "coordinatorId"_attr = _coorMetadata.getId(),
-                                  "error"_attr = redact(ex));
+                    LOG_WARNING(5565605,
+                                errMsg,
+                                "coordinatorId"_attr = _coorMetadata.getId(),
+                                "error"_attr = redact(ex));
                     return ex.toStatus(errMsg);
                 }
             }();

@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kFTDC
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kFTDC
 
 #include "mongo/platform/basic.h"
 
@@ -42,7 +42,7 @@
 #include "mongo/db/ftdc/constants.h"
 #include "mongo/db/jsobj.h"
 #include "mongo/db/service_context.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/str.h"
 #include "mongo/util/time_support.h"
@@ -180,10 +180,10 @@ StatusWith<bool> extractMetricsFromDocument(const BSONObj& referenceDoc,
     while (itCurrent.more()) {
         // Schema mismatch if current document is longer than reference document
         if (matches && !itReference.more()) {
-            LOGV2_DEBUG(20633,
-                        4,
-                        "full-time diagnostic data capture schema change: current document is "
-                        "longer than reference document");
+            LOG_DEBUG(20633,
+                      4,
+                      "full-time diagnostic data capture schema change: current document is "
+                      "longer than reference document");
             matches = false;
         }
 
@@ -193,11 +193,11 @@ StatusWith<bool> extractMetricsFromDocument(const BSONObj& referenceDoc,
         if (matches) {
             // Check for matching field names
             if (referenceElement.fieldNameStringData() != currentElement.fieldNameStringData()) {
-                LOGV2_DEBUG(20634,
-                            4,
-                            "full-time diagnostic data capture schema change: field name change",
-                            "from"_attr = referenceElement.fieldNameStringData(),
-                            "to"_attr = currentElement.fieldNameStringData());
+                LOG_DEBUG(20634,
+                          4,
+                          "full-time diagnostic data capture schema change: field name change",
+                          "from"_attr = referenceElement.fieldNameStringData(),
+                          "to"_attr = currentElement.fieldNameStringData());
                 matches = false;
             }
 
@@ -208,12 +208,12 @@ StatusWith<bool> extractMetricsFromDocument(const BSONObj& referenceDoc,
             if ((currentElement.type() != referenceElement.type()) &&
                 !(referenceElement.isNumber() == true &&
                   currentElement.isNumber() == referenceElement.isNumber())) {
-                LOGV2_DEBUG(20635,
-                            4,
-                            "full-time diagnostic data capture schema change: field type change",
-                            "fieldName"_attr = referenceElement.fieldNameStringData(),
-                            "oldType"_attr = static_cast<int>(referenceElement.type()),
-                            "newType"_attr = static_cast<int>(currentElement.type()));
+                LOG_DEBUG(20635,
+                          4,
+                          "full-time diagnostic data capture schema change: field type change",
+                          "fieldName"_attr = referenceElement.fieldNameStringData(),
+                          "oldType"_attr = static_cast<int>(referenceElement.type()),
+                          "newType"_attr = static_cast<int>(currentElement.type()));
                 matches = false;
             }
         }
@@ -283,10 +283,10 @@ StatusWith<bool> extractMetricsFromDocument(const BSONObj& referenceDoc,
 
     // schema mismatch if ref is longer than curr
     if (matches && itReference.more()) {
-        LOGV2_DEBUG(20636,
-                    4,
-                    "full-time diagnostic data capture schema change: reference document is longer "
-                    "than current");
+        LOG_DEBUG(20636,
+                  4,
+                  "full-time diagnostic data capture schema change: reference document is longer "
+                  "than current");
         matches = false;
     }
 

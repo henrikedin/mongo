@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kCommand
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kCommand
 
 #include "mongo/platform/basic.h"
 
@@ -88,7 +88,7 @@
 #include "mongo/db/transaction_participant.h"
 #include "mongo/db/transaction_validation.h"
 #include "mongo/db/vector_clock.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/factory.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/rpc/message.h"
@@ -231,28 +231,28 @@ void generateLegacyQueryErrorResponse(const AssertionException& exception,
     curop->debug().errInfo = exception.toStatus();
 
     if (queryMessage.query.valid())
-        LOGV2_OPTIONS(51777,
-                      {logv2::LogComponent::kQuery},
-                      "Assertion {error} ns: {namespace} query: {query}",
-                      "Assertion for valid query",
-                      "error"_attr = exception,
-                      "namespace"_attr = queryMessage.ns,
-                      "query"_attr = redact(queryMessage.query));
+        LOG_OPTIONS(51777,
+                    {log::LogComponent::kQuery},
+                    "Assertion {error} ns: {namespace} query: {query}",
+                    "Assertion for valid query",
+                    "error"_attr = exception,
+                    "namespace"_attr = queryMessage.ns,
+                    "query"_attr = redact(queryMessage.query));
     else
-        LOGV2_OPTIONS(51778,
-                      {logv2::LogComponent::kQuery},
-                      "Assertion {error} ns: {namespace} query object is corrupt",
-                      "Assertion for query with corrupted object",
-                      "error"_attr = exception,
-                      "namespace"_attr = queryMessage.ns);
+        LOG_OPTIONS(51778,
+                    {log::LogComponent::kQuery},
+                    "Assertion {error} ns: {namespace} query object is corrupt",
+                    "Assertion for query with corrupted object",
+                    "error"_attr = exception,
+                    "namespace"_attr = queryMessage.ns);
 
     if (queryMessage.ntoskip || queryMessage.ntoreturn) {
-        LOGV2_OPTIONS(21952,
-                      {logv2::LogComponent::kQuery},
-                      "Query's nToSkip = {nToSkip} and nToReturn = {nToReturn}",
-                      "Assertion for query with nToSkip and/or nToReturn",
-                      "nToSkip"_attr = queryMessage.ntoskip,
-                      "nToReturn"_attr = queryMessage.ntoreturn);
+        LOG_OPTIONS(21952,
+                    {log::LogComponent::kQuery},
+                    "Query's nToSkip = {nToSkip} and nToReturn = {nToReturn}",
+                    "Assertion for query with nToSkip and/or nToReturn",
+                    "nToSkip"_attr = queryMessage.ntoskip,
+                    "nToReturn"_attr = queryMessage.ntoreturn);
     }
 
     BSONObjBuilder err;
@@ -376,7 +376,7 @@ StatusWith<repl::ReadConcernArgs> _extractReadConcern(OperationContext* opCtx,
                    serverGlobalParams.clusterRole == ClusterRole::ConfigServer) {
             if (!readConcernArgs.isSpecified()) {
                 // TODO: Disabled until after SERVER-44539, to avoid log spam.
-                // LOGV2(21954, "Missing readConcern on {command}", "Missing readConcern "
+                // LOG(21954, "Missing readConcern on {command}", "Missing readConcern "
                 // "for command", "command"_attr = invocation->definition()->getName());
             }
         } else {
@@ -390,13 +390,13 @@ StatusWith<repl::ReadConcernArgs> _extractReadConcern(OperationContext* opCtx,
                 if (rcDefault) {
                     customDefaultWasApplied = true;
                     readConcernArgs = std::move(*rcDefault);
-                    LOGV2_DEBUG(21955,
-                                2,
-                                "Applying default readConcern on {command} of {readConcernDefault} "
-                                "on {command}",
-                                "Applying default readConcern on command",
-                                "readConcernDefault"_attr = *rcDefault,
-                                "command"_attr = invocation->definition()->getName());
+                    LOG_DEBUG(21955,
+                              2,
+                              "Applying default readConcern on {command} of {readConcernDefault} "
+                              "on {command}",
+                              "Applying default readConcern on command",
+                              "readConcernDefault"_attr = *rcDefault,
+                              "command"_attr = invocation->definition()->getName());
                     // Update the readConcernSupport, since the default RC was applied.
                     readConcernSupport =
                         invocation->supportsReadConcern(readConcernArgs.getLevel());
@@ -876,14 +876,14 @@ void CheckoutSessionAndInvokeCommand::_cleanupTransaction() {
             _txnParticipant->abortTransaction(opCtx);
     } catch (...) {
         // It is illegal for this to throw so we catch and log this here for diagnosability.
-        LOGV2_FATAL(21974,
-                    "Caught exception during transaction {txnNumber} {operation} "
-                    "{logicalSessionId}: {error}",
-                    "Unable to stash/abort transaction",
-                    "operation"_attr = (isPrepared ? "stash" : "abort"),
-                    "txnNumber"_attr = opCtx->getTxnNumber(),
-                    "logicalSessionId"_attr = opCtx->getLogicalSessionId()->toBSON(),
-                    "error"_attr = exceptionToStatus());
+        LOG_FATAL(21974,
+                  "Caught exception during transaction {txnNumber} {operation} "
+                  "{logicalSessionId}: {error}",
+                  "Unable to stash/abort transaction",
+                  "operation"_attr = (isPrepared ? "stash" : "abort"),
+                  "txnNumber"_attr = opCtx->getTxnNumber(),
+                  "logicalSessionId"_attr = opCtx->getLogicalSessionId()->toBSON(),
+                  "error"_attr = exceptionToStatus());
     }
 }
 
@@ -1223,7 +1223,7 @@ void RunCommandAndWaitForWriteConcern::_setup() {
                        serverGlobalParams.clusterRole == ClusterRole::ConfigServer) {
                 if (!request.body.hasField(WriteConcernOptions::kWriteConcernField)) {
                     // TODO: Disabled until after SERVER-44539, to avoid log spam.
-                    // LOGV2(21959, "Missing writeConcern on {command}", "Missing "
+                    // LOG(21959, "Missing writeConcern on {command}", "Missing "
                     // "writeConcern on command", "command"_attr = command->getName());
                 }
             }
@@ -1248,11 +1248,11 @@ Future<void> RunCommandAndWaitForWriteConcern::_runCommandWithFailPoint() {
     // Despite the name, this failpoint only affects commands with write concerns.
     if (auto scoped = failWithErrorCodeInRunCommand.scoped(); MONGO_unlikely(scoped.isActive())) {
         const auto errorCode = scoped.getData()["errorCode"].numberInt();
-        LOGV2(21960,
-              "failWithErrorCodeInRunCommand enabled - failing command with error "
-              "code: {errorCode}",
-              "failWithErrorCodeInRunCommand enabled, failing command",
-              "errorCode"_attr = errorCode);
+        LOG(21960,
+            "failWithErrorCodeInRunCommand enabled - failing command with error "
+            "code: {errorCode}",
+            "failWithErrorCodeInRunCommand enabled, failing command",
+            "errorCode"_attr = errorCode);
         BSONObjBuilder errorBuilder;
         errorBuilder.append("ok", 0.0);
         errorBuilder.append("code", errorCode);
@@ -1466,11 +1466,11 @@ void ExecCommandDatabase::_initiateCommand() {
     }
 
     if (command->adminOnly()) {
-        LOGV2_DEBUG(21961,
-                    2,
-                    "Admin only command: {command}",
-                    "Admin only command",
-                    "command"_attr = request.getCommandName());
+        LOG_DEBUG(21961,
+                  2,
+                  "Admin only command: {command}",
+                  "Admin only command",
+                  "command"_attr = request.getCommandName());
     }
 
     if (command->maintenanceMode()) {
@@ -1593,14 +1593,14 @@ void ExecCommandDatabase::_initiateCommand() {
 
     command->incrementCommandsExecuted();
 
-    if (shouldLog(logv2::LogComponent::kTracking, logv2::LogSeverity::Debug(1)) &&
+    if (shouldLog(log::LogComponent::kTracking, log::LogSeverity::Debug(1)) &&
         rpc::TrackingMetadata::get(opCtx).getParentOperId()) {
-        LOGV2_DEBUG_OPTIONS(4615605,
-                            1,
-                            {logv2::LogComponent::kTracking},
-                            "Command metadata: {trackingMetadata}",
-                            "Command metadata",
-                            "trackingMetadata"_attr = rpc::TrackingMetadata::get(opCtx));
+        LOG_DEBUG_OPTIONS(4615605,
+                          1,
+                          {log::LogComponent::kTracking},
+                          "Command metadata: {trackingMetadata}",
+                          "Command metadata",
+                          "trackingMetadata"_attr = rpc::TrackingMetadata::get(opCtx));
         rpc::TrackingMetadata::get(opCtx).setIsLogged(true);
     }
 }
@@ -1739,16 +1739,16 @@ void ExecCommandDatabase::_handleFailure(Status status) {
     }
     appendClusterAndOperationTime(opCtx, &_extraFieldsBuilder, &metadataBob, _startOperationTime);
 
-    LOGV2_DEBUG(21962,
-                1,
-                "Assertion while executing command '{command}' on database '{db}' with "
-                "arguments '{commandArgs}': {error}",
-                "Assertion while executing command",
-                "command"_attr = request.getCommandName(),
-                "db"_attr = request.getDatabase(),
-                "commandArgs"_attr = redact(
-                    ServiceEntryPointCommon::getRedactedCopyForLogging(command, request.body)),
-                "error"_attr = redact(status.toString()));
+    LOG_DEBUG(21962,
+              1,
+              "Assertion while executing command '{command}' on database '{db}' with "
+              "arguments '{commandArgs}': {error}",
+              "Assertion while executing command",
+              "command"_attr = request.getCommandName(),
+              "db"_attr = request.getDatabase(),
+              "commandArgs"_attr =
+                  redact(ServiceEntryPointCommon::getRedactedCopyForLogging(command, request.body)),
+              "error"_attr = redact(status.toString()));
 
     generateErrorResponse(
         opCtx, replyBuilder, status, metadataBob.obj(), _extraFieldsBuilder.obj());
@@ -1786,11 +1786,11 @@ Future<void> parseCommand(std::shared_ptr<HandleRequest::ExecutionContext> execC
     // Otherwise, reply with the parse error. This is useful for cases where parsing fails due to
     // user-supplied input, such as the document too deep error. Since we failed during parsing, we
     // can't log anything about the command.
-    LOGV2_DEBUG(21963,
-                1,
-                "Assertion while parsing command: {error}",
-                "Assertion while parsing command",
-                "error"_attr = ex.toString());
+    LOG_DEBUG(21963,
+              1,
+              "Assertion while parsing command: {error}",
+              "Assertion while parsing command",
+              "error"_attr = ex.toString());
 
     return ex.toStatus();
 }
@@ -1812,24 +1812,23 @@ Future<void> executeCommand(std::shared_ptr<HandleRequest::ExecutionContext> exe
                 if (execContext->setCommand(CommandHelpers::findCommand(request.getCommandName()));
                     !execContext->getCommand()) {
                     globalCommandRegistry()->incrementUnknownCommands();
-                    LOGV2_DEBUG(21964,
-                                2,
-                                "No such command: {command}",
-                                "Command not found in registry",
-                                "command"_attr = request.getCommandName());
+                    LOG_DEBUG(21964,
+                              2,
+                              "No such command: {command}",
+                              "Command not found in registry",
+                              "command"_attr = request.getCommandName());
                     return Status(ErrorCodes::CommandNotFound,
                                   fmt::format("no such command: '{}'", request.getCommandName()));
                 }
 
                 Command* c = execContext->getCommand();
-                LOGV2_DEBUG(
-                    21965,
-                    2,
-                    "Run command {db}.$cmd {commandArgs}",
-                    "About to run the command",
-                    "db"_attr = request.getDatabase(),
-                    "commandArgs"_attr = redact(
-                        ServiceEntryPointCommon::getRedactedCopyForLogging(c, request.body)));
+                LOG_DEBUG(21965,
+                          2,
+                          "Run command {db}.$cmd {commandArgs}",
+                          "About to run the command",
+                          "db"_attr = request.getDatabase(),
+                          "commandArgs"_attr = redact(
+                              ServiceEntryPointCommon::getRedactedCopyForLogging(c, request.body)));
 
                 {
                     // Try to set this as early as possible, as soon as we have figured out the
@@ -1848,7 +1847,7 @@ Future<void> executeCommand(std::shared_ptr<HandleRequest::ExecutionContext> exe
                     .thenWithState([](auto* runner) { return runner->run(); });
             })
             .tapError([execContext](Status status) {
-                LOGV2_DEBUG(
+                LOG_DEBUG(
                     21966,
                     1,
                     "Assertion while executing command '{command}' on database '{db}': {error}",
@@ -1976,20 +1975,20 @@ void receivedKillCursors(OperationContext* opCtx, const Message& m) {
     static constexpr int kHardKillLimit = 29999;
 
     if (n > kHardKillLimit) {
-        LOGV2_ERROR(4615607,
-                    "Received killCursors, n={numCursors}",
-                    "Received killCursors, exceeded kHardKillLimit",
-                    "numCursors"_attr = n,
-                    "kHardKillLimit"_attr = kHardKillLimit);
+        LOG_ERROR(4615607,
+                  "Received killCursors, n={numCursors}",
+                  "Received killCursors, exceeded kHardKillLimit",
+                  "numCursors"_attr = n,
+                  "kHardKillLimit"_attr = kHardKillLimit);
         uasserted(51250, "Must kill fewer than {} cursors"_format(kHardKillLimit));
     }
 
     if (n > kSoftKillLimit) {
-        LOGV2_WARNING(4615606,
-                      "Received killCursors, n={numCursors}",
-                      "Received killCursors, exceeded kSoftKillLimit",
-                      "numCursors"_attr = n,
-                      "kSoftKillLimit"_attr = kSoftKillLimit);
+        LOG_WARNING(4615606,
+                    "Received killCursors, n={numCursors}",
+                    "Received killCursors, exceeded kSoftKillLimit",
+                    "numCursors"_attr = n,
+                    "kSoftKillLimit"_attr = kSoftKillLimit);
     }
 
     uassert(31289, str::stream() << "must kill at least 1 cursor, n=" << n, n >= 1);
@@ -2000,13 +1999,13 @@ void receivedKillCursors(OperationContext* opCtx, const Message& m) {
     const char* cursorArray = dbmessage.getArray(n);
     int found = runOpKillCursors(opCtx, static_cast<size_t>(n), cursorArray);
 
-    if (shouldLog(MONGO_LOGV2_DEFAULT_COMPONENT, logv2::LogSeverity::Debug(1)) || found != n) {
-        LOGV2_DEBUG(21967,
-                    found == n ? 1 : 0,
-                    "killCursors: found {found} of {numCursors}",
-                    "killCursors found fewer cursors to kill than requested",
-                    "found"_attr = found,
-                    "numCursors"_attr = n);
+    if (shouldLog(MONGO_LOG_DEFAULT_COMPONENT, log::LogSeverity::Debug(1)) || found != n) {
+        LOG_DEBUG(21967,
+                  found == n ? 1 : 0,
+                  "killCursors: found {found} of {numCursors}",
+                  "killCursors found fewer cursors to kill than requested",
+                  "found"_attr = found,
+                  "numCursors"_attr = n);
     }
 }
 
@@ -2239,10 +2238,10 @@ struct UnsupportedOpRunner : SynchronousOpRunner {
     DbResponse runSync() override {
         // For compatibility reasons, we only log incidents of receiving operations that are not
         // supported and return an empty response to the caller.
-        LOGV2(21968,
-              "Operation isn't supported: {operation}",
-              "Operation is not supported",
-              "operation"_attr = static_cast<int>(executionContext->op()));
+        LOG(21968,
+            "Operation isn't supported: {operation}",
+            "Operation is not supported",
+            "operation"_attr = static_cast<int>(executionContext->op()));
         executionContext->currentOp().done();
         executionContext->forceLog = true;
         return {};
@@ -2277,12 +2276,12 @@ DbResponse FireAndForgetOpRunner::runSync() {
         runAndForget();
     } catch (const AssertionException& ue) {
         LastError::get(executionContext->client()).setLastError(ue.code(), ue.reason());
-        LOGV2_DEBUG(21969,
-                    3,
-                    "Caught Assertion in {networkOp}, continuing: {error}",
-                    "Assertion in fire-and-forget operation",
-                    "networkOp"_attr = networkOpToString(executionContext->op()),
-                    "error"_attr = redact(ue));
+        LOG_DEBUG(21969,
+                  3,
+                  "Caught Assertion in {networkOp}, continuing: {error}",
+                  "Assertion in fire-and-forget operation",
+                  "networkOp"_attr = networkOpToString(executionContext->op()),
+                  "error"_attr = redact(ue));
         executionContext->currentOp().debug().errInfo = ue.toStatus();
     }
     // A NotWritablePrimary error can be set either within
@@ -2337,7 +2336,7 @@ Future<void> HandleRequest::completeOperation() try {
     // this op should be written to the profiler.
     const bool shouldProfile =
         currentOp.completeAndLogOperation(opCtx,
-                                          MONGO_LOGV2_DEFAULT_COMPONENT,
+                                          MONGO_LOG_DEFAULT_COMPONENT,
                                           executionContext->getResponse().response.size(),
                                           executionContext->slowMsOverride,
                                           executionContext->forceLog);
@@ -2351,15 +2350,15 @@ Future<void> HandleRequest::completeOperation() try {
     if (shouldProfile) {
         // Performance profiling is on
         if (opCtx->lockState()->isReadLocked()) {
-            LOGV2_DEBUG(21970, 1, "Note: not profiling because of recursive read lock");
+            LOG_DEBUG(21970, 1, "Note: not profiling because of recursive read lock");
         } else if (executionContext->client().isInDirectClient()) {
-            LOGV2_DEBUG(21971, 1, "Note: not profiling because we are in DBDirectClient");
+            LOG_DEBUG(21971, 1, "Note: not profiling because we are in DBDirectClient");
         } else if (executionContext->behaviors->lockedForWriting()) {
             // TODO SERVER-26825: Fix race condition where fsyncLock is acquired post
             // lockedForWriting() call but prior to profile collection lock acquisition.
-            LOGV2_DEBUG(21972, 1, "Note: not profiling because doing fsync+lock");
+            LOG_DEBUG(21972, 1, "Note: not profiling because doing fsync+lock");
         } else if (storageGlobalParams.readOnly) {
-            LOGV2_DEBUG(21973, 1, "Note: not profiling because server is read-only");
+            LOG_DEBUG(21973, 1, "Note: not profiling because server is read-only");
         } else {
             invariant(!opCtx->lockState()->inAWriteUnitOfWork());
             profile(opCtx, executionContext->op());
@@ -2418,7 +2417,7 @@ Future<DbResponse> ServiceEntryPointCommon::handleRequest(
         .then([hr] { return hr->completeOperation(); })
         .onCompletion([hr](Status status) -> Future<DbResponse> {
             if (!status.isOK()) {
-                LOGV2_ERROR(4879802, "Failed to handle request", "error"_attr = redact(status));
+                LOG_ERROR(4879802, "Failed to handle request", "error"_attr = redact(status));
                 return status;
             }
             return hr->executionContext->getResponse();

@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kStorage
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kStorage
 
 #include "mongo/platform/basic.h"
 
@@ -43,7 +43,7 @@
 #include "mongo/db/operation_context.h"
 #include "mongo/db/storage/storage_repair_observer.h"
 #include "mongo/db/storage/write_unit_of_work.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/progress_meter.h"
 #include "mongo/util/str.h"
@@ -173,17 +173,17 @@ StatusWith<std::pair<long long, long long>> IndexBuildsManager::startBuildingInd
                 auto validStatus = validateBSON(data.data(), data.size());
                 if (!validStatus.isOK()) {
                     if (repair == RepairData::kNo) {
-                        LOGV2_FATAL(31396,
-                                    "Invalid BSON detected at {id}: {validStatus}",
-                                    "Invalid BSON detected",
-                                    "id"_attr = id,
-                                    "error"_attr = redact(validStatus));
-                    }
-                    LOGV2_WARNING(20348,
-                                  "Invalid BSON detected at {id}: {validStatus}. Deleting.",
-                                  "Invalid BSON detected; deleting",
+                        LOG_FATAL(31396,
+                                  "Invalid BSON detected at {id}: {validStatus}",
+                                  "Invalid BSON detected",
                                   "id"_attr = id,
                                   "error"_attr = redact(validStatus));
+                    }
+                    LOG_WARNING(20348,
+                                "Invalid BSON detected at {id}: {validStatus}. Deleting.",
+                                "Invalid BSON detected; deleting",
+                                "id"_attr = id,
+                                "error"_attr = redact(validStatus));
                     rs->deleteRecord(opCtx, id);
                     // Must reduce the progress meter's expected total after deleting an invalid
                     // document from the collection.
@@ -253,11 +253,11 @@ StatusWith<std::pair<long long, long long>> IndexBuildsManager::startBuildingInd
                                        << "Moved " << recordsRemoved
                                        << " records to lost and found: " << lostAndFoundNss.ns());
 
-        LOGV2(3956200,
-              "Moved records to lost and found.",
-              "numRecords"_attr = recordsRemoved,
-              "lostAndFoundNss"_attr = lostAndFoundNss,
-              "originalCollection"_attr = ns);
+        LOG(3956200,
+            "Moved records to lost and found.",
+            "numRecords"_attr = recordsRemoved,
+            "lostAndFoundNss"_attr = lostAndFoundNss,
+            "originalCollection"_attr = ns);
 
         numRecords -= recordsRemoved;
         dataSize -= bytesRemoved;
@@ -342,11 +342,11 @@ bool IndexBuildsManager::abortIndexBuildWithoutCleanup(OperationContext* opCtx,
         return false;
     }
 
-    LOGV2(20347,
-          "Index build: aborted without cleanup",
-          "buildUUID"_attr = buildUUID,
-          "collectionUUID"_attr = collection->uuid(),
-          logAttrs(collection->ns()));
+    LOG(20347,
+        "Index build: aborted without cleanup",
+        "buildUUID"_attr = buildUUID,
+        "collectionUUID"_attr = collection->uuid(),
+        logAttrs(collection->ns()));
 
     builder.getValue()->abortWithoutCleanup(opCtx, collection, isResumable);
 

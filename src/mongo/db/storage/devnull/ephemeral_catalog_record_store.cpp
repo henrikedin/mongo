@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kStorage
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kStorage
 
 #include "mongo/db/storage/devnull/ephemeral_catalog_record_store.h"
 
@@ -38,7 +38,7 @@
 #include "mongo/db/operation_context.h"
 #include "mongo/db/record_id_helpers.h"
 #include "mongo/db/storage/recovery_unit.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/str.h"
 #include "mongo/util/unowned_ptr.h"
 
@@ -304,10 +304,10 @@ const EphemeralForTestRecordStore::EphemeralForTestRecord* EphemeralForTestRecor
     WithLock, const RecordId& loc) const {
     Records::const_iterator it = _data->records.find(loc);
     if (it == _data->records.end()) {
-        LOGV2_ERROR(23720,
-                    "EphemeralForTestRecordStore::recordFor cannot find record for {ns}:{loc}",
-                    "ns"_attr = ns(),
-                    "loc"_attr = loc);
+        LOG_ERROR(23720,
+                  "EphemeralForTestRecordStore::recordFor cannot find record for {ns}:{loc}",
+                  "ns"_attr = ns(),
+                  "loc"_attr = loc);
     }
     invariant(it != _data->records.end());
     return &it->second;
@@ -317,10 +317,10 @@ EphemeralForTestRecordStore::EphemeralForTestRecord* EphemeralForTestRecordStore
     WithLock, const RecordId& loc) {
     Records::iterator it = _data->records.find(loc);
     if (it == _data->records.end()) {
-        LOGV2_ERROR(23721,
-                    "EphemeralForTestRecordStore::recordFor cannot find record for {ns}:{loc}",
-                    "ns"_attr = ns(),
-                    "loc"_attr = loc);
+        LOG_ERROR(23721,
+                  "EphemeralForTestRecordStore::recordFor cannot find record for {ns}:{loc}",
+                  "ns"_attr = ns(),
+                  "loc"_attr = loc);
     }
     invariant(it != _data->records.end());
     return &it->second;

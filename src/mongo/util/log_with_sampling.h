@@ -31,8 +31,8 @@
 
 #include <utility>
 
-#include "mongo/logv2/log_component.h"
-#include "mongo/logv2/log_severity.h"
+#include "mongo/log/log_component.h"
+#include "mongo/log/log_severity.h"
 
 namespace mongo {
 
@@ -41,12 +41,11 @@ namespace mongo {
  * is if we should sample this operation for profiling.
  */
 inline std::pair<bool, bool> shouldLogSlowOpWithSampling(OperationContext* opCtx,
-                                                         logv2::LogComponent logComponent,
+                                                         log::LogComponent logComponent,
                                                          Milliseconds opDuration,
                                                          Milliseconds slowMS) {
     // Log the operation if log message verbosity for operation component is >= 1.
-    const bool componentHasTargetLogVerbosity =
-        shouldLog(logComponent, logv2::LogSeverity::Debug(1));
+    const bool componentHasTargetLogVerbosity = shouldLog(logComponent, log::LogSeverity::Debug(1));
 
     const auto client = opCtx->getClient();
     const bool shouldSample =

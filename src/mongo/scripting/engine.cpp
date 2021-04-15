@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kDefault
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kDefault
 
 #include "mongo/platform/basic.h"
 
@@ -41,7 +41,7 @@
 #include "mongo/client/dbclient_cursor.h"
 #include "mongo/db/operation_context.h"
 #include "mongo/db/service_context.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/scripting/dbdirectclient_factory.h"
 #include "mongo/util/ctype.h"
 #include "mongo/util/fail_point.h"
@@ -139,7 +139,7 @@ bool Scope::execFile(const string& filename, bool printResult, bool reportError,
     boost::filesystem::path p(filename);
 #endif
     if (!exists(p)) {
-        LOGV2_ERROR(22779, "file [{filename}] doesn't exist", "filename"_attr = filename);
+        LOG_ERROR(22779, "file [{filename}] doesn't exist", "filename"_attr = filename);
         return false;
     }
 
@@ -158,9 +158,9 @@ bool Scope::execFile(const string& filename, bool printResult, bool reportError,
         }
 
         if (empty) {
-            LOGV2_ERROR(22780,
-                        "directory [{filename}] doesn't have any *.js files",
-                        "filename"_attr = filename);
+            LOG_ERROR(22780,
+                      "directory [{filename}] doesn't have any *.js files",
+                      "filename"_attr = filename);
             return false;
         }
 
@@ -175,7 +175,7 @@ bool Scope::execFile(const string& filename, bool printResult, bool reportError,
 
     fileofs fo = f.len();
     if (fo > kMaxJsFileLength) {
-        LOGV2_WARNING(22778, "attempted to execute javascript file larger than 2GB");
+        LOG_WARNING(22778, "attempted to execute javascript file larger than 2GB");
         return false;
     }
     unsigned len = static_cast<unsigned>(fo);
@@ -253,7 +253,7 @@ void Scope::loadStored(OperationContext* opCtx, bool ignoreNotConnected) {
                 v.type() != BSONType::CodeWScope);
 
         if (MONGO_unlikely(mr_killop_test_fp.shouldFail())) {
-            LOGV2(5062200, "Pausing mr_killop_test_fp for system.js entry", "entryName"_attr = n);
+            LOG(5062200, "Pausing mr_killop_test_fp for system.js entry", "entryName"_attr = n);
 
             /* This thread sleep makes the interrupts in the test come in at a time
              *  where the js misses the interrupt and throw an exception instead of
@@ -271,10 +271,10 @@ void Scope::loadStored(OperationContext* opCtx, bool ignoreNotConnected) {
                 throw;
             }
 
-            LOGV2_ERROR(22781,
-                        "unable to load stored JavaScript function {n_valuestr}(): {setElemEx}",
-                        "n_valuestr"_attr = n.valuestr(),
-                        "setElemEx"_attr = redact(setElemEx));
+            LOG_ERROR(22781,
+                      "unable to load stored JavaScript function {n_valuestr}(): {setElemEx}",
+                      "n_valuestr"_attr = n.valuestr(),
+                      "setElemEx"_attr = redact(setElemEx));
         }
     }
 
@@ -358,7 +358,7 @@ public:
 
         if (scope->hasOutOfMemoryException()) {
             // make some room
-            LOGV2_INFO(22777, "Clearing all idle JS contexts due to out of memory");
+            LOG_INFO(22777, "Clearing all idle JS contexts due to out of memory");
             _pools.clear();
             return;
         }
@@ -437,7 +437,7 @@ public:
         try {
             scopeCache.release(_pool, _real);
         } catch (const ExceptionFor<ErrorCodes::InterruptedAtShutdown>&) {
-            LOGV2(5367100, "Interrupted at shutdown during ~PooledScope()");
+            LOG(5367100, "Interrupted at shutdown during ~PooledScope()");
         }
     }
 

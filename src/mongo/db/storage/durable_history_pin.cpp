@@ -27,10 +27,10 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kStorage
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kStorage
 
-#define LOGV2_FOR_RECOVERY(ID, DLEVEL, MESSAGE, ...) \
-    LOGV2_DEBUG_OPTIONS(ID, DLEVEL, {logv2::LogComponent::kStorageRecovery}, MESSAGE, ##__VA_ARGS__)
+#define LOG_FOR_RECOVERY(ID, DLEVEL, MESSAGE, ...) \
+    LOG_DEBUG_OPTIONS(ID, DLEVEL, {log::LogComponent::kStorageRecovery}, MESSAGE, ##__VA_ARGS__)
 
 #include "mongo/platform/basic.h"
 
@@ -40,7 +40,7 @@
 #include "mongo/db/commands.h"
 #include "mongo/db/db_raii.h"
 #include "mongo/db/service_context.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace mongo {
 
@@ -80,20 +80,20 @@ void DurableHistoryRegistry::reconcilePins(OperationContext* opCtx) {
 
     for (auto& pin : _pins) {
         boost::optional<Timestamp> pinTs = pin->calculatePin(opCtx);
-        LOGV2_FOR_RECOVERY(5384102,
-                           2,
-                           "Reconciling timestamp pin.",
-                           "name"_attr = pin->getName(),
-                           "ts"_attr = pinTs);
+        LOG_FOR_RECOVERY(5384102,
+                         2,
+                         "Reconciling timestamp pin.",
+                         "name"_attr = pin->getName(),
+                         "ts"_attr = pinTs);
         if (pinTs) {
             auto swTimestamp =
                 engine->pinOldestTimestamp(opCtx, pin->getName(), pinTs.get(), false);
             if (!swTimestamp.isOK()) {
-                LOGV2_WARNING(5384105,
-                              "Unable to repin oldest timestamp",
-                              "service"_attr = pin->getName(),
-                              "request"_attr = pinTs.get(),
-                              "error"_attr = swTimestamp.getStatus());
+                LOG_WARNING(5384105,
+                            "Unable to repin oldest timestamp",
+                            "service"_attr = pin->getName(),
+                            "request"_attr = pinTs.get(),
+                            "error"_attr = swTimestamp.getStatus());
             }
         } else {
             engine->unpinOldestTimestamp(pin->getName());

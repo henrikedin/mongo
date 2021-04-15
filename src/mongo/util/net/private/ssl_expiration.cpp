@@ -27,13 +27,13 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kControl
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kControl
 
 #include "mongo/util/net/private/ssl_expiration.h"
 
 #include <string>
 
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/time_support.h"
 
 namespace mongo {
@@ -72,10 +72,10 @@ void CertificateExpirationMonitor::run(Client* client) {
     stdx::lock_guard<Mutex> lock(_mutex);
     if (_certExpiration <= now) {
         // The certificate has expired.
-        LOGV2_WARNING(23785,
-                      "Server certificate is now invalid. It expired on {certExpiration}",
-                      "Server certificate has expired",
-                      "certExpiration"_attr = dateToISOStringUTC(_certExpiration));
+        LOG_WARNING(23785,
+                    "Server certificate is now invalid. It expired on {certExpiration}",
+                    "Server certificate has expired",
+                    "certExpiration"_attr = dateToISOStringUTC(_certExpiration));
         return;
     }
 
@@ -83,12 +83,12 @@ void CertificateExpirationMonitor::run(Client* client) {
 
     if (remainingValidDuration <= 30 * oneDay) {
         // The certificate will expire in the next 30 days
-        LOGV2_WARNING(23786,
-                      "Server certificate will expire on {certExpiration} in "
-                      "{validDuration}.",
-                      "Server certificate will expire soon",
-                      "certExpiration"_attr = dateToISOStringUTC(_certExpiration),
-                      "validDuration"_attr = durationCount<Hours>(remainingValidDuration));
+        LOG_WARNING(23786,
+                    "Server certificate will expire on {certExpiration} in "
+                    "{validDuration}.",
+                    "Server certificate will expire soon",
+                    "certExpiration"_attr = dateToISOStringUTC(_certExpiration),
+                    "validDuration"_attr = durationCount<Hours>(remainingValidDuration));
     }
 }
 

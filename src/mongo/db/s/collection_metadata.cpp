@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kSharding
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kSharding
 
 #include "mongo/platform/basic.h"
 
@@ -38,7 +38,7 @@
 #include "mongo/bson/simple_bsonobj_comparator.h"
 #include "mongo/bson/util/builder.h"
 #include "mongo/db/bson/dotted_path_support.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/s/catalog/type_chunk.h"
 #include "mongo/util/str.h"
 
@@ -96,7 +96,7 @@ boost::optional<ShardKeyPattern> CollectionMetadata::getReshardingKeyIfShouldFor
 
 void CollectionMetadata::throwIfReshardingInProgress(NamespaceString const& nss) const {
     if (isSharded() && getReshardingFields()) {
-        LOGV2(5277122, "reshardCollection in progress", "namespace"_attr = nss.toString());
+        LOG(5277122, "reshardCollection in progress", "namespace"_attr = nss.toString());
 
         uasserted(ErrorCodes::ReshardCollectionInProgress,
                   "reshardCollection is in progress for namespace " + nss.toString());

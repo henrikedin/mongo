@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kFTDC
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kFTDC
 
 #include "mongo/platform/basic.h"
 
@@ -39,7 +39,7 @@
 #include "mongo/db/index/index_descriptor.h"
 #include "mongo/db/timeseries/bucket_catalog.h"
 #include "mongo/db/views/view_catalog.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 #include "mongo/db/stats/storage_stats.h"
 
@@ -67,7 +67,7 @@ Status appendCollectionStorageStats(OperationContext* opCtx,
                          AutoGetCollectionViewMode::kViewsForbidden,
                          waitForLock ? Date_t::max() : Date_t::now());
     } catch (const ExceptionForCat<ErrorCategory::Interruption>&) {
-        LOGV2_DEBUG(3088801, 2, "Failed to retrieve storage statistics", logAttrs(nss));
+        LOG_DEBUG(3088801, 2, "Failed to retrieve storage statistics", logAttrs(nss));
         return Status::OK();
     }
 

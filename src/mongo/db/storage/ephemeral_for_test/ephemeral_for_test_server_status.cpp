@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kFTDC
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kFTDC
 
 #include "mongo/platform/basic.h"
 
@@ -38,7 +38,7 @@
 #include "mongo/db/storage/ephemeral_for_test/ephemeral_for_test_kv_engine.h"
 #include "mongo/db/storage/ephemeral_for_test/ephemeral_for_test_radix_store.h"
 #include "mongo/db/storage/ephemeral_for_test/ephemeral_for_test_record_store.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace mongo {
 namespace ephemeral_for_test {
@@ -55,7 +55,7 @@ BSONObj ServerStatusSection::generateSection(OperationContext* opCtx,
     Lock::GlobalLock lk(
         opCtx, LockMode::MODE_IS, Date_t::now(), Lock::InterruptBehavior::kLeaveUnlocked);
     if (!lk.isLocked()) {
-        LOGV2_DEBUG(4919800, 2, "Failed to retrieve ephemeralForTest statistics");
+        LOG_DEBUG(4919800, 2, "Failed to retrieve ephemeralForTest statistics");
         return BSONObj();
     }
 

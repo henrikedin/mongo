@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTest
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTest
 
 #include "mongo/platform/basic.h"
 
@@ -36,7 +36,7 @@
 #include "mongo/db/update/document_diff_calculator.h"
 #include "mongo/db/update/document_diff_test_helpers.h"
 #include "mongo/db/update/update_oplog_entry_serialization.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/platform/random.h"
 #include "mongo/unittest/bson_test_util.h"
 #include "mongo/unittest/unittest.h"
@@ -102,7 +102,7 @@ std::vector<BSONObj> getDocumentsRepo() {
 void runTest(std::vector<BSONObj> documents, size_t numSimulations) {
     // Shuffle them into a random order
     auto rng = getRNG();
-    LOGV2(4785301, "Seed used for the test ", "seed"_attr = getSeed());
+    LOG(4785301, "Seed used for the test ", "seed"_attr = getSeed());
     for (size_t simulation = 0; simulation < numSimulations; ++simulation) {
         std::shuffle(documents.begin(), documents.end(), rng->urbg());
 

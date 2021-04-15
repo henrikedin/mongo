@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTest
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTest
 
 #include "mongo/platform/basic.h"
 
@@ -41,7 +41,7 @@
 #include "mongo/executor/thread_pool_mock.h"
 #include "mongo/executor/thread_pool_task_executor.h"
 #include "mongo/executor/thread_pool_task_executor_test_fixture.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/unittest/unittest.h"
 #include "mongo/util/duration.h"
 
@@ -114,10 +114,10 @@ protected:
         // Check that it is a ping request from the expected hostAndPort.
         executor::TaskExecutorTest::assertRemoteCommandNameEquals("ping", request);
         ASSERT_EQ(request.target, hostAndPort);
-        LOGV2(23925,
-              "Got mock network operation",
-              "elapsed"_attr = elapsed(),
-              "request"_attr = request.toString());
+        LOG(23925,
+            "Got mock network operation",
+            "elapsed"_attr = elapsed(),
+            "request"_attr = request.toString());
 
         const auto node = replSet->getNode(hostAndPort.toString());
         node->setCommandReply("ping", BSON("ok" << 1));
@@ -136,13 +136,13 @@ protected:
         InNetworkGuard guard(_net);
 
         // Operations can happen inline with advanceTime(), so log before and after the call.
-        LOGV2_DEBUG(23926,
-                    1,
-                    "About to advance time",
-                    "elapsedStart"_attr = elapsed(),
-                    "elapsedEnd"_attr = (elapsed() + d));
+        LOG_DEBUG(23926,
+                  1,
+                  "About to advance time",
+                  "elapsedStart"_attr = elapsed(),
+                  "elapsedEnd"_attr = (elapsed() + d));
         _net->advanceTime(_net->now() + d);
-        LOGV2_DEBUG(23927, 1, "Advanced time", "elapsed"_attr = elapsed());
+        LOG_DEBUG(23927, 1, "Advanced time", "elapsed"_attr = elapsed());
     }
 
     /**

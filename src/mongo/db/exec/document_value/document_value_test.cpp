@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kDefault
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kDefault
 
 #include <math.h>
 #include <sstream>
@@ -44,7 +44,7 @@
 #include "mongo/db/json.h"
 #include "mongo/db/pipeline/field_path.h"
 #include "mongo/dbtests/dbtests.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace DocumentTests {
 
@@ -419,7 +419,7 @@ public:
 
         // Remove the second field.
         md.setField("b", Value());
-        LOGV2(20585, "{md_peek}", "md_peek"_attr = md.peek().toString());
+        LOG(20585, "{md_peek}", "md_peek"_attr = md.peek().toString());
         ASSERT_EQUALS(2ULL, md.peek().computeSize());
         ASSERT(md.peek()["b"].missing());
         ASSERT_EQUALS("a", getNthField(md.peek(), 0).first.toString());
@@ -2143,7 +2143,7 @@ private:
         assertComparison(expectedResult, fromBson(a), fromBson(b));
     }
     void assertComparison(int expectedResult, const Value& a, const Value& b) {
-        LOGV2(20586, "testing {a} and {b}", "a"_attr = a.toString(), "b"_attr = b.toString());
+        LOG(20586, "testing {a} and {b}", "a"_attr = a.toString(), "b"_attr = b.toString());
 
         // reflexivity
         ASSERT_EQUALS(0, cmp(a, a));

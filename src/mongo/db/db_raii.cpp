@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kStorage
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kStorage
 
 #include "mongo/platform/basic.h"
 
@@ -40,7 +40,7 @@
 #include "mongo/db/s/collection_sharding_state.h"
 #include "mongo/db/s/database_sharding_state.h"
 #include "mongo/db/storage/snapshot_helper.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace mongo {
 namespace {
@@ -175,10 +175,10 @@ auto acquireCollectionAndConsistentSnapshot(
             }
         }
 
-        LOGV2_DEBUG(5067701,
-                    3,
-                    "Retrying acquiring state for lock-free read because collection, catalog or "
-                    "replication state changed.");
+        LOG_DEBUG(5067701,
+                  3,
+                  "Retrying acquiring state for lock-free read because collection, catalog or "
+                  "replication state changed.");
         reset();
         opCtx->recoveryUnit()->abandonSnapshot();
     }
@@ -308,10 +308,10 @@ AutoGetCollectionForReadBase<AutoGetCollectionType, EmplaceAutoCollFunc>::
         // lock or reading at a timestamp.
         if (readSource == RecoveryUnit::ReadSource::kNoTimestamp && callerWasConflicting &&
             !nss.mustBeAppliedInOwnOplogBatch() && shouldReadAtLastApplied) {
-            LOGV2_FATAL(4728700,
-                        "Reading from replicated collection on a secondary without read timestamp "
-                        "or PBWM lock",
-                        "collection"_attr = nss);
+            LOG_FATAL(4728700,
+                      "Reading from replicated collection on a secondary without read timestamp "
+                      "or PBWM lock",
+                      "collection"_attr = nss);
         }
 
         auto minSnapshot = coll->getMinimumVisibleSnapshot();
@@ -347,12 +347,12 @@ AutoGetCollectionForReadBase<AutoGetCollectionType, EmplaceAutoCollFunc>::
         if (readSource == RecoveryUnit::ReadSource::kLastApplied ||
             readSource == RecoveryUnit::ReadSource::kNoOverlap) {
             invariant(readTimestamp);
-            LOGV2(20576,
-                  "Tried reading at a timestamp, but future catalog changes are pending. "
-                  "Trying again",
-                  "readTimestamp"_attr = *readTimestamp,
-                  "collection"_attr = nss.ns(),
-                  "collectionMinSnapshot"_attr = *minSnapshot);
+            LOG(20576,
+                "Tried reading at a timestamp, but future catalog changes are pending. "
+                "Trying again",
+                "readTimestamp"_attr = *readTimestamp,
+                "collection"_attr = nss.ns(),
+                "collectionMinSnapshot"_attr = *minSnapshot);
 
             // If we are AutoGetting multiple collections, it is possible that we've already done
             // some reads and locked in our snapshot.  At this point, the only way out is to fail

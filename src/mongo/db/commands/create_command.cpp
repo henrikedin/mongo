@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kCommand
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kCommand
 
 #include "mongo/platform/basic.h"
 
@@ -39,7 +39,7 @@
 #include "mongo/db/query/collation/collator_factory_interface.h"
 #include "mongo/db/s/operation_sharding_state.h"
 #include "mongo/db/storage/storage_parameters_gen.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace mongo {
 namespace {
@@ -105,7 +105,7 @@ public:
             CreateCommandReply reply;
             if (cmd.getAutoIndexId()) {
 #define DEPR_23800 "The autoIndexId option is deprecated and will be removed in a future release"
-                LOGV2_WARNING(23800, DEPR_23800);
+                LOG_WARNING(23800, DEPR_23800);
                 reply.setNote(StringData(DEPR_23800));
 #undef DEPR_23800
             }

@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kReplication
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kReplication
 
 #include "mongo/platform/basic.h"
 
@@ -44,7 +44,7 @@
 #include "mongo/db/session_catalog_mongod.h"
 #include "mongo/db/transaction_history_iterator.h"
 #include "mongo/db/transaction_participant.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace mongo {
 using repl::OplogEntry;
@@ -84,7 +84,7 @@ Status _applyOperationsForTransaction(OperationContext* opCtx,
                  oplogApplicationMode == repl::OplogApplication::Mode::kRecovering);
 
             if (!ignoreException) {
-                LOGV2_DEBUG(
+                LOG_DEBUG(
                     21845,
                     1,
                     "Error applying operation in transaction. {error}- oplog entry: {oplogEntry}",
@@ -93,17 +93,17 @@ Status _applyOperationsForTransaction(OperationContext* opCtx,
                     "oplogEntry"_attr = redact(op.toBSONForLogging()));
                 return exceptionToStatus();
             }
-            LOGV2_DEBUG(21846,
-                        1,
-                        "Encountered but ignoring error: {error} while applying operations for "
-                        "transaction because we are either in initial "
-                        "sync or recovering mode - oplog entry: {oplogEntry}",
-                        "Encountered but ignoring error while applying operations for transaction "
-                        "because we are either in initial sync or recovering mode",
-                        "error"_attr = redact(ex),
-                        "oplogEntry"_attr = redact(op.toBSONForLogging()),
-                        "oplogApplicationMode"_attr =
-                            repl::OplogApplication::modeToString(oplogApplicationMode));
+            LOG_DEBUG(21846,
+                      1,
+                      "Encountered but ignoring error: {error} while applying operations for "
+                      "transaction because we are either in initial "
+                      "sync or recovering mode - oplog entry: {oplogEntry}",
+                      "Encountered but ignoring error while applying operations for transaction "
+                      "because we are either in initial sync or recovering mode",
+                      "error"_attr = redact(ex),
+                      "oplogEntry"_attr = redact(op.toBSONForLogging()),
+                      "oplogApplicationMode"_attr =
+                          repl::OplogApplication::modeToString(oplogApplicationMode));
         }
     }
     return Status::OK();
@@ -400,11 +400,11 @@ Status _applyPrepareTransaction(OperationContext* opCtx,
         auto ns = op.getNss();
         auto uuid = *op.getUuid();
         if (indexBuildsCoord->inProgForCollection(uuid, IndexBuildProtocol::kSinglePhase)) {
-            LOGV2_WARNING(21849,
-                          "Blocking replication until single-phase index builds are finished on "
-                          "collection, due to prepared transaction",
-                          "namespace"_attr = redact(ns.toString()),
-                          "uuid"_attr = uuid);
+            LOG_WARNING(21849,
+                        "Blocking replication until single-phase index builds are finished on "
+                        "collection, due to prepared transaction",
+                        "namespace"_attr = redact(ns.toString()),
+                        "uuid"_attr = uuid);
             indexBuildsCoord->awaitNoIndexBuildInProgressForCollection(
                 opCtx, uuid, IndexBuildProtocol::kSinglePhase);
         }
@@ -447,7 +447,7 @@ Status _applyPrepareTransaction(OperationContext* opCtx,
         auto status = _applyOperationsForTransaction(opCtx, ops, mode);
 
         if (MONGO_unlikely(applyPrepareTxnOpsFailsWithWriteConflict.shouldFail())) {
-            LOGV2(4947101, "Hit applyPrepareTxnOpsFailsWithWriteConflict failpoint");
+            LOG(4947101, "Hit applyPrepareTxnOpsFailsWithWriteConflict failpoint");
             status = Status(ErrorCodes::WriteConflict,
                             "Prepare transaction apply ops failed due to write conflict");
         }
@@ -458,7 +458,7 @@ Status _applyPrepareTransaction(OperationContext* opCtx,
         fassert(31137, status);
 
         if (MONGO_unlikely(applyOpsHangBeforePreparingTransaction.shouldFail())) {
-            LOGV2(21847, "Hit applyOpsHangBeforePreparingTransaction failpoint");
+            LOG(21847, "Hit applyOpsHangBeforePreparingTransaction failpoint");
             applyOpsHangBeforePreparingTransaction.pauseWhileSet(opCtx);
         }
 
@@ -510,7 +510,7 @@ Status applyPrepareTransaction(OperationContext* opCtx,
     switch (mode) {
         case repl::OplogApplication::Mode::kRecovering: {
             if (!serverGlobalParams.enableMajorityReadConcern) {
-                LOGV2_ERROR(
+                LOG_ERROR(
                     21850,
                     "Cannot replay a prepared transaction when 'enableMajorityReadConcern' is "
                     "set to false. Restart the server with --enableMajorityReadConcern=true "
@@ -541,7 +541,7 @@ Status applyPrepareTransaction(OperationContext* opCtx,
 
 void reconstructPreparedTransactions(OperationContext* opCtx, repl::OplogApplication::Mode mode) {
     if (MONGO_unlikely(skipReconstructPreparedTransactions.shouldFail())) {
-        LOGV2(21848, "Hit skipReconstructPreparedTransactions failpoint");
+        LOG(21848, "Hit skipReconstructPreparedTransactions failpoint");
         return;
     }
 

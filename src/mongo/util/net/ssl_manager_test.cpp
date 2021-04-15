@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTest
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTest
 
 #include <fstream>
 
@@ -41,7 +41,7 @@
 #include "mongo/util/net/ssl_manager.h"
 #include "mongo/util/net/ssl_options.h"
 
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/unittest/unittest.h"
 
 #if MONGO_CONFIG_SSL_PROVIDER == MONGO_CONFIG_SSL_PROVIDER_OPENSSL
@@ -59,12 +59,12 @@ public:
     void startSession(transport::SessionHandle session) override {
         stdx::unique_lock<Latch> lk(_mutex);
         _sessions.push_back(std::move(session));
-        LOGV2(2303202, "started session");
+        LOG(2303202, "started session");
         _cv.notify_one();
     }
 
     void endAllSessions(transport::Session::TagMask tags) override {
-        LOGV2(2303302, "end all sessions");
+        LOG(2303302, "end all sessions");
         std::vector<transport::SessionHandle> old_sessions;
         {
             stdx::unique_lock<Latch> lock(_mutex);
@@ -149,17 +149,17 @@ TEST(SSLManager, matchHostname) {
     for (const auto& test : tests) {
         if (bool(test.expected) != hostNameMatchForX509Certificates(test.hostname, test.certName)) {
             failure = true;
-            LOGV2_DEBUG(23266,
-                        1,
-                        "Failure for Hostname: {test_hostname} Certificate: {test_certName}",
-                        "test_hostname"_attr = test.hostname,
-                        "test_certName"_attr = test.certName);
+            LOG_DEBUG(23266,
+                      1,
+                      "Failure for Hostname: {test_hostname} Certificate: {test_certName}",
+                      "test_hostname"_attr = test.hostname,
+                      "test_certName"_attr = test.certName);
         } else {
-            LOGV2_DEBUG(23267,
-                        1,
-                        "Passed for Hostname: {test_hostname} Certificate: {test_certName}",
-                        "test_hostname"_attr = test.hostname,
-                        "test_certName"_attr = test.certName);
+            LOG_DEBUG(23267,
+                      1,
+                      "Passed for Hostname: {test_hostname} Certificate: {test_certName}",
+                      "test_hostname"_attr = test.hostname,
+                      "test_certName"_attr = test.certName);
         }
     }
     ASSERT_FALSE(failure);
@@ -468,7 +468,7 @@ TEST(SSLManager, DNParsingAndNormalization) {
           {"2.5.4.7", "大田区, 東京都"}}}};
 
     for (const auto& test : tests) {
-        LOGV2(23268, "Testing DN \"{test_first}\"", "test_first"_attr = test.first);
+        LOG(23268, "Testing DN \"{test_first}\"", "test_first"_attr = test.first);
         auto swDN = parseDN(test.first);
         ASSERT_OK(swDN.getStatus());
         ASSERT_OK(swDN.getValue().normalizeStrings());
@@ -480,7 +480,7 @@ TEST(SSLManager, DNParsingAndNormalization) {
 TEST(SSLManager, BadDNParsing) {
     std::vector<std::string> tests = {"CN=#12345", R"(CN=\B)", R"(CN=<", "\)"};
     for (const auto& test : tests) {
-        LOGV2(23269, "Testing bad DN: \"{test}\"", "test"_attr = test);
+        LOG(23269, "Testing bad DN: \"{test}\"", "test"_attr = test);
         auto swDN = parseDN(test);
         ASSERT_NOT_OK(swDN.getStatus());
     }

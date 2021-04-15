@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kSharding
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kSharding
 
 #include "mongo/platform/basic.h"
 
@@ -45,7 +45,7 @@
 #include "mongo/db/s/shard_filtering_metadata_refresh.h"
 #include "mongo/db/s/sharding_state.h"
 #include "mongo/db/s/start_chunk_clone_request.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/s/chunk_version.h"
 #include "mongo/s/request_types/migration_secondary_throttle_options.h"
 #include "mongo/util/assert_util.h"
@@ -214,10 +214,10 @@ public:
         Status const status = mdm->startCommit(sessionId);
         mdm->report(result, opCtx, false);
         if (!status.isOK()) {
-            LOGV2(22014,
-                  "_recvChunkCommit failed: {error}",
-                  "_recvChunkCommit failed",
-                  "error"_attr = redact(status));
+            LOG(22014,
+                "_recvChunkCommit failed: {error}",
+                "_recvChunkCommit failed",
+                "error"_attr = redact(status));
             uassertStatusOK(status);
         }
         return true;
@@ -265,10 +265,10 @@ public:
             Status const status = mdm->abort(migrationSessionIdStatus.getValue());
             mdm->report(result, opCtx, false);
             if (!status.isOK()) {
-                LOGV2(22015,
-                      "_recvChunkAbort failed: {error}",
-                      "_recvChunkAbort failed",
-                      "error"_attr = redact(status));
+                LOG(22015,
+                    "_recvChunkAbort failed: {error}",
+                    "_recvChunkAbort failed",
+                    "error"_attr = redact(status));
                 uassertStatusOK(status);
             }
         } else if (migrationSessionIdStatus == ErrorCodes::NoSuchKey) {

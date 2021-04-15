@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kQuery
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kQuery
 
 #include "mongo/platform/basic.h"
 
@@ -40,7 +40,7 @@
 #include "mongo/db/exec/document_value/value.h"
 #include "mongo/db/pipeline/expression.h"
 #include "mongo/db/pipeline/expression_context.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace mongo {
 using boost::intrusive_ptr;
@@ -121,10 +121,10 @@ DocumentSource::GetNextResult DocumentSourceSampleFromRandomCursor::getNextNonDu
                 if (_seenDocs.insert(std::move(idField)).second) {
                     return nextInput;
                 }
-                LOGV2_DEBUG(20903,
-                            1,
-                            "$sample encountered duplicate document: {nextInput_getDocument}",
-                            "nextInput_getDocument"_attr = nextInput.getDocument().toString());
+                LOG_DEBUG(20903,
+                          1,
+                          "$sample encountered duplicate document: {nextInput_getDocument}",
+                          "nextInput_getDocument"_attr = nextInput.getDocument().toString());
                 break;  // Try again with the next document.
             }
             case GetNextResult::ReturnStatus::kPauseExecution: {

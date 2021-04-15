@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kCommand
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kCommand
 
 #include "mongo/platform/basic.h"
 
@@ -43,7 +43,7 @@
 #include "mongo/db/commands/kill_op_cmd_base.h"
 #include "mongo/db/operation_context.h"
 #include "mongo/db/service_context.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/str.h"
 
 namespace mongo {
@@ -58,7 +58,7 @@ public:
 
         // Used by tests to check if auth checks passed.
         result.append("info", "attempting to kill op");
-        LOGV2(20482, "Going to kill op: {opId}", "Going to kill op", "opId"_attr = opId);
+        LOG(20482, "Going to kill op: {opId}", "Going to kill op", "opId"_attr = opId);
         KillOpCmdBase::killLocalOperation(opCtx, opId);
 
         // killOp always reports success once past the auth check.

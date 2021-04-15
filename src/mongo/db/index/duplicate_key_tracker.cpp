@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kIndex
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kIndex
 
 #include "mongo/platform/basic.h"
 
@@ -38,7 +38,7 @@
 #include "mongo/db/index/index_access_method.h"
 #include "mongo/db/keypattern.h"
 #include "mongo/db/storage/execution_context.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/assert_util.h"
 
 namespace mongo {
@@ -77,10 +77,10 @@ void DuplicateKeyTracker::finalizeTemporaryTable(OperationContext* opCtx,
 Status DuplicateKeyTracker::recordKey(OperationContext* opCtx, const KeyString::Value& key) {
     invariant(opCtx->lockState()->inAWriteUnitOfWork());
 
-    LOGV2_DEBUG(20676,
-                1,
-                "Index build: recording duplicate key conflict on unique index",
-                "index"_attr = _indexCatalogEntry->descriptor()->indexName());
+    LOG_DEBUG(20676,
+              1,
+              "Index build: recording duplicate key conflict on unique index",
+              "index"_attr = _indexCatalogEntry->descriptor()->indexName());
 
     // The KeyString::Value will be serialized in the format [KeyString][TypeBits]. We need to
     // store the TypeBits for error reporting later on. The RecordId does not need to be stored, so
@@ -97,10 +97,10 @@ Status DuplicateKeyTracker::recordKey(OperationContext* opCtx, const KeyString::
     opCtx->recoveryUnit()->onRollback([this]() { _duplicateCounter.fetchAndAdd(-1); });
 
     if (numDuplicates % 1000 == 0) {
-        LOGV2_INFO(4806700,
-                   "Index build: high number of duplicate keys on unique index",
-                   "index"_attr = _indexCatalogEntry->descriptor()->indexName(),
-                   "numDuplicateKeys"_attr = numDuplicates);
+        LOG_INFO(4806700,
+                 "Index build: high number of duplicate keys on unique index",
+                 "index"_attr = _indexCatalogEntry->descriptor()->indexName(),
+                 "numDuplicateKeys"_attr = numDuplicates);
     }
 
     return Status::OK();
@@ -148,11 +148,11 @@ Status DuplicateKeyTracker::checkConstraints(OperationContext* opCtx) const {
     invariant(resolved == _duplicateCounter.load());
 
     int logLevel = (resolved > 0) ? 0 : 1;
-    LOGV2_DEBUG(20677,
-                logLevel,
-                "index build: resolved duplicate key conflicts for unique index",
-                "numResolved"_attr = resolved,
-                "indexName"_attr = _indexCatalogEntry->descriptor()->indexName());
+    LOG_DEBUG(20677,
+              logLevel,
+              "index build: resolved duplicate key conflicts for unique index",
+              "numResolved"_attr = resolved,
+              "indexName"_attr = _indexCatalogEntry->descriptor()->indexName());
     return Status::OK();
 }
 

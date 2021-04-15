@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kAccessControl
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kAccessControl
 
 #include "mongo/platform/basic.h"
 
@@ -38,7 +38,7 @@
 #include "mongo/base/status.h"
 #include "mongo/db/auth/enable_localhost_auth_bypass_parameter_gen.h"
 #include "mongo/db/client.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/debug_util.h"
 
 namespace mongo {
@@ -70,9 +70,9 @@ void AuthzSessionExternalStateServerCommon::_checkShouldAllowLocalhost(Operation
     _allowLocalhost = !_authzManager->hasAnyPrivilegeDocuments(opCtx);
     if (_allowLocalhost) {
         std::call_once(checkShouldAllowLocalhostOnceFlag, []() {
-            LOGV2(20248,
-                  "note: no users configured in admin.system.users, allowing localhost "
-                  "access");
+            LOG(20248,
+                "note: no users configured in admin.system.users, allowing localhost "
+                "access");
         });
     }
 }

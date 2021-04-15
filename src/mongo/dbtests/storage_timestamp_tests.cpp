@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTest
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTest
 
 #include "mongo/platform/basic.h"
 
@@ -87,7 +87,7 @@
 #include "mongo/db/transaction_participant_gen.h"
 #include "mongo/db/vector_clock_mutable.h"
 #include "mongo/dbtests/dbtests.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/stdx/future.h"
 #include "mongo/unittest/unittest.h"
@@ -1747,10 +1747,10 @@ public:
         auto multikeyNoopTs = multikeyNoopTime.asTimestamp();
         auto commitEntryTs = multikeyNoopTime.addTicks(1).asTimestamp();
 
-        LOGV2(22502, "Present time", "timestamp"_attr = presentTs);
-        LOGV2(22503, "Before transaction time", "timestamp"_attr = beforeTxnTs);
-        LOGV2(4801000, "Multikey noop time", "timestamp"_attr = multikeyNoopTs);
-        LOGV2(22504, "Commit entry time", "timestamp"_attr = commitEntryTs);
+        LOG(22502, "Present time", "timestamp"_attr = presentTs);
+        LOG(22503, "Before transaction time", "timestamp"_attr = beforeTxnTs);
+        LOG(4801000, "Multikey noop time", "timestamp"_attr = multikeyNoopTs);
+        LOG(22504, "Commit entry time", "timestamp"_attr = commitEntryTs);
 
         const auto sessionId = makeLogicalSessionIdForTest();
         _opCtx->setLogicalSessionId(sessionId);
@@ -2934,7 +2934,7 @@ public:
         // NOTE: This test does not test any timestamp reads.
         const LogicalTime insert1 = _clock->tickClusterTime(1);
         {
-            LOGV2(22505, "inserting {badDoc1}", "badDoc1"_attr = badDoc1);
+            LOG(22505, "inserting {badDoc1}", "badDoc1"_attr = badDoc1);
             WriteUnitOfWork wuow(_opCtx);
             insertDocument(collection.get(),
                            InsertStatement(badDoc1, insert1.asTimestamp(), presentTerm));
@@ -2943,7 +2943,7 @@ public:
 
         const LogicalTime insert2 = _clock->tickClusterTime(1);
         {
-            LOGV2(22506, "inserting {badDoc2}", "badDoc2"_attr = badDoc2);
+            LOG(22506, "inserting {badDoc2}", "badDoc2"_attr = badDoc2);
             WriteUnitOfWork wuow(_opCtx);
             insertDocument(collection.get(),
                            InsertStatement(badDoc2, insert2.asTimestamp(), presentTerm));
@@ -3003,7 +3003,7 @@ public:
         {
             // This write will not succeed because the node is a primary and the document is not
             // indexable.
-            LOGV2(22507, "attempting to insert {badDoc3}", "badDoc3"_attr = badDoc3);
+            LOG(22507, "attempting to insert {badDoc3}", "badDoc3"_attr = badDoc3);
             WriteUnitOfWork wuow(_opCtx);
             ASSERT_THROWS_CODE(
                 collection->insertDocument(
@@ -3466,9 +3466,9 @@ public:
     }
 
     void logTimestamps() const {
-        LOGV2(22508, "Present TS: {presentTs}", "presentTs"_attr = presentTs);
-        LOGV2(22509, "Before transaction TS: {beforeTxnTs}", "beforeTxnTs"_attr = beforeTxnTs);
-        LOGV2(22510, "Commit entry TS: {commitEntryTs}", "commitEntryTs"_attr = commitEntryTs);
+        LOG(22508, "Present TS: {presentTs}", "presentTs"_attr = presentTs);
+        LOG(22509, "Before transaction TS: {beforeTxnTs}", "beforeTxnTs"_attr = beforeTxnTs);
+        LOG(22510, "Commit entry TS: {commitEntryTs}", "commitEntryTs"_attr = commitEntryTs);
     }
 
     BSONObj getSessionTxnInfoAtTimestamp(const Timestamp& ts, bool expected) {
@@ -3668,7 +3668,7 @@ public:
     void run() {
         auto txnParticipant = TransactionParticipant::get(_opCtx);
         ASSERT(txnParticipant);
-        LOGV2(22511, "PrepareTS: {prepareEntryTs}", "prepareEntryTs"_attr = prepareEntryTs);
+        LOG(22511, "PrepareTS: {prepareEntryTs}", "prepareEntryTs"_attr = prepareEntryTs);
         logTimestamps();
 
         const auto prepareFilter = BSON("ts" << prepareEntryTs);
@@ -3863,8 +3863,8 @@ public:
     void run() {
         auto txnParticipant = TransactionParticipant::get(_opCtx);
         ASSERT(txnParticipant);
-        LOGV2(22512, "PrepareTS: {prepareEntryTs}", "prepareEntryTs"_attr = prepareEntryTs);
-        LOGV2(22513, "AbortTS: {abortEntryTs}", "abortEntryTs"_attr = abortEntryTs);
+        LOG(22512, "PrepareTS: {prepareEntryTs}", "prepareEntryTs"_attr = prepareEntryTs);
+        LOG(22513, "AbortTS: {abortEntryTs}", "abortEntryTs"_attr = abortEntryTs);
 
         const auto prepareFilter = BSON("ts" << prepareEntryTs);
         const auto abortFilter = BSON("ts" << abortEntryTs);
@@ -3968,7 +3968,7 @@ public:
         const auto prepareTs = clusterTime.addTicks(1).asTimestamp();
         const auto commitTs = clusterTime.addTicks(2).asTimestamp();
         commitEntryTs = clusterTime.addTicks(3).asTimestamp();
-        LOGV2(22514, "Prepare TS: {prepareTs}", "prepareTs"_attr = prepareTs);
+        LOG(22514, "Prepare TS: {prepareTs}", "prepareTs"_attr = prepareTs);
         logTimestamps();
 
         {
@@ -4070,7 +4070,7 @@ public:
         const auto clusterTime = currentTime.clusterTime();
         const auto prepareTs = clusterTime.addTicks(1).asTimestamp();
         const auto abortEntryTs = clusterTime.addTicks(2).asTimestamp();
-        LOGV2(22515, "Prepare TS: {prepareTs}", "prepareTs"_attr = prepareTs);
+        LOG(22515, "Prepare TS: {prepareTs}", "prepareTs"_attr = prepareTs);
         logTimestamps();
 
         {
@@ -4165,10 +4165,10 @@ public:
         auto storageEngine = cc().getServiceContext()->getStorageEngine();
         if (!storageEngine->supportsReadConcernSnapshot() ||
             !mongo::serverGlobalParams.enableMajorityReadConcern) {
-            LOGV2(22516,
-                  "Skipping this test suite because storage engine {storageGlobalParams_engine} "
-                  "does not support timestamp writes.",
-                  "storageGlobalParams_engine"_attr = storageGlobalParams.engine);
+            LOG(22516,
+                "Skipping this test suite because storage engine {storageGlobalParams_engine} "
+                "does not support timestamp writes.",
+                "storageGlobalParams_engine"_attr = storageGlobalParams.engine);
             return true;
         }
         return false;

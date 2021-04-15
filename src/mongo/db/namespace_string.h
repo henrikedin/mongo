@@ -39,7 +39,7 @@
 #include "mongo/bson/util/builder.h"
 #include "mongo/db/repl/optime.h"
 #include "mongo/db/server_options.h"
-#include "mongo/logv2/log_attr.h"
+#include "mongo/log/log_attr.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/uuid.h"
 
@@ -271,7 +271,7 @@ public:
     // The following methods assume isValid() is true for this NamespaceString.
     //
 
-    bool isHealthlog() const {
+    bool isHealthLOG() const {
         return isLocal() && coll() == "system.healthlog";
     }
     bool isSystem() const {

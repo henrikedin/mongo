@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kCommand
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kCommand
 
 #include "mongo/platform/basic.h"
 
@@ -73,7 +73,7 @@
 #include "mongo/db/storage/duplicate_key_error_info.h"
 #include "mongo/db/transaction_participant.h"
 #include "mongo/db/write_concern.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/log_and_backoff.h"
 #include "mongo/util/scopeguard.h"
 
@@ -97,13 +97,12 @@ boost::optional<BSONObj> advanceExecutor(OperationContext* opCtx,
     } catch (DBException& exception) {
         auto&& explainer = exec->getPlanExplainer();
         auto&& [stats, _] = explainer.getWinningPlanStats(ExplainOptions::Verbosity::kExecStats);
-        LOGV2_WARNING(
-            23802,
-            "Plan executor error during findAndModify: {error}, stats: {stats}, cmd: {cmd}",
-            "Plan executor error during findAndModify",
-            "error"_attr = exception.toStatus(),
-            "stats"_attr = redact(stats),
-            "cmd"_attr = request.toBSON(BSONObj() /* commandPassthroughFields */));
+        LOG_WARNING(23802,
+                    "Plan executor error during findAndModify: {error}, stats: {stats}, cmd: {cmd}",
+                    "Plan executor error during findAndModify",
+                    "error"_attr = exception.toStatus(),
+                    "stats"_attr = redact(stats),
+                    "cmd"_attr = request.toBSON(BSONObj() /* commandPassthroughFields */));
 
         exception.addContext("Plan executor error during findAndModify");
         throw;
@@ -695,8 +694,8 @@ write_ops::FindAndModifyCommandReply CmdFindAndModify::Invocation::typedRun(
 
                     ++retryAttempts;
                     logAndBackoff(4721200,
-                                  ::mongo::logv2::LogComponent::kWrite,
-                                  logv2::LogSeverity::Debug(1),
+                                  ::mongo::log::LogComponent::kWrite,
+                                  log::LogSeverity::Debug(1),
                                   retryAttempts,
                                   "Caught DuplicateKey exception during findAndModify upsert",
                                   "namespace"_attr = nsString.ns());

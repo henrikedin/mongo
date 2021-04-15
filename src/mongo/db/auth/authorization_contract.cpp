@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kAccessControl
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kAccessControl
 
 #include "mongo/db/auth/authorization_contract.h"
 
@@ -35,7 +35,7 @@
 #include "mongo/db/auth/access_checks_gen.h"
 #include "mongo/db/auth/action_type_gen.h"
 #include "mongo/db/auth/privilege.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/debug_util.h"
 
 namespace mongo {
@@ -80,7 +80,7 @@ bool AuthorizationContract::contains(const AuthorizationContract& other) const {
                 }
             }
 
-            LOGV2(5452402, "Missing Auth Checks", "checks"_attr = builder.arr());
+            LOG(5452402, "Missing Auth Checks", "checks"_attr = builder.arr());
         }
 
         return false;
@@ -99,10 +99,10 @@ bool AuthorizationContract::contains(const AuthorizationContract& other) const {
                     }
                 }
 
-                LOGV2(5452403,
-                      "Missing Action Types for resource",
-                      "resource"_attr = MatchType_serializer(static_cast<MatchTypeEnum>(i)),
-                      "actions"_attr = builder.arr());
+                LOG(5452403,
+                    "Missing Action Types for resource",
+                    "resource"_attr = MatchType_serializer(static_cast<MatchTypeEnum>(i)),
+                    "actions"_attr = builder.arr());
             }
 
             return false;

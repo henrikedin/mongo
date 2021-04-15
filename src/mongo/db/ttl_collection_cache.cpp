@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kStorage
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kStorage
 
 #include "mongo/platform/basic.h"
 
@@ -36,7 +36,7 @@
 #include <algorithm>
 
 #include "mongo/db/service_context.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/fail_point.h"
 
 namespace mongo {
@@ -58,7 +58,7 @@ void TTLCollectionCache::registerTTLInfo(UUID uuid, const Info& info) {
     }
 
     if (MONGO_unlikely(hangTTLCollectionCacheAfterRegisteringInfo.shouldFail())) {
-        LOGV2(4664000, "Hanging due to hangTTLCollectionCacheAfterRegisteringInfo fail point");
+        LOG(4664000, "Hanging due to hangTTLCollectionCacheAfterRegisteringInfo fail point");
         hangTTLCollectionCacheAfterRegisteringInfo.pauseWhileSet();
     }
 }

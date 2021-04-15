@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kCommand
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kCommand
 
 #include "mongo/platform/basic.h"
 
@@ -54,7 +54,7 @@
 #include "mongo/executor/network_interface_factory.h"
 #include "mongo/executor/remote_command_request.h"
 #include "mongo/executor/thread_pool_task_executor.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/concurrency/thread_pool.h"
 #include "mongo/util/synchronized_value.h"
 
@@ -397,19 +397,19 @@ void MirrorMaestroImpl::_mirror(const std::vector<HostAndPort>& hosts,
             }
 
             if (ErrorCodes::isRetriableError(args.response.status)) {
-                LOGV2_WARNING(5089200,
-                              "Received mirroring response with a retriable failure",
-                              "error"_attr = args.response);
+                LOG_WARNING(5089200,
+                            "Received mirroring response with a retriable failure",
+                            "error"_attr = args.response);
                 return;
             } else if (!args.response.isOK()) {
-                LOGV2_FATAL(4717301,
-                            "Received mirroring response with a non-okay status",
-                            "error"_attr = args.response);
+                LOG_FATAL(4717301,
+                          "Received mirroring response with a non-okay status",
+                          "error"_attr = args.response);
             }
 
             gMirroredReadsSection.resolved.fetchAndAdd(1);
             gMirroredReadsSection.resolvedBreakdown.onResponseReceived(host);
-            LOGV2_DEBUG(
+            LOG_DEBUG(
                 31457, 4, "Response received", "host"_attr = host, "response"_attr = args.response);
         };
 
@@ -420,7 +420,7 @@ void MirrorMaestroImpl::_mirror(const std::vector<HostAndPort>& hosts,
             newRequest.fireAndForgetMode = executor::RemoteCommandRequest::FireAndForgetMode::kOn;
         }
 
-        LOGV2_DEBUG(31455, 4, "About to mirror", "host"_attr = host, "request"_attr = newRequest);
+        LOG_DEBUG(31455, 4, "About to mirror", "host"_attr = host, "request"_attr = newRequest);
 
         auto status =
             _executor->scheduleRemoteCommand(newRequest, std::move(mirrorResponseCallback))
@@ -430,11 +430,11 @@ void MirrorMaestroImpl::_mirror(const std::vector<HostAndPort>& hosts,
         gMirroredReadsSection.sent.fetchAndAdd(1);
     }
 } catch (const DBException& e) {
-    LOGV2_DEBUG(31456, 2, "Mirroring failed", "reason"_attr = e);
+    LOG_DEBUG(31456, 2, "Mirroring failed", "reason"_attr = e);
 }
 
 void MirrorMaestroImpl::init(ServiceContext* serviceContext) noexcept {
-    LOGV2_DEBUG(31452, 2, "Initializing MirrorMaestro");
+    LOG_DEBUG(31452, 2, "Initializing MirrorMaestro");
 
     // Until the end of this scope, no other thread can mutate _initGuard.liveness, so no other
     // thread can be in the critical section of init() or shutdown().
@@ -448,7 +448,7 @@ void MirrorMaestroImpl::init(ServiceContext* serviceContext) noexcept {
             return;
         } break;
         case Liveness::kShutdown: {
-            LOGV2_DEBUG(31453, 2, "Cannot initialize an already shutdown MirrorMaestro");
+            LOG_DEBUG(31453, 2, "Cannot initialize an already shutdown MirrorMaestro");
             return;
         } break;
     };
@@ -485,7 +485,7 @@ void MirrorMaestroImpl::init(ServiceContext* serviceContext) noexcept {
 }
 
 void MirrorMaestroImpl::shutdown() noexcept {
-    LOGV2_DEBUG(31454, 2, "Shutting down MirrorMaestro");
+    LOG_DEBUG(31454, 2, "Shutting down MirrorMaestro");
 
     // Until the end of this scope, no other thread can mutate _initGuard.liveness, so no other
     // thread can be in the critical section of init() or shutdown().

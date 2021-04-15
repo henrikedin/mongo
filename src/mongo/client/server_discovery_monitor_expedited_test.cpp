@@ -26,13 +26,13 @@
  *    exception statement from all source files in the program, then also delete
  *    it in the license file.
  */
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kNetwork
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kNetwork
 #include "mongo/client/server_discovery_monitor.h"
 
 #include <boost/optional/optional_io.hpp>
 
 #include "mongo/executor/task_executor.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/unittest/unittest.h"
 
 namespace mongo {
@@ -45,11 +45,11 @@ public:
     };
 
     void verifyTestCase(TestCase testCase) {
-        LOGV2_INFO(4712103,
-                   "TestCase",
-                   "timeElapsedSinceLastIsMaster"_attr = testCase.timeElapsedSinceLastIsMaster,
-                   "previousRefreshPeriod"_attr = testCase.previousRefreshPeriod,
-                   "expeditedRefreshPeriod"_attr = kExpeditedRefreshPeriod);
+        LOG_INFO(4712103,
+                 "TestCase",
+                 "timeElapsedSinceLastIsMaster"_attr = testCase.timeElapsedSinceLastIsMaster,
+                 "previousRefreshPeriod"_attr = testCase.previousRefreshPeriod,
+                 "expeditedRefreshPeriod"_attr = kExpeditedRefreshPeriod);
         auto result = SingleServerDiscoveryMonitor::calculateExpeditedDelayUntilNextCheck(
             testCase.timeElapsedSinceLastIsMaster,
             kExpeditedRefreshPeriod,

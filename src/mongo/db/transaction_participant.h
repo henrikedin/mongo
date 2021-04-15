@@ -53,7 +53,7 @@
 #include "mongo/db/storage/storage_engine.h"
 #include "mongo/db/transaction_metrics_observer.h"
 #include "mongo/idl/mutable_observer_registry.h"
-#include "mongo/logv2/attribute_storage.h"
+#include "mongo/log/attribute_storage.h"
 #include "mongo/stdx/unordered_map.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/concurrency/with_lock.h"
@@ -757,7 +757,7 @@ public:
                                     TerminationCause terminationCause,
                                     APIParameters apiParameters,
                                     repl::ReadConcernArgs readConcernArgs,
-                                    logv2::DynamicAttributes* pAttrs) const;
+                                    log::DynamicAttributes* pAttrs) const;
 
         BSONObj _transactionInfoBSONForLog(OperationContext* opCtx,
                                            const SingleThreadedLockStats* lockStats,

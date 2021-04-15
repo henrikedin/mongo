@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kStorage
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kStorage
 
 #include "mongo/platform/basic.h"
 
@@ -45,7 +45,7 @@
 #include "mongo/db/operation_context.h"
 #include "mongo/db/storage/record_data.h"
 #include "mongo/db/views/view_catalog.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/stdx/unordered_set.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/string_map.h"
@@ -197,11 +197,11 @@ void DurableViewCatalogImpl::upsert(OperationContext* opCtx,
 
     Snapshotted<BSONObj> oldView;
     if (!id.isValid() || !systemViews->findDoc(opCtx, id, &oldView)) {
-        LOGV2_DEBUG(22544,
-                    2,
-                    "Insert view to system views catalog",
-                    "view"_attr = view,
-                    "viewCatalog"_attr = _db->getSystemViewsName());
+        LOG_DEBUG(22544,
+                  2,
+                  "Insert view to system views catalog",
+                  "view"_attr = view,
+                  "viewCatalog"_attr = _db->getSystemViewsName());
         uassertStatusOK(
             systemViews->insertDocument(opCtx, InsertStatement(view), &CurOp::get(opCtx)->debug()));
     } else {
@@ -230,11 +230,11 @@ void DurableViewCatalogImpl::remove(OperationContext* opCtx, const NamespaceStri
     if (!id.isValid())
         return;
 
-    LOGV2_DEBUG(22545,
-                2,
-                "Remove view from system views catalog",
-                "view"_attr = name,
-                "viewCatalog"_attr = _db->getSystemViewsName());
+    LOG_DEBUG(22545,
+              2,
+              "Remove view from system views catalog",
+              "view"_attr = name,
+              "viewCatalog"_attr = _db->getSystemViewsName());
     systemViews->deleteDocument(opCtx, kUninitializedStmtId, id, &CurOp::get(opCtx)->debug());
 }
 }  // namespace mongo

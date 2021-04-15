@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kResharding
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kResharding
 
 #include "mongo/platform/basic.h"
 
@@ -51,8 +51,8 @@
 #include "mongo/db/s/resharding_util.h"
 #include "mongo/db/session_catalog_mongod.h"
 #include "mongo/db/transaction_participant.h"
-#include "mongo/logv2/log.h"
-#include "mongo/logv2/redaction.h"
+#include "mongo/log/log.h"
+#include "mongo/log/redaction.h"
 #include "mongo/stdx/mutex.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/concurrency/thread_pool.h"
@@ -146,7 +146,7 @@ ExecutorFuture<void> ReshardingOplogApplier::_scheduleNextBatch(
             return _oplogIter->getNextBatch(executor, cancelToken, factory);
         })
         .then([this, executor, cancelToken, factory](OplogBatch batch) {
-            LOGV2_DEBUG(5391002, 3, "Starting batch", "batchSize"_attr = batch.size());
+            LOG_DEBUG(5391002, 3, "Starting batch", "batchSize"_attr = batch.size());
             _currentBatchToApply = std::move(batch);
 
             return _applyBatch(executor, cancelToken, factory, false /* isForSessionApplication */);
@@ -226,7 +226,7 @@ SemiFuture<void> ReshardingOplogApplier::_applyBatch(
 
     return resharding::cancelWhenAnyErrorThenQuiesce(batchApplierFutures, executor, errorSource)
         .onError([](Status status) {
-            LOGV2_ERROR(
+            LOG_ERROR(
                 5012004, "Failed to apply operation in resharding", "error"_attr = redact(status));
             return status;
         })

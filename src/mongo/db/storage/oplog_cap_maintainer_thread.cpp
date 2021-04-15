@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kStorage
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kStorage
 
 #include "mongo/platform/basic.h"
 
@@ -38,7 +38,7 @@
 #include "mongo/db/catalog_raii.h"
 #include "mongo/db/client.h"
 #include "mongo/db/service_context.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/exit.h"
 #include "mongo/util/fail_point.h"
@@ -54,7 +54,7 @@ MONGO_FAIL_POINT_DEFINE(hangOplogCapMaintainerThread);
 
 bool OplogCapMaintainerThread::_deleteExcessDocuments() {
     if (!getGlobalServiceContext()->getStorageEngine()) {
-        LOGV2_DEBUG(22240, 2, "OplogCapMaintainerThread: no global storage engine yet");
+        LOG_DEBUG(22240, 2, "OplogCapMaintainerThread: no global storage engine yet");
         return false;
     }
 
@@ -71,7 +71,7 @@ bool OplogCapMaintainerThread::_deleteExcessDocuments() {
         AutoGetOplog oplogWrite(opCtx.get(), OplogAccessMode::kWrite);
         const auto& oplog = oplogWrite.getCollection();
         if (!oplog) {
-            LOGV2_DEBUG(4562600, 2, "oplog collection does not exist");
+            LOG_DEBUG(4562600, 2, "oplog collection does not exist");
             return false;
         }
         auto rs = oplog->getRecordStore();
@@ -82,10 +82,10 @@ bool OplogCapMaintainerThread::_deleteExcessDocuments() {
     } catch (const ExceptionForCat<ErrorCategory::Interruption>&) {
         return false;
     } catch (const std::exception& e) {
-        LOGV2_FATAL_NOTRACE(22243,
-                            "error in OplogCapMaintainerThread: {error}",
-                            "Error in OplogCapMaintainerThread",
-                            "error"_attr = e.what());
+        LOG_FATAL_NOTRACE(22243,
+                          "error in OplogCapMaintainerThread: {error}",
+                          "Error in OplogCapMaintainerThread",
+                          "error"_attr = e.what());
     } catch (...) {
         fassertFailedNoTrace(!"unknown error in OplogCapMaintainerThread");
     }
@@ -93,12 +93,12 @@ bool OplogCapMaintainerThread::_deleteExcessDocuments() {
 }
 
 void OplogCapMaintainerThread::run() {
-    LOGV2_DEBUG(5295000, 1, "Oplog cap maintainer thread started", "threadName"_attr = _name);
+    LOG_DEBUG(5295000, 1, "Oplog cap maintainer thread started", "threadName"_attr = _name);
     ThreadClient tc(_name, getGlobalServiceContext());
 
     while (!globalInShutdownDeprecated()) {
         if (MONGO_unlikely(hangOplogCapMaintainerThread.shouldFail())) {
-            LOGV2(5095500, "Hanging the oplog cap maintainer thread due to fail point");
+            LOG(5095500, "Hanging the oplog cap maintainer thread due to fail point");
             hangOplogCapMaintainerThread.pauseWhileSet();
         }
 

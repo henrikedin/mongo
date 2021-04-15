@@ -26,11 +26,11 @@
  *    exception statement from all source files in the program, then also delete
  *    it in the license file.
  */
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kDefault
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kDefault
 
 #include "mongo/client/sdam/json_test_arg_parser.h"
 
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/options_parser/environment.h"
 #include "mongo/util/options_parser/option_section.h"
 #include "mongo/util/options_parser/options_parser.h"
@@ -85,10 +85,10 @@ ArgParser::ArgParser(int argc, char* argv[]) {
 }
 
 void ArgParser::LogParams() const {
-    LOGV2(20199, "Verbosity", "verbose"_attr = _verbose);
-    LOGV2(20200, "Source directory", "directory"_attr = _sourceDirectory);
+    LOG(20199, "Verbosity", "verbose"_attr = _verbose);
+    LOG(20200, "Source directory", "directory"_attr = _sourceDirectory);
     if (_testFilters.size()) {
-        LOGV2(20201, "Test filters", "filters"_attr = boost::join(_testFilters, ", "));
+        LOG(20201, "Test filters", "filters"_attr = boost::join(_testFilters, ", "));
     }
 }
 

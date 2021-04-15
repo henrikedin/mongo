@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTenantMigration
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTenantMigration
 
 #include "mongo/platform/basic.h"
 #include "mongo/util/str.h"
@@ -42,7 +42,7 @@
 #include "mongo/db/repl/tenant_migration_conflict_info.h"
 #include "mongo/db/repl/tenant_migration_state_machine_gen.h"
 #include "mongo/executor/network_interface_factory.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/transport/service_executor.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/fail_point.h"
@@ -191,15 +191,15 @@ SemiFuture<void> checkIfCanReadOrBlock(OperationContext* opCtx, StringData dbNam
             const auto recipientMtabStatus = recipientMtab ? *resultIter : Status::OK();
             if (!donorMtabStatus.isOK()) {
                 donorMtab->recordTenantMigrationError(donorMtabStatus);
-                LOGV2(5519301,
-                      "Received error while waiting on donor access blocker",
-                      "error"_attr = donorMtabStatus);
+                LOG(5519301,
+                    "Received error while waiting on donor access blocker",
+                    "error"_attr = donorMtabStatus);
             }
             if (!recipientMtabStatus.isOK()) {
                 recipientMtab->recordTenantMigrationError(recipientMtabStatus);
-                LOGV2(5519302,
-                      "Received error while waiting on recipient access blocker",
-                      "error"_attr = recipientMtabStatus);
+                LOG(5519302,
+                    "Received error while waiting on recipient access blocker",
+                    "error"_attr = recipientMtabStatus);
                 if (donorMtabStatus.isOK()) {
                     return recipientMtabStatus;
                 }
@@ -258,11 +258,11 @@ Status checkIfCanBuildIndex(OperationContext* opCtx, StringData dbName) {
         // This log is included for synchronization of the tenant migration buildindex jstests.
         auto status = mtab->checkIfCanBuildIndex();
         mtab->recordTenantMigrationError(status);
-        LOGV2_DEBUG(4886202,
-                    1,
-                    "Checked if tenant migration on database prevents index builds",
-                    "db"_attr = dbName,
-                    "error"_attr = status);
+        LOG_DEBUG(4886202,
+                  1,
+                  "Checked if tenant migration on database prevents index builds",
+                  "db"_attr = dbName,
+                  "error"_attr = status);
         return status;
     }
     return Status::OK();

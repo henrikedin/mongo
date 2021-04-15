@@ -26,13 +26,13 @@
  *    exception statement from all source files in the program, then also delete
  *    it in the license file.
  */
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTest
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTest
 #include "mongo/client/streamable_replica_set_monitor_error_handler.h"
 
 #include <boost/optional/optional_io.hpp>
 
 #include "mongo/client/sdam/sdam.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/platform/basic.h"
 #include "mongo/unittest/unittest.h"
 
@@ -69,17 +69,17 @@ public:
 
         const auto prePost = (stage == HandshakeStage::kPreHandshake) ? "pre" : "post";
         const auto applicationOperation = (isApplicationOperation) ? "application" : "monitoring";
-        LOGV2_INFO(4712105,
-                   "Check Scenario",
-                   "handshake"_attr = prePost,
-                   "operationType"_attr = applicationOperation);
+        LOG_INFO(4712105,
+                 "Check Scenario",
+                 "handshake"_attr = prePost,
+                 "operationType"_attr = applicationOperation);
         for (auto error : errors) {
-            LOGV2_INFO(4712106, "Check error", "error"_attr = ErrorCodes::errorString(error));
+            LOG_INFO(4712106, "Check error", "error"_attr = ErrorCodes::errorString(error));
             for (int attempt = 0; attempt < numAttempts; attempt++) {
                 auto result = testSubject->computeErrorActions(
                     kHost, makeStatus(error), stage, isApplicationOperation, kErrorBson);
                 verifyActions(result, expectedResultGenerator(makeStatus(error)));
-                LOGV2_INFO(4712107, "Attempt Successful", "num"_attr = attempt);
+                LOG_INFO(4712107, "Attempt Successful", "num"_attr = attempt);
             }
         }
     }

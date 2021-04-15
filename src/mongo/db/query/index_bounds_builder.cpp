@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kQuery
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kQuery
 
 #include "mongo/db/query/index_bounds_builder.h"
 
@@ -50,7 +50,7 @@
 #include "mongo/db/query/planner_ixselect.h"
 #include "mongo/db/query/planner_wildcard_helpers.h"
 #include "mongo/db/query/query_knobs_gen.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/ctype.h"
 #include "mongo/util/str.h"
 #include "third_party/s2/s2cell.h"
@@ -1010,15 +1010,15 @@ void IndexBoundsBuilder::_translatePredicate(const MatchExpression* expr,
 
             *tightnessOut = IndexBoundsBuilder::INEXACT_FETCH;
         } else {
-            LOGV2_WARNING(20934,
-                          "Planner error trying to build geo bounds for an index element",
-                          "element"_attr = elt.toString());
+            LOG_WARNING(20934,
+                        "Planner error trying to build geo bounds for an index element",
+                        "element"_attr = elt.toString());
             verify(0);
         }
     } else {
-        LOGV2_WARNING(20935,
-                      "Planner error while trying to build bounds for expression",
-                      "expression"_attr = redact(expr->debugString()));
+        LOG_WARNING(20935,
+                    "Planner error while trying to build bounds for expression",
+                    "expression"_attr = redact(expr->debugString()));
         verify(0);
     }
 }
@@ -1323,11 +1323,11 @@ void IndexBoundsBuilder::alignBounds(IndexBounds* bounds, const BSONObj& kp, int
     }
 
     if (!bounds->isValidFor(kp, scanDir)) {
-        LOGV2(20933,
-              "Invalid bounds",
-              "bounds"_attr = redact(bounds->toString()),
-              "keyPattern"_attr = redact(kp),
-              "scanDirection"_attr = scanDir);
+        LOG(20933,
+            "Invalid bounds",
+            "bounds"_attr = redact(bounds->toString()),
+            "keyPattern"_attr = redact(kp),
+            "scanDirection"_attr = scanDir);
         MONGO_UNREACHABLE;
     }
 }

@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTest
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTest
 
 #include <fmt/format.h>
 
@@ -35,7 +35,7 @@
 #include "mongo/bson/json.h"
 #include "mongo/db/s/resharding/resharding_metrics.h"
 #include "mongo/db/service_context_test_fixture.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/unittest/death_test.h"
 #include "mongo/unittest/unittest.h"
 #include "mongo/util/clock_source_mock.h"
@@ -485,7 +485,7 @@ TEST_F(ReshardingMetricsTest, EstimatedRemainingOperationTimeCloning) {
         advanceTime(timePerDocument);
         remainingTime -= timePerDocument;
     }
-    LOGV2_DEBUG(
+    LOG_DEBUG(
         5422700, 3, "Max absolute relative error observed", "maxAbsRelErr"_attr = maxAbsRelErr);
 }
 
@@ -518,7 +518,7 @@ TEST_F(ReshardingMetricsTest, EstimatedRemainingOperationTimeApplying) {
         m->onOplogEntriesApplied(1);
         remainingTime -= timePerOp;
     }
-    LOGV2_DEBUG(
+    LOG_DEBUG(
         5422701, 3, "Max absolute relative error observed", "maxAbsRelErr"_attr = maxAbsRelErr);
 }
 

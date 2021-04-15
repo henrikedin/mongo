@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTest
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTest
 
 #include "mongo/platform/basic.h"
 
@@ -101,8 +101,8 @@ private:
 
 class Verbosity : public mongo::unittest::Test {
     /** Reset the log level before we test */
-    mongo::unittest::MinimumLoggedSeverityGuard _severityGuard{mongo::logv2::LogComponent::kDefault,
-                                                               mongo::logv2::LogSeverity::Info()};
+    mongo::unittest::MinimumLoggedSeverityGuard _severityGuard{mongo::log::LogComponent::kDefault,
+                                                               mongo::log::LogSeverity::Info()};
 };
 
 TEST_F(Verbosity, Default) {
@@ -123,7 +123,7 @@ TEST_F(Verbosity, Default) {
     ASSERT_OK(::mongo::storeServerOptions(environment));
 
     // Make sure the log level didn't change since we didn't specify any verbose options
-    ASSERT_EQUALS(getMinimumLogSeverity(), ::mongo::logv2::LogSeverity::Info());
+    ASSERT_EQUALS(getMinimumLogSeverity(), ::mongo::log::LogSeverity::Info());
 }
 
 TEST_F(Verbosity, CommandLineImplicit) {
@@ -145,7 +145,7 @@ TEST_F(Verbosity, CommandLineImplicit) {
     ASSERT_OK(::mongo::storeServerOptions(environment));
 
     int verbosity = 1;
-    ASSERT_EQUALS(getMinimumLogSeverity(), ::mongo::logv2::LogSeverity::Debug(verbosity));
+    ASSERT_EQUALS(getMinimumLogSeverity(), ::mongo::log::LogSeverity::Debug(verbosity));
 }
 
 TEST_F(Verbosity, CommandLineString) {
@@ -168,7 +168,7 @@ TEST_F(Verbosity, CommandLineString) {
     ASSERT_OK(::mongo::storeServerOptions(environment));
 
     int verbosity = 4;
-    ASSERT_EQUALS(getMinimumLogSeverity(), ::mongo::logv2::LogSeverity::Debug(verbosity));
+    ASSERT_EQUALS(getMinimumLogSeverity(), ::mongo::log::LogSeverity::Debug(verbosity));
 }
 
 TEST_F(Verbosity, CommandLineStringDisguisedLongForm) {
@@ -191,7 +191,7 @@ TEST_F(Verbosity, CommandLineStringDisguisedLongForm) {
     ASSERT_OK(::mongo::storeServerOptions(environment));
 
     int verbosity = 4;
-    ASSERT_EQUALS(getMinimumLogSeverity(), ::mongo::logv2::LogSeverity::Debug(verbosity));
+    ASSERT_EQUALS(getMinimumLogSeverity(), ::mongo::log::LogSeverity::Debug(verbosity));
 }
 
 TEST_F(Verbosity, CommandLineEmptyString) {
@@ -276,7 +276,7 @@ TEST_F(Verbosity, INIConfigString) {
     ASSERT_OK(::mongo::storeServerOptions(environment));
 
     int verbosity = 4;
-    ASSERT_EQUALS(getMinimumLogSeverity(), ::mongo::logv2::LogSeverity::Debug(verbosity));
+    ASSERT_EQUALS(getMinimumLogSeverity(), ::mongo::log::LogSeverity::Debug(verbosity));
 }
 
 TEST_F(Verbosity, INIConfigBadString) {
@@ -320,7 +320,7 @@ TEST_F(Verbosity, INIConfigEmptyString) {
     ASSERT_OK(::mongo::storeServerOptions(environment));
 
     int verbosity = 0;
-    ASSERT_EQUALS(getMinimumLogSeverity(), ::mongo::logv2::LogSeverity::Debug(verbosity));
+    ASSERT_EQUALS(getMinimumLogSeverity(), ::mongo::log::LogSeverity::Debug(verbosity));
 }
 
 TEST_F(Verbosity, JSONConfigString) {
@@ -345,7 +345,7 @@ TEST_F(Verbosity, JSONConfigString) {
     ASSERT_OK(::mongo::storeServerOptions(environment));
 
     int verbosity = 4;
-    ASSERT_EQUALS(getMinimumLogSeverity(), ::mongo::logv2::LogSeverity::Debug(verbosity));
+    ASSERT_EQUALS(getMinimumLogSeverity(), ::mongo::log::LogSeverity::Debug(verbosity));
 }
 
 TEST_F(Verbosity, MultipleSourcesMultipleOptions) {
@@ -372,7 +372,7 @@ TEST_F(Verbosity, MultipleSourcesMultipleOptions) {
     ASSERT_OK(::mongo::storeServerOptions(environment));
 
     int verbosity = 3;
-    ASSERT_EQUALS(getMinimumLogSeverity(), ::mongo::logv2::LogSeverity::Debug(verbosity));
+    ASSERT_EQUALS(getMinimumLogSeverity(), ::mongo::log::LogSeverity::Debug(verbosity));
 }
 
 TEST_F(Verbosity, YAMLConfigStringLogComponent) {
@@ -382,7 +382,7 @@ TEST_F(Verbosity, YAMLConfigStringLogComponent) {
 
     // Log level for Storage will be cleared by config file value.
     auto storageSeverityGuard = mongo::unittest::MinimumLoggedSeverityGuard{
-        mongo::logv2::LogComponent::kStorage, mongo::logv2::LogSeverity::Debug(1)};
+        mongo::log::LogComponent::kStorage, mongo::log::LogSeverity::Debug(1)};
 
     ASSERT_OK(::mongo::addGeneralServerOptions(&options));
 
@@ -413,29 +413,29 @@ TEST_F(Verbosity, YAMLConfigStringLogComponent) {
     int verbosity = 4;
 
     // Default
-    ASSERT_EQUALS(getMinimumLogSeverity(), ::mongo::logv2::LogSeverity::Debug(verbosity));
-    ASSERT_EQUALS(getMinimumLogSeverity(::mongo::logv2::LogComponent::kDefault),
-                  ::mongo::logv2::LogSeverity::Debug(verbosity));
+    ASSERT_EQUALS(getMinimumLogSeverity(), ::mongo::log::LogSeverity::Debug(verbosity));
+    ASSERT_EQUALS(getMinimumLogSeverity(::mongo::log::LogComponent::kDefault),
+                  ::mongo::log::LogSeverity::Debug(verbosity));
 
     // AccessControl
-    ASSERT_TRUE(hasMinimumLogSeverity(::mongo::logv2::LogComponent::kAccessControl));
-    ASSERT_EQUALS(getMinimumLogSeverity(::mongo::logv2::LogComponent::kAccessControl),
-                  ::mongo::logv2::LogSeverity::Log());
+    ASSERT_TRUE(hasMinimumLogSeverity(::mongo::log::LogComponent::kAccessControl));
+    ASSERT_EQUALS(getMinimumLogSeverity(::mongo::log::LogComponent::kAccessControl),
+                  ::mongo::log::LogSeverity::Log());
 
     // Query - not mentioned in configuration. should match default.
-    ASSERT_FALSE(hasMinimumLogSeverity(::mongo::logv2::LogComponent::kStorage));
-    ASSERT_EQUALS(getMinimumLogSeverity(::mongo::logv2::LogComponent::kStorage),
-                  ::mongo::logv2::LogSeverity::Debug(verbosity));
+    ASSERT_FALSE(hasMinimumLogSeverity(::mongo::log::LogComponent::kStorage));
+    ASSERT_EQUALS(getMinimumLogSeverity(::mongo::log::LogComponent::kStorage),
+                  ::mongo::log::LogSeverity::Debug(verbosity));
 
     // Storage - cleared by -1 value in configuration. should match default.
-    ASSERT_FALSE(hasMinimumLogSeverity(::mongo::logv2::LogComponent::kStorage));
-    ASSERT_EQUALS(getMinimumLogSeverity(::mongo::logv2::LogComponent::kStorage),
-                  ::mongo::logv2::LogSeverity::Debug(verbosity));
+    ASSERT_FALSE(hasMinimumLogSeverity(::mongo::log::LogComponent::kStorage));
+    ASSERT_EQUALS(getMinimumLogSeverity(::mongo::log::LogComponent::kStorage),
+                  ::mongo::log::LogSeverity::Debug(verbosity));
 
     // Journaling - explicitly set to 2 in configuration.
-    ASSERT_TRUE(hasMinimumLogSeverity(::mongo::logv2::LogComponent::kJournal));
-    ASSERT_EQUALS(getMinimumLogSeverity(::mongo::logv2::LogComponent::kJournal),
-                  ::mongo::logv2::LogSeverity::Debug(2));
+    ASSERT_TRUE(hasMinimumLogSeverity(::mongo::log::LogComponent::kJournal));
+    ASSERT_EQUALS(getMinimumLogSeverity(::mongo::log::LogComponent::kJournal),
+                  ::mongo::log::LogSeverity::Debug(2));
 }
 
 TEST(SetupOptions, Default) {

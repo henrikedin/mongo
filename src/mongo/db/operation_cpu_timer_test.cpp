@@ -27,11 +27,11 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTest
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTest
 
 #include "mongo/db/operation_cpu_timer.h"
 #include "mongo/db/service_context_test_fixture.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/platform/atomic_word.h"
 #include "mongo/stdx/condition_variable.h"
 #include "mongo/stdx/mutex.h"
@@ -183,10 +183,10 @@ TEST_F(OperationCPUTimerTest, TimerPausesOnBlockingSleep) {
         auto elapsed = timer->getElapsed();
         if (elapsed < kSomeDelay)
             return true;
-        LOGV2_WARNING(5160101,
-                      "Elapsed operation time exceeded the upper bound",
-                      "elapsed"_attr = elapsed,
-                      "delay"_attr = kSomeDelay);
+        LOG_WARNING(5160101,
+                    "Elapsed operation time exceeded the upper bound",
+                    "elapsed"_attr = elapsed,
+                    "delay"_attr = kSomeDelay);
         return false;
     };
 

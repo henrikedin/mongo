@@ -27,12 +27,12 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kStorage
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kStorage
 
 #include "mongo/platform/basic.h"
 
 #include "mongo/db/storage/recovery_unit.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/fail_point.h"
 #include "mongo/util/scopeguard.h"
 #include "mongo/util/time_support.h"
@@ -95,10 +95,10 @@ void RecoveryUnit::_executeCommitHandlers(boost::optional<Timestamp> commitTimes
     for (auto& change : _changes) {
         try {
             // Log at higher level because commits occur far more frequently than rollbacks.
-            LOGV2_DEBUG(22244,
-                        3,
-                        "CUSTOM COMMIT {demangleName_typeid_change}",
-                        "demangleName_typeid_change"_attr = redact(demangleName(typeid(*change))));
+            LOG_DEBUG(22244,
+                      3,
+                      "CUSTOM COMMIT {demangleName_typeid_change}",
+                      "demangleName_typeid_change"_attr = redact(demangleName(typeid(*change))));
             change->commit(commitTimestamp);
         } catch (...) {
             std::terminate();
@@ -107,11 +107,11 @@ void RecoveryUnit::_executeCommitHandlers(boost::optional<Timestamp> commitTimes
     try {
         if (_changeForCatalogVisibility) {
             // Log at higher level because commits occur far more frequently than rollbacks.
-            LOGV2_DEBUG(5255701,
-                        2,
-                        "CUSTOM COMMIT {demangleName_typeid_change}",
-                        "demangleName_typeid_change"_attr =
-                            redact(demangleName(typeid(*_changeForCatalogVisibility))));
+            LOG_DEBUG(5255701,
+                      2,
+                      "CUSTOM COMMIT {demangleName_typeid_change}",
+                      "demangleName_typeid_change"_attr =
+                          redact(demangleName(typeid(*_changeForCatalogVisibility))));
             _changeForCatalogVisibility->commit(commitTimestamp);
         }
     } catch (...) {
@@ -132,21 +132,21 @@ void RecoveryUnit::_executeRollbackHandlers() {
     try {
         if (_changeForCatalogVisibility) {
 
-            LOGV2_DEBUG(5255702,
-                        2,
-                        "CUSTOM ROLLBACK {demangleName_typeid_change}",
-                        "demangleName_typeid_change"_attr =
-                            redact(demangleName(typeid(*_changeForCatalogVisibility))));
+            LOG_DEBUG(5255702,
+                      2,
+                      "CUSTOM ROLLBACK {demangleName_typeid_change}",
+                      "demangleName_typeid_change"_attr =
+                          redact(demangleName(typeid(*_changeForCatalogVisibility))));
             _changeForCatalogVisibility->rollback();
         }
         for (Changes::const_reverse_iterator it = _changes.rbegin(), end = _changes.rend();
              it != end;
              ++it) {
             Change* change = it->get();
-            LOGV2_DEBUG(22245,
-                        2,
-                        "CUSTOM ROLLBACK {demangleName_typeid_change}",
-                        "demangleName_typeid_change"_attr = redact(demangleName(typeid(*change))));
+            LOG_DEBUG(22245,
+                      2,
+                      "CUSTOM ROLLBACK {demangleName_typeid_change}",
+                      "demangleName_typeid_change"_attr = redact(demangleName(typeid(*change))));
             change->rollback();
         }
         _changeForCatalogVisibility.reset();

@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kResharding
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kResharding
 
 #include "mongo/platform/basic.h"
 
@@ -55,7 +55,7 @@
 #include "mongo/db/service_context.h"
 #include "mongo/db/storage/write_unit_of_work.h"
 #include "mongo/executor/task_executor.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/s/stale_shard_version_helpers.h"
 #include "mongo/util/future_util.h"
 #include "mongo/util/scopeguard.h"
@@ -357,22 +357,22 @@ SemiFuture<void> ReshardingCollectionCloner::run(
                 status == ErrorCodes::Interrupted) {
                 // Do retry on any other types of retryable errors though. Also retry on errors from
                 // stray killCursors and killOp commands being run.
-                LOGV2(5269300,
-                      "Transient error while cloning sharded collection",
-                      "sourceNamespace"_attr = _sourceNss,
-                      "outputNamespace"_attr = _outputNss,
-                      "readTimestamp"_attr = _atClusterTime,
-                      "error"_attr = redact(status));
+                LOG(5269300,
+                    "Transient error while cloning sharded collection",
+                    "sourceNamespace"_attr = _sourceNss,
+                    "outputNamespace"_attr = _outputNss,
+                    "readTimestamp"_attr = _atClusterTime,
+                    "error"_attr = redact(status));
                 return false;
             }
 
             if (!status.isOK()) {
-                LOGV2(5352400,
-                      "Operation-fatal error for resharding while cloning sharded collection",
-                      "sourceNamespace"_attr = _sourceNss,
-                      "outputNamespace"_attr = _outputNss,
-                      "readTimestamp"_attr = _atClusterTime,
-                      "error"_attr = redact(status));
+                LOG(5352400,
+                    "Operation-fatal error for resharding while cloning sharded collection",
+                    "sourceNamespace"_attr = _sourceNss,
+                    "outputNamespace"_attr = _outputNss,
+                    "readTimestamp"_attr = _atClusterTime,
+                    "error"_attr = redact(status));
             }
 
             return true;

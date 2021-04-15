@@ -27,10 +27,10 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kStorage
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kStorage
 
-#define LOGV2_FOR_TRANSACTION(ID, DLEVEL, MESSAGE, ...) \
-    LOGV2_DEBUG_OPTIONS(ID, DLEVEL, {logv2::LogComponent::kTransaction}, MESSAGE, ##__VA_ARGS__)
+#define LOG_FOR_TRANSACTION(ID, DLEVEL, MESSAGE, ...) \
+    LOG_DEBUG_OPTIONS(ID, DLEVEL, {log::LogComponent::kTransaction}, MESSAGE, ##__VA_ARGS__)
 
 #include "mongo/platform/basic.h"
 
@@ -65,7 +65,7 @@
 #include "mongo/db/transaction_history_iterator.h"
 #include "mongo/db/transaction_participant_gen.h"
 #include "mongo/db/vector_clock_mutable.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/fail_point.h"
 #include "mongo/util/log_with_sampling.h"
 #include "mongo/util/net/socket_utils.h"
@@ -101,7 +101,7 @@ void fassertOnRepeatedExecution(const LogicalSessionId& lsid,
                                 StmtId stmtId,
                                 const repl::OpTime& firstOpTime,
                                 const repl::OpTime& secondOpTime) {
-    LOGV2_FATAL(
+    LOG_FATAL(
         40526,
         "Statement id {stmtId} from transaction [ {lsid}:{txnNumber} ] was committed once "
         "with opTime {firstCommitOpTime} and a second time with opTime {secondCommitOpTime}. This "
@@ -703,9 +703,9 @@ TransactionParticipant::OplogSlotReserver::OplogSlotReserver(OperationContext* o
 
 TransactionParticipant::OplogSlotReserver::~OplogSlotReserver() {
     if (MONGO_unlikely(hangBeforeReleasingTransactionOplogHole.shouldFail())) {
-        LOGV2(22520,
-              "transaction - hangBeforeReleasingTransactionOplogHole fail point enabled. Blocking "
-              "until fail point is disabled");
+        LOG(22520,
+            "transaction - hangBeforeReleasingTransactionOplogHole fail point enabled. Blocking "
+            "until fail point is disabled");
         hangBeforeReleasingTransactionOplogHole.pauseWhileSet();
     }
 
@@ -1128,13 +1128,13 @@ Timestamp TransactionParticipant::Participant::prepareTransaction(
         } catch (...) {
             // It is illegal for aborting a prepared transaction to fail for any reason, so we crash
             // instead.
-            LOGV2_FATAL_CONTINUE(22525,
-                                 "Caught exception during abort of prepared transaction "
-                                 "{txnNumber} on {lsid}: {error}",
-                                 "Caught exception during abort of prepared transaction",
-                                 "txnNumber"_attr = opCtx->getTxnNumber(),
-                                 "lsid"_attr = _sessionId().toBSON(),
-                                 "error"_attr = exceptionToStatus());
+            LOG_FATAL_CONTINUE(22525,
+                               "Caught exception during abort of prepared transaction "
+                               "{txnNumber} on {lsid}: {error}",
+                               "Caught exception during abort of prepared transaction",
+                               "txnNumber"_attr = opCtx->getTxnNumber(),
+                               "lsid"_attr = _sessionId().toBSON(),
+                               "error"_attr = exceptionToStatus());
             std::terminate();
         }
     });
@@ -1197,11 +1197,11 @@ Timestamp TransactionParticipant::Participant::prepareTransaction(
 
         if (MONGO_unlikely(hangAfterReservingPrepareTimestamp.shouldFail())) {
             // This log output is used in js tests so please leave it.
-            LOGV2(22521,
-                  "transaction - hangAfterReservingPrepareTimestamp fail point "
-                  "enabled. Blocking until fail point is disabled. Prepare OpTime: "
-                  "{prepareOpTime}",
-                  "prepareOpTime"_attr = prepareOplogSlot);
+            LOG(22521,
+                "transaction - hangAfterReservingPrepareTimestamp fail point "
+                "enabled. Blocking until fail point is disabled. Prepare OpTime: "
+                "{prepareOpTime}",
+                "prepareOpTime"_attr = prepareOplogSlot);
             hangAfterReservingPrepareTimestamp.pauseWhileSet();
         }
     }
@@ -1227,9 +1227,9 @@ Timestamp TransactionParticipant::Participant::prepareTransaction(
     }
 
     if (MONGO_unlikely(hangAfterSettingPrepareStartTime.shouldFail())) {
-        LOGV2(22522,
-              "transaction - hangAfterSettingPrepareStartTime fail point enabled. Blocking "
-              "until fail point is disabled");
+        LOG(22522,
+            "transaction - hangAfterSettingPrepareStartTime fail point enabled. Blocking "
+            "until fail point is disabled");
         hangAfterSettingPrepareStartTime.pauseWhileSet();
     }
 
@@ -1461,13 +1461,13 @@ void TransactionParticipant::Participant::commitPreparedTransaction(
     } catch (...) {
         // It is illegal for committing a prepared transaction to fail for any reason, other than an
         // invalid command, so we crash instead.
-        LOGV2_FATAL_CONTINUE(22526,
-                             "Caught exception during commit of prepared transaction {txnNumber} "
-                             "on {lsid}: {error}",
-                             "Caught exception during commit of prepared transaction",
-                             "txnNumber"_attr = opCtx->getTxnNumber(),
-                             "lsid"_attr = _sessionId().toBSON(),
-                             "error"_attr = exceptionToStatus());
+        LOG_FATAL_CONTINUE(22526,
+                           "Caught exception during commit of prepared transaction {txnNumber} "
+                           "on {lsid}: {error}",
+                           "Caught exception during commit of prepared transaction",
+                           "txnNumber"_attr = opCtx->getTxnNumber(),
+                           "lsid"_attr = _sessionId().toBSON(),
+                           "error"_attr = exceptionToStatus());
         std::terminate();
     }
 }
@@ -1602,7 +1602,7 @@ void TransactionParticipant::Participant::_abortActiveTransaction(
         } catch (...) {
             // It is illegal for aborting a transaction that must write an abort oplog entry to fail
             // after aborting the storage transaction, so we crash instead.
-            LOGV2_FATAL_CONTINUE(
+            LOG_FATAL_CONTINUE(
                 22527,
                 "Caught exception during abort of transaction that must write abort oplog "
                 "entry {txnNumber} on {lsid}: {error}",
@@ -1988,7 +1988,7 @@ void TransactionParticipant::Participant::_transactionInfoForLog(
     TerminationCause terminationCause,
     APIParameters apiParameters,
     repl::ReadConcernArgs readConcernArgs,
-    logv2::DynamicAttributes* pAttrs) const {
+    log::DynamicAttributes* pAttrs) const {
     invariant(lockStats);
 
     // User specified transaction parameters.
@@ -2143,14 +2143,14 @@ void TransactionParticipant::Participant::_logSlowTransaction(
                 tickSource, tickSource->getTicks()));
 
         if (shouldLogSlowOpWithSampling(opCtx,
-                                        logv2::LogComponent::kTransaction,
+                                        log::LogComponent::kTransaction,
                                         opDuration,
                                         Milliseconds(serverGlobalParams.slowMS))
                 .first) {
-            logv2::DynamicAttributes attr;
+            log::DynamicAttributes attr;
             _transactionInfoForLog(
                 opCtx, lockStats, terminationCause, apiParameters, readConcernArgs, &attr);
-            LOGV2_OPTIONS(51802, {logv2::LogComponent::kTransaction}, "transaction", attr);
+            LOG_OPTIONS(51802, {log::LogComponent::kTransaction}, "transaction", attr);
         }
     }
 }
@@ -2161,14 +2161,13 @@ void TransactionParticipant::Participant::_setNewTxnNumber(OperationContext* opC
             "Cannot change transaction number while the session has a prepared transaction",
             !o().txnState.isInSet(TransactionState::kPrepared));
 
-    LOGV2_FOR_TRANSACTION(
-        23984,
-        4,
-        "New transaction started with txnNumber: {txnNumber} on session with lsid "
-        "{lsid}",
-        "New transaction started",
-        "txnNumber"_attr = txnNumber,
-        "lsid"_attr = _sessionId().getId());
+    LOG_FOR_TRANSACTION(23984,
+                        4,
+                        "New transaction started with txnNumber: {txnNumber} on session with lsid "
+                        "{lsid}",
+                        "New transaction started",
+                        "txnNumber"_attr = txnNumber,
+                        "lsid"_attr = _sessionId().getId());
 
     // Abort the existing transaction if it's not prepared, committed, or aborted.
     if (o().txnState.isInProgress()) {

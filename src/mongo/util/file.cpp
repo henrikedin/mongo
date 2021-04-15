@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kStorage
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kStorage
 
 #include "mongo/util/file.h"
 
@@ -43,7 +43,7 @@
 #include <sys/types.h>
 #endif
 
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/platform/basic.h"
 #include "mongo/util/allocator.h"
 #include "mongo/util/assert_util.h"
@@ -72,22 +72,22 @@ intmax_t File::freeSpace(const std::string& path) {
         return avail.QuadPart;
     }
     DWORD dosError = GetLastError();
-    LOGV2(23140,
-          "In File::freeSpace(), GetDiskFreeSpaceEx for '{path}' failed with {error}",
-          "In File::freeSpace(), GetDiskFreeSpaceEx failed",
-          "path"_attr = path,
-          "error"_attr = errnoWithDescription(dosError));
+    LOG(23140,
+        "In File::freeSpace(), GetDiskFreeSpaceEx for '{path}' failed with {error}",
+        "In File::freeSpace(), GetDiskFreeSpaceEx failed",
+        "path"_attr = path,
+        "error"_attr = errnoWithDescription(dosError));
     return -1;
 }
 
 void File::fsync() const {
     if (FlushFileBuffers(_handle) == 0) {
         DWORD dosError = GetLastError();
-        LOGV2(23141,
-              "In File::fsync(), FlushFileBuffers for '{fileName}' failed with {error}",
-              "In File::fsync(), FlushFileBuffers failed",
-              "fileName"_attr = _name,
-              "error"_attr = errnoWithDescription(dosError));
+        LOG(23141,
+            "In File::fsync(), FlushFileBuffers for '{fileName}' failed with {error}",
+            "In File::fsync(), FlushFileBuffers failed",
+            "fileName"_attr = _name,
+            "error"_attr = errnoWithDescription(dosError));
     }
 }
 
@@ -102,11 +102,11 @@ fileofs File::len() {
     }
     _bad = true;
     DWORD dosError = GetLastError();
-    LOGV2(23142,
-          "In File::len(), GetFileSizeEx for '{fileName}' failed with {error}",
-          "In File::len(), GetFileSizeEx failed",
-          "fileName"_attr = _name,
-          "error"_attr = errnoWithDescription(dosError));
+    LOG(23142,
+        "In File::len(), GetFileSizeEx for '{fileName}' failed with {error}",
+        "In File::len(), GetFileSizeEx failed",
+        "fileName"_attr = _name,
+        "error"_attr = errnoWithDescription(dosError));
     return 0;
 }
 
@@ -122,11 +122,11 @@ void File::open(const char* filename, bool readOnly, bool direct) {
     _bad = !is_open();
     if (_bad) {
         DWORD dosError = GetLastError();
-        LOGV2(23143,
-              "In File::open(), CreateFileW for '{fileName}' failed with {error}",
-              "In File::open(), CreateFileW failed",
-              "fileName"_attr = _name,
-              "error"_attr = errnoWithDescription(dosError));
+        LOG(23143,
+            "In File::open(), CreateFileW for '{fileName}' failed with {error}",
+            "In File::open(), CreateFileW failed",
+            "fileName"_attr = _name,
+            "error"_attr = errnoWithDescription(dosError));
     }
 }
 
@@ -136,24 +136,24 @@ void File::read(fileofs o, char* data, unsigned len) {
     if (SetFilePointerEx(_handle, li, nullptr, FILE_BEGIN) == 0) {
         _bad = true;
         DWORD dosError = GetLastError();
-        LOGV2(23144,
-              "In File::read(), SetFilePointerEx for '{fileName}' tried to set the file pointer to "
-              "{failPointer} but failed with {error}",
-              "In File::read(), SetFilePointerEx failed to set file pointer",
-              "fileName"_attr = _name,
-              "failPointer"_attr = o,
-              "error"_attr = errnoWithDescription(dosError));
+        LOG(23144,
+            "In File::read(), SetFilePointerEx for '{fileName}' tried to set the file pointer to "
+            "{failPointer} but failed with {error}",
+            "In File::read(), SetFilePointerEx failed to set file pointer",
+            "fileName"_attr = _name,
+            "failPointer"_attr = o,
+            "error"_attr = errnoWithDescription(dosError));
         return;
     }
     DWORD bytesRead;
     if (!ReadFile(_handle, data, len, &bytesRead, 0)) {
         _bad = true;
         DWORD dosError = GetLastError();
-        LOGV2(23145,
-              "In File::read(), ReadFile for '{fileName}' failed with {error}",
-              "In File::read(), ReadFile failed",
-              "fileName"_attr = _name,
-              "error"_attr = errnoWithDescription(dosError));
+        LOG(23145,
+            "In File::read(), ReadFile for '{fileName}' failed with {error}",
+            "In File::read(), ReadFile failed",
+            "fileName"_attr = _name,
+            "error"_attr = errnoWithDescription(dosError));
     } else if (bytesRead != len) {
         _bad = true;
         msgasserted(10438,
@@ -172,23 +172,23 @@ void File::truncate(fileofs size) {
     if (SetFilePointerEx(_handle, li, nullptr, FILE_BEGIN) == 0) {
         _bad = true;
         DWORD dosError = GetLastError();
-        LOGV2(23146,
-              "In File::truncate(), SetFilePointerEx for '{fileName}' tried to set the file "
-              "pointer to {filePointer} but failed with {error}",
-              "In File::truncate(), SetFilePointerEx failed to set file pointer",
-              "fileName"_attr = _name,
-              "filePointer"_attr = size,
-              "error"_attr = errnoWithDescription(dosError));
+        LOG(23146,
+            "In File::truncate(), SetFilePointerEx for '{fileName}' tried to set the file "
+            "pointer to {filePointer} but failed with {error}",
+            "In File::truncate(), SetFilePointerEx failed to set file pointer",
+            "fileName"_attr = _name,
+            "filePointer"_attr = size,
+            "error"_attr = errnoWithDescription(dosError));
         return;
     }
     if (SetEndOfFile(_handle) == 0) {
         _bad = true;
         DWORD dosError = GetLastError();
-        LOGV2(23147,
-              "In File::truncate(), SetEndOfFile for '{fileName}' failed with {error}",
-              "In File::truncate(), SetEndOfFile failed",
-              "fileName"_attr = _name,
-              "error"_attr = errnoWithDescription(dosError));
+        LOG(23147,
+            "In File::truncate(), SetEndOfFile for '{fileName}' failed with {error}",
+            "In File::truncate(), SetEndOfFile failed",
+            "fileName"_attr = _name,
+            "error"_attr = errnoWithDescription(dosError));
     }
 }
 
@@ -198,8 +198,7 @@ void File::write(fileofs o, const char* data, unsigned len) {
     if (SetFilePointerEx(_handle, li, nullptr, FILE_BEGIN) == 0) {
         _bad = true;
         DWORD dosError = GetLastError();
-        LOGV2(
-            23148,
+        LOG(23148,
             "In File::write(), SetFilePointerEx for '{fileName}' tried to set the file pointer to "
             "{filePointer} but failed with {error}",
             "In File::write(), SetFilePointerEx failed to set file pointer",
@@ -212,14 +211,14 @@ void File::write(fileofs o, const char* data, unsigned len) {
     if (WriteFile(_handle, data, len, &bytesWritten, nullptr) == 0) {
         _bad = true;
         DWORD dosError = GetLastError();
-        LOGV2(23149,
-              "In File::write(), WriteFile for '{fileName}' tried to write {bytesToWrite} bytes "
-              "but only wrote {bytesWritten} bytes, failing with {error}",
-              "In File::write(), WriteFile failed",
-              "fileName"_attr = _name,
-              "bytesToWrite"_attr = len,
-              "bytesWritten"_attr = bytesWritten,
-              "error"_attr = errnoWithDescription(dosError));
+        LOG(23149,
+            "In File::write(), WriteFile for '{fileName}' tried to write {bytesToWrite} bytes "
+            "but only wrote {bytesWritten} bytes, failing with {error}",
+            "In File::write(), WriteFile failed",
+            "fileName"_attr = _name,
+            "bytesToWrite"_attr = len,
+            "bytesWritten"_attr = bytesWritten,
+            "error"_attr = errnoWithDescription(dosError));
     }
 }
 
@@ -239,21 +238,21 @@ intmax_t File::freeSpace(const std::string& path) {
     if (statvfs(path.c_str(), &info) == 0) {
         return static_cast<intmax_t>(info.f_bavail) * info.f_frsize;
     }
-    LOGV2(23150,
-          "In File::freeSpace(), statvfs for '{path}' failed with {error}",
-          "In File::freeSpace(), statvfs failed",
-          "path"_attr = path,
-          "error"_attr = errnoWithDescription());
+    LOG(23150,
+        "In File::freeSpace(), statvfs for '{path}' failed with {error}",
+        "In File::freeSpace(), statvfs failed",
+        "path"_attr = path,
+        "error"_attr = errnoWithDescription());
     return -1;
 }
 
 void File::fsync() const {
     if (::fsync(_fd)) {
-        LOGV2(23151,
-              "In File::fsync(), ::fsync for '{fileName}' failed with {error}",
-              "In File::fsync(), ::fsync failed",
-              "fileName"_attr = _name,
-              "error"_attr = errnoWithDescription());
+        LOG(23151,
+            "In File::fsync(), ::fsync for '{fileName}' failed with {error}",
+            "In File::fsync(), ::fsync failed",
+            "fileName"_attr = _name,
+            "error"_attr = errnoWithDescription());
     }
 }
 
@@ -267,11 +266,11 @@ fileofs File::len() {
         return o;
     }
     _bad = true;
-    LOGV2(23152,
-          "In File::len(), lseek for '{fileName}' failed with {error}",
-          "In File::len(), lseek failed",
-          "fileName"_attr = _name,
-          "error"_attr = errnoWithDescription());
+    LOG(23152,
+        "In File::len(), lseek for '{fileName}' failed with {error}",
+        "In File::len(), lseek failed",
+        "fileName"_attr = _name,
+        "error"_attr = errnoWithDescription());
     return 0;
 }
 
@@ -290,11 +289,11 @@ void File::open(const char* filename, bool readOnly, bool direct) {
                  S_IRUSR | S_IWUSR);
     _bad = !is_open();
     if (_bad) {
-        LOGV2(23153,
-              "In File::open(), ::open for '{fileName}' failed with {error}",
-              "In File::open(), ::open failed",
-              "fileName"_attr = _name,
-              "error"_attr = errnoWithDescription());
+        LOG(23153,
+            "In File::open(), ::open for '{fileName}' failed with {error}",
+            "In File::open(), ::open failed",
+            "fileName"_attr = _name,
+            "error"_attr = errnoWithDescription());
     }
 }
 
@@ -302,11 +301,11 @@ void File::read(fileofs o, char* data, unsigned len) {
     ssize_t bytesRead = ::pread(_fd, data, len, o);
     if (bytesRead == -1) {
         _bad = true;
-        LOGV2(23154,
-              "In File::read(), ::pread for '{fileName}' failed with {error}",
-              "In File::read(), ::pread failed",
-              "fileName"_attr = _name,
-              "error"_attr = errnoWithDescription());
+        LOG(23154,
+            "In File::read(), ::pread for '{fileName}' failed with {error}",
+            "In File::read(), ::pread failed",
+            "fileName"_attr = _name,
+            "error"_attr = errnoWithDescription());
     } else if (bytesRead != static_cast<ssize_t>(len)) {
         _bad = true;
         msgasserted(16569,
@@ -322,13 +321,13 @@ void File::truncate(fileofs size) {
     }
     if (ftruncate(_fd, size) != 0) {
         _bad = true;
-        LOGV2(23155,
-              "In File::truncate(), ftruncate for '{fileName}' tried to set the file pointer to "
-              "{filePointer} but failed with {error}",
-              "In File::truncate(), ftruncate failed to set file pointer",
-              "fileName"_attr = _name,
-              "filePointer"_attr = size,
-              "error"_attr = errnoWithDescription());
+        LOG(23155,
+            "In File::truncate(), ftruncate for '{fileName}' tried to set the file pointer to "
+            "{filePointer} but failed with {error}",
+            "In File::truncate(), ftruncate failed to set file pointer",
+            "fileName"_attr = _name,
+            "filePointer"_attr = size,
+            "error"_attr = errnoWithDescription());
         return;
     }
 }
@@ -337,14 +336,14 @@ void File::write(fileofs o, const char* data, unsigned len) {
     ssize_t bytesWritten = ::pwrite(_fd, data, len, o);
     if (bytesWritten != static_cast<ssize_t>(len)) {
         _bad = true;
-        LOGV2(23156,
-              "In File::write(), ::pwrite for '{fileName}' tried to write {bytesToWrite} bytes but "
-              "only wrote {bytesWritten} bytes, failing with {error}",
-              "In File::write(), ::pwrite failed",
-              "fileName"_attr = _name,
-              "bytesToWrite"_attr = len,
-              "bytesWritten"_attr = bytesWritten,
-              "error"_attr = errnoWithDescription());
+        LOG(23156,
+            "In File::write(), ::pwrite for '{fileName}' tried to write {bytesToWrite} bytes but "
+            "only wrote {bytesWritten} bytes, failing with {error}",
+            "In File::write(), ::pwrite failed",
+            "fileName"_attr = _name,
+            "bytesToWrite"_attr = len,
+            "bytesWritten"_attr = bytesWritten,
+            "error"_attr = errnoWithDescription());
     }
 }
 

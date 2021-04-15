@@ -26,7 +26,7 @@
  *    exception statement from all source files in the program, then also delete
  *    it in the license file.
  */
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kFTDC
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kFTDC
 
 #include "mongo/platform/basic.h"
 
@@ -62,7 +62,7 @@
 #include "mongo/db/storage/storage_options.h"
 #include "mongo/db/wire_version.h"
 #include "mongo/executor/network_interface.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/metadata/client_metadata.h"
 #include "mongo/transport/hello_metrics.h"
 #include "mongo/util/decimal_counter.h"
@@ -145,7 +145,7 @@ TopologyVersion appendReplicationInfo(OperationContext* opCtx,
         if (MONGO_unlikely(hangWaitingForHelloResponseOnStandalone.shouldFail())) {
             // Used in tests that wait for this failpoint to be entered to guarantee that the
             // request is waiting and metrics have been updated.
-            LOGV2(31462, "Hanging due to hangWaitingForHelloResponseOnStandalone failpoint.");
+            LOG(31462, "Hanging due to hangWaitingForHelloResponseOnStandalone failpoint.");
             hangWaitingForHelloResponseOnStandalone.pauseWhileSet(opCtx);
         }
         opCtx->sleepFor(Milliseconds(*maxAwaitTimeMS));
@@ -354,10 +354,10 @@ public:
                     "topologyVersion must have a non-negative counter",
                     clientTopologyVersion->getCounter() >= 0);
 
-            LOGV2_DEBUG(23904,
-                        3,
-                        "Using maxAwaitTimeMS for awaitable hello protocol",
-                        "maxAwaitTimeMS"_attr = maxAwaitTimeMS.get());
+            LOG_DEBUG(23904,
+                      3,
+                      "Using maxAwaitTimeMS for awaitable hello protocol",
+                      "maxAwaitTimeMS"_attr = maxAwaitTimeMS.get());
 
             curOp->pauseTimer();
             timerGuard.emplace([curOp]() { curOp->resumeTimer(); });
@@ -437,7 +437,7 @@ public:
         }
 
         if (opCtx->isExhaust()) {
-            LOGV2_DEBUG(23905, 3, "Using exhaust for isMaster or hello protocol");
+            LOG_DEBUG(23905, 3, "Using exhaust for isMaster or hello protocol");
 
             uassert(51756,
                     "An isMaster or hello request with exhaust must specify 'maxAwaitTimeMS'",

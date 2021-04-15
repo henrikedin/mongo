@@ -40,7 +40,7 @@
 #include "mongo/base/string_data.h"
 #include "mongo/bson/bsonobj.h"
 #include "mongo/db/service_context.h"
-#include "mongo/logv2/attribute_storage.h"
+#include "mongo/log/attribute_storage.h"
 #include "mongo/platform/atomic_word.h"
 #include "mongo/util/decorable.h"
 #include "mongo/util/net/sock.h"
@@ -175,8 +175,8 @@ struct CertInformationToLog {
     // it means the certificate is the default one for the local cluster.
     std::optional<std::string> targetClusterURI;
 
-    logv2::DynamicAttributes getDynamicAttributes() const {
-        logv2::DynamicAttributes attrs;
+    log::DynamicAttributes getDynamicAttributes() const {
+        log::DynamicAttributes attrs;
         attrs.add("subject", subject);
         attrs.add("issuer", issuer);
         attrs.add("thumbprint", StringData(hexEncodedThumbprint));
@@ -293,7 +293,7 @@ public:
      * Utility class to capture a temporary string with SSL error message in DynamicAttributes.
      */
     struct CaptureSSLErrorInAttrs {
-        CaptureSSLErrorInAttrs(logv2::DynamicAttributes& attrs)
+        CaptureSSLErrorInAttrs(log::DynamicAttributes& attrs)
             : _captured(getSSLErrorMessage(ERR_get_error())) {
             attrs.add("error", _captured);
         }

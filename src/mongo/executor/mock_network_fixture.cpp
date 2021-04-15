@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTest
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTest
 
 #include "mongo/platform/basic.h"
 
@@ -35,7 +35,7 @@
 
 #include "mongo/db/matcher/matcher.h"
 #include "mongo/executor/network_interface_mock.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace mongo {
 namespace test {
@@ -102,11 +102,11 @@ void MockNetwork::_runUntilIdle() {
                 // Consume the next request and execute the action.
                 noi = _net->getNextReadyRequest();
                 auto response = (*exp)->run(request);
-                LOGV2_DEBUG(5015401,
-                            1,
-                            "mock reply ",
-                            "request"_attr = request,
-                            "response"_attr = response);
+                LOG_DEBUG(5015401,
+                          1,
+                          "mock reply ",
+                          "request"_attr = request,
+                          "response"_attr = response);
                 _net->scheduleResponse(noi, _net->now(), response);
 
                 // Continue handling network operations and process requests.
@@ -130,8 +130,7 @@ void MockNetwork::runUntilExpectationsSatisfied() {
 
 void MockNetwork::runUntil(Date_t target) {
     while (_net->now() < target) {
-        LOGV2_DEBUG(
-            5015402, 1, "mock advances time", "from"_attr = _net->now(), "to"_attr = target);
+        LOG_DEBUG(5015402, 1, "mock advances time", "from"_attr = _net->now(), "to"_attr = target);
         {
             executor::NetworkInterfaceMock::InNetworkGuard guard(_net);
             // Even if we cannot reach target time, we are still making progress in the loop.
@@ -140,7 +139,7 @@ void MockNetwork::runUntil(Date_t target) {
         // Run until idle.
         _runUntilIdle();
     }
-    LOGV2_DEBUG(5015403, 1, "mock reached time", "target"_attr = target);
+    LOG_DEBUG(5015403, 1, "mock reached time", "target"_attr = target);
 }
 
 }  // namespace mock

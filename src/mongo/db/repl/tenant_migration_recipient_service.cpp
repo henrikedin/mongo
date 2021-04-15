@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTenantMigration
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTenantMigration
 
 #include "mongo/platform/basic.h"
 
@@ -66,7 +66,7 @@
 #include "mongo/db/transaction_participant.h"
 #include "mongo/db/vector_clock_mutable.h"
 #include "mongo/db/write_concern_options.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/cancellation.h"
@@ -504,13 +504,13 @@ std::unique_ptr<DBClientConnection> TenantMigrationRecipientService::Instance::_
                                      nullptr /* apiParameters */,
                                      _transientSSLParams ? &_transientSSLParams.get() : nullptr);
     if (!swClientBase.isOK()) {
-        LOGV2_ERROR(4880400,
-                    "Failed to connect to migration donor",
-                    "tenantId"_attr = getTenantId(),
-                    "migrationId"_attr = getMigrationUUID(),
-                    "serverAddress"_attr = serverAddress,
-                    "applicationName"_attr = applicationName,
-                    "error"_attr = swClientBase.getStatus());
+        LOG_ERROR(4880400,
+                  "Failed to connect to migration donor",
+                  "tenantId"_attr = getTenantId(),
+                  "migrationId"_attr = getMigrationUUID(),
+                  "serverAddress"_attr = serverAddress,
+                  "applicationName"_attr = applicationName,
+                  "error"_attr = swClientBase.getStatus());
         uassertStatusOK(swClientBase.getStatus());
     }
 
@@ -552,13 +552,13 @@ OpTime TenantMigrationRecipientService::Instance::_getDonorMajorityOpTime(
 
 SemiFuture<TenantMigrationRecipientService::Instance::ConnectionPair>
 TenantMigrationRecipientService::Instance::_createAndConnectClients() {
-    LOGV2_DEBUG(4880401,
-                1,
-                "Recipient migration service connecting clients",
-                "tenantId"_attr = getTenantId(),
-                "migrationId"_attr = getMigrationUUID(),
-                "connectionString"_attr = _donorConnectionString,
-                "readPreference"_attr = _readPreference);
+    LOG_DEBUG(4880401,
+              1,
+              "Recipient migration service connecting clients",
+              "tenantId"_attr = getTenantId(),
+              "migrationId"_attr = getMigrationUUID(),
+              "connectionString"_attr = _donorConnectionString,
+              "readPreference"_attr = _readPreference);
     const auto& servers = _donorUri.getServers();
     stdx::lock_guard lk(_mutex);
     _donorReplicaSetMonitor = ReplicaSetMonitor::createIfNeeded(
@@ -577,7 +577,7 @@ TenantMigrationRecipientService::Instance::_createAndConnectClients() {
     });
 
     if (MONGO_unlikely(hangAfterCreatingRSM.shouldFail())) {
-        LOGV2(5272004, "hangAfterCreatingRSM failpoint enabled");
+        LOG(5272004, "hangAfterCreatingRSM failpoint enabled");
         hangAfterCreatingRSM.pauseWhileSet();
     }
 
@@ -595,11 +595,11 @@ TenantMigrationRecipientService::Instance::_createAndConnectClients() {
                    .thenRunOn(**_scopedExecutor)
                    .then([this, self = shared_from_this(), kDelayedMajorityOpTimeErrorCode](
                              const HostAndPort& serverAddress) {
-                       LOGV2(5272002,
-                             "Attempting to connect to donor host",
-                             "donorHost"_attr = serverAddress,
-                             "tenantId"_attr = getTenantId(),
-                             "migrationId"_attr = getMigrationUUID());
+                       LOG(5272002,
+                           "Attempting to connect to donor host",
+                           "donorHost"_attr = serverAddress,
+                           "tenantId"_attr = getTenantId(),
+                           "migrationId"_attr = getMigrationUUID());
                        // Application name is constructed such that it doesn't exceeds
                        // kMaxApplicationNameByteLength (128 bytes).
                        // "TenantMigration_" (16 bytes) + <tenantId> (61 bytes) + "_" (1 byte) +
@@ -674,11 +674,11 @@ TenantMigrationRecipientService::Instance::_createAndConnectClients() {
                 return true;
             }
 
-            LOGV2_ERROR(4880404,
-                        "Connecting to donor failed",
-                        "tenantId"_attr = getTenantId(),
-                        "migrationId"_attr = getMigrationUUID(),
-                        "error"_attr = status);
+            LOG_ERROR(4880404,
+                      "Connecting to donor failed",
+                      "tenantId"_attr = getTenantId(),
+                      "migrationId"_attr = getMigrationUUID(),
+                      "error"_attr = status);
 
             // Make sure we don't end up with a partially initialized set of connections.
             stdx::lock_guard lk(_mutex);
@@ -691,9 +691,9 @@ TenantMigrationRecipientService::Instance::_createAndConnectClients() {
             }
 
             if (MONGO_unlikely(skipRetriesWhenConnectingToDonorHost.shouldFail())) {
-                LOGV2(5425600,
-                      "skipRetriesWhenConnectingToDonorHost failpoint enabled, migration "
-                      "proceeding with error from connecting to sync source");
+                LOG(5425600,
+                    "skipRetriesWhenConnectingToDonorHost failpoint enabled, migration "
+                    "proceeding with error from connecting to sync source");
                 return true;
             }
 
@@ -725,11 +725,11 @@ TenantMigrationRecipientService::Instance::_createAndConnectClients() {
 void TenantMigrationRecipientService::Instance::_excludeDonorHost(WithLock,
                                                                   const HostAndPort& host,
                                                                   Date_t until) {
-    LOGV2_DEBUG(5271800,
-                2,
-                "Excluding donor host",
-                "donorHost"_attr = host,
-                "until"_attr = until.toString());
+    LOG_DEBUG(5271800,
+              2,
+              "Excluding donor host",
+              "donorHost"_attr = host,
+              "until"_attr = until.toString());
 
     _excludedDonorHosts.emplace_back(std::make_pair(host, until));
 }
@@ -764,13 +764,13 @@ SemiFuture<void> TenantMigrationRecipientService::Instance::_initializeStateDoc(
         return SemiFuture<void>::makeReady();
     }
 
-    LOGV2_DEBUG(5081400,
-                2,
-                "Recipient migration service initializing state document",
-                "tenantId"_attr = getTenantId(),
-                "migrationId"_attr = getMigrationUUID(),
-                "connectionString"_attr = _donorConnectionString,
-                "readPreference"_attr = _readPreference);
+    LOG_DEBUG(5081400,
+              2,
+              "Recipient migration service initializing state document",
+              "tenantId"_attr = getTenantId(),
+              "migrationId"_attr = getMigrationUUID(),
+              "connectionString"_attr = _donorConnectionString,
+              "readPreference"_attr = _readPreference);
 
     // Persist the state doc before starting the data sync.
     _stateDoc.setState(TenantMigrationRecipientStateEnum::kStarted);
@@ -788,7 +788,7 @@ SemiFuture<void> TenantMigrationRecipientService::Instance::_initializeStateDoc(
 
             if (MONGO_unlikely(
                     failWhilePersistingTenantMigrationRecipientInstanceStateDoc.shouldFail())) {
-                LOGV2(4878500, "Persisting state doc failed due to fail point enabled.");
+                LOG(4878500, "Persisting state doc failed due to fail point enabled.");
                 uasserted(
                     ErrorCodes::NotWritablePrimary,
                     "Persisting state doc failed - "
@@ -816,12 +816,12 @@ void TenantMigrationRecipientService::Instance::_getStartOpTimesFromDonor(WithLo
     // Get the last oplog entry at the read concern majority optime in the remote oplog.  It
     // does not matter which tenant it is for.
     auto lastOplogEntry1OpTime = _getDonorMajorityOpTime(_client);
-    LOGV2_DEBUG(4880600,
-                2,
-                "Found last oplog entry at read concern majority optime on remote node",
-                "migrationId"_attr = getMigrationUUID(),
-                "tenantId"_attr = _stateDoc.getTenantId(),
-                "lastOplogEntry"_attr = lastOplogEntry1OpTime.toBSON());
+    LOG_DEBUG(4880600,
+              2,
+              "Found last oplog entry at read concern majority optime on remote node",
+              "migrationId"_attr = getMigrationUUID(),
+              "tenantId"_attr = _stateDoc.getTenantId(),
+              "lastOplogEntry"_attr = lastOplogEntry1OpTime.toBSON());
 
     // Get the optime of the earliest transaction that was open at the read concern majority optime
     // As with the last oplog entry, it does not matter that this may be for a different tenant; an
@@ -836,13 +836,13 @@ void TenantMigrationRecipientService::Instance::_getStartOpTimesFromDonor(WithLo
         &transactionTableOpTimeFields,
         QueryOption_SecondaryOk,
         ReadConcernArgs(ReadConcernLevel::kMajorityReadConcern).toBSONInner());
-    LOGV2_DEBUG(4880602,
-                2,
-                "Transaction table entry for earliest transaction that was open at the read "
-                "concern majority optime on remote node (may be empty)",
-                "migrationId"_attr = getMigrationUUID(),
-                "tenantId"_attr = _stateDoc.getTenantId(),
-                "earliestOpenTransaction"_attr = earliestOpenTransactionBson);
+    LOG_DEBUG(4880602,
+              2,
+              "Transaction table entry for earliest transaction that was open at the read "
+              "concern majority optime on remote node (may be empty)",
+              "migrationId"_attr = getMigrationUUID(),
+              "tenantId"_attr = _stateDoc.getTenantId(),
+              "earliestOpenTransaction"_attr = earliestOpenTransactionBson);
 
     pauseAfterRetrievingLastTxnMigrationRecipientInstance.pauseWhileSet();
 
@@ -850,13 +850,13 @@ void TenantMigrationRecipientService::Instance::_getStartOpTimesFromDonor(WithLo
     // table entry, as otherwise there is a potential race where we may try to apply
     // a commit for which we have not fetched a previous transaction oplog entry.
     auto lastOplogEntry2OpTime = _getDonorMajorityOpTime(_client);
-    LOGV2_DEBUG(4880604,
-                2,
-                "Found last oplog entry at the read concern majority optime (after reading txn "
-                "table) on remote node",
-                "migrationId"_attr = getMigrationUUID(),
-                "tenantId"_attr = _stateDoc.getTenantId(),
-                "lastOplogEntry"_attr = lastOplogEntry2OpTime.toBSON());
+    LOG_DEBUG(4880604,
+              2,
+              "Found last oplog entry at the read concern majority optime (after reading txn "
+              "table) on remote node",
+              "migrationId"_attr = getMigrationUUID(),
+              "tenantId"_attr = _stateDoc.getTenantId(),
+              "lastOplogEntry"_attr = lastOplogEntry2OpTime.toBSON());
     _stateDoc.setStartApplyingDonorOpTime(lastOplogEntry2OpTime);
 
     OpTime startFetchingDonorOpTime = lastOplogEntry1OpTime;
@@ -924,14 +924,14 @@ void TenantMigrationRecipientService::Instance::_processCommittedTransactionEntr
     opCtx->setInMultiDocumentTransaction();
     MongoDOperationContextSession ocs(opCtx);
 
-    LOGV2_DEBUG(5351301,
-                1,
-                "Migration attempting to commit transaction",
-                "sessionId"_attr = sessionId,
-                "txnNumber"_attr = txnNumber,
-                "tenantId"_attr = getTenantId(),
-                "migrationId"_attr = getMigrationUUID(),
-                "entry"_attr = entry.toString());
+    LOG_DEBUG(5351301,
+              1,
+              "Migration attempting to commit transaction",
+              "sessionId"_attr = sessionId,
+              "txnNumber"_attr = txnNumber,
+              "tenantId"_attr = getTenantId(),
+              "migrationId"_attr = getMigrationUUID(),
+              "entry"_attr = entry.toString());
 
     auto txnParticipant = TransactionParticipant::get(opCtx);
     uassert(5351300,
@@ -984,7 +984,7 @@ void TenantMigrationRecipientService::Instance::_processCommittedTransactionEntr
     txnParticipant.invalidate(opCtx);
 
     if (MONGO_unlikely(hangAfterUpdatingTransactionEntry.shouldFail())) {
-        LOGV2(5351400, "hangAfterUpdatingTransactionEntry failpoint enabled");
+        LOG(5351400, "hangAfterUpdatingTransactionEntry failpoint enabled");
         hangAfterUpdatingTransactionEntry.pauseWhileSet();
     }
 }
@@ -998,7 +998,7 @@ TenantMigrationRecipientService::Instance::_fetchCommittedTransactionsBeforeStar
     {
         stdx::lock_guard lk(_mutex);
         if (_stateDoc.getCompletedUpdatingTransactionsBeforeStartOpTime()) {
-            LOGV2_DEBUG(
+            LOG_DEBUG(
                 5351401,
                 2,
                 "Already completed fetching committed transactions from donor, skipping stage",
@@ -1013,9 +1013,9 @@ TenantMigrationRecipientService::Instance::_fetchCommittedTransactionsBeforeStar
     auto statusWith = DBClientCursor::fromAggregationRequest(
         _client.get(), std::move(aggRequest), true /* secondaryOk */, false /* useExhaust */);
     if (!statusWith.isOK()) {
-        LOGV2_ERROR(5351100,
-                    "Fetch committed transactions aggregation failed",
-                    "error"_attr = statusWith.getStatus());
+        LOG_ERROR(5351100,
+                  "Fetch committed transactions aggregation failed",
+                  "error"_attr = statusWith.getStatus());
         uassertStatusOK(statusWith.getStatus());
     }
 
@@ -1084,12 +1084,12 @@ TenantMigrationRecipientService::Instance::_fetchRetryableWritesOplogBeforeStart
     {
         stdx::lock_guard lk(_mutex);
         if (_stateDoc.getCompletedFetchingRetryableWritesBeforeStartOpTime()) {
-            LOGV2_DEBUG(5350800,
-                        2,
-                        "Already completed fetching retryable writes oplog entries from donor, "
-                        "skipping stage",
-                        "migrationId"_attr = getMigrationUUID(),
-                        "tenantId"_attr = getTenantId());
+            LOG_DEBUG(5350800,
+                      2,
+                      "Already completed fetching retryable writes oplog entries from donor, "
+                      "skipping stage",
+                      "migrationId"_attr = getMigrationUUID(),
+                      "tenantId"_attr = getTenantId());
             return SemiFuture<void>::makeReady();
         }
     }
@@ -1300,7 +1300,7 @@ void TenantMigrationRecipientService::Instance::_oplogFetcherCallback(Status opl
     if (oplogFetcherStatus.isOK()) {
         // Oplog fetcher status of "OK" means the stopReplProducer failpoint is set.  Migration
         // cannot continue in this state so force a failure.
-        LOGV2_ERROR(
+        LOG_ERROR(
             4881205,
             "Recipient migration service oplog fetcher stopped due to stopReplProducer failpoint",
             "tenantId"_attr = getTenantId(),
@@ -1310,11 +1310,11 @@ void TenantMigrationRecipientService::Instance::_oplogFetcherCallback(Status opl
                     "failpoint"},
                    /*skipWaitingForForgetMigration=*/false);
     } else if (oplogFetcherStatus.code() != ErrorCodes::CallbackCanceled) {
-        LOGV2_ERROR(4881204,
-                    "Recipient migration service oplog fetcher failed",
-                    "tenantId"_attr = getTenantId(),
-                    "migrationId"_attr = getMigrationUUID(),
-                    "error"_attr = oplogFetcherStatus);
+        LOG_ERROR(4881204,
+                  "Recipient migration service oplog fetcher failed",
+                  "tenantId"_attr = getTenantId(),
+                  "migrationId"_attr = getMigrationUUID(),
+                  "error"_attr = oplogFetcherStatus);
         _interrupt(oplogFetcherStatus, /*skipWaitingForForgetMigration=*/false);
     }
     _oplogFetcherStatus = oplogFetcherStatus;
@@ -1324,12 +1324,12 @@ void TenantMigrationRecipientService::Instance::_stopOrHangOnFailPoint(FailPoint
                                                                        OperationContext* opCtx) {
     fp->executeIf(
         [&](const BSONObj& data) {
-            LOGV2(4881103,
-                  "Tenant migration recipient instance: failpoint enabled",
-                  "tenantId"_attr = getTenantId(),
-                  "migrationId"_attr = getMigrationUUID(),
-                  "name"_attr = fp->getName(),
-                  "args"_attr = data);
+            LOG(4881103,
+                "Tenant migration recipient instance: failpoint enabled",
+                "tenantId"_attr = getTenantId(),
+                "migrationId"_attr = getMigrationUUID(),
+                "name"_attr = fp->getName(),
+                "args"_attr = data);
             if (data["action"].str() == "hang") {
                 if (opCtx) {
                     fp->pauseWhileSet(opCtx);
@@ -1402,11 +1402,11 @@ Future<void> TenantMigrationRecipientService::Instance::_startTenantAllDatabaseC
         repl::StorageInterface::get(cc().getServiceContext()),
         _writerPool.get(),
         _tenantId);
-    LOGV2_DEBUG(4881100,
-                1,
-                "Starting TenantAllDatabaseCloner",
-                "migrationId"_attr = getMigrationUUID(),
-                "tenantId"_attr = getTenantId());
+    LOG_DEBUG(4881100,
+              1,
+              "Starting TenantAllDatabaseCloner",
+              "migrationId"_attr = getMigrationUUID(),
+              "tenantId"_attr = getTenantId());
 
     auto [startClonerFuture, startCloner] =
         _tenantAllDatabaseCloner->runOnExecutorEvent((**_scopedExecutor).get());
@@ -1648,10 +1648,10 @@ void TenantMigrationRecipientService::Instance::interrupt(Status status) {
 
 void TenantMigrationRecipientService::Instance::onReceiveRecipientForgetMigration(
     OperationContext* opCtx) {
-    LOGV2(4881400,
-          "Forgetting migration due to recipientForgetMigration command",
-          "migrationId"_attr = getMigrationUUID(),
-          "tenantId"_attr = getTenantId());
+    LOG(4881400,
+        "Forgetting migration due to recipientForgetMigration command",
+        "migrationId"_attr = getMigrationUUID(),
+        "tenantId"_attr = getTenantId());
 
     // Wait until the state doc is initialized and persisted.
     _stateDocPersistedPromise.getFuture().get(opCtx);
@@ -1777,13 +1777,13 @@ void TenantMigrationRecipientService::Instance::_compareRecipientAndDonorFCV() c
     auto recipientFCV = _stateDoc.getRecipientPrimaryStartingFCV();
 
     if (donorFCV != recipientFCV) {
-        LOGV2_ERROR(5382300,
-                    "Donor and recipient FCV mismatch",
-                    "tenantId"_attr = getTenantId(),
-                    "migrationId"_attr = getMigrationUUID(),
-                    "donorConnString"_attr = _donorConnectionString,
-                    "donorFCV"_attr = donorFCV,
-                    "recipientFCV"_attr = recipientFCV);
+        LOG_ERROR(5382300,
+                  "Donor and recipient FCV mismatch",
+                  "tenantId"_attr = getTenantId(),
+                  "migrationId"_attr = getMigrationUUID(),
+                  "donorConnString"_attr = _donorConnectionString,
+                  "donorFCV"_attr = donorFCV,
+                  "recipientFCV"_attr = recipientFCV);
         uasserted(5382301, "Mismatch between donor and recipient FCV");
     }
 }
@@ -1795,12 +1795,12 @@ SemiFuture<void> TenantMigrationRecipientService::Instance::run(
     auto scopedOutstandingMigrationCounter =
         TenantMigrationStatistics::get(_serviceContext)->getScopedOutstandingReceivingCount();
 
-    LOGV2(4879607,
-          "Starting tenant migration recipient instance: ",
-          "migrationId"_attr = getMigrationUUID(),
-          "tenantId"_attr = getTenantId(),
-          "connectionString"_attr = _donorConnectionString,
-          "readPreference"_attr = _readPreference);
+    LOG(4879607,
+        "Starting tenant migration recipient instance: ",
+        "migrationId"_attr = getMigrationUUID(),
+        "tenantId"_attr = getTenantId(),
+        "connectionString"_attr = _donorConnectionString,
+        "readPreference"_attr = _readPreference);
 
     pauseBeforeRunTenantMigrationRecipientInstance.pauseWhileSet();
     // The 'AsyncTry' is run on the cleanup executor as opposed to the scoped executor  as we rely
@@ -1931,12 +1931,12 @@ SemiFuture<void> TenantMigrationRecipientService::Instance::run(
                        }
 
                        if (startingFCV != currentFCV) {
-                           LOGV2_ERROR(5356200,
-                                       "FCV may not change during migration",
-                                       "tenantId"_attr = getTenantId(),
-                                       "migrationId"_attr = getMigrationUUID(),
-                                       "startingFCV"_attr = startingFCV,
-                                       "currentFCV"_attr = currentFCV);
+                           LOG_ERROR(5356200,
+                                     "FCV may not change during migration",
+                                     "tenantId"_attr = getTenantId(),
+                                     "migrationId"_attr = getMigrationUUID(),
+                                     "startingFCV"_attr = startingFCV,
+                                     "currentFCV"_attr = currentFCV);
                            uasserted(5356201, "Detected FCV change from last migration attempt.");
                        }
 
@@ -2007,22 +2007,22 @@ SemiFuture<void> TenantMigrationRecipientService::Instance::run(
                            }
                            beginApplyingAfterOpTime =
                                std::max(resumeOpTime, startApplyingDonorOpTime);
-                           LOGV2_DEBUG(5394601,
-                                       1,
-                                       "Resuming oplog application from previous tenant "
-                                       "migration attempt",
-                                       "startApplyingDonorOpTime"_attr = beginApplyingAfterOpTime,
-                                       "resumeBatchingOpTime"_attr = resumeOpTime);
+                           LOG_DEBUG(5394601,
+                                     1,
+                                     "Resuming oplog application from previous tenant "
+                                     "migration attempt",
+                                     "startApplyingDonorOpTime"_attr = beginApplyingAfterOpTime,
+                                     "resumeBatchingOpTime"_attr = resumeOpTime);
                            lk.lock();
                        } else {
                            beginApplyingAfterOpTime = *_stateDoc.getStartApplyingDonorOpTime();
                        }
-                       LOGV2_DEBUG(4881202,
-                                   1,
-                                   "Recipient migration service creating oplog applier",
-                                   "tenantId"_attr = getTenantId(),
-                                   "migrationId"_attr = getMigrationUUID(),
-                                   "startApplyingDonorOpTime"_attr = beginApplyingAfterOpTime);
+                       LOG_DEBUG(4881202,
+                                 1,
+                                 "Recipient migration service creating oplog applier",
+                                 "tenantId"_attr = getTenantId(),
+                                 "migrationId"_attr = getMigrationUUID(),
+                                 "startApplyingDonorOpTime"_attr = beginApplyingAfterOpTime);
                        _tenantOplogApplier =
                            std::make_shared<TenantOplogApplier>(_migrationUuid,
                                                                 _tenantId,
@@ -2051,11 +2051,11 @@ SemiFuture<void> TenantMigrationRecipientService::Instance::run(
                    })
                    .then([this, self = shared_from_this()] {
                        _stopOrHangOnFailPoint(&fpAfterFetchingCommittedTransactions);
-                       LOGV2_DEBUG(4881200,
-                                   1,
-                                   "Recipient migration service starting oplog applier",
-                                   "tenantId"_attr = getTenantId(),
-                                   "migrationId"_attr = getMigrationUUID());
+                       LOG_DEBUG(4881200,
+                                 1,
+                                 "Recipient migration service starting oplog applier",
+                                 "tenantId"_attr = getTenantId(),
+                                 "migrationId"_attr = getMigrationUUID());
                        {
                            stdx::lock_guard lk(_mutex);
                            _tenantOplogApplier->setCloneFinishedRecipientOpTime(
@@ -2071,13 +2071,13 @@ SemiFuture<void> TenantMigrationRecipientService::Instance::run(
                    .then([this, self = shared_from_this()] {
                        _stopOrHangOnFailPoint(&fpBeforeFulfillingDataConsistentPromise);
                        stdx::lock_guard lk(_mutex);
-                       LOGV2_DEBUG(4881101,
-                                   1,
-                                   "Tenant migration recipient instance is in consistent state",
-                                   "migrationId"_attr = getMigrationUUID(),
-                                   "tenantId"_attr = getTenantId(),
-                                   "donorConsistentOpTime"_attr =
-                                       _stateDoc.getDataConsistentStopDonorOpTime());
+                       LOG_DEBUG(4881101,
+                                 1,
+                                 "Tenant migration recipient instance is in consistent state",
+                                 "migrationId"_attr = getMigrationUUID(),
+                                 "tenantId"_attr = getTenantId(),
+                                 "donorConsistentOpTime"_attr =
+                                     _stateDoc.getDataConsistentStopDonorOpTime());
 
                        if (!_dataConsistentPromise.getFuture().isReady()) {
                            _dataConsistentPromise.emplaceValue(
@@ -2157,12 +2157,12 @@ SemiFuture<void> TenantMigrationRecipientService::Instance::run(
             if (ErrorCodes::isCancellationError(status) || ErrorCodes::isNetworkError(status)) {
                 stdx::lock_guard lk(_mutex);
                 if (_taskState.isInterrupted()) {
-                    LOGV2(4881207,
-                          "Migration completed with both error and interrupt",
-                          "tenantId"_attr = getTenantId(),
-                          "migrationId"_attr = getMigrationUUID(),
-                          "completionStatus"_attr = status,
-                          "interruptStatus"_attr = _taskState.getInterruptStatus());
+                    LOG(4881207,
+                        "Migration completed with both error and interrupt",
+                        "tenantId"_attr = getTenantId(),
+                        "migrationId"_attr = getMigrationUUID(),
+                        "completionStatus"_attr = status,
+                        "interruptStatus"_attr = _taskState.getInterruptStatus());
                     status = _taskState.getInterruptStatus();
                 } else if (status == ErrorCodes::CallbackCanceled) {
                     // All of our async components don't exit with CallbackCanceled normally unless
@@ -2176,16 +2176,16 @@ SemiFuture<void> TenantMigrationRecipientService::Instance::run(
                 }
             }
 
-            LOGV2(4878501,
-                  "Tenant migration recipient instance: Data sync completed.",
-                  "tenantId"_attr = getTenantId(),
-                  "migrationId"_attr = getMigrationUUID(),
-                  "error"_attr = status);
+            LOG(4878501,
+                "Tenant migration recipient instance: Data sync completed.",
+                "tenantId"_attr = getTenantId(),
+                "migrationId"_attr = getMigrationUUID(),
+                "error"_attr = status);
 
             if (MONGO_unlikely(hangBeforeTaskCompletion.shouldFail())) {
-                LOGV2(4881102,
-                      "Tenant migration recipient instance: hangBeforeTaskCompletion failpoint "
-                      "enabled");
+                LOG(4881102,
+                    "Tenant migration recipient instance: hangBeforeTaskCompletion failpoint "
+                    "enabled");
                 hangBeforeTaskCompletion.pauseWhileSet();
             }
 
@@ -2239,22 +2239,22 @@ SemiFuture<void> TenantMigrationRecipientService::Instance::run(
             stdx::lock_guard lk(_mutex);
             invariant(_dataSyncCompletionPromise.getFuture().isReady());
             if (status.isOK()) {
-                LOGV2(4881401,
-                      "Migration marked to be garbage collectable due to "
-                      "recipientForgetMigration "
-                      "command",
-                      "migrationId"_attr = getMigrationUUID(),
-                      "tenantId"_attr = getTenantId(),
-                      "expireAt"_attr = *_stateDoc.getExpireAt());
+                LOG(4881401,
+                    "Migration marked to be garbage collectable due to "
+                    "recipientForgetMigration "
+                    "command",
+                    "migrationId"_attr = getMigrationUUID(),
+                    "tenantId"_attr = getTenantId(),
+                    "expireAt"_attr = *_stateDoc.getExpireAt());
                 setPromiseOkifNotReady(lk, _taskCompletionPromise);
             } else {
                 // We should only hit here on a stepDown/shutDown, or a 'conflicting migration'
                 // error.
-                LOGV2(4881402,
-                      "Migration not marked to be garbage collectable",
-                      "migrationId"_attr = getMigrationUUID(),
-                      "tenantId"_attr = getTenantId(),
-                      "status"_attr = status);
+                LOG(4881402,
+                    "Migration not marked to be garbage collectable",
+                    "migrationId"_attr = getMigrationUUID(),
+                    "tenantId"_attr = getTenantId(),
+                    "status"_attr = status);
                 setPromiseErrorifNotReady(lk, _taskCompletionPromise, status);
             }
             _taskState.setState(TaskState::kDone);

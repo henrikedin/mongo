@@ -40,7 +40,7 @@ public:
     static void killCursors(OperationContext* opCtx, const std::vector<OperationKey>& opKeys) {
         auto clusterCursorManager = Grid::get(opCtx)->getCursorManager();
         for (auto& cursorId : clusterCursorManager->getCursorsForOpKeys(opKeys)) {
-            LOGV2(4664805, "Attempting to kill cursor", "cursorId"_attr = cursorId);
+            LOG(4664805, "Attempting to kill cursor", "cursorId"_attr = cursorId);
             auto cursorNss = clusterCursorManager->getNamespaceForCursorId(cursorId);
             if (!cursorNss) {
                 // The cursor must have already been killed.
@@ -50,11 +50,11 @@ public:
             auto status = clusterCursorManager->killCursor(opCtx, cursorNss.get(), cursorId);
 
             if (!status.isOK()) {
-                LOGV2(4664806,
-                      "Failed to kill the cursor ",
-                      "error"_attr = redact(status.toString()));
+                LOG(4664806,
+                    "Failed to kill the cursor ",
+                    "error"_attr = redact(status.toString()));
             } else {
-                LOGV2(4664807, "Killed cursor", "cursorId"_attr = cursorId);
+                LOG(4664807, "Killed cursor", "cursorId"_attr = cursorId);
             }
         }
     }

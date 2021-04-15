@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTest
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTest
 
 #include "mongo/platform/basic.h"
 
@@ -39,7 +39,7 @@
 #include "mongo/bson/simple_bsonobj_comparator.h"
 #include "mongo/db/json.h"
 #include "mongo/db/query/collation/collator_interface_mock.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/unittest/unittest.h"
 
 using namespace mongo;
@@ -139,22 +139,22 @@ bool testKeygen(const BSONObj& kp,
         //
         bool match = keysetsEqual(expectedKeys, actualKeys);
         if (!match) {
-            LOGV2(20647,
-                  "Expected: {dumpKeyset_expectedKeys}, Actual: {dumpKeyset_actualKeys}",
-                  "dumpKeyset_expectedKeys"_attr = dumpKeyset(expectedKeys),
-                  "dumpKeyset_actualKeys"_attr = dumpKeyset(actualKeys));
+            LOG(20647,
+                "Expected: {dumpKeyset_expectedKeys}, Actual: {dumpKeyset_actualKeys}",
+                "dumpKeyset_expectedKeys"_attr = dumpKeyset(expectedKeys),
+                "dumpKeyset_actualKeys"_attr = dumpKeyset(actualKeys));
             return false;
         }
 
         match = (expectedMultikeyPaths == actualMultikeyPaths);
         if (!match) {
-            LOGV2(20648,
-                  "Expected: {dumpMultikeyPaths_expectedMultikeyPaths}, Actual: "
-                  "{dumpMultikeyPaths_actualMultikeyPaths}",
-                  "dumpMultikeyPaths_expectedMultikeyPaths"_attr =
-                      dumpMultikeyPaths(expectedMultikeyPaths),
-                  "dumpMultikeyPaths_actualMultikeyPaths"_attr =
-                      dumpMultikeyPaths(actualMultikeyPaths));
+            LOG(20648,
+                "Expected: {dumpMultikeyPaths_expectedMultikeyPaths}, Actual: "
+                "{dumpMultikeyPaths_actualMultikeyPaths}",
+                "dumpMultikeyPaths_expectedMultikeyPaths"_attr =
+                    dumpMultikeyPaths(expectedMultikeyPaths),
+                "dumpMultikeyPaths_actualMultikeyPaths"_attr =
+                    dumpMultikeyPaths(actualMultikeyPaths));
             return false;
         }
 

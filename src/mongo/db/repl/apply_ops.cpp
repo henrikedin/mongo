@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kCommand
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kCommand
 
 #include "mongo/platform/basic.h"
 
@@ -55,7 +55,7 @@
 #include "mongo/db/service_context.h"
 #include "mongo/db/session_catalog_mongod.h"
 #include "mongo/db/transaction_participant.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/util/fail_point.h"
 
@@ -268,10 +268,10 @@ Status _applyOpsWithCommandInfo(OperationContext* opCtx,
 
         ab.append(status.isOK());
         if (!status.isOK()) {
-            LOGV2(21064,
-                  "applyOps error applying: {error}",
-                  "applyOps error applying",
-                  "error"_attr = status);
+            LOG(21064,
+                "applyOps error applying: {error}",
+                "applyOps error applying",
+                "error"_attr = status);
             errors++;
         }
 

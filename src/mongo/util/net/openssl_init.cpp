@@ -27,13 +27,13 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kNetwork
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kNetwork
 
 #include "mongo/platform/basic.h"
 
 #include "mongo/base/init.h"
 #include "mongo/config.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/platform/mutex.h"
 #include "mongo/stdx/mutex.h"
 #include "mongo/util/net/ssl_manager.h"
@@ -149,15 +149,15 @@ void setupFIPS() {
 #if defined(MONGO_CONFIG_HAVE_FIPS_MODE_SET)
     int status = FIPS_mode_set(1);
     if (!status) {
-        LOGV2_FATAL(23173,
-                    "can't activate FIPS mode: {error}",
-                    "Can't activate FIPS mode",
-                    "error"_attr = SSLManagerInterface::getSSLErrorMessage(ERR_get_error()));
+        LOG_FATAL(23173,
+                  "can't activate FIPS mode: {error}",
+                  "Can't activate FIPS mode",
+                  "error"_attr = SSLManagerInterface::getSSLErrorMessage(ERR_get_error()));
         fassertFailedNoTrace(16703);
     }
-    LOGV2(23172, "FIPS 140-2 mode activated");
+    LOG(23172, "FIPS 140-2 mode activated");
 #else
-    LOGV2_FATAL(23174, "this version of mongodb was not compiled with FIPS support");
+    LOG_FATAL(23174, "this version of mongodb was not compiled with FIPS support");
     fassertFailedNoTrace(17089);
 #endif
 }

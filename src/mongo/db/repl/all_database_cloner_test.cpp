@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTest
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTest
 
 #include "mongo/platform/basic.h"
 
@@ -38,7 +38,7 @@
 #include "mongo/db/repl/storage_interface_mock.h"
 #include "mongo/db/service_context_test_fixture.h"
 #include "mongo/dbtests/mock/mock_dbclient_connection.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/unittest/unittest.h"
 #include "mongo/util/clock_source_mock.h"
 #include "mongo/util/concurrency/thread_pool.h"
@@ -118,7 +118,7 @@ TEST_F(AllDatabaseClonerTest, RetriesConnect) {
     ASSERT_EQ(2, getSharedData()->getTotalRetries(WithLock::withoutLock()));
 
     // Bring the server up.
-    LOGV2(21061, "Bringing mock server back up.");
+    LOG(21061, "Bringing mock server back up.");
     _mockServer->reboot();
 
     // Allow the cloner to finish.
@@ -234,7 +234,7 @@ TEST_F(AllDatabaseClonerTest, RetriesListDatabases) {
     ASSERT_EQ(2, getSharedData()->getTotalRetries(WithLock::withoutLock()));
 
     // Bring the server up.
-    LOGV2(21062, "Bringing mock server back up.");
+    LOG(21062, "Bringing mock server back up.");
     _mockServer->reboot();
 
     // Allow the cloner to finish.
@@ -282,7 +282,7 @@ TEST_F(AllDatabaseClonerTest, RetriesListDatabasesButRollBackIdChanges) {
     _mockServer->setCommandReply("replSetGetRBID", fromjson("{ok:1, rbid:2}"));
 
     // Bring the server up.
-    LOGV2(21063, "Bringing mock server back up.");
+    LOG(21063, "Bringing mock server back up.");
     _mockServer->reboot();
 
     // Allow the cloner to finish.
@@ -329,7 +329,7 @@ TEST_F(AllDatabaseClonerTest, RetriesListDatabasesButSourceNodeIsDowngraded) {
     _clock.advance(Minutes(60));
 
     // Bring the server up, but change the wire version to an older one.
-    LOGV2(21053, "Bringing mock server back up.");
+    LOG(21053, "Bringing mock server back up.");
     _mockClient->setWireVersions(WireVersion::SHARDED_TRANSACTIONS,
                                  WireVersion::SHARDED_TRANSACTIONS);
     _mockServer->reboot();
@@ -379,7 +379,7 @@ TEST_F(AllDatabaseClonerTest, RetriesListDatabasesButInitialSyncIdChanges) {
     _clock.advance(Minutes(60));
 
     // Bring the server up.
-    LOGV2(21052, "Bringing mock server back up.");
+    LOG(21052, "Bringing mock server back up.");
     _mockServer->reboot();
 
     // Clear and change the initial sync ID

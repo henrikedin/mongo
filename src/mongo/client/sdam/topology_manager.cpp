@@ -26,14 +26,14 @@
  *    exception statement from all source files in the program, then also delete
  *    it in the license file.
  */
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kNetwork
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kNetwork
 
 #include "mongo/client/sdam/topology_manager.h"
 
 #include <string>
 
 #include "mongo/client/sdam/topology_state_machine.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/topology_version_gen.h"
 
 namespace mongo::sdam {
@@ -86,13 +86,13 @@ bool TopologyManagerImpl::onServerDescription(const HelloOutcome& helloOutcome) 
 
     boost::optional<TopologyVersion> newTopologyVersion = helloOutcome.getTopologyVersion();
     if (isStaleTopologyVersion(lastTopologyVersion, newTopologyVersion)) {
-        LOGV2(23930,
-              "Ignoring this hello response because our topologyVersion: {lastTopologyVersion} is "
-              "fresher than the provided topologyVersion: {newTopologyVersion}",
-              "Ignoring this hello response because our last topologyVersion is fresher than the "
-              "new topologyVersion provided",
-              "lastTopologyVersion"_attr = lastTopologyVersion->toBSON(),
-              "newTopologyVersion"_attr = newTopologyVersion->toBSON());
+        LOG(23930,
+            "Ignoring this hello response because our topologyVersion: {lastTopologyVersion} is "
+            "fresher than the provided topologyVersion: {newTopologyVersion}",
+            "Ignoring this hello response because our last topologyVersion is fresher than the "
+            "new topologyVersion provided",
+            "lastTopologyVersion"_attr = lastTopologyVersion->toBSON(),
+            "newTopologyVersion"_attr = newTopologyVersion->toBSON());
         return false;
     }
 
@@ -139,11 +139,11 @@ void TopologyManagerImpl::onServerRTTUpdated(HostAndPort hostAndPort, HelloRTT r
         }
     }
     // otherwise, the server was removed from the topology. Nothing to do.
-    LOGV2(4333201,
-          "Not updating RTT. Server {server} does not exist in {replicaSet}",
-          "Not updating RTT. The server does not exist in the replica set",
-          "server"_attr = hostAndPort,
-          "replicaSet"_attr = getTopologyDescription()->getSetName());
+    LOG(4333201,
+        "Not updating RTT. Server {server} does not exist in {replicaSet}",
+        "Not updating RTT. The server does not exist in the replica set",
+        "server"_attr = hostAndPort,
+        "replicaSet"_attr = getTopologyDescription()->getSetName());
 }
 
 SemiFuture<std::vector<HostAndPort>> TopologyManagerImpl::executeWithLock(

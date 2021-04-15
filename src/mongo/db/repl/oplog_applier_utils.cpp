@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kReplication
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kReplication
 
 #include "mongo/platform/basic.h"
 
@@ -41,7 +41,7 @@
 #include "mongo/db/repl/repl_server_parameters_gen.h"
 #include "mongo/db/stats/counters.h"
 
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace mongo {
 namespace repl {
@@ -311,11 +311,11 @@ Status OplogApplierUtils::applyOplogBatchCommon(
                     continue;
                 }
 
-                LOGV2_FATAL_CONTINUE(21237,
-                                     "Error applying operation ({oplogEntry}): {error}",
-                                     "Error applying operation",
-                                     "oplogEntry"_attr = redact(entry.toBSONForLogging()),
-                                     "error"_attr = causedBy(redact(status)));
+                LOG_FATAL_CONTINUE(21237,
+                                   "Error applying operation ({oplogEntry}): {error}",
+                                   "Error applying operation",
+                                   "oplogEntry"_attr = redact(entry.toBSONForLogging()),
+                                   "error"_attr = causedBy(redact(status)));
                 return status;
             }
         } catch (const DBException& e) {
@@ -326,11 +326,11 @@ Status OplogApplierUtils::applyOplogBatchCommon(
                 continue;
             }
 
-            LOGV2_FATAL_CONTINUE(21238,
-                                 "writer worker caught exception: {error} on: {oplogEntry}",
-                                 "Writer worker caught exception",
-                                 "error"_attr = redact(e),
-                                 "oplogEntry"_attr = redact(entry.toBSONForLogging()));
+            LOG_FATAL_CONTINUE(21238,
+                               "writer worker caught exception: {error} on: {oplogEntry}",
+                               "Writer worker caught exception",
+                               "error"_attr = redact(e),
+                               "oplogEntry"_attr = redact(entry.toBSONForLogging()));
             return e.toStatus();
         }
     }

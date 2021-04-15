@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kDefault
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kDefault
 
 #include "mongo/platform/basic.h"
 
@@ -36,7 +36,7 @@
 #include <js/Conversions.h>
 
 #include "mongo/base/init.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/scripting/engine.h"
 #include "mongo/scripting/mozjs/implscope.h"
 #include "mongo/scripting/mozjs/jsstringwrapper.h"
@@ -82,11 +82,10 @@ void GlobalInfo::Functions::print::call(JSContext* cx, JS::CallArgs args) {
 
     args.rval().setUndefined();
 
-    LOGV2_INFO_OPTIONS(
-        20162,
-        logv2::LogOptions(logv2::LogTag::kPlainShell, logv2::LogTruncation::Disabled),
-        "{jsPrint}",
-        "jsPrint"_attr = ss.str());
+    LOG_INFO_OPTIONS(20162,
+                     log::LogOptions(log::LogTag::kPlainShell, log::LogTruncation::Disabled),
+                     "{jsPrint}",
+                     "jsPrint"_attr = ss.str());
 }
 
 void GlobalInfo::Functions::version::call(JSContext* cx, JS::CallArgs args) {

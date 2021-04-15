@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kSharding
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kSharding
 
 #include "mongo/platform/basic.h"
 
@@ -51,7 +51,7 @@
 #include "mongo/db/repl/read_concern_args.h"
 #include "mongo/db/repl/repl_client_info.h"
 #include "mongo/executor/network_interface.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/rpc/metadata/repl_set_metadata.h"
 #include "mongo/s/catalog/config_server_version.h"
@@ -993,7 +993,7 @@ Status ShardingCatalogClientImpl::applyChunkOpsDeprecated(OperationContext* opCt
         // document in the list of updates should be returned from a query to the chunks
         // collection. The last chunk can be identified by namespace and version number.
 
-        LOGV2_WARNING(
+        LOG_WARNING(
             22675,
             "Error committing chunk operation, metadata will be revalidated. Caused by {error}",
             "Error committing chunk operation, metadata will be revalidated",
@@ -1069,8 +1069,7 @@ Status ShardingCatalogClientImpl::insertConfigDocument(OperationContext* opCtx,
         // or it is because we failed to wait for write concern on the first attempt. In order to
         // differentiate, fetch the entry and check.
         if (retry > 1 && status == ErrorCodes::DuplicateKey) {
-            LOGV2_DEBUG(
-                22674, 1, "Insert retry failed because of duplicate key error, rechecking.");
+            LOG_DEBUG(22674, 1, "Insert retry failed because of duplicate key error, rechecking.");
 
             auto fetchDuplicate =
                 _exhaustiveFindOnConfig(opCtx,

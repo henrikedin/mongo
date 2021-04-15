@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kControl
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kControl
 
 #include "mongo/platform/basic.h"
 
@@ -45,7 +45,7 @@
 #include <sys/types.h>
 
 #include "mongo/bson/bsonobjbuilder.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace mongo {
 
@@ -71,7 +71,7 @@ int ProcessInfo::getVirtualMemorySize() {
     mach_port_t task;
 
     if ((result = task_for_pid(mach_task_self(), _pid.toNative(), &task)) != KERN_SUCCESS) {
-        LOGV2(677702, "error getting task");
+        LOG(677702, "error getting task");
         return 0;
     }
 
@@ -82,7 +82,7 @@ int ProcessInfo::getVirtualMemorySize() {
 #endif
     mach_msg_type_number_t count = TASK_BASIC_INFO_COUNT;
     if ((result = task_info(task, TASK_BASIC_INFO, (task_info_t)&ti, &count)) != KERN_SUCCESS) {
-        LOGV2(677703, "error getting task_info", "result"_attr = result);
+        LOG(677703, "error getting task_info", "result"_attr = result);
         return 0;
     }
     return (int)((double)ti.virtual_size / (1024.0 * 1024));
@@ -94,7 +94,7 @@ int ProcessInfo::getResidentSize() {
     mach_port_t task;
 
     if ((result = task_for_pid(mach_task_self(), _pid.toNative(), &task)) != KERN_SUCCESS) {
-        LOGV2(577704, "error getting task");
+        LOG(577704, "error getting task");
         return 0;
     }
 
@@ -106,7 +106,7 @@ int ProcessInfo::getResidentSize() {
 #endif
     mach_msg_type_number_t count = TASK_BASIC_INFO_COUNT;
     if ((result = task_info(task, TASK_BASIC_INFO, (task_info_t)&ti, &count)) != KERN_SUCCESS) {
-        LOGV2(677705, "error getting task_info", "result"_attr = result);
+        LOG(677705, "error getting task_info", "result"_attr = result);
         return 0;
     }
     return (int)(ti.resident_size / (1024 * 1024));
@@ -118,7 +118,7 @@ void ProcessInfo::getExtraInfo(BSONObjBuilder& info) {
 
     if (KERN_SUCCESS !=
         task_info(mach_task_self(), TASK_EVENTS_INFO, (integer_t*)&taskInfo, &taskInfoCount)) {
-        LOGV2(677706, "error getting extra task_info");
+        LOG(677706, "error getting extra task_info");
         return;
     }
 
@@ -145,7 +145,7 @@ Variant getSysctlByName(const char* sysctlName) {
     } while (status == -1 && errno == ENOMEM);
     if (status == -1) {
         // unrecoverable error from sysctlbyname
-        LOGV2(23351, "{sysctlName} unavailable", "sysctlName"_attr = sysctlName);
+        LOG(23351, "{sysctlName} unavailable", "sysctlName"_attr = sysctlName);
         return "";
     }
 
@@ -161,15 +161,15 @@ long long getSysctlByName<NumberVal>(const char* sysctlName) {
     long long value = 0;
     size_t len = sizeof(value);
     if (sysctlbyname(sysctlName, &value, &len, nullptr, 0) < 0) {
-        LOGV2(23352,
-              "Unable to resolve sysctl {sysctlName} (number) ",
-              "sysctlName"_attr = sysctlName);
+        LOG(23352,
+            "Unable to resolve sysctl {sysctlName} (number) ",
+            "sysctlName"_attr = sysctlName);
     }
     if (len > 8) {
-        LOGV2(23353,
-              "Unable to resolve sysctl {sysctlName} as integer.  System returned {len} bytes.",
-              "sysctlName"_attr = sysctlName,
-              "len"_attr = len);
+        LOG(23353,
+            "Unable to resolve sysctl {sysctlName} as integer.  System returned {len} bytes.",
+            "sysctlName"_attr = sysctlName,
+            "len"_attr = len);
     }
     return value;
 }

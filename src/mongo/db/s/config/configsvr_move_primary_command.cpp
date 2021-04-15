@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kSharding
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kSharding
 
 #include "mongo/platform/basic.h"
 
@@ -44,7 +44,7 @@
 #include "mongo/db/repl/repl_client_info.h"
 #include "mongo/db/s/dist_lock_manager.h"
 #include "mongo/db/server_options.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/s/catalog/type_database.h"
 #include "mongo/s/catalog_cache.h"
 #include "mongo/s/client/shard_registry.h"
@@ -156,12 +156,12 @@ public:
         const auto toShard = [&]() {
             auto toShardStatus = shardRegistry->getShard(opCtx, to);
             if (!toShardStatus.isOK()) {
-                LOGV2(21921,
-                      "Could not move database {db} to shard {shardId}: {error}",
-                      "Could not move database to shard",
-                      "db"_attr = dbname,
-                      "shardId"_attr = to,
-                      "error"_attr = toShardStatus.getStatus());
+                LOG(21921,
+                    "Could not move database {db} to shard {shardId}: {error}",
+                    "Could not move database to shard",
+                    "db"_attr = dbname,
+                    "shardId"_attr = to,
+                    "error"_attr = toShardStatus.getStatus());
                 uassertStatusOKWithContext(toShardStatus.getStatus(),
                                            str::stream() << "Could not move database '" << dbname
                                                          << "' to shard '" << to << "'");

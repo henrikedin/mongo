@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kCommand
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kCommand
 
 #include "mongo/platform/basic.h"
 
@@ -37,7 +37,7 @@
 #include "mongo/db/operation_context.h"
 #include "mongo/db/service_context.h"
 #include "mongo/db/session_killer.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace mongo {
 
@@ -56,11 +56,11 @@ SessionKiller::Result killSessionsLocalKillOps(OperationContext* opCtx,
                 if (const KillAllSessionsByPattern* pattern = matcher.match(*lsid)) {
                     ScopedKillAllSessionsByPatternImpersonator impersonator(opCtx, *pattern);
 
-                    LOGV2(20706,
-                          "Killing op {opId} as part of killing session {lsid}",
-                          "Killing op as part of killing session",
-                          "opId"_attr = opCtxToKill->getOpID(),
-                          "lsid"_attr = lsid->toBSON());
+                    LOG(20706,
+                        "Killing op {opId} as part of killing session {lsid}",
+                        "Killing op as part of killing session",
+                        "opId"_attr = opCtxToKill->getOpID(),
+                        "lsid"_attr = lsid->toBSON());
 
                     opCtx->getServiceContext()->killOperation(lk, opCtxToKill);
                 }

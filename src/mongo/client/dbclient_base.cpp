@@ -31,7 +31,7 @@
  * Connect to a Mongo database as a database, from C++.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kNetwork
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kNetwork
 
 #include "mongo/platform/basic.h"
 
@@ -57,7 +57,7 @@
 #include "mongo/db/wire_version.h"
 #include "mongo/executor/remote_command_request.h"
 #include "mongo/executor/remote_command_response.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/platform/mutex.h"
 #include "mongo/rpc/factory.h"
 #include "mongo/rpc/get_status_from_command_result.h"
@@ -524,7 +524,7 @@ Status DBClientBase::authenticateInternalUser(auth::StepDownBehavior stepDownBeh
     ScopedMetadataWriterRemover remover{this};
     if (!auth::isInternalAuthSet()) {
         if (!serverGlobalParams.quiet.load()) {
-            LOGV2(20116, "ERROR: No authentication parameters set for internal user");
+            LOG(20116, "ERROR: No authentication parameters set for internal user");
         }
         return {ErrorCodes::AuthenticationFailed,
                 "No authentication parameters set for internal user"};
@@ -549,11 +549,11 @@ Status DBClientBase::authenticateInternalUser(auth::StepDownBehavior stepDownBeh
     }
 
     if (!serverGlobalParams.quiet.load()) {
-        LOGV2(20117,
-              "Can't authenticate to {connString} as internal user, error: {error}",
-              "Can't authenticate as internal user",
-              "connString"_attr = toString(),
-              "error"_attr = status);
+        LOG(20117,
+            "Can't authenticate to {connString} as internal user, error: {error}",
+            "Can't authenticate as internal user",
+            "connString"_attr = toString(),
+            "error"_attr = status);
     }
 
     return status;
@@ -1062,11 +1062,11 @@ void DBClientBase::dropIndex(const string& ns,
     }
     BSONObj info;
     if (!runCommand(nsToDatabase(ns), cmdBuilder.obj(), info)) {
-        LOGV2_DEBUG(20118,
-                    _logLevel.toInt(),
-                    "dropIndex failed: {info}",
-                    "dropIndex failed",
-                    "info"_attr = info);
+        LOG_DEBUG(20118,
+                  _logLevel.toInt(),
+                  "dropIndex failed: {info}",
+                  "dropIndex failed",
+                  "info"_attr = info);
         uassert(10007, "dropIndex failed", 0);
     }
 }

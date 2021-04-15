@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kStorage
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kStorage
 
 #include "mongo/platform/basic.h"
 
@@ -38,7 +38,7 @@
 #include "mongo/db/s/collection_sharding_state.h"
 #include "mongo/db/s/database_sharding_state.h"
 #include "mongo/db/views/view_catalog.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/fail_point.h"
 
 namespace mongo {
@@ -304,7 +304,7 @@ AutoGetCollectionMaybeLockFree::AutoGetCollectionMaybeLockFree(
                                  [](std::shared_ptr<const Collection>& collection,
                                     OperationContext* opCtx,
                                     CollectionUUID uuid) {
-                                     LOGV2_FATAL(
+                                     LOG_FATAL(
                                          5342700,
                                          "This is a nested lock helper and there was an attempt to "
                                          "yield locks, which should be impossible");

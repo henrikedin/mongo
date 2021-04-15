@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTest
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTest
 
 #include "mongo/platform/basic.h"
 
@@ -41,7 +41,7 @@
 #include "mongo/db/operation_context.h"
 #include "mongo/db/operation_context_group.h"
 #include "mongo/db/service_context.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/stdx/future.h"
 #include "mongo/stdx/thread.h"
 #include "mongo/transport/session.h"
@@ -1169,8 +1169,8 @@ TEST(OperationContextTest, CurrentOpExcludesKilledOperations) {
             auto objNoOpCtx = bobNoOpCtx.obj();
             auto objKilledOpCtx = bobKilledOpCtx.obj();
 
-            LOGV2_DEBUG(4780201, 1, "With no opCtx", "object"_attr = objNoOpCtx);
-            LOGV2_DEBUG(4780202, 1, "With killed opCtx", "object"_attr = objKilledOpCtx);
+            LOG_DEBUG(4780201, 1, "With no opCtx", "object"_attr = objNoOpCtx);
+            LOG_DEBUG(4780202, 1, "With killed opCtx", "object"_attr = objKilledOpCtx);
 
             ASSERT_EQ(objNoOpCtx.nFields(), objKilledOpCtx.nFields());
 

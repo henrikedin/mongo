@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kQuery
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kQuery
 
 #include "mongo/platform/basic.h"
 
@@ -57,7 +57,7 @@
 #include "mongo/db/stats/server_read_concern_metrics.h"
 #include "mongo/db/storage/storage_engine.h"
 #include "mongo/db/transaction_participant.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 
 namespace mongo {
@@ -508,13 +508,13 @@ public:
                 auto&& explainer = exec->getPlanExplainer();
                 auto&& [stats, _] =
                     explainer.getWinningPlanStats(ExplainOptions::Verbosity::kExecStats);
-                LOGV2_WARNING(23798,
-                              "Plan executor error during find command: {error}, "
-                              "stats: {stats}, cmd: {cmd}",
-                              "Plan executor error during find command",
-                              "error"_attr = exception.toStatus(),
-                              "stats"_attr = redact(stats),
-                              "cmd"_attr = cmdObj);
+                LOG_WARNING(23798,
+                            "Plan executor error during find command: {error}, "
+                            "stats: {stats}, cmd: {cmd}",
+                            "Plan executor error during find command",
+                            "error"_attr = exception.toStatus(),
+                            "stats"_attr = redact(stats),
+                            "cmd"_attr = cmdObj);
 
                 exception.addContext("Executor error during find command");
                 throw;

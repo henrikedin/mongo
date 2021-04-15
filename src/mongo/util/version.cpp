@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kControl
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kControl
 
 #include "mongo/platform/basic.h"
 
@@ -48,7 +48,7 @@
 #include "mongo/bson/bsonobj.h"
 #include "mongo/bson/json.h"
 #include "mongo/db/jsobj.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/assert_util.h"
 
 namespace mongo {
@@ -124,7 +124,7 @@ const VersionInfoInterface& VersionInfoInterface::instance(NotEnabledAction acti
         return fallbackVersionInfo;
     }
 
-    LOGV2_FATAL(40278, "Terminating because valid version info has not been configured");
+    LOG_FATAL(40278, "Terminating because valid version info has not been configured");
 }
 
 std::string VersionInfoInterface::makeVersionString(StringData binaryName) const {
@@ -188,7 +188,7 @@ std::string VersionInfoInterface::openSSLVersion(StringData prefix, StringData s
 }
 
 void VersionInfoInterface::logTargetMinOS() const {
-    LOGV2(23398, "Target operating system minimum version", "targetMinOS"_attr = targetMinOS());
+    LOG(23398, "Target operating system minimum version", "targetMinOS"_attr = targetMinOS());
 }
 
 void VersionInfoInterface::logBuildInfo(std::ostream* os) const {
@@ -211,7 +211,7 @@ void VersionInfoInterface::logBuildInfo(std::ostream* os) const {
         // If printing to ostream, print a json object with a single "buildInfo" element.
         *os << "Build Info: " << tojson(obj, ExtendedRelaxedV2_0_0, true) << std::endl;
     } else {
-        LOGV2(23403, "Build Info", "buildInfo"_attr = obj);
+        LOG(23403, "Build Info", "buildInfo"_attr = obj);
     }
 }
 

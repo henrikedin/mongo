@@ -27,12 +27,12 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kCommand
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kCommand
 
 #include "mongo/platform/basic.h"
 
 #include "mongo/db/s/reshard_collection_coordinator.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/s/grid.h"
 #include "mongo/s/request_types/reshard_collection_gen.h"
 
@@ -75,10 +75,10 @@ SemiFuture<void> ReshardCollectionCoordinator::runImpl(
             uassertStatusOK(Shard::CommandResponse::getEffectiveStatus(std::move(cmdResponse)));
         })
         .onError([this, anchor = shared_from_this()](const Status& status) {
-            LOGV2_ERROR(5276001,
-                        "Error running reshard collection",
-                        "namespace"_attr = _nss,
-                        "error"_attr = redact(status));
+            LOG_ERROR(5276001,
+                      "Error running reshard collection",
+                      "namespace"_attr = _nss,
+                      "error"_attr = redact(status));
             return status;
         })
         .semi();

@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kAccessControl
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kAccessControl
 
 #include "mongo/platform/basic.h"
 
@@ -50,8 +50,8 @@
 #include "mongo/db/commands.h"
 #include "mongo/db/commands/authentication_commands.h"
 #include "mongo/db/server_options.h"
-#include "mongo/logv2/attribute_storage.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/attribute_storage.h"
+#include "mongo/log/log.h"
 #include "mongo/util/base64.h"
 #include "mongo/util/sequence_util.h"
 #include "mongo/util/str.h"
@@ -141,7 +141,7 @@ SaslReply doSaslStep(OperationContext* opCtx,
     StatusWith<std::string> swResponse = mechanism.step(opCtx, payload.get());
 
     auto makeLogAttributes = [&]() {
-        logv2::DynamicAttributes attrs;
+        log::DynamicAttributes attrs;
         attrs.add("mechanism", mechanism.mechanismName());
         attrs.add("speculative", session->isSpeculative());
         attrs.add("principalName", mechanism.getPrincipalName());
@@ -166,7 +166,7 @@ SaslReply doSaslStep(OperationContext* opCtx,
         auto attrs = makeLogAttributes();
         auto errorString = redact(swResponse.getStatus());
         attrs.add("error", errorString);
-        LOGV2_DEBUG(20249, dLevel, "Authentication failed", attrs);
+        LOG_DEBUG(20249, dLevel, "Authentication failed", attrs);
 
         sleepmillis(saslGlobalParams.authFailedDelay.load());
         // All the client needs to know is that authentication has failed.
@@ -180,7 +180,7 @@ SaslReply doSaslStep(OperationContext* opCtx,
 
         if (!serverGlobalParams.quiet.load()) {
             auto attrs = makeLogAttributes();
-            LOGV2(20250, "Authentication succeeded", attrs);
+            LOG(20250, "Authentication succeeded", attrs);
         }
 
         session->markSuccessful();

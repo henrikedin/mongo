@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kQuery
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kQuery
 
 #include "mongo/platform/basic.h"
 
@@ -49,7 +49,7 @@
 #include "mongo/db/query/query_knobs_gen.h"
 #include "mongo/db/query/query_planner.h"
 #include "mongo/db/query/stage_builder_util.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/str.h"
 #include "mongo/util/transitional_tools_do_not_use/vector_spooling.h"
 
@@ -112,12 +112,12 @@ Status CachedPlanStage::pickBestPlan(PlanYieldPolicy* yieldPolicy) {
             // whole query. We neither evict the existing cache entry nor cache the result of
             // replanning.
             auto explainer = plan_explainer_factory::make(child().get());
-            LOGV2_DEBUG(20579,
-                        1,
-                        "Execution of cached plan failed, falling back to replan",
-                        "query"_attr = redact(_canonicalQuery->toStringShort()),
-                        "planSummary"_attr = explainer->getPlanSummary(),
-                        "status"_attr = redact(ex.toStatus()));
+            LOG_DEBUG(20579,
+                      1,
+                      "Execution of cached plan failed, falling back to replan",
+                      "query"_attr = redact(_canonicalQuery->toStringShort()),
+                      "planSummary"_attr = explainer->getPlanSummary(),
+                      "status"_attr = redact(ex.toStatus()));
 
             const bool shouldCache = false;
             return replan(yieldPolicy,
@@ -161,13 +161,13 @@ Status CachedPlanStage::pickBestPlan(PlanYieldPolicy* yieldPolicy) {
     // If we're here, the trial period took more than 'maxWorksBeforeReplan' work cycles. This
     // plan is taking too long, so we replan from scratch.
     auto explainer = plan_explainer_factory::make(child().get());
-    LOGV2_DEBUG(20580,
-                1,
-                "Evicting cache entry and replanning query",
-                "maxWorksBeforeReplan"_attr = maxWorksBeforeReplan,
-                "decisionWorks"_attr = _decisionWorks,
-                "query"_attr = redact(_canonicalQuery->toStringShort()),
-                "planSummary"_attr = explainer->getPlanSummary());
+    LOG_DEBUG(20580,
+              1,
+              "Evicting cache entry and replanning query",
+              "maxWorksBeforeReplan"_attr = maxWorksBeforeReplan,
+              "decisionWorks"_attr = _decisionWorks,
+              "query"_attr = redact(_canonicalQuery->toStringShort()),
+              "planSummary"_attr = explainer->getPlanSummary());
 
     const bool shouldCache = true;
     return replan(
@@ -228,7 +228,7 @@ Status CachedPlanStage::replan(PlanYieldPolicy* yieldPolicy, bool shouldCache, s
         solutions.pop_back();
 
         auto explainer = plan_explainer_factory::make(child().get());
-        LOGV2_DEBUG(
+        LOG_DEBUG(
             20581,
             1,
             "Replanning of query resulted in single query solution, which will not be cached.",
@@ -263,12 +263,12 @@ Status CachedPlanStage::replan(PlanYieldPolicy* yieldPolicy, bool shouldCache, s
     }
 
     auto explainer = plan_explainer_factory::make(child().get());
-    LOGV2_DEBUG(20582,
-                1,
-                "Query plan after replanning and its cache status",
-                "query"_attr = redact(_canonicalQuery->toStringShort()),
-                "planSummary"_attr = explainer->getPlanSummary(),
-                "shouldCache"_attr = (shouldCache ? "yes" : "no"));
+    LOG_DEBUG(20582,
+              1,
+              "Query plan after replanning and its cache status",
+              "query"_attr = redact(_canonicalQuery->toStringShort()),
+              "planSummary"_attr = explainer->getPlanSummary(),
+              "shouldCache"_attr = (shouldCache ? "yes" : "no"));
     return Status::OK();
 }
 

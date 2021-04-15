@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kSharding
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kSharding
 
 #include "mongo/platform/basic.h"
 
@@ -43,7 +43,7 @@
 #include "mongo/db/s/shard_filtering_metadata_refresh.h"
 #include "mongo/db/s/sharding_state.h"
 #include "mongo/db/vector_clock.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/s/catalog/type_chunk.h"
 #include "mongo/s/client/shard_registry.h"
 #include "mongo/s/grid.h"
@@ -227,12 +227,12 @@ void mergeChunks(OperationContext* opCtx,
 
     if ((!commandStatus.isOK() || !writeConcernStatus.isOK()) &&
         checkMetadataForSuccess(opCtx, nss, epoch, ChunkRange(minKey, maxKey))) {
-        LOGV2_DEBUG(21983,
-                    1,
-                    "mergeChunk interval [{minKey},{maxKey}) has already been committed",
-                    "mergeChunk interval has already been committed",
-                    "minKey"_attr = redact(minKey),
-                    "maxKey"_attr = redact(maxKey));
+        LOG_DEBUG(21983,
+                  1,
+                  "mergeChunk interval [{minKey},{maxKey}) has already been committed",
+                  "mergeChunk interval has already been committed",
+                  "minKey"_attr = redact(minKey),
+                  "maxKey"_attr = redact(maxKey));
         return;
     }
 

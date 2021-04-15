@@ -31,7 +31,7 @@
  * Connect to a Mongo database as a database, from C++.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kNetwork
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kNetwork
 
 #include "mongo/platform/basic.h"
 
@@ -65,7 +65,7 @@
 #include "mongo/db/wire_version.h"
 #include "mongo/executor/remote_command_request.h"
 #include "mongo/executor/remote_command_response.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/platform/mutex.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/rpc/metadata/client_metadata.h"
@@ -353,10 +353,10 @@ Status DBClientConnection::connect(const HostAndPort& serverAddress,
     auto validateStatus =
         rpc::validateWireVersion(wireSpec->outgoing, swProtocolSet.getValue().version);
     if (!validateStatus.isOK()) {
-        LOGV2_WARNING(20126,
-                      "Remote host has incompatible wire version: {error}",
-                      "Remote host has incompatible wire version",
-                      "error"_attr = validateStatus);
+        LOG_WARNING(20126,
+                    "Remote host has incompatible wire version: {error}",
+                    "Remote host has incompatible wire version",
+                    "error"_attr = validateStatus);
 
         return validateStatus;
     }
@@ -450,11 +450,11 @@ Status DBClientConnection::connectSocketOnly(
     _lastConnectivityCheck = Date_t::now();
     _session->setTimeout(_socketTimeout);
     _session->setTags(_tagMask);
-    LOGV2_DEBUG(20119,
-                1,
-                "Connected to host {connString}",
-                "Connected to host",
-                "connString"_attr = toString());
+    LOG_DEBUG(20119,
+              1,
+              "Connected to host {connString}",
+              "Connected to host",
+              "connString"_attr = toString());
     return Status::OK();
 }
 
@@ -581,22 +581,22 @@ void DBClientConnection::_checkConnection() {
     // Don't hammer reconnects, backoff if needed
     sleepFor(_autoReconnectBackoff.nextSleep());
 
-    LOGV2_DEBUG(20120,
-                _logLevel.toInt(),
-                "Trying to reconnect to {connString}",
-                "Trying to reconnect",
-                "connString"_attr = toString());
+    LOG_DEBUG(20120,
+              _logLevel.toInt(),
+              "Trying to reconnect to {connString}",
+              "Trying to reconnect",
+              "connString"_attr = toString());
     string errmsg;
 
     auto connectStatus = connect(_serverAddress, _applicationName, _transientSSLParams);
     if (!connectStatus.isOK()) {
         _markFailed(kSetFlag);
-        LOGV2_DEBUG(20121,
-                    _logLevel.toInt(),
-                    "Reconnect attempt to {connString} failed: {reason}",
-                    "Reconnect attempt failed",
-                    "connString"_attr = toString(),
-                    "error"_attr = errmsg);
+        LOG_DEBUG(20121,
+                  _logLevel.toInt(),
+                  "Reconnect attempt to {connString} failed: {reason}",
+                  "Reconnect attempt failed",
+                  "connString"_attr = toString(),
+                  "error"_attr = errmsg);
         if (connectStatus == ErrorCodes::IncompatibleCatalogManager) {
             uassertStatusOK(connectStatus);  // Will always throw
         } else {
@@ -604,11 +604,11 @@ void DBClientConnection::_checkConnection() {
         }
     }
 
-    LOGV2_DEBUG(20122,
-                _logLevel.toInt(),
-                "Reconnected to {connString}",
-                "Reconnected",
-                "connString"_attr = toString());
+    LOG_DEBUG(20122,
+              _logLevel.toInt(),
+              "Reconnected to {connString}",
+              "Reconnected",
+              "connString"_attr = toString());
     if (_internalAuthOnReconnect) {
         uassertStatusOK(authenticateInternalUser(_internalAuthStepDownBehavior));
     } else {
@@ -616,13 +616,13 @@ void DBClientConnection::_checkConnection() {
             try {
                 DBClientConnection::_auth(kv.second);
             } catch (ExceptionFor<ErrorCodes::AuthenticationFailed>& ex) {
-                LOGV2_DEBUG(20123,
-                            _logLevel.toInt(),
-                            "Reconnect: auth failed for on {db} using {user}: {reason}",
-                            "Reconnect: auth failed",
-                            "db"_attr = kv.second[auth::getSaslCommandUserDBFieldName()],
-                            "user"_attr = kv.second[auth::getSaslCommandUserFieldName()],
-                            "error"_attr = ex.what());
+                LOG_DEBUG(20123,
+                          _logLevel.toInt(),
+                          "Reconnect: auth failed for on {db} using {user}: {reason}",
+                          "Reconnect: auth failed",
+                          "db"_attr = kv.second[auth::getSaslCommandUserDBFieldName()],
+                          "user"_attr = kv.second[auth::getSaslCommandUserFieldName()],
+                          "error"_attr = ex.what());
             }
         }
     }
@@ -780,11 +780,11 @@ bool DBClientConnection::call(Message& toSend,
 
     auto sinkStatus = _session->sinkMessage(swm.getValue());
     if (!sinkStatus.isOK()) {
-        LOGV2(20124,
-              "DBClientConnection failed to send message to {connString}: {error}",
-              "DBClientConnection failed to send message",
-              "connString"_attr = getServerAddress(),
-              "error"_attr = redact(sinkStatus));
+        LOG(20124,
+            "DBClientConnection failed to send message to {connString}: {error}",
+            "DBClientConnection failed to send message",
+            "connString"_attr = getServerAddress(),
+            "error"_attr = redact(sinkStatus));
         return maybeThrow(sinkStatus);
     }
 
@@ -792,11 +792,11 @@ bool DBClientConnection::call(Message& toSend,
     if (swm.isOK()) {
         response = std::move(swm.getValue());
     } else {
-        LOGV2(20125,
-              "DBClientConnection failed to receive message from {connString}: {error}",
-              "DBClientConnection failed to receive message",
-              "connString"_attr = getServerAddress(),
-              "error"_attr = redact(swm.getStatus()));
+        LOG(20125,
+            "DBClientConnection failed to receive message from {connString}: {error}",
+            "DBClientConnection failed to receive message",
+            "connString"_attr = getServerAddress(),
+            "error"_attr = redact(swm.getStatus()));
         return maybeThrow(swm.getStatus());
     }
 

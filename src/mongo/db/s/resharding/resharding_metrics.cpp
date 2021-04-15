@@ -26,13 +26,13 @@
  *    exception statement from all source files in the program, then also delete
  *    it in the license file.
  */
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kResharding
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kResharding
 
 #include <algorithm>
 #include <memory>
 
 #include "mongo/db/s/resharding/resharding_metrics.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/platform/compiler.h"
 
 namespace mongo {
@@ -183,10 +183,10 @@ static bool checkState(T state, std::initializer_list<T> validStates) {
         sep = ", "_sd;
     }
 
-    LOGV2_FATAL_CONTINUE(5553300,
-                         "Invalid resharding state",
-                         "state"_attr = serializeState(state),
-                         "valid"_attr = ss.str());
+    LOG_FATAL_CONTINUE(5553300,
+                       "Invalid resharding state",
+                       "state"_attr = serializeState(state),
+                       "valid"_attr = ss.str());
     return false;
 }
 

@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTransaction
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTransaction
 
 #include "mongo/platform/basic.h"
 
@@ -37,7 +37,7 @@
 #include "mongo/db/s/transaction_coordinator_metrics_observer.h"
 #include "mongo/db/server_options.h"
 #include "mongo/db/vector_clock_mutable.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/s/grid.h"
 #include "mongo/util/cancellation.h"
 #include "mongo/util/fail_point.h"
@@ -66,7 +66,7 @@ ExecutorFuture<void> waitForMajorityWithHangFailpoint(ServiceContext* service,
 
     if (auto sfp = failpoint.scoped(); MONGO_unlikely(sfp.isActive())) {
         const BSONObj& data = sfp.getData();
-        LOGV2(22445, "Hit {failPointName} failpoint", "failPointName"_attr = failPointName);
+        LOG(22445, "Hit {failPointName} failpoint", "failPointName"_attr = failPointName);
 
         // Run the hang failpoint asynchronously on a different thread to avoid self deadlocks.
         return ExecutorFuture<void>(executor).then(
@@ -111,11 +111,11 @@ TransactionCoordinator::TransactionCoordinator(OperationContext* operationContex
         _scheduler
             ->scheduleWorkAt(deadline,
                              [this](OperationContext*) {
-                                 LOGV2_DEBUG(5047000,
-                                             1,
-                                             "TransactionCoordinator deadline reached",
-                                             "sessionId"_attr = _lsid.getId(),
-                                             "txnNumber"_attr = _txnNumber);
+                                 LOG_DEBUG(5047000,
+                                           1,
+                                           "TransactionCoordinator deadline reached",
+                                           "sessionId"_attr = _lsid.getId(),
+                                           "txnNumber"_attr = _txnNumber);
                                  cancelIfCommitNotYetStarted();
 
                                  // See the comments for sendPrepare about the purpose of this
@@ -212,14 +212,14 @@ TransactionCoordinator::TransactionCoordinator(OperationContext* operationContex
                     }
 
                     if (_decision->getDecision() == CommitDecision::kCommit) {
-                        LOGV2_DEBUG(22446,
-                                    3,
-                                    "{sessionId}:{txnNumber} Advancing cluster time to "
-                                    "the commit timestamp {commitTimestamp}",
-                                    "Advancing cluster time to the commit timestamp",
-                                    "sessionId"_attr = _lsid.getId(),
-                                    "txnNumber"_attr = _txnNumber,
-                                    "commitTimestamp"_attr = *_decision->getCommitTimestamp());
+                        LOG_DEBUG(22446,
+                                  3,
+                                  "{sessionId}:{txnNumber} Advancing cluster time to "
+                                  "the commit timestamp {commitTimestamp}",
+                                  "Advancing cluster time to the commit timestamp",
+                                  "sessionId"_attr = _lsid.getId(),
+                                  "txnNumber"_attr = _txnNumber,
+                                  "commitTimestamp"_attr = *_decision->getCommitTimestamp());
 
                         VectorClockMutable::get(_serviceContext)
                             ->tickClusterTimeTo(LogicalTime(*_decision->getCommitTimestamp()));
@@ -230,11 +230,11 @@ TransactionCoordinator::TransactionCoordinator(OperationContext* operationContex
             [this, lsid, txnNumber](const Status& status) {
                 // Timeout happened, propagate the decision to abort the transaction to replicas
                 // and convert the internal error code to the public one.
-                LOGV2(5047001,
-                      "Transaction coordinator made abort decision",
-                      "sessionId"_attr = lsid.getId(),
-                      "txnNumber"_attr = txnNumber,
-                      "status"_attr = redact(status));
+                LOG(5047001,
+                    "Transaction coordinator made abort decision",
+                    "sessionId"_attr = lsid.getId(),
+                    "txnNumber"_attr = txnNumber,
+                    "status"_attr = redact(status));
                 stdx::lock_guard<Latch> lg(_mutex);
                 _decision = txn::PrepareVote::kAbort;
                 _decision->setAbortStatus(Status(ErrorCodes::NoSuchTransaction, status.reason()));
@@ -415,13 +415,13 @@ void TransactionCoordinator::_done(Status status) {
                         str::stream() << "Coordinator " << _lsid.getId() << ':' << _txnNumber
                                       << " stopped due to: " << status.reason());
 
-    LOGV2_DEBUG(22447,
-                3,
-                "{sessionId}:{txnNumber} Two-phase commit completed with {status}",
-                "Two-phase commit completed",
-                "sessionId"_attr = _lsid.getId(),
-                "txnNumber"_attr = _txnNumber,
-                "status"_attr = redact(status));
+    LOG_DEBUG(22447,
+              3,
+              "{sessionId}:{txnNumber} Two-phase commit completed with {status}",
+              "Two-phase commit completed",
+              "sessionId"_attr = _lsid.getId(),
+              "txnNumber"_attr = _txnNumber,
+              "status"_attr = redact(status));
 
     stdx::unique_lock<Latch> ul(_mutex);
 
@@ -435,7 +435,7 @@ void TransactionCoordinator::_done(Status status) {
         _decisionDurable ? _decision : boost::none);
 
     if (status.isOK() &&
-        (shouldLog(logv2::LogComponent::kTransaction, logv2::LogSeverity::Debug(1)) ||
+        (shouldLog(log::LogComponent::kTransaction, log::LogSeverity::Debug(1)) ||
          _transactionCoordinatorMetricsObserver->getSingleTransactionCoordinatorStats()
                  .getTwoPhaseCommitDuration(tickSource, tickSource->getTicks()) >
              Milliseconds(serverGlobalParams.slowMS))) {
@@ -458,7 +458,7 @@ void TransactionCoordinator::_done(Status status) {
 
 void TransactionCoordinator::_logSlowTwoPhaseCommit(
     const txn::CoordinatorCommitDecision& decision) {
-    logv2::DynamicAttributes attrs;
+    log::DynamicAttributes attrs;
 
     BSONObjBuilder parametersBuilder;
 
@@ -522,7 +522,7 @@ void TransactionCoordinator::_logSlowTwoPhaseCommit(
         duration_cast<Milliseconds>(
             singleTransactionCoordinatorStats.getTwoPhaseCommitDuration(tickSource, curTick)));
 
-    LOGV2(51804, "two-phase commit", attrs);
+    LOG(51804, "two-phase commit", attrs);
 }
 
 std::string TransactionCoordinator::_twoPhaseCommitInfoForLog(

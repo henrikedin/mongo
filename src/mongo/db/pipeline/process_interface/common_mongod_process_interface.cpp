@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kQuery
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kQuery
 
 #include "mongo/platform/basic.h"
 
@@ -68,7 +68,7 @@
 #include "mongo/db/storage/durable_catalog.h"
 #include "mongo/db/transaction_history_iterator.h"
 #include "mongo/db/transaction_participant.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/s/cluster_commands_helpers.h"
 #include "mongo/s/query/document_source_merge_cursors.h"
 
@@ -160,10 +160,10 @@ std::vector<Document> CommonMongodProcessInterface::getIndexStats(OperationConte
 
     std::vector<Document> indexStats;
     if (!collection) {
-        LOGV2_DEBUG(23881,
-                    2,
-                    "Collection not found on index stats retrieval: {ns_ns}",
-                    "ns_ns"_attr = ns.ns());
+        LOG_DEBUG(23881,
+                  2,
+                  "Collection not found on index stats retrieval: {ns_ns}",
+                  "ns_ns"_attr = ns.ns());
         return indexStats;
     }
 

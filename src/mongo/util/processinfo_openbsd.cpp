@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kControl
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kControl
 
 #include <cstdlib>
 #include <string>
@@ -42,7 +42,7 @@
 #include <sys/vmmeter.h>
 #include <unistd.h>
 
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/scopeguard.h"
 #include "processinfo.h"
 
@@ -105,7 +105,7 @@ int ProcessInfo::getVirtualMemorySize() {
     int cnt = 0;
     char err[_POSIX2_LINE_MAX] = {0};
     if ((kd = kvm_openfiles(NULL, NULL, NULL, KVM_NO_FILES, err)) == NULL) {
-        LOGV2(23343, "Unable to get virt mem size: {err}", "err"_attr = err);
+        LOG(23343, "Unable to get virt mem size: {err}", "err"_attr = err);
         return -1;
     }
 
@@ -121,7 +121,7 @@ int ProcessInfo::getResidentSize() {
     int cnt = 0;
     char err[_POSIX2_LINE_MAX] = {0};
     if ((kd = kvm_openfiles(NULL, NULL, NULL, KVM_NO_FILES, err)) == NULL) {
-        LOGV2(23344, "Unable to get res mem size: {err}", "err"_attr = err);
+        LOG(23344, "Unable to get res mem size: {err}", "err"_attr = err);
         return -1;
     }
     kinfo_proc* task = kvm_getprocs(kd, KERN_PROC_PID, _pid.toNative(), sizeof(kinfo_proc), &cnt);
@@ -139,21 +139,21 @@ void ProcessInfo::SystemInfo::collectSystemInfo() {
     mib[1] = KERN_VERSION;
     int status = getSysctlByIDWithDefault(mib, 2, std::string("unknown"), &osVersion);
     if (status != 0)
-        LOGV2(23345,
-              "Unable to collect OS Version. (errno: {errno} msg: {msg})",
-              "Unable to collect OS Version.",
-              "errno"_attr = status,
-              "msg"_attr = strerror(status));
+        LOG(23345,
+            "Unable to collect OS Version. (errno: {errno} msg: {msg})",
+            "Unable to collect OS Version.",
+            "errno"_attr = status,
+            "msg"_attr = strerror(status));
 
     mib[0] = CTL_HW;
     mib[1] = HW_MACHINE;
     status = getSysctlByIDWithDefault(mib, 2, std::string("unknown"), &cpuArch);
     if (status != 0)
-        LOGV2(23346,
-              "Unable to collect Machine Architecture. (errno: {errno} msg: {msg})",
-              "Unable to collect Machine Architecture.",
-              "errno"_attr = status,
-              "msg"_attr = strerror(status));
+        LOG(23346,
+            "Unable to collect Machine Architecture. (errno: {errno} msg: {msg})",
+            "Unable to collect Machine Architecture.",
+            "errno"_attr = status,
+            "msg"_attr = strerror(status));
     addrSize = cpuArch.find("64") != std::string::npos ? 64 : 32;
 
     uintptr_t numBuffer;
@@ -164,20 +164,20 @@ void ProcessInfo::SystemInfo::collectSystemInfo() {
     memSize = numBuffer;
     memLimit = memSize;
     if (status != 0)
-        LOGV2(23347,
-              "Unable to collect Physical Memory. (errno: {errno} msg: {msg})",
-              "errno"_attr = status,
-              "msg"_attr = strerror(status));
+        LOG(23347,
+            "Unable to collect Physical Memory. (errno: {errno} msg: {msg})",
+            "errno"_attr = status,
+            "msg"_attr = strerror(status));
 
     mib[0] = CTL_HW;
     mib[1] = HW_NCPU;
     status = getSysctlByIDWithDefault(mib, 2, defaultNum, &numBuffer);
     numCores = numBuffer;
     if (status != 0)
-        LOGV2(23348,
-              "Unable to collect Number of CPUs. (errno: {errno} msg: {msg})",
-              "errno"_attr = status,
-              "msg"_attr = strerror(status));
+        LOG(23348,
+            "Unable to collect Number of CPUs. (errno: {errno} msg: {msg})",
+            "errno"_attr = status,
+            "msg"_attr = strerror(status));
 
     pageSize = static_cast<unsigned long long>(sysconf(_SC_PAGESIZE));
 

@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kReplication
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kReplication
 
 #include "mongo/platform/basic.h"
 
@@ -49,7 +49,7 @@
 #include "mongo/db/storage/storage_engine.h"
 #include "mongo/db/transaction_validation.h"
 #include "mongo/db/write_concern_options.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/protocol.h"
 #include "mongo/util/fail_point.h"
 
@@ -114,13 +114,12 @@ StatusWith<WriteConcernOptions> extractWriteConcern(OperationContext* opCtx,
                                      .getDefaultWriteConcern(opCtx);
                 if (wcDefault) {
                     customDefaultWasApplied = true;
-                    LOGV2_DEBUG(22548,
-                                2,
-                                "Applying default writeConcern on {cmdObj_firstElementFieldName} "
-                                "of {wcDefault}",
-                                "cmdObj_firstElementFieldName"_attr =
-                                    cmdObj.firstElementFieldName(),
-                                "wcDefault"_attr = wcDefault->toBSON());
+                    LOG_DEBUG(22548,
+                              2,
+                              "Applying default writeConcern on {cmdObj_firstElementFieldName} "
+                              "of {wcDefault}",
+                              "cmdObj_firstElementFieldName"_attr = cmdObj.firstElementFieldName(),
+                              "wcDefault"_attr = wcDefault->toBSON());
                     return *wcDefault;
                 }
             }
@@ -277,11 +276,11 @@ Status waitForWriteConcern(OperationContext* opCtx,
                            const OpTime& replOpTime,
                            const WriteConcernOptions& writeConcern,
                            WriteConcernResult* result) {
-    LOGV2_DEBUG(22549,
-                2,
-                "Waiting for write concern. OpTime: {replOpTime}, write concern: {writeConcern}",
-                "replOpTime"_attr = replOpTime,
-                "writeConcern"_attr = writeConcern.toBSON());
+    LOG_DEBUG(22549,
+              2,
+              "Waiting for write concern. OpTime: {replOpTime}, write concern: {writeConcern}",
+              "replOpTime"_attr = replOpTime,
+              "writeConcern"_attr = writeConcern.toBSON());
 
     auto* const storageEngine = opCtx->getServiceContext()->getStorageEngine();
     auto const replCoord = repl::ReplicationCoordinator::get(opCtx);
@@ -300,8 +299,7 @@ Status waitForWriteConcern(OperationContext* opCtx,
     try {
         switch (writeConcernWithPopulatedSyncMode.syncMode) {
             case WriteConcernOptions::SyncMode::UNSET:
-                LOGV2_FATAL(34410,
-                            "Attempting to wait on a WriteConcern with an unset sync option");
+                LOG_FATAL(34410, "Attempting to wait on a WriteConcern with an unset sync option");
             case WriteConcernOptions::SyncMode::NONE:
                 break;
             case WriteConcernOptions::SyncMode::FSYNC: {

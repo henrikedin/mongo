@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kSharding
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kSharding
 
 #include "mongo/platform/basic.h"
 
@@ -38,7 +38,7 @@
 #include "mongo/db/s/database_sharding_state.h"
 #include "mongo/db/s/operation_sharding_state.h"
 #include "mongo/db/s/sharding_ddl_coordinator.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 #include "mongo/db/s/create_collection_coordinator.h"
 #include "mongo/db/s/drop_collection_coordinator.h"
@@ -56,8 +56,7 @@ ShardingDDLCoordinatorService* ShardingDDLCoordinatorService::getService(Operati
 std::shared_ptr<ShardingDDLCoordinator> ShardingDDLCoordinatorService::_constructCoordinator(
     BSONObj initialState) const {
     const auto op = extractShardingDDLCoordinatorMetadata(initialState);
-    LOGV2(
-        5390510, "Constructing new sharding DDL coordinator", "coordinatorDoc"_attr = op.toBSON());
+    LOG(5390510, "Constructing new sharding DDL coordinator", "coordinatorDoc"_attr = op.toBSON());
     switch (op.getId().getOperationType()) {
         case DDLCoordinatorTypeEnum::kDropDatabase:
             return std::make_shared<DropDatabaseCoordinator>(std::move(initialState));
@@ -121,9 +120,9 @@ ExecutorFuture<void> ShardingDDLCoordinatorService::_rebuildService(
             }
         })
         .onError([this](const Status& status) {
-            LOGV2_ERROR(5469630,
-                        "Failed to rebuild Sharding DDL coordinator service",
-                        "error"_attr = status);
+            LOG_ERROR(5469630,
+                      "Failed to rebuild Sharding DDL coordinator service",
+                      "error"_attr = status);
         });
 }
 
@@ -161,10 +160,10 @@ ShardingDDLCoordinatorService::getOrCreateInstance(OperationContext* opCtx, BSON
                 checked_pointer_cast<ShardingDDLCoordinator>(std::move(coordinator)),
                 std::move(created));
         } catch (const DBException& ex) {
-            LOGV2_ERROR(5390512,
-                        "Failed to create instance of sharding DDL coordinator",
-                        "coordinatorId"_attr = coorMetadata.getId(),
-                        "reason"_attr = redact(ex));
+            LOG_ERROR(5390512,
+                      "Failed to create instance of sharding DDL coordinator",
+                      "coordinatorId"_attr = coorMetadata.getId(),
+                      "reason"_attr = redact(ex));
             throw;
         }
     }();

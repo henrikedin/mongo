@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kQuery
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kQuery
 
 #include "mongo/db/query/planner_ixselect.h"
 
@@ -48,7 +48,7 @@
 #include "mongo/db/query/indexability.h"
 #include "mongo/db/query/planner_wildcard_helpers.h"
 #include "mongo/db/query/query_planner_common.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace mongo {
 
@@ -286,22 +286,22 @@ std::vector<IndexEntry> QueryPlannerIXSelect::findIndexesByHint(
         auto hintName = firstHintElt.valueStringData();
         for (auto&& entry : allIndices) {
             if (entry.identifier.catalogName == hintName) {
-                LOGV2_DEBUG(20952,
-                            5,
-                            "Hint by name specified, restricting indices",
-                            "name"_attr = entry.identifier.catalogName,
-                            "keyPattern"_attr = entry.keyPattern);
+                LOG_DEBUG(20952,
+                          5,
+                          "Hint by name specified, restricting indices",
+                          "name"_attr = entry.identifier.catalogName,
+                          "keyPattern"_attr = entry.keyPattern);
                 out.push_back(entry);
             }
         }
     } else {
         for (auto&& entry : allIndices) {
             if (SimpleBSONObjComparator::kInstance.evaluate(entry.keyPattern == hintedIndex)) {
-                LOGV2_DEBUG(20953,
-                            5,
-                            "Hint specified, restricting indices",
-                            "name"_attr = entry.identifier.catalogName,
-                            "keyPattern"_attr = entry.keyPattern);
+                LOG_DEBUG(20953,
+                          5,
+                          "Hint specified, restricting indices",
+                          "name"_attr = entry.identifier.catalogName,
+                          "keyPattern"_attr = entry.keyPattern);
                 out.push_back(entry);
             }
         }
@@ -598,10 +598,10 @@ bool QueryPlannerIXSelect::_compatible(const BSONElement& keyPatternElt,
     } else if (IndexNames::GEO_HAYSTACK == indexedFieldType) {
         return false;
     } else {
-        LOGV2_WARNING(20954,
-                      "Unknown indexing for given node and field",
-                      "node"_attr = node->debugString(),
-                      "field"_attr = keyPatternElt.toString());
+        LOG_WARNING(20954,
+                    "Unknown indexing for given node and field",
+                    "node"_attr = node->debugString(),
+                    "field"_attr = keyPatternElt.toString());
         verify(0);
     }
 }

@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTest
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTest
 
 #include "mongo/platform/basic.h"
 
@@ -39,7 +39,7 @@
 #include "mongo/base/static_assert.h"
 #include "mongo/config.h"
 #include "mongo/db/sorter/sorter.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/platform/random.h"
 #include "mongo/stdx/thread.h"
 #include "mongo/unittest/death_test.h"
@@ -203,10 +203,10 @@ void _assertIteratorsEquivalent(It1 it1, It2 it2, int line) {
         it1->closeSource();
         it2->closeSource();
     } catch (...) {
-        LOGV2(22047,
-              "Failure from line {line} on iteration {iteration}",
-              "line"_attr = line,
-              "iteration"_attr = iteration);
+        LOG(22047,
+            "Failure from line {line} on iteration {iteration}",
+            "line"_attr = line,
+            "iteration"_attr = iteration);
         it1->closeSource();
         it2->closeSource();
         throw;

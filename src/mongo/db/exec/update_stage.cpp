@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kWrite
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kWrite
 
 #include "mongo/platform/basic.h"
 
@@ -54,7 +54,7 @@
 #include "mongo/db/storage/duplicate_key_error_info.h"
 #include "mongo/db/update/path_support.h"
 #include "mongo/db/update/storage_validation.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/s/shard_key_pattern.h"
 #include "mongo/s/would_change_owning_shard_exception.h"
 #include "mongo/util/assert_util.h"
@@ -695,7 +695,7 @@ bool UpdateStage::wasExistingShardKeyUpdated(CollectionShardingState* css,
 
     if (!collFilter.keyBelongsToMe(newShardKey)) {
         if (MONGO_unlikely(hangBeforeThrowWouldChangeOwningShard.shouldFail())) {
-            LOGV2(20605, "Hit hangBeforeThrowWouldChangeOwningShard failpoint");
+            LOG(20605, "Hit hangBeforeThrowWouldChangeOwningShard failpoint");
             hangBeforeThrowWouldChangeOwningShard.pauseWhileSet(opCtx());
         }
 

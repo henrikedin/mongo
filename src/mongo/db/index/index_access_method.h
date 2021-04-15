@@ -415,7 +415,7 @@ struct UpdateTicket {
  * Flags we can set for inserts and deletes (and updates, which are kind of both).
  */
 struct InsertDeleteOptions {
-    // If there's an error, log() it.
+    // If there's an error, LOG() it.
     bool logIfError = false;
 
     // Are duplicate keys allowed in the index?

@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kSharding
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kSharding
 
 #include "mongo/platform/basic.h"
 
@@ -37,7 +37,7 @@
 #include "mongo/db/commands.h"
 #include "mongo/db/s/database_sharding_state.h"
 #include "mongo/db/s/sharding_state.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/s/request_types/sharded_ddl_commands_gen.h"
 
 namespace mongo {
@@ -78,11 +78,11 @@ public:
             try {
                 uassertStatusOK(dropDatabase(opCtx, dbName.toString()));
             } catch (const ExceptionFor<ErrorCodes::NamespaceNotFound>&) {
-                LOGV2_DEBUG(5281101,
-                            1,
-                            "Received a ShardsvrDropDatabaseParticipant but did not find the "
-                            "database locally",
-                            "database"_attr = dbName);
+                LOG_DEBUG(5281101,
+                          1,
+                          "Received a ShardsvrDropDatabaseParticipant but did not find the "
+                          "database locally",
+                          "database"_attr = dbName);
             }
 
             {

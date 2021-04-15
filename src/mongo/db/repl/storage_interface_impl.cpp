@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kReplication
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kReplication
 
 #include "mongo/platform/basic.h"
 
@@ -80,7 +80,7 @@
 #include "mongo/db/storage/control/storage_control.h"
 #include "mongo/db/storage/durable_catalog.h"
 #include "mongo/db/storage/oplog_cap_maintainer_thread.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/background.h"
 #include "mongo/util/str.h"
@@ -193,11 +193,11 @@ StorageInterfaceImpl::createCollectionForBulkLoading(
     const BSONObj idIndexSpec,
     const std::vector<BSONObj>& secondaryIndexSpecs) {
 
-    LOGV2_DEBUG(21753,
-                2,
-                "StorageInterfaceImpl::createCollectionForBulkLoading called for ns: {namespace}",
-                "StorageInterfaceImpl::createCollectionForBulkLoading called",
-                "namespace"_attr = nss.ns());
+    LOG_DEBUG(21753,
+              2,
+              "StorageInterfaceImpl::createCollectionForBulkLoading called for ns: {namespace}",
+              "StorageInterfaceImpl::createCollectionForBulkLoading called",
+              "namespace"_attr = nss.ns());
 
     class StashClient {
     public:
@@ -409,10 +409,10 @@ Status StorageInterfaceImpl::dropReplicatedDatabases(OperationContext* opCtx) {
     std::vector<std::string> dbNames =
         opCtx->getServiceContext()->getStorageEngine()->listDatabases();
     invariant(!dbNames.empty());
-    LOGV2(21754,
-          "dropReplicatedDatabases - dropping {numDatabases} databases",
-          "dropReplicatedDatabases - dropping databases",
-          "numDatabases"_attr = dbNames.size());
+    LOG(21754,
+        "dropReplicatedDatabases - dropping {numDatabases} databases",
+        "dropReplicatedDatabases - dropping databases",
+        "numDatabases"_attr = dbNames.size());
 
     ReplicationCoordinator::get(opCtx)->clearCommittedSnapshot();
 
@@ -429,20 +429,20 @@ Status StorageInterfaceImpl::dropReplicatedDatabases(OperationContext* opCtx) {
             } else {
                 // This is needed since dropDatabase can't be rolled back.
                 // This is safe be replaced by "invariant(db);dropDatabase(opCtx, db);" once fixed.
-                LOGV2(21755,
-                      "dropReplicatedDatabases - database disappeared after retrieving list of "
-                      "database names but before drop: {dbName}",
-                      "dropReplicatedDatabases - database disappeared after retrieving list of "
-                      "database names but before drop",
-                      "dbName"_attr = dbName);
+                LOG(21755,
+                    "dropReplicatedDatabases - database disappeared after retrieving list of "
+                    "database names but before drop: {dbName}",
+                    "dropReplicatedDatabases - database disappeared after retrieving list of "
+                    "database names but before drop",
+                    "dbName"_attr = dbName);
             }
         });
     }
     invariant(hasLocalDatabase, "local database missing");
-    LOGV2(21756,
-          "dropReplicatedDatabases - dropped {numDatabases} databases",
-          "dropReplicatedDatabases - dropped databases",
-          "numDatabases"_attr = dbNames.size());
+    LOG(21756,
+        "dropReplicatedDatabases - dropped {numDatabases} databases",
+        "dropReplicatedDatabases - dropped databases",
+        "numDatabases"_attr = dbNames.size());
 
     return Status::OK();
 }
@@ -1199,10 +1199,10 @@ boost::optional<BSONObj> StorageInterfaceImpl::findOplogEntryLessThanOrEqualToTi
             // This will log a message about the conflict initially and then every 5 seconds, with
             // the current rather arbitrary settings.
             if (retries % 10 == 0) {
-                LOGV2(4795900,
-                      "Reading the oplog collection conflicts with a validate cmd. Continuing to "
-                      "retry.",
-                      "retries"_attr = retries);
+                LOG(4795900,
+                    "Reading the oplog collection conflicts with a validate cmd. Continuing to "
+                    "retry.",
+                    "retries"_attr = retries);
             }
 
             ++retries;
@@ -1316,9 +1316,9 @@ void StorageInterfaceImpl::setStableTimestamp(ServiceContext* serviceCtx,
         const auto holdStableTimestamp = dataObj["timestamp"].timestamp();
         if (newStableTimestamp > holdStableTimestamp) {
             newStableTimestamp = holdStableTimestamp;
-            LOGV2(4784410,
-                  "holdStableTimestampAtSpecificTimestamp holding the stable timestamp",
-                  "holdStableTimestamp"_attr = holdStableTimestamp);
+            LOG(4784410,
+                "holdStableTimestampAtSpecificTimestamp holding the stable timestamp",
+                "holdStableTimestamp"_attr = holdStableTimestamp);
         }
     });
 

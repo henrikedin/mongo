@@ -30,14 +30,14 @@
 #pragma once
 
 #include "mongo/base/string_data.h"
-#include "mongo/logv2/log_component.h"
-#include "mongo/logv2/log_detail.h"
-#include "mongo/logv2/log_severity.h"
+#include "mongo/log/log_component.h"
+#include "mongo/log/log_detail.h"
+#include "mongo/log/log_severity.h"
 
 namespace mongo {
-namespace log_backoff_detail {
+namespace LOG_backoff_detail {
 void logAndBackoffImpl(size_t numAttempts);
-}  // namespace log_backoff_detail
+}  // namespace LOG_backoff_detail
 
 /**
  * Will log a message at 'logLevel' for the given 'logComponent' and will perform truncated
@@ -45,13 +45,13 @@ void logAndBackoffImpl(size_t numAttempts);
  */
 template <size_t N, typename... Args>
 void logAndBackoff(int32_t logId,
-                   logv2::LogComponent component,
-                   logv2::LogSeverity severity,
+                   log::LogComponent component,
+                   log::LogSeverity severity,
                    size_t numAttempts,
                    const char (&msg)[N],
                    const fmt::internal::named_arg<Args, char>&... args) {
-    logv2::detail::doLog(logId, severity, {component}, msg, args..., "attempts"_attr = numAttempts);
-    log_backoff_detail::logAndBackoffImpl(numAttempts);
+    log::detail::doLog(logId, severity, {component}, msg, args..., "attempts"_attr = numAttempts);
+    LOG_backoff_detail::logAndBackoffImpl(numAttempts);
 }
 
 }  // namespace mongo

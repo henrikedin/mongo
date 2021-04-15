@@ -27,14 +27,14 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kCommand
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kCommand
 
 #include "mongo/platform/basic.h"
 
 #include "mongo/db/auth/authorization_session.h"
 #include "mongo/db/commands.h"
 #include "mongo/db/create_indexes_gen.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/s/cluster_commands_helpers.h"
 #include "mongo/s/cluster_ddl.h"
@@ -80,12 +80,12 @@ public:
                               const RequestParser&,
                               BSONObjBuilder& output) final {
         const NamespaceString nss(CommandHelpers::parseNsCollectionRequired(dbName, cmdObj));
-        LOGV2_DEBUG(22750,
-                    1,
-                    "createIndexes: {namespace} cmd: {command}",
-                    "CMD: createIndexes",
-                    "namespace"_attr = nss,
-                    "command"_attr = redact(cmdObj));
+        LOG_DEBUG(22750,
+                  1,
+                  "createIndexes: {namespace} cmd: {command}",
+                  "CMD: createIndexes",
+                  "namespace"_attr = nss,
+                  "command"_attr = redact(cmdObj));
 
         cluster::createDatabase(opCtx, dbName);
 

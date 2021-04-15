@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kQuery
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kQuery
 
 #include "mongo/platform/basic.h"
 
@@ -53,7 +53,7 @@
 #include "mongo/db/query/query_planner.h"
 #include "mongo/db/query/query_planner_common.h"
 #include "mongo/db/record_id_helpers.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/transitional_tools_do_not_use/vector_spooling.h"
 
 namespace {
@@ -1301,10 +1301,10 @@ std::unique_ptr<QuerySolutionNode> QueryPlannerAccess::buildIndexedAnd(
         } else {
             // We can't use sort-based intersection, and hash-based intersection is disabled.
             // Clean up the index scans and bail out by returning NULL.
-            LOGV2_DEBUG(20947,
-                        5,
-                        "Can't build index intersection solution: AND_SORTED is not possible and "
-                        "AND_HASH is disabled");
+            LOG_DEBUG(20947,
+                      5,
+                      "Can't build index intersection solution: AND_SORTED is not possible and "
+                      "AND_HASH is disabled");
             return nullptr;
         }
     }
@@ -1369,7 +1369,7 @@ std::unique_ptr<QuerySolutionNode> QueryPlannerAccess::buildIndexedOr(
     // when any of our children lack index tags.  If a node lacks an index tag it cannot
     // be answered via an index.
     if (!inArrayOperator && 0 != root->numChildren()) {
-        LOGV2_WARNING(20948, "Planner OR error, non-indexed child of OR");
+        LOG_WARNING(20948, "Planner OR error, non-indexed child of OR");
         // We won't enumerate an OR without indices for each child, so this isn't an issue, even
         // if we have an AND with an OR child -- we won't get here unless the OR is fully
         // indexed.

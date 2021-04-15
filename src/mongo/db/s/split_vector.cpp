@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kSharding
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kSharding
 
 #include "mongo/platform/basic.h"
 
@@ -44,7 +44,7 @@
 #include "mongo/db/namespace_string.h"
 #include "mongo/db/query/internal_plans.h"
 #include "mongo/db/query/plan_executor.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace mongo {
 namespace {
@@ -126,12 +126,12 @@ std::vector<BSONObj> splitVector(OperationContext* opCtx,
             return emptyVector;
         }
 
-        LOGV2(22107,
-              "Requested split points lookup for chunk {namespace} {minKey} -->> {maxKey}",
-              "Requested split points lookup for chunk",
-              "namespace"_attr = nss.toString(),
-              "minKey"_attr = redact(minKey),
-              "maxKey"_attr = redact(maxKey));
+        LOG(22107,
+            "Requested split points lookup for chunk {namespace} {minKey} -->> {maxKey}",
+            "Requested split points lookup for chunk",
+            "namespace"_attr = nss.toString(),
+            "minKey"_attr = redact(minKey),
+            "maxKey"_attr = redact(maxKey));
 
         // We'll use the average object size and number of object to find approximately how many
         // keys each chunk should have. We'll split at half the maxChunkSizeBytes or
@@ -141,14 +141,14 @@ std::vector<BSONObj> splitVector(OperationContext* opCtx,
         long long keyCount = maxChunkSizeBytes.get() / (2 * avgRecSize);
 
         if (maxChunkObjects.get() && (maxChunkObjects.get() < keyCount)) {
-            LOGV2(22108,
-                  "Limiting the number of documents per chunk to {maxChunkObjects} based "
-                  "on the maxChunkObjects parameter for split vector command (compared to maximum "
-                  "possible: {maxPossibleDocumentsPerChunk})",
-                  "Limiting the number of documents per chunk for split vector command based on "
-                  "the maxChunksObject parameter",
-                  "maxChunkObjects"_attr = maxChunkObjects.get(),
-                  "maxPossibleDocumentsPerChunk"_attr = keyCount);
+            LOG(22108,
+                "Limiting the number of documents per chunk to {maxChunkObjects} based "
+                "on the maxChunkObjects parameter for split vector command (compared to maximum "
+                "possible: {maxPossibleDocumentsPerChunk})",
+                "Limiting the number of documents per chunk for split vector command based on "
+                "the maxChunksObject parameter",
+                "maxChunkObjects"_attr = maxChunkObjects.get(),
+                "maxPossibleDocumentsPerChunk"_attr = keyCount);
             keyCount = maxChunkObjects.get();
         }
 
@@ -199,7 +199,7 @@ std::vector<BSONObj> splitVector(OperationContext* opCtx,
         if (currKey.woCompare(maxKeyInChunk) == 0) {
             // Range contains only documents with a single key value.  So we cannot possibly find a
             // split point, and there is no need to scan any further.
-            LOGV2_WARNING(
+            LOG_WARNING(
                 22113,
                 "Possible low cardinality key detected in {namespace} - range {minKey} -->> "
                 "{maxKey} contains only the key {key}",
@@ -242,14 +242,14 @@ std::vector<BSONObj> splitVector(OperationContext* opCtx,
                                 continue;
                             }
 
-                            LOGV2(22109,
-                                  "Max BSON response size reached for split vector before the end "
-                                  "of chunk {namespace} {minKey} -->> {maxKey}",
-                                  "Max BSON response size reached for split vector before the end "
-                                  "of chunk",
-                                  "namespace"_attr = nss.toString(),
-                                  "minKey"_attr = redact(minKey),
-                                  "maxKey"_attr = redact(maxKey));
+                            LOG(22109,
+                                "Max BSON response size reached for split vector before the end "
+                                "of chunk {namespace} {minKey} -->> {maxKey}",
+                                "Max BSON response size reached for split vector before the end "
+                                "of chunk",
+                                "namespace"_attr = nss.toString(),
+                                "minKey"_attr = redact(minKey),
+                                "maxKey"_attr = redact(maxKey));
                             break;
                         }
 
@@ -257,24 +257,24 @@ std::vector<BSONObj> splitVector(OperationContext* opCtx,
                         splitKeys.push_back(currKey.getOwned());
                         currCount = 0;
                         numChunks++;
-                        LOGV2_DEBUG(22110,
-                                    4,
-                                    "Picked a split key: {key}",
-                                    "Picked a split key",
-                                    "key"_attr = redact(currKey));
+                        LOG_DEBUG(22110,
+                                  4,
+                                  "Picked a split key: {key}",
+                                  "Picked a split key",
+                                  "key"_attr = redact(currKey));
                     }
                 }
 
                 // Stop if we have enough split points.
                 if (maxSplitPoints && maxSplitPoints.get() && (numChunks >= maxSplitPoints.get())) {
-                    LOGV2(22111,
-                          "Max number of requested split points reached ({numSplitPoints}) before "
-                          "the end of chunk {namespace} {minKey} -->> {maxKey}",
-                          "Max number of requested split points reached before the end of chunk",
-                          "numSplitPoints"_attr = numChunks,
-                          "namespace"_attr = nss.toString(),
-                          "minKey"_attr = redact(minKey),
-                          "maxKey"_attr = redact(maxKey));
+                    LOG(22111,
+                        "Max number of requested split points reached ({numSplitPoints}) before "
+                        "the end of chunk {namespace} {minKey} -->> {maxKey}",
+                        "Max number of requested split points reached before the end of chunk",
+                        "numSplitPoints"_attr = numChunks,
+                        "namespace"_attr = nss.toString(),
+                        "minKey"_attr = redact(minKey),
+                        "maxKey"_attr = redact(maxKey));
                     break;
                 }
 
@@ -292,10 +292,10 @@ std::vector<BSONObj> splitVector(OperationContext* opCtx,
             force = false;
             keyCount = currCount / 2;
             currCount = 0;
-            LOGV2(22112,
-                  "splitVector doing another cycle because of force, keyCount now: {keyCount}",
-                  "splitVector doing another cycle because of force",
-                  "keyCount"_attr = keyCount);
+            LOG(22112,
+                "splitVector doing another cycle because of force, keyCount now: {keyCount}",
+                "splitVector doing another cycle because of force",
+                "keyCount"_attr = keyCount);
 
             exec = InternalPlanner::indexScan(opCtx,
                                               &collection.getCollection(),
@@ -316,19 +316,19 @@ std::vector<BSONObj> splitVector(OperationContext* opCtx,
 
         // Warn for keys that are more numerous than maxChunkSizeBytes allows.
         for (auto it = tooFrequentKeys.cbegin(); it != tooFrequentKeys.cend(); ++it) {
-            LOGV2_WARNING(22114,
-                          "Possible low cardinality key detected in {namespace} - key is "
-                          "{key}",
-                          "Possible low cardinality key detected",
-                          "namespace"_attr = nss.toString(),
-                          "key"_attr = redact(prettyKey(idx->keyPattern(), *it)));
+            LOG_WARNING(22114,
+                        "Possible low cardinality key detected in {namespace} - key is "
+                        "{key}",
+                        "Possible low cardinality key detected",
+                        "namespace"_attr = nss.toString(),
+                        "key"_attr = redact(prettyKey(idx->keyPattern(), *it)));
         }
 
         // Remove the sentinel at the beginning before returning
         splitKeys.erase(splitKeys.begin());
 
         if (timer.millis() > serverGlobalParams.slowMS) {
-            LOGV2_WARNING(
+            LOG_WARNING(
                 22115,
                 "Finding the split vector for {namespace} over {keyPattern} keyCount: {keyCount} "
                 "numSplits: {numSplits} lookedAt: {currCount} took {duration}",

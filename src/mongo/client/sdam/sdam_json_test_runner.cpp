@@ -26,7 +26,7 @@
  *    exception statement from all source files in the program, then also delete
  *    it in the license file.
  */
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kDefault
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kDefault
 
 #include <fstream>
 #include <iostream>
@@ -43,7 +43,7 @@
 #include "mongo/client/sdam/json_test_arg_parser.h"
 #include "mongo/client/sdam/sdam_configuration_parameters_gen.h"
 #include "mongo/client/sdam/topology_manager.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/stdx/unordered_set.h"
 #include "mongo/util/clock_source_mock.h"
 #include "mongo/util/options_parser/environment.h"
@@ -112,17 +112,17 @@ public:
         for (auto response : _isMasterResponses) {
             auto descriptionStr =
                 (response.getResponse()) ? response.getResponse()->toString() : "[ Network Error ]";
-            LOGV2(20202,
-                  "Sending server description",
-                  "server"_attr = response.getServer(),
-                  "description"_attr = descriptionStr);
+            LOG(20202,
+                "Sending server description",
+                "server"_attr = response.getServer(),
+                "description"_attr = descriptionStr);
             topology.onServerDescription(response);
         }
 
-        LOGV2(20203,
-              "TopologyDescription after phase",
-              "phaseNumber"_attr = _phaseNum,
-              "topologyDescription"_attr = topology.getTopologyDescription()->toString());
+        LOG(20203,
+            "TopologyDescription after phase",
+            "phaseNumber"_attr = _phaseNum,
+            "topologyDescription"_attr = topology.getTopologyDescription()->toString());
 
         validateServers(
             &testResult, topology.getTopologyDescription(), _topologyOutcome["servers"].Obj());
@@ -459,11 +459,11 @@ public:
         TestCaseResult result{{}, _testFilePath, _testName};
 
         for (const auto& testPhase : _testPhases) {
-            LOGV2(20204, "### Phase Number ###", "phase"_attr = testPhase.getPhaseNum());
+            LOG(20204, "### Phase Number ###", "phase"_attr = testPhase.getPhaseNum());
             auto phaseResult = testPhase.execute(topology);
             result.phaseResults.push_back(phaseResult);
             if (!result.Success()) {
-                LOGV2(20205, "Phase failed", "phase"_attr = phaseResult.phaseNumber);
+                LOG(20205, "Phase failed", "phase"_attr = phaseResult.phaseNumber);
                 break;
             }
         }
@@ -478,7 +478,7 @@ public:
 private:
     void parseTest(fs::path testFilePath) {
         _testFilePath = testFilePath.string();
-        LOGV2(20207, "### Parsing Test File ###", "testFilePath"_attr = testFilePath.string());
+        LOG(20207, "### Parsing Test File ###", "testFilePath"_attr = testFilePath.string());
         {
             std::ifstream testFile(_testFilePath);
             std::ostringstream json;
@@ -541,7 +541,7 @@ public:
         for (auto jsonTest : testFiles) {
             auto testCase = JsonTestCase(jsonTest);
             try {
-                LOGV2(20208, "### Executing Test Case ###", "test"_attr = testCase.Name());
+                LOG(20208, "### Executing Test Case ###", "test"_attr = testCase.Name());
                 results.push_back(testCase.execute());
             } catch (const DBException& ex) {
                 std::stringstream error;
@@ -566,7 +566,7 @@ public:
                 results.begin(), results.end(), [](const JsonTestCase::TestCaseResult& result) {
                     return !result.Success();
                 })) {
-            LOGV2(20209, "### Failed Test Results ###");
+            LOG(20209, "### Failed Test Results ###");
         }
 
         for (const auto& result : results) {
@@ -576,28 +576,28 @@ public:
             if (result.Success()) {
                 ++numSuccess;
             } else {
-                LOGV2(20210, "### Test Name ###", "name"_attr = testName);
-                LOGV2(20211, "Error in file", "file"_attr = file);
+                LOG(20210, "### Test Name ###", "name"_attr = testName);
+                LOG(20211, "Error in file", "file"_attr = file);
                 ++numFailed;
                 for (auto phaseResult : phaseResults) {
-                    LOGV2(20212, "Phase", "phaseNumber"_attr = phaseResult.phaseNumber);
+                    LOG(20212, "Phase", "phaseNumber"_attr = phaseResult.phaseNumber);
                     if (!phaseResult.Success()) {
                         for (auto error : phaseResult.errorDescriptions) {
-                            LOGV2(20213,
-                                  "Errors",
-                                  "errorFirst"_attr = error.first,
-                                  "errorSecond"_attr = error.second);
+                            LOG(20213,
+                                "Errors",
+                                "errorFirst"_attr = error.first,
+                                "errorSecond"_attr = error.second);
                         }
                     }
                 }
-                LOGV2(20214, "");
+                LOG(20214, "");
             }
         }
-        LOGV2(20215,
-              "Test cases summary",
-              "numTestCases"_attr = numTestCases,
-              "numSuccess"_attr = numSuccess,
-              "numFailed"_attr = numFailed);
+        LOG(20215,
+            "Test cases summary",
+            "numTestCases"_attr = numTestCases,
+            "numSuccess"_attr = numSuccess,
+            "numFailed"_attr = numFailed);
 
         return numFailed;
     }
@@ -632,10 +632,10 @@ private:
             if (filePath.string().find(filter) != std::string::npos) {
                 return true;
             } else {
-                LOGV2_DEBUG(20216,
-                            2,
-                            "Test skipped due to filter configuration",
-                            "filePath"_attr = filePath.string());
+                LOG_DEBUG(20216,
+                          2,
+                          "Test skipped due to filter configuration",
+                          "filePath"_attr = filePath.string());
             }
         }
 
@@ -649,8 +649,8 @@ private:
 int main(int argc, char* argv[]) {
     ArgParser args(argc, argv);
 
-    ::mongo::logv2::LogManager::global().getGlobalSettings().setMinimumLoggedSeverity(
-        MONGO_LOGV2_DEFAULT_COMPONENT, ::mongo::logv2::LogSeverity::Debug(args.Verbose()));
+    ::mongo::log::LogManager::global().getGlobalSettings().setMinimumLoggedSeverity(
+        MONGO_LOG_DEFAULT_COMPONENT, ::mongo::log::LogSeverity::Debug(args.Verbose()));
 
     args.LogParams();
 

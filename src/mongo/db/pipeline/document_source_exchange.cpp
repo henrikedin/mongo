@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kQuery
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kQuery
 
 #include "mongo/platform/basic.h"
 
@@ -39,7 +39,7 @@
 #include "mongo/db/hasher.h"
 #include "mongo/db/pipeline/document_source_exchange.h"
 #include "mongo/db/storage/key_string.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace mongo {
 
@@ -302,7 +302,7 @@ DocumentSource::GetNextResult Exchange::getNext(OperationContext* opCtx,
 
         // There is not any document so try to load more from the source.
         if (_loadingThreadId == kInvalidThreadId) {
-            LOGV2_DEBUG(
+            LOG_DEBUG(
                 20896, 3, "A consumer {consumerId} begins loading", "consumerId"_attr = consumerId);
 
             try {
@@ -317,7 +317,7 @@ DocumentSource::GetNextResult Exchange::getNext(OperationContext* opCtx,
                 size_t fullConsumerId = loadNextBatch();
 
                 if (MONGO_unlikely(exchangeFailLoadNextBatch.shouldFail())) {
-                    LOGV2(20897, "exchangeFailLoadNextBatch fail point enabled.");
+                    LOG(20897, "exchangeFailLoadNextBatch fail point enabled.");
                     uasserted(ErrorCodes::FailPointEnabled,
                               "Asserting on loading the next batch due to failpoint.");
                 }

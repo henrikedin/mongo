@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTest
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTest
 
 #include "mongo/platform/basic.h"
 
@@ -40,7 +40,7 @@
 #include "mongo/executor/network_interface_mock.h"
 #include "mongo/executor/task_executor.h"
 #include "mongo/executor/task_executor_test_fixture.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/stdx/thread.h"
 #include "mongo/stdx/unordered_map.h"
 #include "mongo/unittest/unittest.h"
@@ -86,10 +86,10 @@ public:
     CetRegistrationAgent(const std::string& name, ExecutorTestCaseFactory makeTest) {
         auto& entry = executorTestCaseRegistry()[name];
         if (entry) {
-            LOGV2_FATAL(28713,
-                        "Multiple attempts to register ExecutorTest named {executor}",
-                        "Multiple attempts to register ExecutorTest",
-                        "executor"_attr = name);
+            LOG_FATAL(28713,
+                      "Multiple attempts to register ExecutorTest named {executor}",
+                      "Multiple attempts to register ExecutorTest",
+                      "executor"_attr = name);
         }
         entry = std::move(makeTest);
     }

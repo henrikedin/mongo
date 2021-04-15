@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kReplication
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kReplication
 
 #include "mongo/db/repl/oplog_fetcher.h"
 
@@ -39,7 +39,7 @@
 #include "mongo/db/repl/replication_auth.h"
 #include "mongo/db/repl/replication_coordinator.h"
 #include "mongo/db/stats/timer_stats.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/metadata/oplog_query_metadata.h"
 #include "mongo/s/resharding/resume_token_gen.h"
 #include "mongo/util/assert_util.h"
@@ -433,10 +433,10 @@ Status OplogFetcher::_connect() {
                 if (!connectStatus.isOK()) {
                     // If this is a retry, let the DBClientConnection handle the reconnect itself
                     // for proper backoff behavior.
-                    LOGV2(23437,
-                          "OplogFetcher reconnecting due to error: {error}",
-                          "OplogFetcher reconnecting due to error",
-                          "error"_attr = connectStatus);
+                    LOG(23437,
+                        "OplogFetcher reconnecting due to error: {error}",
+                        "OplogFetcher reconnecting due to error",
+                        "error"_attr = connectStatus);
                     _conn->checkConnection();
                 } else {
                     uassertStatusOK(_conn->connect(_config.source, "OplogFetcher", boost::none));
@@ -637,7 +637,7 @@ Status OplogFetcher::_onSuccessfulBatch(const Documents& documents) {
             [&](auto&&) {
                 static constexpr char message[] =
                     "stopReplProducerOnDocument fail point is enabled";
-                LOGV2(21269, message);
+                LOG(21269, message);
                 status = {ErrorCodes::FailPointEnabled, message};
             },
             [&](const BSONObj& data) {
@@ -660,27 +660,27 @@ Status OplogFetcher::_onSuccessfulBatch(const Documents& documents) {
     auto firstDocToApply = documents.cbegin();
 
     if (!documents.empty()) {
-        LOGV2_DEBUG(21270,
-                    2,
-                    "oplog fetcher read {batchSize} operations from remote oplog starting at "
-                    "{firstTimestamp} and ending at {lastTimestamp}",
-                    "Oplog fetcher read batch from remote oplog",
-                    "batchSize"_attr = documents.size(),
-                    "firstTimestamp"_attr = documents.front()["ts"],
-                    "lastTimestamp"_attr = documents.back()["ts"]);
+        LOG_DEBUG(21270,
+                  2,
+                  "oplog fetcher read {batchSize} operations from remote oplog starting at "
+                  "{firstTimestamp} and ending at {lastTimestamp}",
+                  "Oplog fetcher read batch from remote oplog",
+                  "batchSize"_attr = documents.size(),
+                  "firstTimestamp"_attr = documents.front()["ts"],
+                  "lastTimestamp"_attr = documents.back()["ts"]);
     } else {
-        LOGV2_DEBUG(21271, 2, "Oplog fetcher read 0 operations from remote oplog");
+        LOG_DEBUG(21271, 2, "Oplog fetcher read 0 operations from remote oplog");
     }
 
     auto oqMetadataResult = rpc::OplogQueryMetadata::readFromMetadata(_metadataObj);
     if (!oqMetadataResult.isOK()) {
-        LOGV2_ERROR(21278,
-                    "invalid oplog query metadata from sync source {syncSource}: "
-                    "{error}: {metadata}",
-                    "Invalid oplog query metadata from sync source",
-                    "syncSource"_attr = _config.source,
-                    "error"_attr = oqMetadataResult.getStatus(),
-                    "metadata"_attr = _metadataObj);
+        LOG_ERROR(21278,
+                  "invalid oplog query metadata from sync source {syncSource}: "
+                  "{error}: {metadata}",
+                  "Invalid oplog query metadata from sync source",
+                  "syncSource"_attr = _config.source,
+                  "error"_attr = oqMetadataResult.getStatus(),
+                  "metadata"_attr = _metadataObj);
         return oqMetadataResult.getStatus();
     }
     auto oqMetadata = oqMetadataResult.getValue();
@@ -693,11 +693,11 @@ Status OplogFetcher::_onSuccessfulBatch(const Documents& documents) {
             return status;
         }
 
-        LOGV2_DEBUG(21272,
-                    1,
-                    "oplog fetcher successfully fetched from {syncSource}",
-                    "Oplog fetcher successfully fetched from sync source",
-                    "syncSource"_attr = _config.source);
+        LOG_DEBUG(21272,
+                  1,
+                  "oplog fetcher successfully fetched from {syncSource}",
+                  "Oplog fetcher successfully fetched from sync source",
+                  "syncSource"_attr = _config.source);
 
         // We do not always enqueue the first document. We elect to skip it for the following
         // reasons:
@@ -741,13 +741,13 @@ Status OplogFetcher::_onSuccessfulBatch(const Documents& documents) {
     // response that triggers a rollback.
     auto metadataResult = rpc::ReplSetMetadata::readFromMetadata(_metadataObj);
     if (!metadataResult.isOK()) {
-        LOGV2_ERROR(21279,
-                    "invalid replication metadata from sync source {syncSource}: "
-                    "{error}: {metadata}",
-                    "Invalid replication metadata from sync source",
-                    "syncSource"_attr = _config.source,
-                    "error"_attr = metadataResult.getStatus(),
-                    "metadata"_attr = _metadataObj);
+        LOG_ERROR(21279,
+                  "invalid replication metadata from sync source {syncSource}: "
+                  "{error}: {metadata}",
+                  "Invalid replication metadata from sync source",
+                  "syncSource"_attr = _config.source,
+                  "error"_attr = metadataResult.getStatus(),
+                  "metadata"_attr = _metadataObj);
         return metadataResult.getStatus();
     }
     auto replSetMetadata = metadataResult.getValue();
@@ -808,11 +808,11 @@ Status OplogFetcher::_onSuccessfulBatch(const Documents& documents) {
     // We have now processed the batch. We should only move forward our view of _lastFetched if the
     // batch was not empty.
     if (lastDocOpTime != previousOpTimeFetched) {
-        LOGV2_DEBUG(21273,
-                    3,
-                    "Oplog fetcher setting last fetched optime ahead after batch: {lastDocOpTime}",
-                    "Oplog fetcher setting last fetched optime ahead after batch",
-                    "lastDocOpTime"_attr = lastDocOpTime);
+        LOG_DEBUG(21273,
+                  3,
+                  "Oplog fetcher setting last fetched optime ahead after batch: {lastDocOpTime}",
+                  "Oplog fetcher setting last fetched optime ahead after batch",
+                  "lastDocOpTime"_attr = lastDocOpTime);
 
         stdx::lock_guard<Latch> lock(_mutex);
         _lastFetched = lastDocOpTime;
@@ -968,25 +968,25 @@ bool OplogFetcher::OplogFetcherRestartDecisionDefault::shouldContinue(OplogFetch
     // If we try to sync from a node that is shutting down, do not attempt to reconnect.
     // We should choose a new sync source.
     if (status.code() == ErrorCodes::ShutdownInProgress) {
-        LOGV2(4696202,
-              "Not recreating cursor for oplog fetcher because sync source is shutting down",
-              "error"_attr = redact(status));
+        LOG(4696202,
+            "Not recreating cursor for oplog fetcher because sync source is shutting down",
+            "error"_attr = redact(status));
         return false;
     }
     if (_numRestarts == _maxRestarts) {
-        LOGV2(21274,
-              "Error returned from oplog query (no more query restarts left): {error}",
-              "Error returned from oplog query (no more query restarts left)",
-              "error"_attr = redact(status));
+        LOG(21274,
+            "Error returned from oplog query (no more query restarts left): {error}",
+            "Error returned from oplog query (no more query restarts left)",
+            "error"_attr = redact(status));
         return false;
     }
-    LOGV2(21275,
-          "Recreating cursor for oplog fetcher due to error: {error}. Last fetched optime: "
-          "{lastOpTimeFetched}. Attempts remaining: {attemptsRemaining}",
-          "Recreating cursor for oplog fetcher due to error",
-          "lastOpTimeFetched"_attr = fetcher->_getLastOpTimeFetched(),
-          "attemptsRemaining"_attr = (_maxRestarts - _numRestarts),
-          "error"_attr = redact(status));
+    LOG(21275,
+        "Recreating cursor for oplog fetcher due to error: {error}. Last fetched optime: "
+        "{lastOpTimeFetched}. Attempts remaining: {attemptsRemaining}",
+        "Recreating cursor for oplog fetcher due to error",
+        "lastOpTimeFetched"_attr = fetcher->_getLastOpTimeFetched(),
+        "attemptsRemaining"_attr = (_maxRestarts - _numRestarts),
+        "error"_attr = redact(status));
     _numRestarts++;
     return true;
 }

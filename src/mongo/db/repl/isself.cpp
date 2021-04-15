@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kNetwork
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kNetwork
 
 #include "mongo/platform/basic.h"
 
@@ -44,7 +44,7 @@
 #include "mongo/db/auth/privilege.h"
 #include "mongo/db/commands.h"
 #include "mongo/db/service_context.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/net/cidr.h"
 #include "mongo/util/net/socket_utils.h"
 #include "mongo/util/scopeguard.h"
@@ -121,11 +121,11 @@ std::vector<std::string> getAddrsForHost(const std::string& iporhost,
     int err = getaddrinfo(iporhost.c_str(), portNum.c_str(), &hints, &addrs);
 
     if (err) {
-        LOGV2_WARNING(21207,
-                      "getaddrinfo(\"{host}\") failed: {error}",
-                      "getaddrinfo() failed",
-                      "host"_attr = iporhost,
-                      "error"_attr = stringifyError(err));
+        LOG_WARNING(21207,
+                    "getaddrinfo(\"{host}\") failed: {error}",
+                    "getaddrinfo() failed",
+                    "host"_attr = iporhost,
+                    "error"_attr = stringifyError(err));
         return out;
     }
 
@@ -139,23 +139,23 @@ std::vector<std::string> getAddrsForHost(const std::string& iporhost,
             err = getnameinfo(
                 addr->ai_addr, addr->ai_addrlen, host, NI_MAXHOST, nullptr, 0, NI_NUMERICHOST);
             if (err) {
-                LOGV2_WARNING(21208,
-                              "getnameinfo() failed: {error}",
-                              "getnameinfo() failed",
-                              "error"_attr = stringifyError(err));
+                LOG_WARNING(21208,
+                            "getnameinfo() failed: {error}",
+                            "getnameinfo() failed",
+                            "error"_attr = stringifyError(err));
                 continue;
             }
             out.push_back(host);
         }
     }
 
-    if (shouldLog(MONGO_LOGV2_DEFAULT_COMPONENT, logv2::LogSeverity::Debug(2))) {
-        LOGV2_DEBUG(21205,
-                    2,
-                    "getAddrsForHost()",
-                    "host"_attr = iporhost,
-                    "port"_attr = port,
-                    "result"_attr = out);
+    if (shouldLog(MONGO_LOG_DEFAULT_COMPONENT, log::LogSeverity::Debug(2))) {
+        LOG_DEBUG(21205,
+                  2,
+                  "getAddrsForHost()",
+                  "host"_attr = iporhost,
+                  "port"_attr = port,
+                  "result"_attr = out);
     }
 
     return out;
@@ -165,9 +165,9 @@ std::vector<std::string> getAddrsForHost(const std::string& iporhost,
 
 bool isSelf(const HostAndPort& hostAndPort, ServiceContext* const ctx) {
     if (MONGO_unlikely(failIsSelfCheck.shouldFail())) {
-        LOGV2(356490,
-              "failIsSelfCheck failpoint activated, returning false from isSelf",
-              "hostAndPort"_attr = hostAndPort);
+        LOG(356490,
+            "failIsSelfCheck failpoint activated, returning false from isSelf",
+            "hostAndPort"_attr = hostAndPort);
         return false;
     }
 
@@ -210,10 +210,10 @@ bool isSelf(const HostAndPort& hostAndPort, ServiceContext* const ctx) {
                         return true;
                     }
                 } catch (const std::exception& e) {
-                    LOGV2_WARNING(4754500,
-                                  "Error checking host against loopback addresses",
-                                  "host"_attr = *j,
-                                  "error"_attr = e.what());
+                    LOG_WARNING(4754500,
+                                "Error checking host against loopback addresses",
+                                "host"_attr = *j,
+                                "error"_attr = e.what());
                 }
 
                 if (*i == *j) {
@@ -236,10 +236,10 @@ bool isSelf(const HostAndPort& hostAndPort, ServiceContext* const ctx) {
         // does not call 'isMaster'.
         auto connectSocketResult = conn.connectSocketOnly(hostAndPort, boost::none);
         if (!connectSocketResult.isOK()) {
-            LOGV2(4834700,
-                  "isSelf could not connect via connectSocketOnly",
-                  "hostAndPort"_attr = hostAndPort,
-                  "error"_attr = connectSocketResult);
+            LOG(4834700,
+                "isSelf could not connect via connectSocketOnly",
+                "hostAndPort"_attr = hostAndPort,
+                "error"_attr = connectSocketResult);
             return false;
         }
 
@@ -247,10 +247,10 @@ bool isSelf(const HostAndPort& hostAndPort, ServiceContext* const ctx) {
             auto authInternalUserResult =
                 conn.authenticateInternalUser(auth::StepDownBehavior::kKeepConnectionOpen);
             if (!authInternalUserResult.isOK()) {
-                LOGV2(4834701,
-                      "isSelf could not authenticate internal user",
-                      "hostAndPort"_attr = hostAndPort,
-                      "error"_attr = authInternalUserResult);
+                LOG(4834701,
+                    "isSelf could not authenticate internal user",
+                    "hostAndPort"_attr = hostAndPort,
+                    "error"_attr = authInternalUserResult);
                 return false;
             }
         }
@@ -260,11 +260,11 @@ bool isSelf(const HostAndPort& hostAndPort, ServiceContext* const ctx) {
 
         return me;
     } catch (const std::exception& e) {
-        LOGV2_WARNING(21209,
-                      "couldn't check isSelf ({hostAndPort}) {error}",
-                      "Couldn't check isSelf",
-                      "hostAndPort"_attr = hostAndPort,
-                      "error"_attr = e.what());
+        LOG_WARNING(21209,
+                    "couldn't check isSelf ({hostAndPort}) {error}",
+                    "Couldn't check isSelf",
+                    "hostAndPort"_attr = hostAndPort,
+                    "error"_attr = e.what());
     }
 
     return false;
@@ -283,10 +283,10 @@ std::vector<std::string> getBoundAddrs(const bool ipv6enabled) {
 
     int err = getifaddrs(&addrs);
     if (err) {
-        LOGV2_WARNING(21210,
-                      "getifaddrs failure: {error}",
-                      "getifaddrs() failed",
-                      "error"_attr = errnoWithDescription(err));
+        LOG_WARNING(21210,
+                    "getifaddrs failure: {error}",
+                    "getifaddrs() failed",
+                    "error"_attr = errnoWithDescription(err));
         return out;
     }
     ON_BLOCK_EXIT([&] { freeifaddrs(addrs); });
@@ -308,10 +308,10 @@ std::vector<std::string> getBoundAddrs(const bool ipv6enabled) {
                 0,
                 NI_NUMERICHOST);
             if (err) {
-                LOGV2_WARNING(21211,
-                              "getnameinfo() failed: {error}",
-                              "getnameinfo() failed",
-                              "error"_attr = gai_strerror(err));
+                LOG_WARNING(21211,
+                            "getnameinfo() failed: {error}",
+                            "getnameinfo() failed",
+                            "error"_attr = gai_strerror(err));
                 continue;
             }
             out.push_back(host);
@@ -348,10 +348,10 @@ std::vector<std::string> getBoundAddrs(const bool ipv6enabled) {
     }
 
     if (err != NO_ERROR) {
-        LOGV2_WARNING(21212,
-                      "GetAdaptersAddresses() failed: {error}",
-                      "GetAdaptersAddresses() failed",
-                      "error"_attr = errnoWithDescription(err));
+        LOG_WARNING(21212,
+                    "GetAdaptersAddresses() failed: {error}",
+                    "GetAdaptersAddresses() failed",
+                    "error"_attr = errnoWithDescription(err));
         return out;
     }
 
@@ -369,10 +369,10 @@ std::vector<std::string> getBoundAddrs(const bool ipv6enabled) {
                 boost::asio::detail::socket_ops::inet_ntop(
                     AF_INET, &(sock->sin_addr), addrstr, INET_ADDRSTRLEN, 0, ec);
                 if (ec) {
-                    LOGV2_WARNING(21213,
-                                  "inet_ntop failed during IPv4 address conversion: {error}",
-                                  "inet_ntop failed during IPv4 address conversion",
-                                  "error"_attr = ec.message());
+                    LOG_WARNING(21213,
+                                "inet_ntop failed during IPv4 address conversion: {error}",
+                                "inet_ntop failed during IPv4 address conversion",
+                                "error"_attr = ec.message());
                     continue;
                 }
                 out.push_back(addrstr);
@@ -384,10 +384,10 @@ std::vector<std::string> getBoundAddrs(const bool ipv6enabled) {
                 boost::asio::detail::socket_ops::inet_ntop(
                     AF_INET6, &(sock->sin6_addr), addrstr, INET6_ADDRSTRLEN, 0, ec);
                 if (ec) {
-                    LOGV2_WARNING(21214,
-                                  "inet_ntop failed during IPv6 address conversion: {error}",
-                                  "inet_ntop failed during IPv6 address conversion",
-                                  "error"_attr = ec.message());
+                    LOG_WARNING(21214,
+                                "inet_ntop failed during IPv6 address conversion: {error}",
+                                "inet_ntop failed during IPv6 address conversion",
+                                "error"_attr = ec.message());
                     continue;
                 }
                 out.push_back(addrstr);
@@ -397,8 +397,8 @@ std::vector<std::string> getBoundAddrs(const bool ipv6enabled) {
 
 #endif  // defined(_WIN32)
 
-    if (shouldLog(MONGO_LOGV2_DEFAULT_COMPONENT, logv2::LogSeverity::Debug(2))) {
-        LOGV2_DEBUG(21206, 2, "getBoundAddrs()", "result"_attr = out);
+    if (shouldLog(MONGO_LOG_DEFAULT_COMPONENT, log::LogSeverity::Debug(2))) {
+        LOG_DEBUG(21206, 2, "getBoundAddrs()", "result"_attr = out);
     }
     return out;
 }

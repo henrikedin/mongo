@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kControl
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kControl
 
 #include "mongo/platform/basic.h"
 
@@ -57,7 +57,7 @@
 #include <fmt/format.h>
 #include <pcrecpp.h>
 
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/ctype.h"
 #include "mongo/util/file.h"
 
@@ -546,7 +546,7 @@ public:
             if (mongo::NumberParser{}(meminfo, &systemMem).isOK()) {
                 return systemMem * 1024;  // convert from kB to bytes
             } else
-                LOGV2(23338, "Unable to collect system memory information");
+                LOG(23338, "Unable to collect system memory information");
         }
         return 0;
     }
@@ -659,9 +659,9 @@ void ProcessInfo::SystemInfo::collectSystemInfo() {
 
     if (uname(&unameData) == -1) {
         auto e = errno;
-        LOGV2(23339,
-              "Unable to collect detailed system information",
-              "error"_attr = errnoWithDescription(e));
+        LOG(23339,
+            "Unable to collect detailed system information",
+            "error"_attr = errnoWithDescription(e));
     }
 
     osType = "Linux";
@@ -716,10 +716,10 @@ bool ProcessInfo::checkNumaEnabled() {
         hasMultipleNodes = boost::filesystem::exists("/sys/devices/system/node/node1");
         hasNumaMaps = boost::filesystem::exists("/proc/self/numa_maps");
     } catch (boost::filesystem::filesystem_error& e) {
-        LOGV2(23340,
-              "WARNING: Cannot detect if NUMA interleaving is enabled. Failed to probe",
-              "path"_attr = e.path1().string(),
-              "reason"_attr = e.code().message());
+        LOG(23340,
+            "WARNING: Cannot detect if NUMA interleaving is enabled. Failed to probe",
+            "path"_attr = e.path1().string(),
+            "reason"_attr = e.code().message());
         return false;
     }
 

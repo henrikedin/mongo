@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kCommand
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kCommand
 
 #include "mongo/platform/basic.h"
 
@@ -36,7 +36,7 @@
 #include "mongo/db/coll_mod_gen.h"
 #include "mongo/db/coll_mod_reply_validation.h"
 #include "mongo/db/commands.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/s/cluster_commands_helpers.h"
 #include "mongo/s/grid.h"
 
@@ -84,12 +84,12 @@ public:
                               BSONObjBuilder& result) final {
         auto cmd = requestParser.request();
         auto nss = cmd.getNamespace();
-        LOGV2_DEBUG(22748,
-                    1,
-                    "collMod: {namespace} cmd: {command}",
-                    "CMD: collMod",
-                    "namespace"_attr = nss,
-                    "command"_attr = redact(cmdObj));
+        LOG_DEBUG(22748,
+                  1,
+                  "collMod: {namespace} cmd: {command}",
+                  "CMD: collMod",
+                  "namespace"_attr = nss,
+                  "command"_attr = redact(cmdObj));
 
         auto routingInfo =
             uassertStatusOK(Grid::get(opCtx)->catalogCache()->getCollectionRoutingInfo(opCtx, nss));

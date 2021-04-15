@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kResharding
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kResharding
 
 #include "mongo/platform/basic.h"
 
@@ -49,7 +49,7 @@
 #include "mongo/db/session_catalog_mongod.h"
 #include "mongo/db/stats/counters.h"
 #include "mongo/db/transaction_participant.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace mongo {
 namespace {
@@ -79,9 +79,9 @@ void runWithTransaction(OperationContext* opCtx, unique_function<void(OperationC
         try {
             txnParticipant.abortTransaction(opCtx);
         } catch (DBException& e) {
-            LOGV2_WARNING(4990200,
-                          "Failed to abort transaction in AlternativeSessionRegion",
-                          "error"_attr = redact(e));
+            LOG_WARNING(4990200,
+                        "Failed to abort transaction in AlternativeSessionRegion",
+                        "error"_attr = redact(e));
         }
     });
 
@@ -119,7 +119,7 @@ ReshardingOplogApplicationRules::ReshardingOplogApplicationRules(
 
 Status ReshardingOplogApplicationRules::applyOperation(OperationContext* opCtx,
                                                        const repl::OplogEntry& op) const {
-    LOGV2_DEBUG(49901, 3, "Applying op for resharding", "op"_attr = redact(op.toBSONForLogging()));
+    LOG_DEBUG(49901, 3, "Applying op for resharding", "op"_attr = redact(op.toBSONForLogging()));
 
     invariant(!opCtx->lockState()->inAWriteUnitOfWork());
     invariant(opCtx->writesAreReplicated());

@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kReplication
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kReplication
 
 #include "mongo/platform/basic.h"
 
@@ -36,7 +36,7 @@
 #include "mongo/db/auth/authorization_session.h"
 #include "mongo/db/namespace_string.h"
 #include "mongo/db/repl/repl_server_parameters_gen.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/processinfo.h"
 #include "mongo/util/time_support.h"
 
@@ -64,9 +64,9 @@ Future<void> OplogApplier::startup() {
     auto callback =
         [ this, promise = std::move(pf.promise) ](const CallbackArgs& args) mutable noexcept {
         invariant(args.status);
-        LOGV2(21224, "Starting oplog application");
+        LOG(21224, "Starting oplog application");
         _run(_oplogBuffer);
-        LOGV2(21225, "Finished oplog application");
+        LOG(21225, "Finished oplog application");
         promise.setWith([] {});
     };
     invariant(_executor->scheduleWork(std::move(callback)).getStatus());
@@ -76,7 +76,7 @@ Future<void> OplogApplier::startup() {
 void OplogApplier::shutdown() {
     // Shutdown will hang if this failpoint is enabled.
     if (globalFailPointRegistry().find("rsSyncApplyStop")->shouldFail()) {
-        LOGV2_FATAL_NOTRACE(40304, "Turn off rsSyncApplyStop before attempting clean shutdown");
+        LOG_FATAL_NOTRACE(40304, "Turn off rsSyncApplyStop before attempting clean shutdown");
     }
 
     stdx::lock_guard<Latch> lock(_mutex);
@@ -110,11 +110,11 @@ void OplogApplier::enqueue(OperationContext* opCtx,
                            OplogBuffer::Batch::const_iterator end) {
     static Occasionally sampler;
     if (sampler.tick()) {
-        LOGV2_DEBUG(21226,
-                    2,
-                    "oplog buffer has {oplogBufferSizeBytes} bytes",
-                    "Oplog buffer size",
-                    "oplogBufferSizeBytes"_attr = _oplogBuffer->getSize());
+        LOG_DEBUG(21226,
+                  2,
+                  "oplog buffer has {oplogBufferSizeBytes} bytes",
+                  "Oplog buffer size",
+                  "oplogBufferSizeBytes"_attr = _oplogBuffer->getSize());
     }
     _oplogBuffer->push(opCtx, begin, end);
 }

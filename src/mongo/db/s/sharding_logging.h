@@ -93,7 +93,7 @@ private:
      * @param detail Additional info about the metadata change (not interpreted)
      * @param writeConcern Write concern options to use for logging
      */
-    Status _log(OperationContext* opCtx,
+    Status _LOG(OperationContext* opCtx,
                 const StringData logCollName,
                 const StringData what,
                 const StringData operationNSS,

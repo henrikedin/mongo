@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kQuery
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kQuery
 
 #include "mongo/platform/basic.h"
 
@@ -60,8 +60,8 @@
 #include "mongo/db/matcher/schema/expression_internal_schema_unique_items.h"
 #include "mongo/db/matcher/schema/expression_internal_schema_xor.h"
 #include "mongo/db/matcher/schema/json_pointer.h"
-#include "mongo/logv2/log.h"
-#include "mongo/logv2/log_component_settings.h"
+#include "mongo/log/log.h"
+#include "mongo/log/log_component_settings.h"
 #include "mongo/util/string_map.h"
 
 namespace mongo {
@@ -1855,20 +1855,20 @@ StatusWithMatchExpression JSONSchemaParser::parse(
     BSONObj schema,
     AllowedFeatureSet allowedFeatures,
     bool ignoreUnknownKeywords) {
-    LOGV2_DEBUG(20728,
-                5,
-                "Parsing JSON Schema: {schema}",
-                "Parsing JSON Schema",
-                "schema"_attr = schema.jsonString(JsonStringFormat::LegacyStrict));
+    LOG_DEBUG(20728,
+              5,
+              "Parsing JSON Schema: {schema}",
+              "Parsing JSON Schema",
+              "schema"_attr = schema.jsonString(JsonStringFormat::LegacyStrict));
     try {
         auto translation = _parse(expCtx, ""_sd, schema, allowedFeatures, ignoreUnknownKeywords);
-        if (shouldLog(MONGO_LOGV2_DEFAULT_COMPONENT, logv2::LogSeverity::Debug(5)) &&
+        if (shouldLog(MONGO_LOG_DEFAULT_COMPONENT, log::LogSeverity::Debug(5)) &&
             translation.isOK()) {
-            LOGV2_DEBUG(20729,
-                        5,
-                        "Translated schema match expression: {expression}",
-                        "Translated schema match expression",
-                        "expression"_attr = translation.getValue()->debugString());
+            LOG_DEBUG(20729,
+                      5,
+                      "Translated schema match expression: {expression}",
+                      "Translated schema match expression",
+                      "expression"_attr = translation.getValue()->debugString());
         }
         // Tag the top level MatchExpression as '$jsonSchema' if necessary.
         if (translation.isOK()) {

@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kDefault
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kDefault
 
 #include "mongo/platform/basic.h"
 
@@ -35,7 +35,7 @@
 
 #include <iostream>
 
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/str.h"
 
 namespace mongo {
@@ -47,9 +47,9 @@ namespace {
  * Accepts an errno code, prints its error message, and exits.
  */
 void failWithErrno(int err) {
-    LOGV2_FATAL(28604,
-                "error in Ticketholder: {errnoWithDescription_err}",
-                "errnoWithDescription_err"_attr = errnoWithDescription(err));
+    LOG_FATAL(28604,
+              "error in Ticketholder: {errnoWithDescription_err}",
+              "errnoWithDescription_err"_attr = errnoWithDescription(err));
 }
 
 /*
@@ -224,7 +224,7 @@ Status TicketHolder::resize(int newSize) {
            << "more than newSize(" << newSize << ")";
 
         std::string errmsg = ss.str();
-        LOGV2(23120, "{errmsg}", "errmsg"_attr = errmsg);
+        LOG(23120, "{errmsg}", "errmsg"_attr = errmsg);
         return Status(ErrorCodes::BadValue, errmsg);
     }
 

@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kSharding
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kSharding
 
 #include "mongo/platform/basic.h"
 
@@ -43,7 +43,7 @@
 #include "mongo/config.h"
 #include "mongo/db/server_options_base.h"
 #include "mongo/db/server_options_server_helpers.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/s/version_mongos.h"
 #include "mongo/util/net/socket_utils.h"
 #include "mongo/util/options_parser/startup_options.h"
@@ -68,8 +68,8 @@ bool handlePreValidationMongosOptions(const moe::Environment& params,
         return false;
     }
     if (params.count("test") && params["test"].as<bool>() == true) {
-        logv2::LogManager::global().getGlobalSettings().setMinimumLoggedSeverity(
-            mongo::logv2::LogComponent::kDefault, ::mongo::logv2::LogSeverity::Debug(5));
+        log::LogManager::global().getGlobalSettings().setMinimumLoggedSeverity(
+            mongo::log::LogComponent::kDefault, ::mongo::log::LogSeverity::Debug(5));
         return false;
     }
 
@@ -156,16 +156,16 @@ Status storeMongosOptions(const moe::Environment& params) {
     }
     if (!resolvedSomeSeedSever) {
         if (!hostbyname(configdbConnectionString.getValue().getSetName().c_str()).empty()) {
-            LOGV2_WARNING(24131,
-                          "The replica set name "
-                          "\"{str_escape_configdbConnectionString_getValue_getSetName}\" resolves "
-                          "as a host name, but none of the servers in the seed list do. "
-                          "Did you reverse the replica set name and the seed list in "
-                          "{str_escape_configdbConnectionString_getValue}?",
-                          "str_escape_configdbConnectionString_getValue_getSetName"_attr =
-                              str::escape(configdbConnectionString.getValue().getSetName()),
-                          "str_escape_configdbConnectionString_getValue"_attr =
-                              str::escape(configdbConnectionString.getValue().toString()));
+            LOG_WARNING(24131,
+                        "The replica set name "
+                        "\"{str_escape_configdbConnectionString_getValue_getSetName}\" resolves "
+                        "as a host name, but none of the servers in the seed list do. "
+                        "Did you reverse the replica set name and the seed list in "
+                        "{str_escape_configdbConnectionString_getValue}?",
+                        "str_escape_configdbConnectionString_getValue_getSetName"_attr =
+                            str::escape(configdbConnectionString.getValue().getSetName()),
+                        "str_escape_configdbConnectionString_getValue"_attr =
+                            str::escape(configdbConnectionString.getValue().toString()));
         }
     }
 
@@ -175,9 +175,9 @@ Status storeMongosOptions(const moe::Environment& params) {
                          configdbConnectionString.getValue().getSetName()};
 
     if (mongosGlobalParams.configdbs.getServers().size() < 3) {
-        LOGV2_WARNING(24132,
-                      "Running a sharded cluster with fewer than 3 config servers should only be "
-                      "done for testing purposes and is not recommended for production.");
+        LOG_WARNING(24132,
+                    "Running a sharded cluster with fewer than 3 config servers should only be "
+                    "done for testing purposes and is not recommended for production.");
     }
 
     return Status::OK();

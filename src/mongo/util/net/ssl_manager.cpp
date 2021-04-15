@@ -28,7 +28,7 @@
  */
 
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kNetwork
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kNetwork
 
 #include "mongo/platform/basic.h"
 
@@ -44,7 +44,7 @@
 #include "mongo/config.h"
 #include "mongo/db/auth/sasl_command_constants.h"
 #include "mongo/db/commands/server_status.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/platform/overflow_arithmetic.h"
 #include "mongo/transport/session.h"
 #include "mongo/transport/transport_layer_asio.h"
@@ -343,15 +343,15 @@ std::shared_ptr<SSLManagerInterface> SSLManagerCoordinator::getSSLManager() {
 void logCert(const CertInformationToLog& cert, StringData certType, const int logNum) {
     auto attrs = cert.getDynamicAttributes();
     attrs.add("type", certType);
-    LOGV2(logNum, "Certificate information", attrs);
+    LOG(logNum, "Certificate information", attrs);
 }
 
 void logCRL(const CRLInformationToLog& crl, const int logNum) {
-    LOGV2(logNum,
-          "CRL information",
-          "thumbprint"_attr = hexblob::encode(crl.thumbprint.data(), crl.thumbprint.size()),
-          "notValidBefore"_attr = crl.validityNotBefore.toString(),
-          "notValidAfter"_attr = crl.validityNotAfter.toString());
+    LOG(logNum,
+        "CRL information",
+        "thumbprint"_attr = hexblob::encode(crl.thumbprint.data(), crl.thumbprint.size()),
+        "notValidBefore"_attr = crl.validityNotBefore.toString(),
+        "notValidAfter"_attr = crl.validityNotAfter.toString());
 }
 
 void logSSLInfo(const SSLInformationToLog& info,
@@ -389,7 +389,7 @@ void SSLManagerCoordinator::rotate() {
     std::shared_ptr<SSLManagerInterface> originalManager = *_manager;
     _manager = manager;
 
-    LOGV2(4913400, "Successfully rotated X509 certificates.");
+    LOG(4913400, "Successfully rotated X509 certificates.");
     logSSLInfo(_manager->get()->getSSLInformationToLog());
 
     originalManager->stopJobs();
@@ -617,23 +617,23 @@ MONGO_INITIALIZER_WITH_PREREQUISITES(SSLManagerLogger, ("SSLManager"))
     if (!isSSLServer || (sslGlobalParams.sslMode.load() != SSLParams::SSLMode_disabled)) {
         const auto& config = SSLManagerCoordinator::get()->getSSLManager()->getSSLConfiguration();
         if (!config.clientSubjectName.empty()) {
-            LOGV2_DEBUG(23214,
-                        1,
-                        "Client Certificate Name: {name}",
-                        "Client certificate name",
-                        "name"_attr = config.clientSubjectName);
+            LOG_DEBUG(23214,
+                      1,
+                      "Client Certificate Name: {name}",
+                      "Client certificate name",
+                      "name"_attr = config.clientSubjectName);
         }
         if (!config.serverSubjectName().empty()) {
-            LOGV2_DEBUG(23215,
-                        1,
-                        "Server Certificate Name: {name}",
-                        "Server certificate name",
-                        "name"_attr = config.serverSubjectName());
-            LOGV2_DEBUG(23216,
-                        1,
-                        "Server Certificate Expiration: {expiration}",
-                        "Server certificate expiration",
-                        "expiration"_attr = config.serverCertificateExpirationDate);
+            LOG_DEBUG(23215,
+                      1,
+                      "Server Certificate Name: {name}",
+                      "Server certificate name",
+                      "name"_attr = config.serverSubjectName());
+            LOG_DEBUG(23216,
+                      1,
+                      "Server Certificate Expiration: {expiration}",
+                      "Server certificate expiration",
+                      "expiration"_attr = config.serverCertificateExpirationDate);
         }
     }
 }
@@ -668,13 +668,13 @@ Status SSLX509Name::normalizeStrings() {
                     break;
                 }
                 default:
-                    LOGV2_DEBUG(23217,
-                                1,
-                                "Certificate subject name contains unknown string type: "
-                                "{entryType} (string value is \"{entryValue}\")",
-                                "Certificate subject name contains unknown string type",
-                                "entryType"_attr = entry.type,
-                                "entryValue"_attr = entry.value);
+                    LOG_DEBUG(23217,
+                              1,
+                              "Certificate subject name contains unknown string type: "
+                              "{entryType} (string value is \"{entryValue}\")",
+                              "Certificate subject name contains unknown string type",
+                              "entryType"_attr = entry.type,
+                              "entryValue"_attr = entry.value);
                     break;
             }
         }
@@ -756,19 +756,19 @@ bool SSLConfiguration::isClusterMember(SSLX509Name subject) const {
 bool SSLConfiguration::isClusterMember(StringData subjectName) const {
     auto swClient = parseDN(subjectName);
     if (!swClient.isOK()) {
-        LOGV2_WARNING(23219,
-                      "Unable to parse client subject name: {error}",
-                      "Unable to parse client subject name",
-                      "error"_attr = swClient.getStatus());
+        LOG_WARNING(23219,
+                    "Unable to parse client subject name: {error}",
+                    "Unable to parse client subject name",
+                    "error"_attr = swClient.getStatus());
         return false;
     }
     auto& client = swClient.getValue();
     auto status = client.normalizeStrings();
     if (!status.isOK()) {
-        LOGV2_WARNING(23220,
-                      "Unable to normalize client subject name: {error}",
-                      "Unable to normalize client subject name",
-                      "error"_attr = status);
+        LOG_WARNING(23220,
+                    "Unable to normalize client subject name: {error}",
+                    "Unable to normalize client subject name",
+                    "error"_attr = status);
         return false;
     }
 
@@ -1263,11 +1263,11 @@ void recordTLSVersion(TLSVersion version, const HostAndPort& hostForLogging) {
     }
 
     if (!versionString.empty()) {
-        LOGV2(23218,
-              "Accepted connection with TLS Version {tlsVersion} from connection {remoteHost}",
-              "Accepted connection with TLS",
-              "tlsVersion"_attr = versionString,
-              "remoteHost"_attr = hostForLogging);
+        LOG(23218,
+            "Accepted connection with TLS Version {tlsVersion} from connection {remoteHost}",
+            "Accepted connection with TLS",
+            "tlsVersion"_attr = versionString,
+            "remoteHost"_attr = hostForLogging);
     }
 }
 
@@ -1291,18 +1291,18 @@ bool hostNameMatchForX509Certificates(std::string nameToMatch, std::string certH
 }
 
 void tlsEmitWarningExpiringClientCertificate(const SSLX509Name& peer) {
-    LOGV2_WARNING(23221,
-                  "Peer certificate '{peerSubjectName}' expires soon",
-                  "Peer certificate expires soon",
-                  "peerSubjectName"_attr = peer);
+    LOG_WARNING(23221,
+                "Peer certificate '{peerSubjectName}' expires soon",
+                "Peer certificate expires soon",
+                "peerSubjectName"_attr = peer);
 }
 
 void tlsEmitWarningExpiringClientCertificate(const SSLX509Name& peer, Days days) {
-    LOGV2_WARNING(23222,
-                  "Peer certificate '{peerSubjectName}' expires in {days}",
-                  "Peer certificate expiration information",
-                  "peerSubjectName"_attr = peer,
-                  "days"_attr = days);
+    LOG_WARNING(23222,
+                "Peer certificate '{peerSubjectName}' expires in {days}",
+                "Peer certificate expiration information",
+                "peerSubjectName"_attr = peer,
+                "days"_attr = days);
 }
 
 }  // namespace mongo

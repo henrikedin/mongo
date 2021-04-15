@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kCommand
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kCommand
 
 #include "mongo/platform/basic.h"
 
@@ -60,7 +60,7 @@
 #include "mongo/db/ttl_collection_cache.h"
 #include "mongo/db/views/view_catalog.h"
 #include "mongo/idl/command_generic_argument.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/fail_point.h"
 
 namespace mongo {
@@ -85,7 +85,7 @@ void assertMovePrimaryInProgress(OperationContext* opCtx, NamespaceString const&
             auto mpsm = dss->getMovePrimarySourceManager(dssLock);
 
             if (mpsm) {
-                LOGV2(4945200, "assertMovePrimaryInProgress", "namespace"_attr = nss.toString());
+                LOG(4945200, "assertMovePrimaryInProgress", "namespace"_attr = nss.toString());
 
                 uasserted(ErrorCodes::MovePrimaryInProgress,
                           "movePrimary is in progress for namespace " + nss.toString());
@@ -93,7 +93,7 @@ void assertMovePrimaryInProgress(OperationContext* opCtx, NamespaceString const&
         }
     } catch (const DBException& ex) {
         if (ex.toStatus() != ErrorCodes::MovePrimaryInProgress) {
-            LOGV2(4945201, "Error when getting collection description", "what"_attr = ex.what());
+            LOG(4945201, "Error when getting collection description", "what"_attr = ex.what());
             return;
         }
         throw;
@@ -586,7 +586,7 @@ Status _collModInternal(OperationContext* opCtx,
                 oldExpireSecs, newExpireSecs, oldHidden, newHidden, result));
 
             if (MONGO_unlikely(assertAfterIndexUpdate.shouldFail())) {
-                LOGV2(20307, "collMod - assertAfterIndexUpdate fail point enabled");
+                LOG(20307, "collMod - assertAfterIndexUpdate fail point enabled");
                 uasserted(50970, "trigger rollback after the index update");
             }
         }

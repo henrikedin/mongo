@@ -31,20 +31,20 @@
 
 #include <boost/optional/optional.hpp>
 
-#include "mongo/logv2/log_component.h"
-#include "mongo/logv2/log_component_settings.h"
-#include "mongo/logv2/log_manager.h"
-#include "mongo/logv2/log_severity.h"
+#include "mongo/log/log_component.h"
+#include "mongo/log/log_component_settings.h"
+#include "mongo/log/log_manager.h"
+#include "mongo/log/log_severity.h"
 
 namespace mongo::unittest {
 
 namespace log_test_detail {
 
-using logv2::LogComponent;
-using logv2::LogSeverity;
+using log::LogComponent;
+using log::LogSeverity;
 
 inline auto& _settings() {
-    return logv2::LogManager::global().getGlobalSettings();
+    return log::LogManager::global().getGlobalSettings();
 }
 
 inline bool hasMinimumLogSeverity(LogComponent component) {
@@ -86,12 +86,12 @@ using log_test_detail::setMinimumLoggedSeverity;
 class MinimumLoggedSeverityGuard {
 public:
     /** Just save and restore: do not change the severity at ctor time. */
-    explicit MinimumLoggedSeverityGuard(logv2::LogComponent component)
+    explicit MinimumLoggedSeverityGuard(log::LogComponent component)
         : _component{component}, _savedSeverity{_get()} {}
 
     /** Change the `component` to have `severity`. */
-    MinimumLoggedSeverityGuard(logv2::LogComponent component,
-                               boost::optional<logv2::LogSeverity> severity)
+    MinimumLoggedSeverityGuard(log::LogComponent component,
+                               boost::optional<log::LogSeverity> severity)
         : MinimumLoggedSeverityGuard{component} {
         _put(severity);
     }
@@ -101,13 +101,13 @@ public:
     }
 
 private:
-    boost::optional<logv2::LogSeverity> _get() {
+    boost::optional<log::LogSeverity> _get() {
         if (hasMinimumLogSeverity(_component))
             return getMinimumLogSeverity(_component);
         return boost::none;
     }
 
-    void _put(boost::optional<logv2::LogSeverity> severity) {
+    void _put(boost::optional<log::LogSeverity> severity) {
         if (severity) {
             setMinimumLoggedSeverity(_component, *severity);
         } else {
@@ -115,8 +115,8 @@ private:
         }
     }
 
-    logv2::LogComponent _component;
-    boost::optional<logv2::LogSeverity> _savedSeverity;
+    log::LogComponent _component;
+    boost::optional<log::LogSeverity> _savedSeverity;
 };
 
 }  // namespace mongo::unittest

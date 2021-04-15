@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kIndex
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kIndex
 
 #include "mongo/platform/basic.h"
 
@@ -45,7 +45,7 @@
 #include "mongo/db/multi_key_path_tracker.h"
 #include "mongo/db/operation_context.h"
 #include "mongo/db/service_context.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/fail_point.h"
 #include "mongo/util/progress_meter.h"
 #include "mongo/util/uuid.h"
@@ -266,16 +266,16 @@ Status IndexBuildInterceptor::drainWritesIntoIndex(OperationContext* opCtx,
     progress->finished();
 
     int logLevel = (_numApplied - appliedAtStart > 0) ? 0 : 1;
-    LOGV2_DEBUG(20689,
-                logLevel,
-                "Index build: drained side writes",
-                "index"_attr = _indexCatalogEntry->descriptor()->indexName(),
-                "collectionUUID"_attr = coll->uuid(),
-                logAttrs(coll->ns()),
-                "numApplied"_attr = (_numApplied - appliedAtStart),
-                "totalInserted"_attr = totalInserted,
-                "totalDeleted"_attr = totalDeleted,
-                "durationMillis"_attr = timer.millis());
+    LOG_DEBUG(20689,
+              logLevel,
+              "Index build: drained side writes",
+              "index"_attr = _indexCatalogEntry->descriptor()->indexName(),
+              "collectionUUID"_attr = coll->uuid(),
+              logAttrs(coll->ns()),
+              "numApplied"_attr = (_numApplied - appliedAtStart),
+              "totalInserted"_attr = totalInserted,
+              "totalDeleted"_attr = totalDeleted,
+              "durationMillis"_attr = timer.millis());
 
     return Status::OK();
 }
@@ -368,7 +368,7 @@ void IndexBuildInterceptor::_yield(OperationContext* opCtx, const Yieldable* yie
     auto failPointHang = [opCtx, indexCatalogEntry = _indexCatalogEntry](FailPoint* fp) {
         fp->executeIf(
             [fp](auto&&) {
-                LOGV2(20690, "Hanging index build during drain yield");
+                LOG(20690, "Hanging index build during drain yield");
                 fp->pauseWhileSet();
             },
             [opCtx, indexCatalogEntry](auto&& config) {
@@ -401,11 +401,11 @@ bool IndexBuildInterceptor::areAllWritesApplied(OperationContext* opCtx) const {
                 (str::stream() << "The number of side writes recorded does not match the number "
                                   "applied, despite the table appearing empty. Writes recorded: "
                                << writesRecorded << ", applied: " << _numApplied));
-        LOGV2_WARNING(20692,
-                      "The number of side writes recorded does not match the number applied, "
-                      "despite the table appearing empty",
-                      "writesRecorded"_attr = writesRecorded,
-                      "applied"_attr = _numApplied);
+        LOG_WARNING(20692,
+                    "The number of side writes recorded does not match the number applied, "
+                    "despite the table appearing empty",
+                    "writesRecorded"_attr = writesRecorded,
+                    "applied"_attr = _numApplied);
     }
 
     return true;
@@ -501,13 +501,13 @@ Status IndexBuildInterceptor::sideWrite(OperationContext* opCtx,
                                     RecordData(doc.objdata(), doc.objsize())});
     }
 
-    LOGV2_DEBUG(20691,
-                2,
-                "recording {records_size} side write keys on index "
-                "'{indexCatalogEntry_descriptor_indexName}'",
-                "records_size"_attr = records.size(),
-                "indexCatalogEntry_descriptor_indexName"_attr =
-                    _indexCatalogEntry->descriptor()->indexName());
+    LOG_DEBUG(20691,
+              2,
+              "recording {records_size} side write keys on index "
+              "'{indexCatalogEntry_descriptor_indexName}'",
+              "records_size"_attr = records.size(),
+              "indexCatalogEntry_descriptor_indexName"_attr =
+                  _indexCatalogEntry->descriptor()->indexName());
 
     // By passing a vector of null timestamps, these inserts are not timestamped individually, but
     // rather with the timestamp of the owning operation.
@@ -525,10 +525,10 @@ void IndexBuildInterceptor::_checkDrainPhaseFailPoint(OperationContext* opCtx,
                                                       long long iteration) const {
     fp->executeIf(
         [=](const BSONObj& data) {
-            LOGV2(4841800,
-                  "Hanging index build during drain writes phase",
-                  "iteration"_attr = iteration,
-                  "index"_attr = _indexCatalogEntry->descriptor()->indexName());
+            LOG(4841800,
+                "Hanging index build during drain writes phase",
+                "iteration"_attr = iteration,
+                "index"_attr = _indexCatalogEntry->descriptor()->indexName());
 
             fp->pauseWhileSet(opCtx);
         },

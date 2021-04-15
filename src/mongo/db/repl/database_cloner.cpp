@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kReplicationInitialSync
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kReplicationInitialSync
 
 #include "mongo/platform/basic.h"
 
@@ -36,7 +36,7 @@
 #include "mongo/db/repl/database_cloner.h"
 #include "mongo/db/repl/database_cloner_common.h"
 #include "mongo/db/repl/database_cloner_gen.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/assert_util.h"
 
 namespace mongo {
@@ -85,18 +85,18 @@ BaseCloner::AfterStageBehavior DatabaseCloner::listCollectionsStage() {
         }
         NamespaceString collectionNamespace(_dbName, result.getName());
         if (collectionNamespace.isSystem() && !collectionNamespace.isReplicated()) {
-            LOGV2_DEBUG(21146,
-                        1,
-                        "Skipping 'system' collection: {namespace}",
-                        "Database cloner skipping 'system' collection",
-                        "namespace"_attr = collectionNamespace.ns());
+            LOG_DEBUG(21146,
+                      1,
+                      "Skipping 'system' collection: {namespace}",
+                      "Database cloner skipping 'system' collection",
+                      "namespace"_attr = collectionNamespace.ns());
             continue;
         }
-        LOGV2_DEBUG(21147,
-                    2,
-                    "Allowing cloning of collectionInfo: {info}",
-                    "Allowing cloning of collectionInfo",
-                    "info"_attr = info);
+        LOG_DEBUG(21147,
+                  2,
+                  "Allowing cloning of collectionInfo: {info}",
+                  "Allowing cloning of collectionInfo",
+                  "info"_attr = info);
 
         bool isDuplicate = seen.insert(result.getName().toString()).second;
         uassert(51005,
@@ -142,17 +142,17 @@ void DatabaseCloner::postStage() {
         }
         auto collStatus = _currentCollectionCloner->run();
         if (collStatus.isOK()) {
-            LOGV2_DEBUG(21148,
-                        1,
-                        "collection clone finished: {namespace}",
-                        "Collection clone finished",
-                        "namespace"_attr = sourceNss);
+            LOG_DEBUG(21148,
+                      1,
+                      "collection clone finished: {namespace}",
+                      "Collection clone finished",
+                      "namespace"_attr = sourceNss);
         } else {
-            LOGV2_ERROR(21149,
-                        "collection clone for '{namespace}' failed due to {error}",
-                        "Collection clone failed",
-                        "namespace"_attr = sourceNss,
-                        "error"_attr = collStatus.toString());
+            LOG_ERROR(21149,
+                      "collection clone for '{namespace}' failed due to {error}",
+                      "Collection clone failed",
+                      "namespace"_attr = sourceNss,
+                      "error"_attr = collStatus.toString());
             setSyncFailedStatus({ErrorCodes::InitialSyncFailure,
                                  collStatus
                                      .withContext(str::stream() << "Error cloning collection '"

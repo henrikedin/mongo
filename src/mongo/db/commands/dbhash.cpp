@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kCommand
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kCommand
 
 #include "mongo/platform/basic.h"
 
@@ -49,7 +49,7 @@
 #include "mongo/db/repl/replication_coordinator.h"
 #include "mongo/db/storage/storage_engine.h"
 #include "mongo/db/transaction_participant.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/platform/mutex.h"
 #include "mongo/util/md5.hpp"
 #include "mongo/util/net/socket_utils.h"
@@ -360,7 +360,7 @@ private:
             exec = InternalPlanner::collectionScan(
                 opCtx, &collection, PlanYieldPolicy::YieldPolicy::NO_YIELD);
         } else {
-            LOGV2(20455, "Can't find _id index for namespace", "namespace"_attr = nss);
+            LOG(20455, "Can't find _id index for namespace", "namespace"_attr = nss);
             return "no _id _index";
         }
 
@@ -376,8 +376,7 @@ private:
                 n++;
             }
         } catch (DBException& exception) {
-            LOGV2_WARNING(
-                20456, "Error while hashing, db possibly dropped", "namespace"_attr = nss);
+            LOG_WARNING(20456, "Error while hashing, db possibly dropped", "namespace"_attr = nss);
             exception.addContext("Plan executor error while running dbHash command");
             throw;
         }

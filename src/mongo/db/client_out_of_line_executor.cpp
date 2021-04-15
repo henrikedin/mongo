@@ -27,16 +27,16 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kDefault
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kDefault
 
 #include "mongo/db/client_out_of_line_executor.h"
 
 #include "mongo/base/error_codes.h"
 #include "mongo/base/status.h"
 #include "mongo/db/service_context.h"
-#include "mongo/logv2/log.h"
-#include "mongo/logv2/log_severity.h"
-#include "mongo/logv2/log_severity_suppressor.h"
+#include "mongo/log/log.h"
+#include "mongo/log/log_severity.h"
+#include "mongo/log/log_severity_suppressor.h"
 #include "mongo/util/clock_source.h"
 #include "mongo/util/scopeguard.h"
 
@@ -46,8 +46,8 @@ namespace mongo {
 class ClientOutOfLineExecutor::Impl {
 public:
     /** Returns Info(), then suppresses to `Debug(2)` for a second. */
-    logv2::SeveritySuppressor bumpedSeverity{
-        Seconds{1}, logv2::LogSeverity::Info(), logv2::LogSeverity::Debug(2)};
+    log::SeveritySuppressor bumpedSeverity{
+        Seconds{1}, log::LogSeverity::Info(), log::LogSeverity::Debug(2)};
     ClockSource::StopWatch stopWatch;
 };
 
@@ -104,11 +104,11 @@ void ClientOutOfLineExecutor::consumeAllTasks() noexcept {
     auto elapsed = _impl->stopWatch.elapsed();
 
     if (MONGO_unlikely(elapsed > kTimeLimit)) {
-        LOGV2_DEBUG(4651401,
-                    _impl->bumpedSeverity().toInt(),
-                    "Client's executor exceeded time limit",
-                    "elapsed"_attr = elapsed,
-                    "limit"_attr = kTimeLimit);
+        LOG_DEBUG(4651401,
+                  _impl->bumpedSeverity().toInt(),
+                  "Client's executor exceeded time limit",
+                  "elapsed"_attr = elapsed,
+                  "limit"_attr = kTimeLimit);
     }
 }
 

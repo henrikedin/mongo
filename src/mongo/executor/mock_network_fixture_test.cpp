@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTest
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTest
 
 #include "mongo/platform/basic.h"
 
@@ -37,7 +37,7 @@
 #include "mongo/executor/network_interface_mock.h"
 #include "mongo/executor/network_interface_mock_test_fixture.h"
 #include "mongo/executor/thread_pool_mock.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/unittest/unittest.h"
 
 namespace mongo {
@@ -68,7 +68,7 @@ public:
     Status startCommand(RemoteCommandRequestOnAny& request) {
         TaskExecutor::CallbackHandle cb;
         return net().startCommand(cb, request, [&](const auto& resp) {
-            LOGV2(5015503, "Test got command response", "resp"_attr = resp);
+            LOG(5015503, "Test got command response", "resp"_attr = resp);
             _responses.push_back(resp);
         });
     }

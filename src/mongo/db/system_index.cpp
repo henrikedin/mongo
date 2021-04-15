@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kStorage
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kStorage
 
 #include "mongo/platform/basic.h"
 
@@ -47,7 +47,7 @@
 #include "mongo/db/index_builds_coordinator.h"
 #include "mongo/db/jsobj.h"
 #include "mongo/db/storage/storage_options.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/assert_util.h"
 
 using namespace std::chrono_literals;
@@ -104,24 +104,24 @@ void generateSystemIndexForExistingCollection(OperationContext* opCtx,
         auto indexSpecStatus = index_key_validate::validateIndexSpec(opCtx, spec.toBSON());
         BSONObj indexSpec = fassert(40452, indexSpecStatus);
 
-        LOGV2(22488,
-              "No authorization index detected on {namespace} collection. Attempting to recover by "
-              "creating an index with spec: {indexSpec}",
-              "No authorization index detected. Attempting to recover by "
-              "creating an index",
-              logAttrs(ns),
-              "indexSpec"_attr = indexSpec);
+        LOG(22488,
+            "No authorization index detected on {namespace} collection. Attempting to recover by "
+            "creating an index with spec: {indexSpec}",
+            "No authorization index detected. Attempting to recover by "
+            "creating an index",
+            logAttrs(ns),
+            "indexSpec"_attr = indexSpec);
 
         auto indexConstraints = IndexBuildsManager::IndexConstraints::kEnforce;
         auto fromMigrate = false;
         IndexBuildsCoordinator::get(opCtx)->createIndex(
             opCtx, collectionUUID, indexSpec, indexConstraints, fromMigrate);
     } catch (const DBException& e) {
-        LOGV2_FATAL_CONTINUE(22490,
-                             "Failed to regenerate index for {namespace}. Exception: {error}",
-                             "Failed to regenerate index",
-                             logAttrs(ns),
-                             "error"_attr = e.what());
+        LOG_FATAL_CONTINUE(22490,
+                           "Failed to regenerate index for {namespace}. Exception: {error}",
+                           "Failed to regenerate index",
+                           logAttrs(ns),
+                           "error"_attr = e.what());
         throw;
     }
 }
@@ -131,8 +131,8 @@ void generateSystemIndexForExistingCollection(OperationContext* opCtx,
 Status verifySystemIndexes(OperationContext* opCtx) {
     // Do not try and generate any system indexes in read only mode.
     if (storageGlobalParams.readOnly) {
-        LOGV2_WARNING(22489,
-                      "Running in queryable backup mode. Unable to create authorization indexes");
+        LOG_WARNING(22489,
+                    "Running in queryable backup mode. Unable to create authorization indexes");
         return Status::OK();
     }
 

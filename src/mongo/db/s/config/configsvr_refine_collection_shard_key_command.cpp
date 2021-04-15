@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kSharding
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kSharding
 
 #include "mongo/platform/basic.h"
 
@@ -38,7 +38,7 @@
 #include "mongo/db/s/config/sharding_catalog_manager.h"
 #include "mongo/db/s/dist_lock_manager.h"
 #include "mongo/db/s/shard_key_util.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/s/grid.h"
 #include "mongo/s/request_types/refine_collection_shard_key_gen.h"
 #include "mongo/s/stale_shard_version_helpers.h"
@@ -159,10 +159,10 @@ public:
                                       shardkeyutil::ValidationBehaviorsRefineShardKey(opCtx, nss));
                               });
 
-            LOGV2(21922,
-                  "CMD: refineCollectionShardKey: {request}",
-                  "CMD: refineCollectionShardKey",
-                  "request"_attr = request().toBSON({}));
+            LOG(21922,
+                "CMD: refineCollectionShardKey: {request}",
+                "CMD: refineCollectionShardKey",
+                "request"_attr = request().toBSON({}));
 
             ShardingCatalogManager::get(opCtx)->refineCollectionShardKey(
                 opCtx, nss, newShardKeyPattern);

@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTest
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTest
 
 #include "mongo/platform/basic.h"
 
@@ -46,7 +46,7 @@
 #include "mongo/db/storage/checkpointer.h"
 #include "mongo/db/storage/wiredtiger/wiredtiger_kv_engine.h"
 #include "mongo/db/storage/wiredtiger/wiredtiger_record_store.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/unittest/log_test.h"
 #include "mongo/unittest/temp_dir.h"
 #include "mongo/unittest/unittest.h"
@@ -273,8 +273,8 @@ TEST_F(WiredTigerKVEngineTest, TestOplogTruncation) {
 
 
     // To diagnose any intermittent failures, maximize logging from WiredTigerKVEngine and friends.
-    auto severityGuard = unittest::MinimumLoggedSeverityGuard{logv2::LogComponent::kStorage,
-                                                              logv2::LogSeverity::Debug(3)};
+    auto severityGuard = unittest::MinimumLoggedSeverityGuard{log::LogComponent::kStorage,
+                                                              log::LogSeverity::Debug(3)};
 
     // Simulate the callback that queries config.transactions for the oldest active transaction.
     boost::optional<Timestamp> oldestActiveTxnTimestamp;
@@ -312,12 +312,12 @@ TEST_F(WiredTigerKVEngineTest, TestOplogTruncation) {
             sleepmillis(100);
         }
 
-        LOGV2(22367,
-              "Expected the pinned oplog to advance. Expected value: {newPinned} Published value: "
-              "{engine_getOplogNeededForCrashRecovery}",
-              "newPinned"_attr = newPinned,
-              "engine_getOplogNeededForCrashRecovery"_attr =
-                  _engine->getOplogNeededForCrashRecovery());
+        LOG(22367,
+            "Expected the pinned oplog to advance. Expected value: {newPinned} Published value: "
+            "{engine_getOplogNeededForCrashRecovery}",
+            "newPinned"_attr = newPinned,
+            "engine_getOplogNeededForCrashRecovery"_attr =
+                _engine->getOplogNeededForCrashRecovery());
         FAIL("");
     };
 

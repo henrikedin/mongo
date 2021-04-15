@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kControl
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kControl
 
 #include "mongo/platform/basic.h"
 
@@ -39,7 +39,7 @@
 #include "mongo/client/authenticate.h"
 #include "mongo/config.h"
 #include "mongo/db/server_options.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/net/ssl_options.h"
 #include "mongo/util/processinfo.h"
 #include "mongo/util/version.h"
@@ -51,7 +51,7 @@ bool CheckPrivilegeEnabled(const wchar_t* name) {
     LUID luid;
     if (!LookupPrivilegeValueW(nullptr, name, &luid)) {
         auto str = errnoWithPrefix("Failed to LookupPrivilegeValue");
-        LOGV2_WARNING(4718701, "{str}", "str"_attr = str);
+        LOG_WARNING(4718701, "{str}", "str"_attr = str);
         return false;
     }
 
@@ -59,7 +59,7 @@ bool CheckPrivilegeEnabled(const wchar_t* name) {
     HANDLE accessToken;
     if (!OpenProcessToken(GetCurrentProcess(), TOKEN_QUERY, &accessToken)) {
         auto str = errnoWithPrefix("Failed to OpenProcessToken");
-        LOGV2_WARNING(4718702, "{str}", "str"_attr = str);
+        LOG_WARNING(4718702, "{str}", "str"_attr = str);
         return false;
     }
 
@@ -75,7 +75,7 @@ bool CheckPrivilegeEnabled(const wchar_t* name) {
 
     if (!PrivilegeCheck(accessToken, &privileges, &ret)) {
         auto str = errnoWithPrefix("Failed to PrivilegeCheck");
-        LOGV2_WARNING(4718703, "{str}", "str"_attr = str);
+        LOG_WARNING(4718703, "{str}", "str"_attr = str);
         return false;
     }
 
@@ -93,40 +93,40 @@ void logCommonStartupWarnings(const ServerGlobalParams& serverParams) {
     {
         auto&& vii = VersionInfoInterface::instance();
         if ((vii.minorVersion() % 2) != 0) {
-            LOGV2_WARNING_OPTIONS(
+            LOG_WARNING_OPTIONS(
                 22117,
-                {logv2::LogTag::kStartupWarnings},
+                {log::LogTag::kStartupWarnings},
                 "This is a development version of MongoDB. Not recommended for production",
                 "version"_attr = vii.version());
         }
     }
 
     if (serverParams.authState == ServerGlobalParams::AuthState::kUndefined) {
-        LOGV2_WARNING_OPTIONS(22120,
-                              {logv2::LogTag::kStartupWarnings},
-                              "Access control is not enabled for the database. Read and write "
-                              "access to data and configuration is unrestricted");
+        LOG_WARNING_OPTIONS(22120,
+                            {log::LogTag::kStartupWarnings},
+                            "Access control is not enabled for the database. Read and write "
+                            "access to data and configuration is unrestricted");
     }
 
     const bool is32bit = sizeof(int*) == 4;
     if (is32bit) {
-        LOGV2_WARNING_OPTIONS(
-            22123, {logv2::LogTag::kStartupWarnings}, "This 32-bit MongoDB binary is deprecated");
+        LOG_WARNING_OPTIONS(
+            22123, {log::LogTag::kStartupWarnings}, "This 32-bit MongoDB binary is deprecated");
     }
 
 #ifdef MONGO_CONFIG_SSL
     if (sslGlobalParams.sslAllowInvalidCertificates) {
-        LOGV2_WARNING_OPTIONS(
+        LOG_WARNING_OPTIONS(
             22124,
-            {logv2::LogTag::kStartupWarnings},
+            {log::LogTag::kStartupWarnings},
             "While invalid X509 certificates may be used to connect to this server, they will not "
             "be considered permissible for authentication");
     }
 
     if (sslGlobalParams.sslAllowInvalidHostnames) {
-        LOGV2_WARNING_OPTIONS(
+        LOG_WARNING_OPTIONS(
             22128,
-            {logv2::LogTag::kStartupWarnings},
+            {log::LogTag::kStartupWarnings},
             "This server will not perform X.509 hostname validation. This may allow your server to "
             "make or accept connections to untrusted parties");
     }
@@ -142,14 +142,14 @@ void logCommonStartupWarnings(const ServerGlobalParams& serverParams) {
 #endif
         sslGlobalParams.sslCAFile.empty()) {
 #ifdef MONGO_CONFIG_SSL_CERTIFICATE_SELECTORS
-        LOGV2_WARNING(22132,
-                      "No client certificate validation can be performed since no CA file has been "
-                      "provided and no sslCertificateSelector has been specified. Please specify "
-                      "an sslCAFile parameter");
+        LOG_WARNING(22132,
+                    "No client certificate validation can be performed since no CA file has been "
+                    "provided and no sslCertificateSelector has been specified. Please specify "
+                    "an sslCAFile parameter");
 #else
-        LOGV2_WARNING(22133,
-                      "No client certificate validation can be performed since no CA file has been "
-                      "provided. Please specify an sslCAFile parameter");
+        LOG_WARNING(22133,
+                    "No client certificate validation can be performed since no CA file has been "
+                    "provided. Please specify an sslCAFile parameter");
 #endif
     }
 
@@ -158,18 +158,18 @@ void logCommonStartupWarnings(const ServerGlobalParams& serverParams) {
     BOOL wow64Process;
     BOOL retWow64 = IsWow64Process(GetCurrentProcess(), &wow64Process);
     if (retWow64 && wow64Process) {
-        LOGV2_OPTIONS(22135,
-                      {logv2::LogTag::kStartupWarnings},
-                      "This is a 32-bit MongoDB binary running on a 64-bit operating system. "
-                      "Switch to a 64-bit build of MongoDB to support larger databases");
+        LOG_OPTIONS(22135,
+                    {log::LogTag::kStartupWarnings},
+                    "This is a 32-bit MongoDB binary running on a 64-bit operating system. "
+                    "Switch to a 64-bit build of MongoDB to support larger databases");
     }
 #endif
 
 #ifdef _WIN32
     if (!CheckPrivilegeEnabled(SE_INC_WORKING_SET_NAME)) {
-        LOGV2_OPTIONS(
+        LOG_OPTIONS(
             4718704,
-            {logv2::LogTag::kStartupWarnings},
+            {log::LogTag::kStartupWarnings},
             "SeIncreaseWorkingSetPrivilege privilege is not granted to the process. Secure memory "
             "allocation for SCRAM and/or Encrypted Storage Engine may fail.");
     }
@@ -177,17 +177,17 @@ void logCommonStartupWarnings(const ServerGlobalParams& serverParams) {
 
 #if !defined(_WIN32)
     if (getuid() == 0) {
-        LOGV2_WARNING_OPTIONS(
+        LOG_WARNING_OPTIONS(
             22138,
-            {logv2::LogTag::kStartupWarnings},
+            {log::LogTag::kStartupWarnings},
             "You are running this process as the root user, which is not recommended");
     }
 #endif
 
     if (serverParams.bind_ips.empty()) {
-        LOGV2_WARNING_OPTIONS(
+        LOG_WARNING_OPTIONS(
             22140,
-            {logv2::LogTag::kStartupWarnings},
+            {log::LogTag::kStartupWarnings},
             "This server is bound to localhost. Remote systems will be unable to connect to this "
             "server. Start the server with --bind_ip <address> to specify which IP addresses it "
             "should serve responses from, or with --bind_ip_all to bind to all interfaces. If this "
@@ -196,9 +196,9 @@ void logCommonStartupWarnings(const ServerGlobalParams& serverParams) {
     }
 
     if (auth::hasMultipleInternalAuthKeys()) {
-        LOGV2_WARNING_OPTIONS(
+        LOG_WARNING_OPTIONS(
             22147,
-            {logv2::LogTag::kStartupWarnings},
+            {log::LogTag::kStartupWarnings},
             "Multiple keys specified in security key file. If cluster key file rollover is not in "
             "progress, only one key should be specified in the key file");
     }

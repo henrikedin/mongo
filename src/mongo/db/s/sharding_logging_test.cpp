@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kSharding
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kSharding
 
 #include "mongo/platform/basic.h"
 
@@ -59,7 +59,7 @@ public:
 protected:
     void noRetryAfterSuccessfulCreate() {
         auto future = launchAsync([this] {
-            log("moved a chunk", "foo.bar", BSON("min" << 3 << "max" << 4)).transitional_ignore();
+            LOG("moved a chunk", "foo.bar", BSON("min" << 3 << "max" << 4)).transitional_ignore();
         });
 
         expectConfigCollectionCreate(
@@ -76,7 +76,7 @@ protected:
 
         // Now log another change and confirm that we don't re-attempt to create the collection
         future = launchAsync([this] {
-            log("moved a second chunk", "foo.bar", BSON("min" << 4 << "max" << 5))
+            LOG("moved a second chunk", "foo.bar", BSON("min" << 4 << "max" << 5))
                 .transitional_ignore();
         });
 
@@ -93,7 +93,7 @@ protected:
 
     void noRetryCreateIfAlreadyExists() {
         auto future = launchAsync([this] {
-            log("moved a chunk", "foo.bar", BSON("min" << 3 << "max" << 4)).transitional_ignore();
+            LOG("moved a chunk", "foo.bar", BSON("min" << 3 << "max" << 4)).transitional_ignore();
         });
 
         BSONObjBuilder createResponseBuilder;
@@ -113,7 +113,7 @@ protected:
 
         // Now log another change and confirm that we don't re-attempt to create the collection
         future = launchAsync([this] {
-            log("moved a second chunk", "foo.bar", BSON("min" << 4 << "max" << 5))
+            LOG("moved a second chunk", "foo.bar", BSON("min" << 4 << "max" << 5))
                 .transitional_ignore();
         });
 
@@ -130,7 +130,7 @@ protected:
 
     void createFailure() {
         auto future = launchAsync([this] {
-            log("moved a chunk", "foo.bar", BSON("min" << 3 << "max" << 4)).transitional_ignore();
+            LOG("moved a chunk", "foo.bar", BSON("min" << 3 << "max" << 4)).transitional_ignore();
         });
 
         BSONObjBuilder createResponseBuilder;
@@ -144,7 +144,7 @@ protected:
 
         // Now log another change and confirm that we *do* attempt to create the collection
         future = launchAsync([this] {
-            log("moved a second chunk", "foo.bar", BSON("min" << 4 << "max" << 5))
+            LOG("moved a second chunk", "foo.bar", BSON("min" << 4 << "max" << 5))
                 .transitional_ignore();
         });
 
@@ -165,7 +165,7 @@ protected:
         return (_configCollType == ChangeLog ? "changelog" : "actionlog");
     }
 
-    Status log(const std::string& what, const std::string& ns, const BSONObj& detail) {
+    Status LOG(const std::string& what, const std::string& ns, const BSONObj& detail) {
         if (_configCollType == ChangeLog) {
             return ShardingLogging::get(operationContext())
                 ->logChangeChecked(operationContext(),

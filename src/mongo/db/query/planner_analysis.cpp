@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kQuery
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kQuery
 
 #include "mongo/db/query/planner_analysis.h"
 
@@ -42,7 +42,7 @@
 #include "mongo/db/matcher/expression_geo.h"
 #include "mongo/db/query/query_planner.h"
 #include "mongo/db/query/query_planner_common.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace mongo {
 
@@ -386,7 +386,7 @@ std::unique_ptr<QuerySolutionNode> addSortKeyGeneratorStageIfNeeded(
 std::unique_ptr<ProjectionNode> analyzeProjection(const CanonicalQuery& query,
                                                   std::unique_ptr<QuerySolutionNode> solnRoot,
                                                   const bool hasSortStage) {
-    LOGV2_DEBUG(20949, 5, "PROJECTION: Current plan", "plan"_attr = redact(solnRoot->toString()));
+    LOG_DEBUG(20949, 5, "PROJECTION: Current plan", "plan"_attr = redact(solnRoot->toString()));
 
     // If the projection requires the entire document we add a fetch stage if not present. Otherwise
     // we add a fetch stage if we are not covered.
@@ -731,7 +731,7 @@ bool QueryPlannerAnalysis::explodeForSort(const CanonicalQuery& query,
     // Too many ixscans spoil the performance.
     if (totalNumScans > (size_t)internalQueryMaxScansToExplode.load()) {
         (*solnRoot)->hitScanLimit = true;
-        LOGV2_DEBUG(
+        LOG_DEBUG(
             20950,
             5,
             "Could expand ixscans to pull out sort order but resulting scan count is too high",
@@ -791,10 +791,10 @@ QuerySolutionNode* QueryPlannerAnalysis::analyzeSort(const CanonicalQuery& query
     BSONObj reverseSort = QueryPlannerCommon::reverseSortObj(sortObj);
     if (providedSorts.contains(reverseSort)) {
         QueryPlannerCommon::reverseScans(solnRoot);
-        LOGV2_DEBUG(20951,
-                    5,
-                    "Reversing ixscan to provide sort",
-                    "newPlan"_attr = redact(solnRoot->toString()));
+        LOG_DEBUG(20951,
+                  5,
+                  "Reversing ixscan to provide sort",
+                  "newPlan"_attr = redact(solnRoot->toString()));
         return solnRoot;
     }
 

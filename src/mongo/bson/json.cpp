@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kDefault
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kDefault
 
 #include "mongo/bson/json.h"
 
@@ -37,7 +37,7 @@
 
 #include "mongo/base/parse_number.h"
 #include "mongo/db/jsobj.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/platform/decimal128.h"
 #include "mongo/platform/strtoll.h"
 #include "mongo/util/base64.h"
@@ -56,14 +56,14 @@ using std::unique_ptr;
 using namespace fmt::literals;
 
 #if 0
-#define MONGO_JSON_DEBUG(message)                                \
-    LOGV2(20107,                                                 \
-          "JSON DEBUG @ {FILE_}:{LINE_} {FUNCTION_}{}{message}", \
-          "FILE_"_attr = __FILE__,                               \
-          "LINE_"_attr = __LINE__,                               \
-          "FUNCTION_"_attr = __FUNCTION__,                       \
-          ""_attr = ": " \,                                      \
-          "message"_attr = message);
+#define MONGO_JSON_DEBUG(message)                              \
+    LOG(20107,                                                 \
+        "JSON DEBUG @ {FILE_}:{LINE_} {FUNCTION_}{}{message}", \
+        "FILE_"_attr = __FILE__,                               \
+        "LINE_"_attr = __LINE__,                               \
+        "FUNCTION_"_attr = __FUNCTION__,                       \
+        ""_attr = ": " \,                                      \
+        "message"_attr = message);
 #else
 #define MONGO_JSON_DEBUG(message)
 #endif

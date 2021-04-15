@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kCommand
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kCommand
 
 #include "mongo/platform/basic.h"
 
@@ -56,7 +56,7 @@
 #include "mongo/db/timeseries/timeseries_lookup.h"
 #include "mongo/db/vector_clock.h"
 #include "mongo/db/views/view_catalog.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/exit_code.h"
 #include "mongo/util/quick_exit.h"
 
@@ -176,7 +176,7 @@ public:
         const NamespaceString toReIndexNss =
             CommandHelpers::parseNsCollectionRequired(dbname, jsobj);
 
-        LOGV2(20457, "CMD: reIndex {namespace}", "CMD reIndex", "namespace"_attr = toReIndexNss);
+        LOG(20457, "CMD: reIndex {namespace}", "CMD reIndex", "namespace"_attr = toReIndexNss);
 
         if (repl::ReplicationCoordinator::get(opCtx)->getReplicationMode() !=
             repl::ReplicationCoordinator::modeNone) {
@@ -275,7 +275,7 @@ public:
         });
 
         if (MONGO_unlikely(reIndexCrashAfterDrop.shouldFail())) {
-            LOGV2(20458, "Exiting because 'reIndexCrashAfterDrop' fail point was set");
+            LOG(20458, "Exiting because 'reIndexCrashAfterDrop' fail point was set");
             quickExit(EXIT_ABRUPT);
         }
 

@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kStorage
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kStorage
 
 #include "mongo/platform/basic.h"
 
@@ -37,7 +37,7 @@
 #include "mongo/db/db_raii.h"
 #include "mongo/db/index/index_access_method.h"
 #include "mongo/db/storage/key_string.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace mongo {
 
@@ -64,31 +64,31 @@ void printKeyString(const RecordId& recordId,
     }
     BSONObj rehydratedKey = b.done();
 
-    LOGV2(51811,
-          "{caller} {record_id}, key: {rehydrated_key}, keystring: "
-          "{key_string}",
-          "caller"_attr = callerLogPrefix,
-          "record_id"_attr = recordId,
-          "rehydrated_key"_attr = rehydratedKey,
-          "key_string"_attr = keyStringValue);
+    LOG(51811,
+        "{caller} {record_id}, key: {rehydrated_key}, keystring: "
+        "{key_string}",
+        "caller"_attr = callerLogPrefix,
+        "record_id"_attr = recordId,
+        "rehydrated_key"_attr = rehydratedKey,
+        "key_string"_attr = keyStringValue);
 }
 
 void printCollectionAndIndexTableEntries(OperationContext* opCtx, const NamespaceString& nss) {
     invariant(!opCtx->lockState()->isLocked());
     AutoGetCollection coll(opCtx, nss, MODE_IS);
 
-    LOGV2(51807, "Dumping collection table and index tables' entries for debugging...");
+    LOG(51807, "Dumping collection table and index tables' entries for debugging...");
 
     // Iterate and print the collection table (record store) documents.
     RecordStore* rs = coll->getRecordStore();
     auto rsCursor = rs->getCursor(opCtx);
     boost::optional<Record> rec = rsCursor->next();
-    LOGV2(51808, "[Debugging] Collection table entries:");
+    LOG(51808, "[Debugging] Collection table entries:");
     while (rec) {
-        LOGV2(51809,
-              "[Debugging](record) {record_id}, Value: {record_data}",
-              "record_id"_attr = rec->id,
-              "record_data"_attr = rec->data.toBson());
+        LOG(51809,
+            "[Debugging](record) {record_id}, Value: {record_data}",
+            "record_id"_attr = rec->id,
+            "record_data"_attr = rec->data.toBson());
         rec = rsCursor->next();
     }
 
@@ -107,9 +107,9 @@ void printCollectionAndIndexTableEntries(OperationContext* opCtx, const Namespac
         KeyString::Builder firstKeyString(
             version, BSONObj(), ordering, KeyString::Discriminator::kExclusiveBefore);
 
-        LOGV2(51810,
-              "[Debugging] {keyPattern_str} index table entries:",
-              "keyPattern_str"_attr = keyPattern);
+        LOG(51810,
+            "[Debugging] {keyPattern_str} index table entries:",
+            "keyPattern_str"_attr = keyPattern);
 
         for (auto keyStringEntry = indexCursor->seekForKeyString(firstKeyString.getValueCopy());
              keyStringEntry;
@@ -132,7 +132,7 @@ void printValidateResults(const ValidateResults& results) {
 
     results.appendToResultObj(&resultObj, /*debugging=*/true);
 
-    LOGV2(51812, "Results", "results"_attr = resultObj.done());
+    LOG(51812, "Results", "results"_attr = resultObj.done());
 }
 
 }  // namespace StorageDebugUtil

@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kAccessControl
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kAccessControl
 
 #include "mongo/platform/basic.h"
 
@@ -71,7 +71,7 @@
 #include "mongo/db/query/cursor_response.h"
 #include "mongo/db/repl/replication_coordinator.h"
 #include "mongo/db/service_context.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/platform/mutex.h"
 #include "mongo/rpc/factory.h"
 #include "mongo/rpc/get_status_from_command_result.h"
@@ -554,7 +554,7 @@ public:
         }
 
         if (_authzManager->getCacheGeneration() == _cacheGeneration) {
-            LOGV2_DEBUG(20509, 1, "User management command did not invalidate the user cache");
+            LOG_DEBUG(20509, 1, "User management command did not invalidate the user cache");
             _authzManager->invalidateUserCache(_opCtx);
         }
     }
@@ -821,9 +821,9 @@ public:
         if (fp.isActive()) {
             IDLParserErrorContext ctx("umcTransaction");
             auto delay = UMCTransactionFailPoint::parse(ctx, fp.getData()).getCommitDelayMS();
-            LOGV2(4993100,
-                  "Sleeping prior to committing UMC transaction",
-                  "duration"_attr = Milliseconds(delay));
+            LOG(4993100,
+                "Sleeping prior to committing UMC transaction",
+                "duration"_attr = Milliseconds(delay));
             sleepmillis(delay);
         }
         return commitOrAbort(kCommitTransaction);
@@ -1019,10 +1019,10 @@ void CmdUMCTyped<CreateUserCommand, void>::Invocation::typedRun(OperationContext
                       "Cannot create an x.509 user with a subjectname that would be "
                       "recognized as an internal cluster member");
         } else {
-            LOGV2(4593800,
-                  "Creating user which would be considered a cluster member if clusterAuthMode "
-                  "enabled X509 authentication",
-                  "user"_attr = userName);
+            LOG(4593800,
+                "Creating user which would be considered a cluster member if clusterAuthMode "
+                "enabled X509 authentication",
+                "user"_attr = userName);
         }
     }
 #endif
@@ -1786,11 +1786,11 @@ Status retryTransactionOps(OperationContext* opCtx,
     for (int tries = kMaxAttempts; tries > 0; --tries) {
         if (tries < kMaxAttempts) {
             // Emit log on all but the first attempt.
-            LOGV2_DEBUG(5297200,
-                        4,
-                        "Retrying user management command transaction",
-                        "command"_attr = forCommand,
-                        "reason"_attr = status);
+            LOG_DEBUG(5297200,
+                      4,
+                      "Retrying user management command transaction",
+                      "command"_attr = forCommand,
+                      "reason"_attr = status);
         }
 
         UMCTransaction txn(opCtx, forCommand);
@@ -1847,7 +1847,7 @@ void CmdUMCTyped<DropRoleCommand, void>::Invocation::typedRun(OperationContext* 
         try {
             authzManager->invalidateUserCache(opCtx);
         } catch (const AssertionException& ex) {
-            LOGV2_WARNING(4907701, "Failed invalidating user cache", "exception"_attr = ex);
+            LOG_WARNING(4907701, "Failed invalidating user cache", "exception"_attr = ex);
         }
     });
 
@@ -1909,7 +1909,7 @@ CmdUMCTyped<DropAllRolesFromDatabaseCommand, DropAllRolesFromDatabaseReply>::Inv
         try {
             authzManager->invalidateUserCache(opCtx);
         } catch (const AssertionException& ex) {
-            LOGV2_WARNING(4907700, "Failed invalidating user cache", "exception"_attr = ex);
+            LOG_WARNING(4907700, "Failed invalidating user cache", "exception"_attr = ex);
         }
     });
 
@@ -2184,22 +2184,22 @@ void _addUser(OperationContext* opCtx,
         Status status = updatePrivilegeDocument(opCtx, userName, userObj);
         if (!status.isOK()) {
             // Match the behavior of mongorestore to continue on failure
-            LOGV2_WARNING(20510,
-                          "Could not update user {user} in _mergeAuthzCollections command: {error}",
-                          "Could not update user during _mergeAuthzCollections command",
-                          "user"_attr = userName,
-                          "error"_attr = redact(status));
+            LOG_WARNING(20510,
+                        "Could not update user {user} in _mergeAuthzCollections command: {error}",
+                        "Could not update user during _mergeAuthzCollections command",
+                        "user"_attr = userName,
+                        "error"_attr = redact(status));
         }
     } else {
         _auditCreateOrUpdateUser(userObj, true);
         Status status = insertPrivilegeDocument(opCtx, userObj);
         if (!status.isOK()) {
             // Match the behavior of mongorestore to continue on failure
-            LOGV2_WARNING(20511,
-                          "Could not insert user {user} in _mergeAuthzCollections command: {error}",
-                          "Could not insert user during _mergeAuthzCollections command",
-                          "user"_attr = userName,
-                          "error"_attr = redact(status));
+            LOG_WARNING(20511,
+                        "Could not insert user {user} in _mergeAuthzCollections command: {error}",
+                        "Could not insert user during _mergeAuthzCollections command",
+                        "user"_attr = userName,
+                        "error"_attr = redact(status));
         }
     }
     usersToDrop->erase(userName);
@@ -2314,22 +2314,22 @@ void _addRole(OperationContext* opCtx,
         Status status = updateRoleDocument(opCtx, roleName, roleObj);
         if (!status.isOK()) {
             // Match the behavior of mongorestore to continue on failure
-            LOGV2_WARNING(20512,
-                          "Could not update role {role} in _mergeAuthzCollections command: {error}",
-                          "Could not update role during _mergeAuthzCollections command",
-                          "role"_attr = roleName,
-                          "error"_attr = redact(status));
+            LOG_WARNING(20512,
+                        "Could not update role {role} in _mergeAuthzCollections command: {error}",
+                        "Could not update role during _mergeAuthzCollections command",
+                        "role"_attr = roleName,
+                        "error"_attr = redact(status));
         }
     } else {
         _auditCreateOrUpdateRole(roleObj, true);
         Status status = insertRoleDocument(opCtx, roleObj);
         if (!status.isOK()) {
             // Match the behavior of mongorestore to continue on failure
-            LOGV2_WARNING(20513,
-                          "Could not insert role {role} in _mergeAuthzCollections command: {error}",
-                          "Could not insert role during _mergeAuthzCollections command",
-                          "role"_attr = roleName,
-                          "error"_attr = redact(status));
+            LOG_WARNING(20513,
+                        "Could not insert role {role} in _mergeAuthzCollections command: {error}",
+                        "Could not insert role during _mergeAuthzCollections command",
+                        "role"_attr = roleName,
+                        "error"_attr = redact(status));
         }
     }
     rolesToDrop->erase(roleName);

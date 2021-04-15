@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kSharding
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kSharding
 
 #include "mongo/platform/basic.h"
 
@@ -36,7 +36,7 @@
 #include "mongo/db/operation_context.h"
 #include "mongo/db/s/operation_sharding_state.h"
 #include "mongo/db/s/sharding_state.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/s/database_version.h"
 #include "mongo/s/stale_exception.h"
 #include "mongo/util/fail_point.h"
@@ -152,7 +152,7 @@ boost::optional<DatabaseVersion> DatabaseShardingState::getDbVersion(OperationCo
 }
 
 void DatabaseShardingState::clearDatabaseInfo(OperationContext* opCtx) {
-    LOGV2(5369110, "Clearing node's cached database info", "db"_attr = _dbName);
+    LOG(5369110, "Clearing node's cached database info", "db"_attr = _dbName);
     const auto dssLock = DSSLock::lockExclusive(opCtx, this);
     _optDatabaseInfo = boost::none;
 }
@@ -161,10 +161,10 @@ void DatabaseShardingState::setDatabaseInfo(OperationContext* opCtx,
                                             DatabaseType&& newDatabaseInfo,
                                             DSSLock& dssLock) {
     invariant(opCtx->lockState()->isDbLockedForMode(_dbName, MODE_X));
-    LOGV2(5369111,
-          "Setting this node's cached database info",
-          "db"_attr = _dbName,
-          "newDatabaseVersion"_attr = newDatabaseInfo.getVersion());
+    LOG(5369111,
+        "Setting this node's cached database info",
+        "db"_attr = _dbName,
+        "newDatabaseVersion"_attr = newDatabaseInfo.getVersion());
     _optDatabaseInfo.emplace(std::move(newDatabaseInfo));
 }
 

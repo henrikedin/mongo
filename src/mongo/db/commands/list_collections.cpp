@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kCommand
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kCommand
 
 #include "mongo/platform/basic.h"
 
@@ -65,7 +65,7 @@
 #include "mongo/db/storage/storage_engine.h"
 #include "mongo/db/storage/storage_options.h"
 #include "mongo/db/views/view_catalog.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace mongo {
 
@@ -426,11 +426,10 @@ public:
                         firstBatch.push_back(ListCollectionsReplyItem::parse(
                             IDLParserErrorContext("ListCollectionsReplyItem"), nextDoc));
                     } catch (const DBException& exc) {
-                        LOGV2_ERROR(
-                            5254300,
-                            "Could not parse catalog entry while replying to listCollections",
-                            "entry"_attr = nextDoc,
-                            "error"_attr = exc);
+                        LOG_ERROR(5254300,
+                                  "Could not parse catalog entry while replying to listCollections",
+                                  "entry"_attr = nextDoc,
+                                  "error"_attr = exc);
                         fassertFailed(5254301);
                     }
                     bytesBuffered += nextDoc.objsize();

@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTest
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTest
 
 #include "mongo/platform/basic.h"
 
@@ -41,7 +41,7 @@
 #include "mongo/db/repl/oplog_interface_mock.h"
 #include "mongo/db/repl/oplog_interface_remote.h"
 #include "mongo/db/repl/roll_back_local_operations.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/unittest/unittest.h"
 
 namespace {
@@ -330,15 +330,15 @@ public:
                                           boost::optional<BSONObj> readConcernObj) override {
         if (_initFailuresLeft > 0) {
             _initFailuresLeft--;
-            LOGV2(21657,
-                  "Throwing DBException on DBClientCursorForTest::query(). Failures left: "
-                  "{initFailuresLeft}",
-                  "initFailuresLeft"_attr = _initFailuresLeft);
+            LOG(21657,
+                "Throwing DBException on DBClientCursorForTest::query(). Failures left: "
+                "{initFailuresLeft}",
+                "initFailuresLeft"_attr = _initFailuresLeft);
             uasserted(50852, "Simulated network error");
             MONGO_UNREACHABLE;
         }
 
-        LOGV2(21658, "Returning success on DBClientCursorForTest::query()");
+        LOG(21658, "Returning success on DBClientCursorForTest::query()");
 
         BSONArrayBuilder builder;
         builder.append(makeOp(1));

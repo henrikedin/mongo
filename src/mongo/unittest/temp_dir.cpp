@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTest
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTest
 
 #include "mongo/platform/basic.h"
 
@@ -36,7 +36,7 @@
 #include <boost/filesystem.hpp>
 
 #include "mongo/base/init.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/unittest/unittest.h"
 #include "mongo/util/options_parser/startup_option_init.h"
 #include "mongo/util/options_parser/startup_options.h"
@@ -85,22 +85,22 @@ TempDir::TempDir(const std::string& namePrefix) {
 
     bool createdNewDirectory = boost::filesystem::create_directory(_path);
     if (!createdNewDirectory) {
-        LOGV2_ERROR(23053, "unique path ({path}) already existed", "path"_attr = _path);
+        LOG_ERROR(23053, "unique path ({path}) already existed", "path"_attr = _path);
         fassertFailed(17147);
     }
 
-    LOGV2(23051, "Created temporary directory: {path}", "path"_attr = _path);
+    LOG(23051, "Created temporary directory: {path}", "path"_attr = _path);
 }
 
 TempDir::~TempDir() {
     try {
         boost::filesystem::remove_all(_path);
     } catch (const std::exception& e) {
-        LOGV2_WARNING(23052,
-                      "error encountered recursively deleting directory '{path}': {e_what}. "
-                      "Ignoring and continuing.",
-                      "path"_attr = _path,
-                      "e_what"_attr = e.what());
+        LOG_WARNING(23052,
+                    "error encountered recursively deleting directory '{path}': {e_what}. "
+                    "Ignoring and continuing.",
+                    "path"_attr = _path,
+                    "e_what"_attr = e.what());
     }
 }
 

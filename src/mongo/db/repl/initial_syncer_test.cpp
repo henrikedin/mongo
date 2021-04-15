@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTest
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTest
 
 #include "mongo/platform/basic.h"
 
@@ -75,7 +75,7 @@
 #include "mongo/util/scopeguard.h"
 #include "mongo/util/str.h"
 
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/unittest/barrier.h"
 #include "mongo/unittest/unittest.h"
 
@@ -184,9 +184,9 @@ public:
     void scheduleNetworkResponse(std::string cmdName, const BSONObj& obj) {
         NetworkInterfaceMock* net = getNet();
         if (!net->hasReadyRequests()) {
-            LOGV2(24158,
-                  "The network doesn't have a request to process for this response",
-                  "obj"_attr = obj);
+            LOG(24158,
+                "The network doesn't have a request to process for this response",
+                "obj"_attr = obj);
         }
         verifyNextRequestCommandName(cmdName);
         scheduleNetworkResponse(net->getNextReadyRequest(), obj);
@@ -197,11 +197,11 @@ public:
         NetworkInterfaceMock* net = getNet();
         Milliseconds millis(0);
         RemoteCommandResponse response(obj, millis);
-        LOGV2(24159,
-              "Sending response for network request",
-              "dbname"_attr = noi->getRequest().dbname,
-              "cmd"_attr = noi->getRequest().cmdObj,
-              "response"_attr = response);
+        LOG(24159,
+            "Sending response for network request",
+            "dbname"_attr = noi->getRequest().dbname,
+            "cmd"_attr = noi->getRequest().cmdObj,
+            "response"_attr = response);
 
         net->scheduleResponse(noi, net->now(), response);
     }
@@ -209,9 +209,9 @@ public:
     void scheduleNetworkResponse(std::string cmdName, Status errorStatus) {
         NetworkInterfaceMock* net = getNet();
         if (!getNet()->hasReadyRequests()) {
-            LOGV2(24162,
-                  "The network doesn't have a request to process for the error",
-                  "errorStatus"_attr = errorStatus);
+            LOG(24162,
+                "The network doesn't have a request to process for the error",
+                "errorStatus"_attr = errorStatus);
         }
         verifyNextRequestCommandName(cmdName);
         net->scheduleResponse(net->getNextReadyRequest(), net->now(), errorStatus);
@@ -249,9 +249,9 @@ public:
     void finishProcessingNetworkResponse() {
         getNet()->runReadyNetworkOperations();
         if (getNet()->hasReadyRequests()) {
-            LOGV2(24163,
-                  "The network has unexpected requests to process",
-                  "request"_attr = getNet()->getNextReadyRequest()->getDiagnosticString());
+            LOG(24163,
+                "The network has unexpected requests to process",
+                "request"_attr = getNet()->getNextReadyRequest()->getDiagnosticString());
         }
         ASSERT_FALSE(getNet()->hasReadyRequests());
     }
@@ -339,9 +339,9 @@ protected:
             // Get collection info from map.
             const auto collInfo = &_collections[nss];
             if (collInfo->stats->initCalled) {
-                LOGV2(24165,
-                      "reusing collection during test which may cause problems",
-                      "nss"_attr = nss);
+                LOG(24165,
+                    "reusing collection during test which may cause problems",
+                    "nss"_attr = nss);
             }
             auto localLoader = std::make_unique<CollectionBulkLoaderMock>(collInfo->stats);
             auto status = localLoader->init(secondaryIndexSpecs);
@@ -906,11 +906,11 @@ TEST_F(InitialSyncerTest,
 
     // Check number of failed attempts in stats.
     auto progress = initialSyncer->getInitialSyncProgress();
-    LOGV2(24166,
-          "Progress after {initialSyncMaxAttempts} failed attempts: {progress}",
-          "Progress after initialSyncMaxAttempts failed attempts",
-          "initialSyncMaxAttempts"_attr = initialSyncMaxAttempts,
-          "progress"_attr = progress);
+    LOG(24166,
+        "Progress after {initialSyncMaxAttempts} failed attempts: {progress}",
+        "Progress after initialSyncMaxAttempts failed attempts",
+        "initialSyncMaxAttempts"_attr = initialSyncMaxAttempts,
+        "progress"_attr = progress);
     ASSERT_EQUALS(progress.getIntField("failedInitialSyncAttempts"), int(initialSyncMaxAttempts))
         << progress;
     ASSERT_EQUALS(progress.getIntField("maxFailedInitialSyncAttempts"), int(initialSyncMaxAttempts))
@@ -4475,7 +4475,7 @@ TEST_F(InitialSyncerTest, TestRemainingInitialSyncEstimatedMillisMetric) {
     // collection is expected to equal 'dbSize'.
     hangDuringCloningFailPoint->waitForTimesEntered(timesEntered + 1);
     auto progress = initialSyncer->getInitialSyncProgress();
-    LOGV2(5301701, "Progress in middle of cloning", "progress"_attr = progress);
+    LOG(5301701, "Progress in middle of cloning", "progress"_attr = progress);
     {
         ON_BLOCK_EXIT([hangDuringCloningFailPoint]() {
             hangDuringCloningFailPoint->setMode(FailPoint::off);
@@ -4558,10 +4558,10 @@ TEST_F(InitialSyncerTest, GetInitialSyncProgressReturnsCorrectProgress) {
             net->runReadyNetworkOperations();
         }
 
-        LOGV2(24167, "Done playing first failed response");
+        LOG(24167, "Done playing first failed response");
 
         auto progress = initialSyncer->getInitialSyncProgress();
-        LOGV2(24168, "Progress after first failed response", "progress"_attr = progress);
+        LOG(24168, "Progress after first failed response", "progress"_attr = progress);
         ASSERT_EQUALS(progress.nFields(), 11) << progress;
         ASSERT_FALSE(progress.hasField("remainingInitialSyncEstimatedMillis"));
         ASSERT_FALSE(progress.hasField("InitialSyncEnd"));
@@ -4590,7 +4590,7 @@ TEST_F(InitialSyncerTest, GetInitialSyncProgressReturnsCorrectProgress) {
     // started.
     getOplogFetcher()->waitForshutdown();
 
-    LOGV2(24169, "Done playing failed responses");
+    LOG(24169, "Done playing failed responses");
 
     const auto bytesToCopy = 10;
     const auto avgObjSize = 2;
@@ -4626,10 +4626,10 @@ TEST_F(InitialSyncerTest, GetInitialSyncProgressReturnsCorrectProgress) {
             processSuccessfulFCVFetcherResponseLastLTS();
         }
 
-        LOGV2(24170, "Done playing first successful response");
+        LOG(24170, "Done playing first successful response");
 
         auto progress = initialSyncer->getInitialSyncProgress();
-        LOGV2(24171, "Progress after failure", "progress"_attr = progress);
+        LOG(24171, "Progress after failure", "progress"_attr = progress);
         ASSERT_EQUALS(progress.nFields(), 11) << progress;
         ASSERT_FALSE(progress.hasField("remainingInitialSyncEstimatedMillis"));
         ASSERT_FALSE(progress.hasField("InitialSyncEnd"));
@@ -4730,10 +4730,10 @@ TEST_F(InitialSyncerTest, GetInitialSyncProgressReturnsCorrectProgress) {
         // applying the first batch.
         processSuccessfulLastOplogEntryFetcherResponse({makeOplogEntryObj(7)});
     }
-    LOGV2(24172, "Done playing all but last successful response");
+    LOG(24172, "Done playing all but last successful response");
 
     auto progress = initialSyncer->getInitialSyncProgress();
-    LOGV2(24173, "Progress after all but last successful response", "progress"_attr = progress);
+    LOG(24173, "Progress after all but last successful response", "progress"_attr = progress);
     ASSERT_EQUALS(progress.nFields(), 13) << progress;
     ASSERT_EQUALS(progress.getIntField("failedInitialSyncAttempts"), 1) << progress;
     ASSERT_EQUALS(progress.getIntField("maxFailedInitialSyncAttempts"), 2) << progress;
@@ -4802,7 +4802,7 @@ TEST_F(InitialSyncerTest, GetInitialSyncProgressReturnsCorrectProgress) {
         net->runReadyNetworkOperations();
     }
 
-    LOGV2(24174, "waiting for initial sync to verify it completed OK");
+    LOG(24174, "waiting for initial sync to verify it completed OK");
     initialSyncer->join();
     ASSERT_OK(_lastApplied.getStatus());
     auto dummyEntry = makeOplogEntry(7);
@@ -4810,7 +4810,7 @@ TEST_F(InitialSyncerTest, GetInitialSyncProgressReturnsCorrectProgress) {
     ASSERT_EQUALS(dummyEntry.getWallClockTime(), _lastApplied.getValue().wallTime);
 
     progress = initialSyncer->getInitialSyncProgress();
-    LOGV2(24175, "Progress at end", "progress"_attr = progress);
+    LOG(24175, "Progress at end", "progress"_attr = progress);
     ASSERT_EQUALS(progress.nFields(), 14) << progress;
     ASSERT_EQUALS(progress.getIntField("failedInitialSyncAttempts"), 1) << progress;
     ASSERT_EQUALS(progress.getIntField("maxFailedInitialSyncAttempts"), 2) << progress;
@@ -4929,7 +4929,7 @@ TEST_F(InitialSyncerTest, GetInitialSyncProgressReturnsCorrectProgressForNetwork
         auto outageStart = net->now();
 
         auto progress = initialSyncer->getInitialSyncProgress();
-        LOGV2(24176, "Progress after first network error", "progress"_attr = progress);
+        LOG(24176, "Progress after first network error", "progress"_attr = progress);
         ASSERT_EQUALS(progress.getField("syncSourceUnreachableSince").date(), outageStart)
             << progress;
         ASSERT_EQUALS(progress.getIntField("currentOutageDurationMillis"), 0) << progress;
@@ -4949,7 +4949,7 @@ TEST_F(InitialSyncerTest, GetInitialSyncProgressReturnsCorrectProgressForNetwork
         net->runReadyNetworkOperations();
 
         progress = initialSyncer->getInitialSyncProgress();
-        LOGV2(24177, "Progress after failed retry", "progress"_attr = progress);
+        LOG(24177, "Progress after failed retry", "progress"_attr = progress);
         ASSERT_EQUALS(progress.getField("syncSourceUnreachableSince").date(), outageStart)
             << progress;
         ASSERT_EQUALS(progress.getIntField("currentOutageDurationMillis"), 1000) << progress;
@@ -4963,7 +4963,7 @@ TEST_F(InitialSyncerTest, GetInitialSyncProgressReturnsCorrectProgressForNetwork
         net->runReadyNetworkOperations();
 
         progress = initialSyncer->getInitialSyncProgress();
-        LOGV2(24178, "Progress after successful retry", "progress"_attr = progress);
+        LOG(24178, "Progress after successful retry", "progress"_attr = progress);
         ASSERT(progress.getField("syncSourceUnreachableSince").eoo());
         ASSERT(progress.getField("currentOutageDurationMillis").eoo()) << progress;
         ASSERT_EQUALS(progress.getIntField("totalTimeUnreachableMillis"), 2000) << progress;
@@ -4984,7 +4984,7 @@ TEST_F(InitialSyncerTest, GetInitialSyncProgressReturnsCorrectProgressForNetwork
     ASSERT_OK(_lastApplied.getStatus());
 
     auto progress = initialSyncer->getInitialSyncProgress();
-    LOGV2(24179, "Progress at end", "progress"_attr = progress);
+    LOG(24179, "Progress at end", "progress"_attr = progress);
     ASSERT(progress.getField("syncSourceUnreachableSince").eoo());
     ASSERT(progress.getField("currentOutageDurationMillis").eoo()) << progress;
     ASSERT_EQUALS(progress.getIntField("totalTimeUnreachableMillis"), 2000) << progress;

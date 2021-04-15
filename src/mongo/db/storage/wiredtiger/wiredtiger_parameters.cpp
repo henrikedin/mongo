@@ -26,12 +26,12 @@
  *    exception statement from all source files in the program, then also delete
  *    it in the license file.
  */
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kStorage
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kStorage
 
 #include "mongo/platform/basic.h"
 
 #include "mongo/db/storage/wiredtiger/wiredtiger_parameters_gen.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/str.h"
 
 namespace mongo {
@@ -54,10 +54,10 @@ Status WiredTigerEngineRuntimeConfigParameter::setFromString(const std::string& 
                        << pos));
     }
 
-    LOGV2(22376,
-          "Reconfiguring WiredTiger storage engine with config string: \"{config}\"",
-          "Reconfiguring WiredTiger storage engine",
-          "config"_attr = str);
+    LOG(22376,
+        "Reconfiguring WiredTiger storage engine with config string: \"{config}\"",
+        "Reconfiguring WiredTiger storage engine",
+        "config"_attr = str);
 
     invariant(_data.second);
     int ret = _data.second->reconfigure(str.c_str());
@@ -65,10 +65,10 @@ Status WiredTigerEngineRuntimeConfigParameter::setFromString(const std::string& 
         const char* errorStr = wiredtiger_strerror(ret);
         string result = (str::stream() << "WiredTiger reconfiguration failed with error code ("
                                        << ret << "): " << errorStr);
-        LOGV2_ERROR(22378,
-                    "WiredTiger reconfiguration failed",
-                    "error"_attr = ret,
-                    "message"_attr = errorStr);
+        LOG_ERROR(22378,
+                  "WiredTiger reconfiguration failed",
+                  "error"_attr = ret,
+                  "message"_attr = errorStr);
 
         return Status(ErrorCodes::BadValue, result);
     }

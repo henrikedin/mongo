@@ -39,14 +39,13 @@ public:
     static void killCursors(OperationContext* opCtx, const std::vector<OperationKey>& opKeys) {
         auto cursorManager = CursorManager::get(opCtx);
         for (auto& cursorId : cursorManager->getCursorsForOpKeys(opKeys)) {
-            LOGV2(4664802, "Attempting to kill cursor", "cursorId"_attr = cursorId);
+            LOG(4664802, "Attempting to kill cursor", "cursorId"_attr = cursorId);
             auto status = cursorManager->killCursor(opCtx, cursorId);
 
             if (!status.isOK()) {
-                LOGV2(
-                    4664803, "Failed to kill the cursor", "error"_attr = redact(status.toString()));
+                LOG(4664803, "Failed to kill the cursor", "error"_attr = redact(status.toString()));
             } else {
-                LOGV2(4664804, "Killed cursor", "cursorId"_attr = cursorId);
+                LOG(4664804, "Killed cursor", "cursorId"_attr = cursorId);
             }
         }
     }

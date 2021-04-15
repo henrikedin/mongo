@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kIndex
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kIndex
 
 #include "mongo/platform/basic.h"
 
@@ -47,7 +47,7 @@
 #include "mongo/db/storage/durable_catalog.h"
 #include "mongo/db/ttl_collection_cache.h"
 #include "mongo/db/vector_clock.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/assert_util.h"
 
 namespace mongo {
@@ -246,13 +246,13 @@ void IndexBuildBlock::success(OperationContext* opCtx, Collection* collection) {
             // Note: this runs after the WUOW commits but before we release our X lock on the
             // collection. This means that any snapshot created after this must include the full
             // index, and no one can try to read this index before we set the visibility.
-            LOGV2(20345,
-                  "Index build: done building index {indexName} on ns {nss}",
-                  "Index build: done building",
-                  "buildUUID"_attr = buildUUID,
-                  "namespace"_attr = coll->ns(),
-                  "index"_attr = indexName,
-                  "commitTimestamp"_attr = commitTime);
+            LOG(20345,
+                "Index build: done building index {indexName} on ns {nss}",
+                "Index build: done building",
+                "buildUUID"_attr = buildUUID,
+                "namespace"_attr = coll->ns(),
+                "index"_attr = indexName,
+                "commitTimestamp"_attr = commitTime);
 
             if (commitTime) {
                 entry->setMinimumVisibleSnapshot(commitTime.get());

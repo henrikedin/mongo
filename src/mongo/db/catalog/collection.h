@@ -53,7 +53,7 @@
 #include "mongo/db/storage/record_store.h"
 #include "mongo/db/storage/snapshot.h"
 #include "mongo/db/yieldable.h"
-#include "mongo/logv2/log_attr.h"
+#include "mongo/log/log_attr.h"
 #include "mongo/platform/mutex.h"
 #include "mongo/stdx/condition_variable.h"
 #include "mongo/util/decorable.h"
@@ -615,7 +615,7 @@ public:
     virtual void onDeregisterFromCatalog(OperationContext* opCtx) = 0;
 
     friend auto logAttrs(const Collection& col) {
-        return logv2::multipleAttrs(col.ns(), col.uuid());
+        return log::multipleAttrs(col.ns(), col.uuid());
     }
 };
 

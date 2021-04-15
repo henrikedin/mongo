@@ -30,10 +30,10 @@
 
 #include <algorithm>
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kNetwork
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kNetwork
 #include "mongo/client/sdam/topology_description.h"
 #include "mongo/db/wire_version.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/platform/random.h"
 #include "mongo/util/fail_point.h"
 
@@ -245,7 +245,7 @@ void SdamServerSelector::filterTags(std::vector<ServerDescriptionPtr>* servers,
                     return false;
                 }
             } else {
-                LOGV2_WARNING(
+                LOG_WARNING(
                     4671202,
                     "Invalid tags specified for server selection; tags should be specified as "
                     "bson Objects",

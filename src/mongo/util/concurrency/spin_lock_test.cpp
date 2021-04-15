@@ -27,13 +27,13 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTest
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTest
 
 #include "mongo/platform/basic.h"
 
 #include <functional>
 
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/stdx/thread.h"
 #include "mongo/unittest/unittest.h"
 #include "mongo/util/concurrency/spin_lock.h"
@@ -130,7 +130,7 @@ public:
 
         int ms = timer.millis();
         using namespace mongo::literals;
-        LOGV2(24149, "spinlock {testName} time: {ms}", "testName"_attr = testName, "ms"_attr = ms);
+        LOG(24149, "spinlock {testName} time: {ms}", "testName"_attr = testName, "ms"_attr = ms);
 
         ASSERT_EQUALS(counter, _threads * _incs);
     }

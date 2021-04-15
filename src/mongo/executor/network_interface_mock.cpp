@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kNetwork
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kNetwork
 
 #include "mongo/platform/basic.h"
 
@@ -39,7 +39,7 @@
 
 #include "mongo/executor/connection_pool_stats.h"
 #include "mongo/executor/network_connection_hook.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/str.h"
 #include "mongo/util/time_support.h"
 
@@ -97,7 +97,7 @@ Status NetworkInterfaceMock::_startCommand(const TaskExecutor::CallbackHandle& c
 
     const Date_t now = _now_inlock();
 
-    LOGV2(5440600, "Scheduling request", "when"_attr = now, "request"_attr = request);
+    LOG(5440600, "Scheduling request", "when"_attr = now, "request"_attr = request);
 
     auto op = NetworkOperation(cbHandle, request, now, std::move(onResponse));
 
@@ -230,11 +230,10 @@ void NetworkInterfaceMock::shutdown() {
                                                        "Shutting down mock network",
                                                        Milliseconds(0)}};
         if (op.processResponse(std::move(response))) {
-            LOGV2_WARNING(
-                22590,
-                "Mock network interface shutting down with outstanding request: {request}",
-                "Mock network interface shutting down with outstanding request",
-                "request"_attr = op.getRequest());
+            LOG_WARNING(22590,
+                        "Mock network interface shutting down with outstanding request: {request}",
+                        "Mock network interface shutting down with outstanding request",
+                        "request"_attr = op.getRequest());
         }
     }
     lk.lock();
@@ -335,11 +334,11 @@ void NetworkInterfaceMock::_scheduleResponse_inlock(NetworkOperationIterator noi
                                      [when](const auto& response) { return response.when > when; });
 
     _responses.insert(insertBefore, NetworkResponse{noi, when, response});
-    LOGV2(5440601,
-          "Scheduling response",
-          "when"_attr = when,
-          "request"_attr = noi->getRequest(),
-          "response"_attr = response);
+    LOG(5440601,
+        "Scheduling response",
+        "when"_attr = when,
+        "request"_attr = noi->getRequest(),
+        "response"_attr = response);
 }
 
 void NetworkInterfaceMock::scheduleResponse(NetworkOperationIterator noi,
@@ -593,11 +592,11 @@ void NetworkInterfaceMock::_runReadyNetworkOperations_inlock(stdx::unique_lock<s
 
         auto noi = response.noi;
 
-        LOGV2(5440602,
-              "Processing response",
-              "when"_attr = response.when,
-              "request"_attr = noi->getRequest(),
-              "response"_attr = response.response);
+        LOG(5440602,
+            "Processing response",
+            "when"_attr = response.when,
+            "request"_attr = noi->getRequest(),
+            "response"_attr = response.response);
 
         if (_metadataHook) {
             _metadataHook

@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTest
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTest
 
 #include "mongo/platform/basic.h"
 
@@ -45,7 +45,7 @@
 #include "mongo/db/server_options.h"
 #include "mongo/db/service_context.h"
 #include "mongo/executor/task_executor.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/metadata/oplog_query_metadata.h"
 #include "mongo/rpc/metadata/repl_set_metadata.h"
 #include "mongo/unittest/death_test.h"
@@ -1893,7 +1893,7 @@ TEST_F(TopoCoordTest, ReplSetGetStatus) {
         &resultStatus);
     ASSERT_OK(resultStatus);
     BSONObj rsStatus = statusBuilder.obj();
-    LOGV2(21843, "{rsStatus}", "rsStatus"_attr = rsStatus);
+    LOG(21843, "{rsStatus}", "rsStatus"_attr = rsStatus);
 
     // Test results for all non-self members
     ASSERT_EQUALS(setName, rsStatus["set"].String());
@@ -2010,7 +2010,7 @@ TEST_F(TopoCoordTest, ReplSetGetStatus) {
         &resultStatus);
     ASSERT_OK(resultStatus);
     rsStatus = statusBuilder2.obj();
-    LOGV2(21844, "{rsStatus}", "rsStatus"_attr = rsStatus);
+    LOG(21844, "{rsStatus}", "rsStatus"_attr = rsStatus);
     ASSERT_EQUALS(setName, rsStatus["set"].String());
     ASSERT_FALSE(rsStatus.hasField("lastStableRecoveryTimestamp"));
     ASSERT_FALSE(rsStatus.hasField("electionCandidateMetrics"));
@@ -7390,8 +7390,8 @@ TEST_F(HeartbeatResponseTestTwoRetriesV1, HeartbeatThreeNonconsecutiveFailures) 
 class HeartbeatResponseHighVerbosityTestV1 : public HeartbeatResponseTestV1 {
 public:
     // set verbosity as high as the highest verbosity log message we'd like to check for
-    unittest::MinimumLoggedSeverityGuard severityGuard{logv2::LogComponent::kDefault,
-                                                       logv2::LogSeverity::Debug(3)};
+    unittest::MinimumLoggedSeverityGuard severityGuard{log::LogComponent::kDefault,
+                                                       log::LogSeverity::Debug(3)};
 };
 
 // TODO(dannenberg) figure out why this test is useful

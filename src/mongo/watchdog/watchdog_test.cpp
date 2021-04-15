@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTest
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTest
 
 #include "mongo/platform/basic.h"
 
@@ -38,7 +38,7 @@
 #include "mongo/db/client.h"
 #include "mongo/db/service_context.h"
 #include "mongo/db/service_context_test_fixture.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/unittest/death_test.h"
 #include "mongo/unittest/temp_dir.h"
 #include "mongo/unittest/unittest.h"
@@ -307,7 +307,7 @@ class WatchdogMonitorThreadTest : public ServiceContextTest {};
 TEST_F(WatchdogMonitorThreadTest, Basic) {
     ManualResetEvent deathEvent;
     WatchdogDeathCallback deathCallback = [&deathEvent]() {
-        LOGV2(23431, "Death signalled");
+        LOG(23431, "Death signalled");
         deathEvent.set();
     };
 
@@ -352,7 +352,7 @@ private:
 TEST_F(WatchdogMonitorThreadTest, SleepyHungCheck) {
     ManualResetEvent deathEvent;
     WatchdogDeathCallback deathCallback = [&deathEvent]() {
-        LOGV2(23432, "Death signalled");
+        LOG(23432, "Death signalled");
         deathEvent.set();
     };
 
@@ -382,7 +382,7 @@ class WatchdogMonitorTest : public ServiceContextTest {};
 TEST_F(WatchdogMonitorTest, SleepyHungCheck) {
     ManualResetEvent deathEvent;
     WatchdogDeathCallback deathCallback = [&deathEvent]() {
-        LOGV2(23433, "Death signalled");
+        LOG(23433, "Death signalled");
         deathEvent.set();
     };
 
@@ -420,7 +420,7 @@ DEATH_TEST_F(WatchdogMonitorTest, Death, "") {
 TEST_F(WatchdogMonitorTest, PauseAndResume) {
 
     WatchdogDeathCallback deathCallback = []() {
-        LOGV2(23434, "Death signalled, it should not have been");
+        LOG(23434, "Death signalled, it should not have been");
         invariant(false);
     };
 
