@@ -36,7 +36,7 @@
 
 #include "mongo/base/error_codes.h"
 #include "mongo/base/status.h"
-#include "mongo/logv2/redaction.h"
+#include "mongo/log/redaction.h"
 #include "mongo/platform/source_location.h"
 #include "mongo/stdx/thread.h"
 #include "mongo/unittest/death_test.h"

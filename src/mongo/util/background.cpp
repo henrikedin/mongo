@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kCommand
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kCommand
 
 #include "mongo/platform/basic.h"
 
@@ -36,7 +36,7 @@
 #include <functional>
 
 #include "mongo/config.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/platform/mutex.h"
 #include "mongo/stdx/condition_variable.h"
 #include "mongo/stdx/thread.h"
@@ -151,11 +151,11 @@ void BackgroundJob::jobBody() {
         setThreadName(threadName);
     }
 
-    LOGV2_DEBUG(23098,
-                1,
-                "BackgroundJob starting: {threadName}",
-                "BackgroundJob starting",
-                "threadName"_attr = threadName);
+    LOG_DEBUG(23098,
+              1,
+              "BackgroundJob starting: {threadName}",
+              "BackgroundJob starting",
+              "threadName"_attr = threadName);
 
     run();
 
@@ -341,26 +341,26 @@ void PeriodicTaskRunner::_runTask(PeriodicTask* const task) {
     try {
         task->taskDoWork();
     } catch (const std::exception& e) {
-        LOGV2_ERROR(23100,
-                    "Task: {taskName} failed: {error}",
-                    "Task failed",
-                    "taskName"_attr = taskName,
-                    "error"_attr = redact(e.what()));
+        LOG_ERROR(23100,
+                  "Task: {taskName} failed: {error}",
+                  "Task failed",
+                  "taskName"_attr = taskName,
+                  "error"_attr = redact(e.what()));
     } catch (...) {
-        LOGV2_ERROR(23101,
-                    "Task: {taskName} failed with unknown error",
-                    "Task failed with unknown error",
-                    "taskName"_attr = taskName);
+        LOG_ERROR(23101,
+                  "Task: {taskName} failed with unknown error",
+                  "Task failed with unknown error",
+                  "taskName"_attr = taskName);
     }
 
     const auto duration = timer.elapsed();
 
-    LOGV2_DEBUG(23099,
-                duration <= kMinLog ? 3 : 0,
-                "Task: {taskName} took: {duration}",
-                "Task finished",
-                "taskName"_attr = taskName,
-                "duration"_attr = duration_cast<Milliseconds>(duration));
+    LOG_DEBUG(23099,
+              duration <= kMinLog ? 3 : 0,
+              "Task: {taskName} took: {duration}",
+              "Task finished",
+              "taskName"_attr = taskName,
+              "duration"_attr = duration_cast<Milliseconds>(duration));
 }
 
 }  // namespace mongo

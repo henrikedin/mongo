@@ -36,7 +36,7 @@
 #include "mongo/bson/bsonobj.h"
 #include "mongo/bson/bsonobjbuilder.h"
 #include "mongo/bson/bsontypes.h"
-#include "mongo/logv2/log_component.h"
+#include "mongo/log/log_component.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/str.h"
 
@@ -46,13 +46,13 @@ namespace mongo {
  * Looks up a component by its short name, or returns kNumLogComponents
  * if the shortName is invalid
  */
-logv2::LogComponent _getComponentForShortName(StringData shortName) {
-    for (int i = 0; i < int(logv2::LogComponent::kNumLogComponents); ++i) {
-        logv2::LogComponent component = static_cast<logv2::LogComponent::Value>(i);
+log::LogComponent _getComponentForShortName(StringData shortName) {
+    for (int i = 0; i < int(log::LogComponent::kNumLogComponents); ++i) {
+        log::LogComponent component = static_cast<log::LogComponent::Value>(i);
         if (component.getShortName() == shortName)
             return component;
     }
-    return static_cast<logv2::LogComponent::Value>(logv2::LogComponent::kNumLogComponents);
+    return static_cast<log::LogComponent::Value>(log::LogComponent::kNumLogComponents);
 }
 
 StatusWith<std::vector<LogComponentSetting>> parseLogComponentSettings(const BSONObj& settings) {
@@ -61,7 +61,7 @@ StatusWith<std::vector<LogComponentSetting>> parseLogComponentSettings(const BSO
     std::vector<LogComponentSetting> levelsToSet;
     std::vector<BSONObjIterator> iterators;
 
-    logv2::LogComponent parentComponent = logv2::LogComponent::kDefault;
+    log::LogComponent parentComponent = log::LogComponent::kDefault;
     BSONObjIterator iter(settings);
 
     while (iter.moreWithEOO()) {
@@ -86,9 +86,9 @@ StatusWith<std::vector<LogComponentSetting>> parseLogComponentSettings(const BSO
             continue;
         }
         const StringData shortName = elem.fieldNameStringData();
-        const logv2::LogComponent curr = _getComponentForShortName(shortName);
+        const log::LogComponent curr = _getComponentForShortName(shortName);
 
-        if (curr == logv2::LogComponent::kNumLogComponents || curr.parent() != parentComponent) {
+        if (curr == log::LogComponent::kNumLogComponents || curr.parent() != parentComponent) {
             return StatusWith<Result>(ErrorCodes::BadValue,
                                       str::stream()
                                           << "Invalid component name "

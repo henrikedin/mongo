@@ -43,7 +43,7 @@
 #include "mongo/db/session_txn_record_gen.h"
 #include "mongo/db/storage/write_unit_of_work.h"
 #include "mongo/db/transaction_participant.h"
-#include "mongo/logv2/redaction.h"
+#include "mongo/log/redaction.h"
 #include "mongo/util/scopeguard.h"
 
 namespace mongo::resharding::data_copy {

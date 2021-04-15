@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kCommand
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kCommand
 
 #include "mongo/platform/basic.h"
 
@@ -95,7 +95,7 @@
 #include "mongo/db/views/view_catalog.h"
 #include "mongo/db/write_concern.h"
 #include "mongo/executor/async_request_executor.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/scripting/engine.h"
 #include "mongo/util/fail_point.h"
 #include "mongo/util/future.h"
@@ -455,10 +455,10 @@ public:
                 }
             }
         } catch (DBException& exception) {
-            LOGV2_WARNING(23801,
-                          "Internal error while reading {namespace}",
-                          "Internal error while reading",
-                          "namespace"_attr = ns);
+            LOG_WARNING(23801,
+                        "Internal error while reading {namespace}",
+                        "Internal error while reading",
+                        "namespace"_attr = ns);
             exception.addContext("Executor error while reading during dataSize command");
             throw;
         }

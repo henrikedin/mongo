@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kSharding
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kSharding
 
 #include "mongo/platform/basic.h"
 
@@ -51,7 +51,7 @@
 #include "mongo/executor/remote_command_response.h"
 #include "mongo/executor/task_executor.h"
 #include "mongo/executor/task_executor_pool.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/s/client/shard_registry.h"
 #include "mongo/s/grid.h"
@@ -181,10 +181,10 @@ void LogTransactionOperationsForShardingHandler::commit(boost::optional<Timestam
 
         auto idElement = documentKey["_id"];
         if (idElement.eoo()) {
-            LOGV2_WARNING(21994,
-                          "Received a document without an _id field, ignoring: {documentKey}",
-                          "Received a document without an _id and will ignore that document",
-                          "documentKey"_attr = redact(documentKey));
+            LOG_WARNING(21994,
+                        "Received a document without an _id field, ignoring: {documentKey}",
+                        "Received a document without an _id and will ignore that document",
+                        "documentKey"_attr = redact(documentKey));
             continue;
         }
 
@@ -389,10 +389,10 @@ void MigrationChunkClonerSourceLegacy::cancelClone(OperationContext* opCtx) {
                                                    kRecvChunkAbort, _args.getNss(), _sessionId))
                                     .getStatus();
             if (!status.isOK()) {
-                LOGV2(21991,
-                      "Failed to cancel migration: {error}",
-                      "Failed to cancel migration",
-                      "error"_attr = redact(status));
+                LOG(21991,
+                    "Failed to cancel migration: {error}",
+                    "Failed to cancel migration",
+                    "error"_attr = redact(status));
             }
         }
         // Intentional fall through
@@ -415,12 +415,12 @@ void MigrationChunkClonerSourceLegacy::onInsertOp(OperationContext* opCtx,
 
     BSONElement idElement = insertedDoc["_id"];
     if (idElement.eoo()) {
-        LOGV2_WARNING(21995,
-                      "logInsertOp received a document without an _id field, ignoring inserted "
-                      "document: {insertedDoc}",
-                      "logInsertOp received a document without an _id field and will ignore that "
-                      "document",
-                      "insertedDoc"_attr = redact(insertedDoc));
+        LOG_WARNING(21995,
+                    "logInsertOp received a document without an _id field, ignoring inserted "
+                    "document: {insertedDoc}",
+                    "logInsertOp received a document without an _id field and will ignore that "
+                    "document",
+                    "insertedDoc"_attr = redact(insertedDoc));
         return;
     }
 
@@ -450,7 +450,7 @@ void MigrationChunkClonerSourceLegacy::onUpdateOp(OperationContext* opCtx,
 
     BSONElement idElement = postImageDoc["_id"];
     if (idElement.eoo()) {
-        LOGV2_WARNING(
+        LOG_WARNING(
             21996,
             "logUpdateOp received a document without an _id field, ignoring the updated document: "
             "{postImageDoc}",
@@ -492,7 +492,7 @@ void MigrationChunkClonerSourceLegacy::onDeleteOp(OperationContext* opCtx,
 
     BSONElement idElement = deletedDocId["_id"];
     if (idElement.eoo()) {
-        LOGV2_WARNING(
+        LOG_WARNING(
             21997,
             "logDeleteOp received a document without an _id field, ignoring deleted doc: "
             "{deletedDocId}",
@@ -993,21 +993,21 @@ Status MigrationChunkClonerSourceLegacy::_checkRecipientCloningStatus(OperationC
         const std::size_t cloneLocsRemaining = _cloneLocs.size();
 
         if (_forceJumbo && _jumboChunkCloneState) {
-            LOGV2(21992,
-                  "moveChunk data transfer progress: {response} mem used: {memoryUsedBytes} "
-                  "documents cloned so far: {docsCloned}",
-                  "moveChunk data transfer progress",
-                  "response"_attr = redact(res),
-                  "memoryUsedBytes"_attr = _memoryUsed,
-                  "docsCloned"_attr = _jumboChunkCloneState->docsCloned);
+            LOG(21992,
+                "moveChunk data transfer progress: {response} mem used: {memoryUsedBytes} "
+                "documents cloned so far: {docsCloned}",
+                "moveChunk data transfer progress",
+                "response"_attr = redact(res),
+                "memoryUsedBytes"_attr = _memoryUsed,
+                "docsCloned"_attr = _jumboChunkCloneState->docsCloned);
         } else {
-            LOGV2(21993,
-                  "moveChunk data transfer progress: {response} mem used: {memoryUsedBytes} "
-                  "documents remaining to clone: {docsRemainingToClone}",
-                  "moveChunk data transfer progress",
-                  "response"_attr = redact(res),
-                  "memoryUsedBytes"_attr = _memoryUsed,
-                  "docsRemainingToClone"_attr = cloneLocsRemaining);
+            LOG(21993,
+                "moveChunk data transfer progress: {response} mem used: {memoryUsedBytes} "
+                "documents remaining to clone: {docsRemainingToClone}",
+                "moveChunk data transfer progress",
+                "response"_attr = redact(res),
+                "memoryUsedBytes"_attr = _memoryUsed,
+                "docsRemainingToClone"_attr = cloneLocsRemaining);
         }
 
         if (res["state"].String() == "steady") {

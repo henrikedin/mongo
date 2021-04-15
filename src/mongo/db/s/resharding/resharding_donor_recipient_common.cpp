@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kResharding
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kResharding
 
 #include "mongo/platform/basic.h"
 
@@ -39,7 +39,7 @@
 #include "mongo/db/s/shard_filtering_metadata_refresh.h"
 #include "mongo/db/s/sharding_state.h"
 #include "mongo/db/storage/duplicate_key_error_info.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/s/catalog/sharding_catalog_client.h"
 #include "mongo/s/grid.h"
 #include "mongo/stdx/unordered_set.h"
@@ -414,9 +414,9 @@ void clearFilteringMetadata(OperationContext* opCtx, bool scheduleAsyncRefresh) 
                 onShardVersionMismatch(opCtx.get(), nss, boost::none /* shardVersionReceived */);
             })
             .onError([](const Status& status) {
-                LOGV2_WARNING(5498101,
-                              "Error on deferred shardVersion recovery execution",
-                              "error"_attr = redact(status));
+                LOG_WARNING(5498101,
+                            "Error on deferred shardVersion recovery execution",
+                            "error"_attr = redact(status));
             })
             .getAsync([](auto) {});
     }

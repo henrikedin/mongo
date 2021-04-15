@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kReplication
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kReplication
 
 #include "mongo/platform/basic.h"
 
@@ -44,7 +44,7 @@
 #include "mongo/db/logical_time.h"
 #include "mongo/db/operation_context.h"
 #include "mongo/db/service_context.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/s/catalog/sharding_catalog_client.h"
 #include "mongo/s/write_ops/batched_command_request.h"
@@ -181,12 +181,12 @@ Status KeysCollectionClientDirect::_insert(OperationContext* opCtx,
             Shard::CommandResponse::processBatchWriteResponse(swResponse, &batchResponse);
         if (retry < kOnErrorNumRetries &&
             isRetriableError(writeStatus.code(), Shard::RetryPolicy::kIdempotent)) {
-            LOGV2_DEBUG(20704,
-                        2,
-                        "Batch write command to {nss_db}failed with retriable error and will be "
-                        "retried{causedBy_writeStatus}",
-                        "nss_db"_attr = nss.db(),
-                        "causedBy_writeStatus"_attr = causedBy(redact(writeStatus)));
+            LOG_DEBUG(20704,
+                      2,
+                      "Batch write command to {nss_db}failed with retriable error and will be "
+                      "retried{causedBy_writeStatus}",
+                      "nss_db"_attr = nss.db(),
+                      "causedBy_writeStatus"_attr = causedBy(redact(writeStatus)));
             continue;
         }
 

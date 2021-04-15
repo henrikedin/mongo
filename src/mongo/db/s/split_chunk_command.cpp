@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kSharding
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kSharding
 
 #include "mongo/platform/basic.h"
 
@@ -42,7 +42,7 @@
 #include "mongo/db/s/operation_sharding_state.h"
 #include "mongo/db/s/sharding_state.h"
 #include "mongo/db/s/split_chunk.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/s/catalog/type_chunk.h"
 #include "mongo/util/str.h"
 
@@ -120,10 +120,10 @@ public:
         auto parseShardNameStatus = bsonExtractStringField(cmdObj, "from", &shardName);
         uassertStatusOK(parseShardNameStatus);
 
-        LOGV2(22104,
-              "Received splitChunk request: {request}",
-              "Received splitChunk request",
-              "request"_attr = redact(cmdObj));
+        LOG(22104,
+            "Received splitChunk request: {request}",
+            "Received splitChunk request",
+            "request"_attr = redact(cmdObj));
 
         vector<BSONObj> splitKeys;
         {

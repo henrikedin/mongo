@@ -69,7 +69,7 @@ Status setupServerOptions(const std::vector<std::string>& args);
 Status storeServerOptions(const optionenvironment::Environment& params);
 
 /**
- * Write to `os`, or to LOGV2 if null.
+ * Write to `os`, or to log if null.
  */
 void printCommandLineOpts(std::ostream* os);
 

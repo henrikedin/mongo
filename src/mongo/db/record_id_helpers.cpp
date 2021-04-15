@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kStorage
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kStorage
 
 #include "mongo/db/record_id_helpers.h"
 

@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kControl
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kControl
 
 #include "mongo/db/server_options_server_helpers.h"
 
@@ -48,8 +48,8 @@
 #include "mongo/db/server_options.h"
 #include "mongo/db/server_options_base.h"
 #include "mongo/db/server_options_helpers.h"
-#include "mongo/logv2/log.h"
-#include "mongo/logv2/log_component.h"
+#include "mongo/log/log.h"
+#include "mongo/log/log_component.h"
 #include "mongo/transport/message_compressor_registry.h"
 #include "mongo/util/cmdline_utils/censor_cmdline.h"
 #include "mongo/util/fail_point.h"
@@ -119,10 +119,10 @@ void printCommandLineOpts(std::ostream* os) {
                       tojson(serverGlobalParams.parsedOpts, ExtendedRelaxedV2_0_0, true))
             << std::endl;
     } else {
-        LOGV2(21951,
-              "Options set by command line: {options}",
-              "Options set by command line",
-              "options"_attr = serverGlobalParams.parsedOpts);
+        LOG(21951,
+            "Options set by command line: {options}",
+            "Options set by command line",
+            "options"_attr = serverGlobalParams.parsedOpts);
     }
 }
 

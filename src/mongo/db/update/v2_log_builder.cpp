@@ -36,7 +36,7 @@
 #include "mongo/base/checked_cast.h"
 #include "mongo/db/update/update_oplog_entry_serialization.h"
 
-namespace mongo::v2_log_builder {
+namespace mongo::v2_LOG_builder {
 Status V2LogBuilder::logUpdatedField(const RuntimeUpdatePath& path, mutablebson::Element elt) {
     auto newNode = std::make_unique<diff_tree::UpdateNode>(elt);
     addNodeAtPath(path,
@@ -128,4 +128,4 @@ BSONObj V2LogBuilder::serialize() const {
     auto diff = _root.serialize();
     return update_oplog_entry::makeDeltaOplogEntry(diff);
 }
-}  // namespace mongo::v2_log_builder
+}  // namespace mongo::v2_LOG_builder

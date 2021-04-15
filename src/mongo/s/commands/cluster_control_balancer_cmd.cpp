@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kSharding
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kSharding
 
 #include "mongo/platform/basic.h"
 
@@ -36,7 +36,7 @@
 #include "mongo/db/auth/authorization_session.h"
 #include "mongo/db/auth/privilege.h"
 #include "mongo/db/commands.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/s/client/shard_registry.h"
 #include "mongo/s/grid.h"
 
@@ -90,9 +90,9 @@ public:
         auto configShard = Grid::get(opCtx)->shardRegistry()->getConfigShard();
 
         if (_logCommand)
-            LOGV2(5054300,
-                  "About to run balancer control command",
-                  "cmd"_attr = _configsvrCommandName);
+            LOG(5054300,
+                "About to run balancer control command",
+                "cmd"_attr = _configsvrCommandName);
 
         auto cmdResponse = uassertStatusOK(
             configShard->runCommandWithFixedRetryAttempts(opCtx,

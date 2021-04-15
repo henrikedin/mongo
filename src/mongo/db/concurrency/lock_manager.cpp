@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kDefault
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kDefault
 
 #include "mongo/platform/basic.h"
 
@@ -44,7 +44,7 @@
 #include "mongo/db/catalog/collection_catalog.h"
 #include "mongo/db/concurrency/d_concurrency.h"
 #include "mongo/db/concurrency/locker.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/str.h"
 #include "mongo/util/timer.h"
@@ -846,11 +846,11 @@ LockManager::Partition* LockManager::_getPartition(LockRequest* request) const {
 void LockManager::dump() const {
     BSONArrayBuilder locks;
     _buildLocksArray(getLockToClientMap(getGlobalServiceContext()), true, nullptr, &locks);
-    LOGV2_OPTIONS(20521,
-                  logv2::LogTruncation::Disabled,
-                  "lock manager dump",
-                  "addr"_attr = formatPtr(this),
-                  "locks"_attr = locks.arr());
+    LOG_OPTIONS(20521,
+                log::LogTruncation::Disabled,
+                "lock manager dump",
+                "addr"_attr = formatPtr(this),
+                "locks"_attr = locks.arr());
 }
 
 void LockManager::getLockInfoBSON(const std::map<LockerId, BSONObj>& lockToClientMap,

@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTest
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTest
 
 #include "mongo/platform/basic.h"
 
@@ -43,7 +43,7 @@
 #include "mongo/db/server_options_helpers.h"
 #include "mongo/db/service_context.h"
 #include "mongo/db/wire_version.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/transport/transport_layer_asio.h"
 #include "mongo/unittest/unittest.h"
 #include "mongo/util/options_parser/environment.h"
@@ -125,9 +125,9 @@ MONGO_STARTUP_OPTIONS_STORE(IntegrationTestOptions)(InitializerContext*) {
     uassertStatusOK(swConnectionString);
 
     fixtureConnectionString = std::move(swConnectionString.getValue());
-    LOGV2(23050,
-          "Using test fixture with connection string = {connectionString}",
-          "connectionString"_attr = connectionString);
+    LOG(23050,
+        "Using test fixture with connection string = {connectionString}",
+        "connectionString"_attr = connectionString);
 }
 
 }  // namespace

@@ -28,7 +28,7 @@
  */
 
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTest
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTest
 
 #include "mongo/platform/basic.h"
 

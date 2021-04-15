@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kDefault
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kDefault
 
 #include "mongo/platform/basic.h"
 
@@ -37,7 +37,7 @@
 #include <functional>
 #include <memory>
 
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/stdx/thread.h"
 #include "mongo/transport/service_executor.h"
 #include "mongo/util/assert_util.h"
@@ -92,16 +92,16 @@ Status launchServiceWorkerThread(unique_function<void()> task) noexcept {
             int failed = pthread_attr_setstacksize(&attrs, stackSizeToSet);
             if (failed) {
                 const auto ewd = errnoWithDescription(failed);
-                LOGV2_WARNING(22949,
-                              "pthread_attr_setstacksize failed: {error}",
-                              "pthread_attr_setstacksize failed",
-                              "error"_attr = ewd);
+                LOG_WARNING(22949,
+                            "pthread_attr_setstacksize failed: {error}",
+                            "pthread_attr_setstacksize failed",
+                            "error"_attr = ewd);
             }
         } else if (limits.rlim_cur < 1024 * 1024) {
-            LOGV2_WARNING(22950,
-                          "Stack size set to {stackSizeKiB}KiB. We suggest 1024KiB",
-                          "Stack size not set to suggested 1024KiB",
-                          "stackSizeKiB"_attr = (limits.rlim_cur / 1024));
+            LOG_WARNING(22950,
+                        "Stack size set to {stackSizeKiB}KiB. We suggest 1024KiB",
+                        "Stack size not set to suggested 1024KiB",
+                        "stackSizeKiB"_attr = (limits.rlim_cur / 1024));
         }
 
         // Wrap the user-specified `task` so it runs with an installed `sigaltstack`.
@@ -117,28 +117,28 @@ Status launchServiceWorkerThread(unique_function<void()> task) noexcept {
 
         int failed = pthread_create(&thread, &attrs, runFunc, ctx.get());
         if (failed > 0) {
-            LOGV2_ERROR_OPTIONS(4850900,
-                                {logv2::UserAssertAfterLog()},
-                                "pthread_create failed: error: {error}",
-                                "pthread_create failed",
-                                "error"_attr = errnoWithDescription(failed));
+            LOG_ERROR_OPTIONS(4850900,
+                              {log::UserAssertAfterLog()},
+                              "pthread_create failed: error: {error}",
+                              "pthread_create failed",
+                              "error"_attr = errnoWithDescription(failed));
         } else if (failed < 0) {
             auto savedErrno = errno;
-            LOGV2_ERROR_OPTIONS(4850901,
-                                {logv2::UserAssertAfterLog()},
-                                "pthread_create failed with a negative return code: {code}, errno: "
-                                "{errno}, error: {error}",
-                                "pthread_create failed with a negative return code",
-                                "code"_attr = failed,
-                                "errno"_attr = savedErrno,
-                                "error"_attr = errnoWithDescription(savedErrno));
+            LOG_ERROR_OPTIONS(4850901,
+                              {log::UserAssertAfterLog()},
+                              "pthread_create failed with a negative return code: {code}, errno: "
+                              "{errno}, error: {error}",
+                              "pthread_create failed with a negative return code",
+                              "code"_attr = failed,
+                              "errno"_attr = savedErrno,
+                              "error"_attr = errnoWithDescription(savedErrno));
         }
 
         ctx.release();
 #endif
 
     } catch (const std::exception& e) {
-        LOGV2_ERROR(22948, "Thread creation failed", "error"_attr = e.what());
+        LOG_ERROR(22948, "Thread creation failed", "error"_attr = e.what());
         return {ErrorCodes::InternalError,
                 format(FMT_STRING("Failed to create service entry worker thread: {}"), e.what())};
     }

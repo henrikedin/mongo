@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kSharding
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kSharding
 
 #include "mongo/db/s/drop_database_coordinator.h"
 
@@ -36,7 +36,7 @@
 #include "mongo/db/s/sharding_ddl_util.h"
 #include "mongo/db/s/sharding_logging.h"
 #include "mongo/db/s/sharding_state.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/s/catalog/sharding_catalog_client.h"
 #include "mongo/s/client/shard_registry.h"
 #include "mongo/s/grid.h"
@@ -140,12 +140,12 @@ void DropDatabaseCoordinator::_enterPhase(Phase newPhase) {
     StateDoc newDoc(_doc);
     newDoc.setPhase(newPhase);
 
-    LOGV2_DEBUG(5494501,
-                2,
-                "Drop database coordinator phase transition",
-                "namespace"_attr = nss(),
-                "newPhase"_attr = DropDatabaseCoordinatorPhase_serializer(newDoc.getPhase()),
-                "oldPhase"_attr = DropDatabaseCoordinatorPhase_serializer(_doc.getPhase()));
+    LOG_DEBUG(5494501,
+              2,
+              "Drop database coordinator phase transition",
+              "namespace"_attr = nss(),
+              "newPhase"_attr = DropDatabaseCoordinatorPhase_serializer(newDoc.getPhase()),
+              "oldPhase"_attr = DropDatabaseCoordinatorPhase_serializer(_doc.getPhase()));
 
     auto opCtx = cc().makeOperationContext();
     if (_doc.getPhase() == Phase::kUnset) {
@@ -168,10 +168,10 @@ ExecutorFuture<void> DropDatabaseCoordinator::_runImpl(
 
                 if (_doc.getCollInfo()) {
                     const auto& coll = _doc.getCollInfo().get();
-                    LOGV2_DEBUG(5494504,
-                                2,
-                                "Completing collection drop from previous primary",
-                                "namespace"_attr = coll.getNss());
+                    LOG_DEBUG(5494504,
+                              2,
+                              "Completing collection drop from previous primary",
+                              "namespace"_attr = coll.getNss());
                     dropShardedCollection(opCtx, coll, executor);
                 }
 
@@ -184,7 +184,7 @@ ExecutorFuture<void> DropDatabaseCoordinator::_runImpl(
 
                 for (const auto& coll : allCollectionsForDb) {
                     const auto& nss = coll.getNss();
-                    LOGV2_DEBUG(5494505, 2, "Dropping collection", "namespace"_attr = nss);
+                    LOG_DEBUG(5494505, 2, "Dropping collection", "namespace"_attr = nss);
 
                     sharding_ddl_util::stopMigrations(opCtx, nss);
 
@@ -230,15 +230,15 @@ ExecutorFuture<void> DropDatabaseCoordinator::_runImpl(
                 }
 
                 ShardingLogging::get(opCtx)->logChange(opCtx, "dropDatabase", _dbName);
-                LOGV2(5494506, "Database dropped", "namespace"_attr = nss());
+                LOG(5494506, "Database dropped", "namespace"_attr = nss());
             }))
         .onError([this, anchor = shared_from_this()](const Status& status) {
             if (!status.isA<ErrorCategory::NotPrimaryError>() &&
                 !status.isA<ErrorCategory::ShutdownError>()) {
-                LOGV2_ERROR(5494507,
-                            "Error running drop database",
-                            "namespace"_attr = nss(),
-                            "error"_attr = redact(status));
+                LOG_ERROR(5494507,
+                          "Error running drop database",
+                          "namespace"_attr = nss(),
+                          "error"_attr = redact(status));
             }
             return status;
         });

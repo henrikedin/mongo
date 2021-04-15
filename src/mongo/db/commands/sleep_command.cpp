@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kCommand
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kCommand
 
 #include "mongo/platform/basic.h"
 
@@ -35,7 +35,7 @@
 #include "mongo/db/commands/test_commands_enabled.h"
 #include "mongo/db/concurrency/d_concurrency.h"
 #include "mongo/db/concurrency/lock_manager_defs.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace mongo {
 
@@ -118,7 +118,7 @@ public:
              const std::string& ns,
              const BSONObj& cmdObj,
              BSONObjBuilder& result) {
-        LOGV2(20504, "Test-only command 'sleep' invoked");
+        LOG(20504, "Test-only command 'sleep' invoked");
         long long msToSleep = 0;
 
         if (cmdObj["secs"] || cmdObj["seconds"] || cmdObj["millis"]) {

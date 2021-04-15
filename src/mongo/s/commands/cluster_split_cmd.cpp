@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kCommand
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kCommand
 
 #include "mongo/platform/basic.h"
 
@@ -39,7 +39,7 @@
 #include "mongo/db/auth/authorization_session.h"
 #include "mongo/db/commands.h"
 #include "mongo/db/field_parser.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/s/catalog_cache.h"
 #include "mongo/s/client/shard_registry.h"
 #include "mongo/s/cluster_commands_helpers.h"
@@ -253,13 +253,13 @@ public:
                               cm.getShardKeyPattern(),
                               ChunkRange(chunk->getMin(), chunk->getMax()));
 
-        LOGV2(22758,
-              "Splitting chunk {chunkRange} in {namespace} on shard {shardId} at key {splitPoint}",
-              "Splitting chunk",
-              "chunkRange"_attr = redact(ChunkRange(chunk->getMin(), chunk->getMax()).toString()),
-              "splitPoint"_attr = redact(splitPoint),
-              "namespace"_attr = nss.ns(),
-              "shardId"_attr = chunk->getShardId());
+        LOG(22758,
+            "Splitting chunk {chunkRange} in {namespace} on shard {shardId} at key {splitPoint}",
+            "Splitting chunk",
+            "chunkRange"_attr = redact(ChunkRange(chunk->getMin(), chunk->getMax()).toString()),
+            "splitPoint"_attr = redact(splitPoint),
+            "namespace"_attr = nss.ns(),
+            "shardId"_attr = chunk->getShardId());
 
         uassertStatusOK(
             shardutil::splitChunkAtMultiplePoints(opCtx,

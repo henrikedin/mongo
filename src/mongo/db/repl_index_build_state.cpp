@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kStorage
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kStorage
 
 #include "mongo/platform/basic.h"
 
@@ -35,7 +35,7 @@
 
 #include "mongo/db/repl/replication_coordinator.h"
 #include "mongo/db/repl/tenant_migration_access_blocker_util.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace mongo {
 
@@ -184,12 +184,12 @@ void ReplIndexBuildState::onOplogAbort(OperationContext* opCtx, const NamespaceS
                             << ",  index build state: " << _indexBuildState.toString());
     invariant(_indexBuildState.getTimestamp() && _indexBuildState.getAbortReason(),
               buildUUID.toString());
-    LOGV2(3856206,
-          "Aborting index build from oplog entry",
-          "buildUUID"_attr = buildUUID,
-          "abortTimestamp"_attr = _indexBuildState.getTimestamp().get(),
-          "abortReason"_attr = _indexBuildState.getAbortReason().get(),
-          "collectionUUID"_attr = collectionUUID);
+    LOG(3856206,
+        "Aborting index build from oplog entry",
+        "buildUUID"_attr = buildUUID,
+        "abortTimestamp"_attr = _indexBuildState.getTimestamp().get(),
+        "abortReason"_attr = _indexBuildState.getAbortReason().get(),
+        "collectionUUID"_attr = collectionUUID);
 }
 
 bool ReplIndexBuildState::isAborted() const {
@@ -228,14 +228,14 @@ void ReplIndexBuildState::setCommitQuorumSatisfied(OperationContext* opCtx) {
         // kRollbackAbort. So, it's ok to skip signaling.
         auto action = _waitForNextAction->getFuture().get(opCtx);
 
-        LOGV2(3856200,
-              "Not signaling \"{skippedAction}\" as it was previously signaled with "
-              "\"{previousAction}\" for index build: {buildUUID}",
-              "Skipping signaling as it was previously signaled for index build",
-              "skippedAction"_attr =
-                  indexBuildActionToString(IndexBuildAction::kCommitQuorumSatisfied),
-              "previousAction"_attr = indexBuildActionToString(action),
-              "buildUUID"_attr = buildUUID);
+        LOG(3856200,
+            "Not signaling \"{skippedAction}\" as it was previously signaled with "
+            "\"{previousAction}\" for index build: {buildUUID}",
+            "Skipping signaling as it was previously signaled for index build",
+            "skippedAction"_attr =
+                indexBuildActionToString(IndexBuildAction::kCommitQuorumSatisfied),
+            "previousAction"_attr = indexBuildActionToString(action),
+            "buildUUID"_attr = buildUUID);
     }
 }
 
@@ -248,9 +248,9 @@ void ReplIndexBuildState::setSinglePhaseCommit(OperationContext* opCtx) {
         invariant(action == IndexBuildAction::kPrimaryAbort,
                   str::stream() << "action: " << indexBuildActionToString(action)
                                 << ", buildUUID: " << buildUUID);
-        LOGV2(4639700,
-              "Not committing single-phase build because it has already been aborted",
-              "buildUUID"_attr = buildUUID);
+        LOG(4639700,
+            "Not committing single-phase build because it has already been aborted",
+            "buildUUID"_attr = buildUUID);
         return;
     }
     _waitForNextAction->emplaceValue(IndexBuildAction::kSinglePhaseCommit);
@@ -290,10 +290,10 @@ ReplIndexBuildState::TryAbortResult ReplIndexBuildState::tryAbort(OperationConte
     // Wait until the build is done setting up. This indicates that all required state is
     // initialized to attempt an abort.
     if (_indexBuildState.isSettingUp()) {
-        LOGV2_DEBUG(465605,
-                    2,
-                    "waiting until index build is done setting up before attempting to abort",
-                    "buildUUID"_attr = buildUUID);
+        LOG_DEBUG(465605,
+                  2,
+                  "waiting until index build is done setting up before attempting to abort",
+                  "buildUUID"_attr = buildUUID);
         return TryAbortResult::kRetry;
     }
     if (_waitForNextAction->getFuture().isReady()) {
@@ -325,7 +325,7 @@ ReplIndexBuildState::TryAbortResult ReplIndexBuildState::tryAbort(OperationConte
         return TryAbortResult::kRetry;
     }
 
-    LOGV2(4656003, "Aborting index build", "buildUUID"_attr = buildUUID, "error"_attr = reason);
+    LOG(4656003, "Aborting index build", "buildUUID"_attr = buildUUID, "error"_attr = reason);
 
     // Set the state on replState. Once set, the calling thread must complete the abort process.
     auto abortTimestamp =
@@ -426,13 +426,13 @@ Status ReplIndexBuildState::onConflictWithNewIndexBuild(const ReplIndexBuildStat
         aborted = true;
     }
     std::string msg = ss;
-    LOGV2(20661,
-          "Index build conflict. There's already an index with the same name being "
-          "built under an existing index build",
-          "buildUUID"_attr = otherIndexBuild.buildUUID,
-          "existingBuildUUID"_attr = buildUUID,
-          "index"_attr = otherIndexName,
-          "collectionUUID"_attr = otherIndexBuild.collectionUUID);
+    LOG(20661,
+        "Index build conflict. There's already an index with the same name being "
+        "built under an existing index build",
+        "buildUUID"_attr = otherIndexBuild.buildUUID,
+        "existingBuildUUID"_attr = buildUUID,
+        "index"_attr = otherIndexName,
+        "collectionUUID"_attr = otherIndexBuild.collectionUUID);
     if (aborted) {
         return {ErrorCodes::IndexBuildAborted, msg};
     }

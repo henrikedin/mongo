@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kDefault
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kDefault
 
 #include "mongo/platform/basic.h"
 
@@ -43,7 +43,7 @@
 #include "mongo/base/init.h"
 #include "mongo/db/client.h"
 #include "mongo/db/service_context.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/platform/mutex.h"
 #include "mongo/util/fail_point.h"
 #include "mongo/util/latch_analyzer.h"
@@ -221,17 +221,17 @@ void LatchAnalyzer::_handleViolation(ErrorCodes::Error ec,
         auto begin = boost::make_transform_iterator(identities.begin(), derefIdentity);
         auto end = boost::make_transform_iterator(identities.end(), derefIdentity);
 
-        LOGV2_FATAL_OPTIONS(ec,
-                            {logv2::LogTruncation::Disabled},
-                            "Theoretical deadlock found on use of latch",
-                            "reason"_attr = message,
-                            "latch"_attr = identity,
-                            "latchesHeld"_attr = logv2::seqLog(begin, end));
+        LOG_FATAL_OPTIONS(ec,
+                          {log::LogTruncation::Disabled},
+                          "Theoretical deadlock found on use of latch",
+                          "reason"_attr = message,
+                          "latch"_attr = identity,
+                          "latchesHeld"_attr = log::seqLog(begin, end));
     } else {
-        LOGV2_WARNING(ec,
-                      "Theoretical deadlock found on use of latch",
-                      "reason"_attr = message,
-                      "latch"_attr = identity);
+        LOG_WARNING(ec,
+                    "Theoretical deadlock found on use of latch",
+                    "reason"_attr = message,
+                    "latch"_attr = identity);
     }
 }
 
@@ -418,10 +418,10 @@ void LatchAnalyzer::dump() {
     BSONObjBuilder bob(1024 * 1024);
     appendToBSON(bob);
 
-    LOGV2_OPTIONS(25003,
-                  {logv2::LogTruncation::Disabled},
-                  "LatchAnalyzer dump",
-                  "latchAnalysis"_attr = bob.done());
+    LOG_OPTIONS(25003,
+                {log::LogTruncation::Disabled},
+                "LatchAnalyzer dump",
+                "latchAnalysis"_attr = bob.done());
 }
 
 LatchAnalyzerDisabledBlock::LatchAnalyzerDisabledBlock() {

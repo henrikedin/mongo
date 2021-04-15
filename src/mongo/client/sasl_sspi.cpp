@@ -29,7 +29,7 @@
 
 #ifdef _WIN32
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kNetwork
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kNetwork
 
 #include "mongo/platform/basic.h"
 
@@ -39,7 +39,7 @@
 #include "mongo/base/init.h"
 #include "mongo/base/status.h"
 #include "mongo/client/sasl_sspi_options.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/scopeguard.h"
 #include "mongo/util/str.h"
 #include "mongo/util/text.h"
@@ -204,14 +204,14 @@ int sspiClientMechNew(void* glob_context,
         // PTR records should point to the canonical name. If there's more than one, warn and
         // arbitrarily use the last entry.
         if (fqdns.size() > 1) {
-            LOGV2_WARNING(23933,
-                          "Found multiple PTR records while performing reverse DNS",
-                          "records"_attr = fqdns);
+            LOG_WARNING(23933,
+                        "Found multiple PTR records while performing reverse DNS",
+                        "records"_attr = fqdns);
         }
         canonName = std::move(fqdns.back());
         fqdns.pop_back();
     } else if (saslSSPIGlobalParams.canonicalization != HostnameCanonicalizationMode::kNone) {
-        LOGV2_WARNING(23934, "Was unable to acquire an FQDN");
+        LOG_WARNING(23934, "Was unable to acquire an FQDN");
     }
 
     pcctx->nameToken = toWideString(cparams->service) + L'/' + toWideString(canonName.c_str());

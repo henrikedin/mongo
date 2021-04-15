@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kQuery
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kQuery
 
 #include "mongo/platform/basic.h"
 
@@ -65,7 +65,7 @@
 #include "mongo/db/matcher/extensions_callback_real.h"
 #include "mongo/db/record_id_helpers.h"
 #include "mongo/db/s/collection_sharding_state.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace mongo::stage_builder {
 // Returns a non-null pointer to the root of a plan tree, or a non-OK status if the PlanStage tree
@@ -420,7 +420,7 @@ std::unique_ptr<PlanStage> ClassicStageBuilder::build(const QuerySolutionNode* r
         case STAGE_TRIAL:
         case STAGE_UNKNOWN:
         case STAGE_UPDATE: {
-            LOGV2_WARNING(4615604, "Can't build exec tree for node", "node"_attr = *root);
+            LOG_WARNING(4615604, "Can't build exec tree for node", "node"_attr = *root);
         }
     }
 

@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kQuery
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kQuery
 
 #include "mongo/platform/basic.h"
 
@@ -36,7 +36,7 @@
 #include "mongo/db/matcher/expression_internal_expr_comparison.h"
 #include "mongo/db/matcher/expression_leaf.h"
 #include "mongo/db/matcher/expression_tree.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace mongo {
 
@@ -44,7 +44,7 @@ using CmpOp = ExpressionCompare::CmpOp;
 
 RewriteExpr::RewriteResult RewriteExpr::rewrite(const boost::intrusive_ptr<Expression>& expression,
                                                 const CollatorInterface* collator) {
-    LOGV2_DEBUG(
+    LOG_DEBUG(
         20725, 5, "Expression prior to rewrite", "expression"_attr = expression->serialize(false));
 
     RewriteExpr rewriteExpr(collator);
@@ -52,15 +52,15 @@ RewriteExpr::RewriteResult RewriteExpr::rewrite(const boost::intrusive_ptr<Expre
 
     if (auto matchTree = rewriteExpr._rewriteExpression(expression)) {
         matchExpression = std::move(matchTree);
-        LOGV2_DEBUG(20726,
-                    5,
-                    "Post-rewrite MatchExpression",
-                    "expression"_attr = matchExpression->debugString());
+        LOG_DEBUG(20726,
+                  5,
+                  "Post-rewrite MatchExpression",
+                  "expression"_attr = matchExpression->debugString());
         matchExpression = MatchExpression::optimize(std::move(matchExpression));
-        LOGV2_DEBUG(20727,
-                    5,
-                    "Post-rewrite/post-optimized MatchExpression",
-                    "expression"_attr = matchExpression->debugString());
+        LOG_DEBUG(20727,
+                  5,
+                  "Post-rewrite/post-optimized MatchExpression",
+                  "expression"_attr = matchExpression->debugString());
     }
 
     return {std::move(matchExpression), std::move(rewriteExpr._matchExprElemStorage)};

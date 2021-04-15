@@ -31,7 +31,7 @@
  * Tests for json.{h,cpp} code and BSONObj::jsonString()
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTest
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTest
 
 #include "mongo/platform/basic.h"
 
@@ -45,7 +45,7 @@
 #include "mongo/db/jsobj.h"
 #include "mongo/db/json.h"
 #include "mongo/dbtests/dbtests.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/platform/decimal128.h"
 #include "mongo/unittest/unittest.h"
 
@@ -101,7 +101,7 @@ TEST(JsonStringTest, BasicTest) {
  * JavaScript's JSON.stringify(x,null,4) is the goal with our pretty==true formatting.
  * Expected string captured from node.js interpreter.
  * E.g.:
- * node -e 'console.log(JSON.stringify([123,[],{},{"a":1},{"a":1,"b":2,"c":[1,2,3]}],null,4))'
+ * node -e 'console.LOG(JSON.stringify([123,[],{},{"a":1},{"a":1,"b":2,"c":[1,2,3]}],null,4))'
  */
 TEST(JsonStringTest, PrettyFormatTest) {
     auto validate = [&](int line, BSONObj obj, bool arr, std::string out) {
@@ -607,18 +607,18 @@ void assertEquals(const std::string& json,
                   const char* msg) {
     const bool bad = expected.woCompare(actual);
     if (bad) {
-        LOGV2(22494,
-              "want:{expected_jsonString} size: {expected_objsize}",
-              "expected_jsonString"_attr = expected.jsonString(),
-              "expected_objsize"_attr = expected.objsize());
-        LOGV2(22495,
-              "got :{actual_jsonString} size: {actual_objsize}",
-              "actual_jsonString"_attr = actual.jsonString(),
-              "actual_objsize"_attr = actual.objsize());
-        LOGV2(22496, "{expected_hexDump}", "expected_hexDump"_attr = expected.hexDump());
-        LOGV2(22497, "{actual_hexDump}", "actual_hexDump"_attr = actual.hexDump());
-        LOGV2(22498, "{msg}", "msg"_attr = msg);
-        LOGV2(22499, "orig json:{json}", "json"_attr = json);
+        LOG(22494,
+            "want:{expected_jsonString} size: {expected_objsize}",
+            "expected_jsonString"_attr = expected.jsonString(),
+            "expected_objsize"_attr = expected.objsize());
+        LOG(22495,
+            "got :{actual_jsonString} size: {actual_objsize}",
+            "actual_jsonString"_attr = actual.jsonString(),
+            "actual_objsize"_attr = actual.objsize());
+        LOG(22496, "{expected_hexDump}", "expected_hexDump"_attr = expected.hexDump());
+        LOG(22497, "{actual_hexDump}", "actual_hexDump"_attr = actual.hexDump());
+        LOG(22498, "{msg}", "msg"_attr = msg);
+        LOG(22499, "orig json:{json}", "json"_attr = json);
     }
     ASSERT(!bad);
 }

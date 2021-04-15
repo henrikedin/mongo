@@ -27,14 +27,14 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kDefault
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kDefault
 
 #include "mongo/platform/basic.h"
 #undef MONGO_PCH_WHITELISTED  // needed for log.h
 
 #include "mongo/util/progress_meter.h"
 
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace mongo {
 
@@ -53,7 +53,7 @@ void ProgressMeter::reset(unsigned long long total, int secondsBetween, int chec
 
 bool ProgressMeter::hit(int n) {
     if (!_active) {
-        LOGV2_WARNING(23370, "hit an inactive ProgressMeter");
+        LOG_WARNING(23370, "hit an inactive ProgressMeter");
         return false;
     }
 
@@ -69,7 +69,7 @@ bool ProgressMeter::hit(int n) {
     if (_total > 0) {
         int per = (int)(((double)_done * 100.0) / (double)_total);
 
-        logv2::DynamicAttributes attrs;
+        log::DynamicAttributes attrs;
         attrs.add("name", _name);
         attrs.add("done", _done);
         if (_showTotal) {
@@ -79,7 +79,7 @@ bool ProgressMeter::hit(int n) {
         if (!_units.empty()) {
             attrs.add("units", _units);
         }
-        LOGV2(51773, "progress meter", attrs);
+        LOG(51773, "progress meter", attrs);
     }
     _lastTime = t;
     return true;

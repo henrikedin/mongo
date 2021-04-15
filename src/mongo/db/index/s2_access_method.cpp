@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kIndex
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kIndex
 
 #include "mongo/db/index/s2_access_method.h"
 
@@ -41,7 +41,7 @@
 #include "mongo/db/index/expression_params.h"
 #include "mongo/db/index_names.h"
 #include "mongo/db/jsobj.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace mongo {
 
@@ -77,10 +77,10 @@ S2AccessMethod::S2AccessMethod(IndexCatalogEntry* btreeState,
             geoFields >= 1);
 
     if (descriptor->isSparse()) {
-        LOGV2_WARNING(23742,
-                      "Sparse option ignored for index spec {descriptor_keyPattern}",
-                      "Sparse option ignored for index spec",
-                      "indexSpec"_attr = descriptor->keyPattern());
+        LOG_WARNING(23742,
+                    "Sparse option ignored for index spec {descriptor_keyPattern}",
+                    "Sparse option ignored for index spec",
+                    "indexSpec"_attr = descriptor->keyPattern());
     }
 }
 

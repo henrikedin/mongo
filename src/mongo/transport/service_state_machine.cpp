@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kNetwork
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kNetwork
 
 #include "mongo/platform/basic.h"
 
@@ -42,7 +42,7 @@
 #include "mongo/db/dbmessage.h"
 #include "mongo/db/stats/counters.h"
 #include "mongo/db/traffic_recorder.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/platform/atomic_word.h"
 #include "mongo/platform/mutex.h"
 #include "mongo/rpc/message.h"
@@ -384,27 +384,26 @@ void ServiceStateMachine::Impl::sourceCallback(Status status) {
         // If any other issues arise, close the session.
     } else if (ErrorCodes::isInterruption(status.code()) ||
                ErrorCodes::isNetworkError(status.code())) {
-        LOGV2_DEBUG(
-            22986,
-            2,
-            "Session from {remote} encountered a network error during SourceMessage: {error}",
-            "Session from remote encountered a network error during SourceMessage",
-            "remote"_attr = remote,
-            "error"_attr = status);
+        LOG_DEBUG(22986,
+                  2,
+                  "Session from {remote} encountered a network error during SourceMessage: {error}",
+                  "Session from remote encountered a network error during SourceMessage",
+                  "remote"_attr = remote,
+                  "error"_attr = status);
         _state.store(State::EndSession);
     } else if (status == TransportLayer::TicketSessionClosedStatus) {
         // Our session may have been closed internally.
-        LOGV2_DEBUG(22987,
-                    2,
-                    "Session from {remote} was closed internally during SourceMessage",
-                    "remote"_attr = remote);
+        LOG_DEBUG(22987,
+                  2,
+                  "Session from {remote} was closed internally during SourceMessage",
+                  "remote"_attr = remote);
         _state.store(State::EndSession);
     } else {
-        LOGV2(22988,
-              "Error receiving request from client. Ending connection from remote",
-              "error"_attr = status,
-              "remote"_attr = remote,
-              "connectionId"_attr = session()->id());
+        LOG(22988,
+            "Error receiving request from client. Ending connection from remote",
+            "error"_attr = status,
+            "remote"_attr = remote,
+            "connectionId"_attr = session()->id());
         _state.store(State::EndSession);
     }
     uassertStatusOK(status);
@@ -419,11 +418,11 @@ void ServiceStateMachine::Impl::sinkCallback(Status status) {
     // Otherwise, update the current state depending on whether we're in exhaust or not and return
     // from this function to let startNewLoop() continue the future chaining of state transitions.
     if (!status.isOK()) {
-        LOGV2(22989,
-              "Error sending response to client. Ending connection from remote",
-              "error"_attr = status,
-              "remote"_attr = session()->remote(),
-              "connectionId"_attr = session()->id());
+        LOG(22989,
+            "Error sending response to client. Ending connection from remote",
+            "error"_attr = status,
+            "remote"_attr = session()->remote(),
+            "connectionId"_attr = session()->id());
         _state.store(State::EndSession);
         uassertStatusOK(status);
     } else if (_inExhaust) {
@@ -572,11 +571,11 @@ void ServiceStateMachine::Impl::startNewLoop(const Status& execStatus) {
                 // The service executor failed to schedule the task. This could for example be that
                 // we failed to start a worker thread. Terminate this connection to leave the system
                 // in a valid state.
-                LOGV2_WARNING_OPTIONS(4910400,
-                                      {logv2::LogComponent::kExecutor},
-                                      "Terminating session due to error: {error}",
-                                      "Terminating session due to error",
-                                      "error"_attr = status);
+                LOG_WARNING_OPTIONS(4910400,
+                                    {log::LogComponent::kExecutor},
+                                    "Terminating session due to error: {error}",
+                                    "Terminating session due to error",
+                                    "error"_attr = status);
                 terminate();
                 cleanupSession(status);
 
@@ -613,8 +612,7 @@ void ServiceStateMachine::Impl::terminateIfTagsDontMatch(transport::Session::Tag
     // If terminateIfTagsDontMatch gets called when we still are 'pending' where no tags have been
     // set, then skip the termination check.
     if ((sessionTags & tags) || (sessionTags & transport::Session::kPending)) {
-        LOGV2(
-            22991, "Skip closing connection for connection", "connectionId"_attr = session()->id());
+        LOG(22991, "Skip closing connection for connection", "connectionId"_attr = session()->id());
         return;
     }
 
@@ -623,11 +621,11 @@ void ServiceStateMachine::Impl::terminateIfTagsDontMatch(transport::Session::Tag
 
 void ServiceStateMachine::Impl::terminateAndLogIfError(Status status) {
     if (!status.isOK()) {
-        LOGV2_WARNING_OPTIONS(22993,
-                              {logv2::LogComponent::kExecutor},
-                              "Terminating session due to error: {error}",
-                              "Terminating session due to error",
-                              "error"_attr = status);
+        LOG_WARNING_OPTIONS(22993,
+                            {log::LogComponent::kExecutor},
+                            "Terminating session due to error: {error}",
+                            "Terminating session due to error",
+                            "error"_attr = status);
         terminate();
     }
 }
@@ -647,10 +645,10 @@ void ServiceStateMachine::Impl::cleanupExhaustResources() noexcept try {
         _sep->handleRequest(opCtx.get(), makeKillCursorsMessage(cursorId)).get();
     }
 } catch (const DBException& e) {
-    LOGV2(22992,
-          "Error cleaning up resources for exhaust requests: {error}",
-          "Error cleaning up resources for exhaust requests",
-          "error"_attr = e.toStatus());
+    LOG(22992,
+        "Error cleaning up resources for exhaust requests: {error}",
+        "Error cleaning up resources for exhaust requests",
+        "error"_attr = e.toStatus());
 }
 
 void ServiceStateMachine::Impl::setCleanupHook(std::function<void()> hook) {
@@ -659,7 +657,7 @@ void ServiceStateMachine::Impl::setCleanupHook(std::function<void()> hook) {
 }
 
 void ServiceStateMachine::Impl::cleanupSession(const Status& status) {
-    LOGV2_INFO(5127900, "Ending session", "error"_attr = status);
+    LOG_INFO(5127900, "Ending session", "error"_attr = status);
 
     cleanupExhaustResources();
 

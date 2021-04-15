@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kDefault
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kDefault
 
 #include "mongo/platform/basic.h"
 
@@ -36,7 +36,7 @@
 #include "mongo/db/client.h"
 #include "mongo/db/operation_key_manager.h"
 #include "mongo/db/service_context.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/platform/mutex.h"
 #include "mongo/platform/random.h"
 #include "mongo/transport/baton.h"
@@ -245,7 +245,7 @@ Status OperationContext::checkForInterruptNoAssert() noexcept {
 
     checkForInterruptFail.executeIf(
         [&](auto&&) {
-            LOGV2(20882, "Marking operation as killed for failpoint", "opId"_attr = getOpID());
+            LOG(20882, "Marking operation as killed for failpoint", "opId"_attr = getOpID());
             markKilled();
         },
         [&](auto&& data) { return opShouldFail(getClient(), data); });
@@ -343,7 +343,7 @@ void OperationContext::markKilled(ErrorCodes::Error killCode) {
     }
 
     if (killCode == ErrorCodes::ClientDisconnect) {
-        LOGV2(20883, "Interrupted operation as its client disconnected", "opId"_attr = getOpID());
+        LOG(20883, "Interrupted operation as its client disconnected", "opId"_attr = getOpID());
     }
 
     if (auto status = ErrorCodes::OK; _killCode.compareAndSwap(&status, killCode)) {

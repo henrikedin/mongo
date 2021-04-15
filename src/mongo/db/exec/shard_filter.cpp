@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kQuery
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kQuery
 
 #include "mongo/platform/basic.h"
 
@@ -38,7 +38,7 @@
 #include "mongo/db/exec/filter.h"
 #include "mongo/db/exec/scoped_timer.h"
 #include "mongo/db/exec/working_set_common.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/s/shard_key_pattern.h"
 
 namespace mongo {
@@ -87,7 +87,7 @@ PlanStage::StageState ShardFilterStage::doWork(WorkingSetID* out) {
 
                     // Skip this working set member with a warning - no shard key should not be
                     // possible unless manually inserting data into a shard
-                    LOGV2_WARNING(
+                    LOG_WARNING(
                         23787,
                         "No shard key found in document, it may have been inserted manually "
                         "into shard",

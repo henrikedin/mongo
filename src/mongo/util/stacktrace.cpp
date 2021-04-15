@@ -27,13 +27,13 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kControl
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kControl
 
 #include "mongo/util/stacktrace.h"
 
 #include "mongo/bson/bsonobj.h"
 #include "mongo/bson/json.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/ctype.h"
 
@@ -96,7 +96,7 @@ void logBacktraceObject(const BSONObj& bt, StackTraceSink* sink, bool withHumanR
     if (sink) {
         *sink << fmt::format(FMT_STRING("BACKTRACE: {}\n"), tojson(bt, ExtendedRelaxedV2_0_0));
     } else {
-        LOGV2_OPTIONS(31380, {logv2::LogTruncation::Disabled}, "BACKTRACE", "bt"_attr = bt);
+        LOG_OPTIONS(31380, {log::LogTruncation::Disabled}, "BACKTRACE", "bt"_attr = bt);
     }
     if (withHumanReadable) {
         if (auto elem = bt.getField("backtrace"); !elem.eoo()) {
@@ -105,7 +105,7 @@ void logBacktraceObject(const BSONObj& bt, StackTraceSink* sink, bool withHumanR
                 if (sink) {
                     *sink << fmt::format("  Frame: {}\n", tojson(frame, ExtendedRelaxedV2_0_0));
                 } else {
-                    LOGV2(31445, "Frame", "frame"_attr = frame);
+                    LOG(31445, "Frame", "frame"_attr = frame);
                 }
             }
         }

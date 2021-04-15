@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kSharding
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kSharding
 
 #include "mongo/platform/basic.h"
 
@@ -46,7 +46,7 @@
 #include "mongo/db/s/shard_filtering_metadata_refresh.h"
 #include "mongo/db/s/sharding_state.h"
 #include "mongo/db/views/view_catalog.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/s/client/shard_registry.h"
 #include "mongo/s/grid.h"
 #include "mongo/s/request_types/set_shard_version_request.h"
@@ -195,7 +195,7 @@ public:
                     if (critSecSignal) {
                         collLock.reset();
                         autoDb.reset();
-                        LOGV2(22056, "waiting till out of critical section");
+                        LOG(22056, "waiting till out of critical section");
                         auto deadline = opCtx->getServiceContext()->getFastClockSource()->now() +
                             std::min(opCtx->getRemainingMaxTimeMillis(), kTenSeconds);
 
@@ -221,7 +221,7 @@ public:
                     if (critSecSignal) {
                         collLock.reset();
                         autoDb.reset();
-                        LOGV2(22057, "waiting till out of critical section");
+                        LOG(22057, "waiting till out of critical section");
 
                         auto deadline = opCtx->getServiceContext()->getFastClockSource()->now() +
                             std::min(opCtx->getRemainingMaxTimeMillis(), kTenSeconds);
@@ -273,7 +273,7 @@ public:
 
             if (!status.isOK()) {
                 // The reload itself was interrupted or confused here
-                LOGV2_WARNING(
+                LOG_WARNING(
                     22058,
                     "Could not refresh metadata for the namespace {namespace} with the requested "
                     "shard version {requestedShardVersion}; the current shard version is "
@@ -296,7 +296,7 @@ public:
                 // set.
                 static Occasionally sampler;
                 if (sampler.tick()) {
-                    LOGV2_WARNING(
+                    LOG_WARNING(
                         22059,
                         "Requested shard version differs from the authoritative (current) shard "
                         "version for the namespace {namespace}; the requested version is "

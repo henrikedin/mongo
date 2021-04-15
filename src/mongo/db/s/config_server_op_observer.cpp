@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kSharding
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kSharding
 
 #include "mongo/platform/basic.h"
 
@@ -36,7 +36,7 @@
 #include "mongo/db/s/config/sharding_catalog_manager.h"
 #include "mongo/db/update/update_oplog_entry_serialization.h"
 #include "mongo/db/vector_clock_mutable.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/s/catalog/type_config_version.h"
 #include "mongo/s/catalog/type_shard.h"
 #include "mongo/s/cluster_identity_loader.h"
@@ -208,11 +208,11 @@ void ConfigServerOpObserver::_registerTopologyTimeTickPoint(Timestamp newTopolog
         numTickPoints = _topologyTimeTickPoints.size();
     }
     if (numTickPoints >= kPossiblyExcessiveNumTopologyTimeTickPoints) {
-        LOGV2_WARNING(4740600,
-                      "possibly excessive number of topologyTime tick points",
-                      "numTickPoints"_attr = numTickPoints,
-                      "kPossiblyExcessiveNumTopologyTimeTickPoints"_attr =
-                          kPossiblyExcessiveNumTopologyTimeTickPoints);
+        LOG_WARNING(4740600,
+                    "possibly excessive number of topologyTime tick points",
+                    "numTickPoints"_attr = numTickPoints,
+                    "kPossiblyExcessiveNumTopologyTimeTickPoints"_attr =
+                        kPossiblyExcessiveNumTopologyTimeTickPoints);
     }
 }
 

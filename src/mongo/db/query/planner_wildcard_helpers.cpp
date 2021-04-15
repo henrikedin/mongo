@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kQuery
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kQuery
 
 #include "mongo/platform/basic.h"
 
@@ -39,7 +39,7 @@
 #include "mongo/db/exec/projection_executor_utils.h"
 #include "mongo/db/index/wildcard_key_generator.h"
 #include "mongo/db/query/index_bounds.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace mongo {
 namespace wildcard_planning {
@@ -245,12 +245,12 @@ bool validateNumericPathComponents(const MultikeyPaths& multikeyPaths,
     // all paths with and without array indices. Because this is O(2^n), we decline to answer
     // queries that traverse more than 8 levels of array indices.
     if (arrayIndices.size() > kWildcardMaxArrayIndexTraversalDepth) {
-        LOGV2_DEBUG(20955,
-                    2,
-                    "Declining to answer query on a field with $** index, as it traverses through "
-                    "more than the maximum permitted depth of nested array indices",
-                    "field"_attr = queryPath.dottedField(),
-                    "maxNestedArrayIndices"_attr = kWildcardMaxArrayIndexTraversalDepth);
+        LOG_DEBUG(20955,
+                  2,
+                  "Declining to answer query on a field with $** index, as it traverses through "
+                  "more than the maximum permitted depth of nested array indices",
+                  "field"_attr = queryPath.dottedField(),
+                  "maxNestedArrayIndices"_attr = kWildcardMaxArrayIndexTraversalDepth);
         return false;
     }
 

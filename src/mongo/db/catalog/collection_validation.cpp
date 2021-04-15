@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kStorage
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kStorage
 
 #include "mongo/platform/basic.h"
 
@@ -44,13 +44,13 @@
 #include "mongo/db/operation_context.h"
 #include "mongo/db/storage/durable_catalog.h"
 #include "mongo/db/views/view_catalog.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/fail_point.h"
 #include "mongo/util/scopeguard.h"
 
 namespace mongo {
 
-using logv2::LogComponent;
+using log::LogComponent;
 using std::string;
 
 MONGO_FAIL_POINT_DEFINE(pauseCollectionValidationWithLock);
@@ -86,11 +86,11 @@ void _validateIndexesInternalStructure(OperationContext* opCtx,
         const IndexDescriptor* descriptor = entry->descriptor();
         const IndexAccessMethod* iam = entry->accessMethod();
 
-        LOGV2_OPTIONS(20295,
-                      {LogComponent::kIndex},
-                      "Validating internal structure",
-                      "index"_attr = descriptor->indexName(),
-                      "namespace"_attr = validateState->nss());
+        LOG_OPTIONS(20295,
+                    {LogComponent::kIndex},
+                    "Validating internal structure",
+                    "index"_attr = descriptor->indexName(),
+                    "namespace"_attr = validateState->nss());
 
         auto& curIndexResults = (results->indexResultsMap)[descriptor->indexName()];
 
@@ -121,11 +121,11 @@ void _validateIndexes(OperationContext* opCtx,
 
         const IndexDescriptor* descriptor = index->descriptor();
 
-        LOGV2_OPTIONS(20296,
-                      {LogComponent::kIndex},
-                      "Validating index consistency",
-                      "index"_attr = descriptor->indexName(),
-                      "namespace"_attr = validateState->nss());
+        LOG_OPTIONS(20296,
+                    {LogComponent::kIndex},
+                    "Validating index consistency",
+                    "index"_attr = descriptor->indexName(),
+                    "namespace"_attr = validateState->nss());
 
         int64_t numTraversedKeys;
         indexValidator->traverseIndex(opCtx, index.get(), &numTraversedKeys, results);
@@ -180,7 +180,7 @@ void _gatherIndexEntryErrors(OperationContext* opCtx,
         return;
     }
 
-    LOGV2_OPTIONS(
+    LOG_OPTIONS(
         20297, {LogComponent::kIndex}, "Starting to traverse through all the document key sets");
 
     // During the second phase of validation, iterate through each documents key set and only record
@@ -192,9 +192,9 @@ void _gatherIndexEntryErrors(OperationContext* opCtx,
         indexValidator->traverseRecordStore(opCtx, &tempValidateResults, &tempBuilder);
     }
 
-    LOGV2_OPTIONS(
+    LOG_OPTIONS(
         20298, {LogComponent::kIndex}, "Finished traversing through all the document key sets");
-    LOGV2_OPTIONS(20299, {LogComponent::kIndex}, "Starting to traverse through all the indexes");
+    LOG_OPTIONS(20299, {LogComponent::kIndex}, "Starting to traverse through all the indexes");
 
     // Iterate through all the indexes in the collection and only record the index entry keys that
     // had inconsistencies during the first phase.
@@ -203,10 +203,10 @@ void _gatherIndexEntryErrors(OperationContext* opCtx,
 
         const IndexDescriptor* descriptor = index->descriptor();
 
-        LOGV2_OPTIONS(20300,
-                      {LogComponent::kIndex},
-                      "Traversing through the index entries",
-                      "index"_attr = descriptor->indexName());
+        LOG_OPTIONS(20300,
+                    {LogComponent::kIndex},
+                    "Traversing through the index entries",
+                    "index"_attr = descriptor->indexName());
 
         indexValidator->traverseIndex(opCtx,
                                       index.get(),
@@ -224,7 +224,7 @@ void _gatherIndexEntryErrors(OperationContext* opCtx,
         indexConsistency->repairMissingIndexEntries(opCtx, result);
     }
 
-    LOGV2_OPTIONS(20301, {LogComponent::kIndex}, "Finished traversing through all the indexes");
+    LOG_OPTIONS(20301, {LogComponent::kIndex}, "Finished traversing through all the indexes");
 
     indexConsistency->addIndexEntryErrors(result);
 }
@@ -301,11 +301,11 @@ void _reportInvalidResults(OperationContext* opCtx,
                            BSONObjBuilder* output,
                            const string uuidString) {
     _reportValidationResults(opCtx, validateState, results, output);
-    LOGV2_OPTIONS(20302,
-                  {LogComponent::kIndex},
-                  "Validation complete -- Corruption found",
-                  "namespace"_attr = validateState->nss(),
-                  "uuid"_attr = uuidString);
+    LOG_OPTIONS(20302,
+                {LogComponent::kIndex},
+                "Validation complete -- Corruption found",
+                "namespace"_attr = validateState->nss(),
+                "uuid"_attr = uuidString);
 }
 
 template <typename T>
@@ -509,11 +509,11 @@ Status validate(OperationContext* opCtx,
         validateState.initializeCursors(opCtx);
 
         // Validate the record store.
-        LOGV2_OPTIONS(20303,
-                      {LogComponent::kIndex},
-                      "validating collection",
-                      "namespace"_attr = validateState.nss(),
-                      "uuid"_attr = uuidString);
+        LOG_OPTIONS(20303,
+                    {LogComponent::kIndex},
+                    "validating collection",
+                    "namespace"_attr = validateState.nss(),
+                    "uuid"_attr = uuidString);
 
         IndexConsistency indexConsistency(opCtx, &validateState);
         ValidateAdaptor indexValidator(&indexConsistency, &validateState);
@@ -536,7 +536,7 @@ Status validate(OperationContext* opCtx,
 
         if (MONGO_unlikely(pauseCollectionValidationWithLock.shouldFail())) {
             _validationIsPausedForTest.store(true);
-            LOGV2(20304, "Failpoint 'pauseCollectionValidationWithLock' activated");
+            LOG(20304, "Failpoint 'pauseCollectionValidationWithLock' activated");
             pauseCollectionValidationWithLock.pauseWhileSet();
             _validationIsPausedForTest.store(false);
         }
@@ -550,11 +550,11 @@ Status validate(OperationContext* opCtx,
         _validateIndexes(opCtx, &validateState, &indexValidator, results);
 
         if (indexConsistency.haveEntryMismatch()) {
-            LOGV2_OPTIONS(20305,
-                          {LogComponent::kIndex},
-                          "Index inconsistencies were detected. "
-                          "Starting the second phase of index validation to gather concise errors",
-                          "namespace"_attr = validateState.nss());
+            LOG_OPTIONS(20305,
+                        {LogComponent::kIndex},
+                        "Index inconsistencies were detected. "
+                        "Starting the second phase of index validation to gather concise errors",
+                        "namespace"_attr = validateState.nss());
             _gatherIndexEntryErrors(
                 opCtx, &validateState, &indexConsistency, &indexValidator, results);
         }
@@ -576,28 +576,28 @@ Status validate(OperationContext* opCtx,
         // Report the validation results for the user to see.
         _reportValidationResults(opCtx, &validateState, results, output);
 
-        LOGV2_OPTIONS(20306,
-                      {LogComponent::kIndex},
-                      "Validation complete for collection. No "
-                      "corruption found",
-                      "namespace"_attr = validateState.nss(),
-                      "uuid"_attr = uuidString);
+        LOG_OPTIONS(20306,
+                    {LogComponent::kIndex},
+                    "Validation complete for collection. No "
+                    "corruption found",
+                    "namespace"_attr = validateState.nss(),
+                    "uuid"_attr = uuidString);
     } catch (const DBException& e) {
         if (ErrorCodes::isInterruption(e.code())) {
-            LOGV2_OPTIONS(5160301,
-                          {LogComponent::kIndex},
-                          "Validation interrupted",
-                          "namespace"_attr = validateState.nss());
+            LOG_OPTIONS(5160301,
+                        {LogComponent::kIndex},
+                        "Validation interrupted",
+                        "namespace"_attr = validateState.nss());
             return e.toStatus();
         }
         string err = str::stream() << "exception during collection validation: " << e.toString();
         results->errors.push_back(err);
         results->valid = false;
-        LOGV2_OPTIONS(5160302,
-                      {LogComponent::kIndex},
-                      "Validation failed due to exception",
-                      "namespace"_attr = validateState.nss(),
-                      "error"_attr = e.toString());
+        LOG_OPTIONS(5160302,
+                    {LogComponent::kIndex},
+                    "Validation failed due to exception",
+                    "namespace"_attr = validateState.nss(),
+                    "error"_attr = e.toString());
     }
 
     return Status::OK();

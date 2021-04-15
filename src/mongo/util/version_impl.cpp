@@ -27,14 +27,14 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kControl
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kControl
 
 #include "mongo/platform/basic.h"
 
 #include "mongo/util/version.h"
 
 #include "mongo/base/init.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/assert_util.h"
 
 #include "mongo/util/version_constants.h"
@@ -88,7 +88,7 @@ public:
 #error This targeted Windows version is not supported
 #endif  // NTDDI_VERSION
 #else
-        LOGV2_FATAL(40277, "VersionInfoInterface::targetMinOS is only available for Windows");
+        LOG_FATAL(40277, "VersionInfoInterface::targetMinOS is only available for Windows");
 #endif
     }
 

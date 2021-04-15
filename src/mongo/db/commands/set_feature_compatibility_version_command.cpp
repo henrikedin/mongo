@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kDefault
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kDefault
 
 #include "mongo/platform/basic.h"
 
@@ -56,7 +56,7 @@
 #include "mongo/db/s/config/sharding_catalog_manager.h"
 #include "mongo/db/server_options.h"
 #include "mongo/db/views/view_catalog.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/s/sharded_collections_ddl_parameters_gen.h"
 #include "mongo/stdx/unordered_set.h"
@@ -107,7 +107,7 @@ void checkInitialSyncFinished(OperationContext* opCtx) {
 
     // We should make sure the current config w/o 'newlyAdded' members got replicated
     // to all nodes.
-    LOGV2(4637904, "Waiting for the current replica set config to propagate to all nodes.");
+    LOG(4637904, "Waiting for the current replica set config to propagate to all nodes.");
     // If a write concern is given, we'll use its wTimeout. It's kNoTimeout by default.
     WriteConcernOptions writeConcern(repl::ReplSetConfig::kConfigAllWriteConcernName,
                                      WriteConcernOptions::SyncMode::NONE,
@@ -117,7 +117,7 @@ void checkInitialSyncFinished(OperationContext* opCtx) {
     uassertStatusOKWithContext(
         replCoord->awaitReplication(opCtx, fakeOpTime, writeConcern).status,
         "Failed to wait for the current replica set config to propagate to all nodes");
-    LOGV2(4637905, "The current replica set config has been propagated to all nodes.");
+    LOG(4637905, "The current replica set config has been propagated to all nodes.");
 }
 
 void waitForCurrentConfigCommitment(OperationContext* opCtx) {
@@ -305,7 +305,7 @@ private:
             uassertStatusOKWithContext(
                 replCoord->awaitConfigCommitment(opCtx, true /* waitForOplogCommitment */),
                 "The upgraded replica set config failed to propagate to a majority");
-            LOGV2(5042302, "The upgraded replica set config has been propagated to a majority");
+            LOG(5042302, "The upgraded replica set config has been propagated to a majority");
         }
 
         {
@@ -430,7 +430,7 @@ private:
             uassertStatusOKWithContext(
                 replCoord->awaitConfigCommitment(opCtx, true /* waitForOplogCommitment */),
                 "The downgraded replica set config failed to propagate to a majority");
-            LOGV2(5042304, "The downgraded replica set config has been propagated to a majority");
+            LOG(5042304, "The downgraded replica set config has been propagated to a majority");
         }
 
         {
@@ -465,7 +465,7 @@ private:
         if (request.getDowngradeOnDiskChanges()) {
             invariant(requestedVersion == FeatureCompatibility::kLastContinuous);
             _downgradeOnDiskChanges();
-            LOGV2(4875603, "Downgrade of on-disk format complete.");
+            LOG(4875603, "Downgrade of on-disk format complete.");
         }
     }
 
@@ -474,9 +474,9 @@ private:
      * version.
      */
     void _downgradeOnDiskChanges() {
-        LOGV2(4975602,
-              "Downgrading on-disk format to reflect the last-continuous version.",
-              "last_continuous_version"_attr = FCVP::kLastContinuous);
+        LOG(4975602,
+            "Downgrading on-disk format to reflect the last-continuous version.",
+            "last_continuous_version"_attr = FCVP::kLastContinuous);
     }
 
 } setFeatureCompatibilityVersionCommand;

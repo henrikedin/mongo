@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kIndex
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kIndex
 
 #include "mongo/platform/basic.h"
 
@@ -53,7 +53,7 @@
 #include "mongo/db/repl/tenant_migration_conflict_info.h"
 #include "mongo/db/storage/storage_options.h"
 #include "mongo/db/storage/write_unit_of_work.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/fail_point.h"
 #include "mongo/util/progress_meter.h"
@@ -114,18 +114,17 @@ void MultiIndexBlock::abortIndexBuild(OperationContext* opCtx,
         } catch (const DBException& e) {
             if (e.toStatus() == ErrorCodes::ExceededMemoryLimit)
                 continue;
-            LOGV2_ERROR(20393,
-                        "Caught exception while cleaning up partially built indexes: {e}",
-                        "Caught exception while cleaning up partially built indexes",
-                        "error"_attr = redact(e));
+            LOG_ERROR(20393,
+                      "Caught exception while cleaning up partially built indexes: {e}",
+                      "Caught exception while cleaning up partially built indexes",
+                      "error"_attr = redact(e));
         } catch (const std::exception& e) {
-            LOGV2_ERROR(20394,
-                        "Caught exception while cleaning up partially built indexes: {e_what}",
-                        "Caught exception while cleaning up partially built indexes",
-                        "error"_attr = e.what());
+            LOG_ERROR(20394,
+                      "Caught exception while cleaning up partially built indexes: {e_what}",
+                      "Caught exception while cleaning up partially built indexes",
+                      "error"_attr = e.what());
         } catch (...) {
-            LOGV2_ERROR(20395,
-                        "Caught unknown exception while cleaning up partially built indexes");
+            LOG_ERROR(20395, "Caught unknown exception while cleaning up partially built indexes");
         }
         fassertFailed(18644);
     }
@@ -192,9 +191,9 @@ StatusWith<std::vector<BSONObj>> MultiIndexBlock::init(
 
         for (const auto& info : indexSpecs) {
             if (info["background"].isBoolean() && !info["background"].Bool()) {
-                LOGV2(20383,
-                      "Ignoring obsolete { background: false } index build option because all "
-                      "indexes are built in the background with the hybrid method");
+                LOG(20383,
+                    "Ignoring obsolete { background: false } index build option because all "
+                    "indexes are built in the background with the hybrid method");
             }
         }
 
@@ -290,15 +289,14 @@ StatusWith<std::vector<BSONObj>> MultiIndexBlock::init(
             index.options.dupsAllowed = true;
             index.options.fromIndexBuilder = true;
 
-            LOGV2(20384,
-                  "Index build: starting",
-                  "buildUUID"_attr = _buildUUID,
-                  "collectionUUID"_attr = _collectionUUID,
-                  logAttrs(collection->ns()),
-                  "properties"_attr = *descriptor,
-                  "method"_attr = _method,
-                  "maxTemporaryMemoryUsageMB"_attr =
-                      eachIndexBuildMaxMemoryUsageBytes / 1024 / 1024);
+            LOG(20384,
+                "Index build: starting",
+                "buildUUID"_attr = _buildUUID,
+                "collectionUUID"_attr = _collectionUUID,
+                logAttrs(collection->ns()),
+                "properties"_attr = *descriptor,
+                "method"_attr = _method,
+                "maxTemporaryMemoryUsageMB"_attr = eachIndexBuildMaxMemoryUsageBytes / 1024 / 1024);
 
             index.filterExpression = indexCatalogEntry->getFilterExpression();
         }
@@ -308,12 +306,12 @@ StatusWith<std::vector<BSONObj>> MultiIndexBlock::init(
                 return;
             }
 
-            LOGV2(20346,
-                  "Index build: initialized",
-                  "buildUUID"_attr = _buildUUID,
-                  "collectionUUID"_attr = _collectionUUID,
-                  logAttrs(ns),
-                  "initializationTimestamp"_attr = commitTs);
+            LOG(20346,
+                "Index build: initialized",
+                "buildUUID"_attr = _buildUUID,
+                "collectionUUID"_attr = _collectionUUID,
+                logAttrs(ns),
+                "initializationTimestamp"_attr = commitTs);
         });
 
         wunit.commit();
@@ -370,9 +368,9 @@ Status MultiIndexBlock::insertAllDocumentsInCollection(
     hangAfterSettingUpIndexBuild.executeIf(
         [buildUUID = _buildUUID](const BSONObj& data) {
             // Hang the build after the curOP info is set up.
-            LOGV2(20387,
-                  "Hanging index build due to failpoint 'hangAfterSettingUpIndexBuild'",
-                  "buildUUID"_attr = buildUUID);
+            LOG(20387,
+                "Hanging index build due to failpoint 'hangAfterSettingUpIndexBuild'",
+                "buildUUID"_attr = buildUUID);
             hangAfterSettingUpIndexBuild.pauseWhileSet();
         },
         [buildUUID = _buildUUID](const BSONObj& data) {
@@ -395,9 +393,9 @@ Status MultiIndexBlock::insertAllDocumentsInCollection(
         Locker::LockSnapshot lockInfo;
         invariant(opCtx->lockState()->saveLockStateAndUnlock(&lockInfo));
 
-        LOGV2(4585201,
-              "Hanging index build with no locks due to "
-              "'hangAfterSettingUpIndexBuildUnlocked' failpoint");
+        LOG(4585201,
+            "Hanging index build with no locks due to "
+            "'hangAfterSettingUpIndexBuildUnlocked' failpoint");
         hangAfterSettingUpIndexBuildUnlocked.pauseWhileSet();
 
         opCtx->lockState()->restoreLockState(opCtx, lockInfo);
@@ -477,16 +475,16 @@ Status MultiIndexBlock::insertAllDocumentsInCollection(
         }
 
         auto readSource = opCtx->recoveryUnit()->getTimestampReadSource();
-        LOGV2(4984704,
-              "Index build: collection scan stopped",
-              "buildUUID"_attr = _buildUUID,
-              "collectionUUID"_attr = _collectionUUID,
-              "totalRecords"_attr = n,
-              "duration"_attr = duration_cast<Milliseconds>(Seconds(t.seconds())),
-              "phase"_attr = IndexBuildPhase_serializer(_phase),
-              "collectionScanPosition"_attr = _lastRecordIdInserted,
-              "readSource"_attr = RecoveryUnit::toString(readSource),
-              "error"_attr = ex);
+        LOG(4984704,
+            "Index build: collection scan stopped",
+            "buildUUID"_attr = _buildUUID,
+            "collectionUUID"_attr = _collectionUUID,
+            "totalRecords"_attr = n,
+            "duration"_attr = duration_cast<Milliseconds>(Seconds(t.seconds())),
+            "phase"_attr = IndexBuildPhase_serializer(_phase),
+            "collectionScanPosition"_attr = _lastRecordIdInserted,
+            "readSource"_attr = RecoveryUnit::toString(readSource),
+            "error"_attr = ex);
         ex.addContext(str::stream()
                       << "collection scan stopped. totalRecords: " << n
                       << "; durationMillis: " << duration_cast<Milliseconds>(Seconds(t.seconds()))
@@ -497,9 +495,9 @@ Status MultiIndexBlock::insertAllDocumentsInCollection(
     }
 
     if (MONGO_unlikely(leaveIndexBuildUnfinishedForShutdown.shouldFail())) {
-        LOGV2(20389,
-              "Index build interrupted due to 'leaveIndexBuildUnfinishedForShutdown' failpoint. "
-              "Mimicking shutdown error code");
+        LOG(20389,
+            "Index build interrupted due to 'leaveIndexBuildUnfinishedForShutdown' failpoint. "
+            "Mimicking shutdown error code");
         return Status(
             ErrorCodes::InterruptedAtShutdown,
             "background index build interrupted due to failpoint. returning a shutdown error.");
@@ -511,9 +509,9 @@ Status MultiIndexBlock::insertAllDocumentsInCollection(
         Locker::LockSnapshot lockInfo;
         invariant(opCtx->lockState()->saveLockStateAndUnlock(&lockInfo));
 
-        LOGV2(20390,
-              "Hanging index build with no locks due to "
-              "'hangAfterStartingIndexBuildUnlocked' failpoint");
+        LOG(20390,
+            "Hanging index build with no locks due to "
+            "'hangAfterStartingIndexBuildUnlocked' failpoint");
         hangAfterStartingIndexBuildUnlocked.pauseWhileSet();
 
         if (isBackgroundBuilding()) {
@@ -527,15 +525,14 @@ Status MultiIndexBlock::insertAllDocumentsInCollection(
 
     progress->finished();
 
-    LOGV2(20391,
-          "Index build: collection scan done",
-          "buildUUID"_attr = _buildUUID,
-          "collectionUUID"_attr = _collectionUUID,
-          logAttrs(collection->ns()),
-          "totalRecords"_attr = n,
-          "readSource"_attr =
-              RecoveryUnit::toString(opCtx->recoveryUnit()->getTimestampReadSource()),
-          "duration"_attr = duration_cast<Milliseconds>(Seconds(t.seconds())));
+    LOG(20391,
+        "Index build: collection scan done",
+        "buildUUID"_attr = _buildUUID,
+        "collectionUUID"_attr = _collectionUUID,
+        logAttrs(collection->ns()),
+        "totalRecords"_attr = n,
+        "readSource"_attr = RecoveryUnit::toString(opCtx->recoveryUnit()->getTimestampReadSource()),
+        "duration"_attr = duration_cast<Milliseconds>(Seconds(t.seconds())));
 
     Status ret = dumpInsertsFromBulk(opCtx, collection);
     if (!ret.isOK())
@@ -607,11 +604,11 @@ Status MultiIndexBlock::dumpInsertsFromBulk(
             ? !_indexes[i].block->getEntry(opCtx, collection)->descriptor()->unique()
             : _indexes[i].options.dupsAllowed;
         const IndexCatalogEntry* entry = _indexes[i].block->getEntry(opCtx, collection);
-        LOGV2_DEBUG(20392,
-                    1,
-                    "Index build: inserting from external sorter into index",
-                    "index"_attr = entry->descriptor()->indexName(),
-                    "buildUUID"_attr = _buildUUID);
+        LOG_DEBUG(20392,
+                  1,
+                  "Index build: inserting from external sorter into index",
+                  "index"_attr = entry->descriptor()->indexName(),
+                  "buildUUID"_attr = _buildUUID);
 
         // SERVER-41918 This call to commitBulk() results in file I/O that may result in an
         // exception.
@@ -850,13 +847,13 @@ void MultiIndexBlock::_writeStateToDisk(OperationContext* opCtx,
 
     auto status = rs->rs()->insertRecord(opCtx, obj.objdata(), obj.objsize(), Timestamp());
     if (!status.isOK()) {
-        LOGV2_ERROR(4841501,
-                    "Index build: failed to write resumable state to disk",
-                    "buildUUID"_attr = _buildUUID,
-                    "collectionUUID"_attr = _collectionUUID,
-                    logAttrs(collection->ns()),
-                    "details"_attr = obj,
-                    "error"_attr = status.getStatus());
+        LOG_ERROR(4841501,
+                  "Index build: failed to write resumable state to disk",
+                  "buildUUID"_attr = _buildUUID,
+                  "collectionUUID"_attr = _collectionUUID,
+                  logAttrs(collection->ns()),
+                  "details"_attr = obj,
+                  "error"_attr = status.getStatus());
         dassert(status,
                 str::stream() << "Failed to write resumable index build state to disk. UUID: "
                               << _buildUUID);
@@ -867,12 +864,12 @@ void MultiIndexBlock::_writeStateToDisk(OperationContext* opCtx,
 
     wuow.commit();
 
-    LOGV2(4841502,
-          "Index build: wrote resumable state to disk",
-          "buildUUID"_attr = _buildUUID,
-          "collectionUUID"_attr = _collectionUUID,
-          logAttrs(collection->ns()),
-          "details"_attr = obj);
+    LOG(4841502,
+        "Index build: wrote resumable state to disk",
+        "buildUUID"_attr = _buildUUID,
+        "collectionUUID"_attr = _collectionUUID,
+        logAttrs(collection->ns()),
+        "details"_attr = obj);
 
     rs->finalizeTemporaryTable(opCtx, TemporaryRecordStore::FinalizationAction::kKeep);
 }
@@ -959,12 +956,12 @@ Status MultiIndexBlock::_failPointHangDuringBuild(OperationContext* opCtx,
     try {
         fp->executeIf(
             [=, &doc](const BSONObj& data) {
-                LOGV2(20386,
-                      "Hanging index build during collection scan phase",
-                      "where"_attr = where,
-                      "doc"_attr = doc,
-                      "iteration"_attr = iteration,
-                      "buildUUID"_attr = _buildUUID);
+                LOG(20386,
+                    "Hanging index build during collection scan phase",
+                    "where"_attr = where,
+                    "doc"_attr = doc,
+                    "iteration"_attr = iteration,
+                    "buildUUID"_attr = _buildUUID);
 
                 fp->pauseWhileSet(opCtx);
             },

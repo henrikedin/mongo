@@ -42,10 +42,10 @@
 #include "mongo/db/service_context.h"
 #include "mongo/embedded/embedded.h"
 #include "mongo/embedded/embedded_log_backend.h"
-#include "mongo/logv2/component_settings_filter.h"
-#include "mongo/logv2/log_domain_global.h"
-#include "mongo/logv2/log_manager.h"
-#include "mongo/logv2/plain_formatter.h"
+#include "mongo/log/component_settings_filter.h"
+#include "mongo/log/log_domain_global.h"
+#include "mongo/log/log_manager.h"
+#include "mongo/log/plain_formatter.h"
 #include "mongo/rpc/message.h"
 #include "mongo/stdx/unordered_map.h"
 #include "mongo/transport/service_entry_point.h"
@@ -205,16 +205,15 @@ namespace {
 std::unique_ptr<mongo_embedded_v1_lib> library;
 
 void registerLogCallback(mongo_embedded_v1_lib* const lib,
-                         const mongo_embedded_v1_log_callback logCallback,
+                         const mongo_embedded_v1_LOG_callback logCallback,
                          void* const logUserData) {
     auto backend = boost::make_shared<embedded::EmbeddedLogBackend>(logCallback, logUserData);
     auto sink =
         boost::make_shared<boost::log::sinks::synchronous_sink<embedded::EmbeddedLogBackend>>(
             std::move(backend));
-    sink->set_filter(
-        logv2::ComponentSettingsFilter(logv2::LogManager::global().getGlobalDomain(),
-                                       logv2::LogManager::global().getGlobalSettings()));
-    sink->set_formatter(logv2::PlainFormatter());
+    sink->set_filter(log::ComponentSettingsFilter(log::LogManager::global().getGlobalDomain(),
+                                                  log::LogManager::global().getGlobalSettings()));
+    sink->set_formatter(log::PlainFormatter());
     boost::log::core::get()->add_sink(sink);
     lib->logSink = sink;
 }
@@ -232,10 +231,10 @@ mongo_embedded_v1_lib* capi_lib_init(mongo_embedded_v1_init_params const* params
     if (params) {
         // The standard console log appender may or may not be installed here, depending if this is
         // the first time we initialize the library or not. Make sure we handle both cases.
-        using namespace logv2;
+        using namespace log;
         auto& globalDomain = LogManager::global().getGlobalDomainInternal();
         LogDomainGlobal::ConfigurationOptions config = globalDomain.config();
-        if (params->log_flags & MONGO_EMBEDDED_V1_LOG_STDOUT) {
+        if (params->LOG_flags & MONGO_EMBEDDED_V1_LOG_STDOUT) {
             if (!config.consoleEnabled) {
                 config.consoleEnabled = true;
                 invariant(globalDomain.configure(config).isOK());
@@ -247,8 +246,8 @@ mongo_embedded_v1_lib* capi_lib_init(mongo_embedded_v1_init_params const* params
             }
         }
 
-        if ((params->log_flags & MONGO_EMBEDDED_V1_LOG_CALLBACK) && params->log_callback) {
-            registerLogCallback(lib.get(), params->log_callback, params->log_user_data);
+        if ((params->LOG_flags & MONGO_EMBEDDED_V1_LOG_CALLBACK) && params->LOG_callback) {
+            registerLogCallback(lib.get(), params->LOG_callback, params->LOG_user_data);
         }
     }
 
@@ -259,7 +258,7 @@ mongo_embedded_v1_lib* capi_lib_init(mongo_embedded_v1_init_params const* params
     // Make sure that no actual logger is attached if library cannot be initialized.  Also prevent
     // exception leaking failures here.
     []() noexcept {
-        using namespace logv2;
+        using namespace log;
         LogDomainGlobal::ConfigurationOptions config;
         config.makeDisabled();
         LogManager::global().getGlobalDomainInternal().configure(config).ignore();

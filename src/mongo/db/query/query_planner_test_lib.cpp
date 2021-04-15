@@ -31,7 +31,7 @@
  * This file contains tests for mongo/db/query/query_planner.cpp
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTest
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTest
 
 #include "mongo/db/query/query_planner_test_lib.h"
 
@@ -47,7 +47,7 @@
 #include "mongo/db/query/projection_parser.h"
 #include "mongo/db/query/query_planner.h"
 #include "mongo/db/query/query_solution.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/unittest/unittest.h"
 #include "mongo/util/assert_util.h"
 
@@ -137,7 +137,7 @@ bool bsonObjFieldsAreInSet(BSONObj obj, const std::set<std::string>& allowedFiel
     while (i.more()) {
         BSONElement child = i.next();
         if (!allowedFields.count(child.fieldName())) {
-            LOGV2_ERROR(23932, "Unexpected field", "field"_attr = child.fieldName());
+            LOG_ERROR(23932, "Unexpected field", "field"_attr = child.fieldName());
             return false;
         }
     }

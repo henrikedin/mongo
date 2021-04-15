@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kSharding
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kSharding
 
 #include "mongo/platform/basic.h"
 
@@ -41,7 +41,7 @@
 #include "mongo/db/s/migration_util.h"
 #include "mongo/db/s/range_deletion_util.h"
 #include "mongo/db/s/sharding_runtime_d_params_gen.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/fail_point.h"
 #include "mongo/util/time_support.h"
@@ -180,27 +180,27 @@ void MetadataManager::setFilteringMetadata(CollectionMetadata remoteMetadata) {
 
     // We already have the same or newer version
     if (remoteMetadata.getCollVersion().isOlderOrEqualThan(activeMetadata.getCollVersion())) {
-        LOGV2_DEBUG(21984,
-                    1,
-                    "Ignoring incoming metadata update {activeMetadata} for {namespace} because "
-                    "the active (current) metadata {remoteMetadata} has the same or a newer "
-                    "collection version",
-                    "Ignoring incoming metadata update for this namespace because the active "
-                    "(current) metadata has the same or a newer collection version",
-                    "namespace"_attr = _nss.ns(),
-                    "activeMetadata"_attr = activeMetadata.toStringBasic(),
-                    "remoteMetadata"_attr = remoteMetadata.toStringBasic());
+        LOG_DEBUG(21984,
+                  1,
+                  "Ignoring incoming metadata update {activeMetadata} for {namespace} because "
+                  "the active (current) metadata {remoteMetadata} has the same or a newer "
+                  "collection version",
+                  "Ignoring incoming metadata update for this namespace because the active "
+                  "(current) metadata has the same or a newer collection version",
+                  "namespace"_attr = _nss.ns(),
+                  "activeMetadata"_attr = activeMetadata.toStringBasic(),
+                  "remoteMetadata"_attr = remoteMetadata.toStringBasic());
         return;
     }
 
-    LOGV2(21985,
-          "Updating metadata {activeMetadata} for {namespace} because the remote metadata "
-          "{remoteMetadata} has a newer collection version",
-          "Updating metadata for this namespace because the remote metadata has a newer "
-          "collection version",
-          "namespace"_attr = _nss.ns(),
-          "activeMetadata"_attr = activeMetadata.toStringBasic(),
-          "remoteMetadata"_attr = remoteMetadata.toStringBasic());
+    LOG(21985,
+        "Updating metadata {activeMetadata} for {namespace} because the remote metadata "
+        "{remoteMetadata} has a newer collection version",
+        "Updating metadata for this namespace because the remote metadata has a newer "
+        "collection version",
+        "namespace"_attr = _nss.ns(),
+        "activeMetadata"_attr = activeMetadata.toStringBasic(),
+        "remoteMetadata"_attr = remoteMetadata.toStringBasic());
 
     _setActiveMetadata(lg, std::move(remoteMetadata));
 }
@@ -274,14 +274,14 @@ SharedSemiFuture<void> MetadataManager::cleanUpRange(ChunkRange const& range,
         shouldDelayBeforeDeletion ? Seconds(orphanCleanupDelaySecs.load()) : Seconds(0);
 
     if (overlapMetadata) {
-        LOGV2_OPTIONS(21989,
-                      {logv2::LogComponent::kShardingMigration},
-                      "Deletion of {namespace} range {range} will be scheduled after all possibly "
-                      "dependent queries finish",
-                      "Deletion of the collection's specified range will be scheduled after all "
-                      "possibly dependent queries finish",
-                      "namespace"_attr = _nss.ns(),
-                      "range"_attr = redact(range.toString()));
+        LOG_OPTIONS(21989,
+                    {log::LogComponent::kShardingMigration},
+                    "Deletion of {namespace} range {range} will be scheduled after all possibly "
+                    "dependent queries finish",
+                    "Deletion of the collection's specified range will be scheduled after all "
+                    "possibly dependent queries finish",
+                    "namespace"_attr = _nss.ns(),
+                    "range"_attr = redact(range.toString()));
         ++overlapMetadata->numContingentRangeDeletionTasks;
         // Schedule the range for deletion once the overlapping metadata object is destroyed
         // (meaning no more queries can be using the range) and obtain a future which will be
@@ -293,12 +293,12 @@ SharedSemiFuture<void> MetadataManager::cleanUpRange(ChunkRange const& range,
                                        delayForActiveQueriesOnSecondariesToComplete);
     } else {
         // No running queries can depend on this range, so queue it for deletion immediately.
-        LOGV2_OPTIONS(21990,
-                      {logv2::LogComponent::kShardingMigration},
-                      "Scheduling deletion of {namespace} range {range}",
-                      "Scheduling deletion of the collection's specified range",
-                      "namespace"_attr = _nss.ns(),
-                      "range"_attr = redact(range.toString()));
+        LOG_OPTIONS(21990,
+                    {log::LogComponent::kShardingMigration},
+                    "Scheduling deletion of {namespace} range {range}",
+                    "Scheduling deletion of the collection's specified range",
+                    "namespace"_attr = _nss.ns(),
+                    "range"_attr = redact(range.toString()));
 
         return _submitRangeForDeletion(lg,
                                        SemiFuture<void>::makeReady(),

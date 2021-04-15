@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTest
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTest
 
 #include "mongo/platform/basic.h"
 
@@ -38,7 +38,7 @@
 #include "mongo/db/service_context_d_test_fixture.h"
 #include "mongo/db/storage/flow_control.h"
 #include "mongo/db/storage/flow_control_parameters_gen.h"
-#include "mongo/logv2/log_debug.h"
+#include "mongo/log/log_debug.h"
 #include "mongo/unittest/unittest.h"
 
 namespace mongo {

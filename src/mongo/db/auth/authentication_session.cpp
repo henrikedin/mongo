@@ -27,14 +27,14 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kAccessControl
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kAccessControl
 
 #include "mongo/db/auth/authentication_session.h"
 
 #include "mongo/client/authenticate.h"
 #include "mongo/db/audit.h"
 #include "mongo/db/client.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace mongo {
 namespace {
@@ -105,7 +105,7 @@ AuthenticationSession::StepGuard::StepGuard(OperationContext* opCtx, StepType cu
     : _opCtx(opCtx), _currentStep(currentStep) {
     auto client = _opCtx->getClient();
 
-    LOGV2_DEBUG(
+    LOG_DEBUG(
         5286300, kDiagnosticLogLevel, "Starting authentication step", "step"_attr = _currentStep);
 
     auto& maybeSession = getAuthenticationSession(client);
@@ -165,10 +165,10 @@ AuthenticationSession::StepGuard::StepGuard(OperationContext* opCtx, StepType cu
 AuthenticationSession::StepGuard::~StepGuard() {
     auto& maybeSession = getAuthenticationSession(_opCtx->getClient());
     if (maybeSession) {
-        LOGV2_DEBUG(5286301,
-                    kDiagnosticLogLevel,
-                    "Finished authentication step",
-                    "step"_attr = _currentStep);
+        LOG_DEBUG(5286301,
+                  kDiagnosticLogLevel,
+                  "Finished authentication step",
+                  "step"_attr = _currentStep);
         if (maybeSession->_isFinished) {
             // We're done with this session, reset it.
             maybeSession.reset();
@@ -185,7 +185,7 @@ AuthenticationSession* AuthenticationSession::get(Client* client) {
 }
 
 void AuthenticationSession::setMechanismName(StringData mechanismName) {
-    LOGV2_DEBUG(
+    LOG_DEBUG(
         5286200, kDiagnosticLogLevel, "Setting mechanism name", "mechanism"_attr = mechanismName);
     tassert(5286201, "Attempt to change the mechanism name", _mechName.empty());
 
@@ -199,9 +199,9 @@ void AuthenticationSession::setMechanismName(StringData mechanismName) {
 
 void AuthenticationSession::_verifyUserNameFromSaslSupportedMechanisms(const UserName& userName) {
     if (auto status = crossVerifyUserNames(_ssmUserName, userName); !status.isOK()) {
-        LOGV2(5286202,
-              "Different user name was supplied to saslSupportedMechs",
-              "error"_attr = status);
+        LOG(5286202,
+            "Different user name was supplied to saslSupportedMechs",
+            "error"_attr = status);
 
         // Reset _ssmUserName since we have found a conflict.
         auto ssmUserName = std::exchange(_ssmUserName, {});
@@ -221,7 +221,7 @@ void AuthenticationSession::setUserNameForSaslSupportedMechanisms(UserName userN
 }
 
 void AuthenticationSession::updateUserName(UserName userName) {
-    LOGV2_DEBUG(5286203, kDiagnosticLogLevel, "Updating user name", "userName"_attr = userName);
+    LOG_DEBUG(5286203, kDiagnosticLogLevel, "Updating user name", "userName"_attr = userName);
 
     _verifyUserNameFromSaslSupportedMechanisms(userName);
     uassertStatusOK(crossVerifyUserNames(_userName, userName));
@@ -238,7 +238,7 @@ void AuthenticationSession::setMechanism(std::unique_ptr<ServerMechanismBase> me
         uassertStatusOK(_mech->setOptions(*options));
     }
 
-    LOGV2_DEBUG(5286304, kDiagnosticLogLevel, "Determined mechanism for authentication");
+    LOG_DEBUG(5286304, kDiagnosticLogLevel, "Determined mechanism for authentication");
 }
 
 void AuthenticationSession::setAsClusterMember() {
@@ -248,7 +248,7 @@ void AuthenticationSession::setAsClusterMember() {
 
     _mechCounter->incClusterAuthenticateReceived();
 
-    LOGV2_DEBUG(5286305, kDiagnosticLogLevel, "Marking as cluster member");
+    LOG_DEBUG(5286305, kDiagnosticLogLevel, "Marking as cluster member");
 }
 
 void AuthenticationSession::_finish() {
@@ -281,15 +281,15 @@ void AuthenticationSession::markSuccessful() {
                                           ErrorCodes::OK);
     audit::logAuthentication(_client, event);
 
-    LOGV2_DEBUG(5286306,
-                kDiagnosticLogLevel,
-                "Successfully authenticated",
-                "client"_attr = _client->getRemote(),
-                "isSpeculative"_attr = _isSpeculative,
-                "isClusterMember"_attr = _isClusterMember,
-                "mechanism"_attr = _mechName,
-                "user"_attr = _userName.getUser(),
-                "db"_attr = _userName.getDB());
+    LOG_DEBUG(5286306,
+              kDiagnosticLogLevel,
+              "Successfully authenticated",
+              "client"_attr = _client->getRemote(),
+              "isSpeculative"_attr = _isSpeculative,
+              "isClusterMember"_attr = _isClusterMember,
+              "mechanism"_attr = _mechName,
+              "user"_attr = _userName.getUser(),
+              "db"_attr = _userName.getDB());
 }
 
 void AuthenticationSession::markFailed(const Status& status) {
@@ -302,16 +302,16 @@ void AuthenticationSession::markFailed(const Status& status) {
                                           status.code());
     audit::logAuthentication(_client, event);
 
-    LOGV2_DEBUG(5286307,
-                kDiagnosticLogLevel,
-                "Failed to authenticate",
-                "client"_attr = _client->getRemote(),
-                "isSpeculative"_attr = _isSpeculative,
-                "isClusterMember"_attr = _isClusterMember,
-                "mechanism"_attr = _mechName,
-                "user"_attr = _userName.getUser(),
-                "db"_attr = _userName.getDB(),
-                "error"_attr = status);
+    LOG_DEBUG(5286307,
+              kDiagnosticLogLevel,
+              "Failed to authenticate",
+              "client"_attr = _client->getRemote(),
+              "isSpeculative"_attr = _isSpeculative,
+              "isClusterMember"_attr = _isClusterMember,
+              "mechanism"_attr = _mechName,
+              "user"_attr = _userName.getUser(),
+              "db"_attr = _userName.getDB(),
+              "error"_attr = status);
 }
 
 }  // namespace mongo

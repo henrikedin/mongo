@@ -723,7 +723,7 @@ std::tuple<bool, value::TypeTags, value::Value> ByteCode::genericLn(value::TypeT
                 // legal input to ln(), returning NaN.
                 return {false, value::TypeTags::Nothing, 0};
             }
-            // Note: NaN is a legal input to log(), returning NaN.
+            // Note: NaN is a legal input to LOG(), returning NaN.
             return {false,
                     value::TypeTags::NumberDouble,
                     value::bitcastFrom<double>(std::log(operand))};

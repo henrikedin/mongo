@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kStorage
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kStorage
 
 #if defined(__linux__)
 #include <sys/vfs.h>
@@ -51,7 +51,7 @@
 #include "mongo/db/storage/wiredtiger/wiredtiger_record_store.h"
 #include "mongo/db/storage/wiredtiger/wiredtiger_server_status.h"
 #include "mongo/db/storage/wiredtiger/wiredtiger_util.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/processinfo.h"
 
 #if __has_feature(address_sanitizer)
@@ -68,7 +68,7 @@ public:
                                                   const StorageGlobalParams& params,
                                                   const StorageEngineLockFile* lockFile) const {
         if (lockFile && lockFile->createdByUncleanShutdown()) {
-            LOGV2_WARNING(22302, "Recovering data from the last clean checkpoint.");
+            LOG_WARNING(22302, "Recovering data from the last clean checkpoint.");
         }
 
 #if defined(__linux__)
@@ -80,11 +80,11 @@ public:
             int ret = statfs(params.dbpath.c_str(), &fs_stats);
 
             if (ret == 0 && fs_stats.f_type == EXT4_SUPER_MAGIC) {
-                LOGV2_OPTIONS(22297,
-                              {logv2::LogTag::kStartupWarnings},
-                              "Using the XFS filesystem is strongly recommended with the "
-                              "WiredTiger storage engine. See "
-                              "http://dochub.mongodb.org/core/prodnotes-filesystem");
+                LOG_OPTIONS(22297,
+                            {log::LogTag::kStartupWarnings},
+                            "Using the XFS filesystem is strongly recommended with the "
+                            "WiredTiger storage engine. See "
+                            "http://dochub.mongodb.org/core/prodnotes-filesystem");
             }
         }
 #endif
@@ -94,10 +94,10 @@ public:
         ProcessInfo p;
         if (p.supported()) {
             if (cacheMB > memoryThresholdPercentage * p.getMemSizeMB()) {
-                LOGV2_OPTIONS(22300,
-                              {logv2::LogTag::kStartupWarnings},
-                              "The configured WiredTiger cache size is more than 80% of available "
-                              "RAM. See http://dochub.mongodb.org/core/faq-memory-diagnostics-wt");
+                LOG_OPTIONS(22300,
+                            {log::LogTag::kStartupWarnings},
+                            "The configured WiredTiger cache size is more than 80% of available "
+                            "RAM. See http://dochub.mongodb.org/core/faq-memory-diagnostics-wt");
             }
         }
         const bool ephemeral = false;

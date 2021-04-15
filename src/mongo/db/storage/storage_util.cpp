@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kStorage
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kStorage
 
 #include "mongo/platform/basic.h"
 
@@ -42,7 +42,7 @@
 #include "mongo/db/storage/ident.h"
 #include "mongo/db/storage/kv/kv_engine.h"
 #include "mongo/db/storage/storage_engine.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace mongo {
 namespace catalog {
@@ -64,7 +64,7 @@ auto removeEmptyDirectory =
         boost::filesystem::remove(storageEngine->getFilesystemPathForDb(ns.db().toString()), ec);
 
         if (!ec) {
-            LOGV2(4888200, "Removed empty database directory", "db"_attr = ns.db());
+            LOG(4888200, "Removed empty database directory", "db"_attr = ns.db());
         } else if (collectionCatalog->begin(nullptr, ns.db()) == collectionCatalog->end(nullptr)) {
             // It is possible for a new collection to be created in the database between when we
             // check whether the database is empty and actually attempting to remove the directory.
@@ -72,11 +72,11 @@ auto removeEmptyDirectory =
             // since we attempt to remove the directory for both the collection and index ident
             // drops, once the database is empty it will be still logged until the final of these
             // ident drops occurs.
-            LOGV2_DEBUG(4888201,
-                        1,
-                        "Failed to remove database directory",
-                        "db"_attr = ns.db(),
-                        "error"_attr = ec.message());
+            LOG_DEBUG(4888201,
+                      1,
+                      "Failed to remove database directory",
+                      "db"_attr = ns.db(),
+                      "error"_attr = ec.message());
         }
     };
 }  // namespace
@@ -127,13 +127,13 @@ void removeIndex(OperationContext* opCtx,
                 // Standalone mode will not provide a timestamp.
                 commitTimestamp = Timestamp::min();
             }
-            LOGV2(22206,
-                  "Deferring table drop for index",
-                  "index"_attr = indexNameStr,
-                  logAttrs(nss),
-                  "uuid"_attr = collectionUUID,
-                  "ident"_attr = ident->getIdent(),
-                  "commitTimestamp"_attr = commitTimestamp);
+            LOG(22206,
+                "Deferring table drop for index",
+                "index"_attr = indexNameStr,
+                logAttrs(nss),
+                "uuid"_attr = collectionUUID,
+                "ident"_attr = ident->getIdent(),
+                "commitTimestamp"_attr = commitTimestamp);
             storageEngine->addDropPendingIdent(*commitTimestamp, nss, ident, std::move(onDrop));
         } else {
             // Intentionally ignoring failure here. Since we've removed the metadata pointing to
@@ -181,11 +181,11 @@ Status dropCollection(OperationContext* opCtx,
                     // Standalone mode will not provide a timestamp.
                     commitTimestamp = Timestamp::min();
                 }
-                LOGV2(22214,
-                      "Deferring table drop for collection",
-                      logAttrs(nss),
-                      "ident"_attr = ident->getIdent(),
-                      "commitTimestamp"_attr = commitTimestamp);
+                LOG(22214,
+                    "Deferring table drop for collection",
+                    logAttrs(nss),
+                    "ident"_attr = ident->getIdent(),
+                    "commitTimestamp"_attr = commitTimestamp);
                 storageEngine->addDropPendingIdent(*commitTimestamp, nss, ident, std::move(onDrop));
             } else {
                 // Intentionally ignoring failure here. Since we've removed the metadata pointing to

@@ -26,7 +26,7 @@
  *    exception statement from all source files in the program, then also delete
  *    it in the license file.
  */
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kExecutor
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kExecutor
 
 #include "mongo/platform/basic.h"
 
@@ -37,7 +37,7 @@
 
 #include "mongo/db/jsobj.h"
 #include "mongo/db/namespace_string.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/destructor_guard.h"
@@ -401,18 +401,18 @@ void Fetcher::_sendKillCursors(const CursorId id, const NamespaceString& nss) {
     if (id) {
         auto logKillCursorsResult = [](const RemoteCommandCallbackArgs& args) {
             if (!args.response.isOK()) {
-                LOGV2_WARNING(23918,
-                              "killCursors command task failed: {error}",
-                              "killCursors command task failed",
-                              "error"_attr = redact(args.response.status));
+                LOG_WARNING(23918,
+                            "killCursors command task failed: {error}",
+                            "killCursors command task failed",
+                            "error"_attr = redact(args.response.status));
                 return;
             }
             auto status = getStatusFromCommandResult(args.response.data);
             if (!status.isOK()) {
-                LOGV2_WARNING(23919,
-                              "killCursors command failed: {error}",
-                              "killCursors command failed",
-                              "error"_attr = redact(status));
+                LOG_WARNING(23919,
+                            "killCursors command failed: {error}",
+                            "killCursors command failed",
+                            "error"_attr = redact(status));
             }
         };
 
@@ -422,10 +422,10 @@ void Fetcher::_sendKillCursors(const CursorId id, const NamespaceString& nss) {
 
         auto scheduleResult = _executor->scheduleRemoteCommand(request, logKillCursorsResult);
         if (!scheduleResult.isOK()) {
-            LOGV2_WARNING(23920,
-                          "Failed to schedule killCursors command: {error}",
-                          "Failed to schedule killCursors command",
-                          "error"_attr = redact(scheduleResult.getStatus()));
+            LOG_WARNING(23920,
+                        "Failed to schedule killCursors command: {error}",
+                        "Failed to schedule killCursors command",
+                        "error"_attr = redact(scheduleResult.getStatus()));
         }
     }
 }

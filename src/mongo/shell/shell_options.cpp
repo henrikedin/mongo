@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kDefault
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kDefault
 
 #include "mongo/platform/basic.h"
 
@@ -44,7 +44,7 @@
 #include "mongo/config.h"
 #include "mongo/db/auth/sasl_command_constants.h"
 #include "mongo/db/server_options.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/protocol.h"
 #include "mongo/shell/shell_utils.h"
 #include "mongo/transport/message_compressor_options_client_gen.h"
@@ -114,12 +114,12 @@ Status storeMongoShellOptions(const moe::Environment& params,
         shellGlobalParams.enableIPv6 = true;
     }
 
-    auto minimumLoggedSeveity = logv2::LogSeverity::Info();
+    auto minimumLoggedSeveity = log::LogSeverity::Info();
     if (params.count("verbose")) {
-        minimumLoggedSeveity = logv2::LogSeverity::Debug(1);
+        minimumLoggedSeveity = log::LogSeverity::Debug(1);
     }
-    logv2::LogManager::global().getGlobalSettings().setMinimumLoggedSeverity(
-        mongo::logv2::LogComponent::kDefault, minimumLoggedSeveity);
+    log::LogManager::global().getGlobalSettings().setMinimumLoggedSeverity(
+        mongo::log::LogComponent::kDefault, minimumLoggedSeveity);
 
     // `objcheck` option is part of `serverGlobalParams` to avoid making common parts depend upon
     // the client options.  The option is set to false in clients by default.

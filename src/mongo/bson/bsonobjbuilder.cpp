@@ -27,14 +27,14 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kDefault
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kDefault
 
 #include "mongo/db/jsobj.h"
 
 #include <boost/lexical_cast.hpp>
 
 #include "mongo/bson/timestamp.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace mongo {
 
@@ -106,7 +106,7 @@ Derived& BSONObjBuilderBase<Derived, B>::appendMinForType(StringData fieldName, 
             appendCodeWScope(fieldName, "", BSONObj());
             return static_cast<Derived&>(*this);
     };
-    LOGV2(20101, "type not supported for appendMinElementForType: {t}", "t"_attr = t);
+    LOG(20101, "type not supported for appendMinElementForType: {t}", "t"_attr = t);
     uassert(10061, "type not supported for appendMinElementForType", false);
 }
 
@@ -175,7 +175,7 @@ Derived& BSONObjBuilderBase<Derived, B>::appendMaxForType(StringData fieldName, 
             appendMinForType(fieldName, MaxKey);
             return static_cast<Derived&>(*this);
     }
-    LOGV2(20102, "type not supported for appendMaxElementForType: {t}", "t"_attr = t);
+    LOG(20102, "type not supported for appendMaxElementForType: {t}", "t"_attr = t);
     uassert(14853, "type not supported for appendMaxElementForType", false);
 }
 

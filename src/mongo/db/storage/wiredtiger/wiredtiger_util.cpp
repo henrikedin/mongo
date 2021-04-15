@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kStorage
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kStorage
 
 #include "mongo/platform/basic.h"
 
@@ -46,7 +46,7 @@
 #include "mongo/db/storage/wiredtiger/wiredtiger_kv_engine.h"
 #include "mongo/db/storage/wiredtiger/wiredtiger_recovery_unit.h"
 #include "mongo/db/storage/wiredtiger/wiredtiger_session_cache.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/fail_point.h"
 #include "mongo/util/processinfo.h"
@@ -85,10 +85,10 @@ void createTableChecksFile() {
                   "incomplete."
                << std::endl;
     if (fileStream.fail()) {
-        LOGV2_FATAL_NOTRACE(4366400,
-                            "Failed to write to file",
-                            "file"_attr = path.generic_string(),
-                            "error"_attr = errnoWithDescription());
+        LOG_FATAL_NOTRACE(4366400,
+                          "Failed to write to file",
+                          "file"_attr = path.generic_string(),
+                          "error"_attr = errnoWithDescription());
     }
     fileStream.close();
 
@@ -111,10 +111,10 @@ void removeTableChecksFile() {
     boost::filesystem::remove(path, errorCode);
 
     if (errorCode) {
-        LOGV2_FATAL_NOTRACE(4366403,
-                            "Failed to remove file",
-                            "file"_attr = path.generic_string(),
-                            "error"_attr = errorCode.message());
+        LOG_FATAL_NOTRACE(4366403,
+                          "Failed to remove file",
+                          "file"_attr = path.generic_string(),
+                          "error"_attr = errorCode.message());
     }
 }
 
@@ -224,7 +224,7 @@ StatusWith<std::string> WiredTigerUtil::getMetadataCreate(OperationContext* opCt
             cursor = session->getNewCursor(metadataURI);
         }
     } catch (const ExceptionFor<ErrorCodes::CursorNotFound>& ex) {
-        LOGV2_FATAL_NOTRACE(51257, "Cursor not found", "error"_attr = ex);
+        LOG_FATAL_NOTRACE(51257, "Cursor not found", "error"_attr = ex);
     }
     invariant(cursor);
     auto releaser = makeGuard(
@@ -254,7 +254,7 @@ StatusWith<std::string> WiredTigerUtil::getMetadata(OperationContext* opCtx, Str
             cursor = session->getNewCursor(metadataURI);
         }
     } catch (const ExceptionFor<ErrorCodes::CursorNotFound>& ex) {
-        LOGV2_FATAL_NOTRACE(31293, "Cursor not found", "error"_attr = ex);
+        LOG_FATAL_NOTRACE(31293, "Cursor not found", "error"_attr = ex);
     }
     invariant(cursor);
     auto releaser =
@@ -373,14 +373,14 @@ StatusWith<int64_t> WiredTigerUtil::checkApplicationMetadataFormatVersion(Operat
                                     << " has unsupported format version: " << version << ".");
     }
 
-    LOGV2_DEBUG(22428,
-                2,
-                "WiredTigerUtil::checkApplicationMetadataFormatVersion  uri: {uri} ok range "
-                "{minimumVersion} -> {maximumVersion} current: {version}",
-                "uri"_attr = uri,
-                "minimumVersion"_attr = minimumVersion,
-                "maximumVersion"_attr = maximumVersion,
-                "version"_attr = version);
+    LOG_DEBUG(22428,
+              2,
+              "WiredTigerUtil::checkApplicationMetadataFormatVersion  uri: {uri} ok range "
+              "{minimumVersion} -> {maximumVersion} current: {version}",
+              "uri"_attr = uri,
+              "minimumVersion"_attr = minimumVersion,
+              "maximumVersion"_attr = maximumVersion,
+              "version"_attr = version);
 
     return version;
 }
@@ -488,11 +488,11 @@ size_t WiredTigerUtil::getCacheSizeMB(double requestedCacheSizeGB) {
         cacheSizeMB = 1024 * requestedCacheSizeGB;
     }
     if (cacheSizeMB > kMaxSizeCacheMB) {
-        LOGV2(22429,
-              "Requested cache size: {requestedMB}MB exceeds max; setting to {maximumMB}MB",
-              "Requested cache size exceeds max, setting to maximum",
-              "requestedMB"_attr = cacheSizeMB,
-              "maximumMB"_attr = kMaxSizeCacheMB);
+        LOG(22429,
+            "Requested cache size: {requestedMB}MB exceeds max; setting to {maximumMB}MB",
+            "Requested cache size exceeds max, setting to maximum",
+            "requestedMB"_attr = cacheSizeMB,
+            "maximumMB"_attr = kMaxSizeCacheMB);
         cacheSizeMB = kMaxSizeCacheMB;
     }
     return static_cast<size_t>(cacheSizeMB);
@@ -524,11 +524,11 @@ int mdb_handle_error_with_startup_suppression(WT_EVENT_HANDLER* handler,
                 return 0;
             }
         }
-        LOGV2_ERROR(22435,
-                    "WiredTiger error ({error}) {message}",
-                    "WiredTiger error",
-                    "error"_attr = errorCode,
-                    "message"_attr = message);
+        LOG_ERROR(22435,
+                  "WiredTiger error ({error}) {message}",
+                  "WiredTiger error",
+                  "error"_attr = errorCode,
+                  "message"_attr = message);
 
         // Don't abort on WT_PANIC when repairing, as the error will be handled at a higher layer.
         if (storageGlobalParams.repair) {
@@ -546,11 +546,11 @@ int mdb_handle_error(WT_EVENT_HANDLER* handler,
                      int errorCode,
                      const char* message) {
     try {
-        LOGV2_ERROR(22436,
-                    "WiredTiger error ({errorCode}) {message}",
-                    "WiredTiger error",
-                    "error"_attr = errorCode,
-                    "message"_attr = redact(message));
+        LOG_ERROR(22436,
+                  "WiredTiger error ({errorCode}) {message}",
+                  "WiredTiger error",
+                  "error"_attr = errorCode,
+                  "message"_attr = redact(message));
 
         // Don't abort on WT_PANIC when repairing, as the error will be handled at a higher layer.
         if (storageGlobalParams.repair) {
@@ -565,7 +565,7 @@ int mdb_handle_error(WT_EVENT_HANDLER* handler,
 
 int mdb_handle_message(WT_EVENT_HANDLER* handler, WT_SESSION* session, const char* message) {
     try {
-        LOGV2(22430, "WiredTiger message", "message"_attr = redact(message));
+        LOG(22430, "WiredTiger message", "message"_attr = redact(message));
     } catch (...) {
         std::terminate();
     }
@@ -577,10 +577,10 @@ int mdb_handle_progress(WT_EVENT_HANDLER* handler,
                         const char* operation,
                         uint64_t progress) {
     try {
-        LOGV2(22431,
-              "WiredTiger progress",
-              "operation"_attr = redact(operation),
-              "progress"_attr = progress);
+        LOG(22431,
+            "WiredTiger progress",
+            "operation"_attr = redact(operation),
+            "progress"_attr = progress);
     } catch (...) {
         std::terminate();
     }
@@ -734,12 +734,12 @@ Status WiredTigerUtil::setTableLogging(WT_SESSION* session, const std::string& u
                 createTableChecksFile();
             }
 
-            LOGV2(4366405,
-                  "Modifying the table logging settings for all existing WiredTiger tables",
-                  "loggingEnabled"_attr = on,
-                  "repair"_attr = storageGlobalParams.repair,
-                  "hasPreviouslyIncompleteTableChecks"_attr =
-                      _tableLoggingInfo.hasPreviouslyIncompleteTableChecks);
+            LOG(4366405,
+                "Modifying the table logging settings for all existing WiredTiger tables",
+                "loggingEnabled"_attr = on,
+                "repair"_attr = storageGlobalParams.repair,
+                "hasPreviouslyIncompleteTableChecks"_attr =
+                    _tableLoggingInfo.hasPreviouslyIncompleteTableChecks);
         }
 
         return _setTableLogging(session, uri, on);
@@ -767,9 +767,9 @@ Status WiredTigerUtil::setTableLogging(WT_SESSION* session, const std::string& u
     const std::string existingMetadata = getMetadataCreate(session, uri).getValue();
     if (existingMetadata.find(setting) != std::string::npos) {
         // The table is running with the expected logging settings.
-        LOGV2(4366408,
-              "No table logging settings modifications are required for existing WiredTiger tables",
-              "loggingEnabled"_attr = on);
+        LOG(4366408,
+            "No table logging settings modifications are required for existing WiredTiger tables",
+            "loggingEnabled"_attr = on);
         return Status::OK();
     }
 
@@ -778,14 +778,14 @@ Status WiredTigerUtil::setTableLogging(WT_SESSION* session, const std::string& u
     _tableLoggingInfo.changeTableLogging = true;
     createTableChecksFile();
 
-    LOGV2(4366406,
-          "Modifying the table logging settings for all existing WiredTiger tables",
-          "loggingEnabled"_attr = on);
+    LOG(4366406,
+        "Modifying the table logging settings for all existing WiredTiger tables",
+        "loggingEnabled"_attr = on);
 
     Status status = _setTableLogging(session, uri, on);
 
     if (MONGO_unlikely(crashAfterUpdatingFirstTableLoggingSettings.shouldFail())) {
-        LOGV2_FATAL_NOTRACE(
+        LOG_FATAL_NOTRACE(
             4366407, "Crashing due to 'crashAfterUpdatingFirstTableLoggingSettings' fail point");
     }
     return status;
@@ -815,17 +815,17 @@ Status WiredTigerUtil::_setTableLogging(WT_SESSION* session, const std::string& 
         return Status::OK();
     }
 
-    LOGV2_DEBUG(
+    LOG_DEBUG(
         22432, 1, "Changing table logging settings", "uri"_attr = uri, "loggingEnabled"_attr = on);
     int ret = session->alter(session, uri.c_str(), setting.c_str());
     if (ret) {
-        LOGV2_FATAL(50756,
-                    "Failed to update log setting",
-                    "uri"_attr = uri,
-                    "loggingEnabled"_attr = on,
-                    "error"_attr = ret,
-                    "metadata"_attr = redact(existingMetadata),
-                    "message"_attr = session->strerror(session, ret));
+        LOG_FATAL(50756,
+                  "Failed to update log setting",
+                  "uri"_attr = uri,
+                  "loggingEnabled"_attr = on,
+                  "error"_attr = ret,
+                  "metadata"_attr = redact(existingMetadata),
+                  "message"_attr = session->strerror(session, ret));
     }
 
     return Status::OK();

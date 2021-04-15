@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTest
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTest
 
 #include "mongo/platform/basic.h"
 
@@ -35,7 +35,7 @@
 #include "mongo/db/update/document_diff_applier.h"
 #include "mongo/db/update/document_diff_serialization.h"
 #include "mongo/db/update/document_diff_test_helpers.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/unittest/unittest.h"
 
 namespace mongo::doc_diff {

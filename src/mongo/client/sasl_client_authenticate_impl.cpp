@@ -34,7 +34,7 @@
  * The primary entry point at runtime is saslClientAuthenticateImpl().
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kNetwork
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kNetwork
 
 #include "mongo/platform/basic.h"
 
@@ -48,7 +48,7 @@
 #include "mongo/client/sasl_client_authenticate.h"
 #include "mongo/client/sasl_client_session.h"
 #include "mongo/db/auth/sasl_command_constants.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/util/base64.h"
 #include "mongo/util/net/hostandport.h"
@@ -181,7 +181,7 @@ Future<void> asyncSaslConversation(auth::RunCommandHook runCommand,
     if (!status.isOK())
         return status;
 
-    LOGV2_DEBUG(20197, saslLogLevel, "sasl client input", "payload"_attr = base64::encode(payload));
+    LOG_DEBUG(20197, saslLogLevel, "sasl client input", "payload"_attr = base64::encode(payload));
 
     // Create new payload for our response
     std::string responsePayload;
@@ -189,10 +189,10 @@ Future<void> asyncSaslConversation(auth::RunCommandHook runCommand,
     if (!status.isOK())
         return status;
 
-    LOGV2_DEBUG(20198,
-                saslLogLevel,
-                "sasl client output",
-                "payload"_attr = base64::encode(responsePayload));
+    LOG_DEBUG(20198,
+              saslLogLevel,
+              "sasl client output",
+              "payload"_attr = base64::encode(responsePayload));
 
     // Handle a done from the server which comes before the client is complete.
     const bool serverDone = inputObj[saslCommandDoneFieldName].trueValue();

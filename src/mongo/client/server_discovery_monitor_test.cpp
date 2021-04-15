@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kDefault
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kDefault
 
 #include "mongo/platform/basic.h"
 
@@ -47,7 +47,7 @@
 #include "mongo/executor/thread_pool_mock.h"
 #include "mongo/executor/thread_pool_task_executor.h"
 #include "mongo/executor/thread_pool_task_executor_test_fixture.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/unittest/unittest.h"
 #include "mongo/util/duration.h"
 
@@ -171,10 +171,10 @@ protected:
             ASSERT_EQ(request.target, hostAndPort);
         }
 
-        LOGV2(457991,
-              "Got mock network operation",
-              "elapsed"_attr = elapsed(),
-              "request"_attr = request.toString());
+        LOG(457991,
+            "Got mock network operation",
+            "elapsed"_attr = elapsed(),
+            "request"_attr = request.toString());
 
         const auto node = replSet->getNode(requestHost);
         if (node->isRunning()) {
@@ -190,13 +190,13 @@ protected:
     void advanceTime(Duration d) {
         InNetworkGuard guard(_net);
         // Operations can happen inline with advanceTime(), so log before and after the call.
-        LOGV2_DEBUG(457992,
-                    1,
-                    "Advancing time",
-                    "elpasedStart"_attr = elapsed(),
-                    "elapsedEnd"_attr = (elapsed() + d));
+        LOG_DEBUG(457992,
+                  1,
+                  "Advancing time",
+                  "elpasedStart"_attr = elapsed(),
+                  "elapsedEnd"_attr = (elapsed() + d));
         _net->advanceTime(_net->now() + d);
-        LOGV2_DEBUG(457993, 1, "Advanced time", "timeElapsed"_attr = elapsed());
+        LOG_DEBUG(457993, 1, "Advanced time", "timeElapsed"_attr = elapsed());
     }
 
     /**

@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kCommand
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kCommand
 
 #include "mongo/platform/basic.h"
 
@@ -45,7 +45,7 @@
 #include "mongo/db/operation_context.h"
 #include "mongo/db/operation_killer.h"
 #include "mongo/db/service_context.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace mongo {
 
@@ -64,7 +64,7 @@ public:
             auto opKeys = Base::request().getOperationKeys();
 
             for (auto& opKey : opKeys) {
-                LOGV2(4615602, "Attempting to kill operation", "operationKey"_attr = opKey);
+                LOG(4615602, "Attempting to kill operation", "operationKey"_attr = opKey);
                 opKiller.killOperation(OperationKey(opKey));
             }
             Derived::killCursors(opCtx, opKeys);

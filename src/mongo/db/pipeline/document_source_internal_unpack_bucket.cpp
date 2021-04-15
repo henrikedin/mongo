@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kQuery
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kQuery
 
 #include "mongo/platform/basic.h"
 
@@ -48,7 +48,7 @@
 #include "mongo/db/pipeline/expression_context.h"
 #include "mongo/db/pipeline/lite_parsed_document_source.h"
 #include "mongo/db/timeseries/timeseries_field_names.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace mongo {
 
@@ -547,7 +547,7 @@ DocumentSourceInternalUnpackBucket::sampleUniqueMeasurementFromBuckets() {
                         _nSampledSoFar++;
                         return sampledDocument;
                     } else {
-                        LOGV2_DEBUG(
+                        LOG_DEBUG(
                             5422102,
                             1,
                             "$_internalUnpackBucket optimized for sample saw duplicate measurement",

@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kStorage
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kStorage
 
 #include "mongo/platform/basic.h"
 
@@ -43,7 +43,7 @@
 #include "mongo/db/storage/wiredtiger/wiredtiger_kv_engine.h"
 #include "mongo/db/storage/wiredtiger/wiredtiger_parameters_gen.h"
 #include "mongo/db/storage/wiredtiger/wiredtiger_util.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/stdx/thread.h"
 #include "mongo/util/scopeguard.h"
 
@@ -101,12 +101,12 @@ void _openCursor(WT_SESSION* session,
             uasserted(ErrorCodes::CursorNotFound, cursorErrMsg);
         }
 
-        LOGV2_FATAL_NOTRACE(50882,
-                            "Failed to open WiredTiger cursor. This may be due to data corruption",
-                            "uri"_attr = uri,
-                            "config"_attr = config,
-                            "error"_attr = status,
-                            "message"_attr = kWTRepairMsg);
+        LOG_FATAL_NOTRACE(50882,
+                          "Failed to open WiredTiger cursor. This may be due to data corruption",
+                          "uri"_attr = uri,
+                          "config"_attr = config,
+                          "error"_attr = status,
+                          "message"_attr = kWTRepairMsg);
     }
 }
 }  // namespace
@@ -305,7 +305,7 @@ void WiredTigerSessionCache::waitUntilDurable(OperationContext* opCtx,
                 journalListener->onDurable(token.get());
             }
         }
-        LOGV2_DEBUG(22418, 4, "created checkpoint (forced)");
+        LOG_DEBUG(22418, 4, "created checkpoint (forced)");
         return;
     }
 
@@ -347,10 +347,10 @@ void WiredTigerSessionCache::waitUntilDurable(OperationContext* opCtx,
     // Use the journal when available, or a checkpoint otherwise.
     if (_engine && _engine->isDurable()) {
         invariantWTOK(_waitUntilDurableSession->log_flush(_waitUntilDurableSession, "sync=on"));
-        LOGV2_DEBUG(22419, 4, "flushed journal");
+        LOG_DEBUG(22419, 4, "flushed journal");
     } else {
         invariantWTOK(_waitUntilDurableSession->checkpoint(_waitUntilDurableSession, nullptr));
-        LOGV2_DEBUG(22420, 4, "created checkpoint");
+        LOG_DEBUG(22420, 4, "created checkpoint");
     }
 
     if (token) {

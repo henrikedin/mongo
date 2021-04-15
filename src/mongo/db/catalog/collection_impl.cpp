@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kStorage
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kStorage
 
 #include "mongo/platform/basic.h"
 
@@ -75,7 +75,7 @@
 #include "mongo/db/update/update_driver.h"
 
 #include "mongo/db/auth/user_document_parser.h"  // XXX-ANDY
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/object_check.h"
 #include "mongo/util/fail_point.h"
 
@@ -121,10 +121,10 @@ Status checkFailCollectionInsertsFailPoint(const NamespaceString& ns, const BSON
             const std::string msg = str::stream()
                 << "Failpoint (failCollectionInserts) has been enabled (" << data
                 << "), so rejecting insert (first doc): " << firstDoc;
-            LOGV2(20287,
-                  "Failpoint (failCollectionInserts) has been enabled, so rejecting insert",
-                  "data"_attr = data,
-                  "document"_attr = firstDoc);
+            LOG(20287,
+                "Failpoint (failCollectionInserts) has been enabled, so rejecting insert",
+                "data"_attr = data,
+                "document"_attr = firstDoc);
             s = {ErrorCodes::FailPointEnabled, msg};
         },
         [&](const BSONObj& data) {
@@ -152,12 +152,12 @@ std::unique_ptr<CollatorInterface> parseCollation(OperationContext* opCtx,
     // integration, shut down the server. Errors other than IncompatibleCollationVersion should not
     // be possible, so these are an invariant rather than fassert.
     if (collator == ErrorCodes::IncompatibleCollationVersion) {
-        LOGV2(20288,
-              "Collection {nss} has a default collation which is incompatible with this version: "
-              "{collationSpec}",
-              "Collection has a default collation incompatible with this version",
-              "namespace"_attr = nss,
-              "collationSpec"_attr = collationSpec);
+        LOG(20288,
+            "Collection {nss} has a default collation which is incompatible with this version: "
+            "{collationSpec}",
+            "Collection has a default collation incompatible with this version",
+            "namespace"_attr = nss,
+            "collationSpec"_attr = collationSpec);
         fassertFailedNoTrace(40144);
     }
     invariant(collator.getStatus());
@@ -325,12 +325,12 @@ void CollectionImpl::init(OperationContext* opCtx) {
         parseValidator(opCtx, validatorDoc, MatchExpressionParser::kAllowAllSpecialFeatures);
     if (!_validator.isOK()) {
         // Log an error and startup warning if the collection validator is malformed.
-        LOGV2_WARNING_OPTIONS(20293,
-                              {logv2::LogTag::kStartupWarnings},
-                              "Collection {ns} has malformed validator: {validatorStatus}",
-                              "Collection has malformed validator",
-                              "namespace"_attr = _ns,
-                              "validatorStatus"_attr = _validator.getStatus());
+        LOG_WARNING_OPTIONS(20293,
+                            {log::LogTag::kStartupWarnings},
+                            "Collection {ns} has malformed validator: {validatorStatus}",
+                            "Collection has malformed validator",
+                            "namespace"_attr = _ns,
+                            "validatorStatus"_attr = _validator.getStatus());
     }
 
     _timeseriesOptions = collectionOptions.timeseries;
@@ -488,11 +488,11 @@ Status CollectionImpl::checkValidation(OperationContext* opCtx, const BSONObj& d
     }
 
     if (validationActionOrDefault(_validationAction) == ValidationActionEnum::warn) {
-        LOGV2_WARNING(20294,
-                      "Document would fail validation",
-                      "namespace"_attr = ns(),
-                      "document"_attr = redact(document),
-                      "errInfo"_attr = generatedError);
+        LOG_WARNING(20294,
+                    "Document would fail validation",
+                    "namespace"_attr = ns(),
+                    "document"_attr = redact(document),
+                    "errInfo"_attr = generatedError);
         return Status::OK();
     }
 
@@ -629,11 +629,11 @@ Status CollectionImpl::insertDocuments(OperationContext* opCtx,
                 whenFirst += " when first _id is ";
                 whenFirst += firstIdElem.str();
             }
-            LOGV2(20289,
-                  "hangAfterCollectionInserts fail point enabled. Blocking "
-                  "until fail point is disabled.",
-                  "namespace"_attr = _ns,
-                  "whenFirst"_attr = whenFirst);
+            LOG(20289,
+                "hangAfterCollectionInserts fail point enabled. Blocking "
+                "until fail point is disabled.",
+                "namespace"_attr = _ns,
+                "whenFirst"_attr = whenFirst);
             hangAfterCollectionInserts.pauseWhileSet(opCtx);
         },
         [&](const BSONObj& data) {
@@ -696,10 +696,10 @@ Status CollectionImpl::insertDocumentForBulkLoader(
     status = onRecordInserted(loc.getValue());
 
     if (MONGO_unlikely(failAfterBulkLoadDocInsert.shouldFail())) {
-        LOGV2(20290,
-              "Failpoint failAfterBulkLoadDocInsert enabled. Throwing "
-              "WriteConflictException",
-              "namespace"_attr = _ns);
+        LOG(20290,
+            "Failpoint failAfterBulkLoadDocInsert enabled. Throwing "
+            "WriteConflictException",
+            "namespace"_attr = _ns);
         throw WriteConflictException();
     }
 
@@ -928,7 +928,7 @@ void CollectionImpl::_cappedDeleteAsNeeded(OperationContext* opCtx) const {
 
             _shared->_recordStore->deleteRecord(opCtx, toDelete);
         } catch (const WriteConflictException&) {
-            LOGV2(22398, "Got write conflict removing capped records, ignoring");
+            LOG(22398, "Got write conflict removing capped records, ignoring");
             return;
         }
     }
@@ -999,10 +999,10 @@ void CollectionImpl::deleteDocument(OperationContext* opCtx,
                                     bool noWarn,
                                     Collection::StoreDeletedDoc storeDeletedDoc) const {
     if (isCapped()) {
-        LOGV2(20291,
-              "failing remove on a capped ns {ns}",
-              "failing remove on a capped ns",
-              "namespace"_attr = _ns);
+        LOG(20291,
+            "failing remove on a capped ns {ns}",
+            "failing remove on a capped ns",
+            "namespace"_attr = _ns);
         uasserted(10089, "cannot remove from a capped collection");
         return;
     }
@@ -1242,14 +1242,14 @@ bool CollectionImpl::isEmpty(OperationContext* opCtx) const {
         bob.appendNumber("fastCount", static_cast<long long>(fastCount));
         bob.append("cursor", str::stream() << (cursorEmptyCollRes ? "0" : ">=1"));
 
-        LOGV2_DEBUG(20292,
-                    2,
-                    "Detected erroneous fast count for collection {ns}({uuid}) "
-                    "[{getRecordStore_getIdent}]. Record count reported by: {bob_obj}",
-                    "ns"_attr = ns(),
-                    "uuid"_attr = uuid(),
-                    "getRecordStore_getIdent"_attr = getRecordStore()->getIdent(),
-                    "bob_obj"_attr = bob.obj());
+        LOG_DEBUG(20292,
+                  2,
+                  "Detected erroneous fast count for collection {ns}({uuid}) "
+                  "[{getRecordStore_getIdent}]. Record count reported by: {bob_obj}",
+                  "ns"_attr = ns(),
+                  "uuid"_attr = uuid(),
+                  "getRecordStore_getIdent"_attr = getRecordStore()->getIdent(),
+                  "bob_obj"_attr = bob.obj());
     }
 
     return cursorEmptyCollRes;

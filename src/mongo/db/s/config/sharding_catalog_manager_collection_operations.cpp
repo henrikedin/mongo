@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kSharding
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kSharding
 
 #include "mongo/platform/basic.h"
 
@@ -57,7 +57,7 @@
 #include "mongo/db/vector_clock.h"
 #include "mongo/executor/network_interface.h"
 #include "mongo/executor/task_executor.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/s/balancer_configuration.h"
 #include "mongo/s/catalog/sharding_catalog_client_impl.h"
@@ -346,17 +346,17 @@ void ShardingCatalogManager::refineCollectionShardKey(OperationContext* opCtx,
         updateShardingCatalogEntryForCollectionInTxn(
             opCtx, nss, collType, false /* upsert */, txnNumber);
 
-        LOGV2(21933,
-              "refineCollectionShardKey updated collection entry for {namespace}: took "
-              "{durationMillis} ms. Total time taken: {totalTimeMillis} ms.",
-              "refineCollectionShardKey updated collection entry",
-              "namespace"_attr = nss.ns(),
-              "durationMillis"_attr = executionTimer.millis(),
-              "totalTimeMillis"_attr = totalTimer.millis());
+        LOG(21933,
+            "refineCollectionShardKey updated collection entry for {namespace}: took "
+            "{durationMillis} ms. Total time taken: {totalTimeMillis} ms.",
+            "refineCollectionShardKey updated collection entry",
+            "namespace"_attr = nss.ns(),
+            "durationMillis"_attr = executionTimer.millis(),
+            "totalTimeMillis"_attr = totalTimer.millis());
         executionTimer.reset();
 
         if (MONGO_unlikely(hangRefineCollectionShardKeyBeforeUpdatingChunks.shouldFail())) {
-            LOGV2(21934, "Hit hangRefineCollectionShardKeyBeforeUpdatingChunks failpoint");
+            LOG(21934, "Hit hangRefineCollectionShardKeyBeforeUpdatingChunks failpoint");
             hangRefineCollectionShardKeyBeforeUpdatingChunks.pauseWhileSet(opCtx);
         }
 
@@ -385,13 +385,13 @@ void ShardingCatalogManager::refineCollectionShardKey(OperationContext* opCtx,
                                                          ),
             txnNumber);
 
-        LOGV2(21935,
-              "refineCollectionShardKey: updated chunk entries for {namespace}: took "
-              "{durationMillis} ms. Total time taken: {totalTimeMillis} ms.",
-              "refineCollectionShardKey: updated chunk entries",
-              "namespace"_attr = nss.ns(),
-              "durationMillis"_attr = executionTimer.millis(),
-              "totalTimeMillis"_attr = totalTimer.millis());
+        LOG(21935,
+            "refineCollectionShardKey: updated chunk entries for {namespace}: took "
+            "{durationMillis} ms. Total time taken: {totalTimeMillis} ms.",
+            "refineCollectionShardKey: updated chunk entries",
+            "namespace"_attr = nss.ns(),
+            "durationMillis"_attr = executionTimer.millis(),
+            "totalTimeMillis"_attr = totalTimer.millis());
         executionTimer.reset();
 
         // Update all config.tags entries for the given namespace by setting their bounds for
@@ -409,16 +409,16 @@ void ShardingCatalogManager::refineCollectionShardKey(OperationContext* opCtx,
             txnNumber);
 
 
-        LOGV2(21936,
-              "refineCollectionShardKey: updated zone entries for {namespace}: took "
-              "{durationMillis} ms. Total time taken: {totalTimeMillis} ms.",
-              "refineCollectionShardKey: updated zone entries",
-              "namespace"_attr = nss.ns(),
-              "durationMillis"_attr = executionTimer.millis(),
-              "totalTimeMillis"_attr = totalTimer.millis());
+        LOG(21936,
+            "refineCollectionShardKey: updated zone entries for {namespace}: took "
+            "{durationMillis} ms. Total time taken: {totalTimeMillis} ms.",
+            "refineCollectionShardKey: updated zone entries",
+            "namespace"_attr = nss.ns(),
+            "durationMillis"_attr = executionTimer.millis(),
+            "totalTimeMillis"_attr = totalTimer.millis());
 
         if (MONGO_unlikely(hangRefineCollectionShardKeyBeforeCommit.shouldFail())) {
-            LOGV2(21937, "Hit hangRefineCollectionShardKeyBeforeCommit failpoint");
+            LOG(21937, "Hit hangRefineCollectionShardKeyBeforeCommit failpoint");
             hangRefineCollectionShardKeyBeforeCommit.pauseWhileSet(opCtx);
         }
     };
@@ -436,8 +436,7 @@ void ShardingCatalogManager::refineCollectionShardKey(OperationContext* opCtx,
     try {
         triggerFireAndForgetShardRefreshes(opCtx, collType);
     } catch (const DBException& ex) {
-        LOGV2(
-            51798,
+        LOG(51798,
             "refineCollectionShardKey: failed to best-effort refresh all shards containing chunks "
             "in {namespace}",
             "refineCollectionShardKey: failed to best-effort refresh all shards containing chunks",

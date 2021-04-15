@@ -30,14 +30,14 @@
 /**
  * This file contains a test framework for testing sbe::PlanStages.
  */
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kQuery
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kQuery
 
 #include "mongo/platform/basic.h"
 
 #include "mongo/db/exec/sbe/sbe_plan_stage_test.h"
 
 
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace mongo::sbe {
 
@@ -49,7 +49,7 @@ void PlanStageTestFixture::assertValuesEqual(value::TypeTags lhsTag,
     if (!equal) {
         std::stringstream ss;
         ss << std::make_pair(lhsTag, lhsVal) << " != " << std::make_pair(rhsTag, rhsVal);
-        LOGV2(5075401, "{msg}", "msg"_attr = ss.str());
+        LOG(5075401, "{msg}", "msg"_attr = ss.str());
     }
     ASSERT_TRUE(equal);
 }

@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kConnectionPool
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kConnectionPool
 
 #include "mongo/platform/basic.h"
 
@@ -39,8 +39,8 @@
 #include "mongo/bson/bsonobjbuilder.h"
 #include "mongo/executor/connection_pool_stats.h"
 #include "mongo/executor/remote_command_request.h"
-#include "mongo/logv2/log.h"
-#include "mongo/logv2/log_severity_suppressor.h"
+#include "mongo/log/log.h"
+#include "mongo/log/log_severity_suppressor.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/debug_util.h"
 #include "mongo/util/destructor_guard.h"
@@ -62,8 +62,8 @@ namespace mongo {
 namespace {
 
 auto makeSeveritySuppressor() {
-    return std::make_unique<logv2::KeyedSeveritySuppressor<HostAndPort>>(
-        Seconds{1}, logv2::LogSeverity::Log(), logv2::LogSeverity::Debug(2));
+    return std::make_unique<log::KeyedSeveritySuppressor<HostAndPort>>(
+        Seconds{1}, log::LogSeverity::Log(), log::LogSeverity::Debug(2));
 }
 
 template <typename Map, typename Key>
@@ -121,12 +121,12 @@ size_t ConnectionPool::ConnectionInterface::getGeneration() const {
 void ConnectionPool::ControllerInterface::init(ConnectionPool* pool) {
     invariant(pool);
 
-    LOGV2_DEBUG(22558,
-                2,
-                "Initializing connection pool controller for {pool} as a {controller}",
-                "Initializing connection pool controller",
-                "pool"_attr = pool->_name,
-                "controller"_attr = name());
+    LOG_DEBUG(22558,
+              2,
+              "Initializing connection pool controller for {pool} as a {controller}",
+              "Initializing connection pool controller",
+              "pool"_attr = pool->_name,
+              "controller"_attr = name());
     _pool = pool;
 }
 
@@ -346,7 +346,7 @@ public:
 
     void fassertSSLModeIs(transport::ConnectSSLMode desired) const {
         if (desired != _sslMode) {
-            LOGV2_FATAL_NOTRACE(51043, "Mixing ssl modes for a single host is not supported");
+            LOG_FATAL_NOTRACE(51043, "Mixing ssl modes for a single host is not supported");
         }
     }
 
@@ -650,11 +650,11 @@ Future<ConnectionPool::ConnectionHandle> ConnectionPool::SpecificPool::getConnec
         auto conn = tryGetConnection();
 
         if (conn) {
-            LOGV2_DEBUG(22559,
-                        kDiagnosticLogLevel,
-                        "Using existing idle connection to {hostAndPort}",
-                        "Using existing idle connection",
-                        "hostAndPort"_attr = _hostAndPort);
+            LOG_DEBUG(22559,
+                      kDiagnosticLogLevel,
+                      "Using existing idle connection to {hostAndPort}",
+                      "Using existing idle connection",
+                      "hostAndPort"_attr = _hostAndPort);
             return Future<ConnectionPool::ConnectionHandle>::makeReady(std::move(conn));
         }
     }
@@ -663,12 +663,12 @@ Future<ConnectionPool::ConnectionHandle> ConnectionPool::SpecificPool::getConnec
     if (timeout < Milliseconds(0) || timeout > pendingTimeout) {
         timeout = pendingTimeout;
     }
-    LOGV2_DEBUG(22560,
-                kDiagnosticLogLevel,
-                "Requesting new connection to {hostAndPort} with timeout {timeout}",
-                "Requesting new connection",
-                "hostAndPort"_attr = _hostAndPort,
-                "timeout"_attr = timeout);
+    LOG_DEBUG(22560,
+              kDiagnosticLogLevel,
+              "Requesting new connection to {hostAndPort} with timeout {timeout}",
+              "Requesting new connection",
+              "hostAndPort"_attr = _hostAndPort,
+              "timeout"_attr = timeout);
 
     const auto expiration = now + timeout;
     auto pf = makePromiseFuture<ConnectionHandle>();
@@ -700,10 +700,10 @@ ConnectionPool::ConnectionHandle ConnectionPool::SpecificPool::tryGetConnection(
         conn->cancelTimeout();
 
         if (!conn->maybeHealthy()) {
-            LOGV2(22561,
-                  "Dropping unhealthy pooled connection to {hostAndPort}",
-                  "Dropping unhealthy pooled connection",
-                  "hostAndPort"_attr = conn->getHostAndPort());
+            LOG(22561,
+                "Dropping unhealthy pooled connection to {hostAndPort}",
+                "Dropping unhealthy pooled connection",
+                "hostAndPort"_attr = conn->getHostAndPort());
 
             // Drop the bad connection via scoped destruction and retry
             continue;
@@ -736,45 +736,45 @@ void ConnectionPool::SpecificPool::finishRefresh(ConnectionInterface* connPtr, S
     // various callers have their own time limit which is unrelated
     // to our internal one.
     if (status.code() == ErrorCodes::NetworkInterfaceExceededTimeLimit) {
-        LOGV2_DEBUG(22562,
-                    kDiagnosticLogLevel,
-                    "Pending connection to host {hostAndPort} did not complete within the timeout, "
-                    "retrying with a new connection; "
-                    "{numOpenConns} connections to that host remain open",
-                    "Pending connection did not complete within the timeout, "
-                    "retrying with a new connection",
-                    "hostAndPort"_attr = _hostAndPort,
-                    "numOpenConns"_attr = openConnections());
+        LOG_DEBUG(22562,
+                  kDiagnosticLogLevel,
+                  "Pending connection to host {hostAndPort} did not complete within the timeout, "
+                  "retrying with a new connection; "
+                  "{numOpenConns} connections to that host remain open",
+                  "Pending connection did not complete within the timeout, "
+                  "retrying with a new connection",
+                  "hostAndPort"_attr = _hostAndPort,
+                  "numOpenConns"_attr = openConnections());
         return;
     }
 
     // Pass a failure on through
     if (!status.isOK()) {
-        LOGV2_DEBUG(22563,
-                    kDiagnosticLogLevel,
-                    "Connection failed to {hostAndPort} due to {error}",
-                    "Connection failed",
-                    "hostAndPort"_attr = _hostAndPort,
-                    "error"_attr = redact(status));
+        LOG_DEBUG(22563,
+                  kDiagnosticLogLevel,
+                  "Connection failed to {hostAndPort} due to {error}",
+                  "Connection failed",
+                  "hostAndPort"_attr = _hostAndPort,
+                  "error"_attr = redact(status));
         processFailure(status);
         return;
     }
 
     // If the host and port were dropped, let this lapse and spawn new connections
     if (!conn || conn->getGeneration() != _generation) {
-        LOGV2_DEBUG(22564,
-                    kDiagnosticLogLevel,
-                    "Dropping late refreshed connection to {hostAndPort}",
-                    "Dropping late refreshed connection",
-                    "hostAndPort"_attr = _hostAndPort);
+        LOG_DEBUG(22564,
+                  kDiagnosticLogLevel,
+                  "Dropping late refreshed connection to {hostAndPort}",
+                  "Dropping late refreshed connection",
+                  "hostAndPort"_attr = _hostAndPort);
         return;
     }
 
-    LOGV2_DEBUG(22565,
-                kDiagnosticLogLevel,
-                "Finishing connection refresh for {hostAndPort}",
-                "Finishing connection refresh",
-                "hostAndPort"_attr = _hostAndPort);
+    LOG_DEBUG(22565,
+              kDiagnosticLogLevel,
+              "Finishing connection refresh for {hostAndPort}",
+              "Finishing connection refresh",
+              "hostAndPort"_attr = _hostAndPort);
 
     // If the connection refreshed successfully, throw it back in the ready pool
     addToReady(std::move(conn));
@@ -800,13 +800,13 @@ void ConnectionPool::SpecificPool::returnConnection(ConnectionInterface* connPtr
 
     if (auto status = conn->getStatus(); !status.isOK()) {
         // TODO: alert via some callback if the host is bad
-        LOGV2(22566,
-              "Ending connection to host {hostAndPort} due to bad connection status: {error}; "
-              "{numOpenConns} connections to that host remain open",
-              "Ending connection due to bad connection status",
-              "hostAndPort"_attr = _hostAndPort,
-              "error"_attr = redact(status),
-              "numOpenConns"_attr = openConnections());
+        LOG(22566,
+            "Ending connection to host {hostAndPort} due to bad connection status: {error}; "
+            "{numOpenConns} connections to that host remain open",
+            "Ending connection due to bad connection status",
+            "hostAndPort"_attr = _hostAndPort,
+            "error"_attr = redact(status),
+            "numOpenConns"_attr = openConnections());
         return;
     }
 
@@ -818,22 +818,22 @@ void ConnectionPool::SpecificPool::returnConnection(ConnectionInterface* connPtr
         if (_readyPool.size() + _processingPool.size() + _checkedOutPool.size() >=
             controls.targetConnections) {
             // If we already have minConnections, just let the connection lapse
-            LOGV2(22567,
-                  "Ending idle connection to host {hostAndPort} because the pool meets "
-                  "constraints; {numOpenConns} connections to that host remain open",
-                  "Ending idle connection because the pool meets constraints",
-                  "hostAndPort"_attr = _hostAndPort,
-                  "numOpenConns"_attr = openConnections());
+            LOG(22567,
+                "Ending idle connection to host {hostAndPort} because the pool meets "
+                "constraints; {numOpenConns} connections to that host remain open",
+                "Ending idle connection because the pool meets constraints",
+                "hostAndPort"_attr = _hostAndPort,
+                "numOpenConns"_attr = openConnections());
             return;
         }
 
         _processingPool[connPtr] = std::move(conn);
 
-        LOGV2_DEBUG(22568,
-                    kDiagnosticLogLevel,
-                    "Refreshing connection to {hostAndPort}",
-                    "Refreshing connection",
-                    "hostAndPort"_attr = _hostAndPort);
+        LOG_DEBUG(22568,
+                  kDiagnosticLogLevel,
+                  "Refreshing connection to {hostAndPort}",
+                  "Refreshing connection",
+                  "hostAndPort"_attr = _hostAndPort);
         connPtr->refresh(_parent->_controller->pendingTimeout(),
                          guardCallback([this](auto conn, auto status) {
                              finishRefresh(std::move(conn), std::move(status));
@@ -843,11 +843,11 @@ void ConnectionPool::SpecificPool::returnConnection(ConnectionInterface* connPtr
     }
 
     // If it's fine as it is, just put it in the ready queue
-    LOGV2_DEBUG(22569,
-                kDiagnosticLogLevel,
-                "Returning ready connection to {hostAndPort}",
-                "Returning ready connection",
-                "hostAndPort"_attr = _hostAndPort);
+    LOG_DEBUG(22569,
+              kDiagnosticLogLevel,
+              "Returning ready connection to {hostAndPort}",
+              "Returning ready connection",
+              "hostAndPort"_attr = _hostAndPort);
     addToReady(std::move(conn));
 
     fulfillRequests();
@@ -864,11 +864,11 @@ void ConnectionPool::SpecificPool::addToReady(OwnedConnection conn) {
     // immediately check them back in (which kicks off the refresh logic in
     // returnConnection
     auto returnConnectionFunc = guardCallback([this, connPtr]() {
-        LOGV2_DEBUG(22570,
-                    kDiagnosticLogLevel,
-                    "Triggered refresh timeout for {hostAndPort}",
-                    "Triggered refresh timeout",
-                    "hostAndPort"_attr = _hostAndPort);
+        LOG_DEBUG(22570,
+                  kDiagnosticLogLevel,
+                  "Triggered refresh timeout for {hostAndPort}",
+                  "Triggered refresh timeout",
+                  "hostAndPort"_attr = _hostAndPort);
         auto conn = takeFromPool(_readyPool, connPtr);
 
         // We've already been checked out. We don't need to refresh ourselves.
@@ -895,11 +895,11 @@ void ConnectionPool::SpecificPool::triggerShutdown(const Status& status) {
         return;
     }
 
-    LOGV2_DEBUG(22571,
-                2,
-                "Delisting connection pool for {hostAndPort}",
-                "Delistinng connection pool",
-                "hostAndPort"_attr = _hostAndPort);
+    LOG_DEBUG(22571,
+              2,
+              "Delisting connection pool for {hostAndPort}",
+              "Delistinng connection pool",
+              "hostAndPort"_attr = _hostAndPort);
 
     // Make sure the pool lifetime lasts until the end of this function,
     // it could be only in the map of pools
@@ -920,12 +920,12 @@ void ConnectionPool::SpecificPool::processFailure(const Status& status) {
 
     if (!_readyPool.empty() || !_processingPool.empty()) {
         static auto& bumpedSeverity = *makeSeveritySuppressor().release();
-        LOGV2_DEBUG(22572,
-                    bumpedSeverity(_hostAndPort).toInt(),
-                    "Dropping all pooled connections to {hostAndPort} due to {error}",
-                    "Dropping all pooled connections",
-                    "hostAndPort"_attr = _hostAndPort,
-                    "error"_attr = redact(status));
+        LOG_DEBUG(22572,
+                  bumpedSeverity(_hostAndPort).toInt(),
+                  "Dropping all pooled connections to {hostAndPort} due to {error}",
+                  "Dropping all pooled connections",
+                  "hostAndPort"_attr = _hostAndPort,
+                  "error"_attr = redact(status));
     }
 
     // When a connection enters the ready pool, its timer is set to eventually refresh the
@@ -953,11 +953,11 @@ void ConnectionPool::SpecificPool::processFailure(const Status& status) {
         request.second.setError(status);
     }
 
-    LOGV2_DEBUG(22573,
-                kDiagnosticLogLevel,
-                "Failing requests to {hostAndPort}",
-                "Failing requests",
-                "hostAndPort"_attr = _hostAndPort);
+    LOG_DEBUG(22573,
+              kDiagnosticLogLevel,
+              "Failing requests to {hostAndPort}",
+              "Failing requests",
+              "hostAndPort"_attr = _hostAndPort);
     _requests.clear();
 }
 
@@ -995,22 +995,22 @@ void ConnectionPool::SpecificPool::spawnConnections() {
     }
 
     if (_health.isFailed) {
-        LOGV2_DEBUG(22574,
-                    kDiagnosticLogLevel,
-                    "Pool for {hostAndPort} has failed recently, "
-                    "postponing any attempts to spawn connections",
-                    "Pool has failed recently, postponing any attempts to spawn connections",
-                    "hostAndPort"_attr = _hostAndPort);
+        LOG_DEBUG(22574,
+                  kDiagnosticLogLevel,
+                  "Pool for {hostAndPort} has failed recently, "
+                  "postponing any attempts to spawn connections",
+                  "Pool has failed recently, postponing any attempts to spawn connections",
+                  "hostAndPort"_attr = _hostAndPort);
         return;
     }
 
     auto controls = _parent->_controller->getControls(_id);
-    LOGV2_DEBUG(22575,
-                kDiagnosticLogLevel,
-                "Comparing connection state for {hostAndPort} to controls: {poolControls}",
-                "Comparing connection state to controls",
-                "hostAndPort"_attr = _hostAndPort,
-                "poolControls"_attr = controls);
+    LOG_DEBUG(22575,
+              kDiagnosticLogLevel,
+              "Comparing connection state for {hostAndPort} to controls: {poolControls}",
+              "Comparing connection state to controls",
+              "hostAndPort"_attr = _hostAndPort,
+              "poolControls"_attr = controls);
 
     auto pendingConnections = refreshingConnections();
     if (pendingConnections >= controls.maxPendingConnections) {
@@ -1023,20 +1023,20 @@ void ConnectionPool::SpecificPool::spawnConnections() {
     }
 
     static auto& bumpedSeverity = *makeSeveritySuppressor().release();
-    LOGV2_DEBUG(22576,
-                bumpedSeverity(_hostAndPort).toInt(),
-                "Connecting to {hostAndPort}",
-                "Connecting",
-                "hostAndPort"_attr = _hostAndPort);
+    LOG_DEBUG(22576,
+              bumpedSeverity(_hostAndPort).toInt(),
+              "Connecting to {hostAndPort}",
+              "Connecting",
+              "hostAndPort"_attr = _hostAndPort);
 
     auto allowance = std::min(controls.targetConnections - totalConnections,
                               controls.maxPendingConnections - pendingConnections);
-    LOGV2_DEBUG(22577,
-                kDiagnosticLogLevel,
-                "Spawning {connAllowance} connections to {hostAndPort}",
-                "Spawning connections",
-                "connAllowance"_attr = allowance,
-                "hostAndPort"_attr = _hostAndPort);
+    LOG_DEBUG(22577,
+              kDiagnosticLogLevel,
+              "Spawning {connAllowance} connections to {hostAndPort}",
+              "Spawning connections",
+              "connAllowance"_attr = allowance,
+              "hostAndPort"_attr = _hostAndPort);
 
     for (decltype(allowance) i = 0; i < allowance; ++i) {
         OwnedConnection handle;
@@ -1044,9 +1044,9 @@ void ConnectionPool::SpecificPool::spawnConnections() {
             // make a new connection and put it in processing
             handle = _parent->_factory->makeConnection(_hostAndPort, _sslMode, _generation);
         } catch (std::system_error& e) {
-            LOGV2_FATAL(40336,
-                        "Failed to construct a new connection object: {reason}",
-                        "reason"_attr = e.what());
+            LOG_FATAL(40336,
+                      "Failed to construct a new connection object: {reason}",
+                      "reason"_attr = e.what());
         }
 
         _processingPool[handle.get()] = handle;
@@ -1163,12 +1163,12 @@ void ConnectionPool::SpecificPool::updateController() {
         availableConnections(),
         inUseConnections(),
     };
-    LOGV2_DEBUG(22578,
-                kDiagnosticLogLevel,
-                "Updating pool controller for {hostAndPort} with state: {poolState}",
-                "Updating pool controller",
-                "hostAndPort"_attr = _hostAndPort,
-                "poolState"_attr = state);
+    LOG_DEBUG(22578,
+              kDiagnosticLogLevel,
+              "Updating pool controller for {hostAndPort} with state: {poolState}",
+              "Updating pool controller",
+              "hostAndPort"_attr = _hostAndPort,
+              "poolState"_attr = state);
     auto hostGroup = controller.updateHost(_id, std::move(state));
 
     // If we can shutdown, then do so
@@ -1185,10 +1185,10 @@ void ConnectionPool::SpecificPool::updateController() {
                 // shutdown. For example, it is always inappropriate to shutdown a SpecificPool with
                 // connections in use or requests outstanding unless its parent ConnectionPool is
                 // also shutting down.
-                LOGV2_WARNING(4293001,
-                              "Controller requested shutdown but connections still in use, "
-                              "connection pool will stay active.",
-                              "hostAndPort"_attr = pool->_hostAndPort);
+                LOG_WARNING(4293001,
+                            "Controller requested shutdown but connections still in use, "
+                            "connection pool will stay active.",
+                            "hostAndPort"_attr = pool->_hostAndPort);
                 continue;
             }
 
@@ -1223,11 +1223,11 @@ void ConnectionPool::SpecificPool::updateController() {
 void ConnectionPool::SpecificPool::updateState() {
     if (_health.isShutdown) {
         // If we're in shutdown, there is nothing to update. Our clients are all gone.
-        LOGV2_DEBUG(22579,
-                    kDiagnosticLogLevel,
-                    "Pool {hostAndPort} is dead",
-                    "Pool is dead",
-                    "hostAndPort"_attr = _hostAndPort);
+        LOG_DEBUG(22579,
+                  kDiagnosticLogLevel,
+                  "Pool {hostAndPort} is dead",
+                  "Pool is dead",
+                  "hostAndPort"_attr = _hostAndPort);
         return;
     }
 

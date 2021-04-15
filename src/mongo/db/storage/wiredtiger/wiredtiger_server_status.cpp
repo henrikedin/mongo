@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kFTDC
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kFTDC
 
 #include "mongo/platform/basic.h"
 
@@ -41,7 +41,7 @@
 #include "mongo/db/storage/wiredtiger/wiredtiger_recovery_unit.h"
 #include "mongo/db/storage/wiredtiger/wiredtiger_session_cache.h"
 #include "mongo/db/storage/wiredtiger/wiredtiger_util.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/assert_util.h"
 
 namespace mongo {
@@ -60,7 +60,7 @@ BSONObj WiredTigerServerStatusSection::generateSection(OperationContext* opCtx,
     Lock::GlobalLock lk(
         opCtx, LockMode::MODE_IS, Date_t::now(), Lock::InterruptBehavior::kLeaveUnlocked);
     if (!lk.isLocked()) {
-        LOGV2_DEBUG(3088800, 2, "Failed to retrieve wiredTiger statistics");
+        LOG_DEBUG(3088800, 2, "Failed to retrieve wiredTiger statistics");
         return BSONObj();
     }
 

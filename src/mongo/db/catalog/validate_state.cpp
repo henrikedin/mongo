@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kStorage
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kStorage
 
 #include "mongo/platform/basic.h"
 
@@ -42,7 +42,7 @@
 #include "mongo/db/operation_context.h"
 #include "mongo/db/storage/durable_catalog.h"
 #include "mongo/db/views/view_catalog.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/fail_point.h"
 
 namespace mongo {
@@ -278,7 +278,7 @@ void ValidateState::_relockDatabaseAndCollection(OperationContext* opCtx) {
     _databaseLock.reset();
 
     if (MONGO_unlikely(hangDuringYieldingLocksForValidation.shouldFail())) {
-        LOGV2(20411, "Hanging on fail point 'hangDuringYieldingLocksForValidation'");
+        LOG(20411, "Hanging on fail point 'hangDuringYieldingLocksForValidation'");
         hangDuringYieldingLocksForValidation.pauseWhileSet();
     }
 

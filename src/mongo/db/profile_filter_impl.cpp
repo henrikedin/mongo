@@ -27,9 +27,9 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kQuery
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kQuery
 
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/platform/basic.h"
 
 #include "mongo/db/pipeline/expression_context.h"
@@ -69,7 +69,7 @@ bool ProfileFilterImpl::matches(OperationContext* opCtx,
     try {
         return _matcher.matches(_makeBSON({opCtx, op, curop}));
     } catch (const DBException& e) {
-        LOGV2_DEBUG(4910202, 5, "Profile filter threw an exception", "exception"_attr = e);
+        LOG_DEBUG(4910202, 5, "Profile filter threw an exception", "exception"_attr = e);
         return false;
     }
 }

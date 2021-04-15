@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kStorage
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kStorage
 
 #include "mongo/platform/basic.h"
 
@@ -50,7 +50,7 @@
 #include "mongo/db/query/plan_cache.h"
 #include "mongo/db/query/planner_ixselect.h"
 #include "mongo/db/service_context.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/clock_source.h"
 
 namespace mongo {
@@ -181,17 +181,17 @@ void CollectionQueryInfo::clearQueryCache(OperationContext* opCtx, const Collect
     // PlanCache instance for this collection clone. Checking the refcount can't race as we can't
     // start readers on this collection while it is writable
     if (_planCache.use_count() == 1) {
-        LOGV2_DEBUG(5014501,
-                    1,
-                    "Clearing plan cache - collection info cache cleared",
-                    "namespace"_attr = coll->ns());
+        LOG_DEBUG(5014501,
+                  1,
+                  "Clearing plan cache - collection info cache cleared",
+                  "namespace"_attr = coll->ns());
 
         _planCache->clear();
     } else {
-        LOGV2_DEBUG(5014502,
-                    1,
-                    "Clearing plan cache - collection info cache reinstantiated",
-                    "namespace"_attr = coll->ns());
+        LOG_DEBUG(5014502,
+                  1,
+                  "Clearing plan cache - collection info cache reinstantiated",
+                  "namespace"_attr = coll->ns());
 
         _planCache = std::make_shared<PlanCache>();
         updatePlanCacheIndexEntries(opCtx, coll);
@@ -199,10 +199,10 @@ void CollectionQueryInfo::clearQueryCache(OperationContext* opCtx, const Collect
 }
 
 void CollectionQueryInfo::clearQueryCacheForSetMultikey(const CollectionPtr& coll) const {
-    LOGV2_DEBUG(5014500,
-                1,
-                "Clearing plan cache for multikey - collection info cache cleared",
-                "namespace"_attr = coll->ns());
+    LOG_DEBUG(5014500,
+              1,
+              "Clearing plan cache for multikey - collection info cache cleared",
+              "namespace"_attr = coll->ns());
     _planCache->clear();
 }
 

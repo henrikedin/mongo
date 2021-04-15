@@ -115,14 +115,14 @@ public:
 #ifdef MONGO_CONFIG_SSL
         _sslContext = transientSSLContext ? transientSSLContext : *tl->_sslContext;
         if (transientSSLContext) {
-            logv2::DynamicAttributes attrs;
+            log::DynamicAttributes attrs;
             if (transientSSLContext->targetClusterURI) {
                 attrs.add("targetClusterURI", *transientSSLContext->targetClusterURI);
             }
             attrs.add("isIngress", isIngressSession);
             attrs.add("connectionId", id());
             attrs.add("remote", remote());
-            LOGV2(5271001, "Initializing the ASIOSession with transient SSL context", attrs);
+            LOG(5271001, "Initializing the ASIOSession with transient SSL context", attrs);
         }
 #endif
     } catch (const DBException&) {
@@ -162,10 +162,10 @@ public:
             std::error_code ec;
             getSocket().shutdown(GenericSocket::shutdown_both, ec);
             if ((ec) && (ec != asio::error::not_connected)) {
-                LOGV2_ERROR(23841,
-                            "Error shutting down socket: {error}",
-                            "Error shutting down socket",
-                            "error"_attr = ec.message());
+                LOG_ERROR(23841,
+                          "Error shutting down socket: {error}",
+                          "Error shutting down socket",
+                          "error"_attr = ec.message());
             }
         }
     }
@@ -228,11 +228,11 @@ public:
     }
 
     void cancelAsyncOperations(const BatonHandle& baton = nullptr) override {
-        LOGV2_DEBUG(4615608,
-                    3,
-                    "Cancelling outstanding I/O operations on connection to {remote}",
-                    "Cancelling outstanding I/O operations on connection to remote",
-                    "remote"_attr = _remote);
+        LOG_DEBUG(4615608,
+                  3,
+                  "Cancelling outstanding I/O operations on connection to {remote}",
+                  "Cancelling outstanding I/O operations on connection to remote",
+                  "remote"_attr = _remote);
         if (baton && baton->networking() && baton->networking()->cancelSession(*this)) {
             // If we have a baton, it was for networking, and it owned our session, then we're done.
             return;
@@ -255,10 +255,10 @@ public:
         auto swPollEvents = pollASIOSocket(getSocket(), POLLIN, Milliseconds{0});
         if (!swPollEvents.isOK()) {
             if (swPollEvents != ErrorCodes::NetworkTimeout) {
-                LOGV2_WARNING(4615609,
-                              "Failed to poll socket for connectivity check: {error}",
-                              "Failed to poll socket for connectivity check",
-                              "error"_attr = swPollEvents.getStatus());
+                LOG_WARNING(4615609,
+                            "Failed to poll socket for connectivity check: {error}",
+                            "Failed to poll socket for connectivity check",
+                            "error"_attr = swPollEvents.getStatus());
                 return false;
             }
             return true;
@@ -271,10 +271,10 @@ public:
             if (size == sizeof(testByte)) {
                 return true;
             } else if (size == -1) {
-                LOGV2_WARNING(4615610,
-                              "Failed to check socket connectivity: {error}",
-                              "Failed to check socket connectivity",
-                              "error"_attr = errnoWithDescription(errno));
+                LOG_WARNING(4615610,
+                            "Failed to check socket connectivity: {error}",
+                            "Failed to check socket connectivity",
+                            "error"_attr = errnoWithDescription(errno));
             }
             // If size == 0 then we got disconnected and we should return false.
         }
@@ -454,12 +454,12 @@ private:
                     sb << "recv(): message msgLen " << msgLen << " is invalid. "
                        << "Min " << kHeaderSize << " Max: " << MaxMessageSizeBytes;
                     const auto str = sb.str();
-                    LOGV2(4615638,
-                          "recv(): message msgLen {msgLen} is invalid. Min: {min} Max: {max}",
-                          "recv(): message mstLen is invalid.",
-                          "msgLen"_attr = msgLen,
-                          "min"_attr = kHeaderSize,
-                          "max"_attr = MaxMessageSizeBytes);
+                    LOG(4615638,
+                        "recv(): message msgLen {msgLen} is invalid. Min: {min} Max: {max}",
+                        "recv(): message mstLen is invalid.",
+                        "msgLen"_attr = msgLen,
+                        "min"_attr = kHeaderSize,
+                        "max"_attr = MaxMessageSizeBytes);
 
                     return Future<Message>::makeReady(Status(ErrorCodes::ProtocolError, str));
                 }
@@ -749,12 +749,12 @@ private:
             return doHandshake().then([this](size_t size) {
                 if (_sslSocket->get_sni()) {
                     auto sniName = _sslSocket->get_sni().get();
-                    LOGV2_DEBUG(4908000,
-                                2,
-                                "Client connected with SNI extension",
-                                "sniName"_attr = sniName);
+                    LOG_DEBUG(4908000,
+                              2,
+                              "Client connected with SNI extension",
+                              "sniName"_attr = sniName);
                 } else {
-                    LOGV2_DEBUG(4908001, 2, "Client connected without SNI extension");
+                    LOG_DEBUG(4908001, 2, "Client connected without SNI extension");
                 }
                 if (SSLPeerInfo::forSession(shared_from_this()).subjectName.empty()) {
                     return getSSLManager()
@@ -777,12 +777,12 @@ private:
         } else {
             if (!sslGlobalParams.disableNonSSLConnectionLogging &&
                 _tl->_sslMode() == SSLParams::SSLMode_preferSSL) {
-                LOGV2(23838,
-                      "SSL mode is set to 'preferred' and connection {connectionId} to {remote} is "
-                      "not using SSL.",
-                      "SSL mode is set to 'preferred' and connection to remote is not using SSL.",
-                      "connectionId"_attr = id(),
-                      "remote"_attr = remote());
+                LOG(23838,
+                    "SSL mode is set to 'preferred' and connection {connectionId} to {remote} is "
+                    "not using SSL.",
+                    "SSL mode is set to 'preferred' and connection to remote is not using SSL.",
+                    "connectionId"_attr = id(),
+                    "remote"_attr = remote());
             }
             return Future<bool>::makeReady(false);
         }

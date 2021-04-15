@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kCommand
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kCommand
 
 #include "mongo/platform/basic.h"
 
@@ -58,7 +58,7 @@
 #include "mongo/db/service_context.h"
 #include "mongo/db/storage/durable_catalog.h"
 #include "mongo/db/views/view_catalog.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/fail_point.h"
 #include "mongo/util/scopeguard.h"
 
@@ -157,16 +157,16 @@ Status renameTargetCollectionToTmp(OperationContext* opCtx,
 
         wunit.commit();
 
-        LOGV2(20397,
-              "Successfully renamed the target {targetNs} ({targetUUID}) to {tmpName} so that the "
-              "source {sourceNs} ({sourceUUID}) could be renamed to {targetNs2}",
-              "Successfully renamed the target so that the source could be renamed",
-              "existingTargetNamespace"_attr = targetNs,
-              "existingTargetUUID"_attr = targetUUID,
-              "renamedExistingTarget"_attr = tmpName,
-              "sourceNamespace"_attr = sourceNs,
-              "sourceUUID"_attr = sourceUUID,
-              "newTargetNamespace"_attr = targetNs);
+        LOG(20397,
+            "Successfully renamed the target {targetNs} ({targetUUID}) to {tmpName} so that the "
+            "source {sourceNs} ({sourceUUID}) could be renamed to {targetNs2}",
+            "Successfully renamed the target so that the source could be renamed",
+            "existingTargetNamespace"_attr = targetNs,
+            "existingTargetUUID"_attr = targetUUID,
+            "renamedExistingTarget"_attr = tmpName,
+            "sourceNamespace"_attr = sourceNs,
+            "sourceUUID"_attr = sourceUUID,
+            "newTargetNamespace"_attr = targetNs);
 
         return Status::OK();
     });
@@ -237,7 +237,7 @@ Status renameCollectionAndDropTarget(OperationContext* opCtx,
             // 'renameOpTime' must be null because a valid 'renameOpTimeFromApplyOps' implies
             // replicated writes are not enabled.
             if (!renameOpTime.isNull()) {
-                LOGV2_FATAL(
+                LOG_FATAL(
                     40616,
                     "renameCollection: {from} to {to} (with dropTarget=true) - unexpected "
                     "renameCollection oplog entry written to the oplog with optime {renameOpTime}",
@@ -533,12 +533,12 @@ Status renameBetweenDBs(OperationContext* opCtx,
     }
     const auto& tmpName = tmpNameResult.getValue();
 
-    LOGV2(20398,
-          "Attempting to create temporary collection: {tmpName} with the contents of collection: "
-          "{source}",
-          "Attempting to create temporary collection",
-          "temporaryCollection"_attr = tmpName,
-          "sourceCollection"_attr = source);
+    LOG(20398,
+        "Attempting to create temporary collection: {tmpName} with the contents of collection: "
+        "{source}",
+        "Attempting to create temporary collection",
+        "temporaryCollection"_attr = tmpName,
+        "sourceCollection"_attr = source);
 
     Collection* tmpColl = nullptr;
     {
@@ -570,14 +570,14 @@ Status renameBetweenDBs(OperationContext* opCtx,
         if (!status.isOK()) {
             // Ignoring failure case when dropping the temporary collection during cleanup because
             // the rename operation has already failed for another reason.
-            LOGV2(20399,
-                  "Unable to drop temporary collection {tmpName} while renaming from {source} to "
-                  "{target}: {error}",
-                  "Unable to drop temporary collection while renaming",
-                  "tempCollection"_attr = tmpName,
-                  "source"_attr = source,
-                  "target"_attr = target,
-                  "error"_attr = status);
+            LOG(20399,
+                "Unable to drop temporary collection {tmpName} while renaming from {source} to "
+                "{target}: {error}",
+                "Unable to drop temporary collection while renaming",
+                "tempCollection"_attr = tmpName,
+                "source"_attr = source,
+                "target"_attr = target,
+                "error"_attr = status);
         }
     });
 
@@ -809,12 +809,12 @@ Status renameCollection(OperationContext* opCtx,
     }
 
     StringData dropTargetMsg = options.dropTarget ? "yes"_sd : "no"_sd;
-    LOGV2(20400,
-          "renameCollectionForCommand: rename {source} to {target}{dropTargetMsg}",
-          "renameCollectionForCommand",
-          "sourceNamespace"_attr = source,
-          "targetNamespace"_attr = target,
-          "dropTarget"_attr = dropTargetMsg);
+    LOG(20400,
+        "renameCollectionForCommand: rename {source} to {target}{dropTargetMsg}",
+        "renameCollectionForCommand",
+        "sourceNamespace"_attr = source,
+        "targetNamespace"_attr = target,
+        "dropTarget"_attr = dropTargetMsg);
 
     if (source.db() == target.db())
         return renameCollectionWithinDB(opCtx, source, target, options);
@@ -907,14 +907,14 @@ Status renameCollectionForApplyOps(OperationContext* opCtx,
 
     const std::string uuidToDropString = uuidToDrop ? uuidToDrop->toString() : "<none>";
     const std::string uuidString = uuidToRename ? uuidToRename->toString() : "UUID unknown";
-    LOGV2(20401,
-          "renameCollectionForApplyOps: rename {sourceNss} ({uuidString}) to "
-          "{targetNss}{dropTargetMsg}",
-          "renameCollectionForApplyOps",
-          "sourceNamespace"_attr = sourceNss,
-          "uuid"_attr = uuidString,
-          "targetNamespace"_attr = targetNss,
-          "uuidToDrop"_attr = uuidToDropString);
+    LOG(20401,
+        "renameCollectionForApplyOps: rename {sourceNss} ({uuidString}) to "
+        "{targetNss}{dropTargetMsg}",
+        "renameCollectionForApplyOps",
+        "sourceNamespace"_attr = sourceNss,
+        "uuid"_attr = uuidString,
+        "targetNamespace"_attr = targetNss,
+        "uuidToDrop"_attr = uuidToDropString);
 
     if (sourceNss.db() == targetNss.db()) {
         return renameCollectionWithinDBForApplyOps(
@@ -935,12 +935,12 @@ Status renameCollectionForRollback(OperationContext* opCtx,
                                "have the same database. source: "
                             << *source << ". target: " << target);
 
-    LOGV2(20402,
-          "renameCollectionForRollback: rename {source} ({uuid}) to {target}.",
-          "renameCollectionForRollback",
-          "source"_attr = *source,
-          "uuid"_attr = uuid,
-          "target"_attr = target);
+    LOG(20402,
+        "renameCollectionForRollback: rename {source} ({uuid}) to {target}.",
+        "renameCollectionForRollback",
+        "source"_attr = *source,
+        "uuid"_attr = uuid,
+        "target"_attr = target);
 
     return renameCollectionWithinDB(opCtx, *source, target, {});
 }

@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kCommand
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kCommand
 
 #include "mongo/platform/basic.h"
 
@@ -36,7 +36,7 @@
 #include "mongo/db/commands/vote_commit_index_build_gen.h"
 #include "mongo/db/index_builds_coordinator.h"
 #include "mongo/db/repl/repl_client_info.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace mongo {
 namespace {
@@ -74,13 +74,13 @@ public:
             auto lastOpBeforeRun = repl::ReplClientInfo::forClient(opCtx->getClient()).getLastOp();
 
             const auto& cmd = request();
-            LOGV2_DEBUG(3856208,
-                        1,
-                        "Received voteCommitIndexBuild request for index build: {buildUUID}, "
-                        "from host: {host}",
-                        "Received voteCommitIndexBuild request",
-                        "buildUUID"_attr = cmd.getCommandParameter(),
-                        "host"_attr = cmd.getHostAndPort().toString());
+            LOG_DEBUG(3856208,
+                      1,
+                      "Received voteCommitIndexBuild request for index build: {buildUUID}, "
+                      "from host: {host}",
+                      "Received voteCommitIndexBuild request",
+                      "buildUUID"_attr = cmd.getCommandParameter(),
+                      "host"_attr = cmd.getHostAndPort().toString());
             auto voteStatus = IndexBuildsCoordinator::get(opCtx)->voteCommitIndexBuild(
                 opCtx, cmd.getCommandParameter(), cmd.getHostAndPort());
 

@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTest
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTest
 
 #include "mongo/platform/basic.h"
 
@@ -42,7 +42,7 @@
 #include "mongo/db/repl/task_runner_test_fixture.h"
 #include "mongo/db/repl/topology_coordinator.h"
 #include "mongo/executor/network_interface_mock.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/metadata/repl_set_metadata.h"
 #include "mongo/unittest/log_test.h"
 #include "mongo/unittest/unittest.h"
@@ -119,8 +119,8 @@ ReplSetHeartbeatResponse ReplCoordHBV1Test::receiveHeartbeatFrom(
 
 TEST_F(ReplCoordHBV1Test,
        NodeJoinsExistingReplSetWhenReceivingAConfigContainingTheNodeViaHeartbeat) {
-    auto severityGuard = unittest::MinimumLoggedSeverityGuard{logv2::LogComponent::kDefault,
-                                                              logv2::LogSeverity::Debug(3)};
+    auto severityGuard = unittest::MinimumLoggedSeverityGuard{log::LogComponent::kDefault,
+                                                              log::LogSeverity::Debug(3)};
     ReplSetConfig rsConfig = assertMakeRSConfig(BSON("_id"
                                                      << "mySet"
                                                      << "version" << 3 << "members"
@@ -188,7 +188,7 @@ TEST_F(ReplCoordHBV1Test,
 
 TEST_F(ReplCoordHBV1Test, RestartingHeartbeatsShouldOnlyCancelScheduledHeartbeats) {
     auto replAllSeverityGuard = unittest::MinimumLoggedSeverityGuard{
-        logv2::LogComponent::kReplication, logv2::LogSeverity::Debug(3)};
+        log::LogComponent::kReplication, log::LogSeverity::Debug(3)};
 
     auto replConfigBson = BSON("_id"
                                << "mySet"
@@ -270,7 +270,7 @@ TEST_F(ReplCoordHBV1Test, RestartingHeartbeatsShouldOnlyCancelScheduledHeartbeat
 TEST_F(ReplCoordHBV1Test,
        SecondaryReceivesHeartbeatRequestFromPrimaryWithDifferentPrimaryIdRestartsHeartbeats) {
     auto replAllSeverityGuard = unittest::MinimumLoggedSeverityGuard{
-        logv2::LogComponent::kReplication, logv2::LogSeverity::Debug(3)};
+        log::LogComponent::kReplication, log::LogSeverity::Debug(3)};
 
     auto replConfigBson = BSON("_id"
                                << "mySet"
@@ -342,7 +342,7 @@ TEST_F(
     ReplCoordHBV1Test,
     SecondaryReceivesHeartbeatRequestFromSecondaryWithDifferentPrimaryIdDoesNotRestartHeartbeats) {
     auto replAllSeverityGuard = unittest::MinimumLoggedSeverityGuard{
-        logv2::LogComponent::kReplication, logv2::LogSeverity::Debug(3)};
+        log::LogComponent::kReplication, log::LogSeverity::Debug(3)};
     auto replConfigBson = BSON("_id"
                                << "mySet"
                                << "protocolVersion" << 1 << "version" << 1 << "members"
@@ -415,8 +415,8 @@ public:
         return assertMakeRSConfig(makeConfigObj(version, term));
     }
 
-    unittest::MinimumLoggedSeverityGuard severityGuard{logv2::LogComponent::kDefault,
-                                                       logv2::LogSeverity::Debug(3)};
+    unittest::MinimumLoggedSeverityGuard severityGuard{log::LogComponent::kDefault,
+                                                       log::LogSeverity::Debug(3)};
 
     int initConfigVersion = 2;
     int initConfigTerm = 2;
@@ -685,7 +685,7 @@ TEST_F(ReplCoordHBV1ReconfigTest,
 
 TEST_F(ReplCoordHBV1Test, RejectHeartbeatReconfigDuringElection) {
     auto severityGuard = unittest::MinimumLoggedSeverityGuard{
-        logv2::LogComponent::kReplicationHeartbeats, logv2::LogSeverity::Debug(1)};
+        log::LogComponent::kReplicationHeartbeats, log::LogSeverity::Debug(1)};
 
     auto term = 1;
     auto version = 1;
@@ -726,7 +726,7 @@ TEST_F(ReplCoordHBV1Test, RejectHeartbeatReconfigDuringElection) {
     while (net->hasReadyRequests()) {
         auto noi = net->getNextReadyRequest();
         auto& request = noi->getRequest();
-        LOGV2(482571, "processing", "to"_attr = request.target, "cmd"_attr = request.cmdObj);
+        LOG(482571, "processing", "to"_attr = request.target, "cmd"_attr = request.cmdObj);
         if (request.cmdObj.firstElementFieldNameStringData() != "replSetRequestVotes") {
             net->blackHole(noi);
         } else {
@@ -785,8 +785,8 @@ TEST_F(ReplCoordHBV1Test, AwaitHelloReturnsResponseOnReconfigViaHeartbeat) {
         ASSERT_EQUALS("node3", hosts[2].host());
     });
 
-    auto severityGuard = unittest::MinimumLoggedSeverityGuard{logv2::LogComponent::kDefault,
-                                                              logv2::LogSeverity::Debug(3)};
+    auto severityGuard = unittest::MinimumLoggedSeverityGuard{log::LogComponent::kDefault,
+                                                              log::LogSeverity::Debug(3)};
     ReplSetConfig rsConfig =
         assertMakeRSConfig(BSON("_id"
                                 << "mySet"
@@ -837,8 +837,8 @@ TEST_F(ReplCoordHBV1Test, AwaitHelloReturnsResponseOnReconfigViaHeartbeat) {
 
 TEST_F(ReplCoordHBV1Test,
        ArbiterJoinsExistingReplSetWhenReceivingAConfigContainingTheArbiterViaHeartbeat) {
-    auto severityGuard = unittest::MinimumLoggedSeverityGuard{logv2::LogComponent::kDefault,
-                                                              logv2::LogSeverity::Debug(3)};
+    auto severityGuard = unittest::MinimumLoggedSeverityGuard{log::LogComponent::kDefault,
+                                                              log::LogSeverity::Debug(3)};
     ReplSetConfig rsConfig =
         assertMakeRSConfig(BSON("_id"
                                 << "mySet"
@@ -910,8 +910,8 @@ TEST_F(ReplCoordHBV1Test,
        NodeDoesNotJoinExistingReplSetWhenReceivingAConfigNotContainingTheNodeViaHeartbeat) {
     // Tests that a node in RS_STARTUP will not transition to RS_REMOVED if it receives a
     // configuration that does not contain it.
-    auto severityGuard = unittest::MinimumLoggedSeverityGuard{logv2::LogComponent::kDefault,
-                                                              logv2::LogSeverity::Debug(3)};
+    auto severityGuard = unittest::MinimumLoggedSeverityGuard{log::LogComponent::kDefault,
+                                                              log::LogSeverity::Debug(3)};
     ReplSetConfig rsConfig = assertMakeRSConfig(BSON("_id"
                                                      << "mySet"
                                                      << "version" << 3 << "members"
@@ -993,8 +993,8 @@ TEST_F(ReplCoordHBV1Test,
 TEST_F(ReplCoordHBV1Test,
        NodeChangesToRecoveringStateWhenAllNodesRespondToHeartbeatsWithUnauthorized) {
     // Tests that a node that only has auth error heartbeats is recovering
-    auto severityGuard = unittest::MinimumLoggedSeverityGuard{logv2::LogComponent::kDefault,
-                                                              logv2::LogSeverity::Debug(3)};
+    auto severityGuard = unittest::MinimumLoggedSeverityGuard{log::LogComponent::kDefault,
+                                                              log::LogSeverity::Debug(3)};
     assertStartSuccess(BSON("_id"
                             << "mySet"
                             << "version" << 1 << "members"
@@ -1009,10 +1009,10 @@ TEST_F(ReplCoordHBV1Test,
     enterNetwork();
     const NetworkInterfaceMock::NetworkOperationIterator noi = getNet()->getNextReadyRequest();
     const RemoteCommandRequest& request = noi->getRequest();
-    LOGV2(21492,
-          "{request_target} processing {request_cmdObj}",
-          "request_target"_attr = request.target.toString(),
-          "request_cmdObj"_attr = request.cmdObj);
+    LOG(21492,
+        "{request_target} processing {request_cmdObj}",
+        "request_target"_attr = request.target.toString(),
+        "request_cmdObj"_attr = request.cmdObj);
     getNet()->scheduleResponse(
         noi,
         getNet()->now(),
@@ -1022,10 +1022,10 @@ TEST_F(ReplCoordHBV1Test,
 
     if (request.target != HostAndPort("node2", 12345) &&
         request.cmdObj.firstElement().fieldNameStringData() != "replSetHeartbeat") {
-        LOGV2_ERROR(21496,
-                    "Black holing unexpected request to {request_target}: {request_cmdObj}",
-                    "request_target"_attr = request.target,
-                    "request_cmdObj"_attr = request.cmdObj);
+        LOG_ERROR(21496,
+                  "Black holing unexpected request to {request_target}: {request_cmdObj}",
+                  "request_target"_attr = request.target,
+                  "request_cmdObj"_attr = request.cmdObj);
         getNet()->blackHole(noi);
     }
     getNet()->runReadyNetworkOperations();
@@ -1089,16 +1089,16 @@ TEST_F(ReplCoordHBV1Test, IgnoreTheContentsOfMetadataWhenItsReplicaSetIdDoesNotM
         const RemoteCommandRequest& request = noi->getRequest();
         if (request.target == host2 &&
             request.cmdObj.firstElement().fieldNameStringData() == "replSetHeartbeat") {
-            LOGV2(21493,
-                  "{request_target} processing {request_cmdObj}",
-                  "request_target"_attr = request.target.toString(),
-                  "request_cmdObj"_attr = request.cmdObj);
+            LOG(21493,
+                "{request_target} processing {request_cmdObj}",
+                "request_target"_attr = request.target.toString(),
+                "request_cmdObj"_attr = request.cmdObj);
             net->scheduleResponse(noi, net->now(), heartbeatResponse);
         } else {
-            LOGV2(21494,
-                  "blackholing request to {request_target}: {request_cmdObj}",
-                  "request_target"_attr = request.target.toString(),
-                  "request_cmdObj"_attr = request.cmdObj);
+            LOG(21494,
+                "blackholing request to {request_target}: {request_cmdObj}",
+                "request_target"_attr = request.target.toString(),
+                "request_cmdObj"_attr = request.cmdObj);
             net->blackHole(noi);
         }
         net->runReadyNetworkOperations();
@@ -1112,7 +1112,7 @@ TEST_F(ReplCoordHBV1Test, IgnoreTheContentsOfMetadataWhenItsReplicaSetIdDoesNotM
     ASSERT_OK(getReplCoord()->processReplSetGetStatus(
         &statusBuilder, ReplicationCoordinator::ReplSetGetStatusResponseStyle::kBasic));
     auto statusObj = statusBuilder.obj();
-    LOGV2(21495, "replica set status = {statusObj}", "statusObj"_attr = statusObj);
+    LOG(21495, "replica set status = {statusObj}", "statusObj"_attr = statusObj);
 
     ASSERT_EQ(mongo::Array, statusObj["members"].type());
     auto members = statusObj["members"].Array();
@@ -1332,8 +1332,8 @@ protected:
     Date_t _wallTime = Date_t() + Seconds(100);
     std::unique_ptr<ThreadPool> _threadPool;
 
-    unittest::MinimumLoggedSeverityGuard replLogSeverityGuard{logv2::LogComponent::kReplication,
-                                                              logv2::LogSeverity::Debug(2)};
+    unittest::MinimumLoggedSeverityGuard replLogSeverityGuard{log::LogComponent::kReplication,
+                                                              log::LogSeverity::Debug(2)};
 };
 
 void HBStepdownAndReconfigTest::setUp() {
@@ -1449,10 +1449,10 @@ Future<void> HBStepdownAndReconfigTest::startReconfigCommand() {
 
             if (!status.isOK()) {
                 ASSERT(ErrorCodes::isNotPrimaryError(status.code()));
-                LOGV2(463817,
-                      "processReplSetReconfig threw expected error",
-                      "errorCode"_attr = status.code(),
-                      "message"_attr = status.reason());
+                LOG(463817,
+                    "processReplSetReconfig threw expected error",
+                    "errorCode"_attr = status.code(),
+                    "message"_attr = status.reason());
             }
             promise.emplaceValue();
         });
@@ -1461,7 +1461,7 @@ Future<void> HBStepdownAndReconfigTest::startReconfigCommand() {
 }
 
 void HBStepdownAndReconfigTest::assertSteppedDown() {
-    LOGV2(463811, "Waiting for step down to complete");
+    LOG(463811, "Waiting for step down to complete");
     // Wait for step down to finish since it may be asynchronous.
     auto timeout = Milliseconds(5 * 60 * 1000);
     ASSERT_OK(getReplCoord()->waitForMemberState(MemberState::RS_SECONDARY, timeout));
@@ -1472,7 +1472,7 @@ void HBStepdownAndReconfigTest::assertSteppedDown() {
 }
 
 void HBStepdownAndReconfigTest::assertConfigStored() {
-    LOGV2(463812, "Waiting for config to be stored");
+    LOG(463812, "Waiting for config to be stored");
     // Wait for new config since it may be installed asynchronously.
     while (getReplCoord()->getConfig().getConfigVersionAndTerm() < ConfigVersionAndTerm(3, 1)) {
         sleepFor(Milliseconds(10));

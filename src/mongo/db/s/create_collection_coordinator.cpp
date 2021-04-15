@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kSharding
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kSharding
 
 #include "mongo/platform/basic.h"
 
@@ -42,7 +42,7 @@
 #include "mongo/db/s/sharding_ddl_util.h"
 #include "mongo/db/s/sharding_logging.h"
 #include "mongo/db/s/sharding_state.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/s/cluster_commands_helpers.h"
 #include "mongo/s/cluster_write.h"
@@ -500,11 +500,11 @@ ExecutorFuture<void> CreateCollectionCoordinator::_runImpl(
                     ScopedShardVersionCriticalSection critSec(opCtx, nss());
 
                     if (_recoveredFromDisk) {
-                        LOGV2_DEBUG(5458704,
-                                    1,
-                                    "Removing partial changes from previous run",
-                                    "namespace"_attr = nss(),
-                                    "dropShardKey"_attr = _doc.getShardKeyAlreadyCreated());
+                        LOG_DEBUG(5458704,
+                                  1,
+                                  "Removing partial changes from previous run",
+                                  "namespace"_attr = nss(),
+                                  "dropShardKey"_attr = _doc.getShardKeyAlreadyCreated());
                         if (!_doc.getShardKeyAlreadyCreated()) {
                             // TODO SERVER-55551: remove this to prevent continous failover on huge
                             // collections.
@@ -539,10 +539,10 @@ ExecutorFuture<void> CreateCollectionCoordinator::_runImpl(
         .onError([this, anchor = shared_from_this()](const Status& status) {
             if (!status.isA<ErrorCategory::NotPrimaryError>() &&
                 !status.isA<ErrorCategory::ShutdownError>()) {
-                LOGV2_ERROR(5458702,
-                            "Error running create collection",
-                            "namespace"_attr = nss(),
-                            "error"_attr = redact(status));
+                LOG_ERROR(5458702,
+                          "Error running create collection",
+                          "namespace"_attr = nss(),
+                          "error"_attr = redact(status));
             }
             return status;
         });
@@ -550,7 +550,7 @@ ExecutorFuture<void> CreateCollectionCoordinator::_runImpl(
 
 
 void CreateCollectionCoordinator::_checkCommandArguments(OperationContext* opCtx) {
-    LOGV2_DEBUG(5277902, 2, "Create collection _checkCommandArguments", "namespace"_attr = nss());
+    LOG_DEBUG(5277902, 2, "Create collection _checkCommandArguments", "namespace"_attr = nss());
 
     const auto dbInfo = uassertStatusOK(
         Grid::get(opCtx)->catalogCache()->getDatabaseWithRefresh(opCtx, nss().db()));
@@ -618,7 +618,7 @@ void CreateCollectionCoordinator::_checkCommandArguments(OperationContext* opCtx
 }
 
 void CreateCollectionCoordinator::_createCollectionAndIndexes(OperationContext* opCtx) {
-    LOGV2_DEBUG(
+    LOG_DEBUG(
         5277903, 2, "Create collection _createCollectionAndIndexes", "namespace"_attr = nss());
 
     auto unique = _doc.getUnique().value_or(false);
@@ -650,7 +650,7 @@ void CreateCollectionCoordinator::_createCollectionAndIndexes(OperationContext* 
 }
 
 void CreateCollectionCoordinator::_createPolicyAndChunks(OperationContext* opCtx) {
-    LOGV2_DEBUG(5277904, 2, "Create collection _createChunks", "namespace"_attr = nss());
+    LOG_DEBUG(5277904, 2, "Create collection _createChunks", "namespace"_attr = nss());
 
     _splitPolicy = InitialSplitPolicy::calculateOptimizationStrategy(
         opCtx,
@@ -670,10 +670,10 @@ void CreateCollectionCoordinator::_createPolicyAndChunks(OperationContext* opCtx
 }
 
 void CreateCollectionCoordinator::_createCollectionOnNonPrimaryShards(OperationContext* opCtx) {
-    LOGV2_DEBUG(5277905,
-                2,
-                "Create collection _createCollectionOnNonPrimaryShards",
-                "namespace"_attr = nss());
+    LOG_DEBUG(5277905,
+              2,
+              "Create collection _createCollectionOnNonPrimaryShards",
+              "namespace"_attr = nss());
 
     std::vector<AsyncRequestsSender::Request> requests;
     std::set<ShardId> initializedShards;
@@ -732,7 +732,7 @@ void CreateCollectionCoordinator::_createCollectionOnNonPrimaryShards(OperationC
 }
 
 void CreateCollectionCoordinator::_commit(OperationContext* opCtx) {
-    LOGV2_DEBUG(5277906, 2, "Create collection _commit", "namespace"_attr = nss());
+    LOG_DEBUG(5277906, 2, "Create collection _commit", "namespace"_attr = nss());
 
     // Upsert Chunks.
     upsertChunks(opCtx, _initialChunks.chunks);
@@ -757,7 +757,7 @@ void CreateCollectionCoordinator::_commit(OperationContext* opCtx) {
 }
 
 void CreateCollectionCoordinator::_finalize(OperationContext* opCtx) noexcept {
-    LOGV2_DEBUG(5277907, 2, "Create collection _finalize", "namespace"_attr = nss());
+    LOG_DEBUG(5277907, 2, "Create collection _finalize", "namespace"_attr = nss());
 
     try {
         forceShardFilteringMetadataRefresh(opCtx, nss());
@@ -794,19 +794,19 @@ void CreateCollectionCoordinator::_finalize(OperationContext* opCtx) noexcept {
 
             uassertStatusOK(refreshCmdResponse.commandStatus);
         } catch (const DBException& ex) {
-            LOGV2_WARNING(5277909,
-                          "Could not refresh shard",
-                          "shardId"_attr = shard->getId(),
-                          "error"_attr = redact(ex.reason()));
+            LOG_WARNING(5277909,
+                        "Could not refresh shard",
+                        "shardId"_attr = shard->getId(),
+                        "error"_attr = redact(ex.reason()));
         }
         shardsRefreshed.emplace(chunkShardId);
     }
 
-    LOGV2(5277901,
-          "Created initial chunk(s)",
-          "namespace"_attr = nss(),
-          "numInitialChunks"_attr = _initialChunks.chunks.size(),
-          "initialCollectionVersion"_attr = _initialChunks.collVersion());
+    LOG(5277901,
+        "Created initial chunk(s)",
+        "namespace"_attr = nss(),
+        "numInitialChunks"_attr = _initialChunks.chunks.size(),
+        "initialCollectionVersion"_attr = _initialChunks.collVersion());
 
 
     ShardingLogging::get(opCtx)->logChange(
@@ -822,11 +822,11 @@ void CreateCollectionCoordinator::_finalize(OperationContext* opCtx) noexcept {
     result.setCollectionUUID(_collectionUUID);
     _result = std::move(result);
 
-    LOGV2(5458701,
-          "Collection created",
-          "namespace"_attr = nss(),
-          "UUID"_attr = _result->getCollectionUUID(),
-          "version"_attr = _result->getCollectionVersion());
+    LOG(5458701,
+        "Collection created",
+        "namespace"_attr = nss(),
+        "UUID"_attr = _result->getCollectionUUID(),
+        "version"_attr = _result->getCollectionVersion());
 }
 
 // Phase change and document handling API.
@@ -857,12 +857,12 @@ void CreateCollectionCoordinator::_enterPhase(Phase newPhase) {
     CoordDoc newDoc(_doc);
     newDoc.setPhase(newPhase);
 
-    LOGV2_DEBUG(5565600,
-                2,
-                "Create collection coordinator phase transition",
-                "namespace"_attr = nss(),
-                "newPhase"_attr = CreateCollectionCoordinatorPhase_serializer(newDoc.getPhase()),
-                "oldPhase"_attr = CreateCollectionCoordinatorPhase_serializer(_doc.getPhase()));
+    LOG_DEBUG(5565600,
+              2,
+              "Create collection coordinator phase transition",
+              "namespace"_attr = nss(),
+              "newPhase"_attr = CreateCollectionCoordinatorPhase_serializer(newDoc.getPhase()),
+              "oldPhase"_attr = CreateCollectionCoordinatorPhase_serializer(_doc.getPhase()));
 
     if (_doc.getPhase() == Phase::kUnset) {
         _insertCoordinatorDocument(std::move(newDoc));

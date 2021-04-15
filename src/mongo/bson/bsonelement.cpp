@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kDefault
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kDefault
 
 #include "mongo/bson/bsonelement.h"
 
@@ -43,7 +43,7 @@
 #include "mongo/bson/generator_extended_relaxed_2_0_0.h"
 #include "mongo/bson/generator_legacy_strict.h"
 #include "mongo/db/jsobj.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/platform/strnlen.h"
 #include "mongo/util/base64.h"
 #include "mongo/util/duration.h"
@@ -897,7 +897,7 @@ std::string BSONElement::_asCode() const {
             return std::string(codeWScopeCode(),
                                ConstDataView(valuestr()).read<LittleEndian<int>>() - 1);
         default:
-            LOGV2(20100, "can't convert type: {int_type} to code", "int_type"_attr = (int)(type()));
+            LOG(20100, "can't convert type: {int_type} to code", "int_type"_attr = (int)(type()));
     }
     uassert(10062, "not code", 0);
     return "";

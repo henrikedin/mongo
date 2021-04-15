@@ -27,13 +27,13 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kDefault
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kDefault
 
 #include "mongo/platform/basic.h"
 
 #include "mongo/db/client_strand.h"
 
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/concurrency/thread_name.h"
 #include "mongo/util/thread_context.h"
 
@@ -60,8 +60,7 @@ void ClientStrand::_setCurrent() noexcept {
     invariant(_isBound.load());
     invariant(_client);
 
-    LOGV2_DEBUG(
-        5127801, kDiagnosticLogLevel, "Setting the Client", "client"_attr = _client->desc());
+    LOG_DEBUG(5127801, kDiagnosticLogLevel, "Setting the Client", "client"_attr = _client->desc());
 
     // Set the Client for this thread so calls to Client::getCurrent() works as expected.
     Client::setCurrent(std::move(_client));
@@ -69,7 +68,7 @@ void ClientStrand::_setCurrent() noexcept {
     // Set up the thread name.
     _oldThreadName = ThreadName::set(ThreadContext::get(), _threadName);
     if (_oldThreadName) {
-        LOGV2_DEBUG(5127802, kDiagnosticLogLevel, "Set thread name", "name"_attr = *_threadName);
+        LOG_DEBUG(5127802, kDiagnosticLogLevel, "Set thread name", "name"_attr = *_threadName);
     }
 }
 
@@ -89,8 +88,7 @@ void ClientStrand::_releaseCurrent() noexcept {
         ThreadName::release(ThreadContext::get());
     }
 
-    LOGV2_DEBUG(
-        5127803, kDiagnosticLogLevel, "Released the Client", "client"_attr = _client->desc());
+    LOG_DEBUG(5127803, kDiagnosticLogLevel, "Released the Client", "client"_attr = _client->desc());
 }
 
 }  // namespace mongo

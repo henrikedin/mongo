@@ -27,14 +27,14 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kDefault
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kDefault
 
 #include "mongo/util/log_and_backoff.h"
 
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/time_support.h"
 
-namespace mongo::log_backoff_detail {
+namespace mongo::LOG_backoff_detail {
 
 void logAndBackoffImpl(size_t numAttempts) {
     if (numAttempts < 4) {
@@ -50,4 +50,4 @@ void logAndBackoffImpl(size_t numAttempts) {
     }
 }
 
-}  // namespace mongo::log_backoff_detail
+}  // namespace mongo::LOG_backoff_detail

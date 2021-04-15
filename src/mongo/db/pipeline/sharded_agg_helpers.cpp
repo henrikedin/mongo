@@ -26,7 +26,7 @@
  *    exception statement from all source files in the program, then also delete
  *    it in the license file.
  */
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kQuery
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kQuery
 
 #include "mongo/platform/basic.h"
 
@@ -50,7 +50,7 @@
 #include "mongo/db/pipeline/lite_parsed_pipeline.h"
 #include "mongo/db/pipeline/semantic_analysis.h"
 #include "mongo/db/vector_clock.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/s/catalog/type_shard.h"
 #include "mongo/s/cluster_commands_helpers.h"
@@ -187,10 +187,10 @@ std::vector<RemoteCursor> establishShardCursors(OperationContext* opCtx,
                                                 const std::set<ShardId>& shardIds,
                                                 const BSONObj& cmdObj,
                                                 const ReadPreferenceSetting& readPref) {
-    LOGV2_DEBUG(20904,
-                1,
-                "Dispatching command {cmdObj} to establish cursors on shards",
-                "cmdObj"_attr = redact(cmdObj));
+    LOG_DEBUG(20904,
+              1,
+              "Dispatching command {cmdObj} to establish cursors on shards",
+              "cmdObj"_attr = redact(cmdObj));
 
     std::vector<std::pair<ShardId, BSONObj>> requests;
 
@@ -221,9 +221,9 @@ std::vector<RemoteCursor> establishShardCursors(OperationContext* opCtx,
     }
 
     if (MONGO_unlikely(shardedAggregateHangBeforeEstablishingShardCursors.shouldFail())) {
-        LOGV2(20905,
-              "shardedAggregateHangBeforeEstablishingShardCursors fail point enabled.  Blocking "
-              "until fail point is disabled.");
+        LOG(20905,
+            "shardedAggregateHangBeforeEstablishingShardCursors fail point enabled.  Blocking "
+            "until fail point is disabled.");
         while (MONGO_unlikely(shardedAggregateHangBeforeEstablishingShardCursors.shouldFail())) {
             sleepsecs(1);
         }
@@ -899,13 +899,13 @@ DispatchShardPipelineResults dispatchShardPipeline(
     boost::optional<SplitPipeline> splitPipelines;
 
     if (needsSplit) {
-        LOGV2_DEBUG(20906,
-                    5,
-                    "Splitting pipeline: targeting = {shardIds_size} shards, needsMongosMerge = "
-                    "{needsMongosMerge}, needsPrimaryShardMerge = {needsPrimaryShardMerge}",
-                    "shardIds_size"_attr = shardIds.size(),
-                    "needsMongosMerge"_attr = needsMongosMerge,
-                    "needsPrimaryShardMerge"_attr = needsPrimaryShardMerge);
+        LOG_DEBUG(20906,
+                  5,
+                  "Splitting pipeline: targeting = {shardIds_size} shards, needsMongosMerge = "
+                  "{needsMongosMerge}, needsPrimaryShardMerge = {needsPrimaryShardMerge}",
+                  "shardIds_size"_attr = shardIds.size(),
+                  "needsMongosMerge"_attr = needsMongosMerge,
+                  "needsPrimaryShardMerge"_attr = needsPrimaryShardMerge);
         splitPipelines = splitPipeline(std::move(pipeline));
 
         exchangeSpec = checkIfEligibleForExchange(opCtx, splitPipelines->mergePipeline.get());

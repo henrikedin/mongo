@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kDefault
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kDefault
 
 #include "mongo/platform/basic.h"
 
@@ -41,7 +41,7 @@
 #include "mongo/db/repl/replication_coordinator_impl.h"
 #include "mongo/db/repl/replication_coordinator_test_fixture.h"
 #include "mongo/executor/network_interface_mock.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/stdx/future.h"
 #include "mongo/unittest/log_test.h"
 #include "mongo/unittest/unittest.h"
@@ -753,8 +753,8 @@ TEST_F(ReplCoordTest, NodeDoesNotAcceptHeartbeatReconfigWhileInTheMidstOfReconfi
     hbResp.addToBSON(&respObj2);
     net->scheduleResponse(noi, net->now(), makeResponseStatus(respObj2.obj()));
 
-    auto severityGuard = unittest::MinimumLoggedSeverityGuard{logv2::LogComponent::kDefault,
-                                                              logv2::LogSeverity::Debug(1)};
+    auto severityGuard = unittest::MinimumLoggedSeverityGuard{log::LogComponent::kDefault,
+                                                              log::LogSeverity::Debug(1)};
     startCapturingLogMessages();
     // execute hb reconfig, which should fail with a log message; confirmed at end of test
     net->runReadyNetworkOperations();
@@ -812,21 +812,21 @@ class ReplCoordReconfigTest : public ReplCoordTest {
 public:
     int counter = 0;
     std::vector<HostAndPort> initialSyncNodes;
-    unittest::MinimumLoggedSeverityGuard severityGuard{logv2::LogComponent::kDefault,
-                                                       logv2::LogSeverity::Debug(3)};
+    unittest::MinimumLoggedSeverityGuard severityGuard{log::LogComponent::kDefault,
+                                                       log::LogSeverity::Debug(3)};
 
     void respondToHeartbeat() {
         counter++;
-        LOGV2(24245, "Going to respond to heartbeat", "counter"_attr = counter);
+        LOG(24245, "Going to respond to heartbeat", "counter"_attr = counter);
         auto net = getNet();
         auto noi = net->getNextReadyRequest();
         auto&& request = noi->getRequest();
-        LOGV2(24258,
-              "Going to respond to heartbeat request {counter}: {request_cmdObj} from "
-              "{request_target}",
-              "counter"_attr = counter,
-              "request_cmdObj"_attr = request.cmdObj,
-              "request_target"_attr = request.target);
+        LOG(24258,
+            "Going to respond to heartbeat request {counter}: {request_cmdObj} from "
+            "{request_target}",
+            "counter"_attr = counter,
+            "request_cmdObj"_attr = request.cmdObj,
+            "request_target"_attr = request.target);
         repl::ReplSetHeartbeatArgsV1 hbArgs;
         ASSERT_OK(hbArgs.initialize(request.cmdObj));
         repl::ReplSetHeartbeatResponse hbResp;
@@ -845,14 +845,14 @@ public:
         hbResp.setDurableOpTimeAndWallTime({OpTime(Timestamp(100, 1), 0), Date_t() + Seconds(100)});
         respObj << "ok" << 1;
         hbResp.addToBSON(&respObj);
-        LOGV2(24259,
-              "Scheduling response to heartbeat request {counter} with response {hbResp}",
-              "counter"_attr = counter,
-              "hbResp"_attr = hbResp.toBSON());
+        LOG(24259,
+            "Scheduling response to heartbeat request {counter} with response {hbResp}",
+            "counter"_attr = counter,
+            "hbResp"_attr = hbResp.toBSON());
         net->scheduleResponse(noi, net->now(), makeResponseStatus(respObj.obj()));
-        LOGV2(24260, "Responding to heartbeat request {counter}", "counter"_attr = counter);
+        LOG(24260, "Responding to heartbeat request {counter}", "counter"_attr = counter);
         net->runReadyNetworkOperations();
-        LOGV2(24261, "Responded to heartbeat request {counter}", "counter"_attr = counter);
+        LOG(24261, "Responded to heartbeat request {counter}", "counter"_attr = counter);
     }
 
     void setUpNewlyAddedFieldTest() {
@@ -883,23 +883,23 @@ public:
     }
 
     void respondToNHeartbeats(int n) {
-        LOGV2(24262, "Responding to {n} heartbeats", "n"_attr = n);
+        LOG(24262, "Responding to {n} heartbeats", "n"_attr = n);
         enterNetwork();
         for (int i = 0; i < n; i++) {
             respondToHeartbeat();
         }
         exitNetwork();
-        LOGV2(24263, "Responded to {n} heartbeats", "n"_attr = n);
+        LOG(24263, "Responded to {n} heartbeats", "n"_attr = n);
     }
 
     void respondToAllHeartbeats() {
-        LOGV2(24264, "Responding to all heartbeats");
+        LOG(24264, "Responding to all heartbeats");
         enterNetwork();
         while (getNet()->hasReadyRequests()) {
             respondToHeartbeat();
         }
         exitNetwork();
-        LOGV2(24265, "Responded to all heartbeats");
+        LOG(24265, "Responded to all heartbeats");
     }
 
     Status doSafeReconfig(OperationContext* opCtx,
@@ -915,9 +915,9 @@ public:
         stdx::thread reconfigThread = stdx::thread(
             [&] { status = getReplCoord()->processReplSetReconfig(opCtx, args, &result); });
         // Satisfy quorum check with heartbeats.
-        LOGV2(24257,
-              "Responding to quorum check with heartbeats.",
-              "heartbeats"_attr = quorumHeartbeats);
+        LOG(24257,
+            "Responding to quorum check with heartbeats.",
+            "heartbeats"_attr = quorumHeartbeats);
         respondToNHeartbeats(quorumHeartbeats);
         reconfigThread.join();
 
@@ -2003,8 +2003,8 @@ TEST_F(ReplCoordReconfigTest, ForceReconfigShouldThrowIfArbiterNodesHaveNewlyAdd
 }
 
 TEST_F(ReplCoordTest, StepUpReconfigConcurrentWithHeartbeatReconfig) {
-    auto severityGuard = unittest::MinimumLoggedSeverityGuard{logv2::LogComponent::kReplication,
-                                                              logv2::LogSeverity::Debug(2)};
+    auto severityGuard = unittest::MinimumLoggedSeverityGuard{log::LogComponent::kReplication,
+                                                              log::LogSeverity::Debug(2)};
     assertStartSuccess(BSON("_id"
                             << "mySet"
                             << "version" << 2 << "term" << 0 << "members"
@@ -2104,8 +2104,8 @@ TEST_F(ReplCoordTest, StepUpReconfigConcurrentWithHeartbeatReconfig) {
 }
 
 TEST_F(ReplCoordTest, StepUpReconfigConcurrentWithForceHeartbeatReconfig) {
-    auto severityGuard = unittest::MinimumLoggedSeverityGuard{logv2::LogComponent::kReplication,
-                                                              logv2::LogSeverity::Debug(2)};
+    auto severityGuard = unittest::MinimumLoggedSeverityGuard{log::LogComponent::kReplication,
+                                                              log::LogSeverity::Debug(2)};
     assertStartSuccess(BSON("_id"
                             << "mySet"
                             << "version" << 2 << "term" << 0 << "members"

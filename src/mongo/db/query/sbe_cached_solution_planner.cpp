@@ -26,7 +26,7 @@
  *    exception statement from all source files in the program, then also delete
  *    it in the license file.
  */
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kQuery
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kQuery
 
 #include "mongo/platform/basic.h"
 
@@ -38,7 +38,7 @@
 #include "mongo/db/query/sbe_multi_planner.h"
 #include "mongo/db/query/stage_builder_util.h"
 #include "mongo/db/query/util/make_data_structure.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace mongo::sbe {
 CandidatePlans CachedSolutionPlanner::plan(
@@ -58,11 +58,11 @@ CandidatePlans CachedSolutionPlanner::plan(
     if (!candidate.status.isOK()) {
         // On failure, fall back to replanning the whole query. We neither evict the existing cache
         // entry, nor cache the result of replanning.
-        LOGV2_DEBUG(2057901,
-                    1,
-                    "Execution of cached plan failed, falling back to replan",
-                    "query"_attr = redact(_cq.toStringShort()),
-                    "planSummary"_attr = explainer->getPlanSummary());
+        LOG_DEBUG(2057901,
+                  1,
+                  "Execution of cached plan failed, falling back to replan",
+                  "query"_attr = redact(_cq.toStringShort()),
+                  "planSummary"_attr = explainer->getPlanSummary());
         return replan(false, str::stream() << "cached plan returned: " << candidate.status);
     }
 
@@ -76,7 +76,7 @@ CandidatePlans CachedSolutionPlanner::plan(
 
     // If we're here, the trial period took more than 'maxReadsBeforeReplan' physical reads. This
     // plan may not be efficient any longer, so we replan from scratch.
-    LOGV2_DEBUG(
+    LOG_DEBUG(
         2058001,
         1,
         "Evicting cache entry for a query and replanning it since the number of required reads "
@@ -137,7 +137,7 @@ CandidatePlans CachedSolutionPlanner::replan(bool shouldCache, std::string reaso
             5323800, "cached planner unexpectedly exited early during prepare phase", !exitedEarly);
 
         auto explainer = plan_explainer_factory::make(root.get(), &data, solutions[0].get());
-        LOGV2_DEBUG(
+        LOG_DEBUG(
             2058101,
             1,
             "Replanning of query resulted in a single query solution, which will not be cached. ",
@@ -167,12 +167,12 @@ CandidatePlans CachedSolutionPlanner::replan(bool shouldCache, std::string reaso
     auto explainer = plan_explainer_factory::make(candidates[winnerIdx].root.get(),
                                                   &candidates[winnerIdx].data,
                                                   candidates[winnerIdx].solution.get());
-    LOGV2_DEBUG(2058201,
-                1,
-                "Query plan after replanning and its cache status",
-                "query"_attr = redact(_cq.toStringShort()),
-                "planSummary"_attr = explainer->getPlanSummary(),
-                "shouldCache"_attr = (shouldCache ? "yes" : "no"));
+    LOG_DEBUG(2058201,
+              1,
+              "Query plan after replanning and its cache status",
+              "query"_attr = redact(_cq.toStringShort()),
+              "planSummary"_attr = explainer->getPlanSummary(),
+              "shouldCache"_attr = (shouldCache ? "yes" : "no"));
     return {std::move(candidates), winnerIdx};
 }
 }  // namespace mongo::sbe

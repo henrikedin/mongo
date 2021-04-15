@@ -98,7 +98,7 @@ private:
     /**
      * Overriden to allow the BaseCloner to use the initial sync log component.
      */
-    virtual logv2::LogComponent getLogComponent() final;
+    virtual log::LogComponent getLogComponent() final;
 
     // Operation that may currently be retrying.
     InitialSyncSharedData::RetryableOperation _retryableOp;

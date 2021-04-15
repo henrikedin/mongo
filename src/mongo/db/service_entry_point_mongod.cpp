@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kCommand
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kCommand
 
 #include "mongo/platform/basic.h"
 
@@ -45,7 +45,7 @@
 #include "mongo/db/s/sharding_config_optime_gossip.h"
 #include "mongo/db/s/sharding_state.h"
 #include "mongo/db/service_entry_point_common.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/rpc/metadata/config_server_metadata.h"
 #include "mongo/rpc/metadata/sharding_metadata.h"
@@ -82,16 +82,16 @@ public:
             if (ErrorCodes::isExceededTimeLimitError(rcStatus.code())) {
                 const int debugLevel =
                     serverGlobalParams.clusterRole == ClusterRole::ConfigServer ? 0 : 2;
-                LOGV2_DEBUG(21975,
-                            debugLevel,
-                            "Command on database {db} timed out waiting for read concern to be "
-                            "satisfied. Command: {command}. Info: {error}",
-                            "Command timed out waiting for read concern to be satisfied",
-                            "db"_attr = request.getDatabase(),
-                            "command"_attr =
-                                redact(ServiceEntryPointCommon::getRedactedCopyForLogging(
-                                    invocation->definition(), request.body)),
-                            "error"_attr = redact(rcStatus));
+                LOG_DEBUG(21975,
+                          debugLevel,
+                          "Command on database {db} timed out waiting for read concern to be "
+                          "satisfied. Command: {command}. Info: {error}",
+                          "Command timed out waiting for read concern to be satisfied",
+                          "db"_attr = request.getDatabase(),
+                          "command"_attr =
+                              redact(ServiceEntryPointCommon::getRedactedCopyForLogging(
+                                  invocation->definition(), request.body)),
+                          "error"_attr = redact(rcStatus));
             }
 
             uassertStatusOK(rcStatus);

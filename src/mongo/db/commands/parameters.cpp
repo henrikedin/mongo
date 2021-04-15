@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kCommand
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kCommand
 
 #include "mongo/platform/basic.h"
 
@@ -43,7 +43,7 @@
 #include "mongo/db/commands/parse_log_component_settings.h"
 #include "mongo/db/storage/storage_options.h"
 #include "mongo/idl/command_generic_argument.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/str.h"
 
 using std::string;
@@ -52,8 +52,8 @@ using std::stringstream;
 namespace mongo {
 
 namespace {
-using logv2::LogComponent;
-using logv2::LogSeverity;
+using log::LogComponent;
+using log::LogSeverity;
 
 void appendParameterNames(std::string* help) {
     *help += "supported:\n";
@@ -97,8 +97,8 @@ void getLogComponentVerbosity(BSONObj* output) {
         LogComponent component = static_cast<LogComponent::Value>(i);
 
         int severity = -1;
-        if (logv2::LogManager::global().getGlobalSettings().hasMinimumLogSeverity(component)) {
-            severity = logv2::LogManager::global()
+        if (log::LogManager::global().getGlobalSettings().hasMinimumLogSeverity(component)) {
+            severity = log::LogManager::global()
                            .getGlobalSettings()
                            .getMinimumLogSeverity(component)
                            .toInt();
@@ -171,15 +171,15 @@ Status setLogComponentVerbosity(const BSONObj& bsonSettings) {
 
         // Negative value means to clear log level of component.
         if (newSetting.level < 0) {
-            logv2::LogManager::global().getGlobalSettings().clearMinimumLoggedSeverity(
+            log::LogManager::global().getGlobalSettings().clearMinimumLoggedSeverity(
                 newSetting.component);
             continue;
         }
         // Convert non-negative value to Log()/Debug(N).
         LogSeverity newSeverity =
             (newSetting.level > 0) ? LogSeverity::Debug(newSetting.level) : LogSeverity::Log();
-        logv2::LogManager::global().getGlobalSettings().setMinimumLoggedSeverity(
-            newSetting.component, newSeverity);
+        log::LogManager::global().getGlobalSettings().setMinimumLoggedSeverity(newSetting.component,
+                                                                               newSeverity);
     }
 
     return Status::OK();
@@ -367,29 +367,29 @@ public:
             try {
                 uassertStatusOK(foundParameter->second->set(parameter));
             } catch (const DBException& ex) {
-                LOGV2(20496,
-                      "Error setting parameter {parameterName} to {newValue} errMsg: {error}",
-                      "Error setting parameter to new value",
-                      "parameterName"_attr = parameterName,
-                      "newValue"_attr = redact(parameter.toString(false)),
-                      "error"_attr = redact(ex));
+                LOG(20496,
+                    "Error setting parameter {parameterName} to {newValue} errMsg: {error}",
+                    "Error setting parameter to new value",
+                    "parameterName"_attr = parameterName,
+                    "newValue"_attr = redact(parameter.toString(false)),
+                    "error"_attr = redact(ex));
                 throw;
             }
 
             if (oldValue) {
-                LOGV2(23435,
-                      "Successfully set parameter {parameterName} to {newValue} (was "
-                      "{oldValue})",
-                      "Successfully set parameter to new value",
-                      "parameterName"_attr = parameterName,
-                      "newValue"_attr = redact(parameter.toString(false)),
-                      "oldValue"_attr = redact(oldValue.toString(false)));
+                LOG(23435,
+                    "Successfully set parameter {parameterName} to {newValue} (was "
+                    "{oldValue})",
+                    "Successfully set parameter to new value",
+                    "parameterName"_attr = parameterName,
+                    "newValue"_attr = redact(parameter.toString(false)),
+                    "oldValue"_attr = redact(oldValue.toString(false)));
             } else {
-                LOGV2(23436,
-                      "Successfully set parameter {parameterName} to {newValue}",
-                      "Successfully set parameter to new value",
-                      "parameterName"_attr = parameterName,
-                      "newValue"_attr = redact(parameter.toString(false)));
+                LOG(23436,
+                    "Successfully set parameter {parameterName} to {newValue}",
+                    "Successfully set parameter to new value",
+                    "parameterName"_attr = parameterName,
+                    "newValue"_attr = redact(parameter.toString(false)));
             }
 
             numSet++;
@@ -408,9 +408,9 @@ void LogLevelServerParameter::append(OperationContext*,
                                      BSONObjBuilder& builder,
                                      const std::string& name) {
     builder.append(name,
-                   logv2::LogManager::global()
+                   log::LogManager::global()
                        .getGlobalSettings()
-                       .getMinimumLogSeverity(mongo::logv2::LogComponent::kDefault)
+                       .getMinimumLogSeverity(mongo::log::LogComponent::kDefault)
                        .toInt());
 }
 
@@ -421,8 +421,8 @@ Status LogLevelServerParameter::set(const BSONElement& newValueElement) {
                       str::stream() << "Invalid value for logLevel: " << newValueElement);
     LogSeverity newSeverity = (newValue > 0) ? LogSeverity::Debug(newValue) : LogSeverity::Log();
 
-    logv2::LogManager::global().getGlobalSettings().setMinimumLoggedSeverity(
-        mongo::logv2::LogComponent::kDefault, newSeverity);
+    log::LogManager::global().getGlobalSettings().setMinimumLoggedSeverity(
+        mongo::log::LogComponent::kDefault, newSeverity);
     return Status::OK();
 }
 
@@ -436,8 +436,8 @@ Status LogLevelServerParameter::setFromString(const std::string& strLevel) {
                       str::stream() << "Invalid value for logLevel: " << newValue);
     LogSeverity newSeverity = (newValue > 0) ? LogSeverity::Debug(newValue) : LogSeverity::Log();
 
-    logv2::LogManager::global().getGlobalSettings().setMinimumLoggedSeverity(
-        mongo::logv2::LogComponent::kDefault, newSeverity);
+    log::LogManager::global().getGlobalSettings().setMinimumLoggedSeverity(
+        mongo::log::LogComponent::kDefault, newSeverity);
     return Status::OK();
 }
 

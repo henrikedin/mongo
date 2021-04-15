@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kReplication
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kReplication
 
 #include "mongo/platform/basic.h"
 
@@ -42,7 +42,7 @@
 #include "mongo/db/operation_context.h"
 #include "mongo/db/service_context.h"
 #include "mongo/db/vector_clock.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/fail_point.h"
 
@@ -233,7 +233,7 @@ void LogicalTimeValidator::cacheExternalKey(ExternalKeysCollectionDocument key) 
 }
 
 void LogicalTimeValidator::resetKeyManagerCache() {
-    LOGV2(20716, "Resetting key manager cache");
+    LOG(20716, "Resetting key manager cache");
     invariant(_keyManager);
     _keyManager->clearCache();
     stdx::lock_guard<Latch> lk(_mutex);
@@ -243,7 +243,7 @@ void LogicalTimeValidator::resetKeyManagerCache() {
 
 void LogicalTimeValidator::stopKeyManager() {
     if (_keyManager) {
-        LOGV2(20717, "Stopping key manager");
+        LOG(20717, "Stopping key manager");
         _keyManager->stopMonitoring();
         _keyManager->clearCache();
 
@@ -251,7 +251,7 @@ void LogicalTimeValidator::stopKeyManager() {
         _lastSeenValidTime = SignedLogicalTime();
         _timeProofService.resetCache();
     } else {
-        LOGV2(20718, "Stopping key manager: no key manager exists.");
+        LOG(20718, "Stopping key manager: no key manager exists.");
     }
 }
 

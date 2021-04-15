@@ -27,13 +27,13 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kDefault
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kDefault
 
 #include "mongo/platform/basic.h"
 
 #include "mongo/db/vector_clock_mutable.h"
 
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace mongo {
 namespace {
@@ -84,10 +84,10 @@ LogicalTime VectorClockMutable::_advanceComponentTimeByTicks(Component component
     // second.
     else if (time.asTimestamp().getInc() > (kMaxValue - nTicks)) {
 
-        LOGV2(20709,
-              "Exceeded maximum allowable increment value within one second. Moving time forward "
-              "to the next second.",
-              "vectorClockComponent"_attr = _componentName(component));
+        LOG(20709,
+            "Exceeded maximum allowable increment value within one second. Moving time forward "
+            "to the next second.",
+            "vectorClockComponent"_attr = _componentName(component));
 
         // Move time forward to the next second
         time = LogicalTime(Timestamp(time.asTimestamp().getSecs() + 1, 0));

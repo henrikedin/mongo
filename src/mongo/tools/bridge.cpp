@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kBridge
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kBridge
 
 #include "mongo/platform/basic.h"
 
@@ -40,7 +40,7 @@
 #include "mongo/db/dbmessage.h"
 #include "mongo/db/operation_context.h"
 #include "mongo/db/service_context.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/platform/atomic_word.h"
 #include "mongo/platform/mutex.h"
 #include "mongo/platform/random.h"
@@ -94,7 +94,7 @@ public:
             return status.getStatus();
         }
 
-        LOGV2(22916, "Processing bridge command", "cmdName"_attr = cmdName, "cmdObj"_attr = cmdObj);
+        LOG(22916, "Processing bridge command", "cmdName"_attr = cmdName, "cmdObj"_attr = cmdObj);
 
         BridgeCommand* command = status.getValue();
         return command->run(cmdObj, &_settingsMutex, &_settings);
@@ -271,7 +271,7 @@ Future<DbResponse> ServiceEntryPointBridge::handleRequest(OperationContext* opCt
     // stream, make sure we close the exhaust stream properly.
     auto earlyExhaustExitGuard = makeGuard([&] {
         if (dest.inExhaust()) {
-            LOGV2(4622301, "mongobridge shutting down exhaust stream", "remote"_attr = dest);
+            LOG(4622301, "mongobridge shutting down exhaust stream", "remote"_attr = dest);
             dest.setInExhaust(false);
             // Active exhaust stream should have a session.
             invariant(dest.getSession());
@@ -293,11 +293,11 @@ Future<DbResponse> ServiceEntryPointBridge::handleRequest(OperationContext* opCt
                     tl->connect(destAddr, transport::kGlobalSSLMode, connectExpiration - now);
                 auto status = sws.getStatus();
                 if (!status.isOK()) {
-                    LOGV2_WARNING(22924,
-                                  "Unable to establish connection to {remoteAddress}: {error}",
-                                  "Unable to establish connection",
-                                  "remoteAddress"_attr = destAddr,
-                                  "error"_attr = status);
+                    LOG_WARNING(22924,
+                                "Unable to establish connection to {remoteAddress}: {error}",
+                                "Unable to establish connection",
+                                "remoteAddress"_attr = destAddr,
+                                "error"_attr = status);
                     now = getGlobalServiceContext()->getFastClockSource()->now();
                 } else {
                     return std::move(sws.getValue());
@@ -325,14 +325,14 @@ Future<DbResponse> ServiceEntryPointBridge::handleRequest(OperationContext* opCt
 
         dest.extractHostInfo(*cmdRequest);
 
-        LOGV2_DEBUG(22917,
-                    1,
-                    "Received \"{commandName}\" command with arguments "
-                    "{arguments} from {remote}",
-                    "Received command",
-                    "commandName"_attr = cmdRequest->getCommandName(),
-                    "arguments"_attr = cmdRequest->body,
-                    "remote"_attr = dest);
+        LOG_DEBUG(22917,
+                  1,
+                  "Received \"{commandName}\" command with arguments "
+                  "{arguments} from {remote}",
+                  "Received command",
+                  "commandName"_attr = cmdRequest->getCommandName(),
+                  "arguments"_attr = cmdRequest->body,
+                  "remote"_attr = dest);
     }
 
     // Handle a message intended to configure the mongobridge and return a response.
@@ -359,11 +359,11 @@ Future<DbResponse> ServiceEntryPointBridge::handleRequest(OperationContext* opCt
     switch (hostSettings.state) {
         // Close the connection to 'dest'.
         case HostSettings::State::kHangUp:
-            LOGV2(22918,
-                  "Rejecting connection from {remote}, end connection {source}",
-                  "Rejecting connection",
-                  "remote"_attr = dest,
-                  "source"_attr = source->remote().toString());
+            LOG(22918,
+                "Rejecting connection from {remote}, end connection {source}",
+                "Rejecting connection",
+                "remote"_attr = dest,
+                "source"_attr = source->remote().toString());
             source->end();
             return Future<DbResponse>::makeReady({Message()});
         // Forward the message to 'dest' with probability '1 - hostSettings.loss'.
@@ -371,19 +371,19 @@ Future<DbResponse> ServiceEntryPointBridge::handleRequest(OperationContext* opCt
             if (dest.nextCanonicalDouble() < hostSettings.loss) {
                 std::string hostName = dest.toString();
                 if (cmdRequest) {
-                    LOGV2(22919,
-                          "Discarding \"{commandName}\" command with arguments "
-                          "{arguments} from {hostName}",
-                          "Discarding command from host",
-                          "commandName"_attr = cmdRequest->getCommandName(),
-                          "arguments"_attr = cmdRequest->body,
-                          "hostName"_attr = hostName);
+                    LOG(22919,
+                        "Discarding \"{commandName}\" command with arguments "
+                        "{arguments} from {hostName}",
+                        "Discarding command from host",
+                        "commandName"_attr = cmdRequest->getCommandName(),
+                        "arguments"_attr = cmdRequest->body,
+                        "hostName"_attr = hostName);
                 } else {
-                    LOGV2(22920,
-                          "Discarding {operation} from {hostName}",
-                          "Discarding operation from host",
-                          "operation"_attr = networkOpToString(request.operation()),
-                          "hostName"_attr = hostName);
+                    LOG(22920,
+                        "Discarding {operation} from {hostName}",
+                        "Discarding operation from host",
+                        "operation"_attr = networkOpToString(request.operation()),
+                        "hostName"_attr = hostName);
                 }
                 return Future<DbResponse>::makeReady({Message()});
             }
@@ -427,11 +427,11 @@ Future<DbResponse> ServiceEntryPointBridge::handleRequest(OperationContext* opCt
         // reply with. If the message handling settings were since changed to close
         // connections from 'host', then do so now.
         if (hostSettings.state == HostSettings::State::kHangUp) {
-            LOGV2(22921,
-                  "Closing connection from {remote}, end connection {source}",
-                  "Closing connection",
-                  "remote"_attr = dest,
-                  "source"_attr = source->remote());
+            LOG(22921,
+                "Closing connection from {remote}, end connection {source}",
+                "Closing connection",
+                "remote"_attr = dest,
+                "source"_attr = source->remote());
             source->end();
             return Future<DbResponse>::makeReady({Message()});
         }
@@ -456,7 +456,7 @@ Future<DbResponse> ServiceEntryPointBridge::handleRequest(OperationContext* opCt
         return Future<DbResponse>::makeReady({Message()});
     }
 } catch (const DBException& e) {
-    LOGV2_ERROR(4879804, "Failed to handle request", "error"_attr = redact(e));
+    LOG_ERROR(4879804, "Failed to handle request", "error"_attr = redact(e));
     return e.toStatus();
 }
 
@@ -498,16 +498,16 @@ int bridgeMain(int argc, char** argv) {
     }
 
     if (auto status = serviceContext->getServiceEntryPoint()->start(); !status.isOK()) {
-        LOGV2(4907203, "Error starting service entry point", "error"_attr = status);
+        LOG(4907203, "Error starting service entry point", "error"_attr = status);
     }
 
     if (auto status = serviceContext->getTransportLayer()->setup(); !status.isOK()) {
-        LOGV2(22922, "Error setting up transport layer", "error"_attr = status);
+        LOG(22922, "Error setting up transport layer", "error"_attr = status);
         return EXIT_NET_ERROR;
     }
 
     if (auto status = serviceContext->getTransportLayer()->start(); !status.isOK()) {
-        LOGV2(22923, "Error starting transport layer", "error"_attr = status);
+        LOG(22923, "Error starting transport layer", "error"_attr = status);
         return EXIT_NET_ERROR;
     }
 

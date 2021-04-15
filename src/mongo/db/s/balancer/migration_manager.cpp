@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kSharding
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kSharding
 
 #include "mongo/platform/basic.h"
 
@@ -42,7 +42,7 @@
 #include "mongo/db/s/balancer/scoped_migration_request.h"
 #include "mongo/db/s/dist_lock_manager.h"
 #include "mongo/executor/task_executor_pool.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/s/catalog_cache.h"
 #include "mongo/s/client/shard_registry.h"
@@ -236,11 +236,11 @@ void MigrationManager::startRecoveryAndAcquireDistLocks(OperationContext* opCtx)
             boost::none);
 
     if (!statusWithMigrationsQueryResponse.isOK()) {
-        LOGV2(21896,
-              "Unable to read config.migrations collection documents for balancer migration "
-              "recovery. Abandoning balancer recovery: {error}",
-              "Unable to read config.migrations documents for balancer migration recovery",
-              "error"_attr = redact(statusWithMigrationsQueryResponse.getStatus()));
+        LOG(21896,
+            "Unable to read config.migrations collection documents for balancer migration "
+            "recovery. Abandoning balancer recovery: {error}",
+            "Unable to read config.migrations documents for balancer migration recovery",
+            "error"_attr = redact(statusWithMigrationsQueryResponse.getStatus()));
         return;
     }
 
@@ -250,12 +250,12 @@ void MigrationManager::startRecoveryAndAcquireDistLocks(OperationContext* opCtx)
             // The format of this migration document is incorrect. The balancer holds a distlock for
             // this migration, but without parsing the migration document we cannot identify which
             // distlock must be released. So we must release all distlocks.
-            LOGV2(21897,
-                  "Unable to parse config.migrations document '{migration}' for balancer"
-                  "migration recovery. Abandoning balancer recovery: {error}",
-                  "Unable to parse config.migrations document for balancer migration recovery",
-                  "migration"_attr = redact(migration.toString()),
-                  "error"_attr = redact(statusWithMigrationType.getStatus()));
+            LOG(21897,
+                "Unable to parse config.migrations document '{migration}' for balancer"
+                "migration recovery. Abandoning balancer recovery: {error}",
+                "Unable to parse config.migrations document for balancer migration recovery",
+                "migration"_attr = redact(migration.toString()),
+                "error"_attr = redact(statusWithMigrationType.getStatus()));
             return;
         }
         MigrationType migrateType = std::move(statusWithMigrationType.getValue());
@@ -272,14 +272,14 @@ void MigrationManager::startRecoveryAndAcquireDistLocks(OperationContext* opCtx)
             auto status = DistLockManager::get(opCtx)->tryLockDirectWithLocalWriteConcern(
                 opCtx, migrateType.getNss().ns(), whyMessage);
             if (!status.isOK()) {
-                LOGV2(21898,
-                      "Failed to acquire distributed lock for collection {namespace} "
-                      "during balancer recovery of an active migration. Abandoning balancer "
-                      "recovery: {error}",
-                      "Failed to acquire distributed lock for collection "
-                      "during balancer recovery of an active migration",
-                      "namespace"_attr = migrateType.getNss().ns(),
-                      "error"_attr = redact(status));
+                LOG(21898,
+                    "Failed to acquire distributed lock for collection {namespace} "
+                    "during balancer recovery of an active migration. Abandoning balancer "
+                    "recovery: {error}",
+                    "Failed to acquire distributed lock for collection "
+                    "during balancer recovery of an active migration",
+                    "namespace"_attr = migrateType.getNss().ns(),
+                    "error"_attr = redact(status));
                 return;
             }
         }
@@ -329,12 +329,12 @@ void MigrationManager::finishRecovery(OperationContext* opCtx,
             // This shouldn't happen because the collection was intact and sharded when the previous
             // config primary was active and the dist locks have been held by the balancer
             // throughout. Abort migration recovery.
-            LOGV2(21899,
-                  "Unable to reload chunk metadata for collection {namespace} during balancer "
-                  "recovery. Abandoning recovery: {error}",
-                  "Unable to reload chunk metadata for collection during balancer recovery",
-                  "namespace"_attr = nss,
-                  "error"_attr = redact(swCM.getStatus()));
+            LOG(21899,
+                "Unable to reload chunk metadata for collection {namespace} during balancer "
+                "recovery. Abandoning recovery: {error}",
+                "Unable to reload chunk metadata for collection during balancer recovery",
+                "namespace"_attr = nss,
+                "error"_attr = redact(swCM.getStatus()));
             return;
         }
 

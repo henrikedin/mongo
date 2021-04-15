@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kQuery
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kQuery
 
 #include "mongo/platform/basic.h"
 
@@ -49,7 +49,7 @@
 #include "mongo/db/query/collation/collation_index_key.h"
 #include "mongo/db/query/datetime/date_time_support.h"
 #include "mongo/db/storage/key_string.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/fail_point.h"
 #include "mongo/util/str.h"
 #include "mongo/util/summation.h"
@@ -2335,18 +2335,18 @@ std::tuple<bool, value::TypeTags, value::Value> buildRegexMatchResultObject(
             return true;
         }
         if (startPos == -1 || limitPos == -1) {
-            LOGV2_ERROR(5073412,
-                        "Unexpected error occurred while executing regexFind.",
-                        "startPos"_attr = startPos,
-                        "limitPos"_attr = limitPos);
+            LOG_ERROR(5073412,
+                      "Unexpected error occurred while executing regexFind.",
+                      "startPos"_attr = startPos,
+                      "limitPos"_attr = limitPos);
             return false;
         }
         if (startPos < 0 || static_cast<size_t>(startPos) > inputString.size() || limitPos < 0 ||
             static_cast<size_t>(limitPos) > inputString.size() || startPos > limitPos) {
-            LOGV2_ERROR(5073413,
-                        "Unexpected error occurred while executing regexFind.",
-                        "startPos"_attr = startPos,
-                        "limitPos"_attr = limitPos);
+            LOG_ERROR(5073413,
+                      "Unexpected error occurred while executing regexFind.",
+                      "startPos"_attr = startPos,
+                      "limitPos"_attr = limitPos);
             return false;
         }
         return true;
@@ -2428,9 +2428,9 @@ std::tuple<bool, value::TypeTags, value::Value> pcreNextMatch(value::PcreRegex* 
 
     auto numCaptures = pcre->getNumberCaptures();
     if (execResult < -1 || execResult > static_cast<int>(numCaptures) + 1) {
-        LOGV2_ERROR(5073414,
-                    "Error occurred while executing regular expression.",
-                    "execResult"_attr = execResult);
+        LOG_ERROR(5073414,
+                  "Error occurred while executing regular expression.",
+                  "execResult"_attr = execResult);
         return {false, value::TypeTags::Nothing, 0};
     }
 
@@ -2643,11 +2643,11 @@ std::tuple<bool, value::TypeTags, value::Value> ByteCode::builtinShardFilter(Ari
     if (filterTag != value::TypeTags::shardFilterer || shardKeyTag != value::TypeTags::bsonObject) {
         if (filterTag == value::TypeTags::shardFilterer &&
             shardKeyTag == value::TypeTags::Nothing) {
-            LOGV2_WARNING(5071200,
-                          "No shard key found in document, it may have been inserted manually "
-                          "into shard",
-                          "keyPattern"_attr =
-                              value::getShardFiltererView(filterValue)->getKeyPattern());
+            LOG_WARNING(5071200,
+                        "No shard key found in document, it may have been inserted manually "
+                        "into shard",
+                        "keyPattern"_attr =
+                            value::getShardFiltererView(filterValue)->getKeyPattern());
         }
         return {false, value::TypeTags::Nothing, 0};
     }

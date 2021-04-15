@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kResharding
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kResharding
 
 #include "mongo/db/s/resharding/resharding_coordinator_service.h"
 
@@ -45,7 +45,7 @@
 #include "mongo/db/s/sharding_util.h"
 #include "mongo/db/storage/duplicate_key_error_info.h"
 #include "mongo/db/vector_clock.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/s/catalog/type_chunk.h"
 #include "mongo/s/grid.h"
@@ -883,13 +883,13 @@ void ReshardingCoordinatorService::ReshardingCoordinator::installCoordinatorDoc(
                                            bob.obj(),
                                            ShardingCatalogClient::kMajorityWriteConcern);
 
-    LOGV2_INFO(5343001,
-               "Transitioned resharding coordinator state",
-               "newState"_attr = CoordinatorState_serializer(doc.getState()),
-               "oldState"_attr = CoordinatorState_serializer(_coordinatorDoc.getState()),
-               "namespace"_attr = doc.getSourceNss(),
-               "collectionUUID"_attr = doc.getSourceUUID(),
-               "reshardingUUID"_attr = doc.getReshardingUUID());
+    LOG_INFO(5343001,
+             "Transitioned resharding coordinator state",
+             "newState"_attr = CoordinatorState_serializer(doc.getState()),
+             "oldState"_attr = CoordinatorState_serializer(_coordinatorDoc.getState()),
+             "namespace"_attr = doc.getSourceNss(),
+             "collectionUUID"_attr = doc.getSourceUUID(),
+             "reshardingUUID"_attr = doc.getReshardingUUID());
 
     _coordinatorDoc = doc;
 }
@@ -909,10 +909,10 @@ ExecutorFuture<void> waitForMinimumOperationDuration(
     const auto estimatedStart = executor->now() - elapsed;
     return executor->sleepUntil(estimatedStart + minDuration, token)
         .then([executor, estimatedStart] {
-            LOGV2_INFO(5391801,
-                       "Resuming operation after waiting for minimum resharding operation duration",
-                       "startedOn"_attr = estimatedStart,
-                       "resumedOn"_attr = executor->now());
+            LOG_INFO(5391801,
+                     "Resuming operation after waiting for minimum resharding operation duration",
+                     "startedOn"_attr = estimatedStart,
+                     "resumedOn"_attr = executor->now());
         });
 }
 
@@ -1005,9 +1005,9 @@ ReshardingCoordinatorService::ReshardingCoordinator::_persistDecisionAndFinishRe
                 return status;
             }
 
-            LOGV2_FATAL(5277000,
-                        "Unrecoverable error past the point resharding was guaranteed to succeed",
-                        "error"_attr = redact(status));
+            LOG_FATAL(5277000,
+                      "Unrecoverable error past the point resharding was guaranteed to succeed",
+                      "error"_attr = redact(status));
         });
 }
 SemiFuture<void> ReshardingCoordinatorService::ReshardingCoordinator::run(
@@ -1071,11 +1071,11 @@ void ReshardingCoordinatorService::ReshardingCoordinator::_onAbort(
     const std::shared_ptr<executor::ScopedTaskExecutor>& executor, const Status& status) {
     auto nss = _coordinatorDoc.getSourceNss();
 
-    LOGV2(4956902,
-          "Resharding failed",
-          "namespace"_attr = nss.ns(),
-          "newShardKeyPattern"_attr = _coordinatorDoc.getReshardingKey(),
-          "error"_attr = status);
+    LOG(4956902,
+        "Resharding failed",
+        "namespace"_attr = nss.ns(),
+        "newShardKeyPattern"_attr = _coordinatorDoc.getReshardingKey(),
+        "error"_attr = status);
 
     if (_coordinatorDoc.getState() == CoordinatorStateEnum::kUnused) {
         return;
@@ -1118,7 +1118,7 @@ void ReshardingCoordinatorService::ReshardingCoordinator::onOkayToEnterCritical(
     auto lg = stdx::lock_guard(_fulfillmentMutex);
     if (_canEnterCritical.getFuture().isReady())
         return;
-    LOGV2(5391601, "Marking resharding operation okay to enter critical section");
+    LOG(5391601, "Marking resharding operation okay to enter critical section");
     _canEnterCritical.emplaceValue();
 }
 
@@ -1284,14 +1284,14 @@ ReshardingCoordinatorService::ReshardingCoordinator::_awaitAllRecipientsFinished
                     opCtx.get(), _ctHolder->getAbortToken());
             }
 
-            LOGV2(5391602, "Resharding operation waiting for an okay to enter critical section");
+            LOG(5391602, "Resharding operation waiting for an okay to enter critical section");
             if (reshardingCoordinatorCanEnterCriticalImplicitly.shouldFail()) {
                 onOkayToEnterCritical();
             }
             return _canEnterCritical.getFuture()
                 .thenRunOn(**executor)
                 .then([doc = std::move(coordinatorDocChangedOnDisk)] {
-                    LOGV2(5391603, "Resharding operation is okay to enter critical section");
+                    LOG(5391603, "Resharding operation is okay to enter critical section");
                     return doc;
                 });
         })
@@ -1301,7 +1301,7 @@ ReshardingCoordinatorService::ReshardingCoordinator::_awaitAllRecipientsFinished
             const auto criticalSectionTimeout =
                 Milliseconds(resharding::gReshardingCriticalSectionTimeoutMillis.load());
             const auto criticalSectionExpiresAt = (*executor)->now() + criticalSectionTimeout;
-            LOGV2_INFO(
+            LOG_INFO(
                 5573001, "Engaging critical section", "timeoutAt"_attr = criticalSectionExpiresAt);
 
             auto swCbHandle = (*executor)->scheduleWorkAt(

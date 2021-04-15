@@ -26,11 +26,11 @@
  *    exception statement from all source files in the program, then also delete
  *    it in the license file.
  */
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTest
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTest
 
 #include "mongo/platform/basic.h"
 
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/stdx/chrono.h"
 #include "mongo/unittest/unittest.h"
 #include "mongo/util/alarm.h"
@@ -49,22 +49,21 @@ TEST(AlarmScheduler, BasicSingleThread) {
     auto alarm = scheduler->alarmAt(testStart + Milliseconds(10));
     bool firstTimerExpired = false;
     std::move(alarm.future).getAsync([&](Status status) {
-        LOGV2(23071, "First timer expired: {error}", "First timer expired", "error"_attr = status);
+        LOG(23071, "First timer expired: {error}", "First timer expired", "error"_attr = status);
         firstTimerExpired = true;
     });
 
     alarm = scheduler->alarmAt(testStart + Milliseconds(500));
     bool secondTimerExpired = false;
     std::move(alarm.future).getAsync([&](Status status) {
-        LOGV2(
-            23072, "Second timer expired: {error}", "Second timer expired", "error"_attr = status);
+        LOG(23072, "Second timer expired: {error}", "Second timer expired", "error"_attr = status);
         secondTimerExpired = true;
     });
 
     alarm = scheduler->alarmAt(testStart + Milliseconds(515));
     bool thirdTimerExpired = false;
     std::move(alarm.future).getAsync([&](Status status) {
-        LOGV2(23073, "Third timer expired: {error}", "Third timer expired", "error"_attr = status);
+        LOG(23073, "Third timer expired: {error}", "Third timer expired", "error"_attr = status);
         thirdTimerExpired = true;
     });
     auto missingEvent = alarm.handle;

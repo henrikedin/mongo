@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kFTDC
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kFTDC
 
 #include "mongo/platform/basic.h"
 
@@ -39,7 +39,7 @@
 #include "mongo/db/ftdc/collector.h"
 #include "mongo/db/ftdc/util.h"
 #include "mongo/db/jsobj.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/platform/mutex.h"
 #include "mongo/stdx/condition_variable.h"
 #include "mongo/stdx/thread.h"
@@ -137,9 +137,9 @@ BSONObj FTDCController::getMostRecentPeriodicDocument() {
 }
 
 void FTDCController::start() {
-    LOGV2(20625,
-          "Initializing full-time diagnostic data capture",
-          "dataDirectory"_attr = _path.generic_string());
+    LOG(20625,
+        "Initializing full-time diagnostic data capture",
+        "dataDirectory"_attr = _path.generic_string());
 
     // Start the thread
     _thread = stdx::thread([this] { doLoop(); });
@@ -153,7 +153,7 @@ void FTDCController::start() {
 }
 
 void FTDCController::stop() {
-    LOGV2(20626, "Shutting down full-time diagnostic data capture");
+    LOG(20626, "Shutting down full-time diagnostic data capture");
 
     {
         stdx::lock_guard<Latch> lock(_mutex);
@@ -181,9 +181,9 @@ void FTDCController::stop() {
     if (_mgr) {
         auto s = _mgr->close();
         if (!s.isOK()) {
-            LOGV2(20627,
-                  "Failed to close full-time diagnostic data capture file manager",
-                  "error"_attr = s);
+            LOG(20627,
+                "Failed to close full-time diagnostic data capture file manager",
+                "error"_attr = s);
         }
     }
 }

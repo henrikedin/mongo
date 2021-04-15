@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kNetwork
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kNetwork
 
 #include "mongo/platform/basic.h"
 
@@ -44,7 +44,7 @@
 #include "mongo/db/operation_context.h"
 #include "mongo/db/repl/bson_extract_optime.h"
 #include "mongo/db/server_options.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/platform/atomic_word.h"
 #include "mongo/platform/mutex.h"
 #include "mongo/stdx/condition_variable.h"
@@ -114,7 +114,7 @@ void ReplicaSetMonitor::cleanup() {
 
 std::function<void()> ReplicaSetMonitor::_getCleanupCallback(StringData name) {
     return [n = name.toString()] {
-        LOGV2(5046701, "ReplicaSetMonitor cleanup callback invoked", "name"_attr = n);
+        LOG(5046701, "ReplicaSetMonitor cleanup callback invoked", "name"_attr = n);
         // This callback should never invoke ReplicaSetMonitorManager::removeMonitor() because it's
         // a race: the RSM stored in ReplicaSetMonitorManager could be a new one. However, we can
         // safely garbage collect RSM for the 'name'.

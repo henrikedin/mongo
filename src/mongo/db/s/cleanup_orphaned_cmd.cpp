@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kCommand
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kCommand
 
 #include "mongo/platform/basic.h"
 
@@ -50,7 +50,7 @@
 #include "mongo/db/s/sharding_runtime_d_params_gen.h"
 #include "mongo/db/s/sharding_state.h"
 #include "mongo/db/service_context.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/s/request_types/migration_secondary_throttle_options.h"
 
 namespace mongo {
@@ -75,12 +75,12 @@ CleanupResult cleanupOrphanedData(OperationContext* opCtx,
     {
         AutoGetCollection autoColl(opCtx, ns, MODE_IX);
         if (!autoColl.getCollection()) {
-            LOGV2(4416000,
-                  "cleanupOrphaned skipping waiting for orphaned data cleanup because "
-                  "{namespace} does not exist",
-                  "cleanupOrphaned skipping waiting for orphaned data cleanup because "
-                  "collection does not exist",
-                  "namespace"_attr = ns.ns());
+            LOG(4416000,
+                "cleanupOrphaned skipping waiting for orphaned data cleanup because "
+                "{namespace} does not exist",
+                "cleanupOrphaned skipping waiting for orphaned data cleanup because "
+                "collection does not exist",
+                "namespace"_attr = ns.ns());
             return CleanupResult::kDone;
         }
         collectionUuid.emplace(autoColl.getCollection()->uuid());
@@ -88,12 +88,12 @@ CleanupResult cleanupOrphanedData(OperationContext* opCtx,
         auto* const csr = CollectionShardingRuntime::get(opCtx, ns);
         const auto optCollDescr = csr->getCurrentMetadataIfKnown();
         if (!optCollDescr || !optCollDescr->isSharded()) {
-            LOGV2(4416001,
-                  "cleanupOrphaned skipping waiting for orphaned data cleanup because "
-                  "{namespace} is not sharded",
-                  "cleanupOrphaned skipping waiting for orphaned data cleanup because "
-                  "collection is not sharded",
-                  "namespace"_attr = ns.ns());
+            LOG(4416001,
+                "cleanupOrphaned skipping waiting for orphaned data cleanup because "
+                "{namespace} is not sharded",
+                "cleanupOrphaned skipping waiting for orphaned data cleanup because "
+                "collection is not sharded",
+                "namespace"_attr = ns.ns());
             return CleanupResult::kDone;
         }
         range.emplace(optCollDescr->getMinKey(), optCollDescr->getMaxKey());
@@ -103,9 +103,9 @@ CleanupResult cleanupOrphanedData(OperationContext* opCtx,
         // cleanupOrphaned logic did if 'startingFromKey' is present.
         BSONObj keyPattern = optCollDescr->getKeyPattern();
         if (!startingFromKeyConst.isEmpty() && !optCollDescr->isValidKey(startingFromKeyConst)) {
-            LOGV2_ERROR_OPTIONS(
+            LOG_ERROR_OPTIONS(
                 4416002,
-                {logv2::UserAssertAfterLog(ErrorCodes::OrphanedRangeCleanUpFailed)},
+                {log::UserAssertAfterLog(ErrorCodes::OrphanedRangeCleanUpFailed)},
                 "Could not cleanup orphaned data because start key does not match shard key "
                 "pattern",
                 "startKey"_attr = redact(startingFromKeyConst),
@@ -127,11 +127,11 @@ CleanupResult cleanupOrphanedData(OperationContext* opCtx,
                 "is set to true and this shard contains range deletion tasks for the collection.",
                 !disableResumableRangeDeleter.load());
 
-        LOGV2(4416003,
-              "cleanupOrphaned going to wait for range deletion tasks to complete",
-              "namespace"_attr = ns.ns(),
-              "collectionUUID"_attr = *collectionUuid,
-              "numRemainingDeletionTasks"_attr = numRemainingDeletionTasks);
+        LOG(4416003,
+            "cleanupOrphaned going to wait for range deletion tasks to complete",
+            "namespace"_attr = ns.ns(),
+            "collectionUUID"_attr = *collectionUuid,
+            "numRemainingDeletionTasks"_attr = numRemainingDeletionTasks);
 
         auto status = CollectionShardingRuntime::waitForClean(opCtx, ns, *collectionUuid, *range);
 

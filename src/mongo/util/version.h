@@ -161,7 +161,7 @@ public:
      * Logs similar info to `appendBuildInfo`, suitable for the --version flag or for a
      * startup log message (trimmed for user-friendliness). The `buildInfo` data appear
      * in a subobject mapped to the "environment" key, but with the elements for which
-     * inVersion == false removed. Puts to `os` if nonnull, else to LOGV2.
+     * inVersion == false removed. Puts to `os` if nonnull, else to log.
      */
     void logBuildInfo(std::ostream* os) const;
 

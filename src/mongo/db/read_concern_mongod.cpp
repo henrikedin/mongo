@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kCommand
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kCommand
 
 #include "mongo/base/shim.h"
 #include "mongo/base/status.h"
@@ -46,7 +46,7 @@
 #include "mongo/db/server_options.h"
 #include "mongo/db/storage/recovery_unit.h"
 #include "mongo/db/vector_clock.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/s/grid.h"
 #include "mongo/util/concurrency/notification.h"
@@ -123,13 +123,13 @@ Status makeNoopWriteIfNeeded(OperationContext* opCtx, LogicalTime clusterTime) {
         auto waitStatus = replCoord->waitUntilOpTimeForReadUntil(opCtx, readConcernArgs, deadline);
         lastAppliedOpTime = LogicalTime(replCoord->getMyLastAppliedOpTime().getTimestamp());
         if (!waitStatus.isOK()) {
-            LOGV2_DEBUG(20986,
-                        1,
-                        "Wait for clusterTime: {clusterTime} until deadline: {deadline} failed "
-                        "with {waitStatus}",
-                        "clusterTime"_attr = clusterTime.toString(),
-                        "deadline"_attr = deadline,
-                        "waitStatus"_attr = waitStatus.toString());
+            LOG_DEBUG(20986,
+                      1,
+                      "Wait for clusterTime: {clusterTime} until deadline: {deadline} failed "
+                      "with {waitStatus}",
+                      "clusterTime"_attr = clusterTime.toString(),
+                      "deadline"_attr = deadline,
+                      "waitStatus"_attr = waitStatus.toString());
         }
     }
 
@@ -162,12 +162,12 @@ Status makeNoopWriteIfNeeded(OperationContext* opCtx, LogicalTime clusterTime) {
         auto myWriteRequest = writeRequests.getOrCreateWriteRequest(clusterTime);
         if (std::get<0>(myWriteRequest)) {  // Its a new request
             try {
-                LOGV2_DEBUG(20987,
-                            2,
-                            "New appendOplogNote request on clusterTime: {clusterTime} remaining "
-                            "attempts: {remainingAttempts}",
-                            "clusterTime"_attr = clusterTime.toString(),
-                            "remainingAttempts"_attr = remainingAttempts);
+                LOG_DEBUG(20987,
+                          2,
+                          "New appendOplogNote request on clusterTime: {clusterTime} remaining "
+                          "attempts: {remainingAttempts}",
+                          "clusterTime"_attr = clusterTime.toString(),
+                          "remainingAttempts"_attr = remainingAttempts);
 
                 auto onRemoteCmdScheduled = [](executor::TaskExecutor::CallbackHandle handle) {};
                 auto onRemoteCmdComplete = [](executor::TaskExecutor::CallbackHandle handle) {};
@@ -192,12 +192,12 @@ Status makeNoopWriteIfNeeded(OperationContext* opCtx, LogicalTime clusterTime) {
                 writeRequests.deleteWriteRequest(clusterTime);
             }
         } else {
-            LOGV2_DEBUG(20988,
-                        2,
-                        "Join appendOplogNote request on clusterTime: {clusterTime} remaining "
-                        "attempts: {remainingAttempts}",
-                        "clusterTime"_attr = clusterTime.toString(),
-                        "remainingAttempts"_attr = remainingAttempts);
+            LOG_DEBUG(20988,
+                      2,
+                      "Join appendOplogNote request on clusterTime: {clusterTime} remaining "
+                      "attempts: {remainingAttempts}",
+                      "clusterTime"_attr = clusterTime.toString(),
+                      "remainingAttempts"_attr = remainingAttempts);
             try {
                 status = std::get<1>(myWriteRequest)->get(opCtx);
             } catch (const DBException& ex) {
@@ -214,11 +214,11 @@ Status makeNoopWriteIfNeeded(OperationContext* opCtx, LogicalTime clusterTime) {
         // issue the noop write while some writes have already happened on the primary that have
         // bumped the clusterTime beyond the 'clusterTime' the noop write requested.
         if (status == ErrorCodes::StaleClusterTime) {
-            LOGV2_DEBUG(54102,
-                        2,
-                        "appendOplogNote request on clusterTime {clusterTime} failed with "
-                        "StaleClusterTime",
-                        "clusterTime"_attr = clusterTime.asTimestamp());
+            LOG_DEBUG(54102,
+                      2,
+                      "appendOplogNote request on clusterTime {clusterTime} failed with "
+                      "StaleClusterTime",
+                      "clusterTime"_attr = clusterTime.asTimestamp());
             return Status::OK();
         }
 
@@ -226,11 +226,11 @@ Status makeNoopWriteIfNeeded(OperationContext* opCtx, LogicalTime clusterTime) {
     }
     // This is when the noop write failed but the opLog caught up to clusterTime by replicating.
     if (!status.isOK()) {
-        LOGV2_DEBUG(20989,
-                    1,
-                    "Reached clusterTime {lastAppliedOpTime} but failed noop write due to {error}",
-                    "lastAppliedOpTime"_attr = lastAppliedOpTime.toString(),
-                    "error"_attr = status.toString());
+        LOG_DEBUG(20989,
+                  1,
+                  "Reached clusterTime {lastAppliedOpTime} but failed noop write due to {error}",
+                  "lastAppliedOpTime"_attr = lastAppliedOpTime.toString(),
+                  "error"_attr = status.toString());
     }
     return Status::OK();
 }
@@ -375,11 +375,11 @@ Status waitForReadConcernImpl(OperationContext* opCtx,
 
             auto status = makeNoopWriteIfNeeded(opCtx, *targetClusterTime);
             if (!status.isOK()) {
-                LOGV2(20990,
-                      "Failed noop write at clusterTime: {targetClusterTime} due to {error}",
-                      "Failed noop write",
-                      "targetClusterTime"_attr = targetClusterTime,
-                      "error"_attr = status);
+                LOG(20990,
+                    "Failed noop write at clusterTime: {targetClusterTime} due to {error}",
+                    "Failed noop write",
+                    "targetClusterTime"_attr = targetClusterTime,
+                    "error"_attr = status);
             }
         }
 
@@ -426,18 +426,17 @@ Status waitForReadConcernImpl(OperationContext* opCtx,
 
         const int debugLevel = serverGlobalParams.clusterRole == ClusterRole::ConfigServer ? 1 : 2;
 
-        LOGV2_DEBUG(
-            20991,
-            debugLevel,
-            "Waiting for 'committed' snapshot to be available for reading: {readConcernArgs}",
-            "readConcernArgs"_attr = readConcernArgs);
+        LOG_DEBUG(20991,
+                  debugLevel,
+                  "Waiting for 'committed' snapshot to be available for reading: {readConcernArgs}",
+                  "readConcernArgs"_attr = readConcernArgs);
 
         ru->setTimestampReadSource(RecoveryUnit::ReadSource::kMajorityCommitted);
         Status status = ru->majorityCommittedSnapshotAvailable();
 
         // Wait until a snapshot is available.
         while (status == ErrorCodes::ReadConcernMajorityNotAvailableYet) {
-            LOGV2_DEBUG(20992, debugLevel, "Snapshot not available yet.");
+            LOG_DEBUG(20992, debugLevel, "Snapshot not available yet.");
             replCoord->waitUntilSnapshotCommitted(opCtx, Timestamp());
             status = ru->majorityCommittedSnapshotAvailable();
         }
@@ -446,10 +445,10 @@ Status waitForReadConcernImpl(OperationContext* opCtx,
             return status;
         }
 
-        LOGV2_DEBUG(20993,
-                    debugLevel,
-                    "Using 'committed' snapshot",
-                    "operation_description"_attr = CurOp::get(opCtx)->opDescription());
+        LOG_DEBUG(20993,
+                  debugLevel,
+                  "Using 'committed' snapshot",
+                  "operation_description"_attr = CurOp::get(opCtx)->opDescription());
     }
     return Status::OK();
 }
@@ -457,9 +456,9 @@ Status waitForReadConcernImpl(OperationContext* opCtx,
 Status waitForLinearizableReadConcernImpl(OperationContext* opCtx, const int readConcernTimeout) {
     CurOpFailpointHelpers::waitWhileFailPointEnabled(
         &hangBeforeLinearizableReadConcern, opCtx, "hangBeforeLinearizableReadConcern", [opCtx]() {
-            LOGV2(20994,
-                  "batch update - hangBeforeLinearizableReadConcern fail point enabled. "
-                  "Blocking until fail point is disabled.");
+            LOG(20994,
+                "batch update - hangBeforeLinearizableReadConcern fail point enabled. "
+                "Blocking until fail point is disabled.");
         });
 
     repl::ReplicationCoordinator* replCoord =
@@ -533,12 +532,12 @@ Status waitForSpeculativeMajorityReadConcernImpl(
     }
 
     // Block to make sure returned data is majority committed.
-    LOGV2_DEBUG(20995,
-                1,
-                "Servicing speculative majority read, waiting for timestamp {waitTs} to become "
-                "committed, current commit point: {replCoord_getLastCommittedOpTime}",
-                "waitTs"_attr = waitTs,
-                "replCoord_getLastCommittedOpTime"_attr = replCoord->getLastCommittedOpTime());
+    LOG_DEBUG(20995,
+              1,
+              "Servicing speculative majority read, waiting for timestamp {waitTs} to become "
+              "committed, current commit point: {replCoord_getLastCommittedOpTime}",
+              "waitTs"_attr = waitTs,
+              "replCoord_getLastCommittedOpTime"_attr = replCoord->getLastCommittedOpTime());
 
     if (!opCtx->hasDeadline()) {
         // This hard-coded value represents the maximum time we are willing to wait for a timestamp
@@ -553,12 +552,12 @@ Status waitForSpeculativeMajorityReadConcernImpl(
     Timer t;
     auto waitStatus = replCoord->awaitTimestampCommitted(opCtx, waitTs);
     if (waitStatus.isOK()) {
-        LOGV2_DEBUG(20996,
-                    1,
-                    "Timestamp {waitTs} became majority committed, waited {t_millis}ms for "
-                    "speculative majority read to be satisfied.",
-                    "waitTs"_attr = waitTs,
-                    "t_millis"_attr = t.millis());
+        LOG_DEBUG(20996,
+                  1,
+                  "Timestamp {waitTs} became majority committed, waited {t_millis}ms for "
+                  "speculative majority read to be satisfied.",
+                  "waitTs"_attr = waitTs,
+                  "t_millis"_attr = t.millis());
     }
     return waitStatus;
 }

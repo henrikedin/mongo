@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kNetwork
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kNetwork
 
 #include "mongo/platform/basic.h"
 
@@ -38,7 +38,7 @@
 #include "mongo/client/read_preference.h"
 #include "mongo/client/replica_set_monitor.h"
 #include "mongo/db/operation_context.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/net/hostandport.h"
 #include "mongo/util/str.h"
@@ -52,12 +52,12 @@ RemoteCommandTargeterRS::RemoteCommandTargeterRS(const std::string& rsName,
     std::set<HostAndPort> seedServers(seedHosts.begin(), seedHosts.end());
     _rsMonitor = ReplicaSetMonitor::createIfNeeded(rsName, seedServers);
 
-    LOGV2_DEBUG(20157,
-                1,
-                "Started targeter for {connectionString}",
-                "Started targeter",
-                "connectionString"_attr = ConnectionString::forReplicaSet(
-                    rsName, std::vector<HostAndPort>(seedServers.begin(), seedServers.end())));
+    LOG_DEBUG(20157,
+              1,
+              "Started targeter for {connectionString}",
+              "Started targeter",
+              "connectionString"_attr = ConnectionString::forReplicaSet(
+                  rsName, std::vector<HostAndPort>(seedServers.begin(), seedServers.end())));
 }
 
 ConnectionString RemoteCommandTargeterRS::connectionString() {

@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTransaction
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTransaction
 
 #include "mongo/platform/basic.h"
 
@@ -44,7 +44,7 @@
 #include "mongo/db/service_context.h"
 #include "mongo/db/transaction_participant.h"
 #include "mongo/db/transaction_validation.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace mongo {
 namespace {
@@ -94,13 +94,13 @@ public:
                     "commitTransaction must be run within a transaction",
                     txnParticipant);
 
-            LOGV2_DEBUG(20507,
-                        3,
-                        "Received commitTransaction for transaction with txnNumber "
-                        "{txnNumber} on session {sessionId}",
-                        "Received commitTransaction",
-                        "txnNumber"_attr = opCtx->getTxnNumber(),
-                        "sessionId"_attr = opCtx->getLogicalSessionId()->toBSON());
+            LOG_DEBUG(20507,
+                      3,
+                      "Received commitTransaction for transaction with txnNumber "
+                      "{txnNumber} on session {sessionId}",
+                      "Received commitTransaction",
+                      "txnNumber"_attr = opCtx->getTxnNumber(),
+                      "sessionId"_attr = opCtx->getLogicalSessionId()->toBSON());
 
             // commitTransaction is retryable.
             if (txnParticipant.transactionIsCommitted()) {
@@ -206,13 +206,13 @@ public:
                     "abortTransaction must be run within a transaction",
                     txnParticipant);
 
-            LOGV2_DEBUG(20508,
-                        3,
-                        "Received abortTransaction for transaction with txnNumber {txnNumber} "
-                        "on session {sessionId}",
-                        "Received abortTransaction",
-                        "txnNumber"_attr = opCtx->getTxnNumber(),
-                        "sessionId"_attr = opCtx->getLogicalSessionId()->toBSON());
+            LOG_DEBUG(20508,
+                      3,
+                      "Received abortTransaction for transaction with txnNumber {txnNumber} "
+                      "on session {sessionId}",
+                      "Received abortTransaction",
+                      "txnNumber"_attr = opCtx->getTxnNumber(),
+                      "sessionId"_attr = opCtx->getLogicalSessionId()->toBSON());
 
             uassert(ErrorCodes::NoSuchTransaction,
                     "Transaction isn't in progress",

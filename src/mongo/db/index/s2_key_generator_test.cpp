@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTest
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTest
 
 #include "mongo/platform/basic.h"
 
@@ -41,7 +41,7 @@
 #include "mongo/db/index/s2_common.h"
 #include "mongo/db/json.h"
 #include "mongo/db/query/collation/collator_interface_mock.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/unittest/unittest.h"
 #include "mongo/util/str.h"
 
@@ -79,18 +79,18 @@ std::string dumpMultikeyPaths(const MultikeyPaths& multikeyPaths) {
 
 bool areKeysetsEqual(const KeyStringSet& expectedKeys, const KeyStringSet& actualKeys) {
     if (expectedKeys.size() != actualKeys.size()) {
-        LOGV2(20693,
-              "Expected: {dumpKeyset_expectedKeys}, Actual: {dumpKeyset_actualKeys}",
-              "dumpKeyset_expectedKeys"_attr = dumpKeyset(expectedKeys),
-              "dumpKeyset_actualKeys"_attr = dumpKeyset(actualKeys));
+        LOG(20693,
+            "Expected: {dumpKeyset_expectedKeys}, Actual: {dumpKeyset_actualKeys}",
+            "dumpKeyset_expectedKeys"_attr = dumpKeyset(expectedKeys),
+            "dumpKeyset_actualKeys"_attr = dumpKeyset(actualKeys));
         return false;
     }
 
     if (!std::equal(expectedKeys.begin(), expectedKeys.end(), actualKeys.begin())) {
-        LOGV2(20694,
-              "Expected: {dumpKeyset_expectedKeys}, Actual: {dumpKeyset_actualKeys}",
-              "dumpKeyset_expectedKeys"_attr = dumpKeyset(expectedKeys),
-              "dumpKeyset_actualKeys"_attr = dumpKeyset(actualKeys));
+        LOG(20694,
+            "Expected: {dumpKeyset_expectedKeys}, Actual: {dumpKeyset_actualKeys}",
+            "dumpKeyset_expectedKeys"_attr = dumpKeyset(expectedKeys),
+            "dumpKeyset_actualKeys"_attr = dumpKeyset(actualKeys));
         return false;
     }
 

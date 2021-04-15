@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kReplication
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kReplication
 
 #include "mongo/platform/basic.h"
 
@@ -43,7 +43,7 @@
 #include "mongo/db/repl/replication_coordinator_external_state.h"
 #include "mongo/db/repl/replication_process.h"
 #include "mongo/db/repl/storage_interface.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace mongo {
 namespace repl {
@@ -105,15 +105,15 @@ ChangeSyncSourceAction DataReplicatorExternalStateImpl::shouldStopFetching(
     auto changeSyncSourceAction = _replicationCoordinator->shouldChangeSyncSource(
         source, replMetadata, oqMetadata, previousOpTimeFetched, lastOpTimeFetched);
     if (changeSyncSourceAction != ChangeSyncSourceAction::kContinueSyncing) {
-        LOGV2(21150,
-              "Canceling oplog query due to OplogQueryMetadata. We have to choose a new "
-              "sync source. Current source: {syncSource}, OpTime {lastAppliedOpTime}, "
-              "its sync source index:{syncSourceIndex}",
-              "Canceling oplog query due to OplogQueryMetadata. We have to choose a new "
-              "sync source",
-              "syncSource"_attr = source,
-              "lastAppliedOpTime"_attr = oqMetadata.getLastOpApplied(),
-              "syncSourceIndex"_attr = oqMetadata.getSyncSourceIndex());
+        LOG(21150,
+            "Canceling oplog query due to OplogQueryMetadata. We have to choose a new "
+            "sync source. Current source: {syncSource}, OpTime {lastAppliedOpTime}, "
+            "its sync source index:{syncSourceIndex}",
+            "Canceling oplog query due to OplogQueryMetadata. We have to choose a new "
+            "sync source",
+            "syncSource"_attr = source,
+            "lastAppliedOpTime"_attr = oqMetadata.getLastOpApplied(),
+            "syncSourceIndex"_attr = oqMetadata.getSyncSourceIndex());
     }
     return changeSyncSourceAction;
 }

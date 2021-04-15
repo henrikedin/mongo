@@ -27,9 +27,9 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kSharding
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kSharding
 
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 #include "mongo/platform/basic.h"
 
@@ -51,13 +51,11 @@ void write(OperationContext* opCtx,
 
     ChunkManagerTargeter targeter(opCtx, request.getNS(), targetEpoch);
 
-    LOGV2_DEBUG_OPTIONS(
-        4817400, 2, {logv2::LogComponent::kShardMigrationPerf}, "Starting batch write");
+    LOG_DEBUG_OPTIONS(4817400, 2, {log::LogComponent::kShardMigrationPerf}, "Starting batch write");
 
     BatchWriteExec::executeBatch(opCtx, targeter, request, response, stats);
 
-    LOGV2_DEBUG_OPTIONS(
-        4817401, 2, {logv2::LogComponent::kShardMigrationPerf}, "Finished batch write");
+    LOG_DEBUG_OPTIONS(4817401, 2, {log::LogComponent::kShardMigrationPerf}, "Finished batch write");
 }
 
 }  // namespace cluster

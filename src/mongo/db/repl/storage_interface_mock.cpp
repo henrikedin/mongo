@@ -26,7 +26,7 @@
  *    exception statement from all source files in the program, then also delete
  *    it in the license file.
  */
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kReplication
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kReplication
 
 #include <numeric>
 
@@ -34,7 +34,7 @@
 
 #include "mongo/db/repl/storage_interface_mock.h"
 
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/str.h"
 
 namespace mongo {
@@ -99,14 +99,14 @@ Timestamp StorageInterfaceMock::getAllDurableTimestamp(ServiceContext* serviceCt
 }
 
 Status CollectionBulkLoaderMock::init(const std::vector<BSONObj>& secondaryIndexSpecs) {
-    LOGV2_DEBUG(21757, 1, "CollectionBulkLoaderMock::init called");
+    LOG_DEBUG(21757, 1, "CollectionBulkLoaderMock::init called");
     stats->initCalled = true;
     return Status::OK();
 }
 
 Status CollectionBulkLoaderMock::insertDocuments(const std::vector<BSONObj>::const_iterator begin,
                                                  const std::vector<BSONObj>::const_iterator end) {
-    LOGV2_DEBUG(21758, 1, "CollectionBulkLoaderMock::insertDocuments called");
+    LOG_DEBUG(21758, 1, "CollectionBulkLoaderMock::insertDocuments called");
     const auto status = insertDocsFn(begin, end);
 
     // Only count if it succeeds.
@@ -117,7 +117,7 @@ Status CollectionBulkLoaderMock::insertDocuments(const std::vector<BSONObj>::con
 }
 
 Status CollectionBulkLoaderMock::commit() {
-    LOGV2_DEBUG(21759, 1, "CollectionBulkLoaderMock::commit called");
+    LOG_DEBUG(21759, 1, "CollectionBulkLoaderMock::commit called");
     stats->commitCalled = true;
     return commitFn();
 }

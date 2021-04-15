@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kNetwork
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kNetwork
 
 #include "mongo/platform/basic.h"
 
@@ -37,7 +37,7 @@
 #include "mongo/config.h"
 #include "mongo/db/auth/sasl_command_constants.h"
 #include "mongo/db/server_options.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/net/ssl_options.h"
 #include "mongo/util/net/ssl_parameters_gen.h"
 
@@ -111,8 +111,8 @@ void SSLModeServerParameter::append(OperationContext*,
                                     BSONObjBuilder& builder,
                                     const std::string& fieldName) {
     std::call_once(warnForSSLMode, [] {
-        LOGV2_WARNING(
-            23803, "Use of deprecated server parameter 'sslMode', please use 'tlsMode' instead.");
+        LOG_WARNING(23803,
+                    "Use of deprecated server parameter 'sslMode', please use 'tlsMode' instead.");
     });
 
     builder.append(fieldName, SSLParams::sslModeFormat(sslGlobalParams.sslMode.load()));
@@ -128,8 +128,8 @@ void TLSModeServerParameter::append(OperationContext*,
 
 Status SSLModeServerParameter::setFromString(const std::string& strMode) {
     std::call_once(warnForSSLMode, [] {
-        LOGV2_WARNING(
-            23804, "Use of deprecated server parameter 'sslMode', please use 'tlsMode' instead.");
+        LOG_WARNING(23804,
+                    "Use of deprecated server parameter 'sslMode', please use 'tlsMode' instead.");
     });
 
     auto swNewMode = checkTLSModeTransition(

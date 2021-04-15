@@ -26,7 +26,7 @@
  *    exception statement from all source files in the program, then also delete
  *    it in the license file.
  */
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kDefault
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kDefault
 
 #include "mongo/platform/basic.h"
 
@@ -40,7 +40,7 @@
 
 #include "mongo/base/dependency_graph.h"
 #include "mongo/base/status.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/quick_exit.h"
 #include "mongo/util/str.h"
@@ -162,11 +162,11 @@ void Initializer::executeInitializers(const std::vector<std::string>& args) {
 
     // The order of the initializers is non-deterministic, so make it available.
     // Must be after verbose has been parsed, or the Debug(2) severity won't be visible.
-    LOGV2_DEBUG_OPTIONS(4777800,
-                        2,
-                        {logv2::LogTruncation::Disabled},
-                        "Ran initializers",
-                        "nodes"_attr = _sortedNodes);
+    LOG_DEBUG_OPTIONS(4777800,
+                      2,
+                      {log::LogTruncation::Disabled},
+                      "Ran initializers",
+                      "nodes"_attr = _sortedNodes);
 }
 
 void Initializer::executeDeinitializers() {

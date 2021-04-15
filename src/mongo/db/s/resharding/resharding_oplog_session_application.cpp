@@ -38,7 +38,7 @@
 #include "mongo/db/s/resharding/resharding_data_copy_util.h"
 #include "mongo/db/storage/write_unit_of_work.h"
 #include "mongo/db/transaction_participant.h"
-#include "mongo/logv2/redaction.h"
+#include "mongo/log/redaction.h"
 
 namespace mongo {
 

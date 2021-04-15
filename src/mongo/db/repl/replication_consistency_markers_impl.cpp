@@ -26,7 +26,7 @@
  *    exception statement from all source files in the program, then also delete
  *    it in the license file.
  */
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kReplication
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kReplication
 
 #include "mongo/platform/basic.h"
 
@@ -41,7 +41,7 @@
 #include "mongo/db/repl/replication_coordinator.h"
 #include "mongo/db/repl/storage_interface.h"
 #include "mongo/db/storage/control/journal_flusher.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace mongo {
 namespace repl {
@@ -99,7 +99,7 @@ void ReplicationConsistencyMarkersImpl::_updateMinValidDocument(
 }
 
 void ReplicationConsistencyMarkersImpl::initializeMinValidDocument(OperationContext* opCtx) {
-    LOGV2_DEBUG(21282, 3, "Initializing minValid document");
+    LOG_DEBUG(21282, 3, "Initializing minValid document");
 
     // This initializes the values of the required fields if they are not already set.
     // If one of the fields is already set, the $max will prefer the existing value since it
@@ -120,28 +120,27 @@ void ReplicationConsistencyMarkersImpl::initializeMinValidDocument(OperationCont
 bool ReplicationConsistencyMarkersImpl::getInitialSyncFlag(OperationContext* opCtx) const {
     auto doc = _getMinValidDocument(opCtx);
     if (!doc) {
-        LOGV2_DEBUG(
+        LOG_DEBUG(
             21283, 3, "No min valid document found, returning initial sync flag value of false");
         return false;
     }
 
     boost::optional<bool> flag = doc->getInitialSyncFlag();
     if (!flag) {
-        LOGV2_DEBUG(
-            21284, 3, "No initial sync flag set, returning initial sync flag value of false");
+        LOG_DEBUG(21284, 3, "No initial sync flag set, returning initial sync flag value of false");
         return false;
     }
 
-    LOGV2_DEBUG(21285,
-                3,
-                "returning initial sync flag value of {flag}",
-                "Returning initial sync flag value",
-                "flag"_attr = flag.get());
+    LOG_DEBUG(21285,
+              3,
+              "returning initial sync flag value of {flag}",
+              "Returning initial sync flag value",
+              "flag"_attr = flag.get());
     return flag.get();
 }
 
 void ReplicationConsistencyMarkersImpl::setInitialSyncFlag(OperationContext* opCtx) {
-    LOGV2_DEBUG(21286, 3, "Setting initial sync flag");
+    LOG_DEBUG(21286, 3, "Setting initial sync flag");
     TimestampedBSONObj update;
     update.obj = BSON("$set" << kInitialSyncFlag);
 
@@ -155,7 +154,7 @@ void ReplicationConsistencyMarkersImpl::setInitialSyncFlag(OperationContext* opC
 }
 
 void ReplicationConsistencyMarkersImpl::clearInitialSyncFlag(OperationContext* opCtx) {
-    LOGV2_DEBUG(21287, 3, "Clearing initial sync flag");
+    LOG_DEBUG(21287, 3, "Clearing initial sync flag");
 
     auto replCoord = repl::ReplicationCoordinator::get(opCtx);
     OpTimeAndWallTime opTimeAndWallTime = replCoord->getMyLastAppliedOpTimeAndWallTime();
@@ -198,24 +197,24 @@ OpTime ReplicationConsistencyMarkersImpl::getMinValid(OperationContext* opCtx) c
 
     auto minValid = OpTime(doc->getMinValidTimestamp(), doc->getMinValidTerm());
 
-    LOGV2_DEBUG(21288,
-                3,
-                "returning minvalid: {minValidString}({minValidBSON})",
-                "Returning minvalid",
-                "minValidString"_attr = minValid.toString(),
-                "minValidBSON"_attr = minValid.toBSON());
+    LOG_DEBUG(21288,
+              3,
+              "returning minvalid: {minValidString}({minValidBSON})",
+              "Returning minvalid",
+              "minValidString"_attr = minValid.toString(),
+              "minValidBSON"_attr = minValid.toBSON());
 
     return minValid;
 }
 
 void ReplicationConsistencyMarkersImpl::setMinValid(OperationContext* opCtx,
                                                     const OpTime& minValid) {
-    LOGV2_DEBUG(21289,
-                3,
-                "setting minvalid to exactly: {minValidString}({minValidBSON})",
-                "Setting minvalid to exactly",
-                "minValidString"_attr = minValid.toString(),
-                "minValidBSON"_attr = minValid.toBSON());
+    LOG_DEBUG(21289,
+              3,
+              "setting minvalid to exactly: {minValidString}({minValidBSON})",
+              "Setting minvalid to exactly",
+              "minValidString"_attr = minValid.toString(),
+              "minValidBSON"_attr = minValid.toBSON());
     TimestampedBSONObj update;
     update.obj =
         BSON("$set" << BSON(MinValidDocument::kMinValidTimestampFieldName
@@ -232,12 +231,12 @@ void ReplicationConsistencyMarkersImpl::setMinValid(OperationContext* opCtx,
 
 void ReplicationConsistencyMarkersImpl::setMinValidToAtLeast(OperationContext* opCtx,
                                                              const OpTime& minValid) {
-    LOGV2_DEBUG(21290,
-                3,
-                "setting minvalid to at least: {minValidString}({minValidBSON})",
-                "Setting minvalid to at least",
-                "minValidString"_attr = minValid.toString(),
-                "minValidBSON"_attr = minValid.toBSON());
+    LOG_DEBUG(21290,
+              3,
+              "setting minvalid to at least: {minValidString}({minValidBSON})",
+              "Setting minvalid to at least",
+              "minValidString"_attr = minValid.toString(),
+              "minValidBSON"_attr = minValid.toBSON());
 
     auto& termField = MinValidDocument::kMinValidTermFieldName;
     auto& tsField = MinValidDocument::kMinValidTimestampFieldName;
@@ -277,12 +276,12 @@ void ReplicationConsistencyMarkersImpl::setAppliedThrough(OperationContext* opCt
                                                           const OpTime& optime,
                                                           bool setTimestamp) {
     invariant(!optime.isNull());
-    LOGV2_DEBUG(21291,
-                3,
-                "setting appliedThrough to: {appliedThroughString}({appliedThroughBSON})",
-                "Setting appliedThrough",
-                "appliedThroughString"_attr = optime.toString(),
-                "appliedThroughBSON"_attr = optime.toBSON());
+    LOG_DEBUG(21291,
+              3,
+              "setting appliedThrough to: {appliedThroughString}({appliedThroughBSON})",
+              "Setting appliedThrough",
+              "appliedThroughString"_attr = optime.toString(),
+              "appliedThroughBSON"_attr = optime.toBSON());
 
     // We set the 'appliedThrough' to the provided timestamp. The 'appliedThrough' is only valid
     // in checkpoints that contain all writes through this timestamp since it indicates the top of
@@ -298,11 +297,11 @@ void ReplicationConsistencyMarkersImpl::setAppliedThrough(OperationContext* opCt
 
 void ReplicationConsistencyMarkersImpl::clearAppliedThrough(OperationContext* opCtx,
                                                             const Timestamp& writeTimestamp) {
-    LOGV2_DEBUG(21292,
-                3,
-                "clearing appliedThrough at: {writeTimestamp}",
-                "Clearing appliedThrough",
-                "writeTimestamp"_attr = writeTimestamp.toString());
+    LOG_DEBUG(21292,
+              3,
+              "clearing appliedThrough at: {writeTimestamp}",
+              "Clearing appliedThrough",
+              "writeTimestamp"_attr = writeTimestamp.toString());
 
     TimestampedBSONObj update;
     update.timestamp = writeTimestamp;
@@ -317,23 +316,22 @@ OpTime ReplicationConsistencyMarkersImpl::getAppliedThrough(OperationContext* op
 
     auto appliedThrough = doc->getAppliedThrough();
     if (!appliedThrough) {
-        LOGV2_DEBUG(
-            21293, 3, "No appliedThrough OpTime set, returning empty appliedThrough OpTime");
+        LOG_DEBUG(21293, 3, "No appliedThrough OpTime set, returning empty appliedThrough OpTime");
         return {};
     }
-    LOGV2_DEBUG(21294,
-                3,
-                "returning appliedThrough: {appliedThroughString}({appliedThroughBSON})",
-                "Returning appliedThrough",
-                "appliedThroughString"_attr = appliedThrough->toString(),
-                "appliedThroughBSON"_attr = appliedThrough->toBSON());
+    LOG_DEBUG(21294,
+              3,
+              "returning appliedThrough: {appliedThroughString}({appliedThroughBSON})",
+              "Returning appliedThrough",
+              "appliedThroughString"_attr = appliedThrough->toString(),
+              "appliedThroughBSON"_attr = appliedThrough->toBSON());
 
     return appliedThrough.get();
 }
 
 void ReplicationConsistencyMarkersImpl::ensureFastCountOnOplogTruncateAfterPoint(
     OperationContext* opCtx) {
-    LOGV2_DEBUG(
+    LOG_DEBUG(
         21295,
         3,
         "Updating cached fast-count on collection {oplogTruncateAfterPointNamespace} in case an "
@@ -379,11 +377,11 @@ Status ReplicationConsistencyMarkersImpl::_upsertOplogTruncateAfterPointDocument
 
 Status ReplicationConsistencyMarkersImpl::_setOplogTruncateAfterPoint(OperationContext* opCtx,
                                                                       const Timestamp& timestamp) {
-    LOGV2_DEBUG(21296,
-                3,
-                "setting oplog truncate after point to: {oplogTruncateAfterPoint}",
-                "Setting oplog truncate after point",
-                "oplogTruncateAfterPoint"_attr = timestamp.toBSON());
+    LOG_DEBUG(21296,
+              3,
+              "setting oplog truncate after point to: {oplogTruncateAfterPoint}",
+              "Setting oplog truncate after point",
+              "oplogTruncateAfterPoint"_attr = timestamp.toBSON());
 
     return _upsertOplogTruncateAfterPointDocument(
         opCtx,
@@ -428,17 +426,17 @@ Timestamp ReplicationConsistencyMarkersImpl::getOplogTruncateAfterPoint(
     OperationContext* opCtx) const {
     auto truncatePointDoc = _getOplogTruncateAfterPointDocument(opCtx);
     if (!truncatePointDoc) {
-        LOGV2_DEBUG(
+        LOG_DEBUG(
             21297, 3, "Returning empty oplog truncate after point since document did not exist");
         return Timestamp();
     }
     Timestamp truncatePointTimestamp = truncatePointDoc->getOplogTruncateAfterPoint();
 
-    LOGV2_DEBUG(21298,
-                3,
-                "Returning oplog truncate after point: {oplogTruncateAfterPoint}",
-                "Returning oplog truncate after point",
-                "oplogTruncateAfterPoint"_attr = truncatePointTimestamp);
+    LOG_DEBUG(21298,
+              3,
+              "Returning oplog truncate after point: {oplogTruncateAfterPoint}",
+              "Returning oplog truncate after point",
+              "oplogTruncateAfterPoint"_attr = truncatePointTimestamp);
     return truncatePointTimestamp;
 }
 
@@ -462,11 +460,11 @@ bool ReplicationConsistencyMarkersImpl::isOplogTruncateAfterPointBeingUsedForPri
 void ReplicationConsistencyMarkersImpl::setOplogTruncateAfterPointToTopOfOplog(
     OperationContext* opCtx) {
     auto timestamp = _storageInterface->getLatestOplogTimestamp(opCtx);
-    LOGV2_DEBUG(21551,
-                3,
-                "Initializing oplog truncate after point: {oplogTruncateAfterPoint}",
-                "Initializing oplog truncate after point",
-                "oplogTruncateAfterPoint"_attr = timestamp);
+    LOG_DEBUG(21551,
+              3,
+              "Initializing oplog truncate after point: {oplogTruncateAfterPoint}",
+              "Initializing oplog truncate after point",
+              "oplogTruncateAfterPoint"_attr = timestamp);
     setOplogTruncateAfterPoint(opCtx, timestamp);
 }
 
@@ -565,7 +563,7 @@ void ReplicationConsistencyMarkersImpl::setInitialSyncIdIfNotSet(OperationContex
     auto status =
         _storageInterface->createCollection(opCtx, _initialSyncIdNss, CollectionOptions());
     if (!status.isOK() && status.code() != ErrorCodes::NamespaceExists) {
-        LOGV2_FATAL(
+        LOG_FATAL(
             4608500, "Failed to create collection", "namespace"_attr = _initialSyncIdNss.ns());
         fassertFailedWithStatus(4608502, status);
     }

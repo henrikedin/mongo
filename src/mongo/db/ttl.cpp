@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kIndex
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kIndex
 
 #include "mongo/platform/basic.h"
 
@@ -58,10 +58,10 @@
 #include "mongo/db/ttl_collection_cache.h"
 #include "mongo/db/ttl_gen.h"
 #include "mongo/db/views/view_catalog.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
+#include "mongo/util/log_with_sampling.h"
 #include "mongo/util/background.h"
 #include "mongo/util/concurrency/idle_thread_block.h"
-#include "mongo/util/log_with_sampling.h"
 
 namespace mongo {
 
@@ -129,29 +129,29 @@ public:
                 }
             }
 
-            LOGV2_DEBUG(22528, 3, "thread awake");
+            LOG_DEBUG(22528, 3, "thread awake");
 
             if (!ttlMonitorEnabled.load()) {
-                LOGV2_DEBUG(22529, 1, "disabled");
+                LOG_DEBUG(22529, 1, "disabled");
                 continue;
             }
 
             if (lockedForWriting()) {
                 // Note: this is not perfect as you can go into fsync+lock between this and actually
                 // doing the delete later.
-                LOGV2_DEBUG(22530, 3, "locked for writing");
+                LOG_DEBUG(22530, 3, "locked for writing");
                 continue;
             }
 
             try {
                 doTTLPass();
             } catch (const WriteConflictException&) {
-                LOGV2_DEBUG(22531, 1, "got WriteConflictException");
+                LOG_DEBUG(22531, 1, "got WriteConflictException");
             } catch (const ExceptionForCat<ErrorCategory::Interruption>& interruption) {
-                LOGV2_DEBUG(22532,
-                            1,
-                            "TTLMonitor was interrupted: {interruption}",
-                            "interruption"_attr = interruption);
+                LOG_DEBUG(22532,
+                          1,
+                          "TTLMonitor was interrupted: {interruption}",
+                          "interruption"_attr = interruption);
             }
         }
     }
@@ -160,14 +160,14 @@ public:
      * Signals the thread to quit and then waits until it does.
      */
     void shutdown() {
-        LOGV2(3684100, "Shutting down TTL collection monitor thread");
+        LOG(3684100, "Shutting down TTL collection monitor thread");
         {
             stdx::lock_guard<Latch> lk(_stateMutex);
             _shuttingDown = true;
             _shuttingDownCV.notify_one();
         }
         wait();
-        LOGV2(3684101, "Finished shutting down TTL collection monitor thread");
+        LOG(3684101, "Finished shutting down TTL collection monitor thread");
     }
 
 private:
@@ -211,15 +211,15 @@ private:
                 try {
                     deleteExpired(opCtx, &ttlCollectionCache, uuid, *nss, info);
                 } catch (const ExceptionForCat<ErrorCategory::Interruption>&) {
-                    LOGV2_WARNING(22537,
-                                  "TTLMonitor was interrupted, waiting before doing another pass",
-                                  "wait"_attr = Milliseconds(Seconds(ttlMonitorSleepSecs.load())));
+                    LOG_WARNING(22537,
+                                "TTLMonitor was interrupted, waiting before doing another pass",
+                                "wait"_attr = Milliseconds(Seconds(ttlMonitorSleepSecs.load())));
                     return;
                 } catch (const DBException& ex) {
-                    LOGV2_ERROR(5400703,
-                                "Error running TTL job on collection",
-                                logAttrs(*nss),
-                                "error"_attr = ex);
+                    LOG_ERROR(5400703,
+                              "Error running TTL job on collection",
+                              logAttrs(*nss),
+                              "error"_attr = ex);
                     continue;
                 }
             }
@@ -253,9 +253,9 @@ private:
             return;
 
         if (MONGO_unlikely(hangTTLMonitorWithLock.shouldFail())) {
-            LOGV2(22534,
-                  "Hanging due to hangTTLMonitorWithLock fail point",
-                  "ttlPasses"_attr = ttlPasses.get());
+            LOG(22534,
+                "Hanging due to hangTTLMonitorWithLock fail point",
+                "ttlPasses"_attr = ttlPasses.get());
             hangTTLMonitorWithLock.pauseWhileSet(opCtx);
         }
 
@@ -269,11 +269,11 @@ private:
                 (mtab = TenantMigrationAccessBlockerRegistry::get(opCtx->getServiceContext())
                             .getTenantMigrationAccessBlockerForDbName(coll.getDb()->name())) &&
             mtab->checkIfShouldBlockTTL()) {
-            LOGV2_DEBUG(53768,
-                        1,
-                        "Postpone TTL of DB because of active tenant migration",
-                        "tenantMigrationAccessBlocker"_attr = mtab->getDebugInfo().jsonString(),
-                        "database"_attr = coll.getDb()->name());
+            LOG_DEBUG(53768,
+                      1,
+                      "Postpone TTL of DB because of active tenant migration",
+                      "tenantMigrationAccessBlocker"_attr = mtab->getDebugInfo().jsonString(),
+                      "database"_attr = coll.getDb()->name());
             return;
         }
 
@@ -341,39 +341,39 @@ private:
         const BSONObj key = spec["key"].Obj();
         const StringData name = spec["name"].valueStringData();
         if (key.nFields() != 1) {
-            LOGV2_ERROR(22540,
-                        "key for ttl index can only have 1 field, skipping TTL job",
-                        "index"_attr = spec);
+            LOG_ERROR(22540,
+                      "key for ttl index can only have 1 field, skipping TTL job",
+                      "index"_attr = spec);
             return;
         }
 
-        LOGV2_DEBUG(22533,
-                    1,
-                    "running TTL job for index",
-                    logAttrs(collection->ns()),
-                    "key"_attr = key,
-                    "name"_attr = name);
+        LOG_DEBUG(22533,
+                  1,
+                  "running TTL job for index",
+                  logAttrs(collection->ns()),
+                  "key"_attr = key,
+                  "name"_attr = name);
 
         const IndexDescriptor* desc = collection->getIndexCatalog()->findIndexByName(opCtx, name);
         if (!desc) {
-            LOGV2_DEBUG(22535, 1, "index not found; skipping ttl job", "index"_attr = spec);
+            LOG_DEBUG(22535, 1, "index not found; skipping ttl job", "index"_attr = spec);
             return;
         }
 
         if (IndexType::INDEX_BTREE != IndexNames::nameToType(desc->getAccessMethodName())) {
-            LOGV2_ERROR(22541,
-                        "special index can't be used as a TTL index, skipping TTL job",
-                        "index"_attr = spec);
+            LOG_ERROR(22541,
+                      "special index can't be used as a TTL index, skipping TTL job",
+                      "index"_attr = spec);
             return;
         }
 
         BSONElement secondsExpireElt = spec[IndexDescriptor::kExpireAfterSecondsFieldName];
         if (!secondsExpireElt.isNumber()) {
-            LOGV2_ERROR(22542,
-                        "TTL indexes require the expire field to be numeric, skipping TTL job",
-                        "field"_attr = IndexDescriptor::kExpireAfterSecondsFieldName,
-                        "type"_attr = typeName(secondsExpireElt.type()),
-                        "index"_attr = spec);
+            LOG_ERROR(22542,
+                      "TTL indexes require the expire field to be numeric, skipping TTL job",
+                      "field"_attr = IndexDescriptor::kExpireAfterSecondsFieldName,
+                      "type"_attr = typeName(secondsExpireElt.type()),
+                      "index"_attr = spec);
             return;
         }
 
@@ -422,16 +422,16 @@ private:
 
             const auto duration = Milliseconds(timer.millis());
             if (shouldLogSlowOpWithSampling(opCtx,
-                                            logv2::LogComponent::kIndex,
+                                            log::LogComponent::kIndex,
                                             duration,
                                             Milliseconds(serverGlobalParams.slowMS))
                     .first) {
-                LOGV2(5479200,
-                      "Deleted expired documents using index",
-                      logAttrs(collection->ns()),
-                      "index"_attr = name,
-                      "numDeleted"_attr = numDeleted,
-                      "duration"_attr = duration);
+                LOG(5479200,
+                    "Deleted expired documents using index",
+                    logAttrs(collection->ns()),
+                    "index"_attr = name,
+                    "numDeleted"_attr = numDeleted,
+                    "duration"_attr = duration);
             }
         } catch (const ExceptionFor<ErrorCodes::QueryPlanKilled>&) {
             // It is expected that a collection drop can kill a query plan while the TTL monitor
@@ -459,10 +459,10 @@ private:
             return;
         }
 
-        LOGV2_DEBUG(5400704,
-                    1,
-                    "running TTL job for collection clustered by _id",
-                    logAttrs(collection->ns()));
+        LOG_DEBUG(5400704,
+                  1,
+                  "running TTL job for collection clustered by _id",
+                  logAttrs(collection->ns()));
 
         const auto expirationDate = safeExpirationDate(opCtx, collection, *expireAfterSeconds);
 
@@ -493,15 +493,15 @@ private:
 
             const auto duration = Milliseconds(timer.millis());
             if (shouldLogSlowOpWithSampling(opCtx,
-                                            logv2::LogComponent::kIndex,
+                                            log::LogComponent::kIndex,
                                             duration,
                                             Milliseconds(serverGlobalParams.slowMS))
                     .first) {
-                LOGV2(5400702,
-                      "Deleted expired documents using collection scan",
-                      logAttrs(collection->ns()),
-                      "numDeleted"_attr = numDeleted,
-                      "duration"_attr = duration);
+                LOG(5400702,
+                    "Deleted expired documents using collection scan",
+                    logAttrs(collection->ns()),
+                    "numDeleted"_attr = numDeleted,
+                    "duration"_attr = duration);
             }
         } catch (const ExceptionFor<ErrorCodes::QueryPlanKilled>&) {
             // It is expected that a collection drop can kill a query plan while the TTL monitor

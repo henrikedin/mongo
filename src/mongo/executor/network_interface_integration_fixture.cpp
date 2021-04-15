@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kASIO
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kASIO
 
 #include "mongo/platform/basic.h"
 
@@ -39,7 +39,7 @@
 #include "mongo/executor/network_interface_integration_fixture.h"
 #include "mongo/executor/remote_command_response.h"
 #include "mongo/executor/task_executor.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/stdx/future.h"
 #include "mongo/unittest/integration_test.h"
@@ -116,12 +116,12 @@ Future<RemoteCommandResponse> NetworkInterfaceIntegrationFixture::runCommand(
     return net().startCommand(cbHandle, rcroa).then([](TaskExecutor::ResponseOnAnyStatus roa) {
         auto res = RemoteCommandResponse(roa);
         if (res.isOK()) {
-            LOGV2(4820500,
-                  "Got command result: {response}",
-                  "Got command result",
-                  "response"_attr = res.toString());
+            LOG(4820500,
+                "Got command result: {response}",
+                "Got command result",
+                "response"_attr = res.toString());
         } else {
-            LOGV2(4820501, "Command failed: {error}", "Command failed", "error"_attr = res.status);
+            LOG(4820501, "Command failed: {error}", "Command failed", "error"_attr = res.status);
         }
         return res;
     });
@@ -133,12 +133,12 @@ Future<RemoteCommandOnAnyResponse> NetworkInterfaceIntegrationFixture::runComman
 
     return net().startCommand(cbHandle, rcroa).then([](TaskExecutor::ResponseOnAnyStatus roa) {
         if (roa.isOK()) {
-            LOGV2(4820502,
-                  "Got command result: {response}",
-                  "Got command result",
-                  "response"_attr = roa.toString());
+            LOG(4820502,
+                "Got command result: {response}",
+                "Got command result",
+                "response"_attr = roa.toString());
         } else {
-            LOGV2(4820503, "Command failed: {error}", "Command failed", "error"_attr = roa.status);
+            LOG(4820503, "Command failed: {error}", "Command failed", "error"_attr = roa.status);
         }
         return roa;
     });

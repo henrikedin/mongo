@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTenantMigration
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTenantMigration
 
 #include "mongo/platform/basic.h"
 
@@ -35,7 +35,7 @@
 
 #include "mongo/db/repl/apply_ops.h"
 #include "mongo/db/repl/oplog_batcher.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace mongo {
 namespace repl {
@@ -106,11 +106,11 @@ void TenantOplogBatcher::_pushEntry(OperationContext* opCtx,
         // This is consistent with what shard migration does.  The oplog applier will ignore
         // image entries which are not directly followed by the entry referring to them.
         if (batch->ops.empty() || batch->ops.back().entry.getOpTime() != imageOpTime) {
-            LOGV2_DEBUG(5351004,
-                        1,
-                        "Tenant Oplog Batcher reordering pre- or post- image for oplog entry",
-                        "opTime"_attr = op.getOpTime(),
-                        "imageOpTime"_attr = imageOpTime);
+            LOG_DEBUG(5351004,
+                      1,
+                      "Tenant Oplog Batcher reordering pre- or post- image for oplog entry",
+                      "opTime"_attr = op.getOpTime(),
+                      "imageOpTime"_attr = imageOpTime);
             auto imageOp = OplogEntry(
                 uassertStatusOK(_oplogBuffer->findByTimestamp(opCtx, imageOpTime.getTimestamp())));
             batch->ops.emplace_back(TenantOplogEntry(std::move(imageOp)));
@@ -144,10 +144,10 @@ StatusWith<TenantOplogBatch> TenantOplogBatcher::_readNextBatch(BatchLimits limi
                 return {ErrorCodes::CallbackCanceled, "Tenant oplog batcher shut down"};
             }
         }
-        LOGV2_DEBUG(4885602,
-                    1,
-                    "Tenant Oplog Batcher reading batch",
-                    "component"_attr = _getComponentName());
+        LOG_DEBUG(4885602,
+                  1,
+                  "Tenant Oplog Batcher reading batch",
+                  "component"_attr = _getComponentName());
         BSONObj op;
         // We are guaranteed this loop will return at least one operation, because waitForData
         // returned true above.
@@ -178,11 +178,11 @@ StatusWith<TenantOplogBatch> TenantOplogBatcher::_readNextBatch(BatchLimits limi
             _consume(opCtx.get());
         }
     }
-    LOGV2_DEBUG(4885603,
-                1,
-                "Tenant Oplog Batcher read batch",
-                "component"_attr = _getComponentName(),
-                "size"_attr = batch.ops.size());
+    LOG_DEBUG(4885603,
+              1,
+              "Tenant Oplog Batcher read batch",
+              "component"_attr = _getComponentName(),
+              "size"_attr = batch.ops.size());
     return batch;
 }
 
@@ -238,7 +238,7 @@ SemiFuture<TenantOplogBatch> TenantOplogBatcher::getNextBatch(BatchLimits limits
 }
 
 Status TenantOplogBatcher::_doStartup_inlock() noexcept {
-    LOGV2_DEBUG(
+    LOG_DEBUG(
         4885604, 1, "Tenant Oplog Batcher starting up", "component"_attr = _getComponentName());
     if (!_resumeBatchingTs.isNull()) {
         auto opCtx = cc().makeOperationContext();
@@ -256,16 +256,16 @@ Status TenantOplogBatcher::_doStartup_inlock() noexcept {
             BSONObj opToPopAndDiscard;
             _oplogBuffer->tryPop(opCtx.get(), &opToPopAndDiscard);
         }
-        LOGV2_DEBUG(5272306,
-                    1,
-                    "Tenant Oplog Batcher will resume batching from after timestamp",
-                    "timestamp"_attr = _resumeBatchingTs);
+        LOG_DEBUG(5272306,
+                  1,
+                  "Tenant Oplog Batcher will resume batching from after timestamp",
+                  "timestamp"_attr = _resumeBatchingTs);
     }
     return Status::OK();
 }
 
 void TenantOplogBatcher::_doShutdown_inlock() noexcept {
-    LOGV2_DEBUG(
+    LOG_DEBUG(
         4885605, 1, "Tenant Oplog Batcher shutting down", "component"_attr = _getComponentName());
     if (!_batchRequested) {
         _transitionToComplete_inlock();

@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kControl
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kControl
 
 #include "mongo/platform/basic.h"
 
@@ -61,7 +61,7 @@
 #include "mongo/db/service_context_d_test_fixture.h"
 #include "mongo/executor/network_interface_mock.h"
 #include "mongo/executor/thread_pool_task_executor_test_fixture.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/object_check.h"
 #include "mongo/unittest/barrier.h"
 #include "mongo/unittest/temp_dir.h"
@@ -75,7 +75,7 @@ namespace {
 
 auto makeRandom() {
     auto seed = SecureRandom().nextInt64();
-    LOGV2(24189, "PseudoRandom()", "seed"_attr = seed);
+    LOG(24189, "PseudoRandom()", "seed"_attr = seed);
     return PseudoRandom(seed);
 }
 
@@ -243,7 +243,7 @@ public:
 
     Future<FreeMonRegistrationResponse> sendRegistrationAsync(
         const FreeMonRegistrationRequest& req) final {
-        LOGV2(20611, "Sending Registration ...");
+        LOG(20611, "Sending Registration ...");
 
         _registers.addAndFetch(1);
 
@@ -289,7 +289,7 @@ public:
 
 
     Future<FreeMonMetricsResponse> sendMetricsAsync(const FreeMonMetricsRequest& req) final {
-        LOGV2(20612, "Sending Metrics ...");
+        LOG(20612, "Sending Metrics ...");
 
         _metrics.addAndFetch(1);
 
@@ -508,8 +508,8 @@ TEST(FreeMonRetryTest, TestRegistration) {
     // If jitter is large as possible, we'd expect trueMin increments before false.
     const auto trueMin = characterizeJitter(Seconds{9}, Seconds{119});
 
-    // LOGV2(20613, "trueMin:{trueMin}", "trueMin"_attr = trueMin);
-    // LOGV2(20614, "trueMax:{trueMax}", "trueMax"_attr = trueMax);
+    // LOG(20613, "trueMin:{trueMin}", "trueMin"_attr = trueMin);
+    // LOG(20614, "trueMax:{trueMax}", "trueMax"_attr = trueMax);
 
     for (int j = 0; j < 30; j++) {
         // std::cout << "j: " << j << "\n";

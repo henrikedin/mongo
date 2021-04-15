@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kNetwork
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kNetwork
 
 #include "mongo/platform/basic.h"
 
@@ -54,7 +54,7 @@
 #endif
 
 #include "mongo/db/server_options.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/concurrency/value.h"
 #include "mongo/util/errno_util.h"
 #include "mongo/util/exit_code.h"
@@ -70,10 +70,10 @@ const struct WinsockInit {
     WinsockInit() {
         WSADATA d;
         if (WSAStartup(MAKEWORD(2, 2), &d) != 0) {
-            LOGV2(23201,
-                  "ERROR: wsastartup failed {error}",
-                  "ERROR: wsastartup failed",
-                  "error"_attr = errnoWithDescription());
+            LOG(23201,
+                "ERROR: wsastartup failed {error}",
+                "ERROR: wsastartup failed",
+                "error"_attr = errnoWithDescription());
             quickExit(EXIT_NTSERVICE_ERROR);
         }
     }
@@ -118,10 +118,10 @@ void setSocketKeepAliveParams(int sock,
             // Return seconds
             return val ? (val.get() / 1000) : default_value;
         }
-        LOGV2_ERROR(23203,
-                    "can't get KeepAlive parameter: {error}",
-                    "Can't get KeepAlive parameter",
-                    "error"_attr = withval.getStatus());
+        LOG_ERROR(23203,
+                  "can't get KeepAlive parameter: {error}",
+                  "Can't get KeepAlive parameter",
+                  "error"_attr = withval.getStatus());
         return default_value;
     };
 
@@ -143,10 +143,10 @@ void setSocketKeepAliveParams(int sock,
                      &sent,
                      nullptr,
                      nullptr)) {
-            LOGV2_ERROR(23204,
-                        "failed setting keepalive values: {error}",
-                        "Failed setting keepalive values",
-                        "error"_attr = WSAGetLastError());
+            LOG_ERROR(23204,
+                      "failed setting keepalive values: {error}",
+                      "Failed setting keepalive values",
+                      "error"_attr = WSAGetLastError());
         }
     }
 #elif defined(__APPLE__) || defined(__linux__)
@@ -156,21 +156,21 @@ void setSocketKeepAliveParams(int sock,
             socklen_t len = sizeof(optval);
 
             if (getsockopt(sock, level, optnum, (char*)&optval, &len)) {
-                LOGV2_ERROR(23205,
-                            "can't get {optname}: {error}",
-                            "Can't get socket option",
-                            "optname"_attr = optname,
-                            "error"_attr = errnoWithDescription());
+                LOG_ERROR(23205,
+                          "can't get {optname}: {error}",
+                          "Can't get socket option",
+                          "optname"_attr = optname,
+                          "error"_attr = errnoWithDescription());
             }
 
             if (optval > maxval) {
                 optval = maxval;
                 if (setsockopt(sock, level, optnum, (char*)&optval, sizeof(optval))) {
-                    LOGV2_ERROR(23206,
-                                "can't set {optname}: {error}",
-                                "Can't set socket option",
-                                "optname"_attr = optname,
-                                "error"_attr = errnoWithDescription());
+                    LOG_ERROR(23206,
+                              "can't set {optname}: {error}",
+                              "Can't set socket option",
+                              "optname"_attr = optname,
+                              "error"_attr = errnoWithDescription());
                 }
             }
         };
@@ -214,10 +214,10 @@ std::string getHostName() {
     char buf[256];
     int ec = gethostname(buf, 127);
     if (ec || *buf == 0) {
-        LOGV2(23202,
-              "can't get this server's hostname {error}",
-              "Can't get this server's hostname",
-              "error"_attr = errnoWithDescription());
+        LOG(23202,
+            "can't get this server's hostname {error}",
+            "Can't get this server's hostname",
+            "error"_attr = errnoWithDescription());
         return "";
     }
     return buf;

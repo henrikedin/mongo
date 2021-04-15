@@ -26,7 +26,7 @@
  *    exception statement from all source files in the program, then also delete
  *    it in the license file.
  */
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kCommand
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kCommand
 
 #include "mongo/db/auth/authorization_session.h"
 #include "mongo/db/commands.h"
@@ -36,7 +36,7 @@
 #include "mongo/db/repl/primary_only_service.h"
 #include "mongo/db/repl/repl_server_parameters_gen.h"
 #include "mongo/db/repl/tenant_migration_recipient_service.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace mongo {
 namespace {
@@ -92,9 +92,9 @@ public:
             const auto stateDocBson = stateDoc.toBSON();
 
             if (MONGO_unlikely(returnResponseOkForRecipientSyncDataCmd.shouldFail())) {
-                LOGV2(4879608,
-                      "'returnResponseOkForRecipientSyncDataCmd' failpoint enabled.",
-                      "tenantMigrationRecipientInstance"_attr = stateDoc.toBSON());
+                LOG(4879608,
+                    "'returnResponseOkForRecipientSyncDataCmd' failpoint enabled.",
+                    "tenantMigrationRecipientInstance"_attr = stateDoc.toBSON());
                 return Response(repl::OpTime());
             }
 

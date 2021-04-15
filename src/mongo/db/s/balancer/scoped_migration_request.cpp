@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kSharding
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kSharding
 
 #include "mongo/platform/basic.h"
 
@@ -35,7 +35,7 @@
 
 #include "mongo/db/s/balancer/type_migration.h"
 #include "mongo/db/write_concern_options.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/s/client/shard_registry.h"
 #include "mongo/s/grid.h"
 
@@ -68,11 +68,11 @@ ScopedMigrationRequest::~ScopedMigrationRequest() {
         _opCtx, MigrationType::ConfigNS, migrationDocumentIdentifier, kMajorityWriteConcern);
 
     if (!result.isOK()) {
-        LOGV2(21900,
-              "Failed to remove config.migrations document for migration '{migration}': {error}",
-              "Failed to remove config.migrations document for migration",
-              "migration"_attr = migrationDocumentIdentifier.toString(),
-              "error"_attr = redact(result));
+        LOG(21900,
+            "Failed to remove config.migrations document for migration '{migration}': {error}",
+            "Failed to remove config.migrations document for migration",
+            "migration"_attr = migrationDocumentIdentifier.toString(),
+            "error"_attr = redact(result));
     }
 }
 
@@ -144,8 +144,7 @@ StatusWith<ScopedMigrationRequest> ScopedMigrationRequest::writeMigration(
             MigrateInfo activeMigrateInfo = statusWithActiveMigration.getValue().toMigrateInfo();
             if (activeMigrateInfo.to != migrateInfo.to ||
                 activeMigrateInfo.from != migrateInfo.from) {
-                LOGV2(
-                    21901,
+                LOG(21901,
                     "Failed to write document '{newMigration}' to config.migrations because there "
                     "is already an active migration for that chunk: "
                     "'{activeMigration}': {error}",
@@ -204,13 +203,13 @@ Status ScopedMigrationRequest::tryToRemoveMigration() {
 void ScopedMigrationRequest::keepDocumentOnDestruct() {
     invariant(_opCtx);
     _opCtx = nullptr;
-    LOGV2_DEBUG(21902,
-                1,
-                "Keeping config.migrations document with namespace {namespace} and minKey "
-                "{minKey} for balancer recovery",
-                "Keeping config.migrations document for balancer recovery",
-                "namespace"_attr = _nss,
-                "minKey"_attr = _minKey);
+    LOG_DEBUG(21902,
+              1,
+              "Keeping config.migrations document with namespace {namespace} and minKey "
+              "{minKey} for balancer recovery",
+              "Keeping config.migrations document for balancer recovery",
+              "namespace"_attr = _nss,
+              "minKey"_attr = _minKey);
 }
 
 }  // namespace mongo

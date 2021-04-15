@@ -44,7 +44,7 @@
 
 namespace mongo {
 
-namespace logv2 {
+namespace log {
 class LogComponent;
 }
 
@@ -251,7 +251,7 @@ protected:
     /**
      * Must override this to specify the log component for messages in this class.
      */
-    virtual logv2::LogComponent getLogComponent() = 0;
+    virtual log::LogComponent getLogComponent() = 0;
 
 private:
     virtual ClonerStages getStages() = 0;

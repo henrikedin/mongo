@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kSharding
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kSharding
 
 #include "mongo/platform/basic.h"
 
@@ -48,7 +48,7 @@
 #include "mongo/db/s/balancer/cluster_statistics_impl.h"
 #include "mongo/db/s/config/sharding_catalog_manager.h"
 #include "mongo/db/s/sharding_logging.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/s/balancer_configuration.h"
 #include "mongo/s/catalog/type_chunk.h"
 #include "mongo/s/client/shard_registry.h"
@@ -150,10 +150,10 @@ void warnOnMultiVersion(const vector<ClusterStatistics::ShardStatistics>& cluste
     BSONObjBuilder shardVersions;
     for (const auto& stat : clusterStats)
         shardVersions << stat.shardId << stat.mongoVersion;
-    LOGV2_WARNING(21875,
-                  "Multiversion cluster detected",
-                  "localVersion"_attr = vii.version(),
-                  "shardVersions"_attr = shardVersions.done());
+    LOG_WARNING(21875,
+                "Multiversion cluster detected",
+                "localVersion"_attr = vii.version(),
+                "shardVersions"_attr = shardVersions.done());
 }
 
 const auto _balancerDecoration = ServiceContext::declareDecoration<Balancer>();
@@ -264,11 +264,11 @@ Status Balancer::rebalanceSingleChunk(OperationContext* opCtx, const ChunkType& 
 
     auto migrateInfo = std::move(migrateStatus.getValue());
     if (!migrateInfo) {
-        LOGV2_DEBUG(21854,
-                    1,
-                    "Unable to find more appropriate location for chunk {chunk}",
-                    "Unable to find more appropriate location for chunk",
-                    "chunk"_attr = redact(chunk.toString()));
+        LOG_DEBUG(21854,
+                  1,
+                  "Unable to find more appropriate location for chunk {chunk}",
+                  "Unable to find more appropriate location for chunk",
+                  "chunk"_attr = redact(chunk.toString()));
         return Status::OK();
     }
 
@@ -328,14 +328,14 @@ void Balancer::_mainThread() {
         _state = kStopped;
         _joinCond.notify_all();
 
-        LOGV2_DEBUG(21855, 1, "Balancer thread terminated");
+        LOG_DEBUG(21855, 1, "Balancer thread terminated");
     });
 
     Client::initThread("Balancer");
     auto opCtx = cc().makeOperationContext();
     auto shardingContext = Grid::get(opCtx.get());
 
-    LOGV2(21856, "CSRS balancer is starting");
+    LOG(21856, "CSRS balancer is starting");
 
     {
         stdx::lock_guard<Latch> scopedLock(_mutex);
@@ -348,7 +348,7 @@ void Balancer::_mainThread() {
     while (!_stopRequested()) {
         Status refreshStatus = balancerConfig->refreshAndCheck(opCtx.get());
         if (!refreshStatus.isOK()) {
-            LOGV2_WARNING(
+            LOG_WARNING(
                 21876,
                 "Balancer settings could not be loaded because of {error} and will be retried in "
                 "{backoffInterval}",
@@ -363,13 +363,13 @@ void Balancer::_mainThread() {
         break;
     }
 
-    LOGV2(21857, "CSRS balancer thread is recovering");
+    LOG(21857, "CSRS balancer thread is recovering");
 
     _migrationManager.finishRecovery(opCtx.get(),
                                      balancerConfig->getMaxChunkSizeBytes(),
                                      balancerConfig->getSecondaryThrottle());
 
-    LOGV2(21858, "CSRS balancer thread is recovered");
+    LOG(21858, "CSRS balancer thread is recovered");
 
     // Main balancer loop
     while (!_stopRequested()) {
@@ -384,29 +384,29 @@ void Balancer::_mainThread() {
 
             Status refreshStatus = balancerConfig->refreshAndCheck(opCtx.get());
             if (!refreshStatus.isOK()) {
-                LOGV2_WARNING(21877,
-                              "Skipping balancing round due to {error}",
-                              "Skipping balancing round",
-                              "error"_attr = refreshStatus);
+                LOG_WARNING(21877,
+                            "Skipping balancing round due to {error}",
+                            "Skipping balancing round",
+                            "error"_attr = refreshStatus);
                 _endRound(opCtx.get(), kBalanceRoundDefaultInterval);
                 continue;
             }
 
             if (!balancerConfig->shouldBalance()) {
-                LOGV2_DEBUG(21859, 1, "Skipping balancing round because balancing is disabled");
+                LOG_DEBUG(21859, 1, "Skipping balancing round because balancing is disabled");
                 _endRound(opCtx.get(), kBalanceRoundDefaultInterval);
                 continue;
             }
 
             {
-                LOGV2_DEBUG(21860,
-                            1,
-                            "Start balancing round. waitForDelete: {waitForDelete}, "
-                            "secondaryThrottle: {secondaryThrottle}",
-                            "Start balancing round",
-                            "waitForDelete"_attr = balancerConfig->waitForDelete(),
-                            "secondaryThrottle"_attr =
-                                balancerConfig->getSecondaryThrottle().toBSON());
+                LOG_DEBUG(21860,
+                          1,
+                          "Start balancing round. waitForDelete: {waitForDelete}, "
+                          "secondaryThrottle: {secondaryThrottle}",
+                          "Start balancing round",
+                          "waitForDelete"_attr = balancerConfig->waitForDelete(),
+                          "secondaryThrottle"_attr =
+                              balancerConfig->getSecondaryThrottle().toBSON());
 
                 static Occasionally sampler;
                 if (sampler.tick()) {
@@ -415,19 +415,19 @@ void Balancer::_mainThread() {
 
                 Status status = _splitChunksIfNeeded(opCtx.get());
                 if (!status.isOK()) {
-                    LOGV2_WARNING(21878,
-                                  "Failed to split chunks due to {error}",
-                                  "Failed to split chunks",
-                                  "error"_attr = status);
+                    LOG_WARNING(21878,
+                                "Failed to split chunks due to {error}",
+                                "Failed to split chunks",
+                                "error"_attr = status);
                 } else {
-                    LOGV2_DEBUG(21861, 1, "Done enforcing tag range boundaries.");
+                    LOG_DEBUG(21861, 1, "Done enforcing tag range boundaries.");
                 }
 
                 const auto candidateChunks =
                     uassertStatusOK(_chunkSelectionPolicy->selectChunksToMove(opCtx.get()));
 
                 if (candidateChunks.empty()) {
-                    LOGV2_DEBUG(21862, 1, "No need to move any chunk");
+                    LOG_DEBUG(21862, 1, "No need to move any chunk");
                     _balancedLastTime = 0;
                 } else {
                     _balancedLastTime = _moveChunks(opCtx.get(), candidateChunks);
@@ -440,7 +440,7 @@ void Balancer::_mainThread() {
                         .ignore();
                 }
 
-                LOGV2_DEBUG(21863, 1, "End balancing round");
+                LOG_DEBUG(21863, 1, "End balancing round");
             }
 
             Milliseconds balancerInterval =
@@ -448,22 +448,22 @@ void Balancer::_mainThread() {
 
             overrideBalanceRoundInterval.execute([&](const BSONObj& data) {
                 balancerInterval = Milliseconds(data["intervalMs"].numberInt());
-                LOGV2(21864,
-                      "overrideBalanceRoundInterval: using shorter balancing interval: "
-                      "{balancerInterval}",
-                      "overrideBalanceRoundInterval: using shorter balancing interval",
-                      "balancerInterval"_attr = balancerInterval);
+                LOG(21864,
+                    "overrideBalanceRoundInterval: using shorter balancing interval: "
+                    "{balancerInterval}",
+                    "overrideBalanceRoundInterval: using shorter balancing interval",
+                    "balancerInterval"_attr = balancerInterval);
             });
 
             _endRound(opCtx.get(), balancerInterval);
         } catch (const DBException& e) {
-            LOGV2(21865,
-                  "caught exception while doing balance: {error}",
-                  "Error while doing balance",
-                  "error"_attr = e);
+            LOG(21865,
+                "caught exception while doing balance: {error}",
+                "Error while doing balance",
+                "error"_attr = e);
 
             // Just to match the opening statement if in log level 1
-            LOGV2_DEBUG(21866, 1, "End balancing round");
+            LOG_DEBUG(21866, 1, "End balancing round");
 
             // This round failed, tell the world!
             roundDetails.setFailed(e.what());
@@ -492,7 +492,7 @@ void Balancer::_mainThread() {
         _threadOperationContext = nullptr;
     }
 
-    LOGV2(21867, "CSRS balancer is now stopped");
+    LOG(21867, "CSRS balancer is now stopped");
 }
 
 bool Balancer::_stopRequested() {
@@ -557,13 +557,13 @@ bool Balancer::_checkOIDs(OperationContext* opCtx) {
             if (oids.count(x) == 0) {
                 oids[x] = shardId;
             } else {
-                LOGV2(21868,
-                      "error: 2 machines have {oidMachine} as oid machine piece: {firstShardId} "
-                      "and {secondShardId}",
-                      "Two machines have the same oidMachine value",
-                      "oidMachine"_attr = x,
-                      "firstShardId"_attr = shardId,
-                      "secondShardId"_attr = oids[x]);
+                LOG(21868,
+                    "error: 2 machines have {oidMachine} as oid machine piece: {firstShardId} "
+                    "and {secondShardId}",
+                    "Two machines have the same oidMachine value",
+                    "oidMachine"_attr = x,
+                    "firstShardId"_attr = shardId,
+                    "secondShardId"_attr = oids[x]);
 
                 result = uassertStatusOK(s->runCommandWithFixedRetryAttempts(
                     opCtx,
@@ -590,10 +590,10 @@ bool Balancer::_checkOIDs(OperationContext* opCtx) {
                 return false;
             }
         } else {
-            LOGV2(21869,
-                  "warning: oidMachine not set on: {shard}",
-                  "warning: oidMachine not set on shard",
-                  "shard"_attr = s->toString());
+            LOG(21869,
+                "warning: oidMachine not set on: {shard}",
+                "warning: oidMachine not set on shard",
+                "shard"_attr = s->toString());
         }
     }
 
@@ -625,11 +625,11 @@ Status Balancer::_splitChunksIfNeeded(OperationContext* opCtx) {
                                                   ChunkRange(splitInfo.minKey, splitInfo.maxKey),
                                                   splitInfo.splitKeys);
         if (!splitStatus.isOK()) {
-            LOGV2_WARNING(21879,
-                          "Failed to split chunk {splitInfo} {error}",
-                          "Failed to split chunk",
-                          "splitInfo"_attr = redact(splitInfo.toString()),
-                          "error"_attr = redact(splitStatus.getStatus()));
+            LOG_WARNING(21879,
+                        "Failed to split chunk {splitInfo} {error}",
+                        "Failed to split chunk",
+                        "splitInfo"_attr = redact(splitInfo.toString()),
+                        "error"_attr = redact(splitStatus.getStatus()));
         }
     }
 
@@ -642,7 +642,7 @@ int Balancer::_moveChunks(OperationContext* opCtx,
 
     // If the balancer was disabled since we started this round, don't start new chunk moves
     if (_stopRequested() || !balancerConfig->shouldBalance()) {
-        LOGV2_DEBUG(21870, 1, "Skipping balancing round because balancer was stopped");
+        LOG_DEBUG(21870, 1, "Skipping balancing round because balancer was stopped");
         return 0;
     }
 
@@ -680,22 +680,22 @@ int Balancer::_moveChunks(OperationContext* opCtx,
         if (status == ErrorCodes::ChunkTooBig || status == ErrorCodes::ExceededMemoryLimit) {
             numChunksProcessed++;
 
-            LOGV2(21871,
-                  "Migration {migrateInfo} failed with {error}, going to try splitting the chunk",
-                  "Migration failed, going to try splitting the chunk",
-                  "migrateInfo"_attr = redact(requestIt->toString()),
-                  "error"_attr = redact(status));
+            LOG(21871,
+                "Migration {migrateInfo} failed with {error}, going to try splitting the chunk",
+                "Migration failed, going to try splitting the chunk",
+                "migrateInfo"_attr = redact(requestIt->toString()),
+                "error"_attr = redact(status));
 
             ShardingCatalogManager::get(opCtx)->splitOrMarkJumbo(
                 opCtx, requestIt->nss, requestIt->minKey);
             continue;
         }
 
-        LOGV2(21872,
-              "Migration {migrateInfo} failed with {error}",
-              "Migration failed",
-              "migrateInfo"_attr = redact(requestIt->toString()),
-              "error"_attr = redact(status));
+        LOG(21872,
+            "Migration {migrateInfo} failed with {error}",
+            "Migration failed",
+            "migrateInfo"_attr = redact(requestIt->toString()),
+            "error"_attr = redact(status));
     }
 
     return numChunksProcessed;

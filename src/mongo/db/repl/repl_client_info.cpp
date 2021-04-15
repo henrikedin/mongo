@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kReplication
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kReplication
 
 #include "mongo/platform/basic.h"
 
@@ -36,7 +36,7 @@
 #include "mongo/db/client.h"
 #include "mongo/db/operation_context.h"
 #include "mongo/db/repl/replication_coordinator.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/decorable.h"
 
 namespace mongo {
@@ -106,15 +106,15 @@ void ReplClientInfo::setLastOpToSystemLastOpTime(OperationContext* opCtx) {
             systemOpTime.getTimestamp() >= _lastOp.getTimestamp()) {
             _lastOp = systemOpTime;
         } else {
-            LOGV2(21280,
-                  "Not setting the last OpTime for this Client from {lastOp} to the current system "
-                  "time of {systemOpTime} as that would be moving the OpTime backwards.  This "
-                  "should only happen if there was a rollback recently",
-                  "Not setting the last OpTime for this Client to the current system time as that "
-                  "would be moving the OpTime backwards. This should only happen if there was a "
-                  "rollback recently",
-                  "lastOp"_attr = _lastOp,
-                  "systemOpTime"_attr = systemOpTime);
+            LOG(21280,
+                "Not setting the last OpTime for this Client from {lastOp} to the current system "
+                "time of {systemOpTime} as that would be moving the OpTime backwards.  This "
+                "should only happen if there was a rollback recently",
+                "Not setting the last OpTime for this Client to the current system time as that "
+                "would be moving the OpTime backwards. This should only happen if there was a "
+                "rollback recently",
+                "lastOp"_attr = _lastOp,
+                "systemOpTime"_attr = systemOpTime);
         }
 
         lastOpInfo(opCtx).lastOpSetExplicitly = true;
@@ -130,11 +130,11 @@ void ReplClientInfo::setLastOpToSystemLastOpTimeIgnoringInterrupt(OperationConte
     } catch (const ExceptionForCat<ErrorCategory::Interruption>& e) {
         // In most cases, it is safe to ignore interruption errors because we cannot use the same
         // OperationContext to wait for writeConcern anyways.
-        LOGV2_DEBUG(21281,
-                    2,
-                    "Ignoring set last op interruption error: {error}",
-                    "Ignoring set last op interruption error",
-                    "error"_attr = e.toStatus());
+        LOG_DEBUG(21281,
+                  2,
+                  "Ignoring set last op interruption error: {error}",
+                  "Ignoring set last op interruption error",
+                  "error"_attr = e.toStatus());
     }
 }
 

@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kNetwork
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kNetwork
 
 #include "mongo/platform/basic.h"
 
@@ -49,7 +49,7 @@
 #include "mongo/bson/bsonobjbuilder.h"
 #include "mongo/config.h"
 #include "mongo/db/service_context.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/platform/atomic_word.h"
 #include "mongo/transport/session.h"
 #include "mongo/util/assert_util.h"
@@ -227,8 +227,8 @@ bool enableECDHE(SSL_CTX* const ctx) {
     if (SSL_CTX_ctrl(ctx, 94, 1, nullptr) != 1) {
         // If manually setting the configuration option failed, use a hard coded curve
         if (!useDefaultECKey(ctx)) {
-            LOGV2_WARNING(23230,
-                          "Failed to enable ECDHE due to a lack of support from system libraries.");
+            LOG_WARNING(23230,
+                        "Failed to enable ECDHE due to a lack of support from system libraries.");
             return false;
         }
     }
@@ -433,14 +433,14 @@ Date_t convertASN1ToMillis(const ASN1_TIME* asn1time) {
     ON_BLOCK_EXIT([&] { BIO_free(outBIO); });
 
     if (timeError <= 0) {
-        LOGV2_ERROR(23241, "ASN1_TIME_print failed or wrote no data.");
+        LOG_ERROR(23241, "ASN1_TIME_print failed or wrote no data.");
         return Date_t();
     }
 
     char dateChar[DATE_LEN];
     timeError = BIO_gets(outBIO, dateChar, DATE_LEN);
     if (timeError <= 0) {
-        LOGV2_ERROR(23242, "BIO_gets call failed to transfer contents to buf");
+        LOG_ERROR(23242, "BIO_gets call failed to transfer contents to buf");
         return Date_t();
     }
 
@@ -1543,7 +1543,7 @@ SSLConnectionOpenSSL::SSLConnectionOpenSSL(SSL_CTX* context,
     if (len > 0) {
         int toBIO = BIO_write(networkBIO, initialBytes, len);
         if (toBIO != len) {
-            LOGV2_DEBUG(23223, 3, "Failed to write initial network data to the SSL BIO layer");
+            LOG_DEBUG(23223, 3, "Failed to write initial network data to the SSL BIO layer");
             throwSocketError(SocketErrorKind::RECV_ERROR, socket->remoteString());
         }
     }
@@ -1578,7 +1578,7 @@ SSLManagerOpenSSL::SSLManagerOpenSSL(const SSLParams& params,
     if (_transientSSLParams.has_value()) {
         // No other initialization is necessary: this is egress connection manager that
         // is not using local PEM files.
-        LOGV2_DEBUG(54090, 1, "Default params are ignored for transient SSL manager");
+        LOG_DEBUG(54090, 1, "Default params are ignored for transient SSL manager");
         return;
     }
 
@@ -1648,7 +1648,7 @@ int SSLManagerOpenSSL::_processPasswordFetcherOutput(StatusWith<StringData>* swP
     fassert(17314, num > 0);
 
     if (!swPassword->isOK()) {
-        LOGV2_ERROR(23239, "Unable to fetch password", "error"_attr = swPassword->getStatus());
+        LOG_ERROR(23239, "Unable to fetch password", "error"_attr = swPassword->getStatus());
         return -1;
     }
     StringData password = std::move(swPassword->getValue());
@@ -1781,10 +1781,10 @@ int ocspClientCallback(SSL* ssl, void* arg) {
 
     UniqueX509 peerCert(SSL_get_peer_certificate(ssl));
     if (!peerCert) {
-        LOGV2_DEBUG(23224,
-                    1,
-                    "Could not get peer certificate from SSL object in OCSP verification callback. "
-                    "Will continue with the connection.");
+        LOG_DEBUG(23224,
+                  1,
+                  "Could not get peer certificate from SSL object in OCSP verification callback. "
+                  "Will continue with the connection.");
 
         return OCSP_CLIENT_RESPONSE_ACCEPTABLE;
     }
@@ -1806,25 +1806,25 @@ int ocspClientCallback(SSL* ssl, void* arg) {
     // CRLs or check with the OCSP responder ourselves. If it is true, then we are done.
     if (!swStapleOK.isOK()) {
         if (swStapleOK.getStatus() == ErrorCodes::OCSPCertificateStatusRevoked) {
-            LOGV2_DEBUG(23225,
-                        1,
-                        "Stapled OCSP Response validation failed: {error}",
-                        "Stapled OCSP Response validation failed",
-                        "error"_attr = swStapleOK.getStatus());
+            LOG_DEBUG(23225,
+                      1,
+                      "Stapled OCSP Response validation failed: {error}",
+                      "Stapled OCSP Response validation failed",
+                      "error"_attr = swStapleOK.getStatus());
             return OCSP_CLIENT_RESPONSE_NOT_ACCEPTABLE;
         }
 
-        LOGV2_ERROR(4781101,
-                    "Stapled OCSP Response validation threw an error: {error}",
-                    "Stapled OCSP Response validation threw an error",
-                    "error"_attr = swStapleOK.getStatus());
+        LOG_ERROR(4781101,
+                  "Stapled OCSP Response validation threw an error: {error}",
+                  "Stapled OCSP Response validation threw an error",
+                  "error"_attr = swStapleOK.getStatus());
 
         return OCSP_CLIENT_RESPONSE_ERROR;
     } else if (!swStapleOK.getValue()) {
-        LOGV2_DEBUG(23226,
-                    1,
-                    "Stapled Certificate validation failed: Stapled response does not contain "
-                    "status information regarding the peer certificate.");
+        LOG_DEBUG(23226,
+                  1,
+                  "Stapled Certificate validation failed: Stapled response does not contain "
+                  "status information regarding the peer certificate.");
         return OCSP_CLIENT_RESPONSE_NOT_ACCEPTABLE;
     }
 
@@ -2012,9 +2012,9 @@ Status OCSPFetcher::start(SSL_CTX* context, bool asyncOCSPStaple) {
         .getAsync([this, sm = _manager->shared_from_this()](
                       StatusWith<Milliseconds> swDurationInitial) mutable {
             if (!swDurationInitial.isOK()) {
-                LOGV2_WARNING(5512202,
-                              "Server was unable to staple OCSP Response",
-                              "reason"_attr = swDurationInitial.getStatus());
+                LOG_WARNING(5512202,
+                            "Server was unable to staple OCSP Response",
+                            "reason"_attr = swDurationInitial.getStatus());
             }
             startPeriodicJob(swDurationInitial);
         });
@@ -2067,9 +2067,9 @@ void OCSPFetcher::doPeriodicJob() {
     fetchAndStaple(nullptr).getAsync(
         [this, sm = _manager->shared_from_this()](StatusWith<Milliseconds> swDuration) {
             if (!swDuration.isOK()) {
-                LOGV2_WARNING(5512201,
-                              "Server was unable to staple OCSP Response",
-                              "reason"_attr = swDuration.getStatus());
+                LOG_WARNING(5512201,
+                            "Server was unable to staple OCSP Response",
+                            "reason"_attr = swDuration.getStatus());
             }
 
             stdx::lock_guard<Latch> lock(this->_staplingMutex);
@@ -2118,7 +2118,7 @@ Future<Milliseconds> OCSPFetcher::fetchAndStaple(Promise<void>* promise) {
     // Continue with OCSP Stapling logic
     auto swOCSPContext = extractOcspUris(_context, _cert, intermediateCerts.get());
     if (!swOCSPContext.isOK()) {
-        LOGV2_WARNING(23232, "Could not staple OCSP response to outgoing certificate.");
+        LOG_WARNING(23232, "Could not staple OCSP response to outgoing certificate.");
         return swOCSPContext.getStatus();
     }
 
@@ -2167,7 +2167,7 @@ Milliseconds SSLManagerOpenSSL::updateOcspStaplingContextWithResponse(
     stdx::lock_guard<mongo::Mutex> guard(_sharedResponseMutex);
 
     if (!swResponse.isOK()) {
-        LOGV2_WARNING(23233, "Could not staple OCSP response to outgoing certificate.");
+        LOG_WARNING(23233, "Could not staple OCSP response to outgoing certificate.");
 
         if (_ocspStaplingContext && _ocspStaplingContext->sharedResponseForServer &&
             _ocspStaplingContext->sharedResponseNextUpdate <
@@ -2175,7 +2175,7 @@ Milliseconds SSLManagerOpenSSL::updateOcspStaplingContextWithResponse(
 
             _ocspStaplingContext = std::make_shared<OCSPStaplingContext>();
 
-            LOGV2_WARNING(4633601, "Server will remove and not staple the expiring OCSP Response.");
+            LOG_WARNING(4633601, "Server will remove and not staple the expiring OCSP Response.");
         }
 
         return kOCSPUnknownStatusRefreshRate;
@@ -2202,11 +2202,11 @@ Status SSLManagerOpenSSL::initSSLContext(SSL_CTX* context,
                                          const SSLParams& params,
                                          ConnectionDirection direction) {
     if (isTransient()) {
-        LOGV2_DEBUG(5270602,
-                    2,
-                    "Initializing transient egress SSL context",
-                    "targetClusterConnectionString"_attr =
-                        (*_transientSSLParams).targetedClusterConnectionString);
+        LOG_DEBUG(5270602,
+                  2,
+                  "Initializing transient egress SSL context",
+                  "targetClusterConnectionString"_attr =
+                      (*_transientSSLParams).targetedClusterConnectionString);
     }
 
     // SSL_OP_ALL - Activate all bug workaround options, to support buggy client SSL's.
@@ -2375,10 +2375,10 @@ Status SSLManagerOpenSSL::initSSLContext(SSL_CTX* context,
             UniqueDHParams dhparams = makeDefaultDHParameters();
 
             if (!dhparams || SSL_CTX_set_tmp_dh(context, dhparams.get()) != 1) {
-                LOGV2_ERROR(23240,
-                            "Failed to set default DH parameters: {error}",
-                            "Failed to set default DH parameters",
-                            "error"_attr = getSSLErrorMessage(ERR_get_error()));
+                LOG_ERROR(23240,
+                          "Failed to set default DH parameters: {error}",
+                          "Failed to set default DH parameters",
+                          "error"_attr = getSSLErrorMessage(ERR_get_error()));
             }
         }
     }
@@ -2432,7 +2432,7 @@ Status SSLManagerOpenSSL::_parseAndValidateCertificateFromMemory(
     SSLX509Name* subjectName,
     bool verifyHasSubjectAlternativeName,
     Date_t* serverCertificateExpirationDate) {
-    logv2::DynamicAttributes errorAttrs;
+    log::DynamicAttributes errorAttrs;
 
 #if OPENSSL_VERSION_NUMBER <= 0x1000114fL
     UniqueBIO inBio(BIO_new_mem_buf(const_cast<char*>(buffer.rawData()), buffer.size()));
@@ -2485,10 +2485,10 @@ Status SSLManagerOpenSSL::_parseAndValidateCertificateFromBIO(
         }
 
         if (!hasSan) {
-            LOGV2_WARNING_OPTIONS(551190,
-                                  {logv2::LogTag::kStartupWarnings},
-                                  "Server certificate has no compatible Subject Alternative Name. "
-                                  "This may prevent TLS clients from connecting");
+            LOG_WARNING_OPTIONS(551190,
+                                {log::LogTag::kStartupWarnings},
+                                "Server certificate has no compatible Subject Alternative Name. "
+                                "This may prevent TLS clients from connecting");
         }
     }
 
@@ -2526,7 +2526,7 @@ bool SSLManagerOpenSSL::_readCertificateChainFromMemory(
     PasswordFetcher* password,
     std::optional<StringData> targetClusterURI) {
 
-    logv2::DynamicAttributes errorAttrs;
+    log::DynamicAttributes errorAttrs;
     if (targetClusterURI) {
         errorAttrs.add("targetClusterURI", *targetClusterURI);
     }
@@ -2542,7 +2542,7 @@ bool SSLManagerOpenSSL::_readCertificateChainFromMemory(
 
     if (!inBio) {
         CaptureSSLErrorInAttrs capture(errorAttrs);
-        LOGV2_ERROR(5159905, "Failed to allocate BIO from in memory payload", errorAttrs);
+        LOG_ERROR(5159905, "Failed to allocate BIO from in memory payload", errorAttrs);
         return false;
     }
 
@@ -2553,7 +2553,7 @@ bool SSLManagerOpenSSL::_readCertificateChainFromMemory(
 
     if (!x509cert) {
         CaptureSSLErrorInAttrs capture(errorAttrs);
-        LOGV2_ERROR(5159906, "Failed to read the X509 certificate from memory", errorAttrs);
+        LOG_ERROR(5159906, "Failed to read the X509 certificate from memory", errorAttrs);
         return false;
     }
 
@@ -2564,7 +2564,7 @@ bool SSLManagerOpenSSL::_readCertificateChainFromMemory(
     // SSL_CTX_use_certificate increments the refcount on cert.
     if (1 != SSL_CTX_use_certificate(context, x509cert.get())) {
         CaptureSSLErrorInAttrs capture(errorAttrs);
-        LOGV2_ERROR(5159907, "Failed to use the X509 certificate loaded from memory", errorAttrs);
+        LOG_ERROR(5159907, "Failed to use the X509 certificate loaded from memory", errorAttrs);
         return false;
     }
 
@@ -2582,7 +2582,7 @@ bool SSLManagerOpenSSL::_readCertificateChainFromMemory(
         if (1 != SSL_CTX_add_extra_chain_cert(context, ca.release())) {
 #endif
             CaptureSSLErrorInAttrs capture(errorAttrs);
-            LOGV2_ERROR(
+            LOG_ERROR(
                 5159908, "Failed to use the CA X509 certificate loaded from memory", errorAttrs);
             return false;
         }
@@ -2595,7 +2595,7 @@ bool SSLManagerOpenSSL::_readCertificateChainFromMemory(
         ERR_clear_error();
     } else {
         CaptureSSLErrorInAttrs capture(errorAttrs);
-        LOGV2_ERROR(
+        LOG_ERROR(
             5159909, "Error remained after scanning all X509 certificates from memory", errorAttrs);
         return false;  // Some real error.
     }
@@ -2606,12 +2606,12 @@ bool SSLManagerOpenSSL::_readCertificateChainFromMemory(
 bool SSLManagerOpenSSL::_setupPEM(SSL_CTX* context,
                                   const std::string& keyFile,
                                   PasswordFetcher* password) const {
-    logv2::DynamicAttributes errorAttrs;
+    log::DynamicAttributes errorAttrs;
     errorAttrs.add("keyFile", keyFile);
 
     if (SSL_CTX_use_certificate_chain_file(context, keyFile.c_str()) != 1) {
         CaptureSSLErrorInAttrs capture(errorAttrs);
-        LOGV2_ERROR(23248, "Cannot read certificate file", errorAttrs);
+        LOG_ERROR(23248, "Cannot read certificate file", errorAttrs);
         return false;
     }
 
@@ -2619,13 +2619,13 @@ bool SSLManagerOpenSSL::_setupPEM(SSL_CTX* context,
 
     if (!inBio) {
         CaptureSSLErrorInAttrs capture(errorAttrs);
-        LOGV2_ERROR(23249, "Failed to allocate BIO object", errorAttrs);
+        LOG_ERROR(23249, "Failed to allocate BIO object", errorAttrs);
         return false;
     }
 
     if (BIO_read_filename(inBio.get(), keyFile.c_str()) <= 0) {
         CaptureSSLErrorInAttrs capture(errorAttrs);
-        LOGV2_ERROR(23250, "Cannot read PEM key file", errorAttrs);
+        LOG_ERROR(23250, "Cannot read PEM key file", errorAttrs);
         return false;
     }
     return _setupPEMFromBIO(context, std::move(inBio), password, keyFile, std::nullopt);
@@ -2635,7 +2635,7 @@ bool SSLManagerOpenSSL::_setupPEMFromMemoryPayload(SSL_CTX* context,
                                                    const std::string& payload,
                                                    PasswordFetcher* password,
                                                    StringData targetClusterURI) const {
-    logv2::DynamicAttributes errorAttrs;
+    log::DynamicAttributes errorAttrs;
     errorAttrs.add("targetClusterURI", targetClusterURI);
 
     if (!_readCertificateChainFromMemory(context, payload, password, targetClusterURI)) {
@@ -2649,7 +2649,7 @@ bool SSLManagerOpenSSL::_setupPEMFromMemoryPayload(SSL_CTX* context,
 
     if (!inBio) {
         CaptureSSLErrorInAttrs capture(errorAttrs);
-        LOGV2_ERROR(5159901, "Failed to allocate BIO object from in-memory payload", errorAttrs);
+        LOG_ERROR(5159901, "Failed to allocate BIO object from in-memory payload", errorAttrs);
         return false;
     }
 
@@ -2661,7 +2661,7 @@ bool SSLManagerOpenSSL::_setupPEMFromBIO(SSL_CTX* context,
                                          PasswordFetcher* password,
                                          std::optional<StringData> keyFile,
                                          std::optional<StringData> targetClusterURI) const {
-    logv2::DynamicAttributes errorAttrs;
+    log::DynamicAttributes errorAttrs;
     if (keyFile) {
         errorAttrs.add("keyFile", *keyFile);
     }
@@ -2675,21 +2675,21 @@ bool SSLManagerOpenSSL::_setupPEMFromBIO(SSL_CTX* context,
     EVP_PKEY* privateKey = PEM_read_bio_PrivateKey(inBio.get(), nullptr, password_cb, userdata);
     if (!privateKey) {
         CaptureSSLErrorInAttrs capture(errorAttrs);
-        LOGV2_ERROR(23251, "Cannot read PEM key", errorAttrs);
+        LOG_ERROR(23251, "Cannot read PEM key", errorAttrs);
         return false;
     }
     const auto privateKeyGuard = makeGuard([&privateKey]() { EVP_PKEY_free(privateKey); });
 
     if (SSL_CTX_use_PrivateKey(context, privateKey) != 1) {
         CaptureSSLErrorInAttrs capture(errorAttrs);
-        LOGV2_ERROR(23252, "Cannot use PEM key", errorAttrs);
+        LOG_ERROR(23252, "Cannot use PEM key", errorAttrs);
         return false;
     }
 
     // Verify that the certificate and the key go together.
     if (SSL_CTX_check_private_key(context) != 1) {
         CaptureSSLErrorInAttrs capture(errorAttrs);
-        LOGV2_ERROR(23253, "SSL certificate validation failed", errorAttrs);
+        LOG_ERROR(23253, "SSL certificate validation failed", errorAttrs);
         return false;
     }
 
@@ -2755,21 +2755,21 @@ bool SSLManagerOpenSSL::_setupCRL(SSL_CTX* context, const std::string& crlFile) 
 
     int status = X509_load_crl_file(lookup, crlFile.c_str(), X509_FILETYPE_PEM);
     if (status == 0) {
-        LOGV2_ERROR(23254,
-                    "cannot read CRL file: {crlFile} {error}",
-                    "Cannot read CRL file",
-                    "crlFile"_attr = crlFile,
-                    "error"_attr = getSSLErrorMessage(ERR_get_error()));
+        LOG_ERROR(23254,
+                  "cannot read CRL file: {crlFile} {error}",
+                  "Cannot read CRL file",
+                  "crlFile"_attr = crlFile,
+                  "error"_attr = getSSLErrorMessage(ERR_get_error()));
         return false;
     }
 
     if (status == 1) {
-        LOGV2(4652601, "ssl imported 1 revoked certificate from the revocation list.");
+        LOG(4652601, "ssl imported 1 revoked certificate from the revocation list.");
     } else {
-        LOGV2(4652602,
-              "ssl imported {numberCerts} revoked certificates from the revocation list",
-              "SSL imported revoked certificates from the revocation list",
-              "numberCerts"_attr = status);
+        LOG(4652602,
+            "ssl imported {numberCerts} revoked certificates from the revocation list",
+            "SSL imported revoked certificates from the revocation list",
+            "numberCerts"_attr = status);
     }
 
     return true;
@@ -2818,7 +2818,7 @@ void SSLManagerOpenSSL::_flushNetworkBIO(SSLConnectionOpenSSL* conn) {
 
         int toBIO = BIO_write(conn->networkBIO, buffer, numRead);
         if (toBIO != numRead) {
-            LOGV2_DEBUG(23228, 3, "Failed to write network data to the SSL BIO layer");
+            LOG_DEBUG(23228, 3, "Failed to write network data to the SSL BIO layer");
             throwSocketError(SocketErrorKind::RECV_ERROR, conn->socket->remoteString());
         }
     }
@@ -2990,15 +2990,15 @@ Future<SSLPeerInfo> SSLManagerOpenSSL::parseAndValidatePeerCertificate(
         if (_weakValidation) {
             // do not give warning if certificate warnings are  suppressed
             if (!_suppressNoCertificateWarning) {
-                LOGV2_WARNING(23234,
-                              "no SSL certificate provided by peer",
-                              "No SSL certificate provided by peer");
+                LOG_WARNING(23234,
+                            "no SSL certificate provided by peer",
+                            "No SSL certificate provided by peer");
             }
             return SSLPeerInfo(sni);
         } else {
-            LOGV2_ERROR(23255,
-                        "no SSL certificate provided by peer; connection rejected",
-                        "No SSL certificate provided by peer; connection rejected");
+            LOG_ERROR(23255,
+                      "no SSL certificate provided by peer; connection rejected",
+                      "No SSL certificate provided by peer; connection rejected");
             return Status(ErrorCodes::SSLHandshakeFailed,
                           "no SSL certificate provided by peer; connection rejected");
         }
@@ -3009,19 +3009,19 @@ Future<SSLPeerInfo> SSLManagerOpenSSL::parseAndValidatePeerCertificate(
 
     if (result != X509_V_OK) {
         if (_allowInvalidCertificates) {
-            LOGV2_WARNING(23235,
-                          "SSL peer certificate validation failed: {reason}",
-                          "SSL peer certificate validation failed",
-                          "reason"_attr = X509_verify_cert_error_string(result));
+            LOG_WARNING(23235,
+                        "SSL peer certificate validation failed: {reason}",
+                        "SSL peer certificate validation failed",
+                        "reason"_attr = X509_verify_cert_error_string(result));
             return SSLPeerInfo(sni);
         } else {
             str::stream msg;
             msg << "SSL peer certificate validation failed: "
                 << X509_verify_cert_error_string(result);
-            LOGV2_ERROR(23256,
-                        "{error}",
-                        "SSL peer certificate validation failed",
-                        "error"_attr = msg.ss.str());
+            LOG_ERROR(23256,
+                      "{error}",
+                      "SSL peer certificate validation failed",
+                      "error"_attr = msg.ss.str());
             return Status(ErrorCodes::SSLHandshakeFailed, msg);
         }
     }
@@ -3037,11 +3037,11 @@ Future<SSLPeerInfo> SSLManagerOpenSSL::parseAndValidatePeerCertificate(
 
     // TODO: check optional cipher restriction, using cert.
     auto peerSubject = getCertificateSubjectX509Name(peerCert);
-    LOGV2_DEBUG(23229,
-                2,
-                "Accepted TLS connection from peer: {peerSubject}",
-                "Accepted TLS connection from peer",
-                "peerSubject"_attr = peerSubject);
+    LOG_DEBUG(23229,
+              2,
+              "Accepted TLS connection from peer: {peerSubject}",
+              "Accepted TLS connection from peer",
+              "peerSubject"_attr = peerSubject);
 
     StatusWith<stdx::unordered_set<RoleName>> swPeerCertificateRoles = _parsePeerRoles(peerCert);
     if (!swPeerCertificateRoles.isOK()) {
@@ -3071,7 +3071,7 @@ Future<SSLPeerInfo> SSLManagerOpenSSL::parseAndValidatePeerCertificate(
 
         // If client and server certificate are the same, log a warning.
         if (_sslConfiguration.serverSubjectName() == peerSubject) {
-            LOGV2_WARNING(23236, "Client connecting with server's own TLS certificate");
+            LOG_WARNING(23236, "Client connecting with server's own TLS certificate");
         }
 
         // void futures are default constructed as ready futures.
@@ -3111,9 +3111,9 @@ Future<SSLPeerInfo> SSLManagerOpenSSL::parseAndValidatePeerCertificate(
                     reinterpret_cast<char*>(ASN1_STRING_data(currentName->d.dNSName)));
                 auto swCIDRDNSName = CIDR::parse(dnsName);
                 if (swCIDRDNSName.isOK()) {
-                    LOGV2_WARNING(23237,
-                                  "You have an IP Address in the DNS Name field on your "
-                                  "certificate. This formulation is deprecated.");
+                    LOG_WARNING(23237,
+                                "You have an IP Address in the DNS Name field on your "
+                                "certificate. This formulation is deprecated.");
                     if (swCIDRRemoteHost.isOK() &&
                         swCIDRRemoteHost.getValue() == swCIDRDNSName.getValue()) {
                         sanMatch = true;
@@ -3179,19 +3179,19 @@ Future<SSLPeerInfo> SSLManagerOpenSSL::parseAndValidatePeerCertificate(
         std::string msg = msgBuilder.str();
 
         if (_allowInvalidCertificates || _allowInvalidHostnames || isUnixDomainSocket(remoteHost)) {
-            LOGV2_WARNING(23238,
-                          "The server certificate does not match the host name. Hostname: "
-                          "{remoteHost} does not match {certificateNames}",
-                          "The server certificate does not match the remote host name",
-                          "remoteHost"_attr = remoteHost,
-                          "certificateNames"_attr = certificateNames.str());
-        } else {
-            LOGV2_ERROR(23257,
+            LOG_WARNING(23238,
                         "The server certificate does not match the host name. Hostname: "
                         "{remoteHost} does not match {certificateNames}",
                         "The server certificate does not match the remote host name",
                         "remoteHost"_attr = remoteHost,
                         "certificateNames"_attr = certificateNames.str());
+        } else {
+            LOG_ERROR(23257,
+                      "The server certificate does not match the host name. Hostname: "
+                      "{remoteHost} does not match {certificateNames}",
+                      "The server certificate does not match the remote host name",
+                      "remoteHost"_attr = remoteHost,
+                      "certificateNames"_attr = certificateNames.str());
             return Future<SSLPeerInfo>::makeReady(Status(ErrorCodes::SSLHandshakeFailed, msg));
         }
     }
@@ -3285,39 +3285,39 @@ void SSLManagerOpenSSL::_handleSSLError(SSLConnectionOpenSSL* conn, int ret) {
             // manner.
             errToThrow = (code == SSL_ERROR_WANT_READ) ? SocketErrorKind::RECV_ERROR
                                                        : SocketErrorKind::SEND_ERROR;
-            LOGV2_ERROR(23258,
-                        "SSL: {error}, possibly timed out during connect",
-                        "SSL: possibly timed out during connect",
-                        "error"_attr = code);
+            LOG_ERROR(23258,
+                      "SSL: {error}, possibly timed out during connect",
+                      "SSL: possibly timed out during connect",
+                      "error"_attr = code);
             break;
 
         case SSL_ERROR_ZERO_RETURN:
             // TODO: Check if we can avoid throwing an exception for this condition
             // If so, change error() back to LOG(3)
-            LOGV2_ERROR(23259, "SSL network connection closed");
+            LOG_ERROR(23259, "SSL network connection closed");
             break;
         case SSL_ERROR_SYSCALL:
             // If ERR_get_error returned 0, the error queue is empty
             // check the return value of the actual SSL operation
             if (err != 0) {
-                LOGV2_ERROR(
+                LOG_ERROR(
                     23260, "SSL: {error}", "SSL error", "error"_attr = getSSLErrorMessage(err));
             } else if (ret == 0) {
-                LOGV2_ERROR(23261, "Unexpected EOF encountered during SSL communication");
+                LOG_ERROR(23261, "Unexpected EOF encountered during SSL communication");
             } else {
-                LOGV2_ERROR(23262,
-                            "The SSL BIO reported an I/O error {error}",
-                            "The SSL BIO reported an I/O error",
-                            "error"_attr = errnoWithDescription());
+                LOG_ERROR(23262,
+                          "The SSL BIO reported an I/O error {error}",
+                          "The SSL BIO reported an I/O error",
+                          "error"_attr = errnoWithDescription());
             }
             break;
         case SSL_ERROR_SSL: {
-            LOGV2_ERROR(23263, "SSL: {error}", "SSL error", "error"_attr = getSSLErrorMessage(err));
+            LOG_ERROR(23263, "SSL: {error}", "SSL error", "error"_attr = getSSLErrorMessage(err));
             break;
         }
 
         default:
-            LOGV2_ERROR(23264, "unrecognized SSL error");
+            LOG_ERROR(23264, "unrecognized SSL error");
             break;
     }
     _flushNetworkBIO(conn);

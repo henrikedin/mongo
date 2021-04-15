@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kSharding
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kSharding
 
 #include "mongo/platform/basic.h"
 
@@ -38,7 +38,7 @@
 #include "mongo/bson/util/bson_extract.h"
 #include "mongo/client/authenticate.h"
 #include "mongo/db/client.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 
 namespace mongo {
@@ -56,11 +56,11 @@ void ShardingConnectionHook::onCreate(DBClientBase* conn) {
     // Authenticate as the first thing we do
     // NOTE: Replica set authentication allows authentication against *any* online host
     if (auth::isInternalAuthSet()) {
-        LOGV2_DEBUG(22722,
-                    2,
-                    "Calling onCreate auth for {connectionString}",
-                    "Calling onCreate auth",
-                    "connectionString"_attr = conn->toString());
+        LOG_DEBUG(22722,
+                  2,
+                  "Calling onCreate auth for {connectionString}",
+                  "Calling onCreate auth",
+                  "connectionString"_attr = conn->toString());
 
         uassertStatusOKWithContext(conn->authenticateInternalUser(),
                                    str::stream() << "can't authenticate to server "

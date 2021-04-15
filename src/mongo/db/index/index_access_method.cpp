@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kIndex
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kIndex
 
 #include "mongo/platform/basic.h"
 
@@ -53,7 +53,7 @@
 #include "mongo/db/storage/durable_catalog.h"
 #include "mongo/db/storage/execution_context.h"
 #include "mongo/db/storage/storage_options.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/progress_meter.h"
 #include "mongo/util/scopeguard.h"
 #include "mongo/util/stacktrace.h"
@@ -224,15 +224,15 @@ void AbstractIndexAccessMethod::removeOneKey(OperationContext* opCtx,
         _newInterface->unindex(opCtx, keyString, dupsAllowed);
     } catch (AssertionException& e) {
         NamespaceString ns = _indexCatalogEntry->getNSSFromCatalog(opCtx);
-        LOGV2(20683,
-              "Assertion failure: _unindex failed on: {namespace} for index: {indexName}. "
-              "{error}  KeyString:{keyString}  dl:{recordId}",
-              "Assertion failure: _unindex failed",
-              "error"_attr = redact(e),
-              "keyString"_attr = keyString,
-              "recordId"_attr = loc,
-              "namespace"_attr = ns,
-              "indexName"_attr = _descriptor->indexName());
+        LOG(20683,
+            "Assertion failure: _unindex failed on: {namespace} for index: {indexName}. "
+            "{error}  KeyString:{keyString}  dl:{recordId}",
+            "Assertion failure: _unindex failed",
+            "error"_attr = redact(e),
+            "keyString"_attr = keyString,
+            "recordId"_attr = loc,
+            "namespace"_attr = ns,
+            "indexName"_attr = _descriptor->indexName());
         printStackTrace();
     }
 }
@@ -582,13 +582,13 @@ Status AbstractIndexAccessMethod::BulkBuilderImpl::insert(OperationContext* opCt
                 // index builder can retry at a point when data is consistent.
                 auto interceptor = _indexCatalogEntry->indexBuildInterceptor();
                 if (interceptor && interceptor->getSkippedRecordTracker()) {
-                    LOGV2_DEBUG(20684,
-                                1,
-                                "Recording suppressed key generation error to retry later: "
-                                "{error} on {loc}: {obj}",
-                                "error"_attr = status,
-                                "loc"_attr = loc,
-                                "obj"_attr = redact(obj));
+                    LOG_DEBUG(20684,
+                              1,
+                              "Recording suppressed key generation error to retry later: "
+                              "{error} on {loc}: {obj}",
+                              "error"_attr = status,
+                              "loc"_attr = loc,
+                              "obj"_attr = redact(obj));
                     interceptor->getSkippedRecordTracker()->record(opCtx, loc);
                 }
             });
@@ -705,11 +705,11 @@ Status AbstractIndexAccessMethod::commitBulk(OperationContext* opCtx,
 
         hangIndexBuildDuringBulkLoadPhase.executeIf(
             [opCtx, i, &indexName = _descriptor->indexName()](const BSONObj& data) {
-                LOGV2(4924400,
-                      "Hanging index build during bulk load phase due to "
-                      "'hangIndexBuildDuringBulkLoadPhase' failpoint",
-                      "iteration"_attr = i,
-                      "index"_attr = indexName);
+                LOG(4924400,
+                    "Hanging index build during bulk load phase due to "
+                    "'hangIndexBuildDuringBulkLoadPhase' failpoint",
+                    "iteration"_attr = i,
+                    "index"_attr = indexName);
 
                 hangIndexBuildDuringBulkLoadPhase.pauseWhileSet(opCtx);
             },
@@ -733,7 +733,7 @@ Status AbstractIndexAccessMethod::commitBulk(OperationContext* opCtx,
         }
 
         if (kDebugBuild && data.first.compare(previousKey) < 0) {
-            LOGV2_FATAL_NOTRACE(
+            LOG_FATAL_NOTRACE(
                 31171,
                 "Expected the next key to be greater than or equal to the previous key",
                 "nextKey"_attr = data.first.toString(),
@@ -775,14 +775,14 @@ Status AbstractIndexAccessMethod::commitBulk(OperationContext* opCtx,
 
     pm.finished();
 
-    LOGV2(20685,
-          "Index build: inserted {bulk_getKeysInserted} keys from external sorter into index in "
-          "{timer_seconds} seconds",
-          "Index build: inserted keys from external sorter into index",
-          "namespace"_attr = _indexCatalogEntry->getNSSFromCatalog(opCtx),
-          "index"_attr = _descriptor->indexName(),
-          "keysInserted"_attr = bulk->getKeysInserted(),
-          "duration"_attr = Milliseconds(Seconds(timer.seconds())));
+    LOG(20685,
+        "Index build: inserted {bulk_getKeysInserted} keys from external sorter into index in "
+        "{timer_seconds} seconds",
+        "Index build: inserted keys from external sorter into index",
+        "namespace"_attr = _indexCatalogEntry->getNSSFromCatalog(opCtx),
+        "index"_attr = _descriptor->indexName(),
+        "keysInserted"_attr = bulk->getKeysInserted(),
+        "duration"_attr = Milliseconds(Seconds(timer.seconds())));
     return Status::OK();
 }
 
@@ -795,7 +795,7 @@ void AbstractIndexAccessMethod::setIndexIsMultikey(OperationContext* opCtx,
 
 IndexAccessMethod::OnSuppressedErrorFn IndexAccessMethod::kNoopOnSuppressedErrorFn =
     [](Status status, const BSONObj& obj, boost::optional<RecordId> loc) {
-        LOGV2_DEBUG(
+        LOG_DEBUG(
             20686,
             1,
             "Suppressed key generation error: {error} when getting index keys for {loc}: {obj}",

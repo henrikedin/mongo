@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTransaction
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTransaction
 
 #include "mongo/platform/basic.h"
 
@@ -36,7 +36,7 @@
 #include "mongo/client/remote_command_targeter.h"
 #include "mongo/db/auth/authorization_session.h"
 #include "mongo/db/s/sharding_state.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/s/grid.h"
 #include "mongo/transport/service_entry_point.h"
@@ -88,11 +88,11 @@ Future<executor::TaskExecutor::ResponseStatus> AsyncWorkScheduler::scheduleRemot
             invariant(data.hasField("command"));
             failPointErrorCode = data.getIntField("code");
             if (commandObj.hasField(data.getStringField("command"))) {
-                LOGV2_DEBUG(5141702,
-                            1,
-                            "Fail point matched the command and will inject failure",
-                            "shardId"_attr = shardId,
-                            "failData"_attr = data);
+                LOG_DEBUG(5141702,
+                          1,
+                          "Fail point matched the command and will inject failure",
+                          "shardId"_attr = shardId,
+                          "failData"_attr = data);
                 return true;
             }
             return false;
@@ -117,7 +117,7 @@ Future<executor::TaskExecutor::ResponseStatus> AsyncWorkScheduler::scheduleRemot
                 ->grantInternalAuthorization(opCtx->getClient());
 
             if (MONGO_unlikely(hangWhileTargetingLocalHost.shouldFail())) {
-                LOGV2(22449, "Hit hangWhileTargetingLocalHost failpoint");
+                LOG(22449, "Hit hangWhileTargetingLocalHost failpoint");
                 hangWhileTargetingLocalHost.pauseWhileSet(opCtx);
             }
 
@@ -253,7 +253,7 @@ Future<AsyncWorkScheduler::HostAndShard> AsyncWorkScheduler::_targetHostAsync(
         const auto shard = uassertStatusOK(shardRegistry->getShard(opCtx, shardId));
 
         if (MONGO_unlikely(hangWhileTargetingRemoteHost.shouldFail())) {
-            LOGV2(22450, "Hit hangWhileTargetingRemoteHost failpoint", "shardId"_attr = shardId);
+            LOG(22450, "Hit hangWhileTargetingRemoteHost failpoint", "shardId"_attr = shardId);
             hangWhileTargetingRemoteHost.pauseWhileSet(opCtx);
         }
 

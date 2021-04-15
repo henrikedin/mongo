@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kNetwork
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kNetwork
 
 #include "mongo/platform/basic.h"
 
@@ -38,7 +38,7 @@
 
 #include "mongo/db/auth/restriction_environment.h"
 #include "mongo/db/service_context.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/transport/hello_metrics.h"
 #include "mongo/transport/service_executor.h"
 #include "mongo/transport/service_executor_gen.h"
@@ -105,13 +105,13 @@ size_t getSupportedMax() {
 
         size_t max = (size_t)(limit.rlim_cur * .8);
 
-        LOGV2_DEBUG(22940,
-                    1,
-                    "fd limit hard:{hard} soft:{soft} max conn: {conn}",
-                    "file descriptor and connection resource limits",
-                    "hard"_attr = limit.rlim_max,
-                    "soft"_attr = limit.rlim_cur,
-                    "conn"_attr = max);
+        LOG_DEBUG(22940,
+                  1,
+                  "fd limit hard:{hard} soft:{soft} max conn: {conn}",
+                  "file descriptor and connection resource limits",
+                  "hard"_attr = limit.rlim_max,
+                  "soft"_attr = limit.rlim_cur,
+                  "conn"_attr = max);
 
         return std::min(max, serverGlobalParams.maxConns);
 #endif
@@ -120,10 +120,10 @@ size_t getSupportedMax() {
     // If we asked for more connections than supported, inform the user.
     if (supportedMax < serverGlobalParams.maxConns &&
         serverGlobalParams.maxConns != DEFAULT_MAX_CONN) {
-        LOGV2(22941,
-              " --maxConns too high, can only handle {limit}",
-              " --maxConns too high",
-              "limit"_attr = supportedMax);
+        LOG(22941,
+            " --maxConns too high, can only handle {limit}",
+            " --maxConns too high",
+            "limit"_attr = supportedMax);
     }
 
     return supportedMax;
@@ -184,19 +184,19 @@ void ServiceEntryPointImpl::startSession(transport::SessionHandle session) {
 
     if (!maybeSsmIt) {
         if (!quiet) {
-            LOGV2(22942,
-                  "Connection refused because there are too many open connections",
-                  "remote"_attr = session->remote(),
-                  "connectionCount"_attr = connectionCount);
+            LOG(22942,
+                "Connection refused because there are too many open connections",
+                "remote"_attr = session->remote(),
+                "connectionCount"_attr = connectionCount);
         }
         return;
     } else if (!quiet) {
-        LOGV2(22943,
-              "Connection accepted",
-              "remote"_attr = session->remote(),
-              "uuid"_attr = uuid.toString(),
-              "connectionId"_attr = session->id(),
-              "connectionCount"_attr = connectionCount);
+        LOG(22943,
+            "Connection accepted",
+            "remote"_attr = session->remote(),
+            "uuid"_attr = uuid.toString(),
+            "connectionId"_attr = session->id(),
+            "connectionCount"_attr = connectionCount);
     }
 
     auto ssmIt = *maybeSsmIt;
@@ -211,12 +211,12 @@ void ServiceEntryPointImpl::startSession(transport::SessionHandle session) {
         }
 
         if (!quiet) {
-            LOGV2(22944,
-                  "Connection ended",
-                  "remote"_attr = remote,
-                  "uuid"_attr = uuid.toString(),
-                  "connectionId"_attr = session->id(),
-                  "connectionCount"_attr = connectionCount);
+            LOG(22944,
+                "Connection ended",
+                "remote"_attr = remote,
+                "uuid"_attr = uuid.toString(),
+                "connectionId"_attr = session->id(),
+                "connectionCount"_attr = connectionCount);
         }
 
         _sessionsCV.notify_one();
@@ -265,10 +265,9 @@ bool ServiceEntryPointImpl::shutdownAndWait(Milliseconds timeout) {
     lk.unlock();
 
     if (result) {
-        LOGV2(22946, "shutdown: no running workers found...");
+        LOG(22946, "shutdown: no running workers found...");
     } else {
-        LOGV2(
-            22947,
+        LOG(22947,
             "shutdown: exhausted grace period for {workers} active workers to "
             "drain; continuing with shutdown...",
             "shutdown: exhausted grace period active workers to drain; continuing with shutdown...",
@@ -293,7 +292,7 @@ void ServiceEntryPointImpl::_terminateAll(WithLock) {
 
 bool ServiceEntryPointImpl::waitForNoSessions(Milliseconds timeout) {
     auto deadline = _svcCtx->getPreciseClockSource()->now() + timeout;
-    LOGV2(5342100, "Waiting until for all sessions to conclude", "deadline"_attr = deadline);
+    LOG(5342100, "Waiting until for all sessions to conclude", "deadline"_attr = deadline);
 
     auto lk = stdx::unique_lock<decltype(_sessionsMutex)>(_sessionsMutex);
     return _waitForNoSessions(lk, deadline);

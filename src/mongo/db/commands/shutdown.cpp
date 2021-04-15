@@ -27,9 +27,9 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kCommand
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kCommand
 
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 #include "mongo/db/commands/shutdown.h"
 #include "mongo/util/fail_point.h"
@@ -54,10 +54,10 @@ void finishShutdown(bool force, long long timeoutSecs, Milliseconds quiesceTime)
     });
 
     // Shared by mongos and mongod shutdown code paths
-    LOGV2(4695400,
-          "Terminating via shutdown command",
-          "force"_attr = force,
-          "timeoutSecs"_attr = timeoutSecs);
+    LOG(4695400,
+        "Terminating via shutdown command",
+        "force"_attr = force,
+        "timeoutSecs"_attr = timeoutSecs);
 
 #if defined(_WIN32)
     // Signal the ServiceMain thread to shutdown.

@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kStorage
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kStorage
 
 #include "mongo/platform/basic.h"
 
@@ -61,7 +61,7 @@
 #include "mongo/db/storage/storage_repair_observer.h"
 #include "mongo/db/storage/storage_util.h"
 #include "mongo/db/vector_clock.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/scopeguard.h"
 
 namespace mongo {
@@ -93,11 +93,11 @@ Status dropUnfinishedIndexes(OperationContext* opCtx, const CollectionPtr& colle
     durableCatalog->getAllIndexes(opCtx, collection->getCatalogId(), &indexNames);
     for (const auto& indexName : indexNames) {
         if (!durableCatalog->isIndexReady(opCtx, collection->getCatalogId(), indexName)) {
-            LOGV2(3871400,
-                  "Dropping unfinished index '{name}' after collection was modified by "
-                  "repair",
-                  "Dropping unfinished index after collection was modified by repair",
-                  "index"_attr = indexName);
+            LOG(3871400,
+                "Dropping unfinished index '{name}' after collection was modified by "
+                "repair",
+                "Dropping unfinished index after collection was modified by repair",
+                "index"_attr = indexName);
 
             WriteUnitOfWork wuow(opCtx);
             // There are no concurrent users of the index while --repair is running, so it is OK to
@@ -142,7 +142,7 @@ Status repairDatabase(OperationContext* opCtx, StorageEngine* engine, const std:
     invariant(opCtx->lockState()->isW());
     invariant(dbName.find('.') == std::string::npos);
 
-    LOGV2(21029, "repairDatabase", "db"_attr = dbName);
+    LOG(21029, "repairDatabase", "db"_attr = dbName);
 
 
     opCtx->checkForInterrupt();
@@ -156,11 +156,11 @@ Status repairDatabase(OperationContext* opCtx, StorageEngine* engine, const std:
 
     auto status = repairCollections(opCtx, engine, dbName);
     if (!status.isOK()) {
-        LOGV2_FATAL_CONTINUE(21030,
-                             "Failed to repair database {dbName}: {status_reason}",
-                             "Failed to repair database",
-                             "db"_attr = dbName,
-                             "error"_attr = status);
+        LOG_FATAL_CONTINUE(21030,
+                           "Failed to repair database {dbName}: {status_reason}",
+                           "Failed to repair database",
+                           "db"_attr = dbName,
+                           "error"_attr = status);
     }
 
     try {
@@ -174,7 +174,7 @@ Status repairDatabase(OperationContext* opCtx, StorageEngine* engine, const std:
         // have a UUID.
         throw;
     } catch (...) {
-        LOGV2_FATAL_CONTINUE(
+        LOG_FATAL_CONTINUE(
             21031, "Unexpected exception encountered while reopening database after repair.");
         std::terminate();  // Logs additional info about the specific error.
     }
@@ -187,7 +187,7 @@ Status repairCollection(OperationContext* opCtx,
                         const NamespaceString& nss) {
     opCtx->checkForInterrupt();
 
-    LOGV2(21027, "Repairing collection", "namespace"_attr = nss);
+    LOG(21027, "Repairing collection", "namespace"_attr = nss);
 
     Status status = Status::OK();
     {
@@ -247,19 +247,19 @@ Status repairCollection(OperationContext* opCtx,
     const bool debug = false;
     validateResults.appendToResultObj(&detailedResults, debug);
 
-    LOGV2(21028,
-          "Collection validation",
-          "results"_attr = output.done(),
-          "detailedResults"_attr = detailedResults.done());
+    LOG(21028,
+        "Collection validation",
+        "results"_attr = output.done(),
+        "detailedResults"_attr = detailedResults.done());
 
     if (validateResults.repaired) {
         if (validateResults.valid) {
-            LOGV2(4934000, "Validate successfully repaired all data", "collection"_attr = nss);
+            LOG(4934000, "Validate successfully repaired all data", "collection"_attr = nss);
         } else {
-            LOGV2(4934001, "Validate was unable to repair all data", "collection"_attr = nss);
+            LOG(4934001, "Validate was unable to repair all data", "collection"_attr = nss);
         }
     } else {
-        LOGV2(4934002, "Validate did not make any repairs", "collection"_attr = nss);
+        LOG(4934002, "Validate did not make any repairs", "collection"_attr = nss);
     }
 
     // If not valid, whether repair ran or not, indexes will need to be rebuilt.

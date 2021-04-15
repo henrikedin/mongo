@@ -3995,8 +3995,8 @@ TEST_F(TransactionsMetricsTest, LogTransactionInfoVerbosityInfo) {
     });
 
     // Set verbosity level of transaction components to info.
-    auto severityGuard = unittest::MinimumLoggedSeverityGuard{logv2::LogComponent::kTransaction,
-                                                              logv2::LogSeverity::Info()};
+    auto severityGuard = unittest::MinimumLoggedSeverityGuard{log::LogComponent::kTransaction,
+                                                              log::LogSeverity::Info()};
 
     txnParticipant.unstashTransactionResources(opCtx(), "commitTransaction");
 
@@ -4014,8 +4014,8 @@ TEST_F(TransactionsMetricsTest, LogTransactionInfoVerbosityDebug) {
     auto txnParticipant = TransactionParticipant::get(opCtx());
 
     // Set verbosity level of transaction components to debug.
-    auto severityGuard = unittest::MinimumLoggedSeverityGuard{logv2::LogComponent::kTransaction,
-                                                              logv2::LogSeverity::Debug(1)};
+    auto severityGuard = unittest::MinimumLoggedSeverityGuard{log::LogComponent::kTransaction,
+                                                              log::LogSeverity::Debug(1)};
 
     txnParticipant.unstashTransactionResources(opCtx(), "commitTransaction");
 

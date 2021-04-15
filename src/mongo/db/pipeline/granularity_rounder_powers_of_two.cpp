@@ -76,7 +76,7 @@ Value GranularityRounderPowersOfTwo::roundUp(Value value) {
     } else {
         long long number = value.getLong();
 
-        // We can find the log_2 of 'number' by counting the number of leading zeros to find its
+        // We can find the LOG_2 of 'number' by counting the number of leading zeros to find its
         // first bit set. This is safe to do because we are working with positive values.
         exp = Value(63 - countLeadingZeros64(number) + 1);
     }

@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kStorage
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kStorage
 
 #include "mongo/platform/basic.h"
 
@@ -45,7 +45,7 @@
 #include "mongo/db/stats/top.h"
 #include "mongo/db/storage/storage_engine.h"
 #include "mongo/db/views/view_catalog.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace mongo {
 namespace {
@@ -189,7 +189,7 @@ void DatabaseHolderImpl::dropDb(OperationContext* opCtx, Database* db) {
     // Store the name so we have if for after the db object is deleted
     auto name = db->name();
 
-    LOGV2_DEBUG(20310, 1, "dropDatabase {name}", "name"_attr = name);
+    LOG_DEBUG(20310, 1, "dropDatabase {name}", "name"_attr = name);
 
     invariant(opCtx->lockState()->isDbLockedForMode(name, MODE_X));
 
@@ -285,7 +285,7 @@ void DatabaseHolderImpl::closeAll(OperationContext* opCtx) {
     auto* const storageEngine = opCtx->getServiceContext()->getStorageEngine();
 
     for (const auto& name : dbs) {
-        LOGV2_DEBUG(20311, 2, "DatabaseHolder::closeAll name:{name}", "name"_attr = name);
+        LOG_DEBUG(20311, 2, "DatabaseHolder::closeAll name:{name}", "name"_attr = name);
 
         Database* db = _dbs[name];
         CollectionCatalog::write(

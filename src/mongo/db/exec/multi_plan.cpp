@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kQuery
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kQuery
 
 #include "mongo/platform/basic.h"
 
@@ -50,7 +50,7 @@
 #include "mongo/db/query/plan_cache.h"
 #include "mongo/db/query/plan_ranker.h"
 #include "mongo/db/query/plan_ranker_util.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/str.h"
 
 namespace mongo {
@@ -128,7 +128,7 @@ PlanStage::StageState MultiPlanStage::doWork(WorkingSetID* out) {
             throw;
         }
 
-        LOGV2_DEBUG(20588, 5, "Best plan errored, switching to backup plan");
+        LOG_DEBUG(20588, 5, "Best plan errored, switching to backup plan");
 
         // Attempt to remove the plan from the cache. This will fail if the plan has already been
         // removed, and we intentionally ignore such errors.
@@ -140,7 +140,7 @@ PlanStage::StageState MultiPlanStage::doWork(WorkingSetID* out) {
     }
 
     if (hasBackupPlan() && PlanStage::ADVANCED == state) {
-        LOGV2_DEBUG(20589, 5, "Best plan had a blocking stage, became unblocked");
+        LOG_DEBUG(20589, 5, "Best plan had a blocking stage, became unblocked");
         _backupPlanIdx = kNoSuchPlan;
     }
 
@@ -198,19 +198,18 @@ Status MultiPlanStage::pickBestPlan(PlanYieldPolicy* yieldPolicy) {
     const auto& alreadyProduced = bestCandidate.results;
     const auto& bestSolution = bestCandidate.solution;
 
-    LOGV2_DEBUG(
-        20590, 5, "Winning solution", "bestSolution"_attr = redact(bestSolution->toString()));
+    LOG_DEBUG(20590, 5, "Winning solution", "bestSolution"_attr = redact(bestSolution->toString()));
 
     auto explainer =
         plan_explainer_factory::make(bestCandidate.root, bestSolution->_enumeratorExplainInfo);
-    LOGV2_DEBUG(20591, 2, "Winning plan", "planSummary"_attr = explainer->getPlanSummary());
+    LOG_DEBUG(20591, 2, "Winning plan", "planSummary"_attr = explainer->getPlanSummary());
 
     _backupPlanIdx = kNoSuchPlan;
     if (bestSolution->hasBlockingStage && (0 == alreadyProduced.size())) {
-        LOGV2_DEBUG(20592, 5, "Winner has blocking stage, looking for backup plan...");
+        LOG_DEBUG(20592, 5, "Winner has blocking stage, looking for backup plan...");
         for (auto&& ix : ranking->candidateOrder) {
             if (!_candidates[ix].solution->hasBlockingStage) {
-                LOGV2_DEBUG(20593, 5, "Backup child", "ix"_attr = ix);
+                LOG_DEBUG(20593, 5, "Backup child", "ix"_attr = ix);
                 _backupPlanIdx = ix;
                 break;
             }

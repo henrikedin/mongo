@@ -53,14 +53,14 @@ TEST(FTDCUtilTest, TestMongoSPath) {
     std::vector<std::pair<std::string, std::string>> testCases = {
         {"/var/log/mongos.log", "/var/log/mongos.diagnostic.data"},
         {"/var/log/mongos.foo.log", "/var/log/mongos.diagnostic.data"},
-        {"/var/log/log_file", "/var/log/log_file.diagnostic.data"},
+        {"/var/log/LOG_file", "/var/log/LOG_file.diagnostic.data"},
         {"./mongos.log", "./mongos.diagnostic.data"},
         {"../mongos.log", "../mongos.diagnostic.data"},
         {"c:\\var\\log\\mongos.log", "c:\\var\\log\\mongos.diagnostic.data"},
         {"c:\\var\\log\\mongos.foo.log", "c:\\var\\log\\mongos.diagnostic.data"},
-        {"c:\\var\\log\\log_file", "c:\\var\\log\\log_file.diagnostic.data"},
+        {"c:\\var\\log\\LOG_file", "c:\\var\\log\\LOG_file.diagnostic.data"},
         {"/var/some.log/mongos.log", "/var/some.log/mongos.diagnostic.data"},
-        {"/var/some.log/log_file", "/var/some.log/log_file.diagnostic.data"},
+        {"/var/some.log/LOG_file", "/var/some.log/LOG_file.diagnostic.data"},
 
         {"foo/mongos.log", "foo/mongos.diagnostic.data"},
     };

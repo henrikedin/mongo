@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kSharding
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kSharding
 
 #include "mongo/platform/basic.h"
 
@@ -38,7 +38,7 @@
 #include "mongo/db/s/drop_collection_legacy.h"
 #include "mongo/db/s/sharding_ddl_coordinator_service.h"
 #include "mongo/db/s/sharding_state.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/s/grid.h"
 #include "mongo/s/request_types/sharded_ddl_commands_gen.h"
 #include "mongo/s/sharded_collections_ddl_parameters_gen.h"
@@ -80,16 +80,15 @@ public:
                 serverGlobalParams.featureCompatibility);
 
             if (!useNewPath) {
-                LOGV2_DEBUG(5280951,
-                            1,
-                            "Running legacy drop collection procedure",
-                            "namespace"_attr = ns());
+                LOG_DEBUG(5280951,
+                          1,
+                          "Running legacy drop collection procedure",
+                          "namespace"_attr = ns());
                 dropCollectionLegacy(opCtx, ns());
                 return;
             }
 
-            LOGV2_DEBUG(
-                5280952, 1, "Running new drop collection procedure", "namespace"_attr = ns());
+            LOG_DEBUG(5280952, 1, "Running new drop collection procedure", "namespace"_attr = ns());
 
             // Since this operation is not directly writing locally we need to force its db
             // profile level increase in order to be logged in "<db>.system.profile"

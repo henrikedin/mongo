@@ -26,7 +26,7 @@
  *    exception statement from all source files in the program, then also delete
  *    it in the license file.
  */
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kStorage
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kStorage
 
 #include "mongo/platform/basic.h"
 
@@ -39,7 +39,7 @@
 #include "mongo/db/server_options.h"
 #include "mongo/db/storage/recovery_unit.h"
 #include "mongo/db/storage/snapshot_helper.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/uuid.h"
 
@@ -524,7 +524,7 @@ void CollectionCatalog::write(ServiceContext* svcCtx, CatalogWriteFn job) {
         entry.completion->completed = true;
         entry.completion->cv.notify_one();
     }
-    LOGV2_DEBUG(
+    LOG_DEBUG(
         5255601, 1, "Finished writing to the CollectionCatalog", "jobs"_attr = completed.size());
     if (myException)
         std::rethrow_exception(myException);
@@ -941,19 +941,19 @@ void CollectionCatalog::registerCollection(OperationContext* opCtx,
             return;
         }
 
-        LOGV2(20279,
-              "Conflicted creating a collection. ns: {coll_ns} ({coll_uuid}).",
-              "Conflicted creating a collection",
-              logAttrs(*coll));
+        LOG(20279,
+            "Conflicted creating a collection. ns: {coll_ns} ({coll_uuid}).",
+            "Conflicted creating a collection",
+            logAttrs(*coll));
         throw WriteConflictException();
     }
 
-    LOGV2_DEBUG(20280,
-                1,
-                "Registering collection {ns} with UUID {uuid}",
-                "Registering collection",
-                "namespace"_attr = ns,
-                "uuid"_attr = uuid);
+    LOG_DEBUG(20280,
+              1,
+              "Registering collection {ns} with UUID {uuid}",
+              "Registering collection",
+              "namespace"_attr = ns,
+              "uuid"_attr = uuid);
 
     auto dbName = ns.db().toString();
     auto dbIdPair = std::make_pair(dbName, uuid);
@@ -982,7 +982,7 @@ std::shared_ptr<Collection> CollectionCatalog::deregisterCollection(OperationCon
     auto dbName = ns.db().toString();
     auto dbIdPair = std::make_pair(dbName, uuid);
 
-    LOGV2_DEBUG(20281, 1, "Deregistering collection", "namespace"_attr = ns, "uuid"_attr = uuid);
+    LOG_DEBUG(20281, 1, "Deregistering collection", "namespace"_attr = ns, "uuid"_attr = uuid);
 
     // Make sure collection object exists.
     invariant(_collections.find(ns) != _collections.end());
@@ -1001,15 +1001,14 @@ std::shared_ptr<Collection> CollectionCatalog::deregisterCollection(OperationCon
 }
 
 void CollectionCatalog::deregisterAllCollections() {
-    LOGV2(20282, "Deregistering all the collections");
+    LOG(20282, "Deregistering all the collections");
     for (auto& entry : _catalog) {
         auto uuid = entry.first;
         auto ns = entry.second->ns();
         auto dbName = ns.db().toString();
         auto dbIdPair = std::make_pair(dbName, uuid);
 
-        LOGV2_DEBUG(
-            20283, 1, "Deregistering collection", "namespace"_attr = ns, "uuid"_attr = uuid);
+        LOG_DEBUG(20283, 1, "Deregistering collection", "namespace"_attr = ns, "uuid"_attr = uuid);
 
         entry.second.reset();
     }

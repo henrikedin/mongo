@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kNetwork
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kNetwork
 
 #include "mongo/platform/basic.h"
 
@@ -37,7 +37,7 @@
 #include "mongo/base/data_type_endian.h"
 #include "mongo/bson/bsonobj.h"
 #include "mongo/bson/bsonobjbuilder.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/message.h"
 #include "mongo/transport/message_compressor_registry.h"
 #include "mongo/transport/session.h"
@@ -95,11 +95,11 @@ StatusWith<Message> MessageCompressorManager::compressMessage(
         return {msg};
     }
 
-    LOGV2_DEBUG(22925,
-                3,
-                "Compressing message with {compressor}",
-                "Compressing message",
-                "compressor"_attr = compressor->getName());
+    LOG_DEBUG(22925,
+              3,
+              "Compressing message with {compressor}",
+              "Compressing message",
+              "compressor"_attr = compressor->getName());
 
     auto inputHeader = msg.header();
     size_t bufferSize = compressor->getMaxCompressedSize(msg.dataSize()) +
@@ -109,13 +109,13 @@ StatusWith<Message> MessageCompressorManager::compressMessage(
         inputHeader.getNetworkOp(), inputHeader.dataLen(), compressor->getId());
 
     if (bufferSize > MaxMessageSizeBytes) {
-        LOGV2_DEBUG(22926,
-                    3,
-                    "Compressed message would be larger than {MaxMessageSizeBytes}, returning "
-                    "original uncompressed message",
-                    "Compressed message would be larger than maximum allowed, returning original "
-                    "uncompressed message",
-                    "MaxMessageSizeBytes"_attr = MaxMessageSizeBytes);
+        LOG_DEBUG(22926,
+                  3,
+                  "Compressed message would be larger than {MaxMessageSizeBytes}, returning "
+                  "original uncompressed message",
+                  "Compressed message would be larger than maximum allowed, returning original "
+                  "uncompressed message",
+                  "MaxMessageSizeBytes"_attr = MaxMessageSizeBytes);
         return {msg};
     }
 
@@ -161,11 +161,11 @@ StatusWith<Message> MessageCompressorManager::decompressMessage(const Message& m
         *compressorId = compressor->getId();
     }
 
-    LOGV2_DEBUG(22927,
-                3,
-                "Decompressing message with {compressor}",
-                "Decompressing message",
-                "compressor"_attr = compressor->getName());
+    LOG_DEBUG(22927,
+              3,
+              "Decompressing message with {compressor}",
+              "Decompressing message",
+              "compressor"_attr = compressor->getName());
 
     if (compressionHeader.uncompressedSize < 0) {
         return {ErrorCodes::BadValue, "Decompressed message would be negative in size"};
@@ -204,7 +204,7 @@ StatusWith<Message> MessageCompressorManager::decompressMessage(const Message& m
 }
 
 void MessageCompressorManager::clientBegin(BSONObjBuilder* output) {
-    LOGV2_DEBUG(22928, 3, "Starting client-side compression negotiation");
+    LOG_DEBUG(22928, 3, "Starting client-side compression negotiation");
 
     // We're about to update the compressor list with the negotiation result from the server.
     _negotiated.clear();
@@ -215,11 +215,11 @@ void MessageCompressorManager::clientBegin(BSONObjBuilder* output) {
 
     BSONArrayBuilder sub(output->subarrayStart("compression"));
     for (const auto& e : _registry->getCompressorNames()) {
-        LOGV2_DEBUG(22929,
-                    3,
-                    "Offering {compressor} compressor to server",
-                    "Offering compressor to server",
-                    "compressor"_attr = e);
+        LOG_DEBUG(22929,
+                  3,
+                  "Offering {compressor} compressor to server",
+                  "Offering compressor to server",
+                  "compressor"_attr = e);
         sub.append(e);
     }
     sub.doneFast();
@@ -227,7 +227,7 @@ void MessageCompressorManager::clientBegin(BSONObjBuilder* output) {
 
 void MessageCompressorManager::clientFinish(const BSONObj& input) {
     auto elem = input.getField("compression");
-    LOGV2_DEBUG(22930, 3, "Finishing client-side compression negotiation");
+    LOG_DEBUG(22930, 3, "Finishing client-side compression negotiation");
 
     // We've just called clientBegin, so the list of compressors should be empty.
     invariant(_negotiated.empty());
@@ -236,29 +236,29 @@ void MessageCompressorManager::clientFinish(const BSONObj& input) {
     // supported by this server and just return. We've already disabled compression by clearing
     // out the _negotiated array above.
     if (elem.eoo()) {
-        LOGV2_DEBUG(22931,
-                    3,
-                    "No compression algorithms were sent from the server. This connection will be "
-                    "uncompressed");
+        LOG_DEBUG(22931,
+                  3,
+                  "No compression algorithms were sent from the server. This connection will be "
+                  "uncompressed");
         return;
     }
 
-    LOGV2_DEBUG(22932, 3, "Received message compressors from server");
+    LOG_DEBUG(22932, 3, "Received message compressors from server");
     for (const auto& e : elem.Obj()) {
         auto algoName = e.checkAndGetStringData();
         auto ret = _registry->getCompressor(algoName);
-        LOGV2_DEBUG(22933,
-                    3,
-                    "Adding compressor {compressor}",
-                    "Adding compressor",
-                    "compressor"_attr = ret->getName());
+        LOG_DEBUG(22933,
+                  3,
+                  "Adding compressor {compressor}",
+                  "Adding compressor",
+                  "compressor"_attr = ret->getName());
         _negotiated.push_back(ret);
     }
 }
 
 void MessageCompressorManager::serverNegotiate(
     const boost::optional<std::vector<StringData>>& clientCompressors, BSONObjBuilder* result) {
-    LOGV2_DEBUG(22934, 3, "Starting server-side compression negotiation");
+    LOG_DEBUG(22934, 3, "Starting server-side compression negotiation");
 
     // No advertised compressions, just asking for the last negotiated result.
     if (!clientCompressors) {
@@ -267,7 +267,7 @@ void MessageCompressorManager::serverNegotiate(
         // support compression.
         std::vector<std::string> ret;
         if (_negotiated.empty()) {
-            LOGV2_DEBUG(22935, 3, "Compression negotiation not requested by client");
+            LOG_DEBUG(22935, 3, "Compression negotiation not requested by client");
         } else {
             BSONArrayBuilder sub(result->subarrayStart("compression"));
             for (const auto& algo : _negotiated) {
@@ -283,7 +283,7 @@ void MessageCompressorManager::serverNegotiate(
 
     // First we go through all the compressor names that the client has requested support for
     if (clientCompressors->empty()) {
-        LOGV2_DEBUG(22936, 3, "No compressors provided");
+        LOG_DEBUG(22936, 3, "No compressors provided");
         return;
     }
 
@@ -292,25 +292,25 @@ void MessageCompressorManager::serverNegotiate(
         // If the MessageCompressorRegistry knows about a compressor with that name, then it is
         // valid and we add it to our list of negotiated compressors.
         if ((cur = _registry->getCompressor(curName))) {
-            LOGV2_DEBUG(22937,
-                        3,
-                        "{compressor} is supported",
-                        "supported compressor",
-                        "compressor"_attr = cur->getName());
+            LOG_DEBUG(22937,
+                      3,
+                      "{compressor} is supported",
+                      "supported compressor",
+                      "compressor"_attr = cur->getName());
             _negotiated.push_back(cur);
         } else {  // Otherwise the compressor is not supported and we skip over it.
-            LOGV2_DEBUG(22938,
-                        3,
-                        "{compressor} is not supported",
-                        "compressor is not supported",
-                        "compressor"_attr = curName);
+            LOG_DEBUG(22938,
+                      3,
+                      "{compressor} is not supported",
+                      "compressor is not supported",
+                      "compressor"_attr = curName);
         }
     }
 
     // If the number of compressors that were eventually negotiated is greater than 0, then
     // we should send that back to the client.
     if (_negotiated.empty()) {
-        LOGV2_DEBUG(22939, 3, "Could not agree on compressor to use");
+        LOG_DEBUG(22939, 3, "Could not agree on compressor to use");
     } else {
         BSONArrayBuilder sub(result->subarrayStart("compression"));
         for (const auto& algo : _negotiated) {

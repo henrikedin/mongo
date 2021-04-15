@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kQuery
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kQuery
 
 #include "mongo/platform/basic.h"
 
@@ -38,7 +38,7 @@
 
 #include "mongo/db/kill_sessions_common.h"
 #include "mongo/db/logical_session_cache.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/clock_source.h"
 #include "mongo/util/str.h"
 
@@ -415,10 +415,10 @@ std::size_t ClusterCursorManager::killMortalCursorsInactiveSince(OperationContex
             !entry.getOperationUsingCursor() && entry.getLastActive() <= cutoff;
 
         if (res) {
-            LOGV2(22837,
-                  "Cursor timed out",
-                  "cursorId"_attr = cursorId,
-                  "idleSince"_attr = entry.getLastActive().toString());
+            LOG(22837,
+                "Cursor timed out",
+                "cursorId"_attr = cursorId,
+                "idleSince"_attr = entry.getLastActive().toString());
         }
 
         return res;
@@ -624,7 +624,7 @@ std::pair<Status, int> ClusterCursorManager::killCursorsWithMatchingSessions(
             return;
         }
         uassertStatusOK(mgr.killCursor(opCtx, *cursorNss, id));
-        LOGV2(22838, "Killing cursor as part of killing session(s)", "cursorId"_attr = id);
+        LOG(22838, "Killing cursor as part of killing session(s)", "cursorId"_attr = id);
     };
 
     auto bySessionCursorKiller = makeKillCursorsBySessionAdaptor(opCtx, matcher, std::move(eraser));
@@ -720,7 +720,7 @@ auto ClusterCursorManager::eraseContainer(NssToCursorContainerMap::iterator it)
     // with this namespace.
     size_t numDeleted = _cursorIdPrefixToNamespaceMap.erase(container.containerPrefix);
     if (numDeleted != 1) {
-        LOGV2_ERROR(
+        LOG_ERROR(
             4786901,
             "Error attempting to erase CursorEntryContainer for nss {nss} and containerPrefix"
             "{prefix}. Could not find containerPrefix in map from cursor ID prefix to nss. "
@@ -777,16 +777,16 @@ StatusWith<ClusterClientCursorGuard> ClusterCursorManager::_detachCursor(WithLoc
 }
 
 void ClusterCursorManager::logCursorManagerInfo() const {
-    LOGV2_ERROR_OPTIONS(4786900,
-                        logv2::LogTruncation::Disabled,
-                        "Dumping cursor manager contents. "
-                        "NSS -> Container map: {nssToContainer} "
-                        "Cursor ID Prefix -> NSS map: {cursorIdToNss} "
-                        "Internal log: {internalLog}",
-                        "Dumping cursor manager contents.",
-                        "{nssToContainer}"_attr = dumpNssToContainerMap(),
-                        "{cursorIdToNss}"_attr = dumpCursorIdToNssMap(),
-                        "{internalLog}"_attr = dumpInternalLog());
+    LOG_ERROR_OPTIONS(4786900,
+                      log::LogTruncation::Disabled,
+                      "Dumping cursor manager contents. "
+                      "NSS -> Container map: {nssToContainer} "
+                      "Cursor ID Prefix -> NSS map: {cursorIdToNss} "
+                      "Internal log: {internalLog}",
+                      "Dumping cursor manager contents.",
+                      "{nssToContainer}"_attr = dumpNssToContainerMap(),
+                      "{cursorIdToNss}"_attr = dumpCursorIdToNssMap(),
+                      "{internalLog}"_attr = dumpInternalLog());
 }
 
 std::string ClusterCursorManager::LogEvent::typeToString(ClusterCursorManager::LogEvent::Type t) {

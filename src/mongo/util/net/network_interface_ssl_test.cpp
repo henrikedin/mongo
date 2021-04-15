@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTest
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTest
 
 #include "mongo/platform/basic.h"
 
@@ -36,7 +36,7 @@
 #include "mongo/client/authenticate.h"
 #include "mongo/db/auth/authorization_session_impl.h"
 #include "mongo/executor/network_interface_integration_fixture.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/unittest/integration_test.h"
 #include "mongo/unittest/unittest.h"
 #include "mongo/util/net/ssl_options.h"
@@ -77,7 +77,7 @@ public:
             params.targetedClusterConnectionString = ConnectionString::forLocal();
             return params;
         }());
-        LOGV2(5181101, "Initializing the test connection with transient SSL params");
+        LOG(5181101, "Initializing the test connection with transient SSL params");
         createNet(nullptr, std::move(options));
         net().startup();
     }

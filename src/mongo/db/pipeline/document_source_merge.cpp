@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kQuery
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kQuery
 
 #include "mongo/platform/basic.h"
 
@@ -41,7 +41,7 @@
 #include "mongo/db/ops/write_ops.h"
 #include "mongo/db/pipeline/document_path_support.h"
 #include "mongo/db/pipeline/variable_validation.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace mongo {
 using namespace fmt::literals;
@@ -565,8 +565,7 @@ void DocumentSourceMerge::waitWhileFailPointEnabled() {
         pExpCtx->opCtx,
         "hangWhileBuildingDocumentSourceMergeBatch",
         []() {
-            LOGV2(
-                20900,
+            LOG(20900,
                 "Hanging aggregation due to 'hangWhileBuildingDocumentSourceMergeBatch' failpoint");
         });
 }

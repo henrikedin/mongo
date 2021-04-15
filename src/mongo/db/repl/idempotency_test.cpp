@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTest
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTest
 
 #include "mongo/platform/basic.h"
 
@@ -45,7 +45,7 @@
 #include "mongo/db/update/document_diff_calculator.h"
 #include "mongo/db/update/document_diff_test_helpers.h"
 #include "mongo/db/update/update_oplog_entry_serialization.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/unittest/unittest.h"
 
 namespace mongo {
@@ -149,10 +149,10 @@ std::string RandomizedIdempotencyTest::getStatesString(const std::vector<Collect
                                                        const std::vector<CollectionState>& state2,
                                                        const std::vector<OplogEntry>& state1Ops,
                                                        const std::vector<OplogEntry>& state2Ops) {
-    LOGV2(21157,
-          "{IdempotencyTest_getStatesString_state1_state2_ops}",
-          "IdempotencyTest_getStatesString_state1_state2_ops"_attr =
-              IdempotencyTest::getStatesString(state1, state2, state1Ops, state2Ops));
+    LOG(21157,
+        "{IdempotencyTest_getStatesString_state1_state2_ops}",
+        "IdempotencyTest_getStatesString_state1_state2_ops"_attr =
+            IdempotencyTest::getStatesString(state1, state2, state1Ops, state2Ops));
     StringBuilder sb;
     sb << "Ran update ops: ";
     sb << "[ ";

@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kControl
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kControl
 
 #include "mongo/platform/basic.h"
 
@@ -37,7 +37,7 @@
 #include <iostream>
 #include <psapi.h>
 
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/processinfo.h"
 
 namespace mongo {
@@ -78,9 +78,9 @@ LpiRecords getLogicalProcessorInformationRecords() {
                     new SlpiBuf[((returnLength - 1) / sizeof(Slpi)) + 1]);
             } else {
                 DWORD gle = GetLastError();
-                LOGV2_WARNING(23811,
-                              "GetLogicalProcessorInformation failed",
-                              "error"_attr = errnoWithDescription(gle));
+                LOG_WARNING(23811,
+                            "GetLogicalProcessorInformation failed",
+                            "error"_attr = errnoWithDescription(gle));
                 return LpiRecords{};
             }
         }
@@ -148,7 +148,7 @@ int ProcessInfo::getVirtualMemorySize() {
     BOOL status = GlobalMemoryStatusEx(&mse);
     if (!status) {
         DWORD gle = GetLastError();
-        LOGV2_ERROR(23812, "GlobalMemoryStatusEx failed", "error"_attr = errnoWithDescription(gle));
+        LOG_ERROR(23812, "GlobalMemoryStatusEx failed", "error"_attr = errnoWithDescription(gle));
         fassert(28621, status);
     }
 
@@ -162,7 +162,7 @@ int ProcessInfo::getResidentSize() {
     BOOL status = GetProcessMemoryInfo(GetCurrentProcess(), &pmc, sizeof(pmc));
     if (!status) {
         DWORD gle = GetLastError();
-        LOGV2_ERROR(23813, "GetProcessMemoryInfo failed", "error"_attr = errnoWithDescription(gle));
+        LOG_ERROR(23813, "GetProcessMemoryInfo failed", "error"_attr = errnoWithDescription(gle));
         fassert(28622, status);
     }
 
@@ -194,20 +194,20 @@ bool getFileVersion(const char* filePath, DWORD& fileVersionMS, DWORD& fileVersi
     DWORD verSize = GetFileVersionInfoSizeA(filePath, NULL);
     if (verSize == 0) {
         DWORD gle = GetLastError();
-        LOGV2_WARNING(23807,
-                      "GetFileVersionInfoSizeA failed",
-                      "path"_attr = filePath,
-                      "error"_attr = errnoWithDescription(gle));
+        LOG_WARNING(23807,
+                    "GetFileVersionInfoSizeA failed",
+                    "path"_attr = filePath,
+                    "error"_attr = errnoWithDescription(gle));
         return false;
     }
 
     std::unique_ptr<char[]> verData(new char[verSize]);
     if (GetFileVersionInfoA(filePath, NULL, verSize, verData.get()) == 0) {
         DWORD gle = GetLastError();
-        LOGV2_WARNING(23808,
-                      "GetFileVersionInfoSizeA failed",
-                      "path"_attr = filePath,
-                      "error"_attr = errnoWithDescription(gle));
+        LOG_WARNING(23808,
+                    "GetFileVersionInfoSizeA failed",
+                    "path"_attr = filePath,
+                    "error"_attr = errnoWithDescription(gle));
         return false;
     }
 
@@ -215,17 +215,17 @@ bool getFileVersion(const char* filePath, DWORD& fileVersionMS, DWORD& fileVersi
     VS_FIXEDFILEINFO* verInfo;
     if (VerQueryValueA(verData.get(), "\\", (LPVOID*)&verInfo, &size) == 0) {
         DWORD gle = GetLastError();
-        LOGV2_WARNING(23809,
-                      "VerQueryValueA failed",
-                      "path"_attr = filePath,
-                      "error"_attr = errnoWithDescription(gle));
+        LOG_WARNING(23809,
+                    "VerQueryValueA failed",
+                    "path"_attr = filePath,
+                    "error"_attr = errnoWithDescription(gle));
         return false;
     }
 
     if (size != sizeof(VS_FIXEDFILEINFO)) {
-        LOGV2_WARNING(23810,
-                      "VerQueryValueA returned structure with unexpected size",
-                      "path"_attr = filePath);
+        LOG_WARNING(23810,
+                    "VerQueryValueA returned structure with unexpected size",
+                    "path"_attr = filePath);
         return false;
     }
 

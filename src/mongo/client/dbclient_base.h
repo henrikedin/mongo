@@ -45,7 +45,7 @@
 #include "mongo/db/dbmessage.h"
 #include "mongo/db/jsobj.h"
 #include "mongo/db/write_concern_options.h"
-#include "mongo/logv2/log_severity.h"
+#include "mongo/log/log_severity.h"
 #include "mongo/platform/atomic_word.h"
 #include "mongo/rpc/message.h"
 #include "mongo/rpc/metadata.h"
@@ -111,7 +111,7 @@ class DBClientBase : public DBClientQueryInterface {
 
 public:
     DBClientBase(const ClientAPIVersionParameters* apiParameters = nullptr)
-        : _logLevel(logv2::LogSeverity::Log()),
+        : _logLevel(log::LogSeverity::Log()),
           _connectionId(ConnectionIdSequence.fetchAndAdd(1)),
           _cachedAvailableOptions((enum QueryOptions)0),
           _haveCachedAvailableOptions(false) {
@@ -814,7 +814,7 @@ protected:
     void _setServerRPCProtocols(rpc::ProtocolSet serverProtocols);
 
     /** controls how chatty the client is about network errors & such.  See log.h */
-    const logv2::LogSeverity _logLevel;
+    const log::LogSeverity _logLevel;
 
     static AtomicWord<long long> ConnectionIdSequence;
     long long _connectionId;  // unique connection id for this connection

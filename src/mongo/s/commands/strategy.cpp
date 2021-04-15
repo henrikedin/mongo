@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kSharding
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kSharding
 
 #include "mongo/platform/basic.h"
 
@@ -66,7 +66,7 @@
 #include "mongo/db/vector_clock.h"
 #include "mongo/db/views/resolved_view.h"
 #include "mongo/db/write_concern_options.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/factory.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/rpc/metadata/client_metadata.h"
@@ -134,7 +134,7 @@ void appendRequiredFieldsToResponse(OperationContext* opCtx, BSONObjBuilder* res
     if (MONGO_unlikely(allowSkippingAppendRequiredFieldsToResponse.shouldFail())) {
         auto validator = LogicalTimeValidator::get(opCtx);
         if (!validator->shouldGossipLogicalTime()) {
-            LOGV2_DEBUG(4801301, 3, "Skipped gossiping logical time");
+            LOG_DEBUG(4801301, 3, "Skipped gossiping logical time");
             return;
         }
     }
@@ -151,21 +151,21 @@ void appendRequiredFieldsToResponse(OperationContext* opCtx, BSONObjBuilder* res
     if (clusterTimeWasOutput) {
         auto operationTime = OperationTimeTracker::get(opCtx)->getMaxOperationTime();
         if (operationTime != LogicalTime::kUninitialized) {
-            LOGV2_DEBUG(22764,
-                        5,
-                        "Appending operationTime: {operationTime}",
-                        "Appending operationTime",
-                        "operationTime"_attr = operationTime.asTimestamp());
+            LOG_DEBUG(22764,
+                      5,
+                      "Appending operationTime: {operationTime}",
+                      "Appending operationTime",
+                      "operationTime"_attr = operationTime.asTimestamp());
             operationTime.appendAsOperationTime(responseBuilder);
         } else if (clusterTime != LogicalTime::kUninitialized) {
             // If we don't know the actual operation time, use the cluster time instead. This is
             // safe but not optimal because we can always return a later operation time than
             // actual.
-            LOGV2_DEBUG(22765,
-                        5,
-                        "Appending clusterTime as operationTime {clusterTime}",
-                        "Appending clusterTime as operationTime",
-                        "clusterTime"_attr = clusterTime.asTimestamp());
+            LOG_DEBUG(22765,
+                      5,
+                      "Appending clusterTime as operationTime {clusterTime}",
+                      "Appending clusterTime as operationTime",
+                      "clusterTime"_attr = clusterTime.asTimestamp());
             clusterTime.appendAsOperationTime(responseBuilder);
         }
     }
@@ -654,12 +654,12 @@ Status ParseAndRunCommand::RunInvocation::_setup() {
                                        .getDefaultWriteConcern(opCtx)) {
             _parc->_wc = *wcDefault;
             customDefaultWriteConcernWasApplied = true;
-            LOGV2_DEBUG(22766,
-                        2,
-                        "Applying default writeConcern on {command} of {writeConcern}",
-                        "Applying default writeConcern on command",
-                        "command"_attr = request.getCommandName(),
-                        "writeConcern"_attr = *wcDefault);
+            LOG_DEBUG(22766,
+                      2,
+                      "Applying default writeConcern on {command} of {writeConcern}",
+                      "Applying default writeConcern on command",
+                      "command"_attr = request.getCommandName(),
+                      "writeConcern"_attr = *wcDefault);
         }
     }
 
@@ -717,12 +717,12 @@ Status ParseAndRunCommand::RunInvocation::_setup() {
                     readConcernArgs = std::move(*rcDefault);
                 }
                 customDefaultReadConcernWasApplied = true;
-                LOGV2_DEBUG(22767,
-                            2,
-                            "Applying default readConcern on {command} of {readConcern}",
-                            "Applying default readConcern on command",
-                            "command"_attr = invocation->definition()->getName(),
-                            "readConcern"_attr = *rcDefault);
+                LOG_DEBUG(22767,
+                          2,
+                          "Applying default readConcern on {command} of {readConcern}",
+                          "Applying default readConcern on command",
+                          "command"_attr = invocation->definition()->getName(),
+                          "readConcern"_attr = *rcDefault);
                 // Update the readConcernSupport, since the default RC was applied.
                 readConcernSupport = invocation->supportsReadConcern(readConcernArgs.getLevel());
             }
@@ -1097,14 +1097,14 @@ DbResponse Strategy::queryOp(OperationContext* opCtx, const NamespaceString& nss
     audit::logQueryAuthzCheck(client, nss, q.query, status.code());
     uassertStatusOK(status);
 
-    LOGV2_DEBUG(22768,
-                3,
-                "Query: {namespace} {query} ntoreturn: {ntoreturn} options: {queryOptions}",
-                "Query",
-                "namespace"_attr = q.ns,
-                "query"_attr = redact(q.query),
-                "ntoreturn"_attr = q.ntoreturn,
-                "queryOptions"_attr = q.queryOptions);
+    LOG_DEBUG(22768,
+              3,
+              "Query: {namespace} {query} ntoreturn: {ntoreturn} options: {queryOptions}",
+              "Query",
+              "namespace"_attr = q.ns,
+              "query"_attr = redact(q.query),
+              "ntoreturn"_attr = q.ntoreturn,
+              "queryOptions"_attr = q.queryOptions);
 
     if (q.queryOptions & QueryOption_Exhaust) {
         uasserted(18526,
@@ -1224,34 +1224,34 @@ void ClientCommand::_parseMessage() try {
     if (ErrorCodes::isConnectionFatalMessageParseError(ex.code()))
         _propagateException = true;
 
-    LOGV2_DEBUG(22769,
-                1,
-                "Exception thrown while parsing command {error}",
-                "Exception thrown while parsing command",
-                "error"_attr = redact(ex));
+    LOG_DEBUG(22769,
+              1,
+              "Exception thrown while parsing command {error}",
+              "Exception thrown while parsing command",
+              "error"_attr = redact(ex));
     throw;
 }
 
 Future<void> ClientCommand::_execute() {
-    LOGV2_DEBUG(22770,
-                3,
-                "Command begin db: {db} msg id: {headerId}",
-                "Command begin",
-                "db"_attr = _rec->getRequest().getDatabase().toString(),
-                "headerId"_attr = _rec->getMessage().header().getId());
+    LOG_DEBUG(22770,
+              3,
+              "Command begin db: {db} msg id: {headerId}",
+              "Command begin",
+              "db"_attr = _rec->getRequest().getDatabase().toString(),
+              "headerId"_attr = _rec->getMessage().header().getId());
 
     return future_util::makeState<ParseAndRunCommand>(_rec, _errorBuilder)
         .thenWithState([](auto* runner) { return runner->run(); })
         .then([this] {
-            LOGV2_DEBUG(22771,
-                        3,
-                        "Command end db: {db} msg id: {headerId}",
-                        "Command end",
-                        "db"_attr = _rec->getRequest().getDatabase().toString(),
-                        "headerId"_attr = _rec->getMessage().header().getId());
+            LOG_DEBUG(22771,
+                      3,
+                      "Command end db: {db} msg id: {headerId}",
+                      "Command end",
+                      "db"_attr = _rec->getRequest().getDatabase().toString(),
+                      "headerId"_attr = _rec->getMessage().header().getId());
         })
         .tapError([this](Status status) {
-            LOGV2_DEBUG(
+            LOG_DEBUG(
                 22772,
                 1,
                 "Exception thrown while processing command on {db} msg id: {headerId} {error}",
@@ -1403,11 +1403,11 @@ void Strategy::killCursors(OperationContext* opCtx, DbMessage* dbm) {
 
         boost::optional<NamespaceString> nss = manager->getNamespaceForCursorId(cursorId);
         if (!nss) {
-            LOGV2_DEBUG(22773,
-                        3,
-                        "Can't find cursor to kill, no namespace found. Cursor id: {cursorId}",
-                        "Can't find cursor to kill, no namespace found",
-                        "cursorId"_attr = cursorId);
+            LOG_DEBUG(22773,
+                      3,
+                      "Can't find cursor to kill, no namespace found. Cursor id: {cursorId}",
+                      "Can't find cursor to kill, no namespace found",
+                      "cursorId"_attr = cursorId);
             continue;
         }
 
@@ -1418,7 +1418,7 @@ void Strategy::killCursors(OperationContext* opCtx, DbMessage* dbm) {
         auto authzStatus = manager->checkAuthForKillCursors(opCtx, *nss, cursorId, authChecker);
         audit::logKillCursorsAuthzCheck(client, *nss, cursorId, authzStatus.code());
         if (!authzStatus.isOK()) {
-            LOGV2_DEBUG(
+            LOG_DEBUG(
                 22774,
                 3,
                 "Not authorized to kill cursor. Namespace: '{namespace}', cursor id: {cursorId}",
@@ -1430,22 +1430,21 @@ void Strategy::killCursors(OperationContext* opCtx, DbMessage* dbm) {
 
         Status killCursorStatus = manager->killCursor(opCtx, *nss, cursorId);
         if (!killCursorStatus.isOK()) {
-            LOGV2_DEBUG(
-                22775,
-                3,
-                "Can't find cursor to kill. Namespace: '{namespace}', cursor id: {cursorId}",
-                "Can't find cursor to kill",
-                "namespace"_attr = *nss,
-                "cursorId"_attr = cursorId);
+            LOG_DEBUG(22775,
+                      3,
+                      "Can't find cursor to kill. Namespace: '{namespace}', cursor id: {cursorId}",
+                      "Can't find cursor to kill",
+                      "namespace"_attr = *nss,
+                      "cursorId"_attr = cursorId);
             continue;
         }
 
-        LOGV2_DEBUG(22776,
-                    3,
-                    "Killed cursor. Namespace: '{namespace}', cursor id: {cursorId}",
-                    "Killed cursor",
-                    "namespace"_attr = *nss,
-                    "cursorId"_attr = cursorId);
+        LOG_DEBUG(22776,
+                  3,
+                  "Killed cursor. Namespace: '{namespace}', cursor id: {cursorId}",
+                  "Killed cursor",
+                  "namespace"_attr = *nss,
+                  "cursorId"_attr = cursorId);
     }
 }
 

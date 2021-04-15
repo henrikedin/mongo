@@ -26,7 +26,7 @@
  *    exception statement from all source files in the program, then also delete
  *    it in the license file.
  */
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kControl
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kControl
 
 #include "mongo/platform/basic.h"
 
@@ -36,7 +36,7 @@
 #include <dlfcn.h>
 #include <memory>
 
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/str.h"
 
@@ -45,15 +45,14 @@ namespace mongo {
 SharedLibrary::~SharedLibrary() {
     if (_handle) {
         if (dlclose(_handle) != 0) {
-            LOGV2_DEBUG(
-                22612, 2, "Load Library close failed {dlerror}", "dlerror"_attr = dlerror());
+            LOG_DEBUG(22612, 2, "Load Library close failed {dlerror}", "dlerror"_attr = dlerror());
         }
     }
 }
 
 StatusWith<std::unique_ptr<SharedLibrary>> SharedLibrary::create(
     const boost::filesystem::path& full_path) {
-    LOGV2_DEBUG(
+    LOG_DEBUG(
         22613, 1, "Loading library: {full_path_c_str}", "full_path_c_str"_attr = full_path.c_str());
 
     void* handle = dlopen(full_path.c_str(), RTLD_NOW | RTLD_GLOBAL);

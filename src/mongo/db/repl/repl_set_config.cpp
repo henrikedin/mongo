@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kReplication
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kReplication
 
 #include "mongo/platform/basic.h"
 
@@ -43,7 +43,7 @@
 #include "mongo/db/repl/repl_server_parameters_gen.h"
 #include "mongo/db/repl/repl_set_config_params_gen.h"
 #include "mongo/db/server_options.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/str.h"
 
 namespace mongo {
@@ -726,7 +726,7 @@ MemberConfig* MutableReplSetConfig::_findMemberByID(MemberId id) {
             return const_cast<MemberConfig*>(&(*it));
         }
     }
-    LOGV2_FATAL(4709100, "Unable to find member", "id"_attr = id);
+    LOG_FATAL(4709100, "Unable to find member", "id"_attr = id);
 }
 
 void MutableReplSetConfig::addNewlyAddedFieldForMember(MemberId memberId) {

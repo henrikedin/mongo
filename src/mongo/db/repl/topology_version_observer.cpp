@@ -27,14 +27,14 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kReplication
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kReplication
 
 #include "mongo/db/repl/topology_version_observer.h"
 
 #include "mongo/base/status_with.h"
 #include "mongo/db/client.h"
 #include "mongo/db/operation_context.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/fail_point.h"
 
@@ -46,7 +46,7 @@ MONGO_FAIL_POINT_DEFINE(topologyVersionObserverExpectsShutdown);
 
 void TopologyVersionObserver::init(ServiceContext* serviceContext,
                                    ReplicationCoordinator* replCoordinator) noexcept {
-    LOGV2_INFO(40440, "Starting the TopologyVersionObserver");
+    LOG_INFO(40440, "Starting the TopologyVersionObserver");
 
     stdx::unique_lock lk(_mutex);
 
@@ -75,7 +75,7 @@ void TopologyVersionObserver::shutdown() noexcept {
         return;
     }
 
-    LOGV2_INFO(40441, "Stopping TopologyVersionObserver");
+    LOG_INFO(40441, "Stopping TopologyVersionObserver");
 
     // Wait for the thread to stop and steal it to the local stack
     auto thread = [&] {
@@ -123,7 +123,7 @@ void TopologyVersionObserver::_cacheHelloResponse(
     OperationContext* opCtx, boost::optional<TopologyVersion> topologyVersion) try {
     invariant(opCtx);
 
-    LOGV2_DEBUG(4794600, 3, "Waiting for a topology change");
+    LOG_DEBUG(4794600, 3, "Waiting for a topology change");
 
     {
         auto cacheGuard = makeGuard([&] {
@@ -149,7 +149,7 @@ void TopologyVersionObserver::_cacheHelloResponse(
         return;
     }
 
-    LOGV2_DEBUG(4794601, 3, "Observed a topology change");
+    LOG_DEBUG(4794601, 3, "Observed a topology change");
 
     // We could be a PeriodicRunner::Job someday. For now, OperationContext::sleepFor() will serve
     // the same purpose.
@@ -160,7 +160,7 @@ void TopologyVersionObserver::_cacheHelloResponse(
         throw;
     }
 
-    LOGV2_WARNING(40444, "Observer could not retrieve HelloResponse", "error"_attr = e.toString());
+    LOG_WARNING(40444, "Observer could not retrieve HelloResponse", "error"_attr = e.toString());
 }
 
 void TopologyVersionObserver::_workerThreadBody() noexcept try {
@@ -176,7 +176,7 @@ void TopologyVersionObserver::_workerThreadBody() noexcept try {
         return boost::none;
     };
 
-    LOGV2_INFO(40445, "Started TopologyVersionObserver");
+    LOG_INFO(40445, "Started TopologyVersionObserver");
 
     {
         stdx::lock_guard lk(_mutex);
@@ -206,7 +206,7 @@ void TopologyVersionObserver::_workerThreadBody() noexcept try {
             _cv.notify_all();
         }
 
-        LOGV2_INFO(40447, "Stopped TopologyVersionObserver");
+        LOG_INFO(40447, "Stopped TopologyVersionObserver");
 
         // Pause here to confirm that we do not depend upon shutdown() being invoked for
         // isShutdown() to be true.
@@ -234,7 +234,7 @@ void TopologyVersionObserver::_workerThreadBody() noexcept try {
         _cacheHelloResponse(opCtxHandle.get(), getTopologyVersion());
     }
 } catch (const ExceptionForCat<ErrorCategory::ShutdownError>& e) {
-    LOGV2_DEBUG(40443, 3, "Observer thread stopped due to shutdown", "error"_attr = e.toString());
+    LOG_DEBUG(40443, 3, "Observer thread stopped due to shutdown", "error"_attr = e.toString());
 }
 
 }  // namespace repl

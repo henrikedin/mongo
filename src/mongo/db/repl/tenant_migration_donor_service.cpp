@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTenantMigration
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTenantMigration
 
 #include "mongo/db/repl/tenant_migration_donor_service.h"
 
@@ -50,7 +50,7 @@
 #include "mongo/db/repl/wait_for_majority_service.h"
 #include "mongo/executor/connection_pool.h"
 #include "mongo/executor/network_interface_factory.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/rpc/metadata/egress_metadata_hook_list.h"
 #include "mongo/util/cancellation.h"
@@ -768,12 +768,12 @@ SemiFuture<void> TenantMigrationDonorService::Instance::run(
             return _handleErrorOrEnterAbortedState(executor, serviceToken, status);
         })
         .onCompletion([this, self = shared_from_this()](Status status) {
-            LOGV2(5006601,
-                  "Tenant migration completed",
-                  "migrationId"_attr = _migrationUuid,
-                  "tenantId"_attr = _tenantId,
-                  "status"_attr = status,
-                  "abortReason"_attr = _abortReason);
+            LOG(5006601,
+                "Tenant migration completed",
+                "migrationId"_attr = _migrationUuid,
+                "tenantId"_attr = _tenantId,
+                "status"_attr = status,
+                "abortReason"_attr = _abortReason);
             if (!_stateDoc.getExpireAt()) {
                 // Avoid double counting tenant migration statistics after failover.
                 // Double counting may still happen if the failover to the same primary
@@ -796,11 +796,11 @@ SemiFuture<void> TenantMigrationDonorService::Instance::run(
                        scopedCounter{std::move(scopedOutstandingMigrationCounter)}](Status status) {
             stdx::lock_guard<Latch> lg(_mutex);
 
-            LOGV2(4920400,
-                  "Marked migration state as garbage collectable",
-                  "migrationId"_attr = _migrationUuid,
-                  "expireAt"_attr = _stateDoc.getExpireAt(),
-                  "status"_attr = status);
+            LOG(4920400,
+                "Marked migration state as garbage collectable",
+                "migrationId"_attr = _migrationUuid,
+                "expireAt"_attr = _stateDoc.getExpireAt(),
+                "status"_attr = status);
 
             setPromiseFromStatusIfNotReady(lg, _completionPromise, status);
         })
@@ -1094,9 +1094,9 @@ TenantMigrationDonorService::Instance::_waitForRecipientToReachBlockTimestampAnd
             const auto& [status, idx] = result;
 
             if (idx == 0) {
-                LOGV2(5290301,
-                      "Tenant migration blocking stage timeout expired",
-                      "timeoutMs"_attr = repl::tenantMigrationGarbageCollectionDelayMS.load());
+                LOG(5290301,
+                    "Tenant migration blocking stage timeout expired",
+                    "timeoutMs"_attr = repl::tenantMigrationGarbageCollectionDelayMS.load());
                 // Deadline reached, cancel the pending '_sendRecipientSyncDataCommand()'...
                 _abortMigrationSource.cancel();
                 // ...and return error.
@@ -1118,9 +1118,9 @@ TenantMigrationDonorService::Instance::_waitForRecipientToReachBlockTimestampAnd
                         pauseTenantMigrationBeforeLeavingBlockingState.pauseWhileSet(opCtx);
                     } else {
                         const auto blockTime = Milliseconds{data.getIntField("blockTimeMS")};
-                        LOGV2(5010400,
-                              "Keep migration in blocking state",
-                              "blockTime"_attr = blockTime);
+                        LOG(5010400,
+                            "Keep migration in blocking state",
+                            "blockTime"_attr = blockTime);
                         opCtx->sleepFor(blockTime);
                     }
                 },

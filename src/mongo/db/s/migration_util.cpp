@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kShardingMigration
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kShardingMigration
 
 #include "mongo/platform/basic.h"
 
@@ -61,7 +61,7 @@
 #include "mongo/db/write_concern.h"
 #include "mongo/executor/task_executor_pool.h"
 #include "mongo/executor/thread_pool_task_executor.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/s/catalog/type_chunk.h"
 #include "mongo/s/client/shard.h"
@@ -116,7 +116,7 @@ void sendToRecipient(OperationContext* opCtx,
         uassertStatusOK(Grid::get(opCtx)->shardRegistry()->getShard(opCtx, recipientId));
 
     auto cmdBSON = cmd.toBSON(passthroughFields);
-    LOGV2_DEBUG(22023, 1, "Sending request to recipient", "commandToSend"_attr = redact(cmdBSON));
+    LOG_DEBUG(22023, 1, "Sending request to recipient", "commandToSend"_attr = redact(cmdBSON));
 
     auto response = recipientShard->runCommandWithFixedRetryAttempts(
         opCtx,
@@ -179,11 +179,11 @@ void retryIdempotentWorkAsPrimaryUntilSuccessOrStepdown(
             break;
         } catch (DBException& ex) {
             if (attempt % kLogRetryAttemptThreshold == 1) {
-                LOGV2_WARNING(23937,
-                              "Retrying task after failed attempt",
-                              "taskDescription"_attr = redact(taskDescription),
-                              "attempt"_attr = attempt,
-                              "error"_attr = redact(ex));
+                LOG_WARNING(23937,
+                            "Retrying task after failed attempt",
+                            "taskDescription"_attr = redact(taskDescription),
+                            "attempt"_attr = attempt,
+                            "error"_attr = redact(ex));
             }
         }
     }
@@ -320,18 +320,18 @@ ExecutorFuture<void> submitRangeDeletionTask(OperationContext* opCtx,
                     // refresh, because this node may have just stepped up and therefore may have a
                     // stale cache.
                     auto optCollDescr = csr->getCurrentMetadataIfKnown();
-                    LOGV2(22024,
-                          "Filtering metadata for this range deletion task may be outdated; "
-                          "forcing refresh",
-                          "deletionTask"_attr = redact(deletionTask.toBSON()),
-                          "error"_attr =
-                              (optCollDescr ? (optCollDescr->isSharded()
-                                                   ? "Collection has UUID that does not match "
-                                                     "UUID of the deletion task"
-                                                   : "Collection is unsharded")
-                                            : "Collection's sharding state is not known"),
-                          "namespace"_attr = deletionTask.getNss(),
-                          "migrationId"_attr = deletionTask.getId());
+                    LOG(22024,
+                        "Filtering metadata for this range deletion task may be outdated; "
+                        "forcing refresh",
+                        "deletionTask"_attr = redact(deletionTask.toBSON()),
+                        "error"_attr =
+                            (optCollDescr ? (optCollDescr->isSharded()
+                                                 ? "Collection has UUID that does not match "
+                                                   "UUID of the deletion task"
+                                                 : "Collection is unsharded")
+                                          : "Collection's sharding state is not known"),
+                        "namespace"_attr = deletionTask.getNss(),
+                        "migrationId"_attr = deletionTask.getId());
                 }
 
                 try {
@@ -364,10 +364,10 @@ ExecutorFuture<void> submitRangeDeletionTask(OperationContext* opCtx,
                                 : " is not known"),
                     deletionTaskUuidMatchesFilteringMetadataUuid(opCtx, csr, deletionTask));
 
-            LOGV2(22026,
-                  "Submitting range deletion task",
-                  "deletionTask"_attr = redact(deletionTask.toBSON()),
-                  "migrationId"_attr = deletionTask.getId());
+            LOG(22026,
+                "Submitting range deletion task",
+                "deletionTask"_attr = redact(deletionTask.toBSON()),
+                "migrationId"_attr = deletionTask.getId());
 
             const auto whenToClean = deletionTask.getWhenToClean() == CleanWhenEnum::kNow
                 ? CollectionShardingRuntime::kNow
@@ -384,11 +384,11 @@ ExecutorFuture<void> submitRangeDeletionTask(OperationContext* opCtx,
             auto uniqueOpCtx = tc->makeOperationContext();
             auto opCtx = uniqueOpCtx.get();
 
-            LOGV2(22027,
-                  "Failed to submit range deletion task",
-                  "deletionTask"_attr = redact(deletionTask.toBSON()),
-                  "error"_attr = redact(status),
-                  "migrationId"_attr = deletionTask.getId());
+            LOG(22027,
+                "Failed to submit range deletion task",
+                "deletionTask"_attr = redact(deletionTask.toBSON()),
+                "error"_attr = redact(status),
+                "migrationId"_attr = deletionTask.getId());
 
             if (status == ErrorCodes::RangeDeletionAbandonedBecauseCollectionWithUUIDDoesNotExist) {
                 deleteRangeDeletionTaskLocally(
@@ -413,7 +413,7 @@ void submitPendingDeletions(OperationContext* opCtx) {
 }
 
 void resubmitRangeDeletionsOnStepUp(ServiceContext* serviceContext) {
-    LOGV2(22028, "Starting pending deletion submission thread.");
+    LOG(22028, "Starting pending deletion submission thread.");
 
     ExecutorFuture<void>(getMigrationUtilExecutor())
         .then([serviceContext] {
@@ -429,9 +429,9 @@ void resubmitRangeDeletionsOnStepUp(ServiceContext* serviceContext) {
         })
         .getAsync([](const Status& status) {
             if (!status.isOK()) {
-                LOGV2(45739,
-                      "Error while submitting pending range deletions",
-                      "error"_attr = redact(status));
+                LOG(45739,
+                    "Error while submitting pending range deletions",
+                    "error"_attr = redact(status));
             }
         });
 }
@@ -452,17 +452,17 @@ void forEachOrphanRange(OperationContext* opCtx, const NamespaceString& nss, Cal
         RangeMap{SimpleBSONObjComparator::kInstance.makeBSONObjIndexedMap<BSONObj>()};
 
     if (!metadata) {
-        LOGV2(474680,
-              "Upgrade: Skipping orphaned range enumeration because the collection's sharding "
-              "state is not known",
-              "namespace"_attr = nss);
+        LOG(474680,
+            "Upgrade: Skipping orphaned range enumeration because the collection's sharding "
+            "state is not known",
+            "namespace"_attr = nss);
         return;
     }
 
     if (!metadata->isSharded()) {
-        LOGV2(22029,
-              "Upgrade: Skipping orphaned range enumeration because the collection is not sharded",
-              "namespace"_attr = nss);
+        LOG(22029,
+            "Upgrade: Skipping orphaned range enumeration because the collection is not sharded",
+            "namespace"_attr = nss);
         return;
     }
 
@@ -471,12 +471,12 @@ void forEachOrphanRange(OperationContext* opCtx, const NamespaceString& nss, Cal
     while (true) {
         auto range = metadata->getNextOrphanRange(emptyChunkMap, startingKey);
         if (!range) {
-            LOGV2_DEBUG(22030,
-                        2,
-                        "Upgrade: Completed orphanged range enumeration; no orphaned ranges "
-                        "remain",
-                        "namespace"_attr = nss.toString(),
-                        "startingKey"_attr = redact(startingKey));
+            LOG_DEBUG(22030,
+                      2,
+                      "Upgrade: Completed orphanged range enumeration; no orphaned ranges "
+                      "remain",
+                      "namespace"_attr = nss.toString(),
+                      "startingKey"_attr = redact(startingKey));
 
             return;
         }
@@ -492,11 +492,11 @@ void submitOrphanRanges(OperationContext* opCtx, const NamespaceString& nss, con
 
         onShardVersionMismatch(opCtx, nss, boost::none);
 
-        LOGV2_DEBUG(22031,
-                    2,
-                    "Upgrade: Cleaning up existing orphans",
-                    "namespace"_attr = nss,
-                    "uuid"_attr = uuid);
+        LOG_DEBUG(22031,
+                  2,
+                  "Upgrade: Cleaning up existing orphans",
+                  "namespace"_attr = nss,
+                  "uuid"_attr = uuid);
 
         std::vector<RangeDeletionTask> deletions;
         forEachOrphanRange(opCtx, nss, [&deletions, &opCtx, &nss, &uuid](const auto& range) {
@@ -513,19 +513,19 @@ void submitOrphanRanges(OperationContext* opCtx, const NamespaceString& nss, con
         PersistentTaskStore<RangeDeletionTask> store(NamespaceString::kRangeDeletionNamespace);
 
         for (const auto& task : deletions) {
-            LOGV2_DEBUG(22032,
-                        2,
-                        "Upgrade: Submitting chunk range for cleanup",
-                        "range"_attr = redact(task.getRange().toString()),
-                        "namespace"_attr = nss);
+            LOG_DEBUG(22032,
+                      2,
+                      "Upgrade: Submitting chunk range for cleanup",
+                      "range"_attr = redact(task.getRange().toString()),
+                      "namespace"_attr = nss);
             store.add(opCtx, task);
         }
     } catch (ExceptionFor<ErrorCodes::NamespaceNotFound>& e) {
-        LOGV2(22033,
-              "Upgrade: Failed to clean up orphans because the namespace was not found; the "
-              "collection must have been dropped",
-              "namespace"_attr = nss,
-              "error"_attr = redact(e.what()));
+        LOG(22033,
+            "Upgrade: Failed to clean up orphans because the namespace was not found; the "
+            "collection must have been dropped",
+            "namespace"_attr = nss,
+            "error"_attr = redact(e.what()));
     }
 }
 
@@ -540,10 +540,10 @@ void submitOrphanRangesForCleanup(OperationContext* opCtx) {
         for (auto collIt = catalog->begin(opCtx, dbName); collIt != catalog->end(opCtx); ++collIt) {
             auto uuid = collIt.uuid().get();
             auto nss = catalog->lookupNSSByUUID(opCtx, uuid).get();
-            LOGV2_DEBUG(22034,
-                        2,
-                        "Upgrade: Processing collection for orphaned range cleanup",
-                        "namespace"_attr = nss);
+            LOG_DEBUG(22034,
+                      2,
+                      "Upgrade: Processing collection for orphaned range cleanup",
+                      "namespace"_attr = nss);
             if (!nss.isNamespaceAlwaysUnsharded()) {
                 submitOrphanRanges(opCtx, nss, uuid);
             }
@@ -682,11 +682,11 @@ void markAsReadyRangeDeletionTaskOnRecipient(OperationContext* opCtx,
                     updateOp,
                     BSON(WriteConcernOptions::kWriteConcernField << WriteConcernOptions::Majority));
             } catch (const ExceptionFor<ErrorCodes::ShardNotFound>& exShardNotFound) {
-                LOGV2_DEBUG(4620232,
-                            1,
-                            "Failed to mark range deletion task on recipient shard as ready",
-                            "migrationId"_attr = migrationId,
-                            "error"_attr = exShardNotFound);
+                LOG_DEBUG(4620232,
+                          1,
+                          "Failed to mark range deletion task on recipient shard as ready",
+                          "migrationId"_attr = migrationId,
+                          "error"_attr = exShardNotFound);
                 return;
             }
 
@@ -789,7 +789,7 @@ void ensureChunkVersionIsGreaterThan(OperationContext* opCtx,
 }
 
 void resumeMigrationCoordinationsOnStepUp(OperationContext* opCtx) {
-    LOGV2_DEBUG(4798510, 2, "Starting migration coordinator step-up recovery");
+    LOG_DEBUG(4798510, 2, "Starting migration coordinator step-up recovery");
 
     unsigned long long unfinishedMigrationsCount = 0;
 
@@ -809,11 +809,11 @@ void resumeMigrationCoordinationsOnStepUp(OperationContext* opCtx) {
                                     << redact(doc.toBSON()));
 
                       unfinishedMigrationsCount++;
-                      LOGV2_DEBUG(4798511,
-                                  3,
-                                  "Found unfinished migration on step-up",
-                                  "migrationCoordinatorDoc"_attr = redact(doc.toBSON()),
-                                  "unfinishedMigrationsCount"_attr = unfinishedMigrationsCount);
+                      LOG_DEBUG(4798511,
+                                3,
+                                "Found unfinished migration on step-up",
+                                "migrationCoordinatorDoc"_attr = redact(doc.toBSON()),
+                                "unfinishedMigrationsCount"_attr = unfinishedMigrationsCount);
 
                       const auto& nss = doc.getNss();
 
@@ -844,9 +844,9 @@ void resumeMigrationCoordinationsOnStepUp(OperationContext* opCtx) {
                                   opCtx.get(), nss, boost::none /* shardVersionReceived */);
                           })
                           .onError([](const Status& status) {
-                              LOGV2_WARNING(4798512,
-                                            "Error on deferred shardVersion recovery execution",
-                                            "error"_attr = redact(status));
+                              LOG_WARNING(4798512,
+                                          "Error on deferred shardVersion recovery execution",
+                                          "error"_attr = redact(status));
                           })
                           .getAsync([](auto) {});
 
@@ -856,14 +856,14 @@ void resumeMigrationCoordinationsOnStepUp(OperationContext* opCtx) {
     ShardingStatistics::get(opCtx).unfinishedMigrationFromPreviousPrimary.store(
         unfinishedMigrationsCount);
 
-    LOGV2_DEBUG(4798513,
-                2,
-                "Finished migration coordinator step-up recovery",
-                "unfinishedMigrationsCount"_attr = unfinishedMigrationsCount);
+    LOG_DEBUG(4798513,
+              2,
+              "Finished migration coordinator step-up recovery",
+              "unfinishedMigrationsCount"_attr = unfinishedMigrationsCount);
 }
 
 void recoverMigrationCoordinations(OperationContext* opCtx, NamespaceString nss) {
-    LOGV2_DEBUG(4798501, 2, "Starting migration recovery", "namespace"_attr = nss);
+    LOG_DEBUG(4798501, 2, "Starting migration recovery", "namespace"_attr = nss);
 
     unsigned migrationRecoveryCount = 0;
     PersistentTaskStore<MigrationCoordinatorDocument> store(
@@ -872,10 +872,10 @@ void recoverMigrationCoordinations(OperationContext* opCtx, NamespaceString nss)
         opCtx,
         QUERY(MigrationCoordinatorDocument::kNssFieldName << nss.toString()),
         [&opCtx, &migrationRecoveryCount](const MigrationCoordinatorDocument& doc) {
-            LOGV2_DEBUG(4798502,
-                        2,
-                        "Recovering migration",
-                        "migrationCoordinatorDocument"_attr = redact(doc.toBSON()));
+            LOG_DEBUG(4798502,
+                      2,
+                      "Recovering migration",
+                      "migrationCoordinatorDocument"_attr = redact(doc.toBSON()));
             // ensure there is only one migrationCoordinatorDocument
             // to be recovered for this namespace
             invariant(++migrationRecoveryCount == 1,
@@ -922,24 +922,23 @@ void recoverMigrationCoordinations(OperationContext* opCtx, NamespaceString nss)
             if (!currentMetadata.isSharded() ||
                 !currentMetadata.uuidMatches(doc.getCollectionUuid())) {
                 if (!currentMetadata.isSharded()) {
-                    LOGV2(4798503,
-                          "During migration recovery the collection was discovered to have been "
-                          "dropped."
-                          "Deleting the range deletion tasks on the donor and the recipient "
-                          "as well as the migration coordinator document on this node",
-                          "migrationCoordinatorDocument"_attr = redact(doc.toBSON()));
+                    LOG(4798503,
+                        "During migration recovery the collection was discovered to have been "
+                        "dropped."
+                        "Deleting the range deletion tasks on the donor and the recipient "
+                        "as well as the migration coordinator document on this node",
+                        "migrationCoordinatorDocument"_attr = redact(doc.toBSON()));
                 } else {
                     // UUID don't match
-                    LOGV2(4798504,
-                          "During migration recovery the collection was discovered to have been "
-                          "dropped and recreated. Collection has a UUID that "
-                          "does not match the one in the migration coordinator "
-                          "document. Deleting the range deletion tasks on the donor and "
-                          "recipient as well as the migration coordinator document on this node",
-                          "migrationCoordinatorDocument"_attr = redact(doc.toBSON()),
-                          "refreshedMetadataUUID"_attr =
-                              currentMetadata.getChunkManager()->getUUID(),
-                          "coordinatorDocumentUUID"_attr = doc.getCollectionUuid());
+                    LOG(4798504,
+                        "During migration recovery the collection was discovered to have been "
+                        "dropped and recreated. Collection has a UUID that "
+                        "does not match the one in the migration coordinator "
+                        "document. Deleting the range deletion tasks on the donor and "
+                        "recipient as well as the migration coordinator document on this node",
+                        "migrationCoordinatorDocument"_attr = redact(doc.toBSON()),
+                        "refreshedMetadataUUID"_attr = currentMetadata.getChunkManager()->getUUID(),
+                        "coordinatorDocumentUUID"_attr = doc.getCollectionUuid());
                 }
 
                 deleteRangeDeletionTaskOnRecipient(opCtx, doc.getRecipientShardId(), doc.getId());

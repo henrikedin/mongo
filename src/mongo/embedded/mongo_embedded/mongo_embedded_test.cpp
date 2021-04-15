@@ -105,9 +105,9 @@ class MongodbCAPITest : public mongo::unittest::Test {
 protected:
     void setUp() {
         mongo_embedded_v1_init_params params;
-        params.log_flags = MONGO_EMBEDDED_V1_LOG_STDOUT;
-        params.log_callback = nullptr;
-        params.log_user_data = nullptr;
+        params.LOG_flags = MONGO_EMBEDDED_V1_LOG_STDOUT;
+        params.LOG_callback = nullptr;
+        params.LOG_user_data = nullptr;
 
         YAML::Emitter yaml;
         yaml << YAML::BeginMap;
@@ -734,8 +734,8 @@ int main(const int argc, const char* const* const argv) {
     mongo_embedded_v1_init_params params{};
 
     bool receivedCallback = false;
-    params.log_flags = MONGO_EMBEDDED_V1_LOG_STDOUT | MONGO_EMBEDDED_V1_LOG_CALLBACK;
-    params.log_callback = [](void* user_data,
+    params.LOG_flags = MONGO_EMBEDDED_V1_LOG_STDOUT | MONGO_EMBEDDED_V1_LOG_CALLBACK;
+    params.LOG_callback = [](void* user_data,
                              const char* message,
                              const char* component,
                              const char* context,
@@ -744,7 +744,7 @@ int main(const int argc, const char* const* const argv) {
         ASSERT(component);
         *reinterpret_cast<bool*>(user_data) = true;
     };
-    params.log_user_data = &receivedCallback;
+    params.LOG_user_data = &receivedCallback;
 
     YAML::Emitter yaml;
     yaml << YAML::BeginMap;

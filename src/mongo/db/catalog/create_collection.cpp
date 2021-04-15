@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kCommand
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kCommand
 
 #include "mongo/platform/basic.h"
 
@@ -54,7 +54,7 @@
 #include "mongo/db/repl/replication_coordinator.h"
 #include "mongo/db/views/view_catalog.h"
 #include "mongo/idl/command_generic_argument.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/fail_point.h"
 
 namespace mongo {
@@ -345,9 +345,9 @@ Status _createTimeseries(OperationContext* opCtx,
 
         if (MONGO_unlikely(failTimeseriesViewCreation.shouldFail(
                 [&ns](const BSONObj& data) { return data["ns"_sd].String() == ns.ns(); }))) {
-            LOGV2(5490200,
-                  "failTimeseriesViewCreation fail point enabled. Failing creation of view "
-                  "definition after bucket collection was created successfully.");
+            LOG(5490200,
+                "failTimeseriesViewCreation fail point enabled. Failing creation of view "
+                "definition after bucket collection was created successfully.");
             return {ErrorCodes::OperationFailed,
                     str::stream() << "Timeseries view definition " << ns
                                   << " creation failed due to 'failTimeseriesViewCreation' "
@@ -596,12 +596,12 @@ Status createCollectionForApplyOps(OperationContext* opCtx,
             return Status::OK();
 
         if (currentName && currentName->isDropPendingNamespace()) {
-            LOGV2(20308,
-                  "CMD: create -- existing collection with conflicting UUID is in a drop-pending "
-                  "state",
-                  "newCollection"_attr = newCollName,
-                  "conflictingUUID"_attr = uuid,
-                  "existingCollection"_attr = *currentName);
+            LOG(20308,
+                "CMD: create -- existing collection with conflicting UUID is in a drop-pending "
+                "state",
+                "newCollection"_attr = newCollName,
+                "conflictingUUID"_attr = uuid,
+                "existingCollection"_attr = *currentName);
             return Status(ErrorCodes::NamespaceExists,
                           str::stream() << "existing collection " << currentName->toString()
                                         << " with conflicting UUID " << uuid.toString()
@@ -637,12 +637,12 @@ Status createCollectionForApplyOps(OperationContext* opCtx,
             }
 
             // It is ok to log this because this doesn't happen very frequently.
-            LOGV2(20309,
-                  "CMD: create -- renaming existing collection with conflicting UUID to "
-                  "temporary collection",
-                  "newCollection"_attr = newCollName,
-                  "conflictingUUID"_attr = uuid,
-                  "tempName"_attr = tmpName);
+            LOG(20309,
+                "CMD: create -- renaming existing collection with conflicting UUID to "
+                "temporary collection",
+                "newCollection"_attr = newCollName,
+                "conflictingUUID"_attr = uuid,
+                "tempName"_attr = tmpName);
             Status status =
                 writeConflictRetry(opCtx, "createCollectionForApplyOps", newCollName.ns(), [&] {
                     WriteUnitOfWork wuow(opCtx);

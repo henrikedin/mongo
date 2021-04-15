@@ -27,14 +27,14 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kQuery
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kQuery
 
 #include "mongo/platform/basic.h"
 
 #include "mongo/db/pipeline/document_source_internal_shard_filter.h"
 
 #include "mongo/db/exec/document_value/document.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace mongo {
 
@@ -58,12 +58,12 @@ DocumentSource::GetNextResult DocumentSourceInternalShardFilter::doGetNext() {
         }
 
         if (belongsRes == ShardFilterer::DocumentBelongsResult::kNoShardKey) {
-            LOGV2_WARNING(23870,
-                          "no shard key found in document {next_getDocument_toBson} for shard key "
-                          "pattern {shardFilterer_getKeyPattern}, document may have been inserted "
-                          "manually into shard",
-                          "next_getDocument_toBson"_attr = redact(next.getDocument().toBson()),
-                          "shardFilterer_getKeyPattern"_attr = _shardFilterer->getKeyPattern());
+            LOG_WARNING(23870,
+                        "no shard key found in document {next_getDocument_toBson} for shard key "
+                        "pattern {shardFilterer_getKeyPattern}, document may have been inserted "
+                        "manually into shard",
+                        "next_getDocument_toBson"_attr = redact(next.getDocument().toBson()),
+                        "shardFilterer_getKeyPattern"_attr = _shardFilterer->getKeyPattern());
         }
 
         // For performance reasons, a streaming stage must not keep references to documents across

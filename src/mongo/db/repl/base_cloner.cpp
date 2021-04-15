@@ -27,12 +27,12 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kReplication
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kReplication
 
 #include "mongo/platform/basic.h"
 
 #include "mongo/db/repl/base_cloner.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/scopeguard.h"
 
 namespace mongo {
@@ -87,12 +87,12 @@ Status BaseCloner::run() {
     }
     stdx::lock_guard<ReplSyncSharedData> lk(*_sharedData);
     if (!_sharedData->getStatus(lk).isOK()) {
-        LOGV2_OPTIONS(21065,
-                      {getLogComponent()},
-                      "Failing data clone because of failure outside data clone: "
-                      "{error}",
-                      "Failing data clone because of failure outside data clone",
-                      "error"_attr = _sharedData->getStatus(lk));
+        LOG_OPTIONS(21065,
+                    {getLogComponent()},
+                    "Failing data clone because of failure outside data clone: "
+                    "{error}",
+                    "Failing data clone because of failure outside data clone",
+                    "error"_attr = _sharedData->getStatus(lk));
     }
     return _sharedData->getStatus(lk);
 }
@@ -102,25 +102,25 @@ bool BaseCloner::isMyFailPoint(const BSONObj& data) const {
 }
 
 BaseCloner::AfterStageBehavior BaseCloner::runStage(BaseClonerStage* stage) {
-    LOGV2_DEBUG_OPTIONS(21069,
-                        1,
-                        {getLogComponent()},
-                        "Cloner {cloner} running stage {stage}",
-                        "Cloner running stage",
-                        "cloner"_attr = getClonerName(),
-                        "stage"_attr = stage->getName());
+    LOG_DEBUG_OPTIONS(21069,
+                      1,
+                      {getLogComponent()},
+                      "Cloner {cloner} running stage {stage}",
+                      "Cloner running stage",
+                      "cloner"_attr = getClonerName(),
+                      "stage"_attr = stage->getName());
     pauseForFuzzer(stage);
     auto isThisStageFailPoint = [this, stage](const BSONObj& data) {
         return data["stage"].str() == stage->getName() && isMyFailPoint(data);
     };
     hangBeforeClonerStage.executeIf(
         [&](const BSONObj& data) {
-            LOGV2_OPTIONS(21070,
-                          {getLogComponent()},
-                          "Cloner {cloner} hanging before running stage {stage}",
-                          "Cloner hanging before running stage",
-                          "cloner"_attr = getClonerName(),
-                          "stage"_attr = stage->getName());
+            LOG_OPTIONS(21070,
+                        {getLogComponent()},
+                        "Cloner {cloner} hanging before running stage {stage}",
+                        "Cloner hanging before running stage",
+                        "cloner"_attr = getClonerName(),
+                        "stage"_attr = stage->getName());
             while (!mustExit() && hangBeforeClonerStage.shouldFail(isThisStageFailPoint)) {
                 sleepmillis(100);
             }
@@ -129,24 +129,24 @@ BaseCloner::AfterStageBehavior BaseCloner::runStage(BaseClonerStage* stage) {
     auto afterStageBehavior = runStageWithRetries(stage);
     hangAfterClonerStage.executeIf(
         [&](const BSONObj& data) {
-            LOGV2_OPTIONS(21071,
-                          {getLogComponent()},
-                          "Cloner {cloner} hanging after running stage {stage}",
-                          "Cloner hanging after running stage",
-                          "cloner"_attr = getClonerName(),
-                          "stage"_attr = stage->getName());
+            LOG_OPTIONS(21071,
+                        {getLogComponent()},
+                        "Cloner {cloner} hanging after running stage {stage}",
+                        "Cloner hanging after running stage",
+                        "cloner"_attr = getClonerName(),
+                        "stage"_attr = stage->getName());
             while (!mustExit() && hangAfterClonerStage.shouldFail(isThisStageFailPoint)) {
                 sleepmillis(100);
             }
         },
         isThisStageFailPoint);
-    LOGV2_DEBUG_OPTIONS(21072,
-                        1,
-                        {getLogComponent()},
-                        "Cloner {cloner} finished running stage {stage}",
-                        "Cloner finished running stage",
-                        "cloner"_attr = getClonerName(),
-                        "stage"_attr = stage->getName());
+    LOG_DEBUG_OPTIONS(21072,
+                      1,
+                      {getLogComponent()},
+                      "Cloner {cloner} finished running stage {stage}",
+                      "Cloner finished running stage",
+                      "cloner"_attr = getClonerName(),
+                      "stage"_attr = stage->getName());
     return afterStageBehavior;
 }
 
@@ -165,26 +165,26 @@ BaseCloner::AfterStageBehavior BaseCloner::runStageWithRetries(BaseClonerStage* 
                 // If lastError is set, this is a retry.
                 hangBeforeRetryingClonerStage.executeIf(
                     [&](const BSONObj& data) {
-                        LOGV2_OPTIONS(21074,
-                                      {getLogComponent()},
-                                      "Cloner {cloner} hanging before retrying stage {stage}",
-                                      "Cloner hanging before retrying stage",
-                                      "cloner"_attr = getClonerName(),
-                                      "stage"_attr = stage->getName());
+                        LOG_OPTIONS(21074,
+                                    {getLogComponent()},
+                                    "Cloner {cloner} hanging before retrying stage {stage}",
+                                    "Cloner hanging before retrying stage",
+                                    "cloner"_attr = getClonerName(),
+                                    "stage"_attr = stage->getName());
                         while (!mustExit() &&
                                hangBeforeRetryingClonerStage.shouldFail(isThisStageFailPoint)) {
                             sleepmillis(100);
                         }
                     },
                     isThisStageFailPoint);
-                LOGV2_OPTIONS(21075,
-                              {getLogComponent()},
-                              "Sync process retrying {cloner} stage {stage} due to "
-                              "{error}",
-                              "Sync process retrying cloner stage due to error",
-                              "cloner"_attr = getClonerName(),
-                              "stage"_attr = stage->getName(),
-                              "error"_attr = lastError);
+                LOG_OPTIONS(21075,
+                            {getLogComponent()},
+                            "Sync process retrying {cloner} stage {stage} due to "
+                            "{error}",
+                            "Sync process retrying cloner stage due to error",
+                            "cloner"_attr = getClonerName(),
+                            "stage"_attr = stage->getName(),
+                            "error"_attr = lastError);
                 // Execute any per-retry logic needed by the cloner.
                 handleStageAttemptFailed(stage, lastError);
             }
@@ -192,25 +192,25 @@ BaseCloner::AfterStageBehavior BaseCloner::runStageWithRetries(BaseClonerStage* 
         } catch (DBException& e) {
             lastError = e.toStatus();
             if (!stage->isTransientError(lastError)) {
-                LOGV2_OPTIONS(21077,
+                LOG_OPTIONS(21077,
+                            {getLogComponent()},
+                            "Non-retryable error occurred during cloner "
+                            "{cloner} stage {stage}: {error}",
+                            "Non-retryable error occurred during cloner stage",
+                            "cloner"_attr = getClonerName(),
+                            "stage"_attr = stage->getName(),
+                            "error"_attr = lastError);
+                throw;
+            }
+            LOG_DEBUG_OPTIONS(21078,
+                              1,
                               {getLogComponent()},
-                              "Non-retryable error occurred during cloner "
+                              "Transient error occurred during cloner "
                               "{cloner} stage {stage}: {error}",
-                              "Non-retryable error occurred during cloner stage",
+                              "Transient error occurred during cloner stage",
                               "cloner"_attr = getClonerName(),
                               "stage"_attr = stage->getName(),
                               "error"_attr = lastError);
-                throw;
-            }
-            LOGV2_DEBUG_OPTIONS(21078,
-                                1,
-                                {getLogComponent()},
-                                "Transient error occurred during cloner "
-                                "{cloner} stage {stage}: {error}",
-                                "Transient error occurred during cloner stage",
-                                "cloner"_attr = getClonerName(),
-                                "stage"_attr = stage->getName(),
-                                "error"_attr = lastError);
         }
     }
 }

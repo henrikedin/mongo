@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kNetwork
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kNetwork
 
 #include "mongo/platform/basic.h"
 
@@ -39,7 +39,7 @@
 #include "mongo/base/data_type_endian.h"
 #include "mongo/config.h"
 #include "mongo/db/bson/dotted_path_support.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/object_check.h"
 #include "mongo/util/bufreader.h"
 #include "mongo/util/hex.h"
@@ -218,7 +218,7 @@ OpMsg OpMsg::parse(const Message& message) try {
 
     return msg;
 } catch (const DBException& ex) {
-    LOGV2_DEBUG(
+    LOG_DEBUG(
         22632,
         1,
         "invalid message: {ex_code} {ex} -- {hexdump_message_singleData_view2ptr_message_size}",
@@ -322,11 +322,11 @@ Message OpMsgBuilder::finishWithoutSizeChecking() {
         std::set<StringData> seenFields;
         for (auto elem : resumeBody().asTempObj()) {
             if (!(seenFields.insert(elem.fieldNameStringData()).second)) {
-                LOGV2_FATAL(40474,
-                            "OP_MSG with duplicate field '{elem_fieldNameStringData}' : "
-                            "{resumeBody_asTempObj}",
-                            "elem_fieldNameStringData"_attr = elem.fieldNameStringData(),
-                            "resumeBody_asTempObj"_attr = redact(resumeBody().asTempObj()));
+                LOG_FATAL(40474,
+                          "OP_MSG with duplicate field '{elem_fieldNameStringData}' : "
+                          "{resumeBody_asTempObj}",
+                          "elem_fieldNameStringData"_attr = elem.fieldNameStringData(),
+                          "resumeBody_asTempObj"_attr = redact(resumeBody().asTempObj()));
             }
         }
     }

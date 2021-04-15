@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kReplication
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kReplication
 
 #include "mongo/platform/basic.h"
 
@@ -43,7 +43,7 @@
 #include "mongo/db/repl/oplog_entry.h"
 #include "mongo/db/repl/replication_coordinator.h"
 #include "mongo/executor/egress_tag_closer_manager.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/transport/service_entry_point.h"
 #include "mongo/util/assert_util.h"
 
@@ -118,7 +118,7 @@ void FcvOpObserver::_onInsertOrUpdate(OperationContext* opCtx, const BSONObj& do
 
     // To avoid extra log messages when the targetVersion is set/unset, only log when the version
     // changes.
-    logv2::DynamicAttributes attrs;
+    log::DynamicAttributes attrs;
     bool isDifferent = true;
     if (serverGlobalParams.featureCompatibility.isVersionInitialized()) {
         const auto currentVersion = serverGlobalParams.featureCompatibility.getVersion();
@@ -128,7 +128,7 @@ void FcvOpObserver::_onInsertOrUpdate(OperationContext* opCtx, const BSONObj& do
 
     if (isDifferent) {
         attrs.add("newVersion", FeatureCompatibilityVersionParser::toString(newVersion));
-        LOGV2(20459, "Setting featureCompatibilityVersion", attrs);
+        LOG(20459, "Setting featureCompatibilityVersion", attrs);
     }
 
     opCtx->recoveryUnit()->onCommit(
@@ -188,10 +188,10 @@ void FcvOpObserver::onReplicationRollback(OperationContext* opCtx,
         const auto memoryFcv = serverGlobalParams.featureCompatibility.getVersion();
         if (swVersion.isOK() && (swVersion.getValue() != memoryFcv)) {
             auto diskFcv = swVersion.getValue();
-            LOGV2(4675801,
-                  "Setting featureCompatibilityVersion as part of rollback",
-                  "newVersion"_attr = FeatureCompatibilityVersionParser::toString(diskFcv),
-                  "oldVersion"_attr = FeatureCompatibilityVersionParser::toString(memoryFcv));
+            LOG(4675801,
+                "Setting featureCompatibilityVersion as part of rollback",
+                "newVersion"_attr = FeatureCompatibilityVersionParser::toString(diskFcv),
+                "oldVersion"_attr = FeatureCompatibilityVersionParser::toString(memoryFcv));
             _setVersion(opCtx, diskFcv);
         }
     }

@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kStorage
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kStorage
 
 #include "mongo/platform/basic.h"
 
@@ -50,7 +50,7 @@
 #include "mongo/db/stats/resource_consumption_metrics.h"
 #include "mongo/db/storage/two_phase_index_build_knobs_gen.h"
 #include "mongo/executor/task_executor.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/fail_point.h"
@@ -196,14 +196,14 @@ IndexBuildsCoordinatorMongod::_startIndexBuild(OperationContext* opCtx,
                     return true;
                 }
 
-                LOGV2(4715500,
-                      "Too many index builds running simultaneously, waiting until the number of "
-                      "active index builds is below the threshold",
-                      "numActiveIndexBuilds"_attr = _numActiveIndexBuilds,
-                      "maxNumActiveUserIndexBuilds"_attr = maxActiveBuilds,
-                      "indexSpecs"_attr = specs,
-                      "buildUUID"_attr = buildUUID,
-                      "collectionUUID"_attr = collectionUUID);
+                LOG(4715500,
+                    "Too many index builds running simultaneously, waiting until the number of "
+                    "active index builds is below the threshold",
+                    "numActiveIndexBuilds"_attr = _numActiveIndexBuilds,
+                    "maxNumActiveUserIndexBuilds"_attr = maxActiveBuilds,
+                    "indexSpecs"_attr = specs,
+                    "buildUUID"_attr = buildUUID,
+                    "collectionUUID"_attr = collectionUUID);
                 return false;
             });
         } else {
@@ -220,7 +220,7 @@ IndexBuildsCoordinatorMongod::_startIndexBuild(OperationContext* opCtx,
     });
 
     if (MONGO_unlikely(hangAfterAcquiringIndexBuildSlot.shouldFail())) {
-        LOGV2(4886201, "Hanging index build due to failpoint 'hangAfterAcquiringIndexBuildSlot'");
+        LOG(4886201, "Hanging index build due to failpoint 'hangAfterAcquiringIndexBuildSlot'");
         hangAfterAcquiringIndexBuildSlot.pauseWhileSet();
     }
 
@@ -257,11 +257,11 @@ IndexBuildsCoordinatorMongod::_startIndexBuild(OperationContext* opCtx,
             auto migrationStatus =
                 tenant_migration_access_blocker::checkIfCanBuildIndex(opCtx, dbName);
             if (!migrationStatus.isOK()) {
-                LOGV2(4886200,
-                      "Aborted index build before start due to tenant migration",
-                      "error"_attr = migrationStatus,
-                      "buildUUID"_attr = buildUUID,
-                      "collectionUUID"_attr = collectionUUID);
+                LOG(4886200,
+                    "Aborted index build before start due to tenant migration",
+                    "error"_attr = migrationStatus,
+                    "buildUUID"_attr = buildUUID,
+                    "collectionUUID"_attr = collectionUUID);
                 activeIndexBuilds.unregisterIndexBuild(&_indexBuildsManager,
                                                        invariant(_getIndexBuild(buildUUID)));
                 return migrationStatus;
@@ -394,9 +394,9 @@ IndexBuildsCoordinatorMongod::_startIndexBuild(OperationContext* opCtx,
             // Logs the index build statistics if it took longer than the server parameter `slowMs`
             // to complete.
             CurOp::get(opCtx.get())
-                ->completeAndLogOperation(opCtx.get(), MONGO_LOGV2_DEFAULT_COMPONENT);
+                ->completeAndLogOperation(opCtx.get(), MONGO_LOG_DEFAULT_COMPONENT);
         } catch (const DBException& e) {
-            LOGV2(4656002, "unable to log operation", "error"_attr = e);
+            LOG(4656002, "unable to log operation", "error"_attr = e);
         }
     });
 
@@ -488,8 +488,7 @@ void IndexBuildsCoordinatorMongod::_signalIfCommitQuorumIsSatisfied(
     if (!commitQuorumSatisfied)
         return;
 
-    LOGV2(
-        3856201, "Index build: commit quorum satisfied", "indexBuildEntry"_attr = indexBuildEntry);
+    LOG(3856201, "Index build: commit quorum satisfied", "indexBuildEntry"_attr = indexBuildEntry);
     _sendCommitQuorumSatisfiedSignal(opCtx, replState);
 }
 
@@ -540,10 +539,10 @@ bool IndexBuildsCoordinatorMongod::_checkVoteCommitIndexCmdSucceeded(const BSONO
     if (commandStatus.isOK() && wcStatus.isOK()) {
         return true;
     }
-    LOGV2(3856202,
-          "'voteCommitIndexBuild' command failed.",
-          "indexBuildUUID"_attr = indexBuildUUID,
-          "responseStatus"_attr = response);
+    LOG(3856202,
+        "'voteCommitIndexBuild' command failed.",
+        "indexBuildUUID"_attr = indexBuildUUID,
+        "responseStatus"_attr = response);
     return false;
 }
 
@@ -612,11 +611,11 @@ void IndexBuildsCoordinatorMongod::_signalPrimaryForCommitReadiness(
             // received the CallbackCanceled error because the index build was signaled with abort
             // or commit signal, then needToVote() would return false and we don't retry the voting
             // process.
-            LOGV2_DEBUG(4666400,
-                        1,
-                        "Failed to run 'voteCommitIndexBuild' command.",
-                        "indexBuildUUID"_attr = replState->buildUUID,
-                        "errorMsg"_attr = ex);
+            LOG_DEBUG(4666400,
+                      1,
+                      "Failed to run 'voteCommitIndexBuild' command.",
+                      "indexBuildUUID"_attr = replState->buildUUID,
+                      "errorMsg"_attr = ex);
             continue;
         }
 
@@ -627,7 +626,7 @@ void IndexBuildsCoordinatorMongod::_signalPrimaryForCommitReadiness(
     }
 
     if (MONGO_unlikely(hangIndexBuildAfterSignalPrimaryForCommitReadiness.shouldFail())) {
-        LOGV2(4841707, "Hanging index build after signaling the primary for commit readiness");
+        LOG(4841707, "Hanging index build after signaling the primary for commit readiness");
         hangIndexBuildAfterSignalPrimaryForCommitReadiness.pauseWhileSet(opCtx);
     }
     return;
@@ -668,9 +667,9 @@ void IndexBuildsCoordinatorMongod::_waitForNextIndexBuildActionAndCommit(
     OperationContext* opCtx,
     std::shared_ptr<ReplIndexBuildState> replState,
     const IndexBuildOptions& indexBuildOptions) {
-    LOGV2(3856203,
-          "Index build: waiting for next action before completing final phase",
-          "buildUUID"_attr = replState->buildUUID);
+    LOG(3856203,
+        "Index build: waiting for next action before completing final phase",
+        "buildUUID"_attr = replState->buildUUID);
 
     while (true) {
         // Future wait should hold no locks.
@@ -680,10 +679,10 @@ void IndexBuildsCoordinatorMongod::_waitForNextIndexBuildActionAndCommit(
         // Future wait can be interrupted.
         const auto nextAction = _drainSideWritesUntilNextActionIsAvailable(opCtx, replState);
 
-        LOGV2(3856204,
-              "Index build: received signal",
-              "buildUUID"_attr = replState->buildUUID,
-              "action"_attr = indexBuildActionToString(nextAction));
+        LOG(3856204,
+            "Index build: received signal",
+            "buildUUID"_attr = replState->buildUUID,
+            "action"_attr = indexBuildActionToString(nextAction));
 
         // Tenant migration abort should have been re-written as primary abort before reaching here.
         invariant(nextAction != IndexBuildAction::kTenantMigrationAbort);
@@ -701,11 +700,11 @@ void IndexBuildsCoordinatorMongod::_waitForNextIndexBuildActionAndCommit(
             case IndexBuildAction::kOplogCommit: {
                 invariant(replState->protocol == IndexBuildProtocol::kTwoPhase);
                 invariant(!commitTimestamp.isNull(), replState->buildUUID.toString());
-                LOGV2(3856205,
-                      "Index build: committing from oplog entry",
-                      "buildUUID"_attr = replState->buildUUID,
-                      "commitTimestamp"_attr = commitTimestamp,
-                      "collectionUUID"_attr = replState->collectionUUID);
+                LOG(3856205,
+                    "Index build: committing from oplog entry",
+                    "buildUUID"_attr = replState->buildUUID,
+                    "commitTimestamp"_attr = commitTimestamp,
+                    "collectionUUID"_attr = replState->collectionUUID);
                 break;
             }
             case IndexBuildAction::kCommitQuorumSatisfied: {
@@ -725,7 +724,7 @@ void IndexBuildsCoordinatorMongod::_waitForNextIndexBuildActionAndCommit(
             case IndexBuildAction::kPrimaryAbort:
             case IndexBuildAction::kTenantMigrationAbort:
                 // The calling thread should have interrupted us before signaling an abort action.
-                LOGV2_FATAL(4698901, "Index build abort should have interrupted this operation");
+                LOG_FATAL(4698901, "Index build abort should have interrupted this operation");
             case IndexBuildAction::kNoAction:
                 return;
         }
@@ -737,18 +736,18 @@ void IndexBuildsCoordinatorMongod::_waitForNextIndexBuildActionAndCommit(
                 invariant(nextAction != IndexBuildAction::kOplogCommit);
                 // Reset the promise as the node has stepped down. Wait for the new primary to
                 // coordinate the index build and send the new signal/action.
-                LOGV2(3856207,
-                      "No longer primary while attempting to commit. Waiting again for next action "
-                      "before completing final phase",
-                      "buildUUID"_attr = replState->buildUUID);
+                LOG(3856207,
+                    "No longer primary while attempting to commit. Waiting again for next action "
+                    "before completing final phase",
+                    "buildUUID"_attr = replState->buildUUID);
                 replState->resetNextActionPromise();
                 needsToRetryWait = true;
                 break;
             case CommitResult::kLockTimeout:
-                LOGV2(4698900,
-                      "Unable to acquire RSTL for commit within deadline. Releasing locks and "
-                      "trying again",
-                      "buildUUID"_attr = replState->buildUUID);
+                LOG(4698900,
+                    "Unable to acquire RSTL for commit within deadline. Releasing locks and "
+                    "trying again",
+                    "buildUUID"_attr = replState->buildUUID);
                 needsToRetryWait = true;
                 break;
             case CommitResult::kSuccess:

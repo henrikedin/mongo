@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTest
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTest
 
 #include "mongo/platform/basic.h"
 
@@ -65,7 +65,7 @@
 #include "mongo/db/shutdown_in_progress_quiesce_info.h"
 #include "mongo/db/write_concern_options.h"
 #include "mongo/executor/network_interface_mock.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/metadata/oplog_query_metadata.h"
 #include "mongo/rpc/metadata/repl_set_metadata.h"
 #include "mongo/stdx/future.h"
@@ -1343,10 +1343,10 @@ protected:
         getNet()->runUntil(getNet()->now() + heartbeatInterval);
         NetworkInterfaceMock::NetworkOperationIterator noi = getNet()->getNextReadyRequest();
         RemoteCommandRequest request = noi->getRequest();
-        LOGV2(21497,
-              "{request_target} processing {request_cmdObj}",
-              "request_target"_attr = request.target.toString(),
-              "request_cmdObj"_attr = request.cmdObj);
+        LOG(21497,
+            "{request_target} processing {request_cmdObj}",
+            "request_target"_attr = request.target.toString(),
+            "request_cmdObj"_attr = request.cmdObj);
         ReplSetHeartbeatArgsV1 hbArgs;
         if (hbArgs.initialize(request.cmdObj).isOK()) {
             ReplSetHeartbeatResponse hbResp;
@@ -1362,9 +1362,9 @@ protected:
         }
         while (getNet()->hasReadyRequests()) {
             auto noi = getNet()->getNextReadyRequest();
-            LOGV2(21498,
-                  "Blackholing network request {noi_getRequest_cmdObj}",
-                  "noi_getRequest_cmdObj"_attr = noi->getRequest().cmdObj);
+            LOG(21498,
+                "Blackholing network request {noi_getRequest_cmdObj}",
+                "noi_getRequest_cmdObj"_attr = noi->getRequest().cmdObj);
             getNet()->blackHole(noi);
         }
 
@@ -2005,10 +2005,10 @@ protected:
             ReplSetHeartbeatArgsV1 hbArgs;
             ASSERT_OK(hbArgs.initialize(request.cmdObj));
 
-            LOGV2(21499,
-                  "{request_target} processing {request_cmdObj}",
-                  "request_target"_attr = request.target.toString(),
-                  "request_cmdObj"_attr = request.cmdObj);
+            LOG(21499,
+                "{request_target} processing {request_cmdObj}",
+                "request_target"_attr = request.target.toString(),
+                "request_cmdObj"_attr = request.cmdObj);
 
             // Catch up 'numNodesCaughtUp' nodes out of 5.
             OpTime optimeResponse = (hbNum <= numNodesCaughtUp) ? optimePrimary : optimeLagged;
@@ -2451,10 +2451,10 @@ TEST_F(StepDownTest,
     getNet()->runUntil(getNet()->now() + Milliseconds(2000));
     NetworkInterfaceMock::NetworkOperationIterator noi = getNet()->getNextReadyRequest();
     RemoteCommandRequest request = noi->getRequest();
-    LOGV2(21500,
-          "HB1: {request_target} processing {request_cmdObj}",
-          "request_target"_attr = request.target.toString(),
-          "request_cmdObj"_attr = request.cmdObj);
+    LOG(21500,
+        "HB1: {request_target} processing {request_cmdObj}",
+        "request_target"_attr = request.target.toString(),
+        "request_cmdObj"_attr = request.cmdObj);
     ReplSetHeartbeatArgsV1 hbArgs;
     if (hbArgs.initialize(request.cmdObj).isOK()) {
         ReplSetHeartbeatResponse hbResp;
@@ -2738,7 +2738,7 @@ TEST_F(ReplCoordTest, NodeIncludesOtherMembersProgressInUpdatePositionCommand) {
         long long memberId = entry[UpdatePositionArgs::kMemberIdFieldName].Number();
         memberIds.insert(memberId);
         if (memberId == 0) {
-            LOGV2(21501, "{_0}", "_0"_attr = 0);
+            LOG(21501, "{_0}", "_0"_attr = 0);
             ASSERT_OK(bsonExtractOpTimeField(
                 entry, UpdatePositionArgs::kAppliedOpTimeFieldName, &appliedOpTime));
             ASSERT_OK(bsonExtractOpTimeField(
@@ -2746,7 +2746,7 @@ TEST_F(ReplCoordTest, NodeIncludesOtherMembersProgressInUpdatePositionCommand) {
             ASSERT_EQUALS(optime1, appliedOpTime);
             ASSERT_EQUALS(optime1, durableOpTime);
         } else if (memberId == 1) {
-            LOGV2(21502, "{_1}", "_1"_attr = 1);
+            LOG(21502, "{_1}", "_1"_attr = 1);
             ASSERT_OK(bsonExtractOpTimeField(
                 entry, UpdatePositionArgs::kAppliedOpTimeFieldName, &appliedOpTime));
             ASSERT_OK(bsonExtractOpTimeField(
@@ -2754,7 +2754,7 @@ TEST_F(ReplCoordTest, NodeIncludesOtherMembersProgressInUpdatePositionCommand) {
             ASSERT_EQUALS(optime2, appliedOpTime);
             ASSERT_EQUALS(OpTime(), durableOpTime);
         } else if (memberId == 2) {
-            LOGV2(21503, "{_2}", "_2"_attr = 2);
+            LOG(21503, "{_2}", "_2"_attr = 2);
             ASSERT_OK(bsonExtractOpTimeField(
                 entry, UpdatePositionArgs::kAppliedOpTimeFieldName, &appliedOpTime));
             ASSERT_OK(bsonExtractOpTimeField(
@@ -2762,7 +2762,7 @@ TEST_F(ReplCoordTest, NodeIncludesOtherMembersProgressInUpdatePositionCommand) {
             ASSERT_EQUALS(optime3, appliedOpTime);
             ASSERT_EQUALS(optime3, durableOpTime);
         } else {
-            LOGV2(21504, "{_3}", "_3"_attr = 3);
+            LOG(21504, "{_3}", "_3"_attr = 3);
             ASSERT_EQUALS(3, memberId);
             ASSERT_OK(bsonExtractOpTimeField(
                 entry, UpdatePositionArgs::kAppliedOpTimeFieldName, &appliedOpTime));
@@ -4598,9 +4598,9 @@ TEST_F(ReplCoordTest, AwaitHelloResponseReturnsOnElectionWin) {
     waitForHelloFailPoint->waitForTimesEntered(timesEnteredFailPoint + 1);
     auto electionTimeoutWhen = getReplCoord()->getElectionTimeout_forTest();
     ASSERT_NOT_EQUALS(Date_t(), electionTimeoutWhen);
-    LOGV2(21505,
-          "Election timeout scheduled at {electionTimeoutWhen} (simulator time)",
-          "electionTimeoutWhen"_attr = electionTimeoutWhen);
+    LOG(21505,
+        "Election timeout scheduled at {electionTimeoutWhen} (simulator time)",
+        "electionTimeoutWhen"_attr = electionTimeoutWhen);
     simulateSuccessfulV1ElectionWithoutExitingDrainMode(electionTimeoutWhen, opCtx.get());
 
     waitForHelloFailPoint->waitForTimesEntered(timesEnteredFailPoint + 2);
@@ -4707,9 +4707,9 @@ TEST_F(ReplCoordTest, AwaitHelloResponseReturnsOnElectionWinWithReconfig) {
     waitForHelloFailPoint->waitForTimesEntered(timesEnteredFailPoint + 1);
     auto electionTimeoutWhen = getReplCoord()->getElectionTimeout_forTest();
     ASSERT_NOT_EQUALS(Date_t(), electionTimeoutWhen);
-    LOGV2(4508104,
-          "Election timeout scheduled at {electionTimeoutWhen} (simulator time)",
-          "electionTimeoutWhen"_attr = electionTimeoutWhen);
+    LOG(4508104,
+        "Election timeout scheduled at {electionTimeoutWhen} (simulator time)",
+        "electionTimeoutWhen"_attr = electionTimeoutWhen);
     simulateSuccessfulV1ElectionWithoutExitingDrainMode(electionTimeoutWhen, opCtx.get());
 
     waitForHelloFailPoint->waitForTimesEntered(timesEnteredFailPoint + 2);
@@ -6224,7 +6224,7 @@ TEST_F(ReplCoordTest, PrepareOplogQueryMetadata) {
         &metadataBob);
 
     BSONObj metadata = metadataBob.done();
-    LOGV2(21506, "{metadata}", "metadata"_attr = metadata);
+    LOG(21506, "{metadata}", "metadata"_attr = metadata);
 
     auto oqMetadata = rpc::OplogQueryMetadata::readFromMetadata(metadata);
     ASSERT_OK(oqMetadata.getStatus());
@@ -6331,16 +6331,16 @@ TEST_F(ReplCoordTest,
     const auto& request = noi->getRequest();
     ASSERT_EQUALS(HostAndPort("node2", 12345), request.target);
     ASSERT_EQUALS("replSetHeartbeat", request.cmdObj.firstElement().fieldNameStringData());
-    LOGV2(21507,
-          "black holing {noi_getRequest_cmdObj}",
-          "noi_getRequest_cmdObj"_attr = noi->getRequest().cmdObj);
+    LOG(21507,
+        "black holing {noi_getRequest_cmdObj}",
+        "noi_getRequest_cmdObj"_attr = noi->getRequest().cmdObj);
     net->blackHole(noi);
 
     // Advance simulator clock to some time before the first scheduled election.
     auto electionTimeoutWhen = replCoord->getElectionTimeout_forTest();
-    LOGV2(21508,
-          "Election initially scheduled at {electionTimeoutWhen} (simulator time)",
-          "electionTimeoutWhen"_attr = electionTimeoutWhen);
+    LOG(21508,
+        "Election initially scheduled at {electionTimeoutWhen} (simulator time)",
+        "electionTimeoutWhen"_attr = electionTimeoutWhen);
     ASSERT_GREATER_THAN(electionTimeoutWhen, net->now());
     auto until = net->now() + (electionTimeoutWhen - net->now()) / 2;
     net->runUntil(until);
@@ -6424,7 +6424,7 @@ TEST_F(ReplCoordTest,
     ASSERT_TRUE(net->hasReadyRequests());
     auto noi = net->getNextReadyRequest();
     auto&& request = noi->getRequest();
-    LOGV2(21509, "processing {request_cmdObj}", "request_cmdObj"_attr = request.cmdObj);
+    LOG(21509, "processing {request_cmdObj}", "request_cmdObj"_attr = request.cmdObj);
     ASSERT_EQUALS(HostAndPort("node2", 12345), request.target);
     ASSERT_EQUALS("replSetHeartbeat", request.cmdObj.firstElement().fieldNameStringData());
 
@@ -6478,7 +6478,7 @@ TEST_F(ReplCoordTest,
     ASSERT_TRUE(net->hasReadyRequests());
     auto noi = net->getNextReadyRequest();
     auto&& request = noi->getRequest();
-    LOGV2(21510, "processing {request_cmdObj}", "request_cmdObj"_attr = request.cmdObj);
+    LOG(21510, "processing {request_cmdObj}", "request_cmdObj"_attr = request.cmdObj);
     ASSERT_EQUALS(HostAndPort("node2", 12345), request.target);
 
     ASSERT_EQUALS("replSetHeartbeat", request.cmdObj.firstElement().fieldNameStringData());
@@ -6531,7 +6531,7 @@ TEST_F(ReplCoordTest,
     ASSERT_TRUE(net->hasReadyRequests());
     auto noi = net->getNextReadyRequest();
     auto&& request = noi->getRequest();
-    LOGV2(21511, "processing {request_cmdObj}", "request_cmdObj"_attr = request.cmdObj);
+    LOG(21511, "processing {request_cmdObj}", "request_cmdObj"_attr = request.cmdObj);
     ASSERT_EQUALS(HostAndPort("node2", 12345), request.target);
 
     ASSERT_EQUALS("replSetHeartbeat", request.cmdObj.firstElement().fieldNameStringData());
@@ -6579,7 +6579,7 @@ TEST_F(ReplCoordTest,
     ASSERT_TRUE(net->hasReadyRequests());
     auto noi = net->getNextReadyRequest();
     auto&& request = noi->getRequest();
-    LOGV2(21512, "processing {request_cmdObj}", "request_cmdObj"_attr = request.cmdObj);
+    LOG(21512, "processing {request_cmdObj}", "request_cmdObj"_attr = request.cmdObj);
     ASSERT_EQUALS(HostAndPort("node2", 12345), request.target);
 
     ASSERT_EQUALS("replSetHeartbeat", request.cmdObj.firstElement().fieldNameStringData());
@@ -6603,7 +6603,7 @@ TEST_F(ReplCoordTest,
 TEST_F(ReplCoordTest, CancelAndRescheduleElectionTimeoutLogging) {
     // Log all the election messages.
     auto replElectionAllSeverityGuard = unittest::MinimumLoggedSeverityGuard{
-        logv2::LogComponent::kReplicationElection, logv2::LogSeverity::Debug(5)};
+        log::LogComponent::kReplicationElection, log::LogSeverity::Debug(5)};
     startCapturingLogMessages();
     // heartbeatTimeoutSecs is made large so we can advance the clock without worrying about
     // additional heartbeats.
@@ -6641,16 +6641,16 @@ TEST_F(ReplCoordTest, CancelAndRescheduleElectionTimeoutLogging) {
     const auto& request = noi->getRequest();
     ASSERT_EQUALS(HostAndPort("node2", 12345), request.target);
     ASSERT_EQUALS("replSetHeartbeat", request.cmdObj.firstElement().fieldNameStringData());
-    LOGV2(21513,
-          "black holing {noi_getRequest_cmdObj}",
-          "noi_getRequest_cmdObj"_attr = noi->getRequest().cmdObj);
+    LOG(21513,
+        "black holing {noi_getRequest_cmdObj}",
+        "noi_getRequest_cmdObj"_attr = noi->getRequest().cmdObj);
     net->blackHole(noi);
 
     // Advance simulator clock to some time after the first scheduled election.
     auto electionTimeoutWhen = replCoord->getElectionTimeout_forTest();
-    LOGV2(21514,
-          "Election initially scheduled at {electionTimeoutWhen} (simulator time)",
-          "electionTimeoutWhen"_attr = electionTimeoutWhen);
+    LOG(21514,
+        "Election initially scheduled at {electionTimeoutWhen} (simulator time)",
+        "electionTimeoutWhen"_attr = electionTimeoutWhen);
     ASSERT_GREATER_THAN(electionTimeoutWhen, net->now());
     auto until = electionTimeoutWhen + Milliseconds(1);
     net->runUntil(until);
@@ -6663,7 +6663,7 @@ TEST_F(ReplCoordTest, CancelAndRescheduleElectionTimeoutLogging) {
     ASSERT_EQ(1, countTextFormatLogLinesContaining("Canceling election timeout callback"));
 
     auto replElectionReducedSeverityGuard = unittest::MinimumLoggedSeverityGuard{
-        logv2::LogComponent::kReplicationElection, logv2::LogSeverity::Debug(4)};
+        log::LogComponent::kReplicationElection, log::LogSeverity::Debug(4)};
     net->enterNetwork();
     until = electionTimeoutWhen + Milliseconds(500);
     net->runUntil(until);

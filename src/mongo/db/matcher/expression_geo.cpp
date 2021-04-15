@@ -27,14 +27,14 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kDefault
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kDefault
 
 #include "mongo/db/matcher/expression_geo.h"
 
 #include "mongo/bson/simple_bsonobj_comparator.h"
 #include "mongo/db/geo/geoparser.h"
 #include "mongo/db/matcher/expression_parser.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/platform/basic.h"
 #include "mongo/util/str.h"
 
@@ -79,7 +79,7 @@ Status GeoExpression::parseQuery(const BSONObj& obj) {
         BSONElement elt = geoIt.next();
         if (elt.fieldNameStringData() == "$uniqueDocs") {
             // Deprecated "$uniqueDocs" field
-            LOGV2_WARNING(23847, "Deprecated $uniqueDocs option", "query"_attr = redact(obj));
+            LOG_WARNING(23847, "Deprecated $uniqueDocs option", "query"_attr = redact(obj));
         } else {
             // The element must be a geo specifier. "$box", "$center", "$geometry", etc.
             geoContainer.reset(new GeometryContainer());
@@ -194,7 +194,7 @@ bool GeoNearExpression::parseLegacyQuery(const BSONObj& obj) {
             maxDistance = e.Number();
             uassert(16896, "$maxDistance must be non-negative", maxDistance >= 0.0);
         } else if (fieldName == "$uniqueDocs") {
-            LOGV2_WARNING(23848, "Ignoring deprecated option $uniqueDocs");
+            LOG_WARNING(23848, "Ignoring deprecated option $uniqueDocs");
         } else {
             // In a query document, $near queries can have no non-geo sibling parameters.
             uasserted(34413,

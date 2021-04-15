@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kAccessControl
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kAccessControl
 
 #include "mongo/platform/basic.h"
 
@@ -43,7 +43,7 @@
 #include "mongo/db/operation_context.h"
 #include "mongo/db/server_options.h"
 #include "mongo/db/storage/snapshot_manager.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/duration.h"
 #include "mongo/util/fail_point.h"
 #include "mongo/util/net/ssl_types.h"
@@ -216,11 +216,11 @@ void handleAuthLocalGetUserFailPoint(const std::vector<RoleName>& directRoles) {
         return;
     }
 
-    LOGV2_DEBUG(4859400,
-                3,
-                "Sleeping prior to merging direct roles, after user acquisition",
-                "duration"_attr = Milliseconds(delay),
-                "directRoles"_attr = directRoles);
+    LOG_DEBUG(4859400,
+              3,
+              "Sleeping prior to merging direct roles, after user acquisition",
+              "duration"_attr = Milliseconds(delay),
+              "directRoles"_attr = directRoles);
     sleepmillis(delay);
 }
 }  // namespace
@@ -318,11 +318,11 @@ StatusWith<User> AuthzManagerExternalStateLocal::getUserObject(OperationContext*
     user.addPrivileges(data.privileges.get());
     user.setIndirectRestrictions(data.restrictions.get());
 
-    LOGV2_DEBUG(5517200,
-                3,
-                "Acquired new user object",
-                "userName"_attr = userName,
-                "directRoles"_attr = directRoles);
+    LOG_DEBUG(5517200,
+              3,
+              "Acquired new user object",
+              "userName"_attr = userName,
+              "directRoles"_attr = directRoles);
 
     return std::move(user);
 } catch (const AssertionException& ex) {
@@ -430,7 +430,7 @@ StatusWith<ResolvedRoleData> AuthzManagerExternalStateLocal::resolveRoles(
                 opCtx, AuthorizationManager::rolesCollectionNamespace, role.toBSON(), &roleDoc);
             if (!status.isOK()) {
                 if (status.code() == ErrorCodes::NoMatchingDocument) {
-                    LOGV2(5029200, "Role does not exist", "role"_attr = role);
+                    LOG(5029200, "Role does not exist", "role"_attr = role);
                     continue;
                 }
                 return status;
@@ -719,14 +719,14 @@ void _invalidateUserCache(OperationContext* opCtx,
         auto id = (*src)["_id"].str();
         auto splitPoint = id.find('.');
         if (splitPoint == std::string::npos) {
-            LOGV2_WARNING(23749,
-                          "Invalidating user cache based on user being updated failed, will "
-                          "invalidate the entire cache instead",
-                          "error"_attr =
-                              Status(ErrorCodes::FailedToParse,
-                                     str::stream() << "_id entries for user documents must be of "
-                                                      "the form <dbname>.<username>.  Found: "
-                                                   << id));
+            LOG_WARNING(23749,
+                        "Invalidating user cache based on user being updated failed, will "
+                        "invalidate the entire cache instead",
+                        "error"_attr =
+                            Status(ErrorCodes::FailedToParse,
+                                   str::stream() << "_id entries for user documents must be of "
+                                                    "the form <dbname>.<username>.  Found: "
+                                                 << id));
             authzManager->invalidateUserCache(opCtx);
             return;
         }

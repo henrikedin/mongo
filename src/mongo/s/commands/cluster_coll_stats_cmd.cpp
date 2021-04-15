@@ -27,12 +27,12 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kCommand
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kCommand
 
 #include "mongo/platform/basic.h"
 
 #include "mongo/db/commands.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/s/cluster_commands_helpers.h"
 #include "mongo/s/grid.h"
@@ -222,10 +222,10 @@ public:
                         }
                     }
                 } else {
-                    LOGV2(22749,
-                          "Unexpected field for mongos collStats: {fieldName}",
-                          "Unexpected field for mongos collStats",
-                          "fieldName"_attr = e.fieldName());
+                    LOG(22749,
+                        "Unexpected field for mongos collStats: {fieldName}",
+                        "Unexpected field for mongos collStats",
+                        "fieldName"_attr = e.fieldName());
                 }
             }
 

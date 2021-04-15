@@ -26,10 +26,10 @@
  *    exception statement from all source files in the program, then also delete
  *    it in the license file.
  */
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kNetwork
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kNetwork
 #include "mongo/client/streamable_replica_set_monitor_error_handler.h"
 
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace mongo {
 SdamErrorHandler::ErrorActions SdamErrorHandler::computeErrorActions(const HostAndPort& host,
@@ -44,12 +44,12 @@ SdamErrorHandler::ErrorActions SdamErrorHandler::computeErrorActions(const HostA
         if (result.helloOutcome)
             _clearConsecutiveErrorsWithoutHelloOutcome(host);
 
-        LOGV2(4712102,
-              "Host failed in replica set",
-              "replicaSet"_attr = _setName,
-              "host"_attr = host,
-              "error"_attr = status,
-              "action"_attr = result);
+        LOG(4712102,
+            "Host failed in replica set",
+            "replicaSet"_attr = _setName,
+            "host"_attr = host,
+            "error"_attr = status,
+            "action"_attr = result);
     });
 
     // Helpers to mutate the actions

@@ -27,12 +27,12 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kExecutor
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kExecutor
 
 #include "mongo/transport/service_executor_fixed.h"
 
 #include "mongo/base/error_codes.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/transport/service_executor_gen.h"
 #include "mongo/transport/session.h"
 #include "mongo/transport/transport_layer.h"
@@ -145,10 +145,10 @@ ServiceExecutorFixed::~ServiceExecutorFixed() {
 }
 
 void ServiceExecutorFixed::join() noexcept {
-    LOGV2_DEBUG(4910502,
-                kDiagnosticLogLevel,
-                "Joining fixed thread-pool service executor",
-                "name"_attr = _options.poolName);
+    LOG_DEBUG(4910502,
+              kDiagnosticLogLevel,
+              "Joining fixed thread-pool service executor",
+              "name"_attr = _options.poolName);
 
     {
         auto lk = stdx::unique_lock(_mutex);
@@ -191,10 +191,10 @@ Status ServiceExecutorFixed::start() {
         };
     }
 
-    LOGV2_DEBUG(4910501,
-                kDiagnosticLogLevel,
-                "Starting fixed thread-pool service executor",
-                "name"_attr = _options.poolName);
+    LOG_DEBUG(4910501,
+              kDiagnosticLogLevel,
+              "Starting fixed thread-pool service executor",
+              "name"_attr = _options.poolName);
 
     _threadPool->startup();
 
@@ -238,10 +238,10 @@ ServiceExecutorFixed* ServiceExecutorFixed::get(ServiceContext* ctx) {
 }
 
 Status ServiceExecutorFixed::shutdown(Milliseconds timeout) {
-    LOGV2_DEBUG(4910503,
-                kDiagnosticLogLevel,
-                "Shutting down fixed thread-pool service executor",
-                "name"_attr = _options.poolName);
+    LOG_DEBUG(4910503,
+              kDiagnosticLogLevel,
+              "Shutting down fixed thread-pool service executor",
+              "name"_attr = _options.poolName);
 
     {
         auto lk = stdx::unique_lock(_mutex);
@@ -256,10 +256,10 @@ Status ServiceExecutorFixed::shutdown(Milliseconds timeout) {
         }
     }
 
-    LOGV2_DEBUG(4910504,
-                kDiagnosticLogLevel,
-                "Shutdown fixed thread-pool service executor",
-                "name"_attr = _options.poolName);
+    LOG_DEBUG(4910504,
+              kDiagnosticLogLevel,
+              "Shutdown fixed thread-pool service executor",
+              "name"_attr = _options.poolName);
 
     return Status::OK();
 }
@@ -320,8 +320,7 @@ void ServiceExecutorFixed::_checkForShutdown(WithLock) {
     // experience a trivial shutdown() and join().
     _state = State::kStopped;
 
-    LOGV2_DEBUG(
-        4910505, kDiagnosticLogLevel, "Finishing shutdown", "name"_attr = _options.poolName);
+    LOG_DEBUG(4910505, kDiagnosticLogLevel, "Finishing shutdown", "name"_attr = _options.poolName);
     _shutdownCondition.notify_one();
 
     if (!_svcCtx) {

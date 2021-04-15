@@ -27,11 +27,11 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kControl
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kControl
 
 #include "mongo/idl/server_parameter.h"
 
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace mongo {
 using SPT = ServerParameterType;
@@ -80,10 +80,10 @@ ServerParameterSet* ServerParameterSet::getGlobal() {
 void ServerParameterSet::add(ServerParameter* sp) {
     ServerParameter*& x = _map[sp->name()];
     if (x) {
-        LOGV2_FATAL(23784,
-                    "'{name}' already exists in the server parameter set",
-                    "Duplicate server parameter registration",
-                    "name"_attr = x->name());
+        LOG_FATAL(23784,
+                  "'{name}' already exists in the server parameter set",
+                  "Duplicate server parameter registration",
+                  "name"_attr = x->name());
     }
     x = sp;
 }
@@ -133,36 +133,36 @@ void IDLServerParameterDeprecatedAlias::append(OperationContext* opCtx,
                                                BSONObjBuilder& b,
                                                const std::string& fieldName) {
     std::call_once(_warnOnce, [&] {
-        LOGV2_WARNING(23781,
-                      "Use of deprecated server parameter '{deprecatedName}', "
-                      "please use '{canonicalName}' instead",
-                      "Use of deprecated server parameter name",
-                      "deprecatedName"_attr = name(),
-                      "canonicalName"_attr = _sp->name());
+        LOG_WARNING(23781,
+                    "Use of deprecated server parameter '{deprecatedName}', "
+                    "please use '{canonicalName}' instead",
+                    "Use of deprecated server parameter name",
+                    "deprecatedName"_attr = name(),
+                    "canonicalName"_attr = _sp->name());
     });
     _sp->append(opCtx, b, fieldName);
 }
 
 Status IDLServerParameterDeprecatedAlias::set(const BSONElement& newValueElement) {
     std::call_once(_warnOnce, [&] {
-        LOGV2_WARNING(23782,
-                      "Use of deprecated server parameter '{deprecatedName}', "
-                      "please use '{canonicalName}' instead",
-                      "Use of deprecated server parameter name",
-                      "deprecatedName"_attr = name(),
-                      "canonicalName"_attr = _sp->name());
+        LOG_WARNING(23782,
+                    "Use of deprecated server parameter '{deprecatedName}', "
+                    "please use '{canonicalName}' instead",
+                    "Use of deprecated server parameter name",
+                    "deprecatedName"_attr = name(),
+                    "canonicalName"_attr = _sp->name());
     });
     return _sp->set(newValueElement);
 }
 
 Status IDLServerParameterDeprecatedAlias::setFromString(const std::string& str) {
     std::call_once(_warnOnce, [&] {
-        LOGV2_WARNING(23783,
-                      "Use of deprecated server parameter '{deprecatedName}', "
-                      "please use '{canonicalName}' instead",
-                      "Use of deprecated server parameter name",
-                      "deprecatedName"_attr = name(),
-                      "canonicalName"_attr = _sp->name());
+        LOG_WARNING(23783,
+                    "Use of deprecated server parameter '{deprecatedName}', "
+                    "please use '{canonicalName}' instead",
+                    "Use of deprecated server parameter name",
+                    "deprecatedName"_attr = name(),
+                    "canonicalName"_attr = _sp->name());
     });
     return _sp->setFromString(str);
 }

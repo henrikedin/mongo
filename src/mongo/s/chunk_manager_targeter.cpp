@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kSharding
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kSharding
 
 #include "mongo/platform/basic.h"
 
@@ -44,7 +44,7 @@
 #include "mongo/db/query/collation/collation_index_key.h"
 #include "mongo/db/query/collation/collator_factory_interface.h"
 #include "mongo/executor/task_executor_pool.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/s/client/shard_registry.h"
 #include "mongo/s/cluster_commands_helpers.h"
 #include "mongo/s/cluster_ddl.h"
@@ -269,12 +269,12 @@ CompareResult compareAllShardVersions(const ChunkManager& cm,
             cachedShardVersion =
                 cm.isSharded() ? cm.getVersion(shardId) : ChunkVersion::UNSHARDED();
         } catch (const DBException& ex) {
-            LOGV2_WARNING(22915,
-                          "could not lookup shard {shardId} in local cache, shard metadata may "
-                          "have changed or be unavailable: {error}",
-                          "Could not lookup shard in local cache",
-                          "shardId"_attr = shardId,
-                          "error"_attr = ex);
+            LOG_WARNING(22915,
+                        "could not lookup shard {shardId} in local cache, shard metadata may "
+                        "have changed or be unavailable: {error}",
+                        "Could not lookup shard in local cache",
+                        "shardId"_attr = shardId,
+                        "error"_attr = ex);
 
             return CompareResult_Unknown;
         }
@@ -667,15 +667,15 @@ void ChunkManagerTargeter::refreshIfNeeded(OperationContext* opCtx, bool* wasCha
 
     *wasChanged = false;
 
-    LOGV2_DEBUG(22912,
-                4,
-                "ChunkManagerTargeter checking if refresh is needed, "
-                "needsTargetingRefresh({needsTargetingRefresh}) has remoteShardVersion "
-                "({hasRemoteShardVersions})) has remoteDbVersion ({hasRemoteDbVersion})",
-                "ChunkManagerTargeter checking if refresh is needed",
-                "needsTargetingRefresh"_attr = _needsTargetingRefresh,
-                "hasRemoteShardVersions"_attr = !_remoteShardVersions.empty(),
-                "hasRemoteDbVersion"_attr = bool{_remoteDbVersion});
+    LOG_DEBUG(22912,
+              4,
+              "ChunkManagerTargeter checking if refresh is needed, "
+              "needsTargetingRefresh({needsTargetingRefresh}) has remoteShardVersion "
+              "({hasRemoteShardVersions})) has remoteDbVersion ({hasRemoteDbVersion})",
+              "ChunkManagerTargeter checking if refresh is needed",
+              "needsTargetingRefresh"_attr = _needsTargetingRefresh,
+              "hasRemoteShardVersions"_attr = !_remoteShardVersions.empty(),
+              "hasRemoteDbVersion"_attr = bool{_remoteDbVersion});
 
     //
     // Did we have any stale config or targeting errors at all?
@@ -726,11 +726,11 @@ void ChunkManagerTargeter::refreshIfNeeded(OperationContext* opCtx, bool* wasCha
 
         CompareResult result = compareAllShardVersions(*_cm, _remoteShardVersions);
 
-        LOGV2_DEBUG(22913,
-                    4,
-                    "ChunkManagerTargeter shard versions comparison result: {result}",
-                    "ChunkManagerTargeter shard versions comparison",
-                    "result"_attr = static_cast<int>(result));
+        LOG_DEBUG(22913,
+                  4,
+                  "ChunkManagerTargeter shard versions comparison result: {result}",
+                  "ChunkManagerTargeter shard versions comparison",
+                  "result"_attr = static_cast<int>(result));
 
         // Reset the versions
         _remoteShardVersions.clear();
@@ -748,11 +748,11 @@ void ChunkManagerTargeter::refreshIfNeeded(OperationContext* opCtx, bool* wasCha
 
         CompareResult result = compareDbVersions(*_cm, *_remoteDbVersion);
 
-        LOGV2_DEBUG(22914,
-                    4,
-                    "ChunkManagerTargeter database versions comparison result: {result}",
-                    "ChunkManagerTargeter database versions comparison",
-                    "result"_attr = static_cast<int>(result));
+        LOG_DEBUG(22914,
+                  4,
+                  "ChunkManagerTargeter database versions comparison result: {result}",
+                  "ChunkManagerTargeter database versions comparison",
+                  "result"_attr = static_cast<int>(result));
 
         // Reset the version
         _remoteDbVersion = boost::none;

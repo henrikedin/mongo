@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kQuery
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kQuery
 
 #include "mongo/platform/basic.h"
 
@@ -47,7 +47,7 @@
 #include "mongo/db/query/sbe_stage_builder_helpers.h"
 #include "mongo/db/query/util/make_data_structure.h"
 #include "mongo/db/record_id_helpers.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/str.h"
 
 namespace mongo::stage_builder {
@@ -147,7 +147,7 @@ std::pair<std::unique_ptr<sbe::PlanStage>, PlanStageSlots> generateOptimizedOplo
             auto cursor = collection->getRecordStore()->getCursor(opCtx);
             auto startRec = cursor->seekNear(*csn->minRecord);
             if (startRec) {
-                LOGV2_DEBUG(205841, 3, "Using direct oplog seek");
+                LOG_DEBUG(205841, 3, "Using direct oplog seek");
                 return {startRec->id, slotIdGenerator->generate()};
             }
         }

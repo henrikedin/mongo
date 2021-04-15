@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTest
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTest
 
 #include "mongo/platform/basic.h"
 
@@ -43,7 +43,7 @@
 #define UNW_LOCAL_ONLY
 #include <libunwind.h>
 
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/unittest/unittest.h"
 #include "mongo/util/stacktrace.h"
 #include "mongo/util/stacktrace_libunwind_test_functions.h"
@@ -158,7 +158,7 @@ TEST(Unwind, Linkage) {
 
     std::string_view view = stacktrace;
 
-    LOGV2_OPTIONS(31429, {logv2::LogTruncation::Disabled}, "Trace", "trace"_attr = view);
+    LOG_OPTIONS(31429, {log::LogTruncation::Disabled}, "Trace", "trace"_attr = view);
 
     // Remove the backtrace JSON object, which is all one line.
     assertAndRemovePrefix(view, R"(BACKTRACE: {"backtrace":)");
@@ -185,11 +185,10 @@ TEST(Unwind, Linkage) {
     for (const auto& name : frames) {
         auto pos = remainder.find(name);
         if (pos == remainder.npos) {
-            LOGV2_OPTIONS(
-                31378, {logv2::LogTruncation::Disabled}, "BACKTRACE", "trace"_attr = view);
+            LOG_OPTIONS(31378, {log::LogTruncation::Disabled}, "BACKTRACE", "trace"_attr = view);
             FAIL("name '{}' is missing or out of order in sample backtrace"_format(name));
         }
-        LOGV2(31379, "Removing prefix", "prefix"_attr = remainder.substr(0, pos));
+        LOG(31379, "Removing prefix", "prefix"_attr = remainder.substr(0, pos));
         remainder.remove_prefix(pos);
     }
 }

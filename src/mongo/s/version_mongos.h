@@ -33,7 +33,7 @@ namespace mongo {
 
 /**
  * Outputs the version of MongoS as part of server startup.
- * Goes to `os` if nonnull, else to LOGV2.
+ * Goes to `os` if nonnull, else to log.
  *
  * NOTE: Outputs the version of MongoS to `os` (as part of the --version option),
  * which reports different data than if `os` is null!

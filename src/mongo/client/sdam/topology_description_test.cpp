@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kDefault
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kDefault
 
 #include "mongo/client/sdam/sdam_test_base.h"
 #include "mongo/client/sdam/topology_description.h"
@@ -37,7 +37,7 @@
 #include "mongo/client/sdam/server_description.h"
 #include "mongo/client/sdam/server_description_builder.h"
 #include "mongo/db/wire_version.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/unittest/death_test.h"
 
 namespace mongo {
@@ -158,10 +158,10 @@ TEST_F(TopologyDescriptionTestFixture, ShouldOnlyAllowSingleAndRsNoPrimaryWithSe
                         topologyTypes.end());
 
     for (const auto topologyType : topologyTypes) {
-        LOGV2(20217,
-              "Check TopologyType {topologyType} with setName value.",
-              "Check TopologyType with setName value",
-              "topologyType"_attr = topologyType);
+        LOG(20217,
+            "Check TopologyType {topologyType} with setName value.",
+            "Check TopologyType with setName value",
+            "topologyType"_attr = topologyType);
         ASSERT_THROWS_CODE(makeSdamConfig(kOneServer, topologyType, kSetName),
                            DBException,
                            ErrorCodes::InvalidTopologyType);

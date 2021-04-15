@@ -26,7 +26,7 @@
  *    exception statement from all source files in the program, then also delete
  *    it in the license file.
  */
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kCommand
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kCommand
 
 #include "mongo/platform/basic.h"
 
@@ -38,7 +38,7 @@
 #include "mongo/db/jsobj.h"
 #include "mongo/db/profile_filter_impl.h"
 #include "mongo/idl/idl_parser.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace mongo {
 
@@ -107,7 +107,7 @@ bool ProfileCmdBase::run(OperationContext* opCtx,
     // Log the change made to server's profiling settings, if the request asks to change anything.
     if (profilingLevel != -1 || request.getSlowms() || request.getSampleRate() ||
         request.getFilter()) {
-        logv2::DynamicAttributes attrs;
+        log::DynamicAttributes attrs;
 
         BSONObjBuilder oldState;
         BSONObjBuilder newState;
@@ -132,7 +132,7 @@ bool ProfileCmdBase::run(OperationContext* opCtx,
         }
         attrs.add("to", newState.obj());
 
-        LOGV2(48742, "Profiler settings changed", attrs);
+        LOG(48742, "Profiler settings changed", attrs);
     }
 
     return true;

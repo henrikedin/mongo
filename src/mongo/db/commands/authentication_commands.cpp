@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kAccessControl
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kAccessControl
 
 #include "mongo/platform/basic.h"
 
@@ -55,7 +55,7 @@
 #include "mongo/db/commands/test_commands_enabled.h"
 #include "mongo/db/commands/user_management_commands_gen.h"
 #include "mongo/db/operation_context.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/platform/random.h"
 #include "mongo/rpc/metadata/client_metadata.h"
 #include "mongo/transport/session.h"
@@ -267,7 +267,7 @@ void _authenticateX509(OperationContext* opCtx, AuthenticationSession* session) 
             case ServerGlobalParams::ClusterAuthMode_sendX509:
             case ServerGlobalParams::ClusterAuthMode_x509: {
                 if (!isInternalClient()) {
-                    LOGV2_WARNING(
+                    LOG_WARNING(
                         20430,
                         "Client isn't a mongod or mongos, but is connecting with a certificate "
                         "with cluster membership");
@@ -304,13 +304,13 @@ AuthenticateReply authCommand(OperationContext* opCtx,
     auto mechanism = cmd.getMechanism();
 
     if (!serverGlobalParams.quiet.load()) {
-        LOGV2_DEBUG(5315501,
-                    2,
-                    "Authenticate Command",
-                    "client"_attr = client->getRemote(),
-                    "mechanism"_attr = mechanism,
-                    "user"_attr = user,
-                    "db"_attr = dbname);
+        LOG_DEBUG(5315501,
+                  2,
+                  "Authenticate Command",
+                  "client"_attr = client->getRemote(),
+                  "mechanism"_attr = mechanism,
+                  "user"_attr = user,
+                  "db"_attr = dbname);
     }
 
     auto& internalSecurityUser = internalSecurity.user->getName();
@@ -331,12 +331,12 @@ AuthenticateReply authCommand(OperationContext* opCtx,
     try {
         _authenticate(opCtx, session, mechanism);
         if (!serverGlobalParams.quiet.load()) {
-            LOGV2(20429,
-                  "Successfully authenticated",
-                  "client"_attr = client->getRemote(),
-                  "mechanism"_attr = mechanism,
-                  "user"_attr = session->getUserName(),
-                  "db"_attr = session->getDatabase());
+            LOG(20429,
+                "Successfully authenticated",
+                "client"_attr = client->getRemote(),
+                "mechanism"_attr = mechanism,
+                "user"_attr = session->getUserName(),
+                "db"_attr = session->getDatabase());
         }
 
         session->markSuccessful();
@@ -346,13 +346,13 @@ AuthenticateReply authCommand(OperationContext* opCtx,
 
     } catch (const AssertionException& ex) {
         if (!serverGlobalParams.quiet.load()) {
-            LOGV2(20428,
-                  "Failed to authenticate",
-                  "client"_attr = client->getRemote(),
-                  "mechanism"_attr = mechanism,
-                  "user"_attr = session->getUserName(),
-                  "db"_attr = session->getDatabase(),
-                  "error"_attr = ex.toStatus());
+            LOG(20428,
+                "Failed to authenticate",
+                "client"_attr = client->getRemote(),
+                "mechanism"_attr = mechanism,
+                "user"_attr = session->getUserName(),
+                "db"_attr = session->getDatabase(),
+                "error"_attr = ex.toStatus());
         }
 
         throw;

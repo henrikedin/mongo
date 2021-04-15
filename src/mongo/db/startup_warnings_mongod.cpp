@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kControl
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kControl
 
 #include "mongo/platform/basic.h"
 
@@ -43,7 +43,7 @@
 #include "mongo/db/server_options.h"
 #include "mongo/db/startup_warnings_common.h"
 #include "mongo/db/storage/storage_options.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/processinfo.h"
 #include "mongo/util/str.h"
 #include "mongo/util/version.h"
@@ -139,35 +139,35 @@ void logMongodStartupWarnings(const StorageGlobalParams& storageParams,
     logCommonStartupWarnings(serverParams);
 
     if (sizeof(int*) == 4) {
-        LOGV2_WARNING_OPTIONS(
+        LOG_WARNING_OPTIONS(
             22152,
-            {logv2::LogTag::kStartupWarnings},
+            {log::LogTag::kStartupWarnings},
             "This is a 32 bit MongoDB binary. 32 bit builds are limited to less than 2GB "
             "of data (or less with --journal). See http://dochub.mongodb.org/core/32bit");
         if (!storageParams.dur) {
-            LOGV2_WARNING_OPTIONS(22154,
-                                  {logv2::LogTag::kStartupWarnings},
-                                  "Journaling defaults to off for 32 bit and is currently off");
+            LOG_WARNING_OPTIONS(22154,
+                                {log::LogTag::kStartupWarnings},
+                                "Journaling defaults to off for 32 bit and is currently off");
         }
     }
 
 #ifdef __linux__
     if (boost::filesystem::exists("/proc/vz") && !boost::filesystem::exists("/proc/bc")) {
-        LOGV2_OPTIONS(22161,
-                      {logv2::LogTag::kStartupWarnings},
-                      "You are running in OpenVZ which can cause issues on versions of RHEL older "
-                      "than RHEL6");
+        LOG_OPTIONS(22161,
+                    {log::LogTag::kStartupWarnings},
+                    "You are running in OpenVZ which can cause issues on versions of RHEL older "
+                    "than RHEL6");
     }
 
     bool hasMultipleNumaNodes = false;
     try {
         hasMultipleNumaNodes = boost::filesystem::exists("/sys/devices/system/node/node1");
     } catch (boost::filesystem::filesystem_error& e) {
-        LOGV2_WARNING_OPTIONS(22163,
-                              {logv2::LogTag::kStartupWarnings},
-                              "Cannot detect if NUMA interleaving is enabled. Failed to probe path",
-                              "path"_attr = e.path1().string(),
-                              "error"_attr = e.code().message());
+        LOG_WARNING_OPTIONS(22163,
+                            {log::LogTag::kStartupWarnings},
+                            "Cannot detect if NUMA interleaving is enabled. Failed to probe path",
+                            "path"_attr = e.path1().string(),
+                            "error"_attr = e.code().message());
     }
     if (hasMultipleNumaNodes) {
         // We are on a box with a NUMA enabled kernel and more than 1 numa node (they start at
@@ -187,28 +187,28 @@ void logMongodStartupWarnings(const StorageGlobalParams& storageParams,
             std::string line;  // we only need the first line
             std::getline(f, line);
             if (f.fail()) {
-                LOGV2_WARNING_OPTIONS(22200,
-                                      {logv2::LogTag::kStartupWarnings},
-                                      "Failed to read from /proc/self/numa_maps",
-                                      "error"_attr = errnoWithDescription());
+                LOG_WARNING_OPTIONS(22200,
+                                    {log::LogTag::kStartupWarnings},
+                                    "Failed to read from /proc/self/numa_maps",
+                                    "error"_attr = errnoWithDescription());
             } else {
                 // skip over pointer
                 std::string::size_type where = line.find(' ');
                 if ((where == std::string::npos) || (++where == line.size())) {
-                    LOGV2_WARNING_OPTIONS(22165,
-                                          {logv2::LogTag::kStartupWarnings},
-                                          "Cannot parse numa_maps at line: {line}",
-                                          "Cannot parse numa_maps",
-                                          "line"_attr = line);
+                    LOG_WARNING_OPTIONS(22165,
+                                        {log::LogTag::kStartupWarnings},
+                                        "Cannot parse numa_maps at line: {line}",
+                                        "Cannot parse numa_maps",
+                                        "line"_attr = line);
                 }
                 // if the text following the space doesn't begin with 'interleave', then
                 // issue the warning.
                 else if (line.find("interleave", where) != where) {
-                    LOGV2_WARNING_OPTIONS(22167,
-                                          {logv2::LogTag::kStartupWarnings},
-                                          "You are running on a NUMA machine. We suggest launching "
-                                          "mongod like this to avoid performance problems: numactl "
-                                          "--interleave=all mongod [other options]");
+                    LOG_WARNING_OPTIONS(22167,
+                                        {log::LogTag::kStartupWarnings},
+                                        "You are running on a NUMA machine. We suggest launching "
+                                        "mongod like this to avoid performance problems: numactl "
+                                        "--interleave=all mongod [other options]");
                 }
             }
         }
@@ -220,11 +220,10 @@ void logMongodStartupWarnings(const StorageGlobalParams& storageParams,
         f >> val;
 
         if (val == 2) {
-            LOGV2_OPTIONS(
-                22171,
-                {logv2::LogTag::kStartupWarnings},
-                "Journaling works best if /proc/sys/vm/overcommit_memory is set to 0 or 1",
-                "currentValue"_attr = val);
+            LOG_OPTIONS(22171,
+                        {log::LogTag::kStartupWarnings},
+                        "Journaling works best if /proc/sys/vm/overcommit_memory is set to 0 or 1",
+                        "currentValue"_attr = val);
         }
     }
 
@@ -234,11 +233,11 @@ void logMongodStartupWarnings(const StorageGlobalParams& storageParams,
         f >> val;
 
         if (val != 0) {
-            LOGV2_OPTIONS(22174,
-                          {logv2::LogTag::kStartupWarnings},
-                          "We suggest setting /proc/sys/vm/zone_reclaim_mode to 0. See "
-                          "http://www.kernel.org/doc/Documentation/sysctl/vm.txt",
-                          "currentValue"_attr = val);
+            LOG_OPTIONS(22174,
+                        {log::LogTag::kStartupWarnings},
+                        "We suggest setting /proc/sys/vm/zone_reclaim_mode to 0. See "
+                        "http://www.kernel.org/doc/Documentation/sysctl/vm.txt",
+                        "currentValue"_attr = val);
         }
     }
 
@@ -251,18 +250,17 @@ void logMongodStartupWarnings(const StorageGlobalParams& storageParams,
             // If we do not have hugepages enabled, we don't need to warn about its features
             shouldWarnAboutDefragAlways = true;
 
-            LOGV2_WARNING_OPTIONS(22178,
-                                  {logv2::LogTag::kStartupWarnings},
-                                  TRANSPARENT_HUGE_PAGES_DIR
-                                  "/enabled is 'always'. We suggest setting it to 'never'");
+            LOG_WARNING_OPTIONS(22178,
+                                {log::LogTag::kStartupWarnings},
+                                TRANSPARENT_HUGE_PAGES_DIR
+                                "/enabled is 'always'. We suggest setting it to 'never'");
         }
     } else if (transparentHugePagesEnabledResult.getStatus().code() !=
                ErrorCodes::NonExistentPath) {
-        LOGV2_WARNING_OPTIONS(22202,
-                              {logv2::LogTag::kStartupWarnings},
-                              "Failed to read " TRANSPARENT_HUGE_PAGES_DIR "/enabled",
-                              "error"_attr =
-                                  transparentHugePagesEnabledResult.getStatus().reason());
+        LOG_WARNING_OPTIONS(22202,
+                            {log::LogTag::kStartupWarnings},
+                            "Failed to read " TRANSPARENT_HUGE_PAGES_DIR "/enabled",
+                            "error"_attr = transparentHugePagesEnabledResult.getStatus().reason());
     }
 
     StatusWith<std::string> transparentHugePagesDefragResult =
@@ -270,16 +268,16 @@ void logMongodStartupWarnings(const StorageGlobalParams& storageParams,
     if (transparentHugePagesDefragResult.isOK()) {
         if (shouldWarnAboutDefragAlways &&
             transparentHugePagesDefragResult.getValue() == "always") {
-            LOGV2_WARNING_OPTIONS(22181,
-                                  {logv2::LogTag::kStartupWarnings},
-                                  TRANSPARENT_HUGE_PAGES_DIR
-                                  "/defrag is 'always'. We suggest setting it to 'never'");
+            LOG_WARNING_OPTIONS(22181,
+                                {log::LogTag::kStartupWarnings},
+                                TRANSPARENT_HUGE_PAGES_DIR
+                                "/defrag is 'always'. We suggest setting it to 'never'");
         }
     } else if (transparentHugePagesDefragResult.getStatus().code() != ErrorCodes::NonExistentPath) {
-        LOGV2_WARNING_OPTIONS(22204,
-                              {logv2::LogTag::kStartupWarnings},
-                              "Failed to read " TRANSPARENT_HUGE_PAGES_DIR "/defrag",
-                              "error"_attr = transparentHugePagesDefragResult.getStatus().reason());
+        LOG_WARNING_OPTIONS(22204,
+                            {log::LogTag::kStartupWarnings},
+                            "Failed to read " TRANSPARENT_HUGE_PAGES_DIR "/defrag",
+                            "error"_attr = transparentHugePagesDefragResult.getStatus().reason());
     }
 #endif  // __linux__
 
@@ -290,22 +288,22 @@ void logMongodStartupWarnings(const StorageGlobalParams& storageParams,
 
     if (!getrlimit(RLIMIT_NOFILE, &rlnofile)) {
         if (rlnofile.rlim_cur < minNumFiles) {
-            LOGV2_WARNING_OPTIONS(22184,
-                                  {logv2::LogTag::kStartupWarnings},
-                                  "** WARNING: Soft rlimits too low. The limit for open file "
-                                  "descriptors is {currentValue}, recommended "
-                                  "minimum is {recommendedMinimum}",
-                                  "Soft rlimits for open file descriptors too low",
-                                  "currentValue"_attr = rlnofile.rlim_cur,
-                                  "recommendedMinimum"_attr = minNumFiles);
+            LOG_WARNING_OPTIONS(22184,
+                                {log::LogTag::kStartupWarnings},
+                                "** WARNING: Soft rlimits too low. The limit for open file "
+                                "descriptors is {currentValue}, recommended "
+                                "minimum is {recommendedMinimum}",
+                                "Soft rlimits for open file descriptors too low",
+                                "currentValue"_attr = rlnofile.rlim_cur,
+                                "recommendedMinimum"_attr = minNumFiles);
         }
     } else {
         const auto errmsg = errnoWithDescription();
-        LOGV2_WARNING_OPTIONS(22186,
-                              {logv2::LogTag::kStartupWarnings},
-                              "getrlimit failed: {error}",
-                              "getrlimit failed",
-                              "error"_attr = errmsg);
+        LOG_WARNING_OPTIONS(22186,
+                            {log::LogTag::kStartupWarnings},
+                            "getrlimit failed: {error}",
+                            "getrlimit failed",
+                            "error"_attr = errmsg);
     }
 
 // Solaris does not have RLIMIT_MEMLOCK, these are exposed via getrctl(2) instead
@@ -317,23 +315,23 @@ void logMongodStartupWarnings(const StorageGlobalParams& storageParams,
 
     if (!getrlimit(RLIMIT_MEMLOCK, &rlmemlock)) {
         if ((rlmemlock.rlim_cur / ProcessInfo::getPageSize()) < minLockedPages) {
-            LOGV2_WARNING_OPTIONS(22188,
-                                  {logv2::LogTag::kStartupWarnings},
-                                  "** WARNING: Soft rlimits too low. The limit for locked memory "
-                                  "size is {lockedMemoryBytes} "
-                                  "bytes, it should be at least {minLockedMemoryBytes} bytes",
-                                  "Soft rlimit for locked memory too low",
-                                  "lockedMemoryBytes"_attr = rlmemlock.rlim_cur,
-                                  "minLockedMemoryBytes"_attr =
-                                      minLockedPages * ProcessInfo::getPageSize());
+            LOG_WARNING_OPTIONS(22188,
+                                {log::LogTag::kStartupWarnings},
+                                "** WARNING: Soft rlimits too low. The limit for locked memory "
+                                "size is {lockedMemoryBytes} "
+                                "bytes, it should be at least {minLockedMemoryBytes} bytes",
+                                "Soft rlimit for locked memory too low",
+                                "lockedMemoryBytes"_attr = rlmemlock.rlim_cur,
+                                "minLockedMemoryBytes"_attr =
+                                    minLockedPages * ProcessInfo::getPageSize());
         }
     } else {
         const auto errmsg = errnoWithDescription();
-        LOGV2_WARNING_OPTIONS(22190,
-                              {logv2::LogTag::kStartupWarnings},
-                              "** WARNING: getrlimit failed: {error}",
-                              "getrlimit failed",
-                              "error"_attr = errmsg);
+        LOG_WARNING_OPTIONS(22190,
+                            {log::LogTag::kStartupWarnings},
+                            "** WARNING: getrlimit failed: {error}",
+                            "getrlimit failed",
+                            "error"_attr = errmsg);
     }
 #endif
 #endif
@@ -342,19 +340,19 @@ void logMongodStartupWarnings(const StorageGlobalParams& storageParams,
     ProcessInfo p;
 
     if (p.hasNumaEnabled()) {
-        LOGV2_WARNING_OPTIONS(22192,
-                              {logv2::LogTag::kStartupWarnings},
-                              "You are running on a NUMA machine. We suggest disabling NUMA in the "
-                              "machine BIOS by enabling interleaving to avoid performance "
-                              "problems. See your BIOS documentation for more information");
+        LOG_WARNING_OPTIONS(22192,
+                            {log::LogTag::kStartupWarnings},
+                            "You are running on a NUMA machine. We suggest disabling NUMA in the "
+                            "machine BIOS by enabling interleaving to avoid performance "
+                            "problems. See your BIOS documentation for more information");
     }
 
 #endif  // #ifdef _WIN32
 
     if (storageParams.engine == "ephemeralForTest") {
-        LOGV2_OPTIONS(
+        LOG_OPTIONS(
             22197,
-            {logv2::LogTag::kStartupWarnings},
+            {log::LogTag::kStartupWarnings},
             "The ephemeralForTest storage engine is for testing only. Do not use in production");
     }
 }

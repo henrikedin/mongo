@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kSharding
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kSharding
 
 #include "mongo/platform/basic.h"
 
@@ -53,7 +53,7 @@
 #include "mongo/executor/task_executor.h"
 #include "mongo/executor/task_executor_pool.h"
 #include "mongo/executor/thread_pool_task_executor.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/metadata/config_server_metadata.h"
 #include "mongo/rpc/metadata/metadata_hook.h"
 #include "mongo/s/balancer_configuration.h"
@@ -228,7 +228,7 @@ Status waitForShardRegistryReload(OperationContext* opCtx) {
             continue;
         } catch (const DBException& ex) {
             Status status = ex.toStatus();
-            LOGV2_WARNING(
+            LOG_WARNING(
                 23834,
                 "Error {error} initializing sharding state, sleeping for 2 seconds and retrying",
                 "Error initializing sharding state, sleeping for 2 seconds and retrying",

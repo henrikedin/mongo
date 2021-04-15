@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kCommand
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kCommand
 
 #include <string>
 
@@ -48,7 +48,7 @@
 #include "mongo/db/ops/insert.h"
 #include "mongo/db/query/internal_plans.h"
 #include "mongo/db/service_context.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace mongo {
 
@@ -88,10 +88,10 @@ public:
                            string& errmsg,
                            BSONObjBuilder& result) {
         const NamespaceString nss(CommandHelpers::parseNsCollectionRequired(dbname, cmdObj));
-        LOGV2(20505,
-              "Test-only command 'godinsert' invoked coll:{collection}",
-              "Test-only command 'godinsert' invoked",
-              "collection"_attr = nss.coll());
+        LOG(20505,
+            "Test-only command 'godinsert' invoked coll:{collection}",
+            "Test-only command 'godinsert' invoked",
+            "collection"_attr = nss.coll());
         BSONObj obj = cmdObj["obj"].embeddedObjectUserCheck();
 
         Lock::DBLock lk(opCtx, dbname, MODE_X);

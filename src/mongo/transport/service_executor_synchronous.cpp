@@ -27,13 +27,13 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kExecutor
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kExecutor
 
 #include "mongo/platform/basic.h"
 
 #include "mongo/transport/service_executor_synchronous.h"
 
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/stdx/thread.h"
 #include "mongo/transport/service_executor_gen.h"
 #include "mongo/transport/service_executor_utils.h"
@@ -72,7 +72,7 @@ Status ServiceExecutorSynchronous::start() {
 }
 
 Status ServiceExecutorSynchronous::shutdown(Milliseconds timeout) {
-    LOGV2_DEBUG(22982, 3, "Shutting down passthrough executor");
+    LOG_DEBUG(22982, 3, "Shutting down passthrough executor");
 
     _stillRunning.store(false);
 
@@ -119,7 +119,7 @@ Status ServiceExecutorSynchronous::scheduleTask(Task task, ScheduleFlags flags) 
 
     // First call to scheduleTask() for this connection, spawn a worker thread that will push jobs
     // into the thread local job queue.
-    LOGV2_DEBUG(22983, 3, "Starting new executor thread in passthrough mode");
+    LOG_DEBUG(22983, 3, "Starting new executor thread in passthrough mode");
 
     Status status = launchServiceWorkerThread(
         [this, condVarAnchor = _shutdownCondition, task = std::move(task)]() mutable {

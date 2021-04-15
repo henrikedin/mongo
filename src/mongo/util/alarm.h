@@ -150,7 +150,7 @@ private:
 /*
  * Implements a basic alarm scheduler based on a multimap of date_t to promise.
  *
- * Scheduling an alarm takes O(log(n)) where n is the number of outstanding alarms.
+ * Scheduling an alarm takes O(LOG(n)) where n is the number of outstanding alarms.
  * Canceling an alarm is done in constant time.
  * Processing alarms is done in constant time.
  */

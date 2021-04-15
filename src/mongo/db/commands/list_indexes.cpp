@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kCommand
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kCommand
 
 #include "mongo/platform/basic.h"
 
@@ -57,7 +57,7 @@
 #include "mongo/db/storage/storage_engine.h"
 #include "mongo/db/timeseries/timeseries_index_schema_conversion_functions.h"
 #include "mongo/db/timeseries/timeseries_lookup.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/uuid.h"
 
 namespace mongo {
@@ -255,10 +255,10 @@ public:
                     firstBatch.push_back(ListIndexesReplyItem::parse(
                         IDLParserErrorContext("ListIndexesReplyItem"), nextDoc));
                 } catch (const DBException& exc) {
-                    LOGV2_ERROR(5254500,
-                                "Could not parse catalog entry while replying to listIndexes",
-                                "entry"_attr = nextDoc,
-                                "error"_attr = exc);
+                    LOG_ERROR(5254500,
+                              "Could not parse catalog entry while replying to listIndexes",
+                              "entry"_attr = nextDoc,
+                              "error"_attr = exc);
                     uasserted(5254501,
                               "Could not parse catalog entry while replying to listIndexes");
                 }

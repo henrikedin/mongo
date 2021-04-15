@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kCommand
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kCommand
 
 #include "mongo/platform/basic.h"
 
@@ -42,7 +42,7 @@
 #include "mongo/db/s/shard_collection_legacy.h"
 #include "mongo/db/s/sharding_ddl_coordinator_service.h"
 #include "mongo/db/s/sharding_state.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/s/grid.h"
 #include "mongo/s/request_types/shard_collection_gen.h"
 #include "mongo/s/request_types/sharded_ddl_commands_gen.h"
@@ -245,14 +245,14 @@ public:
             }();
 
             if (!useNewPath) {
-                LOGV2_DEBUG(5277911,
-                            1,
-                            "Running legacy create collection procedure",
-                            "namespace"_attr = ns());
+                LOG_DEBUG(5277911,
+                          1,
+                          "Running legacy create collection procedure",
+                          "namespace"_attr = ns());
                 return createCollectionLegacy(opCtx, ns(), request());
             }
 
-            LOGV2_DEBUG(
+            LOG_DEBUG(
                 5277910, 1, "Running new create collection procedure", "namespace"_attr = ns());
             return createCollection(opCtx, ns(), request());
         }

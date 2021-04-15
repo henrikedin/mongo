@@ -26,7 +26,7 @@
  *    exception statement from all source files in the program, then also delete
  *    it in the license file.
  */
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kQuery
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kQuery
 
 #include "mongo/platform/basic.h"
 
@@ -39,7 +39,7 @@
 #include "mongo/db/pipeline/document_source_skip.h"
 #include "mongo/db/pipeline/sharded_agg_helpers.h"
 #include "mongo/db/query/find_common.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/rpc/op_msg_rpc_impls.h"
 #include "mongo/s/catalog_cache.h"
@@ -87,7 +87,7 @@ AsyncRequestsSender::Response establishMergingShardCursor(OperationContext* opCt
                                                           const BSONObj mergeCmdObj,
                                                           const ShardId& mergingShardId) {
     if (MONGO_unlikely(shardedAggregateFailToEstablishMergingShardCursor.shouldFail())) {
-        LOGV2(22834, "shardedAggregateFailToEstablishMergingShardCursor fail point enabled");
+        LOG(22834, "shardedAggregateFailToEstablishMergingShardCursor fail point enabled");
         uasserted(ErrorCodes::FailPointEnabled,
                   "Asserting on establishing merging shard cursor due to failpoint.");
     }
@@ -211,10 +211,10 @@ Status dispatchMergingPipeline(const boost::intrusive_ptr<ExpressionContext>& ex
     auto mergeCmdObj = createCommandForMergingShard(
         serializedCommand, expCtx, mergingShardId, mergingShardContributesData, mergePipeline);
 
-    LOGV2_DEBUG(22835,
-                1,
-                "Dispatching merge pipeline to designated shard",
-                "command"_attr = redact(mergeCmdObj));
+    LOG_DEBUG(22835,
+              1,
+              "Dispatching merge pipeline to designated shard",
+              "command"_attr = redact(mergeCmdObj));
 
     // Dispatch $mergeCursors to the chosen shard, store the resulting cursor, and return.
     auto mergeResponse =
@@ -366,7 +366,7 @@ DispatchShardPipelineResults dispatchExchangeConsumerPipeline(
     auto opCtx = expCtx->opCtx;
 
     if (MONGO_unlikely(shardedAggregateFailToDispatchExchangeConsumerPipeline.shouldFail())) {
-        LOGV2(22836, "shardedAggregateFailToDispatchExchangeConsumerPipeline fail point enabled");
+        LOG(22836, "shardedAggregateFailToDispatchExchangeConsumerPipeline fail point enabled");
         uasserted(ErrorCodes::FailPointEnabled,
                   "Asserting on exhange consumer pipeline dispatch due to failpoint.");
     }

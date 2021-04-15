@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kReplication
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kReplication
 
 #include "mongo/platform/basic.h"
 
@@ -40,7 +40,7 @@
 #include "mongo/db/operation_context.h"
 #include "mongo/db/repl/storage_interface.h"
 #include "mongo/db/service_context.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace mongo {
 namespace repl {
@@ -89,7 +89,7 @@ void DropPendingCollectionReaper::addDropPendingNamespace(
     };
 
     if (std::find_if(lowerBound, upperBound, matcher) != upperBound) {
-        LOGV2_FATAL_NOTRACE(
+        LOG_FATAL_NOTRACE(
             40448,
             "Failed to add drop-pending collection {dropPendingNamespace} with drop optime "
             "{dropOpTime}: duplicate optime and namespace pair.",
@@ -140,26 +140,26 @@ bool DropPendingCollectionReaper::rollBackDropPendingCollection(
         auto matcher = [&pendingNss](const auto& pair) { return pair.second == pendingNss; };
         auto it = std::find_if(lowerBound, upperBound, matcher);
         if (it == upperBound) {
-            LOGV2_WARNING(21154,
-                          "Cannot find drop-pending namespace at OpTime {opTime} for collection "
-                          "{namespace} to roll back.",
-                          "Cannot find drop-pending namespace to roll back",
-                          "opTime"_attr = opTime,
-                          "namespace"_attr = collectionNamespace);
+            LOG_WARNING(21154,
+                        "Cannot find drop-pending namespace at OpTime {opTime} for collection "
+                        "{namespace} to roll back.",
+                        "Cannot find drop-pending namespace to roll back",
+                        "opTime"_attr = opTime,
+                        "namespace"_attr = collectionNamespace);
             return false;
         }
 
         _dropPendingNamespaces.erase(it);
     }
 
-    LOGV2(21152,
-          "Rolling back collection drop for {pendingNamespace} with drop OpTime {dropOpTime} to "
-          "namespace "
-          "{namespace}",
-          "Rolling back collection drop",
-          "pendingNamespace"_attr = pendingNss,
-          "dropOpTime"_attr = opTime,
-          "namespace"_attr = collectionNamespace);
+    LOG(21152,
+        "Rolling back collection drop for {pendingNamespace} with drop OpTime {dropOpTime} to "
+        "namespace "
+        "{namespace}",
+        "Rolling back collection drop",
+        "pendingNamespace"_attr = pendingNss,
+        "dropOpTime"_attr = opTime,
+        "namespace"_attr = collectionNamespace);
 
     return true;
 }
@@ -188,13 +188,13 @@ void DropPendingCollectionReaper::dropCollectionsOlderThan(OperationContext* opC
         for (const auto& opTimeAndNamespace : toDrop) {
             const auto& dropOpTime = opTimeAndNamespace.first;
             const auto& nss = opTimeAndNamespace.second;
-            LOGV2(21153,
-                  "Completing collection drop for {namespace} with drop optime {dropOpTime} "
-                  "(notification optime: {notificationOpTime})",
-                  "Completing collection drop",
-                  "namespace"_attr = nss,
-                  "dropOpTime"_attr = dropOpTime,
-                  "notificationOpTime"_attr = opTime);
+            LOG(21153,
+                "Completing collection drop for {namespace} with drop optime {dropOpTime} "
+                "(notification optime: {notificationOpTime})",
+                "Completing collection drop",
+                "namespace"_attr = nss,
+                "dropOpTime"_attr = dropOpTime,
+                "notificationOpTime"_attr = opTime);
             Status status = Status::OK();
             try {
                 // dropCollection could throw an interrupt exception, since it acquires db locks.
@@ -203,15 +203,14 @@ void DropPendingCollectionReaper::dropCollectionsOlderThan(OperationContext* opC
                 status = exceptionToStatus();
             }
             if (!status.isOK()) {
-                LOGV2_WARNING(
-                    21155,
-                    "Failed to remove drop-pending collection {namespace} with drop optime "
-                    "{dropOpTime} (notification optime: {notificationOpTime}): {error}",
-                    "Failed to remove drop-pending collection ",
-                    "namespace"_attr = nss,
-                    "dropOpTime"_attr = dropOpTime,
-                    "notificationOpTime"_attr = opTime,
-                    "error"_attr = status);
+                LOG_WARNING(21155,
+                            "Failed to remove drop-pending collection {namespace} with drop optime "
+                            "{dropOpTime} (notification optime: {notificationOpTime}): {error}",
+                            "Failed to remove drop-pending collection ",
+                            "namespace"_attr = nss,
+                            "dropOpTime"_attr = dropOpTime,
+                            "notificationOpTime"_attr = opTime,
+                            "error"_attr = status);
             }
         }
     }

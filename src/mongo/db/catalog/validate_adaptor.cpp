@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kStorage
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kStorage
 
 #include "mongo/platform/basic.h"
 
@@ -49,7 +49,7 @@
 #include "mongo/db/storage/execution_context.h"
 #include "mongo/db/storage/key_string.h"
 #include "mongo/db/storage/record_store.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/object_check.h"
 #include "mongo/util/fail_point.h"
 #include "mongo/util/testing_proctor.h"
@@ -80,7 +80,7 @@ Status ValidateAdaptor::validateRecord(OperationContext* opCtx,
     *dataSize = recordBson.objsize();
 
     if (MONGO_unlikely(_validateState->extraLoggingForTest())) {
-        LOGV2(4666601, "[validate]", "recordId"_attr = recordId, "recordData"_attr = recordBson);
+        LOG(4666601, "[validate]", "recordId"_attr = recordId, "recordData"_attr = recordBson);
     }
 
     const CollectionPtr& coll = _validateState->getCollection();
@@ -125,10 +125,10 @@ Status ValidateAdaptor::validateRecord(OperationContext* opCtx,
                     wuow.commit();
                 });
 
-                LOGV2(4614700,
-                      "Index set to multikey",
-                      "indexName"_attr = descriptor->indexName(),
-                      "collection"_attr = coll->ns().ns());
+                LOG(4614700,
+                    "Index set to multikey",
+                    "indexName"_attr = descriptor->indexName(),
+                    "collection"_attr = coll->ns().ns());
                 results->warnings.push_back(str::stream() << "Index " << descriptor->indexName()
                                                           << " set to multikey.");
                 results->repaired = true;
@@ -156,10 +156,10 @@ Status ValidateAdaptor::validateRecord(OperationContext* opCtx,
                         wuow.commit();
                     });
 
-                    LOGV2(4614701,
-                          "Multikey paths updated to cover multikey document",
-                          "indexName"_attr = descriptor->indexName(),
-                          "collection"_attr = coll->ns().ns());
+                    LOG(4614701,
+                        "Multikey paths updated to cover multikey document",
+                        "indexName"_attr = descriptor->indexName(),
+                        "collection"_attr = coll->ns().ns());
                     results->warnings.push_back(str::stream() << "Index " << descriptor->indexName()
                                                               << " multikey paths updated.");
                     results->repaired = true;
@@ -297,11 +297,11 @@ void ValidateAdaptor::traverseIndex(OperationContext* opCtx,
         indexEntry = indexCursor->seekForKeyString(opCtx, firstKeyString);
     } catch (const DBException& ex) {
         if (TestingProctor::instance().isEnabled() && ex.code() != ErrorCodes::WriteConflict) {
-            LOGV2_FATAL(5318400,
-                        "Error seeking to first key",
-                        "error"_attr = ex.toString(),
-                        "index"_attr = indexName,
-                        "key"_attr = firstKeyString.toString());
+            LOG_FATAL(5318400,
+                      "Error seeking to first key",
+                      "error"_attr = ex.toString(),
+                      "index"_attr = indexName,
+                      "key"_attr = firstKeyString.toString());
         }
         throw;
     }
@@ -354,11 +354,11 @@ void ValidateAdaptor::traverseIndex(OperationContext* opCtx,
             indexEntry = indexCursor->nextKeyString(opCtx);
         } catch (const DBException& ex) {
             if (TestingProctor::instance().isEnabled() && ex.code() != ErrorCodes::WriteConflict) {
-                LOGV2_FATAL(5318401,
-                            "Error advancing index cursor",
-                            "error"_attr = ex.toString(),
-                            "index"_attr = indexName,
-                            "prevKey"_attr = prevIndexKeyStringValue.toString());
+                LOG_FATAL(5318401,
+                          "Error advancing index cursor",
+                          "error"_attr = ex.toString(),
+                          "index"_attr = indexName,
+                          "prevKey"_attr = prevIndexKeyStringValue.toString());
             }
             throw;
         }
@@ -380,11 +380,11 @@ void ValidateAdaptor::traverseIndex(OperationContext* opCtx,
         auto indexPaths = index->getMultikeyPaths(opCtx);
         auto& documentPaths = indexInfo.docMultikeyPaths;
         if (indexInfo.multikeyDocs && documentPaths != indexPaths) {
-            LOGV2(5367500,
-                  "Index's multikey paths do not match those of its documents",
-                  "index"_attr = descriptor->indexName(),
-                  "indexPaths"_attr = MultikeyPathTracker::dumpMultikeyPaths(indexPaths),
-                  "documentPaths"_attr = MultikeyPathTracker::dumpMultikeyPaths(documentPaths));
+            LOG(5367500,
+                "Index's multikey paths do not match those of its documents",
+                "index"_attr = descriptor->indexName(),
+                "indexPaths"_attr = MultikeyPathTracker::dumpMultikeyPaths(indexPaths),
+                "documentPaths"_attr = MultikeyPathTracker::dumpMultikeyPaths(documentPaths));
 
             // Since we have the correct multikey path information for this index, we can tighten up
             // its metadata to improve query performance. This may apply in two distinct scenarios:
@@ -413,9 +413,9 @@ void ValidateAdaptor::traverseIndex(OperationContext* opCtx,
         if (index->isMultikey() && !indexInfo.multikeyDocs) {
             invariant(!indexInfo.docMultikeyPaths.size());
 
-            LOGV2(5367501,
-                  "Index is multikey but there are no multikey documents",
-                  "index"_attr = descriptor->indexName());
+            LOG(5367501,
+                "Index is multikey but there are no multikey documents",
+                "index"_attr = descriptor->indexName());
 
             // This makes an improvement in the case that no documents make the index multikey and
             // the flag can be unset entirely. This may be due to a change in the data or historical
@@ -505,16 +505,16 @@ void ValidateAdaptor::traverseRecordStore(OperationContext* opCtx,
         if (!status.isOK() || validatedSize != static_cast<size_t>(dataSize)) {
             // If status is not okay, dataSize is not reliable.
             if (!status.isOK()) {
-                LOGV2(4835001,
-                      "Document corruption details - Document validation failed with error",
-                      "recordId"_attr = record->id,
-                      "error"_attr = status);
+                LOG(4835001,
+                    "Document corruption details - Document validation failed with error",
+                    "recordId"_attr = record->id,
+                    "error"_attr = status);
             } else {
-                LOGV2(4835002,
-                      "Document corruption details - Document validation failure; size mismatch",
-                      "recordId"_attr = record->id,
-                      "validatedBytes"_attr = validatedSize,
-                      "recordBytes"_attr = dataSize);
+                LOG(4835002,
+                    "Document corruption details - Document validation failure; size mismatch",
+                    "recordId"_attr = record->id,
+                    "validatedBytes"_attr = validatedSize,
+                    "recordBytes"_attr = dataSize);
             }
 
             if (_validateState->fixErrors()) {

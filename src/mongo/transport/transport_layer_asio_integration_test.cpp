@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTest
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTest
 
 #include "mongo/platform/basic.h"
 
@@ -36,7 +36,7 @@
 #include "mongo/db/client.h"
 #include "mongo/db/operation_context.h"
 #include "mongo/db/service_context.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/topology_version_gen.h"
 #include "mongo/stdx/thread.h"
 #include "mongo/transport/session.h"
@@ -59,11 +59,11 @@ TEST(TransportLayerASIO, HTTPRequestGetsHTTPError) {
     asio::ip::tcp::resolver resolver(ioContext);
     asio::ip::tcp::socket socket(ioContext);
 
-    LOGV2(23028, "Connecting to {server}", "Connecting to server", "server"_attr = server);
+    LOG(23028, "Connecting to {server}", "Connecting to server", "server"_attr = server);
     auto resolverIt = resolver.resolve(server.host(), std::to_string(server.port()));
     asio::connect(socket, resolverIt);
 
-    LOGV2(23029, "Sending HTTP request");
+    LOG(23029, "Sending HTTP request");
     std::string httpReq = str::stream() << "GET /\r\n"
                                            "Host: "
                                         << server
@@ -72,16 +72,16 @@ TEST(TransportLayerASIO, HTTPRequestGetsHTTPError) {
                                            "Accept: */*";
     asio::write(socket, asio::buffer(httpReq.data(), httpReq.size()));
 
-    LOGV2(23030, "Waiting for response");
+    LOG(23030, "Waiting for response");
     std::array<char, 256> httpRespBuf;
     std::error_code ec;
     auto size = asio::read(socket, asio::buffer(httpRespBuf.data(), httpRespBuf.size()), ec);
     StringData httpResp(httpRespBuf.data(), size);
 
-    LOGV2(23031,
-          "Received http response: {response}",
-          "Received http response",
-          "response"_attr = httpResp);
+    LOG(23031,
+        "Received http response: {response}",
+        "Received http response",
+        "response"_attr = httpResp);
     ASSERT_TRUE(httpResp.startsWith("HTTP/1.0 200 OK"));
 
 // Why oh why can't ASIO unify their error codes

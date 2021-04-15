@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kSharding
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kSharding
 
 #include "mongo/db/s/drop_collection_coordinator.h"
 
@@ -36,7 +36,7 @@
 #include "mongo/db/s/sharding_logging.h"
 #include "mongo/db/s/sharding_state.h"
 #include "mongo/db/s/sharding_util.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/s/catalog/sharding_catalog_client.h"
 #include "mongo/s/client/shard_registry.h"
 #include "mongo/s/grid.h"
@@ -94,12 +94,12 @@ void DropCollectionCoordinator::_enterPhase(Phase newPhase) {
     StateDoc newDoc(_doc);
     newDoc.setPhase(newPhase);
 
-    LOGV2_DEBUG(5390501,
-                2,
-                "Drop collection coordinator phase transition",
-                "namespace"_attr = nss(),
-                "newPhase"_attr = DropCollectionCoordinatorPhase_serializer(newDoc.getPhase()),
-                "oldPhase"_attr = DropCollectionCoordinatorPhase_serializer(_doc.getPhase()));
+    LOG_DEBUG(5390501,
+              2,
+              "Drop collection coordinator phase transition",
+              "namespace"_attr = nss(),
+              "newPhase"_attr = DropCollectionCoordinatorPhase_serializer(newDoc.getPhase()),
+              "oldPhase"_attr = DropCollectionCoordinatorPhase_serializer(_doc.getPhase()));
 
     if (_doc.getPhase() == Phase::kUnset) {
         _insertStateDocument(std::move(newDoc));
@@ -139,11 +139,11 @@ ExecutorFuture<void> DropCollectionCoordinator::_runImpl(
 
                 const auto collIsSharded = bool(_doc.getCollInfo());
 
-                LOGV2_DEBUG(5390504,
-                            2,
-                            "Dropping collection",
-                            "namespace"_attr = nss(),
-                            "sharded"_attr = collIsSharded);
+                LOG_DEBUG(5390504,
+                          2,
+                          "Dropping collection",
+                          "namespace"_attr = nss(),
+                          "sharded"_attr = collIsSharded);
 
                 if (collIsSharded) {
                     invariant(_doc.getCollInfo());
@@ -180,16 +180,16 @@ ExecutorFuture<void> DropCollectionCoordinator::_runImpl(
                     **executor);
 
                 ShardingLogging::get(opCtx)->logChange(opCtx, "dropCollection", nss().ns());
-                LOGV2(5390503, "Collection dropped", "namespace"_attr = nss());
+                LOG(5390503, "Collection dropped", "namespace"_attr = nss());
             }))
         .onError([this, anchor = shared_from_this()](const Status& status) {
             if (!status.isA<ErrorCategory::NotPrimaryError>() &&
                 !status.isA<ErrorCategory::ShutdownError>()) {
                 // TODO SERVER-55396: retry operation until it succeeds.
-                LOGV2_ERROR(5280901,
-                            "Error running drop collection",
-                            "namespace"_attr = nss(),
-                            "error"_attr = redact(status));
+                LOG_ERROR(5280901,
+                          "Error running drop collection",
+                          "namespace"_attr = nss(),
+                          "error"_attr = redact(status));
             }
             return status;
         });

@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kNetwork
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kNetwork
 
 #include "mongo/platform/basic.h"
 
@@ -44,7 +44,7 @@
 #include "mongo/db/server_options.h"
 #include "mongo/db/wire_version.h"
 #include "mongo/executor/egress_tag_closer_manager.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/factory.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/rpc/legacy_request_builder.h"
@@ -114,10 +114,10 @@ void AsyncDBClient::_parseIsMasterResponse(BSONObj request,
     auto protocolSet = uassertStatusOK(rpc::parseProtocolSetFromIsMasterReply(responseBody));
     auto validateStatus = rpc::validateWireVersion(wireSpec->outgoing, protocolSet.version);
     if (!validateStatus.isOK()) {
-        LOGV2_WARNING(23741,
-                      "Remote host has incompatible wire version: {error}",
-                      "Remote host has incompatible wire version",
-                      "error"_attr = validateStatus);
+        LOG_WARNING(23741,
+                    "Remote host has incompatible wire version: {error}",
+                    "Remote host has incompatible wire version",
+                    "error"_attr = validateStatus);
         uasserted(validateStatus.code(),
                   str::stream() << "remote host has incompatible wire version: "
                                 << validateStatus.reason());

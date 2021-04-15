@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kQuery
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kQuery
 
 #include "mongo/platform/basic.h"
 
@@ -60,7 +60,7 @@
 #include "mongo/db/stats/counters.h"
 #include "mongo/db/stats/resource_consumption_metrics.h"
 #include "mongo/db/stats/top.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/s/chunk_version.h"
 #include "mongo/util/fail_point.h"
 #include "mongo/util/scopeguard.h"
@@ -345,12 +345,12 @@ public:
                 auto&& explainer = exec->getPlanExplainer();
                 auto&& [stats, _] =
                     explainer.getWinningPlanStats(ExplainOptions::Verbosity::kExecStats);
-                LOGV2_WARNING(20478,
-                              "getMore command executor error: {error}, stats: {stats}, cmd: {cmd}",
-                              "getMore command executor error",
-                              "error"_attr = exception.toStatus(),
-                              "stats"_attr = redact(stats),
-                              "cmd"_attr = cmd.toBSON({}));
+                LOG_WARNING(20478,
+                            "getMore command executor error: {error}, stats: {stats}, cmd: {cmd}",
+                            "getMore command executor error",
+                            "error"_attr = exception.toStatus(),
+                            "stats"_attr = redact(stats),
+                            "cmd"_attr = cmd.toBSON({}));
 
                 exception.addContext("Executor error during getMore");
                 throw;
@@ -718,9 +718,9 @@ public:
             acquireLocksAndIterateCursor(opCtx, reply, cursorManager, cursorPin, curOp);
 
             if (MONGO_unlikely(getMoreHangAfterPinCursor.shouldFail())) {
-                LOGV2(20477,
-                      "getMoreHangAfterPinCursor fail point enabled. Blocking until fail "
-                      "point is disabled");
+                LOG(20477,
+                    "getMoreHangAfterPinCursor fail point enabled. Blocking until fail "
+                    "point is disabled");
                 getMoreHangAfterPinCursor.pauseWhileSet(opCtx);
             }
 

@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTest
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTest
 
 #include "mongo/platform/basic.h"
 
@@ -48,7 +48,7 @@
 #include "mongo/db/ftdc/file_writer.h"
 #include "mongo/db/ftdc/ftdc_test.h"
 #include "mongo/db/jsobj.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/unittest/temp_dir.h"
 #include "mongo/unittest/unittest.h"
 
@@ -114,11 +114,11 @@ TEST_F(FTDCFileManagerTest, TestFull) {
     for (auto& file : files) {
         int fs = boost::filesystem::file_size(file);
         ASSERT_TRUE(fs < c.maxFileSizeBytes * 1.10);
-        LOGV2(20632,
-              "File {fileName} has size {fileSize}",
-              "File size",
-              "fileName"_attr = file.generic_string(),
-              "fileSize"_attr = fs);
+        LOG(20632,
+            "File {fileName} has size {fileSize}",
+            "File size",
+            "fileName"_attr = file.generic_string(),
+            "fileSize"_attr = fs);
         if (file.generic_string().find("interim") == std::string::npos) {
             sum += fs;
         }

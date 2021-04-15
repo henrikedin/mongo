@@ -26,7 +26,7 @@
  *    exception statement from all source files in the program, then also delete
  *    it in the license file.
  */
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kAccessControl
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kAccessControl
 
 #include "mongo/platform/basic.h"
 
@@ -36,7 +36,7 @@
 #include "mongo/client/authenticate.h"
 #include "mongo/db/auth/sasl_options.h"
 #include "mongo/db/auth/user.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/exit_code.h"
 #include "mongo/util/icu.h"
 #include "mongo/util/net/socket_utils.h"
@@ -105,9 +105,9 @@ void SASLServerMechanismRegistry::advertiseMechanismNamesForUser(OperationContex
     if (!swUser.isOK()) {
         auto& status = swUser.getStatus();
         if (status.code() == ErrorCodes::UserNotFound) {
-            LOGV2(20251,
-                  "Supported SASL mechanisms requested for unknown user",
-                  "user"_attr = userName);
+            LOG(20251,
+                "Supported SASL mechanisms requested for unknown user",
+                "user"_attr = userName);
             return;
         }
         uassertStatusOK(status);
@@ -194,10 +194,10 @@ ServiceContext::ConstructorActionRegisterer SASLServerMechanismRegistryValidatio
         for (const auto& mech : saslGlobalParams.authenticationMechanisms) {
             auto it = std::find(supportedMechanisms.cbegin(), supportedMechanisms.cend(), mech);
             if (it == supportedMechanisms.end()) {
-                LOGV2_ERROR(4742901,
-                            "SASL Mechanism '{mechanism}' is not supported",
-                            "Unsupported SASL mechanism",
-                            "mechanism"_attr = mech);
+                LOG_ERROR(4742901,
+                          "SASL Mechanism '{mechanism}' is not supported",
+                          "Unsupported SASL mechanism",
+                          "mechanism"_attr = mech);
 
                 // Quick Exit since we are in the middle of setting up ServiceContext
                 quickExit(EXIT_BADOPTIONS);

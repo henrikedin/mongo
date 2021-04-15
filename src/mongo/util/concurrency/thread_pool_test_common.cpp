@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kDefault
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kDefault
 
 #include "mongo/platform/basic.h"
 
@@ -35,7 +35,7 @@
 
 #include <memory>
 
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/platform/mutex.h"
 #include "mongo/stdx/condition_variable.h"
 #include "mongo/unittest/death_test.h"
@@ -78,10 +78,10 @@ public:
     TptRegistrationAgent(const std::string& name, ThreadPoolTestCaseFactory makeTest) {
         auto& entry = threadPoolTestCaseRegistry()[name];
         if (entry) {
-            LOGV2_FATAL(34355,
-                        "Multiple attempts to register ThreadPoolTest named {name}",
-                        "Multiple attempts to register ThreadPoolTest",
-                        "name"_attr = name);
+            LOG_FATAL(34355,
+                      "Multiple attempts to register ThreadPoolTest named {name}",
+                      "Multiple attempts to register ThreadPoolTest",
+                      "name"_attr = name);
         }
         entry = std::move(makeTest);
     }
@@ -96,10 +96,10 @@ public:
     TptDeathRegistrationAgent(const std::string& name, ThreadPoolTestCaseFactory makeTest) {
         auto& entry = threadPoolTestCaseRegistry()[name];
         if (entry) {
-            LOGV2_FATAL(34356,
-                        "Multiple attempts to register ThreadPoolDeathTest named {name}",
-                        "Multiple attempts to register ThreadPoolDeathTest",
-                        "name"_attr = name);
+            LOG_FATAL(34356,
+                      "Multiple attempts to register ThreadPoolDeathTest named {name}",
+                      "Multiple attempts to register ThreadPoolDeathTest",
+                      "name"_attr = name);
         }
         entry = [makeTest](ThreadPoolFactory makeThreadPool) {
             return std::make_unique<::mongo::unittest::DeathTest<T>>(std::move(makeThreadPool));

@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTest
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTest
 
 #include "mongo/platform/basic.h"
 
@@ -37,7 +37,7 @@
 #include "mongo/bson/bsonobjbuilder.h"
 #include "mongo/db/service_context.h"
 #include "mongo/db/service_context_test_fixture.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/transport/mock_session.h"
 #include "mongo/transport/service_executor_fixed.h"
 #include "mongo/transport/service_executor_gen.h"
@@ -83,10 +83,10 @@ public:
         try {
             _ioContext.run_for(time.toSystemDuration());
         } catch (...) {
-            LOGV2_FATAL(50476,
-                        "Uncaught exception in reactor: {error}",
-                        "Uncaught exception in reactor",
-                        "error"_attr = exceptionToStatus());
+            LOG_FATAL(50476,
+                      "Uncaught exception in reactor: {error}",
+                      "Uncaught exception in reactor",
+                      "error"_attr = exceptionToStatus());
         }
     }
 
@@ -97,7 +97,7 @@ public:
     void drain() override final {
         _ioContext.restart();
         while (_ioContext.poll()) {
-            LOGV2_DEBUG(22984, 1, "Draining remaining work in reactor.");
+            LOG_DEBUG(22984, 1, "Draining remaining work in reactor.");
         }
         _ioContext.stop();
     }

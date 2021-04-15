@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kControl
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kControl
 
 #include "mongo/platform/basic.h"
 
@@ -55,7 +55,7 @@
 #include "mongo/bson/bsonobj.h"
 #include "mongo/bson/bsonobjbuilder.h"
 #include "mongo/bson/json.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/stdx/mutex.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/concurrency/mutex.h"
@@ -95,7 +95,7 @@ public:
         const auto symbolPath = symbolPathBuilder.str();
 
         if (!SymInitializeW(handle, symbolPath.c_str(), TRUE)) {
-            LOGV2_ERROR(
+            LOG_ERROR(
                 31443, "Stack trace initialization failed", "error"_attr = errnoWithDescription());
             return;
         }
@@ -239,7 +239,7 @@ std::vector<TraceItem> makeTraceList(CONTEXT& context) {
     stdx::lock_guard<SymbolHandler> lk(symbolHandler);
 
     if (!symbolHandler) {
-        LOGV2_ERROR(31444, "Stack trace failed, symbol handler returned an invalid handle");
+        LOG_ERROR(31444, "Stack trace failed, symbol handler returned an invalid handle");
         return traceList;
     }
 

@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT mongo::logv2::LogComponent::kSharding
+#define MONGO_LOG_DEFAULT_COMPONENT mongo::log::LogComponent::kSharding
 
 #include "mongo/platform/basic.h"
 
@@ -38,7 +38,7 @@
 #include "mongo/db/logical_time.h"
 #include "mongo/db/operation_time_tracker.h"
 #include "mongo/executor/thread_pool_task_executor.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/rpc/metadata/sharding_metadata.h"
 #include "mongo/s/client/shard_registry.h"
@@ -188,15 +188,15 @@ StatusWith<TaskExecutor::CallbackHandle> ShardingTaskExecutor::scheduleRemoteCom
             auto shard = grid->shardRegistry()->getShardForHostNoReload(target);
 
             if (!shard) {
-                LOGV2_DEBUG(22870,
-                            1,
-                            "Could not find shard containing host: {host}",
-                            "Could not find shard containing host",
-                            "host"_attr = target);
+                LOG_DEBUG(22870,
+                          1,
+                          "Could not find shard containing host: {host}",
+                          "Could not find shard containing host",
+                          "host"_attr = target);
             }
 
             if (isMongos() && args.response.status == ErrorCodes::IncompatibleWithUpgradedServer) {
-                LOGV2_FATAL_NOTRACE(
+                LOG_FATAL_NOTRACE(
                     50710,
                     "This mongos server must be upgraded. It is attempting to communicate "
                     "with an upgraded cluster with which it is incompatible. Error: {error} "
@@ -212,10 +212,10 @@ StatusWith<TaskExecutor::CallbackHandle> ShardingTaskExecutor::scheduleRemoteCom
                 shard->updateReplSetMonitor(target, args.response.status);
             }
 
-            LOGV2_DEBUG(22871,
-                        1,
-                        "Error processing the remote request, not updating operationTime or gLE",
-                        "error"_attr = args.response.status);
+            LOG_DEBUG(22871,
+                      1,
+                      "Error processing the remote request, not updating operationTime or gLE",
+                      "error"_attr = args.response.status);
 
             return;
         }
@@ -246,23 +246,23 @@ StatusWith<TaskExecutor::CallbackHandle> ShardingTaskExecutor::scheduleRemoteCom
 
                 auto shardConn = ConnectionString::parse(target.toString());
                 if (!shardConn.isOK()) {
-                    LOGV2_ERROR(22874,
-                                "Could not parse connection string to update getLastError stats: "
-                                "{connectionString}",
-                                "Could not parse connection string to update getLastError stats",
-                                "connectionString"_attr = target);
+                    LOG_ERROR(22874,
+                              "Could not parse connection string to update getLastError stats: "
+                              "{connectionString}",
+                              "Could not parse connection string to update getLastError stats",
+                              "connectionString"_attr = target);
                 }
 
                 clusterGLE->addHostOpTime(shardConn.getValue(),
                                           HostOpTime(shardingMetadata.getLastOpTime(),
                                                      shardingMetadata.getLastElectionId()));
             } else if (swShardingMetadata.getStatus() != ErrorCodes::NoSuchKey) {
-                LOGV2_WARNING(22872,
-                              "Got invalid sharding metadata {error} "
-                              "metadata object was '{response}'",
-                              "Could not parse sharding metadata from response",
-                              "error"_attr = redact(swShardingMetadata.getStatus()),
-                              "response"_attr = redact(args.response.data));
+                LOG_WARNING(22872,
+                            "Got invalid sharding metadata {error} "
+                            "metadata object was '{response}'",
+                            "Could not parse sharding metadata from response",
+                            "error"_attr = redact(swShardingMetadata.getStatus()),
+                            "response"_attr = redact(args.response.data));
             }
         }
     };

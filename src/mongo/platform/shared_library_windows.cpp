@@ -26,7 +26,7 @@
  *    exception statement from all source files in the program, then also delete
  *    it in the license file.
  */
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kControl
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kControl
 
 #include "mongo/platform/basic.h"
 
@@ -34,7 +34,7 @@
 
 #include <boost/filesystem.hpp>
 
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/str.h"
 #include "mongo/util/text.h"
@@ -45,20 +45,20 @@ SharedLibrary::~SharedLibrary() {
     if (_handle) {
         if (FreeLibrary(static_cast<HMODULE>(_handle)) == 0) {
             DWORD lasterror = GetLastError();
-            LOGV2_DEBUG(22614,
-                        2,
-                        "Load library close failed: {errnoWithDescription_lasterror}",
-                        "errnoWithDescription_lasterror"_attr = errnoWithDescription(lasterror));
+            LOG_DEBUG(22614,
+                      2,
+                      "Load library close failed: {errnoWithDescription_lasterror}",
+                      "errnoWithDescription_lasterror"_attr = errnoWithDescription(lasterror));
         }
     }
 }
 
 StatusWith<std::unique_ptr<SharedLibrary>> SharedLibrary::create(
     const boost::filesystem::path& full_path) {
-    LOGV2_DEBUG(22615,
-                1,
-                "Loading library: {toUtf8String_full_path_c_str}",
-                "toUtf8String_full_path_c_str"_attr = toUtf8String(full_path.c_str()));
+    LOG_DEBUG(22615,
+              1,
+              "Loading library: {toUtf8String_full_path_c_str}",
+              "toUtf8String_full_path_c_str"_attr = toUtf8String(full_path.c_str()));
 
     HMODULE handle = LoadLibraryW(full_path.c_str());
     if (handle == nullptr) {

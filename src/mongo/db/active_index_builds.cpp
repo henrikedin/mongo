@@ -26,11 +26,11 @@
  *    exception statement from all source files in the program, then also delete
  *    it in the license file.
  */
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kStorage
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kStorage
 
 #include "mongo/db/active_index_builds.h"
 #include "mongo/db/catalog/index_builds_manager.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 #include <boost/iterator/transform_iterator.hpp>
 
@@ -52,9 +52,9 @@ void ActiveIndexBuilds::waitForAllIndexBuildsToStopForShutdown(OperationContext*
     auto indexBuildToUUID = [](const auto& indexBuild) { return indexBuild.first; };
     auto begin = boost::make_transform_iterator(_allIndexBuilds.begin(), indexBuildToUUID);
     auto end = boost::make_transform_iterator(_allIndexBuilds.end(), indexBuildToUUID);
-    LOGV2(4725201,
-          "Waiting until the following index builds are finished",
-          "indexBuilds"_attr = logv2::seqLog(begin, end));
+    LOG(4725201,
+        "Waiting until the following index builds are finished",
+        "indexBuilds"_attr = log::seqLog(begin, end));
 
     // Wait for all the index builds to stop.
     auto pred = [this]() { return _allIndexBuilds.empty(); };
@@ -131,11 +131,11 @@ void ActiveIndexBuilds::unregisterIndexBuild(
 
     invariant(_allIndexBuilds.erase(replIndexBuildState->buildUUID));
 
-    LOGV2_DEBUG(4656004,
-                1,
-                "Index build: unregistering",
-                "buildUUID"_attr = replIndexBuildState->buildUUID,
-                "collectionUUID"_attr = replIndexBuildState->collectionUUID);
+    LOG_DEBUG(4656004,
+              1,
+              "Index build: unregistering",
+              "buildUUID"_attr = replIndexBuildState->buildUUID,
+              "collectionUUID"_attr = replIndexBuildState->collectionUUID);
 
     indexBuildsManager->unregisterIndexBuild(replIndexBuildState->buildUUID);
     _indexBuildsCompletedGen++;

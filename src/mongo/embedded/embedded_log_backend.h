@@ -37,9 +37,9 @@
 #include <boost/log/utility/formatting_ostream.hpp>
 
 #include "mongo/base/status.h"
-#include "mongo/logv2/attributes.h"
-#include "mongo/logv2/log_component.h"
-#include "mongo/logv2/log_severity.h"
+#include "mongo/log/attributes.h"
+#include "mongo/log/log_component.h"
+#include "mongo/log/log_severity.h"
 
 namespace mongo {
 namespace embedded {
@@ -59,9 +59,9 @@ public:
     void consume(boost::log::record_view const& rec, string_type const& formatted_string) {
         using boost::log::extract;
 
-        auto severity = extract<logv2::LogSeverity>(logv2::attributes::severity(), rec).get();
-        auto component = extract<logv2::LogComponent>(logv2::attributes::component(), rec).get();
-        auto context = extract<StringData>(logv2::attributes::threadName(), rec).get();
+        auto severity = extract<log::LogSeverity>(log::attributes::severity(), rec).get();
+        auto component = extract<log::LogComponent>(log::attributes::component(), rec).get();
+        auto context = extract<StringData>(log::attributes::threadName(), rec).get();
 
         _callback(_callbackUserData,
                   formatted_string.c_str(),

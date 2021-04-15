@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kQuery
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kQuery
 
 #include "mongo/platform/basic.h"
 
@@ -39,7 +39,7 @@
 #include "mongo/db/matcher/expression_array.h"
 #include "mongo/db/matcher/expression_geo.h"
 #include "mongo/db/query/projection.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace mongo {
 
@@ -301,10 +301,10 @@ void encodeGeoMatchExpression(const GeoMatchExpression* tree, StringBuilder* key
     } else if (STRICT_SPHERE == geoQuery.getGeometry().getNativeCRS()) {
         *keyBuilder << "ss";
     } else {
-        LOGV2_ERROR(23849,
-                    "Unknown CRS type in geometry",
-                    "crsType"_attr = (int)geoQuery.getGeometry().getNativeCRS(),
-                    "geometryType"_attr = geoQuery.getGeometry().getDebugType());
+        LOG_ERROR(23849,
+                  "Unknown CRS type in geometry",
+                  "crsType"_attr = (int)geoQuery.getGeometry().getNativeCRS(),
+                  "geometryType"_attr = geoQuery.getGeometry().getDebugType());
         MONGO_UNREACHABLE;
     }
 }
@@ -333,9 +333,9 @@ void encodeGeoNearMatchExpression(const GeoNearMatchExpression* tree, StringBuil
             *keyBuilder << "ss";
             break;
         case UNSET:
-            LOGV2_ERROR(23850,
-                        "Unknown CRS type in point geometry for near query",
-                        "crsType"_attr = (int)nearQuery.centroid->crs);
+            LOG_ERROR(23850,
+                      "Unknown CRS type in point geometry for near query",
+                      "crsType"_attr = (int)nearQuery.centroid->crs);
             MONGO_UNREACHABLE;
             break;
     }

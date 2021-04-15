@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kDefault
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kDefault
 
 #include "mongo/platform/basic.h"
 
@@ -56,7 +56,7 @@
 #include "mongo/db/views/resolved_view.h"
 #include "mongo/db/views/view.h"
 #include "mongo/db/views/view_graph.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/fail_point.h"
 
 namespace mongo {
@@ -180,7 +180,7 @@ Status ViewCatalog::reload(OperationContext* opCtx,
 }
 
 Status ViewCatalog::_reload(OperationContext* opCtx, ViewCatalogLookupBehavior lookupBehavior) {
-    LOGV2_DEBUG(22546, 1, "Reloading view catalog for database", "db"_attr = _durable->getName());
+    LOG_DEBUG(22546, 1, "Reloading view catalog for database", "db"_attr = _durable->getName());
 
     _viewMap.clear();
     _valid = false;
@@ -223,10 +223,10 @@ Status ViewCatalog::_reload(OperationContext* opCtx, ViewCatalogLookupBehavior l
         }
     } catch (const DBException& ex) {
         auto status = ex.toStatus();
-        LOGV2(22547,
-              "Could not load view catalog for database",
-              "db"_attr = _durable->getName(),
-              "error"_attr = status);
+        LOG(22547,
+            "Could not load view catalog for database",
+            "db"_attr = _durable->getName(),
+            "error"_attr = status);
         return status;
     }
 

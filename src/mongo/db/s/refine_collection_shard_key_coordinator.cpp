@@ -27,13 +27,13 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kSharding
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kSharding
 
 #include "mongo/db/s/refine_collection_shard_key_coordinator.h"
 
 #include "mongo/db/commands.h"
 #include "mongo/db/s/dist_lock_manager.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/s/catalog_cache.h"
 #include "mongo/s/grid.h"
 #include "mongo/s/request_types/refine_collection_shard_key_gen.h"
@@ -89,10 +89,10 @@ SemiFuture<void> RefineCollectionShardKeyCoordinator::runImpl(
             uassertStatusOK(cmdResponse.writeConcernStatus);
         })
         .onError([this, anchor = shared_from_this()](const Status& status) {
-            LOGV2_ERROR(5277700,
-                        "Error running refine collection shard key",
-                        "namespace"_attr = _nss,
-                        "error"_attr = redact(status));
+            LOG_ERROR(5277700,
+                      "Error running refine collection shard key",
+                      "namespace"_attr = _nss,
+                      "error"_attr = redact(status));
             return status;
         })
         .semi();

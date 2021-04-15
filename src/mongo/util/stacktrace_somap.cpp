@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kControl
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kControl
 #include "mongo/platform/basic.h"
 
 #include "mongo/util/stacktrace_somap.h"
@@ -53,7 +53,7 @@
 #include "mongo/base/init.h"
 #include "mongo/bson/bsonobjbuilder.h"
 #include "mongo/db/jsobj.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/hex.h"
 #include "mongo/util/str.h"
 #include "mongo/util/version.h"
@@ -148,11 +148,11 @@ void processLoadSegment(const dl_phdr_info& info, const ElfW(Phdr) & phdr, BSONO
     const char* filename = info.dlpi_name;
 
     if (memcmp(&eHeader.e_ident[EI_MAG0], ELFMAG, SELFMAG)) {
-        LOGV2_WARNING(23842,
-                      "Bad ELF magic number",
-                      "filename"_attr = filename,
-                      "magic"_attr = hexdump((const char*)&eHeader.e_ident[EI_MAG0], SELFMAG),
-                      "magicExpected"_attr = hexdump(ELFMAG, SELFMAG));
+        LOG_WARNING(23842,
+                    "Bad ELF magic number",
+                    "filename"_attr = filename,
+                    "magic"_attr = hexdump((const char*)&eHeader.e_ident[EI_MAG0], SELFMAG),
+                    "magicExpected"_attr = hexdump(ELFMAG, SELFMAG));
         return;
     }
 
@@ -166,20 +166,20 @@ void processLoadSegment(const dl_phdr_info& info, const ElfW(Phdr) & phdr, BSONO
             }
             return format(FMT_STRING("[elfClass unknown: {}]"), c);
         };
-        LOGV2_WARNING(23843,
-                      "Unexpected ELF class (i.e. bit width)",
-                      "filename"_attr = filename,
-                      "elfClass"_attr = elfClassStr(elfClass),
-                      "elfClassExpected"_attr = elfClassStr(ARCH_ELFCLASS));
+        LOG_WARNING(23843,
+                    "Unexpected ELF class (i.e. bit width)",
+                    "filename"_attr = filename,
+                    "elfClass"_attr = elfClassStr(elfClass),
+                    "elfClassExpected"_attr = elfClassStr(ARCH_ELFCLASS));
         return;
     }
 
     if (uint32_t elfVersion = eHeader.e_ident[EI_VERSION]; elfVersion != EV_CURRENT) {
-        LOGV2_WARNING(23844,
-                      "Wrong ELF version",
-                      "filename"_attr = filename,
-                      "elfVersion"_attr = elfVersion,
-                      "elfVersionExpected"_attr = EV_CURRENT);
+        LOG_WARNING(23844,
+                    "Wrong ELF version",
+                    "filename"_attr = filename,
+                    "elfVersion"_attr = elfVersion,
+                    "elfVersionExpected"_attr = EV_CURRENT);
         return;
     }
 
@@ -192,7 +192,7 @@ void processLoadSegment(const dl_phdr_info& info, const ElfW(Phdr) & phdr, BSONO
         case ET_DYN:
             return;
         default:
-            LOGV2_WARNING(
+            LOG_WARNING(
                 23845, "Unexpected ELF type", "filename"_attr = filename, "elfType"_attr = elfType);
             return;
     }

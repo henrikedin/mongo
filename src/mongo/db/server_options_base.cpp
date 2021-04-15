@@ -32,7 +32,7 @@
 #include "mongo/base/string_data.h"
 #include "mongo/db/server_options_base_gen.h"
 #include "mongo/db/server_options_general_gen.h"
-#include "mongo/logv2/log_component.h"
+#include "mongo/log/log_component.h"
 #include "mongo/util/options_parser/environment.h"
 #include "mongo/util/options_parser/option_description.h"
 #include "mongo/util/options_parser/option_section.h"
@@ -58,9 +58,9 @@ Status addBaseServerOptions(moe::OptionSection* options) {
     const auto hatch = moe::OptionSection::OptionParserUsageType::BaseServerOptionsException;
 
     // log component hierarchy verbosity levels
-    for (int i = 0; i < int(logv2::LogComponent::kNumLogComponents); ++i) {
-        logv2::LogComponent component = static_cast<logv2::LogComponent::Value>(i);
-        if (component == logv2::LogComponent::kDefault) {
+    for (int i = 0; i < int(log::LogComponent::kNumLogComponents); ++i) {
+        log::LogComponent component = static_cast<log::LogComponent::Value>(i);
+        if (component == log::LogComponent::kDefault) {
             continue;
         }
         general_options

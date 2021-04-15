@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kSharding
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kSharding
 
 #include "mongo/platform/basic.h"
 
@@ -37,7 +37,7 @@
 #include "mongo/db/s/collection_sharding_runtime.h"
 #include "mongo/db/s/sharding_ddl_util.h"
 #include "mongo/db/s/sharding_state.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/s/request_types/sharded_ddl_commands_gen.h"
 
 namespace mongo {
@@ -76,10 +76,10 @@ public:
             try {
                 sharding_ddl_util::dropCollectionLocally(opCtx, ns());
             } catch (const ExceptionFor<ErrorCodes::NamespaceNotFound>&) {
-                LOGV2_DEBUG(5280920,
-                            1,
-                            "Namespace not found while trying to delete local collection",
-                            "namespace"_attr = ns());
+                LOG_DEBUG(5280920,
+                          1,
+                          "Namespace not found while trying to delete local collection",
+                          "namespace"_attr = ns());
             }
         }
 

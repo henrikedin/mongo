@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kReplication
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kReplication
 
 #include "mongo/platform/basic.h"
 
@@ -51,7 +51,7 @@
 #include "mongo/executor/network_interface.h"
 #include "mongo/executor/network_interface_factory.h"
 #include "mongo/executor/thread_pool_task_executor.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/metadata/egress_metadata_hook_list.h"
 #include "mongo/s/write_ops/batched_command_response.h"
 #include "mongo/util/concurrency/thread_pool.h"
@@ -152,7 +152,7 @@ void PrimaryOnlyServiceRegistry::registerService(std::unique_ptr<PrimaryOnlyServ
                             << ") with state document namespace \"" << ns
                             << "\" that is already in use by service "
                             << existingService->getServiceName());
-    LOGV2_INFO(
+    LOG_INFO(
         5123008,
         "Successfully registered PrimaryOnlyService {service} with state documents stored in {ns}",
         "Successfully registered PrimaryOnlyService",
@@ -402,13 +402,13 @@ void PrimaryOnlyService::onStepDown() {
         return;
     }
 
-    LOGV2_INFO(5123007,
-               "Interrupting (due to stepDown) PrimaryOnlyService {service} with {numInstances} "
-               "currently running instances and {numOperationContexts} associated operations",
-               "Interrupting PrimaryOnlyService due to stepDown",
-               "service"_attr = getServiceName(),
-               "numInstances"_attr = _activeInstances.size(),
-               "numOperationContexts"_attr = _opCtxs.size());
+    LOG_INFO(5123007,
+             "Interrupting (due to stepDown) PrimaryOnlyService {service} with {numInstances} "
+             "currently running instances and {numOperationContexts} associated operations",
+             "Interrupting PrimaryOnlyService due to stepDown",
+             "service"_attr = getServiceName(),
+             "numInstances"_attr = _activeInstances.size(),
+             "numOperationContexts"_attr = _opCtxs.size());
 
     _interruptInstances(lk,
                         {ErrorCodes::InterruptedDueToReplStateChange,
@@ -427,14 +427,13 @@ void PrimaryOnlyService::shutdown() {
     {
         stdx::lock_guard lk(_mutex);
 
-        LOGV2_INFO(
-            5123006,
-            "Shutting down PrimaryOnlyService {service} with {numInstances} currently running "
-            "instances and {numOperationContexts} associated operations",
-            "Shutting down PrimaryOnlyService",
-            "service"_attr = getServiceName(),
-            "numInstances"_attr = _activeInstances.size(),
-            "numOperationContexts"_attr = _opCtxs.size());
+        LOG_INFO(5123006,
+                 "Shutting down PrimaryOnlyService {service} with {numInstances} currently running "
+                 "instances and {numOperationContexts} associated operations",
+                 "Shutting down PrimaryOnlyService",
+                 "service"_attr = getServiceName(),
+                 "numInstances"_attr = _activeInstances.size(),
+                 "numOperationContexts"_attr = _opCtxs.size());
 
         // If the _state is already kPaused, the instances have already been interrupted.
         if (_state != State::kPaused) {
@@ -574,20 +573,20 @@ void PrimaryOnlyService::_rebuildInstances(long long term) noexcept {
     std::vector<BSONObj> stateDocuments;
 
     auto serviceName = getServiceName();
-    LOGV2_INFO(5123005,
-               "Rebuilding PrimaryOnlyService {service} due to stepUp",
-               "Rebuilding PrimaryOnlyService due to stepUp",
-               "service"_attr = serviceName);
+    LOG_INFO(5123005,
+             "Rebuilding PrimaryOnlyService {service} due to stepUp",
+             "Rebuilding PrimaryOnlyService due to stepUp",
+             "service"_attr = serviceName);
 
     if (!MONGO_unlikely(PrimaryOnlyServiceSkipRebuildingInstances.shouldFail())) {
         auto ns = getStateDocumentsNS();
-        LOGV2_DEBUG(5123004,
-                    2,
-                    "Querying {ns} to look for state documents while rebuilding PrimaryOnlyService "
-                    "{service}",
-                    "Querying to look for state documents while rebuilding PrimaryOnlyService",
-                    "ns"_attr = ns,
-                    "service"_attr = serviceName);
+        LOG_DEBUG(5123004,
+                  2,
+                  "Querying {ns} to look for state documents while rebuilding PrimaryOnlyService "
+                  "{service}",
+                  "Querying to look for state documents while rebuilding PrimaryOnlyService",
+                  "ns"_attr = ns,
+                  "service"_attr = serviceName);
 
         // The PrimaryOnlyServiceClientObserver will make any OpCtx created as part of a
         // PrimaryOnlyService immediately get interrupted if the service is not in state kRunning.
@@ -608,7 +607,7 @@ void PrimaryOnlyService::_rebuildInstances(long long term) noexcept {
                 stateDocuments.push_back(cursor->nextSafe().getOwned());
             }
         } catch (const DBException& e) {
-            LOGV2_ERROR(
+            LOG_ERROR(
                 4923601,
                 "Failed to start PrimaryOnlyService {service} because the query on {ns} "
                 "for state documents failed due to {error}",
@@ -655,14 +654,14 @@ void PrimaryOnlyService::_rebuildInstances(long long term) noexcept {
     invariant(_activeInstances.empty());
     invariant(_term == term);
 
-    LOGV2_DEBUG(5123003,
-                2,
-                "While rebuilding PrimaryOnlyService {service}, found {numDocuments} state "
-                "documents corresponding to instances of that service",
-                "Found state documents while rebuilding PrimaryOnlyService that correspond to "
-                "instances of that service",
-                "service"_attr = serviceName,
-                "numDocuments"_attr = stateDocuments.size());
+    LOG_DEBUG(5123003,
+              2,
+              "While rebuilding PrimaryOnlyService {service}, found {numDocuments} state "
+              "documents corresponding to instances of that service",
+              "Found state documents while rebuilding PrimaryOnlyService that correspond to "
+              "instances of that service",
+              "service"_attr = serviceName,
+              "numDocuments"_attr = stateDocuments.size());
 
     for (auto&& doc : stateDocuments) {
         auto idElem = doc["_id"];
@@ -686,13 +685,13 @@ std::shared_ptr<PrimaryOnlyService::Instance> PrimaryOnlyService::_insertNewInst
                    scopedExecutor = _scopedExecutor,
                    token = instanceSource.token(),
                    instanceID] {
-                LOGV2_DEBUG(5123002,
-                            3,
-                            "Starting instance of PrimaryOnlyService {service} with InstanceID "
-                            "{instanceID}",
-                            "Starting instance of PrimaryOnlyService",
-                            "service"_attr = serviceName,
-                            "instanceID"_attr = instanceID);
+                LOG_DEBUG(5123002,
+                          3,
+                          "Starting instance of PrimaryOnlyService {service} with InstanceID "
+                          "{instanceID}",
+                          "Starting instance of PrimaryOnlyService",
+                          "service"_attr = serviceName,
+                          "instanceID"_attr = instanceID);
 
                 return instance->run(std::move(scopedExecutor), std::move(token));
             })

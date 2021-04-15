@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kSharding
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kSharding
 
 #include "mongo/platform/basic.h"
 
@@ -41,7 +41,7 @@
 #include "mongo/db/s/collection_sharding_runtime.h"
 #include "mongo/db/s/shard_filtering_metadata_refresh.h"
 #include "mongo/db/s/sharding_util.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/metadata/impersonated_user_metadata.h"
 #include "mongo/s/catalog/type_chunk.h"
 #include "mongo/s/catalog/type_collection.h"
@@ -457,7 +457,7 @@ void releaseRecoverableCriticalSection(OperationContext* opCtx,
 
 void retakeInMemoryRecoverableCriticalSections(OperationContext* opCtx) {
 
-    LOGV2_DEBUG(5549400, 2, "Starting re-acquisition of recoverable critical sections");
+    LOG_DEBUG(5549400, 2, "Starting re-acquisition of recoverable critical sections");
 
     PersistentTaskStore<CollectionCriticalSectionDocument> store(
         NamespaceString::kCollectionCriticalSectionsNamespace);
@@ -485,7 +485,7 @@ void retakeInMemoryRecoverableCriticalSections(OperationContext* opCtx) {
         return true;
     });
 
-    LOGV2_DEBUG(5549401, 2, "Finished re-acquisition of recoverable critical sections");
+    LOG_DEBUG(5549401, 2, "Finished re-acquisition of recoverable critical sections");
 }
 
 void stopMigrations(OperationContext* opCtx, const NamespaceString& nss) {

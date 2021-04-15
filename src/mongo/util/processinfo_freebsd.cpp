@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kControl
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kControl
 
 #include <cstdlib>
 #include <string>
@@ -43,7 +43,7 @@
 #include <unistd.h>
 #include <vm/vm_param.h>
 
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/scopeguard.h"
 #include "processinfo.h"
 
@@ -126,19 +126,19 @@ void ProcessInfo::SystemInfo::collectSystemInfo() {
 
     int status = getSysctlByNameWithDefault("kern.version", std::string("unknown"), &osVersion);
     if (status != 0)
-        LOGV2(23332,
-              "Unable to collect OS Version. (errno: {errno} msg: {msg})",
-              "Unable to collect OS Version.",
-              "errno"_attr = status,
-              "msg"_attr = strerror(status));
+        LOG(23332,
+            "Unable to collect OS Version. (errno: {errno} msg: {msg})",
+            "Unable to collect OS Version.",
+            "errno"_attr = status,
+            "msg"_attr = strerror(status));
 
     status = getSysctlByNameWithDefault("hw.machine_arch", std::string("unknown"), &cpuArch);
     if (status != 0)
-        LOGV2(23333,
-              "Unable to collect Machine Architecture. (errno: {errno} msg: {msg})",
-              "Unable to collect Machine Architecture.",
-              "errno"_attr = status,
-              "msg"_attr = strerror(status));
+        LOG(23333,
+            "Unable to collect Machine Architecture. (errno: {errno} msg: {msg})",
+            "Unable to collect Machine Architecture.",
+            "errno"_attr = status,
+            "msg"_attr = strerror(status));
     addrSize = cpuArch.find("64") != std::string::npos ? 64 : 32;
 
     uintptr_t numBuffer;
@@ -147,20 +147,20 @@ void ProcessInfo::SystemInfo::collectSystemInfo() {
     memSize = numBuffer;
     memLimit = memSize;
     if (status != 0)
-        LOGV2(23334,
-              "Unable to collect Physical Memory. (errno: {errno} msg: {msg})",
-              "Unable to collect Physical Memory.",
-              "errno"_attr = status,
-              "msg"_attr = strerror(status));
+        LOG(23334,
+            "Unable to collect Physical Memory. (errno: {errno} msg: {msg})",
+            "Unable to collect Physical Memory.",
+            "errno"_attr = status,
+            "msg"_attr = strerror(status));
 
     status = getSysctlByNameWithDefault("hw.ncpu", defaultNum, &numBuffer);
     numCores = numBuffer;
     if (status != 0)
-        LOGV2(23335,
-              "Unable to collect Number of CPUs. (errno: {errno} msg: {msg})",
-              "Unable to collect Number of CPUs.",
-              "errno"_attr = status,
-              "msg"_attr = strerror(status));
+        LOG(23335,
+            "Unable to collect Number of CPUs. (errno: {errno} msg: {msg})",
+            "Unable to collect Number of CPUs.",
+            "errno"_attr = status,
+            "msg"_attr = strerror(status));
 
     pageSize = static_cast<unsigned long long>(sysconf(_SC_PAGESIZE));
 

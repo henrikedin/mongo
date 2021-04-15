@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTest
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTest
 
 #include "mongo/platform/basic.h"
 
@@ -49,7 +49,7 @@
 #include "mongo/db/service_context_d_test_fixture.h"
 #include "mongo/db/service_context_test_fixture.h"
 #include "mongo/executor/thread_pool_task_executor_test_fixture.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/unittest/log_test.h"
 
 namespace mongo {
@@ -188,10 +188,10 @@ protected:
     TenantOplogApplierTestOpObserver* _opObserver;  // Owned by service context opObserverRegistry
 
 private:
-    unittest::MinimumLoggedSeverityGuard _replicationSeverityGuard{
-        logv2::LogComponent::kReplication, logv2::LogSeverity::Debug(1)};
+    unittest::MinimumLoggedSeverityGuard _replicationSeverityGuard{log::LogComponent::kReplication,
+                                                                   log::LogSeverity::Debug(1)};
     unittest::MinimumLoggedSeverityGuard _tenantMigrationSeverityGuard{
-        logv2::LogComponent::kTenantMigration, logv2::LogSeverity::Debug(1)};
+        log::LogComponent::kTenantMigration, log::LogSeverity::Debug(1)};
 };
 
 TEST_F(TenantOplogApplierTest, NoOpsForSingleBatch) {

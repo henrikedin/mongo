@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kIndex
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kIndex
 
 #include "mongo/platform/basic.h"
 
@@ -63,7 +63,7 @@
 #include "mongo/db/timeseries/timeseries_lookup.h"
 #include "mongo/db/views/view_catalog.h"
 #include "mongo/idl/command_generic_argument.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/platform/compiler.h"
 #include "mongo/s/shard_key_pattern.h"
 #include "mongo/util/scopeguard.h"
@@ -258,7 +258,7 @@ void checkDatabaseShardingState(OperationContext* opCtx, const NamespaceString& 
             auto mpsm = dss->getMovePrimarySourceManager(dssLock);
 
             if (mpsm) {
-                LOGV2(4909200, "assertMovePrimaryInProgress", "namespace"_attr = ns.toString());
+                LOG(4909200, "assertMovePrimaryInProgress", "namespace"_attr = ns.toString());
 
                 uasserted(ErrorCodes::MovePrimaryInProgress,
                           "movePrimary is in progress for namespace " + ns.toString());
@@ -266,7 +266,7 @@ void checkDatabaseShardingState(OperationContext* opCtx, const NamespaceString& 
         }
     } catch (const DBException& ex) {
         if (ex.toStatus() != ErrorCodes::MovePrimaryInProgress) {
-            LOGV2(4909201, "Error when getting collection description", "what"_attr = ex.what());
+            LOG(4909201, "Error when getting collection description", "what"_attr = ex.what());
             return;
         }
         throw;
@@ -307,9 +307,9 @@ CreateIndexesReply runCreateIndexesOnNewCollection(
         if (MONGO_unlikely(hangBeforeCreateIndexesCollectionCreate.shouldFail())) {
             // Simulate a scenario where a conflicting collection creation occurs
             // mid-index build.
-            LOGV2(20437,
-                  "Hanging create collection due to failpoint "
-                  "'hangBeforeCreateIndexesCollectionCreate'");
+            LOG(20437,
+                "Hanging create collection due to failpoint "
+                "'hangBeforeCreateIndexesCollectionCreate'");
             hangBeforeCreateIndexesCollectionCreate.pauseWhileSet();
         }
 
@@ -463,13 +463,13 @@ CreateIndexesReply runCreateIndexesWithCoordinator(OperationContext* opCtx,
     ReplIndexBuildState::IndexCatalogStats stats;
     IndexBuildsCoordinator::IndexBuildOptions indexBuildOptions = {commitQuorum};
 
-    LOGV2(20438,
-          "Index build: registering",
-          "buildUUID"_attr = buildUUID,
-          "namespace"_attr = ns,
-          "collectionUUID"_attr = *collectionUUID,
-          "indexes"_attr = specs.size(),
-          "firstIndex"_attr = specs[0][IndexDescriptor::kIndexNameFieldName]);
+    LOG(20438,
+        "Index build: registering",
+        "buildUUID"_attr = buildUUID,
+        "namespace"_attr = ns,
+        "collectionUUID"_attr = *collectionUUID,
+        "indexes"_attr = specs.size(),
+        "firstIndex"_attr = specs[0][IndexDescriptor::kIndexNameFieldName]);
     hangCreateIndexesBeforeStartingIndexBuild.pauseWhileSet(opCtx);
 
     bool shouldContinueInBackground = false;
@@ -484,19 +484,19 @@ CreateIndexesReply runCreateIndexesWithCoordinator(OperationContext* opCtx,
                                                               indexBuildOptions));
 
         auto deadline = opCtx->getDeadline();
-        LOGV2(20440,
-              "Index build: waiting for index build to complete",
-              "buildUUID"_attr = buildUUID,
-              "deadline"_attr = deadline);
+        LOG(20440,
+            "Index build: waiting for index build to complete",
+            "buildUUID"_attr = buildUUID,
+            "deadline"_attr = deadline);
 
         // Throws on error.
         try {
             stats = buildIndexFuture.get(opCtx);
         } catch (const ExceptionForCat<ErrorCategory::Interruption>& interruptionEx) {
-            LOGV2(20441,
-                  "Index build: received interrupt signal",
-                  "buildUUID"_attr = buildUUID,
-                  "signal"_attr = interruptionEx);
+            LOG(20441,
+                "Index build: received interrupt signal",
+                "buildUUID"_attr = buildUUID,
+                "signal"_attr = interruptionEx);
 
             hangBeforeIndexBuildAbortOnInterrupt.pauseWhileSet();
 
@@ -526,22 +526,22 @@ CreateIndexesReply runCreateIndexesWithCoordinator(OperationContext* opCtx,
                                                       << ": " << interruptionEx.toString());
                 if (indexBuildsCoord->abortIndexBuildByBuildUUID(
                         abortCtx.get(), buildUUID, IndexBuildAction::kPrimaryAbort, abortReason)) {
-                    LOGV2(20443,
-                          "Index build: aborted due to interruption",
-                          "buildUUID"_attr = buildUUID);
+                    LOG(20443,
+                        "Index build: aborted due to interruption",
+                        "buildUUID"_attr = buildUUID);
                 } else {
                     // The index build may already be in the midst of tearing down.
-                    LOGV2(5010500,
-                          "Index build: failed to abort index build",
-                          "buildUUID"_attr = buildUUID);
+                    LOG(5010500,
+                        "Index build: failed to abort index build",
+                        "buildUUID"_attr = buildUUID);
                 }
             }
             throw;
         } catch (const ExceptionForCat<ErrorCategory::NotPrimaryError>& ex) {
-            LOGV2(20444,
-                  "Index build: received interrupt signal due to change in replication state",
-                  "buildUUID"_attr = buildUUID,
-                  "ex"_attr = ex);
+            LOG(20444,
+                "Index build: received interrupt signal due to change in replication state",
+                "buildUUID"_attr = buildUUID,
+                "ex"_attr = ex);
 
             // If this node is no longer a primary, the index build will continue to run in the
             // background and will complete when this node receives a commitIndexBuild oplog
@@ -555,41 +555,41 @@ CreateIndexesReply runCreateIndexesWithCoordinator(OperationContext* opCtx,
                                                   << ex.toString());
             if (indexBuildsCoord->abortIndexBuildByBuildUUID(
                     opCtx, buildUUID, IndexBuildAction::kPrimaryAbort, abortReason)) {
-                LOGV2(20446,
-                      "Index build: aborted due to NotPrimary error",
-                      "buildUUID"_attr = buildUUID);
+                LOG(20446,
+                    "Index build: aborted due to NotPrimary error",
+                    "buildUUID"_attr = buildUUID);
             } else {
                 // The index build may already be in the midst of tearing down.
-                LOGV2(5010501,
-                      "Index build: failed to abort index build",
-                      "buildUUID"_attr = buildUUID);
+                LOG(5010501,
+                    "Index build: failed to abort index build",
+                    "buildUUID"_attr = buildUUID);
             }
 
             throw;
         }
 
-        LOGV2(20447, "Index build: completed", "buildUUID"_attr = buildUUID);
+        LOG(20447, "Index build: completed", "buildUUID"_attr = buildUUID);
     } catch (DBException& ex) {
         // If the collection is dropped after the initial checks in this function (before the
         // AutoStatsTracker is created), the IndexBuildsCoordinator (either startIndexBuild() or
         // the the task running the index build) may return NamespaceNotFound. This is not
         // considered an error and the command should return success.
         if (ErrorCodes::NamespaceNotFound == ex.code()) {
-            LOGV2(20448,
-                  "Index build: failed because collection dropped",
-                  "buildUUID"_attr = buildUUID,
-                  "namespace"_attr = ns,
-                  "collectionUUID"_attr = *collectionUUID,
-                  "exception"_attr = ex);
+            LOG(20448,
+                "Index build: failed because collection dropped",
+                "buildUUID"_attr = buildUUID,
+                "namespace"_attr = ns,
+                "collectionUUID"_attr = *collectionUUID,
+                "exception"_attr = ex);
             return reply;
         }
 
         if (shouldContinueInBackground) {
-            LOGV2(4760400,
-                  "Index build: ignoring interrupt and continuing in background",
-                  "buildUUID"_attr = buildUUID);
+            LOG(4760400,
+                "Index build: ignoring interrupt and continuing in background",
+                "buildUUID"_attr = buildUUID);
         } else {
-            LOGV2(20449, "Index build: failed", "buildUUID"_attr = buildUUID, "error"_attr = ex);
+            LOG(20449, "Index build: failed", "buildUUID"_attr = buildUUID, "error"_attr = ex);
         }
 
         // All other errors should be forwarded to the caller with index build information included.
@@ -718,8 +718,7 @@ public:
                         throw;
                     }
                     if (shouldLogMessageOnAlreadyBuildingError) {
-                        LOGV2(
-                            20450,
+                        LOG(20450,
                             "Received a request to create indexes: '{indexesFieldName}', but found "
                             "that at least one of the indexes is already being built, '{error}'. "
                             "This request will wait for the pre-existing index build to finish "

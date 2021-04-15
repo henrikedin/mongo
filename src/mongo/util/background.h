@@ -137,7 +137,7 @@ private:
  * class MyTask : public PeriodicTask {
  * public:
  *   virtual std::string name() const { return "MyTask; " }
- *   virtual void doWork() { log() << "hi" << std::endl; }
+ *   virtual void doWork() { LOG() << "hi" << std::endl; }
  * } myTask;
  */
 class PeriodicTask {

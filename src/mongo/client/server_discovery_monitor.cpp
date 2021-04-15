@@ -26,7 +26,7 @@
  *    exception statement from all source files in the program, then also delete
  *    it in the license file.
  */
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kDefault
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kDefault
 
 #include "mongo/client/server_discovery_monitor.h"
 
@@ -40,7 +40,7 @@
 #include "mongo/executor/network_interface_factory.h"
 #include "mongo/executor/network_interface_thread_pool.h"
 #include "mongo/executor/thread_pool_task_executor.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/metadata/egress_metadata_hook_list.h"
 
 namespace mongo {
@@ -81,12 +81,12 @@ SingleServerDiscoveryMonitor::SingleServerDiscoveryMonitor(
       _isExpedited(true),
       _isShutdown(true),
       _setUri(setUri) {
-    LOGV2_DEBUG(4333217,
-                kLogLevel + 1,
-                "RSM {replicaSet} monitoring {host}",
-                "RSM monitoring host",
-                "host"_attr = host,
-                "replicaSet"_attr = _setUri.getSetName());
+    LOG_DEBUG(4333217,
+              kLogLevel + 1,
+              "RSM {replicaSet} monitoring {host}",
+              "RSM monitoring host",
+              "host"_attr = host,
+              "replicaSet"_attr = _setUri.getSetName());
 }
 
 void SingleServerDiscoveryMonitor::init() {
@@ -106,13 +106,12 @@ void SingleServerDiscoveryMonitor::requestImmediateCheck() {
 
     if (!_isExpedited) {
         // save some log lines.
-        LOGV2_DEBUG(
-            4333227,
-            kLogLevel,
-            "RSM {replicaSet} monitoring {host} in expedited mode until we detect a primary.",
-            "RSM monitoring host in expedited mode until we detect a primary",
-            "host"_attr = _host,
-            "replicaSet"_attr = _setUri.getSetName());
+        LOG_DEBUG(4333227,
+                  kLogLevel,
+                  "RSM {replicaSet} monitoring {host} in expedited mode until we detect a primary.",
+                  "RSM monitoring host in expedited mode until we detect a primary",
+                  "host"_attr = _host,
+                  "replicaSet"_attr = _setUri.getSetName());
 
         // This will change the _currentRefreshPeriod to the shorter expedited duration.
         _isExpedited = true;
@@ -122,7 +121,7 @@ void SingleServerDiscoveryMonitor::requestImmediateCheck() {
     const auto expeditedRefreshPeriod = _currentRefreshPeriod(lock, false);
 
     if (_helloOutstanding) {
-        LOGV2_DEBUG(
+        LOG_DEBUG(
             4333216,
             kLogLevel + 2,
             "RSM {replicaSet} immediate hello check requested, but there "
@@ -174,12 +173,12 @@ boost::optional<Milliseconds> SingleServerDiscoveryMonitor::_timeSinceLastCheck(
 }
 
 void SingleServerDiscoveryMonitor::_rescheduleNextHello(WithLock lock, Milliseconds delay) {
-    LOGV2_DEBUG(4333218,
-                kLogLevel,
-                "Rescheduling the next replica set monitoring request",
-                "replicaSet"_attr = _setUri.getSetName(),
-                "host"_attr = _host,
-                "delay"_attr = delay);
+    LOG_DEBUG(4333218,
+              kLogLevel,
+              "Rescheduling the next replica set monitoring request",
+              "replicaSet"_attr = _setUri.getSetName(),
+              "host"_attr = _host,
+              "delay"_attr = delay);
     _cancelOutstandingRequest(lock);
     _scheduleNextHello(lock, delay);
 }
@@ -264,12 +263,12 @@ StatusWith<TaskExecutor::CallbackHandle> SingleServerDiscoveryMonitor::_schedule
 
                 if (self->_isShutdown) {
                     self->_helloOutstanding = false;
-                    LOGV2_DEBUG(4495400,
-                                kLogLevel,
-                                "RSM {replicaSet} not processing response: {error}",
-                                "RSM not processing response",
-                                "error"_attr = result.response.status,
-                                "replicaSet"_attr = self->_setUri.getSetName());
+                    LOG_DEBUG(4495400,
+                              kLogLevel,
+                              "RSM {replicaSet} not processing response: {error}",
+                              "RSM not processing response",
+                              "error"_attr = result.response.status,
+                              "replicaSet"_attr = self->_setUri.getSetName());
                     return;
                 }
 
@@ -320,12 +319,12 @@ StatusWith<TaskExecutor::CallbackHandle> SingleServerDiscoveryMonitor::_schedule
                 self->_helloOutstanding = false;
 
                 if (self->_isShutdown) {
-                    LOGV2_DEBUG(4333219,
-                                kLogLevel,
-                                "RSM {replicaSet} not processing response: {error}",
-                                "RSM not processing response",
-                                "error"_attr = result.response.status,
-                                "replicaSet"_attr = self->_setUri.getSetName());
+                    LOG_DEBUG(4333219,
+                              kLogLevel,
+                              "RSM {replicaSet} not processing response: {error}",
+                              "RSM not processing response",
+                              "error"_attr = result.response.status,
+                              "replicaSet"_attr = self->_setUri.getSetName());
                     return;
                 }
 
@@ -366,23 +365,23 @@ void SingleServerDiscoveryMonitor::shutdown() {
         return;
     }
 
-    LOGV2_DEBUG(4333220,
-                kLogLevel + 1,
-                "RSM {replicaSet} Closing host {host}",
-                "RSM closing host",
-                "host"_attr = _host,
-                "replicaSet"_attr = _setUri.getSetName());
+    LOG_DEBUG(4333220,
+              kLogLevel + 1,
+              "RSM {replicaSet} Closing host {host}",
+              "RSM closing host",
+              "host"_attr = _host,
+              "replicaSet"_attr = _setUri.getSetName());
 
     _cancelOutstandingRequest(lock);
 
     _executor = nullptr;
 
-    LOGV2_DEBUG(4333229,
-                kLogLevel + 1,
-                "RSM {replicaSet} Done Closing host {host}",
-                "RSM done closing host",
-                "host"_attr = _host,
-                "replicaSet"_attr = _setUri.getSetName());
+    LOG_DEBUG(4333229,
+              kLogLevel + 1,
+              "RSM {replicaSet} Done Closing host {host}",
+              "RSM done closing host",
+              "host"_attr = _host,
+              "replicaSet"_attr = _setUri.getSetName());
 }
 
 void SingleServerDiscoveryMonitor::_cancelOutstandingRequest(WithLock) {
@@ -398,26 +397,26 @@ void SingleServerDiscoveryMonitor::_cancelOutstandingRequest(WithLock) {
 }
 
 void SingleServerDiscoveryMonitor::_onHelloSuccess(const BSONObj bson) {
-    LOGV2_DEBUG(4333221,
-                kLogLevel + 1,
-                "RSM {replicaSet} received successful hello for server {host}: {helloReply}",
-                "RSM received successful hello",
-                "host"_attr = _host,
-                "replicaSet"_attr = _setUri.getSetName(),
-                "helloReply"_attr = bson.toString());
+    LOG_DEBUG(4333221,
+              kLogLevel + 1,
+              "RSM {replicaSet} received successful hello for server {host}: {helloReply}",
+              "RSM received successful hello",
+              "host"_attr = _host,
+              "replicaSet"_attr = _setUri.getSetName(),
+              "helloReply"_attr = bson.toString());
 
     _eventListener->onServerHeartbeatSucceededEvent(_host, bson);
 }
 
 void SingleServerDiscoveryMonitor::_onHelloFailure(const Status& status, const BSONObj bson) {
-    LOGV2_DEBUG(4333222,
-                kLogLevel,
-                "RSM {replicaSet} received error response from server {host}: {error}: {response}",
-                "RSM received error response",
-                "host"_attr = _host,
-                "error"_attr = status.toString(),
-                "replicaSet"_attr = _setUri.getSetName(),
-                "response"_attr = bson.toString());
+    LOG_DEBUG(4333222,
+              kLogLevel,
+              "RSM {replicaSet} received error response from server {host}: {error}: {response}",
+              "RSM received error response",
+              "host"_attr = _host,
+              "error"_attr = status.toString(),
+              "replicaSet"_attr = _setUri.getSetName(),
+              "response"_attr = bson.toString());
 
     _eventListener->onServerHeartbeatFailureEvent(status, _host, bson);
 }
@@ -461,12 +460,12 @@ ServerDiscoveryMonitor::ServerDiscoveryMonitor(
       _executor(_setupExecutor(executor)),
       _isShutdown(false),
       _setUri(setUri) {
-    LOGV2_DEBUG(4333223,
-                kLogLevel,
-                "RSM {replicaSet} monitoring {nReplicaSetMembers} members.",
-                "RSM now monitoring replica set",
-                "replicaSet"_attr = _setUri.getSetName(),
-                "nReplicaSetMembers"_attr = initialTopologyDescription->getServers().size());
+    LOG_DEBUG(4333223,
+              kLogLevel,
+              "RSM {replicaSet} monitoring {nReplicaSetMembers} members.",
+              "RSM now monitoring replica set",
+              "replicaSet"_attr = _setUri.getSetName(),
+              "nReplicaSetMembers"_attr = initialTopologyDescription->getServers().size());
     onTopologyDescriptionChangedEvent(nullptr, initialTopologyDescription);
 }
 
@@ -502,12 +501,12 @@ void ServerDiscoveryMonitor::onTopologyDescriptionChangedEvent(
         if (newDescription->findServerByAddress(serverAddress) == boost::none) {
             auto& singleMonitor = _singleMonitors[serverAddress];
             singleMonitor->shutdown();
-            LOGV2_DEBUG(4333225,
-                        kLogLevel,
-                        "RSM {replicaSet} host {host} was removed from the topology",
-                        "RSM host was removed from the topology",
-                        "replicaSet"_attr = _setUri.getSetName(),
-                        "addr"_attr = serverAddress);
+            LOG_DEBUG(4333225,
+                      kLogLevel,
+                      "RSM {replicaSet} host {host} was removed from the topology",
+                      "RSM host was removed from the topology",
+                      "replicaSet"_attr = _setUri.getSetName(),
+                      "addr"_attr = serverAddress);
             it = _singleMonitors.erase(it, std::next(it));
         } else {
             ++it;
@@ -523,12 +522,12 @@ void ServerDiscoveryMonitor::onTopologyDescriptionChangedEvent(
                       bool isMissing = _singleMonitors.find(serverDescription->getAddress()) ==
                           _singleMonitors.end();
                       if (isMissing) {
-                          LOGV2_DEBUG(4333226,
-                                      kLogLevel,
-                                      "RSM {replicaSet} {host} was added to the topology",
-                                      "RSM host was added to the topology",
-                                      "replicaSet"_attr = _setUri.getSetName(),
-                                      "host"_attr = serverAddress);
+                          LOG_DEBUG(4333226,
+                                    kLogLevel,
+                                    "RSM {replicaSet} {host} was added to the topology",
+                                    "RSM host was added to the topology",
+                                    "replicaSet"_attr = _setUri.getSetName(),
+                                    "host"_attr = serverAddress);
                           _singleMonitors[serverAddress] =
                               std::make_shared<SingleServerDiscoveryMonitor>(
                                   _setUri,

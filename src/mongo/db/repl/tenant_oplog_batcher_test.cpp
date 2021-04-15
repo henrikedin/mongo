@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTest
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTest
 
 #include "mongo/platform/basic.h"
 
@@ -35,7 +35,7 @@
 #include "mongo/db/repl/tenant_oplog_batcher.h"
 #include "mongo/db/service_context_test_fixture.h"
 #include "mongo/executor/thread_pool_task_executor_test_fixture.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/unittest/log_test.h"
 
 namespace mongo {
@@ -73,8 +73,8 @@ protected:
     std::shared_ptr<executor::ThreadPoolTaskExecutor> _executor;
 
 private:
-    unittest::MinimumLoggedSeverityGuard _replicationSeverityGuard{
-        logv2::LogComponent::kReplication, logv2::LogSeverity::Debug(1)};
+    unittest::MinimumLoggedSeverityGuard _replicationSeverityGuard{log::LogComponent::kReplication,
+                                                                   log::LogSeverity::Debug(1)};
 };
 
 /**

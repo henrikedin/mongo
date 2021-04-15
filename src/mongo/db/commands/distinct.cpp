@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kQuery
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kQuery
 
 #include "mongo/platform/basic.h"
 
@@ -59,7 +59,7 @@
 #include "mongo/db/query/view_response_formatter.h"
 #include "mongo/db/s/collection_sharding_state.h"
 #include "mongo/db/views/resolved_view.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace mongo {
 namespace {
@@ -286,13 +286,13 @@ public:
             auto&& explainer = executor.getValue()->getPlanExplainer();
             auto&& [stats, _] =
                 explainer.getWinningPlanStats(ExplainOptions::Verbosity::kExecStats);
-            LOGV2_WARNING(23797,
-                          "Plan executor error during distinct command: {error}, "
-                          "stats: {stats}, cmd: {cmd}",
-                          "Plan executor error during distinct command",
-                          "error"_attr = exception.toStatus(),
-                          "stats"_attr = redact(stats),
-                          "cmd"_attr = cmdObj);
+            LOG_WARNING(23797,
+                        "Plan executor error during distinct command: {error}, "
+                        "stats: {stats}, cmd: {cmd}",
+                        "Plan executor error during distinct command",
+                        "error"_attr = exception.toStatus(),
+                        "stats"_attr = redact(stats),
+                        "cmd"_attr = cmdObj);
 
             exception.addContext("Executor error during distinct command");
             throw;

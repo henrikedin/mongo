@@ -27,12 +27,12 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTest
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTest
 
 #include "mongo/platform/basic.h"
 
 #include "mongo/db/service_context_test_fixture.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/unittest/log_test.h"
 #include "mongo/util/log_with_sampling.h"
 #include "mongo/util/scopeguard.h"
@@ -53,13 +53,13 @@ namespace {
  * `forceSample`: Set the slow op sampleRate to 0% or 100% to force sampled or not sampled op.
  */
 auto scenario(bool debugLogEnabled, bool slowOp, bool forceSample) {
-    static const logv2::LogComponent component = logv2::LogComponent::kDefault;
+    static const log::LogComponent component = log::LogComponent::kDefault;
     const auto serviceContext = ServiceContext::make();
-    const auto client = serviceContext->makeClient("log_with_sampling_test");
+    const auto client = serviceContext->makeClient("LOG_with_sampling_test");
     const auto opCtx = client->makeOperationContext();
 
     auto loggedSeverityGuard = unittest::MinimumLoggedSeverityGuard(
-        component, debugLogEnabled ? logv2::LogSeverity::Debug(1) : logv2::LogSeverity::Info());
+        component, debugLogEnabled ? log::LogSeverity::Debug(1) : log::LogSeverity::Info());
 
     auto sampleRateGuard = makeGuard(
         [savedRate = serverGlobalParams.sampleRate] { serverGlobalParams.sampleRate = savedRate; });

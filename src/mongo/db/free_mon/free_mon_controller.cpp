@@ -27,13 +27,13 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kControl
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kControl
 
 #include "mongo/platform/basic.h"
 
 #include "mongo/db/free_mon/free_mon_controller.h"
 
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace mongo {
 
@@ -169,7 +169,7 @@ void FreeMonController::start(RegistrationType registrationType,
 
 void FreeMonController::stop() {
     // Stop the agent
-    LOGV2(20609, "Shutting down free monitoring");
+    LOG(20609, "Shutting down free monitoring");
 
     {
         stdx::lock_guard<Latch> lock(_mutex);
@@ -204,7 +204,7 @@ void FreeMonController::turnCrankForTest(size_t countMessagesToIgnore) {
         invariant(_state == State::kStarted);
     }
 
-    LOGV2(20610, "Turning Crank", "count"_attr = countMessagesToIgnore);
+    LOG(20610, "Turning Crank", "count"_attr = countMessagesToIgnore);
 
     _processor->turnCrankForTest(countMessagesToIgnore);
 }
@@ -215,7 +215,7 @@ void FreeMonController::deprioritizeFirstMessageForTest(FreeMonMessageType type)
         invariant(_state == State::kStarted);
     }
 
-    LOGV2(5167901, "Deprioritize message", "type"_attr = static_cast<int>(type));
+    LOG(5167901, "Deprioritize message", "type"_attr = static_cast<int>(type));
 
     _processor->deprioritizeFirstMessageForTest(type);
 }

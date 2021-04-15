@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kDefault
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kDefault
 
 #include "mongo/platform/basic.h"
 
@@ -46,7 +46,7 @@
 #include "mongo/db/repl/repl_client_info.h"
 #include "mongo/db/repl/replication_coordinator_mock.h"
 #include "mongo/dbtests/dbtests.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/transport/transport_layer_asio.h"
 
 namespace mongo {
@@ -191,10 +191,10 @@ protected:
     }
     void check(const BSONObj& expected, const BSONObj& got) const {
         if (expected.woCompare(got)) {
-            LOGV2(22500,
-                  "expected: {expected}, got: {got}",
-                  "expected"_attr = expected.toString(),
-                  "got"_attr = got.toString());
+            LOG(22500,
+                "expected: {expected}, got: {got}",
+                "expected"_attr = expected.toString(),
+                "got"_attr = got.toString());
         }
         ASSERT_BSONOBJ_EQ(expected, got);
     }
@@ -243,7 +243,7 @@ protected:
             OldClientContext ctx(&_opCtx, ns());
             for (vector<BSONObj>::iterator i = ops.begin(); i != ops.end(); ++i) {
                 if (0) {
-                    LOGV2(22501, "op: {i}", "i"_attr = *i);
+                    LOG(22501, "op: {i}", "i"_attr = *i);
                 }
                 repl::UnreplicatedWritesBlock uwb(&_opCtx);
                 auto entry = uassertStatusOK(OplogEntry::parse(*i));

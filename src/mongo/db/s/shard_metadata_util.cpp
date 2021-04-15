@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kSharding
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kSharding
 
 #include "mongo/platform/basic.h"
 
@@ -40,7 +40,7 @@
 #include "mongo/db/s/type_shard_collection.h"
 #include "mongo/db/s/type_shard_database.h"
 #include "mongo/db/write_concern_options.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/rpc/unique_message.h"
 #include "mongo/s/catalog/type_chunk.h"
@@ -451,7 +451,7 @@ Status dropChunksAndDeleteCollectionsEntry(OperationContext* opCtx, const Namesp
             }
         }
 
-        LOGV2_DEBUG(
+        LOG_DEBUG(
             22090,
             1,
             "Successfully cleared persisted chunk metadata and collection entry for collection "
@@ -476,10 +476,10 @@ void dropChunks(OperationContext* opCtx, const NamespaceString& nss) {
         }
     }
 
-    LOGV2_DEBUG(22091,
-                1,
-                "Successfully cleared persisted chunk metadata for collection",
-                "namespace"_attr = nss);
+    LOG_DEBUG(22091,
+              1,
+              "Successfully cleared persisted chunk metadata for collection",
+              "namespace"_attr = nss);
 }
 
 Status deleteDatabasesEntry(OperationContext* opCtx, StringData dbName) {
@@ -500,11 +500,11 @@ Status deleteDatabasesEntry(OperationContext* opCtx, StringData dbName) {
         uassertStatusOK(
             getStatusFromWriteCommandResponse(deleteCommandResponse->getCommandReply()));
 
-        LOGV2_DEBUG(22092,
-                    1,
-                    "Successfully cleared persisted metadata for db {db}",
-                    "Successfully cleared persisted metadata for db",
-                    "db"_attr = dbName);
+        LOG_DEBUG(22092,
+                  1,
+                  "Successfully cleared persisted metadata for db {db}",
+                  "Successfully cleared persisted metadata for db",
+                  "db"_attr = dbName);
         return Status::OK();
     } catch (const DBException& ex) {
         return ex.toStatus();

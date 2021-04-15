@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kSharding
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kSharding
 
 #include "mongo/platform/basic.h"
 
@@ -43,7 +43,7 @@
 #include "mongo/db/s/move_timing_helper.h"
 #include "mongo/db/s/sharding_state.h"
 #include "mongo/db/s/sharding_statistics.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/s/client/shard_registry.h"
 #include "mongo/s/grid.h"
 #include "mongo/s/request_types/migration_secondary_throttle_options.h"
@@ -61,10 +61,10 @@ namespace {
  */
 void uassertStatusOKWithWarning(const Status& status) {
     if (!status.isOK()) {
-        LOGV2_WARNING(23777,
-                      "Chunk move failed with {error}",
-                      "Error while doing moveChunk",
-                      "error"_attr = redact(status));
+        LOG_WARNING(23777,
+                    "Chunk move failed with {error}",
+                    "Error while doing moveChunk",
+                    "error"_attr = redact(status));
         uassertStatusOK(status);
     }
 }

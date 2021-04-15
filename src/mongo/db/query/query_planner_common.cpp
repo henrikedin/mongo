@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kQuery
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kQuery
 
 #include "mongo/platform/basic.h"
 
@@ -35,7 +35,7 @@
 #include "mongo/db/query/projection_ast_path_tracking_visitor.h"
 #include "mongo/db/query/query_planner_common.h"
 #include "mongo/db/query/tree_walker.h"
-#include "mongo/logv2/redaction.h"
+#include "mongo/log/redaction.h"
 #include "mongo/util/assert_util.h"
 
 namespace mongo {

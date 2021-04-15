@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kCommand
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kCommand
 
 #include "mongo/platform/basic.h"
 
@@ -38,7 +38,7 @@
 #include "mongo/db/client.h"
 #include "mongo/db/commands.h"
 #include "mongo/db/write_concern_options.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/s/balancer_configuration.h"
 #include "mongo/s/catalog_cache.h"
 #include "mongo/s/client/shard_registry.h"
@@ -115,13 +115,13 @@ public:
 
         const auto toStatus = Grid::get(opCtx)->shardRegistry()->getShard(opCtx, toString);
         if (!toStatus.isOK()) {
-            LOGV2_OPTIONS(22755,
-                          {logv2::UserAssertAfterLog(ErrorCodes::ShardNotFound)},
-                          "Could not move chunk in {namespace} to {toShardId} because that shard"
-                          " does not exist",
-                          "moveChunk destination shard does not exist",
-                          "toShardId"_attr = toString,
-                          "namespace"_attr = nss.ns());
+            LOG_OPTIONS(22755,
+                        {log::UserAssertAfterLog(ErrorCodes::ShardNotFound)},
+                        "Could not move chunk in {namespace} to {toShardId} because that shard"
+                        " does not exist",
+                        "moveChunk destination shard does not exist",
+                        "toShardId"_attr = toString,
+                        "namespace"_attr = nss.ns());
         }
 
         const auto to = toStatus.getValue();

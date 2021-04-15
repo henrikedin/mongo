@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kControl
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kControl
 
 #include "mongo/platform/basic.h"
 
@@ -175,7 +175,7 @@
 #include "mongo/executor/network_interface_factory.h"
 #include "mongo/executor/network_interface_thread_pool.h"
 #include "mongo/executor/thread_pool_task_executor.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/platform/process_id.h"
 #include "mongo/platform/random.h"
 #include "mongo/rpc/metadata/egress_metadata_hook_list.h"
@@ -224,7 +224,7 @@
 
 namespace mongo {
 
-using logv2::LogComponent;
+using log::LogComponent;
 using std::endl;
 
 namespace {
@@ -348,18 +348,18 @@ ExitCode _initAndListen(ServiceContext* serviceContext, int listenPort) {
     {
         ProcessId pid = ProcessId::getCurrent();
         const bool is32bit = sizeof(int*) == 4;
-        LOGV2(4615611,
-              "MongoDB starting : pid={pid} port={port} dbpath={dbPath} {architecture} host={host}",
-              "MongoDB starting",
-              "pid"_attr = pid.toNative(),
-              "port"_attr = serverGlobalParams.port,
-              "dbPath"_attr = boost::filesystem::path(storageGlobalParams.dbpath).generic_string(),
-              "architecture"_attr = (is32bit ? "32-bit" : "64-bit"),
-              "host"_attr = getHostNameCached());
+        LOG(4615611,
+            "MongoDB starting : pid={pid} port={port} dbpath={dbPath} {architecture} host={host}",
+            "MongoDB starting",
+            "pid"_attr = pid.toNative(),
+            "port"_attr = serverGlobalParams.port,
+            "dbPath"_attr = boost::filesystem::path(storageGlobalParams.dbpath).generic_string(),
+            "architecture"_attr = (is32bit ? "32-bit" : "64-bit"),
+            "host"_attr = getHostNameCached());
     }
 
     if (kDebugBuild)
-        LOGV2(20533, "DEBUG build (which is slower)");
+        LOG(20533, "DEBUG build (which is slower)");
 
 #if defined(_WIN32)
     VersionInfoInterface::instance().logTargetMinOS();
@@ -385,10 +385,10 @@ ExitCode _initAndListen(ServiceContext* serviceContext, int listenPort) {
             transport::TransportLayerManager::createWithConfig(&serverGlobalParams, serviceContext);
         auto res = tl->setup();
         if (!res.isOK()) {
-            LOGV2_ERROR(20568,
-                        "Error setting up listener: {error}",
-                        "Error setting up listener",
-                        "error"_attr = res);
+            LOG_ERROR(20568,
+                      "Error setting up listener: {error}",
+                      "Error setting up listener",
+                      "error"_attr = res);
             return EXIT_NET_ERROR;
         }
         serviceContext->setTransportLayer(std::move(tl));
@@ -426,12 +426,12 @@ ExitCode _initAndListen(ServiceContext* serviceContext, int listenPort) {
 
             // Warn if field name matches non-active registered storage engine.
             if (isRegisteredStorageEngine(serviceContext, e.fieldName())) {
-                LOGV2_WARNING(20566,
-                              "Detected configuration for non-active storage engine {fieldName} "
-                              "when current storage engine is {storageEngine}",
-                              "Detected configuration for non-active storage engine",
-                              "fieldName"_attr = e.fieldName(),
-                              "storageEngine"_attr = storageGlobalParams.engine);
+                LOG_WARNING(20566,
+                            "Detected configuration for non-active storage engine {fieldName} "
+                            "when current storage engine is {storageEngine}",
+                            "Detected configuration for non-active storage engine",
+                            "fieldName"_attr = e.fieldName(),
+                            "storageEngine"_attr = storageGlobalParams.engine);
             }
         }
     }
@@ -439,18 +439,18 @@ ExitCode _initAndListen(ServiceContext* serviceContext, int listenPort) {
     // Disallow running a storage engine that doesn't support capped collections with --profile
     if (!serviceContext->getStorageEngine()->supportsCappedCollections() &&
         serverGlobalParams.defaultProfile != 0) {
-        LOGV2_ERROR(20534,
-                    "Running {storageEngine} with profiling is not supported. Make sure you "
-                    "are not using --profile",
-                    "Running the selected storage engine with profiling is not supported",
-                    "storageEngine"_attr = storageGlobalParams.engine);
+        LOG_ERROR(20534,
+                  "Running {storageEngine} with profiling is not supported. Make sure you "
+                  "are not using --profile",
+                  "Running the selected storage engine with profiling is not supported",
+                  "storageEngine"_attr = storageGlobalParams.engine);
         exitCleanly(EXIT_BADOPTIONS);
     }
 
     // Disallow running WiredTiger with --nojournal in a replica set
     if (storageGlobalParams.engine == "wiredTiger" && !storageGlobalParams.dur &&
         replSettings.usingReplSets()) {
-        LOGV2_ERROR(
+        LOG_ERROR(
             20535,
             "Running wiredTiger without journaling in a replica set is not supported. Make sure "
             "you are not using --nojournal and that storage.journal.enabled is not set to "
@@ -483,12 +483,11 @@ ExitCode _initAndListen(ServiceContext* serviceContext, int listenPort) {
         startup_recovery::repairAndRecoverDatabases(startupOpCtx.get(),
                                                     lastStorageEngineShutdownState);
     } catch (const ExceptionFor<ErrorCodes::MustDowngrade>& error) {
-        LOGV2_FATAL_OPTIONS(
-            20573,
-            logv2::LogOptions(logv2::LogComponent::kControl, logv2::FatalMode::kContinue),
-            "** IMPORTANT: {error}",
-            "Wrong mongod version",
-            "error"_attr = error.toStatus().reason());
+        LOG_FATAL_OPTIONS(20573,
+                          log::LogOptions(log::LogComponent::kControl, log::FatalMode::kContinue),
+                          "** IMPORTANT: {error}",
+                          "Wrong mongod version",
+                          "error"_attr = error.toStatus().reason());
         exitCleanly(EXIT_NEED_DOWNGRADE);
     }
 
@@ -497,7 +496,7 @@ ExitCode _initAndListen(ServiceContext* serviceContext, int listenPort) {
     FeatureCompatibilityVersion::fassertInitializedAfterStartup(startupOpCtx.get());
 
     if (gFlowControlEnabled.load()) {
-        LOGV2(20536, "Flow Control is enabled on this deployment");
+        LOG(20536, "Flow Control is enabled on this deployment");
     }
 
     {
@@ -510,7 +509,7 @@ ExitCode _initAndListen(ServiceContext* serviceContext, int listenPort) {
     serviceContext->getStorageEngine()->notifyStartupComplete();
 
     if (storageGlobalParams.upgrade) {
-        LOGV2(20537, "Finished checking dbs");
+        LOG(20537, "Finished checking dbs");
         exitCleanly(EXIT_CLEAN);
     }
 
@@ -526,10 +525,10 @@ ExitCode _initAndListen(ServiceContext* serviceContext, int listenPort) {
     if (globalAuthzManager->shouldValidateAuthSchemaOnStartup()) {
         Status status = verifySystemIndexes(startupOpCtx.get());
         if (!status.isOK()) {
-            LOGV2_WARNING(20538,
-                          "Unable to verify system indexes: {error}",
-                          "Unable to verify system indexes",
-                          "error"_attr = redact(status));
+            LOG_WARNING(20538,
+                        "Unable to verify system indexes: {error}",
+                        "Unable to verify system indexes",
+                        "error"_attr = redact(status));
             if (status == ErrorCodes::AuthSchemaIncompatible) {
                 exitCleanly(EXIT_NEED_UPGRADE);
             } else if (status == ErrorCodes::NotWritablePrimary) {
@@ -545,7 +544,7 @@ ExitCode _initAndListen(ServiceContext* serviceContext, int listenPort) {
         status =
             globalAuthzManager->getAuthorizationVersion(startupOpCtx.get(), &foundSchemaVersion);
         if (!status.isOK()) {
-            LOGV2_ERROR(
+            LOG_ERROR(
                 20539,
                 "Auth schema version is incompatible: User and role management commands require "
                 "auth data to have at least schema version {minSchemaVersion} but startup could "
@@ -553,15 +552,15 @@ ExitCode _initAndListen(ServiceContext* serviceContext, int listenPort) {
                 "Failed to verify auth schema version",
                 "minSchemaVersion"_attr = AuthorizationManager::schemaVersion26Final,
                 "error"_attr = status);
-            LOGV2(20540,
-                  "To manually repair the 'authSchema' document in the admin.system.version "
-                  "collection, start up with --setParameter "
-                  "startupAuthSchemaValidation=false to disable validation");
+            LOG(20540,
+                "To manually repair the 'authSchema' document in the admin.system.version "
+                "collection, start up with --setParameter "
+                "startupAuthSchemaValidation=false to disable validation");
             exitCleanly(EXIT_NEED_UPGRADE);
         }
 
         if (foundSchemaVersion <= AuthorizationManager::schemaVersion26Final) {
-            LOGV2_ERROR(
+            LOG_ERROR(
                 20541,
                 "This server is using MONGODB-CR, an authentication mechanism which has been "
                 "removed from MongoDB 4.0. In order to upgrade the auth schema, first downgrade "
@@ -570,18 +569,18 @@ ExitCode _initAndListen(ServiceContext* serviceContext, int listenPort) {
             exitCleanly(EXIT_NEED_UPGRADE);
         }
     } else if (globalAuthzManager->isAuthEnabled()) {
-        LOGV2_ERROR(20569, "Auth must be disabled when starting without auth schema validation");
+        LOG_ERROR(20569, "Auth must be disabled when starting without auth schema validation");
         exitCleanly(EXIT_BADOPTIONS);
     } else {
         // If authSchemaValidation is disabled and server is running without auth,
         // warn the user and continue startup without authSchema metadata checks.
-        LOGV2_WARNING_OPTIONS(
+        LOG_WARNING_OPTIONS(
             20543,
-            {logv2::LogTag::kStartupWarnings},
+            {log::LogTag::kStartupWarnings},
             "** WARNING: Startup auth schema validation checks are disabled for the database");
-        LOGV2_WARNING_OPTIONS(
+        LOG_WARNING_OPTIONS(
             20544,
-            {logv2::LogTag::kStartupWarnings},
+            {log::LogTag::kStartupWarnings},
             "**          This mode should only be used to manually repair corrupted auth data");
     }
 
@@ -593,10 +592,10 @@ ExitCode _initAndListen(ServiceContext* serviceContext, int listenPort) {
     if (shardingInitialized) {
         auto status = waitForShardRegistryReload(startupOpCtx.get());
         if (!status.isOK()) {
-            LOGV2(20545,
-                  "Error loading shard registry at startup {error}",
-                  "Error loading shard registry at startup",
-                  "error"_attr = redact(status));
+            LOG(20545,
+                "Error loading shard registry at startup {error}",
+                "Error loading shard registry at startup",
+                "error"_attr = redact(status));
         }
     }
 
@@ -607,9 +606,9 @@ ExitCode _initAndListen(ServiceContext* serviceContext, int listenPort) {
                 .refreshIfNecessary(startupOpCtx.get());
         }
     } catch (const DBException& ex) {
-        LOGV2_WARNING(20567,
-                      "Error loading read and write concern defaults at startup",
-                      "error"_attr = redact(ex));
+        LOG_WARNING(20567,
+                    "Error loading read and write concern defaults at startup",
+                    "error"_attr = redact(ex));
     }
     readWriteConcernDefaultsMongodStartupChecks(startupOpCtx.get());
 
@@ -686,9 +685,9 @@ ExitCode _initAndListen(ServiceContext* serviceContext, int listenPort) {
 
         replCoord->startup(startupOpCtx.get(), lastStorageEngineShutdownState);
         if (getReplSetMemberInStandaloneMode(serviceContext)) {
-            LOGV2_WARNING_OPTIONS(
+            LOG_WARNING_OPTIONS(
                 20547,
-                {logv2::LogTag::kStartupWarnings},
+                {log::LogTag::kStartupWarnings},
                 "Document(s) exist in 'system.replset', but started without --replSet. Database "
                 "contents may appear inconsistent with the writes that were visible when this node "
                 "was running as part of a replica set. Restart with --replSet unless you are doing "
@@ -721,7 +720,7 @@ ExitCode _initAndListen(ServiceContext* serviceContext, int listenPort) {
         try {
             PeriodicThreadToAbortExpiredTransactions::get(serviceContext)->start();
         } catch (ExceptionFor<ErrorCodes::PeriodicJobIsStopped>&) {
-            LOGV2_WARNING(4747501, "Not starting periodic jobs as shutdown is in progress");
+            LOG_WARNING(4747501, "Not starting periodic jobs as shutdown is in progress");
             // Shutdown has already started before initialization is complete. Wait for the
             // shutdown task to complete and return.
             MONGO_IDLE_THREAD_BLOCK;
@@ -749,20 +748,20 @@ ExitCode _initAndListen(ServiceContext* serviceContext, int listenPort) {
 
     auto start = serviceContext->getServiceEntryPoint()->start();
     if (!start.isOK()) {
-        LOGV2_ERROR(20571,
-                    "Error starting service entry point: {error}",
-                    "Error starting service entry point",
-                    "error"_attr = start);
+        LOG_ERROR(20571,
+                  "Error starting service entry point: {error}",
+                  "Error starting service entry point",
+                  "error"_attr = start);
         return EXIT_NET_ERROR;
     }
 
     if (!storageGlobalParams.repair) {
         start = serviceContext->getTransportLayer()->start();
         if (!start.isOK()) {
-            LOGV2_ERROR(20572,
-                        "Error starting listener: {error}",
-                        "Error starting listener",
-                        "error"_attr = start);
+            LOG_ERROR(20572,
+                      "Error starting listener: {error}",
+                      "Error starting listener",
+                      "error"_attr = start);
             return EXIT_NET_ERROR;
         }
     }
@@ -774,12 +773,12 @@ ExitCode _initAndListen(ServiceContext* serviceContext, int listenPort) {
 #else
     if (ntservice::shouldStartService()) {
         ntservice::reportStatus(SERVICE_RUNNING);
-        LOGV2(20555, "Service running");
+        LOG(20555, "Service running");
     }
 #endif
 
     if (MONGO_unlikely(shutdownAtStartup.shouldFail())) {
-        LOGV2(20556, "Starting clean exit via failpoint");
+        LOG(20556, "Starting clean exit via failpoint");
         exitCleanly(EXIT_CLEAN);
     }
 
@@ -791,25 +790,25 @@ ExitCode initAndListen(ServiceContext* service, int listenPort) {
     try {
         return _initAndListen(service, listenPort);
     } catch (DBException& e) {
-        LOGV2_ERROR(20557,
-                    "Exception in initAndListen: {error}, terminating",
-                    "DBException in initAndListen, terminating",
-                    "error"_attr = e.toString());
+        LOG_ERROR(20557,
+                  "Exception in initAndListen: {error}, terminating",
+                  "DBException in initAndListen, terminating",
+                  "error"_attr = e.toString());
         return EXIT_UNCAUGHT;
     } catch (std::exception& e) {
-        LOGV2_ERROR(20558,
-                    "Exception in initAndListen std::exception: {error}, terminating",
-                    "std::exception in initAndListen, terminating",
-                    "error"_attr = e.what());
+        LOG_ERROR(20558,
+                  "Exception in initAndListen std::exception: {error}, terminating",
+                  "std::exception in initAndListen, terminating",
+                  "error"_attr = e.what());
         return EXIT_UNCAUGHT;
     } catch (int& n) {
-        LOGV2_ERROR(20559,
-                    "Exception in initAndListen int: {reason}, terminating",
-                    "Exception in initAndListen, terminating",
-                    "reason"_attr = n);
+        LOG_ERROR(20559,
+                  "Exception in initAndListen int: {reason}, terminating",
+                  "Exception in initAndListen, terminating",
+                  "reason"_attr = n);
         return EXIT_UNCAUGHT;
     } catch (...) {
-        LOGV2_ERROR(20560, "Exception in initAndListen, terminating");
+        LOG_ERROR(20560, "Exception in initAndListen, terminating");
         return EXIT_UNCAUGHT;
     }
 }
@@ -1068,7 +1067,7 @@ void shutdownTask(const ShutdownTaskArgs& shutdownArgs) {
     }
 
     if (MONGO_unlikely(hangBeforeShutdown.shouldFail())) {
-        LOGV2(4944800, "Hanging before shutdown due to hangBeforeShutdown failpoint");
+        LOG(4944800, "Hanging before shutdown due to hangBeforeShutdown failpoint");
         hangBeforeShutdown.pauseWhileSet();
     }
 
@@ -1089,10 +1088,10 @@ void shutdownTask(const ShutdownTaskArgs& shutdownArgs) {
         const auto forceShutdown = true;
         auto stepDownStartTime = opCtx->getServiceContext()->getPreciseClockSource()->now();
         // stepDown should never return an error during force shutdown.
-        LOGV2_OPTIONS(4784900,
-                      {LogComponent::kReplication},
-                      "Stepping down the ReplicationCoordinator for shutdown",
-                      "waitTime"_attr = shutdownTimeout);
+        LOG_OPTIONS(4784900,
+                    {LogComponent::kReplication},
+                    "Stepping down the ReplicationCoordinator for shutdown",
+                    "waitTime"_attr = shutdownTimeout);
         invariantStatusOK(stepDownForShutdown(opCtx, shutdownTimeout, forceShutdown));
         shutdownTimeout = std::max(
             Milliseconds::zero(),
@@ -1115,54 +1114,52 @@ void shutdownTask(const ShutdownTaskArgs& shutdownArgs) {
                 opCtx = uniqueOpCtx.get();
             }
             if (MONGO_unlikely(hangDuringQuiesceMode.shouldFail())) {
-                LOGV2_OPTIONS(4695101,
-                              {LogComponent::kReplication},
-                              "hangDuringQuiesceMode failpoint enabled");
+                LOG_OPTIONS(4695101,
+                            {LogComponent::kReplication},
+                            "hangDuringQuiesceMode failpoint enabled");
                 hangDuringQuiesceMode.pauseWhileSet(opCtx);
             }
 
-            LOGV2_OPTIONS(4695102,
-                          {LogComponent::kReplication},
-                          "Entering quiesce mode for shutdown",
-                          "quiesceTime"_attr = shutdownTimeout);
+            LOG_OPTIONS(4695102,
+                        {LogComponent::kReplication},
+                        "Entering quiesce mode for shutdown",
+                        "quiesceTime"_attr = shutdownTimeout);
             opCtx->sleepFor(shutdownTimeout);
-            LOGV2_OPTIONS(
-                4695103, {LogComponent::kReplication}, "Exiting quiesce mode for shutdown");
+            LOG_OPTIONS(4695103, {LogComponent::kReplication}, "Exiting quiesce mode for shutdown");
         }
     }
 
-    LOGV2_OPTIONS(4784901, {LogComponent::kCommand}, "Shutting down the MirrorMaestro");
+    LOG_OPTIONS(4784901, {LogComponent::kCommand}, "Shutting down the MirrorMaestro");
     MirrorMaestro::shutdown(serviceContext);
 
-    LOGV2_OPTIONS(4784902, {LogComponent::kSharding}, "Shutting down the WaitForMajorityService");
+    LOG_OPTIONS(4784902, {LogComponent::kSharding}, "Shutting down the WaitForMajorityService");
     WaitForMajorityService::get(serviceContext).shutDown();
 
     // Join the logical session cache before the transport layer.
     if (auto lsc = LogicalSessionCache::get(serviceContext)) {
-        LOGV2(4784903, "Shutting down the LogicalSessionCache");
+        LOG(4784903, "Shutting down the LogicalSessionCache");
         lsc->joinOnShutDown();
     }
 
     // Shutdown the TransportLayer so that new connections aren't accepted
     if (auto tl = serviceContext->getTransportLayer()) {
-        LOGV2_OPTIONS(
-            20562, {LogComponent::kNetwork}, "Shutdown: going to close listening sockets");
+        LOG_OPTIONS(20562, {LogComponent::kNetwork}, "Shutdown: going to close listening sockets");
         tl->shutdown();
     }
 
     // Shut down the global dbclient pool so callers stop waiting for connections.
-    LOGV2_OPTIONS(4784905, {LogComponent::kNetwork}, "Shutting down the global connection pool");
+    LOG_OPTIONS(4784905, {LogComponent::kNetwork}, "Shutting down the global connection pool");
     globalConnPool.shutdown();
 
     // Inform Flow Control to stop gating writes on ticket admission. This must be done before the
     // Periodic Runner is shut down (see SERVER-41751).
     if (auto flowControlTicketholder = FlowControlTicketholder::get(serviceContext)) {
-        LOGV2(4784906, "Shutting down the FlowControlTicketholder");
+        LOG(4784906, "Shutting down the FlowControlTicketholder");
         flowControlTicketholder->setInShutdown();
     }
 
     if (auto exec = ReplicaSetNodeProcessInterface::getReplicaSetNodeExecutor(serviceContext)) {
-        LOGV2_OPTIONS(
+        LOG_OPTIONS(
             4784907, {LogComponent::kReplication}, "Shutting down the replica set node executor");
         exec->shutdown();
         exec->join();
@@ -1170,7 +1167,7 @@ void shutdownTask(const ShutdownTaskArgs& shutdownArgs) {
 
     if (auto storageEngine = serviceContext->getStorageEngine()) {
         if (storageEngine->supportsReadConcernSnapshot()) {
-            LOGV2(4784908, "Shutting down the PeriodicThreadToAbortExpiredTransactions");
+            LOG(4784908, "Shutting down the PeriodicThreadToAbortExpiredTransactions");
             PeriodicThreadToAbortExpiredTransactions::get(serviceContext)->stop();
         }
 
@@ -1184,33 +1181,33 @@ void shutdownTask(const ShutdownTaskArgs& shutdownArgs) {
 
         // This can wait a long time while we drain the secondary's apply queue, especially if
         // it is building an index.
-        LOGV2_OPTIONS(
+        LOG_OPTIONS(
             4784909, {LogComponent::kReplication}, "Shutting down the ReplicationCoordinator");
         repl::ReplicationCoordinator::get(serviceContext)->shutdown(opCtx);
 
-        LOGV2_OPTIONS(5093807,
-                      {LogComponent::kTenantMigration},
-                      "Shutting down all TenantMigrationAccessBlockers on global shutdown");
+        LOG_OPTIONS(5093807,
+                    {LogComponent::kTenantMigration},
+                    "Shutting down all TenantMigrationAccessBlockers on global shutdown");
         TenantMigrationAccessBlockerRegistry::get(serviceContext).shutDown();
 
         // Terminate the index consistency check.
         if (serverGlobalParams.clusterRole == ClusterRole::ConfigServer) {
-            LOGV2_OPTIONS(4784904,
-                          {LogComponent::kSharding},
-                          "Shutting down the PeriodicShardedIndexConsistencyChecker");
+            LOG_OPTIONS(4784904,
+                        {LogComponent::kSharding},
+                        "Shutting down the PeriodicShardedIndexConsistencyChecker");
             PeriodicShardedIndexConsistencyChecker::get(serviceContext).onShutDown();
         }
 
-        LOGV2_OPTIONS(
+        LOG_OPTIONS(
             4784910, {LogComponent::kSharding}, "Shutting down the ShardingInitializationMongoD");
         ShardingInitializationMongoD::get(serviceContext)->shutDown(opCtx);
 
         // Acquire the RSTL in mode X. First we enqueue the lock request, then kill all operations,
         // destroy all stashed transaction resources in order to release locks, and finally wait
         // until the lock request is granted.
-        LOGV2_OPTIONS(4784911,
-                      {LogComponent::kReplication},
-                      "Enqueuing the ReplicationStateTransitionLock for shutdown");
+        LOG_OPTIONS(4784911,
+                    {LogComponent::kReplication},
+                    "Enqueuing the ReplicationStateTransitionLock for shutdown");
         repl::ReplicationStateTransitionLockGuard rstl(
             opCtx, MODE_X, repl::ReplicationStateTransitionLockGuard::EnqueueOnly());
 
@@ -1218,24 +1215,24 @@ void shutdownTask(const ShutdownTaskArgs& shutdownArgs) {
         // created opCtx to be immediately interrupted. After this point, the opCtx will have been
         // marked as killed and will not be usable other than to kill all transactions directly
         // below.
-        LOGV2_OPTIONS(4784912, {LogComponent::kDefault}, "Killing all operations for shutdown");
+        LOG_OPTIONS(4784912, {LogComponent::kDefault}, "Killing all operations for shutdown");
         const std::set<std::string> excludedClients = {std::string(kFTDCThreadName)};
         serviceContext->setKillAllOperations(excludedClients);
 
         if (MONGO_unlikely(pauseWhileKillingOperationsAtShutdown.shouldFail())) {
-            LOGV2_OPTIONS(4701700,
-                          {LogComponent::kDefault},
-                          "pauseWhileKillingOperationsAtShutdown failpoint enabled");
+            LOG_OPTIONS(4701700,
+                        {LogComponent::kDefault},
+                        "pauseWhileKillingOperationsAtShutdown failpoint enabled");
             sleepsecs(1);
         }
 
         // Destroy all stashed transaction resources, in order to release locks.
-        LOGV2_OPTIONS(4784913, {LogComponent::kCommand}, "Shutting down all open transactions");
+        LOG_OPTIONS(4784913, {LogComponent::kCommand}, "Shutting down all open transactions");
         killSessionsLocalShutdownAllTransactions(opCtx);
 
-        LOGV2_OPTIONS(4784914,
-                      {LogComponent::kReplication},
-                      "Acquiring the ReplicationStateTransitionLock for shutdown");
+        LOG_OPTIONS(4784914,
+                    {LogComponent::kReplication},
+                    "Acquiring the ReplicationStateTransitionLock for shutdown");
         rstl.waitForLockUntil(Date_t::max());
 
         // Release the rstl before waiting for the index build threads to join as index build
@@ -1244,15 +1241,15 @@ void shutdownTask(const ShutdownTaskArgs& shutdownArgs) {
 
         // Shuts down the thread pool and waits for index builds to finish.
         // Depends on setKillAllOperations() above to interrupt the index build operations.
-        LOGV2_OPTIONS(4784915, {LogComponent::kIndex}, "Shutting down the IndexBuildsCoordinator");
+        LOG_OPTIONS(4784915, {LogComponent::kIndex}, "Shutting down the IndexBuildsCoordinator");
         IndexBuildsCoordinator::get(serviceContext)->shutdown(opCtx);
 
         // No new readers can come in after the releasing the RSTL, as previously before releasing
         // the RSTL, we made sure that all new operations will be immediately interrupted by setting
         // ServiceContext::_globalKill to true. Reacquires RSTL in mode X.
-        LOGV2_OPTIONS(4784916,
-                      {LogComponent::kReplication},
-                      "Reacquiring the ReplicationStateTransitionLock for shutdown");
+        LOG_OPTIONS(4784916,
+                    {LogComponent::kReplication},
+                    "Reacquiring the ReplicationStateTransitionLock for shutdown");
         rstl.reacquire();
 
         // We are expected to have no active readers while performing
@@ -1261,55 +1258,55 @@ void shutdownTask(const ShutdownTaskArgs& shutdownArgs) {
         // 1) Acquiring RSTL in mode X as all readers (except single phase hybrid index builds on
         //    secondaries) are expected to hold RSTL in mode IX.
         // 2) By waiting for all index build to finish.
-        LOGV2_OPTIONS(4784917, {LogComponent::kReplication}, "Attempting to mark clean shutdown");
+        LOG_OPTIONS(4784917, {LogComponent::kReplication}, "Attempting to mark clean shutdown");
         repl::ReplicationCoordinator::get(serviceContext)->markAsCleanShutdownIfPossible(opCtx);
     }
 
-    LOGV2_OPTIONS(4784918, {LogComponent::kNetwork}, "Shutting down the ReplicaSetMonitor");
+    LOG_OPTIONS(4784918, {LogComponent::kNetwork}, "Shutting down the ReplicaSetMonitor");
     ReplicaSetMonitor::shutdown();
 
     if (auto sr = Grid::get(serviceContext)->shardRegistry()) {
-        LOGV2_OPTIONS(4784919, {LogComponent::kSharding}, "Shutting down the shard registry");
+        LOG_OPTIONS(4784919, {LogComponent::kSharding}, "Shutting down the shard registry");
         sr->shutdown();
     }
 
     // Validator shutdown must be called after setKillAllOperations is called. Otherwise, this can
     // deadlock.
     if (auto validator = LogicalTimeValidator::get(serviceContext)) {
-        LOGV2_OPTIONS(
+        LOG_OPTIONS(
             4784920, {LogComponent::kReplication}, "Shutting down the LogicalTimeValidator");
         validator->shutDown();
     }
 
     // The migrationutil executor must be shut down before shutting down the CatalogCacheLoader.
     // Otherwise, it may try to schedule work on the CatalogCacheLoader and fail.
-    LOGV2_OPTIONS(4784921, {LogComponent::kSharding}, "Shutting down the MigrationUtilExecutor");
+    LOG_OPTIONS(4784921, {LogComponent::kSharding}, "Shutting down the MigrationUtilExecutor");
     auto migrationUtilExecutor = migrationutil::getMigrationUtilExecutor();
     migrationUtilExecutor->shutdown();
     migrationUtilExecutor->join();
 
     if (ShardingState::get(serviceContext)->enabled()) {
-        LOGV2_OPTIONS(4784922, {LogComponent::kSharding}, "Shutting down the CatalogCacheLoader");
+        LOG_OPTIONS(4784922, {LogComponent::kSharding}, "Shutting down the CatalogCacheLoader");
         CatalogCacheLoader::get(serviceContext).shutDown();
     }
 
     // Shutdown the Service Entry Point and its sessions and give it a grace period to complete.
     if (auto sep = serviceContext->getServiceEntryPoint()) {
-        LOGV2_OPTIONS(4784923, {LogComponent::kCommand}, "Shutting down the ServiceEntryPoint");
+        LOG_OPTIONS(4784923, {LogComponent::kCommand}, "Shutting down the ServiceEntryPoint");
         if (!sep->shutdown(Seconds(10))) {
-            LOGV2_OPTIONS(20563,
-                          {LogComponent::kNetwork},
-                          "Service entry point did not shutdown within the time limit");
+            LOG_OPTIONS(20563,
+                        {LogComponent::kNetwork},
+                        "Service entry point did not shutdown within the time limit");
         }
     }
 
-    LOGV2(4784925, "Shutting down free monitoring");
+    LOG(4784925, "Shutting down free monitoring");
     stopFreeMonitoring();
 
-    LOGV2(4784927, "Shutting down the HealthLog");
+    LOG(4784927, "Shutting down the HealthLog");
     HealthLog::get(serviceContext).shutdown();
 
-    LOGV2(4784928, "Shutting down the TTL monitor");
+    LOG(4784928, "Shutting down the TTL monitor");
     shutdownTTLMonitor(serviceContext);
 
     // We should always be able to acquire the global lock at shutdown.
@@ -1319,27 +1316,27 @@ void shutdownTask(const ShutdownTaskArgs& shutdownArgs) {
     // For a Windows service, dbexit does not call exit(), so we must leak the lock outside
     // of this function to prevent any operations from running that need a lock.
     //
-    LOGV2(4784929, "Acquiring the global lock for shutdown");
+    LOG(4784929, "Acquiring the global lock for shutdown");
     LockerImpl* globalLocker = new LockerImpl();
     globalLocker->lockGlobal(nullptr, MODE_X);
 
     // Global storage engine may not be started in all cases before we exit
     if (serviceContext->getStorageEngine()) {
-        LOGV2(4784930, "Shutting down the storage engine");
+        LOG(4784930, "Shutting down the storage engine");
         shutdownGlobalStorageEngineCleanly(serviceContext);
     }
 
     // We drop the scope cache because leak sanitizer can't see across the
     // thread we use for proxying MozJS requests. Dropping the cache cleans up
     // the memory and makes leak sanitizer happy.
-    LOGV2_OPTIONS(4784931, {LogComponent::kDefault}, "Dropping the scope cache for shutdown");
+    LOG_OPTIONS(4784931, {LogComponent::kDefault}, "Dropping the scope cache for shutdown");
     ScriptEngine::dropScopeCache();
 
     // Shutdown Full-Time Data Capture
-    LOGV2_OPTIONS(4784926, {LogComponent::kFTDC}, "Shutting down full-time data capture");
+    LOG_OPTIONS(4784926, {LogComponent::kFTDC}, "Shutting down full-time data capture");
     stopMongoDFTDC();
 
-    LOGV2(20565, "Now exiting");
+    LOG(20565, "Now exiting");
 
     audit::logShutdown(client);
 
@@ -1372,12 +1369,11 @@ int mongod_main(int argc, char* argv[]) {
 
     Status status = mongo::runGlobalInitializers(std::vector<std::string>(argv, argv + argc));
     if (!status.isOK()) {
-        LOGV2_FATAL_OPTIONS(
-            20574,
-            logv2::LogOptions(logv2::LogComponent::kControl, logv2::FatalMode::kContinue),
-            "Error during global initialization: {error}",
-            "Error during global initialization",
-            "error"_attr = status);
+        LOG_FATAL_OPTIONS(20574,
+                          log::LogOptions(log::LogComponent::kControl, log::FatalMode::kContinue),
+                          "Error during global initialization: {error}",
+                          "Error during global initialization",
+                          "error"_attr = status);
         quickExit(EXIT_FAILURE);
     }
 
@@ -1390,9 +1386,9 @@ int mongod_main(int argc, char* argv[]) {
             return serviceContext;
         } catch (...) {
             auto cause = exceptionToStatus();
-            LOGV2_FATAL_OPTIONS(
+            LOG_FATAL_OPTIONS(
                 20575,
-                logv2::LogOptions(logv2::LogComponent::kControl, logv2::FatalMode::kContinue),
+                log::LogOptions(log::LogComponent::kControl, log::FatalMode::kContinue),
                 "Error creating service context: {error}",
                 "Error creating service context",
                 "error"_attr = redact(cause));

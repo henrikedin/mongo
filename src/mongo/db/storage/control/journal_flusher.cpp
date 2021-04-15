@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kStorage
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kStorage
 
 #include "mongo/platform/basic.h"
 
@@ -37,7 +37,7 @@
 #include "mongo/db/operation_context.h"
 #include "mongo/db/storage/recovery_unit.h"
 #include "mongo/db/storage/storage_options.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/stdx/future.h"
 #include "mongo/util/concurrency/idle_thread_block.h"
 #include "mongo/util/fail_point.h"
@@ -75,7 +75,7 @@ void JournalFlusher::set(ServiceContext* serviceCtx, std::unique_ptr<JournalFlus
 
 void JournalFlusher::run() {
     ThreadClient tc(name(), getGlobalServiceContext());
-    LOGV2_DEBUG(4584701, 1, "starting {name} thread", "name"_attr = name());
+    LOG_DEBUG(4584701, 1, "starting {name} thread", "name"_attr = name());
 
     // The thread must not run and access the service context to create an opCtx while unit test
     // infrastructure is still being set up and expects sole access to the service context (there is
@@ -157,7 +157,7 @@ void JournalFlusher::run() {
         _flushJournalNow = false;
 
         if (_shuttingDown) {
-            LOGV2_DEBUG(4584702, 1, "stopping {name} thread", "name"_attr = name());
+            LOG_DEBUG(4584702, 1, "stopping {name} thread", "name"_attr = name());
             invariant(!_shutdownReason.isOK());
             _nextSharedPromise->setError(_shutdownReason);
 
@@ -176,7 +176,7 @@ void JournalFlusher::run() {
 }
 
 void JournalFlusher::shutdown(const Status& reason) {
-    LOGV2(22320, "Shutting down journal flusher thread");
+    LOG(22320, "Shutting down journal flusher thread");
     {
         stdx::lock_guard<Latch> lk(_stateMutex);
         _shuttingDown = true;
@@ -184,28 +184,28 @@ void JournalFlusher::shutdown(const Status& reason) {
         _flushJournalNowCV.notify_one();
     }
     wait();
-    LOGV2(22321, "Finished shutting down journal flusher thread");
+    LOG(22321, "Finished shutting down journal flusher thread");
 }
 
 void JournalFlusher::pause() {
-    LOGV2(5142500, "Pausing journal flusher thread");
+    LOG(5142500, "Pausing journal flusher thread");
     {
         stdx::unique_lock<Latch> lk(_stateMutex);
         _needToPause = true;
         _stateChangeCV.wait(lk,
                             [&] { return _state == States::Paused || _state == States::ShutDown; });
     }
-    LOGV2(5142501, "Paused journal flusher thread");
+    LOG(5142501, "Paused journal flusher thread");
 }
 
 void JournalFlusher::resume() {
-    LOGV2(5142502, "Resuming journal flusher thread");
+    LOG(5142502, "Resuming journal flusher thread");
     {
         stdx::lock_guard<Latch> lk(_stateMutex);
         _needToPause = false;
         _flushJournalNowCV.notify_one();
     }
-    LOGV2(5142503, "Resumed journal flusher thread");
+    LOG(5142503, "Resumed journal flusher thread");
 }
 
 void JournalFlusher::triggerJournalFlush() {
@@ -223,9 +223,9 @@ void JournalFlusher::waitForJournalFlush() {
             break;
         } catch (const ExceptionFor<ErrorCodes::InterruptedDueToReplStateChange>&) {
             // Do nothing and let the while-loop retry the operation.
-            LOGV2_DEBUG(4814901,
-                        3,
-                        "Retrying waiting for durability interrupted by replication state change");
+            LOG_DEBUG(4814901,
+                      3,
+                      "Retrying waiting for durability interrupted by replication state change");
         }
     }
 }

@@ -26,17 +26,17 @@
  *    exception statement from all source files in the program, then also delete
  *    it in the license file.
  */
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kDefault
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kDefault
 
 #include "mongo/client/sdam/topology_listener.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace mongo::sdam {
 
 void TopologyEventsPublisher::registerListener(TopologyListenerPtr listener) {
     auto locked_listener = listener.lock();
     if (!locked_listener) {
-        LOGV2_WARNING(5148001, "Trying to register an empty listener with TopologyEventsPublisher");
+        LOG_WARNING(5148001, "Trying to register an empty listener with TopologyEventsPublisher");
         return;
     }
     stdx::lock_guard lock(_mutex);
@@ -52,8 +52,7 @@ void TopologyEventsPublisher::registerListener(TopologyListenerPtr listener) {
 void TopologyEventsPublisher::removeListener(TopologyListenerPtr listener) {
     auto locked_listener = listener.lock();
     if (!locked_listener) {
-        LOGV2_WARNING(5148002,
-                      "Trying to unregister an empty listener from TopologyEventsPublisher");
+        LOG_WARNING(5148002, "Trying to unregister an empty listener from TopologyEventsPublisher");
         return;
     }
     stdx::lock_guard lock(_mutex);

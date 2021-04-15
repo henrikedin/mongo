@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kDefault
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kDefault
 
 #include "mongo/platform/basic.h"
 
@@ -44,7 +44,7 @@
 #include "mongo/db/op_observer.h"
 #include "mongo/db/operation_context.h"
 #include "mongo/db/storage/recovery_unit_noop.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/transport/service_entry_point.h"
 #include "mongo/transport/session.h"
 #include "mongo/transport/transport_layer.h"
@@ -106,11 +106,11 @@ ServiceContext::ServiceContext()
 ServiceContext::~ServiceContext() {
     stdx::lock_guard<Latch> lk(_mutex);
     for (const auto& client : _clients) {
-        LOGV2_ERROR(23828,
-                    "{client} exists while destroying {serviceContext}",
-                    "Non-empty client list when destroying service context",
-                    "client"_attr = client->desc(),
-                    "serviceContext"_attr = reinterpret_cast<uint64_t>(this));
+        LOG_ERROR(23828,
+                  "{client} exists while destroying {serviceContext}",
+                  "Non-empty client list when destroying service context",
+                  "client"_attr = client->desc(),
+                  "serviceContext"_attr = reinterpret_cast<uint64_t>(this));
     }
     invariant(_clients.empty());
 }
@@ -361,7 +361,7 @@ void ServiceContext::setKillAllOperations(const std::set<std::string>& excludedC
     }
 
     // Shared by mongos and mongod shutdown code paths
-    LOGV2(4695300, "Interrupted all currently running operations", "opsKilled"_attr = opsKilled);
+    LOG(4695300, "Interrupted all currently running operations", "opsKilled"_attr = opsKilled);
 
     // Notify any listeners who need to reach to the server shutting down
     for (const auto listener : _killOpListeners) {

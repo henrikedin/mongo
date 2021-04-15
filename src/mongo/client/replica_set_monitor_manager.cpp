@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kNetwork
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kNetwork
 
 #include "mongo/platform/basic.h"
 
@@ -48,7 +48,7 @@
 #include "mongo/executor/task_executor.h"
 #include "mongo/executor/task_executor_pool.h"
 #include "mongo/executor/thread_pool_task_executor.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/platform/mutex.h"
 #include "mongo/rpc/metadata/egress_metadata_hook_list.h"
 #include "mongo/util/duration.h"
@@ -96,11 +96,11 @@ Status ReplicaSetMonitorManagerNetworkConnectionHook::validateHost(
                             remoteHost, isMasterReply.status, isMasterReply.data);
                     }
                 } catch (const DBException& exception) {
-                    LOGV2_ERROR(4712101,
-                                "An error occurred publishing a ReplicaSetMonitor handshake event",
-                                "error"_attr = exception.toStatus(),
-                                "replicaSet"_attr = monitor->getName(),
-                                "handshakeStatus"_attr = isMasterReply.status);
+                    LOG_ERROR(4712101,
+                              "An error occurred publishing a ReplicaSetMonitor handshake event",
+                              "error"_attr = exception.toStatus(),
+                              "replicaSet"_attr = monitor->getName(),
+                              "handshakeStatus"_attr = isMasterReply.status);
                     return exception.toStatus();
                 }
             }
@@ -186,10 +186,10 @@ shared_ptr<ReplicaSetMonitor> ReplicaSetMonitorManager::getOrCreateMonitor(
     }
 
     std::shared_ptr<ReplicaSetMonitor> newMonitor;
-    LOGV2(4603701,
-          "Starting Replica Set Monitor",
-          "protocol"_attr = toString(gReplicaSetMonitorProtocol),
-          "uri"_attr = uri.toString());
+    LOG(4603701,
+        "Starting Replica Set Monitor",
+        "protocol"_attr = toString(gReplicaSetMonitorProtocol),
+        "uri"_attr = uri.toString());
     if (gReplicaSetMonitorProtocol == ReplicaSetMonitorProtocol::kScanning) {
         newMonitor = std::make_shared<ScanningReplicaSetMonitor>(uri, cleanupCallback);
         newMonitor->init();
@@ -245,10 +245,10 @@ void ReplicaSetMonitorManager::removeMonitor(StringData setName) {
             monitor->drop();
         }
         _monitors.erase(it);
-        LOGV2(20187,
-              "Removed ReplicaSetMonitor for replica set {replicaSet}",
-              "Removed ReplicaSetMonitor for replica set",
-              "replicaSet"_attr = setName);
+        LOG(20187,
+            "Removed ReplicaSetMonitor for replica set {replicaSet}",
+            "Removed ReplicaSetMonitor for replica set",
+            "replicaSet"_attr = setName);
     }
 }
 
@@ -284,7 +284,7 @@ void ReplicaSetMonitorManager::shutdown() {
     }
 
     if (taskExecutor) {
-        LOGV2_DEBUG(20188, 1, "Shutting down task executor used for monitoring replica sets");
+        LOG_DEBUG(20188, 1, "Shutting down task executor used for monitoring replica sets");
         taskExecutor->shutdown();
         taskExecutor->join();
     }

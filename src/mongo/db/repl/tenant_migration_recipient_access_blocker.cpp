@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTenantMigration
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTenantMigration
 
 #include "mongo/platform/basic.h"
 
@@ -38,7 +38,7 @@
 #include "mongo/db/repl/tenant_migration_access_blocker_executor.h"
 #include "mongo/db/repl/tenant_migration_decoration.h"
 #include "mongo/db/repl/tenant_migration_recipient_access_blocker.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/cancellation.h"
 #include "mongo/util/fail_point.h"
 #include "mongo/util/future_util.h"
@@ -85,11 +85,11 @@ SharedSemiFuture<void> TenantMigrationRecipientAccessBlocker::getCanReadFuture(
 
     // Exclude internal reads decorated with 'tenantMigrationRecipientInfo' from any logic.
     if (repl::tenantMigrationRecipientInfo(opCtx).has_value()) {
-        LOGV2_DEBUG(5492000,
-                    1,
-                    "Internal tenant read got excluded from the MTAB filtering",
-                    "tenantId"_attr = _tenantId,
-                    "opId"_attr = opCtx->getOpID());
+        LOG_DEBUG(5492000,
+                  1,
+                  "Internal tenant read got excluded from the MTAB filtering",
+                  "tenantId"_attr = _tenantId,
+                  "opId"_attr = opCtx->getOpID());
         return SharedSemiFuture<void>();
     }
 
@@ -198,10 +198,10 @@ void TenantMigrationRecipientAccessBlocker::startRejectingReadsBefore(const Time
     stdx::lock_guard<Latch> lk(_mutex);
     _state = State::kRejectBefore;
     if (!_rejectBeforeTimestamp || timestamp > *_rejectBeforeTimestamp) {
-        LOGV2(5358100,
-              "Tenant migration recipient starting to reject reads before timestamp",
-              "tenantId"_attr = _tenantId,
-              "timestamp"_attr = timestamp);
+        LOG(5358100,
+            "Tenant migration recipient starting to reject reads before timestamp",
+            "tenantId"_attr = _tenantId,
+            "timestamp"_attr = timestamp);
         _rejectBeforeTimestamp = timestamp;
     }
 }

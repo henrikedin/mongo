@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTenantMigration
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTenantMigration
 
 #include "mongo/platform/basic.h"
 
@@ -37,7 +37,7 @@
 #include "mongo/db/repl/cloner_utils.h"
 #include "mongo/db/repl/tenant_all_database_cloner.h"
 #include "mongo/db/repl/tenant_database_cloner.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/util/assert_util.h"
 
@@ -84,10 +84,10 @@ BaseCloner::AfterStageBehavior TenantAllDatabaseCloner::listDatabasesStage() {
     _operationTime = getClient()->getOperationTime();
 
     if (MONGO_unlikely(tenantAllDatabaseClonerHangAfterGettingOperationTime.shouldFail())) {
-        LOGV2(4881504,
-              "Failpoint 'tenantAllDatabaseClonerHangAfterGettingOperationTime' enabled. Blocking "
-              "until it is disabled.",
-              "tenantId"_attr = _tenantId);
+        LOG(4881504,
+            "Failpoint 'tenantAllDatabaseClonerHangAfterGettingOperationTime' enabled. Blocking "
+            "until it is disabled.",
+            "tenantId"_attr = _tenantId);
         tenantAllDatabaseClonerHangAfterGettingOperationTime.pauseWhileSet();
     }
 
@@ -112,11 +112,11 @@ BaseCloner::AfterStageBehavior TenantAllDatabaseCloner::listDatabasesStage() {
 
     // Process and verify the listDatabases results.
     for (const auto& dbBSON : databasesArray) {
-        LOGV2_DEBUG(4881508,
-                    2,
-                    "Cloner received listDatabases entry",
-                    "db"_attr = dbBSON,
-                    "tenantId"_attr = _tenantId);
+        LOG_DEBUG(4881508,
+                  2,
+                  "Cloner received listDatabases entry",
+                  "db"_attr = dbBSON,
+                  "tenantId"_attr = _tenantId);
         uassert(4881505, "Result from donor must have 'name' set", dbBSON.hasField("name"));
 
         const auto& dbName = dbBSON["name"].str();
@@ -136,12 +136,12 @@ BaseCloner::AfterStageBehavior TenantAllDatabaseCloner::listExistingDatabasesSta
 
     std::vector<std::string> clonedDatabases;
     for (const auto& dbBSON : databasesArray) {
-        LOGV2_DEBUG(5271500,
-                    2,
-                    "listExistingDatabases entry",
-                    "migrationId"_attr = getSharedData()->getMigrationId(),
-                    "tenantId"_attr = _tenantId,
-                    "db"_attr = dbBSON);
+        LOG_DEBUG(5271500,
+                  2,
+                  "listExistingDatabases entry",
+                  "migrationId"_attr = getSharedData()->getMigrationId(),
+                  "tenantId"_attr = _tenantId,
+                  "db"_attr = dbBSON);
         uassert(5271501,
                 "Cloned database from recipient must have 'name' set",
                 dbBSON.hasField("name"));
@@ -175,16 +175,16 @@ BaseCloner::AfterStageBehavior TenantAllDatabaseCloner::listExistingDatabasesSta
         }
         _databases.erase(_databases.begin(), startingDb);
         if (!_databases.empty()) {
-            LOGV2(5271502,
-                  "Tenant AllDatabaseCloner resumes cloning",
-                  "migrationId"_attr = getSharedData()->getMigrationId(),
-                  "tenantId"_attr = _tenantId,
-                  "resumeFrom"_attr = _databases.front());
+            LOG(5271502,
+                "Tenant AllDatabaseCloner resumes cloning",
+                "migrationId"_attr = getSharedData()->getMigrationId(),
+                "tenantId"_attr = _tenantId,
+                "resumeFrom"_attr = _databases.front());
         } else {
-            LOGV2(5271503,
-                  "Tenant AllDatabaseCloner has already cloned all databases",
-                  "migrationId"_attr = getSharedData()->getMigrationId(),
-                  "tenantId"_attr = _tenantId);
+            LOG(5271503,
+                "Tenant AllDatabaseCloner has already cloned all databases",
+                "migrationId"_attr = getSharedData()->getMigrationId(),
+                "tenantId"_attr = _tenantId);
         }
     }
 
@@ -201,13 +201,13 @@ void TenantAllDatabaseCloner::postStage() {
             BSONObj res;
             getClient()->runCommand(dbName, BSON("dbStats" << 1), res);
             if (auto status = getStatusFromCommandResult(res); !status.isOK()) {
-                LOGV2_WARNING(5426600,
-                              "Skipping recording of data size metrics for database due to failure "
-                              "in the 'dbStats' command, tenant migration stats may be inaccurate.",
-                              "db"_attr = dbName,
-                              "migrationId"_attr = getSharedData()->getMigrationId(),
-                              "tenantId"_attr = _tenantId,
-                              "status"_attr = status);
+                LOG_WARNING(5426600,
+                            "Skipping recording of data size metrics for database due to failure "
+                            "in the 'dbStats' command, tenant migration stats may be inaccurate.",
+                            "db"_attr = dbName,
+                            "migrationId"_attr = getSharedData()->getMigrationId(),
+                            "tenantId"_attr = _tenantId,
+                            "status"_attr = status);
             } else {
                 approxTotalDataSize += res.getField("dataSize").safeNumberLong();
             }
@@ -237,20 +237,20 @@ void TenantAllDatabaseCloner::postStage() {
         }
         auto dbStatus = _currentDatabaseCloner->run();
         if (dbStatus.isOK()) {
-            LOGV2_DEBUG(4881500,
-                        1,
-                        "Tenant migration database clone finished",
-                        "dbName"_attr = dbName,
-                        "status"_attr = dbStatus,
-                        "tenantId"_attr = _tenantId);
+            LOG_DEBUG(4881500,
+                      1,
+                      "Tenant migration database clone finished",
+                      "dbName"_attr = dbName,
+                      "status"_attr = dbStatus,
+                      "tenantId"_attr = _tenantId);
         } else {
-            LOGV2_WARNING(4881501,
-                          "Tenant migration database clone failed",
-                          "dbName"_attr = dbName,
-                          "dbNumber"_attr = (_stats.databasesCloned + 1),
-                          "totalDbs"_attr = _databases.size(),
-                          "error"_attr = dbStatus.toString(),
-                          "tenantId"_attr = _tenantId);
+            LOG_WARNING(4881501,
+                        "Tenant migration database clone failed",
+                        "dbName"_attr = dbName,
+                        "dbNumber"_attr = (_stats.databasesCloned + 1),
+                        "totalDbs"_attr = _databases.size(),
+                        "error"_attr = dbStatus.toString(),
+                        "tenantId"_attr = _tenantId);
             setSyncFailedStatus(dbStatus);
             return;
         }

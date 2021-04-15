@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kNetwork
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kNetwork
 
 #include "mongo/platform/basic.h"
 
@@ -41,7 +41,7 @@
 #include <sys/types.h>
 #endif
 
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/net/sockaddr.h"
 #include "mongo/util/scopeguard.h"
 #include "mongo/util/text.h"
@@ -90,12 +90,12 @@ std::vector<std::string> getHostFQDNs(std::string hostName, HostnameCanonicaliza
     int err;
     auto nativeHostName = shim_toNativeString(hostName.c_str());
     if ((err = shim_getaddrinfo(nativeHostName.c_str(), nullptr, &hints, &info)) != 0) {
-        LOGV2_DEBUG(23170,
-                    3,
-                    "Failed to obtain address information for host {hostName}: {error}",
-                    "Failed to obtain address information for host",
-                    "hostName"_attr = hostName,
-                    "error"_attr = getAddrInfoStrError(err));
+        LOG_DEBUG(23170,
+                  3,
+                  "Failed to obtain address information for host {hostName}: {error}",
+                  "Failed to obtain address information for host",
+                  "hostName"_attr = hostName,
+                  "error"_attr = getAddrInfoStrError(err));
         return results;
     }
     const auto guard = makeGuard(shim_freeaddrinfo);
@@ -139,11 +139,11 @@ std::vector<std::string> getHostFQDNs(std::string hostName, HostnameCanonicaliza
     }
 
     if (!getNameInfoErrors.empty()) {
-        LOGV2_DEBUG(23171,
-                    3,
-                    "Failed to obtain name info: {errors}",
-                    "Failed to obtain name info",
-                    "errors"_attr = getNameInfoErrors);
+        LOG_DEBUG(23171,
+                  3,
+                  "Failed to obtain name info: {errors}",
+                  "Failed to obtain name info",
+                  "errors"_attr = getNameInfoErrors);
     }
 
     // Deduplicate the results list

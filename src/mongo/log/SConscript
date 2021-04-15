@@ -1,0 +1,27 @@
+# -*- mode: python -*-
+
+Import("env")
+
+env = env.Clone()
+
+env.CppUnitTest(
+    target='log_test',
+    source=[
+        'log_component_test.cpp',
+        'log_test.cpp',
+        'redaction_test.cpp',
+    ],
+    LIBDEPS=[
+        '$BUILD_DIR/mongo/base',
+    ]
+)
+
+env.Benchmark(
+    target='LOG_bm',
+    source=[
+        'log_bm.cpp',
+    ],
+    LIBDEPS=[
+        '$BUILD_DIR/mongo/base',
+    ],
+)

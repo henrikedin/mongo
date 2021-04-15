@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kDefault
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kDefault
 
 #include "mongo/platform/basic.h"
 
@@ -35,7 +35,7 @@
 
 #include "mongo/bson/bson_validate.h"
 #include "mongo/bson/bsonobjbuilder.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace mongo {
 namespace {
@@ -101,7 +101,7 @@ void BM_validate(benchmark::State& state) {
     const auto& elem = array[0].Obj();
     auto status = validateBSON(elem.objdata(), elem.objsize());
     if (!status.isOK())
-        LOGV2(4440100, "Validate failed", "elem"_attr = elem, "status"_attr = status);
+        LOG(4440100, "Validate failed", "elem"_attr = elem, "status"_attr = status);
     invariant(status.isOK());
 
     for (auto _ : state) {

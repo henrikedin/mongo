@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kCommand
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kCommand
 
 #include "mongo/platform/basic.h"
 
@@ -37,7 +37,7 @@
 #include "mongo/db/index_builds_coordinator.h"
 #include "mongo/db/repl/replication_coordinator.h"
 #include "mongo/db/s/transaction_coordinator_service.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace mongo {
 
@@ -55,7 +55,7 @@ Status stepDownForShutdown(OperationContext* opCtx,
     if (replCoord->getConfig().getNumMembers() != 1) {
         try {
             if (MONGO_unlikely(hangInShutdownBeforeStepdown.shouldFail())) {
-                LOGV2(5436600, "hangInShutdownBeforeStepdown failpoint enabled");
+                LOG(5436600, "hangInShutdownBeforeStepdown failpoint enabled");
                 hangInShutdownBeforeStepdown.pauseWhileSet(opCtx);
             }
 
@@ -64,7 +64,7 @@ Status stepDownForShutdown(OperationContext* opCtx,
             replCoord->stepDown(opCtx, false /* force */, waitTime, Days(1));
 
             if (MONGO_unlikely(hangInShutdownAfterStepdown.shouldFail())) {
-                LOGV2(4695100, "hangInShutdownAfterStepdown failpoint enabled");
+                LOG(4695100, "hangInShutdownAfterStepdown failpoint enabled");
                 hangInShutdownAfterStepdown.pauseWhileSet(opCtx);
             }
         } catch (const ExceptionFor<ErrorCodes::NotWritablePrimary>&) {
@@ -74,7 +74,7 @@ Status stepDownForShutdown(OperationContext* opCtx,
                 return e.toStatus();
             }
             // Ignore stepDown errors on force shutdown.
-            LOGV2_WARNING(4719000, "Error stepping down during force shutdown", "error"_attr = e);
+            LOG_WARNING(4719000, "Error stepping down during force shutdown", "error"_attr = e);
         }
 
         // Even if the ReplicationCoordinator failed to step down, ensure we still shut down the

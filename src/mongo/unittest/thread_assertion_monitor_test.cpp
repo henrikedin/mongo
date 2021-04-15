@@ -27,11 +27,11 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTest
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTest
 
 #include "mongo/unittest/thread_assertion_monitor.h"
 
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/unittest/unittest.h"
 
 namespace mongo::unittest {
@@ -73,7 +73,7 @@ TEST(ThreadAssertionMonitor, WorkerExecFail) {
     } catch (const TestAssertionFailureException& ex) {
         ASSERT_STRING_SEARCH_REGEX(ex.what(), "Oops");
     }
-    LOGV2_INFO(5182100, "monitor.wait finished");
+    LOG_INFO(5182100, "monitor.wait finished");
 }
 
 TEST(ThreadAssertionMonitor, ThreadAssertionMonitoredTestTrivial) {

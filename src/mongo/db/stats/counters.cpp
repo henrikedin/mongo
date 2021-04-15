@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kDefault
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kDefault
 
 #include "mongo/platform/basic.h"
 
@@ -37,7 +37,7 @@
 
 #include "mongo/client/authenticate.h"
 #include "mongo/db/jsobj.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace mongo {
 
@@ -69,7 +69,7 @@ void OpCounters::gotOp(int op, bool isCommand) {
         case opReply:
             break;
         default:
-            LOGV2(22205, "OpCounters::gotOp unknown op: {op}", "op"_attr = op);
+            LOG(22205, "OpCounters::gotOp unknown op: {op}", "op"_attr = op);
     }
 }
 

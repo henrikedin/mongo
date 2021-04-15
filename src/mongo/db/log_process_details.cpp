@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kControl
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kControl
 
 #include "mongo/platform/basic.h"
 
@@ -42,7 +42,7 @@
 #include "mongo/db/repl/replication_coordinator.h"
 #include "mongo/db/server_options.h"
 #include "mongo/db/server_options_server_helpers.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/net/socket_utils.h"
 #include "mongo/util/processinfo.h"
 #include "mongo/util/version.h"
@@ -60,10 +60,10 @@ bool is32bit() {
 void logProcessDetails(std::ostream* os) {
     auto&& vii = VersionInfoInterface::instance();
     if (ProcessInfo::getMemSizeMB() < ProcessInfo::getSystemMemSizeMB()) {
-        LOGV2_WARNING(20720,
-                      "Available memory is less than system memory",
-                      "availableMemSizeMB"_attr = ProcessInfo::getMemSizeMB(),
-                      "systemMemSizeMB"_attr = ProcessInfo::getSystemMemSizeMB());
+        LOG_WARNING(20720,
+                    "Available memory is less than system memory",
+                    "availableMemSizeMB"_attr = ProcessInfo::getMemSizeMB(),
+                    "systemMemSizeMB"_attr = ProcessInfo::getSystemMemSizeMB());
     }
     auto osInfo = BSONObjBuilder()
                       .append("name", ProcessInfo::getOsName())
@@ -75,18 +75,18 @@ void logProcessDetails(std::ostream* os) {
                       tojson(osInfo, ExtendedRelaxedV2_0_0, true))
             << std::endl;
     } else {
-        LOGV2(51765, "Operating System", "os"_attr = osInfo);
+        LOG(51765, "Operating System", "os"_attr = osInfo);
     }
     printCommandLineOpts(os);
 }
 
 void logProcessDetailsForLogRotate(ServiceContext* serviceContext) {
-    LOGV2(20721,
-          "Process Details",
-          "pid"_attr = ProcessId::getCurrent(),
-          "port"_attr = serverGlobalParams.port,
-          "architecture"_attr = (is32bit() ? "32-bit" : "64-bit"),
-          "host"_attr = getHostNameCached());
+    LOG(20721,
+        "Process Details",
+        "pid"_attr = ProcessId::getCurrent(),
+        "port"_attr = serverGlobalParams.port,
+        "architecture"_attr = (is32bit() ? "32-bit" : "64-bit"),
+        "host"_attr = getHostNameCached());
 
     auto replCoord = repl::ReplicationCoordinator::get(serviceContext);
     if (replCoord != nullptr &&
@@ -94,12 +94,12 @@ void logProcessDetailsForLogRotate(ServiceContext* serviceContext) {
         auto rsConfig = replCoord->getConfig();
 
         if (rsConfig.isInitialized()) {
-            LOGV2(20722,
-                  "Node is a member of a replica set",
-                  "config"_attr = rsConfig,
-                  "memberState"_attr = replCoord->getMemberState());
+            LOG(20722,
+                "Node is a member of a replica set",
+                "config"_attr = rsConfig,
+                "memberState"_attr = replCoord->getMemberState());
         } else {
-            LOGV2(20724, "Node currently has no replica set config");
+            LOG(20724, "Node currently has no replica set config");
         }
     }
 

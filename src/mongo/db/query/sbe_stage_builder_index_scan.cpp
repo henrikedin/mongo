@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kQuery
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kQuery
 
 #include "mongo/platform/basic.h"
 
@@ -54,7 +54,7 @@
 #include "mongo/db/query/sbe_stage_builder_filter.h"
 #include "mongo/db/query/sbe_stage_builder_helpers.h"
 #include "mongo/db/query/util/make_data_structure.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/str.h"
 #include "mongo/util/visit_helper.h"
 
@@ -223,16 +223,16 @@ makeIntervalsFromIndexBounds(const IndexBounds& bounds,
         }
     }();
 
-    LOGV2_DEBUG(
+    LOG_DEBUG(
         4742905, 5, "Number of generated interval(s) for ixscan", "num"_attr = intervals.size());
     std::vector<std::pair<std::unique_ptr<KeyString::Value>, std::unique_ptr<KeyString::Value>>>
         result;
     for (auto&& [lowKey, highKey] : intervals) {
-        LOGV2_DEBUG(4742906,
-                    5,
-                    "Generated interval [lowKey, highKey]",
-                    "lowKey"_attr = lowKey,
-                    "highKey"_attr = highKey);
+        LOG_DEBUG(4742906,
+                  5,
+                  "Generated interval [lowKey, highKey]",
+                  "lowKey"_attr = lowKey,
+                  "highKey"_attr = highKey);
         // Note that 'makeKeyFromBSONKeyForSeek()' is intended to compute the "start" key for an
         // index scan. The logic for computing a "discriminator" for an "end" key is reversed, which
         // is why we use 'makeKeyStringFromBSONKey()' to manually specify the discriminator for the

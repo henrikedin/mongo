@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kStorage
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kStorage
 
 #include "mongo/platform/basic.h"
 
@@ -37,7 +37,7 @@
 #include "mongo/db/storage/wiredtiger/wiredtiger_kv_engine.h"
 #include "mongo/db/storage/wiredtiger/wiredtiger_oplog_manager.h"
 #include "mongo/db/storage/wiredtiger/wiredtiger_util.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/platform/mutex.h"
 #include "mongo/util/concurrency/idle_thread_block.h"
 #include "mongo/util/scopeguard.h"
@@ -65,10 +65,10 @@ void WiredTigerOplogManager::startVisibilityThread(OperationContext* opCtx,
         // rollback before servicing oplog reads.
         auto topOfOplogTimestamp = Timestamp(lastRecord->id.asLong());
         setOplogReadTimestamp(topOfOplogTimestamp);
-        LOGV2_DEBUG(22368,
-                    1,
-                    "Initializing the oplog read timestamp (oplog visibility).",
-                    "oplogReadTimestamp"_attr = topOfOplogTimestamp);
+        LOG_DEBUG(22368,
+                  1,
+                  "Initializing the oplog read timestamp (oplog visibility).",
+                  "oplogReadTimestamp"_attr = topOfOplogTimestamp);
     } else {
         // Avoid setting oplog visibility to 0. That means "everything is visible".
         setOplogReadTimestamp(Timestamp(StorageEngine::kMinimumTimestamp));
@@ -133,7 +133,7 @@ void WiredTigerOplogManager::waitForAllEarlierOplogWritesToBeVisible(
         oplogRecordStore->getCursor(opCtx, false /* select a reverse cursor */);
     auto lastOplogRecord = cursor->next();
     if (!lastOplogRecord) {
-        LOGV2_DEBUG(22369, 2, "The oplog does not exist. Not going to wait for oplog visibility.");
+        LOG_DEBUG(22369, 2, "The oplog does not exist. Not going to wait for oplog visibility.");
         opCtx->recoveryUnit()->abandonSnapshot();
         return;
     }
@@ -157,26 +157,26 @@ void WiredTigerOplogManager::waitForAllEarlierOplogWritesToBeVisible(
     opCtx->waitForConditionOrInterrupt(_oplogEntriesBecameVisibleCV, lk, [&] {
         auto newLatestVisibleTimestamp = getOplogReadTimestamp();
         if (newLatestVisibleTimestamp < currentLatestVisibleTimestamp) {
-            LOGV2_DEBUG(22370,
-                        1,
-                        "The latest visible oplog entry went backwards in time. A rollback likely "
-                        "occurred.",
-                        "latestVisibleOplogEntryTimestamp"_attr =
-                            Timestamp(newLatestVisibleTimestamp),
-                        "previouslyFoundLatestVisibleOplogEntryTimestamp"_attr =
-                            Timestamp(currentLatestVisibleTimestamp));
+            LOG_DEBUG(22370,
+                      1,
+                      "The latest visible oplog entry went backwards in time. A rollback likely "
+                      "occurred.",
+                      "latestVisibleOplogEntryTimestamp"_attr =
+                          Timestamp(newLatestVisibleTimestamp),
+                      "previouslyFoundLatestVisibleOplogEntryTimestamp"_attr =
+                          Timestamp(currentLatestVisibleTimestamp));
             // We cannot wait for a write that no longer exists, so we are finished.
             return true;
         }
         currentLatestVisibleTimestamp = newLatestVisibleTimestamp;
         RecordId newLatestVisible = RecordId(currentLatestVisibleTimestamp);
         if (newLatestVisible < waitingFor) {
-            LOGV2_DEBUG(22371,
-                        2,
-                        "Operation is waiting for an entry to become visible in the oplog.",
-                        "awaitedOplogEntryTimestamp"_attr = Timestamp(waitingFor.asLong()),
-                        "currentLatestVisibleOplogEntryTimestamp"_attr =
-                            Timestamp(currentLatestVisibleTimestamp));
+            LOG_DEBUG(22371,
+                      2,
+                      "Operation is waiting for an entry to become visible in the oplog.",
+                      "awaitedOplogEntryTimestamp"_attr = Timestamp(waitingFor.asLong()),
+                      "currentLatestVisibleOplogEntryTimestamp"_attr =
+                          Timestamp(currentLatestVisibleTimestamp));
         }
         return newLatestVisible >= waitingFor;
     });
@@ -224,7 +224,7 @@ void WiredTigerOplogManager::_updateOplogVisibilityLoop(WiredTigerSessionCache* 
         }
 
         if (_shuttingDown) {
-            LOGV2(22372, "Oplog visibility thread shutting down.");
+            LOG(22372, "Oplog visibility thread shutting down.");
             return;
         }
 
@@ -241,10 +241,10 @@ void WiredTigerOplogManager::_updateOplogVisibilityLoop(WiredTigerSessionCache* 
         // where we commit data file changes separately from oplog changes, so ignore
         // a non-incrementing timestamp.
         if (newTimestamp <= _oplogReadTimestamp.load()) {
-            LOGV2_DEBUG(22373,
-                        2,
-                        "No new oplog entries became visible.",
-                        "aNoHolesOplogTimestamp"_attr = Timestamp(newTimestamp));
+            LOG_DEBUG(22373,
+                      2,
+                      "No new oplog entries became visible.",
+                      "aNoHolesOplogTimestamp"_attr = Timestamp(newTimestamp));
             continue;
         }
 
@@ -277,10 +277,10 @@ void WiredTigerOplogManager::setOplogReadTimestamp(Timestamp ts) {
 void WiredTigerOplogManager::_setOplogReadTimestamp(WithLock, uint64_t newTimestamp) {
     _oplogReadTimestamp.store(newTimestamp);
     _oplogEntriesBecameVisibleCV.notify_all();
-    LOGV2_DEBUG(22374,
-                2,
-                "Updating the oplogReadTimestamp.",
-                "newOplogReadTimestamp"_attr = Timestamp(newTimestamp));
+    LOG_DEBUG(22374,
+              2,
+              "Updating the oplogReadTimestamp.",
+              "newOplogReadTimestamp"_attr = Timestamp(newTimestamp));
 }
 
 }  // namespace mongo

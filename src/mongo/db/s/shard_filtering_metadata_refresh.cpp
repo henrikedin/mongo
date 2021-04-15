@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kSharding
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kSharding
 
 #include "mongo/platform/basic.h"
 
@@ -45,7 +45,7 @@
 #include "mongo/db/s/sharding_runtime_d_params_gen.h"
 #include "mongo/db/s/sharding_state.h"
 #include "mongo/db/s/sharding_statistics.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/s/catalog_cache.h"
 #include "mongo/s/database_version.h"
 #include "mongo/s/grid.h"
@@ -214,13 +214,13 @@ void onShardVersionMismatch(OperationContext* opCtx,
 
     ShardingStatistics::get(opCtx).countStaleConfigErrors.addAndFetch(1);
 
-    LOGV2_DEBUG(22061,
-                2,
-                "Metadata refresh requested for {namespace} at shard version "
-                "{shardVersionReceived}",
-                "Metadata refresh requested for collection",
-                "namespace"_attr = nss,
-                "shardVersionReceived"_attr = shardVersionReceived);
+    LOG_DEBUG(22061,
+              2,
+              "Metadata refresh requested for {namespace} at shard version "
+              "{shardVersionReceived}",
+              "Metadata refresh requested for collection",
+              "namespace"_attr = nss,
+              "shardVersionReceived"_attr = shardVersionReceived);
 
     boost::optional<SharedSemiFuture<void>> inRecoverOrRefresh;
     while (true) {
@@ -349,11 +349,11 @@ Status onShardVersionMismatchNoExcept(OperationContext* opCtx,
         onShardVersionMismatch(opCtx, nss, shardVersionReceived);
         return Status::OK();
     } catch (const DBException& ex) {
-        LOGV2(22062,
-              "Failed to refresh metadata for {namespace} due to {error}",
-              "Failed to refresh metadata for collection",
-              "namespace"_attr = nss,
-              "error"_attr = redact(ex));
+        LOG(22062,
+            "Failed to refresh metadata for {namespace} due to {error}",
+            "Failed to refresh metadata for collection",
+            "namespace"_attr = nss,
+            "error"_attr = redact(ex));
         return ex.toStatus();
     }
 }
@@ -379,11 +379,11 @@ CollectionMetadata forceGetCurrentMetadata(OperationContext* opCtx, const Namesp
 
         return CollectionMetadata(cm, shardingState->shardId());
     } catch (const ExceptionFor<ErrorCodes::NamespaceNotFound>& ex) {
-        LOGV2(505070,
-              "Namespace {namespace} not found, collection may have been dropped",
-              "Namespace not found, collection may have been dropped",
-              "namespace"_attr = nss,
-              "error"_attr = redact(ex));
+        LOG(505070,
+            "Namespace {namespace} not found, collection may have been dropped",
+            "Namespace not found, collection may have been dropped",
+            "namespace"_attr = nss,
+            "error"_attr = redact(ex));
         return CollectionMetadata();
     }
 }
@@ -430,7 +430,7 @@ ChunkVersion forceShardFilteringMetadataRefresh(OperationContext* opCtx,
             const auto& metadata = *optMetadata;
             if (metadata.isSharded() &&
                 cm.getVersion().isOlderOrEqualThan(metadata.getCollVersion())) {
-                LOGV2_DEBUG(
+                LOG_DEBUG(
                     22063,
                     1,
                     "Skipping refresh of metadata for {namespace} {latestCollectionVersion} with "
@@ -462,7 +462,7 @@ ChunkVersion forceShardFilteringMetadataRefresh(OperationContext* opCtx,
             const auto& metadata = *optMetadata;
             if (metadata.isSharded() &&
                 cm.getVersion().isOlderOrEqualThan(metadata.getCollVersion())) {
-                LOGV2_DEBUG(
+                LOG_DEBUG(
                     22064,
                     1,
                     "Skipping refresh of metadata for {namespace} {latestCollectionVersion} with "
@@ -493,11 +493,11 @@ Status onDbVersionMismatchNoExcept(
         onDbVersionMismatch(opCtx, dbName, clientDbVersion, serverDbVersion);
         return Status::OK();
     } catch (const DBException& ex) {
-        LOGV2(22065,
-              "Failed to refresh databaseVersion for database {db} {error}",
-              "Failed to refresh databaseVersion",
-              "db"_attr = dbName,
-              "error"_attr = redact(ex));
+        LOG(22065,
+            "Failed to refresh databaseVersion for database {db} {error}",
+            "Failed to refresh databaseVersion",
+            "db"_attr = dbName,
+            "error"_attr = redact(ex));
         return ex.toStatus();
     }
 }
@@ -544,13 +544,13 @@ void forceDatabaseRefresh(OperationContext* opCtx, const StringData dbName) {
                     refreshedDbInfo.databaseVersion());
 
             if (comparableRefreshedDbVersion <= comparableCachedDbVersion) {
-                LOGV2_DEBUG(5369130,
-                            2,
-                            "Skipping updating cached database info from refreshed version "
-                            "because the one currently cached is more recent",
-                            "db"_attr = dbName,
-                            "refreshedDbVersion"_attr = refreshedDbInfo.databaseVersion(),
-                            "cachedDbVersion"_attr = cachedDbVersion.get());
+                LOG_DEBUG(5369130,
+                          2,
+                          "Skipping updating cached database info from refreshed version "
+                          "because the one currently cached is more recent",
+                          "db"_attr = dbName,
+                          "refreshedDbVersion"_attr = refreshedDbInfo.databaseVersion(),
+                          "cachedDbVersion"_attr = cachedDbVersion.get());
                 return;
             }
         }

@@ -31,7 +31,7 @@
  * Connect to a Mongo database as a database, from C++.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kNetwork
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kNetwork
 
 #include "mongo/platform/basic.h"
 
@@ -48,7 +48,7 @@
 #include "mongo/db/query/cursor_response.h"
 #include "mongo/db/query/getmore_request.h"
 #include "mongo/db/query/query_request_helper.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/factory.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/rpc/metadata.h"
@@ -212,13 +212,13 @@ bool DBClientCursor::init() {
         _client->call(toSend, reply, true, &_originalHost);
     } catch (const DBException&) {
         // log msg temp?
-        LOGV2(20127, "DBClientCursor::init call() failed");
+        LOG(20127, "DBClientCursor::init call() failed");
         // We always want to throw on network exceptions.
         throw;
     }
     if (reply.empty()) {
         // log msg temp?
-        LOGV2(20128, "DBClientCursor::init message from call() was empty");
+        LOG(20128, "DBClientCursor::init message from call() was empty");
         return false;
     }
     dataReceived(reply);
@@ -244,12 +244,12 @@ bool DBClientCursor::initLazyFinish(bool& retry) {
     // If we get a bad response, return false
     if (!recvStatus.isOK() || reply.empty()) {
         if (!recvStatus.isOK())
-            LOGV2(20129,
-                  "DBClientCursor::init lazy say() failed: {error}",
-                  "DBClientCursor::init lazy say() failed",
-                  "error"_attr = redact(recvStatus));
+            LOG(20129,
+                "DBClientCursor::init lazy say() failed: {error}",
+                "DBClientCursor::init lazy say() failed",
+                "error"_attr = redact(recvStatus));
         if (reply.empty())
-            LOGV2(20130, "DBClientCursor::init message from say() was empty");
+            LOG(20130, "DBClientCursor::init message from say() was empty");
 
         _client->checkResponse({}, true, &retry, &_lazyHost);
 

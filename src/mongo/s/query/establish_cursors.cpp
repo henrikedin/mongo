@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kQuery
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kQuery
 
 #include "mongo/platform/basic.h"
 
@@ -43,7 +43,7 @@
 #include "mongo/db/query/kill_cursors_gen.h"
 #include "mongo/executor/remote_command_request.h"
 #include "mongo/executor/remote_command_response.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/s/grid.h"
 #include "mongo/s/multi_statement_transaction_requests_sender.h"
 #include "mongo/util/assert_util.h"
@@ -140,12 +140,12 @@ void CursorEstablisher::sendRequests(const ReadPreferenceSetting& readPref,
         requests.emplace_back(remote.first, requestWithOpKey.obj());
     }
 
-    LOGV2_DEBUG(4625502,
-                3,
-                "Establishing cursors on remotes",
-                "opId"_attr = _opCtx->getOpID(),
-                "numRemotes"_attr = remotes.size(),
-                "opKey"_attr = _opKey);
+    LOG_DEBUG(4625502,
+              3,
+              "Establishing cursors on remotes",
+              "opId"_attr = _opCtx->getOpID(),
+              "numRemotes"_attr = remotes.size(),
+              "opKey"_attr = _opKey);
 
     // Send the requests
     _ars.emplace(
@@ -198,10 +198,10 @@ void CursorEstablisher::checkForFailedRequests() {
         return;
     }
 
-    LOGV2(4625501,
-          "Unable to establish remote cursors",
-          "error"_attr = *_maybeFailure,
-          "nRemotes"_attr = _remotesToClean.size());
+    LOG(4625501,
+        "Unable to establish remote cursors",
+        "error"_attr = *_maybeFailure,
+        "nRemotes"_attr = _remotesToClean.size());
 
     if (_remotesToClean.empty()) {
         // If we don't have any remotes to clean, throw early.
@@ -220,7 +220,7 @@ void CursorEstablisher::checkForFailedRequests() {
          opKey = _opKey,
          remotes = std::move(remotes)](const executor::TaskExecutor::CallbackArgs& args) mutable {
             if (!args.status.isOK()) {
-                LOGV2_WARNING(
+                LOG_WARNING(
                     48038, "Failed to schedule remote cursor cleanup", "error"_attr = args.status);
                 return;
             }
@@ -233,7 +233,7 @@ void CursorEstablisher::checkForFailedRequests() {
 
 void CursorEstablisher::_handleFailure(const AsyncRequestsSender::Response& response,
                                        Status status) noexcept {
-    LOGV2_DEBUG(
+    LOG_DEBUG(
         4674000, 3, "Experienced a failure while establishing cursors", "error"_attr = status);
     if (_maybeFailure) {
         // If we've already failed, just log and move on.
@@ -278,17 +278,17 @@ void CursorEstablisher::_killOpOnShards(ServiceContext* srvCtx,
         // attempt at cleaning up the cursors, but ignore any returned errors).
         uassertStatusOK(executor->scheduleRemoteCommand(request, [host](auto const& args) {
             if (!args.response.isOK()) {
-                LOGV2_DEBUG(4625504,
-                            2,
-                            "killOperations failed",
-                            "remoteHost"_attr = host.toString(),
-                            "error"_attr = args.response);
+                LOG_DEBUG(4625504,
+                          2,
+                          "killOperations failed",
+                          "remoteHost"_attr = host.toString(),
+                          "error"_attr = args.response);
                 return;
             }
         }));
     }
 } catch (const AssertionException& ex) {
-    LOGV2_DEBUG(4625503, 2, "Failed to cleanup remote operations", "error"_attr = ex.toStatus());
+    LOG_DEBUG(4625503, 2, "Failed to cleanup remote operations", "error"_attr = ex.toStatus());
 }
 
 }  // namespace

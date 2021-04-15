@@ -28,7 +28,7 @@
  */
 
 #include "mongo/util/assert_util.h"
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kQuery
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kQuery
 
 #include "mongo/db/exec/collection_scan.h"
 
@@ -43,7 +43,7 @@
 #include "mongo/db/exec/working_set.h"
 #include "mongo/db/exec/working_set_common.h"
 #include "mongo/db/repl/optime.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/fail_point.h"
 
 namespace mongo {
@@ -78,11 +78,11 @@ CollectionScan::CollectionScan(ExpressionContext* expCtx,
             invariant(collection->isClustered());
         }
     }
-    LOGV2_DEBUG(5400802,
-                5,
-                "collection scan bounds",
-                "min"_attr = (!_params.minRecord) ? "none" : _params.minRecord->toString(),
-                "max"_attr = (!_params.maxRecord) ? "none" : _params.maxRecord->toString());
+    LOG_DEBUG(5400802,
+              5,
+              "collection scan bounds",
+              "min"_attr = (!_params.minRecord) ? "none" : _params.minRecord->toString(),
+              "max"_attr = (!_params.maxRecord) ? "none" : _params.maxRecord->toString());
     invariant(!_params.shouldTrackLatestOplogTimestamp || collection->ns().isOplog());
 
     if (params.assertTsHasNotFallenOffOplog) {
@@ -224,12 +224,12 @@ void CollectionScan::setLatestOplogEntryTimestamp(const Record& record) {
                              "but found a result without a valid 'ts' field: "
                           << record.data.toBson().toString(),
             tsElem.type() == BSONType::bsonTimestamp);
-    LOGV2_DEBUG(550450,
-                5,
-                "Setting _latestOplogEntryTimestamp to the max of the timestamp of the current "
-                "latest oplog entry and the timestamp of the current record",
-                "latestOplogEntryTimestamp"_attr = _latestOplogEntryTimestamp,
-                "currentRecordTimestamp"_attr = tsElem.timestamp());
+    LOG_DEBUG(550450,
+              5,
+              "Setting _latestOplogEntryTimestamp to the max of the timestamp of the current "
+              "latest oplog entry and the timestamp of the current record",
+              "latestOplogEntryTimestamp"_attr = _latestOplogEntryTimestamp,
+              "currentRecordTimestamp"_attr = tsElem.timestamp());
     _latestOplogEntryTimestamp = std::max(_latestOplogEntryTimestamp, tsElem.timestamp());
 }
 

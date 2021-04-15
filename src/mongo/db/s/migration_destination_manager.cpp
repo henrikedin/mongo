@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kShardingMigration
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kShardingMigration
 
 #include "mongo/platform/basic.h"
 
@@ -67,7 +67,7 @@
 #include "mongo/db/session_catalog_mongod.h"
 #include "mongo/db/storage/remove_saver.h"
 #include "mongo/db/transaction_participant.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/s/catalog/type_chunk.h"
 #include "mongo/s/client/shard_registry.h"
 #include "mongo/s/cluster_commands_helpers.h"
@@ -292,10 +292,10 @@ void MigrationDestinationManager::setState(State newState) {
 }
 
 void MigrationDestinationManager::_setStateFail(StringData msg) {
-    LOGV2(21998,
-          "Error during migration: {error}",
-          "Error during migration",
-          "error"_attr = redact(msg));
+    LOG(21998,
+        "Error during migration: {error}",
+        "Error during migration",
+        "error"_attr = redact(msg));
     {
         stdx::lock_guard<Latch> sl(_mutex);
         _errmsg = msg.toString();
@@ -307,10 +307,10 @@ void MigrationDestinationManager::_setStateFail(StringData msg) {
 }
 
 void MigrationDestinationManager::_setStateFailWarn(StringData msg) {
-    LOGV2_WARNING(22010,
-                  "Error during migration: {error}",
-                  "Error during migration",
-                  "error"_attr = redact(msg));
+    LOG_WARNING(22010,
+                "Error during migration: {error}",
+                "Error during migration",
+                "error"_attr = redact(msg));
     {
         stdx::lock_guard<Latch> sl(_mutex);
         _errmsg = msg.toString();
@@ -480,10 +480,10 @@ repl::OpTime MigrationDestinationManager::cloneDocumentsFromDonor(
         } catch (...) {
             stdx::lock_guard<Client> lk(*opCtx->getClient());
             opCtx->getServiceContext()->killOperation(lk, opCtx, ErrorCodes::Error(51008));
-            LOGV2(21999,
-                  "Batch insertion failed: {error}",
-                  "Batch insertion failed",
-                  "error"_attr = redact(exceptionToStatus()));
+            LOG(21999,
+                "Batch insertion failed: {error}",
+                "Batch insertion failed",
+                "error"_attr = redact(exceptionToStatus()));
         }
     }};
 
@@ -908,17 +908,17 @@ void MigrationDestinationManager::_migrateDriver(OperationContext* outerOpCtx) {
     invariant(!_min.isEmpty());
     invariant(!_max.isEmpty());
 
-    LOGV2(22000,
-          "Starting receiving end of migration of chunk {chunkMin} -> {chunkMax} for collection "
-          "{namespace} from {fromShard} at epoch {epoch} with session id {sessionId}",
-          "Starting receiving end of chunk migration",
-          "chunkMin"_attr = redact(_min),
-          "chunkMax"_attr = redact(_max),
-          "namespace"_attr = _nss.ns(),
-          "fromShard"_attr = _fromShard,
-          "epoch"_attr = _epoch,
-          "sessionId"_attr = *_sessionId,
-          "migrationId"_attr = _migrationId.toBSON());
+    LOG(22000,
+        "Starting receiving end of migration of chunk {chunkMin} -> {chunkMax} for collection "
+        "{namespace} from {fromShard} at epoch {epoch} with session id {sessionId}",
+        "Starting receiving end of chunk migration",
+        "chunkMin"_attr = redact(_min),
+        "chunkMax"_attr = redact(_max),
+        "namespace"_attr = _nss.ns(),
+        "fromShard"_attr = _fromShard,
+        "epoch"_attr = _epoch,
+        "sessionId"_attr = *_sessionId,
+        "migrationId"_attr = _migrationId.toBSON());
 
     MoveTimingHelper timing(
         outerOpCtx, "to", _nss.ns(), _min, _max, 6 /* steps */, &_errmsg, _toShard, _fromShard);
@@ -926,9 +926,9 @@ void MigrationDestinationManager::_migrateDriver(OperationContext* outerOpCtx) {
     const auto initialState = getState();
 
     if (initialState == ABORT) {
-        LOGV2_ERROR(22013,
-                    "Migration abort requested before the migration started",
-                    "migrationId"_attr = _migrationId.toBSON());
+        LOG_ERROR(22013,
+                  "Migration abort requested before the migration started",
+                  "migrationId"_attr = _migrationId.toBSON());
         return;
     }
 
@@ -958,14 +958,14 @@ void MigrationDestinationManager::_migrateDriver(OperationContext* outerOpCtx) {
                     "deletion tasks overlapping the incoming range.",
                     !disableResumableRangeDeleter.load());
 
-            LOGV2(22001,
-                  "Migration paused because the requested range {range} for {namespace} "
-                  "overlaps with a range already scheduled for deletion",
-                  "Migration paused because the requested range overlaps with a range already "
-                  "scheduled for deletion",
-                  "namespace"_attr = _nss.ns(),
-                  "range"_attr = redact(range.toString()),
-                  "migrationId"_attr = _migrationId.toBSON());
+            LOG(22001,
+                "Migration paused because the requested range {range} for {namespace} "
+                "overlaps with a range already scheduled for deletion",
+                "Migration paused because the requested range overlaps with a range already "
+                "scheduled for deletion",
+                "namespace"_attr = _nss.ns(),
+                "range"_attr = redact(range.toString()),
+                "migrationId"_attr = _migrationId.toBSON());
 
             auto status = CollectionShardingRuntime::waitForClean(
                 outerOpCtx, _nss, donorCollectionOptionsAndIndexes.uuid, range);
@@ -1096,7 +1096,7 @@ void MigrationDestinationManager::_migrateDriver(OperationContext* outerOpCtx) {
                                 repl::ReplClientInfo::forClient(opCtx->getClient()).getLastOp(),
                                 _writeConcern);
                         if (replStatus.status.code() == ErrorCodes::WriteConcernFailed) {
-                            LOGV2_WARNING(
+                            LOG_WARNING(
                                 22011,
                                 "secondaryThrottle on, but doc insert timed out; continuing",
                                 "migrationId"_attr = _migrationId.toBSON());
@@ -1175,9 +1175,9 @@ void MigrationDestinationManager::_migrateDriver(OperationContext* outerOpCtx) {
                 outerOpCtx->checkForInterrupt();
 
                 if (getState() == ABORT) {
-                    LOGV2(22002,
-                          "Migration aborted while waiting for replication at catch up stage",
-                          "migrationId"_attr = _migrationId.toBSON());
+                    LOG(22002,
+                        "Migration aborted while waiting for replication at catch up stage",
+                        "migrationId"_attr = _migrationId.toBSON());
                     return;
                 }
 
@@ -1188,9 +1188,9 @@ void MigrationDestinationManager::_migrateDriver(OperationContext* outerOpCtx) {
                 }
 
                 if (i > 100) {
-                    LOGV2(22003,
-                          "secondaries having hard time keeping up with migrate",
-                          "migrationId"_attr = _migrationId.toBSON());
+                    LOG(22003,
+                        "secondaries having hard time keeping up with migrate",
+                        "migrationId"_attr = _migrationId.toBSON());
                 }
 
                 sleepmillis(20);
@@ -1210,14 +1210,14 @@ void MigrationDestinationManager::_migrateDriver(OperationContext* outerOpCtx) {
         // Pause to wait for replication. This will prevent us from going into critical section
         // until we're ready.
 
-        LOGV2(22004,
-              "Waiting for replication to catch up before entering critical section",
-              "migrationId"_attr = _migrationId.toBSON());
-        LOGV2_DEBUG_OPTIONS(4817411,
-                            2,
-                            {logv2::LogComponent::kShardMigrationPerf},
-                            "Starting majority commit wait on recipient",
-                            "migrationId"_attr = _migrationId.toBSON());
+        LOG(22004,
+            "Waiting for replication to catch up before entering critical section",
+            "migrationId"_attr = _migrationId.toBSON());
+        LOG_DEBUG_OPTIONS(4817411,
+                          2,
+                          {log::LogComponent::kShardMigrationPerf},
+                          "Starting majority commit wait on recipient",
+                          "migrationId"_attr = _migrationId.toBSON());
 
         runWithoutSession(outerOpCtx, [&] {
             auto awaitReplicationResult =
@@ -1227,14 +1227,14 @@ void MigrationDestinationManager::_migrateDriver(OperationContext* outerOpCtx) {
                                        awaitReplicationResult.status.codeString());
         });
 
-        LOGV2(22005,
-              "Chunk data replicated successfully.",
-              "migrationId"_attr = _migrationId.toBSON());
-        LOGV2_DEBUG_OPTIONS(4817412,
-                            2,
-                            {logv2::LogComponent::kShardMigrationPerf},
-                            "Finished majority commit wait on recipient",
-                            "migrationId"_attr = _migrationId.toBSON());
+        LOG(22005,
+            "Chunk data replicated successfully.",
+            "migrationId"_attr = _migrationId.toBSON());
+        LOG_DEBUG_OPTIONS(4817412,
+                          2,
+                          {log::LogComponent::kShardMigrationPerf},
+                          "Finished majority commit wait on recipient",
+                          "migrationId"_attr = _migrationId.toBSON());
     }
 
     {
@@ -1272,9 +1272,9 @@ void MigrationDestinationManager::_migrateDriver(OperationContext* outerOpCtx) {
             }
 
             if (getState() == ABORT) {
-                LOGV2(22006,
-                      "Migration aborted while transferring mods",
-                      "migrationId"_attr = _migrationId.toBSON());
+                LOG(22006,
+                    "Migration aborted while transferring mods",
+                    "migrationId"_attr = _migrationId.toBSON());
                 return;
             }
 
@@ -1398,9 +1398,9 @@ bool MigrationDestinationManager::_applyMigrateOp(OperationContext* opCtx,
                                     updatedDoc,
                                     &localDoc)) {
                 // Exception will abort migration cleanly
-                LOGV2_ERROR_OPTIONS(
+                LOG_ERROR_OPTIONS(
                     16977,
-                    {logv2::UserAssertAfterLog()},
+                    {log::UserAssertAfterLog()},
                     "Cannot migrate chunk because the local document {localDoc} has the same _id "
                     "as the reloaded remote document {remoteDoc}",
                     "Cannot migrate chunk because the local document has the same _id as the "
@@ -1429,27 +1429,27 @@ bool MigrationDestinationManager::_flushPendingWrites(OperationContext* opCtx,
         repl::OpTime op(lastOpApplied);
         static Occasionally sampler;
         if (sampler.tick()) {
-            LOGV2(22007,
-                  "Migration commit waiting for majority replication for {namespace}, "
-                  "{chunkMin} -> {chunkMax}; waiting to reach this operation: {lastOpApplied}",
-                  "Migration commit waiting for majority replication; waiting until the last "
-                  "operation applied has been replicated",
-                  "namespace"_attr = _nss.ns(),
-                  "chunkMin"_attr = redact(_min),
-                  "chunkMax"_attr = redact(_max),
-                  "lastOpApplied"_attr = op,
-                  "migrationId"_attr = _migrationId.toBSON());
+            LOG(22007,
+                "Migration commit waiting for majority replication for {namespace}, "
+                "{chunkMin} -> {chunkMax}; waiting to reach this operation: {lastOpApplied}",
+                "Migration commit waiting for majority replication; waiting until the last "
+                "operation applied has been replicated",
+                "namespace"_attr = _nss.ns(),
+                "chunkMin"_attr = redact(_min),
+                "chunkMax"_attr = redact(_max),
+                "lastOpApplied"_attr = op,
+                "migrationId"_attr = _migrationId.toBSON());
         }
         return false;
     }
 
-    LOGV2(22008,
-          "Migration commit succeeded flushing to secondaries for {namespace}, {min} -> {max}",
-          "Migration commit succeeded flushing to secondaries",
-          "namespace"_attr = _nss.ns(),
-          "chunkMin"_attr = redact(_min),
-          "chunkMax"_attr = redact(_max),
-          "migrationId"_attr = _migrationId.toBSON());
+    LOG(22008,
+        "Migration commit succeeded flushing to secondaries for {namespace}, {min} -> {max}",
+        "Migration commit succeeded flushing to secondaries",
+        "namespace"_attr = _nss.ns(),
+        "chunkMin"_attr = redact(_min),
+        "chunkMax"_attr = redact(_max),
+        "migrationId"_attr = _migrationId.toBSON());
 
     return true;
 }

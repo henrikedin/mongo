@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kControl
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kControl
 
 #include "mongo/platform/basic.h"
 
@@ -45,7 +45,7 @@
 #include "mongo/base/init.h"
 #include "mongo/bson/json.h"
 #include "mongo/config.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/platform/compiler_gcc.h"
 #include "mongo/util/scopeguard.h"
 #include "mongo/util/stacktrace_somap.h"
@@ -439,7 +439,7 @@ void printStackTraceImpl(const Options& options, StackTraceSink* sink = nullptr)
         if (sink) {
             *sink << fmt::format(FMT_STRING("Error collecting stack trace: {}"), err);
         }
-        LOGV2_ERROR(31430, "Error collecting stack trace", "error"_attr = err);
+        LOG_ERROR(31430, "Error collecting stack trace", "error"_attr = err);
     }
     stack_trace_detail::logBacktraceObject(bob.done(), sink, options.withHumanReadable);
 }

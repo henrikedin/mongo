@@ -27,13 +27,13 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kStorage
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kStorage
 
 #include "mongo/platform/basic.h"
 
 #include "mongo/db/storage/wiredtiger/wiredtiger_prepare_conflict.h"
 
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/fail_point.h"
 
 namespace mongo {
@@ -46,15 +46,15 @@ MONGO_FAIL_POINT_DEFINE(WTSkipPrepareConflictRetries);
 MONGO_FAIL_POINT_DEFINE(WTPrintPrepareConflictLog);
 
 void wiredTigerPrepareConflictLog(int attempts) {
-    LOGV2_DEBUG(22379,
-                1,
-                "Caught WT_PREPARE_CONFLICT, attempt {attempts}. Waiting for unit of work to "
-                "commit or abort.",
-                "attempts"_attr = attempts);
+    LOG_DEBUG(22379,
+              1,
+              "Caught WT_PREPARE_CONFLICT, attempt {attempts}. Waiting for unit of work to "
+              "commit or abort.",
+              "attempts"_attr = attempts);
 }
 
 void wiredTigerPrepareConflictFailPointLog() {
-    LOGV2(22380, "WTPrintPrepareConflictLog fail point enabled.");
+    LOG(22380, "WTPrintPrepareConflictLog fail point enabled.");
 }
 
 }  // namespace mongo

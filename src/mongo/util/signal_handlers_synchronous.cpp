@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kControl
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kControl
 
 #include "mongo/platform/basic.h"
 
@@ -44,7 +44,7 @@
 #include <typeinfo>
 
 #include "mongo/base/string_data.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/platform/compiler.h"
 #include "mongo/stdx/exception.h"
 #include "mongo/stdx/thread.h"
@@ -193,12 +193,11 @@ thread_local int MallocFreeOStreamGuard::terminateDepth = 0;
 
 // must hold MallocFreeOStreamGuard to call
 void writeMallocFreeStreamToLog() {
-    LOGV2_FATAL_OPTIONS(
-        4757800,
-        logv2::LogOptions(logv2::FatalMode::kContinue, logv2::LogTruncation::Disabled),
-        "{message}",
-        "Writing fatal message",
-        "message"_attr = mallocFreeOStream.str());
+    LOG_FATAL_OPTIONS(4757800,
+                      log::LogOptions(log::FatalMode::kContinue, log::LogTruncation::Disabled),
+                      "{message}",
+                      "Writing fatal message",
+                      "message"_attr = mallocFreeOStream.str());
     mallocFreeOStream.rewind();
 }
 
@@ -241,22 +240,20 @@ void myInvalidParameterHandler(const wchar_t* expression,
                                const wchar_t* file,
                                unsigned int line,
                                uintptr_t pReserved) {
-    LOGV2_FATAL_CONTINUE(
-        23815,
-        "Invalid parameter detected in function {function} in {file} at line {line} "
-        "with expression '{expression}'",
-        "Invalid parameter detected",
-        "function"_attr = toUtf8String(function),
-        "file"_attr = toUtf8String(file),
-        "line"_attr = line,
-        "expression"_attr = toUtf8String(expression));
+    LOG_FATAL_CONTINUE(23815,
+                       "Invalid parameter detected in function {function} in {file} at line {line} "
+                       "with expression '{expression}'",
+                       "Invalid parameter detected",
+                       "function"_attr = toUtf8String(function),
+                       "file"_attr = toUtf8String(file),
+                       "line"_attr = line,
+                       "expression"_attr = toUtf8String(expression));
 
     abruptQuit(SIGABRT);
 }
 
 void myPureCallHandler() {
-    LOGV2_FATAL_CONTINUE(23818,
-                         "Pure call handler invoked. Immediate exit due to invalid pure call");
+    LOG_FATAL_CONTINUE(23818, "Pure call handler invoked. Immediate exit due to invalid pure call");
     abruptQuit(SIGABRT);
 }
 
@@ -329,11 +326,11 @@ void setupSynchronousSignalHandlers() {
         }
         if (sigaction(spec.signal, &sa, nullptr) != 0) {
             int savedErr = errno;
-            LOGV2_FATAL(31334,
-                        "Failed to install sigaction for signal {signal}: {error}",
-                        "Failed to install sigaction for signal",
-                        "signal"_attr = spec.signal,
-                        "error"_attr = strerror(savedErr));
+            LOG_FATAL(31334,
+                      "Failed to install sigaction for signal {signal}: {error}",
+                      "Failed to install sigaction for signal",
+                      "signal"_attr = spec.signal,
+                      "error"_attr = strerror(savedErr));
         }
     }
     setupSIGTRAPforDebugger();

@@ -26,7 +26,7 @@
  *    exception statement from all source files in the program, then also delete
  *    it in the license file.
  */
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kQuery
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kQuery
 
 #include "mongo/platform/basic.h"
 
@@ -52,7 +52,7 @@
 #include "mongo/db/exec/sbe/stages/union.h"
 #include "mongo/db/exec/sbe/stages/unique.h"
 #include "mongo/db/exec/sbe/stages/unwind.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/str.h"
 
 namespace mongo {
@@ -1728,7 +1728,7 @@ void Parser::walk(AstQuery& ast) {
 
 Parser::Parser() {
     _parser.log = [&](size_t ln, size_t col, const std::string& msg) {
-        LOGV2(4885902, "{msg}", "msg"_attr = format_error_message(ln, col, msg));
+        LOG(4885902, "{msg}", "msg"_attr = format_error_message(ln, col, msg));
     };
 
     if (!_parser.load_grammar(kSyntax)) {

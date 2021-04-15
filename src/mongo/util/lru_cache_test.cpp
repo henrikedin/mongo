@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTest
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTest
 
 #include "mongo/platform/basic.h"
 
@@ -35,7 +35,7 @@
 #include <type_traits>
 #include <utility>
 
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/stdx/type_traits.h"
 #include "mongo/unittest/unittest.h"
 #include "mongo/util/assert_util.h"
@@ -146,7 +146,7 @@ const std::array<int, 7> kTestSizes{1, 2, 3, 4, 5, 10, 100};
 using SizedTest = std::function<void(int)>;
 void runWithDifferentSizes(SizedTest test) {
     for (auto size : kTestSizes) {
-        LOGV2(24152, "Testing cache size of {size}", "size"_attr = size);
+        LOG(24152, "Testing cache size of {size}", "size"_attr = size);
         test(size);
     }
 }

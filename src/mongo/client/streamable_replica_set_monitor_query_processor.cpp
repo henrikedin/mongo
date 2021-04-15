@@ -26,13 +26,13 @@
  *    exception statement from all source files in the program, then also delete
  *    it in the license file.
  */
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kNetwork
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kNetwork
 #include "mongo/client/streamable_replica_set_monitor_query_processor.h"
 
 #include <memory>
 
 #include "mongo/client/global_conn_pool.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace mongo {
 void StreamableReplicaSetMonitor::StreamableReplicaSetMonitorQueryProcessor::shutdown() {
@@ -54,11 +54,11 @@ void StreamableReplicaSetMonitor::StreamableReplicaSetMonitorQueryProcessor::
         auto replicaSetMonitor = std::static_pointer_cast<StreamableReplicaSetMonitor>(
             ReplicaSetMonitorManager::get()->getMonitor(*setName));
         if (!replicaSetMonitor) {
-            LOGV2_DEBUG(4333215,
-                        kLogLevel,
-                        "Could not find rsm instance {replicaSet} for query processing",
-                        "Could not find rsm instance for query processing",
-                        "replicaSet"_attr = *setName);
+            LOG_DEBUG(4333215,
+                      kLogLevel,
+                      "Could not find rsm instance {replicaSet} for query processing",
+                      "Could not find rsm instance for query processing",
+                      "replicaSet"_attr = *setName);
             return;
         }
         replicaSetMonitor->_processOutstanding(newDescription);

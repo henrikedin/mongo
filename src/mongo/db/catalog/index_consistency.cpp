@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kStorage
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kStorage
 
 #include <algorithm>
 
@@ -43,7 +43,7 @@
 #include "mongo/db/index/index_descriptor.h"
 #include "mongo/db/multi_key_path_tracker.h"
 #include "mongo/db/storage/storage_debug_util.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/string_map.h"
 
 namespace mongo {
@@ -316,7 +316,7 @@ void IndexConsistency::addDocKey(OperationContext* opCtx,
         indexInfo->numRecords++;
 
         if (MONGO_unlikely(_validateState->extraLoggingForTest())) {
-            LOGV2(4666602, "[validate](record) {hash_num}", "hash_num"_attr = hash);
+            LOG(4666602, "[validate](record) {hash_num}", "hash_num"_attr = hash);
             const BSONObj& keyPatternBson = indexInfo->keyPattern;
             auto keyStringBson = KeyString::toBsonSafe(
                 ks.getBuffer(), ks.getSize(), indexInfo->ord, ks.getTypeBits());
@@ -360,7 +360,7 @@ void IndexConsistency::addIndexKey(OperationContext* opCtx,
         indexInfo->numKeys++;
 
         if (MONGO_unlikely(_validateState->extraLoggingForTest())) {
-            LOGV2(4666603, "[validate](index) {hash_num}", "hash_num"_attr = hash);
+            LOG(4666603, "[validate](index) {hash_num}", "hash_num"_attr = hash);
             const BSONObj& keyPatternBson = indexInfo->keyPattern;
             auto keyStringBson = KeyString::toBsonSafe(
                 ks.getBuffer(), ks.getSize(), indexInfo->ord, ks.getTypeBits());

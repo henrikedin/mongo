@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTenantMigration
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTenantMigration
 
 #include "mongo/platform/basic.h"
 
@@ -43,7 +43,7 @@
 #include "mongo/db/repl/repl_server_parameters_gen.h"
 #include "mongo/db/repl/tenant_collection_cloner.h"
 #include "mongo/db/repl/tenant_migration_decoration.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/rpc/metadata/repl_set_metadata.h"
 #include "mongo/util/assert_util.h"
@@ -142,11 +142,11 @@ BaseCloner::AfterStageBehavior TenantCollectionCloner::TenantCollectionClonerSta
         return ClonerStage<TenantCollectionCloner>::run();
     } catch (const ExceptionFor<ErrorCodes::NamespaceNotFound>&) {
         // We can exit this cloner cleanly and move on to the next one.
-        LOGV2(5289701,
-              "TenantCollectionCloner stopped because collection was dropped on the donor.",
-              "namespace"_attr = getCloner()->getSourceNss(),
-              "uuid"_attr = getCloner()->getSourceUuid(),
-              "tenantId"_attr = getCloner()->getTenantId());
+        LOG(5289701,
+            "TenantCollectionCloner stopped because collection was dropped on the donor.",
+            "namespace"_attr = getCloner()->getSourceNss(),
+            "uuid"_attr = getCloner()->getSourceUuid(),
+            "tenantId"_attr = getCloner()->getTenantId());
         getCloner()->waitForDatabaseWorkToComplete();
         return kSkipRemainingStages;
     } catch (const DBException&) {
@@ -168,11 +168,11 @@ BaseCloner::AfterStageBehavior TenantCollectionCloner::countStage() {
     // so we set it to zero here to avoid aborting the collection clone.
     // Note that this count value is only used for reporting purposes.
     if (count < 0) {
-        LOGV2_WARNING(4884502,
-                      "Count command returned negative value. Updating to 0 to allow progress "
-                      "meter to function properly",
-                      "namespace"_attr = _sourceNss.ns(),
-                      "tenantId"_attr = _tenantId);
+        LOG_WARNING(4884502,
+                    "Count command returned negative value. Updating to 0 to allow progress "
+                    "meter to function properly",
+                    "namespace"_attr = _sourceNss.ns(),
+                    "tenantId"_attr = _tenantId);
         count = 0;
     }
 
@@ -181,13 +181,13 @@ BaseCloner::AfterStageBehavior TenantCollectionCloner::countStage() {
         _sourceNss.db().toString(), BSON("collStats" << _sourceNss.coll()), res);
     auto status = getStatusFromCommandResult(res);
     if (!status.isOK()) {
-        LOGV2_WARNING(5426601,
-                      "Skipping recording of data size metrics for collection due to failure in the"
-                      " 'collStats' command, tenant migration stats may be inaccurate.",
-                      "nss"_attr = _sourceNss,
-                      "migrationId"_attr = getSharedData()->getMigrationId(),
-                      "tenantId"_attr = _tenantId,
-                      "status"_attr = status);
+        LOG_WARNING(5426601,
+                    "Skipping recording of data size metrics for collection due to failure in the"
+                    " 'collStats' command, tenant migration stats may be inaccurate.",
+                    "nss"_attr = _sourceNss,
+                    "migrationId"_attr = getSharedData()->getMigrationId(),
+                    "tenantId"_attr = _tenantId,
+                    "status"_attr = status);
     }
 
     _progressMeter.setTotalWhileRunning(static_cast<unsigned long long>(count));
@@ -220,12 +220,12 @@ BaseCloner::AfterStageBehavior TenantCollectionCloner::checkIfDonorCollectionIsE
                            0 /* batchSize */,
                            ReadConcernArgs(ReadConcernLevel::kMajorityReadConcern).toBSONInner());
     _donorCollectionWasEmptyBeforeListIndexes = !cursor->more();
-    LOGV2_DEBUG(5368500,
-                1,
-                "Checked if donor collection was empty",
-                "wasEmpty"_attr = _donorCollectionWasEmptyBeforeListIndexes,
-                "namespace"_attr = _sourceNss.ns(),
-                "tenantId"_attr = _tenantId);
+    LOG_DEBUG(5368500,
+              1,
+              "Checked if donor collection was empty",
+              "wasEmpty"_attr = _donorCollectionWasEmptyBeforeListIndexes,
+              "namespace"_attr = _sourceNss.ns(),
+              "tenantId"_attr = _tenantId);
     return kContinueNormally;
 }
 
@@ -246,11 +246,11 @@ BaseCloner::AfterStageBehavior TenantCollectionCloner::listIndexesStage() {
             while (
                 MONGO_unlikely(tenantCollectionClonerHangAfterGettingOperationTime.shouldFail()) &&
                 !mustExit()) {
-                LOGV2(4884509,
-                      "tenantCollectionClonerHangAfterGettingOperationTime fail point "
-                      "enabled. Blocking until fail point is disabled",
-                      "namespace"_attr = _sourceNss.toString(),
-                      "tenantId"_attr = _tenantId);
+                LOG(4884509,
+                    "tenantCollectionClonerHangAfterGettingOperationTime fail point "
+                    "enabled. Blocking until fail point is disabled",
+                    "namespace"_attr = _sourceNss.toString(),
+                    "tenantId"_attr = _tenantId);
                 mongo::sleepsecs(1);
             }
         },
@@ -269,11 +269,11 @@ BaseCloner::AfterStageBehavior TenantCollectionCloner::listIndexesStage() {
 
     // Process the listIndexes results for finished indexes only.
     if (indexSpecs.empty()) {
-        LOGV2_WARNING(4884503,
-                      "No indexes found for collection while cloning",
-                      "namespace"_attr = _sourceNss.ns(),
-                      "source"_attr = getSource(),
-                      "tenantId"_attr = _tenantId);
+        LOG_WARNING(4884503,
+                    "No indexes found for collection while cloning",
+                    "namespace"_attr = _sourceNss.ns(),
+                    "source"_attr = getSource(),
+                    "tenantId"_attr = _tenantId);
     }
     for (auto&& spec : indexSpecs) {
         if (spec.hasField("name") && spec.getStringField("name") == "_id_"_sd) {
@@ -299,10 +299,10 @@ BaseCloner::AfterStageBehavior TenantCollectionCloner::listIndexesStage() {
             _collectionOptions.autoIndexId == CollectionOptions::NO);
 
     if (!_idIndexSpec.isEmpty() && _collectionOptions.autoIndexId == CollectionOptions::NO) {
-        LOGV2_WARNING(4884504,
-                      "Found the _id index spec but the collection specified autoIndexId of false",
-                      "namespace"_attr = this->_sourceNss,
-                      "tenantId"_attr = _tenantId);
+        LOG_WARNING(4884504,
+                    "Found the _id index spec but the collection specified autoIndexId of false",
+                    "namespace"_attr = this->_sourceNss,
+                    "tenantId"_attr = _tenantId);
     }
     return kContinueNormally;
 }
@@ -329,13 +329,13 @@ BaseCloner::AfterStageBehavior TenantCollectionCloner::createCollectionStage() {
                 getSharedData()->isResuming());
 
         _existingNss = collection->ns();
-        LOGV2(5342502,
-              "TenantCollectionCloner found collection with same uuid.",
-              "existingNamespace"_attr = _existingNss,
-              "sourceNamespace"_attr = getSourceNss(),
-              "uuid"_attr = getSourceUuid(),
-              "migrationId"_attr = getSharedData()->getMigrationId(),
-              "tenantId"_attr = getTenantId());
+        LOG(5342502,
+            "TenantCollectionCloner found collection with same uuid.",
+            "existingNamespace"_attr = _existingNss,
+            "sourceNamespace"_attr = getSourceNss(),
+            "uuid"_attr = getSourceUuid(),
+            "migrationId"_attr = getSharedData()->getMigrationId(),
+            "tenantId"_attr = getTenantId());
 
         // We are resuming and the collection already exists.
         DBDirectClient client(opCtx.get());
@@ -405,10 +405,10 @@ BaseCloner::AfterStageBehavior TenantCollectionCloner::createCollectionStage() {
 
 BaseCloner::AfterStageBehavior TenantCollectionCloner::queryStage() {
     if (_donorCollectionWasEmptyBeforeListIndexes) {
-        LOGV2_WARNING(5368501,
-                      "Collection was empty at clone time.",
-                      "namespace"_attr = _sourceNss,
-                      "tenantId"_attr = _tenantId);
+        LOG_WARNING(5368501,
+                    "Collection was empty at clone time.",
+                    "namespace"_attr = _sourceNss,
+                    "tenantId"_attr = _tenantId);
         return kContinueNormally;
     }
 
@@ -428,10 +428,10 @@ BaseCloner::AfterStageBehavior TenantCollectionCloner::queryStage() {
         }
         if (readResult.getStatus() == ErrorCodes::NoSuchKey) {
             // Some responses may not carry this information (e.g. reconnecting to verify a drop).
-            LOGV2_DEBUG(5328200,
-                        1,
-                        "No repl metadata found in response",
-                        "data"_attr = redact(metadataObj));
+            LOG_DEBUG(5328200,
+                      1,
+                      "No repl metadata found in response",
+                      "data"_attr = redact(metadataObj));
             return Status::OK();
         }
         return readResult.getStatus().withContext(
@@ -494,11 +494,11 @@ void TenantCollectionCloner::handleNextBatch(DBClientCursorBatchIterator& iter) 
                 MONGO_unlikely(
                     tenantMigrationHangCollectionClonerAfterHandlingBatchResponse.shouldFail()) &&
                 !mustExit()) {
-                LOGV2(4884506,
-                      "tenantMigrationHangCollectionClonerAfterHandlingBatchResponse fail point "
-                      "enabled. Blocking until fail point is disabled",
-                      "namespace"_attr = _sourceNss.toString(),
-                      "tenantId"_attr = _tenantId);
+                LOG(4884506,
+                    "tenantMigrationHangCollectionClonerAfterHandlingBatchResponse fail point "
+                    "enabled. Blocking until fail point is disabled",
+                    "namespace"_attr = _sourceNss.toString(),
+                    "tenantId"_attr = _tenantId);
                 mongo::sleepsecs(1);
             }
         },
@@ -518,10 +518,10 @@ void TenantCollectionCloner::insertDocumentsCallback(
     {
         stdx::lock_guard<Latch> lk(_mutex);
         if (_documentsToInsert.size() == 0) {
-            LOGV2_WARNING(4884507,
-                          "insertDocumentsCallback, but no documents to insert",
-                          "namespace"_attr = _sourceNss,
-                          "tenantId"_attr = _tenantId);
+            LOG_WARNING(4884507,
+                        "insertDocumentsCallback, but no documents to insert",
+                        "namespace"_attr = _sourceNss,
+                        "tenantId"_attr = _tenantId);
             return;
         }
         _documentsToInsert.swap(docs);

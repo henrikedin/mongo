@@ -26,7 +26,7 @@
  *    exception statement from all source files in the program, then also delete
  *    it in the license file.
  */
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kDefault
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kDefault
 
 #include "mongo/platform/basic.h"
 
@@ -41,7 +41,7 @@
 #include "mongo/db/operation_context.h"
 #include "mongo/db/service_context.h"
 #include "mongo/db/vector_clock.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/concurrency/idle_thread_block.h"
 #include "mongo/util/fail_point.h"
 #include "mongo/util/str.h"
@@ -189,7 +189,7 @@ void KeysCollectionManager::enableKeyGenerator(OperationContext* opCtx, bool doE
             opCtx, [this](OperationContext* opCtx) { return _keysCache.refresh(opCtx); });
     }
 } catch (const ExceptionForCat<ErrorCategory::ShutdownError>& ex) {
-    LOGV2(518091, "Exception during key generation", "error"_attr = ex, "enable"_attr = doEnable);
+    LOG(518091, "Exception during key generation", "error"_attr = ex, "enable"_attr = doEnable);
     return;
 }
 
@@ -279,10 +279,10 @@ void KeysCollectionManager::PeriodicRunner::_doPeriodicRefresh(ServiceContext* s
                 if (nextWakeup > kMaxRefreshWaitTimeIfErrored) {
                     nextWakeup = kMaxRefreshWaitTimeIfErrored;
                 }
-                LOGV2(4939300,
-                      "Failed to refresh key cache",
-                      "error"_attr = redact(latestKeyStatusWith.getStatus()),
-                      "nextWakeup"_attr = nextWakeup);
+                LOG(4939300,
+                    "Failed to refresh key cache",
+                    "error"_attr = redact(latestKeyStatusWith.getStatus()),
+                    "nextWakeup"_attr = nextWakeup);
             }
 
             // Notify all waiters that the refresh has finished and they can move on
@@ -315,7 +315,7 @@ void KeysCollectionManager::PeriodicRunner::_doPeriodicRefresh(ServiceContext* s
                     return _inShutdown || _refreshRequest;
                 });
         } catch (const DBException& e) {
-            LOGV2_DEBUG(20705, 1, "Unable to wait for refresh request due to: {e}", "e"_attr = e);
+            LOG_DEBUG(20705, 1, "Unable to wait for refresh request due to: {e}", "e"_attr = e);
 
             if (ErrorCodes::isShutdownError(e)) {
                 return;

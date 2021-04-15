@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kControl
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kControl
 
 #include "mongo/util/options_parser/options_parser.h"
 
@@ -56,7 +56,7 @@
 #include "mongo/crypto/sha256_block.h"
 #include "mongo/db/jsobj.h"
 #include "mongo/db/json.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/ctype.h"
 #include "mongo/util/hex.h"
@@ -579,19 +579,19 @@ StatusWith<YAML::Node> runYAMLExpansion(const YAML::Node& node,
         prefix += '.';
     }
 
-    LOGV2(23318,
-          "Processing {expansion} config expansion for: {node}",
-          "Processing config expansion",
-          "expansion"_attr = expansion.getExpansionName(),
-          "node"_attr = nodeName);
+    LOG(23318,
+        "Processing {expansion} config expansion for: {node}",
+        "Processing config expansion",
+        "expansion"_attr = expansion.getExpansionName(),
+        "node"_attr = nodeName);
     const auto action = expansion.getAction();
-    LOGV2_DEBUG(23319,
-                2,
-                "{prefix}{expansion}: {action}",
-                "Performing expansion action",
-                "prefix"_attr = prefix,
-                "expansion"_attr = expansion.getExpansionName(),
-                "action"_attr = action);
+    LOG_DEBUG(23319,
+              2,
+              "{prefix}{expansion}: {action}",
+              "Performing expansion action",
+              "prefix"_attr = prefix,
+              "expansion"_attr = expansion.getExpansionName(),
+              "action"_attr = action);
 
     if (expansion.isRestExpansion()) {
         return expansion.process(runYAMLRestExpansion(action, configExpand.timeout));
@@ -653,12 +653,12 @@ Status YAMLNodeToValue(const YAML::Node& YAMLNode,
             type = iterator->_type;
             *option = &*iterator;
             if (isDeprecated) {
-                LOGV2_WARNING(23320,
-                              "Option: Given key {deprecatedKey} is deprecated. "
-                              "Please use preferred key {preferredKey} instead.",
-                              "Option: Given key is deprecated. Please use preferred key instead.",
-                              "deprecatedKey"_attr = key,
-                              "preferredKey"_attr = iterator->_dottedName);
+                LOG_WARNING(23320,
+                            "Option: Given key {deprecatedKey} is deprecated. "
+                            "Please use preferred key {preferredKey} instead.",
+                            "Option: Given key is deprecated. Please use preferred key instead.",
+                            "deprecatedKey"_attr = key,
+                            "preferredKey"_attr = iterator->_dottedName);
             }
         }
     }
@@ -795,14 +795,14 @@ Status checkLongName(const po::variables_map& vm,
 
     if (vm.count(long_name)) {
         if (!vm[long_name].defaulted() && singleName != option._singleName) {
-            LOGV2_WARNING(
+            LOG_WARNING(
                 23321,
                 "Option: {deprecatedName} is deprecated. Please use {preferredName} instead.",
                 "Option: This name is deprecated. Please use the preferred name instead.",
                 "deprecatedName"_attr = singleName,
                 "preferredName"_attr = option._singleName);
         } else if (long_name == "sslMode") {
-            LOGV2_WARNING(23322, "Option: sslMode is deprecated. Please use tlsMode instead.");
+            LOG_WARNING(23322, "Option: sslMode is deprecated. Please use tlsMode instead.");
         }
 
         Value optionValue;

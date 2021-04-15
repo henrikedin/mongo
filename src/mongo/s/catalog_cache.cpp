@@ -27,11 +27,11 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kSharding
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kSharding
 
-#define LOGV2_FOR_CATALOG_REFRESH(ID, DLEVEL, MESSAGE, ...) \
-    LOGV2_DEBUG_OPTIONS(                                    \
-        ID, DLEVEL, {logv2::LogComponent::kShardingCatalogRefresh}, MESSAGE, ##__VA_ARGS__)
+#define LOG_FOR_CATALOG_REFRESH(ID, DLEVEL, MESSAGE, ...) \
+    LOG_DEBUG_OPTIONS(                                    \
+        ID, DLEVEL, {log::LogComponent::kShardingCatalogRefresh}, MESSAGE, ##__VA_ARGS__)
 
 #include "mongo/platform/basic.h"
 
@@ -40,7 +40,7 @@
 #include "mongo/bson/bsonobjbuilder.h"
 #include "mongo/db/query/collation/collator_factory_interface.h"
 #include "mongo/db/repl/optime_with.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/s/catalog/type_collection.h"
 #include "mongo/s/catalog/type_database.h"
 #include "mongo/s/client/shard_registry.h"
@@ -154,7 +154,7 @@ StatusWith<ChunkManager> CatalogCache::_getCollectionRoutingInfoAt(
         const auto swDbInfo = getDatabase(opCtx, nss.db(), allowLocks);
         if (!swDbInfo.isOK()) {
             if (swDbInfo == ErrorCodes::NamespaceNotFound) {
-                LOGV2_FOR_CATALOG_REFRESH(
+                LOG_FOR_CATALOG_REFRESH(
                     4947103,
                     2,
                     "Invalidating cached collection entry because its database has been dropped",
@@ -209,11 +209,11 @@ StatusWith<ChunkManager> CatalogCache::_getCollectionRoutingInfoAt(
                                     std::move(collEntry),
                                     atClusterTime);
             } catch (ExceptionFor<ErrorCodes::ConflictingOperationInProgress>& ex) {
-                LOGV2_FOR_CATALOG_REFRESH(5310501,
-                                          0,
-                                          "Collection refresh failed",
-                                          "namespace"_attr = nss,
-                                          "exception"_attr = redact(ex));
+                LOG_FOR_CATALOG_REFRESH(5310501,
+                                        0,
+                                        "Collection refresh failed",
+                                        "namespace"_attr = nss,
+                                        "exception"_attr = redact(ex));
                 _stats.totalRefreshWaitTimeMicros.addAndFetch(t.micros());
                 acquireTries++;
                 if (acquireTries == kMaxInconsistentRoutingInfoRefreshAttempts) {
@@ -223,22 +223,22 @@ StatusWith<ChunkManager> CatalogCache::_getCollectionRoutingInfoAt(
                 // TODO SERVER-53283: Remove once 5.0 has branched out.
                 // This would happen when the query to config.chunks is killed because the index it
                 // relied on has been dropped while the query was ongoing.
-                LOGV2_FOR_CATALOG_REFRESH(5310503,
-                                          0,
-                                          "Collection refresh failed",
-                                          "namespace"_attr = nss,
-                                          "exception"_attr = redact(ex));
+                LOG_FOR_CATALOG_REFRESH(5310503,
+                                        0,
+                                        "Collection refresh failed",
+                                        "namespace"_attr = nss,
+                                        "exception"_attr = redact(ex));
                 _stats.totalRefreshWaitTimeMicros.addAndFetch(t.micros());
                 acquireTries++;
                 if (acquireTries == kMaxInconsistentRoutingInfoRefreshAttempts) {
                     return ex.toStatus();
                 }
             } catch (ExceptionForCat<ErrorCategory::SnapshotError>& ex) {
-                LOGV2_FOR_CATALOG_REFRESH(5487402,
-                                          0,
-                                          "Collection refresh failed",
-                                          "namespace"_attr = nss,
-                                          "exception"_attr = redact(ex));
+                LOG_FOR_CATALOG_REFRESH(5487402,
+                                        0,
+                                        "Collection refresh failed",
+                                        "namespace"_attr = nss,
+                                        "exception"_attr = redact(ex));
                 _stats.totalRefreshWaitTimeMicros.addAndFetch(t.micros());
                 acquireTries++;
                 if (acquireTries == kMaxInconsistentRoutingInfoRefreshAttempts) {
@@ -305,11 +305,11 @@ void CatalogCache::onStaleDatabaseVersion(const StringData dbName,
     if (databaseVersion) {
         const auto version =
             ComparableDatabaseVersion::makeComparableDatabaseVersion(databaseVersion.get());
-        LOGV2_FOR_CATALOG_REFRESH(4899101,
-                                  2,
-                                  "Registering new database version",
-                                  "db"_attr = dbName,
-                                  "version"_attr = version.toBSONForLogging());
+        LOG_FOR_CATALOG_REFRESH(4899101,
+                                2,
+                                "Registering new database version",
+                                "db"_attr = dbName,
+                                "version"_attr = version.toBSONForLogging());
         _databaseCache.advanceTimeInStore(dbName, version);
     } else {
         _databaseCache.invalidate(dbName);
@@ -376,10 +376,10 @@ void CatalogCache::checkEpochOrThrow(const NamespaceString& nss,
 }
 
 void CatalogCache::invalidateEntriesThatReferenceShard(const ShardId& shardId) {
-    LOGV2_DEBUG(4997600,
-                1,
-                "Invalidating databases and collections referencing a specific shard",
-                "shardId"_attr = shardId);
+    LOG_DEBUG(4997600,
+              1,
+              "Invalidating databases and collections referencing a specific shard",
+              "shardId"_attr = shardId);
 
     _databaseCache.invalidateCachedValueIf(
         [&](const DatabaseType& dbt) { return dbt.getPrimary() == shardId; });
@@ -393,20 +393,20 @@ void CatalogCache::invalidateEntriesThatReferenceShard(const ShardId& shardId) {
         std::set<ShardId> shardIds;
         rt.getAllShardIds(&shardIds);
 
-        LOGV2_DEBUG(22647,
-                    3,
-                    "Invalidating cached collection {namespace} that has data "
-                    "on shard {shardId}",
-                    "Invalidating cached collection",
-                    "namespace"_attr = rt.nss(),
-                    "shardId"_attr = shardId);
+        LOG_DEBUG(22647,
+                  3,
+                  "Invalidating cached collection {namespace} that has data "
+                  "on shard {shardId}",
+                  "Invalidating cached collection",
+                  "namespace"_attr = rt.nss(),
+                  "shardId"_attr = shardId);
         return shardIds.find(shardId) != shardIds.end();
     });
 
-    LOGV2(22648,
-          "Finished invalidating databases and collections with data on shard: {shardId}",
-          "Finished invalidating databases and collections that reference specific shard",
-          "shardId"_attr = shardId);
+    LOG(22648,
+        "Finished invalidating databases and collections with data on shard: {shardId}",
+        "Finished invalidating databases and collections that reference specific shard",
+        "shardId"_attr = shardId);
 }
 
 void CatalogCache::purgeDatabase(StringData dbName) {
@@ -520,7 +520,7 @@ CatalogCache::DatabaseCache::LookupResult CatalogCache::DatabaseCache::_lookupDa
     const ComparableDatabaseVersion& previousDbVersion) {
     // TODO (SERVER-34164): Track and increment stats for database refreshes
 
-    LOGV2_FOR_CATALOG_REFRESH(24102, 2, "Refreshing cached database entry", "db"_attr = dbName);
+    LOG_FOR_CATALOG_REFRESH(24102, 2, "Refreshing cached database entry", "db"_attr = dbName);
 
     Timer t{};
     try {
@@ -538,21 +538,21 @@ CatalogCache::DatabaseCache::LookupResult CatalogCache::DatabaseCache::_lookupDa
                   newDb.getVersion())
             : ComparableDatabaseVersion::makeComparableDatabaseVersion(newDb.getVersion());
 
-        LOGV2_FOR_CATALOG_REFRESH(24101,
-                                  1,
-                                  "Refreshed cached database entry",
-                                  "db"_attr = dbName,
-                                  "newDbVersion"_attr = newDbVersion.toBSONForLogging(),
-                                  "oldDbVersion"_attr = previousDbVersion.toBSONForLogging(),
-                                  "duration"_attr = Milliseconds(t.millis()));
+        LOG_FOR_CATALOG_REFRESH(24101,
+                                1,
+                                "Refreshed cached database entry",
+                                "db"_attr = dbName,
+                                "newDbVersion"_attr = newDbVersion.toBSONForLogging(),
+                                "oldDbVersion"_attr = previousDbVersion.toBSONForLogging(),
+                                "duration"_attr = Milliseconds(t.millis()));
         return CatalogCache::DatabaseCache::LookupResult(std::move(newDb), std::move(newDbVersion));
     } catch (const DBException& ex) {
-        LOGV2_FOR_CATALOG_REFRESH(24100,
-                                  1,
-                                  "Error refreshing cached database entry",
-                                  "db"_attr = dbName,
-                                  "duration"_attr = Milliseconds(t.millis()),
-                                  "error"_attr = redact(ex));
+        LOG_FOR_CATALOG_REFRESH(24100,
+                                1,
+                                "Error refreshing cached database entry",
+                                "db"_attr = dbName,
+                                "duration"_attr = Milliseconds(t.millis()),
+                                "error"_attr = redact(ex));
         if (ex.code() == ErrorCodes::NamespaceNotFound) {
             return CatalogCache::DatabaseCache::LookupResult(boost::none, previousDbVersion);
         }
@@ -623,12 +623,12 @@ CatalogCache::CollectionCache::LookupResult CatalogCache::CollectionCache::_look
         auto lookupVersion =
             isIncremental ? existingHistory->optRt->getVersion() : ChunkVersion::UNSHARDED();
 
-        LOGV2_FOR_CATALOG_REFRESH(4619900,
-                                  1,
-                                  "Refreshing cached collection",
-                                  "namespace"_attr = nss,
-                                  "lookupSinceVersion"_attr = lookupVersion,
-                                  "timeInStore"_attr = previousVersion.toBSONForLogging());
+        LOG_FOR_CATALOG_REFRESH(4619900,
+                                1,
+                                "Refreshing cached collection",
+                                "namespace"_attr = nss,
+                                "lookupSinceVersion"_attr = lookupVersion,
+                                "timeInStore"_attr = previousVersion.toBSONForLogging());
 
         auto collectionAndChunks = _catalogCacheLoader.getChunksSince(nss, lookupVersion).get();
 
@@ -710,14 +710,14 @@ CatalogCache::CollectionCache::LookupResult CatalogCache::CollectionCache::_look
                           << ", new value: " << newRoutingHistory.getReshardingFields()->toBSON());
         }
 
-        LOGV2_FOR_CATALOG_REFRESH(4619901,
-                                  isIncremental || newComparableVersion != previousVersion ? 0 : 1,
-                                  "Refreshed cached collection",
-                                  "namespace"_attr = nss,
-                                  "lookupSinceVersion"_attr = lookupVersion,
-                                  "newVersion"_attr = newComparableVersion.toBSONForLogging(),
-                                  "timeInStore"_attr = previousVersion.toBSONForLogging(),
-                                  "duration"_attr = Milliseconds(t.millis()));
+        LOG_FOR_CATALOG_REFRESH(4619901,
+                                isIncremental || newComparableVersion != previousVersion ? 0 : 1,
+                                "Refreshed cached collection",
+                                "namespace"_attr = nss,
+                                "lookupSinceVersion"_attr = lookupVersion,
+                                "newVersion"_attr = newComparableVersion.toBSONForLogging(),
+                                "timeInStore"_attr = previousVersion.toBSONForLogging(),
+                                "duration"_attr = Milliseconds(t.millis()));
         _updateRefreshesStats(isIncremental, false);
 
         return LookupResult(OptionalRoutingTableHistory(std::move(newRoutingHistory)),
@@ -727,23 +727,23 @@ CatalogCache::CollectionCache::LookupResult CatalogCache::CollectionCache::_look
         _updateRefreshesStats(isIncremental, false);
 
         if (ex.code() == ErrorCodes::NamespaceNotFound) {
-            LOGV2_FOR_CATALOG_REFRESH(4619902,
-                                      0,
-                                      "Collection has found to be unsharded after refresh",
-                                      "namespace"_attr = nss,
-                                      "duration"_attr = Milliseconds(t.millis()));
+            LOG_FOR_CATALOG_REFRESH(4619902,
+                                    0,
+                                    "Collection has found to be unsharded after refresh",
+                                    "namespace"_attr = nss,
+                                    "duration"_attr = Milliseconds(t.millis()));
 
             return LookupResult(
                 OptionalRoutingTableHistory(),
                 ComparableChunkVersion::makeComparableChunkVersion(ChunkVersion::UNSHARDED()));
         }
 
-        LOGV2_FOR_CATALOG_REFRESH(4619903,
-                                  0,
-                                  "Error refreshing cached collection",
-                                  "namespace"_attr = nss,
-                                  "duration"_attr = Milliseconds(t.millis()),
-                                  "error"_attr = redact(ex));
+        LOG_FOR_CATALOG_REFRESH(4619903,
+                                0,
+                                "Error refreshing cached collection",
+                                "namespace"_attr = nss,
+                                "duration"_attr = Milliseconds(t.millis()),
+                                "error"_attr = redact(ex));
 
         throw;
     }

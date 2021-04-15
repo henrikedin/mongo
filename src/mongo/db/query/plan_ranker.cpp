@@ -27,13 +27,13 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kQuery
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kQuery
 
 #include "mongo/platform/basic.h"
 
 #include "mongo/db/query/plan_ranker.h"
 
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace mongo::plan_ranker {
 namespace log_detail {
@@ -45,7 +45,7 @@ void logScoreFormula(std::function<std::string()> formula,
                      double noSortBonus,
                      double noIxisectBonus,
                      double tieBreakers) {
-    LOGV2_DEBUG(20961, 2, "Score formula", "formula"_attr = [&]() {
+    LOG_DEBUG(20961, 2, "Score formula", "formula"_attr = [&]() {
         StringBuilder sb;
         sb << "score(" << str::convertDoubleToString(score) << ") = baseScore("
            << str::convertDoubleToString(baseScore) << ")"
@@ -60,7 +60,7 @@ void logScoreFormula(std::function<std::string()> formula,
 }
 
 void logScoreBoost(double score) {
-    LOGV2_DEBUG(20962, 5, "Score boosted due to intersection forcing", "newScore"_attr = score);
+    LOG_DEBUG(20962, 5, "Score boosted due to intersection forcing", "newScore"_attr = score);
 }
 
 void logScoringPlan(std::function<std::string()> solution,
@@ -68,29 +68,29 @@ void logScoringPlan(std::function<std::string()> solution,
                     std::function<std::string()> planSummary,
                     size_t planIndex,
                     bool isEOF) {
-    LOGV2_DEBUG(20956,
-                5,
-                "Scoring plan",
-                "planIndex"_attr = planIndex,
-                "querySolution"_attr = redact(solution()),
-                "stats"_attr = redact(explain()));
-    LOGV2_DEBUG(20957,
-                2,
-                "Scoring query plan",
-                "planSummary"_attr = planSummary(),
-                "planHitEOF"_attr = isEOF);
+    LOG_DEBUG(20956,
+              5,
+              "Scoring plan",
+              "planIndex"_attr = planIndex,
+              "querySolution"_attr = redact(solution()),
+              "stats"_attr = redact(explain()));
+    LOG_DEBUG(20957,
+              2,
+              "Scoring query plan",
+              "planSummary"_attr = planSummary(),
+              "planHitEOF"_attr = isEOF);
 }
 
 void logScore(double score) {
-    LOGV2_DEBUG(20958, 5, "Basic plan score", "score"_attr = score);
+    LOG_DEBUG(20958, 5, "Basic plan score", "score"_attr = score);
 }
 
 void logEOFBonus(double eofBonus) {
-    LOGV2_DEBUG(20959, 5, "Adding EOF bonus to score", "eofBonus"_attr = eofBonus);
+    LOG_DEBUG(20959, 5, "Adding EOF bonus to score", "eofBonus"_attr = eofBonus);
 }
 
 void logFailedPlan(std::function<std::string()> planSummary) {
-    LOGV2_DEBUG(
+    LOG_DEBUG(
         20960, 2, "Not scoring a plan because the plan failed", "planSummary"_attr = planSummary());
 }
 }  // namespace log_detail

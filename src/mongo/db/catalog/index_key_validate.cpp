@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kIndex
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kIndex
 
 #include "mongo/platform/basic.h"
 
@@ -50,7 +50,7 @@
 #include "mongo/db/query/collation/collator_factory_interface.h"
 #include "mongo/db/query/query_knobs_gen.h"
 #include "mongo/db/service_context.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/fail_point.h"
 #include "mongo/util/represent_as.h"
 #include "mongo/util/str.h"
@@ -257,11 +257,11 @@ BSONObj removeUnknownFields(const BSONObj& indexSpec) {
         if (allowedFieldNames.count(fieldName)) {
             builder.append(indexSpecElem);
         } else {
-            LOGV2_WARNING(23878,
-                          "Removing field '{fieldName}' from index spec: {indexSpec}",
-                          "Removing unknown field from index spec",
-                          "fieldName"_attr = redact(fieldName),
-                          "indexSpec"_attr = redact(indexSpec));
+            LOG_WARNING(23878,
+                        "Removing field '{fieldName}' from index spec: {indexSpec}",
+                        "Removing unknown field from index spec",
+                        "fieldName"_attr = redact(fieldName),
+                        "indexSpec"_attr = redact(indexSpec));
         }
     }
     return builder.obj();

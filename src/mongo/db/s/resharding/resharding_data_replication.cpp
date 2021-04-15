@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kResharding
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kResharding
 
 #include "mongo/platform/basic.h"
 
@@ -45,8 +45,8 @@
 #include "mongo/db/s/resharding_util.h"
 #include "mongo/executor/network_interface_factory.h"
 #include "mongo/executor/thread_pool_task_executor.h"
-#include "mongo/logv2/log.h"
-#include "mongo/logv2/redaction.h"
+#include "mongo/log/log.h"
+#include "mongo/log/redaction.h"
 #include "mongo/util/concurrency/thread_pool.h"
 #include "mongo/util/future_util.h"
 

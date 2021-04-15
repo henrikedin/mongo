@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kNetwork
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kNetwork
 
 #include "mongo/platform/basic.h"
 
@@ -35,7 +35,7 @@
 
 #include <boost/optional.hpp>
 
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/transport/service_entry_point.h"
 #include "mongo/transport/service_executor_fixed.h"
 #include "mongo/transport/service_executor_reserved.h"
@@ -130,12 +130,12 @@ void ServiceExecutorContext::set(Client* client, ServiceExecutorContext seCtx) n
         }
     }
 
-    LOGV2_DEBUG(4898000,
-                kDiagnosticLogLevel,
-                "Setting initial ServiceExecutor context for client",
-                "client"_attr = client->desc(),
-                "threadingModel"_attr = seCtx._threadingModel,
-                "canUseReserved"_attr = seCtx._canUseReserved);
+    LOG_DEBUG(4898000,
+              kDiagnosticLogLevel,
+              "Setting initial ServiceExecutor context for client",
+              "client"_attr = client->desc(),
+              "threadingModel"_attr = seCtx._threadingModel,
+              "canUseReserved"_attr = seCtx._canUseReserved);
     serviceExecutorContext = std::move(seCtx);
 }
 
@@ -145,12 +145,12 @@ void ServiceExecutorContext::reset(Client* client) noexcept {
 
         auto stats = getServiceExecutorStats(client->getServiceContext()).synchronize();
 
-        LOGV2_DEBUG(4898001,
-                    kDiagnosticLogLevel,
-                    "Resetting ServiceExecutor context for client",
-                    "client"_attr = client->desc(),
-                    "threadingModel"_attr = serviceExecutorContext->_threadingModel,
-                    "canUseReserved"_attr = serviceExecutorContext->_canUseReserved);
+        LOG_DEBUG(4898001,
+                  kDiagnosticLogLevel,
+                  "Resetting ServiceExecutor context for client",
+                  "client"_attr = client->desc(),
+                  "threadingModel"_attr = serviceExecutorContext->_threadingModel,
+                  "canUseReserved"_attr = serviceExecutorContext->_canUseReserved);
 
         if (serviceExecutorContext->_canUseReserved) {
             --stats->limitExempt;
@@ -278,19 +278,19 @@ void ServiceExecutor::shutdownAll(ServiceContext* serviceContext, Date_t deadlin
 
     if (auto status = transport::ServiceExecutorFixed::get(serviceContext)->shutdown(getTimeout());
         !status.isOK()) {
-        LOGV2(4907202, "Failed to shutdown ServiceExecutorFixed", "error"_attr = status);
+        LOG(4907202, "Failed to shutdown ServiceExecutorFixed", "error"_attr = status);
     }
 
     if (auto exec = transport::ServiceExecutorReserved::get(serviceContext)) {
         if (auto status = exec->shutdown(getTimeout()); !status.isOK()) {
-            LOGV2(4907201, "Failed to shutdown ServiceExecutorReserved", "error"_attr = status);
+            LOG(4907201, "Failed to shutdown ServiceExecutorReserved", "error"_attr = status);
         }
     }
 
     if (auto status =
             transport::ServiceExecutorSynchronous::get(serviceContext)->shutdown(getTimeout());
         !status.isOK()) {
-        LOGV2(4907200, "Failed to shutdown ServiceExecutorSynchronous", "error"_attr = status);
+        LOG(4907200, "Failed to shutdown ServiceExecutorSynchronous", "error"_attr = status);
     }
 }
 

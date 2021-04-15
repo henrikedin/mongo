@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTest
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTest
 
 #include "mongo/platform/basic.h"
 
@@ -39,7 +39,7 @@
 #include "mongo/db/repl/replication_coordinator_mock.h"
 #include "mongo/db/service_context_d_test_fixture.h"
 #include "mongo/db/storage/storage_repair_observer.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/unittest/death_test.h"
 #include "mongo/unittest/unittest.h"
 
@@ -115,11 +115,11 @@ public:
         }
 
         if (repairObserver->isDone() && repairObserver->isDataInvalidated()) {
-            LOGV2(22291, "Modifications: ");
+            LOG(22291, "Modifications: ");
             for (const auto& mod : repairObserver->getModifications()) {
-                LOGV2(22292,
-                      "  {mod_getDescription}",
-                      "mod_getDescription"_attr = mod.getDescription());
+                LOG(22292,
+                    "  {mod_getDescription}",
+                    "mod_getDescription"_attr = mod.getDescription());
             }
         }
         storageGlobalParams.repair = false;

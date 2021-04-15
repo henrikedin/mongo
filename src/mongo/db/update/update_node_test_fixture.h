@@ -82,7 +82,7 @@ protected:
         _indexData.reset();
         _logDoc.reset();
         if (_useV2LogBuilder) {
-            _logBuilder = std::make_unique<v2_log_builder::V2LogBuilder>();
+            _logBuilder = std::make_unique<v2_LOG_builder::V2LogBuilder>();
         } else {
             _logBuilder = std::make_unique<V1LogBuilder>(_logDoc.root());
         }

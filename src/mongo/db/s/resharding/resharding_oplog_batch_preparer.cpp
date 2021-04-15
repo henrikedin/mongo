@@ -38,7 +38,7 @@
 #include "mongo/db/query/collation/collator_interface.h"
 #include "mongo/db/repl/apply_ops.h"
 #include "mongo/db/s/resharding/resharding_server_parameters_gen.h"
-#include "mongo/logv2/redaction.h"
+#include "mongo/log/redaction.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/str.h"
 

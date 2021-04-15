@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kSharding
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kSharding
 
 #include "mongo/platform/basic.h"
 
@@ -47,7 +47,7 @@
 #include "mongo/db/s/type_lockpings.h"
 #include "mongo/db/s/type_locks.h"
 #include "mongo/db/vector_clock.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/s/catalog/config_server_version.h"
 #include "mongo/s/catalog/sharding_catalog_client.h"
 #include "mongo/s/catalog/type_chunk.h"
@@ -556,56 +556,56 @@ void ShardingCatalogManager::_removePre49LegacyMetadata(OperationContext* opCtx)
 }
 
 void ShardingCatalogManager::upgradeMetadataFor49(OperationContext* opCtx) {
-    LOGV2(5276704, "Starting metadata upgrade to 4.9");
+    LOG(5276704, "Starting metadata upgrade to 4.9");
 
     try {
         _removePre49LegacyMetadata(opCtx);
     } catch (const DBException& e) {
-        LOGV2(5276708, "Failed to upgrade sharding metadata: {error}", "error"_attr = e.toString());
+        LOG(5276708, "Failed to upgrade sharding metadata: {error}", "error"_attr = e.toString());
         throw;
     }
 
-    LOGV2(5276705, "Successfully upgraded metadata to 4.9");
+    LOG(5276705, "Successfully upgraded metadata to 4.9");
 }
 
 void ShardingCatalogManager::upgradeMetadataFor50(OperationContext* opCtx) {
-    LOGV2(5581200, "Starting metadata upgrade to 5.0");
+    LOG(5581200, "Starting metadata upgrade to 5.0");
 
     if (feature_flags::gShardingFullDDLSupportTimestampedVersion.isEnabledAndIgnoreFCV()) {
         try {
             _createDBTimestampsFor50(opCtx);
             _upgradeCollectionsAndChunksMetadataFor50(opCtx);
         } catch (const DBException& e) {
-            LOGV2(5581201,
-                  "Failed to upgrade sharding metadata: {error}",
-                  "error"_attr = e.toString());
+            LOG(5581201,
+                "Failed to upgrade sharding metadata: {error}",
+                "error"_attr = e.toString());
             throw;
         }
     }
 
-    LOGV2(5581202, "Successfully upgraded metadata to 5.0");
+    LOG(5581202, "Successfully upgraded metadata to 5.0");
 }
 
 void ShardingCatalogManager::downgradeMetadataToPre50(OperationContext* opCtx) {
-    LOGV2(5581203, "Starting metadata downgrade to pre 5.0");
+    LOG(5581203, "Starting metadata downgrade to pre 5.0");
 
     if (feature_flags::gShardingFullDDLSupportTimestampedVersion.isEnabledAndIgnoreFCV()) {
         try {
             _downgradeConfigDatabasesEntriesToPre50(opCtx);
             _downgradeCollectionsAndChunksMetadataToPre50(opCtx);
         } catch (const DBException& e) {
-            LOGV2(5581204,
-                  "Failed to downgrade sharding metadata: {error}",
-                  "error"_attr = e.toString());
+            LOG(5581204,
+                "Failed to downgrade sharding metadata: {error}",
+                "error"_attr = e.toString());
             throw;
         }
     }
 
-    LOGV2(5581205, "Successfully downgraded metadata to pre 5.0");
+    LOG(5581205, "Successfully downgraded metadata to pre 5.0");
 }
 
 void ShardingCatalogManager::_createDBTimestampsFor50(OperationContext* opCtx) {
-    LOGV2(5258802, "Starting upgrade of config.databases");
+    LOG(5258802, "Starting upgrade of config.databases");
 
     auto const catalogCache = Grid::get(opCtx)->catalogCache();
     auto const configShard = Grid::get(opCtx)->shardRegistry()->getConfigShard();
@@ -656,11 +656,11 @@ void ShardingCatalogManager::_createDBTimestampsFor50(OperationContext* opCtx) {
         sharding_util::tellShardsToRefreshDatabase(opCtx, shardIds, name, fixedExecutor);
     }
 
-    LOGV2(5258803, "Successfully upgraded config.databases");
+    LOG(5258803, "Successfully upgraded config.databases");
 }
 
 void ShardingCatalogManager::_downgradeConfigDatabasesEntriesToPre50(OperationContext* opCtx) {
-    LOGV2(5258806, "Starting downgrade of config.databases");
+    LOG(5258806, "Starting downgrade of config.databases");
 
     updateConfigDocumentDBDirect(
         opCtx,
@@ -703,11 +703,11 @@ void ShardingCatalogManager::_downgradeConfigDatabasesEntriesToPre50(OperationCo
         sharding_util::tellShardsToRefreshDatabase(opCtx, shardIds, name, fixedExecutor);
     }
 
-    LOGV2(5258807, "Successfully downgraded config.databases");
+    LOG(5258807, "Successfully downgraded config.databases");
 }
 
 void ShardingCatalogManager::_upgradeCollectionsAndChunksMetadataFor50(OperationContext* opCtx) {
-    LOGV2(5276700, "Starting upgrade of config.collections and config.chunks");
+    LOG(5276700, "Starting upgrade of config.collections and config.chunks");
 
     auto const catalogCache = Grid::get(opCtx)->catalogCache();
     auto const configShard = Grid::get(opCtx)->shardRegistry()->getConfigShard();
@@ -830,12 +830,12 @@ void ShardingCatalogManager::_upgradeCollectionsAndChunksMetadataFor50(Operation
                                      true /* multi */);
     }
 
-    LOGV2(5276701, "Successfully upgraded config.collections and config.chunks");
+    LOG(5276701, "Successfully upgraded config.collections and config.chunks");
 }
 
 void ShardingCatalogManager::_downgradeCollectionsAndChunksMetadataToPre50(
     OperationContext* opCtx) {
-    LOGV2(5276702, "Starting downgrade of config.collections and config.chunks");
+    LOG(5276702, "Starting downgrade of config.collections and config.chunks");
 
     auto const catalogCache = Grid::get(opCtx)->catalogCache();
     auto const configShard = Grid::get(opCtx)->shardRegistry()->getConfigShard();
@@ -949,7 +949,7 @@ void ShardingCatalogManager::_downgradeCollectionsAndChunksMetadataToPre50(
             true /* multi */);
     }
 
-    LOGV2(5276703, "Successfully downgraded config.collections and config.chunks");
+    LOG(5276703, "Successfully downgraded config.collections and config.chunks");
 }
 
 Lock::ExclusiveLock ShardingCatalogManager::lockZoneMutex(OperationContext* opCtx) {
@@ -1091,9 +1091,9 @@ void ShardingCatalogManager::withTransaction(
         try {
             abortTransaction(opCtx, txnNumber);
         } catch (DBException& e) {
-            LOGV2_WARNING(5192100,
-                          "Failed to abort transaction in AlternativeSessionRegion",
-                          "error"_attr = redact(e));
+            LOG_WARNING(5192100,
+                        "Failed to abort transaction in AlternativeSessionRegion",
+                        "error"_attr = redact(e));
         }
     });
 
@@ -1120,8 +1120,8 @@ void ShardingCatalogManager::withTransaction(
             if (isTransientTransactionError(
                     ex.code(), false /* hasWriteConcernError */, false /* isCommitOrAbort */)) {
                 logAndBackoff(5108800,
-                              ::mongo::logv2::LogComponent::kSharding,
-                              logv2::LogSeverity::Debug(1),
+                              ::mongo::log::LogComponent::kSharding,
+                              log::LogSeverity::Debug(1),
                               attempt++,
                               "Transient transaction error while running local replica set"
                               " transaction, retrying",
@@ -1137,8 +1137,8 @@ void ShardingCatalogManager::withTransaction(
             isTransientTransactionError(
                 cmdStatus.code(), !wcStatus.isOK(), true /* isCommitOrAbort */)) {
             logAndBackoff(5108801,
-                          ::mongo::logv2::LogComponent::kSharding,
-                          logv2::LogSeverity::Debug(1),
+                          ::mongo::log::LogComponent::kSharding,
+                          log::LogSeverity::Debug(1),
                           attempt++,
                           "Transient transaction error while committing local replica set"
                           " transaction, retrying",

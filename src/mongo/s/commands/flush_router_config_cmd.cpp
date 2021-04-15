@@ -27,12 +27,12 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kSharding
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kSharding
 
 #include "mongo/platform/basic.h"
 
 #include "mongo/db/commands.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/s/grid.h"
 #include "mongo/s/is_mongos.h"
 
@@ -86,22 +86,22 @@ public:
 
         const auto argumentElem = cmdObj.firstElement();
         if (argumentElem.isNumber() || argumentElem.isBoolean()) {
-            LOGV2(22761, "Routing metadata flushed for all databases");
+            LOG(22761, "Routing metadata flushed for all databases");
             catalogCache->purgeAllDatabases();
         } else {
             const auto ns = argumentElem.checkAndGetStringData();
             if (nsIsDbOnly(ns)) {
-                LOGV2(22762,
-                      "Routing metadata flushed for database {db}",
-                      "Routing metadata flushed for database",
-                      "db"_attr = ns);
+                LOG(22762,
+                    "Routing metadata flushed for database {db}",
+                    "Routing metadata flushed for database",
+                    "db"_attr = ns);
                 catalogCache->purgeDatabase(ns);
             } else {
                 const NamespaceString nss(ns);
-                LOGV2(22763,
-                      "Routing metadata flushed for collection {namespace}",
-                      "Routing metadata flushed for collection",
-                      "namespace"_attr = nss);
+                LOG(22763,
+                    "Routing metadata flushed for collection {namespace}",
+                    "Routing metadata flushed for collection",
+                    "namespace"_attr = nss);
                 catalogCache->invalidateCollectionEntry_LINEARIZABLE(nss);
             }
         }

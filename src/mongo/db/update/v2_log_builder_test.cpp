@@ -37,7 +37,7 @@
 #include "mongo/unittest/unittest.h"
 #include "mongo/util/safe_num.h"
 
-namespace mongo::v2_log_builder {
+namespace mongo::v2_LOG_builder {
 namespace {
 namespace mmb = mongo::mutablebson;
 
@@ -325,4 +325,4 @@ DEATH_TEST(V2LogBuilder, ImplicityArrayCreationDisallowed, "invariant") {
 }
 
 }  // namespace
-}  // namespace mongo::v2_log_builder
+}  // namespace mongo::v2_LOG_builder

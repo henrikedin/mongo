@@ -27,14 +27,14 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kReplicationInitialSync
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kReplicationInitialSync
 
 #include "mongo/platform/basic.h"
 
 #include "mongo/db/repl/initial_sync_base_cloner.h"
 #include "mongo/db/repl/replication_consistency_markers_gen.h"
 #include "mongo/db/repl/replication_consistency_markers_impl.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace mongo {
 namespace {
@@ -77,12 +77,12 @@ void InitialSyncBaseCloner::handleStageAttemptFailed(BaseClonerStage* stage, Sta
     }
     hangBeforeCheckingRollBackIdClonerStage.executeIf(
         [&](const BSONObj& data) {
-            LOGV2(21076,
-                  "Initial sync cloner {cloner} hanging before checking rollBackId for stage "
-                  "{stage}",
-                  "Initial sync cloner hanging before checking rollBackId",
-                  "cloner"_attr = getClonerName(),
-                  "stage"_attr = stage->getName());
+            LOG(21076,
+                "Initial sync cloner {cloner} hanging before checking rollBackId for stage "
+                "{stage}",
+                "Initial sync cloner hanging before checking rollBackId",
+                "cloner"_attr = getClonerName(),
+                "stage"_attr = stage->getName());
             while (!mustExit() &&
                    hangBeforeCheckingRollBackIdClonerStage.shouldFail(isThisStageFailPoint)) {
                 sleepmillis(100);
@@ -133,7 +133,7 @@ Status InitialSyncBaseCloner::checkInitialSyncIdIsUnchanged() {
         if (ErrorCodes::isRetriableError(e)) {
             auto status = e.toStatus().withContext(
                 ": failed while attempting to retrieve initial sync ID after re-connect");
-            LOGV2_DEBUG(
+            LOG_DEBUG(
                 4608505, 1, "Retrieving Initial Sync ID retriable error", "error"_attr = status);
             return status;
         }
@@ -160,7 +160,7 @@ Status InitialSyncBaseCloner::checkRollBackIdIsUnchanged() {
         if (ErrorCodes::isRetriableError(e)) {
             static constexpr char errorMsg[] =
                 "Failed while attempting to retrieve rollBackId after re-connect";
-            LOGV2_DEBUG(21073, 1, errorMsg, "error"_attr = e);
+            LOG_DEBUG(21073, 1, errorMsg, "error"_attr = e);
             return e.toStatus().withContext(errorMsg);
         }
         throw;
@@ -190,23 +190,23 @@ void InitialSyncBaseCloner::pauseForFuzzer(BaseClonerStage* stage) {
             // nb: This log message is specifically checked for in
             // initial_sync_test_fixture_test.js, so if you change it here you will need to change
             // it there.
-            LOGV2(21066,
-                  "Collection Cloner scheduled a remote command on the {stage}",
-                  "Collection Cloner scheduled a remote command",
-                  "stage"_attr = describeForFuzzer(stage));
-            LOGV2(21067, "initialSyncFuzzerSynchronizationPoint1 fail point enabled");
+            LOG(21066,
+                "Collection Cloner scheduled a remote command on the {stage}",
+                "Collection Cloner scheduled a remote command",
+                "stage"_attr = describeForFuzzer(stage));
+            LOG(21067, "initialSyncFuzzerSynchronizationPoint1 fail point enabled");
             initialSyncFuzzerSynchronizationPoint1.pauseWhileSet();
 
             if (MONGO_unlikely(initialSyncFuzzerSynchronizationPoint2.shouldFail())) {
-                LOGV2(21068, "initialSyncFuzzerSynchronizationPoint2 fail point enabled");
+                LOG(21068, "initialSyncFuzzerSynchronizationPoint2 fail point enabled");
                 initialSyncFuzzerSynchronizationPoint2.pauseWhileSet();
             }
         }
     }
 }
 
-logv2::LogComponent InitialSyncBaseCloner::getLogComponent() {
-    return logv2::LogComponent::kReplicationInitialSync;
+log::LogComponent InitialSyncBaseCloner::getLogComponent() {
+    return log::LogComponent::kReplicationInitialSync;
 }
 
 }  // namespace repl

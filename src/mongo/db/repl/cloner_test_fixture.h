@@ -35,8 +35,8 @@
 #include "mongo/db/service_context_d_test_fixture.h"
 #include "mongo/db/service_context_test_fixture.h"
 #include "mongo/dbtests/mock/mock_dbclient_connection.h"
-#include "mongo/logv2/log_component.h"
-#include "mongo/logv2/log_severity.h"
+#include "mongo/log/log_component.h"
+#include "mongo/log/log_severity.h"
 #include "mongo/unittest/log_test.h"
 #include "mongo/unittest/unittest.h"
 #include "mongo/util/clock_source_mock.h"
@@ -70,8 +70,8 @@ protected:
     ServiceContext::UniqueClient _oldClient;
 
 private:
-    unittest::MinimumLoggedSeverityGuard _verboseGuard{logv2::LogComponent::kReplicationInitialSync,
-                                                       logv2::LogSeverity::Debug(1)};
+    unittest::MinimumLoggedSeverityGuard _verboseGuard{log::LogComponent::kReplicationInitialSync,
+                                                       log::LogSeverity::Debug(1)};
 };
 
 }  // namespace repl

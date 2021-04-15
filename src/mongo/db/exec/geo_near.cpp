@@ -27,11 +27,11 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kQuery
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kQuery
 
 #include "mongo/db/exec/geo_near.h"
 
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include <memory>
 #include <vector>
 
@@ -125,14 +125,14 @@ static void extractGeometries(const BSONObj& doc,
                     // Valid geometry element
                     geometries->push_back(std::move(stored));
                 } else {
-                    LOGV2_WARNING(23760,
-                                  "geoNear stage read non-geometry element in array",
-                                  "nextElement"_attr = redact(nextEl),
-                                  "element"_attr = redact(el));
+                    LOG_WARNING(23760,
+                                "geoNear stage read non-geometry element in array",
+                                "nextElement"_attr = redact(nextEl),
+                                "element"_attr = redact(el));
                 }
             }
         } else {
-            LOGV2_WARNING(
+            LOG_WARNING(
                 23761, "geoNear stage read non-geometry element", "element"_attr = redact(el));
         }
     }

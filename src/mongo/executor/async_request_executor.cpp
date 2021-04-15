@@ -27,13 +27,13 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kExecutor
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kExecutor
 
 #include "mongo/executor/async_request_executor.h"
 
 #include "mongo/db/client_strand.h"
 #include "mongo/db/operation_context.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/platform/compiler.h"
 #include "mongo/util/fail_point.h"
 
@@ -50,14 +50,14 @@ AsyncRequestExecutor::AsyncRequestExecutor(std::string name) : _name(std::move(n
 
 void AsyncRequestExecutor::start() {
     _pool->startup();
-    LOGV2_DEBUG(
+    LOG_DEBUG(
         4910801, kDiagnosticLogLevel, "Started asynchronous request executor", "name"_attr = _name);
 }
 
 void AsyncRequestExecutor::stop() {
     _pool->shutdown();
     _pool->join();
-    LOGV2_DEBUG(
+    LOG_DEBUG(
         4910802, kDiagnosticLogLevel, "Stopped asynchronous request executor", "name"_attr = _name);
 }
 

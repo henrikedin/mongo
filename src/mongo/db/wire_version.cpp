@@ -27,14 +27,14 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kNetwork
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kNetwork
 
 #include "mongo/platform/basic.h"
 
 #include "mongo/db/wire_version.h"
 
 #include "mongo/base/error_codes.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/static_immortal.h"
 #include "mongo/util/thread_safety_context.h"
@@ -63,7 +63,7 @@ void WireSpec::initialize(Specification spec) {
     fassert(ErrorCodes::AlreadyInitialized, !isInitialized());
     BSONObj newSpec = specToBSON(spec);
     _spec = std::make_shared<Specification>(std::move(spec));
-    LOGV2(4915701, "Initialized wire specification", "spec"_attr = newSpec);
+    LOG(4915701, "Initialized wire specification", "spec"_attr = newSpec);
 }
 
 void WireSpec::reset(Specification spec) {
@@ -77,8 +77,7 @@ void WireSpec::reset(Specification spec) {
         newSpec = specToBSON(*_spec.get());
     }
 
-    LOGV2(
-        4915702, "Updated wire specification", "oldSpec"_attr = oldSpec, "newSpec"_attr = newSpec);
+    LOG(4915702, "Updated wire specification", "oldSpec"_attr = oldSpec, "newSpec"_attr = newSpec);
 }
 
 std::shared_ptr<const WireSpec::Specification> WireSpec::get() const {

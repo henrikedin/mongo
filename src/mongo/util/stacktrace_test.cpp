@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTest
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTest
 
 #include "mongo/platform/basic.h"
 
@@ -49,7 +49,7 @@
 #include "mongo/bson/bsonobjbuilder.h"
 #include "mongo/bson/json.h"
 #include "mongo/config.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/platform/mutex.h"
 #include "mongo/stdx/condition_variable.h"
 #include "mongo/stdx/thread.h"
@@ -161,7 +161,7 @@ TEST(StackTrace, PosixFormat) {
     stack_trace_test_detail::recurseWithLinkage(param, 3);
 
     if (kSuperVerbose) {
-        LOGV2_OPTIONS(24153, {logv2::LogTruncation::Disabled}, "Trace", "trace"_attr = trace);
+        LOG_OPTIONS(24153, {log::LogTruncation::Disabled}, "Trace", "trace"_attr = trace);
     }
 
     // Expect log to be a "BACKTRACE:" 1-line record, followed by some "Frame:" lines.
@@ -391,13 +391,12 @@ public:
     }
 
     static void handlerPreamble(int sig) {
-        LOGV2(23387,
-              "Thread caught signal!",
-              "tid"_attr = ostr(stdx::this_thread::get_id()),
-              "sig"_attr = sig);
+        LOG(23387,
+            "Thread caught signal!",
+            "tid"_attr = ostr(stdx::this_thread::get_id()),
+            "sig"_attr = sig);
         char storage;
-        LOGV2(
-            23388, "Local var", "var"_attr = "{:X}"_format(reinterpret_cast<uintptr_t>(&storage)));
+        LOG(23388, "Local var", "var"_attr = "{:X}"_format(reinterpret_cast<uintptr_t>(&storage)));
     }
 
     static void tryHandler(sigAction_t* handler) {
@@ -406,12 +405,12 @@ public:
         auto buf = std::make_unique<std::array<unsigned char, kStackSize>>();
         constexpr unsigned char kSentinel = 0xda;
         std::fill(buf->begin(), buf->end(), kSentinel);
-        LOGV2(24157,
-              "sigaltstack buf",
-              "size"_attr = "{:X}"_format(buf->size()),
-              "data"_attr = "{:X}"_format(reinterpret_cast<uintptr_t>(buf->data())));
+        LOG(24157,
+            "sigaltstack buf",
+            "size"_attr = "{:X}"_format(buf->size()),
+            "data"_attr = "{:X}"_format(reinterpret_cast<uintptr_t>(buf->data())));
         stdx::thread thr([&] {
-            LOGV2(23389, "Thread running", "tid"_attr = ostr(stdx::this_thread::get_id()));
+            LOG(23389, "Thread running", "tid"_attr = ostr(stdx::this_thread::get_id()));
             {
                 stack_t ss;
                 ss.ss_sp = buf->data();
@@ -445,7 +444,7 @@ public:
         size_t used = std::distance(
             std::find_if(buf->begin(), buf->end(), [](unsigned char x) { return x != kSentinel; }),
             buf->end());
-        LOGV2(23390, "Stack used", "bytes"_attr = used);
+        LOG(23390, "Stack used", "bytes"_attr = used);
     }
 };
 
@@ -557,8 +556,7 @@ public:
         StringStackTraceSink sink{dumped};
         printAllThreadStacks(sink);
         if (kSuperVerbose)
-            LOGV2_OPTIONS(
-                24156, {logv2::LogTruncation::Disabled}, "Dumped", "dumped"_attr = dumped);
+            LOG_OPTIONS(24156, {log::LogTruncation::Disabled}, "Dumped", "dumped"_attr = dumped);
 
         reapWorkers();
 
@@ -667,12 +665,12 @@ TEST(StackTrace, BacktraceThroughLibc) {
         capture.notify();
         return static_cast<int>(static_cast<const int*>(a) < static_cast<const int*>(b));
     });
-    LOGV2(23391, "Captured", "frameCount"_attr = capture.arrSize);
+    LOG(23391, "Captured", "frameCount"_attr = capture.arrSize);
     for (size_t i = 0; i < capture.arrSize; ++i) {
-        LOGV2(23392,
-              "Frame",
-              "i"_attr = i,
-              "frame"_attr = "{:X}"_format(reinterpret_cast<uintptr_t>(capture.arr[i])));
+        LOG(23392,
+            "Frame",
+            "i"_attr = i,
+            "frame"_attr = "{:X}"_format(reinterpret_cast<uintptr_t>(capture.arr[i])));
     }
 }
 #endif  // mongo stacktrace backend

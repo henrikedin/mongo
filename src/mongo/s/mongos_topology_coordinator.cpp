@@ -27,9 +27,9 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kCommand
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kCommand
 
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 #include "mongo/db/client.h"
 #include "mongo/db/service_context.h"
@@ -155,20 +155,20 @@ std::shared_ptr<const MongosHelloResponse> MongosTopologyCoordinator::awaitHello
     if (MONGO_unlikely(waitForHelloResponse.shouldFail())) {
         // Used in tests that wait for this failpoint to be entered before shutting down mongos,
         // which is the only action that triggers a topology change.
-        LOGV2(4695704, "waitForHelloResponse failpoint enabled");
+        LOG(4695704, "waitForHelloResponse failpoint enabled");
     }
 
     if (MONGO_unlikely(hangWhileWaitingForHelloResponse.shouldFail())) {
-        LOGV2(4695501, "hangWhileWaitingForHelloResponse failpoint enabled");
+        LOG(4695501, "hangWhileWaitingForHelloResponse failpoint enabled");
         hangWhileWaitingForHelloResponse.pauseWhileSet(opCtx);
     }
 
     // Wait for a mongos topology change with timeout set to deadline.
-    LOGV2_DEBUG(4695502,
-                1,
-                "Waiting for a hello response from a topology change or until deadline",
-                "deadline"_attr = deadline.get(),
-                "currentMongosTopologyVersionCounter"_attr = _topologyVersion.getCounter());
+    LOG_DEBUG(4695502,
+              1,
+              "Waiting for a hello response from a topology change or until deadline",
+              "deadline"_attr = deadline.get(),
+              "currentMongosTopologyVersionCounter"_attr = _topologyVersion.getCounter());
 
     auto statusWithHello =
         futureGetNoThrowWithDeadline(opCtx, future, deadline.get(), opCtx->getTimeoutError());
@@ -208,13 +208,13 @@ void MongosTopologyCoordinator::enterQuiesceModeAndWait(OperationContext* opCtx,
     }
 
     if (MONGO_unlikely(hangDuringQuiesceMode.shouldFail())) {
-        LOGV2(4695700, "hangDuringQuiesceMode failpoint enabled");
+        LOG(4695700, "hangDuringQuiesceMode failpoint enabled");
         hangDuringQuiesceMode.pauseWhileSet(opCtx);
     }
 
-    LOGV2(4695701, "Entering quiesce mode for mongos shutdown", "quiesceTime"_attr = quiesceTime);
+    LOG(4695701, "Entering quiesce mode for mongos shutdown", "quiesceTime"_attr = quiesceTime);
     opCtx->sleepUntil(_quiesceDeadline);
-    LOGV2(4695702, "Exiting quiesce mode for mongos shutdown");
+    LOG(4695702, "Exiting quiesce mode for mongos shutdown");
 }
 
 }  // namespace mongo

@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTest
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTest
 
 #include "mongo/platform/basic.h"
 
@@ -35,7 +35,7 @@
 #include "mongo/bson/bson_depth.h"
 #include "mongo/bson/bson_validate.h"
 #include "mongo/db/jsobj.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/platform/random.h"
 #include "mongo/unittest/unittest.h"
 
@@ -95,12 +95,12 @@ TEST(BSONValidate, RandomData) {
         delete[] x;
     }
 
-    LOGV2(20104,
-          "RandomData: didn't crash valid/total: {numValid}/{numToRun} (want few valid ones) "
-          "jsonSize: {jsonSize}",
-          "numValid"_attr = numValid,
-          "numToRun"_attr = numToRun,
-          "jsonSize"_attr = jsonSize);
+    LOG(20104,
+        "RandomData: didn't crash valid/total: {numValid}/{numToRun} (want few valid ones) "
+        "jsonSize: {jsonSize}",
+        "numValid"_attr = numValid,
+        "numToRun"_attr = numToRun,
+        "jsonSize"_attr = jsonSize);
 }
 
 TEST(BSONValidate, MuckingData1) {
@@ -144,17 +144,17 @@ TEST(BSONValidate, MuckingData1) {
         }
     }
 
-    LOGV2(20105,
-          "MuckingData1: didn't crash valid/total: {numValid}/{numToRun} (want few valid ones)  "
-          "jsonSize: {jsonSize}",
-          "numValid"_attr = numValid,
-          "numToRun"_attr = numToRun,
-          "jsonSize"_attr = jsonSize);
+    LOG(20105,
+        "MuckingData1: didn't crash valid/total: {numValid}/{numToRun} (want few valid ones)  "
+        "jsonSize: {jsonSize}",
+        "numValid"_attr = numValid,
+        "numToRun"_attr = numToRun,
+        "jsonSize"_attr = jsonSize);
 }
 
 TEST(BSONValidate, Fuzz) {
     int64_t seed = time(nullptr);
-    LOGV2(20106, "BSONValidate Fuzz random seed: {seed}", "seed"_attr = seed);
+    LOG(20106, "BSONValidate Fuzz random seed: {seed}", "seed"_attr = seed);
     PseudoRandom randomSource(seed);
 
     BSONObj original =

@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kReplication
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kReplication
 
 #include "mongo/db/repl/oplog_batcher.h"
 
@@ -35,7 +35,7 @@
 #include "mongo/db/commands/txn_cmds_gen.h"
 #include "mongo/db/repl/oplog_applier.h"
 #include "mongo/db/repl/repl_server_parameters_gen.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace mongo {
 namespace repl {
@@ -165,11 +165,11 @@ StatusWith<std::vector<OplogEntry>> OplogBatcher::getNextApplierBatch(
         // Check for oplog version change.
         if (entry.getVersion() != OplogEntry::kOplogVersion) {
             static constexpr char message[] = "Unexpected oplog version";
-            LOGV2_FATAL_CONTINUE(21240,
-                                 message,
-                                 "expectedVersion"_attr = OplogEntry::kOplogVersion,
-                                 "foundVersion"_attr = entry.getVersion(),
-                                 "oplogEntry"_attr = redact(entry.toBSONForLogging()));
+            LOG_FATAL_CONTINUE(21240,
+                               message,
+                               "expectedVersion"_attr = OplogEntry::kOplogVersion,
+                               "foundVersion"_attr = entry.getVersion(),
+                               "oplogEntry"_attr = redact(entry.toBSONForLogging()));
             return {ErrorCodes::BadValue,
                     str::stream() << message << ", expected oplog version "
                                   << OplogEntry::kOplogVersion << ", found version "
@@ -319,10 +319,10 @@ void OplogBatcher::_run(StorageInterface* storageInterface) {
             // Check the oplog buffer after the applier state to ensure the producer is stopped.
             if (isDraining && _oplogBuffer->isEmpty()) {
                 ops.setTermWhenExhausted(termWhenBufferIsEmpty);
-                LOGV2(21239,
-                      "Oplog buffer has been drained in term {term}",
-                      "Oplog buffer has been drained",
-                      "term"_attr = termWhenBufferIsEmpty);
+                LOG(21239,
+                    "Oplog buffer has been drained in term {term}",
+                    "Oplog buffer has been drained",
+                    "term"_attr = termWhenBufferIsEmpty);
             } else {
                 // Don't emit empty batches.
                 continue;

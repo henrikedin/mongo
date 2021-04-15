@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kStorage
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kStorage
 
 #include "mongo/db/storage/durable_catalog_impl.h"
 
@@ -49,7 +49,7 @@
 #include "mongo/db/storage/record_store.h"
 #include "mongo/db/storage/recovery_unit.h"
 #include "mongo/db/storage/storage_engine_interface.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/platform/bits.h"
 #include "mongo/platform/random.h"
 #include "mongo/util/str.h"
@@ -341,11 +341,11 @@ DurableCatalogImpl::FeatureTracker::FeatureBits DurableCatalogImpl::FeatureTrack
     auto nonRepairableFeaturesStatus = bsonExtractTypedField(
         obj, kNonRepairableFeaturesFieldName, BSONType::NumberLong, &nonRepairableFeaturesElem);
     if (!nonRepairableFeaturesStatus.isOK()) {
-        LOGV2_ERROR(22215,
-                    "error: exception extracting typed field with obj:{obj}",
-                    "Exception extracting typed field from obj",
-                    "obj"_attr = redact(obj),
-                    "fieldName"_attr = kNonRepairableFeaturesFieldName);
+        LOG_ERROR(22215,
+                  "error: exception extracting typed field with obj:{obj}",
+                  "Exception extracting typed field from obj",
+                  "obj"_attr = redact(obj),
+                  "fieldName"_attr = kNonRepairableFeaturesFieldName);
         fassert(40111, nonRepairableFeaturesStatus);
     }
 
@@ -353,11 +353,11 @@ DurableCatalogImpl::FeatureTracker::FeatureBits DurableCatalogImpl::FeatureTrack
     auto repairableFeaturesStatus = bsonExtractTypedField(
         obj, kRepairableFeaturesFieldName, BSONType::NumberLong, &repairableFeaturesElem);
     if (!repairableFeaturesStatus.isOK()) {
-        LOGV2_ERROR(22216,
-                    "error: exception extracting typed field with obj:{obj}",
-                    "Exception extracting typed field from obj",
-                    "obj"_attr = redact(obj),
-                    "fieldName"_attr = kRepairableFeaturesFieldName);
+        LOG_ERROR(22216,
+                  "error: exception extracting typed field with obj:{obj}",
+                  "Exception extracting typed field from obj",
+                  "obj"_attr = redact(obj),
+                  "fieldName"_attr = kRepairableFeaturesFieldName);
         fassert(40112, repairableFeaturesStatus);
     }
 
@@ -554,11 +554,11 @@ StatusWith<DurableCatalog::Entry> DurableCatalogImpl::_addEntry(OperationContext
     _catalogIdToEntryMap[res.getValue()] = {res.getValue(), ident, nss};
     opCtx->recoveryUnit()->registerChange(std::make_unique<AddIdentChange>(this, res.getValue()));
 
-    LOGV2_DEBUG(22207,
-                1,
-                "stored meta data for {nss_ns} @ {res_getValue}",
-                "nss_ns"_attr = nss.ns(),
-                "res_getValue"_attr = res.getValue());
+    LOG_DEBUG(22207,
+              1,
+              "stored meta data for {nss_ns} @ {res_getValue}",
+              "nss_ns"_attr = nss.ns(),
+              "res_getValue"_attr = res.getValue());
     return {{res.getValue(), ident, nss}};
 }
 
@@ -578,7 +578,7 @@ StatusWith<DurableCatalog::Entry> DurableCatalogImpl::_importEntry(OperationCont
     _catalogIdToEntryMap[res.getValue()] = {res.getValue(), ident, nss};
     opCtx->recoveryUnit()->registerChange(std::make_unique<AddIdentChange>(this, res.getValue()));
 
-    LOGV2_DEBUG(
+    LOG_DEBUG(
         5095101, 1, "imported meta data", "nss"_attr = nss.ns(), "metadata"_attr = res.getValue());
     return {{res.getValue(), ident, nss}};
 }
@@ -592,7 +592,7 @@ std::string DurableCatalogImpl::getIndexIdent(OperationContext* opCtx,
 }
 
 BSONObj DurableCatalogImpl::_findEntry(OperationContext* opCtx, RecordId catalogId) const {
-    LOGV2_DEBUG(22208, 3, "looking up metadata for: {catalogId}", "catalogId"_attr = catalogId);
+    LOG_DEBUG(22208, 3, "looking up metadata for: {catalogId}", "catalogId"_attr = catalogId);
     RecordData data;
     if (!_rs->findRecord(opCtx, catalogId, &data)) {
         // since the in memory meta data isn't managed with mvcc
@@ -607,11 +607,11 @@ BSONObj DurableCatalogImpl::_findEntry(OperationContext* opCtx, RecordId catalog
 BSONCollectionCatalogEntry::MetaData DurableCatalogImpl::getMetaData(OperationContext* opCtx,
                                                                      RecordId catalogId) const {
     BSONObj obj = _findEntry(opCtx, catalogId);
-    LOGV2_DEBUG(22209, 3, " fetched CCE metadata: {obj}", "obj"_attr = obj);
+    LOG_DEBUG(22209, 3, " fetched CCE metadata: {obj}", "obj"_attr = obj);
     BSONCollectionCatalogEntry::MetaData md;
     const BSONElement mdElement = obj["md"];
     if (mdElement.isABSONObj()) {
-        LOGV2_DEBUG(22210, 3, "returning metadata: {mdElement}", "mdElement"_attr = mdElement);
+        LOG_DEBUG(22210, 3, "returning metadata: {mdElement}", "mdElement"_attr = mdElement);
         md.parse(mdElement.Obj());
     }
     return md;
@@ -660,7 +660,7 @@ void DurableCatalogImpl::putMetaData(OperationContext* opCtx,
         opCtx->recoveryUnit()->setMustBeTimestamped();
     }
 
-    LOGV2_DEBUG(22211, 3, "recording new metadata: {obj}", "obj"_attr = obj);
+    LOG_DEBUG(22211, 3, "recording new metadata: {obj}", "obj"_attr = obj);
     Status status = _rs->updateRecord(opCtx, catalogId, obj.objdata(), obj.objsize());
     fassert(28521, status);
 }
@@ -742,11 +742,11 @@ Status DurableCatalogImpl::_removeEntry(OperationContext* opCtx, RecordId catalo
     opCtx->recoveryUnit()->registerChange(
         std::make_unique<RemoveIdentChange>(this, catalogId, it->second));
 
-    LOGV2_DEBUG(22212,
-                1,
-                "deleting metadata for {it_second_nss} @ {catalogId}",
-                "it_second_nss"_attr = it->second.nss,
-                "catalogId"_attr = catalogId);
+    LOG_DEBUG(22212,
+              1,
+              "deleting metadata for {it_second_nss} @ {catalogId}",
+              "it_second_nss"_attr = it->second.nss,
+              "catalogId"_attr = catalogId);
     _rs->deleteRecord(opCtx, catalogId);
     _catalogIdToEntryMap.erase(it);
 
@@ -837,11 +837,11 @@ StatusWith<std::string> DurableCatalogImpl::newOrphanedIdent(OperationContext* o
     _catalogIdToEntryMap[res.getValue()] = Entry(res.getValue(), ident, ns);
     opCtx->recoveryUnit()->registerChange(std::make_unique<AddIdentChange>(this, res.getValue()));
 
-    LOGV2_DEBUG(22213,
-                1,
-                "stored meta data for orphaned collection {ns} @ {res_getValue}",
-                "ns"_attr = ns,
-                "res_getValue"_attr = res.getValue());
+    LOG_DEBUG(22213,
+              1,
+              "stored meta data for orphaned collection {ns} @ {res_getValue}",
+              "ns"_attr = ns,
+              "res_getValue"_attr = res.getValue());
     return {ns.ns()};
 }
 

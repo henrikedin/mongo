@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kNetwork
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kNetwork
 
 #include <memory>
 
@@ -44,7 +44,7 @@
 #include "mongo/db/operation_context.h"
 #include "mongo/db/request_execution_context.h"
 #include "mongo/db/service_context.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/message.h"
 #include "mongo/s/cluster_last_error_info.h"
 #include "mongo/s/commands/strategy.h"
@@ -157,33 +157,33 @@ Future<DbResponse> OpRunner::run() try {
                 nss.db() != NamespaceString::kLocalDb);
     }
 
-    LOGV2_DEBUG(22867,
-                3,
-                "Request::process begin ns: {namespace} msg id: {msgId} op: {operation}",
-                "Starting operation",
-                "namespace"_attr = nss,
-                "msgId"_attr = hr->msgId,
-                "operation"_attr = networkOpToString(hr->op));
+    LOG_DEBUG(22867,
+              3,
+              "Request::process begin ns: {namespace} msg id: {msgId} op: {operation}",
+              "Starting operation",
+              "namespace"_attr = nss,
+              "msgId"_attr = hr->msgId,
+              "operation"_attr = networkOpToString(hr->op));
 
     auto dbResponse = runOperation();
 
-    LOGV2_DEBUG(22868,
-                3,
-                "Request::process end ns: {namespace} msg id: {msgId} op: {operation}",
-                "Done processing operation",
-                "namespace"_attr = nss,
-                "msgId"_attr = hr->msgId,
-                "operation"_attr = networkOpToString(hr->op));
+    LOG_DEBUG(22868,
+              3,
+              "Request::process end ns: {namespace} msg id: {msgId} op: {operation}",
+              "Done processing operation",
+              "namespace"_attr = nss,
+              "msgId"_attr = hr->msgId,
+              "operation"_attr = networkOpToString(hr->op));
 
     return Future<DbResponse>::makeReady(std::move(dbResponse));
 } catch (const DBException& ex) {
-    LOGV2_DEBUG(22869,
-                1,
-                "Exception thrown while processing {operation} op for {namespace}: {error}",
-                "Got an error while processing operation",
-                "operation"_attr = networkOpToString(hr->op),
-                "namespace"_attr = hr->nsString.ns(),
-                "error"_attr = ex);
+    LOG_DEBUG(22869,
+              1,
+              "Exception thrown while processing {operation} op for {namespace}: {error}",
+              "Got an error while processing operation",
+              "operation"_attr = networkOpToString(hr->op),
+              "namespace"_attr = hr->nsString.ns(),
+              "error"_attr = ex);
 
     DbResponse dbResponse;
     if (hr->op == dbQuery || hr->op == dbGetMore) {
@@ -259,7 +259,7 @@ void HandleRequest::onSuccess(const DbResponse& dbResponse) {
     auto opCtx = rec->getOpCtx();
     // Mark the op as complete, populate the response length, and log it if appropriate.
     CurOp::get(opCtx)->completeAndLogOperation(
-        opCtx, logv2::LogComponent::kCommand, dbResponse.response.size(), slowMsOverride);
+        opCtx, log::LogComponent::kCommand, dbResponse.response.size(), slowMsOverride);
 }
 
 Future<DbResponse> HandleRequest::run() {
@@ -271,7 +271,7 @@ Future<DbResponse> HandleRequest::run() {
                           onSuccess(dbResponse);
                       })
                       .tapError([](Status status) {
-                          LOGV2(4879803, "Failed to handle request", "error"_attr = redact(status));
+                          LOG(4879803, "Failed to handle request", "error"_attr = redact(status));
                       });
     fp.promise.emplaceValue();
     return future;

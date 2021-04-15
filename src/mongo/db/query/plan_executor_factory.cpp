@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kQuery
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kQuery
 
 #include "mongo/platform/basic.h"
 
@@ -38,7 +38,7 @@
 #include "mongo/db/query/plan_executor_impl.h"
 #include "mongo/db/query/plan_executor_sbe.h"
 #include "mongo/db/query/util/make_data_structure.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace mongo::plan_executor_factory {
 
@@ -128,11 +128,11 @@ StatusWith<std::unique_ptr<PlanExecutor, PlanExecutor::Deleter>> make(
     dassert(collection);
     auto&& [rootStage, data] = root;
 
-    LOGV2_DEBUG(4822860,
-                5,
-                "SBE plan",
-                "slots"_attr = data.debugString(),
-                "stages"_attr = sbe::DebugPrinter{}.print(*rootStage));
+    LOG_DEBUG(4822860,
+              5,
+              "SBE plan",
+              "slots"_attr = data.debugString(),
+              "stages"_attr = sbe::DebugPrinter{}.print(*rootStage));
 
     rootStage->prepare(data.ctx);
 
@@ -160,11 +160,11 @@ StatusWith<std::unique_ptr<PlanExecutor, PlanExecutor::Deleter>> make(
     std::unique_ptr<PlanYieldPolicySBE> yieldPolicy) {
     dassert(collection);
 
-    LOGV2_DEBUG(4822861,
-                5,
-                "SBE plan",
-                "slots"_attr = candidates.winner().data.debugString(),
-                "stages"_attr = sbe::DebugPrinter{}.print(*candidates.winner().root));
+    LOG_DEBUG(4822861,
+              5,
+              "SBE plan",
+              "slots"_attr = candidates.winner().data.debugString(),
+              "stages"_attr = sbe::DebugPrinter{}.print(*candidates.winner().root));
 
     return {{new PlanExecutorSBE(opCtx,
                                  std::move(cq),

@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kDefault
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kDefault
 
 #include "mongo/platform/basic.h"
 
@@ -57,13 +57,13 @@
 #include "mongo/db/log_process_details.h"
 #include "mongo/db/server_options.h"
 #include "mongo/db/wire_version.h"
-#include "mongo/logv2/attributes.h"
-#include "mongo/logv2/component_settings_filter.h"
-#include "mongo/logv2/console.h"
-#include "mongo/logv2/json_formatter.h"
-#include "mongo/logv2/log_domain_global.h"
-#include "mongo/logv2/log_manager.h"
-#include "mongo/logv2/text_formatter.h"
+#include "mongo/log/attributes.h"
+#include "mongo/log/component_settings_filter.h"
+#include "mongo/log/console.h"
+#include "mongo/log/json_formatter.h"
+#include "mongo/log/log_domain_global.h"
+#include "mongo/log/log_manager.h"
+#include "mongo/log/text_formatter.h"
 #include "mongo/platform/atomic_word.h"
 #include "mongo/scripting/engine.h"
 #include "mongo/shell/linenoise.h"
@@ -129,7 +129,7 @@ MONGO_INITIALIZER_WITH_PREREQUISITES(WireSpec, ("EndStartupOptionSetup"))(Initia
 const auto kAuthParam = "authSource"s;
 
 /**
- * Basic Logv2 console backend. Provides scoped logging disable.
+ * Basic log console backend. Provides scoped logging disable.
  */
 class ShellBackend final : public boost::log::sinks::text_ostream_backend {
 public:
@@ -138,9 +138,9 @@ public:
 
         auto lk = stdx::lock_guard(mx);
         if (!loggingEnabled &&
-            !extract<logv2::LogTag>(logv2::attributes::tags(), rec)
+            !extract<log::LogTag>(log::attributes::tags(), rec)
                  .get()
-                 .has(logv2::LogTag::kAllowDuringPromptingShell)) {
+                 .has(log::LogTag::kAllowDuringPromptingShell)) {
             return;
         }
         boost::log::sinks::text_ostream_backend::consume(rec, formatted_message);
@@ -178,10 +178,10 @@ private:
 /**
  * Formatter to provide specialized formatting for logs from javascript engine
  */
-class ShellFormatter final : private logv2::PlainFormatter, private logv2::JSONFormatter {
+class ShellFormatter final : private log::PlainFormatter, private log::JSONFormatter {
 public:
     void operator()(boost::log::record_view const& rec, boost::log::formatting_ostream& strm) {
-        using namespace logv2;
+        using namespace log;
         using boost::log::extract;
 
         if (extract<LogTag>(attributes::tags(), rec).get().has(LogTag::kPlainShell)) {
@@ -703,8 +703,8 @@ int mongo_main(int argc, char* argv[]) {
         setupSignals();
 
         // Log to stdout for any early logging before we re-configure the logger
-        auto& lv2Manager = logv2::LogManager::global();
-        logv2::LogDomainGlobal::ConfigurationOptions lv2Config;
+        auto& lv2Manager = log::LogManager::global();
+        log::LogDomainGlobal::ConfigurationOptions lv2Config;
         uassertStatusOK(lv2Manager.getGlobalDomainInternal().configure(lv2Config));
 
         mongo::shell_utils::RecordMyLocation(argv[0]);
@@ -737,12 +737,12 @@ int mongo_main(int argc, char* argv[]) {
             std::cout << mongoShellVersion(VersionInfoInterface::instance()) << std::endl;
 
         auto consoleSink = boost::make_shared<boost::log::sinks::synchronous_sink<ShellBackend>>();
-        consoleSink->set_filter(logv2::ComponentSettingsFilter(lv2Manager.getGlobalDomain(),
-                                                               lv2Manager.getGlobalSettings()));
+        consoleSink->set_filter(log::ComponentSettingsFilter(lv2Manager.getGlobalDomain(),
+                                                             lv2Manager.getGlobalSettings()));
         consoleSink->set_formatter(ShellFormatter());
 
         consoleSink->locked_backend()->add_stream(
-            boost::shared_ptr<std::ostream>(&logv2::Console::out(), boost::null_deleter()));
+            boost::shared_ptr<std::ostream>(&log::Console::out(), boost::null_deleter()));
 
         consoleSink->locked_backend()->auto_flush();
 

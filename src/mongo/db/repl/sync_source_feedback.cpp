@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kReplication
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kReplication
 
 #include "mongo/platform/basic.h"
 
@@ -39,7 +39,7 @@
 #include "mongo/db/repl/replication_coordinator.h"
 #include "mongo/db/repl/reporter.h"
 #include "mongo/executor/task_executor.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/concurrency/idle_thread_block.h"
 #include "mongo/util/net/hostandport.h"
 #include "mongo/util/scopeguard.h"
@@ -104,11 +104,11 @@ void SyncSourceFeedback::forwardSecondaryProgress() {
         if (_reporter) {
             auto triggerStatus = _reporter->trigger();
             if (!triggerStatus.isOK()) {
-                LOGV2_WARNING(21764,
-                              "unable to forward progress to {target}: {error}",
-                              "Unable to forward progress",
-                              "target"_attr = _reporter->getTarget(),
-                              "error"_attr = triggerStatus);
+                LOG_WARNING(21764,
+                            "unable to forward progress to {target}: {error}",
+                            "Unable to forward progress",
+                            "target"_attr = _reporter->getTarget(),
+                            "error"_attr = triggerStatus);
             }
         }
     }
@@ -119,23 +119,23 @@ Status SyncSourceFeedback::_updateUpstream(Reporter* reporter) {
 
     auto triggerStatus = reporter->trigger();
     if (!triggerStatus.isOK()) {
-        LOGV2_WARNING(21765,
-                      "unable to schedule reporter to update replication progress on {syncTarget}: "
-                      "{error}",
-                      "Unable to schedule reporter to update replication progress",
-                      "syncTarget"_attr = syncTarget,
-                      "error"_attr = triggerStatus);
+        LOG_WARNING(21765,
+                    "unable to schedule reporter to update replication progress on {syncTarget}: "
+                    "{error}",
+                    "Unable to schedule reporter to update replication progress",
+                    "syncTarget"_attr = syncTarget,
+                    "error"_attr = triggerStatus);
         return triggerStatus;
     }
 
     auto status = reporter->join();
 
     if (!status.isOK()) {
-        LOGV2(21760,
-              "SyncSourceFeedback error sending update to {syncTarget}: {error}",
-              "SyncSourceFeedback error sending update",
-              "syncTarget"_attr = syncTarget,
-              "error"_attr = status);
+        LOG(21760,
+            "SyncSourceFeedback error sending update to {syncTarget}: {error}",
+            "SyncSourceFeedback error sending update",
+            "syncTarget"_attr = syncTarget,
+            "error"_attr = status);
     }
 
     // Sync source blacklisting will be done in BackgroundSync and SyncSourceResolver.
@@ -213,24 +213,24 @@ void SyncSourceFeedback::run(executor::TaskExecutor* executor,
         }
 
         if (syncTarget != target) {
-            LOGV2_DEBUG(21761,
-                        1,
-                        "setting syncSourceFeedback to {target}",
-                        "Setting syncSourceFeedback",
-                        "target"_attr = target);
+            LOG_DEBUG(21761,
+                      1,
+                      "setting syncSourceFeedback to {target}",
+                      "Setting syncSourceFeedback",
+                      "target"_attr = target);
             syncTarget = target;
 
             // Update keepalive value from config.
             auto oldKeepAliveInterval = keepAliveInterval;
             keepAliveInterval = calculateKeepAliveInterval(replCoord->getConfig());
             if (oldKeepAliveInterval != keepAliveInterval) {
-                LOGV2_DEBUG(21762,
-                            1,
-                            "new syncSourceFeedback keep alive duration = {newKeepAliveInterval} "
-                            "(previously {oldKeepAliveInterval})",
-                            "New syncSourceFeedback keep alive duration",
-                            "newKeepAliveInterval"_attr = keepAliveInterval,
-                            "oldKeepAliveInterval"_attr = oldKeepAliveInterval);
+                LOG_DEBUG(21762,
+                          1,
+                          "new syncSourceFeedback keep alive duration = {newKeepAliveInterval} "
+                          "(previously {oldKeepAliveInterval})",
+                          "New syncSourceFeedback keep alive duration",
+                          "newKeepAliveInterval"_attr = keepAliveInterval,
+                          "oldKeepAliveInterval"_attr = oldKeepAliveInterval);
             }
         }
 
@@ -253,14 +253,13 @@ void SyncSourceFeedback::run(executor::TaskExecutor* executor,
 
         auto status = _updateUpstream(&reporter);
         if (!status.isOK()) {
-            LOGV2_DEBUG(
-                21763,
-                1,
-                "The replication progress command (replSetUpdatePosition) failed and will be "
-                "retried: {error}",
-                "The replication progress command (replSetUpdatePosition) failed and will be "
-                "retried",
-                "error"_attr = status);
+            LOG_DEBUG(21763,
+                      1,
+                      "The replication progress command (replSetUpdatePosition) failed and will be "
+                      "retried: {error}",
+                      "The replication progress command (replSetUpdatePosition) failed and will be "
+                      "retried",
+                      "error"_attr = status);
         }
     }
 }

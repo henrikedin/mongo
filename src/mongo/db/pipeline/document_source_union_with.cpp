@@ -26,7 +26,7 @@
  *    exception statement from all source files in the program, then also delete
  *    it in the license file.
  */
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kQuery
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kQuery
 
 #include "mongo/platform/basic.h"
 
@@ -38,7 +38,7 @@
 #include "mongo/db/pipeline/document_source_union_with.h"
 #include "mongo/db/pipeline/document_source_union_with_gen.h"
 #include "mongo/db/views/resolved_view.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 
 namespace mongo {
 
@@ -183,10 +183,10 @@ DocumentSource::GetNextResult DocumentSourceUnionWith::doGetNext() {
 
     if (_executionState == ExecutionProgress::kStartingSubPipeline) {
         auto serializedPipe = _pipeline->serializeToBson();
-        LOGV2_DEBUG(23869,
-                    1,
-                    "$unionWith attaching cursor to pipeline {pipeline}",
-                    "pipeline"_attr = serializedPipe);
+        LOG_DEBUG(23869,
+                  1,
+                  "$unionWith attaching cursor to pipeline {pipeline}",
+                  "pipeline"_attr = serializedPipe);
         try {
             _pipeline =
                 pExpCtx->mongoProcessInterface->attachCursorSourceToPipeline(_pipeline.release());
@@ -196,13 +196,13 @@ DocumentSource::GetNextResult DocumentSourceUnionWith::doGetNext() {
                 pExpCtx,
                 ExpressionContext::ResolvedNamespace{e->getNamespace(), e->getPipeline()},
                 serializedPipe);
-            LOGV2_DEBUG(4556300,
-                        3,
-                        "$unionWith found view definition. ns: {ns}, pipeline: {pipeline}. New "
-                        "$unionWith sub-pipeline: {new_pipe}",
-                        "ns"_attr = e->getNamespace(),
-                        "pipeline"_attr = Value(e->getPipeline()),
-                        "new_pipe"_attr = _pipeline->serializeToBson());
+            LOG_DEBUG(4556300,
+                      3,
+                      "$unionWith found view definition. ns: {ns}, pipeline: {pipeline}. New "
+                      "$unionWith sub-pipeline: {new_pipe}",
+                      "ns"_attr = e->getNamespace(),
+                      "pipeline"_attr = Value(e->getPipeline()),
+                      "new_pipe"_attr = _pipeline->serializeToBson());
             return doGetNext();
         }
     }
@@ -289,7 +289,7 @@ Value DocumentSourceUnionWith::serialize(boost::optional<ExplainOptions::Verbosi
         invariant(pipeCopy);
         BSONObj explainLocal =
             pExpCtx->mongoProcessInterface->preparePipelineAndExplain(pipeCopy, *explain);
-        LOGV2_DEBUG(4553501, 3, "$unionWith attached cursor to pipeline for explain");
+        LOG_DEBUG(4553501, 3, "$unionWith attached cursor to pipeline for explain");
         // We expect this to be an explanation of a pipeline -- there should only be one field.
         invariant(explainLocal.nFields() == 1);
 

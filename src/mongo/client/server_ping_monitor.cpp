@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kNetwork
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kNetwork
 
 #include <iterator>
 
@@ -39,7 +39,7 @@
 #include "mongo/executor/network_interface_factory.h"
 #include "mongo/executor/network_interface_thread_pool.h"
 #include "mongo/executor/thread_pool_task_executor.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/rpc/metadata/egress_metadata_hook_list.h"
 
@@ -108,22 +108,22 @@ void SingleServerPingMonitor::_scheduleServerPing() {
     }
 
     if (ErrorCodes::isShutdownError(schedulePingHandle.getStatus().code())) {
-        LOGV2_DEBUG(23727,
-                    kLogLevel,
-                    "Can't schedule ping for {host}. Executor shutdown in progress",
-                    "Can't schedule ping for host. Executor shutdown in progress",
-                    "host"_attr = _hostAndPort,
-                    "replicaSet"_attr = _setUri.getSetName());
+        LOG_DEBUG(23727,
+                  kLogLevel,
+                  "Can't schedule ping for {host}. Executor shutdown in progress",
+                  "Can't schedule ping for host. Executor shutdown in progress",
+                  "host"_attr = _hostAndPort,
+                  "replicaSet"_attr = _setUri.getSetName());
         return;
     }
 
     if (!schedulePingHandle.isOK()) {
-        LOGV2_FATAL(23732,
-                    "Can't continue scheduling pings to {host} due to {error}",
-                    "Can't continue scheduling pings to host",
-                    "host"_attr = _hostAndPort,
-                    "error"_attr = redact(schedulePingHandle.getStatus()),
-                    "replicaSet"_attr = _setUri.getSetName());
+        LOG_FATAL(23732,
+                  "Can't continue scheduling pings to {host} due to {error}",
+                  "Can't continue scheduling pings to host",
+                  "host"_attr = _hostAndPort,
+                  "error"_attr = redact(schedulePingHandle.getStatus()),
+                  "replicaSet"_attr = _setUri.getSetName());
         fassertFailed(31434);
     }
 
@@ -177,22 +177,22 @@ void SingleServerPingMonitor::_doServerPing() {
         });
 
     if (ErrorCodes::isShutdownError(remotePingHandle.getStatus().code())) {
-        LOGV2_DEBUG(23728,
-                    kLogLevel,
-                    "Can't ping {host}. Executor shutdown in progress",
-                    "Can't ping host. Executor shutdown in progress",
-                    "host"_attr = _hostAndPort,
-                    "replicaSet"_attr = _setUri.getSetName());
+        LOG_DEBUG(23728,
+                  kLogLevel,
+                  "Can't ping {host}. Executor shutdown in progress",
+                  "Can't ping host. Executor shutdown in progress",
+                  "host"_attr = _hostAndPort,
+                  "replicaSet"_attr = _setUri.getSetName());
         return;
     }
 
     if (!remotePingHandle.isOK()) {
-        LOGV2_FATAL(23733,
-                    "Can't continue pinging {host} due to {error}",
-                    "Can't continue pinging host",
-                    "host"_attr = _hostAndPort,
-                    "error"_attr = redact(remotePingHandle.getStatus()),
-                    "replicaSet"_attr = _setUri.getSetName());
+        LOG_FATAL(23733,
+                  "Can't continue pinging {host} due to {error}",
+                  "Can't continue pinging host",
+                  "host"_attr = _hostAndPort,
+                  "error"_attr = redact(remotePingHandle.getStatus()),
+                  "replicaSet"_attr = _setUri.getSetName());
         fassertFailed(31435);
     }
 
@@ -243,24 +243,24 @@ void ServerPingMonitor::onServerHandshakeCompleteEvent(sdam::HelloRTT durationMs
     }
 
     if (_serverPingMonitorMap.find(address) != _serverPingMonitorMap.end()) {
-        LOGV2_DEBUG(466811,
-                    kLogLevel + 1,
-                    "ServerPingMonitor already monitoring {host}",
-                    "ServerPingMonitor already monitoring host",
-                    "host"_attr = address,
-                    "replicaSet"_attr = _setUri.getSetName());
+        LOG_DEBUG(466811,
+                  kLogLevel + 1,
+                  "ServerPingMonitor already monitoring {host}",
+                  "ServerPingMonitor already monitoring host",
+                  "host"_attr = address,
+                  "replicaSet"_attr = _setUri.getSetName());
         return;
     }
     auto newSingleMonitor = std::make_shared<SingleServerPingMonitor>(
         _setUri, address, _rttListener, _pingFrequency, _executor);
     _serverPingMonitorMap[address] = newSingleMonitor;
     newSingleMonitor->init();
-    LOGV2_DEBUG(23729,
-                kLogLevel,
-                "ServerPingMonitor is now monitoring {host}",
-                "ServerPingMonitor is now monitoring host",
-                "host"_attr = address,
-                "replicaSet"_attr = _setUri.getSetName());
+    LOG_DEBUG(23729,
+              kLogLevel,
+              "ServerPingMonitor is now monitoring {host}",
+              "ServerPingMonitor is now monitoring host",
+              "host"_attr = address,
+              "replicaSet"_attr = _setUri.getSetName());
 }
 
 void ServerPingMonitor::onTopologyDescriptionChangedEvent(
@@ -280,12 +280,12 @@ void ServerPingMonitor::onTopologyDescriptionChangedEvent(
         if (newDescription->findServerByAddress(serverAddress) == boost::none) {
             auto& singleMonitor = _serverPingMonitorMap[serverAddress];
             singleMonitor->drop();
-            LOGV2_DEBUG(462899,
-                        kLogLevel,
-                        "ServerPingMonitor for host {host} was removed from being monitored",
-                        "ServerPingMonitor for host was removed from being monitored",
-                        "host"_attr = serverAddress,
-                        "replicaSet"_attr = _setUri.getSetName());
+            LOG_DEBUG(462899,
+                      kLogLevel,
+                      "ServerPingMonitor for host {host} was removed from being monitored",
+                      "ServerPingMonitor for host was removed from being monitored",
+                      "host"_attr = serverAddress,
+                      "replicaSet"_attr = _setUri.getSetName());
             it = _serverPingMonitorMap.erase(it, std::next(it));
             numRemoved++;
         } else {

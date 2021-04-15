@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kNetwork
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kNetwork
 
 #include "mongo/platform/basic.h"
 
@@ -47,7 +47,7 @@
 #include "mongo/bson/util/builder.h"
 #include "mongo/config.h"
 #include "mongo/db/server_options.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/platform/atomic_word.h"
 #include "mongo/util/concurrency/mutex.h"
 #include "mongo/util/debug_util.h"
@@ -418,7 +418,7 @@ SSLManagerWindows::SSLManagerWindows(const SSLParams& params, bool isServer)
         BOOLEAN enabled = FALSE;
         BCryptGetFipsAlgorithmMode(&enabled);
         if (!enabled) {
-            LOGV2_FATAL_NOTRACE(50744, "FIPS modes is not enabled on the operating system.");
+            LOG_FATAL_NOTRACE(50744, "FIPS modes is not enabled on the operating system.");
         }
     }
 
@@ -447,9 +447,9 @@ SSLManagerWindows::SSLManagerWindows(const SSLParams& params, bool isServer)
             auto swSans = getSubjectAlternativeNames(_serverCertificates[0]);
             const bool hasSan = swSans.isOK() && (0 != swSans.getValue().size());
             if (!hasSan) {
-                LOGV2_WARNING_OPTIONS(
+                LOG_WARNING_OPTIONS(
                     551192,
-                    {logv2::LogTag::kStartupWarnings},
+                    {log::LogTag::kStartupWarnings},
                     "Server certificate has no compatible Subject Alternative Name. "
                     "This may prevent TLS clients from connecting");
             }
@@ -545,9 +545,9 @@ int SSLManagerWindows::SSL_read(SSLConnectionInterface* connInterface, void* buf
                 return bytes_transferred;
             }
             default:
-                LOGV2_FATAL(23282,
-                            "Unexpected ASIO state: {static_cast_int_want}",
-                            "static_cast_int_want"_attr = static_cast<int>(want));
+                LOG_FATAL(23282,
+                          "Unexpected ASIO state: {static_cast_int_want}",
+                          "static_cast_int_want"_attr = static_cast<int>(want));
                 MONGO_UNREACHABLE;
         }
     }
@@ -591,10 +591,10 @@ int SSLManagerWindows::SSL_write(SSLConnectionInterface* connInterface, const vo
                 return bytes_transferred;
             }
             default:
-                LOGV2_FATAL(23283,
-                            "Unexpected ASIO state: {state}",
-                            "Unexpected ASIO state",
-                            "state"_attr = static_cast<int>(want));
+                LOG_FATAL(23283,
+                          "Unexpected ASIO state: {state}",
+                          "Unexpected ASIO state",
+                          "state"_attr = static_cast<int>(want));
                 MONGO_UNREACHABLE;
         }
     }
@@ -1339,9 +1339,9 @@ Status SSLManagerWindows::_loadCertificates(const SSLParams& params) {
 
     if (_sslCertificate || _sslClusterCertificate) {
         if (!params.sslCAFile.empty()) {
-            LOGV2_WARNING(23271,
-                          "Mixing certs from the system certificate store and PEM files. This may "
-                          "produced unexpected results.");
+            LOG_WARNING(23271,
+                        "Mixing certs from the system certificate store and PEM files. This may "
+                        "produced unexpected results.");
         }
 
         _sslConfiguration.hasCA = true;
@@ -1415,7 +1415,7 @@ Status SSLManagerWindows::initSSLContext(SCHANNEL_CRED* cred,
     }
 
     if (params.sslCipherConfig != kSSLCipherConfigDefault) {
-        LOGV2_WARNING(
+        LOG_WARNING(
             23272,
             "sslCipherConfig parameter is not supported with Windows SChannel and is ignored.");
     }
@@ -1620,7 +1620,7 @@ Status SSLManagerWindows::_validateCertificate(PCCERT_CONTEXT cert,
 
         if ((FiletimeToULL(cert->pCertInfo->NotBefore) > currentTimeLong) ||
             (currentTimeLong > FiletimeToULL(cert->pCertInfo->NotAfter))) {
-            LOGV2_FATAL_NOTRACE(50755, "The provided SSL certificate is expired or not yet valid.");
+            LOG_FATAL_NOTRACE(50755, "The provided SSL certificate is expired or not yet valid.");
         }
 
         *serverCertificateExpirationDate =
@@ -1678,9 +1678,9 @@ StatusWith<std::vector<std::string>> getSubjectAlternativeNames(PCCERT_CONTEXT c
             names.push_back(san);
             auto swCIDRSan = CIDR::parse(san);
             if (swCIDRSan.isOK()) {
-                LOGV2_WARNING(23273,
-                              "You have an IP Address in the DNS Name field on your "
-                              "certificate. This formulation is depreceated.");
+                LOG_WARNING(23273,
+                            "You have an IP Address in the DNS Name field on your "
+                            "certificate. This formulation is depreceated.");
             }
         } else if (altNames->rgAltEntry[i].dwAltNameChoice == CERT_ALT_NAME_IP_ADDRESS) {
             auto ipAddrStruct = altNames->rgAltEntry[i].IPAddress;
@@ -1883,30 +1883,30 @@ Status validatePeerCertificate(const std::string& remoteHost,
                 << " does not match " << certificateNames.str();
 
             if (allowInvalidCertificates) {
-                LOGV2_WARNING(23274,
-                              "SSL peer certificate validation failed ({errorCode}): {error}",
-                              "SSL peer certificate validation failed",
-                              "errorCode"_attr = unsignedHex(certChainPolicyStatus.dwError),
-                              "error"_attr = errnoWithDescription(certChainPolicyStatus.dwError));
+                LOG_WARNING(23274,
+                            "SSL peer certificate validation failed ({errorCode}): {error}",
+                            "SSL peer certificate validation failed",
+                            "errorCode"_attr = unsignedHex(certChainPolicyStatus.dwError),
+                            "error"_attr = errnoWithDescription(certChainPolicyStatus.dwError));
 
                 if (certChainPolicyStatus.dwError == CERT_E_CN_NO_MATCH) {
-                    LOGV2_WARNING(23275,
-                                  "The server certificate does not match the host name. Hostname: "
-                                  "{remoteHost} does not match {certificateNames}",
-                                  "The server certificate does not match the host name",
-                                  "remoteHost"_attr = remoteHost,
-                                  "certificateNames"_attr = certificateNames.str());
+                    LOG_WARNING(23275,
+                                "The server certificate does not match the host name. Hostname: "
+                                "{remoteHost} does not match {certificateNames}",
+                                "The server certificate does not match the host name",
+                                "remoteHost"_attr = remoteHost,
+                                "certificateNames"_attr = certificateNames.str());
                 }
 
                 *peerSubjectName = SSLX509Name();
                 return Status::OK();
             } else if (allowInvalidHostnames) {
-                LOGV2_WARNING(23276,
-                              "The server certificate does not match the host name. Hostname: "
-                              "{remoteHost} does not match {certificateNames}",
-                              "The server certificate does not match the host name",
-                              "remoteHost"_attr = remoteHost,
-                              "certificateNames"_attr = certificateNames.str());
+                LOG_WARNING(23276,
+                            "The server certificate does not match the host name. Hostname: "
+                            "{remoteHost} does not match {certificateNames}",
+                            "The server certificate does not match the host name",
+                            "remoteHost"_attr = remoteHost,
+                            "certificateNames"_attr = certificateNames.str());
                 return Status::OK();
             } else {
                 return Status(ErrorCodes::SSLHandshakeFailed, msg);
@@ -1918,11 +1918,11 @@ Status validatePeerCertificate(const std::string& remoteHost,
                 << errnoWithDescription(certChainPolicyStatus.dwError);
 
 
-            LOGV2_ERROR(23279,
-                        "SSL peer certificate validation failed: ({errorCode}){error}",
-                        "SSL peer certificate validation failed",
-                        "errorCode"_attr = unsignedHex(certChainPolicyStatus.dwError),
-                        "error"_attr = errnoWithDescription(certChainPolicyStatus.dwError));
+            LOG_ERROR(23279,
+                      "SSL peer certificate validation failed: ({errorCode}){error}",
+                      "SSL peer certificate validation failed",
+                      "errorCode"_attr = unsignedHex(certChainPolicyStatus.dwError),
+                      "error"_attr = errnoWithDescription(certChainPolicyStatus.dwError));
             return Status(ErrorCodes::SSLHandshakeFailed, msg);
         }
     }
@@ -1990,16 +1990,16 @@ Future<SSLPeerInfo> SSLManagerWindows::parseAndValidatePeerCertificate(
         if (_weakValidation) {
             // do not give warning if "no certificate" warnings are suppressed
             if (!_suppressNoCertificateWarning) {
-                LOGV2_WARNING(23277,
-                              "no SSL certificate provided by peer",
-                              "No SSL certificate provided by peer");
+                LOG_WARNING(23277,
+                            "no SSL certificate provided by peer",
+                            "No SSL certificate provided by peer");
             }
             return SSLPeerInfo(sni);
         } else {
             auto msg = "no SSL certificate provided by peer; connection rejected";
-            LOGV2_ERROR(23280,
-                        "no SSL certificate provided by peer; connection rejected",
-                        "No SSL certificate provided by peer; connection rejected");
+            LOG_ERROR(23280,
+                      "no SSL certificate provided by peer; connection rejected",
+                      "No SSL certificate provided by peer; connection rejected");
             return Status(ErrorCodes::SSLHandshakeFailed, msg);
         }
     }
@@ -2043,14 +2043,14 @@ Future<SSLPeerInfo> SSLManagerWindows::parseAndValidatePeerCertificate(
         return Future<SSLPeerInfo>::makeReady(SSLPeerInfo(sni));
     }
 
-    LOGV2_DEBUG(23270,
-                2,
-                "Accepted TLS connection from peer: {peerSubjectName}",
-                "peerSubjectName"_attr = peerSubjectName);
+    LOG_DEBUG(23270,
+              2,
+              "Accepted TLS connection from peer: {peerSubjectName}",
+              "peerSubjectName"_attr = peerSubjectName);
 
     // If this is a server and client and server certificate are the same, log a warning.
     if (remoteHost.empty() && _sslConfiguration.serverSubjectName() == peerSubjectName) {
-        LOGV2_WARNING(23278, "Client connecting with server's own TLS certificate");
+        LOG_WARNING(23278, "Client connecting with server's own TLS certificate");
     }
 
     // On the server side, parse the certificate for roles

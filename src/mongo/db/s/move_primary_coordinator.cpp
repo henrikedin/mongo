@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kSharding
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kSharding
 
 #include "mongo/platform/basic.h"
 
@@ -44,7 +44,7 @@
 #include "mongo/db/s/shard_metadata_util.h"
 #include "mongo/db/s/sharding_ddl_util.h"
 #include "mongo/db/s/sharding_state.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/s/client/shard_registry.h"
 #include "mongo/s/cluster_commands_helpers.h"
 #include "mongo/s/grid.h"
@@ -59,10 +59,10 @@ namespace {
  */
 void uassertStatusOKWithWarning(const Status& status) {
     if (!status.isOK()) {
-        LOGV2_WARNING(5275800,
-                      "movePrimary failed: {error}",
-                      "movePrimary failed",
-                      "error"_attr = redact(status));
+        LOG_WARNING(5275800,
+                    "movePrimary failed: {error}",
+                    "movePrimary failed",
+                    "error"_attr = redact(status));
         uassertStatusOK(status);
     }
 }
@@ -99,12 +99,12 @@ SemiFuture<void> MovePrimaryCoordinator::runImpl(std::shared_ptr<executor::TaskE
             const auto& toShard = [&]() {
                 auto toShardStatus = shardRegistry->getShard(opCtx, _toShardId);
                 if (!toShardStatus.isOK()) {
-                    LOGV2(5275802,
-                          "Could not move database {db} to shard {shardId}: {error}",
-                          "Could not move database to shard",
-                          "db"_attr = dbName,
-                          "shardId"_attr = _toShardId,
-                          "error"_attr = toShardStatus.getStatus());
+                    LOG(5275802,
+                        "Could not move database {db} to shard {shardId}: {error}",
+                        "Could not move database to shard",
+                        "db"_attr = dbName,
+                        "shardId"_attr = _toShardId,
+                        "error"_attr = toShardStatus.getStatus());
                     uassertStatusOKWithContext(toShardStatus.getStatus(),
                                                str::stream()
                                                    << "Could not move database '" << dbName
@@ -115,10 +115,10 @@ SemiFuture<void> MovePrimaryCoordinator::runImpl(std::shared_ptr<executor::TaskE
 
             const auto& selfShardId = ShardingState::get(opCtx)->shardId();
             if (selfShardId == toShard->getId()) {
-                LOGV2(5275803,
-                      "Database already on the requested primary shard",
-                      "db"_attr = dbName,
-                      "shardId"_attr = _toShardId);
+                LOG(5275803,
+                    "Database already on the requested primary shard",
+                    "db"_attr = dbName,
+                    "shardId"_attr = _toShardId);
                 // The database primary is already the `to` shard
                 return;
             }
@@ -152,10 +152,10 @@ SemiFuture<void> MovePrimaryCoordinator::runImpl(std::shared_ptr<executor::TaskE
             }
         })
         .onError([this, anchor = shared_from_this()](const Status& status) {
-            LOGV2_ERROR(5275804,
-                        "Error running move primary",
-                        "namespace"_attr = _nss,
-                        "error"_attr = redact(status));
+            LOG_ERROR(5275804,
+                      "Error running move primary",
+                      "namespace"_attr = _nss,
+                      "error"_attr = redact(status));
             return status;
         })
         .semi();

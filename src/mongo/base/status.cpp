@@ -27,11 +27,11 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kControl
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kControl
 
 #include "mongo/base/status.h"
 #include "mongo/db/jsobj.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/str.h"
 
 #include <ostream>
@@ -59,7 +59,7 @@ Status::ErrorInfo* Status::ErrorInfo::create(ErrorCodes::Error code,
         // have extra info.
         if (kDebugBuild) {
             // Make it easier to find this issue by fatally failing in debug builds.
-            LOGV2_FATAL(40680, "Code {code} is supposed to have extra info", "code"_attr = code);
+            LOG_FATAL(40680, "Code {code} is supposed to have extra info", "code"_attr = code);
         }
 
         // In release builds, replace the error code. This maintains the invariant that all Statuses
@@ -131,7 +131,7 @@ StringBuilderImpl<Allocator>& operator<<(StringBuilderImpl<Allocator>& sb, const
             // This really shouldn't happen but it would be really annoying if it broke error
             // logging in production.
             if (kDebugBuild) {
-                LOGV2_FATAL_CONTINUE(
+                LOG_FATAL_CONTINUE(
                     23806,
                     "Error serializing extra info for {status_code} in Status::toString()",
                     "status_code"_attr = status.code());

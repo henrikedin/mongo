@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kStorage
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kStorage
 
 #include "mongo/platform/basic.h"
 
@@ -36,7 +36,7 @@
 #include "mongo/db/operation_context.h"
 #include "mongo/db/service_context.h"
 #include "mongo/db/storage/kv/kv_engine.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/concurrency/idle_thread_block.h"
 #include "mongo/util/fail_point.h"
 
@@ -69,7 +69,7 @@ void Checkpointer::set(ServiceContext* serviceCtx, std::unique_ptr<Checkpointer>
 
 void Checkpointer::run() {
     ThreadClient tc(name(), getGlobalServiceContext());
-    LOGV2_DEBUG(22307, 1, "Starting thread", "threadName"_attr = name());
+    LOG_DEBUG(22307, 1, "Starting thread", "threadName"_attr = name());
 
     while (true) {
         auto opCtx = tc->makeOperationContext();
@@ -97,11 +97,11 @@ void Checkpointer::run() {
 
             if (_shuttingDown) {
                 invariant(!_shutdownReason.isOK());
-                LOGV2_DEBUG(22309,
-                            1,
-                            "Stopping thread",
-                            "threadName"_attr = name(),
-                            "reason"_attr = _shutdownReason);
+                LOG_DEBUG(22309,
+                          1,
+                          "Stopping thread",
+                          "threadName"_attr = name(),
+                          "reason"_attr = _shutdownReason);
                 return;
             }
 
@@ -118,10 +118,10 @@ void Checkpointer::run() {
 
         const auto secondsElapsed = durationCount<Seconds>(Date_t::now() - startTime);
         if (secondsElapsed >= 30) {
-            LOGV2_DEBUG(22308,
-                        1,
-                        "Checkpoint was slow to complete",
-                        "secondsElapsed"_attr = secondsElapsed);
+            LOG_DEBUG(22308,
+                      1,
+                      "Checkpoint was slow to complete",
+                      "secondsElapsed"_attr = secondsElapsed);
         }
     }
 }
@@ -132,11 +132,11 @@ void Checkpointer::triggerFirstStableCheckpoint(Timestamp prevStable,
     stdx::unique_lock<Latch> lock(_mutex);
     invariant(!_hasTriggeredFirstStableCheckpoint);
     if (prevStable < initialData && currStable >= initialData) {
-        LOGV2(22310,
-              "Triggering the first stable checkpoint",
-              "initialDataTimestamp"_attr = initialData,
-              "prevStableTimestamp"_attr = prevStable,
-              "currStableTimestamp"_attr = currStable);
+        LOG(22310,
+            "Triggering the first stable checkpoint",
+            "initialDataTimestamp"_attr = initialData,
+            "prevStableTimestamp"_attr = prevStable,
+            "currStableTimestamp"_attr = currStable);
         _hasTriggeredFirstStableCheckpoint = true;
         _triggerCheckpoint = true;
         _sleepCV.notify_one();
@@ -149,7 +149,7 @@ bool Checkpointer::hasTriggeredFirstStableCheckpoint() {
 }
 
 void Checkpointer::shutdown(const Status& reason) {
-    LOGV2(22322, "Shutting down checkpoint thread");
+    LOG(22322, "Shutting down checkpoint thread");
 
     {
         stdx::unique_lock<Latch> lock(_mutex);
@@ -162,7 +162,7 @@ void Checkpointer::shutdown(const Status& reason) {
     }
 
     wait();
-    LOGV2(22323, "Finished shutting down checkpoint thread");
+    LOG(22323, "Finished shutting down checkpoint thread");
 }
 
 }  // namespace mongo

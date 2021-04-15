@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kStorage
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kStorage
 
 #include "mongo/platform/basic.h"
 
@@ -42,7 +42,7 @@
 #include "mongo/db/jsobj.h"
 #include "mongo/db/operation_context.h"
 #include "mongo/db/storage/durable_catalog.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/str.h"
 
 namespace mongo {
@@ -107,12 +107,12 @@ public:
             }
             wunit.commit();
 
-            LOGV2(20497,
-                  "replSetResizeOplog success",
-                  "size"_attr = DurableCatalog::get(opCtx)
-                                    ->getCollectionOptions(opCtx, coll->getCatalogId())
-                                    .cappedSize,
-                  "minRetentionHours"_attr = storageGlobalParams.oplogMinRetentionHours.load());
+            LOG(20497,
+                "replSetResizeOplog success",
+                "size"_attr = DurableCatalog::get(opCtx)
+                                  ->getCollectionOptions(opCtx, coll->getCatalogId())
+                                  .cappedSize,
+                "minRetentionHours"_attr = storageGlobalParams.oplogMinRetentionHours.load());
             return true;
         });
     }

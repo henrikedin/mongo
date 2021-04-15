@@ -27,11 +27,11 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kTest
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kTest
 
 #include "mongo/platform/basic.h"
 
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/platform/mutex.h"
 #include "mongo/unittest/unittest.h"
 #include "mongo/util/concurrency/with_lock.h"
@@ -63,7 +63,7 @@ private:
         return _blerp(lk, i);
     }
     int _blerp(WithLock, int i) {
-        LOGV2(23122, "{i} bleep(s)\n", "i"_attr = i);
+        LOG(23122, "{i} bleep(s)\n", "i"_attr = i);
         return i;
     }
     Mutex _m = MONGO_MAKE_LATCH("Beerp::_m");

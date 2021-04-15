@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kReplication
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kReplication
 
 #include "mongo/platform/basic.h"
 
@@ -37,7 +37,7 @@
 #include "mongo/bson/util/bson_extract.h"
 #include "mongo/db/commands/server_status_metric.h"
 #include "mongo/db/repl/update_position_args.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/rpc/get_status_from_command_result.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/destructor_guard.h"
@@ -151,7 +151,7 @@ Status Reporter::trigger() {
 
     _status = scheduleResult.getStatus();
     if (!_status.isOK()) {
-        LOGV2_DEBUG(
+        LOG_DEBUG(
             21585,
             2,
             "Reporter failed to schedule callback to prepare and send update command: {error}",
@@ -177,11 +177,11 @@ StatusWith<BSONObj> Reporter::_prepareCommand() {
 
     // If there was an error in preparing the command, abort and return that error.
     if (!prepareResult.isOK()) {
-        LOGV2_DEBUG(21586,
-                    2,
-                    "Reporter failed to prepare update command with status: {error}",
-                    "Reporter failed to prepare update command",
-                    "error"_attr = prepareResult.getStatus());
+        LOG_DEBUG(21586,
+                  2,
+                  "Reporter failed to prepare update command with status: {error}",
+                  "Reporter failed to prepare update command",
+                  "error"_attr = prepareResult.getStatus());
         _status = prepareResult.getStatus();
         return _status;
     }
@@ -190,12 +190,12 @@ StatusWith<BSONObj> Reporter::_prepareCommand() {
 }
 
 void Reporter::_sendCommand_inlock(BSONObj commandRequest, Milliseconds netTimeout) {
-    LOGV2_DEBUG(21587,
-                2,
-                "Reporter sending oplog progress to upstream updater {target}: {commandRequest}",
-                "Reporter sending oplog progress to upstream updater",
-                "target"_attr = _target,
-                "commandRequest"_attr = commandRequest);
+    LOG_DEBUG(21587,
+              2,
+              "Reporter sending oplog progress to upstream updater {target}: {commandRequest}",
+              "Reporter sending oplog progress to upstream updater",
+              "target"_attr = _target,
+              "commandRequest"_attr = commandRequest);
 
     auto scheduleResult = _executor->scheduleRemoteCommand(
         executor::RemoteCommandRequest(_target, "admin", commandRequest, nullptr, netTimeout),
@@ -205,11 +205,11 @@ void Reporter::_sendCommand_inlock(BSONObj commandRequest, Milliseconds netTimeo
 
     _status = scheduleResult.getStatus();
     if (!_status.isOK()) {
-        LOGV2_DEBUG(21588,
-                    2,
-                    "Reporter failed to schedule with status: {error}",
-                    "Reporter failed to schedule",
-                    "error"_attr = _status);
+        LOG_DEBUG(21588,
+                  2,
+                  "Reporter failed to schedule with status: {error}",
+                  "Reporter failed to schedule",
+                  "error"_attr = _status);
         if (_status != ErrorCodes::ShutdownInProgress) {
             fassert(34434, _status);
         }

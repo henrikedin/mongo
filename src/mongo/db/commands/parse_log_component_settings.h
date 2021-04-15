@@ -31,7 +31,7 @@
 
 #include <vector>
 
-#include "mongo/logv2/log_component.h"
+#include "mongo/log/log_component.h"
 
 namespace mongo {
 
@@ -43,9 +43,9 @@ class StatusWith;
  * One parsed LogComponent and desired log level
  */
 struct LogComponentSetting {
-    LogComponentSetting(logv2::LogComponent c, int lvl) : component(c), level(lvl) {}
+    LogComponentSetting(log::LogComponent c, int lvl) : component(c), level(lvl) {}
 
-    logv2::LogComponent component;
+    log::LogComponent component;
     int level;
 };
 

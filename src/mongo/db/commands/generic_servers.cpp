@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kCommand
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kCommand
 
 #include "mongo/platform/basic.h"
 
@@ -36,9 +36,9 @@
 #include "mongo/db/commands.h"
 #include "mongo/db/commands/test_commands_enabled.h"
 #include "mongo/db/log_process_details.h"
-#include "mongo/logv2/log.h"
-#include "mongo/logv2/log_util.h"
-#include "mongo/logv2/ramlog.h"
+#include "mongo/log/log.h"
+#include "mongo/log/log_util.h"
+#include "mongo/log/ramlog.h"
 #include "mongo/scripting/engine.h"
 #include "mongo/util/exit.h"
 #include "mongo/util/fail_point.h"
@@ -200,7 +200,7 @@ public:
             logType = val.checkAndGetStringData();
         }
 
-        if (logv2::rotateLogs(serverGlobalParams.logRenameOnRotate, logType)) {
+        if (log::rotateLogs(serverGlobalParams.logRenameOnRotate, logType)) {
             logProcessDetailsForLogRotate(opCtx->getServiceContext());
             return true;
         }
@@ -239,7 +239,7 @@ public:
                    const BSONObj& cmdObj,
                    std::string& errmsg,
                    BSONObjBuilder& result) override {
-        return errmsgRunImpl<logv2::RamLog>(opCtx, dbname, cmdObj, errmsg, result);
+        return errmsgRunImpl<log::RamLog>(opCtx, dbname, cmdObj, errmsg, result);
     }
 
     template <typename RamLogType>
@@ -256,7 +256,7 @@ public:
         }
 
         if (MONGO_unlikely(hangInGetLog.shouldFail())) {
-            LOGV2(5113600, "Hanging in getLog");
+            LOG(5113600, "Hanging in getLog");
             hangInGetLog.pauseWhileSet();
         }
 
@@ -331,7 +331,7 @@ public:
             invariant(ramlog);
             ramlog->clear();
         };
-        clearRamlog(logv2::RamLog::getIfExists(logName));
+        clearRamlog(log::RamLog::getIfExists(logName));
 
         return true;
     }

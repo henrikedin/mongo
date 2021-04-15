@@ -32,12 +32,12 @@
 #include "mongo/base/status.h"
 #include "mongo/bson/bsonobj.h"
 #include "mongo/bson/mutable/document.h"
-#include "mongo/db/update/document_diff_serialization.h"
 #include "mongo/db/update/log_builder_interface.h"
+#include "mongo/db/update/document_diff_serialization.h"
 #include "mongo/db/update/runtime_update_path.h"
 
 namespace mongo {
-namespace v2_log_builder {
+namespace v2_LOG_builder {
 /**
  * A log builder which can produce $v:2 oplog entries.
  *
@@ -87,5 +87,5 @@ private:
     // Root of the tree.
     diff_tree::DocumentSubDiffNode _root;
 };
-}  // namespace v2_log_builder
+}  // namespace v2_LOG_builder
 }  // namespace mongo

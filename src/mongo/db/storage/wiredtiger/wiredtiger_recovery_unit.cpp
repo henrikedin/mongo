@@ -27,7 +27,7 @@
  *    it in the license file.
  */
 
-#define MONGO_LOGV2_DEFAULT_COMPONENT ::mongo::logv2::LogComponent::kStorage
+#define MONGO_LOG_DEFAULT_COMPONENT ::mongo::log::LogComponent::kStorage
 
 #include "mongo/platform/basic.h"
 
@@ -40,7 +40,7 @@
 #include "mongo/db/storage/wiredtiger/wiredtiger_prepare_conflict.h"
 #include "mongo/db/storage/wiredtiger/wiredtiger_session_cache.h"
 #include "mongo/db/storage/wiredtiger/wiredtiger_util.h"
-#include "mongo/logv2/log.h"
+#include "mongo/log/log.h"
 #include "mongo/util/hex.h"
 
 namespace mongo {
@@ -52,7 +52,7 @@ namespace {
 // because the recovery unit may not ever actually be in a prepared state.
 MONGO_FAIL_POINT_DEFINE(WTAlwaysNotifyPrepareConflictWaiters);
 
-logv2::LogSeverity kSlowTransactionSeverity = logv2::LogSeverity::Debug(1);
+log::LogSeverity kSlowTransactionSeverity = log::LogSeverity::Debug(1);
 
 MONGO_FAIL_POINT_DEFINE(doUntimestampedWritesForIdempotencyTests);
 
@@ -225,10 +225,10 @@ void WiredTigerRecoveryUnit::prepareUnitOfWork() {
     auto session = getSession();
     WT_SESSION* s = session->getSession();
 
-    LOGV2_DEBUG(22410,
-                1,
-                "preparing transaction at time: {prepareTimestamp}",
-                "prepareTimestamp"_attr = _prepareTimestamp);
+    LOG_DEBUG(22410,
+              1,
+              "preparing transaction at time: {prepareTimestamp}",
+              "prepareTimestamp"_attr = _prepareTimestamp);
 
     const std::string conf = "prepare_timestamp=" + unsignedHex(_prepareTimestamp.asULL());
     // Prepare the transaction.
@@ -287,10 +287,10 @@ void WiredTigerRecoveryUnit::assertInActiveTxn() const {
     if (_isActive()) {
         return;
     }
-    LOGV2_FATAL(28575,
-                "Recovery unit is not active. Current state: {currentState}",
-                "Recovery unit is not active.",
-                "currentState"_attr = _getState());
+    LOG_FATAL(28575,
+              "Recovery unit is not active. Current state: {currentState}",
+              "Recovery unit is not active.",
+              "currentState"_attr = _getState());
 }
 
 void WiredTigerRecoveryUnit::setTxnModified() {
@@ -378,10 +378,10 @@ void WiredTigerRecoveryUnit::refreshSnapshot() {
     auto wtSession = _session->getSession();
     auto wtRet = wtSession->rollback_transaction(wtSession, nullptr);
     invariantWTOK(wtRet);
-    LOGV2_DEBUG(5035301,
-                3,
-                "WT begin_transaction & rollback_transaction",
-                "snapshotId"_attr = getSnapshotId().toNumber());
+    LOG_DEBUG(5035301,
+              3,
+              "WT begin_transaction & rollback_transaction",
+              "snapshotId"_attr = getSnapshotId().toNumber());
 
     _session = std::move(newSession);
 }
@@ -397,12 +397,11 @@ void WiredTigerRecoveryUnit::_txnClose(bool commit) {
         // transaction sets multiple timestamps, the first timestamp must be set prior to any
         // writes. Vice-versa, if a transaction writes a document before setting a timestamp, it
         // must not set multiple timestamps.
-        LOGV2_FATAL(
-            4877100,
-            "Multi timestamp constraint violated. Transactions setting multiple timestamps "
-            "must set the first timestamp prior to any writes.",
-            "numTimestampsUsed"_attr = _multiTimestampConstraintTracker.timestampOrder.size(),
-            "lastSetTimestamp"_attr = _multiTimestampConstraintTracker.timestampOrder.top());
+        LOG_FATAL(4877100,
+                  "Multi timestamp constraint violated. Transactions setting multiple timestamps "
+                  "must set the first timestamp prior to any writes.",
+                  "numTimestampsUsed"_attr = _multiTimestampConstraintTracker.timestampOrder.size(),
+                  "lastSetTimestamp"_attr = _multiTimestampConstraintTracker.timestampOrder.top());
     }
 
     WT_SESSION* s = _session->getSession();
@@ -411,12 +410,12 @@ void WiredTigerRecoveryUnit::_txnClose(bool commit) {
         // `serverGlobalParams.slowMs` can be set to values <= 0. In those cases, give logging a
         // break.
         if (transactionTime >= std::max(1, serverGlobalParams.slowMS)) {
-            LOGV2_DEBUG(22411,
-                        kSlowTransactionSeverity.toInt(),
-                        "Slow WT transaction. Lifetime of SnapshotId {snapshotId} was "
-                        "{transactionTime}ms",
-                        "snapshotId"_attr = getSnapshotId().toNumber(),
-                        "transactionTime"_attr = transactionTime);
+            LOG_DEBUG(22411,
+                      kSlowTransactionSeverity.toInt(),
+                      "Slow WT transaction. Lifetime of SnapshotId {snapshotId} was "
+                      "{transactionTime}ms",
+                      "snapshotId"_attr = getSnapshotId().toNumber(),
+                      "transactionTime"_attr = transactionTime);
         }
     }
 
@@ -444,7 +443,7 @@ void WiredTigerRecoveryUnit::_txnClose(bool commit) {
 
         wtRet = s->commit_transaction(s, conf.str().c_str());
 
-        LOGV2_DEBUG(
+        LOG_DEBUG(
             22412, 3, "WT commit_transaction", "snapshotId"_attr = getSnapshotId().toNumber());
     } else {
         StringBuilder config;
@@ -457,7 +456,7 @@ void WiredTigerRecoveryUnit::_txnClose(bool commit) {
 
         wtRet = s->rollback_transaction(s, config.str().c_str());
 
-        LOGV2_DEBUG(
+        LOG_DEBUG(
             22413, 3, "WT rollback_transaction", "snapshotId"_attr = getSnapshotId().toNumber());
     }
 
@@ -565,7 +564,7 @@ void WiredTigerRecoveryUnit::_txnOpen() {
     _ensureSession();
 
     // Only start a timer for transaction's lifetime if we're going to log it.
-    if (shouldLog(MONGO_LOGV2_DEFAULT_COMPONENT, kSlowTransactionSeverity)) {
+    if (shouldLog(MONGO_LOG_DEFAULT_COMPONENT, kSlowTransactionSeverity)) {
         _timer.reset(new Timer());
     }
     WT_SESSION* session = _session->getSession();
@@ -618,11 +617,11 @@ void WiredTigerRecoveryUnit::_txnOpen() {
         }
     }
 
-    LOGV2_DEBUG(22414,
-                3,
-                "WT begin_transaction",
-                "snapshotId"_attr = getSnapshotId().toNumber(),
-                "readSource"_attr = toString(_timestampReadSource));
+    LOG_DEBUG(22414,
+              3,
+              "WT begin_transaction",
+              "snapshotId"_attr = getSnapshotId().toNumber(),
+              "readSource"_attr = toString(_timestampReadSource));
 }
 
 Timestamp WiredTigerRecoveryUnit::_beginTransactionAtAllDurableTimestamp(WT_SESSION* session) {
@@ -667,7 +666,7 @@ Timestamp WiredTigerRecoveryUnit::_beginTransactionAtLastAppliedTimestamp(WT_SES
         // timestamped writes have been made.
         WiredTigerBeginTxnBlock txnOpen(
             session, _prepareConflictBehavior, _roundUpPreparedTimestamps);
-        LOGV2_DEBUG(4847500, 2, "no read timestamp available for kLastApplied");
+        LOG_DEBUG(4847500, 2, "no read timestamp available for kLastApplied");
         txnOpen.done();
         return Timestamp();
     }
@@ -731,7 +730,7 @@ Timestamp WiredTigerRecoveryUnit::_beginTransactionAtNoOverlapTimestamp(WT_SESSI
         // timestamped writes have been made.
         WiredTigerBeginTxnBlock txnOpen(
             session, _prepareConflictBehavior, _roundUpPreparedTimestamps);
-        LOGV2_DEBUG(4452900, 1, "no read timestamp available for kNoOverlap");
+        LOG_DEBUG(4452900, 1, "no read timestamp available for kNoOverlap");
         txnOpen.done();
         return readTimestamp;
     }
@@ -771,10 +770,10 @@ void WiredTigerRecoveryUnit::_updateMultiTimestampConstraint(Timestamp timestamp
 
 Status WiredTigerRecoveryUnit::setTimestamp(Timestamp timestamp) {
     _ensureSession();
-    LOGV2_DEBUG(22415,
-                3,
-                "WT set timestamp of future write operations to {timestamp}",
-                "timestamp"_attr = timestamp);
+    LOG_DEBUG(22415,
+              3,
+              "WT set timestamp of future write operations to {timestamp}",
+              "timestamp"_attr = timestamp);
     WT_SESSION* session = _session->getSession();
     invariant(_inUnitOfWork(), toString(_getState()));
     invariant(_prepareTimestamp.isNull());
@@ -907,11 +906,11 @@ void WiredTigerRecoveryUnit::setRoundUpPreparedTimestamps(bool value) {
 
 void WiredTigerRecoveryUnit::setTimestampReadSource(ReadSource readSource,
                                                     boost::optional<Timestamp> provided) {
-    LOGV2_DEBUG(22416,
-                3,
-                "setting timestamp read source",
-                "readSource"_attr = toString(readSource),
-                "provided"_attr = ((provided) ? provided->toString() : "none"));
+    LOG_DEBUG(22416,
+              3,
+              "setting timestamp read source",
+              "readSource"_attr = toString(readSource),
+              "provided"_attr = ((provided) ? provided->toString() : "none"));
     invariant(!_isActive() || _timestampReadSource == readSource,
               str::stream() << "Current state: " << toString(_getState())
                             << ". Invalid internal state while setting timestamp read source: "
