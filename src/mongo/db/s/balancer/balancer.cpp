@@ -347,11 +347,10 @@ void Balancer::_mainThread() {
     while (!_stopRequested()) {
         Status refreshStatus = balancerConfig->refreshAndCheck(opCtx.get());
         if (!refreshStatus.isOK()) {
-            LOG_WARNING(
-                21876,
-                "Got error while refreshing balancer settings, will retry with a backoff",
-                "backoffInterval"_attr = Milliseconds(kInitBackoffInterval),
-                "error"_attr = refreshStatus);
+            LOG_WARNING(21876,
+                        "Got error while refreshing balancer settings, will retry with a backoff",
+                        "backoffInterval"_attr = Milliseconds(kInitBackoffInterval),
+                        "error"_attr = refreshStatus);
 
             _sleepFor(opCtx.get(), kInitBackoffInterval);
             continue;
@@ -381,9 +380,7 @@ void Balancer::_mainThread() {
 
             Status refreshStatus = balancerConfig->refreshAndCheck(opCtx.get());
             if (!refreshStatus.isOK()) {
-                LOG_WARNING(21877,
-                            "Skipping balancing round",
-                            "error"_attr = refreshStatus);
+                LOG_WARNING(21877, "Skipping balancing round", "error"_attr = refreshStatus);
                 _endRound(opCtx.get(), kBalanceRoundDefaultInterval);
                 continue;
             }
@@ -409,9 +406,7 @@ void Balancer::_mainThread() {
 
                 Status status = _splitChunksIfNeeded(opCtx.get());
                 if (!status.isOK()) {
-                    LOG_WARNING(21878,
-                                "Failed to split chunks",
-                                "error"_attr = status);
+                    LOG_WARNING(21878, "Failed to split chunks", "error"_attr = status);
                 } else {
                     LOG_DEBUG(21861, 1, "Done enforcing tag range boundaries.");
                 }
@@ -448,9 +443,7 @@ void Balancer::_mainThread() {
 
             _endRound(opCtx.get(), balancerInterval);
         } catch (const DBException& e) {
-            LOG(21865,
-                "Error while doing balance",
-                "error"_attr = e);
+            LOG(21865, "Error while doing balance", "error"_attr = e);
 
             // Just to match the opening statement if in log level 1
             LOG_DEBUG(21866, 1, "End balancing round");
@@ -578,9 +571,7 @@ bool Balancer::_checkOIDs(OperationContext* opCtx) {
                 return false;
             }
         } else {
-            LOG(21869,
-                "warning: oidMachine not set on shard",
-                "shard"_attr = s->toString());
+            LOG(21869, "warning: oidMachine not set on shard", "shard"_attr = s->toString());
         }
     }
 

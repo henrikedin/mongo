@@ -92,9 +92,7 @@ Status launchServiceWorkerThread(unique_function<void()> task) noexcept {
             int failed = pthread_attr_setstacksize(&attrs, stackSizeToSet);
             if (failed) {
                 const auto ewd = errnoWithDescription(failed);
-                LOG_WARNING(22949,
-                            "pthread_attr_setstacksize failed",
-                            "error"_attr = ewd);
+                LOG_WARNING(22949, "pthread_attr_setstacksize failed", "error"_attr = ewd);
             }
         } else if (limits.rlim_cur < 1024 * 1024) {
             LOG_WARNING(22950,

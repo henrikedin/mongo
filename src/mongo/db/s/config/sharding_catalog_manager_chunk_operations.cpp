@@ -1437,9 +1437,7 @@ void ShardingCatalogManager::splitOrMarkJumbo(OperationContext* opCtx,
             boost::none));
 
         if (splitPoints.empty()) {
-            LOG(21873,
-                "Marking chunk as jumbo",
-                "chunk"_attr = redact(chunk.toString()));
+            LOG(21873, "Marking chunk as jumbo", "chunk"_attr = redact(chunk.toString()));
             chunk.markAsJumbo();
 
             auto const configShard = Grid::get(opCtx)->shardRegistry()->getConfigShard();

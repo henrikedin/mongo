@@ -52,9 +52,9 @@
 #include "mongo/s/multi_statement_transaction_requests_sender.h"
 #include "mongo/s/router_transactions_metrics.h"
 #include "mongo/s/shard_cannot_refresh_due_to_locks_held_exception.h"
-#include "mongo/util/log_with_sampling.h"
 #include "mongo/util/assert_util.h"
 #include "mongo/util/fail_point.h"
+#include "mongo/util/log_with_sampling.h"
 #include "mongo/util/net/socket_utils.h"
 
 namespace mongo {
@@ -569,14 +569,13 @@ BSONObj TransactionRouter::Router::attachTxnFieldsIfNeeded(OperationContext* opC
                                                            const BSONObj& cmdObj) {
     RouterTransactionsMetrics::get(opCtx)->incrementTotalRequestsTargeted();
     if (auto txnPart = getParticipant(shardId)) {
-        LOG_DEBUG(
-            22883,
-            4,
-            "Attaching transaction fields to request for existing participant shard",
-            "sessionId"_attr = _sessionId().getId(),
-            "txnNumber"_attr = o().txnNumber,
-            "shardId"_attr = shardId,
-            "request"_attr = redact(cmdObj));
+        LOG_DEBUG(22883,
+                  4,
+                  "Attaching transaction fields to request for existing participant shard",
+                  "sessionId"_attr = _sessionId().getId(),
+                  "txnNumber"_attr = o().txnNumber,
+                  "shardId"_attr = shardId,
+                  "request"_attr = redact(cmdObj));
         return txnPart->attachTxnFieldsIfNeeded(cmdObj, false);
     }
 
@@ -779,13 +778,12 @@ void TransactionRouter::Router::onStaleShardOrDbError(OperationContext* opCtx,
                                                       const Status& status) {
     invariant(canContinueOnStaleShardOrDbError(cmdName, status));
 
-    LOG_DEBUG(
-        22885,
-        3,
-        "Clearing pending participants after stale version error",
-        "sessionId"_attr = _sessionId().getId(),
-        "txnNumber"_attr = o().txnNumber,
-        "error"_attr = redact(status));
+    LOG_DEBUG(22885,
+              3,
+              "Clearing pending participants after stale version error",
+              "sessionId"_attr = _sessionId().getId(),
+              "txnNumber"_attr = o().txnNumber,
+              "error"_attr = redact(status));
 
     // Remove participants created during the current statement so they are sent the correct options
     // if they are targeted again by the retry.
@@ -796,13 +794,12 @@ void TransactionRouter::Router::onViewResolutionError(OperationContext* opCtx,
                                                       const NamespaceString& nss) {
     // The router can always retry on a view resolution error.
 
-    LOG_DEBUG(
-        22886,
-        3,
-        "Clearing pending participants after view resolution error",
-        "sessionId"_attr = _sessionId().getId(),
-        "txnNumber"_attr = o().txnNumber,
-        "namespace"_attr = nss);
+    LOG_DEBUG(22886,
+              3,
+              "Clearing pending participants after view resolution error",
+              "sessionId"_attr = _sessionId().getId(),
+              "txnNumber"_attr = o().txnNumber,
+              "namespace"_attr = nss);
 
     // Requests against views are always routed to the primary shard for its database, but the retry
     // on the resolved namespace does not have to re-target the primary, so pending participants

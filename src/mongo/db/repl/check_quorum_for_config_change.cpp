@@ -207,19 +207,16 @@ void QuorumChecker::_tabulateHeartbeatResponse(const RemoteCommandRequest& reque
         _vetoStatus =
             Status(ErrorCodes::NewReplicaSetConfigurationIncompatible,
                    str::stream() << message << ", requestTarget:" << request.target.toString());
-        LOG_WARNING(23723,
-                    message,
-                    "requestTarget"_attr = request.target.toString());
+        LOG_WARNING(23723, message, "requestTarget"_attr = request.target.toString());
         return;
     }
 
     if (!hbStatus.isOK() && hbStatus != ErrorCodes::InvalidReplicaSetConfig) {
-        LOG_WARNING(
-            23724,
-            "Got error response on heartbeat request",
-            "hbStatus"_attr = hbStatus,
-            "requestTarget"_attr = request.target,
-            "hbResp"_attr = hbResp);
+        LOG_WARNING(23724,
+                    "Got error response on heartbeat request",
+                    "hbStatus"_attr = hbStatus,
+                    "requestTarget"_attr = request.target,
+                    "hbResp"_attr = hbResp);
         _badResponses.push_back(std::make_pair(request.target, hbStatus));
         return;
     }

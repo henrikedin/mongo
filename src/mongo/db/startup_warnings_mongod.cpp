@@ -295,10 +295,8 @@ void logMongodStartupWarnings(const StorageGlobalParams& storageParams,
         }
     } else {
         const auto errmsg = errnoWithDescription();
-        LOG_WARNING_OPTIONS(22186,
-                            {log::LogTag::kStartupWarnings},
-                            "getrlimit failed",
-                            "error"_attr = errmsg);
+        LOG_WARNING_OPTIONS(
+            22186, {log::LogTag::kStartupWarnings}, "getrlimit failed", "error"_attr = errmsg);
     }
 
 // Solaris does not have RLIMIT_MEMLOCK, these are exposed via getrctl(2) instead
@@ -319,10 +317,8 @@ void logMongodStartupWarnings(const StorageGlobalParams& storageParams,
         }
     } else {
         const auto errmsg = errnoWithDescription();
-        LOG_WARNING_OPTIONS(22190,
-                            {log::LogTag::kStartupWarnings},
-                            "getrlimit failed",
-                            "error"_attr = errmsg);
+        LOG_WARNING_OPTIONS(
+            22190, {log::LogTag::kStartupWarnings}, "getrlimit failed", "error"_attr = errmsg);
     }
 #endif
 #endif

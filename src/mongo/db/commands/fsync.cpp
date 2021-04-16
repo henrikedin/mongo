@@ -372,9 +372,7 @@ void FSyncLockThread::run() {
         try {
             storageEngine->flushAllFiles(&opCtx, /*callerHoldsReadLock*/ true);
         } catch (const std::exception& e) {
-            LOG_ERROR(20472,
-                      "Error doing flushAll",
-                      "error"_attr = e.what());
+            LOG_ERROR(20472, "Error doing flushAll", "error"_attr = e.what());
             fsyncCmd.threadStatus = Status(ErrorCodes::CommandFailed, e.what());
             fsyncCmd.acquireFsyncLockSyncCV.notify_one();
             return;
@@ -404,9 +402,7 @@ void FSyncLockThread::run() {
                             "Locking despite storage engine being unable to begin backup",
                             "error"_attr = e);
             } else {
-                LOG_ERROR(20473,
-                          "Storage engine unable to begin backup",
-                          "error"_attr = e);
+                LOG_ERROR(20473, "Storage engine unable to begin backup", "error"_attr = e);
                 fsyncCmd.threadStatus = e.toStatus();
                 fsyncCmd.acquireFsyncLockSyncCV.notify_one();
                 return;
@@ -432,9 +428,7 @@ void FSyncLockThread::run() {
         }
 
     } catch (const std::exception& e) {
-        LOG_FATAL(40350,
-                  "FSyncLockThread exception",
-                  "error"_attr = e.what());
+        LOG_FATAL(40350, "FSyncLockThread exception", "error"_attr = e.what());
     }
 }
 

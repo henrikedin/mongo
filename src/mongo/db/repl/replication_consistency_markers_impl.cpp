@@ -131,10 +131,7 @@ bool ReplicationConsistencyMarkersImpl::getInitialSyncFlag(OperationContext* opC
         return false;
     }
 
-    LOG_DEBUG(21285,
-              3,
-              "Returning initial sync flag value",
-              "flag"_attr = flag.get());
+    LOG_DEBUG(21285, 3, "Returning initial sync flag value", "flag"_attr = flag.get());
     return flag.get();
 }
 
@@ -292,10 +289,8 @@ void ReplicationConsistencyMarkersImpl::setAppliedThrough(OperationContext* opCt
 
 void ReplicationConsistencyMarkersImpl::clearAppliedThrough(OperationContext* opCtx,
                                                             const Timestamp& writeTimestamp) {
-    LOG_DEBUG(21292,
-              3,
-              "Clearing appliedThrough",
-              "writeTimestamp"_attr = writeTimestamp.toString());
+    LOG_DEBUG(
+        21292, 3, "Clearing appliedThrough", "writeTimestamp"_attr = writeTimestamp.toString());
 
     TimestampedBSONObj update;
     update.timestamp = writeTimestamp;

@@ -244,9 +244,7 @@ bool DBClientCursor::initLazyFinish(bool& retry) {
     // If we get a bad response, return false
     if (!recvStatus.isOK() || reply.empty()) {
         if (!recvStatus.isOK())
-            LOG(20129,
-                "DBClientCursor::init lazy say() failed",
-                "error"_attr = redact(recvStatus));
+            LOG(20129, "DBClientCursor::init lazy say() failed", "error"_attr = redact(recvStatus));
         if (reply.empty())
             LOG(20130, "DBClientCursor::init message from say() was empty");
 

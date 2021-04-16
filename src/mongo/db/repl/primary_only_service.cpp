@@ -152,11 +152,10 @@ void PrimaryOnlyServiceRegistry::registerService(std::unique_ptr<PrimaryOnlyServ
                             << ") with state document namespace \"" << ns
                             << "\" that is already in use by service "
                             << existingService->getServiceName());
-    LOG_INFO(
-        5123008,
-        "Successfully registered PrimaryOnlyService",
-        "service"_attr = name,
-        "ns"_attr = ns);
+    LOG_INFO(5123008,
+             "Successfully registered PrimaryOnlyService",
+             "service"_attr = name,
+             "ns"_attr = ns);
 }
 
 PrimaryOnlyService* PrimaryOnlyServiceRegistry::lookupServiceByName(StringData serviceName) {
@@ -568,9 +567,7 @@ void PrimaryOnlyService::_rebuildInstances(long long term) noexcept {
     std::vector<BSONObj> stateDocuments;
 
     auto serviceName = getServiceName();
-    LOG_INFO(5123005,
-             "Rebuilding PrimaryOnlyService due to stepUp",
-             "service"_attr = serviceName);
+    LOG_INFO(5123005, "Rebuilding PrimaryOnlyService due to stepUp", "service"_attr = serviceName);
 
     if (!MONGO_unlikely(PrimaryOnlyServiceSkipRebuildingInstances.shouldFail())) {
         auto ns = getStateDocumentsNS();

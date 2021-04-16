@@ -153,15 +153,11 @@ void disableNagle(int sock) {
 #endif
 
     if (setsockopt(sock, level, TCP_NODELAY, (char*)&x, sizeof(x)))
-        LOG_ERROR(23195,
-                  "DisableNagle failed",
-                  "error"_attr = errnoWithDescription());
+        LOG_ERROR(23195, "DisableNagle failed", "error"_attr = errnoWithDescription());
 
 #ifdef SO_KEEPALIVE
     if (setsockopt(sock, SOL_SOCKET, SO_KEEPALIVE, (char*)&x, sizeof(x)))
-        LOG_ERROR(23196,
-                  "SO_KEEPALIVE failed",
-                  "error"_attr = errnoWithDescription());
+        LOG_ERROR(23196, "SO_KEEPALIVE failed", "error"_attr = errnoWithDescription());
 #endif
 
     setSocketKeepAliveParams(sock);
@@ -611,10 +607,8 @@ void Socket::handleRecvError(int ret, int len) {
     if (e == EAGAIN && _timeout > 0) {
 #endif
         // this is a timeout
-        LOG_DEBUG(23184,
-                  _logLevel.toInt(),
-                  "Socket recv() timeout",
-                  "remoteHost"_attr = remoteString());
+        LOG_DEBUG(
+            23184, _logLevel.toInt(), "Socket recv() timeout", "remoteHost"_attr = remoteString());
         throwSocketError(SocketErrorKind::RECV_TIMEOUT, remoteString());
     }
 
@@ -729,9 +723,8 @@ bool Socket::isStillConnected() {
                       "idleTimeSecs"_attr = idleTimeSecs,
                       "remoteHost"_attr = remoteString());
             if (kDebugBuild) {
-                LOG_ERROR(23198,
-                          "Hex dump of stale log data",
-                          "hex"_attr = hexdump(testBuf, recvd));
+                LOG_ERROR(
+                    23198, "Hex dump of stale log data", "hex"_attr = hexdump(testBuf, recvd));
             }
             dassert(false);
         } else {

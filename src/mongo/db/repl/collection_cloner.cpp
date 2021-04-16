@@ -349,9 +349,7 @@ void CollectionCloner::runQuery() {
             // Collection has changed upstream. This will trigger the code block above next round,
             // (unless we find out the collection was dropped via getting a NamespaceNotFound).
             if (_queryStage.isCursorError(status)) {
-                LOG(21135,
-                    "Lost cursor during non-resumable query",
-                    "error"_attr = status);
+                LOG(21135, "Lost cursor during non-resumable query", "error"_attr = status);
                 _lostNonResumableCursor = true;
                 throw;
             }
@@ -488,9 +486,7 @@ void CollectionCloner::waitForDatabaseWorkToComplete() {
 // Throws.
 void CollectionCloner::abortNonResumableClone(const Status& status) {
     invariant(!_resumeSupported);
-    LOG(21141,
-        "Error during non-resumable clone",
-        "error"_attr = status);
+    LOG(21141, "Error during non-resumable clone", "error"_attr = status);
     std::string message = str::stream()
         << "Collection clone failed and is not resumable. nss: " << _sourceNss;
     uasserted(ErrorCodes::InitialSyncFailure, message);

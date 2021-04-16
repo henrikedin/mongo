@@ -259,10 +259,7 @@ void dropCollectionNoDistLock(OperationContext* opCtx, const NamespaceString& ns
         BSONObj(),
         ShardingCatalogClient::kMajorityWriteConcern));
 
-    LOG_DEBUG(21924,
-              1,
-              "dropCollection started",
-              "namespace"_attr = nss.ns());
+    LOG_DEBUG(21924, 1, "dropCollection started", "namespace"_attr = nss.ns());
 
     const auto catalogClient = Grid::get(opCtx)->catalogClient();
     auto allShards = uassertStatusOK(catalogClient->getAllShards(
@@ -271,10 +268,7 @@ void dropCollectionNoDistLock(OperationContext* opCtx, const NamespaceString& ns
 
     sendDropCollectionToAllShards(opCtx, nss, allShards);
 
-    LOG_DEBUG(21925,
-              1,
-              "dropCollection shard data deleted",
-              "namespace"_attr = nss.ns());
+    LOG_DEBUG(21925, 1, "dropCollection shard data deleted", "namespace"_attr = nss.ns());
 
     try {
         auto collType = catalogClient->getCollection(opCtx, nss);
@@ -288,20 +282,15 @@ void dropCollectionNoDistLock(OperationContext* opCtx, const NamespaceString& ns
         removeChunksForDroppedCollection(opCtx, nssOrUUID);
         removeTagsForDroppedCollection(opCtx, nss);
 
-        LOG_DEBUG(21926,
-                  1,
-                  "dropCollection chunk and tag data deleted",
-                  "namespace"_attr = nss.ns());
+        LOG_DEBUG(
+            21926, 1, "dropCollection chunk and tag data deleted", "namespace"_attr = nss.ns());
 
         uassertStatusOK(
             catalogClient->removeConfigDocuments(opCtx,
                                                  CollectionType::ConfigNS,
                                                  BSON(CollectionType::kNssFieldName << nss.ns()),
                                                  ShardingCatalogClient::kMajorityWriteConcern));
-        LOG_DEBUG(21927,
-                  1,
-                  "dropCollection collection entry deleted",
-                  "namespace"_attr = nss.ns());
+        LOG_DEBUG(21927, 1, "dropCollection collection entry deleted", "namespace"_attr = nss.ns());
     } catch (const ExceptionFor<ErrorCodes::NamespaceNotFound>&) {
         LOG(5310500,
             "dropCollection {namespace} collection entry not found",
@@ -310,10 +299,7 @@ void dropCollectionNoDistLock(OperationContext* opCtx, const NamespaceString& ns
 
     sendSSVToAllShards(opCtx, nss, allShards);
 
-    LOG_DEBUG(21928,
-              1,
-              "dropCollection completed",
-              "namespace"_attr = nss.ns());
+    LOG_DEBUG(21928, 1, "dropCollection completed", "namespace"_attr = nss.ns());
 
     ShardingLogging::get(opCtx)->logChange(
         opCtx, "dropCollection", nss.ns(), BSONObj(), ShardingCatalogClient::kMajorityWriteConcern);

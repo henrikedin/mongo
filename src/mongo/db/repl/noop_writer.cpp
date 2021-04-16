@@ -189,10 +189,7 @@ void NoopWriter::_writeNoop(OperationContext* opCtx) {
     }
 
     _lastKnownOpTime = replCoord->getMyLastAppliedOpTime();
-    LOG_DEBUG(21223,
-              1,
-              "Set last known op time",
-              "lastKnownOpTime"_attr = _lastKnownOpTime);
+    LOG_DEBUG(21223, 1, "Set last known op time", "lastKnownOpTime"_attr = _lastKnownOpTime);
 }
 
 }  // namespace repl

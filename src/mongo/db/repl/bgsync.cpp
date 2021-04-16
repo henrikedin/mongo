@@ -222,9 +222,7 @@ void BackgroundSync::_run() {
             sleepmillis(100);  // sleep a bit to keep from hammering this thread with temp. errors.
         } catch (const std::exception& e2) {
             // redact(std::exception&) doesn't work
-            LOG_FATAL(28546,
-                      "Sync producer error",
-                      "error"_attr = redact(e2.what()));
+            LOG_FATAL(28546, "Sync producer error", "error"_attr = redact(e2.what()));
         }
     }
     // No need to reset optimes here because we are shutting down.
@@ -350,10 +348,7 @@ void BackgroundSync::_produce() {
             auto status = _replCoord->abortCatchupIfNeeded(
                 ReplicationCoordinator::PrimaryCatchUpConclusionReason::kFailedWithError);
             if (!status.isOK()) {
-                LOG_DEBUG(21083,
-                          1,
-                          "Aborting catch-up failed",
-                          "error"_attr = status);
+                LOG_DEBUG(21083, 1, "Aborting catch-up failed", "error"_attr = status);
             }
             return;
         }
@@ -376,9 +371,7 @@ void BackgroundSync::_produce() {
         // Activate maintenance mode and transition to RECOVERING.
         auto status = _replCoord->setMaintenanceMode(true);
         if (!status.isOK()) {
-            LOG_WARNING(21116,
-                        "Failed to transition into maintenance mode",
-                        "error"_attr = status);
+            LOG_WARNING(21116, "Failed to transition into maintenance mode", "error"_attr = status);
             // Do not mark ourselves too stale on errors so we can try again next time.
             return;
         }
@@ -441,14 +434,10 @@ void BackgroundSync::_produce() {
     // If we find a good sync source after having gone too stale, disable maintenance mode so we can
     // transition to SECONDARY.
     if (_tooStale.swap(false)) {
-        LOG(21091,
-            "No longer too stale. Able to start syncing",
-            "syncSource"_attr = source);
+        LOG(21091, "No longer too stale. Able to start syncing", "syncSource"_attr = source);
         auto status = _replCoord->setMaintenanceMode(false);
         if (!status.isOK()) {
-            LOG_WARNING(21118,
-                        "Failed to leave maintenance mode",
-                        "error"_attr = status);
+            LOG_WARNING(21118, "Failed to leave maintenance mode", "error"_attr = status);
         }
     }
 
@@ -551,10 +540,7 @@ void BackgroundSync::_produce() {
     }
 
     oplogFetcher->join();
-    LOG_DEBUG(21093,
-              1,
-              "Fetcher stopped reading remote oplog",
-              "syncSource"_attr = source);
+    LOG_DEBUG(21093, 1, "Fetcher stopped reading remote oplog", "syncSource"_attr = source);
 
     // If the background sync is stopped after the fetcher is started, we need to
     // re-evaluate our sync source and oplog common point.
@@ -678,10 +664,7 @@ void BackgroundSync::_runRollback(OperationContext* opCtx,
         auto status = _replCoord->abortCatchupIfNeeded(
             ReplicationCoordinator::PrimaryCatchUpConclusionReason::kFailedWithError);
         if (!status.isOK()) {
-            LOG_DEBUG(21097,
-                      1,
-                      "Aborting catch-up failed",
-                      "error"_attr = status);
+            LOG_DEBUG(21097, 1, "Aborting catch-up failed", "error"_attr = status);
         }
         return;
     }
@@ -789,21 +772,16 @@ void BackgroundSync::_runRollbackViaRecoverToCheckpoint(
     _rollback = std::make_unique<RollbackImpl>(
         localOplog, &remoteOplog, storageInterface, _replicationProcess, _replCoord);
 
-    LOG(21104,
-        "Scheduling rollback",
-        "syncSource"_attr = source);
+    LOG(21104, "Scheduling rollback", "syncSource"_attr = source);
     auto status = _rollback->runRollback(opCtx);
     if (status.isOK()) {
         LOG(21105, "Rollback successful");
     } else if (status == ErrorCodes::UnrecoverableRollbackError) {
-        LOG_FATAL_CONTINUE(21128,
-                           "Rollback failed with unrecoverable error",
-                           "error"_attr = status);
+        LOG_FATAL_CONTINUE(
+            21128, "Rollback failed with unrecoverable error", "error"_attr = status);
         fassertFailedWithStatusNoTrace(50666, status);
     } else {
-        LOG_WARNING(21124,
-                    "Rollback failed with retryable error",
-                    "error"_attr = status);
+        LOG_WARNING(21124, "Rollback failed with retryable error", "error"_attr = status);
     }
 }
 
@@ -829,9 +807,7 @@ HostAndPort BackgroundSync::getSyncTarget() const {
 
 void BackgroundSync::clearSyncTarget() {
     stdx::unique_lock<Latch> lock(_mutex);
-    LOG(21106,
-        "Resetting sync source to empty",
-        "previousSyncSource"_attr = _syncSourceHost);
+    LOG(21106, "Resetting sync source to empty", "previousSyncSource"_attr = _syncSourceHost);
     _syncSourceHost = HostAndPort();
 }
 

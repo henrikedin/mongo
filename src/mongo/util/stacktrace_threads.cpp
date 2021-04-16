@@ -405,9 +405,7 @@ void State::collectStacks(std::vector<ThreadBacktrace>& messageStorage,
                           std::vector<int>& missedTids) {
     std::set<int> pendingTids;
     iterateTids([&](int tid) { pendingTids.insert(tid); });
-    LOG(23394,
-        "Preparing to dump thread stacks",
-        "numThreads"_attr = pendingTids.size());
+    LOG(23394, "Preparing to dump thread stacks", "numThreads"_attr = pendingTids.size());
 
     messageStorage.resize(pendingTids.size());
     received.reserve(pendingTids.size());
@@ -433,9 +431,7 @@ void State::collectStacks(std::vector<ThreadBacktrace>& messageStorage,
             ++iter;
         }
     }
-    LOG(23396,
-        "Signalled threads",
-        "numThreads"_attr = pendingTids.size());
+    LOG(23396, "Signalled threads", "numThreads"_attr = pendingTids.size());
 
     size_t napMicros = 0;
     while (!pendingTids.empty()) {
@@ -502,9 +498,7 @@ void State::printStacks() {
             LOG(31423, "===== multithread stacktrace session begin =====");
         }
         void prologue(const BSONObj& obj) override {
-            LOG(31424,
-                "Stacktrace Prologue",
-                "prologue"_attr = obj);
+            LOG(31424, "Stacktrace Prologue", "prologue"_attr = obj);
         }
         void threadRecordsOpen() override {}
         void threadRecord(const BSONObj& obj) override {

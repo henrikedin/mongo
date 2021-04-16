@@ -151,10 +151,7 @@ void BackgroundJob::jobBody() {
         setThreadName(threadName);
     }
 
-    LOG_DEBUG(23098,
-              1,
-              "BackgroundJob starting",
-              "threadName"_attr = threadName);
+    LOG_DEBUG(23098, 1, "BackgroundJob starting", "threadName"_attr = threadName);
 
     run();
 
@@ -340,14 +337,10 @@ void PeriodicTaskRunner::_runTask(PeriodicTask* const task) {
     try {
         task->taskDoWork();
     } catch (const std::exception& e) {
-        LOG_ERROR(23100,
-                  "Task failed",
-                  "taskName"_attr = taskName,
-                  "error"_attr = redact(e.what()));
+        LOG_ERROR(
+            23100, "Task failed", "taskName"_attr = taskName, "error"_attr = redact(e.what()));
     } catch (...) {
-        LOG_ERROR(23101,
-                  "Task failed with unknown error",
-                  "taskName"_attr = taskName);
+        LOG_ERROR(23101, "Task failed with unknown error", "taskName"_attr = taskName);
     }
 
     const auto duration = timer.elapsed();

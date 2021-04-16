@@ -467,10 +467,7 @@ Status ReplSetDistLockManager::lockDirect(OperationContext* opCtx,
             }
         }
 
-        LOG_DEBUG(22660,
-                  1,
-                  "Distributed lock was not acquired",
-                  "lockName"_attr = name);
+        LOG_DEBUG(22660, 1, "Distributed lock was not acquired", "lockName"_attr = name);
 
         if (waitFor == Milliseconds::zero()) {
             break;
@@ -531,10 +528,7 @@ Status ReplSetDistLockManager::tryLockDirectWithLocalWriteConcern(OperationConte
         return Status::OK();
     }
 
-    LOG_DEBUG(22664,
-              1,
-              "Distributed lock was not acquired",
-              "lockName"_attr = name);
+    LOG_DEBUG(22664, 1, "Distributed lock was not acquired", "lockName"_attr = name);
 
     if (lockStatus == ErrorCodes::LockStateChangeFailed) {
         return {ErrorCodes::LockBusy, str::stream() << "Unable to acquire " << name};
@@ -552,11 +546,10 @@ void ReplSetDistLockManager::unlock(Interruptible* intr, StringData name) {
 void ReplSetDistLockManager::unlockAll(OperationContext* opCtx) {
     Status status = _catalog->unlockAll(opCtx, getProcessID());
     if (!status.isOK()) {
-        LOG_WARNING(
-            22672,
-            "Error unlocking all existing distributed locks for a process",
-            "processId"_attr = getProcessID(),
-            "error"_attr = redact(status));
+        LOG_WARNING(22672,
+                    "Error unlocking all existing distributed locks for a process",
+                    "processId"_attr = getProcessID(),
+                    "error"_attr = redact(status));
     }
 }
 

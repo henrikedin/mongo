@@ -287,9 +287,7 @@ void WiredTigerRecoveryUnit::assertInActiveTxn() const {
     if (_isActive()) {
         return;
     }
-    LOG_FATAL(28575,
-              "Recovery unit is not active.",
-              "currentState"_attr = _getState());
+    LOG_FATAL(28575, "Recovery unit is not active.", "currentState"_attr = _getState());
 }
 
 void WiredTigerRecoveryUnit::setTxnModified() {

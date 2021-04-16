@@ -138,10 +138,7 @@ std::vector<std::string> getHostFQDNs(std::string hostName, HostnameCanonicaliza
     }
 
     if (!getNameInfoErrors.empty()) {
-        LOG_DEBUG(23171,
-                  3,
-                  "Failed to obtain name info",
-                  "errors"_attr = getNameInfoErrors);
+        LOG_DEBUG(23171, 3, "Failed to obtain name info", "errors"_attr = getNameInfoErrors);
     }
 
     // Deduplicate the results list

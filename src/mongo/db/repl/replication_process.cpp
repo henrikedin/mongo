@@ -92,9 +92,7 @@ Status ReplicationProcess::refreshRollbackID(OperationContext* opCtx) {
     }
 
     if (kUninitializedRollbackId == _rbid) {
-        LOG(21529,
-            "Initializing rollback ID",
-            "rbid"_attr = rbidResult.getValue());
+        LOG(21529, "Initializing rollback ID", "rbid"_attr = rbidResult.getValue());
     } else {
         LOG(21530,
             "Setting rollback ID",
@@ -127,9 +125,7 @@ Status ReplicationProcess::initializeRollbackID(OperationContext* opCtx) {
 
     auto initRbidSW = _storageInterface->initializeRollbackID(opCtx);
     if (initRbidSW.isOK()) {
-        LOG(21531,
-            "Initialized the rollback ID",
-            "rbid"_attr = initRbidSW.getValue());
+        LOG(21531, "Initialized the rollback ID", "rbid"_attr = initRbidSW.getValue());
         _rbid = initRbidSW.getValue();
         invariant(kUninitializedRollbackId != _rbid);
     } else {
@@ -148,9 +144,7 @@ Status ReplicationProcess::incrementRollbackID(OperationContext* opCtx) {
     // If the rollback ID was incremented successfully, cache the new value in _rbid to be returned
     // the next time getRollbackID() is called.
     if (status.isOK()) {
-        LOG(21532,
-            "Incremented the rollback ID",
-            "rbid"_attr = status.getValue());
+        LOG(21532, "Incremented the rollback ID", "rbid"_attr = status.getValue());
         _rbid = status.getValue();
         invariant(kUninitializedRollbackId != _rbid);
     } else {

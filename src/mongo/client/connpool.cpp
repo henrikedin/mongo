@@ -512,10 +512,7 @@ void DBConnectionPool::clear() {
 
 void DBConnectionPool::removeHost(const string& host) {
     stdx::lock_guard<Latch> L(_mutex);
-    LOG_DEBUG(20115,
-              2,
-              "Removing connections from all pools to a host",
-              "connString"_attr = host);
+    LOG_DEBUG(20115, 2, "Removing connections from all pools to a host", "connString"_attr = host);
     for (PoolMap::iterator i = _pools.begin(); i != _pools.end(); ++i) {
         const string& poolHost = i->first.ident;
         if (!serverNameCompare()(host, poolHost) && !serverNameCompare()(poolHost, host)) {

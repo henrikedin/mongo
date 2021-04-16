@@ -83,9 +83,7 @@ public:
         try {
             _ioContext.run_for(time.toSystemDuration());
         } catch (...) {
-            LOG_FATAL(50476,
-                      "Uncaught exception in reactor",
-                      "error"_attr = exceptionToStatus());
+            LOG_FATAL(50476, "Uncaught exception in reactor", "error"_attr = exceptionToStatus());
         }
     }
 

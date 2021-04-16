@@ -214,9 +214,7 @@ public:
         Status const status = mdm->startCommit(sessionId);
         mdm->report(result, opCtx, false);
         if (!status.isOK()) {
-            LOG(22014,
-                "_recvChunkCommit failed",
-                "error"_attr = redact(status));
+            LOG(22014, "_recvChunkCommit failed", "error"_attr = redact(status));
             uassertStatusOK(status);
         }
         return true;
@@ -264,9 +262,7 @@ public:
             Status const status = mdm->abort(migrationSessionIdStatus.getValue());
             mdm->report(result, opCtx, false);
             if (!status.isOK()) {
-                LOG(22015,
-                    "_recvChunkAbort failed",
-                    "error"_attr = redact(status));
+                LOG(22015, "_recvChunkAbort failed", "error"_attr = redact(status));
                 uassertStatusOK(status);
             }
         } else if (migrationSessionIdStatus == ErrorCodes::NoSuchKey) {

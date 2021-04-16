@@ -129,11 +129,8 @@ void ReplicationCoordinatorImpl::_doMemberHeartbeat(executor::TaskExecutor::Call
 
 void ReplicationCoordinatorImpl::_scheduleHeartbeatToTarget_inlock(const HostAndPort& target,
                                                                    Date_t when) {
-    LOG_FOR_HEARTBEATS(4615618,
-                       2,
-                       "Scheduling heartbeat",
-                       "target"_attr = target,
-                       "when"_attr = when);
+    LOG_FOR_HEARTBEATS(
+        4615618, 2, "Scheduling heartbeat", "target"_attr = target, "when"_attr = when);
     _trackHeartbeatHandle_inlock(
         _replExecutor->scheduleWorkAt(when,
                                       [=](const executor::TaskExecutor::CallbackArgs& cbData) {
@@ -196,13 +193,12 @@ void ReplicationCoordinatorImpl::_handleHeartbeatResponse(
         StatusWith<rpc::ReplSetMetadata> replMetadata =
             rpc::ReplSetMetadata::readFromMetadata(cbData.response.data);
 
-        LOG_FOR_HEARTBEATS(
-            4615620,
-            2,
-            "Received response to heartbeat",
-            "requestId"_attr = cbData.request.id,
-            "target"_attr = target,
-            "response"_attr = resp);
+        LOG_FOR_HEARTBEATS(4615620,
+                           2,
+                           "Received response to heartbeat",
+                           "requestId"_attr = cbData.request.id,
+                           "target"_attr = target,
+                           "response"_attr = resp);
 
         // Reject heartbeat responses (and metadata) from nodes with mismatched replica set IDs.
         // It is problematic to perform this check in the heartbeat reconfiguring logic because it
@@ -408,10 +404,8 @@ stdx::unique_lock<Latch> ReplicationCoordinatorImpl::_handleHeartbeatResponseAct
             if (!_catchupTakeoverCbh.isValid() && !_priorityTakeoverCbh.isValid()) {
                 Milliseconds catchupTakeoverDelay = _rsConfig.getCatchUpTakeoverDelay();
                 _catchupTakeoverWhen = _replExecutor->now() + catchupTakeoverDelay;
-                LOG_FOR_ELECTION(4615648,
-                                 0,
-                                 "Scheduling catchup takeover",
-                                 "when"_attr = _catchupTakeoverWhen);
+                LOG_FOR_ELECTION(
+                    4615648, 0, "Scheduling catchup takeover", "when"_attr = _catchupTakeoverWhen);
                 _catchupTakeoverCbh = _scheduleWorkAt(
                     _catchupTakeoverWhen, [=](const mongo::executor::TaskExecutor::CallbackArgs&) {
                         _startElectSelfIfEligibleV1(StartElectionReasonEnum::kCatchupTakeover);
@@ -967,10 +961,7 @@ void ReplicationCoordinatorImpl::_scheduleNextLivenessUpdate_inlock() {
     }
 
     auto nextTimeout = earliestDate + _rsConfig.getElectionTimeoutPeriod();
-    LOG_DEBUG(21483,
-              3,
-              "Scheduling next check",
-              "nextTimeout"_attr = nextTimeout);
+    LOG_DEBUG(21483, 3, "Scheduling next check", "nextTimeout"_attr = nextTimeout);
 
     // It is possible we will schedule the next timeout in the past.
     // ThreadPoolTaskExecutor::_scheduleWorkAt() schedules its work immediately if it's given a
@@ -1063,10 +1054,7 @@ void ReplicationCoordinatorImpl::_cancelAndRescheduleElectionTimeout_inlock() {
                          "Rescheduling election timeout callback",
                          "when"_attr = when);
     } else {
-        LOG_FOR_ELECTION(4615651,
-                         4,
-                         "Scheduling election timeout callback",
-                         "when"_attr = when);
+        LOG_FOR_ELECTION(4615651, 4, "Scheduling election timeout callback", "when"_attr = when);
     }
     _handleElectionTimeoutWhen = when;
     _handleElectionTimeoutCbh =
@@ -1112,11 +1100,10 @@ void ReplicationCoordinatorImpl::_startElectSelfIfEligibleV1(WithLock lk,
     if (!status.isOK()) {
         switch (reason) {
             case StartElectionReasonEnum::kElectionTimeout:
-                LOG_FOR_ELECTION(
-                    4615655,
-                    0,
-                    "Not starting an election, since we are not electable",
-                    "reason"_attr = status.reason());
+                LOG_FOR_ELECTION(4615655,
+                                 0,
+                                 "Not starting an election, since we are not electable",
+                                 "reason"_attr = status.reason());
                 break;
             case StartElectionReasonEnum::kPriorityTakeover:
                 LOG_FOR_ELECTION(4615656,

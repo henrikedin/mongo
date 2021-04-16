@@ -1219,10 +1219,7 @@ void ClientCommand::_parseMessage() try {
     if (ErrorCodes::isConnectionFatalMessageParseError(ex.code()))
         _propagateException = true;
 
-    LOG_DEBUG(22769,
-              1,
-              "Exception thrown while parsing command",
-              "error"_attr = redact(ex));
+    LOG_DEBUG(22769, 1, "Exception thrown while parsing command", "error"_attr = redact(ex));
     throw;
 }
 
@@ -1243,13 +1240,12 @@ Future<void> ClientCommand::_execute() {
                       "headerId"_attr = _rec->getMessage().header().getId());
         })
         .tapError([this](Status status) {
-            LOG_DEBUG(
-                22772,
-                1,
-                "Exception thrown while processing command",
-                "db"_attr = _rec->getRequest().getDatabase().toString(),
-                "headerId"_attr = _rec->getMessage().header().getId(),
-                "error"_attr = redact(status));
+            LOG_DEBUG(22772,
+                      1,
+                      "Exception thrown while processing command",
+                      "db"_attr = _rec->getRequest().getDatabase().toString(),
+                      "headerId"_attr = _rec->getMessage().header().getId(),
+                      "error"_attr = redact(status));
 
             // Record the exception in CurOp.
             CurOp::get(_rec->getOpCtx())->debug().errInfo = std::move(status);
@@ -1408,12 +1404,11 @@ void Strategy::killCursors(OperationContext* opCtx, DbMessage* dbm) {
         auto authzStatus = manager->checkAuthForKillCursors(opCtx, *nss, cursorId, authChecker);
         audit::logKillCursorsAuthzCheck(client, *nss, cursorId, authzStatus.code());
         if (!authzStatus.isOK()) {
-            LOG_DEBUG(
-                22774,
-                3,
-                "Not authorized to kill cursor",
-                "namespace"_attr = *nss,
-                "cursorId"_attr = cursorId);
+            LOG_DEBUG(22774,
+                      3,
+                      "Not authorized to kill cursor",
+                      "namespace"_attr = *nss,
+                      "cursorId"_attr = cursorId);
             continue;
         }
 
@@ -1427,11 +1422,7 @@ void Strategy::killCursors(OperationContext* opCtx, DbMessage* dbm) {
             continue;
         }
 
-        LOG_DEBUG(22776,
-                  3,
-                  "Killed cursor",
-                  "namespace"_attr = *nss,
-                  "cursorId"_attr = cursorId);
+        LOG_DEBUG(22776, 3, "Killed cursor", "namespace"_attr = *nss, "cursorId"_attr = cursorId);
     }
 }
 

@@ -232,9 +232,7 @@ void StorageEngineLockFile::clearPidAndUnlock() {
     // with StorageEngineLockFile::open().
     if (::ftruncate(_lockFileHandle->_fd, 0)) {
         int errorcode = errno;
-        LOG(22280,
-            "Couldn't remove fs lock",
-            "error"_attr = errnoWithDescription(errorcode));
+        LOG(22280, "Couldn't remove fs lock", "error"_attr = errnoWithDescription(errorcode));
     }
     close();
 }

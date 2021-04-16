@@ -112,8 +112,7 @@ Status clear(OperationContext* opCtx,
 
     planCache->clear();
 
-    LOG_DEBUG(
-        23908, 1, "Cleared plan cache", "namespace"_attr = ns);
+    LOG_DEBUG(23908, 1, "Cleared plan cache", "namespace"_attr = ns);
 
     return Status::OK();
 }

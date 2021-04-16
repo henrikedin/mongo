@@ -212,9 +212,7 @@ DatabaseType ShardingCatalogManager::createDatabase(OperationContext* opCtx,
                             enableSharding,
                             DatabaseVersion(UUID::gen(), clusterTime));
 
-            LOG(21938,
-                "Registering new database in sharding catalog",
-                "db"_attr = db);
+            LOG(21938, "Registering new database in sharding catalog", "db"_attr = db);
 
             // Do this write with majority writeConcern to guarantee that the shard sees the write
             // when it receives the _flushDatabaseCacheUpdates.

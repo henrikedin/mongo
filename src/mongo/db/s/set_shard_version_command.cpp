@@ -273,13 +273,12 @@ public:
 
             if (!status.isOK()) {
                 // The reload itself was interrupted or confused here
-                LOG_WARNING(
-                    22058,
-                    "Could not refresh metadata",
-                    "namespace"_attr = nss.ns(),
-                    "requestedShardVersion"_attr = requestedVersion,
-                    "currentShardVersion"_attr = currVersion,
-                    "error"_attr = redact(status));
+                LOG_WARNING(22058,
+                            "Could not refresh metadata",
+                            "namespace"_attr = nss.ns(),
+                            "requestedShardVersion"_attr = requestedVersion,
+                            "currentShardVersion"_attr = currVersion,
+                            "error"_attr = redact(status));
 
                 result.append("ns", nss.ns());
                 status.serializeErrorToBSON(&result);

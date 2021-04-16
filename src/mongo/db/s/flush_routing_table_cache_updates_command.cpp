@@ -127,10 +127,8 @@ public:
             oss.waitForMigrationCriticalSectionSignal(opCtx);
 
             if (Base::request().getSyncFromConfig()) {
-                LOG_DEBUG(21982,
-                          1,
-                          "Forcing remote routing table refresh",
-                          "namespace"_attr = ns());
+                LOG_DEBUG(
+                    21982, 1, "Forcing remote routing table refresh", "namespace"_attr = ns());
                 onShardVersionMismatch(opCtx, ns(), boost::none);
             }
 

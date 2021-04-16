@@ -457,11 +457,10 @@ vector<MigrateInfo> BalancerPolicy::balance(const ShardStatisticsVector& shardSt
                     continue;
 
                 if (chunk.getJumbo()) {
-                    LOG_WARNING(
-                        21891,
-                        "Chunk violates zone, but it is jumbo and cannot be moved",
-                        "chunk"_attr = redact(chunk.toString()),
-                        "zone"_attr = redact(tag));
+                    LOG_WARNING(21891,
+                                "Chunk violates zone, but it is jumbo and cannot be moved",
+                                "chunk"_attr = redact(chunk.toString()),
+                                "zone"_attr = redact(tag));
                     continue;
                 }
 
@@ -576,9 +575,7 @@ bool BalancerPolicy::_singleZoneBalance(const ShardStatisticsVector& shardStats,
     const ShardId to = _getLeastLoadedReceiverShard(shardStats, distribution, tag, *usedShards);
     if (!to.isValid()) {
         if (migrations->empty()) {
-            LOG(21882,
-                "No available shards to take chunks for zone",
-                "zone"_attr = tag);
+            LOG(21882, "No available shards to take chunks for zone", "zone"_attr = tag);
         }
         return false;
     }
@@ -591,18 +588,17 @@ bool BalancerPolicy::_singleZoneBalance(const ShardStatisticsVector& shardStats,
 
     const size_t imbalance = max - idealNumberOfChunksPerShardForTag;
 
-    LOG_DEBUG(
-        21883,
-        1,
-        "Balancing single zone",
-        "namespace"_attr = distribution.nss().ns(),
-        "zone"_attr = tag,
-        "fromShardId"_attr = from,
-        "fromShardChunkCount"_attr = max,
-        "toShardId"_attr = to,
-        "toShardChunkCount"_attr = min,
-        "idealNumberOfChunksPerShardForTag"_attr = idealNumberOfChunksPerShardForTag,
-        "chunkCountImbalanceThreshold"_attr = kDefaultImbalanceThreshold);
+    LOG_DEBUG(21883,
+              1,
+              "Balancing single zone",
+              "namespace"_attr = distribution.nss().ns(),
+              "zone"_attr = tag,
+              "fromShardId"_attr = from,
+              "fromShardChunkCount"_attr = max,
+              "toShardId"_attr = to,
+              "toShardChunkCount"_attr = min,
+              "idealNumberOfChunksPerShardForTag"_attr = idealNumberOfChunksPerShardForTag,
+              "chunkCountImbalanceThreshold"_attr = kDefaultImbalanceThreshold);
 
     // Check whether it is necessary to balance within this zone
     if (imbalance < kDefaultImbalanceThreshold)

@@ -353,9 +353,8 @@ Status DBClientConnection::connect(const HostAndPort& serverAddress,
     auto validateStatus =
         rpc::validateWireVersion(wireSpec->outgoing, swProtocolSet.getValue().version);
     if (!validateStatus.isOK()) {
-        LOG_WARNING(20126,
-                    "Remote host has incompatible wire version",
-                    "error"_attr = validateStatus);
+        LOG_WARNING(
+            20126, "Remote host has incompatible wire version", "error"_attr = validateStatus);
 
         return validateStatus;
     }
@@ -449,10 +448,7 @@ Status DBClientConnection::connectSocketOnly(
     _lastConnectivityCheck = Date_t::now();
     _session->setTimeout(_socketTimeout);
     _session->setTags(_tagMask);
-    LOG_DEBUG(20119,
-              1,
-              "Connected to host",
-              "connString"_attr = toString());
+    LOG_DEBUG(20119, 1, "Connected to host", "connString"_attr = toString());
     return Status::OK();
 }
 
@@ -579,10 +575,7 @@ void DBClientConnection::_checkConnection() {
     // Don't hammer reconnects, backoff if needed
     sleepFor(_autoReconnectBackoff.nextSleep());
 
-    LOG_DEBUG(20120,
-              _logLevel.toInt(),
-              "Trying to reconnect",
-              "connString"_attr = toString());
+    LOG_DEBUG(20120, _logLevel.toInt(), "Trying to reconnect", "connString"_attr = toString());
     string errmsg;
 
     auto connectStatus = connect(_serverAddress, _applicationName, _transientSSLParams);
@@ -600,10 +593,7 @@ void DBClientConnection::_checkConnection() {
         }
     }
 
-    LOG_DEBUG(20122,
-              _logLevel.toInt(),
-              "Reconnected",
-              "connString"_attr = toString());
+    LOG_DEBUG(20122, _logLevel.toInt(), "Reconnected", "connString"_attr = toString());
     if (_internalAuthOnReconnect) {
         uassertStatusOK(authenticateInternalUser(_internalAuthStepDownBehavior));
     } else {

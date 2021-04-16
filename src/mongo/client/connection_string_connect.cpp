@@ -68,10 +68,7 @@ StatusWith<std::unique_ptr<DBClientBase>> ConnectionString::connect(
                     true, 0, newURI, DBClientConnection::HandshakeValidationHook(), apiParameters);
 
                 c->setSoTimeout(socketTimeout);
-                LOG_DEBUG(20109,
-                          1,
-                          "Creating new connection",
-                          "hostAndPort"_attr = server);
+                LOG_DEBUG(20109, 1, "Creating new connection", "hostAndPort"_attr = server);
                 lastError = c->connect(
                     server,
                     applicationName,

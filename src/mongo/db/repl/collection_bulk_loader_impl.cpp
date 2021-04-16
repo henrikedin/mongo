@@ -221,10 +221,7 @@ Status CollectionBulkLoaderImpl::insertDocuments(const std::vector<BSONObj>::con
 Status CollectionBulkLoaderImpl::commit() {
     return _runTaskReleaseResourcesOnFailure([&] {
         _stats.startBuildingIndexes = Date_t::now();
-        LOG_DEBUG(21130,
-                  2,
-                  "Creating indexes",
-                  "namespace"_attr = _nss.ns());
+        LOG_DEBUG(21130, 2, "Creating indexes", "namespace"_attr = _nss.ns());
         UnreplicatedWritesBlock uwb(_opCtx.get());
 
         // Commit before deleting dups, so the dups will be removed from secondary indexes when

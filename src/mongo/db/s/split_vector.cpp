@@ -249,10 +249,7 @@ std::vector<BSONObj> splitVector(OperationContext* opCtx,
                         splitKeys.push_back(currKey.getOwned());
                         currCount = 0;
                         numChunks++;
-                        LOG_DEBUG(22110,
-                                  4,
-                                  "Picked a split key",
-                                  "key"_attr = redact(currKey));
+                        LOG_DEBUG(22110, 4, "Picked a split key", "key"_attr = redact(currKey));
                     }
                 }
 
@@ -314,15 +311,14 @@ std::vector<BSONObj> splitVector(OperationContext* opCtx,
         splitKeys.erase(splitKeys.begin());
 
         if (timer.millis() > serverGlobalParams.slowMS) {
-            LOG_WARNING(
-                22115,
-                "Finding the split vector completed",
-                "namespace"_attr = nss.toString(),
-                "keyPattern"_attr = redact(keyPattern),
-                "keyCount"_attr = keyCount,
-                "numSplits"_attr = splitKeys.size(),
-                "currCount"_attr = currCount,
-                "duration"_attr = Milliseconds(timer.millis()));
+            LOG_WARNING(22115,
+                        "Finding the split vector completed",
+                        "namespace"_attr = nss.toString(),
+                        "keyPattern"_attr = redact(keyPattern),
+                        "keyCount"_attr = keyCount,
+                        "numSplits"_attr = splitKeys.size(),
+                        "currCount"_attr = currCount,
+                        "duration"_attr = Milliseconds(timer.millis()));
         }
     }
 

@@ -451,11 +451,10 @@ Status dropChunksAndDeleteCollectionsEntry(OperationContext* opCtx, const Namesp
             }
         }
 
-        LOG_DEBUG(
-            22090,
-            1,
-            "Successfully cleared persisted chunk metadata and collection entry",
-            "namespace"_attr = nss);
+        LOG_DEBUG(22090,
+                  1,
+                  "Successfully cleared persisted chunk metadata and collection entry",
+                  "namespace"_attr = nss);
         return Status::OK();
     } catch (const DBException& ex) {
         return ex.toStatus();
@@ -498,10 +497,7 @@ Status deleteDatabasesEntry(OperationContext* opCtx, StringData dbName) {
         uassertStatusOK(
             getStatusFromWriteCommandResponse(deleteCommandResponse->getCommandReply()));
 
-        LOG_DEBUG(22092,
-                  1,
-                  "Successfully cleared persisted metadata for db",
-                  "db"_attr = dbName);
+        LOG_DEBUG(22092, 1, "Successfully cleared persisted metadata for db", "db"_attr = dbName);
         return Status::OK();
     } catch (const DBException& ex) {
         return ex.toStatus();

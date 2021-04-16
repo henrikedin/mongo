@@ -1457,10 +1457,7 @@ void ExecCommandDatabase::_initiateCommand() {
     }
 
     if (command->adminOnly()) {
-        LOG_DEBUG(21961,
-                  2,
-                  "Admin only command",
-                  "command"_attr = request.getCommandName());
+        LOG_DEBUG(21961, 2, "Admin only command", "command"_attr = request.getCommandName());
     }
 
     if (command->maintenanceMode()) {
@@ -1773,10 +1770,7 @@ Future<void> parseCommand(std::shared_ptr<HandleRequest::ExecutionContext> execC
     // Otherwise, reply with the parse error. This is useful for cases where parsing fails due to
     // user-supplied input, such as the document too deep error. Since we failed during parsing, we
     // can't log anything about the command.
-    LOG_DEBUG(21963,
-              1,
-              "Assertion while parsing command",
-              "error"_attr = ex.toString());
+    LOG_DEBUG(21963, 1, "Assertion while parsing command", "error"_attr = ex.toString());
 
     return ex.toStatus();
 }
@@ -1831,13 +1825,12 @@ Future<void> executeCommand(std::shared_ptr<HandleRequest::ExecutionContext> exe
                     .thenWithState([](auto* runner) { return runner->run(); });
             })
             .tapError([execContext](Status status) {
-                LOG_DEBUG(
-                    21966,
-                    1,
-                    "Assertion while executing command",
-                    "command"_attr = execContext->getRequest().getCommandName(),
-                    "db"_attr = execContext->getRequest().getDatabase(),
-                    "error"_attr = status.toString());
+                LOG_DEBUG(21966,
+                          1,
+                          "Assertion while executing command",
+                          "command"_attr = execContext->getRequest().getCommandName(),
+                          "db"_attr = execContext->getRequest().getDatabase(),
+                          "error"_attr = status.toString());
             });
     past.emplaceValue();
     return future;

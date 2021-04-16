@@ -297,9 +297,7 @@ void _logOpsInner(OperationContext* opCtx,
 
     Status result = oplogCollection->insertDocumentsForOplog(opCtx, records, timestamps);
     if (!result.isOK()) {
-        LOG_FATAL(17322,
-                  "Write to oplog failed",
-                  "error"_attr = result.toString());
+        LOG_FATAL(17322, "Write to oplog failed", "error"_attr = result.toString());
     }
 
     // Set replCoord last optime only after we're sure the WUOW didn't abort and roll back.
@@ -544,10 +542,7 @@ long long getNewOplogSizeBytes(OperationContext* opCtx, const ReplSettings& repl
     ProcessInfo pi;
     if (pi.getAddrSize() == 32) {
         const auto sz = 50LL * 1024LL * 1024LL;
-        LOG_DEBUG(21245,
-                  3,
-                  "Choosing oplog size for 32bit system",
-                  "oplogSizeBytes"_attr = sz);
+        LOG_DEBUG(21245, 3, "Choosing oplog size for 32bit system", "oplogSizeBytes"_attr = sz);
         return sz;
     }
     // First choose a minimum size.
@@ -555,10 +550,7 @@ long long getNewOplogSizeBytes(OperationContext* opCtx, const ReplSettings& repl
 #if defined(__APPLE__)
     // typically these are desktops (dev machines), so keep it smallish
     const auto sz = 192 * 1024 * 1024;
-    LOG_DEBUG(21246,
-              3,
-              "Choosing oplog size for Apple system",
-              "oplogSizeBytes"_attr = sz);
+    LOG_DEBUG(21246, 3, "Choosing oplog size for Apple system", "oplogSizeBytes"_attr = sz);
     return sz;
 #else
     long long lowerBound = 0;
@@ -632,9 +624,7 @@ void createOplog(OperationContext* opCtx,
     /* create an oplog collection, if it doesn't yet exist. */
     const auto sz = getNewOplogSizeBytes(opCtx, replSettings);
 
-    LOG(21251,
-        "Creating replication oplog",
-        "oplogSizeMB"_attr = (int)(sz / (1024 * 1024)));
+    LOG(21251, "Creating replication oplog", "oplogSizeMB"_attr = (int)(sz / (1024 * 1024)));
 
     CollectionOptions options;
     options.capped = true;

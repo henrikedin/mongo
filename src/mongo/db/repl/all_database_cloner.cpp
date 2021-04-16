@@ -244,10 +244,7 @@ void AllDatabaseCloner::postStage() {
                 adminStatus = getStorageInterface()->isAdminDbValid(opCtx);
             }
             if (!adminStatus.isOK()) {
-                LOG_DEBUG(21059,
-                          1,
-                          "Validation failed on 'admin' db",
-                          "error"_attr = adminStatus);
+                LOG_DEBUG(21059, 1, "Validation failed on 'admin' db", "error"_attr = adminStatus);
                 setSyncFailedStatus(adminStatus);
                 return;
             }

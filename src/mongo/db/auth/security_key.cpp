@@ -70,13 +70,12 @@ public:
 
     boost::optional<User::CredentialData> generate(const std::string& password) {
         if (password.size() < kMinKeyLength || password.size() > kMaxKeyLength) {
-            LOG_ERROR(
-                20255,
-                "Security key size is out range",
-                "filename"_attr = _filename,
-                "size"_attr = password.size(),
-                "minimumLength"_attr = kMinKeyLength,
-                "maximumLength"_attr = kMaxKeyLength);
+            LOG_ERROR(20255,
+                      "Security key size is out range",
+                      "filename"_attr = _filename,
+                      "size"_attr = password.size(),
+                      "minimumLength"_attr = kMinKeyLength,
+                      "maximumLength"_attr = kMaxKeyLength);
             return boost::none;
         }
 

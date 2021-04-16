@@ -114,10 +114,7 @@ TEST_F(FTDCFileManagerTest, TestFull) {
     for (auto& file : files) {
         int fs = boost::filesystem::file_size(file);
         ASSERT_TRUE(fs < c.maxFileSizeBytes * 1.10);
-        LOG(20632,
-            "File size",
-            "fileName"_attr = file.generic_string(),
-            "fileSize"_attr = fs);
+        LOG(20632, "File size", "fileName"_attr = file.generic_string(), "fileSize"_attr = fs);
         if (file.generic_string().find("interim") == std::string::npos) {
             sum += fs;
         }

@@ -138,9 +138,7 @@ std::vector<std::string> getAddrsForHost(const std::string& iporhost,
             err = getnameinfo(
                 addr->ai_addr, addr->ai_addrlen, host, NI_MAXHOST, nullptr, 0, NI_NUMERICHOST);
             if (err) {
-                LOG_WARNING(21208,
-                            "getnameinfo() failed",
-                            "error"_attr = stringifyError(err));
+                LOG_WARNING(21208, "getnameinfo() failed", "error"_attr = stringifyError(err));
                 continue;
             }
             out.push_back(host);
@@ -280,9 +278,7 @@ std::vector<std::string> getBoundAddrs(const bool ipv6enabled) {
 
     int err = getifaddrs(&addrs);
     if (err) {
-        LOG_WARNING(21210,
-                    "getifaddrs() failed",
-                    "error"_attr = errnoWithDescription(err));
+        LOG_WARNING(21210, "getifaddrs() failed", "error"_attr = errnoWithDescription(err));
         return out;
     }
     ON_BLOCK_EXIT([&] { freeifaddrs(addrs); });
@@ -304,9 +300,7 @@ std::vector<std::string> getBoundAddrs(const bool ipv6enabled) {
                 0,
                 NI_NUMERICHOST);
             if (err) {
-                LOG_WARNING(21211,
-                            "getnameinfo() failed",
-                            "error"_attr = gai_strerror(err));
+                LOG_WARNING(21211, "getnameinfo() failed", "error"_attr = gai_strerror(err));
                 continue;
             }
             out.push_back(host);
@@ -343,9 +337,8 @@ std::vector<std::string> getBoundAddrs(const bool ipv6enabled) {
     }
 
     if (err != NO_ERROR) {
-        LOG_WARNING(21212,
-                    "GetAdaptersAddresses() failed",
-                    "error"_attr = errnoWithDescription(err));
+        LOG_WARNING(
+            21212, "GetAdaptersAddresses() failed", "error"_attr = errnoWithDescription(err));
         return out;
     }
 

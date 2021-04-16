@@ -50,8 +50,8 @@
 #include "mongo/db/storage/control/journal_flusher.h"
 #include "mongo/log/log.h"
 #include "mongo/platform/basic.h"
-#include "mongo/util/log_with_sampling.h"
 #include "mongo/util/fail_point.h"
+#include "mongo/util/log_with_sampling.h"
 
 namespace mongo {
 namespace repl {
@@ -433,10 +433,7 @@ StatusWith<OpTime> OplogApplierImpl::_applyOplogBatch(OperationContext* opCtx,
                                                       std::vector<OplogEntry> ops) {
     invariant(!ops.empty());
 
-    LOG_DEBUG(21230,
-              2,
-              "Replication batch size",
-              "size"_attr = ops.size());
+    LOG_DEBUG(21230, 2, "Replication batch size", "size"_attr = ops.size());
 
     // Stop all readers until we're done. This also prevents doc-locking engines from deleting old
     // entries from the oplog until we finish writing.

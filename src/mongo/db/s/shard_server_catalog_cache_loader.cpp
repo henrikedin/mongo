@@ -740,13 +740,13 @@ ShardServerCatalogCacheLoader::_schedulePrimaryGetChunksSince(
             CollAndChunkTask{swCollectionAndChangedChunks, maxLoaderVersion, termScheduled});
     }
 
-    LOG_FOR_CATALOG_REFRESH(
-        24108,
-        1,
-        "Cache loader remotely refreshed for collection",
-        "namespace"_attr = nss,
-        "oldCollectionVersion"_attr = maxLoaderVersion,
-        "refreshedCollectionVersion"_attr = collAndChunks.changedChunks.back().getVersion());
+    LOG_FOR_CATALOG_REFRESH(24108,
+                            1,
+                            "Cache loader remotely refreshed for collection",
+                            "namespace"_attr = nss,
+                            "oldCollectionVersion"_attr = maxLoaderVersion,
+                            "refreshedCollectionVersion"_attr =
+                                collAndChunks.changedChunks.back().getVersion());
 
     // Metadata was found remotely
     // -- otherwise we would have received NamespaceNotFound rather than Status::OK().
@@ -1089,9 +1089,7 @@ void ShardServerCatalogCacheLoader::_runDbTasks(StringData dbName) {
         _updatePersistedDbMetadata(context.opCtx(), dbName);
         taskFinished = true;
     } catch (const ExceptionForCat<ErrorCategory::ShutdownError>&) {
-        LOG(22097,
-            "Failed to persist metadata update for db due to shutdown",
-            "db"_attr = dbName);
+        LOG(22097, "Failed to persist metadata update for db due to shutdown", "db"_attr = dbName);
         inShutdown = true;
     } catch (const DBException& ex) {
         LOG(22098,
@@ -1187,13 +1185,12 @@ void ShardServerCatalogCacheLoader::_updatePersistedCollAndChunksMetadata(
                       << nss.ns() << "' from '" << task.minQueryVersion.toString() << "' to '"
                       << task.maxQueryVersion.toString() << "'. Will be retried.");
 
-    LOG_FOR_CATALOG_REFRESH(
-        24112,
-        1,
-        "Successfully updated persisted chunk metadata for collection",
-        "namespace"_attr = nss,
-        "oldCollectionVersion"_attr = task.minQueryVersion,
-        "newCollectionVersion"_attr = task.maxQueryVersion);
+    LOG_FOR_CATALOG_REFRESH(24112,
+                            1,
+                            "Successfully updated persisted chunk metadata for collection",
+                            "namespace"_attr = nss,
+                            "oldCollectionVersion"_attr = task.minQueryVersion,
+                            "newCollectionVersion"_attr = task.maxQueryVersion);
 }
 
 void ShardServerCatalogCacheLoader::_updatePersistedDbMetadata(OperationContext* opCtx,
@@ -1223,10 +1220,8 @@ void ShardServerCatalogCacheLoader::_updatePersistedDbMetadata(OperationContext*
                                str::stream() << "Failed to update the persisted metadata for db '"
                                              << dbName.toString() << "'. Will be retried.");
 
-    LOG_FOR_CATALOG_REFRESH(24113,
-                            1,
-                            "Successfully updated persisted metadata for db",
-                            "db"_attr = dbName.toString());
+    LOG_FOR_CATALOG_REFRESH(
+        24113, 1, "Successfully updated persisted metadata for db", "db"_attr = dbName.toString());
 }
 
 CollectionAndChangedChunks

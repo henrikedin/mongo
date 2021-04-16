@@ -175,10 +175,8 @@ private:
                                           std::string setName,
                                           ConnectionString update) {
         if (ErrorCodes::isCancellationError(status.code())) {
-            LOG_DEBUG(22067,
-                      2,
-                      "Unable to schedule confirmed replica set update",
-                      "error"_attr = status);
+            LOG_DEBUG(
+                22067, 2, "Unable to schedule confirmed replica set update", "error"_attr = status);
             stdx::lock_guard lk(_mutex);
             _updateStates.erase(setName);
             return;
@@ -386,9 +384,7 @@ void ShardingInitializationMongoD::initializeFromShardIdentity(
         shardIdentity.validate(),
         "Invalid shard identity document found when initializing sharding state");
 
-    LOG(22072,
-        "Initializing sharding state",
-        "initialShardIdentity"_attr = shardIdentity);
+    LOG(22072, "Initializing sharding state", "initialShardIdentity"_attr = shardIdentity);
 
     const auto& configSvrConnStr = shardIdentity.getConfigsvrConnectionString();
 

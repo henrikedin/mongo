@@ -127,10 +127,7 @@ void ReplClientInfo::setLastOpToSystemLastOpTimeIgnoringInterrupt(OperationConte
     } catch (const ExceptionForCat<ErrorCategory::Interruption>& e) {
         // In most cases, it is safe to ignore interruption errors because we cannot use the same
         // OperationContext to wait for writeConcern anyways.
-        LOG_DEBUG(21281,
-                  2,
-                  "Ignoring set last op interruption error",
-                  "error"_attr = e.toStatus());
+        LOG_DEBUG(21281, 2, "Ignoring set last op interruption error", "error"_attr = e.toStatus());
     }
 }
 

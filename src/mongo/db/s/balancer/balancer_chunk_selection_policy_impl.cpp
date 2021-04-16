@@ -311,11 +311,10 @@ StatusWith<SplitInfoVector> BalancerChunkSelectionPolicyImpl::selectChunksToSpli
                             "error"_attr = candidatesStatus.getStatus());
 
             } else {
-                LOG_WARNING(
-                    21852,
-                    "Unable to enforce tag range policy for collection",
-                    "namespace"_attr = nss.ns(),
-                    "error"_attr = candidatesStatus.getStatus());
+                LOG_WARNING(21852,
+                            "Unable to enforce tag range policy for collection",
+                            "namespace"_attr = nss.ns(),
+                            "error"_attr = candidatesStatus.getStatus());
             }
 
             continue;

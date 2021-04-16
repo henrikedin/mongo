@@ -665,10 +665,7 @@ void TopologyCoordinator::blacklistSyncSource(const HostAndPort& host, Date_t un
 void TopologyCoordinator::unblacklistSyncSource(const HostAndPort& host, Date_t now) {
     std::map<HostAndPort, Date_t>::iterator hostItr = _syncSourceBlacklist.find(host);
     if (hostItr != _syncSourceBlacklist.end() && now >= hostItr->second) {
-        LOG_DEBUG(21801,
-                  2,
-                  "Unblacklisting sync source",
-                  "syncSource"_attr = host);
+        LOG_DEBUG(21801, 2, "Unblacklisting sync source", "syncSource"_attr = host);
         _syncSourceBlacklist.erase(hostItr);
     }
 }
@@ -968,13 +965,12 @@ HeartbeatResponseAction TopologyCoordinator::processHeartbeatResponse(
     }
 
     if (hbStats.failed()) {
-        LOG_FOR_HEARTBEATS(
-            23974,
-            0,
-            "Heartbeat failed after max retries",
-            "target"_attr = target,
-            "maxHeartbeatRetries"_attr = kMaxHeartbeatRetries,
-            "error"_attr = hbResponse.getStatus());
+        LOG_FOR_HEARTBEATS(23974,
+                           0,
+                           "Heartbeat failed after max retries",
+                           "target"_attr = target,
+                           "maxHeartbeatRetries"_attr = kMaxHeartbeatRetries,
+                           "error"_attr = hbResponse.getStatus());
     }
 
     HeartbeatResponseAction nextAction = HeartbeatResponseAction::makeNoAction();
@@ -1015,10 +1011,8 @@ HeartbeatResponseAction TopologyCoordinator::processHeartbeatResponse(
                           "currentConfig"_attr = _rsConfig.toBSON(),
                           "heartbeatConfig"_attr = newConfig.toBSON());
             } else {
-                LOG_DEBUG(4615647,
-                          2,
-                          "Heartbeat config",
-                          "heartbeatConfig"_attr = newConfig.toBSON());
+                LOG_DEBUG(
+                    4615647, 2, "Heartbeat config", "heartbeatConfig"_attr = newConfig.toBSON());
             }
         }
     }
@@ -1072,10 +1066,8 @@ HeartbeatResponseAction TopologyCoordinator::processHeartbeatResponse(
         }
     } else {
         ReplSetHeartbeatResponse hbr = std::move(hbResponse.getValue());
-        LOG_DEBUG(21808,
-                  3,
-                  "setUpValues: heartbeat response good",
-                  "memberId"_attr = member.getId());
+        LOG_DEBUG(
+            21808, 3, "setUpValues: heartbeat response good", "memberId"_attr = member.getId());
         pingsInConfig++;
         auto wasUnelectable = hbData.isUnelectable();
         advancedOpTimeOrUpdatedConfig = hbData.setUpValues(now, std::move(hbr));
@@ -2423,9 +2415,7 @@ std::string TopologyCoordinator::_getUnelectableReasonString(const UnelectableRe
         ss << "node is not a member of a valid replica set configuration";
     }
     if (!hasWrittenToStream) {
-        LOG_FATAL(26011,
-                  "Invalid UnelectableReasonMask value",
-                  "value"_attr = unsignedHex(ur));
+        LOG_FATAL(26011, "Invalid UnelectableReasonMask value", "value"_attr = unsignedHex(ur));
     }
     ss << " (mask 0x" << unsignedHex(ur) << ")";
     return ss;
@@ -2893,11 +2883,7 @@ TopologyCoordinator::UpdateTermResult TopologyCoordinator::updateTerm(long long 
     if (_iAmPrimary()) {
         return TopologyCoordinator::UpdateTermResult::kTriggerStepDown;
     }
-    LOG_DEBUG(21827,
-              1,
-              "Updating term",
-              "oldTerm"_attr = _term,
-              "newTerm"_attr = term);
+    LOG_DEBUG(21827, 1, "Updating term", "oldTerm"_attr = _term, "newTerm"_attr = term);
     _term = term;
     return TopologyCoordinator::UpdateTermResult::kUpdatedTerm;
 }

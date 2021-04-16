@@ -642,9 +642,7 @@ void ServiceStateMachine::Impl::cleanupExhaustResources() noexcept try {
         _sep->handleRequest(opCtx.get(), makeKillCursorsMessage(cursorId)).get();
     }
 } catch (const DBException& e) {
-    LOG(22992,
-        "Error cleaning up resources for exhaust requests",
-        "error"_attr = e.toStatus());
+    LOG(22992, "Error cleaning up resources for exhaust requests", "error"_attr = e.toStatus());
 }
 
 void ServiceStateMachine::Impl::setCleanupHook(std::function<void()> hook) {

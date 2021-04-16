@@ -151,10 +151,8 @@ Status modifyRecoveryDocument(OperationContext* opCtx,
         auto const grid = Grid::get(opCtx);
         BSONObj updateObj = RecoveryDocument::createChangeObj(grid->configOpTime(), change);
 
-        LOG_DEBUG(22083,
-                  1,
-                  "Changing sharding recovery document",
-                  "update"_attr = redact(updateObj));
+        LOG_DEBUG(
+            22083, 1, "Changing sharding recovery document", "update"_attr = redact(updateObj));
 
         auto updateReq = UpdateRequest();
         updateReq.setNamespaceString(NamespaceString::kServerConfigurationNamespace);
@@ -201,9 +199,7 @@ void ShardingStateRecovery::endMetadataOp(OperationContext* opCtx) {
     Status status =
         modifyRecoveryDocument(opCtx, RecoveryDocument::Decrement, WriteConcernOptions());
     if (!status.isOK()) {
-        LOG_WARNING(22088,
-                    "Failed to decrement minOpTimeUpdaters",
-                    "error"_attr = redact(status));
+        LOG_WARNING(22088, "Failed to decrement minOpTimeUpdaters", "error"_attr = redact(status));
     }
 }
 
@@ -262,9 +258,7 @@ Status ShardingStateRecovery::recover(OperationContext* opCtx) {
     if (!status.isOK())
         return status;
 
-    LOG(22087,
-        "Sharding state recovered",
-        "newConfigServerOpTime"_attr = grid->configOpTime());
+    LOG(22087, "Sharding state recovered", "newConfigServerOpTime"_attr = grid->configOpTime());
 
     // Finally, clear the recovery document so next time we don't need to recover
     status = modifyRecoveryDocument(opCtx, RecoveryDocument::Clear, kLocalWriteConcern);

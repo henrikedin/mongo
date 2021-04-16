@@ -384,9 +384,7 @@ ExitCode _initAndListen(ServiceContext* serviceContext, int listenPort) {
             transport::TransportLayerManager::createWithConfig(&serverGlobalParams, serviceContext);
         auto res = tl->setup();
         if (!res.isOK()) {
-            LOG_ERROR(20568,
-                      "Error setting up listener",
-                      "error"_attr = res);
+            LOG_ERROR(20568, "Error setting up listener", "error"_attr = res);
             return EXIT_NET_ERROR;
         }
         serviceContext->setTransportLayer(std::move(tl));
@@ -518,9 +516,7 @@ ExitCode _initAndListen(ServiceContext* serviceContext, int listenPort) {
     if (globalAuthzManager->shouldValidateAuthSchemaOnStartup()) {
         Status status = verifySystemIndexes(startupOpCtx.get());
         if (!status.isOK()) {
-            LOG_WARNING(20538,
-                        "Unable to verify system indexes",
-                        "error"_attr = redact(status));
+            LOG_WARNING(20538, "Unable to verify system indexes", "error"_attr = redact(status));
             if (status == ErrorCodes::AuthSchemaIncompatible) {
                 exitCleanly(EXIT_NEED_UPGRADE);
             } else if (status == ErrorCodes::NotWritablePrimary) {
@@ -536,11 +532,10 @@ ExitCode _initAndListen(ServiceContext* serviceContext, int listenPort) {
         status =
             globalAuthzManager->getAuthorizationVersion(startupOpCtx.get(), &foundSchemaVersion);
         if (!status.isOK()) {
-            LOG_ERROR(
-                20539,
-                "Failed to verify auth schema version",
-                "minSchemaVersion"_attr = AuthorizationManager::schemaVersion26Final,
-                "error"_attr = status);
+            LOG_ERROR(20539,
+                      "Failed to verify auth schema version",
+                      "minSchemaVersion"_attr = AuthorizationManager::schemaVersion26Final,
+                      "error"_attr = status);
             LOG(20540,
                 "To manually repair the 'authSchema' document in the admin.system.version "
                 "collection, start up with --setParameter "
@@ -581,9 +576,7 @@ ExitCode _initAndListen(ServiceContext* serviceContext, int listenPort) {
     if (shardingInitialized) {
         auto status = waitForShardRegistryReload(startupOpCtx.get());
         if (!status.isOK()) {
-            LOG(20545,
-                "Error loading shard registry at startup",
-                "error"_attr = redact(status));
+            LOG(20545, "Error loading shard registry at startup", "error"_attr = redact(status));
         }
     }
 
@@ -736,18 +729,14 @@ ExitCode _initAndListen(ServiceContext* serviceContext, int listenPort) {
 
     auto start = serviceContext->getServiceEntryPoint()->start();
     if (!start.isOK()) {
-        LOG_ERROR(20571,
-                  "Error starting service entry point",
-                  "error"_attr = start);
+        LOG_ERROR(20571, "Error starting service entry point", "error"_attr = start);
         return EXIT_NET_ERROR;
     }
 
     if (!storageGlobalParams.repair) {
         start = serviceContext->getTransportLayer()->start();
         if (!start.isOK()) {
-            LOG_ERROR(20572,
-                      "Error starting listener",
-                      "error"_attr = start);
+            LOG_ERROR(20572, "Error starting listener", "error"_attr = start);
             return EXIT_NET_ERROR;
         }
     }
@@ -776,19 +765,13 @@ ExitCode initAndListen(ServiceContext* service, int listenPort) {
     try {
         return _initAndListen(service, listenPort);
     } catch (DBException& e) {
-        LOG_ERROR(20557,
-                  "DBException in initAndListen, terminating",
-                  "error"_attr = e.toString());
+        LOG_ERROR(20557, "DBException in initAndListen, terminating", "error"_attr = e.toString());
         return EXIT_UNCAUGHT;
     } catch (std::exception& e) {
-        LOG_ERROR(20558,
-                  "std::exception in initAndListen, terminating",
-                  "error"_attr = e.what());
+        LOG_ERROR(20558, "std::exception in initAndListen, terminating", "error"_attr = e.what());
         return EXIT_UNCAUGHT;
     } catch (int& n) {
-        LOG_ERROR(20559,
-                  "Exception in initAndListen, terminating",
-                  "reason"_attr = n);
+        LOG_ERROR(20559, "Exception in initAndListen, terminating", "reason"_attr = n);
         return EXIT_UNCAUGHT;
     } catch (...) {
         LOG_ERROR(20560, "Exception in initAndListen, terminating");

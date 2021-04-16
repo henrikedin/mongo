@@ -152,9 +152,7 @@ bool FailPoint::Impl::_evaluateByMode() {
             // positive again
             return _modeValue.load() <= 0 || _modeValue.subtractAndFetch(1) < 0;
         default:
-            LOG_ERROR(23832,
-                      "FailPoint mode not supported",
-                      "mode"_attr = static_cast<int>(_mode));
+            LOG_ERROR(23832, "FailPoint mode not supported", "mode"_attr = static_cast<int>(_mode));
             fassertFailed(16444);
     }
 }

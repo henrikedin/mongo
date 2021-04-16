@@ -267,9 +267,7 @@ void ShardRegistry::shutdown() {
 void ShardRegistry::_periodicReload(const CallbackArgs& cbArgs) {
     LOG_DEBUG(22726, 1, "Reloading shardRegistry");
     if (!cbArgs.status.isOK()) {
-        LOG_WARNING(22734,
-                    "Error reloading shard registry",
-                    "error"_attr = redact(cbArgs.status));
+        LOG_WARNING(22734, "Error reloading shard registry", "error"_attr = redact(cbArgs.status));
         return;
     }
 

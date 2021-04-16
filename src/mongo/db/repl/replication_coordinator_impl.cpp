@@ -794,9 +794,7 @@ void ReplicationCoordinatorImpl::_startDataReplication(OperationContext* opCtx,
         LOG_DEBUG(4280514, 1, "Initial sync started");
     } catch (const DBException& e) {
         auto status = e.toStatus();
-        LOG(21327,
-            "Initial Sync failed to start",
-            "error"_attr = status);
+        LOG(21327, "Initial Sync failed to start", "error"_attr = status);
         if (ErrorCodes::CallbackCanceled == status || ErrorCodes::isShutdownError(status.code())) {
             return;
         }
@@ -952,9 +950,7 @@ void ReplicationCoordinatorImpl::shutdown(OperationContext* opCtx) {
         LOG_DEBUG(21329, 1, "ReplicationCoordinatorImpl::shutdown calling InitialSyncer::shutdown");
         const auto status = initialSyncerCopy->shutdown();
         if (!status.isOK()) {
-            LOG_WARNING(21410,
-                        "InitialSyncer shutdown failed",
-                        "error"_attr = status);
+            LOG_WARNING(21410, "InitialSyncer shutdown failed", "error"_attr = status);
         }
         initialSyncerCopy->join();
         initialSyncerCopy.reset();
@@ -2066,9 +2062,7 @@ void ReplicationCoordinatorImpl::updateAndLogStateTransitionMetrics(
     bob.appendNumber("userOpsKilled", userOpsKilled.get());
     bob.appendNumber("userOpsRunning", userOpsRunning.get());
 
-    LOG(21340,
-        "State transition ops metrics",
-        "metrics"_attr = bob.obj());
+    LOG(21340, "State transition ops metrics", "metrics"_attr = bob.obj());
 }
 
 long long ReplicationCoordinatorImpl::_calculateRemainingQuiesceTimeMillis() const {
@@ -3299,9 +3293,8 @@ Status ReplicationCoordinatorImpl::_doReplSetReconfig(OperationContext* opCtx,
                           "Cannot run replSetReconfig because the node is currently updating "
                           "its configuration");
         default:
-            LOG_FATAL(18914,
-                      "Unexpected _rsConfigState",
-                      "_rsConfigState"_attr = int(_rsConfigState));
+            LOG_FATAL(
+                18914, "Unexpected _rsConfigState", "_rsConfigState"_attr = int(_rsConfigState));
     }
 
     invariant(_rsConfig.isInitialized());
@@ -3466,9 +3459,7 @@ Status ReplicationCoordinatorImpl::_doReplSetReconfig(OperationContext* opCtx,
         status =
             checkQuorumForReconfig(_replExecutor.get(), newConfig, myIndex, _topCoord->getTerm());
         if (!status.isOK()) {
-            LOG_ERROR(21421,
-                      "replSetReconfig failed",
-                      "error"_attr = status);
+            LOG_ERROR(21421, "replSetReconfig failed", "error"_attr = status);
             return status;
         }
     }
@@ -3491,9 +3482,8 @@ Status ReplicationCoordinatorImpl::_doReplSetReconfig(OperationContext* opCtx,
             newConfig.toBSON(),
             !force && _readWriteAbility->canAcceptNonLocalWrites(opCtx) /* writeOplog */);
         if (!status.isOK()) {
-            LOG_ERROR(21422,
-                      "replSetReconfig failed to store config document",
-                      "error"_attr = status);
+            LOG_ERROR(
+                21422, "replSetReconfig failed to store config document", "error"_attr = status);
             return status;
         }
     }
@@ -3846,9 +3836,7 @@ Status ReplicationCoordinatorImpl::processReplSetInitiate(OperationContext* opCt
         _replExecutor.get(), newConfig, myIndex.getValue(), OpTime::kInitialTerm);
 
     if (!status.isOK()) {
-        LOG_ERROR(21426,
-                  "replSetInitiate failed",
-                  "error"_attr = status);
+        LOG_ERROR(21426, "replSetInitiate failed", "error"_attr = status);
         return status;
     }
 
@@ -4270,9 +4258,7 @@ void ReplicationCoordinatorImpl::CatchupState::signalHeartbeatUpdate_inlock() {
 
     ReplicationMetrics::get(getGlobalServiceContext()).setTargetCatchupOpTime(_targetOpTime);
 
-    LOG(21365,
-        "Heartbeats updated catchup target optime",
-        "targetOpTime"_attr = _targetOpTime);
+    LOG(21365, "Heartbeats updated catchup target optime", "targetOpTime"_attr = _targetOpTime);
     LOG(21366, "Latest known optime per replica set member");
     auto opTimesPerMember = _repl->_topCoord->latestKnownOpTimeSinceHeartbeatRestartPerMember();
     for (auto&& pair : opTimesPerMember) {
@@ -4486,9 +4472,7 @@ ReplicationCoordinatorImpl::_setCurrentRSConfig(WithLock lk,
     // If the SplitHorizon has changed, reply to all waiting hellos with an error.
     _errorOnPromisesIfHorizonChanged(lk, opCtx, oldConfig, newConfig, _selfIndex, myIndex);
 
-    LOG(21392,
-        "New replica set config in use",
-        "config"_attr = _rsConfig.toBSON());
+    LOG(21392, "New replica set config in use", "config"_attr = _rsConfig.toBSON());
     _selfIndex = myIndex;
     if (_selfIndex >= 0) {
         LOG(21393,
@@ -4904,10 +4888,7 @@ void ReplicationCoordinatorImpl::_setStableTimestampForStorage(WithLock lk) {
     }
 
     // Set the stable timestamp and update the committed snapshot.
-    LOG_DEBUG(21396,
-              2,
-              "Setting replication's stable optime",
-              "stableOpTime"_attr = stableOpTime);
+    LOG_DEBUG(21396, 2, "Setting replication's stable optime", "stableOpTime"_attr = stableOpTime);
 
     // As arbiters aren't data bearing nodes, the all durable timestamp does not get advanced. To
     // advance the all durable timestamp when setting the stable timestamp we use 'force=true'.

@@ -87,11 +87,8 @@ void DBException::traceIfNeeded(const DBException& e) {
 
 MONGO_COMPILER_NOINLINE void verifyFailed(const char* expr, const char* file, unsigned line) {
     assertionCount.condrollover(assertionCount.regular.addAndFetch(1));
-    LOG_ERROR(23076,
-              "Assertion failure",
-              "expr"_attr = expr,
-              "file"_attr = file,
-              "line"_attr = line);
+    LOG_ERROR(
+        23076, "Assertion failure", "expr"_attr = expr, "file"_attr = file, "line"_attr = line);
     printStackTrace();
     std::stringstream temp;
     temp << "assertion " << file << ":" << line;
@@ -109,11 +106,8 @@ MONGO_COMPILER_NOINLINE void verifyFailed(const char* expr, const char* file, un
 MONGO_COMPILER_NOINLINE void invariantFailed(const char* expr,
                                              const char* file,
                                              unsigned line) noexcept {
-    LOG_FATAL_CONTINUE(23079,
-                       "Invariant failure",
-                       "expr"_attr = expr,
-                       "file"_attr = file,
-                       "line"_attr = line);
+    LOG_FATAL_CONTINUE(
+        23079, "Invariant failure", "expr"_attr = expr, "file"_attr = file, "line"_attr = line);
     breakpoint();
     LOG_FATAL_CONTINUE(23080, "\n\n***aborting after invariant() failure\n\n");
     std::abort();
@@ -182,11 +176,8 @@ MONGO_COMPILER_NOINLINE void invariantStatusOKFailed(const Status& status,
 MONGO_COMPILER_NOINLINE void fassertFailedWithLocation(int msgid,
                                                        const char* file,
                                                        unsigned line) noexcept {
-    LOG_FATAL_CONTINUE(23089,
-                       "Fatal assertion",
-                       "msgid"_attr = msgid,
-                       "file"_attr = file,
-                       "line"_attr = line);
+    LOG_FATAL_CONTINUE(
+        23089, "Fatal assertion", "msgid"_attr = msgid, "file"_attr = file, "line"_attr = line);
     breakpoint();
     LOG_FATAL_CONTINUE(23090, "\n\n***aborting after fassert() failure\n\n");
     std::abort();
@@ -195,11 +186,8 @@ MONGO_COMPILER_NOINLINE void fassertFailedWithLocation(int msgid,
 MONGO_COMPILER_NOINLINE void fassertFailedNoTraceWithLocation(int msgid,
                                                               const char* file,
                                                               unsigned line) noexcept {
-    LOG_FATAL_CONTINUE(23091,
-                       "Fatal assertion",
-                       "msgid"_attr = msgid,
-                       "file"_attr = file,
-                       "line"_attr = line);
+    LOG_FATAL_CONTINUE(
+        23091, "Fatal assertion", "msgid"_attr = msgid, "file"_attr = file, "line"_attr = line);
     breakpoint();
     LOG_FATAL_CONTINUE(23092, "\n\n***aborting after fassert() failure\n\n");
     quickExit(EXIT_ABRUPT);
@@ -252,11 +240,8 @@ MONGO_COMPILER_NOINLINE void msgassertedWithLocation(const Status& status,
                                                      const char* file,
                                                      unsigned line) {
     assertionCount.condrollover(assertionCount.msg.addAndFetch(1));
-    LOG_ERROR(23077,
-              "Assertion",
-              "error"_attr = redact(status),
-              "file"_attr = file,
-              "line"_attr = line);
+    LOG_ERROR(
+        23077, "Assertion", "error"_attr = redact(status), "file"_attr = file, "line"_attr = line);
     error_details::throwExceptionForStatus(status);
 }
 

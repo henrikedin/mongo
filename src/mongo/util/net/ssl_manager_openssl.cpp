@@ -2985,13 +2985,11 @@ Future<SSLPeerInfo> SSLManagerOpenSSL::parseAndValidatePeerCertificate(
         if (_weakValidation) {
             // do not give warning if certificate warnings are  suppressed
             if (!_suppressNoCertificateWarning) {
-                LOG_WARNING(23234,
-                            "No SSL certificate provided by peer");
+                LOG_WARNING(23234, "No SSL certificate provided by peer");
             }
             return SSLPeerInfo(sni);
         } else {
-            LOG_ERROR(23255,
-                      "No SSL certificate provided by peer; connection rejected");
+            LOG_ERROR(23255, "No SSL certificate provided by peer; connection rejected");
             return Status(ErrorCodes::SSLHandshakeFailed,
                           "no SSL certificate provided by peer; connection rejected");
         }
@@ -3010,9 +3008,7 @@ Future<SSLPeerInfo> SSLManagerOpenSSL::parseAndValidatePeerCertificate(
             str::stream msg;
             msg << "SSL peer certificate validation failed: "
                 << X509_verify_cert_error_string(result);
-            LOG_ERROR(23256,
-                      "SSL peer certificate validation failed",
-                      "error"_attr = msg.ss.str());
+            LOG_ERROR(23256, "SSL peer certificate validation failed", "error"_attr = msg.ss.str());
             return Status(ErrorCodes::SSLHandshakeFailed, msg);
         }
     }
@@ -3028,10 +3024,7 @@ Future<SSLPeerInfo> SSLManagerOpenSSL::parseAndValidatePeerCertificate(
 
     // TODO: check optional cipher restriction, using cert.
     auto peerSubject = getCertificateSubjectX509Name(peerCert);
-    LOG_DEBUG(23229,
-              2,
-              "Accepted TLS connection from peer",
-              "peerSubject"_attr = peerSubject);
+    LOG_DEBUG(23229, 2, "Accepted TLS connection from peer", "peerSubject"_attr = peerSubject);
 
     StatusWith<stdx::unordered_set<RoleName>> swPeerCertificateRoles = _parsePeerRoles(peerCert);
     if (!swPeerCertificateRoles.isOK()) {
@@ -3271,9 +3264,7 @@ void SSLManagerOpenSSL::_handleSSLError(SSLConnectionOpenSSL* conn, int ret) {
             // manner.
             errToThrow = (code == SSL_ERROR_WANT_READ) ? SocketErrorKind::RECV_ERROR
                                                        : SocketErrorKind::SEND_ERROR;
-            LOG_ERROR(23258,
-                      "SSL: possibly timed out during connect",
-                      "error"_attr = code);
+            LOG_ERROR(23258, "SSL: possibly timed out during connect", "error"_attr = code);
             break;
 
         case SSL_ERROR_ZERO_RETURN:
@@ -3285,8 +3276,7 @@ void SSLManagerOpenSSL::_handleSSLError(SSLConnectionOpenSSL* conn, int ret) {
             // If ERR_get_error returned 0, the error queue is empty
             // check the return value of the actual SSL operation
             if (err != 0) {
-                LOG_ERROR(
-                    23260, "SSL error", "error"_attr = getSSLErrorMessage(err));
+                LOG_ERROR(23260, "SSL error", "error"_attr = getSSLErrorMessage(err));
             } else if (ret == 0) {
                 LOG_ERROR(23261, "Unexpected EOF encountered during SSL communication");
             } else {

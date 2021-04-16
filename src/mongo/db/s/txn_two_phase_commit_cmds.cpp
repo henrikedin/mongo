@@ -206,13 +206,12 @@ std::set<ShardId> validateParticipants(OperationContext* opCtx,
     }
     ss << ']';
 
-    LOG_DEBUG(
-        22484,
-        3,
-        "Coordinator shard received request to coordinate commit",
-        "sessionId"_attr = opCtx->getLogicalSessionId()->getId(),
-        "txnNumber"_attr = opCtx->getTxnNumber(),
-        "participantList"_attr = ss.str());
+    LOG_DEBUG(22484,
+              3,
+              "Coordinator shard received request to coordinate commit",
+              "sessionId"_attr = opCtx->getLogicalSessionId()->getId(),
+              "txnNumber"_attr = opCtx->getTxnNumber(),
+              "participantList"_attr = ss.str());
 
     return participantsSet;
 }

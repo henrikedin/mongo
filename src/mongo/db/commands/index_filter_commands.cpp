@@ -263,9 +263,7 @@ Status ClearFilters::clear(OperationContext* opCtx,
         // Remove entry from plan cache
         planCache->remove(*cq).transitional_ignore();
 
-        LOG(20479,
-            "Removed index filter on query",
-            "query"_attr = redact(cq->toStringShort()));
+        LOG(20479, "Removed index filter on query", "query"_attr = redact(cq->toStringShort()));
 
         return Status::OK();
     }
@@ -322,9 +320,7 @@ Status ClearFilters::clear(OperationContext* opCtx,
         planCache->remove(*cq).transitional_ignore();
     }
 
-    LOG(20480,
-        "Removed all index filters for collection",
-        "namespace"_attr = ns);
+    LOG(20480, "Removed all index filters for collection", "namespace"_attr = ns);
 
     return Status::OK();
 }

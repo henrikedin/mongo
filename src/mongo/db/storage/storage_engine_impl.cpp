@@ -284,9 +284,7 @@ void StorageEngineImpl::loadCatalog(OperationContext* opCtx, bool loadingFromUnc
         _initCollection(opCtx, entry.catalogId, entry.nss, _options.forRepair, minVisibleTs);
 
         if (entry.nss.isOrphanCollection()) {
-            LOG(22248,
-                "Orphaned collection found",
-                "namespace"_attr = entry.nss);
+            LOG(22248, "Orphaned collection found", "namespace"_attr = entry.nss);
         }
     }
 
@@ -1184,9 +1182,7 @@ void StorageEngineImpl::TimestampMonitor::startup() {
                     throw;
                 // If we're interrupted at shutdown or after PeriodicRunner's client has been
                 // killed, it's fine to give up on future notifications.
-                LOG(22263,
-                    "Timestamp monitor is stopping",
-                    "error"_attr = ex.reason());
+                LOG(22263, "Timestamp monitor is stopping", "error"_attr = ex.reason());
                 return;
             }
         },

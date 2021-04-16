@@ -361,10 +361,8 @@ void DBClientReplicaSet::_authConnection(DBClientConnection* conn) {
     if (_internalAuthRequested) {
         auto status = conn->authenticateInternalUser();
         if (!status.isOK()) {
-            LOG_WARNING(20148,
-                        "Cached auth failed",
-                        "replicaSet"_attr = _setName,
-                        "error"_attr = status);
+            LOG_WARNING(
+                20148, "Cached auth failed", "replicaSet"_attr = _setName, "error"_attr = status);
         }
         return;
     }
@@ -773,10 +771,7 @@ DBClientConnection* DBClientReplicaSet::selectNodeUsingTags(
     if (monitor->isPrimary(selectedNode)) {
         checkPrimary();
 
-        LOG_DEBUG(20139,
-                  3,
-                  "dbclient_rs selecting primary node",
-                  "connString"_attr = selectedNode);
+        LOG_DEBUG(20139, 3, "dbclient_rs selecting primary node", "connString"_attr = selectedNode);
 
         _lastSecondaryOkConn = _primary;
 
@@ -810,10 +805,7 @@ DBClientConnection* DBClientReplicaSet::selectNodeUsingTags(
         }
     }
 
-    LOG_DEBUG(20140,
-              3,
-              "dbclient_rs selecting node",
-              "connString"_attr = _lastSecondaryOkHost);
+    LOG_DEBUG(20140, 3, "dbclient_rs selecting node", "connString"_attr = _lastSecondaryOkHost);
 
     return _lastSecondaryOkConn.get();
 }
@@ -885,10 +877,8 @@ void DBClientReplicaSet::say(Message& toSend, bool isRetry, string* actualServer
         }
     }
 
-    LOG_DEBUG(20142,
-              3,
-              "dbclient_rs say to primary node",
-              "replicaSet"_attr = _getMonitor()->getName());
+    LOG_DEBUG(
+        20142, 3, "dbclient_rs say to primary node", "replicaSet"_attr = _getMonitor()->getName());
 
     DBClientConnection* primary = checkPrimary();
     if (actualServer)
@@ -1110,10 +1100,8 @@ bool DBClientReplicaSet::call(Message& toSend,
         }
     }
 
-    LOG_DEBUG(20146,
-              3,
-              "dbclient_rs call to primary node",
-              "replicaSet"_attr = _getMonitor()->getName());
+    LOG_DEBUG(
+        20146, 3, "dbclient_rs call to primary node", "replicaSet"_attr = _getMonitor()->getName());
 
     DBClientConnection* m = checkPrimary();
     if (actualServer)

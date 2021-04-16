@@ -59,9 +59,9 @@
 #include "mongo/db/ttl_gen.h"
 #include "mongo/db/views/view_catalog.h"
 #include "mongo/log/log.h"
-#include "mongo/util/log_with_sampling.h"
 #include "mongo/util/background.h"
 #include "mongo/util/concurrency/idle_thread_block.h"
+#include "mongo/util/log_with_sampling.h"
 
 namespace mongo {
 

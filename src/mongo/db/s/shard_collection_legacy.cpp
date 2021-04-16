@@ -100,9 +100,7 @@ const ReadPreferenceSetting kConfigReadSelector(ReadPreference::Nearest, TagSet{
  */
 void uassertStatusOKWithWarning(const Status& status) {
     if (!status.isOK()) {
-        LOG_WARNING(22103,
-                    "shardsvrShardCollection failed",
-                    "error"_attr = redact(status));
+        LOG_WARNING(22103, "shardsvrShardCollection failed", "error"_attr = redact(status));
         uassertStatusOK(status);
     }
 }

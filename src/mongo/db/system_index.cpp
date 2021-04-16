@@ -115,10 +115,8 @@ void generateSystemIndexForExistingCollection(OperationContext* opCtx,
         IndexBuildsCoordinator::get(opCtx)->createIndex(
             opCtx, collectionUUID, indexSpec, indexConstraints, fromMigrate);
     } catch (const DBException& e) {
-        LOG_FATAL_CONTINUE(22490,
-                           "Failed to regenerate index",
-                           logAttrs(ns),
-                           "error"_attr = e.what());
+        LOG_FATAL_CONTINUE(
+            22490, "Failed to regenerate index", logAttrs(ns), "error"_attr = e.what());
         throw;
     }
 }

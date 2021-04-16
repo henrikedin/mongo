@@ -546,9 +546,7 @@ Status Cloner::copyDb(OperationContext* opCtx,
 
     // now build the secondary indexes
     for (auto&& params : createCollectionParams) {
-        LOG(20422,
-            "Copying indexes",
-            "collectionInfo"_attr = params.collectionInfo);
+        LOG(20422, "Copying indexes", "collectionInfo"_attr = params.collectionInfo);
 
         const NamespaceString nss(dBName, params.collectionName);
 

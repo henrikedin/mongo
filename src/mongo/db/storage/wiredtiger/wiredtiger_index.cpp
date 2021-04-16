@@ -1095,11 +1095,10 @@ protected:
 
             if (nextNotIncreasing) {
                 // Our new key is less than the old key which means the next call moved to !next.
-                LOG_ERROR(
-                    51790,
-                    "WTIndex::updatePosition -- new key is less than previous key",
-                    "newKey"_attr = redact(hexblob::encode(item.data, item.size)),
-                    "prevKey"_attr = redact(_key.toString()));
+                LOG_ERROR(51790,
+                          "WTIndex::updatePosition -- new key is less than previous key",
+                          "newKey"_attr = redact(hexblob::encode(item.data, item.size)),
+                          "prevKey"_attr = redact(_key.toString()));
 
                 // Crash when testing diagnostics are enabled.
                 invariant(!TestingProctor::instance().isEnabled());

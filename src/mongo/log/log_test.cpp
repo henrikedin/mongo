@@ -40,13 +40,13 @@
 #include "mongo/bson/bsonobjbuilder.h"
 #include "mongo/bson/json.h"
 #include "mongo/bson/oid.h"
-#include "mongo/log/log_capture_backend.h"
 #include "mongo/log/bson_formatter.h"
 #include "mongo/log/component_settings_filter.h"
 #include "mongo/log/composite_backend.h"
 #include "mongo/log/constants.h"
 #include "mongo/log/json_formatter.h"
 #include "mongo/log/log.h"
+#include "mongo/log/log_capture_backend.h"
 #include "mongo/log/log_component.h"
 #include "mongo/log/log_domain.h"
 #include "mongo/log/log_domain_global.h"
@@ -1311,9 +1311,7 @@ TEST_F(logContainerTest, StringMapUint32) {
 
 TEST_F(logTest, AttrNameCollision) {
     ASSERT_THROWS_CODE(
-        LOG(4793300, "Collision", "k1"_attr = "v1", "k1"_attr = "v2"),
-        AssertionException,
-        4793301);
+        LOG(4793300, "Collision", "k1"_attr = "v1", "k1"_attr = "v2"), AssertionException, 4793301);
 }
 
 TEST_F(logTest, Unicode) {

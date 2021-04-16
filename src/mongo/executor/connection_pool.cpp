@@ -815,10 +815,8 @@ void ConnectionPool::SpecificPool::returnConnection(ConnectionInterface* connPtr
 
         _processingPool[connPtr] = std::move(conn);
 
-        LOG_DEBUG(22568,
-                  kDiagnosticLogLevel,
-                  "Refreshing connection",
-                  "hostAndPort"_attr = _hostAndPort);
+        LOG_DEBUG(
+            22568, kDiagnosticLogLevel, "Refreshing connection", "hostAndPort"_attr = _hostAndPort);
         connPtr->refresh(_parent->_controller->pendingTimeout(),
                          guardCallback([this](auto conn, auto status) {
                              finishRefresh(std::move(conn), std::move(status));
@@ -878,10 +876,7 @@ void ConnectionPool::SpecificPool::triggerShutdown(const Status& status) {
         return;
     }
 
-    LOG_DEBUG(22571,
-              2,
-              "Delistinng connection pool",
-              "hostAndPort"_attr = _hostAndPort);
+    LOG_DEBUG(22571, 2, "Delistinng connection pool", "hostAndPort"_attr = _hostAndPort);
 
     // Make sure the pool lifetime lasts until the end of this function,
     // it could be only in the map of pools
@@ -934,10 +929,7 @@ void ConnectionPool::SpecificPool::processFailure(const Status& status) {
         request.second.setError(status);
     }
 
-    LOG_DEBUG(22573,
-              kDiagnosticLogLevel,
-              "Failing requests",
-              "hostAndPort"_attr = _hostAndPort);
+    LOG_DEBUG(22573, kDiagnosticLogLevel, "Failing requests", "hostAndPort"_attr = _hostAndPort);
     _requests.clear();
 }
 
@@ -1197,10 +1189,7 @@ void ConnectionPool::SpecificPool::updateController() {
 void ConnectionPool::SpecificPool::updateState() {
     if (_health.isShutdown) {
         // If we're in shutdown, there is nothing to update. Our clients are all gone.
-        LOG_DEBUG(22579,
-                  kDiagnosticLogLevel,
-                  "Pool is dead",
-                  "hostAndPort"_attr = _hostAndPort);
+        LOG_DEBUG(22579, kDiagnosticLogLevel, "Pool is dead", "hostAndPort"_attr = _hostAndPort);
         return;
     }
 

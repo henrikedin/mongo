@@ -157,10 +157,7 @@ void SessionCatalog::scanSessions(const SessionKiller::Matcher& matcher,
     {
         stdx::lock_guard<Latch> lg(_mutex);
 
-        LOG_DEBUG(21976,
-                  2,
-                  "Scanning sessions",
-                  "sessionCount"_attr = _sessions.size());
+        LOG_DEBUG(21976, 2, "Scanning sessions", "sessionCount"_attr = _sessions.size());
 
         for (auto it = _sessions.begin(); it != _sessions.end(); ++it) {
             if (matcher.match(it->first)) {

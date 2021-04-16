@@ -285,9 +285,8 @@ void ThreadPool::Impl::_joinRetired_inlock() {
 void ThreadPool::Impl::_join_inlock(stdx::unique_lock<Latch>* lk) {
     _stateChange.wait(*lk, [this] { return _state != preStart && _state != running; });
     if (_state != joinRequired) {
-        LOG_FATAL(28700,
-                  "Attempted to join pool more than once",
-                  "poolName"_attr = _options.poolName);
+        LOG_FATAL(
+            28700, "Attempted to join pool more than once", "poolName"_attr = _options.poolName);
     }
 
     _setState_inlock(joining);
@@ -496,10 +495,7 @@ void ThreadPool::Impl::_consumeTasks() {
 
 void ThreadPool::Impl::_doOneTask(stdx::unique_lock<Latch>* lk) noexcept {
     invariant(!_pendingTasks.empty());
-    LOG_DEBUG(23109,
-              3,
-              "Executing a task on behalf of pool",
-              "poolName"_attr = _options.poolName);
+    LOG_DEBUG(23109, 3, "Executing a task on behalf of pool", "poolName"_attr = _options.poolName);
     Task task = std::move(_pendingTasks.front());
     _pendingTasks.pop_front();
     --_numIdleThreads;

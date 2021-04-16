@@ -215,10 +215,7 @@ void LockerImpl::dump() const {
         for (auto it = _requests.begin(); !it.finished(); it.next())
             entries.push_back({it.key(), it->status, it->mode});
     }
-    LOG(20523,
-        "Locker status",
-        "id"_attr = _id,
-        "requests"_attr = entries);
+    LOG(20523, "Locker status", "id"_attr = _id, "requests"_attr = entries);
 }
 
 

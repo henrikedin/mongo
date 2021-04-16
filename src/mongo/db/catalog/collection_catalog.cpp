@@ -941,17 +941,11 @@ void CollectionCatalog::registerCollection(OperationContext* opCtx,
             return;
         }
 
-        LOG(20279,
-            "Conflicted creating a collection",
-            logAttrs(*coll));
+        LOG(20279, "Conflicted creating a collection", logAttrs(*coll));
         throw WriteConflictException();
     }
 
-    LOG_DEBUG(20280,
-              1,
-              "Registering collection",
-              "namespace"_attr = ns,
-              "uuid"_attr = uuid);
+    LOG_DEBUG(20280, 1, "Registering collection", "namespace"_attr = ns, "uuid"_attr = uuid);
 
     auto dbName = ns.db().toString();
     auto dbIdPair = std::make_pair(dbName, uuid);

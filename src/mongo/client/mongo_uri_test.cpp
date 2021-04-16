@@ -709,9 +709,7 @@ TEST(MongoURI, specTests) {
             if (!valid) {
                 // This uri string is invalid --> parse the uri and ensure it fails
                 const InvalidURITestCase testCase = InvalidURITestCase{uri};
-                LOG(20155,
-                    "Testing URI",
-                    "mongoUri"_attr = testCase.URI);
+                LOG(20155, "Testing URI", "mongoUri"_attr = testCase.URI);
                 auto cs_status = MongoURI::parse(testCase.URI);
                 ASSERT_NOT_OK(cs_status);
             } else {

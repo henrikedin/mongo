@@ -133,9 +133,7 @@ std::pair<Status, int> CursorManager::killCursorsWithMatchingSessions(
     OperationContext* opCtx, const SessionKiller::Matcher& matcher) {
     auto eraser = [&](CursorManager& mgr, CursorId id) {
         uassertStatusOK(mgr.killCursor(opCtx, id));
-        LOG(20528,
-            "Killing cursor as part of killing session(s)",
-            "cursorId"_attr = id);
+        LOG(20528, "Killing cursor as part of killing session(s)", "cursorId"_attr = id);
     };
 
     auto bySessionCursorKiller = makeKillCursorsBySessionAdaptor(opCtx, matcher, std::move(eraser));

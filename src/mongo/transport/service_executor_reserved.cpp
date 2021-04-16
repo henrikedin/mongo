@@ -93,9 +93,7 @@ Status ServiceExecutorReserved::start() {
 }
 
 Status ServiceExecutorReserved::_startWorker() {
-    LOG(22978,
-        "Starting new worker thread for service executor",
-        "name"_attr = _name);
+    LOG(22978, "Starting new worker thread for service executor", "name"_attr = _name);
     return launchServiceWorkerThread([this] {
         stdx::unique_lock<Latch> lk(_mutex);
         _numRunningWorkerThreads.addAndFetch(1);
@@ -153,10 +151,7 @@ Status ServiceExecutorReserved::_startWorker() {
             }
         }
 
-        LOG_DEBUG(22979,
-                  3,
-                  "Exiting worker thread in service executor",
-                  "name"_attr = _name);
+        LOG_DEBUG(22979, 3, "Exiting worker thread in service executor", "name"_attr = _name);
     });
 }
 

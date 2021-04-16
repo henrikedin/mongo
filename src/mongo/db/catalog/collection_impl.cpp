@@ -996,9 +996,7 @@ void CollectionImpl::deleteDocument(OperationContext* opCtx,
                                     bool noWarn,
                                     Collection::StoreDeletedDoc storeDeletedDoc) const {
     if (isCapped()) {
-        LOG(20291,
-            "failing remove on a capped ns",
-            "namespace"_attr = _ns);
+        LOG(20291, "failing remove on a capped ns", "namespace"_attr = _ns);
         uasserted(10089, "cannot remove from a capped collection");
         return;
     }

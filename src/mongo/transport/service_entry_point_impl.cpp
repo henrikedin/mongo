@@ -119,9 +119,7 @@ size_t getSupportedMax() {
     // If we asked for more connections than supported, inform the user.
     if (supportedMax < serverGlobalParams.maxConns &&
         serverGlobalParams.maxConns != DEFAULT_MAX_CONN) {
-        LOG(22941,
-            " --maxConns too high",
-            "limit"_attr = supportedMax);
+        LOG(22941, " --maxConns too high", "limit"_attr = supportedMax);
     }
 
     return supportedMax;

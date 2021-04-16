@@ -97,10 +97,7 @@ std::string oidOrTimestampToString(const OIDorTimestamp& oidOrTimestamp) {
 }  // namespace
 
 Status userCacheInvalidationIntervalSecsNotify(const int& value) {
-    LOG_DEBUG(20259,
-              5,
-              "setInterval",
-              "newInterval"_attr = loadInterval());
+    LOG_DEBUG(20259, 5, "setInterval", "newInterval"_attr = loadInterval());
     if (hasGlobalServiceContext()) {
         auto service = getGlobalServiceContext();
         if (getUserCacheInvalidator(service)) {

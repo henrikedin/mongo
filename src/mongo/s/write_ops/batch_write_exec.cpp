@@ -426,9 +426,7 @@ void BatchWriteExec::executeBatch(OperationContext* opCtx,
                               "Finished post-migration commit refresh on the router with error",
                               "error"_attr = redact(ex));
             // It's okay if we can't refresh, we'll just record errors for the ops if needed
-            LOG_WARNING(22911,
-                        "Could not refresh targeter",
-                        "error"_attr = redact(ex));
+            LOG_WARNING(22911, "Could not refresh targeter", "error"_attr = redact(ex));
         }
 
         //

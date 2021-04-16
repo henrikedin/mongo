@@ -47,10 +47,7 @@ void ReplicaSetChangeNotifier::_addListener(std::shared_ptr<Listener> listener) 
 }
 
 void ReplicaSetChangeNotifier::onFoundSet(const std::string& name) noexcept {
-    LOG_DEBUG(20158,
-              2,
-              "Signaling found set",
-              "replicaSet"_attr = name);
+    LOG_DEBUG(20158, 2, "Signaling found set", "replicaSet"_attr = name);
 
     stdx::unique_lock<Latch> lk(_mutex);
 
@@ -67,10 +64,7 @@ void ReplicaSetChangeNotifier::onFoundSet(const std::string& name) noexcept {
 }
 
 void ReplicaSetChangeNotifier::onPossibleSet(ConnectionString connectionString) noexcept {
-    LOG_DEBUG(20159,
-              2,
-              "Signaling possible set",
-              "connectionString"_attr = connectionString);
+    LOG_DEBUG(20159, 2, "Signaling possible set", "connectionString"_attr = connectionString);
 
     const auto& name = connectionString.getSetName();
 
@@ -130,10 +124,7 @@ void ReplicaSetChangeNotifier::onConfirmedSet(ConnectionString connectionString,
 }
 
 void ReplicaSetChangeNotifier::onDroppedSet(const std::string& name) noexcept {
-    LOG_DEBUG(20161,
-              2,
-              "Signaling dropped set",
-              "replicaSet"_attr = name);
+    LOG_DEBUG(20161, 2, "Signaling dropped set", "replicaSet"_attr = name);
 
     stdx::unique_lock<Latch> lk(_mutex);
 

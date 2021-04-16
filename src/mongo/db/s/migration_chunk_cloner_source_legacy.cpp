@@ -388,9 +388,7 @@ void MigrationChunkClonerSourceLegacy::cancelClone(OperationContext* opCtx) {
                                                    kRecvChunkAbort, _args.getNss(), _sessionId))
                                     .getStatus();
             if (!status.isOK()) {
-                LOG(21991,
-                    "Failed to cancel migration",
-                    "error"_attr = redact(status));
+                LOG(21991, "Failed to cancel migration", "error"_attr = redact(status));
             }
         }
         // Intentional fall through

@@ -791,11 +791,10 @@ Status checkLongName(const po::variables_map& vm,
 
     if (vm.count(long_name)) {
         if (!vm[long_name].defaulted() && singleName != option._singleName) {
-            LOG_WARNING(
-                23321,
-                "Option: This name is deprecated. Please use the preferred name instead.",
-                "deprecatedName"_attr = singleName,
-                "preferredName"_attr = option._singleName);
+            LOG_WARNING(23321,
+                        "Option: This name is deprecated. Please use the preferred name instead.",
+                        "deprecatedName"_attr = singleName,
+                        "preferredName"_attr = option._singleName);
         } else if (long_name == "sslMode") {
             LOG_WARNING(23322, "Option: sslMode is deprecated. Please use tlsMode instead.");
         }

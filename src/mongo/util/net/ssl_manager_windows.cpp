@@ -591,9 +591,7 @@ int SSLManagerWindows::SSL_write(SSLConnectionInterface* connInterface, const vo
                 return bytes_transferred;
             }
             default:
-                LOG_FATAL(23283,
-                          "Unexpected ASIO state",
-                          "state"_attr = static_cast<int>(want));
+                LOG_FATAL(23283, "Unexpected ASIO state", "state"_attr = static_cast<int>(want));
                 MONGO_UNREACHABLE;
         }
     }
@@ -1983,14 +1981,12 @@ Future<SSLPeerInfo> SSLManagerWindows::parseAndValidatePeerCertificate(
         if (_weakValidation) {
             // do not give warning if "no certificate" warnings are suppressed
             if (!_suppressNoCertificateWarning) {
-                LOG_WARNING(23277,
-                            "No SSL certificate provided by peer");
+                LOG_WARNING(23277, "No SSL certificate provided by peer");
             }
             return SSLPeerInfo(sni);
         } else {
             auto msg = "no SSL certificate provided by peer; connection rejected";
-            LOG_ERROR(23280,
-                      "No SSL certificate provided by peer; connection rejected");
+            LOG_ERROR(23280, "No SSL certificate provided by peer; connection rejected");
             return Status(ErrorCodes::SSLHandshakeFailed, msg);
         }
     }

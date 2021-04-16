@@ -103,10 +103,7 @@ StatusWith<int64_t> compactCollection(OperationContext* opCtx,
         recordStore = collection->getRecordStore();
     }
 
-    LOG_OPTIONS(20284,
-                {LogComponent::kCommand},
-                "Compact begin",
-                "namespace"_attr = collectionNss);
+    LOG_OPTIONS(20284, {LogComponent::kCommand}, "Compact begin", "namespace"_attr = collectionNss);
 
     auto oldTotalSize = recordStore->storageSize(opCtx) + collection->getIndexSize(opCtx);
     auto indexCatalog = collection->getIndexCatalog();
@@ -122,10 +119,7 @@ StatusWith<int64_t> compactCollection(OperationContext* opCtx,
 
     auto totalSizeDiff =
         oldTotalSize - recordStore->storageSize(opCtx) - collection->getIndexSize(opCtx);
-    LOG(20286,
-        "Compact end",
-        "namespace"_attr = collectionNss,
-        "freedBytes"_attr = totalSizeDiff);
+    LOG(20286, "Compact end", "namespace"_attr = collectionNss, "freedBytes"_attr = totalSizeDiff);
     return totalSizeDiff;
 }
 

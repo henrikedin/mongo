@@ -154,10 +154,8 @@ Status repairDatabase(OperationContext* opCtx, StorageEngine* engine, const std:
 
     auto status = repairCollections(opCtx, engine, dbName);
     if (!status.isOK()) {
-        LOG_FATAL_CONTINUE(21030,
-                           "Failed to repair database",
-                           "db"_attr = dbName,
-                           "error"_attr = status);
+        LOG_FATAL_CONTINUE(
+            21030, "Failed to repair database", "db"_attr = dbName, "error"_attr = status);
     }
 
     try {

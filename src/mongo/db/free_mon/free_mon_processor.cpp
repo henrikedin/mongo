@@ -610,9 +610,7 @@ void FreeMonProcessor::doAsyncRegisterComplete(
 
     Status s = validateRegistrationResponse(resp);
     if (!s.isOK()) {
-        LOG_WARNING(20620,
-                    "Free Monitoring registration halted due to error",
-                    "error"_attr = s);
+        LOG_WARNING(20620, "Free Monitoring registration halted due to error", "error"_attr = s);
 
         // Disable on any error
         _state->setState(StorageStateEnum::disabled);
@@ -658,9 +656,7 @@ void FreeMonProcessor::doAsyncRegisterComplete(
     // Notify waiters
     notifyPendingRegisters(Status::OK());
 
-    LOG(20615,
-        "Free Monitoring is Enabled",
-        "interval"_attr = resp.getReportingInterval());
+    LOG(20615, "Free Monitoring is Enabled", "interval"_attr = resp.getReportingInterval());
 
     // Enqueue next metrics upload immediately to deliver a good experience
     enqueue(FreeMonMessage::createNow(FreeMonMessageType::MetricsSend));
@@ -802,9 +798,8 @@ void FreeMonProcessor::doAsyncMetricsComplete(
 
     Status s = validateMetricsResponse(resp);
     if (!s.isOK()) {
-        LOG_WARNING(20622,
-                    "Free Monitoring metrics uploading halted due to error",
-                    "error"_attr = s);
+        LOG_WARNING(
+            20622, "Free Monitoring metrics uploading halted due to error", "error"_attr = s);
 
         // Disable free monitoring on validation errors
         _state->setState(StorageStateEnum::disabled);

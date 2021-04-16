@@ -84,11 +84,8 @@ public:
                               BSONObjBuilder& result) final {
         auto cmd = requestParser.request();
         auto nss = cmd.getNamespace();
-        LOG_DEBUG(22748,
-                  1,
-                  "CMD: collMod",
-                  "namespace"_attr = nss,
-                  "command"_attr = redact(cmdObj));
+        LOG_DEBUG(
+            22748, 1, "CMD: collMod", "namespace"_attr = nss, "command"_attr = redact(cmdObj));
 
         auto routingInfo =
             uassertStatusOK(Grid::get(opCtx)->catalogCache()->getCollectionRoutingInfo(opCtx, nss));

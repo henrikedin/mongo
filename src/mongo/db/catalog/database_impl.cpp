@@ -162,9 +162,7 @@ void DatabaseImpl::init(OperationContext* const opCtx) const {
     Status status = validateDBName(_name);
 
     if (!status.isOK()) {
-        LOG_WARNING(20325,
-                    "Tried to open invalid db",
-                    "db"_attr = _name);
+        LOG_WARNING(20325, "Tried to open invalid db", "db"_attr = _name);
         uasserted(10028, status.toString());
     }
 
@@ -217,10 +215,9 @@ void DatabaseImpl::clearTmpCollections(OperationContext* opCtx) const {
             }
             wuow.commit();
         } catch (const WriteConflictException&) {
-            LOG_WARNING(
-                20328,
-                "could not drop temp collection due to WriteConflictException",
-                "namespace"_attr = collection->ns());
+            LOG_WARNING(20328,
+                        "could not drop temp collection due to WriteConflictException",
+                        "namespace"_attr = collection->ns());
             opCtx->recoveryUnit()->abandonSnapshot();
         }
         return true;
@@ -496,10 +493,7 @@ Status DatabaseImpl::_finishDropCollection(OperationContext* opCtx,
                                            const NamespaceString& nss,
                                            Collection* collection) const {
     UUID uuid = collection->uuid();
-    LOG(20318,
-        "Finishing collection drop",
-        "namespace"_attr = nss,
-        "uuid"_attr = uuid);
+    LOG(20318, "Finishing collection drop", "namespace"_attr = nss, "uuid"_attr = uuid);
 
     auto status = catalog::dropCollection(
         opCtx, collection->ns(), collection->getCatalogId(), collection->getSharedIdent());

@@ -1402,10 +1402,7 @@ Status WiredTigerKVEngine::recoverOrphanedIdent(OperationContext* opCtx,
         return status;
     }
 
-    LOG(22333,
-        "Creating new RecordStore",
-        "namespace"_attr = nss,
-        "uuid"_attr = options.uuid);
+    LOG(22333, "Creating new RecordStore", "namespace"_attr = nss, "uuid"_attr = options.uuid);
 
     status = createRecordStore(opCtx, nss.ns(), ident, options);
     if (!status.isOK()) {

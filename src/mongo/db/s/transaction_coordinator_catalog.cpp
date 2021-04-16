@@ -197,9 +197,7 @@ void TransactionCoordinatorCatalog::join() {
             "After 5 seconds of wait there are still sessions left with active coordinators "
             "which have not yet completed",
             "numSessionsLeft"_attr = _coordinatorsBySession.size());
-        LOG(22443,
-            "Active coordinators remaining",
-            "activeCoordinators"_attr = _toString(ul));
+        LOG(22443, "Active coordinators remaining", "activeCoordinators"_attr = _toString(ul));
     }
 }
 

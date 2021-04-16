@@ -470,12 +470,11 @@ Status rollback_internal::updateFixUpInfoFromLocalOplogEntry(OperationContext* o
                 auto buildUUID = indexBuildOplogEntry.buildUUID;
                 auto existingIt = buildsToRestart.find(buildUUID);
                 if (existingIt != buildsToRestart.end()) {
-                    LOG_DEBUG(
-                        21664,
-                        2,
-                        "Index build that was previously marked to be restarted will now be "
-                        "dropped due to a rolled-back 'startIndexBuild' oplog entry",
-                        "buildUUID"_attr = buildUUID);
+                    LOG_DEBUG(21664,
+                              2,
+                              "Index build that was previously marked to be restarted will now be "
+                              "dropped due to a rolled-back 'startIndexBuild' oplog entry",
+                              "buildUUID"_attr = buildUUID);
                     buildsToRestart.erase(existingIt);
 
                     // If the index build was committed or aborted, we must mark the index as
@@ -862,12 +861,11 @@ void dropIndex(OperationContext* opCtx,
     } else {
         auto status = indexCatalog->dropUnfinishedIndex(opCtx, indexDescriptor);
         if (!status.isOK()) {
-            LOG_ERROR(
-                21739,
-                "Rollback failed to drop unfinished index",
-                "indexName"_attr = indexName,
-                "namespace"_attr = nss.toString(),
-                "error"_attr = redact(status));
+            LOG_ERROR(21739,
+                      "Rollback failed to drop unfinished index",
+                      "indexName"_attr = indexName,
+                      "namespace"_attr = nss.toString(),
+                      "error"_attr = redact(status));
         }
     }
 }
@@ -1111,12 +1109,11 @@ void rollbackRenameCollection(OperationContext* opCtx, UUID uuid, RenameCollecti
         status = renameCollectionForRollback(opCtx, info.renameTo, uuid);
 
         if (!status.isOK()) {
-            LOG_FATAL_CONTINUE(
-                21745,
-                "Rename collection failed to roll back twice",
-                "renameFrom"_attr = info.renameFrom,
-                "renameTo"_attr = info.renameTo,
-                "error"_attr = status.toString());
+            LOG_FATAL_CONTINUE(21745,
+                               "Rename collection failed to roll back twice",
+                               "renameFrom"_attr = info.renameFrom,
+                               "renameTo"_attr = info.renameTo,
+                               "error"_attr = status.toString());
             throw RSFatalException(
                 "Rename collection failed to roll back twice. We were unable to rename "
                 "the collection.");
@@ -1147,9 +1144,7 @@ Status _syncRollback(OperationContext* opCtx,
 
     FixUpInfo how;
     how.localTopOfOplog = replCoord->getMyLastAppliedOpTime();
-    LOG(21681,
-        "Starting rollback",
-        "syncSource"_attr = rollbackSource.getSource());
+    LOG(21681, "Starting rollback", "syncSource"_attr = rollbackSource.getSource());
     how.rbid = rollbackSource.getRollbackId();
     uassert(
         40506, "Upstream node rolled back. Need to retry our rollback.", how.rbid == requiredRBID);
@@ -1200,9 +1195,7 @@ Status _syncRollback(OperationContext* opCtx,
     OpTime lastCommittedOpTime = replCoord->getLastCommittedOpTime();
     OpTime committedSnapshot = replCoord->getCurrentCommittedSnapshotOpTime();
 
-    LOG(21683,
-        "Rollback common point",
-        "commonPoint"_attr = commonPointOpTime);
+    LOG(21683, "Rollback common point", "commonPoint"_attr = commonPointOpTime);
 
     // Rollback common point should be >= the replication commit point.
     invariant(commonPointOpTime.getTimestamp() >= lastCommittedOpTime.getTimestamp());
@@ -1418,14 +1411,9 @@ void rollback_internal::syncFixUp(OperationContext* opCtx,
         // Do not attempt to acquire the database lock with an empty namespace. We should survive
         // an attempt to drop a non-existent collection.
         if (!nss) {
-            LOG(21696,
-                "This collection does not exist",
-                "uuid"_attr = uuid);
+            LOG(21696, "This collection does not exist", "uuid"_attr = uuid);
         } else {
-            LOG(21697,
-                "Dropping collection",
-                "namespace"_attr = *nss,
-                "uuid"_attr = uuid);
+            LOG(21697, "Dropping collection", "namespace"_attr = *nss, "uuid"_attr = uuid);
             AutoGetDb dbLock(opCtx, nss->db(), MODE_X);
 
             Database* db = dbLock.getDb();
@@ -1433,11 +1421,8 @@ void rollback_internal::syncFixUp(OperationContext* opCtx,
                 CollectionPtr collection =
                     CollectionCatalog::get(opCtx)->lookupCollectionByUUID(opCtx, uuid);
                 dropCollection(opCtx, *nss, collection, db);
-                LOG_DEBUG(21698,
-                          1,
-                          "Dropped collection",
-                          "namespace"_attr = *nss,
-                          "uuid"_attr = uuid);
+                LOG_DEBUG(
+                    21698, 1, "Dropped collection", "namespace"_attr = *nss, "uuid"_attr = uuid);
             }
         }
     }
@@ -1659,11 +1644,10 @@ void rollback_internal::syncFixUp(OperationContext* opCtx,
                     if (found) {
                         auto status = removeSaver->goingToDelete(obj);
                         if (!status.isOK()) {
-                            LOG_FATAL_CONTINUE(
-                                21747,
-                                "Rollback cannot write document to archive file",
-                                "namespace"_attr = nss->ns(),
-                                "error"_attr = redact(status));
+                            LOG_FATAL_CONTINUE(21747,
+                                               "Rollback cannot write document to archive file",
+                                               "namespace"_attr = nss->ns(),
+                                               "error"_attr = redact(status));
                             throw RSFatalException(str::stream()
                                                    << "Rollback cannot write document in namespace "
                                                    << nss->ns() << " to archive file.");

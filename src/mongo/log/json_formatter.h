@@ -32,10 +32,10 @@
 #include <boost/log/core/record_view.hpp>
 #include <boost/log/utility/formatting_ostream_fwd.hpp>
 
-#include "mongo/log/log_format.h"
 #include "mongo/log/attribute_storage.h"
 #include "mongo/log/constants.h"
 #include "mongo/log/log_component.h"
+#include "mongo/log/log_format.h"
 #include "mongo/log/log_severity.h"
 #include "mongo/log/log_tag.h"
 #include "mongo/log/log_truncation.h"

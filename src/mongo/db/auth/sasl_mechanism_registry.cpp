@@ -194,9 +194,7 @@ ServiceContext::ConstructorActionRegisterer SASLServerMechanismRegistryValidatio
         for (const auto& mech : saslGlobalParams.authenticationMechanisms) {
             auto it = std::find(supportedMechanisms.cbegin(), supportedMechanisms.cend(), mech);
             if (it == supportedMechanisms.end()) {
-                LOG_ERROR(4742901,
-                          "Unsupported SASL mechanism",
-                          "mechanism"_attr = mech);
+                LOG_ERROR(4742901, "Unsupported SASL mechanism", "mechanism"_attr = mech);
 
                 // Quick Exit since we are in the middle of setting up ServiceContext
                 quickExit(EXIT_BADOPTIONS);

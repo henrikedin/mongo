@@ -52,9 +52,7 @@ namespace {
  */
 void uassertStatusOKWithWarning(const Status& status) {
     if (!status.isOK()) {
-        LOG_WARNING(23762,
-                    "movePrimary failed",
-                    "error"_attr = redact(status));
+        LOG_WARNING(23762, "movePrimary failed", "error"_attr = redact(status));
         uassertStatusOK(status);
     }
 }

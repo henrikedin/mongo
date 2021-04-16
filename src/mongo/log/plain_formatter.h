@@ -32,8 +32,8 @@
 #include <boost/log/core/record_view.hpp>
 #include <boost/log/utility/formatting_ostream_fwd.hpp>
 
-#include "mongo/log/log_format.h"
 #include "mongo/log/constants.h"
+#include "mongo/log/log_format.h"
 
 namespace mongo::log {
 

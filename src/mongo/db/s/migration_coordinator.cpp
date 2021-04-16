@@ -178,15 +178,14 @@ SemiFuture<void> MigrationCoordinator::_commitMigrationOnDonorAndRecipient(
         23894, 2, "Making commit decision durable", "migrationId"_attr = _migrationInfo.getId());
     migrationutil::persistCommitDecision(opCtx, _migrationInfo);
 
-    LOG_DEBUG(
-        23895,
-        2,
-        "Bumping transaction number on recipient shard for commit",
-        "namespace"_attr = _migrationInfo.getNss(),
-        "recipientShardId"_attr = _migrationInfo.getRecipientShardId(),
-        "lsid"_attr = _migrationInfo.getLsid(),
-        "currentTxnNumber"_attr = _migrationInfo.getTxnNumber(),
-        "migrationId"_attr = _migrationInfo.getId());
+    LOG_DEBUG(23895,
+              2,
+              "Bumping transaction number on recipient shard for commit",
+              "namespace"_attr = _migrationInfo.getNss(),
+              "recipientShardId"_attr = _migrationInfo.getRecipientShardId(),
+              "lsid"_attr = _migrationInfo.getLsid(),
+              "currentTxnNumber"_attr = _migrationInfo.getTxnNumber(),
+              "migrationId"_attr = _migrationInfo.getId());
     migrationutil::advanceTransactionOnRecipient(opCtx,
                                                  _migrationInfo.getRecipientShardId(),
                                                  _migrationInfo.getLsid(),

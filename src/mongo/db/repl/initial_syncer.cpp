@@ -478,9 +478,7 @@ BSONObj InitialSyncer::_getInitialSyncProgress_inlock() const {
         }
         return bob.obj();
     } catch (const DBException& e) {
-        LOG(21161,
-            "Error creating initial sync progress object",
-            "error"_attr = e.toString());
+        LOG(21161, "Error creating initial sync progress object", "error"_attr = e.toString());
     }
     BSONObjBuilder bob;
     _appendInitialSyncProgressMinimal_inlock(&bob);
@@ -787,21 +785,13 @@ Status InitialSyncer::_truncateOplogAndDropReplicatedDatabases() {
     UnreplicatedWritesBlock unreplicatedWritesBlock(opCtx.get());
 
     // 1.) Truncate the oplog.
-    LOG_DEBUG(21172,
-              2,
-              "Truncating the existing oplog",
-              "namespace"_attr = _opts.localOplogNS);
+    LOG_DEBUG(21172, 2, "Truncating the existing oplog", "namespace"_attr = _opts.localOplogNS);
     Timer timer;
     auto status = _storage->truncateCollection(opCtx.get(), _opts.localOplogNS);
-    LOG(21173,
-        "Initial syncer oplog truncation finished",
-        "durationMillis"_attr = timer.millis());
+    LOG(21173, "Initial syncer oplog truncation finished", "durationMillis"_attr = timer.millis());
     if (!status.isOK()) {
         // 1a.) Create the oplog.
-        LOG_DEBUG(21174,
-                  2,
-                  "Creating the oplog",
-                  "namespace"_attr = _opts.localOplogNS);
+        LOG_DEBUG(21174, 2, "Creating the oplog", "namespace"_attr = _opts.localOplogNS);
         status = _storage->createOplog(opCtx.get(), _opts.localOplogNS);
         if (!status.isOK()) {
             return status;
@@ -1189,10 +1179,7 @@ void InitialSyncer::_fcvFetcherCallback(const StatusWith<Fetcher::QueryResponse>
         [=](const Status& s, int rbid) { _oplogFetcherCallback(s, onCompletionGuard); },
         std::move(oplogFetcherConfig));
 
-    LOG_DEBUG(21178,
-              2,
-              "Starting OplogFetcher",
-              "oplogFetcher"_attr = _oplogFetcher->toString());
+    LOG_DEBUG(21178, 2, "Starting OplogFetcher", "oplogFetcher"_attr = _oplogFetcher->toString());
 
     // _startupComponent_inlock is shutdown-aware.
     status = _startupComponent_inlock(_oplogFetcher);
@@ -1415,10 +1402,8 @@ void InitialSyncer::_lastOplogEntryFetcherCallbackForStopTimestamp(
         const auto& documents = result.getValue().documents;
         invariant(!documents.empty());
         const BSONObj oplogSeedDoc = documents.front();
-        LOG_DEBUG(21185,
-                  2,
-                  "Inserting oplog seed document",
-                  "oplogSeedDocument"_attr = oplogSeedDoc);
+        LOG_DEBUG(
+            21185, 2, "Inserting oplog seed document", "oplogSeedDocument"_attr = oplogSeedDoc);
 
         auto opCtx = makeOpCtx();
         // StorageInterface::insertDocument() has to be called outside the lock because we may
@@ -1569,9 +1554,7 @@ void InitialSyncer::_multiApplierCallback(const Status& multiApplierStatus,
     }
 
     if (!status.isOK()) {
-        LOG_ERROR(21199,
-                  "Failed to apply batch",
-                  "error"_attr = redact(status));
+        LOG_ERROR(21199, "Failed to apply batch", "error"_attr = redact(status));
         onCompletionGuard->setResultAndCancelRemainingWork_inlock(lock, status);
         return;
     }
@@ -1600,10 +1583,8 @@ void InitialSyncer::_rollbackCheckerCheckForRollbackCallback(
     auto status = _checkForShutdownAndConvertStatus_inlock(result.getStatus(),
                                                            "error while getting last rollback ID");
     if (_shouldRetryError(lock, status)) {
-        LOG_DEBUG(21190,
-                  1,
-                  "Retrying rollback checker because of network error",
-                  "error"_attr = status);
+        LOG_DEBUG(
+            21190, 1, "Retrying rollback checker because of network error", "error"_attr = status);
         _scheduleRollbackCheckerCheckForRollback_inlock(lock, onCompletionGuard);
         return;
     }

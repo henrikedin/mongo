@@ -408,9 +408,7 @@ void Fetcher::_sendKillCursors(const CursorId id, const NamespaceString& nss) {
             }
             auto status = getStatusFromCommandResult(args.response.data);
             if (!status.isOK()) {
-                LOG_WARNING(23919,
-                            "killCursors command failed",
-                            "error"_attr = redact(status));
+                LOG_WARNING(23919, "killCursors command failed", "error"_attr = redact(status));
             }
         };
 

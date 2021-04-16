@@ -231,9 +231,7 @@ Status ensureCollectionProperties(OperationContext* opCtx,
         // does not exist before attempting to build it or returning an error.
         if (requiresIndex && !hasAutoIndexIdField &&
             !checkIdIndexExists(opCtx, coll->getCatalogId())) {
-            LOG(21001,
-                "Collection is missing an _id index",
-                logAttrs(*coll));
+            LOG(21001, "Collection is missing an _id index", logAttrs(*coll));
             if (EnsureIndexPolicy::kBuildMissing == ensureIndexPolicy) {
                 auto status = buildMissingIdIndex(opCtx, coll);
                 if (!status.isOK()) {
@@ -319,11 +317,10 @@ void assertCappedOplog(OperationContext* opCtx, Database* db) {
     const CollectionPtr& oplogCollection =
         CollectionCatalog::get(opCtx)->lookupCollectionByNamespace(opCtx, oplogNss);
     if (oplogCollection && !oplogCollection->isCapped()) {
-        LOG_FATAL_NOTRACE(
-            40115,
-            "The oplog collection is not capped; a capped oplog is a "
-            "requirement for replication to function.",
-            "oplogNamespace"_attr = oplogNss);
+        LOG_FATAL_NOTRACE(40115,
+                          "The oplog collection is not capped; a capped oplog is a "
+                          "requirement for replication to function.",
+                          "oplogNamespace"_attr = oplogNss);
     }
 }
 
@@ -387,10 +384,7 @@ void reconcileCatalogAndRebuildUnfinishedIndexes(
 
         auto collection = catalog->lookupCollectionByNamespace(opCtx, collNss);
         for (const auto& indexName : entry.second.first) {
-            LOG(21004,
-                "Rebuilding index",
-                "namespace"_attr = collNss,
-                "index"_attr = indexName);
+            LOG(21004, "Rebuilding index", "namespace"_attr = collNss, "index"_attr = indexName);
         }
 
         std::vector<BSONObj> indexSpecs = entry.second.second;

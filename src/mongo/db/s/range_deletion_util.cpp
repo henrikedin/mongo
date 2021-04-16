@@ -96,13 +96,12 @@ bool collectionUuidHasChanged(const NamespaceString& nss,
     }
 
     if (currentCollection->uuid() != expectedCollectionUuid) {
-        LOG_DEBUG(
-            23764,
-            1,
-            "Abandoning range deletion task because UUID has changed",
-            "namespace"_attr = nss.ns(),
-            "expectedCollectionUUID"_attr = expectedCollectionUuid,
-            "currentCollectionUUID"_attr = currentCollection->uuid());
+        LOG_DEBUG(23764,
+                  1,
+                  "Abandoning range deletion task because UUID has changed",
+                  "namespace"_attr = nss.ns(),
+                  "expectedCollectionUUID"_attr = expectedCollectionUuid,
+                  "currentCollectionUUID"_attr = currentCollection->uuid());
         return true;
     }
 

@@ -162,9 +162,7 @@ public:
             std::error_code ec;
             getSocket().shutdown(GenericSocket::shutdown_both, ec);
             if ((ec) && (ec != asio::error::not_connected)) {
-                LOG_ERROR(23841,
-                          "Error shutting down socket",
-                          "error"_attr = ec.message());
+                LOG_ERROR(23841, "Error shutting down socket", "error"_attr = ec.message());
             }
         }
     }

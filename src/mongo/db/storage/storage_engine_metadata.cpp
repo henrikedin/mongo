@@ -85,9 +85,8 @@ std::unique_ptr<StorageEngineMetadata> StorageEngineMetadata::forPath(const std:
         metadata.reset(new StorageEngineMetadata(dbpath));
         Status status = metadata->read();
         if (!status.isOK()) {
-            LOG_FATAL_NOTRACE(28661,
-                              "Unable to read the storage engine metadata file",
-                              "error"_attr = status);
+            LOG_FATAL_NOTRACE(
+                28661, "Unable to read the storage engine metadata file", "error"_attr = status);
         }
     }
     return metadata;

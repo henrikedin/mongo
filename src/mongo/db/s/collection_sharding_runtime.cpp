@@ -186,9 +186,7 @@ void CollectionShardingRuntime::setFilteringMetadata(OperationContext* opCtx,
     stdx::lock_guard lk(_metadataManagerLock);
 
     if (!newMetadata.isSharded()) {
-        LOG(21917,
-            "Marking collection as unsharded",
-            "namespace"_attr = _nss.ns());
+        LOG(21917, "Marking collection as unsharded", "namespace"_attr = _nss.ns());
         _metadataType = MetadataType::kUnsharded;
         _metadataManager.reset();
         ++_numMetadataManagerChanges;
@@ -207,10 +205,7 @@ void CollectionShardingRuntime::clearFilteringMetadata(OperationContext* opCtx) 
     const auto csrLock = CSRLock::lockExclusive(opCtx, this);
     stdx::lock_guard lk(_metadataManagerLock);
     if (!_nss.isNamespaceAlwaysUnsharded()) {
-        LOG_DEBUG(4798530,
-                  1,
-                  "Clearing collection metadata",
-                  "namespace"_attr = _nss);
+        LOG_DEBUG(4798530, 1, "Clearing collection metadata", "namespace"_attr = _nss);
         _metadataType = MetadataType::kUnknown;
         _metadataManager.reset();
     }

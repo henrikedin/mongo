@@ -80,9 +80,7 @@ Status ShardingLogging::logAction(OperationContext* opCtx,
         if (result.isOK()) {
             _actionLogCollectionCreated.store(1);
         } else {
-            LOG(22078,
-                "Couldn't create config.actionlog collection",
-                "error"_attr = result);
+            LOG(22078, "Couldn't create config.actionlog collection", "error"_attr = result);
             return result;
         }
     }
@@ -108,9 +106,7 @@ Status ShardingLogging::logChangeChecked(OperationContext* opCtx,
         if (result.isOK()) {
             _changeLogCollectionCreated.store(1);
         } else {
-            LOG(22079,
-                "Couldn't create config.changelog collection",
-                "error"_attr = result);
+            LOG(22079, "Couldn't create config.changelog collection", "error"_attr = result);
             return result;
         }
     }

@@ -110,10 +110,8 @@ void OplogApplier::enqueue(OperationContext* opCtx,
                            OplogBuffer::Batch::const_iterator end) {
     static Occasionally sampler;
     if (sampler.tick()) {
-        LOG_DEBUG(21226,
-                  2,
-                  "Oplog buffer size",
-                  "oplogBufferSizeBytes"_attr = _oplogBuffer->getSize());
+        LOG_DEBUG(
+            21226, 2, "Oplog buffer size", "oplogBufferSizeBytes"_attr = _oplogBuffer->getSize());
     }
     _oplogBuffer->push(opCtx, begin, end);
 }

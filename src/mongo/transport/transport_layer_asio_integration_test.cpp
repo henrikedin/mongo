@@ -78,9 +78,7 @@ TEST(TransportLayerASIO, HTTPRequestGetsHTTPError) {
     auto size = asio::read(socket, asio::buffer(httpRespBuf.data(), httpRespBuf.size()), ec);
     StringData httpResp(httpRespBuf.data(), size);
 
-    LOG(23031,
-        "Received http response",
-        "response"_attr = httpResp);
+    LOG(23031, "Received http response", "response"_attr = httpResp);
     ASSERT_TRUE(httpResp.startsWith("HTTP/1.0 200 OK"));
 
 // Why oh why can't ASIO unify their error codes

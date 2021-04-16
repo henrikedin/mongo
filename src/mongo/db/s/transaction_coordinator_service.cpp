@@ -220,11 +220,10 @@ void TransactionCoordinatorService::onStepUp(OperationContext* opCtx,
                     auto& scheduler = catalogAndScheduler->scheduler;
 
                     for (const auto& doc : coordinatorDocs) {
-                        LOG_DEBUG(
-                            22453,
-                            3,
-                            "Going to resume coordinating commit",
-                            "transactionCoordinatorInfo"_attr = doc.toBSON());
+                        LOG_DEBUG(22453,
+                                  3,
+                                  "Going to resume coordinating commit",
+                                  "transactionCoordinatorInfo"_attr = doc.toBSON());
 
                         const auto lsid = *doc.getId().getSessionId();
                         const auto txnNumber = *doc.getId().getTxnNumber();

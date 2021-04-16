@@ -279,9 +279,7 @@ void StreamableReplicaSetMonitor::drop() {
             lock, Status{ErrorCodes::ShutdownInProgress, "the ReplicaSetMonitor is shutting down"});
     }
 
-    LOG(4333209,
-        "Closing Replica Set Monitor",
-        "replicaSet"_attr = getName());
+    LOG(4333209, "Closing Replica Set Monitor", "replicaSet"_attr = getName());
     _queryProcessor->shutdown();
 
     if (_pingMonitor) {
@@ -293,9 +291,7 @@ void StreamableReplicaSetMonitor::drop() {
     }
 
     ReplicaSetMonitorManager::get()->getNotifier().onDroppedSet(getName());
-    LOG(4333210,
-        "Done closing Replica Set Monitor",
-        "replicaSet"_attr = getName());
+    LOG(4333210, "Done closing Replica Set Monitor", "replicaSet"_attr = getName());
 }
 
 SemiFuture<HostAndPort> StreamableReplicaSetMonitor::getHostOrRefresh(

@@ -104,9 +104,7 @@ public:
                      const string&,
                      const BSONObj& cmdObj,
                      BSONObjBuilder& result) {
-        LOG(21573,
-            "replSetTest command received",
-            "cmdObj"_attr = cmdObj.toString());
+        LOG(21573, "replSetTest command received", "cmdObj"_attr = cmdObj.toString());
 
         auto replCoord = ReplicationCoordinator::get(getGlobalServiceContext());
 
@@ -289,10 +287,7 @@ void parseReplSetSeedList(ReplicationCoordinatorExternalState* externalState,
         seedSet.insert(m);
         // uassert(13101, "can't use localhost in replset host list", !m.isLocalHost());
         if (externalState->isSelf(m, getGlobalServiceContext())) {
-            LOG_DEBUG(21576,
-                      1,
-                      "Ignoring seed (=self)",
-                      "seed"_attr = m.toString());
+            LOG_DEBUG(21576, 1, "Ignoring seed (=self)", "seed"_attr = m.toString());
         } else {
             seeds->push_back(m);
         }
@@ -765,9 +760,7 @@ public:
         status = ReplicationCoordinator::get(opCtx)->stepUpIfEligible(skipDryRun);
 
         if (!status.isOK()) {
-            LOG(21582,
-                "replSetStepUp request failed",
-                "error"_attr = causedBy(status));
+            LOG(21582, "replSetStepUp request failed", "error"_attr = causedBy(status));
         }
 
         uassertStatusOK(status);

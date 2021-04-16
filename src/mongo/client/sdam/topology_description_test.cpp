@@ -158,9 +158,7 @@ TEST_F(TopologyDescriptionTestFixture, ShouldOnlyAllowSingleAndRsNoPrimaryWithSe
                         topologyTypes.end());
 
     for (const auto topologyType : topologyTypes) {
-        LOG(20217,
-            "Check TopologyType with setName value",
-            "topologyType"_attr = topologyType);
+        LOG(20217, "Check TopologyType with setName value", "topologyType"_attr = topologyType);
         ASSERT_THROWS_CODE(makeSdamConfig(kOneServer, topologyType, kSetName),
                            DBException,
                            ErrorCodes::InvalidTopologyType);

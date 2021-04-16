@@ -188,10 +188,7 @@ StatusWith<TaskExecutor::CallbackHandle> ShardingTaskExecutor::scheduleRemoteCom
             auto shard = grid->shardRegistry()->getShardForHostNoReload(target);
 
             if (!shard) {
-                LOG_DEBUG(22870,
-                          1,
-                          "Could not find shard containing host",
-                          "host"_attr = target);
+                LOG_DEBUG(22870, 1, "Could not find shard containing host", "host"_attr = target);
             }
 
             if (isMongos() && args.response.status == ErrorCodes::IncompatibleWithUpgradedServer) {

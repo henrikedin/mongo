@@ -117,10 +117,7 @@ void _finishDropDatabase(OperationContext* opCtx,
 
     BucketCatalog::get(opCtx).clear(dbName);
 
-    LOG(20336,
-        "dropDatabase",
-        "db"_attr = dbName,
-        "numCollectionsDropped"_attr = numCollections);
+    LOG(20336, "dropDatabase", "db"_attr = dbName, "numCollectionsDropped"_attr = numCollections);
 }
 
 Status _dropDatabase(OperationContext* opCtx, const std::string& dbName, bool abortIndexBuilds) {
@@ -164,9 +161,7 @@ Status _dropDatabase(OperationContext* opCtx, const std::string& dbName, bool ab
                               << "The database is currently being dropped. Database: " << dbName);
         }
 
-        LOG(20337,
-            "dropDatabase - starting",
-            "db"_attr = dbName);
+        LOG(20337, "dropDatabase - starting", "db"_attr = dbName);
         db->setDropPending(opCtx, true);
 
         // If Database::dropCollectionEventIfSystem() fails, we should reset the drop-pending state

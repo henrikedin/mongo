@@ -159,9 +159,7 @@ public:
                                       shardkeyutil::ValidationBehaviorsRefineShardKey(opCtx, nss));
                               });
 
-            LOG(21922,
-                "CMD: refineCollectionShardKey",
-                "request"_attr = request().toBSON({}));
+            LOG(21922, "CMD: refineCollectionShardKey", "request"_attr = request().toBSON({}));
 
             ShardingCatalogManager::get(opCtx)->refineCollectionShardKey(
                 opCtx, nss, newShardKeyPattern);

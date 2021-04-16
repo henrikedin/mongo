@@ -135,9 +135,7 @@ void LogicalSessionCacheImpl::_periodicRefresh(Client* client) {
 void LogicalSessionCacheImpl::_periodicReap(Client* client) {
     auto res = _reap(client);
     if (!res.isOK()) {
-        LOG(20711,
-            "Failed to reap transaction table",
-            "error"_attr = redact(res));
+        LOG(20711, "Failed to reap transaction table", "error"_attr = redact(res));
     }
 
     return;

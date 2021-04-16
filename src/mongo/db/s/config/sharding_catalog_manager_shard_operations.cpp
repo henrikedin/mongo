@@ -164,9 +164,7 @@ StatusWith<Shard::CommandResponse> ShardingCatalogManager::_runCommandForAddShar
     _executorForAddShard->wait(swCallbackHandle.getValue());
 
     if (response.status == ErrorCodes::ExceededTimeLimit) {
-        LOG(21941,
-            "Operation timed out",
-            "error"_attr = redact(response.status));
+        LOG(21941, "Operation timed out", "error"_attr = redact(response.status));
     }
 
     if (!response.isOK()) {
@@ -847,9 +845,7 @@ RemoveShardProgress ShardingCatalogManager::removeShard(OperationContext* opCtx,
     auto* const catalogClient = Grid::get(opCtx)->catalogClient();
 
     if (!isShardCurrentlyDraining) {
-        LOG(21945,
-            "Going to start draining shard",
-            "shardId"_attr = name);
+        LOG(21945, "Going to start draining shard", "shardId"_attr = name);
 
         // Record start in changelog
         uassertStatusOK(ShardingLogging::get(opCtx)->logChangeChecked(

@@ -339,10 +339,7 @@ public:
                         if (partialOk) {
                             break;  // skipped chunk is probably on another shard
                         }
-                        LOG(20452,
-                            "Unexpected chunk",
-                            "expected"_attr = n,
-                            "observed"_attr = myn);
+                        LOG(20452, "Unexpected chunk", "expected"_attr = n, "observed"_attr = myn);
                         dumpChunks(opCtx, nss.ns(), query, sort);
                         uassert(10040, "chunks out of order", n == myn);
                     }

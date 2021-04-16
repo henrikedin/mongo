@@ -91,10 +91,7 @@ BaseCloner::AfterStageBehavior DatabaseCloner::listCollectionsStage() {
                       "namespace"_attr = collectionNamespace.ns());
             continue;
         }
-        LOG_DEBUG(21147,
-                  2,
-                  "Allowing cloning of collectionInfo",
-                  "info"_attr = info);
+        LOG_DEBUG(21147, 2, "Allowing cloning of collectionInfo", "info"_attr = info);
 
         bool isDuplicate = seen.insert(result.getName().toString()).second;
         uassert(51005,
@@ -140,10 +137,7 @@ void DatabaseCloner::postStage() {
         }
         auto collStatus = _currentCollectionCloner->run();
         if (collStatus.isOK()) {
-            LOG_DEBUG(21148,
-                      1,
-                      "Collection clone finished",
-                      "namespace"_attr = sourceNss);
+            LOG_DEBUG(21148, 1, "Collection clone finished", "namespace"_attr = sourceNss);
         } else {
             LOG_ERROR(21149,
                       "Collection clone failed",

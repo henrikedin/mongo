@@ -150,9 +150,7 @@ void finishCurOp(OperationContext* opCtx, CurOp* curOp) {
         // We need to ignore all errors here. We don't want a successful op to fail because of a
         // failure to record stats. We also don't want to replace the error reported for an op that
         // is failing.
-        LOG(20887,
-            "Ignoring error from finishCurOp",
-            "error"_attr = redact(ex));
+        LOG(20887, "Ignoring error from finishCurOp", "error"_attr = redact(ex));
     }
 }
 

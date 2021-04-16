@@ -523,10 +523,7 @@ int mdb_handle_error_with_startup_suppression(WT_EVENT_HANDLER* handler,
                 return 0;
             }
         }
-        LOG_ERROR(22435,
-                  "WiredTiger error",
-                  "error"_attr = errorCode,
-                  "message"_attr = message);
+        LOG_ERROR(22435, "WiredTiger error", "error"_attr = errorCode, "message"_attr = message);
 
         // Don't abort on WT_PANIC when repairing, as the error will be handled at a higher layer.
         if (storageGlobalParams.repair) {
@@ -544,10 +541,8 @@ int mdb_handle_error(WT_EVENT_HANDLER* handler,
                      int errorCode,
                      const char* message) {
     try {
-        LOG_ERROR(22436,
-                  "WiredTiger error",
-                  "error"_attr = errorCode,
-                  "message"_attr = redact(message));
+        LOG_ERROR(
+            22436, "WiredTiger error", "error"_attr = errorCode, "message"_attr = redact(message));
 
         // Don't abort on WT_PANIC when repairing, as the error will be handled at a higher layer.
         if (storageGlobalParams.repair) {

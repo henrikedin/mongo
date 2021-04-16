@@ -209,10 +209,7 @@ void SyncSourceFeedback::run(executor::TaskExecutor* executor,
         }
 
         if (syncTarget != target) {
-            LOG_DEBUG(21761,
-                      1,
-                      "Setting syncSourceFeedback",
-                      "target"_attr = target);
+            LOG_DEBUG(21761, 1, "Setting syncSourceFeedback", "target"_attr = target);
             syncTarget = target;
 
             // Update keepalive value from config.

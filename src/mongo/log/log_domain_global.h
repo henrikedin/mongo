@@ -29,9 +29,9 @@
 
 #pragma once
 
-#include "mongo/log/log_format.h"
 #include "mongo/log/constants.h"
 #include "mongo/log/log_domain_internal.h"
+#include "mongo/log/log_format.h"
 
 namespace mongo::log {
 class LogDomainGlobal : public LogDomain::Internal {

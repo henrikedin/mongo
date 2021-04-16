@@ -235,9 +235,7 @@ StatusWith<Shard::CommandResponse> ShardRemote::_runCommand(OperationContext* op
 
     if (!response.status.isOK()) {
         if (ErrorCodes::isExceededTimeLimitError(response.status.code())) {
-            LOG(22739,
-                "Operation timed out",
-                "error"_attr = redact(response.status));
+            LOG(22739, "Operation timed out", "error"_attr = redact(response.status));
         }
         return response.status;
     }

@@ -151,11 +151,10 @@ Status Reporter::trigger() {
 
     _status = scheduleResult.getStatus();
     if (!_status.isOK()) {
-        LOG_DEBUG(
-            21585,
-            2,
-            "Reporter failed to schedule callback to prepare and send update command",
-            "error"_attr = _status);
+        LOG_DEBUG(21585,
+                  2,
+                  "Reporter failed to schedule callback to prepare and send update command",
+                  "error"_attr = _status);
         return _status;
     }
 
@@ -202,10 +201,7 @@ void Reporter::_sendCommand_inlock(BSONObj commandRequest, Milliseconds netTimeo
 
     _status = scheduleResult.getStatus();
     if (!_status.isOK()) {
-        LOG_DEBUG(21588,
-                  2,
-                  "Reporter failed to schedule",
-                  "error"_attr = _status);
+        LOG_DEBUG(21588, 2, "Reporter failed to schedule", "error"_attr = _status);
         if (_status != ErrorCodes::ShutdownInProgress) {
             fassert(34434, _status);
         }

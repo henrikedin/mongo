@@ -434,9 +434,7 @@ Status StorageInterfaceImpl::dropReplicatedDatabases(OperationContext* opCtx) {
         });
     }
     invariant(hasLocalDatabase, "local database missing");
-    LOG(21756,
-        "dropReplicatedDatabases - dropped databases",
-        "numDatabases"_attr = dbNames.size());
+    LOG(21756, "dropReplicatedDatabases - dropped databases", "numDatabases"_attr = dbNames.size());
 
     return Status::OK();
 }

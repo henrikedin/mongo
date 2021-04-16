@@ -266,10 +266,7 @@ void ScanningReplicaSetMonitor::SetState::rescheduleRefresh(SchedulingStrategy s
     }
 
     nextScanTime = possibleNextScanTime;
-    LOG_DEBUG(24071,
-              1,
-              "Next replica set scan scheduled",
-              "nextScanTime"_attr = nextScanTime);
+    LOG_DEBUG(24071, 1, "Next replica set scan scheduled", "nextScanTime"_attr = nextScanTime);
     auto swHandle = scheduleWorkAt(nextScanTime, [this](const CallbackArgs& cbArgs) {
         if (cbArgs.myHandle != refresherHandle)
             return;  // We've been replaced!
@@ -666,9 +663,8 @@ Refresher::NextStep Refresher::getNextStep() {
     if (_scan->hostsToScan.empty()) {
         // We've tried all hosts we can, so nothing more to do in this round.
         if (!_scan->foundUpMaster) {
-            LOG_WARNING(24089,
-                        "Unable to reach primary for replica set",
-                        "replicaSet"_attr = _set->name);
+            LOG_WARNING(
+                24089, "Unable to reach primary for replica set", "replicaSet"_attr = _set->name);
 
             // Since we've talked to everyone we could but still didn't find a primary, we
             // do the best we can, and assume all unconfirmedReplies are actually from nodes
@@ -755,14 +751,13 @@ void Refresher::receivedIsMaster(const HostAndPort& from,
                 _scan->possibleNodes.insert(reply.members.begin(), reply.members.end());
             }
         } else {
-            LOG_ERROR(
-                24091,
-                "replset name mismatch. The expected set name does not match the set name "
-                "received from the remote node",
-                "expectedSetName"_attr = _set->name,
-                "fromRemoteNode"_attr = from,
-                "receivedSetName"_attr = reply.setName,
-                "isMasterReply"_attr = replyObj);
+            LOG_ERROR(24091,
+                      "replset name mismatch. The expected set name does not match the set name "
+                      "received from the remote node",
+                      "expectedSetName"_attr = _set->name,
+                      "fromRemoteNode"_attr = from,
+                      "receivedSetName"_attr = reply.setName,
+                      "isMasterReply"_attr = replyObj);
         }
 
         failedHost(from,
@@ -1016,10 +1011,7 @@ Node::Node(const HostAndPort& host) : host(host), latencyMicros(unknownLatency) 
 
 void Node::markFailed(const Status& status) {
     if (isUp) {
-        LOG(24078,
-            "Marking host as failed",
-            "host"_attr = host,
-            "error"_attr = redact(status));
+        LOG(24078, "Marking host as failed", "host"_attr = host, "error"_attr = redact(status));
 
         isUp = false;
     }
@@ -1033,11 +1025,7 @@ bool Node::matches(const ReadPreference pref) const {
         return false;
     }
 
-    LOG_DEBUG(24080,
-              3,
-              "Host is primary?",
-              "host"_attr = host,
-              "isPrimary"_attr = isMaster);
+    LOG_DEBUG(24080, 3, "Host is primary?", "host"_attr = host, "isPrimary"_attr = isMaster);
     if (pref == ReadPreference::PrimaryOnly) {
         return isMaster;
     }
@@ -1098,11 +1086,7 @@ void Node::update(const IsMasterReply& reply) {
               "lastWriteDate"_attr = reply.lastWriteDate);
     lastWriteDate = reply.lastWriteDate;
 
-    LOG_DEBUG(24083,
-              3,
-              "Updating host opTime",
-              "host"_attr = host,
-              "opTime"_attr = reply.opTime);
+    LOG_DEBUG(24083, 3, "Updating host opTime", "host"_attr = host, "opTime"_attr = reply.opTime);
     opTime = reply.opTime;
     lastWriteDateUpdateTime = Date_t::now();
 }

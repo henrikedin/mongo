@@ -54,8 +54,8 @@
 #include "mongo/rpc/metadata/client_metadata.h"
 #include "mongo/rpc/metadata/impersonated_user_metadata.h"
 #include "mongo/transport/service_executor.h"
-#include "mongo/util/log_with_sampling.h"
 #include "mongo/util/hex.h"
+#include "mongo/util/log_with_sampling.h"
 #include "mongo/util/net/socket_utils.h"
 #include "mongo/util/str.h"
 #include "mongo/util/system_tick_source.h"
@@ -403,10 +403,8 @@ void CurOp::setGenericOpRequestDetails(OperationContext* opCtx,
 
 void CurOp::setMessage_inlock(StringData message) {
     if (_progressMeter.isActive()) {
-        LOG_ERROR(20527,
-                  "Updating message",
-                  "old"_attr = redact(_message),
-                  "new"_attr = redact(message));
+        LOG_ERROR(
+            20527, "Updating message", "old"_attr = redact(_message), "new"_attr = redact(message));
         verify(!_progressMeter.isActive());
     }
     _message = message.toString();  // copy
@@ -545,20 +543,18 @@ bool CurOp::completeAndLogOperation(OperationContext* opCtx,
                 if (lk.isLocked()) {
                     _debug.storageStats = opCtx->recoveryUnit()->getOperationStatistics();
                 } else {
-                    LOG_WARNING_OPTIONS(
-                        20525,
-                        {component},
-                        "Failed to gather storage statistics for slow operation",
-                        "opId"_attr = opCtx->getOpID(),
-                        "error"_attr = "lock acquire timeout"_sd);
+                    LOG_WARNING_OPTIONS(20525,
+                                        {component},
+                                        "Failed to gather storage statistics for slow operation",
+                                        "opId"_attr = opCtx->getOpID(),
+                                        "error"_attr = "lock acquire timeout"_sd);
                 }
             } catch (const ExceptionForCat<ErrorCategory::Interruption>& ex) {
-                LOG_WARNING_OPTIONS(
-                    20526,
-                    {component},
-                    "Failed to gather storage statistics for slow operation",
-                    "opId"_attr = opCtx->getOpID(),
-                    "error"_attr = redact(ex));
+                LOG_WARNING_OPTIONS(20526,
+                                    {component},
+                                    "Failed to gather storage statistics for slow operation",
+                                    "opId"_attr = opCtx->getOpID(),
+                                    "error"_attr = redact(ex));
             }
         }
 

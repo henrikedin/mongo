@@ -80,9 +80,7 @@ ServerParameterSet* ServerParameterSet::getGlobal() {
 void ServerParameterSet::add(ServerParameter* sp) {
     ServerParameter*& x = _map[sp->name()];
     if (x) {
-        LOG_FATAL(23784,
-                  "Duplicate server parameter registration",
-                  "name"_attr = x->name());
+        LOG_FATAL(23784, "Duplicate server parameter registration", "name"_attr = x->name());
     }
     x = sp;
 }

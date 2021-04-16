@@ -118,9 +118,7 @@ public:
                 opCtx, request().getDefaultReadConcern(), request().getDefaultWriteConcern());
 
             updatePersistedDefaultRWConcernDocument(opCtx, newDefaults);
-            LOG(20498,
-                "Successfully set RWC defaults",
-                "value"_attr = newDefaults);
+            LOG(20498, "Successfully set RWC defaults", "value"_attr = newDefaults);
 
             // Refresh to populate the cache with the latest defaults.
             rwcDefaults.refreshIfNecessary(opCtx);

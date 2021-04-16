@@ -995,9 +995,7 @@ StatusWith<RollBackLocalOperations::RollbackCommonPoint> RollbackImpl::_findComm
     auto stableTimestamp =
         _storageInterface->getLastStableRecoveryTimestamp(opCtx->getServiceContext());
 
-    LOG(21607,
-        "Rollback common point",
-        "commonPointOpTime"_attr = commonPointOpTime);
+    LOG(21607, "Rollback common point", "commonPointOpTime"_attr = commonPointOpTime);
 
     // Rollback common point should be >= the replication commit point.
     invariant(commonPointOpTime.getTimestamp() >= lastCommittedOpTime.getTimestamp());
@@ -1081,13 +1079,12 @@ boost::optional<BSONObj> RollbackImpl::_findDocumentById(OperationContext* opCtx
     } else if (document.getStatus().code() == ErrorCodes::NoSuchKey) {
         return boost::none;
     } else {
-        LOG_FATAL_CONTINUE(
-            21645,
-            "Rollback failed to read document",
-            "id"_attr = redact(id),
-            "namespace"_attr = nss.ns(),
-            "uuid"_attr = uuid.toString(),
-            "error"_attr = causedBy(document.getStatus()));
+        LOG_FATAL_CONTINUE(21645,
+                           "Rollback failed to read document",
+                           "id"_attr = redact(id),
+                           "namespace"_attr = nss.ns(),
+                           "uuid"_attr = uuid.toString(),
+                           "error"_attr = causedBy(document.getStatus()));
         fassert(50751, document.getStatus());
     }
 

@@ -105,10 +105,9 @@ RemoveSaver::~RemoveSaver() {
         protectedBuffer.reset(new uint8_t[protectedSizeMax]);
         status = _protector->finalizeTag(protectedBuffer.get(), protectedSizeMax, &resultLen);
         if (!status.isOK()) {
-            LOG_FATAL(
-                34352,
-                "Unable to get finalizeTag from DataProtector while closing RemoveSaver",
-                "error"_attr = redact(status));
+            LOG_FATAL(34352,
+                      "Unable to get finalizeTag from DataProtector while closing RemoveSaver",
+                      "error"_attr = redact(status));
         }
 
         if (resultLen != _protector->getNumberOfBytesReservedForTag()) {

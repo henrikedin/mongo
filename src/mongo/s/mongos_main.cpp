@@ -302,9 +302,7 @@ void cleanupTask(const ShutdownTaskArgs& shutdownArgs) {
             // Abort transactions while we can still send remote commands.
             implicitlyAbortAllTransactions(opCtx);
         } catch (const DBException& excep) {
-            LOG_WARNING(22854,
-                        "Error aborting all active transactions",
-                        "error"_attr = excep);
+            LOG_WARNING(22854, "Error aborting all active transactions", "error"_attr = excep);
         }
 
         if (auto lsc = LogicalSessionCache::get(serviceContext)) {
@@ -658,9 +656,7 @@ ExitCode runMongosServer(ServiceContext* serviceContext) {
         transport::TransportLayerManager::createWithConfig(&serverGlobalParams, serviceContext);
     auto res = tl->setup();
     if (!res.isOK()) {
-        LOG_ERROR(22856,
-                  "Error setting up listener",
-                  "error"_attr = res);
+        LOG_ERROR(22856, "Error setting up listener", "error"_attr = res);
         return EXIT_NET_ERROR;
     }
     serviceContext->setTransportLayer(std::move(tl));
@@ -710,9 +706,7 @@ ExitCode runMongosServer(ServiceContext* serviceContext) {
             return EXIT_CLEAN;
         }
 
-        LOG_ERROR(22857,
-                  "Error initializing sharding system",
-                  "error"_attr = redact(ex));
+        LOG_ERROR(22857, "Error initializing sharding system", "error"_attr = redact(ex));
         return EXIT_SHARDING_ERROR;
     }
 
@@ -737,9 +731,7 @@ ExitCode runMongosServer(ServiceContext* serviceContext) {
 
     Status status = AuthorizationManager::get(serviceContext)->initialize(opCtx);
     if (!status.isOK()) {
-        LOG_ERROR(22858,
-                  "Error initializing authorization data",
-                  "error"_attr = status);
+        LOG_ERROR(22858, "Error initializing authorization data", "error"_attr = status);
         return EXIT_SHARDING_ERROR;
     }
 
@@ -765,17 +757,13 @@ ExitCode runMongosServer(ServiceContext* serviceContext) {
 
     status = serviceContext->getServiceEntryPoint()->start();
     if (!status.isOK()) {
-        LOG_ERROR(22860,
-                  "Error starting service entry point",
-                  "error"_attr = redact(status));
+        LOG_ERROR(22860, "Error starting service entry point", "error"_attr = redact(status));
         return EXIT_NET_ERROR;
     }
 
     status = serviceContext->getTransportLayer()->start();
     if (!status.isOK()) {
-        LOG_ERROR(22861,
-                  "Error starting transport layer",
-                  "error"_attr = redact(status));
+        LOG_ERROR(22861, "Error starting transport layer", "error"_attr = redact(status));
         return EXIT_NET_ERROR;
     }
 
@@ -931,14 +919,10 @@ ExitCode mongos_main(int argc, char* argv[]) {
 
         return main(service);
     } catch (const DBException& e) {
-        LOG_ERROR(22862,
-                  "uncaught DBException in mongos main",
-                  "error"_attr = redact(e));
+        LOG_ERROR(22862, "uncaught DBException in mongos main", "error"_attr = redact(e));
         return EXIT_UNCAUGHT;
     } catch (const std::exception& e) {
-        LOG_ERROR(22863,
-                  "uncaught std::exception in mongos main",
-                  "error"_attr = redact(e.what()));
+        LOG_ERROR(22863, "uncaught std::exception in mongos main", "error"_attr = redact(e.what()));
         return EXIT_UNCAUGHT;
     } catch (...) {
         LOG_ERROR(22864, "uncaught unknown exception in mongos main");

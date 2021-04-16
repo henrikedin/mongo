@@ -176,9 +176,8 @@ bool waitForSignal(const sigset_t& sigset, SignalWaitResult* result) {
         if (result->sig == -1) {
             if (errsv == EINTR)
                 continue;
-            LOG_FATAL_CONTINUE(23385,
-                               "sigwaitinfo failed with error",
-                               "error"_attr = strerror(errsv));
+            LOG_FATAL_CONTINUE(
+                23385, "sigwaitinfo failed with error", "error"_attr = strerror(errsv));
             return false;
         }
         return true;
@@ -198,10 +197,7 @@ struct LogRotationState {
 
 void handleOneSignal(const SignalWaitResult& waited, LogRotationState* rotation) {
     int sig = waited.sig;
-    LOG(23377,
-        "Received signal",
-        "signal"_attr = sig,
-        "error"_attr = strsignal(sig));
+    LOG(23377, "Received signal", "signal"_attr = sig, "error"_attr = strsignal(sig));
 #if defined(__linux__)
     const siginfo_t& si = waited.si;
     switch (si.si_code) {
@@ -276,9 +272,7 @@ void signalProcessingThread(LogFileStatus rotate) {
     errno = 0;
     if (int r = pthread_sigmask(SIG_SETMASK, &waitSignals, nullptr); r != 0) {
         int errsv = errno;
-        LOG_FATAL(31377,
-                  "pthread_sigmask failed with error",
-                  "error"_attr = strerror(errsv));
+        LOG_FATAL(31377, "pthread_sigmask failed with error", "error"_attr = strerror(errsv));
     }
 
 #if defined(MONGO_STACKTRACE_CAN_DUMP_ALL_THREADS)

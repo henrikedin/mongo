@@ -145,10 +145,7 @@ private:
             armTimer();
             return _timer->async_wait(UseFuture{}).tapError([timer = _timer](const Status& status) {
                 if (status != ErrorCodes::CallbackCanceled) {
-                    LOG_DEBUG(23011,
-                              2,
-                              "Timer received error",
-                              "error"_attr = status);
+                    LOG_DEBUG(23011, 2, "Timer received error", "error"_attr = status);
                 }
             });
 
@@ -936,9 +933,7 @@ Status TransportLayerASIO::setup() {
         auto swAddrs =
             resolver.resolve(HostAndPort(ip, _listenerPort), _listenerOptions.enableIPv6);
         if (!swAddrs.isOK()) {
-            LOG_WARNING(23021,
-                        "Found no addresses for peer",
-                        "peer"_attr = swAddrs.getStatus());
+            LOG_WARNING(23021, "Found no addresses for peer", "peer"_attr = swAddrs.getStatus());
             continue;
         }
         auto& addrs = swAddrs.getValue();
@@ -1101,10 +1096,8 @@ void TransportLayerASIO::_runListener() noexcept {
             LOG(23017, "removing socket file", "path"_attr = path);
             if (::unlink(path.c_str()) != 0) {
                 const auto ewd = errnoWithDescription();
-                LOG_WARNING(23022,
-                            "Unable to remove UNIX socket",
-                            "path"_attr = path,
-                            "error"_attr = ewd);
+                LOG_WARNING(
+                    23022, "Unable to remove UNIX socket", "path"_attr = path, "error"_attr = ewd);
             }
         }
     }
@@ -1199,9 +1192,7 @@ void TransportLayerASIO::_acceptConnection(GenericAcceptor& acceptor) {
                 new ASIOSession(this, std::move(peerSocket), true));
             _sep->startSession(std::move(session));
         } catch (const DBException& e) {
-            LOG_WARNING(23023,
-                        "Error accepting new connection",
-                        "error"_attr = e);
+            LOG_WARNING(23023, "Error accepting new connection", "error"_attr = e);
         }
 
         _acceptConnection(acceptor);

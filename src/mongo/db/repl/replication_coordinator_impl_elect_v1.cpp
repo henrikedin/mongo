@@ -179,9 +179,7 @@ void ReplicationCoordinatorImpl::ElectionState::start(WithLock lk, StartElection
 
     if (reason == StartElectionReasonEnum::kStepUpRequestSkipDryRun) {
         long long newTerm = term + 1;
-        LOG(21437,
-            "Skipping dry run and running for election",
-            "newTerm"_attr = newTerm);
+        LOG(21437, "Skipping dry run and running for election", "newTerm"_attr = newTerm);
         _startRealElection(lk, newTerm, reason);
         lossGuard.dismiss();
         return;
@@ -247,9 +245,7 @@ void ReplicationCoordinatorImpl::ElectionState::_processDryRunResult(
     }
 
     long long newTerm = originalTerm + 1;
-    LOG(21444,
-        "Dry election run succeeded, running for election",
-        "newTerm"_attr = newTerm);
+    LOG(21444, "Dry election run succeeded, running for election", "newTerm"_attr = newTerm);
 
     _startRealElection(lk, newTerm, reason);
     lossGuard.dismiss();

@@ -189,9 +189,7 @@ void StorageEngineLockFile::clearPidAndUnlock() {
     // with StorageEngineLockFile::open().
     Status status = _truncateFile(_lockFileHandle->_handle);
     if (!status.isOK()) {
-        LOG(22282,
-            "Couldn't remove fs lock",
-            "error"_attr = status);
+        LOG(22282, "Couldn't remove fs lock", "error"_attr = status);
     }
     CloseHandle(_lockFileHandle->_handle);
     _lockFileHandle->clear();

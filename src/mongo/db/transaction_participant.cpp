@@ -66,8 +66,8 @@
 #include "mongo/db/transaction_participant_gen.h"
 #include "mongo/db/vector_clock_mutable.h"
 #include "mongo/log/log.h"
-#include "mongo/util/log_with_sampling.h"
 #include "mongo/util/fail_point.h"
+#include "mongo/util/log_with_sampling.h"
 #include "mongo/util/net/socket_utils.h"
 
 namespace mongo {

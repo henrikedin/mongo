@@ -84,12 +84,11 @@ Status _applyOperationsForTransaction(OperationContext* opCtx,
                  oplogApplicationMode == repl::OplogApplication::Mode::kRecovering);
 
             if (!ignoreException) {
-                LOG_DEBUG(
-                    21845,
-                    1,
-                    "Error applying operation in transaction",
-                    "error"_attr = redact(ex),
-                    "oplogEntry"_attr = redact(op.toBSONForLogging()));
+                LOG_DEBUG(21845,
+                          1,
+                          "Error applying operation in transaction",
+                          "error"_attr = redact(ex),
+                          "oplogEntry"_attr = redact(op.toBSONForLogging()));
                 return exceptionToStatus();
             }
             LOG_DEBUG(21846,

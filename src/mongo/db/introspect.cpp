@@ -175,9 +175,7 @@ Status createProfileCollection(OperationContext* opCtx, Database* db) {
         }
 
         // system.profile namespace doesn't exist; create it
-        LOG(20701,
-            "Creating profile collection",
-            "namespace"_attr = dbProfilingNS);
+        LOG(20701, "Creating profile collection", "namespace"_attr = dbProfilingNS);
 
         CollectionOptions collectionOptions;
         collectionOptions.capped = true;

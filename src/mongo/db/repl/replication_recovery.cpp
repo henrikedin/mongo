@@ -155,11 +155,11 @@ public:
         auto firstTimestampFound =
             fassert(40291, OpTime::parseFromOplogEntry(_cursor->nextSafe())).getTimestamp();
         if (firstTimestampFound != _oplogApplicationStartPoint) {
-            LOG_FATAL_NOTRACE(
-                40292,
-                "Oplog entry at oplogApplicationStartPoint is missing",
-                "oplogApplicationStartPoint"_attr = _oplogApplicationStartPoint.toBSON(),
-                "firstTimestampFound"_attr = firstTimestampFound.toBSON());
+            LOG_FATAL_NOTRACE(40292,
+                              "Oplog entry at oplogApplicationStartPoint is missing",
+                              "oplogApplicationStartPoint"_attr =
+                                  _oplogApplicationStartPoint.toBSON(),
+                              "firstTimestampFound"_attr = firstTimestampFound.toBSON());
         }
     }
 
@@ -259,10 +259,9 @@ void ReplicationRecoveryImpl::_assertNoRecoveryNeededOnUnstableCheckpoint(Operat
 
     const auto truncateAfterPoint = _consistencyMarkers->getOplogTruncateAfterPoint(opCtx);
     if (!truncateAfterPoint.isNull()) {
-        LOG_FATAL_NOTRACE(
-            31363,
-            "Unexpected recovery needed, oplog requires truncation",
-            "oplogTruncateAfterPoint"_attr = truncateAfterPoint.toString());
+        LOG_FATAL_NOTRACE(31363,
+                          "Unexpected recovery needed, oplog requires truncation",
+                          "oplogTruncateAfterPoint"_attr = truncateAfterPoint.toString());
     }
 
     auto topOfOplogSW = _getTopOfOplog(opCtx);
@@ -430,9 +429,8 @@ void ReplicationRecoveryImpl::recoverFromOplog(OperationContext* opCtx,
             opCtx, _consistencyMarkers->getAppliedThrough(opCtx), topOfOplog);
     }
 } catch (...) {
-    LOG_FATAL_CONTINUE(21570,
-                       "Caught exception during replication recovery",
-                       "error"_attr = exceptionToStatus());
+    LOG_FATAL_CONTINUE(
+        21570, "Caught exception during replication recovery", "error"_attr = exceptionToStatus());
     std::terminate();
 }
 
@@ -528,11 +526,10 @@ void ReplicationRecoveryImpl::_applyToEndOfOplog(OperationContext* opCtx,
             "No oplog entries to apply for recovery. Start point is at the top of the oplog");
         return;  // We've applied all the valid oplog we have.
     } else if (oplogApplicationStartPoint > topOfOplog) {
-        LOG_FATAL_NOTRACE(
-            40313,
-            "Applied op oplogApplicationStartPoint not found",
-            "oplogApplicationStartPoint"_attr = oplogApplicationStartPoint.toBSON(),
-            "topOfOplog"_attr = topOfOplog.toBSON());
+        LOG_FATAL_NOTRACE(40313,
+                          "Applied op oplogApplicationStartPoint not found",
+                          "oplogApplicationStartPoint"_attr = oplogApplicationStartPoint.toBSON(),
+                          "topOfOplog"_attr = topOfOplog.toBSON());
     }
 
     Timestamp appliedUpTo = _applyOplogOperations(opCtx, oplogApplicationStartPoint, topOfOplog);

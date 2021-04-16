@@ -82,9 +82,7 @@ bool OplogCapMaintainerThread::_deleteExcessDocuments() {
     } catch (const ExceptionForCat<ErrorCategory::Interruption>&) {
         return false;
     } catch (const std::exception& e) {
-        LOG_FATAL_NOTRACE(22243,
-                          "Error in OplogCapMaintainerThread",
-                          "error"_attr = e.what());
+        LOG_FATAL_NOTRACE(22243, "Error in OplogCapMaintainerThread", "error"_attr = e.what());
     } catch (...) {
         fassertFailedNoTrace(!"unknown error in OplogCapMaintainerThread");
     }

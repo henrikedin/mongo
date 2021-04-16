@@ -617,16 +617,11 @@ MONGO_INITIALIZER_WITH_PREREQUISITES(SSLManagerLogger, ("SSLManager"))
     if (!isSSLServer || (sslGlobalParams.sslMode.load() != SSLParams::SSLMode_disabled)) {
         const auto& config = SSLManagerCoordinator::get()->getSSLManager()->getSSLConfiguration();
         if (!config.clientSubjectName.empty()) {
-            LOG_DEBUG(23214,
-                      1,
-                      "Client certificate name",
-                      "name"_attr = config.clientSubjectName);
+            LOG_DEBUG(23214, 1, "Client certificate name", "name"_attr = config.clientSubjectName);
         }
         if (!config.serverSubjectName().empty()) {
-            LOG_DEBUG(23215,
-                      1,
-                      "Server certificate name",
-                      "name"_attr = config.serverSubjectName());
+            LOG_DEBUG(
+                23215, 1, "Server certificate name", "name"_attr = config.serverSubjectName());
             LOG_DEBUG(23216,
                       1,
                       "Server certificate expiration",
@@ -751,17 +746,14 @@ bool SSLConfiguration::isClusterMember(SSLX509Name subject) const {
 bool SSLConfiguration::isClusterMember(StringData subjectName) const {
     auto swClient = parseDN(subjectName);
     if (!swClient.isOK()) {
-        LOG_WARNING(23219,
-                    "Unable to parse client subject name",
-                    "error"_attr = swClient.getStatus());
+        LOG_WARNING(
+            23219, "Unable to parse client subject name", "error"_attr = swClient.getStatus());
         return false;
     }
     auto& client = swClient.getValue();
     auto status = client.normalizeStrings();
     if (!status.isOK()) {
-        LOG_WARNING(23220,
-                    "Unable to normalize client subject name",
-                    "error"_attr = status);
+        LOG_WARNING(23220, "Unable to normalize client subject name", "error"_attr = status);
         return false;
     }
 
@@ -1283,9 +1275,7 @@ bool hostNameMatchForX509Certificates(std::string nameToMatch, std::string certH
 }
 
 void tlsEmitWarningExpiringClientCertificate(const SSLX509Name& peer) {
-    LOG_WARNING(23221,
-                "Peer certificate expires soon",
-                "peerSubjectName"_attr = peer);
+    LOG_WARNING(23221, "Peer certificate expires soon", "peerSubjectName"_attr = peer);
 }
 
 void tlsEmitWarningExpiringClientCertificate(const SSLX509Name& peer, Days days) {

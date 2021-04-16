@@ -32,8 +32,8 @@
 #include "mongo/base/status.h"
 #include "mongo/bson/bsonobj.h"
 #include "mongo/bson/mutable/document.h"
-#include "mongo/db/update/log_builder_interface.h"
 #include "mongo/db/update/document_diff_serialization.h"
+#include "mongo/db/update/log_builder_interface.h"
 #include "mongo/db/update/runtime_update_path.h"
 
 namespace mongo {

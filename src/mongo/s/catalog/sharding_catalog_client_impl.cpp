@@ -993,10 +993,9 @@ Status ShardingCatalogClientImpl::applyChunkOpsDeprecated(OperationContext* opCt
         // document in the list of updates should be returned from a query to the chunks
         // collection. The last chunk can be identified by namespace and version number.
 
-        LOG_WARNING(
-            22675,
-            "Error committing chunk operation, metadata will be revalidated",
-            "error"_attr = redact(status));
+        LOG_WARNING(22675,
+                    "Error committing chunk operation, metadata will be revalidated",
+                    "error"_attr = redact(status));
 
         // Look for the chunk in this shard whose version got bumped. We assume that if that
         // mod made it to the config server, then transaction was successful.

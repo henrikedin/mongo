@@ -292,9 +292,7 @@ void MigrationDestinationManager::setState(State newState) {
 }
 
 void MigrationDestinationManager::_setStateFail(StringData msg) {
-    LOG(21998,
-        "Error during migration",
-        "error"_attr = redact(msg));
+    LOG(21998, "Error during migration", "error"_attr = redact(msg));
     {
         stdx::lock_guard<Latch> sl(_mutex);
         _errmsg = msg.toString();
@@ -306,9 +304,7 @@ void MigrationDestinationManager::_setStateFail(StringData msg) {
 }
 
 void MigrationDestinationManager::_setStateFailWarn(StringData msg) {
-    LOG_WARNING(22010,
-                "Error during migration",
-                "error"_attr = redact(msg));
+    LOG_WARNING(22010, "Error during migration", "error"_attr = redact(msg));
     {
         stdx::lock_guard<Latch> sl(_mutex);
         _errmsg = msg.toString();
@@ -478,9 +474,7 @@ repl::OpTime MigrationDestinationManager::cloneDocumentsFromDonor(
         } catch (...) {
             stdx::lock_guard<Client> lk(*opCtx->getClient());
             opCtx->getServiceContext()->killOperation(lk, opCtx, ErrorCodes::Error(51008));
-            LOG(21999,
-                "Batch insertion failed",
-                "error"_attr = redact(exceptionToStatus()));
+            LOG(21999, "Batch insertion failed", "error"_attr = redact(exceptionToStatus()));
         }
     }};
 
