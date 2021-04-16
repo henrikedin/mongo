@@ -67,16 +67,6 @@ void doLogUnpacked(int32_t id,
     doLogImpl(id, severity, options, StringData(msg.data(), msg.size()), attributes);
 }
 
-template <typename S, size_t N, typename... Args>
-void doLogUnpacked(int32_t id,
-                   LogSeverity const& severity,
-                   LogOptions const& options,
-                   const S&,  // formatMsg not used
-                   const char (&msg)[N],
-                   const fmt::internal::named_arg<Args, char>&... args) {
-    doLogUnpacked(id, severity, options, msg, args...);
-}
-
 template <typename S>
 void doLogUnpacked(int32_t id,
                    LogSeverity const& severity,
@@ -85,16 +75,6 @@ void doLogUnpacked(int32_t id,
                    const DynamicAttributes& dynamicAttrs) {
     fmt::string_view msg{message};
     doLogImpl(id, severity, options, StringData(msg.data(), msg.size()), dynamicAttrs);
-}
-
-template <typename S, size_t N>
-void doLogUnpacked(int32_t id,
-                   LogSeverity const& severity,
-                   LogOptions const& options,
-                   const S&,  // formatMsg not used
-                   const char (&msg)[N],
-                   const DynamicAttributes& dynamicAttrs) {
-    doLogUnpacked(id, severity, options, msg, dynamicAttrs);
 }
 
 // Args may be raw attributes or CombinedAttr's here. We need to flatten any combined attributes
@@ -109,20 +89,6 @@ void doLog(int32_t id,
     std::apply([id, &severity, &options, &formatMsg](
                    auto&&... args) { doLogUnpacked(id, severity, options, formatMsg, args...); },
                std::tuple_cat(toFlatAttributesTupleRef(args)...));
-}
-
-template <typename S, size_t N, typename... Args>
-void doLog(int32_t id,
-           LogSeverity const& severity,
-           LogOptions const& options,
-           const S& formatMsg,
-           const char (&msg)[N],
-           const Args&... args) {
-    std::apply(
-        [id, &severity, &options, &formatMsg, &msg](auto&&... unpackedArgs) {
-            doLogUnpacked(id, severity, options, formatMsg, msg, unpackedArgs...);
-        },
-        std::tuple_cat(toFlatAttributesTupleRef(args)...));
 }
 
 }  // namespace log::detail

@@ -376,7 +376,6 @@ Status waitForReadConcernImpl(OperationContext* opCtx,
             auto status = makeNoopWriteIfNeeded(opCtx, *targetClusterTime);
             if (!status.isOK()) {
                 LOG(20990,
-                    "Failed noop write at clusterTime: {targetClusterTime} due to {error}",
                     "Failed noop write",
                     "targetClusterTime"_attr = targetClusterTime,
                     "error"_attr = status);

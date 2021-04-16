@@ -96,8 +96,6 @@ public:
 
             LOG_DEBUG(20507,
                       3,
-                      "Received commitTransaction for transaction with txnNumber "
-                      "{txnNumber} on session {sessionId}",
                       "Received commitTransaction",
                       "txnNumber"_attr = opCtx->getTxnNumber(),
                       "sessionId"_attr = opCtx->getLogicalSessionId()->toBSON());
@@ -208,8 +206,6 @@ public:
 
             LOG_DEBUG(20508,
                       3,
-                      "Received abortTransaction for transaction with txnNumber {txnNumber} "
-                      "on session {sessionId}",
                       "Received abortTransaction",
                       "txnNumber"_attr = opCtx->getTxnNumber(),
                       "sessionId"_attr = opCtx->getLogicalSessionId()->toBSON());

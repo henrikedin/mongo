@@ -69,7 +69,6 @@ ScopedMigrationRequest::~ScopedMigrationRequest() {
 
     if (!result.isOK()) {
         LOG(21900,
-            "Failed to remove config.migrations document for migration '{migration}': {error}",
             "Failed to remove config.migrations document for migration",
             "migration"_attr = migrationDocumentIdentifier.toString(),
             "error"_attr = redact(result));
@@ -145,9 +144,6 @@ StatusWith<ScopedMigrationRequest> ScopedMigrationRequest::writeMigration(
             if (activeMigrateInfo.to != migrateInfo.to ||
                 activeMigrateInfo.from != migrateInfo.from) {
                 LOG(21901,
-                    "Failed to write document '{newMigration}' to config.migrations because there "
-                    "is already an active migration for that chunk: "
-                    "'{activeMigration}': {error}",
                     "Failed to write document to config.migrations because there "
                     "is already an active migration for that chunk",
                     "newMigration"_attr = redact(migrateInfo.toString()),
@@ -205,8 +201,6 @@ void ScopedMigrationRequest::keepDocumentOnDestruct() {
     _opCtx = nullptr;
     LOG_DEBUG(21902,
               1,
-              "Keeping config.migrations document with namespace {namespace} and minKey "
-              "{minKey} for balancer recovery",
               "Keeping config.migrations document for balancer recovery",
               "namespace"_attr = _nss,
               "minKey"_attr = _minKey);

@@ -69,7 +69,7 @@ WiredTigerCursor::WiredTigerCursor(const std::string& uri,
     try {
         _cursor = _session->getNewCursor(uri, _config.c_str());
     } catch (const ExceptionFor<ErrorCodes::CursorNotFound>& ex) {
-        LOG_FATAL_NOTRACE(50883, "{ex}", "Cursor not found", "error"_attr = ex);
+        LOG_FATAL_NOTRACE(50883, "Cursor not found", "error"_attr = ex);
     }
 }
 

@@ -122,7 +122,6 @@ std::vector<std::string> getAddrsForHost(const std::string& iporhost,
 
     if (err) {
         LOG_WARNING(21207,
-                    "getaddrinfo(\"{host}\") failed: {error}",
                     "getaddrinfo() failed",
                     "host"_attr = iporhost,
                     "error"_attr = stringifyError(err));
@@ -140,7 +139,6 @@ std::vector<std::string> getAddrsForHost(const std::string& iporhost,
                 addr->ai_addr, addr->ai_addrlen, host, NI_MAXHOST, nullptr, 0, NI_NUMERICHOST);
             if (err) {
                 LOG_WARNING(21208,
-                            "getnameinfo() failed: {error}",
                             "getnameinfo() failed",
                             "error"_attr = stringifyError(err));
                 continue;
@@ -261,7 +259,6 @@ bool isSelf(const HostAndPort& hostAndPort, ServiceContext* const ctx) {
         return me;
     } catch (const std::exception& e) {
         LOG_WARNING(21209,
-                    "couldn't check isSelf ({hostAndPort}) {error}",
                     "Couldn't check isSelf",
                     "hostAndPort"_attr = hostAndPort,
                     "error"_attr = e.what());
@@ -284,7 +281,6 @@ std::vector<std::string> getBoundAddrs(const bool ipv6enabled) {
     int err = getifaddrs(&addrs);
     if (err) {
         LOG_WARNING(21210,
-                    "getifaddrs failure: {error}",
                     "getifaddrs() failed",
                     "error"_attr = errnoWithDescription(err));
         return out;
@@ -309,7 +305,6 @@ std::vector<std::string> getBoundAddrs(const bool ipv6enabled) {
                 NI_NUMERICHOST);
             if (err) {
                 LOG_WARNING(21211,
-                            "getnameinfo() failed: {error}",
                             "getnameinfo() failed",
                             "error"_attr = gai_strerror(err));
                 continue;
@@ -349,7 +344,6 @@ std::vector<std::string> getBoundAddrs(const bool ipv6enabled) {
 
     if (err != NO_ERROR) {
         LOG_WARNING(21212,
-                    "GetAdaptersAddresses() failed: {error}",
                     "GetAdaptersAddresses() failed",
                     "error"_attr = errnoWithDescription(err));
         return out;
@@ -370,7 +364,6 @@ std::vector<std::string> getBoundAddrs(const bool ipv6enabled) {
                     AF_INET, &(sock->sin_addr), addrstr, INET_ADDRSTRLEN, 0, ec);
                 if (ec) {
                     LOG_WARNING(21213,
-                                "inet_ntop failed during IPv4 address conversion: {error}",
                                 "inet_ntop failed during IPv4 address conversion",
                                 "error"_attr = ec.message());
                     continue;
@@ -385,7 +378,6 @@ std::vector<std::string> getBoundAddrs(const bool ipv6enabled) {
                     AF_INET6, &(sock->sin6_addr), addrstr, INET6_ADDRSTRLEN, 0, ec);
                 if (ec) {
                     LOG_WARNING(21214,
-                                "inet_ntop failed during IPv6 address conversion: {error}",
                                 "inet_ntop failed during IPv6 address conversion",
                                 "error"_attr = ec.message());
                     continue;

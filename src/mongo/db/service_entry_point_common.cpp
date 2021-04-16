@@ -233,7 +233,6 @@ void generateLegacyQueryErrorResponse(const AssertionException& exception,
     if (queryMessage.query.valid())
         LOG_OPTIONS(51777,
                     {log::LogComponent::kQuery},
-                    "Assertion {error} ns: {namespace} query: {query}",
                     "Assertion for valid query",
                     "error"_attr = exception,
                     "namespace"_attr = queryMessage.ns,
@@ -241,7 +240,6 @@ void generateLegacyQueryErrorResponse(const AssertionException& exception,
     else
         LOG_OPTIONS(51778,
                     {log::LogComponent::kQuery},
-                    "Assertion {error} ns: {namespace} query object is corrupt",
                     "Assertion for query with corrupted object",
                     "error"_attr = exception,
                     "namespace"_attr = queryMessage.ns);
@@ -249,7 +247,6 @@ void generateLegacyQueryErrorResponse(const AssertionException& exception,
     if (queryMessage.ntoskip || queryMessage.ntoreturn) {
         LOG_OPTIONS(21952,
                     {log::LogComponent::kQuery},
-                    "Query's nToSkip = {nToSkip} and nToReturn = {nToReturn}",
                     "Assertion for query with nToSkip and/or nToReturn",
                     "nToSkip"_attr = queryMessage.ntoskip,
                     "nToReturn"_attr = queryMessage.ntoreturn);
@@ -392,8 +389,6 @@ StatusWith<repl::ReadConcernArgs> _extractReadConcern(OperationContext* opCtx,
                     readConcernArgs = std::move(*rcDefault);
                     LOG_DEBUG(21955,
                               2,
-                              "Applying default readConcern on {command} of {readConcernDefault} "
-                              "on {command}",
                               "Applying default readConcern on command",
                               "readConcernDefault"_attr = *rcDefault,
                               "command"_attr = invocation->definition()->getName());
@@ -877,8 +872,6 @@ void CheckoutSessionAndInvokeCommand::_cleanupTransaction() {
     } catch (...) {
         // It is illegal for this to throw so we catch and log this here for diagnosability.
         LOG_FATAL(21974,
-                  "Caught exception during transaction {txnNumber} {operation} "
-                  "{logicalSessionId}: {error}",
                   "Unable to stash/abort transaction",
                   "operation"_attr = (isPrepared ? "stash" : "abort"),
                   "txnNumber"_attr = opCtx->getTxnNumber(),
@@ -1249,8 +1242,6 @@ Future<void> RunCommandAndWaitForWriteConcern::_runCommandWithFailPoint() {
     if (auto scoped = failWithErrorCodeInRunCommand.scoped(); MONGO_unlikely(scoped.isActive())) {
         const auto errorCode = scoped.getData()["errorCode"].numberInt();
         LOG(21960,
-            "failWithErrorCodeInRunCommand enabled - failing command with error "
-            "code: {errorCode}",
             "failWithErrorCodeInRunCommand enabled, failing command",
             "errorCode"_attr = errorCode);
         BSONObjBuilder errorBuilder;
@@ -1468,7 +1459,6 @@ void ExecCommandDatabase::_initiateCommand() {
     if (command->adminOnly()) {
         LOG_DEBUG(21961,
                   2,
-                  "Admin only command: {command}",
                   "Admin only command",
                   "command"_attr = request.getCommandName());
     }
@@ -1598,7 +1588,6 @@ void ExecCommandDatabase::_initiateCommand() {
         LOG_DEBUG_OPTIONS(4615605,
                           1,
                           {log::LogComponent::kTracking},
-                          "Command metadata: {trackingMetadata}",
                           "Command metadata",
                           "trackingMetadata"_attr = rpc::TrackingMetadata::get(opCtx));
         rpc::TrackingMetadata::get(opCtx).setIsLogged(true);
@@ -1741,8 +1730,6 @@ void ExecCommandDatabase::_handleFailure(Status status) {
 
     LOG_DEBUG(21962,
               1,
-              "Assertion while executing command '{command}' on database '{db}' with "
-              "arguments '{commandArgs}': {error}",
               "Assertion while executing command",
               "command"_attr = request.getCommandName(),
               "db"_attr = request.getDatabase(),
@@ -1788,7 +1775,6 @@ Future<void> parseCommand(std::shared_ptr<HandleRequest::ExecutionContext> execC
     // can't log anything about the command.
     LOG_DEBUG(21963,
               1,
-              "Assertion while parsing command: {error}",
               "Assertion while parsing command",
               "error"_attr = ex.toString());
 
@@ -1814,7 +1800,6 @@ Future<void> executeCommand(std::shared_ptr<HandleRequest::ExecutionContext> exe
                     globalCommandRegistry()->incrementUnknownCommands();
                     LOG_DEBUG(21964,
                               2,
-                              "No such command: {command}",
                               "Command not found in registry",
                               "command"_attr = request.getCommandName());
                     return Status(ErrorCodes::CommandNotFound,
@@ -1824,7 +1809,6 @@ Future<void> executeCommand(std::shared_ptr<HandleRequest::ExecutionContext> exe
                 Command* c = execContext->getCommand();
                 LOG_DEBUG(21965,
                           2,
-                          "Run command {db}.$cmd {commandArgs}",
                           "About to run the command",
                           "db"_attr = request.getDatabase(),
                           "commandArgs"_attr = redact(
@@ -1850,7 +1834,6 @@ Future<void> executeCommand(std::shared_ptr<HandleRequest::ExecutionContext> exe
                 LOG_DEBUG(
                     21966,
                     1,
-                    "Assertion while executing command '{command}' on database '{db}': {error}",
                     "Assertion while executing command",
                     "command"_attr = execContext->getRequest().getCommandName(),
                     "db"_attr = execContext->getRequest().getDatabase(),
@@ -1976,7 +1959,6 @@ void receivedKillCursors(OperationContext* opCtx, const Message& m) {
 
     if (n > kHardKillLimit) {
         LOG_ERROR(4615607,
-                  "Received killCursors, n={numCursors}",
                   "Received killCursors, exceeded kHardKillLimit",
                   "numCursors"_attr = n,
                   "kHardKillLimit"_attr = kHardKillLimit);
@@ -1985,7 +1967,6 @@ void receivedKillCursors(OperationContext* opCtx, const Message& m) {
 
     if (n > kSoftKillLimit) {
         LOG_WARNING(4615606,
-                    "Received killCursors, n={numCursors}",
                     "Received killCursors, exceeded kSoftKillLimit",
                     "numCursors"_attr = n,
                     "kSoftKillLimit"_attr = kSoftKillLimit);
@@ -2002,7 +1983,6 @@ void receivedKillCursors(OperationContext* opCtx, const Message& m) {
     if (shouldLog(MONGO_LOG_DEFAULT_COMPONENT, log::LogSeverity::Debug(1)) || found != n) {
         LOG_DEBUG(21967,
                   found == n ? 1 : 0,
-                  "killCursors: found {found} of {numCursors}",
                   "killCursors found fewer cursors to kill than requested",
                   "found"_attr = found,
                   "numCursors"_attr = n);
@@ -2239,7 +2219,6 @@ struct UnsupportedOpRunner : SynchronousOpRunner {
         // For compatibility reasons, we only log incidents of receiving operations that are not
         // supported and return an empty response to the caller.
         LOG(21968,
-            "Operation isn't supported: {operation}",
             "Operation is not supported",
             "operation"_attr = static_cast<int>(executionContext->op()));
         executionContext->currentOp().done();
@@ -2278,7 +2257,6 @@ DbResponse FireAndForgetOpRunner::runSync() {
         LastError::get(executionContext->client()).setLastError(ue.code(), ue.reason());
         LOG_DEBUG(21969,
                   3,
-                  "Caught Assertion in {networkOp}, continuing: {error}",
                   "Assertion in fire-and-forget operation",
                   "networkOp"_attr = networkOpToString(executionContext->op()),
                   "error"_attr = redact(ue));

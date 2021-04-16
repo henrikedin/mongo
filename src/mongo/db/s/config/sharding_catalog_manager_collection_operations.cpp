@@ -347,8 +347,6 @@ void ShardingCatalogManager::refineCollectionShardKey(OperationContext* opCtx,
             opCtx, nss, collType, false /* upsert */, txnNumber);
 
         LOG(21933,
-            "refineCollectionShardKey updated collection entry for {namespace}: took "
-            "{durationMillis} ms. Total time taken: {totalTimeMillis} ms.",
             "refineCollectionShardKey updated collection entry",
             "namespace"_attr = nss.ns(),
             "durationMillis"_attr = executionTimer.millis(),
@@ -386,8 +384,6 @@ void ShardingCatalogManager::refineCollectionShardKey(OperationContext* opCtx,
             txnNumber);
 
         LOG(21935,
-            "refineCollectionShardKey: updated chunk entries for {namespace}: took "
-            "{durationMillis} ms. Total time taken: {totalTimeMillis} ms.",
             "refineCollectionShardKey: updated chunk entries",
             "namespace"_attr = nss.ns(),
             "durationMillis"_attr = executionTimer.millis(),
@@ -410,8 +406,6 @@ void ShardingCatalogManager::refineCollectionShardKey(OperationContext* opCtx,
 
 
         LOG(21936,
-            "refineCollectionShardKey: updated zone entries for {namespace}: took "
-            "{durationMillis} ms. Total time taken: {totalTimeMillis} ms.",
             "refineCollectionShardKey: updated zone entries",
             "namespace"_attr = nss.ns(),
             "durationMillis"_attr = executionTimer.millis(),
@@ -437,8 +431,6 @@ void ShardingCatalogManager::refineCollectionShardKey(OperationContext* opCtx,
         triggerFireAndForgetShardRefreshes(opCtx, collType);
     } catch (const DBException& ex) {
         LOG(51798,
-            "refineCollectionShardKey: failed to best-effort refresh all shards containing chunks "
-            "in {namespace}",
             "refineCollectionShardKey: failed to best-effort refresh all shards containing chunks",
             "error"_attr = ex.toStatus(),
             "namespace"_attr = nss.ns());

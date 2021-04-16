@@ -105,7 +105,6 @@ StatusWith<int64_t> compactCollection(OperationContext* opCtx,
 
     LOG_OPTIONS(20284,
                 {LogComponent::kCommand},
-                "compact {namespace} begin",
                 "Compact begin",
                 "namespace"_attr = collectionNss);
 
@@ -124,7 +123,6 @@ StatusWith<int64_t> compactCollection(OperationContext* opCtx,
     auto totalSizeDiff =
         oldTotalSize - recordStore->storageSize(opCtx) - collection->getIndexSize(opCtx);
     LOG(20286,
-        "compact {namespace} end, bytes freed: {freedBytes}",
         "Compact end",
         "namespace"_attr = collectionNss,
         "freedBytes"_attr = totalSizeDiff);

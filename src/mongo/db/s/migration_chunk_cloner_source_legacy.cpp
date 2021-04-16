@@ -182,7 +182,6 @@ void LogTransactionOperationsForShardingHandler::commit(boost::optional<Timestam
         auto idElement = documentKey["_id"];
         if (idElement.eoo()) {
             LOG_WARNING(21994,
-                        "Received a document without an _id field, ignoring: {documentKey}",
                         "Received a document without an _id and will ignore that document",
                         "documentKey"_attr = redact(documentKey));
             continue;
@@ -390,7 +389,6 @@ void MigrationChunkClonerSourceLegacy::cancelClone(OperationContext* opCtx) {
                                     .getStatus();
             if (!status.isOK()) {
                 LOG(21991,
-                    "Failed to cancel migration: {error}",
                     "Failed to cancel migration",
                     "error"_attr = redact(status));
             }
@@ -416,8 +414,6 @@ void MigrationChunkClonerSourceLegacy::onInsertOp(OperationContext* opCtx,
     BSONElement idElement = insertedDoc["_id"];
     if (idElement.eoo()) {
         LOG_WARNING(21995,
-                    "logInsertOp received a document without an _id field, ignoring inserted "
-                    "document: {insertedDoc}",
                     "logInsertOp received a document without an _id field and will ignore that "
                     "document",
                     "insertedDoc"_attr = redact(insertedDoc));
@@ -452,8 +448,6 @@ void MigrationChunkClonerSourceLegacy::onUpdateOp(OperationContext* opCtx,
     if (idElement.eoo()) {
         LOG_WARNING(
             21996,
-            "logUpdateOp received a document without an _id field, ignoring the updated document: "
-            "{postImageDoc}",
             "logUpdateOp received a document without an _id field and will ignore that document",
             "postImageDoc"_attr = redact(postImageDoc));
         return;
@@ -494,8 +488,6 @@ void MigrationChunkClonerSourceLegacy::onDeleteOp(OperationContext* opCtx,
     if (idElement.eoo()) {
         LOG_WARNING(
             21997,
-            "logDeleteOp received a document without an _id field, ignoring deleted doc: "
-            "{deletedDocId}",
             "logDeleteOp received a document without an _id field and will ignore that document",
             "deletedDocId"_attr = redact(deletedDocId));
         return;
@@ -994,16 +986,12 @@ Status MigrationChunkClonerSourceLegacy::_checkRecipientCloningStatus(OperationC
 
         if (_forceJumbo && _jumboChunkCloneState) {
             LOG(21992,
-                "moveChunk data transfer progress: {response} mem used: {memoryUsedBytes} "
-                "documents cloned so far: {docsCloned}",
                 "moveChunk data transfer progress",
                 "response"_attr = redact(res),
                 "memoryUsedBytes"_attr = _memoryUsed,
                 "docsCloned"_attr = _jumboChunkCloneState->docsCloned);
         } else {
             LOG(21993,
-                "moveChunk data transfer progress: {response} mem used: {memoryUsedBytes} "
-                "documents remaining to clone: {docsRemainingToClone}",
                 "moveChunk data transfer progress",
                 "response"_attr = redact(res),
                 "memoryUsedBytes"_attr = _memoryUsed,

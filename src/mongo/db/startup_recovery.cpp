@@ -117,9 +117,6 @@ Status restoreMissingFeatureCompatibilityVersionDocument(OperationContext* opCtx
                           featureCompatibilityVersion)) {
         // (Generic FCV reference): This FCV reference should exist across LTS binary versions.
         LOG(21000,
-            "Re-creating featureCompatibilityVersion document that was deleted. Creating new "
-            "document with version "
-            "{FeatureCompatibilityVersionParser_kLastLTS}.",
             "Re-creating featureCompatibilityVersion document that was deleted",
             "version"_attr = FeatureCompatibilityVersionParser::kLastLTS);
 
@@ -235,14 +232,12 @@ Status ensureCollectionProperties(OperationContext* opCtx,
         if (requiresIndex && !hasAutoIndexIdField &&
             !checkIdIndexExists(opCtx, coll->getCatalogId())) {
             LOG(21001,
-                "collection {coll_ns} is missing an _id index",
                 "Collection is missing an _id index",
                 logAttrs(*coll));
             if (EnsureIndexPolicy::kBuildMissing == ensureIndexPolicy) {
                 auto status = buildMissingIdIndex(opCtx, coll);
                 if (!status.isOK()) {
                     LOG_ERROR(21021,
-                              "could not build an _id index on collection {coll_ns}: {error}",
                               "Could not build an _id index on collection",
                               logAttrs(*coll),
                               "error"_attr = status);
@@ -292,9 +287,6 @@ void assertFilesCompatible(OperationContext* opCtx, StorageEngine* storageEngine
     LOG_FATAL_CONTINUE(
         21023,
         "Unable to start mongod due to an incompatibility with the data files and this version "
-        "of mongod: {error}. Please consult our documentation when trying to downgrade to a "
-        "previous major release",
-        "Unable to start mongod due to an incompatibility with the data files and this version "
         "of mongod. Please consult our documentation when trying to downgrade to a previous "
         "major release",
         "error"_attr = redact(status));
@@ -329,8 +321,6 @@ void assertCappedOplog(OperationContext* opCtx, Database* db) {
     if (oplogCollection && !oplogCollection->isCapped()) {
         LOG_FATAL_NOTRACE(
             40115,
-            "The oplog collection {oplogNamespace} is not capped; a capped oplog is a "
-            "requirement for replication to function.",
             "The oplog collection is not capped; a capped oplog is a "
             "requirement for replication to function.",
             "oplogNamespace"_attr = oplogNss);
@@ -398,7 +388,6 @@ void reconcileCatalogAndRebuildUnfinishedIndexes(
         auto collection = catalog->lookupCollectionByNamespace(opCtx, collNss);
         for (const auto& indexName : entry.second.first) {
             LOG(21004,
-                "Rebuilding index. Collection: {collNss} Index: {indexName}",
                 "Rebuilding index",
                 "namespace"_attr = collNss,
                 "index"_attr = indexName);

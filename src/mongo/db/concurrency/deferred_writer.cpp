@@ -48,7 +48,6 @@ auto kLogInterval = stdx::chrono::minutes(1);
 void DeferredWriter::_logFailure(const Status& status) {
     if (TimePoint::clock::now() - _lastLogged > kLogInterval) {
         LOG(20516,
-            "Unable to write to collection {namespace}: {error}",
             "Unable to write to collection",
             "namespace"_attr = _nss.toString(),
             "error"_attr = status);

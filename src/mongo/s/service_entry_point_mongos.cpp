@@ -159,7 +159,6 @@ Future<DbResponse> OpRunner::run() try {
 
     LOG_DEBUG(22867,
               3,
-              "Request::process begin ns: {namespace} msg id: {msgId} op: {operation}",
               "Starting operation",
               "namespace"_attr = nss,
               "msgId"_attr = hr->msgId,
@@ -169,7 +168,6 @@ Future<DbResponse> OpRunner::run() try {
 
     LOG_DEBUG(22868,
               3,
-              "Request::process end ns: {namespace} msg id: {msgId} op: {operation}",
               "Done processing operation",
               "namespace"_attr = nss,
               "msgId"_attr = hr->msgId,
@@ -179,7 +177,6 @@ Future<DbResponse> OpRunner::run() try {
 } catch (const DBException& ex) {
     LOG_DEBUG(22869,
               1,
-              "Exception thrown while processing {operation} op for {namespace}: {error}",
               "Got an error while processing operation",
               "operation"_attr = networkOpToString(hr->op),
               "namespace"_attr = hr->nsString.ns(),

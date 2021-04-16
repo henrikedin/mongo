@@ -64,7 +64,6 @@ void doMinidumpWithException(struct _EXCEPTION_POINTERS* exceptionInfo) {
     if (ret == 0) {
         int gle = GetLastError();
         LOG(23130,
-            "GetModuleFileName failed {error}",
             "GetModuleFileName failed",
             "error"_attr = errnoWithDescription(gle));
 
@@ -90,7 +89,6 @@ void doMinidumpWithException(struct _EXCEPTION_POINTERS* exceptionInfo) {
     if (INVALID_HANDLE_VALUE == hFile) {
         DWORD lasterr = GetLastError();
         LOG(23131,
-            "Failed to open minidump file {dumpName}: {error}",
             "Failed to open minidump file",
             "dumpName"_attr = toUtf8String(dumpName.c_str()),
             "error"_attr = errnoWithDescription(lasterr));
@@ -110,7 +108,6 @@ void doMinidumpWithException(struct _EXCEPTION_POINTERS* exceptionInfo) {
                                    MiniDumpWithProcessThreadData);
 #endif
     LOG(23132,
-        "Writing minidump diagnostic file {dumpName}",
         "Writing minidump diagnostic file",
         "dumpName"_attr = toUtf8String(dumpName.c_str()));
 
@@ -124,7 +121,6 @@ void doMinidumpWithException(struct _EXCEPTION_POINTERS* exceptionInfo) {
     if (FALSE == bstatus) {
         DWORD lasterr = GetLastError();
         LOG(23133,
-            "Failed to create minidump: {error}",
             "Failed to create minidump",
             "error"_attr = errnoWithDescription(lasterr));
     }
@@ -147,7 +143,6 @@ LONG WINAPI exceptionFilter(struct _EXCEPTION_POINTERS* excPointers) {
               "0x%p",
               excPointers->ExceptionRecord->ExceptionAddress);
     LOG_FATAL_CONTINUE(23134,
-                       "*** unhandled exception {exceptionString} at {addressString}, terminating",
                        "Unhandled exception",
                        "exceptionString"_attr = exceptionString,
                        "addressString"_attr = addressString);
@@ -173,7 +168,6 @@ LONG WINAPI exceptionFilter(struct _EXCEPTION_POINTERS* excPointers) {
                   " 0x%llx",
                   excPointers->ExceptionRecord->ExceptionInformation[1]);
         LOG_FATAL_CONTINUE(23135,
-                           "*** access violation was a {accessType}{address}",
                            "Access violation",
                            "accessType"_attr = acTypeString,
                            "address"_attr = addressString);

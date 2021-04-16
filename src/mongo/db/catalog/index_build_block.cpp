@@ -247,7 +247,6 @@ void IndexBuildBlock::success(OperationContext* opCtx, Collection* collection) {
             // collection. This means that any snapshot created after this must include the full
             // index, and no one can try to read this index before we set the visibility.
             LOG(20345,
-                "Index build: done building index {indexName} on ns {nss}",
                 "Index build: done building",
                 "buildUUID"_attr = buildUUID,
                 "namespace"_attr = coll->ns(),

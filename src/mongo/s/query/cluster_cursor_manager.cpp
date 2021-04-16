@@ -722,9 +722,6 @@ auto ClusterCursorManager::eraseContainer(NssToCursorContainerMap::iterator it)
     if (numDeleted != 1) {
         LOG_ERROR(
             4786901,
-            "Error attempting to erase CursorEntryContainer for nss {nss} and containerPrefix"
-            "{prefix}. Could not find containerPrefix in map from cursor ID prefix to nss. "
-            "Expected 'numDeleted' to be 1, but got {actualNumDeleted}",
             "Error attempting to erase CursorEntryContainer. Could not find containerPrefix in map "
             "from cursor id prefix to namespace string.",
             "nss"_attr = it->first,
@@ -779,10 +776,6 @@ StatusWith<ClusterClientCursorGuard> ClusterCursorManager::_detachCursor(WithLoc
 void ClusterCursorManager::logCursorManagerInfo() const {
     LOG_ERROR_OPTIONS(4786900,
                       log::LogTruncation::Disabled,
-                      "Dumping cursor manager contents. "
-                      "NSS -> Container map: {nssToContainer} "
-                      "Cursor ID Prefix -> NSS map: {cursorIdToNss} "
-                      "Internal log: {internalLog}",
                       "Dumping cursor manager contents.",
                       "{nssToContainer}"_attr = dumpNssToContainerMap(),
                       "{cursorIdToNss}"_attr = dumpCursorIdToNssMap(),

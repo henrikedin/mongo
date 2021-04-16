@@ -81,7 +81,6 @@ Status ShardingLogging::logAction(OperationContext* opCtx,
             _actionLogCollectionCreated.store(1);
         } else {
             LOG(22078,
-                "Couldn't create config.actionlog collection: {error}",
                 "Couldn't create config.actionlog collection",
                 "error"_attr = result);
             return result;
@@ -110,7 +109,6 @@ Status ShardingLogging::logChangeChecked(OperationContext* opCtx,
             _changeLogCollectionCreated.store(1);
         } else {
             LOG(22079,
-                "Couldn't create config.changelog collection: {error}",
                 "Couldn't create config.changelog collection",
                 "error"_attr = result);
             return result;
@@ -151,7 +149,6 @@ Status ShardingLogging::_LOG(OperationContext* opCtx,
 
     BSONObj changeLogBSON = changeLog.toBSON();
     LOG(22080,
-        "About to log metadata event into {namespace}: {event}",
         "About to log metadata event",
         "namespace"_attr = logCollName,
         "event"_attr = redact(changeLogBSON));

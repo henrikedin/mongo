@@ -266,7 +266,6 @@ Status Balancer::rebalanceSingleChunk(OperationContext* opCtx, const ChunkType& 
     if (!migrateInfo) {
         LOG_DEBUG(21854,
                   1,
-                  "Unable to find more appropriate location for chunk {chunk}",
                   "Unable to find more appropriate location for chunk",
                   "chunk"_attr = redact(chunk.toString()));
         return Status::OK();
@@ -350,8 +349,6 @@ void Balancer::_mainThread() {
         if (!refreshStatus.isOK()) {
             LOG_WARNING(
                 21876,
-                "Balancer settings could not be loaded because of {error} and will be retried in "
-                "{backoffInterval}",
                 "Got error while refreshing balancer settings, will retry with a backoff",
                 "backoffInterval"_attr = Milliseconds(kInitBackoffInterval),
                 "error"_attr = refreshStatus);
@@ -385,7 +382,6 @@ void Balancer::_mainThread() {
             Status refreshStatus = balancerConfig->refreshAndCheck(opCtx.get());
             if (!refreshStatus.isOK()) {
                 LOG_WARNING(21877,
-                            "Skipping balancing round due to {error}",
                             "Skipping balancing round",
                             "error"_attr = refreshStatus);
                 _endRound(opCtx.get(), kBalanceRoundDefaultInterval);
@@ -401,8 +397,6 @@ void Balancer::_mainThread() {
             {
                 LOG_DEBUG(21860,
                           1,
-                          "Start balancing round. waitForDelete: {waitForDelete}, "
-                          "secondaryThrottle: {secondaryThrottle}",
                           "Start balancing round",
                           "waitForDelete"_attr = balancerConfig->waitForDelete(),
                           "secondaryThrottle"_attr =
@@ -416,7 +410,6 @@ void Balancer::_mainThread() {
                 Status status = _splitChunksIfNeeded(opCtx.get());
                 if (!status.isOK()) {
                     LOG_WARNING(21878,
-                                "Failed to split chunks due to {error}",
                                 "Failed to split chunks",
                                 "error"_attr = status);
                 } else {
@@ -449,8 +442,6 @@ void Balancer::_mainThread() {
             overrideBalanceRoundInterval.execute([&](const BSONObj& data) {
                 balancerInterval = Milliseconds(data["intervalMs"].numberInt());
                 LOG(21864,
-                    "overrideBalanceRoundInterval: using shorter balancing interval: "
-                    "{balancerInterval}",
                     "overrideBalanceRoundInterval: using shorter balancing interval",
                     "balancerInterval"_attr = balancerInterval);
             });
@@ -458,7 +449,6 @@ void Balancer::_mainThread() {
             _endRound(opCtx.get(), balancerInterval);
         } catch (const DBException& e) {
             LOG(21865,
-                "caught exception while doing balance: {error}",
                 "Error while doing balance",
                 "error"_attr = e);
 
@@ -558,8 +548,6 @@ bool Balancer::_checkOIDs(OperationContext* opCtx) {
                 oids[x] = shardId;
             } else {
                 LOG(21868,
-                    "error: 2 machines have {oidMachine} as oid machine piece: {firstShardId} "
-                    "and {secondShardId}",
                     "Two machines have the same oidMachine value",
                     "oidMachine"_attr = x,
                     "firstShardId"_attr = shardId,
@@ -591,7 +579,6 @@ bool Balancer::_checkOIDs(OperationContext* opCtx) {
             }
         } else {
             LOG(21869,
-                "warning: oidMachine not set on: {shard}",
                 "warning: oidMachine not set on shard",
                 "shard"_attr = s->toString());
         }
@@ -626,7 +613,6 @@ Status Balancer::_splitChunksIfNeeded(OperationContext* opCtx) {
                                                   splitInfo.splitKeys);
         if (!splitStatus.isOK()) {
             LOG_WARNING(21879,
-                        "Failed to split chunk {splitInfo} {error}",
                         "Failed to split chunk",
                         "splitInfo"_attr = redact(splitInfo.toString()),
                         "error"_attr = redact(splitStatus.getStatus()));
@@ -681,7 +667,6 @@ int Balancer::_moveChunks(OperationContext* opCtx,
             numChunksProcessed++;
 
             LOG(21871,
-                "Migration {migrateInfo} failed with {error}, going to try splitting the chunk",
                 "Migration failed, going to try splitting the chunk",
                 "migrateInfo"_attr = redact(requestIt->toString()),
                 "error"_attr = redact(status));
@@ -692,7 +677,6 @@ int Balancer::_moveChunks(OperationContext* opCtx,
         }
 
         LOG(21872,
-            "Migration {migrateInfo} failed with {error}",
             "Migration failed",
             "migrateInfo"_attr = redact(requestIt->toString()),
             "error"_attr = redact(status));

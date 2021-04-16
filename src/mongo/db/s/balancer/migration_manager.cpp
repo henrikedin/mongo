@@ -237,8 +237,6 @@ void MigrationManager::startRecoveryAndAcquireDistLocks(OperationContext* opCtx)
 
     if (!statusWithMigrationsQueryResponse.isOK()) {
         LOG(21896,
-            "Unable to read config.migrations collection documents for balancer migration "
-            "recovery. Abandoning balancer recovery: {error}",
             "Unable to read config.migrations documents for balancer migration recovery",
             "error"_attr = redact(statusWithMigrationsQueryResponse.getStatus()));
         return;
@@ -251,8 +249,6 @@ void MigrationManager::startRecoveryAndAcquireDistLocks(OperationContext* opCtx)
             // this migration, but without parsing the migration document we cannot identify which
             // distlock must be released. So we must release all distlocks.
             LOG(21897,
-                "Unable to parse config.migrations document '{migration}' for balancer"
-                "migration recovery. Abandoning balancer recovery: {error}",
                 "Unable to parse config.migrations document for balancer migration recovery",
                 "migration"_attr = redact(migration.toString()),
                 "error"_attr = redact(statusWithMigrationType.getStatus()));
@@ -273,9 +269,6 @@ void MigrationManager::startRecoveryAndAcquireDistLocks(OperationContext* opCtx)
                 opCtx, migrateType.getNss().ns(), whyMessage);
             if (!status.isOK()) {
                 LOG(21898,
-                    "Failed to acquire distributed lock for collection {namespace} "
-                    "during balancer recovery of an active migration. Abandoning balancer "
-                    "recovery: {error}",
                     "Failed to acquire distributed lock for collection "
                     "during balancer recovery of an active migration",
                     "namespace"_attr = migrateType.getNss().ns(),
@@ -330,8 +323,6 @@ void MigrationManager::finishRecovery(OperationContext* opCtx,
             // config primary was active and the dist locks have been held by the balancer
             // throughout. Abort migration recovery.
             LOG(21899,
-                "Unable to reload chunk metadata for collection {namespace} during balancer "
-                "recovery. Abandoning recovery: {error}",
                 "Unable to reload chunk metadata for collection during balancer recovery",
                 "namespace"_attr = nss,
                 "error"_attr = redact(swCM.getStatus()));

@@ -153,7 +153,6 @@ void appendRequiredFieldsToResponse(OperationContext* opCtx, BSONObjBuilder* res
         if (operationTime != LogicalTime::kUninitialized) {
             LOG_DEBUG(22764,
                       5,
-                      "Appending operationTime: {operationTime}",
                       "Appending operationTime",
                       "operationTime"_attr = operationTime.asTimestamp());
             operationTime.appendAsOperationTime(responseBuilder);
@@ -163,7 +162,6 @@ void appendRequiredFieldsToResponse(OperationContext* opCtx, BSONObjBuilder* res
             // actual.
             LOG_DEBUG(22765,
                       5,
-                      "Appending clusterTime as operationTime {clusterTime}",
                       "Appending clusterTime as operationTime",
                       "clusterTime"_attr = clusterTime.asTimestamp());
             clusterTime.appendAsOperationTime(responseBuilder);
@@ -656,7 +654,6 @@ Status ParseAndRunCommand::RunInvocation::_setup() {
             customDefaultWriteConcernWasApplied = true;
             LOG_DEBUG(22766,
                       2,
-                      "Applying default writeConcern on {command} of {writeConcern}",
                       "Applying default writeConcern on command",
                       "command"_attr = request.getCommandName(),
                       "writeConcern"_attr = *wcDefault);
@@ -719,7 +716,6 @@ Status ParseAndRunCommand::RunInvocation::_setup() {
                 customDefaultReadConcernWasApplied = true;
                 LOG_DEBUG(22767,
                           2,
-                          "Applying default readConcern on {command} of {readConcern}",
                           "Applying default readConcern on command",
                           "command"_attr = invocation->definition()->getName(),
                           "readConcern"_attr = *rcDefault);
@@ -1099,7 +1095,6 @@ DbResponse Strategy::queryOp(OperationContext* opCtx, const NamespaceString& nss
 
     LOG_DEBUG(22768,
               3,
-              "Query: {namespace} {query} ntoreturn: {ntoreturn} options: {queryOptions}",
               "Query",
               "namespace"_attr = q.ns,
               "query"_attr = redact(q.query),
@@ -1226,7 +1221,6 @@ void ClientCommand::_parseMessage() try {
 
     LOG_DEBUG(22769,
               1,
-              "Exception thrown while parsing command {error}",
               "Exception thrown while parsing command",
               "error"_attr = redact(ex));
     throw;
@@ -1235,7 +1229,6 @@ void ClientCommand::_parseMessage() try {
 Future<void> ClientCommand::_execute() {
     LOG_DEBUG(22770,
               3,
-              "Command begin db: {db} msg id: {headerId}",
               "Command begin",
               "db"_attr = _rec->getRequest().getDatabase().toString(),
               "headerId"_attr = _rec->getMessage().header().getId());
@@ -1245,7 +1238,6 @@ Future<void> ClientCommand::_execute() {
         .then([this] {
             LOG_DEBUG(22771,
                       3,
-                      "Command end db: {db} msg id: {headerId}",
                       "Command end",
                       "db"_attr = _rec->getRequest().getDatabase().toString(),
                       "headerId"_attr = _rec->getMessage().header().getId());
@@ -1254,7 +1246,6 @@ Future<void> ClientCommand::_execute() {
             LOG_DEBUG(
                 22772,
                 1,
-                "Exception thrown while processing command on {db} msg id: {headerId} {error}",
                 "Exception thrown while processing command",
                 "db"_attr = _rec->getRequest().getDatabase().toString(),
                 "headerId"_attr = _rec->getMessage().header().getId(),
@@ -1405,7 +1396,6 @@ void Strategy::killCursors(OperationContext* opCtx, DbMessage* dbm) {
         if (!nss) {
             LOG_DEBUG(22773,
                       3,
-                      "Can't find cursor to kill, no namespace found. Cursor id: {cursorId}",
                       "Can't find cursor to kill, no namespace found",
                       "cursorId"_attr = cursorId);
             continue;
@@ -1421,7 +1411,6 @@ void Strategy::killCursors(OperationContext* opCtx, DbMessage* dbm) {
             LOG_DEBUG(
                 22774,
                 3,
-                "Not authorized to kill cursor. Namespace: '{namespace}', cursor id: {cursorId}",
                 "Not authorized to kill cursor",
                 "namespace"_attr = *nss,
                 "cursorId"_attr = cursorId);
@@ -1432,7 +1421,6 @@ void Strategy::killCursors(OperationContext* opCtx, DbMessage* dbm) {
         if (!killCursorStatus.isOK()) {
             LOG_DEBUG(22775,
                       3,
-                      "Can't find cursor to kill. Namespace: '{namespace}', cursor id: {cursorId}",
                       "Can't find cursor to kill",
                       "namespace"_attr = *nss,
                       "cursorId"_attr = cursorId);
@@ -1441,7 +1429,6 @@ void Strategy::killCursors(OperationContext* opCtx, DbMessage* dbm) {
 
         LOG_DEBUG(22776,
                   3,
-                  "Killed cursor. Namespace: '{namespace}', cursor id: {cursorId}",
                   "Killed cursor",
                   "namespace"_attr = *nss,
                   "cursorId"_attr = cursorId);

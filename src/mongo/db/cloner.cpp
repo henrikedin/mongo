@@ -193,7 +193,6 @@ struct Cloner::Fun {
                     collection->insertDocument(opCtx, InsertStatement(doc), nullOpDebug, true);
                 if (!status.isOK() && status.code() != ErrorCodes::DuplicateKey) {
                     LOG_ERROR(20424,
-                              "error: exception cloning object",
                               "Exception cloning document",
                               logAttrs(nss),
                               "error"_attr = redact(status),
@@ -548,7 +547,6 @@ Status Cloner::copyDb(OperationContext* opCtx,
     // now build the secondary indexes
     for (auto&& params : createCollectionParams) {
         LOG(20422,
-            "copying indexes for: {collectionInfo}",
             "Copying indexes",
             "collectionInfo"_attr = params.collectionInfo);
 

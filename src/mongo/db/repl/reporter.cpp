@@ -154,7 +154,6 @@ Status Reporter::trigger() {
         LOG_DEBUG(
             21585,
             2,
-            "Reporter failed to schedule callback to prepare and send update command: {error}",
             "Reporter failed to schedule callback to prepare and send update command",
             "error"_attr = _status);
         return _status;
@@ -179,7 +178,6 @@ StatusWith<BSONObj> Reporter::_prepareCommand() {
     if (!prepareResult.isOK()) {
         LOG_DEBUG(21586,
                   2,
-                  "Reporter failed to prepare update command with status: {error}",
                   "Reporter failed to prepare update command",
                   "error"_attr = prepareResult.getStatus());
         _status = prepareResult.getStatus();
@@ -192,7 +190,6 @@ StatusWith<BSONObj> Reporter::_prepareCommand() {
 void Reporter::_sendCommand_inlock(BSONObj commandRequest, Milliseconds netTimeout) {
     LOG_DEBUG(21587,
               2,
-              "Reporter sending oplog progress to upstream updater {target}: {commandRequest}",
               "Reporter sending oplog progress to upstream updater",
               "target"_attr = _target,
               "commandRequest"_attr = commandRequest);
@@ -207,7 +204,6 @@ void Reporter::_sendCommand_inlock(BSONObj commandRequest, Milliseconds netTimeo
     if (!_status.isOK()) {
         LOG_DEBUG(21588,
                   2,
-                  "Reporter failed to schedule with status: {error}",
                   "Reporter failed to schedule",
                   "error"_attr = _status);
         if (_status != ErrorCodes::ShutdownInProgress) {

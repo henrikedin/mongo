@@ -153,7 +153,6 @@ bool FailPoint::Impl::_evaluateByMode() {
             return _modeValue.load() <= 0 || _modeValue.subtractAndFetch(1) < 0;
         default:
             LOG_ERROR(23832,
-                      "FailPoint mode not supported: {mode}",
                       "FailPoint mode not supported",
                       "mode"_attr = static_cast<int>(_mode));
             fassertFailed(16444);
@@ -275,7 +274,6 @@ auto setGlobalFailPoint(const std::string& failPointName, const BSONObj& cmdObj)
         uasserted(ErrorCodes::FailPointSetFailed, failPointName + " not found");
     auto timesEntered = failPoint->setMode(uassertStatusOK(FailPoint::parseBSON(cmdObj)));
     LOG_WARNING(23829,
-                "Set failpoint {failPointName} to: {failPoint}",
                 "Set failpoint",
                 "failPointName"_attr = failPointName,
                 "failPoint"_attr = failPoint->toBSON());
@@ -298,7 +296,6 @@ FailPointEnableBlock::FailPointEnableBlock(FailPoint* failPoint, BSONObj data)
     _initialTimesEntered = _failPoint->setMode(FailPoint::alwaysOn, 0, std::move(data));
 
     LOG_WARNING(23830,
-                "Set failpoint {failPointName} to: {failPoint}",
                 "Set failpoint",
                 "failPointName"_attr = _failPoint->getName(),
                 "failPoint"_attr = _failPoint->toBSON());
@@ -307,7 +304,6 @@ FailPointEnableBlock::FailPointEnableBlock(FailPoint* failPoint, BSONObj data)
 FailPointEnableBlock::~FailPointEnableBlock() {
     _failPoint->setMode(FailPoint::off);
     LOG_WARNING(23831,
-                "Set failpoint {failPointName} to: {failPoint}",
                 "Set failpoint",
                 "failPointName"_attr = _failPoint->getName(),
                 "failPoint"_attr = _failPoint->toBSON());

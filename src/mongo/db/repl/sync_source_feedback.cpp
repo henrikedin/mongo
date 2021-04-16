@@ -105,7 +105,6 @@ void SyncSourceFeedback::forwardSecondaryProgress() {
             auto triggerStatus = _reporter->trigger();
             if (!triggerStatus.isOK()) {
                 LOG_WARNING(21764,
-                            "unable to forward progress to {target}: {error}",
                             "Unable to forward progress",
                             "target"_attr = _reporter->getTarget(),
                             "error"_attr = triggerStatus);
@@ -120,8 +119,6 @@ Status SyncSourceFeedback::_updateUpstream(Reporter* reporter) {
     auto triggerStatus = reporter->trigger();
     if (!triggerStatus.isOK()) {
         LOG_WARNING(21765,
-                    "unable to schedule reporter to update replication progress on {syncTarget}: "
-                    "{error}",
                     "Unable to schedule reporter to update replication progress",
                     "syncTarget"_attr = syncTarget,
                     "error"_attr = triggerStatus);
@@ -132,7 +129,6 @@ Status SyncSourceFeedback::_updateUpstream(Reporter* reporter) {
 
     if (!status.isOK()) {
         LOG(21760,
-            "SyncSourceFeedback error sending update to {syncTarget}: {error}",
             "SyncSourceFeedback error sending update",
             "syncTarget"_attr = syncTarget,
             "error"_attr = status);
@@ -215,7 +211,6 @@ void SyncSourceFeedback::run(executor::TaskExecutor* executor,
         if (syncTarget != target) {
             LOG_DEBUG(21761,
                       1,
-                      "setting syncSourceFeedback to {target}",
                       "Setting syncSourceFeedback",
                       "target"_attr = target);
             syncTarget = target;
@@ -226,8 +221,6 @@ void SyncSourceFeedback::run(executor::TaskExecutor* executor,
             if (oldKeepAliveInterval != keepAliveInterval) {
                 LOG_DEBUG(21762,
                           1,
-                          "new syncSourceFeedback keep alive duration = {newKeepAliveInterval} "
-                          "(previously {oldKeepAliveInterval})",
                           "New syncSourceFeedback keep alive duration",
                           "newKeepAliveInterval"_attr = keepAliveInterval,
                           "oldKeepAliveInterval"_attr = oldKeepAliveInterval);
@@ -255,8 +248,6 @@ void SyncSourceFeedback::run(executor::TaskExecutor* executor,
         if (!status.isOK()) {
             LOG_DEBUG(21763,
                       1,
-                      "The replication progress command (replSetUpdatePosition) failed and will be "
-                      "retried: {error}",
                       "The replication progress command (replSetUpdatePosition) failed and will be "
                       "retried",
                       "error"_attr = status);

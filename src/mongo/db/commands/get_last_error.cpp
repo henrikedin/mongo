@@ -230,7 +230,6 @@ public:
                 if (electionId != repl::ReplicationCoordinator::get(opCtx)->getElectionId()) {
                     LOG_DEBUG(20476,
                               3,
-                              "OID passed in is {passedOID}, but our id is {ourOID}",
                               "OID mismatch during election",
                               "passedOID"_attr = electionId,
                               "ourOID"_attr =

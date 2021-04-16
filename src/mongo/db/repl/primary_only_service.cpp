@@ -154,7 +154,6 @@ void PrimaryOnlyServiceRegistry::registerService(std::unique_ptr<PrimaryOnlyServ
                             << existingService->getServiceName());
     LOG_INFO(
         5123008,
-        "Successfully registered PrimaryOnlyService {service} with state documents stored in {ns}",
         "Successfully registered PrimaryOnlyService",
         "service"_attr = name,
         "ns"_attr = ns);
@@ -403,8 +402,6 @@ void PrimaryOnlyService::onStepDown() {
     }
 
     LOG_INFO(5123007,
-             "Interrupting (due to stepDown) PrimaryOnlyService {service} with {numInstances} "
-             "currently running instances and {numOperationContexts} associated operations",
              "Interrupting PrimaryOnlyService due to stepDown",
              "service"_attr = getServiceName(),
              "numInstances"_attr = _activeInstances.size(),
@@ -428,8 +425,6 @@ void PrimaryOnlyService::shutdown() {
         stdx::lock_guard lk(_mutex);
 
         LOG_INFO(5123006,
-                 "Shutting down PrimaryOnlyService {service} with {numInstances} currently running "
-                 "instances and {numOperationContexts} associated operations",
                  "Shutting down PrimaryOnlyService",
                  "service"_attr = getServiceName(),
                  "numInstances"_attr = _activeInstances.size(),
@@ -574,7 +569,6 @@ void PrimaryOnlyService::_rebuildInstances(long long term) noexcept {
 
     auto serviceName = getServiceName();
     LOG_INFO(5123005,
-             "Rebuilding PrimaryOnlyService {service} due to stepUp",
              "Rebuilding PrimaryOnlyService due to stepUp",
              "service"_attr = serviceName);
 
@@ -582,8 +576,6 @@ void PrimaryOnlyService::_rebuildInstances(long long term) noexcept {
         auto ns = getStateDocumentsNS();
         LOG_DEBUG(5123004,
                   2,
-                  "Querying {ns} to look for state documents while rebuilding PrimaryOnlyService "
-                  "{service}",
                   "Querying to look for state documents while rebuilding PrimaryOnlyService",
                   "ns"_attr = ns,
                   "service"_attr = serviceName);
@@ -609,8 +601,6 @@ void PrimaryOnlyService::_rebuildInstances(long long term) noexcept {
         } catch (const DBException& e) {
             LOG_ERROR(
                 4923601,
-                "Failed to start PrimaryOnlyService {service} because the query on {ns} "
-                "for state documents failed due to {error}",
                 "Failed to start PrimaryOnlyService because the query for state documents failed",
                 "service"_attr = serviceName,
                 "ns"_attr = ns,
@@ -656,8 +646,6 @@ void PrimaryOnlyService::_rebuildInstances(long long term) noexcept {
 
     LOG_DEBUG(5123003,
               2,
-              "While rebuilding PrimaryOnlyService {service}, found {numDocuments} state "
-              "documents corresponding to instances of that service",
               "Found state documents while rebuilding PrimaryOnlyService that correspond to "
               "instances of that service",
               "service"_attr = serviceName,
@@ -687,8 +675,6 @@ std::shared_ptr<PrimaryOnlyService::Instance> PrimaryOnlyService::_insertNewInst
                    instanceID] {
                 LOG_DEBUG(5123002,
                           3,
-                          "Starting instance of PrimaryOnlyService {service} with InstanceID "
-                          "{instanceID}",
                           "Starting instance of PrimaryOnlyService",
                           "service"_attr = serviceName,
                           "instanceID"_attr = instanceID);

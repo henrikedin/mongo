@@ -147,7 +147,6 @@ private:
                 if (status != ErrorCodes::CallbackCanceled) {
                     LOG_DEBUG(23011,
                               2,
-                              "Timer received error: {error}",
                               "Timer received error",
                               "error"_attr = status);
                 }
@@ -671,7 +670,6 @@ Future<SessionHandle> TransportLayerASIO::asyncConnect(
                 Date_t timeAfter = Date_t::now();
                 if (timeAfter - timeBefore > kSlowOperationThreshold) {
                     LOG_WARNING(23019,
-                                "DNS resolution while connecting to {peer} took {duration}",
                                 "DNS resolution while connecting to peer was slow",
                                 "peer"_attr = connector->peer,
                                 "duration"_attr = timeAfter - timeBefore);
@@ -939,7 +937,6 @@ Status TransportLayerASIO::setup() {
             resolver.resolve(HostAndPort(ip, _listenerPort), _listenerOptions.enableIPv6);
         if (!swAddrs.isOK()) {
             LOG_WARNING(23021,
-                        "Found no addresses for {peer}",
                         "Found no addresses for peer",
                         "peer"_attr = swAddrs.getStatus());
             continue;
@@ -953,7 +950,6 @@ Status TransportLayerASIO::setup() {
         if (addr.family() == AF_UNIX) {
             if (::unlink(addr.toString().c_str()) == -1 && errno != ENOENT) {
                 LOG_ERROR(23024,
-                          "Failed to unlink socket file {path} {error}",
                           "Failed to unlink socket file",
                           "path"_attr = addr.toString().c_str(),
                           "error"_attr = errnoWithDescription(errno));
@@ -977,7 +973,6 @@ Status TransportLayerASIO::setup() {
                 addr.toString() == bindAllIPv6Addr) {
                 LOG_WARNING(4206501,
                             "Failed to bind to address as the platform does not support ipv6",
-                            "Failed to bind to {address} as the platform does not support ipv6",
                             "address"_attr = addr.toString());
                 continue;
             }
@@ -1014,7 +1009,6 @@ Status TransportLayerASIO::setup() {
         if (addr.family() == AF_UNIX) {
             if (::chmod(addr.toString().c_str(), serverGlobalParams.unixSocketPermissions) == -1) {
                 LOG_ERROR(23026,
-                          "Failed to chmod socket file {path} {error}",
                           "Failed to chmod socket file",
                           "path"_attr = addr.toString().c_str(),
                           "error"_attr = errnoWithDescription(errno));
@@ -1067,7 +1061,6 @@ void TransportLayerASIO::_runListener() noexcept {
         acceptor.second.listen(serverGlobalParams.listenBacklog, ec);
         if (ec) {
             LOG_FATAL(31339,
-                      "Error listening for new connections on {listenAddress}: {error}",
                       "Error listening for new connections on listen address",
                       "listenAddrs"_attr = acceptor.first,
                       "error"_attr = ec.message());
@@ -1105,11 +1098,10 @@ void TransportLayerASIO::_runListener() noexcept {
         auto& addr = acceptor.first;
         if (addr.getType() == AF_UNIX && !addr.isAnonymousUNIXSocket()) {
             auto path = addr.getAddr();
-            LOG(23017, "removing socket file: {path}", "removing socket file", "path"_attr = path);
+            LOG(23017, "removing socket file", "path"_attr = path);
             if (::unlink(path.c_str()) != 0) {
                 const auto ewd = errnoWithDescription();
                 LOG_WARNING(23022,
-                            "Unable to remove UNIX socket {path}: {error}",
                             "Unable to remove UNIX socket",
                             "path"_attr = path,
                             "error"_attr = ewd);
@@ -1186,7 +1178,6 @@ void TransportLayerASIO::_acceptConnection(GenericAcceptor& acceptor) {
 
         if (ec) {
             LOG(23018,
-                "Error accepting new connection on {localEndpoint}: {error}",
                 "Error accepting new connection on local endpoint",
                 "localEndpoint"_attr = endpointToHostAndPort(acceptor.local_endpoint()),
                 "error"_attr = ec.message());
@@ -1209,7 +1200,6 @@ void TransportLayerASIO::_acceptConnection(GenericAcceptor& acceptor) {
             _sep->startSession(std::move(session));
         } catch (const DBException& e) {
             LOG_WARNING(23023,
-                        "Error accepting new connection: {error}",
                         "Error accepting new connection",
                         "error"_attr = e);
         }

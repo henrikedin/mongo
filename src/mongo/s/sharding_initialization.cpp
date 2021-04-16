@@ -230,7 +230,6 @@ Status waitForShardRegistryReload(OperationContext* opCtx) {
             Status status = ex.toStatus();
             LOG_WARNING(
                 23834,
-                "Error {error} initializing sharding state, sleeping for 2 seconds and retrying",
                 "Error initializing sharding state, sleeping for 2 seconds and retrying",
                 "error"_attr = status);
             sleepFor(kRetryInterval);

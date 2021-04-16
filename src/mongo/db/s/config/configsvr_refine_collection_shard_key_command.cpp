@@ -160,7 +160,6 @@ public:
                               });
 
             LOG(21922,
-                "CMD: refineCollectionShardKey: {request}",
                 "CMD: refineCollectionShardKey",
                 "request"_attr = request().toBSON({}));
 

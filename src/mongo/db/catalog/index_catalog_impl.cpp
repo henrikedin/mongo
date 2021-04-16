@@ -877,7 +877,6 @@ Status IndexCatalogImpl::_doesSpecConflictWithExisting(OperationContext* opCtx,
         if (desc) {
             LOG_DEBUG(20353,
                       2,
-                      "Index already exists with a different name: {name}, spec: {spec}",
                       "Index already exists with a different name",
                       "name"_attr = desc->indexName(),
                       "spec"_attr = desc->infoObj());
@@ -1538,7 +1537,6 @@ void IndexCatalogImpl::_unindexKeys(OperationContext* opCtx,
 
     if (!status.isOK()) {
         LOG(20362,
-            "Couldn't unindex record {obj} from collection {namespace}: {error}",
             "Couldn't unindex record",
             "record"_attr = redact(obj),
             "namespace"_attr = _collection->ns(),

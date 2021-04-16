@@ -153,8 +153,6 @@ std::unique_ptr<CollatorInterface> parseCollation(OperationContext* opCtx,
     // be possible, so these are an invariant rather than fassert.
     if (collator == ErrorCodes::IncompatibleCollationVersion) {
         LOG(20288,
-            "Collection {nss} has a default collation which is incompatible with this version: "
-            "{collationSpec}",
             "Collection has a default collation incompatible with this version",
             "namespace"_attr = nss,
             "collationSpec"_attr = collationSpec);
@@ -327,7 +325,6 @@ void CollectionImpl::init(OperationContext* opCtx) {
         // Log an error and startup warning if the collection validator is malformed.
         LOG_WARNING_OPTIONS(20293,
                             {log::LogTag::kStartupWarnings},
-                            "Collection {ns} has malformed validator: {validatorStatus}",
                             "Collection has malformed validator",
                             "namespace"_attr = _ns,
                             "validatorStatus"_attr = _validator.getStatus());
@@ -1000,7 +997,6 @@ void CollectionImpl::deleteDocument(OperationContext* opCtx,
                                     Collection::StoreDeletedDoc storeDeletedDoc) const {
     if (isCapped()) {
         LOG(20291,
-            "failing remove on a capped ns {ns}",
             "failing remove on a capped ns",
             "namespace"_attr = _ns);
         uasserted(10089, "cannot remove from a capped collection");

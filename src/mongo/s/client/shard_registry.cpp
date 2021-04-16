@@ -239,7 +239,6 @@ void ShardRegistry::startupPeriodicReloader(OperationContext* opCtx) {
 
     if (!status.isOK()) {
         LOG_FATAL(40252,
-                  "Error scheduling shard registry reload caused by {error}",
                   "Error scheduling shard registry reload",
                   "error"_attr = redact(status.getStatus()));
     }
@@ -269,7 +268,6 @@ void ShardRegistry::_periodicReload(const CallbackArgs& cbArgs) {
     LOG_DEBUG(22726, 1, "Reloading shardRegistry");
     if (!cbArgs.status.isOK()) {
         LOG_WARNING(22734,
-                    "Error reloading shard registry caused by {error}",
                     "Error reloading shard registry",
                     "error"_attr = redact(cbArgs.status));
         return;
@@ -288,8 +286,6 @@ void ShardRegistry::_periodicReload(const CallbackArgs& cbArgs) {
             refreshPeriod = Seconds(1);
         }
         LOG(22727,
-            "Error running periodic reload of shard registry caused by {error}; will retry after "
-            "{shardRegistryReloadInterval}",
             "Error running periodic reload of shard registry",
             "error"_attr = redact(e),
             "shardRegistryReloadInterval"_attr = refreshPeriod);
@@ -308,7 +304,6 @@ void ShardRegistry::_periodicReload(const CallbackArgs& cbArgs) {
 
     if (!status.isOK()) {
         LOG_FATAL(40253,
-                  "Error scheduling shard registry reload caused by {error}",
                   "Error scheduling shard registry reload",
                   "error"_attr = redact(status.getStatus()));
     }
@@ -422,7 +417,6 @@ void ShardRegistry::updateReplSetHosts(const ConnectionString& givenConnString,
         .getAsync([](const Status& status) {
             if (!status.isOK()) {
                 LOG(4620201,
-                    "Error running reload of ShardRegistry for RSM update, caused by {error}",
                     "Error running reload of ShardRegistry for RSM update",
                     "error"_attr = redact(status));
             }
@@ -477,8 +471,6 @@ void ShardRegistry::updateReplicaSetOnConfigServer(ServiceContext* serviceContex
     if (!s) {
         LOG_DEBUG(22730,
                   1,
-                  "Error updating replica set on config server. Couldn't find shard for "
-                  "replica set {replicaSetConnectionStr}",
                   "Error updating replica set on config servers. Couldn't find shard",
                   "replicaSetConnectionStr"_attr = connStr);
         return;
@@ -499,8 +491,6 @@ void ShardRegistry::updateReplicaSetOnConfigServer(ServiceContext* serviceContex
     auto status = swWasUpdated.getStatus();
     if (!status.isOK()) {
         LOG_ERROR(22736,
-                  "Error updating replica set {replicaSetConnectionStr} on config server caused "
-                  "by {error}",
                   "Error updating replica set on config server",
                   "replicaSetConnectionStr"_attr = connStr,
                   "error"_attr = redact(status));
@@ -624,8 +614,6 @@ std::pair<ShardRegistryData, Timestamp> ShardRegistryData::createFromCatalogClie
 
     LOG_DEBUG(22731,
               1,
-              "Found {shardsNumber} shards listed on config server(s) with lastVisibleOpTime: "
-              "{lastVisibleOpTime}",
               "Succesfully retrieved updated shard list from config server",
               "shardsNumber"_attr = shards.size(),
               "lastVisibleOpTime"_attr = reloadOpTime);
@@ -642,7 +630,6 @@ std::pair<ShardRegistryData, Timestamp> ShardRegistryData::createFromCatalogClie
         auto shardHostStatus = ConnectionString::parse(shardType.getHost());
         if (!shardHostStatus.isOK()) {
             LOG_WARNING(22735,
-                        "Error parsing shard host caused by {error}",
                         "Error parsing shard host",
                         "error"_attr = redact(shardHostStatus.getStatus()));
             continue;
@@ -794,8 +781,6 @@ void ShardRegistryData::_addShard(std::shared_ptr<Shard> shard) {
 
     LOG_DEBUG(22733,
               3,
-              "Adding new shard {shardId} with connection string {shardConnectionString} to "
-              "shard registry",
               "Adding new shard to shard registry",
               "shardId"_attr = shard->getId(),
               "shardConnectionString"_attr = connString);

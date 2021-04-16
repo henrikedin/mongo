@@ -223,7 +223,6 @@ Status CollectionBulkLoaderImpl::commit() {
         _stats.startBuildingIndexes = Date_t::now();
         LOG_DEBUG(21130,
                   2,
-                  "Creating indexes for ns: {namespace}",
                   "Creating indexes",
                   "namespace"_attr = _nss.ns());
         UnreplicatedWritesBlock uwb(_opCtx.get());
@@ -326,7 +325,6 @@ Status CollectionBulkLoaderImpl::commit() {
         _stats.endBuildingIndexes = Date_t::now();
         LOG_DEBUG(21131,
                   2,
-                  "Done creating indexes for ns: {namespace}, stats: {stats}",
                   "Done creating indexes",
                   "namespace"_attr = _nss.ns(),
                   "stats"_attr = _stats.toString());

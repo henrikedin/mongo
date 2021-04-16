@@ -215,7 +215,6 @@ public:
         mdm->report(result, opCtx, false);
         if (!status.isOK()) {
             LOG(22014,
-                "_recvChunkCommit failed: {error}",
                 "_recvChunkCommit failed",
                 "error"_attr = redact(status));
             uassertStatusOK(status);
@@ -266,7 +265,6 @@ public:
             mdm->report(result, opCtx, false);
             if (!status.isOK()) {
                 LOG(22015,
-                    "_recvChunkAbort failed: {error}",
                     "_recvChunkAbort failed",
                     "error"_attr = redact(status));
                 uassertStatusOK(status);

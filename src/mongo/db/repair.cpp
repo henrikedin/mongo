@@ -94,8 +94,6 @@ Status dropUnfinishedIndexes(OperationContext* opCtx, const CollectionPtr& colle
     for (const auto& indexName : indexNames) {
         if (!durableCatalog->isIndexReady(opCtx, collection->getCatalogId(), indexName)) {
             LOG(3871400,
-                "Dropping unfinished index '{name}' after collection was modified by "
-                "repair",
                 "Dropping unfinished index after collection was modified by repair",
                 "index"_attr = indexName);
 
@@ -157,7 +155,6 @@ Status repairDatabase(OperationContext* opCtx, StorageEngine* engine, const std:
     auto status = repairCollections(opCtx, engine, dbName);
     if (!status.isOK()) {
         LOG_FATAL_CONTINUE(21030,
-                           "Failed to repair database {dbName}: {status_reason}",
                            "Failed to repair database",
                            "db"_attr = dbName,
                            "error"_attr = status);

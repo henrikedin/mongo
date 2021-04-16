@@ -70,7 +70,6 @@ StatusWith<std::unique_ptr<DBClientBase>> ConnectionString::connect(
                 c->setSoTimeout(socketTimeout);
                 LOG_DEBUG(20109,
                           1,
-                          "Creating new connection to: {hostAndPort}",
                           "Creating new connection",
                           "hostAndPort"_attr = server);
                 lastError = c->connect(
@@ -125,7 +124,6 @@ StatusWith<std::unique_ptr<DBClientBase>> ConnectionString::connect(
                 _connectHook->connect(*this, errmsg, socketTimeout, apiParameters);
 
             LOG(20111,
-                "Replacing connection to {oldConnString} with {newConnString}",
                 "Replacing connection string",
                 "oldConnString"_attr = this->toString(),
                 "newConnString"_attr =

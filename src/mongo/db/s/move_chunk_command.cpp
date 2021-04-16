@@ -62,7 +62,6 @@ namespace {
 void uassertStatusOKWithWarning(const Status& status) {
     if (!status.isOK()) {
         LOG_WARNING(23777,
-                    "Chunk move failed with {error}",
                     "Error while doing moveChunk",
                     "error"_attr = redact(status));
         uassertStatusOK(status);

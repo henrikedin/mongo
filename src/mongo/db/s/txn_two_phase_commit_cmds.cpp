@@ -102,7 +102,6 @@ public:
 
             LOG_DEBUG(22483,
                       3,
-                      "{sessionId}:{txnNumber} Participant shard received prepareTransaction",
                       "Participant shard received prepareTransaction",
                       "sessionId"_attr = opCtx->getLogicalSessionId()->toBSON(),
                       "txnNumber"_attr = opCtx->getTxnNumber());
@@ -210,8 +209,6 @@ std::set<ShardId> validateParticipants(OperationContext* opCtx,
     LOG_DEBUG(
         22484,
         3,
-        "{sessionId}:{txnNumber} Coordinator shard received request to coordinate commit with "
-        "participant list {participantList}",
         "Coordinator shard received request to coordinate commit",
         "sessionId"_attr = opCtx->getLogicalSessionId()->getId(),
         "txnNumber"_attr = opCtx->getTxnNumber(),
@@ -292,7 +289,6 @@ public:
 
             LOG_DEBUG(22486,
                       3,
-                      "{sessionId}:{txnNumber} Going to recover decision from local participant",
                       "Going to recover decision from local participant",
                       "sessionId"_attr = opCtx->getLogicalSessionId()->getId(),
                       "txnNumber"_attr = opCtx->getTxnNumber());

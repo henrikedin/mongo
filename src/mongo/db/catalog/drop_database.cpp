@@ -118,7 +118,6 @@ void _finishDropDatabase(OperationContext* opCtx,
     BucketCatalog::get(opCtx).clear(dbName);
 
     LOG(20336,
-        "dropDatabase {dbName} - finished, dropped {numCollections} collection(s)",
         "dropDatabase",
         "db"_attr = dbName,
         "numCollectionsDropped"_attr = numCollections);
@@ -166,7 +165,6 @@ Status _dropDatabase(OperationContext* opCtx, const std::string& dbName, bool ab
         }
 
         LOG(20337,
-            "dropDatabase {dbName} - starting",
             "dropDatabase - starting",
             "db"_attr = dbName);
         db->setDropPending(opCtx, true);
@@ -236,7 +234,6 @@ Status _dropDatabase(OperationContext* opCtx, const std::string& dbName, bool ab
             numCollections++;
 
             LOG(20338,
-                "dropDatabase {dbName} - dropping collection: {nss}",
                 "dropDatabase - dropping collection",
                 "db"_attr = dbName,
                 "namespace"_attr = nss);
@@ -244,7 +241,6 @@ Status _dropDatabase(OperationContext* opCtx, const std::string& dbName, bool ab
             if (nss.isDropPendingNamespace() && replCoord->isReplEnabled() &&
                 opCtx->writesAreReplicated()) {
                 LOG(20339,
-                    "dropDatabase {dbName} - found drop-pending collection: {nss}",
                     "dropDatabase - found drop-pending collection",
                     "db"_attr = dbName,
                     "namespace"_attr = nss);
@@ -345,9 +341,6 @@ Status _dropDatabase(OperationContext* opCtx, const std::string& dbName, bool ab
             WriteConcernOptions::kMajority, WriteConcernOptions::SyncMode::UNSET, wTimeout);
 
         LOG(20340,
-            "dropDatabase {dbName} waiting for {awaitOpTime} to be replicated at "
-            "{dropDatabaseWriteConcern}. Dropping {numCollectionsToDrop} collection(s), with "
-            "last collection drop at {latestDropPendingOpTime}",
             "dropDatabase waiting for replication and dropping collections",
             "db"_attr = dbName,
             "awaitOpTime"_attr = awaitOpTime,
@@ -360,8 +353,6 @@ Status _dropDatabase(OperationContext* opCtx, const std::string& dbName, bool ab
         // If the user-provided write concern is weaker than majority, this is effectively a no-op.
         if (result.status.isOK() && !userWriteConcern.usedDefault) {
             LOG(20341,
-                "dropDatabase {dbName} waiting for {awaitOpTime} to be replicated at "
-                "{userWriteConcern}",
                 "dropDatabase waiting for replication",
                 "db"_attr = dbName,
                 "awaitOpTime"_attr = awaitOpTime,
@@ -378,8 +369,6 @@ Status _dropDatabase(OperationContext* opCtx, const std::string& dbName, bool ab
         }
 
         LOG(20342,
-            "dropDatabase {dbName} - successfully dropped {numCollectionsToDrop} collection(s) "
-            "(most recent drop optime: {awaitOpTime}) after {result_duration}. dropping database",
             "dropDatabase - successfully dropped collections",
             "db"_attr = dbName,
             "numCollectionsDropped"_attr = numCollectionsToDrop,

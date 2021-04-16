@@ -456,7 +456,6 @@ public:
             }
         } catch (DBException& exception) {
             LOG_WARNING(23801,
-                        "Internal error while reading {namespace}",
                         "Internal error while reading",
                         "namespace"_attr = ns);
             exception.addContext("Executor error while reading during dataSize command");

@@ -942,7 +942,6 @@ void CollectionCatalog::registerCollection(OperationContext* opCtx,
         }
 
         LOG(20279,
-            "Conflicted creating a collection. ns: {coll_ns} ({coll_uuid}).",
             "Conflicted creating a collection",
             logAttrs(*coll));
         throw WriteConflictException();
@@ -950,7 +949,6 @@ void CollectionCatalog::registerCollection(OperationContext* opCtx,
 
     LOG_DEBUG(20280,
               1,
-              "Registering collection {ns} with UUID {uuid}",
               "Registering collection",
               "namespace"_attr = ns,
               "uuid"_attr = uuid);

@@ -258,7 +258,6 @@ BSONObj removeUnknownFields(const BSONObj& indexSpec) {
             builder.append(indexSpecElem);
         } else {
             LOG_WARNING(23878,
-                        "Removing field '{fieldName}' from index spec: {indexSpec}",
                         "Removing unknown field from index spec",
                         "fieldName"_attr = redact(fieldName),
                         "indexSpec"_attr = redact(indexSpec));

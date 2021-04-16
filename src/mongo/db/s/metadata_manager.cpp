@@ -182,9 +182,6 @@ void MetadataManager::setFilteringMetadata(CollectionMetadata remoteMetadata) {
     if (remoteMetadata.getCollVersion().isOlderOrEqualThan(activeMetadata.getCollVersion())) {
         LOG_DEBUG(21984,
                   1,
-                  "Ignoring incoming metadata update {activeMetadata} for {namespace} because "
-                  "the active (current) metadata {remoteMetadata} has the same or a newer "
-                  "collection version",
                   "Ignoring incoming metadata update for this namespace because the active "
                   "(current) metadata has the same or a newer collection version",
                   "namespace"_attr = _nss.ns(),
@@ -194,8 +191,6 @@ void MetadataManager::setFilteringMetadata(CollectionMetadata remoteMetadata) {
     }
 
     LOG(21985,
-        "Updating metadata {activeMetadata} for {namespace} because the remote metadata "
-        "{remoteMetadata} has a newer collection version",
         "Updating metadata for this namespace because the remote metadata has a newer "
         "collection version",
         "namespace"_attr = _nss.ns(),
@@ -276,8 +271,6 @@ SharedSemiFuture<void> MetadataManager::cleanUpRange(ChunkRange const& range,
     if (overlapMetadata) {
         LOG_OPTIONS(21989,
                     {log::LogComponent::kShardingMigration},
-                    "Deletion of {namespace} range {range} will be scheduled after all possibly "
-                    "dependent queries finish",
                     "Deletion of the collection's specified range will be scheduled after all "
                     "possibly dependent queries finish",
                     "namespace"_attr = _nss.ns(),
@@ -295,7 +288,6 @@ SharedSemiFuture<void> MetadataManager::cleanUpRange(ChunkRange const& range,
         // No running queries can depend on this range, so queue it for deletion immediately.
         LOG_OPTIONS(21990,
                     {log::LogComponent::kShardingMigration},
-                    "Scheduling deletion of {namespace} range {range}",
                     "Scheduling deletion of the collection's specified range",
                     "namespace"_attr = _nss.ns(),
                     "range"_attr = redact(range.toString()));

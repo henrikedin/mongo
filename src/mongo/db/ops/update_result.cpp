@@ -55,8 +55,6 @@ UpdateResult::UpdateResult(bool existing,
     }
     LOG_DEBUG(20885,
               4,
-              "UpdateResult -- upserted: {upserted} modifiers: {modifiers} existing: {existing} "
-              "numDocsModified: {numModified} numMatched: {numMatched}",
               "UpdateResult",
               "numMatched"_attr = numMatched,
               "numModified"_attr = numDocsModified,

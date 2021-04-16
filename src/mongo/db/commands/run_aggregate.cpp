@@ -194,7 +194,6 @@ bool handleCursorCommand(OperationContext* opCtx,
             auto&& [stats, _] =
                 explainer.getWinningPlanStats(ExplainOptions::Verbosity::kExecStats);
             LOG_WARNING(23799,
-                        "Aggregate command executor error: {error}, stats: {stats}, cmd: {cmd}",
                         "Aggregate command executor error",
                         "error"_attr = exception.toStatus(),
                         "stats"_attr = redact(stats),

@@ -68,7 +68,7 @@ void runTasks(decltype(shutdownTasks) tasks, const ShutdownTaskArgs& shutdownArg
 // has its own 'quickExitMutex' to prohibit multiple threads from attempting to call _exit().
 MONGO_COMPILER_NORETURN void logAndQuickExit_inlock() {
     ExitCode code = shutdownExitCode.get();
-    LOG(23138, "Shutting down with code: {exitCode}", "Shutting down", "exitCode"_attr = code);
+    LOG(23138, "Shutting down", "exitCode"_attr = code);
     quickExit(code);
 }
 
@@ -114,10 +114,6 @@ void shutdown(ExitCode code, const ShutdownTaskArgs& shutdownArgs) {
             ExitCode originallyRequestedCode = shutdownExitCode.get();
             if (code != originallyRequestedCode) {
                 LOG(23139,
-                    "While running shutdown tasks with the intent to exit with code "
-                    "{originalExitCode}, an additional shutdown request arrived with "
-                    "the intent to exit with a different exit code {newExitCode}; "
-                    "ignoring the conflicting exit code",
                     "Conflicting exit code at shutdown",
                     "originalExitCode"_attr = originallyRequestedCode,
                     "newExitCode"_attr = code);

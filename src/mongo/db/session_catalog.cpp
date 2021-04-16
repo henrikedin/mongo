@@ -159,7 +159,6 @@ void SessionCatalog::scanSessions(const SessionKiller::Matcher& matcher,
 
         LOG_DEBUG(21976,
                   2,
-                  "Scanning {sessionCount} sessions",
                   "Scanning sessions",
                   "sessionCount"_attr = _sessions.size());
 

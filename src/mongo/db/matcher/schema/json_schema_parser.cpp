@@ -1857,7 +1857,6 @@ StatusWithMatchExpression JSONSchemaParser::parse(
     bool ignoreUnknownKeywords) {
     LOG_DEBUG(20728,
               5,
-              "Parsing JSON Schema: {schema}",
               "Parsing JSON Schema",
               "schema"_attr = schema.jsonString(JsonStringFormat::LegacyStrict));
     try {
@@ -1866,7 +1865,6 @@ StatusWithMatchExpression JSONSchemaParser::parse(
             translation.isOK()) {
             LOG_DEBUG(20729,
                       5,
-                      "Translated schema match expression: {expression}",
                       "Translated schema match expression",
                       "expression"_attr = translation.getValue()->debugString());
         }

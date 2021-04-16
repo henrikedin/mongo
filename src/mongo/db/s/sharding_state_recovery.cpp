@@ -153,7 +153,6 @@ Status modifyRecoveryDocument(OperationContext* opCtx,
 
         LOG_DEBUG(22083,
                   1,
-                  "Changing sharding recovery document {update}",
                   "Changing sharding recovery document",
                   "update"_attr = redact(updateObj));
 
@@ -203,7 +202,6 @@ void ShardingStateRecovery::endMetadataOp(OperationContext* opCtx) {
         modifyRecoveryDocument(opCtx, RecoveryDocument::Decrement, WriteConcernOptions());
     if (!status.isOK()) {
         LOG_WARNING(22088,
-                    "Failed to decrement minOpTimeUpdaters due to {error}",
                     "Failed to decrement minOpTimeUpdaters",
                     "error"_attr = redact(status));
     }
@@ -233,7 +231,6 @@ Status ShardingStateRecovery::recover(OperationContext* opCtx) {
     const auto recoveryDoc = std::move(recoveryDocStatus.getValue());
 
     LOG(22084,
-        "Sharding state recovery process found document {recoveryDoc}",
         "Sharding state recovery process found document",
         "recoveryDoc"_attr = redact(recoveryDoc.toBSON()));
 
@@ -243,8 +240,6 @@ Status ShardingStateRecovery::recover(OperationContext* opCtx) {
             opCtx, recoveryDoc.getMinOpTime(), "sharding state recovery document");
         if (prevOpTime) {
             LOG(22085,
-                "No in flight metadata change operations, so config server optime updated from "
-                "{prevConfigServerMinOpTime} to {newConfigServerMinOpTime}",
                 "No in flight metadata change operations, so config server optime updated",
                 "prevConfigServerMinOpTime"_attr = *prevOpTime,
                 "newConfigServerMinOpTime"_attr = recoveryDoc.getMinOpTime());
@@ -253,9 +248,6 @@ Status ShardingStateRecovery::recover(OperationContext* opCtx) {
     }
 
     LOG(22086,
-        "Sharding state recovery document indicates there were {inProgressMetadataOperationCount} "
-        "metadata change operations in flight. Contacting the config server primary in order "
-        "to retrieve the most recent opTime.",
         "Sharding state recovery document indicates there were metadata change operations in "
         "flight. Contacting the config server primary in order to retrieve the most recent opTime",
         "inProgressMetadataOperationCount"_attr = recoveryDoc.getMinOpTimeUpdaters());
@@ -271,7 +263,6 @@ Status ShardingStateRecovery::recover(OperationContext* opCtx) {
         return status;
 
     LOG(22087,
-        "Sharding state recovered. New config server opTime is {newConfigServerOpTime}",
         "Sharding state recovered",
         "newConfigServerOpTime"_attr = grid->configOpTime());
 
@@ -279,7 +270,6 @@ Status ShardingStateRecovery::recover(OperationContext* opCtx) {
     status = modifyRecoveryDocument(opCtx, RecoveryDocument::Clear, kLocalWriteConcern);
     if (!status.isOK()) {
         LOG_WARNING(22089,
-                    "Failed to reset sharding state recovery document due to {error}",
                     "Failed to reset sharding state recovery document",
                     "error"_attr = redact(status));
     }

@@ -118,7 +118,6 @@ public:
                 return shardingCatalogManager->removeShard(opCtx, shardId);
             } catch (const DBException& ex) {
                 LOG(21923,
-                    "Failed to remove shard {shardId} due to {error}",
                     "Failed to remove shard",
                     "shardId"_attr = shardId,
                     "error"_attr = redact(ex));

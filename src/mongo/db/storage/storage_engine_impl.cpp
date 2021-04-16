@@ -219,9 +219,6 @@ void StorageEngineImpl::loadCatalog(OperationContext* opCtx, bool loadingFromUnc
                         // reconcileCatalogAndIdents() will later drop this ident.
                         LOG_ERROR(
                             22268,
-                            "Cannot create an entry in the catalog for the orphaned "
-                            "collection ident: {ident} due to {statusWithNs_getStatus_reason}. "
-                            "Restarting the server will remove this ident",
                             "Cannot create an entry in the catalog for orphaned ident. Restarting "
                             "the server will remove this ident",
                             "ident"_attr = ident,
@@ -250,8 +247,6 @@ void StorageEngineImpl::loadCatalog(OperationContext* opCtx, bool loadingFromUnc
                     _recoverOrphanedCollection(opCtx, entry.catalogId, entry.nss, collectionIdent);
                 if (!status.isOK()) {
                     LOG_WARNING(22266,
-                                "Failed to recover orphaned data file for collection "
-                                "'{namespace}': {error}",
                                 "Failed to recover orphaned data file for collection",
                                 "namespace"_attr = entry.nss,
                                 "error"_attr = status);
@@ -290,7 +285,6 @@ void StorageEngineImpl::loadCatalog(OperationContext* opCtx, bool loadingFromUnc
 
         if (entry.nss.isOrphanCollection()) {
             LOG(22248,
-                "Orphaned collection found: {namespace}",
                 "Orphaned collection found",
                 "namespace"_attr = entry.nss);
         }
@@ -354,8 +348,6 @@ Status StorageEngineImpl::_recoverOrphanedCollection(OperationContext* opCtx,
         return {ErrorCodes::IllegalOperation, "Orphan recovery only supported in repair"};
     }
     LOG(22249,
-        "Storage engine is missing collection '{namespace}' from its metadata. Attempting "
-        "to locate and recover the data for {ident}",
         "Storage engine is missing collection from its metadata. Attempting to locate and "
         "recover the data",
         "namespace"_attr = collectionName,
@@ -523,7 +515,6 @@ StatusWith<StorageEngine::ReconcileResult> StorageEngineImpl::reconcileCatalogAn
         // checkpoint.
         if (dropPendingIdents.find(it) != dropPendingIdents.cend()) {
             LOG(22250,
-                "Not removing ident for uncheckpointed collection or index drop: {ident}",
                 "Not removing ident for uncheckpointed collection or index drop",
                 "ident"_attr = it);
             continue;
@@ -577,11 +568,6 @@ StatusWith<StorageEngine::ReconcileResult> StorageEngineImpl::reconcileCatalogAn
             if (!indexMetaData.multikey && hasMultiKeyPaths) {
                 LOG_WARNING(
                     22267,
-                    "The 'multikey' field for index {index} on collection {namespace} was "
-                    "false with non-empty 'multikeyPaths'. This indicates corruption of "
-                    "the catalog. Consider either dropping and recreating the index, or "
-                    "rerunning with the --repair option. See "
-                    "http://dochub.mongodb.org/core/repair for more information.",
                     "The 'multikey' field for index was false with non-empty 'multikeyPaths'. This "
                     "indicates corruption of the catalog. Consider either dropping and recreating "
                     "the index, or rerunning with the --repair option. See "
@@ -612,8 +598,6 @@ StatusWith<StorageEngine::ReconcileResult> StorageEngineImpl::reconcileCatalogAn
                 auto buildUUID = *indexMetaData.buildUUID;
 
                 LOG(22253,
-                    "Found index from unfinished build. Collection: {coll} ({uuid}), index: "
-                    "{indexName}, build UUID: {buildUUID}",
                     "Found index from unfinished build",
                     "namespace"_attr = coll,
                     "uuid"_attr = *collUUID,
@@ -1201,7 +1185,6 @@ void StorageEngineImpl::TimestampMonitor::startup() {
                 // If we're interrupted at shutdown or after PeriodicRunner's client has been
                 // killed, it's fine to give up on future notifications.
                 LOG(22263,
-                    "Timestamp monitor is stopping. {reason}",
                     "Timestamp monitor is stopping",
                     "error"_attr = ex.reason());
                 return;

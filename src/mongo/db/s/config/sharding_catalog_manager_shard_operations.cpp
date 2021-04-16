@@ -165,7 +165,6 @@ StatusWith<Shard::CommandResponse> ShardingCatalogManager::_runCommandForAddShar
 
     if (response.status == ErrorCodes::ExceededTimeLimit) {
         LOG(21941,
-            "Operation timed out with {error}",
             "Operation timed out",
             "error"_attr = redact(response.status));
     }
@@ -688,7 +687,6 @@ StatusWith<std::string> ShardingCatalogManager::addShard(
         shardType.setTopologyTime(newTopologyTime.asTimestamp());
 
         LOG(21942,
-            "Going to insert new entry for shard into config.shards: {shardType}",
             "Going to insert new entry for shard into config.shards",
             "shardType"_attr = shardType.toString());
 
@@ -699,7 +697,6 @@ StatusWith<std::string> ShardingCatalogManager::addShard(
             ShardingCatalogClient::kLocalWriteConcern);
         if (!result.isOK()) {
             LOG(21943,
-                "Error adding shard: {shardType} err: {error}",
                 "Error adding shard",
                 "shardType"_attr = shardType.toBSON(),
                 "error"_attr = result.reason());
@@ -729,7 +726,6 @@ StatusWith<std::string> ShardingCatalogManager::addShard(
                 ShardingCatalogClient::kLocalWriteConcern);
             if (!status.isOK()) {
                 LOG(21944,
-                    "Adding shard {connectionString} even though could not add database {db}",
                     "Adding shard even though we could not add database",
                     "connectionString"_attr = shardConnectionString.toString(),
                     "db"_attr = dbName);
@@ -852,7 +848,6 @@ RemoveShardProgress ShardingCatalogManager::removeShard(OperationContext* opCtx,
 
     if (!isShardCurrentlyDraining) {
         LOG(21945,
-            "Going to start draining shard: {shardId}",
             "Going to start draining shard",
             "shardId"_attr = name);
 
@@ -893,8 +888,6 @@ RemoveShardProgress ShardingCatalogManager::removeShard(OperationContext* opCtx,
     if (chunkCount > 0 || databaseCount > 0) {
         // Still more draining to do
         LOG(21946,
-            "removeShard: draining chunkCount {chunkCount}; databaseCount {databaseCount}; "
-            "jumboCount {jumboCount}",
             "removeShard: draining",
             "chunkCount"_attr = chunkCount,
             "databaseCount"_attr = databaseCount,
@@ -906,7 +899,7 @@ RemoveShardProgress ShardingCatalogManager::removeShard(OperationContext* opCtx,
     }
 
     // Draining is done, now finish removing the shard.
-    LOG(21949, "Going to remove shard: {shardId}", "Going to remove shard", "shardId"_attr = name);
+    LOG(21949, "Going to remove shard", "shardId"_attr = name);
 
     // Find a controlShard to be updated.
     auto controlShardQueryStatus =

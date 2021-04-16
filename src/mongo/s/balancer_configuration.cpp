@@ -243,7 +243,6 @@ Status BalancerConfiguration::_refreshChunkSizeSettings(OperationContext* opCtx)
 
     if (settings.getMaxChunkSizeBytes() != getMaxChunkSizeBytes()) {
         LOG(22640,
-            "Changing MaxChunkSize setting to {newMaxChunkSizeMB}MB from {oldMaxChunkSizeMB}MB",
             "Changing MaxChunkSize setting",
             "newMaxChunkSizeMB"_attr = settings.getMaxChunkSizeBytes() / (1024 * 1024),
             "oldMaxChunkSizeMB"_attr = getMaxChunkSizeBytes() / (1024 * 1024));
@@ -272,7 +271,6 @@ Status BalancerConfiguration::_refreshAutoSplitSettings(OperationContext* opCtx)
 
     if (settings.getShouldAutoSplit() != getShouldAutoSplit()) {
         LOG(22641,
-            "Changing ShouldAutoSplit setting to {newShouldAutoSplit} from {oldShouldAutoSplit}",
             "Changing ShouldAutoSplit setting",
             "newShouldAutoSplit"_attr = settings.getShouldAutoSplit(),
             "oldShouldAutoSplit"_attr = getShouldAutoSplit());

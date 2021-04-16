@@ -107,7 +107,6 @@ size_t getSupportedMax() {
 
         LOG_DEBUG(22940,
                   1,
-                  "fd limit hard:{hard} soft:{soft} max conn: {conn}",
                   "file descriptor and connection resource limits",
                   "hard"_attr = limit.rlim_max,
                   "soft"_attr = limit.rlim_cur,
@@ -121,7 +120,6 @@ size_t getSupportedMax() {
     if (supportedMax < serverGlobalParams.maxConns &&
         serverGlobalParams.maxConns != DEFAULT_MAX_CONN) {
         LOG(22941,
-            " --maxConns too high, can only handle {limit}",
             " --maxConns too high",
             "limit"_attr = supportedMax);
     }
@@ -268,8 +266,6 @@ bool ServiceEntryPointImpl::shutdownAndWait(Milliseconds timeout) {
         LOG(22946, "shutdown: no running workers found...");
     } else {
         LOG(22947,
-            "shutdown: exhausted grace period for {workers} active workers to "
-            "drain; continuing with shutdown...",
             "shutdown: exhausted grace period active workers to drain; continuing with shutdown...",
             "workers"_attr = numOpenSessions());
     }

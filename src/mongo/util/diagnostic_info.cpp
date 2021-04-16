@@ -158,7 +158,6 @@ void BlockedOp::join() {
 
 void BlockedOp::setIsContended(bool value) {
     LOG(23128,
-        "Setting isContended to {value}",
         "Setting isContended",
         "value"_attr = (value ? "true" : "false"));
     stdx::lock_guard lk(_m);
@@ -168,7 +167,6 @@ void BlockedOp::setIsContended(bool value) {
 
 void BlockedOp::setIsWaiting(bool value) {
     LOG(23129,
-        "Setting isWaiting to {value}",
         "Setting isWaiting",
         "value"_attr = (value ? "true" : "false"));
     stdx::lock_guard lk(_m);

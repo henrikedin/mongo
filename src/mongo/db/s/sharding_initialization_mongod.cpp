@@ -177,7 +177,6 @@ private:
         if (ErrorCodes::isCancellationError(status.code())) {
             LOG_DEBUG(22067,
                       2,
-                      "Unable to schedule confirmed replica set update due to {error}",
                       "Unable to schedule confirmed replica set update",
                       "error"_attr = status);
             stdx::lock_guard lk(_mutex);
@@ -202,8 +201,6 @@ private:
 
         try {
             LOG(22068,
-                "Updating shard identity config string with confirmed replica set "
-                "{connectionString}",
                 "Updating shard identity config string with confirmed replica set",
                 "connectionString"_attr = update);
 
@@ -349,10 +346,6 @@ bool ShardingInitializationMongoD::initializeShardingAwarenessIfNeeded(Operation
         if (!foundShardIdentity) {
             LOG_WARNING(22074,
                         "Started with --shardsvr, but no shardIdentity document was found on "
-                        "disk in {namespace}. This most "
-                        "likely means this server has not yet been added to a "
-                        "sharded cluster.",
-                        "Started with --shardsvr, but no shardIdentity document was found on "
                         "disk. This most likely means this server has not yet been added to a "
                         "sharded cluster",
                         "namespace"_attr = NamespaceString::kServerConfigurationNamespace);
@@ -376,8 +369,6 @@ bool ShardingInitializationMongoD::initializeShardingAwarenessIfNeeded(Operation
         if (!shardIdentityBSON.isEmpty()) {
             LOG_WARNING(
                 22075,
-                "Not started with --shardsvr, but a shardIdentity document was found "
-                "on disk in {namespace}: {shardIdentityDocument}",
                 "Not started with --shardsvr, but a shardIdentity document was found on disk",
                 "namespace"_attr = NamespaceString::kServerConfigurationNamespace,
                 "shardIdentityDocument"_attr = shardIdentityBSON);
@@ -396,7 +387,6 @@ void ShardingInitializationMongoD::initializeFromShardIdentity(
         "Invalid shard identity document found when initializing sharding state");
 
     LOG(22072,
-        "Initializing sharding state with: {initialShardIdentity}",
         "Initializing sharding state",
         "initialShardIdentity"_attr = shardIdentity);
 
@@ -462,8 +452,6 @@ void ShardingInitializationMongoD::updateShardIdentityConfigString(
         } else {
             LOG_DEBUG(22073,
                       2,
-                      "Updated config server connection string in shardIdentity document "
-                      "to {newConnectionString}",
                       "Updated config server connection string in shardIdentity document",
                       "newConnectionString"_attr = newConnectionString);
         }
@@ -471,8 +459,6 @@ void ShardingInitializationMongoD::updateShardIdentityConfigString(
         auto status = exception.toStatus();
         if (!ErrorCodes::isNotPrimaryError(status.code())) {
             LOG_WARNING(22077,
-                        "Error encountered while trying to update config connection string to "
-                        "{newConnectionString} {error}",
                         "Error encountered while trying to update config connection string",
                         "newConnectionString"_attr = newConnectionString.toString(),
                         "error"_attr = redact(status));
@@ -599,7 +585,6 @@ void ShardingInitializationMongoD::_initializeShardingEnvironmentOnShardServer(
         opCtx, isReplSet && isStandaloneOrPrimary);
 
     LOG(22071,
-        "Finished initializing sharding components for {memberState} node.",
         "Finished initializing sharding components",
         "memberState"_attr = (isStandaloneOrPrimary ? "primary" : "secondary"));
 }

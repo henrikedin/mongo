@@ -313,7 +313,6 @@ StatusWith<SplitInfoVector> BalancerChunkSelectionPolicyImpl::selectChunksToSpli
             } else {
                 LOG_WARNING(
                     21852,
-                    "Unable to enforce tag range policy for collection {namespace}: {error}",
                     "Unable to enforce tag range policy for collection",
                     "namespace"_attr = nss.ns(),
                     "error"_attr = candidatesStatus.getStatus());
@@ -376,7 +375,6 @@ StatusWith<MigrateInfoVector> BalancerChunkSelectionPolicyImpl::selectChunksToMo
         if (!coll.getAllowBalance() || !coll.getAllowMigrations()) {
             LOG_DEBUG(21851,
                       1,
-                      "Not balancing collection {namespace}; explicitly disabled.",
                       "Not balancing explicitly disabled collection",
                       "namespace"_attr = nss,
                       "allowBalance"_attr = coll.getAllowBalance(),
@@ -391,7 +389,6 @@ StatusWith<MigrateInfoVector> BalancerChunkSelectionPolicyImpl::selectChunksToMo
             continue;
         } else if (!candidatesStatus.isOK()) {
             LOG_WARNING(21853,
-                        "Unable to balance collection {namespace}: {error}",
                         "Unable to balance collection",
                         "namespace"_attr = nss.ns(),
                         "error"_attr = candidatesStatus.getStatus());

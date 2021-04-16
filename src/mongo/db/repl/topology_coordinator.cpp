@@ -558,8 +558,6 @@ boost::optional<HostAndPort> TopologyCoordinator::_chooseSyncSourceInitialChecks
         const auto hostAndPortElem = data["hostAndPort"];
         if (!hostAndPortElem) {
             LOG_FATAL(50835,
-                      "'forceSyncSoureCandidate' parameter set with invalid host and port: "
-                      "{failpointData}",
                       "'forceSyncSoureCandidate' parameter set with invalid host and port",
                       "failpointData"_attr = data);
         }
@@ -598,7 +596,6 @@ boost::optional<HostAndPort> TopologyCoordinator::_chooseSyncSourceInitialChecks
         static Occasionally sampler;
         if (sampler.tick()) {
             LOG(21783,
-                "waiting for {pingsNeeded} pings from other members before syncing",
                 "Waiting for pings from other members before syncing",
                 "pingsNeeded"_attr = numPingsNeeded);
         }
@@ -659,7 +656,6 @@ bool TopologyCoordinator::_memberIsBlacklisted(const MemberConfig& memberConfig,
 void TopologyCoordinator::blacklistSyncSource(const HostAndPort& host, Date_t until) {
     LOG_DEBUG(21800,
               2,
-              "blacklisting {syncSource} until {until}",
               "Blacklisting sync source",
               "syncSource"_attr = host,
               "until"_attr = until.toString());
@@ -671,7 +667,6 @@ void TopologyCoordinator::unblacklistSyncSource(const HostAndPort& host, Date_t 
     if (hostItr != _syncSourceBlacklist.end() && now >= hostItr->second) {
         LOG_DEBUG(21801,
                   2,
-                  "unblacklisting {syncSource}",
                   "Unblacklisting sync source",
                   "syncSource"_attr = host);
         _syncSourceBlacklist.erase(hostItr);
@@ -758,9 +753,6 @@ void TopologyCoordinator::prepareSyncFromResponse(const HostAndPort& target,
     const OpTime lastOpApplied = getMyLastAppliedOpTime();
     if (hbdata.getHeartbeatAppliedOpTime().getSecs() + 10 < lastOpApplied.getSecs()) {
         LOG_WARNING(21837,
-                    "attempting to sync from {syncSource}, but its latest opTime is "
-                    "{syncSourceHeartbeatAppliedOpTime} and ours is "
-                    "{lastOpApplied} so this may not work",
                     "Attempting to sync from sync source, but it is more than 10 seconds behind us",
                     "syncSource"_attr = target,
                     "syncSourceHeartbeatAppliedOpTime"_attr =
@@ -790,8 +782,6 @@ Status TopologyCoordinator::prepareHeartbeatResponseV1(Date_t now,
     const std::string rshb = args.getSetName();
     if (ourSetName != rshb) {
         LOG(21802,
-            "replSet set names do not match, ours: {ourSetName}; remote node's: "
-            "{remoteNodeSetName}",
             "replSet set names do not match",
             "ourSetName"_attr = ourSetName,
             "remoteNodeSetName"_attr = rshb);
@@ -981,8 +971,6 @@ HeartbeatResponseAction TopologyCoordinator::processHeartbeatResponse(
         LOG_FOR_HEARTBEATS(
             23974,
             0,
-            "Heartbeat to {target} failed after {maxHeartbeatRetries} retries, response "
-            "status: {error}",
             "Heartbeat failed after max retries",
             "target"_attr = target,
             "maxHeartbeatRetries"_attr = kMaxHeartbeatRetries,
@@ -1023,14 +1011,12 @@ HeartbeatResponseAction TopologyCoordinator::processHeartbeatResponse(
             if (_rsConfig.isInitialized()) {
                 LOG_DEBUG(4615641,
                           2,
-                          "Current config: {currentConfig}; Config in heartbeat: {heartbeatConfig}",
                           "Heartbeat config",
                           "currentConfig"_attr = _rsConfig.toBSON(),
                           "heartbeatConfig"_attr = newConfig.toBSON());
             } else {
                 LOG_DEBUG(4615647,
                           2,
-                          "Config in heartbeat: {heartbeatConfig}",
                           "Heartbeat config",
                           "heartbeatConfig"_attr = newConfig.toBSON());
             }
@@ -1056,8 +1042,6 @@ HeartbeatResponseAction TopologyCoordinator::processHeartbeatResponse(
     if (memberIndex == -1) {
         LOG_DEBUG(21806,
                   1,
-                  "Could not find {target} in current config so ignoring --"
-                  " current config: {currentConfig}",
                   "Could not find target in current config so ignoring",
                   "target"_attr = target,
                   "currentConfig"_attr = _rsConfig.toBSON());
@@ -1081,8 +1065,6 @@ HeartbeatResponseAction TopologyCoordinator::processHeartbeatResponse(
         } else {
             LOG_DEBUG(21807,
                       3,
-                      "Bad heartbeat response from {target}; trying again; Retries left: "
-                      "{retriesLeft}; {retriesElapsed} have already elapsed",
                       "Bad heartbeat response; trying again",
                       "target"_attr = target,
                       "retriesLeft"_attr = (hbStats.retriesLeft()),
@@ -1092,7 +1074,6 @@ HeartbeatResponseAction TopologyCoordinator::processHeartbeatResponse(
         ReplSetHeartbeatResponse hbr = std::move(hbResponse.getValue());
         LOG_DEBUG(21808,
                   3,
-                  "setUpValues: heartbeat response good for member _id:{memberId}",
                   "setUpValues: heartbeat response good",
                   "memberId"_attr = member.getId());
         pingsInConfig++;
@@ -1282,7 +1263,6 @@ std::pair<MemberId, Date_t> TopologyCoordinator::getStalestLiveMember() const {
         }
         LOG_DEBUG(21810,
                   3,
-                  "memberData lastupdate is: {memberDataLastUpdate}",
                   "memberData last update",
                   "memberDataLastUpdate"_attr = memberData.getLastUpdate());
         if (earliestDate > memberData.getLastUpdate()) {
@@ -1292,7 +1272,6 @@ std::pair<MemberId, Date_t> TopologyCoordinator::getStalestLiveMember() const {
     }
     LOG_DEBUG(21811,
               3,
-              "stalest member {earliestMemberId} date: {earliestDate}",
               "Stalest member",
               "earliestMemberId"_attr = earliestMemberId,
               "earliestDate"_attr = earliestDate);
@@ -1375,9 +1354,6 @@ StatusWith<bool> TopologyCoordinator::setLastOptime(const UpdatePositionArgs::Up
 
     LOG_DEBUG(21812,
               2,
-              "received notification that node with memberID {memberId} in config with version "
-              "{configVersion} has reached optime: {appliedOpTime} and is durable through: "
-              "{durableOpTime}",
               "Received replSetUpdatePosition",
               "memberId"_attr = memberId,
               "configVersion"_attr = args.cfgver,
@@ -1401,9 +1377,6 @@ StatusWith<bool> TopologyCoordinator::setLastOptime(const UpdatePositionArgs::Up
 
     LOG_DEBUG(21815,
               3,
-              "Node with memberID {memberId} currently has optime {oldLastAppliedOpTime} "
-              "durable through {oldLastDurableOpTime}; updating to optime "
-              "{newAppliedOpTime} and durable through {newDurableOpTime}",
               "Updating member data due to replSetUpdatePosition",
               "memberId"_attr = memberId,
               "oldLastAppliedOpTime"_attr = memberData->getLastAppliedOpTime(),
@@ -1531,9 +1504,6 @@ HeartbeatResponseAction TopologyCoordinator::_shouldTakeOverPrimary(int updatedC
         LOG_FOR_ELECTION(
             23979,
             2,
-            "I can take over the primary because I have a higher priority, the highest "
-            "priority in the replica set, and fresher data. Current primary index: "
-            "{primaryIndex} in term {primaryTerm}",
             "I can take over the primary because I have a higher priority, the highest "
             "priority in the replica set, and fresher data",
             "primaryIndex"_attr = primaryIndex,
@@ -1715,20 +1685,18 @@ void TopologyCoordinator::changeMemberState_forTest(const MemberState& newMember
             break;
         default:
             LOG_FATAL(21840,
-                      "Cannot switch to state {newMemberState}",
                       "Cannot change to this member state",
                       "newMemberState"_attr = newMemberState);
             MONGO_UNREACHABLE;
     }
     if (getMemberState() != newMemberState.s) {
         LOG_FATAL(21841,
-                  "Expected to enter state {expectedMemberState} but am now in {actualMemberState}",
                   "Failed to change member state",
                   "expectedMemberState"_attr = newMemberState,
                   "actualMemberState"_attr = getMemberState());
         MONGO_UNREACHABLE;
     }
-    LOG(21816, "{newMemberState}", "Changed member state", "newMemberState"_attr = newMemberState);
+    LOG(21816, "Changed member state", "newMemberState"_attr = newMemberState);
 }
 
 void TopologyCoordinator::setCurrentPrimary_forTest(int primaryIndex,
@@ -2176,7 +2144,7 @@ TopologyCoordinator::prepareFreezeResponse(Date_t now, int secs, BSONObjBuilder*
             response->append("warning", "you really want to freeze for only 1 second?");
 
         _stepDownUntil = std::max(_stepDownUntil, now + Seconds(secs));
-        LOG(21819, "'freezing' for {freezeSecs} seconds", "Freezing", "freezeSecs"_attr = secs);
+        LOG(21819, "Freezing", "freezeSecs"_attr = secs);
     }
 
     return PrepareFreezeResponseResult::kNoAction;
@@ -2257,7 +2225,6 @@ void TopologyCoordinator::updateConfig(const ReplSetConfig& newConfig, int selfI
         _term = OpTime::kInitialTerm;
         LOG_DEBUG(21820,
                   1,
-                  "Updated term in topology coordinator to {term} due to new config",
                   "Updated term in topology coordinator due to new config",
                   "term"_attr = _term);
     }
@@ -2457,7 +2424,6 @@ std::string TopologyCoordinator::_getUnelectableReasonString(const UnelectableRe
     }
     if (!hasWrittenToStream) {
         LOG_FATAL(26011,
-                  "Invalid UnelectableReasonMask value 0x{value}",
                   "Invalid UnelectableReasonMask value",
                   "value"_attr = unsignedHex(ur));
     }
@@ -2829,8 +2795,6 @@ bool TopologyCoordinator::advanceLastCommittedOpTimeAndWallTime(OpTimeAndWallTim
     if (_iAmPrimary() && committedOpTime.opTime < _firstOpTimeOfMyTerm) {
         LOG_DEBUG(21823,
                   1,
-                  "Ignoring older committed snapshot from before I became primary, optime: "
-                  "{committedOpTime}, firstOpTimeOfMyTerm: {firstOpTimeOfMyTerm}",
                   "Ignoring older committed snapshot from before I became primary",
                   "committedOpTime"_attr = committedOpTime.opTime,
                   "firstOpTimeOfMyTerm"_attr = _firstOpTimeOfMyTerm);
@@ -2846,10 +2810,6 @@ bool TopologyCoordinator::advanceLastCommittedOpTimeAndWallTime(OpTimeAndWallTim
             LOG_DEBUG(21824,
                       1,
                       "Ignoring commit point with different term than my lastApplied, since it "
-                      "may "
-                      "not be on the same oplog branch as mine. optime: {committedOpTime}, my "
-                      "last applied: {myLastAppliedOpTimeAndWallTime}",
-                      "Ignoring commit point with different term than my lastApplied, since it "
                       "may not be on the same oplog branch as mine",
                       "committedOpTime"_attr = committedOpTime,
                       "myLastAppliedOpTimeAndWallTime"_attr = getMyLastAppliedOpTimeAndWallTime());
@@ -2864,8 +2824,6 @@ bool TopologyCoordinator::advanceLastCommittedOpTimeAndWallTime(OpTimeAndWallTim
     if (committedOpTime.opTime < _lastCommittedOpTimeAndWallTime.opTime) {
         LOG_DEBUG(21825,
                   1,
-                  "Ignoring older committed snapshot optime: {committedOpTime}, "
-                  "currentCommittedOpTime: {currentCommittedOpTime}",
                   "Ignoring older committed snapshot optime",
                   "committedOpTime"_attr = committedOpTime,
                   "currentCommittedOpTime"_attr = _lastCommittedOpTimeAndWallTime);
@@ -2874,7 +2832,6 @@ bool TopologyCoordinator::advanceLastCommittedOpTimeAndWallTime(OpTimeAndWallTim
 
     LOG_DEBUG(21826,
               2,
-              "Updating _lastCommittedOpTimeAndWallTime to {_lastCommittedOpTimeAndWallTime}",
               "Updating _lastCommittedOpTimeAndWallTime",
               "_lastCommittedOpTimeAndWallTime"_attr = committedOpTime);
     _lastCommittedOpTimeAndWallTime = committedOpTime;
@@ -2938,7 +2895,6 @@ TopologyCoordinator::UpdateTermResult TopologyCoordinator::updateTerm(long long 
     }
     LOG_DEBUG(21827,
               1,
-              "Updating term from {oldTerm} to {newTerm}",
               "Updating term",
               "oldTerm"_attr = _term,
               "newTerm"_attr = term);
@@ -2973,8 +2929,6 @@ bool TopologyCoordinator::shouldChangeSyncSource(const HostAndPort& currentSourc
     // If the user requested a sync source change, return true.
     if (_forceSyncSourceIndex != -1) {
         LOG(21829,
-            "Choosing new sync source because the user has requested to use "
-            "{syncSource} as a sync source",
             "Choosing new sync source because the user has requested a sync source",
             "syncSource"_attr = _rsConfig.getMemberAt(_forceSyncSourceIndex).getHostAndPort());
         return true;
@@ -2985,7 +2939,6 @@ bool TopologyCoordinator::shouldChangeSyncSource(const HostAndPort& currentSourc
     const int currentSourceIndex = _rsConfig.findMemberIndexByHostAndPort(currentSource);
     if (currentSourceIndex == -1) {
         LOG(21831,
-            "Choosing new sync source because {currentSyncSource} is not in our config",
             "Choosing new sync source because current sync source is not in our config",
             "currentSyncSource"_attr = currentSource.toString());
         return true;
@@ -3032,9 +2985,6 @@ bool TopologyCoordinator::shouldChangeSyncSource(const HostAndPort& currentSourc
 
     if (MONGO_unlikely(disableMaxSyncSourceLagSecs.shouldFail())) {
         LOG(21833,
-            "disableMaxSyncSourceLagSecs fail point enabled - not checking the most recent "
-            "OpTime, {currentSyncSourceOpTime}, of our current sync source, {syncSource}, against "
-            "the OpTimes of the other nodes in this replica set.",
             "disableMaxSyncSourceLagSecs fail point enabled - not checking the most recent OpTime "
             "of our current sync source against the OpTimes of the other nodes in this replica set",
             "currentSyncSourceOpTime"_attr = currentSourceOpTime.toString(),
@@ -3053,10 +3003,6 @@ bool TopologyCoordinator::shouldChangeSyncSource(const HostAndPort& currentSourc
                 it->getState().readable() && !_memberIsBlacklisted(candidateConfig, now) &&
                 goalSecs < it->getHeartbeatAppliedOpTime().getSecs()) {
                 LOG(21834,
-                    "Choosing new sync source because the most recent OpTime of our sync "
-                    "source, {syncSource}, is {syncSourceOpTime} which is more than "
-                    "{maxSyncSourceLagSecs} behind member {otherMember} "
-                    "whose most recent OpTime is {otherMemberHearbeatAppliedOpTime}",
                     "Choosing new sync source because the most recent OpTime of our sync source "
                     "is more than maxSyncSourceLagSecs behind another member",
                     "syncSource"_attr = currentSource,

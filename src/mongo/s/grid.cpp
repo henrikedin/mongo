@@ -164,8 +164,6 @@ boost::optional<repl::OpTime> Grid::advanceConfigOpTime(OperationContext* opCtx,
             clientAddr = opCtx->getClient()->clientAddress(true);
         }
         LOG(22792,
-            "Received {reason} {clientAddress} indicating config server"
-            " term has increased, previous opTime {prevOpTime}, now {opTime}",
             "Term advanced for config server",
             "opTime"_attr = opTime,
             "prevOpTime"_attr = prevOpTime,

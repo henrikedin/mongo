@@ -50,8 +50,6 @@ void TransactionCoordinatorCatalog::exitStepUp(Status status) {
     } else {
         LOG_WARNING(22444,
                     "Coordinator recovery failed and coordinateCommit requests will not be "
-                    "allowed: {error}",
-                    "Coordinator recovery failed and coordinateCommit requests will not be "
                     "allowed",
                     "error"_attr = status);
     }
@@ -86,7 +84,6 @@ void TransactionCoordinatorCatalog::insert(OperationContext* opCtx,
                                            bool forStepUp) {
     LOG_DEBUG(22439,
               3,
-              "{sessionId}:{txnNumber} Inserting coordinator into in-memory catalog",
               "Inserting coordinator into in-memory catalog",
               "sessionId"_attr = lsid.getId(),
               "txnNumber"_attr = txnNumber);
@@ -163,7 +160,6 @@ TransactionCoordinatorCatalog::getLatestOnSession(OperationContext* opCtx,
 void TransactionCoordinatorCatalog::_remove(const LogicalSessionId& lsid, TxnNumber txnNumber) {
     LOG_DEBUG(22440,
               3,
-              "{sessionId}:{txnNumber} Removing coordinator from in-memory catalog",
               "Removing coordinator from in-memory catalog",
               "sessionId"_attr = lsid.getId(),
               "txnNumber"_attr = txnNumber);
@@ -198,13 +194,10 @@ void TransactionCoordinatorCatalog::join() {
     while (!_noActiveCoordinatorsCV.wait_for(
         ul, stdx::chrono::seconds{5}, [this] { return _coordinatorsBySession.empty(); })) {
         LOG(22442,
-            "After 5 seconds of wait there are still {numSessionsLeft} sessions left "
-            "with active coordinators which have not yet completed",
             "After 5 seconds of wait there are still sessions left with active coordinators "
             "which have not yet completed",
             "numSessionsLeft"_attr = _coordinatorsBySession.size());
         LOG(22443,
-            "Active coordinators remaining: {activeCoordinators}",
             "Active coordinators remaining",
             "activeCoordinators"_attr = _toString(ul));
     }

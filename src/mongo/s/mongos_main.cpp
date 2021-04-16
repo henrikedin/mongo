@@ -175,16 +175,12 @@ Status waitForSigningKeys(OperationContext* opCtx) {
                 return Status::OK();
             }
             LOG(22842,
-                "Waiting for signing keys, sleeping for {signingKeysCheckInterval} and then"
-                " checking again",
                 "Waiting for signing keys, sleeping before checking again",
                 "signingKeysCheckInterval"_attr = Seconds(kSignKeysRetryInterval));
             sleepFor(kSignKeysRetryInterval);
             continue;
         } catch (const DBException& ex) {
             LOG_WARNING(22853,
-                        "Error while waiting for signing keys, sleeping for"
-                        " {signingKeysCheckInterval} and then checking again {error}",
                         "Error while waiting for signing keys, sleeping before checking again",
                         "signingKeysCheckInterval"_attr = Seconds(kSignKeysRetryInterval),
                         "error"_attr = ex);
@@ -307,7 +303,6 @@ void cleanupTask(const ShutdownTaskArgs& shutdownArgs) {
             implicitlyAbortAllTransactions(opCtx);
         } catch (const DBException& excep) {
             LOG_WARNING(22854,
-                        "Encountered {error} while trying to abort all active transactions",
                         "Error aborting all active transactions",
                         "error"_attr = excep);
         }
@@ -532,7 +527,6 @@ public:
         } catch (const DBException& ex) {
             LOG_DEBUG(22849,
                       2,
-                      "Unable to update sharding state with possible replica set due to {error}",
                       "Unable to update sharding state with possible replica set",
                       "error"_attr = ex);
         }
@@ -569,8 +563,6 @@ private:
         if (ErrorCodes::isCancellationError(schedStatus.code())) {
             LOG_DEBUG(22848,
                       2,
-                      "Unable to schedule updating sharding state with confirmed replica set due"
-                      " to {error}",
                       "Unable to schedule updating sharding state with confirmed replica set",
                       "error"_attr = schedStatus);
             return;
@@ -667,7 +659,6 @@ ExitCode runMongosServer(ServiceContext* serviceContext) {
     auto res = tl->setup();
     if (!res.isOK()) {
         LOG_ERROR(22856,
-                  "Error setting up listener: {error}",
                   "Error setting up listener",
                   "error"_attr = res);
         return EXIT_NET_ERROR;
@@ -720,7 +711,6 @@ ExitCode runMongosServer(ServiceContext* serviceContext) {
         }
 
         LOG_ERROR(22857,
-                  "Error initializing sharding system: {error}",
                   "Error initializing sharding system",
                   "error"_attr = redact(ex));
         return EXIT_SHARDING_ERROR;
@@ -748,7 +738,6 @@ ExitCode runMongosServer(ServiceContext* serviceContext) {
     Status status = AuthorizationManager::get(serviceContext)->initialize(opCtx);
     if (!status.isOK()) {
         LOG_ERROR(22858,
-                  "Error initializing authorization data: {error}",
                   "Error initializing authorization data",
                   "error"_attr = status);
         return EXIT_SHARDING_ERROR;
@@ -777,7 +766,6 @@ ExitCode runMongosServer(ServiceContext* serviceContext) {
     status = serviceContext->getServiceEntryPoint()->start();
     if (!status.isOK()) {
         LOG_ERROR(22860,
-                  "Error starting service entry point: {error}",
                   "Error starting service entry point",
                   "error"_attr = redact(status));
         return EXIT_NET_ERROR;
@@ -786,7 +774,6 @@ ExitCode runMongosServer(ServiceContext* serviceContext) {
     status = serviceContext->getTransportLayer()->start();
     if (!status.isOK()) {
         LOG_ERROR(22861,
-                  "Error starting transport layer: {error}",
                   "Error starting transport layer",
                   "error"_attr = redact(status));
         return EXIT_NET_ERROR;
@@ -906,7 +893,6 @@ ExitCode mongos_main(int argc, char* argv[]) {
     if (!status.isOK()) {
         LOG_FATAL_OPTIONS(22865,
                           log::LogOptions(log::LogComponent::kDefault, log::FatalMode::kContinue),
-                          "Error during global initialization: {error}",
                           "Error during global initialization",
                           "error"_attr = status);
         return EXIT_ABRUPT;
@@ -918,7 +904,6 @@ ExitCode mongos_main(int argc, char* argv[]) {
         auto cause = exceptionToStatus();
         LOG_FATAL_OPTIONS(22866,
                           log::LogOptions(log::LogComponent::kDefault, log::FatalMode::kContinue),
-                          "Error creating service context: {error}",
                           "Error creating service context",
                           "error"_attr = redact(cause));
         return EXIT_ABRUPT;
@@ -947,13 +932,11 @@ ExitCode mongos_main(int argc, char* argv[]) {
         return main(service);
     } catch (const DBException& e) {
         LOG_ERROR(22862,
-                  "uncaught DBException in mongos main: {error}",
                   "uncaught DBException in mongos main",
                   "error"_attr = redact(e));
         return EXIT_UNCAUGHT;
     } catch (const std::exception& e) {
         LOG_ERROR(22863,
-                  "uncaught std::exception in mongos main: {error}",
                   "uncaught std::exception in mongos main",
                   "error"_attr = redact(e.what()));
         return EXIT_UNCAUGHT;

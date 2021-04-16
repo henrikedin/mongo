@@ -213,7 +213,6 @@ DatabaseType ShardingCatalogManager::createDatabase(OperationContext* opCtx,
                             DatabaseVersion(UUID::gen(), clusterTime));
 
             LOG(21938,
-                "Registering new database {db} in sharding catalog",
                 "Registering new database in sharding catalog",
                 "db"_attr = db);
 
@@ -310,7 +309,6 @@ Status ShardingCatalogManager::commitMovePrimary(OperationContext* opCtx,
 
     if (!updateStatus.isOK()) {
         LOG(21940,
-            "Error committing movePrimary for {db}: {error}",
             "Error committing movePrimary",
             "db"_attr = dbname,
             "error"_attr = redact(updateStatus.getStatus()));

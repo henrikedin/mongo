@@ -125,7 +125,6 @@ void StorageRepairObserver::_touchRepairIncompleteFile() {
     fileStream << "This file indicates that a repair operation is in progress or incomplete.";
     if (fileStream.fail()) {
         LOG_FATAL_NOTRACE(50920,
-                          "Failed to write to file {file}: {error}",
                           "Failed to write to file",
                           "file"_attr = _repairIncompleteFilePath.generic_string(),
                           "error"_attr = errnoWithDescription());
@@ -142,7 +141,6 @@ void StorageRepairObserver::_removeRepairIncompleteFile() {
 
     if (ec) {
         LOG_FATAL_NOTRACE(50921,
-                          "Failed to remove file {file}: {error}",
                           "Failed to remove file",
                           "file"_attr = _repairIncompleteFilePath.generic_string(),
                           "error"_attr = ec.message());

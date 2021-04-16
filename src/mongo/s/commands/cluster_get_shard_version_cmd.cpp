@@ -112,7 +112,6 @@ public:
                 bool exceedsSizeLimit = false;
 
                 LOG(22753,
-                    "Routing info requested by getShardVersion: {routingInfo}",
                     "Routing info requested by getShardVersion",
                     "routingInfo"_attr = redact(cm.toString()));
 

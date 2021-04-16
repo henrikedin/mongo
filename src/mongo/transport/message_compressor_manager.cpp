@@ -97,7 +97,6 @@ StatusWith<Message> MessageCompressorManager::compressMessage(
 
     LOG_DEBUG(22925,
               3,
-              "Compressing message with {compressor}",
               "Compressing message",
               "compressor"_attr = compressor->getName());
 
@@ -111,8 +110,6 @@ StatusWith<Message> MessageCompressorManager::compressMessage(
     if (bufferSize > MaxMessageSizeBytes) {
         LOG_DEBUG(22926,
                   3,
-                  "Compressed message would be larger than {MaxMessageSizeBytes}, returning "
-                  "original uncompressed message",
                   "Compressed message would be larger than maximum allowed, returning original "
                   "uncompressed message",
                   "MaxMessageSizeBytes"_attr = MaxMessageSizeBytes);
@@ -163,7 +160,6 @@ StatusWith<Message> MessageCompressorManager::decompressMessage(const Message& m
 
     LOG_DEBUG(22927,
               3,
-              "Decompressing message with {compressor}",
               "Decompressing message",
               "compressor"_attr = compressor->getName());
 
@@ -217,7 +213,6 @@ void MessageCompressorManager::clientBegin(BSONObjBuilder* output) {
     for (const auto& e : _registry->getCompressorNames()) {
         LOG_DEBUG(22929,
                   3,
-                  "Offering {compressor} compressor to server",
                   "Offering compressor to server",
                   "compressor"_attr = e);
         sub.append(e);
@@ -249,7 +244,6 @@ void MessageCompressorManager::clientFinish(const BSONObj& input) {
         auto ret = _registry->getCompressor(algoName);
         LOG_DEBUG(22933,
                   3,
-                  "Adding compressor {compressor}",
                   "Adding compressor",
                   "compressor"_attr = ret->getName());
         _negotiated.push_back(ret);
@@ -294,14 +288,12 @@ void MessageCompressorManager::serverNegotiate(
         if ((cur = _registry->getCompressor(curName))) {
             LOG_DEBUG(22937,
                       3,
-                      "{compressor} is supported",
                       "supported compressor",
                       "compressor"_attr = cur->getName());
             _negotiated.push_back(cur);
         } else {  // Otherwise the compressor is not supported and we skip over it.
             LOG_DEBUG(22938,
                       3,
-                      "{compressor} is not supported",
                       "compressor is not supported",
                       "compressor"_attr = curName);
         }

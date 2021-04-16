@@ -592,7 +592,6 @@ int SSLManagerWindows::SSL_write(SSLConnectionInterface* connInterface, const vo
             }
             default:
                 LOG_FATAL(23283,
-                          "Unexpected ASIO state: {state}",
                           "Unexpected ASIO state",
                           "state"_attr = static_cast<int>(want));
                 MONGO_UNREACHABLE;
@@ -1884,15 +1883,12 @@ Status validatePeerCertificate(const std::string& remoteHost,
 
             if (allowInvalidCertificates) {
                 LOG_WARNING(23274,
-                            "SSL peer certificate validation failed ({errorCode}): {error}",
                             "SSL peer certificate validation failed",
                             "errorCode"_attr = unsignedHex(certChainPolicyStatus.dwError),
                             "error"_attr = errnoWithDescription(certChainPolicyStatus.dwError));
 
                 if (certChainPolicyStatus.dwError == CERT_E_CN_NO_MATCH) {
                     LOG_WARNING(23275,
-                                "The server certificate does not match the host name. Hostname: "
-                                "{remoteHost} does not match {certificateNames}",
                                 "The server certificate does not match the host name",
                                 "remoteHost"_attr = remoteHost,
                                 "certificateNames"_attr = certificateNames.str());
@@ -1902,8 +1898,6 @@ Status validatePeerCertificate(const std::string& remoteHost,
                 return Status::OK();
             } else if (allowInvalidHostnames) {
                 LOG_WARNING(23276,
-                            "The server certificate does not match the host name. Hostname: "
-                            "{remoteHost} does not match {certificateNames}",
                             "The server certificate does not match the host name",
                             "remoteHost"_attr = remoteHost,
                             "certificateNames"_attr = certificateNames.str());
@@ -1919,7 +1913,6 @@ Status validatePeerCertificate(const std::string& remoteHost,
 
 
             LOG_ERROR(23279,
-                      "SSL peer certificate validation failed: ({errorCode}){error}",
                       "SSL peer certificate validation failed",
                       "errorCode"_attr = unsignedHex(certChainPolicyStatus.dwError),
                       "error"_attr = errnoWithDescription(certChainPolicyStatus.dwError));
@@ -1991,14 +1984,12 @@ Future<SSLPeerInfo> SSLManagerWindows::parseAndValidatePeerCertificate(
             // do not give warning if "no certificate" warnings are suppressed
             if (!_suppressNoCertificateWarning) {
                 LOG_WARNING(23277,
-                            "no SSL certificate provided by peer",
                             "No SSL certificate provided by peer");
             }
             return SSLPeerInfo(sni);
         } else {
             auto msg = "no SSL certificate provided by peer; connection rejected";
             LOG_ERROR(23280,
-                      "no SSL certificate provided by peer; connection rejected",
                       "No SSL certificate provided by peer; connection rejected");
             return Status(ErrorCodes::SSLHandshakeFailed, msg);
         }

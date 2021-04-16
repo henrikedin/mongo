@@ -91,8 +91,6 @@ void DropPendingCollectionReaper::addDropPendingNamespace(
     if (std::find_if(lowerBound, upperBound, matcher) != upperBound) {
         LOG_FATAL_NOTRACE(
             40448,
-            "Failed to add drop-pending collection {dropPendingNamespace} with drop optime "
-            "{dropOpTime}: duplicate optime and namespace pair.",
             "Failed to add drop-pending collection: duplicate optime and namespace pair",
             "dropPendingNamespace"_attr = dropPendingNamespace,
             "dropOpTime"_attr = dropOpTime);
@@ -141,8 +139,6 @@ bool DropPendingCollectionReaper::rollBackDropPendingCollection(
         auto it = std::find_if(lowerBound, upperBound, matcher);
         if (it == upperBound) {
             LOG_WARNING(21154,
-                        "Cannot find drop-pending namespace at OpTime {opTime} for collection "
-                        "{namespace} to roll back.",
                         "Cannot find drop-pending namespace to roll back",
                         "opTime"_attr = opTime,
                         "namespace"_attr = collectionNamespace);
@@ -153,9 +149,6 @@ bool DropPendingCollectionReaper::rollBackDropPendingCollection(
     }
 
     LOG(21152,
-        "Rolling back collection drop for {pendingNamespace} with drop OpTime {dropOpTime} to "
-        "namespace "
-        "{namespace}",
         "Rolling back collection drop",
         "pendingNamespace"_attr = pendingNss,
         "dropOpTime"_attr = opTime,
@@ -189,8 +182,6 @@ void DropPendingCollectionReaper::dropCollectionsOlderThan(OperationContext* opC
             const auto& dropOpTime = opTimeAndNamespace.first;
             const auto& nss = opTimeAndNamespace.second;
             LOG(21153,
-                "Completing collection drop for {namespace} with drop optime {dropOpTime} "
-                "(notification optime: {notificationOpTime})",
                 "Completing collection drop",
                 "namespace"_attr = nss,
                 "dropOpTime"_attr = dropOpTime,
@@ -204,8 +195,6 @@ void DropPendingCollectionReaper::dropCollectionsOlderThan(OperationContext* opC
             }
             if (!status.isOK()) {
                 LOG_WARNING(21155,
-                            "Failed to remove drop-pending collection {namespace} with drop optime "
-                            "{dropOpTime} (notification optime: {notificationOpTime}): {error}",
                             "Failed to remove drop-pending collection ",
                             "namespace"_attr = nss,
                             "dropOpTime"_attr = dropOpTime,

@@ -128,7 +128,6 @@ void MigrationCoordinator::startMigration(OperationContext* opCtx) {
 void MigrationCoordinator::setMigrationDecision(DecisionEnum decision) {
     LOG_DEBUG(23891,
               2,
-              "MigrationCoordinator setting migration decision to {decision}",
               "MigrationCoordinator setting migration decision",
               "decision"_attr = (decision == DecisionEnum::kCommitted ? "committed" : "aborted"),
               "migrationId"_attr = _migrationInfo.getId());
@@ -149,7 +148,6 @@ boost::optional<SemiFuture<void>> MigrationCoordinator::completeMigration(Operat
     }
 
     LOG(23893,
-        "MigrationCoordinator delivering decision {decision} to self and to recipient",
         "MigrationCoordinator delivering decision to self and to recipient",
         "decision"_attr = (decision == DecisionEnum::kCommitted ? "committed" : "aborted"),
         "migrationId"_attr = _migrationInfo.getId());
@@ -183,8 +181,6 @@ SemiFuture<void> MigrationCoordinator::_commitMigrationOnDonorAndRecipient(
     LOG_DEBUG(
         23895,
         2,
-        "Bumping transaction number with lsid {lsid} and current txnNumber {currentTxnNumber} on "
-        "recipient shard {recipientShardId} for commit of collection {nss}",
         "Bumping transaction number on recipient shard for commit",
         "namespace"_attr = _migrationInfo.getNss(),
         "recipientShardId"_attr = _migrationInfo.getRecipientShardId(),
@@ -246,9 +242,6 @@ void MigrationCoordinator::_abortMigrationOnDonorAndRecipient(OperationContext* 
     try {
         LOG_DEBUG(23900,
                   2,
-                  "Bumping transaction number with lsid {lsid} and current txnNumber "
-                  "{currentTxnNumber} on "
-                  "recipient shard {recipientShardId} for abort of collection {nss}",
                   "Bumping transaction number on recipient shard for abort",
                   "namespace"_attr = _migrationInfo.getNss(),
                   "recipientShardId"_attr = _migrationInfo.getRecipientShardId(),

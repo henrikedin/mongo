@@ -335,7 +335,6 @@ MONGO_INITIALIZER_GENERAL(ServerLogRedirection,
                 boost::filesystem::rename(absoluteLogpath, renameTarget, ec);
                 if (!ec) {
                     MONGO_LOG(20697,
-                              "Moving existing log file \"{oldLogPath}\" to \"{newLogPath}\"",
                               "Renamed existing log file",
                               "oldLogPath"_attr = absoluteLogpath,
                               "newLogPath"_attr = renameTarget);

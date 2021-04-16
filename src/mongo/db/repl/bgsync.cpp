@@ -223,7 +223,6 @@ void BackgroundSync::_run() {
         } catch (const std::exception& e2) {
             // redact(std::exception&) doesn't work
             LOG_FATAL(28546,
-                      "sync producer exception: {error}",
                       "Sync producer error",
                       "error"_attr = redact(e2.what()));
         }
@@ -310,7 +309,6 @@ void BackgroundSync::_produce() {
         lastOpTimeFetched = _lastOpTimeFetched;
         if (!_syncSourceHost.empty()) {
             LOG(21080,
-                "Clearing sync source {syncSource} to choose a new one.",
                 "Clearing sync source to choose a new one",
                 "syncSource"_attr = _syncSourceHost);
         }
@@ -354,7 +352,6 @@ void BackgroundSync::_produce() {
             if (!status.isOK()) {
                 LOG_DEBUG(21083,
                           1,
-                          "Aborting catch-up failed with status: {error}",
                           "Aborting catch-up failed",
                           "error"_attr = status);
             }
@@ -380,7 +377,6 @@ void BackgroundSync::_produce() {
         auto status = _replCoord->setMaintenanceMode(true);
         if (!status.isOK()) {
             LOG_WARNING(21116,
-                        "Failed to transition into maintenance mode: {error}",
                         "Failed to transition into maintenance mode",
                         "error"_attr = status);
             // Do not mark ourselves too stale on errors so we can try again next time.
@@ -389,8 +385,6 @@ void BackgroundSync::_produce() {
         status = _replCoord->setFollowerMode(MemberState::RS_RECOVERING);
         if (!status.isOK()) {
             LOG_WARNING(21117,
-                        "Failed to transition into {targetState}. "
-                        "Current state: {currentState}. Caused by: {error}",
                         "Failed to perform replica set state transition",
                         "targetState"_attr = MemberState(MemberState::RS_RECOVERING),
                         "currentState"_attr = _replCoord->getMemberState(),
@@ -412,9 +406,6 @@ void BackgroundSync::_produce() {
         if (oldSource == source) {
             long long sleepMS = _getRetrySleepMS();
             LOG(21087,
-                "Chose same sync source candidate as last time, {syncSource}. Sleeping for "
-                "{sleepDurationMillis}ms to avoid immediately choosing a new sync source for the "
-                "same reason as last time.",
                 "Chose same sync source candidate as last time. Sleeping to avoid immediately "
                 "choosing a new sync source for the same reason as last time",
                 "syncSource"_attr = source,
@@ -423,7 +414,6 @@ void BackgroundSync::_produce() {
             mongo::sleepmillis(sleepMS);
         } else {
             LOG(21088,
-                "Changed sync source from {oldSyncSource} to {newSyncSource}",
                 "Changed sync source",
                 "oldSyncSource"_attr =
                     (oldSource.empty() ? std::string("empty") : oldSource.toString()),
@@ -433,8 +423,6 @@ void BackgroundSync::_produce() {
     } else {
         if (!syncSourceResp.isOK()) {
             LOG(21089,
-                "failed to find sync source, received error "
-                "{error}",
                 "Failed to find sync source",
                 "error"_attr = syncSourceResp.syncSourceStatus.getStatus());
         }
@@ -443,8 +431,6 @@ void BackgroundSync::_produce() {
         // No sync source found.
         LOG_DEBUG(21090,
                   1,
-                  "Could not find a sync source. Sleeping for {sleepDurationMillis}ms before "
-                  "trying again.",
                   "Could not find a sync source. Sleeping before trying again",
                   "sleepDurationMillis"_attr = sleepMS);
         numTimesCouldNotFindSyncSource.increment(1);
@@ -456,13 +442,11 @@ void BackgroundSync::_produce() {
     // transition to SECONDARY.
     if (_tooStale.swap(false)) {
         LOG(21091,
-            "No longer too stale. Able to sync from {syncSource}",
             "No longer too stale. Able to start syncing",
             "syncSource"_attr = source);
         auto status = _replCoord->setMaintenanceMode(false);
         if (!status.isOK()) {
             LOG_WARNING(21118,
-                        "Failed to leave maintenance mode: {error}",
                         "Failed to leave maintenance mode",
                         "error"_attr = status);
         }
@@ -554,15 +538,12 @@ void BackgroundSync::_produce() {
     const auto logLevel = TestingProctor::instance().isEnabled() ? 0 : 1;
     LOG_DEBUG(21092,
               logLevel,
-              "scheduling fetcher to read remote oplog on {syncSource} starting at "
-              "{lastOpTimeFetched}",
               "Scheduling fetcher to read remote oplog",
               "syncSource"_attr = source,
               "lastOpTimeFetched"_attr = oplogFetcher->getLastOpTimeFetched_forTest());
     auto scheduleStatus = oplogFetcher->startup();
     if (!scheduleStatus.isOK()) {
         LOG_WARNING(21119,
-                    "unable to schedule fetcher to read remote oplog on {syncSource}: {error}",
                     "Unable to schedule fetcher to read remote oplog",
                     "syncSource"_attr = source,
                     "error"_attr = scheduleStatus);
@@ -572,7 +553,6 @@ void BackgroundSync::_produce() {
     oplogFetcher->join();
     LOG_DEBUG(21093,
               1,
-              "fetcher stopped reading remote oplog on {syncSource}",
               "Fetcher stopped reading remote oplog",
               "syncSource"_attr = source);
 
@@ -617,8 +597,6 @@ void BackgroundSync::_produce() {
         _replCoord->blacklistSyncSource(source, Date_t::now() + blacklistDuration);
     } else if (fetcherReturnStatus == ErrorCodes::InvalidBSON) {
         LOG_WARNING(21121,
-                    "Oplog fetcher got invalid BSON while querying oplog. Blacklisting sync source "
-                    "{syncSource} for {blacklistDuration}.",
                     "Oplog fetcher got invalid BSON while querying oplog. Blacklisting sync source",
                     "syncSource"_attr = source,
                     "blacklistDuration"_attr = blacklistDuration);
@@ -636,7 +614,6 @@ void BackgroundSync::_produce() {
         }
     } else if (!fetcherReturnStatus.isOK()) {
         LOG_WARNING(21122,
-                    "Oplog fetcher stopped querying remote oplog with error: {error}",
                     "Oplog fetcher stopped querying remote oplog with error",
                     "error"_attr = redact(fetcherReturnStatus));
     }
@@ -672,7 +649,6 @@ Status BackgroundSync::_enqueueDocuments(OplogFetcher::Documents::const_iterator
         _lastOpTimeFetched = info.lastDocument;
         LOG_DEBUG(21096,
                   3,
-                  "batch resetting _lastOpTimeFetched: {lastOpTimeFetched}",
                   "Batch resetting _lastOpTimeFetched",
                   "lastOpTimeFetched"_attr = _lastOpTimeFetched);
     }
@@ -704,7 +680,6 @@ void BackgroundSync::_runRollback(OperationContext* opCtx,
         if (!status.isOK()) {
             LOG_DEBUG(21097,
                       1,
-                      "Aborting catch-up failed with status: {error}",
                       "Aborting catch-up failed",
                       "error"_attr = status);
         }
@@ -738,8 +713,6 @@ void BackgroundSync::_runRollback(OperationContext* opCtx,
     auto lastApplied = _replCoord->getMyLastAppliedOpTime();
     if (lastApplied != lastOpTimeFetched) {
         LOG(21100,
-            "Waiting for all operations from {lastApplied} until {lastOpTimeFetched} to be "
-            "applied before starting rollback.",
             "Waiting for all operations from lastApplied until lastOpTimeFetched to be applied "
             "before starting rollback",
             "lastApplied"_attr = lastApplied,
@@ -817,7 +790,6 @@ void BackgroundSync::_runRollbackViaRecoverToCheckpoint(
         localOplog, &remoteOplog, storageInterface, _replicationProcess, _replCoord);
 
     LOG(21104,
-        "Scheduling rollback (sync source: {syncSource})",
         "Scheduling rollback",
         "syncSource"_attr = source);
     auto status = _rollback->runRollback(opCtx);
@@ -825,13 +797,11 @@ void BackgroundSync::_runRollbackViaRecoverToCheckpoint(
         LOG(21105, "Rollback successful");
     } else if (status == ErrorCodes::UnrecoverableRollbackError) {
         LOG_FATAL_CONTINUE(21128,
-                           "Rollback failed with unrecoverable error: {error}",
                            "Rollback failed with unrecoverable error",
                            "error"_attr = status);
         fassertFailedWithStatusNoTrace(50666, status);
     } else {
         LOG_WARNING(21124,
-                    "Rollback failed with retryable error: {error}",
                     "Rollback failed with retryable error",
                     "error"_attr = status);
     }
@@ -860,7 +830,6 @@ HostAndPort BackgroundSync::getSyncTarget() const {
 void BackgroundSync::clearSyncTarget() {
     stdx::unique_lock<Latch> lock(_mutex);
     LOG(21106,
-        "Resetting sync source to empty, which was {previousSyncSource}",
         "Resetting sync source to empty",
         "previousSyncSource"_attr = _syncSourceHost);
     _syncSourceHost = HostAndPort();
@@ -915,8 +884,6 @@ void BackgroundSync::start(OperationContext* opCtx) {
         if (_lastOpTimeFetched <= lastAppliedOpTime) {
             LOG_DEBUG(21110,
                       1,
-                      "Setting bgsync _lastOpTimeFetched={lastAppliedOpTime}. Previous "
-                      "_lastOpTimeFetched: {previousLastOpTimeFetched}",
                       "Setting bgsync _lastOpTimeFetched to lastAppliedOpTime",
                       "lastAppliedOpTime"_attr = lastAppliedOpTime,
                       "previousLastOpTimeFetched"_attr = _lastOpTimeFetched);
@@ -927,7 +894,6 @@ void BackgroundSync::start(OperationContext* opCtx) {
 
     LOG_DEBUG(21111,
               1,
-              "bgsync fetch queue set to: {lastOpTimeFetched}",
               "bgsync fetch queue set to lastOpTimeFetched",
               "lastOpTimeFetched"_attr = _lastOpTimeFetched);
 }
@@ -949,7 +915,6 @@ OpTime BackgroundSync::_readLastAppliedOpTime(OperationContext* opCtx) {
         throw;
     } catch (const DBException& ex) {
         LOG_FATAL(18904,
-                  "Problem reading {namespace}: {error}",
                   "Problem reading from namespace",
                   "namespace"_attr = NamespaceString::kRsOplogNamespace.ns(),
                   "error"_attr = redact(ex));
@@ -958,7 +923,6 @@ OpTime BackgroundSync::_readLastAppliedOpTime(OperationContext* opCtx) {
     OplogEntry parsedEntry(oplogEntry);
     LOG_DEBUG(21112,
               1,
-              "Successfully read last entry of oplog while starting bgsync: {lastOplogEntry}",
               "Successfully read last entry of oplog while starting bgsync",
               "lastOplogEntry"_attr = redact(oplogEntry));
     return parsedEntry.getOpTime();

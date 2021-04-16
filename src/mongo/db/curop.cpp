@@ -404,7 +404,6 @@ void CurOp::setGenericOpRequestDetails(OperationContext* opCtx,
 void CurOp::setMessage_inlock(StringData message) {
     if (_progressMeter.isActive()) {
         LOG_ERROR(20527,
-                  "Changing message from {old} to {new}",
                   "Updating message",
                   "old"_attr = redact(_message),
                   "new"_attr = redact(message));
@@ -549,7 +548,6 @@ bool CurOp::completeAndLogOperation(OperationContext* opCtx,
                     LOG_WARNING_OPTIONS(
                         20525,
                         {component},
-                        "Failed to gather storage statistics for {opId} due to {reason}",
                         "Failed to gather storage statistics for slow operation",
                         "opId"_attr = opCtx->getOpID(),
                         "error"_attr = "lock acquire timeout"_sd);
@@ -558,7 +556,6 @@ bool CurOp::completeAndLogOperation(OperationContext* opCtx,
                 LOG_WARNING_OPTIONS(
                     20526,
                     {component},
-                    "Failed to gather storage statistics for {opId} due to {reason}",
                     "Failed to gather storage statistics for slow operation",
                     "opId"_attr = opCtx->getOpID(),
                     "error"_attr = redact(ex));

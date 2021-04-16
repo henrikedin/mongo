@@ -78,7 +78,6 @@ S2AccessMethod::S2AccessMethod(IndexCatalogEntry* btreeState,
 
     if (descriptor->isSparse()) {
         LOG_WARNING(23742,
-                    "Sparse option ignored for index spec {descriptor_keyPattern}",
                     "Sparse option ignored for index spec",
                     "indexSpec"_attr = descriptor->keyPattern());
     }

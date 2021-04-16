@@ -270,8 +270,6 @@ CompareResult compareAllShardVersions(const ChunkManager& cm,
                 cm.isSharded() ? cm.getVersion(shardId) : ChunkVersion::UNSHARDED();
         } catch (const DBException& ex) {
             LOG_WARNING(22915,
-                        "could not lookup shard {shardId} in local cache, shard metadata may "
-                        "have changed or be unavailable: {error}",
                         "Could not lookup shard in local cache",
                         "shardId"_attr = shardId,
                         "error"_attr = ex);
@@ -669,9 +667,6 @@ void ChunkManagerTargeter::refreshIfNeeded(OperationContext* opCtx, bool* wasCha
 
     LOG_DEBUG(22912,
               4,
-              "ChunkManagerTargeter checking if refresh is needed, "
-              "needsTargetingRefresh({needsTargetingRefresh}) has remoteShardVersion "
-              "({hasRemoteShardVersions})) has remoteDbVersion ({hasRemoteDbVersion})",
               "ChunkManagerTargeter checking if refresh is needed",
               "needsTargetingRefresh"_attr = _needsTargetingRefresh,
               "hasRemoteShardVersions"_attr = !_remoteShardVersions.empty(),
@@ -728,7 +723,6 @@ void ChunkManagerTargeter::refreshIfNeeded(OperationContext* opCtx, bool* wasCha
 
         LOG_DEBUG(22913,
                   4,
-                  "ChunkManagerTargeter shard versions comparison result: {result}",
                   "ChunkManagerTargeter shard versions comparison",
                   "result"_attr = static_cast<int>(result));
 
@@ -750,7 +744,6 @@ void ChunkManagerTargeter::refreshIfNeeded(OperationContext* opCtx, bool* wasCha
 
         LOG_DEBUG(22914,
                   4,
-                  "ChunkManagerTargeter database versions comparison result: {result}",
                   "ChunkManagerTargeter database versions comparison",
                   "result"_attr = static_cast<int>(result));
 

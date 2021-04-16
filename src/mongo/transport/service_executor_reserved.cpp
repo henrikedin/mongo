@@ -94,7 +94,6 @@ Status ServiceExecutorReserved::start() {
 
 Status ServiceExecutorReserved::_startWorker() {
     LOG(22978,
-        "Starting new worker thread for {name} service executor",
         "Starting new worker thread for service executor",
         "name"_attr = _name);
     return launchServiceWorkerThread([this] {
@@ -134,7 +133,6 @@ Status ServiceExecutorReserved::_startWorker() {
                 auto threadStartStatus = _startWorker();
                 if (!threadStartStatus.isOK()) {
                     LOG_WARNING(22981,
-                                "Could not start new reserve worker thread: {error}",
                                 "Could not start new reserve worker thread",
                                 "error"_attr = threadStartStatus);
                 }
@@ -157,7 +155,6 @@ Status ServiceExecutorReserved::_startWorker() {
 
         LOG_DEBUG(22979,
                   3,
-                  "Exiting worker thread in {name} service executor",
                   "Exiting worker thread in service executor",
                   "name"_attr = _name);
     });

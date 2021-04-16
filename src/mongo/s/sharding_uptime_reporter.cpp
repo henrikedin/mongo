@@ -86,7 +86,6 @@ void reportStatus(OperationContext* opCtx,
             ShardingCatalogClient::kMajorityWriteConcern));
     } catch (const DBException& e) {
         LOG(22875,
-            "Error while attempting to write this node's uptime to config.mongos: {error}",
             "Error while attempting to write this node's uptime to config.mongos",
             "error"_attr = e);
     }
@@ -127,7 +126,6 @@ void ShardingUptimeReporter::startPeriodicThread() {
                                   ->refreshAndCheck(opCtx.get());
                 if (!status.isOK()) {
                     LOG_WARNING(22876,
-                                "Failed to refresh balancer settings from config server: {error}",
                                 "Failed to refresh balancer settings from config server",
                                 "error"_attr = status);
                 }

@@ -108,7 +108,6 @@ repl::OpTime persistParticipantListBlocking(OperationContext* opCtx,
                                             const std::vector<ShardId>& participantList) {
     LOG_DEBUG(22463,
               3,
-              "{sessionId}:{txnNumber} Going to write participant list",
               "Going to write participant list",
               "sessionId"_attr = lsid.getId(),
               "txnNumber"_attr = txnNumber);
@@ -385,7 +384,6 @@ repl::OpTime persistDecisionBlocking(OperationContext* opCtx,
 
     LOG_DEBUG(22469,
               3,
-              "{sessionId}:{txnNumber} Wrote decision {decision}",
               "Wrote decision",
               "sessionId"_attr = lsid.getId(),
               "txnNumber"_attr = txnNumber,
@@ -483,7 +481,6 @@ void deleteCoordinatorDocBlocking(OperationContext* opCtx,
                                   TxnNumber txnNumber) {
     LOG_DEBUG(22472,
               3,
-              "{sessionId}:{txnNumber} Going to delete coordinator doc",
               "Going to delete coordinator doc",
               "sessionId"_attr = lsid.getId(),
               "txnNumber"_attr = txnNumber);
@@ -544,7 +541,6 @@ void deleteCoordinatorDocBlocking(OperationContext* opCtx,
 
     LOG_DEBUG(22474,
               3,
-              "{sessionId}:{txnNumber} Deleted coordinator doc",
               "Deleted coordinator doc",
               "sessionId"_attr = lsid.getId(),
               "txnNumber"_attr = txnNumber);
@@ -622,8 +618,6 @@ Future<PrepareResponse> sendPrepareToShard(ServiceContext* service,
          operationContextFn] {
             LOG_DEBUG(22476,
                       3,
-                      "{sessionId}:{txnNumber} Coordinator going to send command "
-                      "{command} to {localOrRemote} shard {shardId}",
                       "Coordinator going to send command to shard",
                       "sessionId"_attr = lsid.getId(),
                       "txnNumber"_attr = txnNumber,
@@ -658,7 +652,6 @@ Future<PrepareResponse> sendPrepareToShard(ServiceContext* service,
                                                    << ", which is not an expected behavior. "
                                                       "Interpreting the response as vote to abort");
                             LOG(22477,
-                                "{sessionId}:{txnNumber} {error}",
                                 "Coordinator received error from transaction participant",
                                 "sessionId"_attr = lsid.getId(),
                                 "txnNumber"_attr = txnNumber,
@@ -671,9 +664,6 @@ Future<PrepareResponse> sendPrepareToShard(ServiceContext* service,
                         LOG_DEBUG(
                             22478,
                             3,
-                            "{sessionId}:{txnNumber} Coordinator shard received a "
-                            "vote to commit from shard {shardId} with prepareTimestamp: "
-                            "{prepareTimestamp}",
                             "Coordinator shard received a vote to commit from participant shard",
                             "sessionId"_attr = lsid.getId(),
                             "txnNumber"_attr = txnNumber,
@@ -688,8 +678,6 @@ Future<PrepareResponse> sendPrepareToShard(ServiceContext* service,
 
                     LOG_DEBUG(22479,
                               3,
-                              "{sessionId}:{txnNumber} Coordinator shard received "
-                              "{error} from shard {shardId} for {command}",
                               "Coordinator shard received response from shard",
                               "sessionId"_attr = lsid.getId(),
                               "txnNumber"_attr = txnNumber,
@@ -726,8 +714,6 @@ Future<PrepareResponse> sendPrepareToShard(ServiceContext* service,
         [lsid, txnNumber, shardId](const Status& status) {
             LOG_DEBUG(22480,
                       3,
-                      "{sessionId}:{txnNumber} Prepare stopped retrying due to retrying "
-                      "being cancelled",
                       "Prepare stopped retrying due to retrying being cancelled",
                       "sessionId"_attr = lsid.getId(),
                       "txnNumber"_attr = txnNumber);
@@ -764,8 +750,6 @@ Future<void> sendDecisionToShard(ServiceContext* service,
          commandObj = commandObj.getOwned()] {
             LOG_DEBUG(22481,
                       3,
-                      "{sessionId}:{txnNumber} Coordinator going to send command "
-                      "{command} to {localOrRemote} shard {shardId}",
                       "Coordinator going to send command to shard",
                       "sessionId"_attr = lsid.getId(),
                       "txnNumber"_attr = txnNumber,
@@ -789,8 +773,6 @@ Future<void> sendDecisionToShard(ServiceContext* service,
 
                     LOG_DEBUG(22482,
                               3,
-                              "{sessionId}:{txnNumber}  Coordinator shard received "
-                              "{status} in response to {command} from shard {shardId}",
                               "Coordinator shard received response from shard",
                               "sessionId"_attr = lsid.getId(),
                               "txnNumber"_attr = txnNumber,

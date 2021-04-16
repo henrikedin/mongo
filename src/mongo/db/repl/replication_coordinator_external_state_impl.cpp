@@ -967,7 +967,6 @@ void ReplicationCoordinatorExternalStateImpl::_dropAllTempCollections(OperationC
             continue;
         LOG_DEBUG(21309,
                   2,
-                  "Removing temporary collections from {db}",
                   "Removing temporary collections",
                   "db"_attr = *it);
         AutoGetDb autoDb(opCtx, *it, MODE_IX);
@@ -1016,9 +1015,6 @@ void ReplicationCoordinatorExternalStateImpl::notifyOplogMetadataWaiters(
                 [committedOpTime, reaper](const executor::TaskExecutor::CallbackArgs& args) {
                     if (MONGO_unlikely(dropPendingCollectionReaperHang.shouldFail())) {
                         LOG(21310,
-                            "fail point dropPendingCollectionReaperHang enabled. "
-                            "Blocking until fail point is disabled. "
-                            "committedOpTime: {committedOpTime}",
                             "fail point dropPendingCollectionReaperHang enabled. "
                             "Blocking until fail point is disabled",
                             "committedOpTime"_attr = committedOpTime);

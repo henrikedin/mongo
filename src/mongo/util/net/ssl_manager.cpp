@@ -619,19 +619,16 @@ MONGO_INITIALIZER_WITH_PREREQUISITES(SSLManagerLogger, ("SSLManager"))
         if (!config.clientSubjectName.empty()) {
             LOG_DEBUG(23214,
                       1,
-                      "Client Certificate Name: {name}",
                       "Client certificate name",
                       "name"_attr = config.clientSubjectName);
         }
         if (!config.serverSubjectName().empty()) {
             LOG_DEBUG(23215,
                       1,
-                      "Server Certificate Name: {name}",
                       "Server certificate name",
                       "name"_attr = config.serverSubjectName());
             LOG_DEBUG(23216,
                       1,
-                      "Server Certificate Expiration: {expiration}",
                       "Server certificate expiration",
                       "expiration"_attr = config.serverCertificateExpirationDate);
         }
@@ -670,8 +667,6 @@ Status SSLX509Name::normalizeStrings() {
                 default:
                     LOG_DEBUG(23217,
                               1,
-                              "Certificate subject name contains unknown string type: "
-                              "{entryType} (string value is \"{entryValue}\")",
                               "Certificate subject name contains unknown string type",
                               "entryType"_attr = entry.type,
                               "entryValue"_attr = entry.value);
@@ -757,7 +752,6 @@ bool SSLConfiguration::isClusterMember(StringData subjectName) const {
     auto swClient = parseDN(subjectName);
     if (!swClient.isOK()) {
         LOG_WARNING(23219,
-                    "Unable to parse client subject name: {error}",
                     "Unable to parse client subject name",
                     "error"_attr = swClient.getStatus());
         return false;
@@ -766,7 +760,6 @@ bool SSLConfiguration::isClusterMember(StringData subjectName) const {
     auto status = client.normalizeStrings();
     if (!status.isOK()) {
         LOG_WARNING(23220,
-                    "Unable to normalize client subject name: {error}",
                     "Unable to normalize client subject name",
                     "error"_attr = status);
         return false;
@@ -1264,7 +1257,6 @@ void recordTLSVersion(TLSVersion version, const HostAndPort& hostForLogging) {
 
     if (!versionString.empty()) {
         LOG(23218,
-            "Accepted connection with TLS Version {tlsVersion} from connection {remoteHost}",
             "Accepted connection with TLS",
             "tlsVersion"_attr = versionString,
             "remoteHost"_attr = hostForLogging);
@@ -1292,14 +1284,12 @@ bool hostNameMatchForX509Certificates(std::string nameToMatch, std::string certH
 
 void tlsEmitWarningExpiringClientCertificate(const SSLX509Name& peer) {
     LOG_WARNING(23221,
-                "Peer certificate '{peerSubjectName}' expires soon",
                 "Peer certificate expires soon",
                 "peerSubjectName"_attr = peer);
 }
 
 void tlsEmitWarningExpiringClientCertificate(const SSLX509Name& peer, Days days) {
     LOG_WARNING(23222,
-                "Peer certificate '{peerSubjectName}' expires in {days}",
                 "Peer certificate expiration information",
                 "peerSubjectName"_attr = peer,
                 "days"_attr = days);

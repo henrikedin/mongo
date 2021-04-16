@@ -121,7 +121,6 @@ public:
         uassertStatusOK(parseShardNameStatus);
 
         LOG(22104,
-            "Received splitChunk request: {request}",
             "Received splitChunk request",
             "request"_attr = redact(cmdObj));
 

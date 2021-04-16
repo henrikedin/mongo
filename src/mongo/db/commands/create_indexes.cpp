@@ -719,10 +719,6 @@ public:
                     }
                     if (shouldLogMessageOnAlreadyBuildingError) {
                         LOG(20450,
-                            "Received a request to create indexes: '{indexesFieldName}', but found "
-                            "that at least one of the indexes is already being built, '{error}'. "
-                            "This request will wait for the pre-existing index build to finish "
-                            "before proceeding",
                             "Received a request to create indexes, "
                             "but found that at least one of the indexes is already being built."
                             "This request will wait for the pre-existing index build to finish "

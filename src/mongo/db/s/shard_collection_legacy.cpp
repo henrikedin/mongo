@@ -101,7 +101,6 @@ const ReadPreferenceSetting kConfigReadSelector(ReadPreference::Nearest, TagSet{
 void uassertStatusOKWithWarning(const Status& status) {
     if (!status.isOK()) {
         LOG_WARNING(22103,
-                    "shardsvrShardCollection failed {error}",
                     "shardsvrShardCollection failed",
                     "error"_attr = redact(status));
         uassertStatusOK(status);
@@ -280,7 +279,7 @@ void logStartShardCollection(OperationContext* opCtx,
                              const ShardsvrShardCollectionRequest& request,
                              const ShardCollectionTargetState& prerequisites,
                              const ShardId& dbPrimaryShardId) {
-    LOG(22100, "CMD: shardcollection: {command}", "CMD: shardcollection", "command"_attr = cmdObj);
+    LOG(22100, "CMD: shardcollection", "command"_attr = cmdObj);
 
     audit::logShardCollection(
         opCtx->getClient(), nss.ns(), prerequisites.shardKeyPattern.toBSON(), request.getUnique());
@@ -639,8 +638,6 @@ CreateCollectionResponse shardCollection(OperationContext* opCtx,
     }
 
     LOG(22101,
-        "Created {numInitialChunks} chunk(s) for: {namespace}, producing collection version "
-        "{initialCollectionVersion}",
         "Created initial chunk(s)",
         "numInitialChunks"_attr = initialChunks.chunks.size(),
         "namespace"_attr = nss,

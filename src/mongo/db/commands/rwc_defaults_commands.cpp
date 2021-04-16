@@ -119,7 +119,6 @@ public:
 
             updatePersistedDefaultRWConcernDocument(opCtx, newDefaults);
             LOG(20498,
-                "Successfully set RWC defaults to {value}",
                 "Successfully set RWC defaults",
                 "value"_attr = newDefaults);
 

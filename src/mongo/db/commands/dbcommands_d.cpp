@@ -340,7 +340,6 @@ public:
                             break;  // skipped chunk is probably on another shard
                         }
                         LOG(20452,
-                            "Should have chunk: {expected} have: {observed}",
                             "Unexpected chunk",
                             "expected"_attr = n,
                             "observed"_attr = myn);
@@ -415,7 +414,7 @@ public:
         q.sort(sort);
         std::unique_ptr<DBClientCursor> c = client.query(NamespaceString(ns), q);
         while (c->more()) {
-            LOG(20454, "Chunk: {chunk}", "Dumping chunks", "chunk"_attr = c->nextSafe());
+            LOG(20454, "Dumping chunks", "chunk"_attr = c->nextSafe());
         }
     }
 

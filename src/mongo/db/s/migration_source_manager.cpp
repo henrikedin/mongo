@@ -129,8 +129,6 @@ MigrationSourceManager::MigrationSourceManager(OperationContext* opCtx,
     invariant(!_opCtx->lockState()->isLocked());
 
     LOG(22016,
-        "Starting chunk migration donation {requestParameters} with expected collection epoch "
-        "{collectionEpoch}",
         "Starting chunk migration donation",
         "requestParameters"_attr = redact(_args.toString()),
         "collectionEpoch"_attr = _args.getVersionEpoch());
@@ -495,7 +493,6 @@ Status MigrationSourceManager::commitChunkMetadataOnConfig() {
     const auto refreshedMetadata = _getCurrentMetadataAndCheckEpoch();
 
     LOG(22018,
-        "Migration succeeded and updated collection version to {updatedCollectionVersion}",
         "Migration succeeded and updated collection version",
         "updatedCollectionVersion"_attr = refreshedMetadata.getCollVersion(),
         "migrationId"_attr = _coordinator->getMigrationId());
@@ -536,8 +533,6 @@ Status MigrationSourceManager::commitChunkMetadataOnConfig() {
 
     if (_args.getWaitForDelete()) {
         LOG(22019,
-            "Waiting for migration cleanup after chunk commit for the namespace {namespace} "
-            "and range {range}",
             "Waiting for migration cleanup after chunk commit",
             "namespace"_attr = getNss().ns(),
             "range"_attr = redact(range.toString()),
@@ -733,8 +728,6 @@ void MigrationSourceManager::_cleanup(bool completeMigration) noexcept {
         _state = kDone;
     } catch (const DBException& ex) {
         LOG_WARNING(5089001,
-                    "Failed to complete the migration {migrationId} with "
-                    "{chunkMigrationRequestParameters} due to: {error}",
                     "Failed to complete the migration",
                     "chunkMigrationRequestParameters"_attr = redact(_args.toString()),
                     "error"_attr = redact(ex),

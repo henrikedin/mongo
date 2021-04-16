@@ -90,7 +90,6 @@ RemoveSaver::~RemoveSaver() {
         Status status = _protector->finalize(protectedBuffer.get(), protectedSizeMax, &resultLen);
         if (!status.isOK()) {
             LOG_FATAL(34350,
-                      "Unable to finalize DataProtector while closing RemoveSaver: {error}",
                       "Unable to finalize DataProtector while closing RemoveSaver",
                       "error"_attr = redact(status));
         }
@@ -98,8 +97,6 @@ RemoveSaver::~RemoveSaver() {
         _out->write(reinterpret_cast<const char*>(protectedBuffer.get()), resultLen);
         if (_out->fail()) {
             LOG_FATAL(34351,
-                      "Couldn't write finalized DataProtector data to: {file} for remove "
-                      "saving: {error}",
                       "Couldn't write finalized DataProtector for remove saving",
                       "file"_attr = _file.generic_string(),
                       "error"_attr = redact(errnoWithDescription()));
@@ -110,15 +107,12 @@ RemoveSaver::~RemoveSaver() {
         if (!status.isOK()) {
             LOG_FATAL(
                 34352,
-                "Unable to get finalizeTag from DataProtector while closing RemoveSaver: {error}",
                 "Unable to get finalizeTag from DataProtector while closing RemoveSaver",
                 "error"_attr = redact(status));
         }
 
         if (resultLen != _protector->getNumberOfBytesReservedForTag()) {
             LOG_FATAL(34353,
-                      "Attempted to write tag of size {sizeBytes} when DataProtector only "
-                      "reserved {reservedBytes} bytes",
                       "Attempted to write tag of larger size than DataProtector reserved size",
                       "sizeBytes"_attr = resultLen,
                       "reservedBytes"_attr = _protector->getNumberOfBytesReservedForTag());
@@ -129,8 +123,6 @@ RemoveSaver::~RemoveSaver() {
 
         if (_out->fail()) {
             LOG_FATAL(34354,
-                      "Couldn't write finalizeTag from DataProtector to: {file} for "
-                      "remove saving: {error}",
                       "Couldn't write finalizeTag from DataProtector for remove saving",
                       "file"_attr = _file.generic_string(),
                       "error"_attr = redact(errnoWithDescription()));

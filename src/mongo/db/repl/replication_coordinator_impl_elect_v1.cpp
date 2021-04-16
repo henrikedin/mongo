@@ -149,8 +149,6 @@ void ReplicationCoordinatorImpl::ElectionState::start(WithLock lk, StartElection
             return;
         default:
             LOG_FATAL(28641,
-                      "Entered replica set election code while in illegal config state "
-                      "{rsConfigState}",
                       "Entered replica set election code while in illegal config state",
                       "rsConfigState"_attr = int(_repl->_rsConfigState));
     }
@@ -182,7 +180,6 @@ void ReplicationCoordinatorImpl::ElectionState::start(WithLock lk, StartElection
     if (reason == StartElectionReasonEnum::kStepUpRequestSkipDryRun) {
         long long newTerm = term + 1;
         LOG(21437,
-            "skipping dry run and running for election in term {newTerm}",
             "Skipping dry run and running for election",
             "newTerm"_attr = newTerm);
         _startRealElection(lk, newTerm, reason);
@@ -191,7 +188,6 @@ void ReplicationCoordinatorImpl::ElectionState::start(WithLock lk, StartElection
     }
 
     LOG(21438,
-        "conducting a dry run election to see if we could be elected. current term: {currentTerm}",
         "Conducting a dry run election to see if we could be elected",
         "currentTerm"_attr = term);
 
@@ -226,8 +222,6 @@ void ReplicationCoordinatorImpl::ElectionState::_processDryRunResult(
 
     if (_topCoord->getTerm() != originalTerm) {
         LOG(21439,
-            "not running for primary, we have been superseded already during dry run. original "
-            "term: {originalTerm}, current term: {currentTerm}",
             "Not running for primary, we have been superseded already during dry run",
             "originalTerm"_attr = originalTerm,
             "currentTerm"_attr = _topCoord->getTerm());
@@ -254,7 +248,6 @@ void ReplicationCoordinatorImpl::ElectionState::_processDryRunResult(
 
     long long newTerm = originalTerm + 1;
     LOG(21444,
-        "dry election run succeeded, running for election in term {newTerm}",
         "Dry election run succeeded, running for election",
         "newTerm"_attr = newTerm);
 
@@ -348,7 +341,6 @@ void ReplicationCoordinatorImpl::ElectionState::_writeLastVoteForMyElection(
 
     if (!status.isOK()) {
         LOG(21445,
-            "failed to store LastVote document when voting for myself: {error}",
             "Failed to store LastVote document when voting for myself",
             "error"_attr = status);
         return;
@@ -356,8 +348,6 @@ void ReplicationCoordinatorImpl::ElectionState::_writeLastVoteForMyElection(
 
     if (_topCoord->getTerm() != lastVote.getTerm()) {
         LOG(21446,
-            "not running for primary, we have been superseded already while writing our last "
-            "vote. election term: {electionTerm}, current term: {currentTerm}",
             "Not running for primary, we have been superseded already while writing our last "
             "vote",
             "electionTerm"_attr = lastVote.getTerm(),
@@ -399,8 +389,6 @@ void ReplicationCoordinatorImpl::ElectionState::_onVoteRequestComplete(
 
     if (_topCoord->getTerm() != newTerm) {
         LOG(21447,
-            "not becoming primary, we have been superseded already during election. election "
-            "term: {electionTerm}, current term: {currentTerm}",
             "Not becoming primary, we have been superseded already during election",
             "electionTerm"_attr = newTerm,
             "currentTerm"_attr = _topCoord->getTerm());
@@ -422,7 +410,6 @@ void ReplicationCoordinatorImpl::ElectionState::_onVoteRequestComplete(
             return;
         case VoteRequester::Result::kSuccessfullyElected:
             LOG(21450,
-                "election succeeded, assuming primary role in term {term}",
                 "Election succeeded, assuming primary role",
                 "term"_attr = _topCoord->getTerm());
             ReplicationMetrics::get(_repl->getServiceContext())
@@ -443,8 +430,6 @@ void ReplicationCoordinatorImpl::ElectionState::_onVoteRequestComplete(
     electionHangsBeforeUpdateMemberState.execute([&](const BSONObj& customWait) {
         auto waitForMillis = Milliseconds(customWait["waitForMillis"].numberInt());
         LOG(21451,
-            "election succeeded - electionHangsBeforeUpdateMemberState fail point "
-            "enabled, sleeping {waitFor}",
             "Election succeeded - electionHangsBeforeUpdateMemberState fail point "
             "enabled, sleeping",
             "waitFor"_attr = waitForMillis);

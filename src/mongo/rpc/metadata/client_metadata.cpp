@@ -403,7 +403,6 @@ void ClientMetadata::logClientMetadata(Client* client) const {
     }
 
     LOG(51800,
-        "received client metadata from {remote} {client}: {doc}",
         "client metadata",
         "remote"_attr = client->getRemote(),
         "client"_attr = client->desc(),

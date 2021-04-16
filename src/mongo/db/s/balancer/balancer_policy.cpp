@@ -353,7 +353,6 @@ MigrateInfo chooseRandomMigration(const ShardStatisticsVector& shardStats,
 
     LOG_DEBUG(21880,
               1,
-              "balancerShouldReturnRandomMigrations: source: {fromShardId} dest: {toShardId}",
               "balancerShouldReturnRandomMigrations",
               "fromShardId"_attr = sourceShardId,
               "toShardId"_attr = destShardId);
@@ -416,8 +415,6 @@ vector<MigrateInfo> BalancerPolicy::balance(const ShardStatisticsVector& shardSt
                 if (!to.isValid()) {
                     if (migrations.empty()) {
                         LOG_WARNING(21889,
-                                    "Chunk {chunk} is on a draining shard, but no appropriate "
-                                    "recipient found",
                                     "Chunk is on a draining shard, but no appropriate "
                                     "recipient found",
                                     "chunk"_attr = redact(chunk.toString()));
@@ -435,8 +432,6 @@ vector<MigrateInfo> BalancerPolicy::balance(const ShardStatisticsVector& shardSt
 
             if (migrations.empty()) {
                 LOG_WARNING(21890,
-                            "Unable to find any chunk to move from draining shard "
-                            "{shardId}. numJumboChunks: {numJumboChunks}",
                             "Unable to find any chunk to move from draining shard",
                             "shardId"_attr = stat.shardId,
                             "numJumboChunks"_attr = numJumboChunks);
@@ -464,7 +459,6 @@ vector<MigrateInfo> BalancerPolicy::balance(const ShardStatisticsVector& shardSt
                 if (chunk.getJumbo()) {
                     LOG_WARNING(
                         21891,
-                        "Chunk {chunk} violates zone {zone}, but it is jumbo and cannot be moved",
                         "Chunk violates zone, but it is jumbo and cannot be moved",
                         "chunk"_attr = redact(chunk.toString()),
                         "zone"_attr = redact(tag));
@@ -476,8 +470,6 @@ vector<MigrateInfo> BalancerPolicy::balance(const ShardStatisticsVector& shardSt
                 if (!to.isValid()) {
                     if (migrations.empty()) {
                         LOG_WARNING(21892,
-                                    "Chunk {chunk} violates zone {zone}, but no appropriate "
-                                    "recipient found",
                                     "Chunk violates zone, but no appropriate recipient found",
                                     "chunk"_attr = redact(chunk.toString()),
                                     "zone"_attr = redact(tag));
@@ -521,9 +513,6 @@ vector<MigrateInfo> BalancerPolicy::balance(const ShardStatisticsVector& shardSt
             if (!tag.empty()) {
                 LOG_WARNING(
                     21893,
-                    "Zone {zone} in collection {namespace} has no assigned shards and chunks "
-                    "which fall into it cannot be balanced. This should be corrected by either "
-                    "assigning shards to the zone or by deleting it.",
                     "Zone in collection has no assigned shards and chunks which fall into it "
                     "cannot be balanced. This should be corrected by either assigning shards "
                     "to the zone or by deleting it.",
@@ -588,7 +577,6 @@ bool BalancerPolicy::_singleZoneBalance(const ShardStatisticsVector& shardStats,
     if (!to.isValid()) {
         if (migrations->empty()) {
             LOG(21882,
-                "No available shards to take chunks for zone {zone}",
                 "No available shards to take chunks for zone",
                 "zone"_attr = tag);
         }
@@ -606,9 +594,6 @@ bool BalancerPolicy::_singleZoneBalance(const ShardStatisticsVector& shardStats,
     LOG_DEBUG(
         21883,
         1,
-        "collection: {namespace}, zone: {zone}, donor: {fromShardId} chunks on "
-        " {fromShardChunkCount}, receiver: {toShardId} chunks on {toShardChunkCount}, "
-        "ideal: {idealNumberOfChunksPerShardForTag}, threshold: {chunkCountImbalanceThreshold}",
         "Balancing single zone",
         "namespace"_attr = distribution.nss().ns(),
         "zone"_attr = tag,
@@ -644,8 +629,6 @@ bool BalancerPolicy::_singleZoneBalance(const ShardStatisticsVector& shardStats,
 
     if (numJumboChunks) {
         LOG_WARNING(21894,
-                    "Shard: {shardId}, collection: {namespace} has only jumbo chunks for "
-                    "zone \'{zone}\' and cannot be balanced. Jumbo chunks count: {numJumboChunks}",
                     "Shard has only jumbo chunks for and cannot be balanced",
                     "shardId"_attr = from,
                     "namespace"_attr = distribution.nss().ns(),

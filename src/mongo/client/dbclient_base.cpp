@@ -550,7 +550,6 @@ Status DBClientBase::authenticateInternalUser(auth::StepDownBehavior stepDownBeh
 
     if (!serverGlobalParams.quiet.load()) {
         LOG(20117,
-            "Can't authenticate to {connString} as internal user, error: {error}",
             "Can't authenticate as internal user",
             "connString"_attr = toString(),
             "error"_attr = status);
@@ -1064,7 +1063,6 @@ void DBClientBase::dropIndex(const string& ns,
     if (!runCommand(nsToDatabase(ns), cmdBuilder.obj(), info)) {
         LOG_DEBUG(20118,
                   _logLevel.toInt(),
-                  "dropIndex failed: {info}",
                   "dropIndex failed",
                   "info"_attr = info);
         uassert(10007, "dropIndex failed", 0);

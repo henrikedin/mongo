@@ -110,7 +110,6 @@ void SingleServerPingMonitor::_scheduleServerPing() {
     if (ErrorCodes::isShutdownError(schedulePingHandle.getStatus().code())) {
         LOG_DEBUG(23727,
                   kLogLevel,
-                  "Can't schedule ping for {host}. Executor shutdown in progress",
                   "Can't schedule ping for host. Executor shutdown in progress",
                   "host"_attr = _hostAndPort,
                   "replicaSet"_attr = _setUri.getSetName());
@@ -119,7 +118,6 @@ void SingleServerPingMonitor::_scheduleServerPing() {
 
     if (!schedulePingHandle.isOK()) {
         LOG_FATAL(23732,
-                  "Can't continue scheduling pings to {host} due to {error}",
                   "Can't continue scheduling pings to host",
                   "host"_attr = _hostAndPort,
                   "error"_attr = redact(schedulePingHandle.getStatus()),
@@ -179,7 +177,6 @@ void SingleServerPingMonitor::_doServerPing() {
     if (ErrorCodes::isShutdownError(remotePingHandle.getStatus().code())) {
         LOG_DEBUG(23728,
                   kLogLevel,
-                  "Can't ping {host}. Executor shutdown in progress",
                   "Can't ping host. Executor shutdown in progress",
                   "host"_attr = _hostAndPort,
                   "replicaSet"_attr = _setUri.getSetName());
@@ -188,7 +185,6 @@ void SingleServerPingMonitor::_doServerPing() {
 
     if (!remotePingHandle.isOK()) {
         LOG_FATAL(23733,
-                  "Can't continue pinging {host} due to {error}",
                   "Can't continue pinging host",
                   "host"_attr = _hostAndPort,
                   "error"_attr = redact(remotePingHandle.getStatus()),
@@ -245,7 +241,6 @@ void ServerPingMonitor::onServerHandshakeCompleteEvent(sdam::HelloRTT durationMs
     if (_serverPingMonitorMap.find(address) != _serverPingMonitorMap.end()) {
         LOG_DEBUG(466811,
                   kLogLevel + 1,
-                  "ServerPingMonitor already monitoring {host}",
                   "ServerPingMonitor already monitoring host",
                   "host"_attr = address,
                   "replicaSet"_attr = _setUri.getSetName());
@@ -257,7 +252,6 @@ void ServerPingMonitor::onServerHandshakeCompleteEvent(sdam::HelloRTT durationMs
     newSingleMonitor->init();
     LOG_DEBUG(23729,
               kLogLevel,
-              "ServerPingMonitor is now monitoring {host}",
               "ServerPingMonitor is now monitoring host",
               "host"_attr = address,
               "replicaSet"_attr = _setUri.getSetName());
@@ -282,7 +276,6 @@ void ServerPingMonitor::onTopologyDescriptionChangedEvent(
             singleMonitor->drop();
             LOG_DEBUG(462899,
                       kLogLevel,
-                      "ServerPingMonitor for host {host} was removed from being monitored",
                       "ServerPingMonitor for host was removed from being monitored",
                       "host"_attr = serverAddress,
                       "replicaSet"_attr = _setUri.getSetName());

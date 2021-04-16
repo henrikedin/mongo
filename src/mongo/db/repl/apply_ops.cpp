@@ -269,7 +269,6 @@ Status _applyOpsWithCommandInfo(OperationContext* opCtx,
         ab.append(status.isOK());
         if (!status.isOK()) {
             LOG(21064,
-                "applyOps error applying: {error}",
                 "applyOps error applying",
                 "error"_attr = status);
             errors++;

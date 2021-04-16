@@ -80,7 +80,6 @@ namespace {
 void consoleTerminate(const char* controlCodeName) {
     setThreadName("consoleTerminate");
     LOG(23371,
-        "Received event {controlCode}, will terminate after current command ends",
         "Received event, will terminate after current command ends",
         "controlCode"_attr = controlCodeName);
     exitCleanly(EXIT_KILL);
@@ -123,7 +122,6 @@ void eventProcessingThread() {
     HANDLE event = CreateEventA(nullptr, TRUE, FALSE, eventName.c_str());
     if (event == nullptr) {
         LOG_WARNING(23382,
-                    "eventProcessingThread CreateEvent failed: {error}",
                     "eventProcessingThread CreateEvent failed",
                     "error"_attr = errnoWithDescription());
         return;
@@ -135,13 +133,11 @@ void eventProcessingThread() {
     if (returnCode != WAIT_OBJECT_0) {
         if (returnCode == WAIT_FAILED) {
             LOG_WARNING(23383,
-                        "eventProcessingThread WaitForSingleObject failed: {error}",
                         "eventProcessingThread WaitForSingleObject failed",
                         "error"_attr = errnoWithDescription());
             return;
         } else {
             LOG_WARNING(23384,
-                        "eventProcessingThread WaitForSingleObject failed: {error}",
                         "eventProcessingThread WaitForSingleObject failed",
                         "error"_attr = errnoWithDescription(returnCode));
             return;
@@ -181,7 +177,6 @@ bool waitForSignal(const sigset_t& sigset, SignalWaitResult* result) {
             if (errsv == EINTR)
                 continue;
             LOG_FATAL_CONTINUE(23385,
-                               "sigwaitinfo failed with error: {error}",
                                "sigwaitinfo failed with error",
                                "error"_attr = strerror(errsv));
             return false;
@@ -204,7 +199,6 @@ struct LogRotationState {
 void handleOneSignal(const SignalWaitResult& waited, LogRotationState* rotation) {
     int sig = waited.sig;
     LOG(23377,
-        "Received signal {signal}: {error}",
         "Received signal",
         "signal"_attr = sig,
         "error"_attr = strsignal(sig));
@@ -214,7 +208,6 @@ void handleOneSignal(const SignalWaitResult& waited, LogRotationState* rotation)
         case SI_USER:
         case SI_QUEUE:
             LOG(23378,
-                "Signal was sent by kill(2) with pid {pid}, uid {uid}",
                 "Signal was sent by kill(2)",
                 "pid"_attr = si.si_pid,
                 "uid"_attr = si.si_uid);
@@ -284,7 +277,6 @@ void signalProcessingThread(LogFileStatus rotate) {
     if (int r = pthread_sigmask(SIG_SETMASK, &waitSignals, nullptr); r != 0) {
         int errsv = errno;
         LOG_FATAL(31377,
-                  "pthread_sigmask failed with error: {error}",
                   "pthread_sigmask failed with error",
                   "error"_attr = strerror(errsv));
     }

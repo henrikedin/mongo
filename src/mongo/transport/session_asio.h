@@ -163,7 +163,6 @@ public:
             getSocket().shutdown(GenericSocket::shutdown_both, ec);
             if ((ec) && (ec != asio::error::not_connected)) {
                 LOG_ERROR(23841,
-                          "Error shutting down socket: {error}",
                           "Error shutting down socket",
                           "error"_attr = ec.message());
             }
@@ -230,7 +229,6 @@ public:
     void cancelAsyncOperations(const BatonHandle& baton = nullptr) override {
         LOG_DEBUG(4615608,
                   3,
-                  "Cancelling outstanding I/O operations on connection to {remote}",
                   "Cancelling outstanding I/O operations on connection to remote",
                   "remote"_attr = _remote);
         if (baton && baton->networking() && baton->networking()->cancelSession(*this)) {
@@ -256,7 +254,6 @@ public:
         if (!swPollEvents.isOK()) {
             if (swPollEvents != ErrorCodes::NetworkTimeout) {
                 LOG_WARNING(4615609,
-                            "Failed to poll socket for connectivity check: {error}",
                             "Failed to poll socket for connectivity check",
                             "error"_attr = swPollEvents.getStatus());
                 return false;
@@ -272,7 +269,6 @@ public:
                 return true;
             } else if (size == -1) {
                 LOG_WARNING(4615610,
-                            "Failed to check socket connectivity: {error}",
                             "Failed to check socket connectivity",
                             "error"_attr = errnoWithDescription(errno));
             }
@@ -455,7 +451,6 @@ private:
                        << "Min " << kHeaderSize << " Max: " << MaxMessageSizeBytes;
                     const auto str = sb.str();
                     LOG(4615638,
-                        "recv(): message msgLen {msgLen} is invalid. Min: {min} Max: {max}",
                         "recv(): message mstLen is invalid.",
                         "msgLen"_attr = msgLen,
                         "min"_attr = kHeaderSize,
@@ -778,8 +773,6 @@ private:
             if (!sslGlobalParams.disableNonSSLConnectionLogging &&
                 _tl->_sslMode() == SSLParams::SSLMode_preferSSL) {
                 LOG(23838,
-                    "SSL mode is set to 'preferred' and connection {connectionId} to {remote} is "
-                    "not using SSL.",
                     "SSL mode is set to 'preferred' and connection to remote is not using SSL.",
                     "connectionId"_attr = id(),
                     "remote"_attr = remote());

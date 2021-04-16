@@ -225,8 +225,6 @@ void AbstractIndexAccessMethod::removeOneKey(OperationContext* opCtx,
     } catch (AssertionException& e) {
         NamespaceString ns = _indexCatalogEntry->getNSSFromCatalog(opCtx);
         LOG(20683,
-            "Assertion failure: _unindex failed on: {namespace} for index: {indexName}. "
-            "{error}  KeyString:{keyString}  dl:{recordId}",
             "Assertion failure: _unindex failed",
             "error"_attr = redact(e),
             "keyString"_attr = keyString,
@@ -776,8 +774,6 @@ Status AbstractIndexAccessMethod::commitBulk(OperationContext* opCtx,
     pm.finished();
 
     LOG(20685,
-        "Index build: inserted {bulk_getKeysInserted} keys from external sorter into index in "
-        "{timer_seconds} seconds",
         "Index build: inserted keys from external sorter into index",
         "namespace"_attr = _indexCatalogEntry->getNSSFromCatalog(opCtx),
         "index"_attr = _descriptor->indexName(),

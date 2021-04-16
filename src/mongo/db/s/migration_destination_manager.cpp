@@ -293,7 +293,6 @@ void MigrationDestinationManager::setState(State newState) {
 
 void MigrationDestinationManager::_setStateFail(StringData msg) {
     LOG(21998,
-        "Error during migration: {error}",
         "Error during migration",
         "error"_attr = redact(msg));
     {
@@ -308,7 +307,6 @@ void MigrationDestinationManager::_setStateFail(StringData msg) {
 
 void MigrationDestinationManager::_setStateFailWarn(StringData msg) {
     LOG_WARNING(22010,
-                "Error during migration: {error}",
                 "Error during migration",
                 "error"_attr = redact(msg));
     {
@@ -481,7 +479,6 @@ repl::OpTime MigrationDestinationManager::cloneDocumentsFromDonor(
             stdx::lock_guard<Client> lk(*opCtx->getClient());
             opCtx->getServiceContext()->killOperation(lk, opCtx, ErrorCodes::Error(51008));
             LOG(21999,
-                "Batch insertion failed: {error}",
                 "Batch insertion failed",
                 "error"_attr = redact(exceptionToStatus()));
         }
@@ -909,8 +906,6 @@ void MigrationDestinationManager::_migrateDriver(OperationContext* outerOpCtx) {
     invariant(!_max.isEmpty());
 
     LOG(22000,
-        "Starting receiving end of migration of chunk {chunkMin} -> {chunkMax} for collection "
-        "{namespace} from {fromShard} at epoch {epoch} with session id {sessionId}",
         "Starting receiving end of chunk migration",
         "chunkMin"_attr = redact(_min),
         "chunkMax"_attr = redact(_max),
@@ -959,8 +954,6 @@ void MigrationDestinationManager::_migrateDriver(OperationContext* outerOpCtx) {
                     !disableResumableRangeDeleter.load());
 
             LOG(22001,
-                "Migration paused because the requested range {range} for {namespace} "
-                "overlaps with a range already scheduled for deletion",
                 "Migration paused because the requested range overlaps with a range already "
                 "scheduled for deletion",
                 "namespace"_attr = _nss.ns(),
@@ -1401,8 +1394,6 @@ bool MigrationDestinationManager::_applyMigrateOp(OperationContext* opCtx,
                 LOG_ERROR_OPTIONS(
                     16977,
                     {log::UserAssertAfterLog()},
-                    "Cannot migrate chunk because the local document {localDoc} has the same _id "
-                    "as the reloaded remote document {remoteDoc}",
                     "Cannot migrate chunk because the local document has the same _id as the "
                     "reloaded remote document",
                     "localDoc"_attr = redact(localDoc),
@@ -1430,8 +1421,6 @@ bool MigrationDestinationManager::_flushPendingWrites(OperationContext* opCtx,
         static Occasionally sampler;
         if (sampler.tick()) {
             LOG(22007,
-                "Migration commit waiting for majority replication for {namespace}, "
-                "{chunkMin} -> {chunkMax}; waiting to reach this operation: {lastOpApplied}",
                 "Migration commit waiting for majority replication; waiting until the last "
                 "operation applied has been replicated",
                 "namespace"_attr = _nss.ns(),
@@ -1444,7 +1433,6 @@ bool MigrationDestinationManager::_flushPendingWrites(OperationContext* opCtx,
     }
 
     LOG(22008,
-        "Migration commit succeeded flushing to secondaries for {namespace}, {min} -> {max}",
         "Migration commit succeeded flushing to secondaries",
         "namespace"_attr = _nss.ns(),
         "chunkMin"_attr = redact(_min),

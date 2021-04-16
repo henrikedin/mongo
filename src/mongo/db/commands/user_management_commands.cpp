@@ -2185,7 +2185,6 @@ void _addUser(OperationContext* opCtx,
         if (!status.isOK()) {
             // Match the behavior of mongorestore to continue on failure
             LOG_WARNING(20510,
-                        "Could not update user {user} in _mergeAuthzCollections command: {error}",
                         "Could not update user during _mergeAuthzCollections command",
                         "user"_attr = userName,
                         "error"_attr = redact(status));
@@ -2196,7 +2195,6 @@ void _addUser(OperationContext* opCtx,
         if (!status.isOK()) {
             // Match the behavior of mongorestore to continue on failure
             LOG_WARNING(20511,
-                        "Could not insert user {user} in _mergeAuthzCollections command: {error}",
                         "Could not insert user during _mergeAuthzCollections command",
                         "user"_attr = userName,
                         "error"_attr = redact(status));
@@ -2315,7 +2313,6 @@ void _addRole(OperationContext* opCtx,
         if (!status.isOK()) {
             // Match the behavior of mongorestore to continue on failure
             LOG_WARNING(20512,
-                        "Could not update role {role} in _mergeAuthzCollections command: {error}",
                         "Could not update role during _mergeAuthzCollections command",
                         "role"_attr = roleName,
                         "error"_attr = redact(status));
@@ -2326,7 +2323,6 @@ void _addRole(OperationContext* opCtx,
         if (!status.isOK()) {
             // Match the behavior of mongorestore to continue on failure
             LOG_WARNING(20513,
-                        "Could not insert role {role} in _mergeAuthzCollections command: {error}",
                         "Could not insert role during _mergeAuthzCollections command",
                         "role"_attr = roleName,
                         "error"_attr = redact(status));

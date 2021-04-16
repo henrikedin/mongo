@@ -136,7 +136,7 @@ public:
         }
 
         const bool lock = cmdObj["lock"].trueValue();
-        LOG(20461, "CMD fsync: lock:{lock}", "CMD fsync", "lock"_attr = lock);
+        LOG(20461, "CMD fsync", "lock"_attr = lock);
 
         // fsync + lock is sometimes used to block writes out of the system and does not care if
         // the `BackupCursorService::fsyncLock` call succeeds.
@@ -190,8 +190,6 @@ public:
         }
 
         LOG(20462,
-            "mongod is locked and no writes are allowed. db.fsyncUnlock() to unlock, "
-            "lock count is {lockCount}, for more info see {seeAlso}",
             "mongod is locked and no writes are allowed",
             "lockCount"_attr = getLockCount(),
             "seeAlso"_attr = FSyncCommand::url());
@@ -375,7 +373,6 @@ void FSyncLockThread::run() {
             storageEngine->flushAllFiles(&opCtx, /*callerHoldsReadLock*/ true);
         } catch (const std::exception& e) {
             LOG_ERROR(20472,
-                      "Error doing flushAll: {error}",
                       "Error doing flushAll",
                       "error"_attr = e.what());
             fsyncCmd.threadStatus = Status(ErrorCodes::CommandFailed, e.what());
@@ -404,12 +401,10 @@ void FSyncLockThread::run() {
         } catch (const DBException& e) {
             if (_allowFsyncFailure) {
                 LOG_WARNING(20470,
-                            "Locking despite storage engine being unable to begin backup: {error}",
                             "Locking despite storage engine being unable to begin backup",
                             "error"_attr = e);
             } else {
                 LOG_ERROR(20473,
-                          "Storage engine unable to begin backup: {error}",
                           "Storage engine unable to begin backup",
                           "error"_attr = e);
                 fsyncCmd.threadStatus = e.toStatus();
@@ -438,7 +433,6 @@ void FSyncLockThread::run() {
 
     } catch (const std::exception& e) {
         LOG_FATAL(40350,
-                  "FSyncLockThread exception: {error}",
                   "FSyncLockThread exception",
                   "error"_attr = e.what());
     }

@@ -98,7 +98,6 @@ boost::optional<BSONObj> advanceExecutor(OperationContext* opCtx,
         auto&& explainer = exec->getPlanExplainer();
         auto&& [stats, _] = explainer.getWinningPlanStats(ExplainOptions::Verbosity::kExecStats);
         LOG_WARNING(23802,
-                    "Plan executor error during findAndModify: {error}, stats: {stats}, cmd: {cmd}",
                     "Plan executor error during findAndModify",
                     "error"_attr = exception.toStatus(),
                     "stats"_attr = redact(stats),

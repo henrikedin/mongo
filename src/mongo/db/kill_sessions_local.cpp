@@ -133,8 +133,6 @@ void killAllExpiredTransactions(OperationContext* opCtx) {
             // that as aborted due to transactionLifetimeLimitSessions.
             if (txnParticipant.transactionIsInProgress() || txnParticipant.transactionIsAborted()) {
                 LOG(20707,
-                    "Aborting transaction with session id {sessionId} and txnNumber {txnNumber}  "
-                    "because it has been running for longer than 'transactionLifetimeLimitSeconds'",
                     "Aborting transaction because it has been running for longer than "
                     "'transactionLifetimeLimitSeconds'",
                     "sessionId"_attr = session.getSessionId().getId(),
@@ -206,8 +204,6 @@ void yieldLocksForPreparedTransactions(OperationContext* opCtx) {
                            if (txnParticipant.transactionIsPrepared()) {
                                LOG_DEBUG(20708,
                                          3,
-                                         "Yielding locks of prepared transaction. SessionId: "
-                                         "{sessionId} TxnNumber: {txnNumber}",
                                          "Yielding locks of prepared transaction",
                                          "sessionId"_attr = session.getSessionId().getId(),
                                          "txnNumber"_attr = txnParticipant.getActiveTxnNumber());

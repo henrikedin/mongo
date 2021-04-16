@@ -349,7 +349,6 @@ ExitCode _initAndListen(ServiceContext* serviceContext, int listenPort) {
         ProcessId pid = ProcessId::getCurrent();
         const bool is32bit = sizeof(int*) == 4;
         LOG(4615611,
-            "MongoDB starting : pid={pid} port={port} dbpath={dbPath} {architecture} host={host}",
             "MongoDB starting",
             "pid"_attr = pid.toNative(),
             "port"_attr = serverGlobalParams.port,
@@ -386,7 +385,6 @@ ExitCode _initAndListen(ServiceContext* serviceContext, int listenPort) {
         auto res = tl->setup();
         if (!res.isOK()) {
             LOG_ERROR(20568,
-                      "Error setting up listener: {error}",
                       "Error setting up listener",
                       "error"_attr = res);
             return EXIT_NET_ERROR;
@@ -427,8 +425,6 @@ ExitCode _initAndListen(ServiceContext* serviceContext, int listenPort) {
             // Warn if field name matches non-active registered storage engine.
             if (isRegisteredStorageEngine(serviceContext, e.fieldName())) {
                 LOG_WARNING(20566,
-                            "Detected configuration for non-active storage engine {fieldName} "
-                            "when current storage engine is {storageEngine}",
                             "Detected configuration for non-active storage engine",
                             "fieldName"_attr = e.fieldName(),
                             "storageEngine"_attr = storageGlobalParams.engine);
@@ -440,8 +436,6 @@ ExitCode _initAndListen(ServiceContext* serviceContext, int listenPort) {
     if (!serviceContext->getStorageEngine()->supportsCappedCollections() &&
         serverGlobalParams.defaultProfile != 0) {
         LOG_ERROR(20534,
-                  "Running {storageEngine} with profiling is not supported. Make sure you "
-                  "are not using --profile",
                   "Running the selected storage engine with profiling is not supported",
                   "storageEngine"_attr = storageGlobalParams.engine);
         exitCleanly(EXIT_BADOPTIONS);
@@ -485,7 +479,6 @@ ExitCode _initAndListen(ServiceContext* serviceContext, int listenPort) {
     } catch (const ExceptionFor<ErrorCodes::MustDowngrade>& error) {
         LOG_FATAL_OPTIONS(20573,
                           log::LogOptions(log::LogComponent::kControl, log::FatalMode::kContinue),
-                          "** IMPORTANT: {error}",
                           "Wrong mongod version",
                           "error"_attr = error.toStatus().reason());
         exitCleanly(EXIT_NEED_DOWNGRADE);
@@ -526,7 +519,6 @@ ExitCode _initAndListen(ServiceContext* serviceContext, int listenPort) {
         Status status = verifySystemIndexes(startupOpCtx.get());
         if (!status.isOK()) {
             LOG_WARNING(20538,
-                        "Unable to verify system indexes: {error}",
                         "Unable to verify system indexes",
                         "error"_attr = redact(status));
             if (status == ErrorCodes::AuthSchemaIncompatible) {
@@ -546,9 +538,6 @@ ExitCode _initAndListen(ServiceContext* serviceContext, int listenPort) {
         if (!status.isOK()) {
             LOG_ERROR(
                 20539,
-                "Auth schema version is incompatible: User and role management commands require "
-                "auth data to have at least schema version {minSchemaVersion} but startup could "
-                "not verify schema version: {error}",
                 "Failed to verify auth schema version",
                 "minSchemaVersion"_attr = AuthorizationManager::schemaVersion26Final,
                 "error"_attr = status);
@@ -593,7 +582,6 @@ ExitCode _initAndListen(ServiceContext* serviceContext, int listenPort) {
         auto status = waitForShardRegistryReload(startupOpCtx.get());
         if (!status.isOK()) {
             LOG(20545,
-                "Error loading shard registry at startup {error}",
                 "Error loading shard registry at startup",
                 "error"_attr = redact(status));
         }
@@ -749,7 +737,6 @@ ExitCode _initAndListen(ServiceContext* serviceContext, int listenPort) {
     auto start = serviceContext->getServiceEntryPoint()->start();
     if (!start.isOK()) {
         LOG_ERROR(20571,
-                  "Error starting service entry point: {error}",
                   "Error starting service entry point",
                   "error"_attr = start);
         return EXIT_NET_ERROR;
@@ -759,7 +746,6 @@ ExitCode _initAndListen(ServiceContext* serviceContext, int listenPort) {
         start = serviceContext->getTransportLayer()->start();
         if (!start.isOK()) {
             LOG_ERROR(20572,
-                      "Error starting listener: {error}",
                       "Error starting listener",
                       "error"_attr = start);
             return EXIT_NET_ERROR;
@@ -791,19 +777,16 @@ ExitCode initAndListen(ServiceContext* service, int listenPort) {
         return _initAndListen(service, listenPort);
     } catch (DBException& e) {
         LOG_ERROR(20557,
-                  "Exception in initAndListen: {error}, terminating",
                   "DBException in initAndListen, terminating",
                   "error"_attr = e.toString());
         return EXIT_UNCAUGHT;
     } catch (std::exception& e) {
         LOG_ERROR(20558,
-                  "Exception in initAndListen std::exception: {error}, terminating",
                   "std::exception in initAndListen, terminating",
                   "error"_attr = e.what());
         return EXIT_UNCAUGHT;
     } catch (int& n) {
         LOG_ERROR(20559,
-                  "Exception in initAndListen int: {reason}, terminating",
                   "Exception in initAndListen, terminating",
                   "reason"_attr = n);
         return EXIT_UNCAUGHT;
@@ -1371,7 +1354,6 @@ int mongod_main(int argc, char* argv[]) {
     if (!status.isOK()) {
         LOG_FATAL_OPTIONS(20574,
                           log::LogOptions(log::LogComponent::kControl, log::FatalMode::kContinue),
-                          "Error during global initialization: {error}",
                           "Error during global initialization",
                           "error"_attr = status);
         quickExit(EXIT_FAILURE);
@@ -1389,7 +1371,6 @@ int mongod_main(int argc, char* argv[]) {
             LOG_FATAL_OPTIONS(
                 20575,
                 log::LogOptions(log::LogComponent::kControl, log::FatalMode::kContinue),
-                "Error creating service context: {error}",
                 "Error creating service context",
                 "error"_attr = redact(cause));
             quickExit(EXIT_FAILURE);

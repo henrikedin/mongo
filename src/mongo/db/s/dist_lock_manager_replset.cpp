@@ -121,7 +121,6 @@ void ReplSetDistLockManager::shutDown(OperationContext* opCtx) {
     auto status = _catalog->stopPing(opCtx, _processID);
     if (!status.isOK()) {
         LOG_WARNING(22667,
-                    "Error cleaning up distributed ping entry for {processId} caused by {error}",
                     "Error cleaning up distributed ping entry",
                     "processId"_attr = _processID,
                     "error"_attr = redact(status));
@@ -139,8 +138,6 @@ bool ReplSetDistLockManager::isShutDown() {
 
 void ReplSetDistLockManager::doTask() {
     LOG(22649,
-        "Creating distributed lock ping thread for process {processId} with ping interval "
-        "{pingInterval}",
         "Creating distributed lock ping thread",
         "processId"_attr = _processID,
         "pingInterval"_attr = _pingInterval);
@@ -201,8 +198,6 @@ void ReplSetDistLockManager::doTask() {
 
                 if (!unlockStatus.isOK()) {
                     LOG_WARNING(22670,
-                                "Error unlocking distributed lock {lockName} with sessionID "
-                                "{lockSessionId} caused by {error}",
                                 "Error unlocking distributed lock",
                                 "lockSessionId"_attr = toUnlock.lockId,
                                 "lockName"_attr = toUnlock.name,
@@ -213,7 +208,6 @@ void ReplSetDistLockManager::doTask() {
                     }
                 } else {
                     LOG(22650,
-                        "Unlocked distributed lock {lockName} with sessionID {lockSessionId}",
                         "Unlocked distributed lock",
                         "lockSessionId"_attr = toUnlock.lockId,
                         "lockName"_attr = toUnlock.name);
@@ -290,8 +284,6 @@ StatusWith<bool> ReplSetDistLockManager::isLockExpired(OperationContext* opCtx,
 
     LOG_DEBUG(22651,
               1,
-              "Checking last ping for lock {lockName} against last seen process {processId} and "
-              "ping {lastPing}",
               "Checking last ping for lock",
               "lockName"_attr = lockDoc.getName(),
               "processId"_attr = pingInfo->processId,
@@ -315,8 +307,6 @@ StatusWith<bool> ReplSetDistLockManager::isLockExpired(OperationContext* opCtx,
 
     if (configServerLocalTime < pingInfo->configLocalTime) {
         LOG_WARNING(22671,
-                    "Config server local time went backwards, new value "
-                    "{newConfigServerLocalTime}, old value {oldConfigServerLocalTime}",
                     "Config server local time went backwards",
                     "newConfigServerLocalTime"_attr = configServerLocalTime,
                     "oldConfigServerLocalTime"_attr = pingInfo->configLocalTime);
@@ -326,8 +316,6 @@ StatusWith<bool> ReplSetDistLockManager::isLockExpired(OperationContext* opCtx,
     Milliseconds elapsedSinceLastPing(configServerLocalTime - pingInfo->configLocalTime);
     if (elapsedSinceLastPing >= lockExpiration) {
         LOG(22652,
-            "Forcing lock {lockName} because elapsed time {elapsedSinceLastPing} >= "
-            "takeover time {lockExpirationTimeout}",
             "Forcing lock because too much time has passed from last ping",
             "lockName"_attr = lockDoc.getName(),
             "elapsedSinceLastPing"_attr = elapsedSinceLastPing,
@@ -337,8 +325,6 @@ StatusWith<bool> ReplSetDistLockManager::isLockExpired(OperationContext* opCtx,
 
     LOG_DEBUG(22653,
               1,
-              "Could not force lock of {lockName} because elapsed time {elapsedSinceLastPing} < "
-              "takeover time {lockExpirationTimeout}",
               "Could not force lock because too little time has passed from last ping",
               "lockName"_attr = lockDoc.getName(),
               "elapsedSinceLastPing"_attr = elapsedSinceLastPing,
@@ -374,12 +360,6 @@ Status ReplSetDistLockManager::lockDirect(OperationContext* opCtx,
 
         LOG_DEBUG(22654,
                   1,
-                  "Trying to acquire new distributed lock for {lockName} ( "
-                  "lockSessionID: {lockSessionId}, "
-                  "process : {processId}, "
-                  "lock timeout : {lockExpirationTimeout}, "
-                  "ping interval : {pingInterval}, "
-                  "reason: {reason} )",
                   "Trying to acquire new distributed lock",
                   "lockName"_attr = name,
                   "lockSessionId"_attr = _lockSessionID,
@@ -396,8 +376,6 @@ Status ReplSetDistLockManager::lockDirect(OperationContext* opCtx,
             // Lock is acquired since findAndModify was able to successfully modify
             // the lock document.
             LOG(22655,
-                "Acquired distributed lock {lockName} with session ID {lockSessionId} for "
-                "{reason}",
                 "Acquired distributed lock",
                 "lockName"_attr = name,
                 "lockSessionId"_attr = _lockSessionID,
@@ -410,9 +388,6 @@ Status ReplSetDistLockManager::lockDirect(OperationContext* opCtx,
             networkErrorRetries < kMaxNumLockAcquireRetries) {
             LOG_DEBUG(22656,
                       1,
-                      "Error acquiring distributed lock because of retryable error. "
-                      "Retrying acquisition by first unlocking the stale entry, which possibly "
-                      "exists now. Caused by {error}",
                       "Error acquiring distributed lock because of retryable error. "
                       "Retrying acquisition by first unlocking the stale entry, which possibly "
                       "exists now",
@@ -431,7 +406,6 @@ Status ReplSetDistLockManager::lockDirect(OperationContext* opCtx,
 
             LOG_DEBUG(22657,
                       1,
-                      "Last attempt to acquire distributed lock failed with {error}",
                       "Last attempt to acquire distributed lock failed",
                       "error"_attr = redact(status));
         }
@@ -478,7 +452,6 @@ Status ReplSetDistLockManager::lockDirect(OperationContext* opCtx,
                     // the lock document.
 
                     LOG(22658,
-                        "Acquired distributed lock {lockName} with sessionId {lockSessionId}",
                         "Acquired distributed lock",
                         "lockName"_attr = name,
                         "lockSessionId"_attr = _lockSessionID);
@@ -496,7 +469,6 @@ Status ReplSetDistLockManager::lockDirect(OperationContext* opCtx,
 
         LOG_DEBUG(22660,
                   1,
-                  "Distributed lock {lockName} was not acquired",
                   "Distributed lock was not acquired",
                   "lockName"_attr = name);
 
@@ -507,7 +479,6 @@ Status ReplSetDistLockManager::lockDirect(OperationContext* opCtx,
         // Periodically message for debugging reasons
         if (msgTimer.seconds() > 10) {
             LOG(22661,
-                "Waited {elapsed} for distributed lock {lockName} for {reason}",
                 "Waiting for distributed lock",
                 "lockName"_attr = name,
                 "elapsed"_attr = Seconds(timer.seconds()),
@@ -535,12 +506,6 @@ Status ReplSetDistLockManager::tryLockDirectWithLocalWriteConcern(OperationConte
 
     LOG_DEBUG(22662,
               1,
-              "Trying to acquire new distributed lock for {lockName} ( "
-              "process : {processId}, "
-              "lockSessionID: {lockSessionId}, "
-              "lock timeout : {lockExpirationTimeout}, "
-              "ping interval : {pingInterval}, "
-              "reason: {reason} )",
               "Trying to acquire new distributed lock",
               "lockName"_attr = name,
               "lockSessionId"_attr = _lockSessionID,
@@ -559,8 +524,6 @@ Status ReplSetDistLockManager::tryLockDirectWithLocalWriteConcern(OperationConte
                                          DistLockCatalog::kLocalWriteConcern);
     if (lockStatus.isOK()) {
         LOG(22663,
-            "Acquired distributed lock {lockName} with session ID {lockSessionId} for "
-            "{reason}",
             "Acquired distributed lock",
             "lockName"_attr = name,
             "lockSessionId"_attr = _lockSessionID,
@@ -570,7 +533,6 @@ Status ReplSetDistLockManager::tryLockDirectWithLocalWriteConcern(OperationConte
 
     LOG_DEBUG(22664,
               1,
-              "Distributed lock {lockName} was not acquired",
               "Distributed lock was not acquired",
               "lockName"_attr = name);
 
@@ -592,7 +554,6 @@ void ReplSetDistLockManager::unlockAll(OperationContext* opCtx) {
     if (!status.isOK()) {
         LOG_WARNING(
             22672,
-            "Error unlocking all distributed locks for process {processId} caused by {error}",
             "Error unlocking all existing distributed locks for a process",
             "processId"_attr = getProcessID(),
             "error"_attr = redact(status));

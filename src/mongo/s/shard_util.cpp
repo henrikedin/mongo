@@ -204,7 +204,6 @@ StatusWith<boost::optional<ChunkRange>> splitChunkAtMultiplePoints(
 
     if (!status.isOK()) {
         LOG(22878,
-            "Split chunk {request} failed: {error}",
             "Split chunk request against shard failed",
             "request"_attr = redact(cmdObj),
             "shardId"_attr = shardId,
@@ -224,8 +223,6 @@ StatusWith<boost::optional<ChunkRange>> splitChunkAtMultiplePoints(
     } else if (status != ErrorCodes::NoSuchKey) {
         LOG_WARNING(
             22879,
-            "Chunk migration will be skipped because splitChunk returned invalid response: "
-            "{response}. Extracting {field} field failed: {error}",
             "Chunk migration will be skipped because extracting field from splitChunk response "
             "failed",
             "response"_attr = redact(cmdResponse),

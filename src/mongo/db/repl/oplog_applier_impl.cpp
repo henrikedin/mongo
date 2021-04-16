@@ -435,7 +435,6 @@ StatusWith<OpTime> OplogApplierImpl::_applyOplogBatch(OperationContext* opCtx,
 
     LOG_DEBUG(21230,
               2,
-              "replication batch size is {size}",
               "Replication batch size",
               "size"_attr = ops.size());
 
@@ -538,11 +537,6 @@ StatusWith<OpTime> OplogApplierImpl::_applyOplogBatch(OperationContext* opCtx,
                 if (!status.isOK()) {
                     LOG_FATAL_CONTINUE(
                         21235,
-                        "Failed to apply batch of operations. Number of operations in "
-                        "batch: {numOperationsInBatch}. First operation: {firstOperation}. "
-                        "Last operation: "
-                        "{lastOperation}. Oplog application failed in writer thread "
-                        "{failedWriterThread}: {error}",
                         "Failed to apply batch of operations",
                         "numOperationsInBatch"_attr = ops.size(),
                         "firstOperation"_attr = redact(ops.front().toBSONForLogging()),

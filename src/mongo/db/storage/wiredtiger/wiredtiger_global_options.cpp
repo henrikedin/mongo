@@ -45,21 +45,18 @@ Status WiredTigerGlobalOptions::store(const moe::Environment& params) {
     // WiredTiger storage engine options
     if (!wiredTigerGlobalOptions.engineConfig.empty()) {
         LOG(22293,
-            "Engine custom option: {wiredTigerGlobalOptions_engineConfig}",
             "Engine custom option",
             "option"_attr = wiredTigerGlobalOptions.engineConfig);
     }
 
     if (!wiredTigerGlobalOptions.collectionConfig.empty()) {
         LOG(22294,
-            "Collection custom option: {wiredTigerGlobalOptions_collectionConfig}",
             "Collection custom option",
             "option"_attr = wiredTigerGlobalOptions.collectionConfig);
     }
 
     if (!wiredTigerGlobalOptions.indexConfig.empty()) {
         LOG(22295,
-            "Index custom option: {wiredTigerGlobalOptions_indexConfig}",
             "Index custom option",
             "option"_attr = wiredTigerGlobalOptions.indexConfig);
     }

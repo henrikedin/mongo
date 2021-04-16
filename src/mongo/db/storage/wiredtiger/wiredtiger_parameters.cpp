@@ -55,7 +55,6 @@ Status WiredTigerEngineRuntimeConfigParameter::setFromString(const std::string& 
     }
 
     LOG(22376,
-        "Reconfiguring WiredTiger storage engine with config string: \"{config}\"",
         "Reconfiguring WiredTiger storage engine",
         "config"_attr = str);
 

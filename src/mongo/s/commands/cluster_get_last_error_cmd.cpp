@@ -107,8 +107,6 @@ Status enforceLegacyWriteConcern(OperationContext* opCtx,
 
         LOG_DEBUG(22752,
                   3,
-                  "Enforcing write concern {options} on {shardId} at opTime "
-                  "{opTime} with electionID {electionId}",
                   "Enforcing write concern on shard",
                   "options"_attr = options,
                   "shardId"_attr = swShard.getValue()->getId(),

@@ -103,10 +103,6 @@ void fassertOnRepeatedExecution(const LogicalSessionId& lsid,
                                 const repl::OpTime& secondOpTime) {
     LOG_FATAL(
         40526,
-        "Statement id {stmtId} from transaction [ {lsid}:{txnNumber} ] was committed once "
-        "with opTime {firstCommitOpTime} and a second time with opTime {secondCommitOpTime}. This "
-        "indicates possible data corruption or server bug and the process will be "
-        "terminated.",
         "Statement from transaction was committed twice. This indicates possible data corruption "
         "or server bug and the process will be terminated",
         "stmtId"_attr = stmtId,
@@ -1129,8 +1125,6 @@ Timestamp TransactionParticipant::Participant::prepareTransaction(
             // It is illegal for aborting a prepared transaction to fail for any reason, so we crash
             // instead.
             LOG_FATAL_CONTINUE(22525,
-                               "Caught exception during abort of prepared transaction "
-                               "{txnNumber} on {lsid}: {error}",
                                "Caught exception during abort of prepared transaction",
                                "txnNumber"_attr = opCtx->getTxnNumber(),
                                "lsid"_attr = _sessionId().toBSON(),
@@ -1462,8 +1456,6 @@ void TransactionParticipant::Participant::commitPreparedTransaction(
         // It is illegal for committing a prepared transaction to fail for any reason, other than an
         // invalid command, so we crash instead.
         LOG_FATAL_CONTINUE(22526,
-                           "Caught exception during commit of prepared transaction {txnNumber} "
-                           "on {lsid}: {error}",
                            "Caught exception during commit of prepared transaction",
                            "txnNumber"_attr = opCtx->getTxnNumber(),
                            "lsid"_attr = _sessionId().toBSON(),
@@ -1604,8 +1596,6 @@ void TransactionParticipant::Participant::_abortActiveTransaction(
             // after aborting the storage transaction, so we crash instead.
             LOG_FATAL_CONTINUE(
                 22527,
-                "Caught exception during abort of transaction that must write abort oplog "
-                "entry {txnNumber} on {lsid}: {error}",
                 "Caught exception during abort of transaction that must write abort oplog "
                 "entry",
                 "txnNumber"_attr = opCtx->getTxnNumber(),
@@ -2163,8 +2153,6 @@ void TransactionParticipant::Participant::_setNewTxnNumber(OperationContext* opC
 
     LOG_FOR_TRANSACTION(23984,
                         4,
-                        "New transaction started with txnNumber: {txnNumber} on session with lsid "
-                        "{lsid}",
                         "New transaction started",
                         "txnNumber"_attr = txnNumber,
                         "lsid"_attr = _sessionId().getId());

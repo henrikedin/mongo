@@ -70,7 +70,6 @@ void ShardingState::setInitialized(ShardId shardId, OID clusterId) {
 void ShardingState::setInitialized(Status failedStatus) {
     invariant(!failedStatus.isOK());
     LOG(22082,
-        "Failed to initialize sharding components {error}",
         "Failed to initialize sharding components",
         "error"_attr = failedStatus);
 

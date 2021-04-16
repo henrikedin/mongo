@@ -81,8 +81,6 @@ Status clear(OperationContext* opCtx,
             invariant(result.code() == ErrorCodes::NoSuchKey);
             LOG_DEBUG(23906,
                       1,
-                      "{namespace}: Query shape doesn't exist in PlanCache - {query}"
-                      "(sort: {sort}; projection: {projection}; collation: {collation})",
                       "Query shape doesn't exist in PlanCache",
                       "namespace"_attr = ns,
                       "query"_attr = redact(cq->getQueryObj()),
@@ -94,8 +92,6 @@ Status clear(OperationContext* opCtx,
 
         LOG_DEBUG(23907,
                   1,
-                  "{namespace}: Removed plan cache entry - {query}"
-                  "(sort: {sort}; projection: {projection}; collation: {collation})",
                   "Removed plan cache entry",
                   "namespace"_attr = ns,
                   "query"_attr = redact(cq->getQueryObj()),
@@ -117,7 +113,7 @@ Status clear(OperationContext* opCtx,
     planCache->clear();
 
     LOG_DEBUG(
-        23908, 1, "{namespace}: Cleared plan cache", "Cleared plan cache", "namespace"_attr = ns);
+        23908, 1, "Cleared plan cache", "namespace"_attr = ns);
 
     return Status::OK();
 }

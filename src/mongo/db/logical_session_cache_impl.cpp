@@ -127,7 +127,6 @@ void LogicalSessionCacheImpl::_periodicRefresh(Client* client) {
         _refresh(client);
     } catch (const DBException& ex) {
         LOG(20710,
-            "Failed to refresh session cache: {error}, will try again at the next refresh interval",
             "Failed to refresh session cache, will try again at the next refresh interval",
             "error"_attr = redact(ex));
     }
@@ -137,7 +136,6 @@ void LogicalSessionCacheImpl::_periodicReap(Client* client) {
     auto res = _reap(client);
     if (!res.isOK()) {
         LOG(20711,
-            "Failed to reap transaction table: {error}",
             "Failed to reap transaction table",
             "error"_attr = redact(res));
     }
@@ -182,8 +180,6 @@ Status LogicalSessionCacheImpl::_reap(Client* client) {
             _sessionsColl->checkSessionsCollectionExists(opCtx);
         } catch (const DBException& ex) {
             LOG(20712,
-                "Sessions collection is not set up: {error}; waiting until next sessions reap "
-                "interval",
                 "Sessions collection is not set up; waiting until next sessions reap interval",
                 "error"_attr = redact(ex));
             return Status::OK();
@@ -259,7 +255,6 @@ void LogicalSessionCacheImpl::_refresh(Client* client) {
         _sessionsColl->setupSessionsCollection(opCtx);
     } catch (const DBException& ex) {
         LOG(20714,
-            "Failed to refresh session cache, will try again at the next refresh interval {error}",
             "Failed to refresh session cache, will try again at the next refresh interval",
             "error"_attr = redact(ex));
         return;
@@ -395,8 +390,6 @@ Status LogicalSessionCacheImpl::_addToCacheIfNotFull(WithLock, LogicalSessionRec
             Seconds{1}, log::LogSeverity::Info(), log::LogSeverity::Debug(2)};
         LOG_DEBUG(20715,
                   bumpedSeverity().toInt(),
-                  "Unable to add session {sessionId} into the cache, too many active sessions: "
-                  "{sessionCount}, maximum: {maxSessions}",
                   "Unable to add session into the cache, too many active sessions",
                   "sessionId"_attr = record.getId(),
                   "sessionCount"_attr = _activeSessions.size(),

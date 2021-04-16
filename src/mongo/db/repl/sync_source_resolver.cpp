@@ -221,8 +221,6 @@ Status SyncSourceResolver::_scheduleFetcher(std::unique_ptr<Fetcher> fetcher) {
         _fetcher = std::move(fetcher);
     } else {
         LOG_ERROR(21776,
-                  "Error scheduling fetcher to evaluate host as sync source, "
-                  "host:{host}, error: {error}",
                   "Error scheduling fetcher to evaluate host as sync source",
                   "host"_attr = fetcher->getSource(),
                   "error"_attr = status);
@@ -236,8 +234,6 @@ OpTime SyncSourceResolver::_parseRemoteEarliestOpTime(const HostAndPort& candida
         // Remote oplog is empty.
         const auto until = _taskExecutor->now() + kOplogEmptyBlacklistDuration;
         LOG(21766,
-            "Blacklisting {candidate} due to empty oplog for {blacklistDuration} "
-            "until: {blacklistUntil}",
             "Blacklisting candidate due to empty oplog",
             "candidate"_attr = candidate,
             "blacklistDuration"_attr = kOplogEmptyBlacklistDuration,
@@ -251,8 +247,6 @@ OpTime SyncSourceResolver::_parseRemoteEarliestOpTime(const HostAndPort& candida
         // First document in remote oplog is empty.
         const auto until = _taskExecutor->now() + kFirstOplogEntryEmptyBlacklistDuration;
         LOG(21767,
-            "Blacklisting {candidate} due to empty first document for "
-            "{blacklistDuration} until: {blacklistUntil}",
             "Blacklisting candidate due to empty first document",
             "candidate"_attr = candidate,
             "blacklistDuration"_attr = kFirstOplogEntryEmptyBlacklistDuration,
@@ -265,9 +259,6 @@ OpTime SyncSourceResolver::_parseRemoteEarliestOpTime(const HostAndPort& candida
     if (!remoteEarliestOpTime.isOK()) {
         const auto until = _taskExecutor->now() + kFirstOplogEntryNullTimestampBlacklistDuration;
         LOG(21768,
-            "Blacklisting {candidate} due to error parsing OpTime from the oldest oplog entry "
-            "for {blacklistDuration} until: {blacklistUntil}. Error: "
-            "{error}, Entry: {oldestOplogEntry}",
             "Blacklisting candidate due to error parsing OpTime from the oldest oplog entry",
             "candidate"_attr = candidate,
             "blacklistDuration"_attr = kFirstOplogEntryNullTimestampBlacklistDuration,
@@ -282,8 +273,6 @@ OpTime SyncSourceResolver::_parseRemoteEarliestOpTime(const HostAndPort& candida
         // First document in remote oplog is empty.
         const auto until = _taskExecutor->now() + kFirstOplogEntryNullTimestampBlacklistDuration;
         LOG(21769,
-            "Blacklisting {candidate} due to null timestamp in first document for "
-            "{blacklistDuration} until: {blacklistUntil}",
             "Blacklisting candidate due to null timestamp in first document",
             "candidate"_attr = candidate,
             "blacklistDuration"_attr = kFirstOplogEntryNullTimestampBlacklistDuration,
@@ -317,8 +306,6 @@ void SyncSourceResolver::_firstOplogEntryFetcherCallback(
         // We got an error.
         const auto until = _taskExecutor->now() + kFetcherErrorBlacklistDuration;
         LOG(21770,
-            "Blacklisting {candidate} due to error: '{error}' for "
-            "{blacklistDuration} until: {blacklistUntil}",
             "Blacklisting candidate due to error",
             "candidate"_attr = candidate,
             "error"_attr = queryResult.getStatus(),
@@ -344,10 +331,6 @@ void SyncSourceResolver::_firstOplogEntryFetcherCallback(
         const auto until = _taskExecutor->now() + blacklistDuration;
 
         LOG(21771,
-            "We are too stale to use {candidate} as a sync source. Blacklisting this sync source "
-            "because our last fetched timestamp: {lastOpTimeFetchedTimestamp} is before "
-            "their earliest timestamp: {remoteEarliestOpTimeTimestamp} for "
-            "{blacklistDuration} until: {blacklistUntil}",
             "We are too stale to use candidate as a sync source. Blacklisting this sync source "
             "because our last fetched timestamp is before their earliest timestamp",
             "candidate"_attr = candidate,
@@ -428,8 +411,6 @@ void SyncSourceResolver::_rbidRequestCallback(
     } catch (const DBException& ex) {
         const auto until = _taskExecutor->now() + kFetcherErrorBlacklistDuration;
         LOG(21772,
-            "Blacklisting {candidate} due to error: '{error}' for {blacklistDuration} "
-            "until: {blacklistUntil}",
             "Blacklisting candidate due to error",
             "candidate"_attr = candidate,
             "error"_attr = ex,
@@ -498,9 +479,6 @@ void SyncSourceResolver::_requiredOpTimeFetcherCallback(
         // We got an error.
         const auto until = _taskExecutor->now() + kFetcherErrorBlacklistDuration;
         LOG(21773,
-            "Blacklisting {candidate} due to required optime fetcher error: "
-            "'{error}' for {blacklistDuration} until: {blacklistUntil}. "
-            "required optime: {requiredOpTime}",
             "Blacklisting candidate due to required optime fetcher error",
             "candidate"_attr = candidate,
             "error"_attr = queryResult.getStatus(),
@@ -519,10 +497,6 @@ void SyncSourceResolver::_requiredOpTimeFetcherCallback(
         const auto until = _taskExecutor->now() + kNoRequiredOpTimeBlacklistDuration;
         LOG_WARNING(
             21774,
-            "We cannot use {candidate} as a sync source because it does not contain the necessary "
-            "operations for us to reach a consistent state: {error} last fetched optime: "
-            "{lastOpTimeFetched}. required optime: {requiredOpTime}. Blacklisting this sync source "
-            "for {blacklistDuration} until: {blacklistUntil}",
             "We cannot use candidate as a sync source because it does not contain the necessary "
             "operations for us to reach a consistent state. Blacklisting this sync source",
             "candidate"_attr = candidate.toString(),
@@ -586,7 +560,6 @@ Status SyncSourceResolver::_finishCallback(const SyncSourceResolverResponse& res
         _onCompletion(response);
     } catch (...) {
         LOG_WARNING(21775,
-                    "sync source resolver finish callback threw exception: {error}",
                     "Sync source resolver finish callback threw exception",
                     "error"_attr = exceptionToStatus());
     }

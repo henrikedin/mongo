@@ -489,7 +489,6 @@ size_t WiredTigerUtil::getCacheSizeMB(double requestedCacheSizeGB) {
     }
     if (cacheSizeMB > kMaxSizeCacheMB) {
         LOG(22429,
-            "Requested cache size: {requestedMB}MB exceeds max; setting to {maximumMB}MB",
             "Requested cache size exceeds max, setting to maximum",
             "requestedMB"_attr = cacheSizeMB,
             "maximumMB"_attr = kMaxSizeCacheMB);
@@ -525,7 +524,6 @@ int mdb_handle_error_with_startup_suppression(WT_EVENT_HANDLER* handler,
             }
         }
         LOG_ERROR(22435,
-                  "WiredTiger error ({error}) {message}",
                   "WiredTiger error",
                   "error"_attr = errorCode,
                   "message"_attr = message);
@@ -547,7 +545,6 @@ int mdb_handle_error(WT_EVENT_HANDLER* handler,
                      const char* message) {
     try {
         LOG_ERROR(22436,
-                  "WiredTiger error ({errorCode}) {message}",
                   "WiredTiger error",
                   "error"_attr = errorCode,
                   "message"_attr = redact(message));

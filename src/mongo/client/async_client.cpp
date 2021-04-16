@@ -115,7 +115,6 @@ void AsyncDBClient::_parseIsMasterResponse(BSONObj request,
     auto validateStatus = rpc::validateWireVersion(wireSpec->outgoing, protocolSet.version);
     if (!validateStatus.isOK()) {
         LOG_WARNING(23741,
-                    "Remote host has incompatible wire version: {error}",
                     "Remote host has incompatible wire version",
                     "error"_attr = validateStatus);
         uasserted(validateStatus.code(),

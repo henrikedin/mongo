@@ -386,7 +386,6 @@ void ServiceStateMachine::Impl::sourceCallback(Status status) {
                ErrorCodes::isNetworkError(status.code())) {
         LOG_DEBUG(22986,
                   2,
-                  "Session from {remote} encountered a network error during SourceMessage: {error}",
                   "Session from remote encountered a network error during SourceMessage",
                   "remote"_attr = remote,
                   "error"_attr = status);
@@ -573,7 +572,6 @@ void ServiceStateMachine::Impl::startNewLoop(const Status& execStatus) {
                 // in a valid state.
                 LOG_WARNING_OPTIONS(4910400,
                                     {log::LogComponent::kExecutor},
-                                    "Terminating session due to error: {error}",
                                     "Terminating session due to error",
                                     "error"_attr = status);
                 terminate();
@@ -623,7 +621,6 @@ void ServiceStateMachine::Impl::terminateAndLogIfError(Status status) {
     if (!status.isOK()) {
         LOG_WARNING_OPTIONS(22993,
                             {log::LogComponent::kExecutor},
-                            "Terminating session due to error: {error}",
                             "Terminating session due to error",
                             "error"_attr = status);
         terminate();
@@ -646,7 +643,6 @@ void ServiceStateMachine::Impl::cleanupExhaustResources() noexcept try {
     }
 } catch (const DBException& e) {
     LOG(22992,
-        "Error cleaning up resources for exhaust requests: {error}",
         "Error cleaning up resources for exhaust requests",
         "error"_attr = e.toStatus());
 }

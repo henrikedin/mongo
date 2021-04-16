@@ -275,9 +275,6 @@ public:
                 // The reload itself was interrupted or confused here
                 LOG_WARNING(
                     22058,
-                    "Could not refresh metadata for the namespace {namespace} with the requested "
-                    "shard version {requestedShardVersion}; the current shard version is "
-                    "{currentShardVersion}: {error}",
                     "Could not refresh metadata",
                     "namespace"_attr = nss.ns(),
                     "requestedShardVersion"_attr = requestedVersion,
@@ -298,10 +295,6 @@ public:
                 if (sampler.tick()) {
                     LOG_WARNING(
                         22059,
-                        "Requested shard version differs from the authoritative (current) shard "
-                        "version for the namespace {namespace}; the requested version is "
-                        "{requestedShardVersion}, but the current version is "
-                        "{currentShardVersion}",
                         "Requested shard version differs from the authoritative (current) shard "
                         "version for this namespace",
                         "namespace"_attr = nss.ns(),

@@ -163,7 +163,6 @@ void DatabaseImpl::init(OperationContext* const opCtx) const {
 
     if (!status.isOK()) {
         LOG_WARNING(20325,
-                    "tried to open invalid db: {name}",
                     "Tried to open invalid db",
                     "db"_attr = _name);
         uasserted(10028, status.toString());
@@ -212,7 +211,6 @@ void DatabaseImpl::clearTmpCollections(OperationContext* opCtx) const {
             Status status = dropCollection(opCtx, collection->ns(), {});
             if (!status.isOK()) {
                 LOG_WARNING(20327,
-                            "could not drop temp collection '{namespace}': {error}",
                             "could not drop temp collection",
                             "namespace"_attr = collection->ns(),
                             "error"_attr = redact(status));
@@ -221,7 +219,6 @@ void DatabaseImpl::clearTmpCollections(OperationContext* opCtx) const {
         } catch (const WriteConflictException&) {
             LOG_WARNING(
                 20328,
-                "could not drop temp collection '{namespace}' due to WriteConflictException",
                 "could not drop temp collection due to WriteConflictException",
                 "namespace"_attr = collection->ns());
             opCtx->recoveryUnit()->abandonSnapshot();
@@ -312,7 +309,6 @@ void DatabaseImpl::getStats(OperationContext* opCtx, BSONObjBuilder* output, dou
             output->appendNumber("fsUsedSize", -1);
             output->appendNumber("fsTotalSize", -1);
             LOG(20312,
-                "Failed to query filesystem disk stats (code: {ec_value}): {ec_message}",
                 "Failed to query filesystem disk stats",
                 "error"_attr = ec.message(),
                 "errorCode"_attr = ec.value());
@@ -366,7 +362,7 @@ Status DatabaseImpl::dropCollectionEvenIfSystem(OperationContext* opCtx,
                                                 repl::OpTime dropOpTime) const {
     invariant(opCtx->lockState()->isCollectionLockedForMode(nss, MODE_X));
 
-    LOG_DEBUG(20313, 1, "dropCollection: {namespace}", "dropCollection", "namespace"_attr = nss);
+    LOG_DEBUG(20313, 1, "dropCollection", "namespace"_attr = nss);
 
     // A valid 'dropOpTime' is not allowed when writes are replicated.
     if (!dropOpTime.isNull() && opCtx->writesAreReplicated()) {
@@ -420,9 +416,6 @@ Status DatabaseImpl::dropCollectionEvenIfSystem(OperationContext* opCtx,
 
         auto commitTimestamp = opCtx->recoveryUnit()->getCommitTimestamp();
         LOG(20314,
-            "dropCollection: {namespace} ({uuid}) - storage engine will take ownership of "
-            "drop-pending "
-            "collection with optime {dropOpTime} and commit timestamp {commitTimestamp}",
             "dropCollection: storage engine will take ownership of drop-pending "
             "collection",
             "namespace"_attr = nss,
@@ -468,9 +461,6 @@ Status DatabaseImpl::dropCollectionEvenIfSystem(OperationContext* opCtx,
     auto dpns = nss.makeDropPendingNamespace(dropOpTime);
     const bool stayTemp = true;
     LOG(20315,
-        "dropCollection: {namespace} ({uuid}) - renaming to drop-pending collection: "
-        "{dropPendingName} with drop "
-        "optime {dropOpTime}",
         "dropCollection: renaming to drop-pending collection",
         "namespace"_attr = nss,
         "uuid"_attr = uuid,
@@ -507,7 +497,6 @@ Status DatabaseImpl::_finishDropCollection(OperationContext* opCtx,
                                            Collection* collection) const {
     UUID uuid = collection->uuid();
     LOG(20318,
-        "Finishing collection drop for {namespace} ({uuid}).",
         "Finishing collection drop",
         "namespace"_attr = nss,
         "uuid"_attr = uuid);
@@ -548,7 +537,6 @@ Status DatabaseImpl::renameCollection(OperationContext* opCtx,
     assertMovePrimaryInProgress(opCtx, fromNss);
 
     LOG(20319,
-        "renameCollection: renaming collection {collToRename_uuid} from {fromNss} to {toNss}",
         "renameCollection",
         "uuid"_attr = collToRename->uuid(),
         "fromName"_attr = fromNss,
@@ -688,8 +676,6 @@ Collection* DatabaseImpl::createCollection(OperationContext* opCtx,
     audit::logCreateCollection(&cc(), nss);
 
     LOG(20320,
-        "createCollection: {namespace} with {generatedUUID_generated_provided} UUID: "
-        "{optionsWithUUID_uuid_get} and options: {options}",
         "createCollection",
         "namespace"_attr = nss,
         "uuidDisposition"_attr = (generatedUUID ? "generated" : "provided"),
@@ -817,7 +803,6 @@ void DatabaseImpl::checkForIdIndexesAndDropPendingCollections(OperationContext* 
         if (nss.isDropPendingNamespace()) {
             auto dropOpTime = fassert(40459, nss.getDropPendingNamespaceOpTime());
             LOG(20321,
-                "Found drop-pending namespace {namespace} with drop optime {dropOpTime}",
                 "Found drop-pending namespace",
                 "namespace"_attr = nss,
                 "dropOpTime"_attr = dropOpTime);

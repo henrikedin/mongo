@@ -298,7 +298,6 @@ void _logOpsInner(OperationContext* opCtx,
     Status result = oplogCollection->insertDocumentsForOplog(opCtx, records, timestamps);
     if (!result.isOK()) {
         LOG_FATAL(17322,
-                  "write to oplog failed: {error}",
                   "Write to oplog failed",
                   "error"_attr = result.toString());
     }
@@ -482,9 +481,6 @@ std::vector<OpTime> logInsertOps(
     sleepBetweenInsertOpTimeGenerationAndLogOp.execute([&](const BSONObj& data) {
         auto numMillis = data["waitForMillis"].numberInt();
         LOG(21244,
-            "Sleeping for {sleepMillis}ms after receiving {numOpTimesReceived} optimes from "
-            "{firstOpTime} to "
-            "{lastOpTime}",
             "Sleeping due to sleepBetweenInsertOpTimeGenerationAndLogOp failpoint",
             "sleepMillis"_attr = numMillis,
             "numOpTimesReceived"_attr = count,
@@ -550,7 +546,6 @@ long long getNewOplogSizeBytes(OperationContext* opCtx, const ReplSettings& repl
         const auto sz = 50LL * 1024LL * 1024LL;
         LOG_DEBUG(21245,
                   3,
-                  "32bit system; choosing {oplogSizeBytes} bytes oplog",
                   "Choosing oplog size for 32bit system",
                   "oplogSizeBytes"_attr = sz);
         return sz;
@@ -562,7 +557,6 @@ long long getNewOplogSizeBytes(OperationContext* opCtx, const ReplSettings& repl
     const auto sz = 192 * 1024 * 1024;
     LOG_DEBUG(21246,
               3,
-              "Apple system; choosing {oplogSizeBytes} bytes oplog",
               "Choosing oplog size for Apple system",
               "oplogSizeBytes"_attr = sz);
     return sz;
@@ -575,8 +569,6 @@ long long getNewOplogSizeBytes(OperationContext* opCtx, const ReplSettings& repl
         bytes = pi.getMemSizeMB() * 1024 * 1024;
         LOG_DEBUG(21247,
                   3,
-                  "Ephemeral storage system; lowerBound: {lowerBoundBytes} bytes, "
-                  "{totalMemoryBytes} bytes total memory",
                   "Ephemeral storage system",
                   "lowerBoundBytes"_attr = lowerBound,
                   "totalMemoryBytes"_attr = bytes);
@@ -586,9 +578,6 @@ long long getNewOplogSizeBytes(OperationContext* opCtx, const ReplSettings& repl
         bytes = File::freeSpace(storageGlobalParams.dbpath);  //-1 if call not supported.
         LOG_DEBUG(21248,
                   3,
-                  "Disk storage system; lowerBound: {lowerBoundBytes} bytes, {freeSpaceBytes} "
-                  "bytes free space "
-                  "on device",
                   "Disk storage system",
                   "lowerBoundBytes"_attr = lowerBound,
                   "freeSpaceBytes"_attr = bytes);
@@ -644,7 +633,6 @@ void createOplog(OperationContext* opCtx,
     const auto sz = getNewOplogSizeBytes(opCtx, replSettings);
 
     LOG(21251,
-        "creating replication oplog of size: {oplogSizeMegabytes}MB...",
         "Creating replication oplog",
         "oplogSizeMB"_attr = (int)(sz / (1024 * 1024)));
 
@@ -895,8 +883,6 @@ const StringMap<ApplyOpMetadata> kOpsMap = {
           auto nss = extractNsFromUUIDorNs(opCtx, entry.getNss(), entry.getUuid(), cmd);
           if (nss.isDropPendingNamespace()) {
               LOG(21253,
-                  "applyCommand: {namespace} : collection is already in a drop-pending state: "
-                  "ignoring collection drop: {command}",
                   "applyCommand: collection is already in a drop-pending state, ignoring "
                   "collection drop",
                   "namespace"_attr = nss,
@@ -1050,8 +1036,6 @@ Status applyOperation_inlock(OperationContext* opCtx,
     auto op = opOrGroupedInserts.getOp();
     LOG_DEBUG(21254,
               3,
-              "applying op (or grouped inserts): {op}, oplog application mode: "
-              "{oplogApplicationMode}",
               "Applying op (or grouped inserts)",
               "op"_attr = redact(opOrGroupedInserts.toBSON()),
               "oplogApplicationMode"_attr = OplogApplication::modeToString(mode));
@@ -1543,8 +1527,6 @@ Status applyCommand_inlock(OperationContext* opCtx,
                            OplogApplication::Mode mode) {
     LOG_DEBUG(21255,
               3,
-              "applying command op: {oplogEntry}, oplog application mode: "
-              "{oplogApplicationMode}",
               "Applying command op",
               "oplogEntry"_attr = redact(entry.toBSONForLogging()),
               "oplogApplicationMode"_attr = OplogApplication::modeToString(mode));
@@ -1692,8 +1674,6 @@ Status applyCommand_inlock(OperationContext* opCtx,
                 LOG_DEBUG(51774,
                           1,
                           "Acceptable error during oplog application: background operation in "
-                          "progress for DB '{db}' from oplog entry {oplogEntry}",
-                          "Acceptable error during oplog application: background operation in "
                           "progress for database",
                           "db"_attr = nss.db(),
                           "oplogEntry"_attr = redact(entry.toBSONForLogging()));
@@ -1722,8 +1702,6 @@ Status applyCommand_inlock(OperationContext* opCtx,
                 auto swUUID = entry.getUuid();
                 if (!swUUID) {
                     LOG_ERROR(21261,
-                              "Failed command {command} on {namespace} during oplog application. "
-                              "Expected a UUID.",
                               "Failed command during oplog application. Expected a UUID",
                               "command"_attr = redact(o),
                               "namespace"_attr = ns);
@@ -1736,8 +1714,6 @@ Status applyCommand_inlock(OperationContext* opCtx,
 
                 LOG_DEBUG(51775,
                           1,
-                          "Acceptable error during oplog application: background operation in "
-                          "progress for ns '{namespace}' from oplog entry {oplogEntry}",
                           "Acceptable error during oplog application: background operation in "
                           "progress for namespace",
                           "namespace"_attr = ns,
@@ -1757,8 +1733,6 @@ Status applyCommand_inlock(OperationContext* opCtx,
                      status.code() != ErrorCodes::IndexNotFound && op->first != "dropDatabase") ||
                     !curOpToApply.acceptableErrors.count(status.code())) {
                     LOG_ERROR(21262,
-                              "Failed command {command} on {db} with status {error} during oplog "
-                              "application",
                               "Failed command during oplog application",
                               "command"_attr = redact(o),
                               "db"_attr = nss.db(),

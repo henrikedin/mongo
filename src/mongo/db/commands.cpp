@@ -701,13 +701,11 @@ void CommandHelpers::evaluateFailCommandFailPoint(OperationContext* opCtx,
                         blockTimeMS >= 0);
 
                 LOG(20432,
-                    "Blocking {command} via 'failCommand' failpoint for {blockTime}",
                     "Blocking command via 'failCommand' failpoint",
                     "command"_attr = cmd->getName(),
                     "blockTime"_attr = Milliseconds{blockTimeMS});
                 opCtx->sleepFor(Milliseconds{blockTimeMS});
                 LOG(20433,
-                    "Unblocking {command} via 'failCommand' failpoint",
                     "Unblocking command via 'failCommand' failpoint",
                     "command"_attr = cmd->getName());
             }
@@ -715,7 +713,6 @@ void CommandHelpers::evaluateFailCommandFailPoint(OperationContext* opCtx,
             if (closeConnection) {
                 opCtx->getClient()->session()->end();
                 LOG(20431,
-                    "Failing {command} via 'failCommand' failpoint: closing connection",
                     "Failing command via 'failCommand' failpoint: closing connection",
                     "command"_attr = cmd->getName());
                 uasserted(50985, "Failing command due to 'failCommand' failpoint");
@@ -723,8 +720,6 @@ void CommandHelpers::evaluateFailCommandFailPoint(OperationContext* opCtx,
 
             if (hasExtraInfo) {
                 LOG(20434,
-                    "Failing {command} via 'failCommand' failpoint: returning {errorCode} and "
-                    "{errorExtraInfo}",
                     "Failing command via 'failCommand' failpoint",
                     "command"_attr = cmd->getName(),
                     "errorCode"_attr = errorCode,
@@ -734,7 +729,6 @@ void CommandHelpers::evaluateFailCommandFailPoint(OperationContext* opCtx,
                                        errorExtraInfo.Obj()));
             } else if (hasErrorCode) {
                 LOG(20435,
-                    "Failing command {command} via 'failCommand' failpoint: returning {errorCode}",
                     "Failing command via 'failCommand' failpoint",
                     "command"_attr = cmd->getName(),
                     "errorCode"_attr = errorCode);
@@ -823,7 +817,6 @@ void CommandInvocation::checkAuthorization(OperationContext* opCtx,
     } catch (const DBException& e) {
         LOG_OPTIONS(20436,
                     {LogComponent::kAccessControl},
-                    "Checking authorization failed: {error}",
                     "Checking authorization failed",
                     "error"_attr = e.toStatus());
         CommandHelpers::auditLogAuthEvent(opCtx, this, request, e.code());

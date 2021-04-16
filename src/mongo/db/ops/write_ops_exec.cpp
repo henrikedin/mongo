@@ -130,7 +130,6 @@ void finishCurOp(OperationContext* opCtx, CurOp* curOp) {
         if (!curOp->debug().errInfo.isOK()) {
             LOG_DEBUG(20886,
                       3,
-                      "Caught Assertion in finishCurOp. Op: {operation}, error: {error}",
                       "Caught Assertion in finishCurOp",
                       "operation"_attr = redact(logicalOpToString(curOp->getLogicalOp())),
                       "error"_attr = curOp->debug().errInfo.toString());
@@ -152,7 +151,6 @@ void finishCurOp(OperationContext* opCtx, CurOp* curOp) {
         // failure to record stats. We also don't want to replace the error reported for an op that
         // is failing.
         LOG(20887,
-            "Ignoring error from finishCurOp: {error}",
             "Ignoring error from finishCurOp",
             "error"_attr = redact(ex));
     }
@@ -180,7 +178,6 @@ public:
             replClientInfo().setLastOpToSystemLastOpTimeIgnoringInterrupt(_opCtx);
             LOG_DEBUG(20888,
                       5,
-                      "Set last op to system time: {timestamp}",
                       "Set last op to system time",
                       "timestamp"_attr = replClientInfo().getLastOp().getTimestamp());
         }
@@ -396,8 +393,6 @@ bool insertBatchAndHandleErrors(OperationContext* opCtx,
         "hangDuringBatchInsert",
         [&wholeOp]() {
             LOG(20889,
-                "Batch insert - hangDuringBatchInsert fail point enabled for namespace "
-                "{namespace}. Blocking until fail point is disabled",
                 "Batch insert - hangDuringBatchInsert fail point enabled for a namespace. "
                 "Blocking until fail point is disabled",
                 "namespace"_attr = wholeOp.getNamespace());
@@ -685,8 +680,6 @@ static SingleWriteResult performSingleUpdateOp(OperationContext* opCtx,
         "hangDuringBatchUpdate",
         [&ns]() {
             LOG(20890,
-                "Batch update - hangDuringBatchUpdate fail point enabled for namespace "
-                "{namespace}. Blocking until fail point is disabled",
                 "Batch update - hangDuringBatchUpdate fail point enabled for a namespace. "
                 "Blocking until fail point is disabled",
                 "namespace"_attr = ns);

@@ -87,14 +87,12 @@ BaseCloner::AfterStageBehavior DatabaseCloner::listCollectionsStage() {
         if (collectionNamespace.isSystem() && !collectionNamespace.isReplicated()) {
             LOG_DEBUG(21146,
                       1,
-                      "Skipping 'system' collection: {namespace}",
                       "Database cloner skipping 'system' collection",
                       "namespace"_attr = collectionNamespace.ns());
             continue;
         }
         LOG_DEBUG(21147,
                   2,
-                  "Allowing cloning of collectionInfo: {info}",
                   "Allowing cloning of collectionInfo",
                   "info"_attr = info);
 
@@ -144,12 +142,10 @@ void DatabaseCloner::postStage() {
         if (collStatus.isOK()) {
             LOG_DEBUG(21148,
                       1,
-                      "collection clone finished: {namespace}",
                       "Collection clone finished",
                       "namespace"_attr = sourceNss);
         } else {
             LOG_ERROR(21149,
-                      "collection clone for '{namespace}' failed due to {error}",
                       "Collection clone failed",
                       "namespace"_attr = sourceNss,
                       "error"_attr = collStatus.toString());

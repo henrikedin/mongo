@@ -1180,7 +1180,6 @@ void BenchRunOp::executeOnce(DBClientBase* conn,
 
             if (this->expected >= 0 && count != this->expected) {
                 LOG_INFO(22797,
-                         "Bench query on: {namespace} expected: {expected} got: {got}",
                          "Bench query on namespace got diffrent results then expected",
                          "namespace"_attr = this->ns,
                          "expected"_attr = this->expected,

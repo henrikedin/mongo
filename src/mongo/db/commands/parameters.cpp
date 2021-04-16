@@ -368,7 +368,6 @@ public:
                 uassertStatusOK(foundParameter->second->set(parameter));
             } catch (const DBException& ex) {
                 LOG(20496,
-                    "Error setting parameter {parameterName} to {newValue} errMsg: {error}",
                     "Error setting parameter to new value",
                     "parameterName"_attr = parameterName,
                     "newValue"_attr = redact(parameter.toString(false)),
@@ -378,15 +377,12 @@ public:
 
             if (oldValue) {
                 LOG(23435,
-                    "Successfully set parameter {parameterName} to {newValue} (was "
-                    "{oldValue})",
                     "Successfully set parameter to new value",
                     "parameterName"_attr = parameterName,
                     "newValue"_attr = redact(parameter.toString(false)),
                     "oldValue"_attr = redact(oldValue.toString(false)));
             } else {
                 LOG(23436,
-                    "Successfully set parameter {parameterName} to {newValue}",
                     "Successfully set parameter to new value",
                     "parameterName"_attr = parameterName,
                     "newValue"_attr = redact(parameter.toString(false)));

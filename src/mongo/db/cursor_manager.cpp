@@ -134,7 +134,6 @@ std::pair<Status, int> CursorManager::killCursorsWithMatchingSessions(
     auto eraser = [&](CursorManager& mgr, CursorId id) {
         uassertStatusOK(mgr.killCursor(opCtx, id));
         LOG(20528,
-            "killing cursor: {id} as part of killing session(s)",
             "Killing cursor as part of killing session(s)",
             "cursorId"_attr = id);
     };
@@ -192,7 +191,6 @@ std::size_t CursorManager::timeoutCursors(OperationContext* opCtx, Date_t now) {
     // Be careful not to dispose of cursors while holding the partition lock.
     for (auto&& cursor : toDisposeWithoutMutex) {
         LOG(20529,
-            "Cursor id {cursorId} timed out, idle since {idleSince}",
             "Cursor timed out",
             "cursorId"_attr = cursor->cursorid(),
             "idleSince"_attr = cursor->getLastUseDate());
@@ -266,7 +264,6 @@ void CursorManager::unpin(OperationContext* opCtx,
     // will see the reason the cursor was killed when asking for the next batch.
     if (interruptStatus == ErrorCodes::Interrupted || interruptStatus == ErrorCodes::CursorKilled) {
         LOG(20530,
-            "removing cursor {cursor_cursorid} after completing batch: {error}",
             "Removing cursor after completing batch",
             "cursorId"_attr = cursor->cursorid(),
             "error"_attr = interruptStatus);

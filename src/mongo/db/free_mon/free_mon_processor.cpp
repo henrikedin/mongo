@@ -264,8 +264,6 @@ void FreeMonProcessor::run() {
         _queue.stop();
 
         LOG_WARNING(20619,
-                    "Uncaught exception in '{error}' in free monitoring subsystem. "
-                    "Shutting down the free monitoring subsystem.",
                     "Uncaught exception in free monitoring subsystem. "
                     "Shutting down the free monitoring subsystem.",
                     "error"_attr = exceptionToStatus());
@@ -613,7 +611,6 @@ void FreeMonProcessor::doAsyncRegisterComplete(
     Status s = validateRegistrationResponse(resp);
     if (!s.isOK()) {
         LOG_WARNING(20620,
-                    "Free Monitoring registration halted due to {error}",
                     "Free Monitoring registration halted due to error",
                     "error"_attr = s);
 
@@ -662,7 +659,6 @@ void FreeMonProcessor::doAsyncRegisterComplete(
     notifyPendingRegisters(Status::OK());
 
     LOG(20615,
-        "Free Monitoring is Enabled. Frequency: {interval} seconds",
         "Free Monitoring is Enabled",
         "interval"_attr = resp.getReportingInterval());
 
@@ -690,7 +686,6 @@ void FreeMonProcessor::doAsyncRegisterFail(
 
     LOG_DEBUG(20616,
               1,
-              "Free Monitoring Registration Failed with status '{error}', retrying in {interval}",
               "Free Monitoring Registration Failed, will retry after interval",
               "error"_attr = msg->getPayload(),
               "interval"_attr = _registrationRetry->getNextDuration());
@@ -808,7 +803,6 @@ void FreeMonProcessor::doAsyncMetricsComplete(
     Status s = validateMetricsResponse(resp);
     if (!s.isOK()) {
         LOG_WARNING(20622,
-                    "Free Monitoring metrics uploading halted due to {error}",
                     "Free Monitoring metrics uploading halted due to error",
                     "error"_attr = s);
 
@@ -889,7 +883,6 @@ void FreeMonProcessor::doAsyncMetricsFail(
 
     LOG_DEBUG(20618,
               1,
-              "Free Monitoring Metrics upload failed with status {error}, retrying in {interval}",
               "Free Monitoring Metrics upload failed, will retry after interval",
               "error"_attr = msg->getPayload(),
               "interval"_attr = _metricsRetry->getNextDuration());

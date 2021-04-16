@@ -117,8 +117,6 @@ public:
         if (!toStatus.isOK()) {
             LOG_OPTIONS(22755,
                         {log::UserAssertAfterLog(ErrorCodes::ShardNotFound)},
-                        "Could not move chunk in {namespace} to {toShardId} because that shard"
-                        " does not exist",
                         "moveChunk destination shard does not exist",
                         "toShardId"_attr = toString,
                         "namespace"_attr = nss.ns());

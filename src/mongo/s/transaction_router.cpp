@@ -487,7 +487,6 @@ void TransactionRouter::Router::processParticipantResponse(OperationContext* opC
         if (participant->readOnly == Participant::ReadOnly::kUnset) {
             LOG_DEBUG(22880,
                       3,
-                      "{sessionId}:{txnNumber} Marking {shardId} as read-only",
                       "Marking shard as read-only participant",
                       "sessionId"_attr = _sessionId().getId(),
                       "txnNumber"_attr = o().txnNumber,
@@ -509,7 +508,6 @@ void TransactionRouter::Router::processParticipantResponse(OperationContext* opC
     if (participant->readOnly != Participant::ReadOnly::kNotReadOnly) {
         LOG_DEBUG(22881,
                   3,
-                  "{sessionId}:{txnNumber} Marking {shardId} as having done a write",
                   "Marking shard has having done a write",
                   "sessionId"_attr = _sessionId().getId(),
                   "txnNumber"_attr = o().txnNumber,
@@ -520,7 +518,6 @@ void TransactionRouter::Router::processParticipantResponse(OperationContext* opC
         if (!p().recoveryShardId) {
             LOG_DEBUG(22882,
                       3,
-                      "{sessionId}:{txnNumber} Choosing {shardId} as recovery shard",
                       "Choosing shard as recovery shard",
                       "sessionId"_attr = _sessionId().getId(),
                       "txnNumber"_attr = o().txnNumber,
@@ -575,7 +572,6 @@ BSONObj TransactionRouter::Router::attachTxnFieldsIfNeeded(OperationContext* opC
         LOG_DEBUG(
             22883,
             4,
-            "{sessionId}:{txnNumber} Sending transaction fields to existing participant: {shardId}",
             "Attaching transaction fields to request for existing participant shard",
             "sessionId"_attr = _sessionId().getId(),
             "txnNumber"_attr = o().txnNumber,
@@ -587,7 +583,6 @@ BSONObj TransactionRouter::Router::attachTxnFieldsIfNeeded(OperationContext* opC
     auto txnPart = _createParticipant(opCtx, shardId);
     LOG_DEBUG(22884,
               4,
-              "{sessionId}:{txnNumber} Sending transaction fields to new participant: {shardId}",
               "Attaching transaction fields to request for new participant shard",
               "sessionId"_attr = _sessionId().getId(),
               "txnNumber"_attr = o().txnNumber,
@@ -787,7 +782,6 @@ void TransactionRouter::Router::onStaleShardOrDbError(OperationContext* opCtx,
     LOG_DEBUG(
         22885,
         3,
-        "{sessionId}:{txnNumber} Clearing pending participants after stale version error: {error}",
         "Clearing pending participants after stale version error",
         "sessionId"_attr = _sessionId().getId(),
         "txnNumber"_attr = o().txnNumber,
@@ -805,8 +799,6 @@ void TransactionRouter::Router::onViewResolutionError(OperationContext* opCtx,
     LOG_DEBUG(
         22886,
         3,
-        "{sessionId}:{txnNumber} Clearing pending participants after view resolution error on "
-        "namespace: {namespace}",
         "Clearing pending participants after view resolution error",
         "sessionId"_attr = _sessionId().getId(),
         "txnNumber"_attr = o().txnNumber,
@@ -831,9 +823,6 @@ void TransactionRouter::Router::onSnapshotError(OperationContext* opCtx, const S
 
     LOG_DEBUG(22887,
               3,
-              "{sessionId}:{txnNumber} Clearing pending participants and resetting global snapshot "
-              "timestamp after snapshot error: {error}, previous timestamp: "
-              "{previousGlobalSnapshotTimestamp}",
               "Clearing pending participants and resetting global snapshot timestamp after "
               "snapshot error",
               "sessionId"_attr = _sessionId().getId(),
@@ -880,8 +869,6 @@ void TransactionRouter::Router::_setAtClusterTime(
 
     LOG_DEBUG(22888,
               2,
-              "{sessionId}:{txnNumber} Setting global snapshot timestamp to "
-              "{globalSnapshotTimestamp} on statement {latestStmtId}",
               "Setting global snapshot timestamp for transaction",
               "sessionId"_attr = _sessionId().getId(),
               "txnNumber"_attr = o().txnNumber,
@@ -958,7 +945,6 @@ void TransactionRouter::Router::beginOrContinueTxn(OperationContext* opCtx,
 
                 LOG_DEBUG(22889,
                           3,
-                          "{sessionId}:{txnNumber} New transaction started",
                           "New transaction started",
                           "sessionId"_attr = _sessionId().getId(),
                           "txnNumber"_attr = o().txnNumber);
@@ -978,7 +964,6 @@ void TransactionRouter::Router::beginOrContinueTxn(OperationContext* opCtx,
 
                 LOG_DEBUG(22890,
                           3,
-                          "{sessionId}:{txnNumber} Commit recovery started",
                           "Commit recovery started",
                           "sessionId"_attr = _sessionId().getId(),
                           "txnNumber"_attr = o().txnNumber);
@@ -1021,8 +1006,6 @@ BSONObj TransactionRouter::Router::_handOffCommitToCoordinator(OperationContext*
 
     LOG_DEBUG(22891,
               3,
-              "{sessionId}:{txnNumber} Committing using two-phase commit, coordinator: "
-              "{coordinatorShardId}",
               "Committing using two-phase commit",
               "sessionId"_attr = _sessionId().getId(),
               "txnNumber"_attr = o().txnNumber,
@@ -1129,8 +1112,6 @@ BSONObj TransactionRouter::Router::_commitTransaction(
         ShardId shardId = o().participants.cbegin()->first;
         LOG_DEBUG(22892,
                   3,
-                  "{sessionId}:{txnNumber} Committing single-shard transaction, single "
-                  "participant: {shardId}",
                   "Committing single-shard transaction",
                   "sessionId"_attr = _sessionId().getId(),
                   "txnNumber"_attr = o().txnNumber,
@@ -1149,8 +1130,6 @@ BSONObj TransactionRouter::Router::_commitTransaction(
     if (writeShards.size() == 0) {
         LOG_DEBUG(22893,
                   3,
-                  "{sessionId}:{txnNumber} Committing read-only transaction on "
-                  "{numParticipantShards} shards",
                   "Committing read-only transaction",
                   "sessionId"_attr = _sessionId().getId(),
                   "txnNumber"_attr = o().txnNumber,
@@ -1197,7 +1176,6 @@ BSONObj TransactionRouter::Router::abortTransaction(OperationContext* opCtx) {
 
     LOG_DEBUG(22895,
               3,
-              "{sessionId}:{txnNumber} Aborting transaction on {numParticipantShards} shard(s)",
               "Aborting transaction on all participant shards",
               "sessionId"_attr = _sessionId().getId(),
               "txnNumber"_attr = o().txnNumber,
@@ -1244,8 +1222,6 @@ void TransactionRouter::Router::implicitlyAbortTransaction(OperationContext* opC
         LOG_DEBUG(
             22896,
             3,
-            "{sessionId}:{txnNumber} Router not sending implicit abortTransaction because commit "
-            "may have been handed off to the coordinator",
             "Not sending implicit abortTransaction to participant shards after error because "
             "coordinating the commit decision may have been handed off to the coordinator shard",
             "sessionId"_attr = _sessionId().getId(),
@@ -1273,8 +1249,6 @@ void TransactionRouter::Router::implicitlyAbortTransaction(OperationContext* opC
 
     LOG_DEBUG(22897,
               3,
-              "{sessionId}:{txnNumber} Implicitly aborting transaction on {numParticipantShards} "
-              "shard(s) due to error: {error}",
               "Implicitly aborting transaction on all participant shards",
               "sessionId"_attr = _sessionId().getId(),
               "txnNumber"_attr = o().txnNumber,
@@ -1291,7 +1265,6 @@ void TransactionRouter::Router::implicitlyAbortTransaction(OperationContext* opC
     } catch (const DBException& ex) {
         LOG_DEBUG(22898,
                   3,
-                  "{sessionId}:{txnNumber} Implicitly aborting transaction failed {error}",
                   "Implicitly aborting transaction failed",
                   "sessionId"_attr = _sessionId().getId(),
                   "txnNumber"_attr = o().txnNumber,

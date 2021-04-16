@@ -264,7 +264,6 @@ Status ClearFilters::clear(OperationContext* opCtx,
         planCache->remove(*cq).transitional_ignore();
 
         LOG(20479,
-            "Removed index filter on {query}",
             "Removed index filter on query",
             "query"_attr = redact(cq->toStringShort()));
 
@@ -324,7 +323,6 @@ Status ClearFilters::clear(OperationContext* opCtx,
     }
 
     LOG(20480,
-        "Removed all index filters for collection: {namespace}",
         "Removed all index filters for collection",
         "namespace"_attr = ns);
 
@@ -404,7 +402,6 @@ Status SetFilter::set(OperationContext* opCtx,
     planCache->remove(*cq).transitional_ignore();
 
     LOG(20481,
-        "Index filter set on {query} {indexes}",
         "Index filter set on query",
         "query"_attr = redact(cq->toStringShort()),
         "indexes"_attr = indexesElt);

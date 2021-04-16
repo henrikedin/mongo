@@ -127,7 +127,6 @@ public:
 
         if (!addShardResult.isOK()) {
             LOG(21920,
-                "addShard request '{request}' failed: {error}",
                 "addShard request failed",
                 "request"_attr = parsedRequest,
                 "error"_attr = addShardResult.getStatus());

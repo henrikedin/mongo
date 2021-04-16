@@ -1307,8 +1307,6 @@ void ShardingCatalogManager::ensureChunkVersionIsGreaterThan(OperationContext* o
         // This can happen in a number of cases, such as that the collection has been dropped, its
         // shard key has been refined, the chunk has been split, or the chunk has been merged.
         LOG(23884,
-            "ensureChunkVersionIsGreaterThan did not find any chunks with minKey {minKey}, "
-            "maxKey {maxKey}, and epoch {epoch}. Returning success.",
             "ensureChunkVersionIsGreaterThan did not find any matching chunks; returning success",
             "minKey"_attr = minKey,
             "maxKey"_attr = maxKey,
@@ -1321,9 +1319,6 @@ void ShardingCatalogManager::ensureChunkVersionIsGreaterThan(OperationContext* o
 
     if (version.isOlderThan(currentChunk.getVersion())) {
         LOG(23885,
-            "ensureChunkVersionIsGreaterThan found that the chunk with minKey {minKey}, maxKey "
-            "{maxKey}, and epoch {epoch} already has a higher version than {version}. Current "
-            "chunk is {currentChunk}. Returning success.",
             "ensureChunkVersionIsGreaterThan found that the chunk already has a higher version; "
             "returning success",
             "minKey"_attr = minKey,
@@ -1347,9 +1342,6 @@ void ShardingCatalogManager::ensureChunkVersionIsGreaterThan(OperationContext* o
             .docs;
     if (highestChunksVector.empty()) {
         LOG(23886,
-            "ensureChunkVersionIsGreaterThan did not find any chunks with epoch {epoch} when "
-            "attempting to find the collectionVersion. The collection must have been dropped "
-            "concurrently or had its shard key refined. Returning success.",
             "ensureChunkVersionIsGreaterThan did not find any chunks with a matching epoch when "
             "attempting to find the collectionVersion. The collection must have been dropped "
             "concurrently or had its shard key refined. Returning success.",
@@ -1375,8 +1367,6 @@ void ShardingCatalogManager::ensureChunkVersionIsGreaterThan(OperationContext* o
                                                                 kNoWaitWriteConcern));
     if (didUpdate) {
         LOG(23887,
-            "ensureChunkVersionIsGreaterThan bumped the version of the chunk with minKey {minKey}, "
-            "maxKey {maxKey}, and epoch {epoch}. Chunk is now {newChunk}",
             "ensureChunkVersionIsGreaterThan bumped the the chunk version",
             "minKey"_attr = minKey,
             "maxKey"_attr = maxKey,
@@ -1384,9 +1374,6 @@ void ShardingCatalogManager::ensureChunkVersionIsGreaterThan(OperationContext* o
             "newChunk"_attr = newChunk.toConfigBSON());
     } else {
         LOG(23888,
-            "ensureChunkVersionIsGreaterThan did not find a chunk matching minKey {minKey}, "
-            "maxKey {maxKey}, and epoch {epoch} when trying to bump its version. The collection "
-            "must have been dropped concurrently or had its shard key refined. Returning success.",
             "ensureChunkVersionIsGreaterThan did not find a matching chunk when trying to bump its "
             "version. The collection must have been dropped concurrently or had its shard key "
             "refined. Returning success.",
@@ -1451,7 +1438,6 @@ void ShardingCatalogManager::splitOrMarkJumbo(OperationContext* opCtx,
 
         if (splitPoints.empty()) {
             LOG(21873,
-                "Marking chunk {chunk} as jumbo",
                 "Marking chunk as jumbo",
                 "chunk"_attr = redact(chunk.toString()));
             chunk.markAsJumbo();
@@ -1493,8 +1479,6 @@ void ShardingCatalogManager::splitOrMarkJumbo(OperationContext* opCtx,
                 ShardingCatalogClient::kMajorityWriteConcern);
             if (!status.isOK()) {
                 LOG(21874,
-                    "Couldn't mark chunk with namespace {namespace} and min key {minKey} as "
-                    "jumbo due to {error}",
                     "Couldn't mark chunk as jumbo",
                     "namespace"_attr = redact(nss.ns()),
                     "minKey"_attr = redact(chunk.getMin()),

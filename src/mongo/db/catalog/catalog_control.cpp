@@ -166,7 +166,6 @@ void openCatalog(OperationContext* opCtx,
 
         for (const auto& indexName : entry.second.first) {
             LOG(20275,
-                "openCatalog: rebuilding index: collection: {collNss}, index: {indexName}",
                 "openCatalog: rebuilding index",
                 "namespace"_attr = collNss.toString(),
                 "index"_attr = indexName);

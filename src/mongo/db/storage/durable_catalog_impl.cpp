@@ -342,7 +342,6 @@ DurableCatalogImpl::FeatureTracker::FeatureBits DurableCatalogImpl::FeatureTrack
         obj, kNonRepairableFeaturesFieldName, BSONType::NumberLong, &nonRepairableFeaturesElem);
     if (!nonRepairableFeaturesStatus.isOK()) {
         LOG_ERROR(22215,
-                  "error: exception extracting typed field with obj:{obj}",
                   "Exception extracting typed field from obj",
                   "obj"_attr = redact(obj),
                   "fieldName"_attr = kNonRepairableFeaturesFieldName);
@@ -354,7 +353,6 @@ DurableCatalogImpl::FeatureTracker::FeatureBits DurableCatalogImpl::FeatureTrack
         obj, kRepairableFeaturesFieldName, BSONType::NumberLong, &repairableFeaturesElem);
     if (!repairableFeaturesStatus.isOK()) {
         LOG_ERROR(22216,
-                  "error: exception extracting typed field with obj:{obj}",
                   "Exception extracting typed field from obj",
                   "obj"_attr = redact(obj),
                   "fieldName"_attr = kRepairableFeaturesFieldName);

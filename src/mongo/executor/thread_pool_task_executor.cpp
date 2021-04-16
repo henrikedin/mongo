@@ -445,7 +445,6 @@ StatusWith<TaskExecutor::CallbackHandle> ThreadPoolTaskExecutor::scheduleRemoteC
     const auto cbState = _networkInProgressQueue.back();
     LOG_DEBUG(22607,
               3,
-              "Scheduling remote command request: {request}",
               "Scheduling remote command request",
               "request"_attr = redact(scheduledRequest.toString()));
     lk.unlock();
@@ -464,7 +463,6 @@ StatusWith<TaskExecutor::CallbackHandle> ThreadPoolTaskExecutor::scheduleRemoteC
             }
             LOG_DEBUG(22608,
                       3,
-                      "Received remote response: {response}",
                       "Received remote response",
                       "response"_attr = redact(response.isOK() ? response.toString()
                                                                : response.status.toString()));
@@ -685,7 +683,6 @@ StatusWith<TaskExecutor::CallbackHandle> ThreadPoolTaskExecutor::scheduleExhaust
     lk.unlock();
     LOG_DEBUG(4495133,
               3,
-              "Scheduling exhaust remote command request: {request}",
               "Scheduling exhaust remote command request",
               "request"_attr = redact(scheduledRequest.toString()));
 
@@ -697,7 +694,6 @@ StatusWith<TaskExecutor::CallbackHandle> ThreadPoolTaskExecutor::scheduleExhaust
 
             LOG_DEBUG(4495134,
                       3,
-                      "Received remote response: {response}",
                       "Received remote response",
                       "response"_attr = redact(response.isOK() ? response.toString()
                                                                : response.status.toString()));

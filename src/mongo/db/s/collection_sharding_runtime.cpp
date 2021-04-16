@@ -187,7 +187,6 @@ void CollectionShardingRuntime::setFilteringMetadata(OperationContext* opCtx,
 
     if (!newMetadata.isSharded()) {
         LOG(21917,
-            "Marking collection {namespace} as unsharded",
             "Marking collection as unsharded",
             "namespace"_attr = _nss.ns());
         _metadataType = MetadataType::kUnsharded;
@@ -210,7 +209,6 @@ void CollectionShardingRuntime::clearFilteringMetadata(OperationContext* opCtx) 
     if (!_nss.isNamespaceAlwaysUnsharded()) {
         LOG_DEBUG(4798530,
                   1,
-                  "Clearing metadata for collection {namespace}",
                   "Clearing collection metadata",
                   "namespace"_attr = _nss);
         _metadataType = MetadataType::kUnknown;
@@ -251,7 +249,6 @@ Status CollectionShardingRuntime::waitForClean(OperationContext* opCtx,
             if (!stillScheduled) {
                 LOG_OPTIONS(21918,
                             {log::LogComponent::kShardingMigration},
-                            "Finished waiting for deletion of {namespace} range {orphanRange}",
                             "Finished waiting for deletion of orphans",
                             "namespace"_attr = nss.ns(),
                             "orphanRange"_attr = redact(orphanRange.toString()));
@@ -261,7 +258,6 @@ Status CollectionShardingRuntime::waitForClean(OperationContext* opCtx,
 
         LOG_OPTIONS(21919,
                     {log::LogComponent::kShardingMigration},
-                    "Waiting for deletion of {namespace} range {orphanRange}",
                     "Waiting for deletion of orphans",
                     "namespace"_attr = nss.ns(),
                     "orphanRange"_attr = orphanRange);

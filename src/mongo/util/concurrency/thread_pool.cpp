@@ -78,16 +78,12 @@ ThreadPool::Options cleanUpOptions(ThreadPool::Options&& options) {
     }
     if (options.maxThreads < 1) {
         LOG_FATAL(28702,
-                  "Cannot create pool {poolName} with maximum number of threads of "
-                  "{maxThreads} which is less than 1",
                   "Cannot create pool with maximum number of threads less than 1",
                   "poolName"_attr = options.poolName,
                   "maxThreads"_attr = options.maxThreads);
     }
     if (options.minThreads > options.maxThreads) {
         LOG_FATAL(28686,
-                  "Cannot create pool {poolName} with minimum number of threads of "
-                  "{minThreads} which is larger than the configured maximum of {maxThreads}",
                   "Cannot create pool with minimum number of threads larger than the "
                   "configured maximum",
                   "poolName"_attr = options.poolName,
@@ -240,7 +236,6 @@ void ThreadPool::Impl::startup() {
     stdx::lock_guard<Latch> lk(_mutex);
     if (_state != preStart) {
         LOG_FATAL(28698,
-                  "Attempted to start pool {poolName}, but it has already started",
                   "Attempted to start pool that has already started",
                   "poolName"_attr = _options.poolName);
     }
@@ -291,7 +286,6 @@ void ThreadPool::Impl::_join_inlock(stdx::unique_lock<Latch>* lk) {
     _stateChange.wait(*lk, [this] { return _state != preStart && _state != running; });
     if (_state != joinRequired) {
         LOG_FATAL(28700,
-                  "Attempted to join pool {poolName} more than once",
                   "Attempted to join pool more than once",
                   "poolName"_attr = _options.poolName);
     }
@@ -396,14 +390,12 @@ void ThreadPool::Impl::_workerThreadBody(const std::string& threadName) noexcept
         _options.onCreateThread(threadName);
     LOG_DEBUG(23104,
               1,
-              "Starting thread {threadName} in pool {poolName}",
               "Starting thread",
               "threadName"_attr = threadName,
               "poolName"_attr = _options.poolName);
     _consumeTasks();
     LOG_DEBUG(23105,
               1,
-              "Shutting down thread {threadName} in pool {poolName}",
               "Shutting down thread",
               "threadName"_attr = threadName,
               "poolName"_attr = _options.poolName);
@@ -434,8 +426,6 @@ void ThreadPool::Impl::_consumeTasks() {
                 _lastFullUtilizationDate = now;
                 LOG_DEBUG(23106,
                           1,
-                          "Reaping this thread; next thread reaped no earlier than "
-                          "{nextThreadRetirementDate}",
                           "Reaping this thread",
                           "nextThreadRetirementDate"_attr =
                               _lastFullUtilizationDate + _options.maxIdleThreadAge);
@@ -444,8 +434,6 @@ void ThreadPool::Impl::_consumeTasks() {
 
             LOG_DEBUG(23107,
                       3,
-                      "Not reaping this thread because the earliest retirement date is "
-                      "{nextThreadRetirementDate}",
                       "Not reaping this thread",
                       "nextThreadRetirementDate"_attr = nextRetirement);
             waitDeadline = nextRetirement;
@@ -456,8 +444,6 @@ void ThreadPool::Impl::_consumeTasks() {
             // would be eligible for retirement once they had no work left to do.
             LOG_DEBUG(23108,
                       3,
-                      "Waiting for work; the thread pool size is {numThreads}; the minimum "
-                      "number of threads is {minThreads}",
                       "Waiting for work",
                       "numThreads"_attr = _threads.size(),
                       "minThreads"_attr = _options.minThreads);
@@ -488,8 +474,6 @@ void ThreadPool::Impl::_consumeTasks() {
 
     if (_state != running) {
         LOG_FATAL_NOTRACE(28701,
-                          "State of pool {poolName} is {actualState}, but expected "
-                          "{expectedState}",
                           "Unexpected pool state",
                           "poolName"_attr = _options.poolName,
                           "actualState"_attr = static_cast<int32_t>(_state),
@@ -503,7 +487,6 @@ void ThreadPool::Impl::_consumeTasks() {
         _threads.begin(), _threads.end(), [&](auto&& t) { return t.get_id() == selfId; });
     if (pos == _threads.end()) {
         LOG_FATAL_NOTRACE(28703,
-                          "Could not find thread with id {threadId} in pool {poolName}",
                           "Could not find thread",
                           "threadId"_attr = threadIdToString(selfId),
                           "poolName"_attr = _options.poolName);
@@ -515,7 +498,6 @@ void ThreadPool::Impl::_doOneTask(stdx::unique_lock<Latch>* lk) noexcept {
     invariant(!_pendingTasks.empty());
     LOG_DEBUG(23109,
               3,
-              "Executing a task on behalf of pool {poolName}",
               "Executing a task on behalf of pool",
               "poolName"_attr = _options.poolName);
     Task task = std::move(_pendingTasks.front());
@@ -542,8 +524,6 @@ void ThreadPool::Impl::_startWorkerThread_inlock() {
         case preStart:
             LOG_DEBUG(23110,
                       1,
-                      "Not starting new thread in pool {poolName}, yet; waiting for "
-                      "startup() call",
                       "Not starting new thread since the pool is still waiting for startup() call",
                       "poolName"_attr = _options.poolName);
             return;
@@ -552,7 +532,6 @@ void ThreadPool::Impl::_startWorkerThread_inlock() {
         case shutdownComplete:
             LOG_DEBUG(23111,
                       1,
-                      "Not starting new thread in pool {poolName}; shutting down",
                       "Not starting new thread since the pool is shutting down",
                       "poolName"_attr = _options.poolName);
             return;
@@ -564,8 +543,6 @@ void ThreadPool::Impl::_startWorkerThread_inlock() {
     if (_threads.size() == _options.maxThreads) {
         LOG_DEBUG(23112,
                   2,
-                  "Not starting new thread in pool {poolName} because it already has "
-                  "{maxThreads} threads, its maximum",
                   "Not starting new thread in pool since the pool is already full",
                   "poolName"_attr = _options.poolName,
                   "maxThreads"_attr = _options.maxThreads);
@@ -578,8 +555,6 @@ void ThreadPool::Impl::_startWorkerThread_inlock() {
         ++_numIdleThreads;
     } catch (const std::exception& ex) {
         LOG_ERROR(23113,
-                  "Failed to start {threadName}; {numThreads} other thread(s) still running in "
-                  "pool {poolName}; caught exception: {error}",
                   "Failed to start thread",
                   "threadName"_attr = threadName,
                   "numThreads"_attr = _threads.size(),

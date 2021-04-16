@@ -402,7 +402,6 @@ void Fetcher::_sendKillCursors(const CursorId id, const NamespaceString& nss) {
         auto logKillCursorsResult = [](const RemoteCommandCallbackArgs& args) {
             if (!args.response.isOK()) {
                 LOG_WARNING(23918,
-                            "killCursors command task failed: {error}",
                             "killCursors command task failed",
                             "error"_attr = redact(args.response.status));
                 return;
@@ -410,7 +409,6 @@ void Fetcher::_sendKillCursors(const CursorId id, const NamespaceString& nss) {
             auto status = getStatusFromCommandResult(args.response.data);
             if (!status.isOK()) {
                 LOG_WARNING(23919,
-                            "killCursors command failed: {error}",
                             "killCursors command failed",
                             "error"_attr = redact(status));
             }
@@ -423,7 +421,6 @@ void Fetcher::_sendKillCursors(const CursorId id, const NamespaceString& nss) {
         auto scheduleResult = _executor->scheduleRemoteCommand(request, logKillCursorsResult);
         if (!scheduleResult.isOK()) {
             LOG_WARNING(23920,
-                        "Failed to schedule killCursors command: {error}",
                         "Failed to schedule killCursors command",
                         "error"_attr = redact(scheduleResult.getStatus()));
         }

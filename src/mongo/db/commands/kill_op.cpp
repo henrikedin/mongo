@@ -58,7 +58,7 @@ public:
 
         // Used by tests to check if auth checks passed.
         result.append("info", "attempting to kill op");
-        LOG(20482, "Going to kill op: {opId}", "Going to kill op", "opId"_attr = opId);
+        LOG(20482, "Going to kill op", "opId"_attr = opId);
         KillOpCmdBase::killLocalOperation(opCtx, opId);
 
         // killOp always reports success once past the auth check.

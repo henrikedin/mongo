@@ -176,7 +176,7 @@ public:
         const NamespaceString toReIndexNss =
             CommandHelpers::parseNsCollectionRequired(dbname, jsobj);
 
-        LOG(20457, "CMD: reIndex {namespace}", "CMD reIndex", "namespace"_attr = toReIndexNss);
+        LOG(20457, "CMD reIndex", "namespace"_attr = toReIndexNss);
 
         if (repl::ReplicationCoordinator::get(opCtx)->getReplicationMode() !=
             repl::ReplicationCoordinator::modeNone) {

@@ -92,7 +92,6 @@ std::vector<std::string> getHostFQDNs(std::string hostName, HostnameCanonicaliza
     if ((err = shim_getaddrinfo(nativeHostName.c_str(), nullptr, &hints, &info)) != 0) {
         LOG_DEBUG(23170,
                   3,
-                  "Failed to obtain address information for host {hostName}: {error}",
                   "Failed to obtain address information for host",
                   "hostName"_attr = hostName,
                   "error"_attr = getAddrInfoStrError(err));
@@ -141,7 +140,6 @@ std::vector<std::string> getHostFQDNs(std::string hostName, HostnameCanonicaliza
     if (!getNameInfoErrors.empty()) {
         LOG_DEBUG(23171,
                   3,
-                  "Failed to obtain name info: {errors}",
                   "Failed to obtain name info",
                   "errors"_attr = getNameInfoErrors);
     }

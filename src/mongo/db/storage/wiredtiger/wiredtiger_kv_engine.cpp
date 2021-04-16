@@ -333,7 +333,6 @@ WiredTigerKVEngine::WiredTigerKVEngine(const std::string& canonicalName,
                 boost::filesystem::create_directory(journalPath);
             } catch (std::exception& e) {
                 LOG_ERROR(22312,
-                          "error creating journal dir {directory} {error}",
                           "Error creating journal directory",
                           "directory"_attr = journalPath.generic_string(),
                           "error"_attr = e.what());
@@ -442,7 +441,6 @@ WiredTigerKVEngine::WiredTigerKVEngine(const std::string& canonicalName,
                 boost::filesystem::remove_all(journalPath);
             } catch (std::exception& e) {
                 LOG_ERROR(22355,
-                          "error removing journal dir {directory} {error}",
                           "Error removing journal directory",
                           "directory"_attr = journalPath.generic_string(),
                           "error"_attr = e.what(),
@@ -869,7 +867,6 @@ Status WiredTigerKVEngine::_rebuildIdent(WT_SESSION* session, const char* uri) {
     if (filePath) {
         const boost::filesystem::path corruptFile(filePath->string() + ".corrupt");
         LOG_WARNING(22352,
-                    "Moving data file {file} to backup as {backup}",
                     "Moving data file to backup",
                     "file"_attr = filePath->generic_string(),
                     "backup"_attr = corruptFile.generic_string());
@@ -880,7 +877,7 @@ Status WiredTigerKVEngine::_rebuildIdent(WT_SESSION* session, const char* uri) {
         }
     }
 
-    LOG_WARNING(22353, "Rebuilding ident {ident}", "Rebuilding ident", "ident"_attr = identName);
+    LOG_WARNING(22353, "Rebuilding ident", "ident"_attr = identName);
 
     // This is safe to call after moving the file because it only reads from the metadata, and not
     // the data file itself.
@@ -888,7 +885,6 @@ Status WiredTigerKVEngine::_rebuildIdent(WT_SESSION* session, const char* uri) {
     if (!swMetadata.isOK()) {
         auto status = swMetadata.getStatus();
         LOG_ERROR(22357,
-                  "Failed to get metadata for {uri}",
                   "Rebuilding ident failed: failed to get metadata",
                   "uri"_attr = uri,
                   "error"_attr = status);
@@ -899,7 +895,6 @@ Status WiredTigerKVEngine::_rebuildIdent(WT_SESSION* session, const char* uri) {
     if (rc != 0) {
         auto status = wtRCToStatus(rc);
         LOG_ERROR(22358,
-                  "Failed to drop {uri}",
                   "Rebuilding ident failed: failed to drop",
                   "uri"_attr = uri,
                   "error"_attr = status);
@@ -910,7 +905,6 @@ Status WiredTigerKVEngine::_rebuildIdent(WT_SESSION* session, const char* uri) {
     if (rc != 0) {
         auto status = wtRCToStatus(rc);
         LOG_ERROR(22359,
-                  "Failed to create {uri} with config: {config}",
                   "Rebuilding ident failed: failed to create with config",
                   "uri"_attr = uri,
                   "config"_attr = swMetadata.getValue(),
@@ -1940,7 +1934,6 @@ void WiredTigerKVEngine::_ensureIdentPath(StringData ident) {
                 boost::filesystem::create_directory(subdir);
             } catch (const std::exception& e) {
                 LOG_ERROR(22361,
-                          "error creating path {directory} {error}",
                           "Error creating directory",
                           "directory"_attr = subdir.string(),
                           "error"_attr = e.what());
@@ -2183,8 +2176,6 @@ StatusWith<Timestamp> WiredTigerKVEngine::recoverToStableTimestamp(OperationCont
 
     LOG_FOR_ROLLBACK(23991,
                      0,
-                     "Rolling back to the stable timestamp. StableTimestamp: {stableTimestamp} "
-                     "Initial Data Timestamp: {initialDataTimestamp}",
                      "Rolling back to the stable timestamp",
                      "stableTimestamp"_attr = stableTimestamp,
                      "initialDataTimestamp"_attr = initialDataTimestamp);

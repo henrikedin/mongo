@@ -382,7 +382,6 @@ void TLConnection::setup(Milliseconds timeout, SetupCallback cb) {
             } else {
                 LOG_DEBUG(22584,
                           2,
-                          "Failed to connect to {hostAndPort} - {error}",
                           "Failed to connect",
                           "hostAndPort"_attr = _peer,
                           "error"_attr = redact(status));

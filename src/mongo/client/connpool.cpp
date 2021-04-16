@@ -96,8 +96,6 @@ PoolForHost::~PoolForHost() {
 void PoolForHost::clear() {
     if (!_parentDestroyed) {
         LOG(24124,
-            "Dropping all pooled connections to {connString} "
-            "(with timeout of {timeoutSecs} seconds)",
             "Dropping all pooled connections to a host",
             "connString"_attr = _hostName,
             "socketTimeout"_attr = makeDuration(_socketTimeoutSecs));
@@ -121,8 +119,6 @@ auto PoolForHost::done(DBConnectionPool* pool, DBClientBase* c) -> ConnectionHea
     if (isFailed || isBroken) {
         _badConns++;
         LOG(24125,
-            "Ending connection to {connString} (with timeout of {socketTimeout}) "
-            "due to bad connection status; {numOpenConns} connections to that host remain open",
             "Ending connection to a host due to a bad connection status",
             "connString"_attr = _hostName,
             "socketTimeout"_attr = makeDuration(_socketTimeoutSecs),
@@ -131,9 +127,6 @@ auto PoolForHost::done(DBConnectionPool* pool, DBClientBase* c) -> ConnectionHea
     } else if (_maxPoolSize >= 0 && static_cast<int>(_pool.size()) >= _maxPoolSize) {
         // We have a pool size that we need to enforce
         LOG(24126,
-            "Ending idle connection to {connString} (with timeout of {socketTimeout}) "
-            "because its pool meets constraints; "
-            "{numOpenConns} connections to that host remain open",
             "Ending idle connection to a host because its pool mees constraints",
             "connString"_attr = _hostName,
             "socketTimeout"_attr = makeDuration(_socketTimeoutSecs),
@@ -161,8 +154,6 @@ void PoolForHost::reportBadConnectionAt(uint64_t microSec) {
         microSec > _minValidCreationTimeMicroSec) {
         _minValidCreationTimeMicroSec = microSec;
         LOG(24127,
-            "Detected bad connection created at {currentTime}, "
-            "clearing pool for {connString} of {numOpenConns} connections",
             "Detected bad connection, clearing pool for host",
             "currentTime"_attr =
                 Microseconds(static_cast<Microseconds::rep>(_minValidCreationTimeMicroSec)),
@@ -302,8 +293,6 @@ public:
 
                 if (p.openConnections() >= _this->_maxInUse) {
                     LOG(20112,
-                        "Too many in-use connections; "
-                        "waiting until there are fewer than {maxInUseConns}",
                         "Too many in-use connections; waiting until there are fewer than maximum",
                         "maxInUseConns"_attr = _this->_maxInUse);
                     p.waitForFreeConnection(timeout, lk);
@@ -390,9 +379,6 @@ DBClientBase* DBConnectionPool::_finishCreate(const string& ident,
     }
 
     LOG(20113,
-        "Successfully connected to {connString} "
-        "({numOpenConns} connections now open to that host "
-        "with a {socketTimeoutSecs} second timeout)",
         "Successfully connected to host",
         "connString"_attr = ident,
         "numOpenConns"_attr = openConnections(ident, socketTimeout),
@@ -517,7 +503,6 @@ void DBConnectionPool::clear() {
     stdx::lock_guard<Latch> L(_mutex);
     LOG_DEBUG(20114,
               2,
-              "Removing connections on all pools owned by {poolName}",
               "Removing all connectionns associated with this set of pools",
               "poolName"_attr = _name);
     for (PoolMap::iterator iter = _pools.begin(); iter != _pools.end(); ++iter) {
@@ -529,7 +514,6 @@ void DBConnectionPool::removeHost(const string& host) {
     stdx::lock_guard<Latch> L(_mutex);
     LOG_DEBUG(20115,
               2,
-              "Removing connections from all pools to {connString}",
               "Removing connections from all pools to a host",
               "connString"_attr = host);
     for (PoolMap::iterator i = _pools.begin(); i != _pools.end(); ++i) {
@@ -733,7 +717,6 @@ ScopedDbConnection::~ScopedDbConnection() {
         } else {
             /* see done() comments above for why we log this line */
             LOG(24128,
-                "Scoped connection to {connString} not being returned to the pool",
                 "Scoped connection not being returned to the pool",
                 "connString"_attr = _conn->getServerAddress());
             kill();

@@ -89,7 +89,6 @@ public:
                            BSONObjBuilder& result) {
         const NamespaceString nss(CommandHelpers::parseNsCollectionRequired(dbname, cmdObj));
         LOG(20505,
-            "Test-only command 'godinsert' invoked coll:{collection}",
             "Test-only command 'godinsert' invoked",
             "collection"_attr = nss.coll());
         BSONObj obj = cmdObj["obj"].embeddedObjectUserCheck();

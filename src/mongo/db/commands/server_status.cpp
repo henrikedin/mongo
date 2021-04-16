@@ -146,7 +146,6 @@ public:
         if (runElapsed > Milliseconds(1000)) {
             BSONObj t = timeBuilder.obj();
             LOG(20499,
-                "serverStatus was very slow: {timeStats}",
                 "serverStatus was very slow",
                 "timeStats"_attr = t);
 

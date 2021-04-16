@@ -60,7 +60,6 @@ namespace {
 void uassertStatusOKWithWarning(const Status& status) {
     if (!status.isOK()) {
         LOG_WARNING(5275800,
-                    "movePrimary failed: {error}",
                     "movePrimary failed",
                     "error"_attr = redact(status));
         uassertStatusOK(status);
@@ -100,7 +99,6 @@ SemiFuture<void> MovePrimaryCoordinator::runImpl(std::shared_ptr<executor::TaskE
                 auto toShardStatus = shardRegistry->getShard(opCtx, _toShardId);
                 if (!toShardStatus.isOK()) {
                     LOG(5275802,
-                        "Could not move database {db} to shard {shardId}: {error}",
                         "Could not move database to shard",
                         "db"_attr = dbName,
                         "shardId"_attr = _toShardId,

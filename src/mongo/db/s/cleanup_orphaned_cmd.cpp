@@ -77,8 +77,6 @@ CleanupResult cleanupOrphanedData(OperationContext* opCtx,
         if (!autoColl.getCollection()) {
             LOG(4416000,
                 "cleanupOrphaned skipping waiting for orphaned data cleanup because "
-                "{namespace} does not exist",
-                "cleanupOrphaned skipping waiting for orphaned data cleanup because "
                 "collection does not exist",
                 "namespace"_attr = ns.ns());
             return CleanupResult::kDone;
@@ -89,8 +87,6 @@ CleanupResult cleanupOrphanedData(OperationContext* opCtx,
         const auto optCollDescr = csr->getCurrentMetadataIfKnown();
         if (!optCollDescr || !optCollDescr->isSharded()) {
             LOG(4416001,
-                "cleanupOrphaned skipping waiting for orphaned data cleanup because "
-                "{namespace} is not sharded",
                 "cleanupOrphaned skipping waiting for orphaned data cleanup because "
                 "collection is not sharded",
                 "namespace"_attr = ns.ns());

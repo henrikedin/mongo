@@ -86,7 +86,6 @@ std::unique_ptr<StorageEngineMetadata> StorageEngineMetadata::forPath(const std:
         Status status = metadata->read();
         if (!status.isOK()) {
             LOG_FATAL_NOTRACE(28661,
-                              "Unable to read the storage engine metadata file: {error}",
                               "Unable to read the storage engine metadata file",
                               "error"_attr = status);
         }

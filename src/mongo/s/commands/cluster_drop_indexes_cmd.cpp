@@ -128,7 +128,6 @@ public:
         auto nss = requestParser.request().getNamespace();
         LOG_DEBUG(22751,
                   1,
-                  "dropIndexes: {namespace} cmd: {command}",
                   "CMD: dropIndexes",
                   "namespace"_attr = nss,
                   "command"_attr = redact(cmdObj));

@@ -72,8 +72,6 @@ public:
         if (password.size() < kMinKeyLength || password.size() > kMaxKeyLength) {
             LOG_ERROR(
                 20255,
-                "Security key in {filename} has length {size}, must be between {minimumLength} "
-                "and {maximumLength} characters",
                 "Security key size is out range",
                 "filename"_attr = _filename,
                 "size"_attr = password.size(),
@@ -146,8 +144,6 @@ bool setUpSecurityKey(const string& filename) {
 
     if (keyStrings.size() > 2) {
         LOG_ERROR(20258,
-                  "Only two keys are supported in the security key file, {numKeys} are "
-                  "specified in {filename}",
                   "Only two keys are supported in the security key file",
                   "numKeys"_attr = keyStrings.size(),
                   "filename"_attr = filename);

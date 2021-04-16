@@ -152,8 +152,6 @@ void TopologyStateMachine::onServerDescription(TopologyDescription& topologyDesc
     if (!topologyDescription.containsServerAddress(serverDescription->getAddress())) {
         LOG_DEBUG(20219,
                   kLogLevel,
-                  "Ignoring isMaster reply from server that is not in the topology: "
-                  "{serverAddress}",
                   "Ignoring isMaster reply from server that is not in the topology",
                   "serverAddress"_attr = serverDescription->getAddress());
         return;
@@ -383,7 +381,6 @@ void TopologyStateMachine::removeServerDescription(TopologyDescription& topology
     topologyDescription.removeServerDescription(serverAddress);
     LOG_DEBUG(20220,
               kLogLevel,
-              "Server '{serverAddress}' was removed from the topology",
               "Server was removed from the topology",
               "serverAddress"_attr = serverAddress);
 }

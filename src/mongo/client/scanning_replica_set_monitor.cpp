@@ -240,7 +240,6 @@ void ScanningReplicaSetMonitor::SetState::rescheduleRefresh(SchedulingStrategy s
     if (isDropped) {  // already removed so no need to refresh
         LOG_DEBUG(24070,
                   1,
-                  "Stopping refresh for replica set {replicaSet} because it's removed",
                   "Stopping refresh for replica set because it's removed",
                   "replicaSet"_attr = name);
         return;
@@ -269,7 +268,6 @@ void ScanningReplicaSetMonitor::SetState::rescheduleRefresh(SchedulingStrategy s
     nextScanTime = possibleNextScanTime;
     LOG_DEBUG(24071,
               1,
-              "Next replica set scan scheduled for {nextScanTime}",
               "Next replica set scan scheduled",
               "nextScanTime"_attr = nextScanTime);
     auto swHandle = scheduleWorkAt(nextScanTime, [this](const CallbackArgs& cbArgs) {
@@ -289,7 +287,6 @@ void ScanningReplicaSetMonitor::SetState::rescheduleRefresh(SchedulingStrategy s
     if (ErrorCodes::isShutdownError(swHandle.getStatus().code())) {
         LOG_DEBUG(24072,
                   1,
-                  "Can't schedule refresh for {replicaSet}. Executor shutdown in progress",
                   "Can't schedule refresh for replica set. Executor shutdown in progress",
                   "replicaSet"_attr = name);
         return;
@@ -297,7 +294,6 @@ void ScanningReplicaSetMonitor::SetState::rescheduleRefresh(SchedulingStrategy s
 
     if (!swHandle.isOK()) {
         LOG_FATAL(40140,
-                  "Can't continue refresh for replica set {replicaSet}: {error}",
                   "Can't continue refresh for replica set",
                   "error"_attr = redact(swHandle.getStatus()),
                   "replicaSet"_attr = name);
@@ -568,7 +564,6 @@ void Refresher::scheduleNetworkRequests() {
 
         if (!swHandle.isOK()) {
             LOG_FATAL(31176,
-                      "Can't continue scan for replica set {replicaSet}: {error}",
                       "Can't continue scan for replica set",
                       "error"_attr = redact(swHandle.getStatus()),
                       "replicaSet"_attr = _set->name);
@@ -672,7 +667,6 @@ Refresher::NextStep Refresher::getNextStep() {
         // We've tried all hosts we can, so nothing more to do in this round.
         if (!_scan->foundUpMaster) {
             LOG_WARNING(24089,
-                        "Unable to reach primary for replica set {replicaSet}",
                         "Unable to reach primary for replica set",
                         "replicaSet"_attr = _set->name);
 
@@ -708,9 +702,6 @@ Refresher::NextStep Refresher::getNextStep() {
             auto nScans = _set->consecutiveFailedScans++;
             if (nScans <= 10 || nScans % 10 == 0) {
                 LOG(24073,
-                    "Cannot reach any nodes for replica set {replicaSet}. Please check network "
-                    "connectivity and the status of the set. This has happened for "
-                    "{numConsecutiveFailedScans} checks in a row.",
                     "Cannot reach any nodes for replica set. Please check network connectivity "
                     "and the status of the set. A number of consecutive scan checks have failed",
                     "replicaSet"_attr = _set->name,
@@ -724,7 +715,6 @@ Refresher::NextStep Refresher::getNextStep() {
 
         LOG_DEBUG(24074,
                   1,
-                  "Refreshing replica set {replicaSet} took {duration}",
                   "Replica set refreshed",
                   "duration"_attr = Milliseconds(_scan->timer.millis()),
                   "replicaSet"_attr = _set->name);
@@ -767,8 +757,6 @@ void Refresher::receivedIsMaster(const HostAndPort& from,
         } else {
             LOG_ERROR(
                 24091,
-                "replset name mismatch: expected {expectedSetName}, but remote node "
-                "{fromRemoteNode} has replset name {receivedSetName}, isMaster: {isMasterReply}",
                 "replset name mismatch. The expected set name does not match the set name "
                 "received from the remote node",
                 "expectedSetName"_attr = _set->name,
@@ -903,8 +891,6 @@ Status Refresher::receivedIsMasterFromMaster(const HostAndPort& from, const IsMa
         !std::equal(_set->nodes.begin(), _set->nodes.end(), reply.members.begin(), hostsEqual)) {
         LOG_DEBUG(24075,
                   2,
-                  "Adjusting nodes in our view of replica set {replicaSet} based on isMaster "
-                  "reply: {isMasterReply}",
                   "Adjusting nodes in our view of the replica set based on isMaster reply",
                   "replicaSet"_attr = _set->name,
                   "isMasterReply"_attr = redact(reply.raw));
@@ -946,7 +932,6 @@ Status Refresher::receivedIsMasterFromMaster(const HostAndPort& from, const IsMa
         // LogLevel can be pretty low, since replica set reconfiguration should be pretty rare
         // and we want to record our changes
         LOG(24076,
-            "Confirmed replica set for {replicaSet} is {connectionString}",
             "Confirmed replica set",
             "replicaSet"_attr = _set->name,
             "connectionString"_attr = _set->seedConnStr);
@@ -1021,7 +1006,6 @@ void IsMasterReply::parse(const BSONObj& obj) {
     } catch (const std::exception& e) {
         ok = false;
         LOG(24077,
-            "Exception while parsing isMaster reply: {error} {isMasterReply}",
             "Exception while parsing isMaster reply",
             "error"_attr = e.what(),
             "isMasterReply"_attr = obj);
@@ -1033,7 +1017,6 @@ Node::Node(const HostAndPort& host) : host(host), latencyMicros(unknownLatency) 
 void Node::markFailed(const Status& status) {
     if (isUp) {
         LOG(24078,
-            "Marking host {host} as failed: {error}",
             "Marking host as failed",
             "host"_attr = host,
             "error"_attr = redact(status));
@@ -1046,13 +1029,12 @@ void Node::markFailed(const Status& status) {
 
 bool Node::matches(const ReadPreference pref) const {
     if (!isUp) {
-        LOG_DEBUG(24079, 3, "Host {host} is not up", "Host is not up", "host"_attr = host);
+        LOG_DEBUG(24079, 3, "Host is not up", "host"_attr = host);
         return false;
     }
 
     LOG_DEBUG(24080,
               3,
-              "Host {host} is primary? {isPrimary}",
               "Host is primary?",
               "host"_attr = host,
               "isPrimary"_attr = isMaster);
@@ -1084,7 +1066,6 @@ void Node::update(const IsMasterReply& reply) {
 
     LOG_DEBUG(24081,
               3,
-              "Updating host {host} based on isMaster reply: {isMasterReply}",
               "Updating host based on isMaster reply",
               "host"_attr = host,
               "isMasterReply"_attr = reply.raw);
@@ -1112,7 +1093,6 @@ void Node::update(const IsMasterReply& reply) {
 
     LOG_DEBUG(24082,
               3,
-              "Updating {host} lastWriteDate to {lastWriteDate}",
               "Updating host lastWriteDate",
               "host"_attr = host,
               "lastWriteDate"_attr = reply.lastWriteDate);
@@ -1120,7 +1100,6 @@ void Node::update(const IsMasterReply& reply) {
 
     LOG_DEBUG(24083,
               3,
-              "Updating {host} opTime to {opTime}",
               "Updating host opTime",
               "host"_attr = host,
               "opTime"_attr = reply.opTime);
@@ -1143,7 +1122,6 @@ SetState::SetState(const MongoURI& uri,
 
     if (name.empty())
         LOG_WARNING(24090,
-                    "Replica set name empty, first node: {firstNode}",
                     "Replica set name empty, adding first node",
                     "firstNode"_attr = *(seedNodes.begin()));
 
@@ -1367,7 +1345,6 @@ Node* SetState::findOrCreateNode(const HostAndPort& host) {
     if (it == nodes.end() || it->host != host) {
         LOG_DEBUG(24084,
                   2,
-                  "Adding node {host} to our view of replica set {replicaSet}",
                   "Adding node to our view of the replica set",
                   "host"_attr = host,
                   "replicaSet"_attr = name);
@@ -1381,8 +1358,6 @@ void SetState::updateNodeIfInNodes(const IsMasterReply& reply) {
     if (!node) {
         LOG_DEBUG(24085,
                   2,
-                  "Skipping application of isMaster reply from {host} since it isn't a "
-                  "confirmed member of set {replicaSet}",
                   "Skipping application of isMaster reply from host since it isn't a confirmed "
                   "member of the replica set",
                   "host"_attr = reply.host,
@@ -1433,7 +1408,6 @@ void SetState::notify() {
         } else if (it->deadline <= cachedNow) {
             LOG_DEBUG(24086,
                       1,
-                      "Unable to statisfy read preference {criteria} by deadline {deadline}",
                       "Unable to statisfy read preference by deadline",
                       "criteria"_attr = it->criteria,
                       "deadline"_attr = it->deadline);

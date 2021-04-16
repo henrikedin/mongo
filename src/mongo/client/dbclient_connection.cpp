@@ -354,7 +354,6 @@ Status DBClientConnection::connect(const HostAndPort& serverAddress,
         rpc::validateWireVersion(wireSpec->outgoing, swProtocolSet.getValue().version);
     if (!validateStatus.isOK()) {
         LOG_WARNING(20126,
-                    "Remote host has incompatible wire version: {error}",
                     "Remote host has incompatible wire version",
                     "error"_attr = validateStatus);
 
@@ -452,7 +451,6 @@ Status DBClientConnection::connectSocketOnly(
     _session->setTags(_tagMask);
     LOG_DEBUG(20119,
               1,
-              "Connected to host {connString}",
               "Connected to host",
               "connString"_attr = toString());
     return Status::OK();
@@ -583,7 +581,6 @@ void DBClientConnection::_checkConnection() {
 
     LOG_DEBUG(20120,
               _logLevel.toInt(),
-              "Trying to reconnect to {connString}",
               "Trying to reconnect",
               "connString"_attr = toString());
     string errmsg;
@@ -593,7 +590,6 @@ void DBClientConnection::_checkConnection() {
         _markFailed(kSetFlag);
         LOG_DEBUG(20121,
                   _logLevel.toInt(),
-                  "Reconnect attempt to {connString} failed: {reason}",
                   "Reconnect attempt failed",
                   "connString"_attr = toString(),
                   "error"_attr = errmsg);
@@ -606,7 +602,6 @@ void DBClientConnection::_checkConnection() {
 
     LOG_DEBUG(20122,
               _logLevel.toInt(),
-              "Reconnected to {connString}",
               "Reconnected",
               "connString"_attr = toString());
     if (_internalAuthOnReconnect) {
@@ -618,7 +613,6 @@ void DBClientConnection::_checkConnection() {
             } catch (ExceptionFor<ErrorCodes::AuthenticationFailed>& ex) {
                 LOG_DEBUG(20123,
                           _logLevel.toInt(),
-                          "Reconnect: auth failed for on {db} using {user}: {reason}",
                           "Reconnect: auth failed",
                           "db"_attr = kv.second[auth::getSaslCommandUserDBFieldName()],
                           "user"_attr = kv.second[auth::getSaslCommandUserFieldName()],
@@ -781,7 +775,6 @@ bool DBClientConnection::call(Message& toSend,
     auto sinkStatus = _session->sinkMessage(swm.getValue());
     if (!sinkStatus.isOK()) {
         LOG(20124,
-            "DBClientConnection failed to send message to {connString}: {error}",
             "DBClientConnection failed to send message",
             "connString"_attr = getServerAddress(),
             "error"_attr = redact(sinkStatus));
@@ -793,7 +786,6 @@ bool DBClientConnection::call(Message& toSend,
         response = std::move(swm.getValue());
     } else {
         LOG(20125,
-            "DBClientConnection failed to receive message from {connString}: {error}",
             "DBClientConnection failed to receive message",
             "connString"_attr = getServerAddress(),
             "error"_attr = redact(swm.getStatus()));

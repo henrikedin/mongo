@@ -107,9 +107,6 @@ void ReplClientInfo::setLastOpToSystemLastOpTime(OperationContext* opCtx) {
             _lastOp = systemOpTime;
         } else {
             LOG(21280,
-                "Not setting the last OpTime for this Client from {lastOp} to the current system "
-                "time of {systemOpTime} as that would be moving the OpTime backwards.  This "
-                "should only happen if there was a rollback recently",
                 "Not setting the last OpTime for this Client to the current system time as that "
                 "would be moving the OpTime backwards. This should only happen if there was a "
                 "rollback recently",
@@ -132,7 +129,6 @@ void ReplClientInfo::setLastOpToSystemLastOpTimeIgnoringInterrupt(OperationConte
         // OperationContext to wait for writeConcern anyways.
         LOG_DEBUG(21281,
                   2,
-                  "Ignoring set last op interruption error: {error}",
                   "Ignoring set last op interruption error",
                   "error"_attr = e.toStatus());
     }

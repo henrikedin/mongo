@@ -214,8 +214,6 @@ TransactionCoordinator::TransactionCoordinator(OperationContext* operationContex
                     if (_decision->getDecision() == CommitDecision::kCommit) {
                         LOG_DEBUG(22446,
                                   3,
-                                  "{sessionId}:{txnNumber} Advancing cluster time to "
-                                  "the commit timestamp {commitTimestamp}",
                                   "Advancing cluster time to the commit timestamp",
                                   "sessionId"_attr = _lsid.getId(),
                                   "txnNumber"_attr = _txnNumber,
@@ -417,7 +415,6 @@ void TransactionCoordinator::_done(Status status) {
 
     LOG_DEBUG(22447,
               3,
-              "{sessionId}:{txnNumber} Two-phase commit completed with {status}",
               "Two-phase commit completed",
               "sessionId"_attr = _lsid.getId(),
               "txnNumber"_attr = _txnNumber,

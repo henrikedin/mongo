@@ -229,7 +229,6 @@ void mergeChunks(OperationContext* opCtx,
         checkMetadataForSuccess(opCtx, nss, epoch, ChunkRange(minKey, maxKey))) {
         LOG_DEBUG(21983,
                   1,
-                  "mergeChunk interval [{minKey},{maxKey}) has already been committed",
                   "mergeChunk interval has already been committed",
                   "minKey"_attr = redact(minKey),
                   "maxKey"_attr = redact(maxKey));

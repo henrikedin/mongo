@@ -58,7 +58,6 @@ void ShardingConnectionHook::onCreate(DBClientBase* conn) {
     if (auth::isInternalAuthSet()) {
         LOG_DEBUG(22722,
                   2,
-                  "Calling onCreate auth for {connectionString}",
                   "Calling onCreate auth",
                   "connectionString"_attr = conn->toString());
 

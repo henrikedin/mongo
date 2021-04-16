@@ -81,7 +81,6 @@ void ServerParameterSet::add(ServerParameter* sp) {
     ServerParameter*& x = _map[sp->name()];
     if (x) {
         LOG_FATAL(23784,
-                  "'{name}' already exists in the server parameter set",
                   "Duplicate server parameter registration",
                   "name"_attr = x->name());
     }
@@ -134,8 +133,6 @@ void IDLServerParameterDeprecatedAlias::append(OperationContext* opCtx,
                                                const std::string& fieldName) {
     std::call_once(_warnOnce, [&] {
         LOG_WARNING(23781,
-                    "Use of deprecated server parameter '{deprecatedName}', "
-                    "please use '{canonicalName}' instead",
                     "Use of deprecated server parameter name",
                     "deprecatedName"_attr = name(),
                     "canonicalName"_attr = _sp->name());
@@ -146,8 +143,6 @@ void IDLServerParameterDeprecatedAlias::append(OperationContext* opCtx,
 Status IDLServerParameterDeprecatedAlias::set(const BSONElement& newValueElement) {
     std::call_once(_warnOnce, [&] {
         LOG_WARNING(23782,
-                    "Use of deprecated server parameter '{deprecatedName}', "
-                    "please use '{canonicalName}' instead",
                     "Use of deprecated server parameter name",
                     "deprecatedName"_attr = name(),
                     "canonicalName"_attr = _sp->name());
@@ -158,8 +153,6 @@ Status IDLServerParameterDeprecatedAlias::set(const BSONElement& newValueElement
 Status IDLServerParameterDeprecatedAlias::setFromString(const std::string& str) {
     std::call_once(_warnOnce, [&] {
         LOG_WARNING(23783,
-                    "Use of deprecated server parameter '{deprecatedName}', "
-                    "please use '{canonicalName}' instead",
                     "Use of deprecated server parameter name",
                     "deprecatedName"_attr = name(),
                     "canonicalName"_attr = _sp->name());

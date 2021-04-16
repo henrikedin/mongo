@@ -78,7 +78,6 @@ Status MovePrimarySourceManager::clone(OperationContext* opCtx) {
     auto scopedGuard = makeGuard([&] { cleanupOnError(opCtx); });
 
     LOG(22042,
-        "Moving {db} primary from: {fromShard} to: {toShard}",
         "Moving primary for database",
         "db"_attr = _dbname,
         "fromShard"_attr = _fromShard,
@@ -243,8 +242,6 @@ Status MovePrimarySourceManager::commitOnConfig(OperationContext* opCtx) {
         // done
         LOG(22044,
             "Error occurred while committing the movePrimary. Performing a majority write "
-            "against the config server to obtain its latest optime: {error}",
-            "Error occurred while committing the movePrimary. Performing a majority write "
             "against the config server to obtain its latest optime",
             "error"_attr = redact(commitStatus));
 
@@ -368,7 +365,6 @@ Status MovePrimarySourceManager::_commitOnConfig(OperationContext* opCtx) {
 
     if (!updateStatus.isOK()) {
         LOG(5448803,
-            "Error committing movePrimary for {db}: {error}",
             "Error committing movePrimary",
             "db"_attr = _dbname,
             "error"_attr = redact(updateStatus.getStatus()));
@@ -395,7 +391,6 @@ Status MovePrimarySourceManager::cleanStaleData(OperationContext* opCtx) {
         Status dropStatus = getStatusFromCommandResult(dropCollResult);
         if (!dropStatus.isOK()) {
             LOG(22045,
-                "Failed to drop cloned collection {namespace} in movePrimary: {error}",
                 "Failed to drop cloned collection in movePrimary",
                 "namespace"_attr = coll,
                 "error"_attr = redact(dropStatus));
@@ -425,8 +420,6 @@ void MovePrimarySourceManager::cleanupOnError(OperationContext* opCtx) {
         BSONObjBuilder requestArgsBSON;
         _requestArgs.serialize(&requestArgsBSON);
         LOG_WARNING(22046,
-                    "Failed to clean up movePrimary with request parameters {request} due to: "
-                    "{error}",
                     "Failed to clean up movePrimary",
                     "request"_attr = redact(requestArgsBSON.obj()),
                     "error"_attr = redact(ex));

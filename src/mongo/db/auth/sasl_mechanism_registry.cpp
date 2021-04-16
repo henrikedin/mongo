@@ -195,7 +195,6 @@ ServiceContext::ConstructorActionRegisterer SASLServerMechanismRegistryValidatio
             auto it = std::find(supportedMechanisms.cbegin(), supportedMechanisms.cend(), mech);
             if (it == supportedMechanisms.end()) {
                 LOG_ERROR(4742901,
-                          "SASL Mechanism '{mechanism}' is not supported",
                           "Unsupported SASL mechanism",
                           "mechanism"_attr = mech);
 

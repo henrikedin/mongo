@@ -184,7 +184,6 @@ void ensureDropCollectionCompleted(OperationContext* opCtx, const NamespaceStrin
 
     LOG_DEBUG(21929,
               1,
-              "Ensuring config entries for {namespace} from previous dropCollection are cleared",
               "Ensuring config entries from previous dropCollection are cleared",
               "namespace"_attr = nss.ns());
 
@@ -262,7 +261,6 @@ void dropCollectionNoDistLock(OperationContext* opCtx, const NamespaceString& ns
 
     LOG_DEBUG(21924,
               1,
-              "dropCollection {namespace} started",
               "dropCollection started",
               "namespace"_attr = nss.ns());
 
@@ -275,7 +273,6 @@ void dropCollectionNoDistLock(OperationContext* opCtx, const NamespaceString& ns
 
     LOG_DEBUG(21925,
               1,
-              "dropCollection {namespace} shard data deleted",
               "dropCollection shard data deleted",
               "namespace"_attr = nss.ns());
 
@@ -293,7 +290,6 @@ void dropCollectionNoDistLock(OperationContext* opCtx, const NamespaceString& ns
 
         LOG_DEBUG(21926,
                   1,
-                  "dropCollection {namespace} chunk and tag data deleted",
                   "dropCollection chunk and tag data deleted",
                   "namespace"_attr = nss.ns());
 
@@ -304,12 +300,10 @@ void dropCollectionNoDistLock(OperationContext* opCtx, const NamespaceString& ns
                                                  ShardingCatalogClient::kMajorityWriteConcern));
         LOG_DEBUG(21927,
                   1,
-                  "dropCollection {namespace} collection entry deleted",
                   "dropCollection collection entry deleted",
                   "namespace"_attr = nss.ns());
     } catch (const ExceptionFor<ErrorCodes::NamespaceNotFound>&) {
         LOG(5310500,
-            "dropCollection {namespace} collection entry not found",
             "dropCollection {namespace} collection entry not found",
             "namespace"_attr = nss.ns());
     }
@@ -318,7 +312,6 @@ void dropCollectionNoDistLock(OperationContext* opCtx, const NamespaceString& ns
 
     LOG_DEBUG(21928,
               1,
-              "dropCollection {namespace} completed",
               "dropCollection completed",
               "namespace"_attr = nss.ns());
 

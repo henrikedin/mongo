@@ -195,7 +195,6 @@ thread_local int MallocFreeOStreamGuard::terminateDepth = 0;
 void writeMallocFreeStreamToLog() {
     LOG_FATAL_OPTIONS(4757800,
                       log::LogOptions(log::FatalMode::kContinue, log::LogTruncation::Disabled),
-                      "{message}",
                       "Writing fatal message",
                       "message"_attr = mallocFreeOStream.str());
     mallocFreeOStream.rewind();
@@ -241,8 +240,6 @@ void myInvalidParameterHandler(const wchar_t* expression,
                                unsigned int line,
                                uintptr_t pReserved) {
     LOG_FATAL_CONTINUE(23815,
-                       "Invalid parameter detected in function {function} in {file} at line {line} "
-                       "with expression '{expression}'",
                        "Invalid parameter detected",
                        "function"_attr = toUtf8String(function),
                        "file"_attr = toUtf8String(file),
@@ -327,7 +324,6 @@ void setupSynchronousSignalHandlers() {
         if (sigaction(spec.signal, &sa, nullptr) != 0) {
             int savedErr = errno;
             LOG_FATAL(31334,
-                      "Failed to install sigaction for signal {signal}: {error}",
                       "Failed to install sigaction for signal",
                       "signal"_attr = spec.signal,
                       "error"_attr = strerror(savedErr));

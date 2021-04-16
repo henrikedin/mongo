@@ -73,7 +73,6 @@ intmax_t File::freeSpace(const std::string& path) {
     }
     DWORD dosError = GetLastError();
     LOG(23140,
-        "In File::freeSpace(), GetDiskFreeSpaceEx for '{path}' failed with {error}",
         "In File::freeSpace(), GetDiskFreeSpaceEx failed",
         "path"_attr = path,
         "error"_attr = errnoWithDescription(dosError));
@@ -84,7 +83,6 @@ void File::fsync() const {
     if (FlushFileBuffers(_handle) == 0) {
         DWORD dosError = GetLastError();
         LOG(23141,
-            "In File::fsync(), FlushFileBuffers for '{fileName}' failed with {error}",
             "In File::fsync(), FlushFileBuffers failed",
             "fileName"_attr = _name,
             "error"_attr = errnoWithDescription(dosError));
@@ -103,7 +101,6 @@ fileofs File::len() {
     _bad = true;
     DWORD dosError = GetLastError();
     LOG(23142,
-        "In File::len(), GetFileSizeEx for '{fileName}' failed with {error}",
         "In File::len(), GetFileSizeEx failed",
         "fileName"_attr = _name,
         "error"_attr = errnoWithDescription(dosError));
@@ -123,7 +120,6 @@ void File::open(const char* filename, bool readOnly, bool direct) {
     if (_bad) {
         DWORD dosError = GetLastError();
         LOG(23143,
-            "In File::open(), CreateFileW for '{fileName}' failed with {error}",
             "In File::open(), CreateFileW failed",
             "fileName"_attr = _name,
             "error"_attr = errnoWithDescription(dosError));
@@ -137,8 +133,6 @@ void File::read(fileofs o, char* data, unsigned len) {
         _bad = true;
         DWORD dosError = GetLastError();
         LOG(23144,
-            "In File::read(), SetFilePointerEx for '{fileName}' tried to set the file pointer to "
-            "{failPointer} but failed with {error}",
             "In File::read(), SetFilePointerEx failed to set file pointer",
             "fileName"_attr = _name,
             "failPointer"_attr = o,
@@ -150,7 +144,6 @@ void File::read(fileofs o, char* data, unsigned len) {
         _bad = true;
         DWORD dosError = GetLastError();
         LOG(23145,
-            "In File::read(), ReadFile for '{fileName}' failed with {error}",
             "In File::read(), ReadFile failed",
             "fileName"_attr = _name,
             "error"_attr = errnoWithDescription(dosError));
@@ -173,8 +166,6 @@ void File::truncate(fileofs size) {
         _bad = true;
         DWORD dosError = GetLastError();
         LOG(23146,
-            "In File::truncate(), SetFilePointerEx for '{fileName}' tried to set the file "
-            "pointer to {filePointer} but failed with {error}",
             "In File::truncate(), SetFilePointerEx failed to set file pointer",
             "fileName"_attr = _name,
             "filePointer"_attr = size,
@@ -185,7 +176,6 @@ void File::truncate(fileofs size) {
         _bad = true;
         DWORD dosError = GetLastError();
         LOG(23147,
-            "In File::truncate(), SetEndOfFile for '{fileName}' failed with {error}",
             "In File::truncate(), SetEndOfFile failed",
             "fileName"_attr = _name,
             "error"_attr = errnoWithDescription(dosError));
@@ -199,8 +189,6 @@ void File::write(fileofs o, const char* data, unsigned len) {
         _bad = true;
         DWORD dosError = GetLastError();
         LOG(23148,
-            "In File::write(), SetFilePointerEx for '{fileName}' tried to set the file pointer to "
-            "{filePointer} but failed with {error}",
             "In File::write(), SetFilePointerEx failed to set file pointer",
             "fileName"_attr = _name,
             "filePointer"_attr = o,
@@ -212,8 +200,6 @@ void File::write(fileofs o, const char* data, unsigned len) {
         _bad = true;
         DWORD dosError = GetLastError();
         LOG(23149,
-            "In File::write(), WriteFile for '{fileName}' tried to write {bytesToWrite} bytes "
-            "but only wrote {bytesWritten} bytes, failing with {error}",
             "In File::write(), WriteFile failed",
             "fileName"_attr = _name,
             "bytesToWrite"_attr = len,
@@ -239,7 +225,6 @@ intmax_t File::freeSpace(const std::string& path) {
         return static_cast<intmax_t>(info.f_bavail) * info.f_frsize;
     }
     LOG(23150,
-        "In File::freeSpace(), statvfs for '{path}' failed with {error}",
         "In File::freeSpace(), statvfs failed",
         "path"_attr = path,
         "error"_attr = errnoWithDescription());
@@ -249,7 +234,6 @@ intmax_t File::freeSpace(const std::string& path) {
 void File::fsync() const {
     if (::fsync(_fd)) {
         LOG(23151,
-            "In File::fsync(), ::fsync for '{fileName}' failed with {error}",
             "In File::fsync(), ::fsync failed",
             "fileName"_attr = _name,
             "error"_attr = errnoWithDescription());
@@ -267,7 +251,6 @@ fileofs File::len() {
     }
     _bad = true;
     LOG(23152,
-        "In File::len(), lseek for '{fileName}' failed with {error}",
         "In File::len(), lseek failed",
         "fileName"_attr = _name,
         "error"_attr = errnoWithDescription());
@@ -290,7 +273,6 @@ void File::open(const char* filename, bool readOnly, bool direct) {
     _bad = !is_open();
     if (_bad) {
         LOG(23153,
-            "In File::open(), ::open for '{fileName}' failed with {error}",
             "In File::open(), ::open failed",
             "fileName"_attr = _name,
             "error"_attr = errnoWithDescription());
@@ -302,7 +284,6 @@ void File::read(fileofs o, char* data, unsigned len) {
     if (bytesRead == -1) {
         _bad = true;
         LOG(23154,
-            "In File::read(), ::pread for '{fileName}' failed with {error}",
             "In File::read(), ::pread failed",
             "fileName"_attr = _name,
             "error"_attr = errnoWithDescription());
@@ -322,8 +303,6 @@ void File::truncate(fileofs size) {
     if (ftruncate(_fd, size) != 0) {
         _bad = true;
         LOG(23155,
-            "In File::truncate(), ftruncate for '{fileName}' tried to set the file pointer to "
-            "{filePointer} but failed with {error}",
             "In File::truncate(), ftruncate failed to set file pointer",
             "fileName"_attr = _name,
             "filePointer"_attr = size,
@@ -337,8 +316,6 @@ void File::write(fileofs o, const char* data, unsigned len) {
     if (bytesWritten != static_cast<ssize_t>(len)) {
         _bad = true;
         LOG(23156,
-            "In File::write(), ::pwrite for '{fileName}' tried to write {bytesToWrite} bytes but "
-            "only wrote {bytesWritten} bytes, failing with {error}",
             "In File::write(), ::pwrite failed",
             "fileName"_attr = _name,
             "bytesToWrite"_attr = len,

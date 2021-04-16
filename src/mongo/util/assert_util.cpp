@@ -80,7 +80,7 @@ AtomicWord<bool> DBException::traceExceptions(false);
 
 void DBException::traceIfNeeded(const DBException& e) {
     if (traceExceptions.load()) {
-        LOG_WARNING(23075, "DBException thrown {error}", "DBException thrown", "error"_attr = e);
+        LOG_WARNING(23075, "DBException thrown", "error"_attr = e);
         printStackTrace();
     }
 }
@@ -88,7 +88,6 @@ void DBException::traceIfNeeded(const DBException& e) {
 MONGO_COMPILER_NOINLINE void verifyFailed(const char* expr, const char* file, unsigned line) {
     assertionCount.condrollover(assertionCount.regular.addAndFetch(1));
     LOG_ERROR(23076,
-              "Assertion failure {expr} {file} {line}",
               "Assertion failure",
               "expr"_attr = expr,
               "file"_attr = file,
@@ -111,7 +110,6 @@ MONGO_COMPILER_NOINLINE void invariantFailed(const char* expr,
                                              const char* file,
                                              unsigned line) noexcept {
     LOG_FATAL_CONTINUE(23079,
-                       "Invariant failure {expr} {file} {line}",
                        "Invariant failure",
                        "expr"_attr = expr,
                        "file"_attr = file,
@@ -126,7 +124,6 @@ MONGO_COMPILER_NOINLINE void invariantFailedWithMsg(const char* expr,
                                                     const char* file,
                                                     unsigned line) noexcept {
     LOG_FATAL_CONTINUE(23081,
-                       "Invariant failure {expr} {msg} {file} {line}",
                        "Invariant failure",
                        "expr"_attr = expr,
                        "msg"_attr = msg,
@@ -142,7 +139,6 @@ MONGO_COMPILER_NOINLINE void invariantOKFailed(const char* expr,
                                                const char* file,
                                                unsigned line) noexcept {
     LOG_FATAL_CONTINUE(23083,
-                       "Invariant failure {expr} resulted in status {error} at {file} {line}",
                        "Invariant failure",
                        "expr"_attr = expr,
                        "error"_attr = redact(status),
@@ -159,7 +155,6 @@ MONGO_COMPILER_NOINLINE void invariantOKFailedWithMsg(const char* expr,
                                                       const char* file,
                                                       unsigned line) noexcept {
     LOG_FATAL_CONTINUE(23085,
-                       "Invariant failure {expr} {msg} resulted in status {error} at {file} {line}",
                        "Invariant failure",
                        "expr"_attr = expr,
                        "msg"_attr = msg,
@@ -175,7 +170,6 @@ MONGO_COMPILER_NOINLINE void invariantStatusOKFailed(const Status& status,
                                                      const char* file,
                                                      unsigned line) noexcept {
     LOG_FATAL_CONTINUE(23087,
-                       "Invariant failure {error} at {file} {line}",
                        "Invariant failure",
                        "error"_attr = redact(status),
                        "file"_attr = file,
@@ -189,7 +183,6 @@ MONGO_COMPILER_NOINLINE void fassertFailedWithLocation(int msgid,
                                                        const char* file,
                                                        unsigned line) noexcept {
     LOG_FATAL_CONTINUE(23089,
-                       "Fatal assertion {msgid} at {file} {line}",
                        "Fatal assertion",
                        "msgid"_attr = msgid,
                        "file"_attr = file,
@@ -203,7 +196,6 @@ MONGO_COMPILER_NOINLINE void fassertFailedNoTraceWithLocation(int msgid,
                                                               const char* file,
                                                               unsigned line) noexcept {
     LOG_FATAL_CONTINUE(23091,
-                       "Fatal assertion {msgid} at {file} {line}",
                        "Fatal assertion",
                        "msgid"_attr = msgid,
                        "file"_attr = file,
@@ -218,7 +210,6 @@ MONGO_COMPILER_NORETURN void fassertFailedWithStatusWithLocation(int msgid,
                                                                  const char* file,
                                                                  unsigned line) noexcept {
     LOG_FATAL_CONTINUE(23093,
-                       "Fatal assertion {msgid} {error} at {file} {line}",
                        "Fatal assertion",
                        "msgid"_attr = msgid,
                        "error"_attr = redact(status),
@@ -234,7 +225,6 @@ MONGO_COMPILER_NORETURN void fassertFailedWithStatusNoTraceWithLocation(int msgi
                                                                         const char* file,
                                                                         unsigned line) noexcept {
     LOG_FATAL_CONTINUE(23095,
-                       "Fatal assertion {msgid} {error} at {file} {line}",
                        "Fatal assertion",
                        "msgid"_attr = msgid,
                        "error"_attr = redact(status),
@@ -251,7 +241,6 @@ MONGO_COMPILER_NOINLINE void uassertedWithLocation(const Status& status,
     assertionCount.condrollover(assertionCount.user.addAndFetch(1));
     LOG_DEBUG(23074,
               1,
-              "User assertion {error} {file} {line}",
               "User assertion",
               "error"_attr = redact(status),
               "file"_attr = file,
@@ -264,7 +253,6 @@ MONGO_COMPILER_NOINLINE void msgassertedWithLocation(const Status& status,
                                                      unsigned line) {
     assertionCount.condrollover(assertionCount.msg.addAndFetch(1));
     LOG_ERROR(23077,
-              "Assertion {error} {file} {line}",
               "Assertion",
               "error"_attr = redact(status),
               "file"_attr = file,

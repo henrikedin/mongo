@@ -105,8 +105,6 @@ void generateSystemIndexForExistingCollection(OperationContext* opCtx,
         BSONObj indexSpec = fassert(40452, indexSpecStatus);
 
         LOG(22488,
-            "No authorization index detected on {namespace} collection. Attempting to recover by "
-            "creating an index with spec: {indexSpec}",
             "No authorization index detected. Attempting to recover by "
             "creating an index",
             logAttrs(ns),
@@ -118,7 +116,6 @@ void generateSystemIndexForExistingCollection(OperationContext* opCtx,
             opCtx, collectionUUID, indexSpec, indexConstraints, fromMigrate);
     } catch (const DBException& e) {
         LOG_FATAL_CONTINUE(22490,
-                           "Failed to regenerate index for {namespace}. Exception: {error}",
                            "Failed to regenerate index",
                            logAttrs(ns),
                            "error"_attr = e.what());

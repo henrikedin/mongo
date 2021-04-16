@@ -157,7 +157,6 @@ public:
             auto toShardStatus = shardRegistry->getShard(opCtx, to);
             if (!toShardStatus.isOK()) {
                 LOG(21921,
-                    "Could not move database {db} to shard {shardId}: {error}",
                     "Could not move database to shard",
                     "db"_attr = dbname,
                     "shardId"_attr = to,

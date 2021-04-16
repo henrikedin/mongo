@@ -112,7 +112,6 @@ void OplogApplier::enqueue(OperationContext* opCtx,
     if (sampler.tick()) {
         LOG_DEBUG(21226,
                   2,
-                  "oplog buffer has {oplogBufferSizeBytes} bytes",
                   "Oplog buffer size",
                   "oplogBufferSizeBytes"_attr = _oplogBuffer->getSize());
     }

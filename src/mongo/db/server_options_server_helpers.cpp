@@ -120,7 +120,6 @@ void printCommandLineOpts(std::ostream* os) {
             << std::endl;
     } else {
         LOG(21951,
-            "Options set by command line: {options}",
             "Options set by command line",
             "options"_attr = serverGlobalParams.parsedOpts);
     }

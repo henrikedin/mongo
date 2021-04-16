@@ -419,7 +419,6 @@ void WiredTigerRecordStore::OplogStones::_calculateStones(OperationContext* opCt
     ON_BLOCK_EXIT([&] {
         auto waitTime = curTimeMicros64() - startWaitTime;
         LOG(22382,
-            "WiredTiger record store oplog processing took {duration}ms",
             "WiredTiger record store oplog processing finished",
             "duration"_attr = Milliseconds(static_cast<int64_t>(waitTime / 1000)));
         _totalTimeProcessing.fetchAndAdd(waitTime);
@@ -428,8 +427,6 @@ void WiredTigerRecordStore::OplogStones::_calculateStones(OperationContext* opCt
     long long dataSize = _rs->dataSize(opCtx);
 
     LOG(22383,
-        "The size storer reports that the oplog contains {numRecords} records totaling to "
-        "{dataSize} bytes",
         "The size storer reports that the oplog contains",
         "numRecords"_attr = numRecords,
         "dataSize"_attr = dataSize);
@@ -533,8 +530,6 @@ void WiredTigerRecordStore::OplogStones::_calculateStonesBySampling(OperationCon
     }
 
     LOG(22389,
-        "Sampling from the oplog between {from} and {to} to "
-        "determine where to place markers for truncation",
         "Sampling from the oplog to determine where to place markers for truncation",
         "from"_attr = earliestOpTime,
         "to"_attr = latestOpTime);
@@ -543,8 +538,6 @@ void WiredTigerRecordStore::OplogStones::_calculateStonesBySampling(OperationCon
     int64_t numSamples = kRandomSamplesPerStone * _rs->numRecords(opCtx) / estRecordsPerStone;
 
     LOG(22390,
-        "Taking {numSamples} samples and assuming that each section of oplog contains "
-        "approximately {containsNumRecords} records totaling to {containsNumBytes} bytes",
         "Taking samples and assuming each oplog section contains",
         "numSamples"_attr = numSamples,
         "containsNumRecords"_attr = estRecordsPerStone,
@@ -582,7 +575,6 @@ void WiredTigerRecordStore::OplogStones::_calculateStonesBySampling(OperationCon
         if (samplingLogIntervalSeconds > 0 &&
             now - lastProgressLog >= Seconds(samplingLogIntervalSeconds)) {
             LOG(22392,
-                "Oplog sampling progress: {current} of {total} samples taken",
                 "Oplog sampling progress",
                 "completed"_attr = (i + 1),
                 "total"_attr = numSamples);
@@ -602,8 +594,6 @@ void WiredTigerRecordStore::OplogStones::_calculateStonesBySampling(OperationCon
 
         LOG_DEBUG(22394,
                   1,
-                  "Marking oplog entry as a potential future oplog truncation point. wall: "
-                  "{wall}, ts: {ts}",
                   "Marking oplog entry as a potential future oplog truncation point",
                   "wall"_attr = wallTime,
                   "ts"_attr = id);
@@ -2013,8 +2003,6 @@ boost::optional<Record> WiredTigerRecordStoreCursorBase::next() {
 
     if (_forward && _lastReturnedId >= id) {
         LOG_ERROR(22406,
-                  "WTCursor::next -- c->next_key ( {next}) was not greater than _lastReturnedId "
-                  "({last}) which is a bug.",
                   "WTCursor::next -- next was not greater than last which is a bug",
                   "next"_attr = id,
                   "last"_attr = _lastReturnedId);

@@ -119,7 +119,6 @@ void profile(OperationContext* opCtx, NetworkOp op) {
         if (!db) {
             // Database disappeared.
             LOG(20700,
-                "note: not profiling because db went away for {namespace}",
                 "note: not profiling because db went away for namespace",
                 "namespace"_attr = CurOp::get(opCtx)->getNS());
             return;
@@ -146,8 +145,6 @@ void profile(OperationContext* opCtx, NetworkOp op) {
         wuow.commit();
     } catch (const AssertionException& assertionEx) {
         LOG_WARNING(20703,
-                    "Caught Assertion while trying to profile {operation} against "
-                    "{namespace}: {assertion}",
                     "Caught Assertion while trying to profile operation",
                     "operation"_attr = networkOpToString(op),
                     "namespace"_attr = CurOp::get(opCtx)->getNS(),
@@ -179,7 +176,6 @@ Status createProfileCollection(OperationContext* opCtx, Database* db) {
 
         // system.profile namespace doesn't exist; create it
         LOG(20701,
-            "Creating profile collection: {namespace}",
             "Creating profile collection",
             "namespace"_attr = dbProfilingNS);
 

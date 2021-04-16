@@ -82,7 +82,6 @@ public:
         const NamespaceString nss(CommandHelpers::parseNsCollectionRequired(dbName, cmdObj));
         LOG_DEBUG(22750,
                   1,
-                  "createIndexes: {namespace} cmd: {command}",
                   "CMD: createIndexes",
                   "namespace"_attr = nss,
                   "command"_attr = redact(cmdObj));

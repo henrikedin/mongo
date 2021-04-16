@@ -89,8 +89,6 @@ bool collectionUuidHasChanged(const NamespaceString& nss,
     if (!currentCollection) {
         LOG_DEBUG(23763,
                   1,
-                  "Abandoning range deletion task for {namespace} with UUID "
-                  "{expectedCollectionUuid} because the collection has been dropped",
                   "Abandoning range deletion task for because the collection has been dropped",
                   "namespace"_attr = nss.ns(),
                   "expectedCollectionUuid"_attr = expectedCollectionUuid);
@@ -101,8 +99,6 @@ bool collectionUuidHasChanged(const NamespaceString& nss,
         LOG_DEBUG(
             23764,
             1,
-            "Abandoning range deletion task for {namespace} with UUID {expectedCollectionUUID} "
-            "because UUID of {namespace} has changed (current is {currentCollectionUUID})",
             "Abandoning range deletion task because UUID has changed",
             "namespace"_attr = nss.ns(),
             "expectedCollectionUUID"_attr = expectedCollectionUuid,
@@ -136,7 +132,6 @@ StatusWith<int> deleteNextBatch(OperationContext* opCtx,
     if (!idx) {
         LOG_ERROR_OPTIONS(23765,
                           {log::UserAssertAfterLog(ErrorCodes::InternalError)},
-                          "Unable to find shard key index for {keyPattern} in {namespace}",
                           "Unable to find shard key index",
                           "keyPattern"_attr = keyPattern.toString(),
                           "namespace"_attr = nss.ns());
@@ -153,7 +148,6 @@ StatusWith<int> deleteNextBatch(OperationContext* opCtx,
 
     LOG_DEBUG(23766,
               1,
-              "Begin removal of {min} to {max} in {namespace}",
               "Begin removal of range",
               "min"_attr = min,
               "max"_attr = max,
@@ -165,7 +159,6 @@ StatusWith<int> deleteNextBatch(OperationContext* opCtx,
     if (!descriptor) {
         LOG_ERROR_OPTIONS(23767,
                           {log::UserAssertAfterLog(ErrorCodes::InternalError)},
-                          "Shard key index with name {indexName} on {namespace} was dropped",
                           "Shard key index was dropped",
                           "indexName"_attr = indexName,
                           "namespace"_attr = nss.ns());
@@ -216,8 +209,6 @@ StatusWith<int> deleteNextBatch(OperationContext* opCtx,
             auto&& [stats, _] =
                 explainer.getWinningPlanStats(ExplainOptions::Verbosity::kExecStats);
             LOG_WARNING(23776,
-                        "Cursor error while trying to delete {min} to {max} in {namespace}, "
-                        "stats: {stats}, error: {error}",
                         "Cursor error while trying to delete range",
                         "min"_attr = redact(min),
                         "max"_attr = redact(max),
@@ -332,8 +323,6 @@ ExecutorFuture<void> deleteRangeInBatches(const std::shared_ptr<executor::TaskEx
 
                    LOG_DEBUG(23769,
                              1,
-                             "Deleted {numDeleted} documents in pass in namespace {namespace} with "
-                             "UUID  {collectionUUID} for range {range}",
                              "Deleted documents in pass",
                              "numDeleted"_attr = numDeleted,
                              "namespace"_attr = nss.ns(),
@@ -500,8 +489,6 @@ SharedSemiFuture<void> removeDocumentsInRange(
         .then([=]() mutable {
             LOG_DEBUG(23772,
                       1,
-                      "Beginning deletion of any documents in {namespace} range {range} with  "
-                      "numDocsToRemovePerBatch {numDocsToRemovePerBatch}",
                       "Beginning deletion of documents",
                       "namespace"_attr = nss.ns(),
                       "range"_attr = redact(range.toString()),
@@ -544,13 +531,11 @@ SharedSemiFuture<void> removeDocumentsInRange(
             if (s.isOK()) {
                 LOG_DEBUG(23773,
                           1,
-                          "Completed deletion of documents in {namespace} range {range}",
                           "Completed deletion of documents",
                           "namespace"_attr = nss.ns(),
                           "range"_attr = redact(range.toString()));
             } else {
                 LOG(23774,
-                    "Failed to delete documents in {namespace} range {range} due to {error}",
                     "Failed to delete documents",
                     "namespace"_attr = nss.ns(),
                     "range"_attr = redact(range.toString()),
@@ -573,8 +558,6 @@ SharedSemiFuture<void> removeDocumentsInRange(
                 removePersistentRangeDeletionTask(nss, std::move(*migrationId));
             } catch (const DBException& e) {
                 LOG_ERROR(23770,
-                          "Failed to delete range deletion task for range {range} in collection "
-                          "{namespace} due to {error}",
                           "Failed to delete range deletion task",
                           "range"_attr = range,
                           "namespace"_attr = nss,
@@ -585,8 +568,6 @@ SharedSemiFuture<void> removeDocumentsInRange(
 
             LOG_DEBUG(23775,
                       1,
-                      "Completed removal of persistent range deletion task for {namespace} "
-                      "range {range}",
                       "Completed removal of persistent range deletion task",
                       "namespace"_attr = nss.ns(),
                       "range"_attr = redact(range.toString()));

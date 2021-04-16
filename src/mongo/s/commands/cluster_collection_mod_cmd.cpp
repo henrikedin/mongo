@@ -86,7 +86,6 @@ public:
         auto nss = cmd.getNamespace();
         LOG_DEBUG(22748,
                   1,
-                  "collMod: {namespace} cmd: {command}",
                   "CMD: collMod",
                   "namespace"_attr = nss,
                   "command"_attr = redact(cmdObj));

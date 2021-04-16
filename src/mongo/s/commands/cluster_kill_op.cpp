@@ -95,7 +95,6 @@ private:
 
         auto shardIdent = opToKill.substr(0, opSepPos);
         LOG(22754,
-            "About to kill op: {opToKill}",
             "About to kill op",
             "opToKill"_attr = redact(opToKill));
 

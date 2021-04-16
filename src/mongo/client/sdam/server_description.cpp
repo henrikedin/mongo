@@ -221,7 +221,6 @@ void ServerDescription::parseTypeFromHelloReply(const BSONObj helloReply) {
         t = ServerType::kRSGhost;
     } else {
         LOG_ERROR(23931,
-                  "Unknown server type from successful hello reply: {helloReply}",
                   "Unknown server type from successful hello reply",
                   "helloReply"_attr = helloReply.toString());
         t = ServerType::kUnknown;

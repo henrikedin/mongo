@@ -56,7 +56,6 @@ void StreamableReplicaSetMonitor::StreamableReplicaSetMonitorQueryProcessor::
         if (!replicaSetMonitor) {
             LOG_DEBUG(4333215,
                       kLogLevel,
-                      "Could not find rsm instance {replicaSet} for query processing",
                       "Could not find rsm instance for query processing",
                       "replicaSet"_attr = *setName);
             return;

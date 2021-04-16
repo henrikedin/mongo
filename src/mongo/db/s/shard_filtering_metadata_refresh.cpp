@@ -216,8 +216,6 @@ void onShardVersionMismatch(OperationContext* opCtx,
 
     LOG_DEBUG(22061,
               2,
-              "Metadata refresh requested for {namespace} at shard version "
-              "{shardVersionReceived}",
               "Metadata refresh requested for collection",
               "namespace"_attr = nss,
               "shardVersionReceived"_attr = shardVersionReceived);
@@ -350,7 +348,6 @@ Status onShardVersionMismatchNoExcept(OperationContext* opCtx,
         return Status::OK();
     } catch (const DBException& ex) {
         LOG(22062,
-            "Failed to refresh metadata for {namespace} due to {error}",
             "Failed to refresh metadata for collection",
             "namespace"_attr = nss,
             "error"_attr = redact(ex));
@@ -380,7 +377,6 @@ CollectionMetadata forceGetCurrentMetadata(OperationContext* opCtx, const Namesp
         return CollectionMetadata(cm, shardingState->shardId());
     } catch (const ExceptionFor<ErrorCodes::NamespaceNotFound>& ex) {
         LOG(505070,
-            "Namespace {namespace} not found, collection may have been dropped",
             "Namespace not found, collection may have been dropped",
             "namespace"_attr = nss,
             "error"_attr = redact(ex));
@@ -433,8 +429,6 @@ ChunkVersion forceShardFilteringMetadataRefresh(OperationContext* opCtx,
                 LOG_DEBUG(
                     22063,
                     1,
-                    "Skipping refresh of metadata for {namespace} {latestCollectionVersion} with "
-                    "an older {refreshedCollectionVersion}",
                     "Skipping metadata refresh because collection already has at least as recent "
                     "metadata",
                     "namespace"_attr = nss,
@@ -465,8 +459,6 @@ ChunkVersion forceShardFilteringMetadataRefresh(OperationContext* opCtx,
                 LOG_DEBUG(
                     22064,
                     1,
-                    "Skipping refresh of metadata for {namespace} {latestCollectionVersion} with "
-                    "an older {refreshedCollectionVersion}",
                     "Skipping metadata refresh because collection already has at least as recent "
                     "metadata",
                     "namespace"_attr = nss,
@@ -494,7 +486,6 @@ Status onDbVersionMismatchNoExcept(
         return Status::OK();
     } catch (const DBException& ex) {
         LOG(22065,
-            "Failed to refresh databaseVersion for database {db} {error}",
             "Failed to refresh databaseVersion",
             "db"_attr = dbName,
             "error"_attr = redact(ex));

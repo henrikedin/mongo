@@ -229,8 +229,6 @@ void ReplIndexBuildState::setCommitQuorumSatisfied(OperationContext* opCtx) {
         auto action = _waitForNextAction->getFuture().get(opCtx);
 
         LOG(3856200,
-            "Not signaling \"{skippedAction}\" as it was previously signaled with "
-            "\"{previousAction}\" for index build: {buildUUID}",
             "Skipping signaling as it was previously signaled for index build",
             "skippedAction"_attr =
                 indexBuildActionToString(IndexBuildAction::kCommitQuorumSatisfied),

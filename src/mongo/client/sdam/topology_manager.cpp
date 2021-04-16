@@ -87,8 +87,6 @@ bool TopologyManagerImpl::onServerDescription(const HelloOutcome& helloOutcome) 
     boost::optional<TopologyVersion> newTopologyVersion = helloOutcome.getTopologyVersion();
     if (isStaleTopologyVersion(lastTopologyVersion, newTopologyVersion)) {
         LOG(23930,
-            "Ignoring this hello response because our topologyVersion: {lastTopologyVersion} is "
-            "fresher than the provided topologyVersion: {newTopologyVersion}",
             "Ignoring this hello response because our last topologyVersion is fresher than the "
             "new topologyVersion provided",
             "lastTopologyVersion"_attr = lastTopologyVersion->toBSON(),
@@ -140,7 +138,6 @@ void TopologyManagerImpl::onServerRTTUpdated(HostAndPort hostAndPort, HelloRTT r
     }
     // otherwise, the server was removed from the topology. Nothing to do.
     LOG(4333201,
-        "Not updating RTT. Server {server} does not exist in {replicaSet}",
         "Not updating RTT. The server does not exist in the replica set",
         "server"_attr = hostAndPort,
         "replicaSet"_attr = getTopologyDescription()->getSetName());

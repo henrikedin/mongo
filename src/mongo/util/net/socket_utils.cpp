@@ -71,7 +71,6 @@ const struct WinsockInit {
         WSADATA d;
         if (WSAStartup(MAKEWORD(2, 2), &d) != 0) {
             LOG(23201,
-                "ERROR: wsastartup failed {error}",
                 "ERROR: wsastartup failed",
                 "error"_attr = errnoWithDescription());
             quickExit(EXIT_NTSERVICE_ERROR);
@@ -119,7 +118,6 @@ void setSocketKeepAliveParams(int sock,
             return val ? (val.get() / 1000) : default_value;
         }
         LOG_ERROR(23203,
-                  "can't get KeepAlive parameter: {error}",
                   "Can't get KeepAlive parameter",
                   "error"_attr = withval.getStatus());
         return default_value;
@@ -144,7 +142,6 @@ void setSocketKeepAliveParams(int sock,
                      nullptr,
                      nullptr)) {
             LOG_ERROR(23204,
-                      "failed setting keepalive values: {error}",
                       "Failed setting keepalive values",
                       "error"_attr = WSAGetLastError());
         }
@@ -157,7 +154,6 @@ void setSocketKeepAliveParams(int sock,
 
             if (getsockopt(sock, level, optnum, (char*)&optval, &len)) {
                 LOG_ERROR(23205,
-                          "can't get {optname}: {error}",
                           "Can't get socket option",
                           "optname"_attr = optname,
                           "error"_attr = errnoWithDescription());
@@ -167,7 +163,6 @@ void setSocketKeepAliveParams(int sock,
                 optval = maxval;
                 if (setsockopt(sock, level, optnum, (char*)&optval, sizeof(optval))) {
                     LOG_ERROR(23206,
-                              "can't set {optname}: {error}",
                               "Can't set socket option",
                               "optname"_attr = optname,
                               "error"_attr = errnoWithDescription());
@@ -215,7 +210,6 @@ std::string getHostName() {
     int ec = gethostname(buf, 127);
     if (ec || *buf == 0) {
         LOG(23202,
-            "can't get this server's hostname {error}",
             "Can't get this server's hostname",
             "error"_attr = errnoWithDescription());
         return "";

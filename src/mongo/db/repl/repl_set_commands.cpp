@@ -105,7 +105,6 @@ public:
                      const BSONObj& cmdObj,
                      BSONObjBuilder& result) {
         LOG(21573,
-            "replSetTest command received: {cmdObj}",
             "replSetTest command received",
             "cmdObj"_attr = cmdObj.toString());
 
@@ -125,7 +124,6 @@ public:
             uassertStatusOK(status);
             Milliseconds timeout(timeoutMillis);
             LOG(21574,
-                "replSetTest: waiting {timeout} for member state to become {expectedState}",
                 "replSetTest: waiting for member state to become expected state",
                 "timeout"_attr = timeout,
                 "expectedState"_attr = expectedState);
@@ -293,7 +291,6 @@ void parseReplSetSeedList(ReplicationCoordinatorExternalState* externalState,
         if (externalState->isSelf(m, getGlobalServiceContext())) {
             LOG_DEBUG(21576,
                       1,
-                      "ignoring seed {seed} (=self)",
                       "Ignoring seed (=self)",
                       "seed"_attr = m.toString());
         } else {
@@ -368,7 +365,6 @@ public:
             b.appendArray("members", members.obj());
             configObj = b.obj();
             LOG(21578,
-                "created this configuration for initiation : {config}",
                 "Created configuration for initiation",
                 "config"_attr = configObj.toString());
         }
@@ -717,7 +713,6 @@ public:
 
         LOG_FOR_HEARTBEATS(24095,
                            2,
-                           "Received heartbeat request from {from}, {cmdObj}",
                            "Received heartbeat request",
                            "from"_attr = cmdObj.getStringField("from"),
                            "cmdObj"_attr = cmdObj);
@@ -735,7 +730,6 @@ public:
 
         LOG_FOR_HEARTBEATS(24096,
                            2,
-                           "Processing heartbeat request from {from}, {cmdObj}",
                            "Processing heartbeat request",
                            "from"_attr = cmdObj.getStringField("from"),
                            "cmdObj"_attr = cmdObj);
@@ -746,7 +740,6 @@ public:
 
         LOG_FOR_HEARTBEATS(24097,
                            2,
-                           "Generated heartbeat response to {from}, {response}",
                            "Generated heartbeat response",
                            "from"_attr = cmdObj.getStringField("from"),
                            "response"_attr = response);
@@ -773,7 +766,6 @@ public:
 
         if (!status.isOK()) {
             LOG(21582,
-                "replSetStepUp request failed {error}",
                 "replSetStepUp request failed",
                 "error"_attr = causedBy(status));
         }
@@ -811,7 +803,6 @@ public:
                 kFailedWithReplSetAbortPrimaryCatchUpCmd);
         if (!status.isOK()) {
             LOG(21584,
-                "replSetAbortPrimaryCatchUp request failed {error}",
                 "replSetAbortPrimaryCatchUp request failed",
                 "error"_attr = causedBy(status));
         }

@@ -208,7 +208,6 @@ bool isAutoBalanceEnabled(OperationContext* opCtx,
         return Grid::get(opCtx)->catalogClient()->getCollection(opCtx, nss).getAllowBalance();
     } catch (const DBException& ex) {
         LOG(21903,
-            "Auto-split for {namespace} failed to load collection metadata: {error}",
             "Auto-split failed to load collection metadata",
             "namespace"_attr = nss,
             "error"_attr = redact(ex));
@@ -328,8 +327,6 @@ void ChunkSplitter::_runAutosplit(std::shared_ptr<ChunkSplitStateDriver> chunkSp
 
         LOG_DEBUG(21906,
                   1,
-                  "about to initiate autosplit: {chunk} dataWritten since last check: "
-                  "{dataWrittenBytes} maxChunkSizeBytes: {maxChunkSizeBytes}",
                   "about to initiate autosplit",
                   "chunk"_attr = redact(chunk.toString()),
                   "dataWrittenBytes"_attr = dataWritten,
@@ -349,8 +346,6 @@ void ChunkSplitter::_runAutosplit(std::shared_ptr<ChunkSplitStateDriver> chunkSp
         if (splitPoints.empty()) {
             LOG_DEBUG(21907,
                       1,
-                      "ChunkSplitter attempted split but not enough split points were found for "
-                      "chunk {chunk}",
                       "ChunkSplitter attempted split but not enough split points were found for "
                       "chunk",
                       "chunk"_attr = redact(chunk.toString()));
@@ -401,8 +396,6 @@ void ChunkSplitter::_runAutosplit(std::shared_ptr<ChunkSplitStateDriver> chunkSp
         const bool shouldBalance = isAutoBalanceEnabled(opCtx.get(), nss, balancerConfig);
 
         LOG(21908,
-            "autosplitted {namespace} chunk: {chunk} with {splitPoints} split points "
-            "(maxChunkSizeBytes: {maxChunkSizeBytes}). {extraInfo}",
             "autosplitted chunk",
             "namespace"_attr = nss,
             "chunk"_attr = redact(chunk.toString()),
@@ -433,8 +426,6 @@ void ChunkSplitter::_runAutosplit(std::shared_ptr<ChunkSplitStateDriver> chunkSp
             moveChunk(opCtx.get(), nss, topChunkMinKey);
         } catch (const DBException& ex) {
             LOG(21909,
-                "Top-chunk optimization failed to move chunk {chunk} in collection "
-                "{namespace} after a successful split: {error}",
                 "Top-chunk optimization failed to move chunk after a successful split",
                 "chunk"_attr = redact(ChunkRange(min, max).toString()),
                 "namespace"_attr = nss,
@@ -442,7 +433,6 @@ void ChunkSplitter::_runAutosplit(std::shared_ptr<ChunkSplitStateDriver> chunkSp
         }
     } catch (const DBException& ex) {
         LOG(21910,
-            "Unable to auto-split chunk {chunk} in namespace {namespace}: {error}",
             "Unable to auto-split chunk",
             "chunk"_attr = redact(ChunkRange(min, max).toString()),
             "namespace"_attr = nss,

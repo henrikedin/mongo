@@ -115,12 +115,10 @@ void MultiIndexBlock::abortIndexBuild(OperationContext* opCtx,
             if (e.toStatus() == ErrorCodes::ExceededMemoryLimit)
                 continue;
             LOG_ERROR(20393,
-                      "Caught exception while cleaning up partially built indexes: {e}",
                       "Caught exception while cleaning up partially built indexes",
                       "error"_attr = redact(e));
         } catch (const std::exception& e) {
             LOG_ERROR(20394,
-                      "Caught exception while cleaning up partially built indexes: {e_what}",
                       "Caught exception while cleaning up partially built indexes",
                       "error"_attr = e.what());
         } catch (...) {

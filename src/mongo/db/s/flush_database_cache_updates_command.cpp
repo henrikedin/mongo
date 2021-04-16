@@ -135,7 +135,6 @@ public:
             if (Base::request().getSyncFromConfig()) {
                 LOG_DEBUG(21981,
                           1,
-                          "Forcing remote routing table refresh for {db}",
                           "Forcing remote routing table refresh",
                           "db"_attr = _dbName());
                 forceDatabaseRefresh(opCtx, _dbName());

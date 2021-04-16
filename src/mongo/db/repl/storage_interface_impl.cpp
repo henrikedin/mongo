@@ -194,7 +194,6 @@ StorageInterfaceImpl::createCollectionForBulkLoading(
 
     LOG_DEBUG(21753,
               2,
-              "StorageInterfaceImpl::createCollectionForBulkLoading called for ns: {namespace}",
               "StorageInterfaceImpl::createCollectionForBulkLoading called",
               "namespace"_attr = nss.ns());
 
@@ -409,7 +408,6 @@ Status StorageInterfaceImpl::dropReplicatedDatabases(OperationContext* opCtx) {
         opCtx->getServiceContext()->getStorageEngine()->listDatabases();
     invariant(!dbNames.empty());
     LOG(21754,
-        "dropReplicatedDatabases - dropping {numDatabases} databases",
         "dropReplicatedDatabases - dropping databases",
         "numDatabases"_attr = dbNames.size());
 
@@ -430,8 +428,6 @@ Status StorageInterfaceImpl::dropReplicatedDatabases(OperationContext* opCtx) {
                 // This is safe be replaced by "invariant(db);dropDatabase(opCtx, db);" once fixed.
                 LOG(21755,
                     "dropReplicatedDatabases - database disappeared after retrieving list of "
-                    "database names but before drop: {dbName}",
-                    "dropReplicatedDatabases - database disappeared after retrieving list of "
                     "database names but before drop",
                     "dbName"_attr = dbName);
             }
@@ -439,7 +435,6 @@ Status StorageInterfaceImpl::dropReplicatedDatabases(OperationContext* opCtx) {
     }
     invariant(hasLocalDatabase, "local database missing");
     LOG(21756,
-        "dropReplicatedDatabases - dropped {numDatabases} databases",
         "dropReplicatedDatabases - dropped databases",
         "numDatabases"_attr = dbNames.size());
 

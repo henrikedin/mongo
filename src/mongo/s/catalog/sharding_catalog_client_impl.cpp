@@ -995,7 +995,6 @@ Status ShardingCatalogClientImpl::applyChunkOpsDeprecated(OperationContext* opCt
 
         LOG_WARNING(
             22675,
-            "Error committing chunk operation, metadata will be revalidated. Caused by {error}",
             "Error committing chunk operation, metadata will be revalidated",
             "error"_attr = redact(status));
 
