@@ -1394,7 +1394,6 @@ Status WiredTigerKVEngine::recoverOrphanedIdent(OperationContext* opCtx,
     tmpFile += ".tmp";
 
     LOG(22332,
-        "Renaming data file {file} to temporary file {temporary}",
         "Renaming data file to temporary",
         "file"_attr = identFilePath->generic_string(),
         "temporary"_attr = tmpFile.generic_string());
@@ -1404,7 +1403,6 @@ Status WiredTigerKVEngine::recoverOrphanedIdent(OperationContext* opCtx,
     }
 
     LOG(22333,
-        "Creating new RecordStore for collection {namespace} with UUID: {uuid}",
         "Creating new RecordStore",
         "namespace"_attr = nss,
         "uuid"_attr = options.uuid);
@@ -1431,7 +1429,7 @@ Status WiredTigerKVEngine::recoverOrphanedIdent(OperationContext* opCtx,
     }
 
     auto start = Date_t::now();
-    LOG(22335, "Salvaging ident {ident}", "Salvaging ident", "ident"_attr = ident);
+    LOG(22335, "Salvaging ident", "ident"_attr = ident);
 
     WiredTigerSession sessionWrapper(_conn);
     WT_SESSION* session = sessionWrapper.getSession();
@@ -1443,7 +1441,6 @@ Status WiredTigerKVEngine::recoverOrphanedIdent(OperationContext* opCtx,
                 str::stream() << "Salvaged data for ident " << ident};
     }
     LOG_WARNING(22354,
-                "Could not salvage data. Rebuilding ident: {status_reason}",
                 "Could not salvage data. Rebuilding ident",
                 "ident"_attr = ident,
                 "error"_attr = status.reason());

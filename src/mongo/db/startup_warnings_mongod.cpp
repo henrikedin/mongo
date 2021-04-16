@@ -197,7 +197,6 @@ void logMongodStartupWarnings(const StorageGlobalParams& storageParams,
                 if ((where == std::string::npos) || (++where == line.size())) {
                     LOG_WARNING_OPTIONS(22165,
                                         {log::LogTag::kStartupWarnings},
-                                        "Cannot parse numa_maps at line: {line}",
                                         "Cannot parse numa_maps",
                                         "line"_attr = line);
                 }
@@ -290,9 +289,6 @@ void logMongodStartupWarnings(const StorageGlobalParams& storageParams,
         if (rlnofile.rlim_cur < minNumFiles) {
             LOG_WARNING_OPTIONS(22184,
                                 {log::LogTag::kStartupWarnings},
-                                "** WARNING: Soft rlimits too low. The limit for open file "
-                                "descriptors is {currentValue}, recommended "
-                                "minimum is {recommendedMinimum}",
                                 "Soft rlimits for open file descriptors too low",
                                 "currentValue"_attr = rlnofile.rlim_cur,
                                 "recommendedMinimum"_attr = minNumFiles);
@@ -301,7 +297,6 @@ void logMongodStartupWarnings(const StorageGlobalParams& storageParams,
         const auto errmsg = errnoWithDescription();
         LOG_WARNING_OPTIONS(22186,
                             {log::LogTag::kStartupWarnings},
-                            "getrlimit failed: {error}",
                             "getrlimit failed",
                             "error"_attr = errmsg);
     }
@@ -317,9 +312,6 @@ void logMongodStartupWarnings(const StorageGlobalParams& storageParams,
         if ((rlmemlock.rlim_cur / ProcessInfo::getPageSize()) < minLockedPages) {
             LOG_WARNING_OPTIONS(22188,
                                 {log::LogTag::kStartupWarnings},
-                                "** WARNING: Soft rlimits too low. The limit for locked memory "
-                                "size is {lockedMemoryBytes} "
-                                "bytes, it should be at least {minLockedMemoryBytes} bytes",
                                 "Soft rlimit for locked memory too low",
                                 "lockedMemoryBytes"_attr = rlmemlock.rlim_cur,
                                 "minLockedMemoryBytes"_attr =
@@ -329,7 +321,6 @@ void logMongodStartupWarnings(const StorageGlobalParams& storageParams,
         const auto errmsg = errnoWithDescription();
         LOG_WARNING_OPTIONS(22190,
                             {log::LogTag::kStartupWarnings},
-                            "** WARNING: getrlimit failed: {error}",
                             "getrlimit failed",
                             "error"_attr = errmsg);
     }

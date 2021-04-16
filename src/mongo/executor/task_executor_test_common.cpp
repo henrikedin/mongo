@@ -87,7 +87,6 @@ public:
         auto& entry = executorTestCaseRegistry()[name];
         if (entry) {
             LOG_FATAL(28713,
-                      "Multiple attempts to register ExecutorTest named {executor}",
                       "Multiple attempts to register ExecutorTest",
                       "executor"_attr = name);
         }

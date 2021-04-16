@@ -93,13 +93,11 @@ Status launchServiceWorkerThread(unique_function<void()> task) noexcept {
             if (failed) {
                 const auto ewd = errnoWithDescription(failed);
                 LOG_WARNING(22949,
-                            "pthread_attr_setstacksize failed: {error}",
                             "pthread_attr_setstacksize failed",
                             "error"_attr = ewd);
             }
         } else if (limits.rlim_cur < 1024 * 1024) {
             LOG_WARNING(22950,
-                        "Stack size set to {stackSizeKiB}KiB. We suggest 1024KiB",
                         "Stack size not set to suggested 1024KiB",
                         "stackSizeKiB"_attr = (limits.rlim_cur / 1024));
         }
@@ -119,15 +117,12 @@ Status launchServiceWorkerThread(unique_function<void()> task) noexcept {
         if (failed > 0) {
             LOG_ERROR_OPTIONS(4850900,
                               {log::UserAssertAfterLog()},
-                              "pthread_create failed: error: {error}",
                               "pthread_create failed",
                               "error"_attr = errnoWithDescription(failed));
         } else if (failed < 0) {
             auto savedErrno = errno;
             LOG_ERROR_OPTIONS(4850901,
                               {log::UserAssertAfterLog()},
-                              "pthread_create failed with a negative return code: {code}, errno: "
-                              "{errno}, error: {error}",
                               "pthread_create failed with a negative return code",
                               "code"_attr = failed,
                               "errno"_attr = savedErrno,

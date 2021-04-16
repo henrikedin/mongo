@@ -57,7 +57,6 @@ void flushMyDirectory(const boost::filesystem::path& file) {
     // massert(40389, str::stream() << "Couldn't find parent dir for file: " << file.string(),);
     if (!file.has_branch_path()) {
         LOG(22274,
-            "warning flushMyDirectory couldn't find parent dir for file: {file}",
             "flushMyDirectory couldn't find parent dir for file",
             "file"_attr = file.generic_string());
         return;
@@ -234,7 +233,6 @@ void StorageEngineLockFile::clearPidAndUnlock() {
     if (::ftruncate(_lockFileHandle->_fd, 0)) {
         int errorcode = errno;
         LOG(22280,
-            "couldn't remove fs lock {errnoWithDescription_errorcode}",
             "Couldn't remove fs lock",
             "error"_attr = errnoWithDescription(errorcode));
     }

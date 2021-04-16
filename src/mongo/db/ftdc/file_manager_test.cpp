@@ -115,7 +115,6 @@ TEST_F(FTDCFileManagerTest, TestFull) {
         int fs = boost::filesystem::file_size(file);
         ASSERT_TRUE(fs < c.maxFileSizeBytes * 1.10);
         LOG(20632,
-            "File {fileName} has size {fileSize}",
             "File size",
             "fileName"_attr = file.generic_string(),
             "fileSize"_attr = fs);

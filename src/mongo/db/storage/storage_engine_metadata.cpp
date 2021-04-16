@@ -221,7 +221,6 @@ void flushMyDirectory(const boost::filesystem::path& file) {
     // massert(13652, str::stream() << "Couldn't find parent dir for file: " << file.string(),);
     if (!file.has_branch_path()) {
         LOG(22283,
-            "warning flushMyDirectory couldn't find parent dir for file: {file}",
             "flushMyDirectory couldn't find parent dir for file",
             "file"_attr = file.generic_string());
         return;

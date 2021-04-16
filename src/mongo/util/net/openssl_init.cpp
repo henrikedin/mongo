@@ -150,7 +150,6 @@ void setupFIPS() {
     int status = FIPS_mode_set(1);
     if (!status) {
         LOG_FATAL(23173,
-                  "can't activate FIPS mode: {error}",
                   "Can't activate FIPS mode",
                   "error"_attr = SSLManagerInterface::getSSLErrorMessage(ERR_get_error()));
         fassertFailedNoTrace(16703);

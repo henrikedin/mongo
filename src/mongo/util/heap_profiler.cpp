@@ -538,7 +538,6 @@ private:
         }
         stackInfo.stackObj = builder.obj();
         LOG(23158,
-            "heapProfile stack {stackNum}: {stackObj}",
             "heapProfile stack",
             "stackNum"_attr = stackInfo.stackNum,
             "stackObj"_attr = stackInfo.stackObj);
@@ -568,11 +567,6 @@ private:
             const size_t stackTableSize = stackHashTable.memorySizeBytes();
             const double MB = 1024 * 1024;
             LOG(23159,
-                "Generating heap profiler serverStatus: sampleIntervalBytes "
-                "{heapProfilingSampleIntervalBytes}; "
-                "maxActiveMemory {maxActiveMemoryMB} MB; objTableSize {objTableSize_MB} MB; "
-                "stackTableSize "
-                "{stackTableSizeMB} MB",
                 "Generating heap profiler serverStatus",
                 "heapProfilingSampleIntervalBytes"_attr = HeapProfilingSampleIntervalBytes,
                 "maxActiveMemoryMB"_attr = maxActiveMemory / MB,

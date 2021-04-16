@@ -344,10 +344,6 @@ TEST_F(logTest, Basic) {
     t4.serialize(buffer);
     ASSERT_EQUALS(lines.back(), fmt::to_string(buffer));
 
-    // Message string is selected when using API that also take a format string
-    LOG(20084, "fmtstr {name}", "msgstr", "name"_attr = 1);
-    ASSERT_EQUALS(lines.back(), "msgstr");
-
     // Test that logging exceptions does not propagate out to user code in release builds
     if (!kDebugBuild) {
         LOG(4638203, "mismatch {name}", "not_name"_attr = 1);
@@ -1315,7 +1311,7 @@ TEST_F(logContainerTest, StringMapUint32) {
 
 TEST_F(logTest, AttrNameCollision) {
     ASSERT_THROWS_CODE(
-        LOG(4793300, "Collision {k1}", "Collision", "k1"_attr = "v1", "k1"_attr = "v2"),
+        LOG(4793300, "Collision", "k1"_attr = "v1", "k1"_attr = "v2"),
         AssertionException,
         4793301);
 }

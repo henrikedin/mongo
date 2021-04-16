@@ -294,7 +294,6 @@ Future<DbResponse> ServiceEntryPointBridge::handleRequest(OperationContext* opCt
                 auto status = sws.getStatus();
                 if (!status.isOK()) {
                     LOG_WARNING(22924,
-                                "Unable to establish connection to {remoteAddress}: {error}",
                                 "Unable to establish connection",
                                 "remoteAddress"_attr = destAddr,
                                 "error"_attr = status);
@@ -327,8 +326,6 @@ Future<DbResponse> ServiceEntryPointBridge::handleRequest(OperationContext* opCt
 
         LOG_DEBUG(22917,
                   1,
-                  "Received \"{commandName}\" command with arguments "
-                  "{arguments} from {remote}",
                   "Received command",
                   "commandName"_attr = cmdRequest->getCommandName(),
                   "arguments"_attr = cmdRequest->body,
@@ -360,7 +357,6 @@ Future<DbResponse> ServiceEntryPointBridge::handleRequest(OperationContext* opCt
         // Close the connection to 'dest'.
         case HostSettings::State::kHangUp:
             LOG(22918,
-                "Rejecting connection from {remote}, end connection {source}",
                 "Rejecting connection",
                 "remote"_attr = dest,
                 "source"_attr = source->remote().toString());
@@ -372,15 +368,12 @@ Future<DbResponse> ServiceEntryPointBridge::handleRequest(OperationContext* opCt
                 std::string hostName = dest.toString();
                 if (cmdRequest) {
                     LOG(22919,
-                        "Discarding \"{commandName}\" command with arguments "
-                        "{arguments} from {hostName}",
                         "Discarding command from host",
                         "commandName"_attr = cmdRequest->getCommandName(),
                         "arguments"_attr = cmdRequest->body,
                         "hostName"_attr = hostName);
                 } else {
                     LOG(22920,
-                        "Discarding {operation} from {hostName}",
                         "Discarding operation from host",
                         "operation"_attr = networkOpToString(request.operation()),
                         "hostName"_attr = hostName);
@@ -428,7 +421,6 @@ Future<DbResponse> ServiceEntryPointBridge::handleRequest(OperationContext* opCt
         // connections from 'host', then do so now.
         if (hostSettings.state == HostSettings::State::kHangUp) {
             LOG(22921,
-                "Closing connection from {remote}, end connection {source}",
                 "Closing connection",
                 "remote"_attr = dest,
                 "source"_attr = source->remote());

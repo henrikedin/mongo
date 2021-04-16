@@ -88,8 +88,6 @@ void compareOptions(size_t lineNumber,
     for (std::size_t i = 0; i < std::min(options.size(), expectedOptions.size()); ++i) {
         if (options[i] != expectedOptions[i]) {
             LOG(20152,
-                "Option: \"tolower({key})={value}\" doesn't equal: "
-                "\"tolower({expectedKey})={expectedValue}\" data on line: {lineNumber}",
                 "Option key-value pair doesn't equal expected pair",
                 "key"_attr = options[i].first.original(),
                 "value"_attr = options[i].second,
@@ -601,7 +599,7 @@ std::string returnStringFromElementOrNull(BSONElement element) {
 
 // Helper method to take a valid test case, parse() it, and assure the output is correct
 void testValidURIFormat(URITestCase testCase) {
-    LOG(20153, "Testing URI: {mongoUri}", "Testing URI", "mongoUri"_attr = testCase.URI);
+    LOG(20153, "Testing URI", "mongoUri"_attr = testCase.URI);
     std::string errMsg;
     const auto cs_status = MongoURI::parse(testCase.URI);
     ASSERT_OK(cs_status);
@@ -629,7 +627,7 @@ TEST(MongoURI, InvalidURIs) {
 
     for (size_t i = 0; i != numCases; ++i) {
         const InvalidURITestCase testCase = invalidCases[i];
-        LOG(20154, "Testing URI: {mongoUri}", "Testing URI", "mongoUri"_attr = testCase.URI);
+        LOG(20154, "Testing URI", "mongoUri"_attr = testCase.URI);
         auto cs_status = MongoURI::parse(testCase.URI);
         ASSERT_NOT_OK(cs_status);
         if (testCase.code) {
@@ -712,7 +710,6 @@ TEST(MongoURI, specTests) {
                 // This uri string is invalid --> parse the uri and ensure it fails
                 const InvalidURITestCase testCase = InvalidURITestCase{uri};
                 LOG(20155,
-                    "Testing URI: {mongoUri}",
                     "Testing URI",
                     "mongoUri"_attr = testCase.URI);
                 auto cs_status = MongoURI::parse(testCase.URI);

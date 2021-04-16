@@ -166,7 +166,6 @@ void setOSThreadName(StringData threadName) {
 
         if (error) {
             LOG(23103,
-                "Ignoring error from setting thread name: {error}",
                 "Ignoring error from setting thread name",
                 "error"_attr = errnoWithDescription(error));
         }

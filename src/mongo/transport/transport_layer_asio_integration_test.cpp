@@ -59,7 +59,7 @@ TEST(TransportLayerASIO, HTTPRequestGetsHTTPError) {
     asio::ip::tcp::resolver resolver(ioContext);
     asio::ip::tcp::socket socket(ioContext);
 
-    LOG(23028, "Connecting to {server}", "Connecting to server", "server"_attr = server);
+    LOG(23028, "Connecting to server", "server"_attr = server);
     auto resolverIt = resolver.resolve(server.host(), std::to_string(server.port()));
     asio::connect(socket, resolverIt);
 
@@ -79,7 +79,6 @@ TEST(TransportLayerASIO, HTTPRequestGetsHTTPError) {
     StringData httpResp(httpRespBuf.data(), size);
 
     LOG(23031,
-        "Received http response: {response}",
         "Received http response",
         "response"_attr = httpResp);
     ASSERT_TRUE(httpResp.startsWith("HTTP/1.0 200 OK"));

@@ -231,7 +231,6 @@ void NetworkInterfaceMock::shutdown() {
                                                        Milliseconds(0)}};
         if (op.processResponse(std::move(response))) {
             LOG_WARNING(22590,
-                        "Mock network interface shutting down with outstanding request: {request}",
                         "Mock network interface shutting down with outstanding request",
                         "request"_attr = op.getRequest());
         }

@@ -75,7 +75,6 @@ void logAndThrowWithErrnoAt(const StringData expr,
                             const int err) {
     using namespace fmt::literals;
     LOG_ERROR(24138,
-              "{expr} failed: {error} @{file}:{line}",
               "expression failed",
               "expr"_attr = expr,
               "error"_attr = errnoWithDescription(err),

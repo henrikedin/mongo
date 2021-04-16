@@ -356,7 +356,6 @@ public:
             // If poll failed, it better be in EINTR
             if (rval < 0 && savedErrno != EINTR) {
                 LOG_FATAL(50834,
-                          "error in poll: {error}",
                           "error in poll",
                           "error"_attr = errnoWithDescription(savedErrno));
             }

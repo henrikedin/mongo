@@ -79,7 +79,6 @@ public:
         auto& entry = threadPoolTestCaseRegistry()[name];
         if (entry) {
             LOG_FATAL(34355,
-                      "Multiple attempts to register ThreadPoolTest named {name}",
                       "Multiple attempts to register ThreadPoolTest",
                       "name"_attr = name);
         }
@@ -97,7 +96,6 @@ public:
         auto& entry = threadPoolTestCaseRegistry()[name];
         if (entry) {
             LOG_FATAL(34356,
-                      "Multiple attempts to register ThreadPoolDeathTest named {name}",
                       "Multiple attempts to register ThreadPoolDeathTest",
                       "name"_attr = name);
         }
