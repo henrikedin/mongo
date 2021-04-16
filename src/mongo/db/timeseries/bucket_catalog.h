@@ -361,8 +361,9 @@ private:
         template <typename GetDataFn>
         void _clearUpdated(GetDataFn getData);
 
-        StringMap<MinMax> _object;
-        std::vector<MinMax> _array;
+        std::vector<std::pair<std::string, MinMax>> _entries;
+        //StringMap<MinMax> _object;
+        /*std::vector<MinMax> _array;*/
 
         /**
          * Data bearing representation for MinMax. Can represent unset, Object, Array or Value
