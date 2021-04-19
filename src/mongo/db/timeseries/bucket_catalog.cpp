@@ -1034,19 +1034,25 @@ void BucketCatalog::MinMax::_update(BSONElement elem,
         return elem.canonicalType() - canonicalizeBSONType(type);
     };
 
-    if (elem.type() == Object) {
+    if (elem.type() == Object || elem.type() == Array) {
         auto shouldUpdateObject = [&](Data& data, auto compare) {
             return data.type() == Type::kObject ||  data.type() == Type::kUnset ||
-                (data.type() == Type::kArray && compare(typeComp(Array), 0)) ||
+                //(data.type() == Type::kArray && compare(typeComp(Array), 0)) ||
                 (data.type() == Type::kValue && compare(typeComp(data.valueType()), 0));
         };
         bool updateMin = shouldUpdateObject(_min, std::less<int>{});
         if (updateMin) {
-            _min.setObject();
+            if (elem.type() == Object)
+                _min.setObject();
+            else
+                _min.setArray();
         }
         bool updateMax = shouldUpdateObject(_max, std::greater<int>{});
         if (updateMax) {
-            _max.setObject();
+            if (elem.type() == Object)
+                _max.setObject();
+            else
+                _max.setArray();
         }
 
         // Compare objects element-wise if min or max need to be updated
@@ -1074,32 +1080,32 @@ void BucketCatalog::MinMax::_update(BSONElement elem,
         return;
     }
 
-    if (elem.type() == Array) {
-        auto shouldUpdateArray = [&](Data& data, auto compare) {
-            return data.type() == Type::kArray || data.type() == Type::kUnset ||
-                (data.type() == Type::kObject && compare(typeComp(Object), 0)) ||
-                (data.type() == Type::kValue && compare(typeComp(data.valueType()), 0));
-        };
-        bool updateMin = shouldUpdateArray(_min, std::less<int>{});
-        if (updateMin) {
-            _min.setArray();
-        }
-        bool updateMax = shouldUpdateArray(_max, std::greater<int>{});
-        if (updateMax) {
-            _max.setArray();
-        }
-        // Compare objects element-wise if min or max need to be updated
-        if (updateMin || updateMax) {
-            auto elemArray = elem.Array();
-            if (_entries.size() < elemArray.size()) {
-                _entries.resize(elemArray.size());
-            }
-            for (size_t i = 0; i < elemArray.size(); i++) {
-                _updateWithMemoryUsage(&_entries[i].second, elemArray[i], stringComparator);
-            }
-        }
-        return;
-    }
+    //if (elem.type() == Array) {
+    //    auto shouldUpdateArray = [&](Data& data, auto compare) {
+    //        return data.type() == Type::kArray || data.type() == Type::kUnset ||
+    //            (data.type() == Type::kObject && compare(typeComp(Object), 0)) ||
+    //            (data.type() == Type::kValue && compare(typeComp(data.valueType()), 0));
+    //    };
+    //    bool updateMin = shouldUpdateArray(_min, std::less<int>{});
+    //    if (updateMin) {
+    //        _min.setArray();
+    //    }
+    //    bool updateMax = shouldUpdateArray(_max, std::greater<int>{});
+    //    if (updateMax) {
+    //        _max.setArray();
+    //    }
+    //    // Compare objects element-wise if min or max need to be updated
+    //    if (updateMin || updateMax) {
+    //        auto elemArray = elem.Array();
+    //        if (_entries.size() < elemArray.size()) {
+    //            _entries.resize(elemArray.size());
+    //        }
+    //        for (size_t i = 0; i < elemArray.size(); i++) {
+    //            _updateWithMemoryUsage(&_entries[i].second, elemArray[i], stringComparator);
+    //        }
+    //    }
+    //    return;
+    //}
 
     auto maybeUpdateValue = [&](Data& data, auto compare) {
         if (data.type() == Type::kUnset ||
