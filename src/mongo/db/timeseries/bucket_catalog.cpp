@@ -750,6 +750,10 @@ BucketCatalog::BucketAccess::BucketAccess(BucketCatalog* catalog,
     key.metadata.normalize();
     HashedBucketKey sortedKey = BucketHasher{}.hashed_key(key);
 
+    // Re-construct the key as it were before normalization
+    auto unsortedBucketKey = key.withMetadata(unsorted);
+    unsortedKey.key = &unsortedBucketKey;
+
     if (bucketFound(_findOpenBucketAndLock(sortedKey))) {
         // Bucket found, check if we have available slots to store the key before normalization
         if (_bucket->_unsortedMetadatas.size() == _bucket->_unsortedMetadatas.capacity())
@@ -757,10 +761,6 @@ BucketCatalog::BucketAccess::BucketAccess(BucketCatalog* catalog,
 
         // Release the bucket as we need to acquire the exclusive lock for the catalog.
         release();
-
-        // Re-construct the key as it were before normalization
-        auto unsortedBucketKey = key.withMetadata(unsorted);
-        unsortedKey.key = &unsortedBucketKey;
 
         // Acquire the exclusive lock for the catalog and look for the bucket again, it may have
         // been modified since we released our locks.
