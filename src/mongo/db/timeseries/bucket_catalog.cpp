@@ -773,8 +773,8 @@ BucketCatalog::BucketAccess::BucketAccess(BucketCatalog* catalog,
 
             _catalog->_openBuckets[unsortedKey] = _bucket;
             _bucket->_unsortedMetadatas.push_back(unsorted);
+            return;
         }
-        return;
     }
 
     // Bucket not found, grab exclusive lock and create bucket
