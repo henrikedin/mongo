@@ -305,6 +305,7 @@ private:
 
     class MinMax {
     public:
+        MinMax();
         /**
          * Updates the min/max according to 'comp', ignoring the 'metaField' field.
          */
@@ -331,37 +332,22 @@ private:
         uint64_t getMemoryUsage() const;
 
     private:
-        enum class Type {
-            kObject,
-            kArray,
-            kValue,
-            kUnset,
-        };
+        enum class Type { kObject, kArray, kValue, kUnset };
 
-        void _update(BSONElement elem, const StringData::ComparatorInterface* stringComparator);
-        void _updateWithMemoryUsage(MinMax* minMax,
-                                    BSONElement elem,
-                                    const StringData::ComparatorInterface* stringComparator);
+        
 
-        template <typename GetDataFn>
-        void _append(BSONObjBuilder* builder, GetDataFn getData) const;
-        template <typename GetDataFn>
-        void _append(BSONArrayBuilder* builder, GetDataFn getData) const;
+        
 
         /**
          * Appends updates, if any, to the builder. Returns whether any updates were appended by
          * this MinMax or any MinMaxes below it.
          */
-        template <typename GetDataFn>
-        bool _appendUpdates(BSONObjBuilder* builder, GetDataFn getData);
 
         /**
          * Clears the '_updated' flag on this MinMax and all MinMaxes below it.
          */
-        template <typename GetDataFn>
-        void _clearUpdated(GetDataFn getData);
+        
 
-        std::vector<std::pair<std::string, MinMax>> _entries;
         //StringMap<MinMax> _object;
         /*std::vector<MinMax> _array;*/
 
@@ -379,12 +365,12 @@ private:
             /**
              * Set type to object.
              */
-            void setObject();
+            bool setObject();
 
             /**
              * Set type to array.
              */
-            void setArray();
+            bool setArray();
 
             /**
              * Set to be the root object.
@@ -437,14 +423,40 @@ private:
             bool _updated = false;
         };
 
+        struct Entry {
+            Data _min;
+            Data _max;
+            uint64_t _memoryUsage = 0;
+            bool EOO = false;
+        };
+
+        mutable std::vector<std::pair<std::string, Entry>> _entries;
+
+        std::vector<std::pair<std::string, Entry>>::iterator _update(std::vector<std::pair<std::string, Entry>>::iterator entry, BSONElement elem, const StringData::ComparatorInterface* stringComparator);
+        std::vector<std::pair<std::string, Entry>>::iterator _updateWithMemoryUsage(std::vector<std::pair<std::string, Entry>>::iterator entry,
+                                    BSONElement elem,
+                                    const StringData::ComparatorInterface* stringComparator);
+
+        template <typename GetDataFn>
+        std::vector<std::pair<std::string, Entry>>::iterator _append(std::vector<std::pair<std::string, Entry>>::iterator begin, BSONObjBuilder* builder, GetDataFn getData) const;
+        template <typename GetDataFn>
+        std::vector<std::pair<std::string, Entry>>::iterator _append(std::vector<std::pair<std::string, Entry>>::iterator begin, BSONArrayBuilder* builder, GetDataFn getData) const;
+
+        template <typename GetDataFn>
+        std::pair<bool, std::vector<std::pair<std::string, Entry>>::iterator> _appendUpdates(std::vector<std::pair<std::string, Entry>>::iterator it, BSONObjBuilder* builder, GetDataFn getData);
+
+        template <typename GetDataFn>
+        std::vector<std::pair<std::string, Entry>>::iterator _clearUpdated(std::vector<std::pair<std::string, Entry>>::iterator it, GetDataFn getData);
+
+
         /**
          * Helper for the recursive internal functions to access the min data component.
          */
         struct GetMin {
-            Data& operator()(MinMax& minmax) const {
+            Data& operator()(Entry& minmax) const {
                 return minmax._min;
             }
-            const Data& operator()(const MinMax& minmax) const {
+            const Data& operator()(const Entry& minmax) const {
                 return minmax._min;
             }
         };
@@ -453,17 +465,16 @@ private:
          * Helper for the recursive internal functions to access the max data component.
          */
         struct GetMax {
-            Data& operator()(MinMax& minmax) const {
+            Data& operator()(Entry& minmax) const {
                 return minmax._max;
             }
-            const Data& operator()(const MinMax& minmax) const {
+            const Data& operator()(const Entry& minmax) const {
                 return minmax._max;
             }
         };
 
-        Data _min;
-        Data _max;
-        uint64_t _memoryUsage = 0;
+        
+        
     };
 
     using IdleList = std::list<Bucket*>;
