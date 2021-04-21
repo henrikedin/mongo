@@ -740,8 +740,12 @@ BucketCatalog::BucketAccess::BucketAccess(BucketCatalog* catalog,
     // First we try to find the bucket without normalizing the key as the normalization is an
     // expensive operation.
     auto unsortedKey = BucketHasher{}.hashed_key(key);
-    if (bucketFound(_findOpenBucketAndLock(unsortedKey)))
-        return;
+    {
+        auto lk = _catalog->_lockShared();
+        if (bucketFound(_findOpenBucketAndLock(unsortedKey)))
+            return;
+    }
+    
 
     // If not found, we normalize the metadata object and try to find it again.
     // Save a copy of the metadata before normalizing so we can add this key if the bucket was found
@@ -754,7 +758,13 @@ BucketCatalog::BucketAccess::BucketAccess(BucketCatalog* catalog,
     auto unsortedBucketKey = key.withMetadata(unsorted);
     unsortedKey.key = &unsortedBucketKey;
 
-    if (bucketFound(_findOpenBucketAndLock(sortedKey))) {
+    bool foundSorted = false;
+    {
+        auto lk = _catalog->_lockShared();
+        foundSorted = bucketFound(_findOpenBucketAndLock(sortedKey));
+    }
+    
+    if (foundSorted) {
         // Bucket found, check if we have available slots to store the key before normalization
         if (_bucket->_unsortedMetadatas.size() == _bucket->_unsortedMetadatas.capacity())
             return;
