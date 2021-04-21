@@ -956,6 +956,7 @@ BucketCatalog::MinMax::MinMax() {
     /*Entry e;
     e.EOO = true;
     _entries.push_back(std::make_pair("", std::move(e)));*/
+    _entries.emplace_back();
     _entries.emplace_back().second.EOO = true;
 }
 
@@ -1035,7 +1036,7 @@ void BucketCatalog::MinMax::update(const BSONObj& doc,
              
         it = _updateWithMemoryUsage(entry, elem, stringComparator);
         //invariant(it->second.EOO);
-        ++it;
+        //++it;
     }
 }
 
@@ -1047,7 +1048,7 @@ std::vector<std::pair<std::string, BucketCatalog::MinMax::Entry>>::iterator Buck
 
     if (elem.type() == Object || elem.type() == Array) {
         auto shouldUpdateObject = [&](Data& data, auto compare) {
-            return data.type() == Type::kObject ||  data.type() == Type::kUnset ||
+            return data.type() == Type::kObject || data.type() == Type::kArray ||  data.type() == Type::kUnset ||
                 //(data.type() == Type::kArray && compare(typeComp(Array), 0)) ||
                 (data.type() == Type::kValue && compare(typeComp(data.valueType()), 0));
         };
@@ -1074,6 +1075,7 @@ std::vector<std::pair<std::string, BucketCatalog::MinMax::Entry>>::iterator Buck
         bool updateMax = shouldUpdateObject(begin->second._max, std::greater<int>{});
         if (updateMax) {
             bool needInsert = false;
+            auto before = begin->second._max.updated();
             if (elem.type() == Object)
                 needInsert = begin->second._max.setObject();
             else
@@ -1086,6 +1088,25 @@ std::vector<std::pair<std::string, BucketCatalog::MinMax::Entry>>::iterator Buck
                 //pair->first = elem.fieldName();
                 pair->second.EOO = true;
                 begin = pair - 1;
+            } else if (!before && begin->second._max.updated()) {
+                auto it = begin + 1;
+                int num = (it->second._min.type() == Type::kUnset ||
+                           it->second._min.type() == Type::kValue) &&
+                        (it->second._max.type() == Type::kUnset ||
+                         it->second._max.type() == Type::kValue)
+                    ? 0
+                    : 1;
+                while (num > 0 || !it->second.EOO) {
+                    it->second._max.setUnset();
+                    ++it;
+                    if ((it->second._min.type() == Type::kArray ||
+                            it->second._min.type() == Type::kObject) ||
+                        (it->second._max.type() == Type::kArray ||
+                            it->second._max.type() == Type::kObject))
+                        ++num;
+                    if (it->second.EOO)
+                        --num;
+                }
             }
         }
 
@@ -1107,9 +1128,11 @@ std::vector<std::pair<std::string, BucketCatalog::MinMax::Entry>>::iterator Buck
                 }
                 it = _updateWithMemoryUsage(
                     entry, subElem, stringComparator);
-                invariant(!it->second.EOO);
-                ++it;
+                //invariant(!it->second.EOO);
+                //++it;
             }
+            it = std::find_if(it, _entries.end(), [](const auto& e) { return e.second.EOO; });
+            ++it;
             return it;
         } else {
             auto it = std::find_if(begin, _entries.end(), [](const auto& e) { return e.second.EOO; });
@@ -1156,7 +1179,7 @@ std::vector<std::pair<std::string, BucketCatalog::MinMax::Entry>>::iterator Buck
     };
     maybeUpdateValue(begin->second._min, std::less<int>{});
     maybeUpdateValue(begin->second._max, std::greater<int>{});
-    return begin;
+    return begin+1;
 }
 
 std::vector<std::pair<std::string, BucketCatalog::MinMax::Entry>>::iterator BucketCatalog::MinMax::_updateWithMemoryUsage(
@@ -1191,15 +1214,17 @@ std::vector<std::pair<std::string, BucketCatalog::MinMax::Entry>>::iterator Buck
 
     for (; it != _entries.end() && !it->second.EOO ;) {
         const Data& data = getData(it->second);
-        invariant(data.type() != Type::kUnset);
+        //invariant(data.type() != Type::kUnset);
         if (data.type() == Type::kObject) {
             BSONObjBuilder subObj(builder->subobjStart(it->first));
             it = _append(it+1, &subObj, getData);
         } else if (data.type() == Type::kArray) {
             BSONArrayBuilder subArr(builder->subarrayStart(it->first));
             it = _append(it+1, &subArr, getData);
-        } else {
+        } else if (data.type() == Type::kValue) {
             builder->appendAs(data.value(), it->first);
+            ++it;
+        } else {
             ++it;
         }
     }
@@ -1214,15 +1239,17 @@ std::vector<std::pair<std::string, BucketCatalog::MinMax::Entry>>::iterator Buck
 
     for (; it != _entries.end() && !it->second.EOO ;) {
         const Data& data = getData(it->second);
-        invariant(data.type() != Type::kUnset);
+        //invariant(data.type() != Type::kUnset);
         if (data.type() == Type::kObject) {
             BSONObjBuilder subObj(builder->subobjStart());
             it = _append(it+1, &subObj, getData);
         } else if (data.type() == Type::kArray) {
             BSONArrayBuilder subArr(builder->subarrayStart());
             it = _append(it+1, &subArr, getData);
-        } else {
+        } else if (data.type() == Type::kValue) {
             builder->append(data.value());
+            ++it;
+        } else {
             ++it;
         }
     }
@@ -1271,6 +1298,22 @@ std::pair<bool, std::vector<std::pair<std::string, BucketCatalog::MinMax::Entry>
                     it = _append(it+1,&subArr, getData);
                 } else {
                     updateSection.appendAs(subdata.value(), it->first);
+                    int num = (it->second._min.type() == Type::kUnset ||
+                               it->second._min.type() == Type::kValue) &&
+                            (it->second._max.type() == Type::kUnset ||
+                             it->second._max.type() == Type::kValue)
+                        ? 0
+                        : 1;
+                    while (num) {
+                        ++it;
+                        if ((it->second._min.type() == Type::kArray ||
+                             it->second._min.type() == Type::kObject) ||
+                            (it->second._max.type() == Type::kArray ||
+                             it->second._max.type() == Type::kObject))
+                            ++num;
+                        if (it->second.EOO)
+                            --num;
+                    }
                     ++it;
                 }
                 _clearUpdated(begin, getData);
@@ -1287,7 +1330,25 @@ std::pair<bool, std::vector<std::pair<std::string, BucketCatalog::MinMax::Entry>
                 };
                 it = newIt;
             } else {
+                //it = std::find_if(it, _entries.end(), [](const auto& e) { return e.second.EOO; });
+                int num = (it->second._min.type() == Type::kUnset ||
+                           it->second._min.type() == Type::kValue) &&
+                        (it->second._max.type() == Type::kUnset ||
+                         it->second._max.type() == Type::kValue)
+                    ? 0
+                    : 1;
+                while (num) {
+                    ++it;
+                    if ((it->second._min.type() == Type::kArray ||
+                         it->second._min.type() == Type::kObject) ||
+                        (it->second._max.type() == Type::kArray ||
+                         it->second._max.type() == Type::kObject))
+                        ++num;
+                    if (it->second.EOO)
+                        --num;
+                }
                 ++it;
+                
             }
         }
         if (hasUpdateSection) {
@@ -1318,6 +1379,22 @@ std::pair<bool, std::vector<std::pair<std::string, BucketCatalog::MinMax::Entry>
                     it = _append(it+1,&subArr, getData);
                 } else {
                     builder->appendAs(subdata.value(), updateFieldName);
+                    int num = (it->second._min.type() == Type::kUnset ||
+                               it->second._min.type() == Type::kValue) &&
+                            (it->second._max.type() == Type::kUnset ||
+                             it->second._max.type() == Type::kValue)
+                        ? 0
+                        : 1;
+                    while (num) {
+                        ++it;
+                        if ((it->second._min.type() == Type::kArray ||
+                             it->second._min.type() == Type::kObject) ||
+                            (it->second._max.type() == Type::kArray ||
+                             it->second._max.type() == Type::kObject))
+                            ++num;
+                        if (it->second.EOO)
+                            --num;
+                    }
                     ++it;
                 }
                 _clearUpdated(begin, getData);
@@ -1334,6 +1411,23 @@ std::pair<bool, std::vector<std::pair<std::string, BucketCatalog::MinMax::Entry>
                 }
                 it = newIt;
             } else {
+                //it = std::find_if(it, _entries.end(), [](const auto& e) { return e.second.EOO; });
+                int num = (it->second._min.type() == Type::kUnset ||
+                           it->second._min.type() == Type::kValue) &&
+                        (it->second._max.type() == Type::kUnset ||
+                         it->second._max.type() == Type::kValue)
+                    ? 0
+                    : 1;
+                while (num) {
+                    ++it;
+                    if ((it->second._min.type() == Type::kArray ||
+                         it->second._min.type() == Type::kObject) ||
+                        (it->second._max.type() == Type::kArray ||
+                         it->second._max.type() == Type::kObject))
+                        ++num;
+                    if (it->second.EOO)
+                        --num;
+                }
                 ++it;
             }
             ++count;
@@ -1349,7 +1443,7 @@ std::pair<bool, std::vector<std::pair<std::string, BucketCatalog::MinMax::Entry>
 template <typename GetDataFn>
 std::vector<std::pair<std::string, BucketCatalog::MinMax::Entry>>::iterator BucketCatalog::MinMax::_clearUpdated(std::vector<std::pair<std::string, Entry>>::iterator it, GetDataFn getData) {
     auto& data = getData(it->second);
-    invariant(data.type() != Type::kUnset);
+    //invariant(data.type() != Type::kUnset);
 
     data.clearUpdated();
     /*if (data.type() == Type::kObject) {

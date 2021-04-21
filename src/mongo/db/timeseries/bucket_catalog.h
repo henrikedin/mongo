@@ -377,6 +377,10 @@ private:
              */
             void setRootObject();
 
+            void setUnset() {
+                _type = Type::kUnset;
+            };
+
             /**
              * Returns stored BSONElement with field name as empty string..
              */
