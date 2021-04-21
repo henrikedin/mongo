@@ -1051,6 +1051,7 @@ std::vector<std::pair<std::string, BucketCatalog::MinMax::Entry>>::iterator Buck
                 //(data.type() == Type::kArray && compare(typeComp(Array), 0)) ||
                 (data.type() == Type::kValue && compare(typeComp(data.valueType()), 0));
         };
+        bool canInsert = (begin->second._min.type() == Type::kUnset || begin->second._min.type() == Type::kValue) && (begin->second._max.type() == Type::kUnset || begin->second._max.type() == Type::kValue);
         bool updateMin = shouldUpdateObject(begin->second._min, std::less<int>{});
         if (updateMin) {
             bool needInsert = false;
@@ -1058,14 +1059,15 @@ std::vector<std::pair<std::string, BucketCatalog::MinMax::Entry>>::iterator Buck
                 needInsert = begin->second._min.setObject();
             else
                 needInsert = begin->second._min.setArray();
-            if (needInsert) {
+            if (needInsert && canInsert) {
                 /*Entry e;
                 e.EOO = true;
                 _entries.insert(begin+1, std::make_pair(std::string(elem.fieldName()), e));*/
                 auto pair = _entries.emplace(begin + 1);
                 //pair->first = elem.fieldName();
                 pair->second.EOO = true;
-                begin = pair + 1;
+                begin = pair - 1;
+                canInsert = false;
             }
 
         }
@@ -1076,36 +1078,36 @@ std::vector<std::pair<std::string, BucketCatalog::MinMax::Entry>>::iterator Buck
                 needInsert = begin->second._max.setObject();
             else
                 needInsert = begin->second._max.setArray();
-            if (needInsert) {
+            if (needInsert && canInsert) {
                 /*Entry e;
                 e.EOO = true;
                 _entries.insert(begin+1, std::make_pair(std::string(elem.fieldName()), e));*/
                 auto pair = _entries.emplace(begin + 1);
                 //pair->first = elem.fieldName();
                 pair->second.EOO = true;
-                begin = pair + 1;
+                begin = pair - 1;
             }
         }
 
         // Compare objects element-wise if min or max need to be updated
         if (updateMin || updateMax) {
-            auto it = begin;
+            auto it = begin + 1;
             for (auto&& subElem : elem.Obj()) {
                 auto entry = it;
                 if (entry == _entries.end() || entry->second.EOO) {
-                    it = _entries.insert(entry, std::make_pair(elem.fieldName(), Entry()));
+                    it = _entries.insert(entry, std::make_pair(subElem.fieldName(), Entry()));
                     entry = it;
-                } else if (it->first != elem.fieldNameStringData()) {
-                    entry = std::find_if(begin, _entries.end(), [&elem](const auto& e) {
-                        return e.first == elem.fieldNameStringData() || e.second.EOO;
+                } else if (it->first != subElem.fieldNameStringData()) {
+                    entry = std::find_if(begin, _entries.end(), [&subElem](const auto& e) {
+                        return e.first == subElem.fieldNameStringData() || e.second.EOO;
                     });
                     if (entry == _entries.end() || entry->second.EOO) {
-                        entry = _entries.insert(it, std::make_pair(elem.fieldName(), Entry()));
+                        entry = _entries.insert(it, std::make_pair(subElem.fieldName(), Entry()));
                     }
                 }
                 it = _updateWithMemoryUsage(
                     entry, subElem, stringComparator);
-                invariant(it->second.EOO);
+                invariant(!it->second.EOO);
                 ++it;
             }
             return it;
@@ -1277,11 +1279,13 @@ std::pair<bool, std::vector<std::pair<std::string, BucketCatalog::MinMax::Entry>
             } else if (subdata.type() != Type::kValue) {
                 BSONObjBuilder subDiff;
 
-                std::tie(appended, it) = _appendUpdates(it, &subDiff, getData);
+                auto newIt = it;
+                std::tie(appended, newIt) = _appendUpdates(it, &subDiff, getData);
                 if (appended) {
                     // An update occurred at a lower level, so append the sub diff.
                     subDiffs[doc_diff::kSubDiffSectionFieldPrefix + it->first] = subDiff.obj();
                 };
+                it = newIt;
             } else {
                 ++it;
             }
@@ -1320,13 +1324,15 @@ std::pair<bool, std::vector<std::pair<std::string, BucketCatalog::MinMax::Entry>
                 appended = true;
             } else if (subdata.type() != Type::kValue) {
                 BSONObjBuilder subDiff;
-                std::tie(appended, it) = _appendUpdates(it, &subDiff, getData);
+                auto newIt = it;
+                std::tie(appended, newIt) = _appendUpdates(it, &subDiff, getData);
                 if (appended) {
                     // An update occurred at a lower level, so append the sub diff.
                     builder->append(str::stream() << doc_diff::kSubDiffSectionFieldPrefix
                                                   << StringData(count),
                                     subDiff.done());
                 }
+                it = newIt;
             } else {
                 ++it;
             }
@@ -1356,19 +1362,19 @@ std::vector<std::pair<std::string, BucketCatalog::MinMax::Entry>>::iterator Buck
         }
     }*/
     if (data.type() == Type::kObject || data.type() == Type::kArray) {
+        ++it;
         for (; it != _entries.end() && !it->second.EOO ;) {
-            it = _clearUpdated(it+1, getData);
+            it = _clearUpdated(it, getData);
         }
+        ++it;
     }
-    if (it != _entries.end() && it->second.EOO)
+    if (it != _entries.end() && !it->second.EOO)
         ++it;
     return it;
 }
 
 uint64_t BucketCatalog::MinMax::getMemoryUsage() const {
-   /* return _memoryUsage + _min.valueSize() + _min.valueSize() +
-        (sizeof(MinMax) * (_entries.size()));*/
-    return 0;
+    return (sizeof(Entry) * (_entries.size()));
 }
 
 BucketCatalog::WriteBatch::WriteBatch(Bucket* bucket,
