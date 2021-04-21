@@ -740,12 +740,8 @@ BucketCatalog::BucketAccess::BucketAccess(BucketCatalog* catalog,
     // First we try to find the bucket without normalizing the key as the normalization is an
     // expensive operation.
     auto unsortedKey = BucketHasher{}.hashed_key(key);
-    {
-        auto lk = _catalog->_lockShared();
-        if (bucketFound(_findOpenBucketAndLock(unsortedKey)))
-            return;
-    }
-    
+    if (bucketFound(_findOpenBucketAndLock(unsortedKey)))
+        return;
 
     // If not found, we normalize the metadata object and try to find it again.
     // Save a copy of the metadata before normalizing so we can add this key if the bucket was found
@@ -757,14 +753,8 @@ BucketCatalog::BucketAccess::BucketAccess(BucketCatalog* catalog,
     // Re-construct the key as it were before normalization
     auto unsortedBucketKey = key.withMetadata(unsorted);
     unsortedKey.key = &unsortedBucketKey;
-
-    bool foundSorted = false;
-    {
-        auto lk = _catalog->_lockShared();
-        foundSorted = bucketFound(_findOpenBucketAndLock(sortedKey));
-    }
     
-    if (foundSorted) {
+    if (bucketFound(_findOpenBucketAndLock(sortedKey))) {
         // Bucket found, check if we have available slots to store the key before normalization
         if (_bucket->_unsortedMetadatas.size() == _bucket->_unsortedMetadatas.capacity())
             return;
@@ -775,14 +765,7 @@ BucketCatalog::BucketAccess::BucketAccess(BucketCatalog* catalog,
         // Acquire the exclusive lock for the catalog and look for the bucket again, it may have
         // been modified since we released our locks.
         auto lk = _catalog->_lockExclusive();
-        if (bucketFound(_findOpenBucketAndLock(sortedKey))) {
-            // Store the unsorted key if we still have free slots
-            if (_bucket->_unsortedMetadatas.size() == _bucket->_unsortedMetadatas.capacity()) {
-                return;
-            }
-
-            _catalog->_openBuckets[unsortedKey] = _bucket;
-            _bucket->_unsortedMetadatas.push_back(unsorted);
+        if (bucketFound(_findOpenBucketLockAndSyncKey(sortedKey, unsortedKey, std::move(unsorted)))) {
             return;
         }
     }
@@ -794,14 +777,16 @@ BucketCatalog::BucketAccess::BucketAccess(BucketCatalog* catalog,
 
 BucketCatalog::BucketAccess::BucketAccess(BucketCatalog* catalog, Bucket* bucket)
     : _catalog(catalog) {
-    auto lk = _catalog->_lockShared();
-    auto bucketIt = _catalog->_allBuckets.find(bucket);
-    if (bucketIt == _catalog->_allBuckets.end()) {
-        return;
-    }
+    {
+        auto lk = _catalog->_lockShared();
+        auto bucketIt = _catalog->_allBuckets.find(bucket);
+        if (bucketIt == _catalog->_allBuckets.end()) {
+            return;
+        }
 
-    _bucket = bucket;
-    _acquire();
+        _bucket = bucket;
+        _acquire();
+    }
 
     stdx::lock_guard statesLk{_catalog->_statesMutex};
     auto statesIt = _catalog->_bucketStates.find(_bucket->_id);
@@ -820,14 +805,50 @@ BucketCatalog::BucketAccess::~BucketAccess() {
 
 BucketCatalog::BucketState BucketCatalog::BucketAccess::_findOpenBucketAndLock(
     const HashedBucketKey& key) {
-    auto it = _catalog->_openBuckets.find(key);
-    if (it == _catalog->_openBuckets.end()) {
-        // Bucket does not exist.
-        return BucketState::kCleared;
+    {
+        auto lk = _catalog->_lockShared();
+        auto it = _catalog->_openBuckets.find(key);
+        if (it == _catalog->_openBuckets.end()) {
+            // Bucket does not exist.
+            return BucketState::kCleared;
+        }
+
+        _bucket = it->second;
+        _acquire();
     }
 
-    _bucket = it->second;
-    _acquire();
+    stdx::lock_guard statesLk{_catalog->_statesMutex};
+    auto statesIt = _catalog->_bucketStates.find(_bucket->_id);
+    invariant(statesIt != _catalog->_bucketStates.end());
+    auto& [_, state] = *statesIt;
+    if (state == BucketState::kCleared || state == BucketState::kPreparedAndCleared) {
+        release();
+    } else {
+        _catalog->_markBucketNotIdle(_bucket, false /* locked */);
+    }
+
+    return state;
+}
+
+BucketCatalog::BucketState BucketCatalog::BucketAccess::_findOpenBucketLockAndSyncKey(
+    const HashedBucketKey& normalizedKey, const HashedBucketKey& key, BSONObj&& metadata) {
+    {
+        auto it = _catalog->_openBuckets.find(normalizedKey);
+        if (it == _catalog->_openBuckets.end()) {
+            // Bucket does not exist.
+            return BucketState::kCleared;
+        }
+
+        _bucket = it->second;
+        _acquire();
+
+        // Store the unsorted key if we still have free slots
+        if (_bucket->_unsortedMetadatas.size() < _bucket->_unsortedMetadatas.capacity()) {
+            _catalog->_openBuckets[key] = _bucket;
+            _bucket->_unsortedMetadatas.push_back(metadata);
+        }
+
+    }
 
     stdx::lock_guard statesLk{_catalog->_statesMutex};
     auto statesIt = _catalog->_bucketStates.find(_bucket->_id);

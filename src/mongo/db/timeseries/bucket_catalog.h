@@ -715,6 +715,7 @@ private:
          * return value will be BucketState::kCleared.
          */
         BucketState _findOpenBucketAndLock(const HashedBucketKey& key);
+        BucketState _findOpenBucketLockAndSyncKey(const HashedBucketKey& normalizedKey, const HashedBucketKey& key, BSONObj&& metadata);
 
         // Helper to find an open bucket for the given metadata if it exists, create it if it
         // doesn't, and lock it. Requires an exclusive lock on the catalog.
