@@ -517,7 +517,11 @@ public:
 
         // The metadata of the data that this bucket contains.
         BucketMetadata _metadata;
-        boost::container::static_vector<BSONObj, 3> _unsortedMetadatas;
+
+        // Extra metadata combinations that are supported without normalizing the metadata object.
+        static constexpr std::size_t kNumFieldOrderCombinationsWithoutNormalizing = 1;
+        boost::container::static_vector<BSONObj, kNumFieldOrderCombinationsWithoutNormalizing>
+            _nonNormalizedKeyMetadatas;
 
         // Top-level field names of the measurements that have been inserted into the bucket.
         StringSet _fieldNames;
@@ -709,26 +713,41 @@ private:
 
     private:
         /**
-         * Helper to find and lock an open bucket for the given metadata if it exists. Requires a
+         * Helper to find and lock an open bucket for the given metadata if it exists. Takes a
          * shared lock on the catalog. Returns the state of the bucket if it is locked and usable.
          * In case the bucket does not exist or was previously cleared and thus is not usable, the
          * return value will be BucketState::kCleared.
          */
         BucketState _findOpenBucketAndLock(const HashedBucketKey& key);
-        BucketState _findOpenBucketLockAndSyncKey(const HashedBucketKey& normalizedKey, const HashedBucketKey& key, BSONObj&& metadata);
+
+        /**
+         * Same as _findOpenBucketAndLock above but takes an exclusive lock on the catalog. In
+         * addition to finding the bucket it also store a non-normalized key if there are available
+         * slots in the bucket.
+         */
+        BucketState _findOpenBucketAndLockWithKeyStore(const HashedBucketKey& normalizedKey,
+                                                       const HashedBucketKey& key,
+                                                       BSONObj&& metadata);
+
+        /**
+         * Helper to determine the state of the bucket that is found by _findOpenBucketAndLock and
+         * _findOpenBucketAndLockWithKeyStore. Requires the bucket lock to be acquired before
+         * calling this function and it may release the lock depending on the state.
+         */
+        BucketState _confirmStateForAcquiredBucket();
 
         // Helper to find an open bucket for the given metadata if it exists, create it if it
         // doesn't, and lock it. Requires an exclusive lock on the catalog.
-        void _findOrCreateOpenBucketAndLock(const HashedBucketKey& sortedKey,
-                                            const HashedBucketKey& unsortedKey);
+        void _findOrCreateOpenBucketAndLock(const HashedBucketKey& normalizedKey,
+                                            const HashedBucketKey& key);
 
         // Lock _bucket.
         void _acquire();
 
         // Allocate a new bucket in the catalog, set the local state to that bucket, and aquire
         // a lock on it.
-        void _create(const HashedBucketKey& sortedKey,
-                     const HashedBucketKey& unsortedKey,
+        void _create(const HashedBucketKey& normalizedKey,
+                     const HashedBucketKey& key,
                      bool openedDuetoMetadata = true);
 
         BucketCatalog* _catalog;
@@ -753,10 +772,10 @@ private:
     bool _removeBucket(Bucket* bucket, bool expiringBuckets);
 
     /**
-     * Removes unsorted BucketKey's for the given bucket from the bucket catalog's internal data
-     * structures.
+     * Removes extra BucketKey's that was stored without normalization for the given bucket from the
+     * bucket catalog's internal data structures.
      */
-    void _removeUnsortedKeysForBucket(Bucket* bucket);
+    void _removeExtraKeysForBucket(Bucket* bucket);
 
     /**
      * Aborts any batches it can for the given bucket, then removes the bucket. If batch is
