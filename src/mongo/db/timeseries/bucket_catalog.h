@@ -42,7 +42,107 @@
 #include "mongo/stdx/unordered_set.h"
 #include "mongo/util/string_map.h"
 
+#include "mongo/stdx/variant.h"
+
 namespace mongo {
+
+class MinMaxValue
+{
+    std::unique_ptr<char[]> _value;
+    uint32_t _size;
+};
+
+class MinMaxData {
+    uint8_t type;
+    bool updated;
+    MinMaxValue* value;
+};
+
+class MinMaxStoredElement {
+public:
+
+private: 
+    std::string name;
+    MinMaxData min;
+    MinMaxData max;
+};
+
+struct MinMaxStoredObject {
+    uint32_t _numEntries;
+    uint32_t _offsetEnd;
+    uint32_t _offsetParent;
+    bool _isArray;
+};
+
+class EntryIterator {
+public:
+    EntryIterator(std::vector<MinMaxEntry>::iterator pos) : _pos(pos) {}
+
+    EntryIterator operator++() const;
+
+private:
+    std::vector<MinMaxEntry>::iterator _pos;
+};
+
+class MinMaxObject {
+public:
+    MinMaxObject(std::vector<MinMaxEntry>& entries, std::vector<MinMaxEntry>::iterator pos) {}
+
+    uint32_t size() const {
+        return obj()._numEntries;
+    }
+
+    EntryIterator begin() {
+        return {_pos + 1};
+    }
+    EntryIterator end() {
+        return {_pos + obj()._offsetEnd};
+
+    }
+
+private:
+    MinMaxStoredObject& obj() {
+        return _pos->obj();
+    }
+
+    MinMaxStoredObject* parent() {
+        auto offset = obj()._offsetParent;
+        if (offset == 0)
+            return nullptr;
+        return &(_pos-offset)->obj();
+    }
+
+    std::vector<MinMaxEntry>& _entries;
+    std::vector<MinMaxEntry>::iterator _pos;
+};
+
+class MinMaxEntry {
+public:
+
+    bool isObj() const {
+        return data.index() == 1;
+    }
+
+    MinMaxStoredObject& obj() {
+        return stdx::get<MinMaxStoredObject>(data);
+    }
+
+private:
+    stdx::variant<MinMaxStoredElement, MinMaxStoredObject> data;
+};
+
+inline EntryIterator EntryIterator::operator++() const {
+    if (_pos->isObj()) {
+        return {_pos + _pos->obj()._offsetEnd};
+    }
+
+    return {_pos + 1};
+}
+
+class MinMaxStore {
+    std::vector<MinMaxEntry> entries;
+};
+
 class BucketCatalog {
     struct ExecutionStats;
     class MinMax;
