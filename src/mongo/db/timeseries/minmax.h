@@ -38,6 +38,8 @@
 
 namespace mongo {
 
+class MinMaxStore;
+
 class MinMaxValue
 {
 public:
@@ -47,6 +49,7 @@ public:
 
 class MinMaxData {
 public:
+friend class MinMaxStore;
     uint8_t type() const {
         return _type;
     }
@@ -108,6 +111,7 @@ class MinMaxObj;
 
 class MinMaxElement {
     friend class MinMaxObj;
+    friend class MinMaxStore;
 public:
     StringData fieldName() const {
         return _fieldName;
@@ -300,6 +304,8 @@ public:
         auto& entry = entries.emplace_back();
         entry._offsetEnd = 1;
         entry._offsetParent = 0;
+        entry._element._min._type = 1;
+        entry._element._max._type = 1;
     }
 
     MinMaxObj root() {

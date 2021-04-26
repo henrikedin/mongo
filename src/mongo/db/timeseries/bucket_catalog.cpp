@@ -1054,10 +1054,12 @@ void BucketCatalog::MinMax::update(const BSONObj& doc,
             if (found == end) {
                 std::tie(it, end) = obj.insert(it, elem.fieldName());
             } else {
+                //logd("crashing {}", elem.fieldNameStringData());
                 invariant(false);
             }
         }
         std::tie(it, end) = _updateWithMemoryUsage(obj.object(it), elem, stringComparator);
+        obj = obj.object(it).parent();
         ++it;
     }
 }
@@ -1102,6 +1104,7 @@ std::pair<EntryIterator, EntryIterator> BucketCatalog::MinMax::_update(MinMaxObj
 
                 std::tie(it, end) = _updateWithMemoryUsage(
                     obj.object(it), subElem, stringComparator);
+                obj = obj.object(it).parent();
                 ++it;
             }
         }
@@ -1132,6 +1135,7 @@ std::pair<EntryIterator, EntryIterator> BucketCatalog::MinMax::_update(MinMaxObj
                     std::tie(it, end) = obj.insert(it, "");
 
                 std::tie(it, end) = _updateWithMemoryUsage(obj.object(it), elemArray[i], stringComparator);
+                obj = obj.object(it).parent();
                 ++it;
             }
         }
