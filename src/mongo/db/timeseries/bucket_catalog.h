@@ -42,106 +42,9 @@
 #include "mongo/stdx/unordered_set.h"
 #include "mongo/util/string_map.h"
 
-#include "mongo/stdx/variant.h"
+#include "mongo/db/timeseries/minmax.h"
 
 namespace mongo {
-//
-//class MinMaxValue
-//{
-//    std::unique_ptr<char[]> _value;
-//    uint32_t _size;
-//};
-//
-//class MinMaxData {
-//    uint8_t type;
-//    bool updated;
-//    MinMaxValue* value;
-//};
-//
-//class MinMaxStoredElement {
-//public:
-//
-//private: 
-//    std::string name;
-//    MinMaxData min;
-//    MinMaxData max;
-//};
-//
-//struct MinMaxStoredObject {
-//    uint32_t _numEntries;
-//    uint32_t _offsetEnd;
-//    uint32_t _offsetParent;
-//    bool _isArray;
-//};
-//
-//class EntryIterator {
-//public:
-//    EntryIterator(std::vector<MinMaxEntry>::iterator pos) : _pos(pos) {}
-//
-//    EntryIterator operator++() const;
-//
-//private:
-//    std::vector<MinMaxEntry>::iterator _pos;
-//};
-//
-//class MinMaxObject {
-//public:
-//    MinMaxObject(std::vector<MinMaxEntry>& entries, std::vector<MinMaxEntry>::iterator pos) {}
-//
-//    uint32_t size() const {
-//        return obj()._numEntries;
-//    }
-//
-//    EntryIterator begin() {
-//        return {_pos + 1};
-//    }
-//    EntryIterator end() {
-//        return {_pos + obj()._offsetEnd};
-//
-//    }
-//
-//private:
-//    MinMaxStoredObject& obj() {
-//        return _pos->obj();
-//    }
-//
-//    MinMaxStoredObject* parent() {
-//        auto offset = obj()._offsetParent;
-//        if (offset == 0)
-//            return nullptr;
-//        return &(_pos-offset)->obj();
-//    }
-//
-//    std::vector<MinMaxEntry>& _entries;
-//    std::vector<MinMaxEntry>::iterator _pos;
-//};
-//
-//class MinMaxEntry {
-//public:
-//
-//    bool isObj() const {
-//        return data.index() == 1;
-//    }
-//
-//    MinMaxStoredObject& obj() {
-//        return stdx::get<MinMaxStoredObject>(data);
-//    }
-//
-//private:
-//    stdx::variant<MinMaxStoredElement, MinMaxStoredObject> data;
-//};
-//
-//inline EntryIterator EntryIterator::operator++() const {
-//    if (_pos->isObj()) {
-//        return {_pos + _pos->obj()._offsetEnd};
-//    }
-//
-//    return {_pos + 1};
-//}
-//
-//class MinMaxStore {
-//    std::vector<MinMaxEntry> entries;
-//};
 
 class BucketCatalog {
     struct ExecutionStats;
@@ -431,120 +334,120 @@ private:
         uint64_t getMemoryUsage() const;
 
     private:
-        enum class Type {
+        enum Type {
+            kUnset,
             kObject,
             kArray,
             kValue,
-            kUnset,
         };
 
-        void _update(BSONElement elem, const StringData::ComparatorInterface* stringComparator);
-        void _updateWithMemoryUsage(MinMax* minMax,
+        std::pair<EntryIterator, EntryIterator> _update(MinMaxObj minmax, BSONElement elem, const StringData::ComparatorInterface* stringComparator);
+        std::pair<EntryIterator, EntryIterator> _updateWithMemoryUsage(MinMaxObj minMax,
                                     BSONElement elem,
                                     const StringData::ComparatorInterface* stringComparator);
 
         template <typename GetDataFn>
-        void _append(BSONObjBuilder* builder, GetDataFn getData) const;
+        void _append(MinMaxObj obj, BSONObjBuilder* builder, GetDataFn getData) const;
         template <typename GetDataFn>
-        void _append(BSONArrayBuilder* builder, GetDataFn getData) const;
+        void _append(MinMaxObj obj, BSONArrayBuilder* builder, GetDataFn getData) const;
 
         /**
          * Appends updates, if any, to the builder. Returns whether any updates were appended by
          * this MinMax or any MinMaxes below it.
          */
         template <typename GetDataFn>
-        bool _appendUpdates(BSONObjBuilder* builder, GetDataFn getData);
+        bool _appendUpdates(MinMaxObj obj, BSONObjBuilder* builder, GetDataFn getData);
 
         /**
          * Clears the '_updated' flag on this MinMax and all MinMaxes below it.
          */
         template <typename GetDataFn>
-        void _clearUpdated(GetDataFn getData);
+        void _clearUpdated(EntryIterator elem, GetDataFn getData);
 
-        StringMap<MinMax> _object;
-        std::vector<MinMax> _array;
+        //StringMap<MinMax> _object;
+        //std::vector<MinMax> _array;
 
-        /**
-         * Data bearing representation for MinMax. Can represent unset, Object, Array or Value
-         * (BSONElement).
-         */
-        class Data {
-        public:
-            /**
-             * Set type to value and store provided element without its field name.
-             */
-            void setValue(const BSONElement& elem);
+        ///**
+        // * Data bearing representation for MinMax. Can represent unset, Object, Array or Value
+        // * (BSONElement).
+        // */
+        //class Data {
+        //public:
+        //    /**
+        //     * Set type to value and store provided element without its field name.
+        //     */
+        //    void setValue(const BSONElement& elem);
 
-            /**
-             * Set type to object.
-             */
-            void setObject();
+        //    /**
+        //     * Set type to object.
+        //     */
+        //    void setObject();
 
-            /**
-             * Set type to array.
-             */
-            void setArray();
+        //    /**
+        //     * Set type to array.
+        //     */
+        //    void setArray();
 
-            /**
-             * Set to be the root object.
-             */
-            void setRootObject();
+        //    /**
+        //     * Set to be the root object.
+        //     */
+        //    void setRootObject();
 
-            /**
-             * Returns stored BSONElement with field name as empty string..
-             */
-            BSONElement value() const;
+        //    /**
+        //     * Returns stored BSONElement with field name as empty string..
+        //     */
+        //    BSONElement value() const;
 
-            /**
-             * Returns stored value type and size without needing to construct BSONElement above.
-             */
-            BSONType valueType() const;
-            int valueSize() const;
+        //    /**
+        //     * Returns stored value type and size without needing to construct BSONElement above.
+        //     */
+        //    BSONType valueType() const;
+        //    int valueSize() const;
 
-            /**
-             * Type this MinMax::Data represents, Object, Array, Value or Unset.
-             */
-            Type type() const {
-                return _type;
-            }
+        //    /**
+        //     * Type this MinMax::Data represents, Object, Array, Value or Unset.
+        //     */
+        //    Type type() const {
+        //        return _type;
+        //    }
 
-            /**
-             * Flag to indicate if this MinMax::Data was updated since last clear.
-             */
-            bool updated() const {
-                return _updated;
-            }
+        //    /**
+        //     * Flag to indicate if this MinMax::Data was updated since last clear.
+        //     */
+        //    bool updated() const {
+        //        return _updated;
+        //    }
 
-            /**
-             * Clear update flag.
-             */
-            void clearUpdated() {
-                _updated = false;
-            }
+        //    /**
+        //     * Clear update flag.
+        //     */
+        //    void clearUpdated() {
+        //        _updated = false;
+        //    }
 
-        private:
-            // Memory buffer to store BSONElement without the field name
-            std::unique_ptr<char[]> _value;
+        //private:
+        //    // Memory buffer to store BSONElement without the field name
+        //    std::unique_ptr<char[]> _value;
 
-            // Size of buffer above
-            int _totalSize = 0;
+        //    // Size of buffer above
+        //    int _totalSize = 0;
 
-            // Type that this MinMax::Data represents
-            Type _type = Type::kUnset;
+        //    // Type that this MinMax::Data represents
+        //    Type _type = Type::kUnset;
 
-            // Flag to indicate if we got updated as part of this MinMax update.
-            bool _updated = false;
-        };
+        //    // Flag to indicate if we got updated as part of this MinMax update.
+        //    bool _updated = false;
+        //};
 
         /**
          * Helper for the recursive internal functions to access the min data component.
          */
         struct GetMin {
-            Data& operator()(MinMax& minmax) const {
-                return minmax._min;
+            MinMaxData& operator()(MinMaxElement& minmax) const {
+                return minmax.min();
             }
-            const Data& operator()(const MinMax& minmax) const {
-                return minmax._min;
+            const MinMaxData& operator()(const MinMaxElement& minmax) const {
+                return minmax.min();
             }
         };
 
@@ -552,16 +455,17 @@ private:
          * Helper for the recursive internal functions to access the max data component.
          */
         struct GetMax {
-            Data& operator()(MinMax& minmax) const {
-                return minmax._max;
+            MinMaxData& operator()(MinMaxElement& minmax) const {
+                return minmax.max();
             }
-            const Data& operator()(const MinMax& minmax) const {
-                return minmax._max;
+            const MinMaxData& operator()(const MinMaxElement& minmax) const {
+                return minmax.max();
             }
         };
 
-        Data _min;
-        Data _max;
+        mutable MinMaxStore _store;
+        /*Data _min;
+        Data _max;*/
         uint64_t _memoryUsage = 0;
     };
 

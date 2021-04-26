@@ -59,11 +59,22 @@ env.CppUnitTest(
     target='db_timeseries_test',
     source=[
         'bucket_catalog_test.cpp',
+        #'minmax_test.cpp',
         'timeseries_index_schema_conversion_functions_test.cpp',
     ],
     LIBDEPS=[
         '$BUILD_DIR/mongo/db/catalog/catalog_test_fixture',
         'bucket_catalog',
         'timeseries_index_schema_conversion_functions',
+    ],
+)
+
+env.CppUnitTest(
+    target='minmax_test',
+    source=[
+        'minmax_test.cpp',
+    ],
+    LIBDEPS=[
+        '$BUILD_DIR/mongo/unittest/unittest',
     ],
 )

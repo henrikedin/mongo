@@ -29,6 +29,9 @@
 
 #pragma once
 
+#include "mongo/base/string_data.h"
+#include "mongo/bson/bsonelement.h"
+
 #include <memory>
 #include <string>
 #include <vector>
@@ -37,37 +40,131 @@ namespace mongo {
 
 class MinMaxValue
 {
-    std::unique_ptr<char[]> _value;
-    uint32_t _size;
+public:
+    std::unique_ptr<char[]> value;
+    int size = 0;
 };
 
 class MinMaxData {
-    uint8_t type;
-    bool updated;
-    MinMaxValue* value;
+public:
+    uint8_t type() const {
+        return _type;
+    }
+
+    /**
+    * Flag to indicate if this MinMax::Data was updated since last clear.
+    */
+    bool updated() const {
+        return _updated;
+    }
+
+    /**
+        * Clear update flag.
+        */
+    void clearUpdated() {
+        _updated = false;
+    }
+
+    BSONElement value() const {
+        return BSONElement(_value.value.get(), 1, _value.size, BSONElement::CachedSizeTag{});
+    }
+    BSONType valueType() const {
+        return (BSONType)_value.value[0];
+    }
+    
+    int valueSize() const {
+        return _value.size;
+    }
+
+    void setObject() {
+        _type = 1; // kObject
+    }
+
+    void setArray() {
+        _type = 2; // kArray
+    }
+
+    void setValue(const BSONElement& elem) {
+        auto requiredSize = elem.size() - elem.fieldNameSize() + 1;
+        if (_value.size < requiredSize) {
+            _value.value = std::make_unique<char[]>(requiredSize);
+        }
+        // Store element as BSONElement buffer but strip out the field name
+        _value.value[0] = elem.type();
+        _value.value[1] = '\0';
+        memcpy(_value.value.get() + 2, elem.value(), elem.valuesize());
+        _value.size = requiredSize;
+        _type = 3; // kValue
+        _updated = true;
+    }
+
+private:
+    uint8_t _type = 0;
+    bool _updated = false;
+    MinMaxValue _value;
 };
 
-class MinMaxEntry {
+class MinMaxObj;
+
+class MinMaxElement {
+    friend class MinMaxObj;
 public:
-    uint32_t _offsetEnd;
-    uint32_t _offsetParent;
-    int32_t _numSubEntries = -1;
+    StringData fieldName() const {
+        return _fieldName;
+    }
+
+    MinMaxData& min() {
+        return _min;
+    }
+
+    const MinMaxData& min() const {
+        return _min;
+    }
+
+    MinMaxData& max() {
+        return _min;
+    }
+
+    const MinMaxData& max() const {
+        return _min;
+    }
+
+private:
     std::string _fieldName;
     MinMaxData _min;
     MinMaxData _max;
 };
 
-class MinMaxObj;
+struct MinMaxEntry {
+public:
+    uint32_t _offsetEnd;
+    uint32_t _offsetParent;
+    MinMaxElement _element;
+};
+
+
 class EntryIterator {
     friend class MinMaxObj;
 
 public:
-    EntryIterator(std::vector<MinMaxEntry>::iterator pos, uint32_t offsetPrev)
-        : _pos(pos), _offsetPrev(offsetPrev) {}
+    using iterator_category = std::forward_iterator_tag;
+    using difference_type = ptrdiff_t;
+    using value_type = MinMaxElement;
+    using pointer = MinMaxElement*;
+    using reference = MinMaxElement&;
+
+    EntryIterator(std::vector<MinMaxEntry>::iterator pos)
+        : _pos(pos) {}
+
+    pointer operator->() {
+        return &_pos->_element;
+    }
+    reference operator*() {
+        return _pos->_element;
+    }
 
     EntryIterator& operator++() {
-        _offsetPrev = _pos->_offsetEnd;
-        _pos += _offsetPrev;
+        _pos += _pos->_offsetEnd;
         return *this;
     }
 
@@ -79,13 +176,45 @@ public:
         return !operator==(rhs);
     }
 
-    EntryIterator prev() const {
-        return {_pos - _offsetPrev, 0};
+private:
+    std::vector<MinMaxEntry>::iterator _pos;
+};
+
+class ConstEntryIterator {
+    friend class MinMaxObj;
+
+public:
+    using iterator_category = std::forward_iterator_tag;
+    using difference_type = ptrdiff_t;
+    using value_type = const MinMaxElement;
+    using pointer = const MinMaxElement*;
+    using reference = const MinMaxElement&;
+
+    ConstEntryIterator(std::vector<MinMaxEntry>::const_iterator pos)
+        : _pos(pos) {}
+
+    pointer operator->() {
+        return &_pos->_element;
+    }
+    reference operator*() {
+        return _pos->_element;
+    }
+
+    ConstEntryIterator& operator++() {
+        _pos += _pos->_offsetEnd;
+        return *this;
+    }
+
+    bool operator==(const ConstEntryIterator& rhs) const {
+        return _pos == rhs._pos;
+    }
+
+    bool operator!=(const ConstEntryIterator& rhs) const {
+        return !operator==(rhs);
     }
 
 private:
-    std::vector<MinMaxEntry>::iterator _pos;
-    uint32_t _offsetPrev;
+    std::vector<MinMaxEntry>::const_iterator _pos;
 };
 
 class MinMaxObj {
@@ -93,37 +222,46 @@ public:
     MinMaxObj(std::vector<MinMaxEntry>& entries, std::vector<MinMaxEntry>::iterator pos)
         : _entries(entries), _pos(pos) {}
 
+    MinMaxObj& operator=(const MinMaxObj& rhs) {
+        _pos = rhs._pos;
+        return *this;
+    }
+
+    MinMaxObj object(EntryIterator pos) const {
+        return {_entries, pos._pos};
+    }
+
+    MinMaxObj parent() const {
+        return {_entries, _pos - _pos->_offsetParent};
+    }
+
+    EntryIterator detach() const {
+        return {_pos};
+    }
+
+    MinMaxElement& element() {
+        return _pos->_element;
+    }
+
     std::pair<EntryIterator, EntryIterator> insert(EntryIterator pos, std::string fieldName) {
-        auto indexPrev = std::distance(_entries.begin(), pos._pos - pos._offsetPrev);
-        _pos = _entries.emplace(pos._pos);
+        auto index = std::distance(_entries.begin(), _pos);
+        auto inserted = _entries.emplace(pos._pos);
+        _pos = _entries.begin() + index;
 
 
-        _pos->_offsetEnd = 1;
-        _pos->_fieldName = std::move(fieldName);
+        inserted->_offsetEnd = 1;
+        inserted->_element._fieldName = std::move(fieldName);
+        inserted->_offsetParent = std::distance(_pos, inserted);
 
-        std::vector<MinMaxEntry>::iterator parent;
-        auto prev = _entries.begin() + indexPrev;
-        if (pos._offsetPrev > 1 || prev->_numSubEntries == -1) {
-            parent = prev - prev->_offsetParent;
-        } else {
-            parent = prev;
-        }
-        _pos->_offsetParent = std::distance(parent, _pos);
+        auto it = inserted;
+        auto parent = _pos;
 
-        // back down in hierarchy to fix end
-        auto it = parent;
-        do {
-            ++it->_offsetEnd;
-            it -= it->_offsetParent;
-
-        } while (it->_offsetParent);
-
-
-        it = _pos;
         while (it != parent) {
-            auto next = EntryIterator(it, 0);
+            ++parent->_offsetEnd;
+
+            auto next = EntryIterator(it);
             ++next;
-            auto end = EntryIterator(parent + parent->_offsetEnd, 0);
+            auto end = EntryIterator(parent + parent->_offsetEnd);
             for (; next != end; ++next) {
                 ++next._pos->_offsetParent;
             }
@@ -132,17 +270,23 @@ public:
             parent = parent - parent->_offsetParent;
         }
 
-
-        EntryIterator inserted(_pos, pos._offsetPrev);
         return std::make_pair(inserted, end());
     }
 
     EntryIterator begin() {
-        return {_pos + 1, 1};
+        return {_pos + 1};
     }
 
     EntryIterator end() {
-        return {_pos + _pos->_offsetEnd, 0};
+        return {_pos + _pos->_offsetEnd};
+    }
+
+    ConstEntryIterator begin() const {
+        return {_pos + 1};
+    }
+
+    ConstEntryIterator end() const {
+        return {_pos + _pos->_offsetEnd};
     }
 
 private:
@@ -156,7 +300,6 @@ public:
         auto& entry = entries.emplace_back();
         entry._offsetEnd = 1;
         entry._offsetParent = 0;
-        entry._numSubEntries = 0;
     }
 
     MinMaxObj root() {
