@@ -81,10 +81,12 @@ friend class MinMaxStore;
 
     void setObject() {
         _type = 1; // kObject
+        _updated = true;
     }
 
     void setArray() {
         _type = 2; // kArray
+        _updated = true;
     }
 
     void setValue(const BSONElement& elem) {
@@ -102,9 +104,9 @@ friend class MinMaxStore;
     }
 
 private:
+    MinMaxValue _value;
     uint8_t _type = 0;
     bool _updated = false;
-    MinMaxValue _value;
 };
 
 class MinMaxObj;
