@@ -1049,7 +1049,13 @@ void BucketCatalog::MinMax::update(const BSONObj& doc,
         if (it == end) {
             std::tie(it, end) = obj.insert(it, elem.fieldName());
         } else if (it->fieldName() != elem.fieldNameStringData()) {
-            invariant(false);
+            auto found = std::find_if(
+                it, end, [&elem](const auto& e) { return e.fieldName() == elem.fieldNameStringData(); });
+            if (found == end) {
+                std::tie(it, end) = obj.insert(it, elem.fieldName());
+            } else {
+                invariant(false);
+            }
         }
         std::tie(it, end) = _updateWithMemoryUsage(obj.object(it), elem, stringComparator);
         ++it;
@@ -1085,7 +1091,13 @@ std::pair<EntryIterator, EntryIterator> BucketCatalog::MinMax::_update(MinMaxObj
                 if (it == end) {
                     std::tie(it, end) = obj.insert(it, elem.fieldName());
                 } else if (it->fieldName() != elem.fieldNameStringData()) {
-                    invariant(false);
+                    auto found = std::find_if(
+                        it, end, [&elem](const auto& e) { return e.fieldName() == elem.fieldNameStringData(); });
+                    if (found == end) {
+                        std::tie(it, end) = obj.insert(it, elem.fieldName());
+                    } else {
+                        invariant(false);
+                    }
                 }
 
                 std::tie(it, end) = _updateWithMemoryUsage(
