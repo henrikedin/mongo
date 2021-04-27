@@ -228,7 +228,11 @@ public:
         std::abort();
     }
 
-    bool isTemporary(OperationContext* opCtx) const {
+    bool isTemporary() const {
+        std::abort();
+    }
+
+    void clearTemporary() {
         std::abort();
     }
 
@@ -308,6 +312,10 @@ public:
     }
 
     const CollatorInterface* getDefaultCollator() const {
+        std::abort();
+    }
+
+    const CollectionOptions& getCollectionOptions() const {
         std::abort();
     }
 

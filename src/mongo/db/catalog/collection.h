@@ -499,11 +499,14 @@ public:
 
     /**
      * Returns true if this is a temporary collection.
-     *
-     * Calling this function is somewhat costly because it requires accessing the storage engine's
-     * cache of collection information.
      */
-    virtual bool isTemporary(OperationContext* opCtx) const = 0;
+    virtual bool isTemporary() const = 0;
+
+    /**
+     * Clears the flag that this is a temporary collection. Must be called in conjunction with
+     * modifying the flag in the durable catalog for this collection.
+     */
+    virtual void clearTemporary() = 0;
 
     /**
      * Returns true if this collection is clustered on _id values. That is, its RecordIds are _id
@@ -576,6 +579,12 @@ public:
      * Collection is destroyed.
      */
     virtual const CollatorInterface* getDefaultCollator() const = 0;
+
+    /**
+     * Returns a cached version of the CollectionOptions that are stored in the DurableCatalog for
+     * this Collection.
+     */
+    virtual const CollectionOptions& getCollectionOptions() const = 0;
 
     /**
      * Fills in each index specification with collation information from this collection and returns

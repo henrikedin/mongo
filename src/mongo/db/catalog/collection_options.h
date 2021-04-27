@@ -91,8 +91,8 @@ struct CollectionOptions {
      */
     static CollectionOptions fromCreateCommand(const CreateCommand& cmd);
 
-    void appendBSON(BSONObjBuilder* builder) const;
-    BSONObj toBSON() const;
+    void appendBSON(BSONObjBuilder* builder, bool includeUUID) const;
+    BSONObj toBSON(bool includeUUID = true) const;
 
     /**
      * Returns true if given options matches to this.
