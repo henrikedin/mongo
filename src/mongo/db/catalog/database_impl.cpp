@@ -577,16 +577,13 @@ Status DatabaseImpl::renameCollection(OperationContext* opCtx,
 
     Top::get(opCtx->getServiceContext()).collectionDropped(fromNss);
 
-    Status status = DurableCatalog::get(opCtx)->renameCollection(
-        opCtx, collToRename->getCatalogId(), toNss, stayTemp);
-
     // Set the namespace of 'collToRename' from within the CollectionCatalog. This is necessary
-    // because the CollectionCatalog mutex synchronizes concurrent access to the collection's
-    // namespace for callers that may not hold a collection lock.
+    // because the CollectionCatalog manages the necessary isolation for this Collection until the
+    // WUOW commits.
     auto writableCollection = collToRename.getWritableCollection();
 
-    CollectionCatalog::get(opCtx)->setCollectionNamespace(
-        opCtx, writableCollection, fromNss, toNss);
+    Status status = CollectionCatalog::get(opCtx)->renameCollection(
+        opCtx, writableCollection, fromNss, toNss, stayTemp);
 
     opCtx->recoveryUnit()->onCommit([writableCollection](boost::optional<Timestamp> commitTime) {
         // Ban reading from this collection on committed reads on snapshots before now.

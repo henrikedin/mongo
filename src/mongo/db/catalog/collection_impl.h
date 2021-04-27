@@ -298,7 +298,8 @@ public:
     bool getRecordPreImages() const final;
     void setRecordPreImages(OperationContext* opCtx, bool val) final;
 
-    bool isTemporary(OperationContext* opCtx) const final;
+    bool isTemporary() const final;
+    void clearTemporary() final;
 
     bool isClustered() const final;
 
@@ -372,6 +373,8 @@ public:
      * Collection is destroyed.
      */
     const CollatorInterface* getDefaultCollator() const final;
+
+    const CollectionOptions& getCollectionOptions() const final;
 
     StatusWith<std::vector<BSONObj>> addCollationDefaultsToIndexSpecsForCreate(
         OperationContext* opCtx, const std::vector<BSONObj>& indexSpecs) const final;
@@ -490,22 +493,19 @@ private:
     UUID _uuid;
     bool _cachedCommitted = true;
     std::shared_ptr<SharedState> _shared;
+    std::shared_ptr<const CollectionOptions> _options;
 
     clonable_ptr<IndexCatalog> _indexCatalog;
 
     // The validator is using shared state internally. Collections share validator until a new
     // validator is set in setValidator which sets a new instance.
     Validator _validator;
-    boost::optional<ValidationActionEnum> _validationAction;
-    boost::optional<ValidationLevelEnum> _validationLevel;
 
     // Whether or not this collection is clustered on _id values.
     bool _clustered = false;
 
     // If this is a time-series buckets collection, the metadata for this collection.
     boost::optional<TimeseriesOptions> _timeseriesOptions;
-
-    bool _recordPreImages = false;
 
     // The earliest snapshot that is allowed to use this collection.
     boost::optional<Timestamp> _minVisibleSnapshot;

@@ -1158,7 +1158,7 @@ Timestamp TransactionParticipant::Participant::prepareTransaction(
                 str::stream() << "prepareTransaction failed because one of the transaction "
                                  "operations was done against a temporary collection '"
                               << collection->ns() << "'.",
-                !collection->isTemporary(opCtx));
+                !collection->isTemporary());
     }
 
     boost::optional<OplogSlotReserver> oplogSlotReserver;

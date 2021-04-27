@@ -327,8 +327,11 @@ SharedCollectionDecorations* CollectionImpl::getSharedDecorations() const {
 }
 
 void CollectionImpl::init(OperationContext* opCtx) {
-    auto collectionOptions =
-        DurableCatalog::get(opCtx)->getCollectionOptions(opCtx, getCatalogId());
+    auto options = std::make_shared<CollectionOptions>();
+    *options = DurableCatalog::get(opCtx)->getCollectionOptions(opCtx, getCatalogId());
+    _options = std::move(options);
+    const auto& collectionOptions = *_options;
+
     _shared->_collator = parseCollation(opCtx, _ns, collectionOptions.collation);
     auto validatorDoc = collectionOptions.validator.getOwned();
 
@@ -337,11 +340,8 @@ void CollectionImpl::init(OperationContext* opCtx) {
 
     // Make sure to copy the action and level before parsing MatchExpression, since certain features
     // are not supported with certain combinations of action and level.
-    _validationAction = collectionOptions.validationAction;
-    _validationLevel = collectionOptions.validationLevel;
     if (collectionOptions.recordPreImages) {
         uassertStatusOK(validatePreImageRecording(opCtx, _ns));
-        _recordPreImages = true;
     }
 
     // Store the result (OK / error) of parsing the validator, but do not enforce that the result is
@@ -472,7 +472,7 @@ Status CollectionImpl::checkValidation(OperationContext* opCtx, const BSONObj& d
     if (!validatorMatchExpr)
         return Status::OK();
 
-    if (validationLevelOrDefault(_validationLevel) == ValidationLevelEnum::off)
+    if (validationLevelOrDefault(_options->validationLevel) == ValidationLevelEnum::off)
         return Status::OK();
 
     if (DocumentValidationSettings::get(opCtx).isSchemaValidationDisabled())
@@ -505,7 +505,7 @@ Status CollectionImpl::checkValidation(OperationContext* opCtx, const BSONObj& d
         // writes which result in the validator throwing an exception are accepted when we're in
         // warn mode.
         if (!isFCVAtLeast47 &&
-            validationActionOrDefault(_validationAction) == ValidationActionEnum::error) {
+            validationActionOrDefault(_options->validationAction) == ValidationActionEnum::error) {
             e.addContext("Document validation failed");
             throw;
         }
@@ -516,7 +516,7 @@ Status CollectionImpl::checkValidation(OperationContext* opCtx, const BSONObj& d
         generatedError = doc_validation_error::generateError(*validatorMatchExpr, document);
     }
 
-    if (validationActionOrDefault(_validationAction) == ValidationActionEnum::warn) {
+    if (validationActionOrDefault(_options->validationAction) == ValidationActionEnum::warn) {
         LOGV2_WARNING(20294,
                       "Document would fail validation",
                       "namespace"_attr = ns(),
@@ -568,8 +568,8 @@ Collection::Validator CollectionImpl::parseValidator(
 
     // If the validation action is "warn" or the level is "moderate", then disallow any encryption
     // keywords. This is to prevent any plaintext data from showing up in the logs.
-    if (validationActionOrDefault(_validationAction) == ValidationActionEnum::warn ||
-        validationLevelOrDefault(_validationLevel) == ValidationLevelEnum::moderate)
+    if (validationActionOrDefault(_options->validationAction) == ValidationActionEnum::warn ||
+        validationLevelOrDefault(_options->validationLevel) == ValidationLevelEnum::moderate)
         allowedFeatures &= ~MatchExpressionParser::AllowedFeatures::kEncryptKeywords;
 
     auto statusWithMatcher =
@@ -1113,7 +1113,8 @@ RecordId CollectionImpl::updateDocument(OperationContext* opCtx,
     {
         auto status = checkValidation(opCtx, newDoc);
         if (!status.isOK()) {
-            if (validationLevelOrDefault(_validationLevel) == ValidationLevelEnum::strict) {
+            if (validationLevelOrDefault(_options->validationLevel) ==
+                ValidationLevelEnum::strict) {
                 uassertStatusOK(status);
             }
             // moderate means we have to check the old doc
@@ -1232,8 +1233,14 @@ StatusWith<RecordData> CollectionImpl::updateDocumentWithDamages(
     return newRecStatus;
 }
 
-bool CollectionImpl::isTemporary(OperationContext* opCtx) const {
-    return DurableCatalog::get(opCtx)->getCollectionOptions(opCtx, getCatalogId()).temp;
+bool CollectionImpl::isTemporary() const {
+    return _options->temp;
+}
+
+void CollectionImpl::clearTemporary() {
+    auto options = std::make_shared<CollectionOptions>(*_options);
+    options->temp = false;
+    _options = std::move(options);
 }
 
 bool CollectionImpl::isClustered() const {
@@ -1260,7 +1267,7 @@ Status CollectionImpl::updateCappedSize(OperationContext* opCtx, long long newCa
 }
 
 bool CollectionImpl::getRecordPreImages() const {
-    return _recordPreImages;
+    return _options->recordPreImages;
 }
 
 void CollectionImpl::setRecordPreImages(OperationContext* opCtx, bool val) {
@@ -1268,7 +1275,9 @@ void CollectionImpl::setRecordPreImages(OperationContext* opCtx, bool val) {
         uassertStatusOK(validatePreImageRecording(opCtx, _ns));
     }
     DurableCatalog::get(opCtx)->setRecordPreImages(opCtx, getCatalogId(), val);
-    _recordPreImages = val;
+    auto options = std::make_shared<CollectionOptions>(*_options);
+    options->recordPreImages = val;
+    _options = std::move(options);
 }
 
 bool CollectionImpl::isCapped() const {
@@ -1420,32 +1429,37 @@ void CollectionImpl::cappedTruncateAfter(OperationContext* opCtx,
 void CollectionImpl::setValidator(OperationContext* opCtx, Validator validator) {
     invariant(opCtx->lockState()->isCollectionLockedForMode(ns(), MODE_X));
 
-    DurableCatalog::get(opCtx)->updateValidator(opCtx,
-                                                getCatalogId(),
-                                                validator.validatorDoc.getOwned(),
-                                                validationLevelOrDefault(_validationLevel),
-                                                validationActionOrDefault(_validationAction));
+    auto validatorDoc = validator.validatorDoc.getOwned();
+    DurableCatalog::get(opCtx)->updateValidator(
+        opCtx,
+        getCatalogId(),
+        validatorDoc,
+        validationLevelOrDefault(_options->validationLevel),
+        validationActionOrDefault(_options->validationAction));
+    auto options = std::make_shared<CollectionOptions>(*_options);
+    options->validator = validatorDoc;
+    _options = std::move(options);
 
     _validator = std::move(validator);
 }
 
 boost::optional<ValidationLevelEnum> CollectionImpl::getValidationLevel() const {
-    return _validationLevel;
+    return _options->validationLevel;
 }
 
 boost::optional<ValidationActionEnum> CollectionImpl::getValidationAction() const {
-    return _validationAction;
+    return _options->validationAction;
 }
 
 Status CollectionImpl::setValidationLevel(OperationContext* opCtx, ValidationLevelEnum newLevel) {
     invariant(opCtx->lockState()->isCollectionLockedForMode(ns(), MODE_X));
 
-    _validationLevel = newLevel;
+    auto storedValidationLevel = validationLevelOrDefault(newLevel);
 
     // Reparse the validator as there are some features which are only supported with certain
     // validation levels.
     auto allowedFeatures = MatchExpressionParser::kAllowAllSpecialFeatures;
-    if (validationLevelOrDefault(_validationLevel) == ValidationLevelEnum::moderate)
+    if (storedValidationLevel == ValidationLevelEnum::moderate)
         allowedFeatures &= ~MatchExpressionParser::AllowedFeatures::kEncryptKeywords;
 
     _validator = parseValidator(opCtx, _validator.validatorDoc, allowedFeatures);
@@ -1453,11 +1467,16 @@ Status CollectionImpl::setValidationLevel(OperationContext* opCtx, ValidationLev
         return _validator.getStatus();
     }
 
-    DurableCatalog::get(opCtx)->updateValidator(opCtx,
-                                                getCatalogId(),
-                                                _validator.validatorDoc,
-                                                validationLevelOrDefault(_validationLevel),
-                                                validationActionOrDefault(_validationAction));
+    DurableCatalog::get(opCtx)->updateValidator(
+        opCtx,
+        getCatalogId(),
+        _validator.validatorDoc,
+        storedValidationLevel,
+        validationActionOrDefault(_options->validationAction));
+
+    auto options = std::make_shared<CollectionOptions>(*_options);
+    options->validationLevel = storedValidationLevel;
+    _options = std::move(options);
 
     return Status::OK();
 }
@@ -1466,12 +1485,12 @@ Status CollectionImpl::setValidationAction(OperationContext* opCtx,
                                            ValidationActionEnum newAction) {
     invariant(opCtx->lockState()->isCollectionLockedForMode(ns(), MODE_X));
 
-    _validationAction = newAction;
+    auto storedValidationAction = validationActionOrDefault(newAction);
 
     // Reparse the validator as there are some features which are only supported with certain
     // validation actions.
     auto allowedFeatures = MatchExpressionParser::kAllowAllSpecialFeatures;
-    if (validationActionOrDefault(_validationAction) == ValidationActionEnum::warn)
+    if (storedValidationAction == ValidationActionEnum::warn)
         allowedFeatures &= ~MatchExpressionParser::AllowedFeatures::kEncryptKeywords;
 
     _validator = parseValidator(opCtx, _validator.validatorDoc, allowedFeatures);
@@ -1482,8 +1501,12 @@ Status CollectionImpl::setValidationAction(OperationContext* opCtx,
     DurableCatalog::get(opCtx)->updateValidator(opCtx,
                                                 getCatalogId(),
                                                 _validator.validatorDoc,
-                                                validationLevelOrDefault(_validationLevel),
-                                                validationActionOrDefault(_validationAction));
+                                                validationLevelOrDefault(_options->validationLevel),
+                                                storedValidationAction);
+
+    auto options = std::make_shared<CollectionOptions>(*_options);
+    options->validationAction = storedValidationAction;
+    _options = std::move(options);
 
     return Status::OK();
 }
@@ -1502,9 +1525,13 @@ Status CollectionImpl::updateValidator(OperationContext* opCtx,
     if (!validator.isOK()) {
         return validator.getStatus();
     }
+    auto options = std::make_shared<CollectionOptions>(*_options);
+    options->validator = newValidator;
+    options->validationLevel = newLevel;
+    options->validationAction = newAction;
+    _options = std::move(options);
+
     _validator = std::move(validator);
-    _validationLevel = newLevel;
-    _validationAction = newAction;
     return Status::OK();
 }
 
@@ -1514,6 +1541,10 @@ boost::optional<TimeseriesOptions> CollectionImpl::getTimeseriesOptions() const 
 
 const CollatorInterface* CollectionImpl::getDefaultCollator() const {
     return _shared->_collator.get();
+}
+
+const CollectionOptions& CollectionImpl::getCollectionOptions() const {
+    return *_options;
 }
 
 StatusWith<std::vector<BSONObj>> CollectionImpl::addCollationDefaultsToIndexSpecsForCreate(
