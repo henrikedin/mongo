@@ -249,14 +249,14 @@ MinMaxStore::Iterator MinMaxStore::Obj::search(MinMaxStore::Iterator first,
     int remainingLinearSearch = kMaxLinearSearchLength;
     for (; first != last && remainingLinearSearch != 0; ++first, --remainingLinearSearch) {
         // Entry found.
-        if (start->fieldName() == fieldName) {
-            return start;
+        if (first->fieldName() == fieldName) {
+            return first;
         }
 
         // Found entry that is used for an Array, we can claim this field.
-        if (start->isArrayFieldName()) {
-            start->claimArrayFieldNameForObject(fieldName.toString());
-            return start;
+        if (first->isArrayFieldName()) {
+            first->claimArrayFieldNameForObject(fieldName.toString());
+            return first;
         }
     }
 
@@ -278,8 +278,8 @@ MinMaxStore::Iterator MinMaxStore::Obj::search(MinMaxStore::Iterator first,
     return search(first, last, fieldName);
 }
 
-MinMaxStore::Iterator MinMaxStore::Obj::search(MinMaxStore::Iterator start, StringData fieldName) {
-    return search(start, end(), fieldName);
+MinMaxStore::Iterator MinMaxStore::Obj::search(MinMaxStore::Iterator first, StringData fieldName) {
+    return search(first, end(), fieldName);
 }
 
 std::pair<MinMaxStore::Iterator, MinMaxStore::Iterator> MinMaxStore::Obj::insert(
