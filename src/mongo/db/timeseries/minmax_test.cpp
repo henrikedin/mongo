@@ -180,7 +180,7 @@ TEST(MinMax, Search) {
     ASSERT(obj.search(obj.begin(), itC, "d") == itC);
 }
 
-TEST(MinMax, SearchMany) {
+TEST(MinMax, SearchLookupMap) {
     MinMaxStore minmax;
     auto obj = minmax.root();
 
@@ -197,6 +197,10 @@ TEST(MinMax, SearchMany) {
     // Provided last is still respected when something is not found
     auto last = std::next(obj.begin());
     ASSERT(obj.search(obj.begin(), last, "100") == last);
+
+    // Map based search is still accurate after inserts
+    obj.insert(obj.begin(), "x");
+    ASSERT_EQ(obj.search(obj.begin(), "50")->fieldName(), "50");
 }
 
 
