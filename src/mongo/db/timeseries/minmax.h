@@ -62,9 +62,19 @@ public:
     /**
      * Buffer value for a Data of type kValue
      */
-    struct Value {
-        std::unique_ptr<char[]> buffer;
-        int size = 0;
+    class Value {
+    public:
+        char* buffer();
+        const char* buffer() const;
+        int capacity() const;
+        int size() const;
+        void resize(int num);
+
+    private:
+        std::array<char, 12> _staticBuffer;
+        int _size = 0;
+        std::unique_ptr<char[]> _buffer;
+        
     };
 
     /**

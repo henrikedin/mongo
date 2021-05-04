@@ -40,6 +40,34 @@ constexpr StringData kArrayFieldName =
     "\0"_sd;  // Use a string that is illegal to represent fields in BSON
 }  // namespace
 
+char* MinMaxStore::Value::buffer() {
+    if (!_buffer)
+        return _staticBuffer.data();
+    return _buffer.get();
+}
+const char* MinMaxStore::Value::buffer() const {
+    if (!_buffer)
+        return _staticBuffer.data();
+    return _buffer.get();
+}
+int MinMaxStore::Value::capacity() const {
+    if (!_buffer)
+        return _staticBuffer.size();
+    return _size;
+}
+
+int MinMaxStore::Value::size() const {
+    return _size;
+}
+void MinMaxStore::Value::resize(int num) {
+    if (num > _staticBuffer.size() && num > _size)
+        _buffer = std::make_unique<char[]>(num);
+    else if (num <= _staticBuffer.size())
+        _buffer.reset();
+
+    _size = num;
+}
+
 MinMaxStore::Type MinMaxStore::Data::type() const {
     return _type;
 }
@@ -59,10 +87,10 @@ void MinMaxStore::Data::clearUpdated() {
 }
 
 BSONElement MinMaxStore::Data::value() const {
-    return BSONElement(_value.buffer.get(), 1, _value.size, BSONElement::CachedSizeTag{});
+    return BSONElement(_value.buffer(), 1, _value.size(), BSONElement::CachedSizeTag{});
 }
 BSONType MinMaxStore::Data::valueType() const {
-    return (BSONType)_value.buffer[0];
+    return (BSONType)_value.buffer()[0];
 }
 
 void MinMaxStore::Data::setUnset() {
@@ -82,14 +110,13 @@ void MinMaxStore::Data::setArray() {
 
 void MinMaxStore::Data::setValue(const BSONElement& elem) {
     auto requiredSize = elem.size() - elem.fieldNameSize() + 1;
-    if (_value.size < requiredSize) {
-        _value.buffer = std::make_unique<char[]>(requiredSize);
-    }
+    _value.resize(requiredSize);
+    
     // Store element as BSONElement buffer but strip out the field name
-    _value.buffer[0] = elem.type();
-    _value.buffer[1] = '\0';
-    memcpy(_value.buffer.get() + 2, elem.value(), elem.valuesize());
-    _value.size = requiredSize;
+    auto buffer = _value.buffer();
+    buffer[0] = elem.type();
+    buffer[1] = '\0';
+    memcpy(buffer + 2, elem.value(), elem.valuesize());
     _type = Type::kValue;
     _updated = true;
 }
