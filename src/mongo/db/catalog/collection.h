@@ -514,6 +514,13 @@ public:
      */
     virtual bool isClustered() const = 0;
 
+    /**
+     * Updates the expireAfterSeconds setting for a clustered TTL index in this Collection and the
+     * durable catalog.
+     */
+    virtual void updateClusteredIndexTTLSetting(OperationContext* opCtx,
+                                                boost::optional<int64_t> expireAfterSeconds) = 0;
+
     virtual Status updateCappedSize(OperationContext* opCtx, long long newCappedSize) = 0;
 
     //

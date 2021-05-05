@@ -385,7 +385,7 @@ private:
 
 void _setClusteredExpireAfterSeconds(OperationContext* opCtx,
                                      const CollectionOptions& oldCollOptions,
-                                     const CollectionPtr& coll,
+                                     Collection* coll,
                                      const BSONElement& clusteredIndexExpireAfterSeconds) {
     invariant(oldCollOptions.clusteredIndex.has_value());
 
@@ -400,8 +400,7 @@ void _setClusteredExpireAfterSeconds(OperationContext* opCtx,
             return;
         }
 
-        DurableCatalog::get(opCtx)->updateClusteredIndexTTLSetting(
-            opCtx, coll->getCatalogId(), boost::none);
+        coll->updateClusteredIndexTTLSetting(opCtx, boost::none);
         return;
     }
 
@@ -421,8 +420,7 @@ void _setClusteredExpireAfterSeconds(OperationContext* opCtx,
     }
 
     invariant(newExpireAfterSeconds >= 0);
-    DurableCatalog::get(opCtx)->updateClusteredIndexTTLSetting(
-        opCtx, coll->getCatalogId(), newExpireAfterSeconds);
+    coll->updateClusteredIndexTTLSetting(opCtx, newExpireAfterSeconds);
 }
 
 Status _collModInternal(OperationContext* opCtx,
@@ -526,15 +524,17 @@ Status _collModInternal(OperationContext* opCtx,
         // options to provide to the OpObserver. TTL index updates aren't a part of collection
         // options so we save the relevant TTL index data in a separate object.
 
-        CollectionOptions oldCollOptions =
+        const CollectionOptions& oldCollOptions =
             DurableCatalog::get(opCtx)->getCollectionOptions(opCtx, coll->getCatalogId());
 
         boost::optional<IndexCollModInfo> indexCollModInfo;
 
         // Handle collMod operation type appropriately.
         if (clusteredIndexExpireAfterSeconds) {
-            _setClusteredExpireAfterSeconds(
-                opCtx, oldCollOptions, coll.getCollection(), clusteredIndexExpireAfterSeconds);
+            _setClusteredExpireAfterSeconds(opCtx,
+                                            oldCollOptions,
+                                            coll.getWritableCollection(),
+                                            clusteredIndexExpireAfterSeconds);
         }
 
         if (indexExpireAfterSeconds || indexHidden) {

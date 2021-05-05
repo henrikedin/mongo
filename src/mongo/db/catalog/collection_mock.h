@@ -240,6 +240,11 @@ public:
         std::abort();
     }
 
+    void updateClusteredIndexTTLSetting(OperationContext* opCtx,
+                                        boost::optional<int64_t> expireAfterSeconds) {
+        std::abort();
+    }
+
     Status updateCappedSize(OperationContext* opCtx, long long newCappedSize) {
         std::abort();
     }
