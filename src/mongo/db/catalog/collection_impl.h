@@ -32,6 +32,7 @@
 #include "mongo/bson/timestamp.h"
 #include "mongo/db/catalog/collection.h"
 #include "mongo/db/catalog/index_catalog.h"
+#include "mongo/db/storage/bson_collection_catalog_entry.h"
 #include "mongo/db/concurrency/d_concurrency.h"
 
 namespace mongo {
@@ -393,6 +394,12 @@ public:
     void establishOplogCollectionForLogging(OperationContext* opCtx) final;
     void onDeregisterFromCatalog(OperationContext* opCtx) final;
 
+    Status prepareForIndexBuild(OperationContext* opCtx,
+                                        RecordId catalogId,
+                                        const IndexDescriptor* spec,
+                                        boost::optional<UUID> buildUUID,
+                                        bool isBackgroundSecondaryBuild) final;
+
 private:
     /**
      * Returns a non-ok Status if document does not pass this collection's validator.
@@ -499,6 +506,8 @@ private:
     // CollectionOptions cached from the DurableCatalog. Is kept separate from the SharedState
     // because it may be updated.
     std::shared_ptr<const CollectionOptions> _options;
+
+    std::shared_ptr<const std::vector<BSONCollectionCatalogEntry::IndexMetaData>> _indexMetadata;
 
     clonable_ptr<IndexCatalog> _indexCatalog;
 

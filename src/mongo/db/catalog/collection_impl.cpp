@@ -1631,4 +1631,12 @@ void CollectionImpl::establishOplogCollectionForLogging(OperationContext* opCtx)
     repl::establishOplogCollectionForLogging(opCtx, this);
 }
 
+Status CollectionImpl::prepareForIndexBuild(OperationContext* opCtx,
+                                            RecordId catalogId,
+                                            const IndexDescriptor* spec,
+                                            boost::optional<UUID> buildUUID,
+                                            bool isBackgroundSecondaryBuild) {
+
+}
+
 }  // namespace mongo

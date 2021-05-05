@@ -164,7 +164,7 @@ public:
 
     void removeIndex(OperationContext* opCtx, RecordId catalogId, StringData indexName);
 
-    Status prepareForIndexBuild(OperationContext* opCtx,
+    StatusWith<BSONCollectionCatalogEntry::IndexMetaData> prepareForIndexBuild(OperationContext* opCtx,
                                 RecordId catalogId,
                                 const IndexDescriptor* spec,
                                 boost::optional<UUID> buildUUID,

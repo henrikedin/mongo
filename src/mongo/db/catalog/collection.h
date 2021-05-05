@@ -524,6 +524,16 @@ public:
     virtual Status updateCappedSize(OperationContext* opCtx, long long newCappedSize) = 0;
 
     //
+    // Index
+    //
+    
+    virtual Status prepareForIndexBuild(OperationContext* opCtx,
+                                        RecordId catalogId,
+                                        const IndexDescriptor* spec,
+                                        boost::optional<UUID> buildUUID,
+                                        bool isBackgroundSecondaryBuild) = 0;
+
+    //
     // Stats
     //
 

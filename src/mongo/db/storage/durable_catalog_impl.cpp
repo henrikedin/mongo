@@ -1108,7 +1108,7 @@ void DurableCatalogImpl::removeIndex(OperationContext* opCtx,
     putMetaData(opCtx, catalogId, md);
 }
 
-Status DurableCatalogImpl::prepareForIndexBuild(OperationContext* opCtx,
+StatusWith<BSONCollectionCatalogEntry::IndexMetaData> DurableCatalogImpl::prepareForIndexBuild(OperationContext* opCtx,
                                                 RecordId catalogId,
                                                 const IndexDescriptor* spec,
                                                 boost::optional<UUID> buildUUID,
