@@ -302,6 +302,8 @@ public:
     void clearTemporary() final;
 
     bool isClustered() const final;
+    void updateClusteredIndexTTLSetting(OperationContext* opCtx,
+                                        boost::optional<int64_t> expireAfterSeconds) final;
 
     Status updateCappedSize(OperationContext* opCtx, long long newCappedSize) final;
 
@@ -493,6 +495,9 @@ private:
     UUID _uuid;
     bool _cachedCommitted = true;
     std::shared_ptr<SharedState> _shared;
+
+    // CollectionOptions cached from the DurableCatalog. Is kept separate from the SharedState
+    // because it may be updated.
     std::shared_ptr<const CollectionOptions> _options;
 
     clonable_ptr<IndexCatalog> _indexCatalog;

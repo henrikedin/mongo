@@ -1247,6 +1247,16 @@ bool CollectionImpl::isClustered() const {
     return _clustered;
 }
 
+void CollectionImpl::updateClusteredIndexTTLSetting(OperationContext* opCtx,
+                                                    boost::optional<int64_t> expireAfterSeconds) {
+    DurableCatalog::get(opCtx)->updateClusteredIndexTTLSetting(
+        opCtx, getCatalogId(), expireAfterSeconds);
+
+    auto options = std::make_shared<CollectionOptions>(*_options);
+    options->clusteredIndex->setExpireAfterSeconds(expireAfterSeconds);
+    _options = std::move(options);
+}
+
 Status CollectionImpl::updateCappedSize(OperationContext* opCtx, long long newCappedSize) {
     invariant(opCtx->lockState()->isCollectionLockedForMode(ns(), MODE_X));
 
@@ -1430,14 +1440,14 @@ void CollectionImpl::setValidator(OperationContext* opCtx, Validator validator) 
     invariant(opCtx->lockState()->isCollectionLockedForMode(ns(), MODE_X));
 
     auto validatorDoc = validator.validatorDoc.getOwned();
+    auto validationLevel = validationLevelOrDefault(_options->validationLevel);
+    auto validationAction = validationActionOrDefault(_options->validationAction);
     DurableCatalog::get(opCtx)->updateValidator(
-        opCtx,
-        getCatalogId(),
-        validatorDoc,
-        validationLevelOrDefault(_options->validationLevel),
-        validationActionOrDefault(_options->validationAction));
+        opCtx, getCatalogId(), validatorDoc, validationLevel, validationAction);
     auto options = std::make_shared<CollectionOptions>(*_options);
     options->validator = validatorDoc;
+    options->validationLevel = validationLevel;
+    options->validationAction = validationAction;
     _options = std::move(options);
 
     _validator = std::move(validator);
