@@ -986,7 +986,7 @@ Status DurableCatalogImpl::dropCollection(OperationContext* opCtx, RecordId cata
     }
 
     invariant(opCtx->lockState()->isCollectionLockedForMode(entry.nss, MODE_X));
-    invariant(getTotalIndexCount(opCtx, catalogId) == 0);
+    //invariant(getTotalIndexCount(opCtx, catalogId) == 0);
 
     // Remove metadata from mdb_catalog
     Status status = _removeEntry(opCtx, catalogId);
@@ -998,7 +998,7 @@ Status DurableCatalogImpl::dropCollection(OperationContext* opCtx, RecordId cata
 }
 
 Status DurableCatalogImpl::dropAndRecreateIndexIdentForResume(OperationContext* opCtx,
-                                                              RecordId catalogId,
+                                                              const CollectionOptions& collOptions,
                                                               const IndexDescriptor* spec,
                                                               StringData ident) {
     auto status = _engine->getEngine()->dropSortedDataInterface(opCtx, ident);
@@ -1006,87 +1006,9 @@ Status DurableCatalogImpl::dropAndRecreateIndexIdentForResume(OperationContext* 
         return status;
 
     status = _engine->getEngine()->createSortedDataInterface(
-        opCtx, getCollectionOptions(opCtx, catalogId), ident, spec);
+        opCtx, collOptions, ident, spec);
 
     return status;
-}
-
-CollectionOptions DurableCatalogImpl::getCollectionOptions(OperationContext* opCtx,
-                                                           RecordId catalogId) const {
-    BSONCollectionCatalogEntry::MetaData md = getMetaData(opCtx, catalogId);
-    return md.options;
-}
-
-int DurableCatalogImpl::getTotalIndexCount(OperationContext* opCtx, RecordId catalogId) const {
-    BSONCollectionCatalogEntry::MetaData md = getMetaData(opCtx, catalogId);
-
-    return static_cast<int>(md.indexes.size());
-}
-
-int DurableCatalogImpl::getCompletedIndexCount(OperationContext* opCtx, RecordId catalogId) const {
-    BSONCollectionCatalogEntry::MetaData md = getMetaData(opCtx, catalogId);
-
-    int num = 0;
-    for (unsigned i = 0; i < md.indexes.size(); i++) {
-        if (md.indexes[i].ready)
-            num++;
-    }
-    return num;
-}
-
-BSONObj DurableCatalogImpl::getIndexSpec(OperationContext* opCtx,
-                                         RecordId catalogId,
-                                         StringData indexName) const {
-    BSONCollectionCatalogEntry::MetaData md = getMetaData(opCtx, catalogId);
-
-    int offset = md.findIndexOffset(indexName);
-    invariant(offset >= 0,
-              str::stream() << "cannot get index spec for " << indexName << " @ " << catalogId
-                            << " : " << md.toBSON());
-
-    BSONObj spec = md.indexes[offset].spec.getOwned();
-    return spec;
-}
-
-void DurableCatalogImpl::getAllIndexes(OperationContext* opCtx,
-                                       RecordId catalogId,
-                                       std::vector<std::string>* names) const {
-    BSONCollectionCatalogEntry::MetaData md = getMetaData(opCtx, catalogId);
-
-    for (unsigned i = 0; i < md.indexes.size(); i++) {
-        names->push_back(md.indexes[i].spec["name"].String());
-    }
-}
-
-void DurableCatalogImpl::getReadyIndexes(OperationContext* opCtx,
-                                         RecordId catalogId,
-                                         std::vector<std::string>* names) const {
-    BSONCollectionCatalogEntry::MetaData md = getMetaData(opCtx, catalogId);
-
-    for (unsigned i = 0; i < md.indexes.size(); i++) {
-        if (md.indexes[i].ready)
-            names->push_back(md.indexes[i].spec["name"].String());
-    }
-}
-
-bool DurableCatalogImpl::isIndexPresent(OperationContext* opCtx,
-                                        RecordId catalogId,
-                                        StringData indexName) const {
-    BSONCollectionCatalogEntry::MetaData md = getMetaData(opCtx, catalogId);
-    int offset = md.findIndexOffset(indexName);
-    return offset >= 0;
-}
-
-bool DurableCatalogImpl::isIndexReady(OperationContext* opCtx,
-                                      RecordId catalogId,
-                                      StringData indexName) const {
-    BSONCollectionCatalogEntry::MetaData md = getMetaData(opCtx, catalogId);
-
-    int offset = md.findIndexOffset(indexName);
-    invariant(offset >= 0,
-              str::stream() << "cannot get ready status for index " << indexName << " @ "
-                            << catalogId << " : " << md.toBSON());
-    return md.indexes[offset].ready;
 }
 
 void DurableCatalogImpl::setRand_forTest(const std::string& rand) {

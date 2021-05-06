@@ -456,7 +456,7 @@ Status StorageInterfaceImpl::createOplog(OperationContext* opCtx, const Namespac
 StatusWith<size_t> StorageInterfaceImpl::getOplogMaxSize(OperationContext* opCtx) {
     // This writeConflictRetry loop protects callers from WriteConflictExceptions thrown by the
     // storage engine running out of cache space, despite this operation not performing any writes.
-    return writeConflictRetry(
+    /*return writeConflictRetry(
         opCtx,
         "StorageInterfaceImpl::getOplogMaxSize",
         NamespaceString::kRsOplogNamespace.ns(),
@@ -473,7 +473,19 @@ StatusWith<size_t> StorageInterfaceImpl::getOplogMaxSize(OperationContext* opCtx
                         str::stream()
                             << NamespaceString::kRsOplogNamespace.ns() << " isn't capped"};
             return options.cappedSize;
-        });
+        });*/
+    AutoGetOplog oplogRead(opCtx, OplogAccessMode::kRead);
+    const auto& oplog = oplogRead.getCollection();
+    if (!oplog) {
+        return {ErrorCodes::NamespaceNotFound, "Your oplog doesn't exist."};
+    }
+    const auto options =
+        oplog->getCollectionOptions();
+    if (!options.capped)
+        return {ErrorCodes::BadValue,
+                str::stream()
+                    << NamespaceString::kRsOplogNamespace.ns() << " isn't capped"};
+    return options.cappedSize;
 }
 
 Status StorageInterfaceImpl::createCollection(OperationContext* opCtx,

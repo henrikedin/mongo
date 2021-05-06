@@ -165,13 +165,13 @@ public:
                           bool isMultikey,
                           const MultikeyPaths& multikeyPaths) final;
 
-    bool isReady(OperationContext* opCtx) const final;
+    bool isReady(OperationContext* opCtx, const CollectionPtr& collection) const final;
 
     bool isFrozen() const final;
 
-    bool isPresentInMySnapshot(OperationContext* opCtx) const final;
+    bool isPresentInMySnapshot(const CollectionPtr& collection) const final;
 
-    bool isReadyInMySnapshot(OperationContext* opCtx) const final;
+    bool isReadyInMySnapshot(const CollectionPtr& collection) const final;
 
     /**
      * If return value is not boost::none, reads with majority read concern using an older snapshot

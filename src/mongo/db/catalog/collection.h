@@ -619,6 +619,20 @@ public:
                                          const IndexDescriptor* desc,
                                          bool isMultikey,
                                          const MultikeyPaths& multikeyPaths) const = 0;
+
+    virtual int getTotalIndexCount() const = 0;
+
+    virtual int getCompletedIndexCount() const = 0;
+
+    virtual BSONObj getIndexSpec(StringData indexName) const = 0;
+
+    virtual void getAllIndexes(std::vector<std::string>* names) const = 0;
+
+    virtual void getReadyIndexes(std::vector<std::string>* names) const = 0;
+
+    virtual bool isIndexPresent(StringData indexName) const = 0;
+
+    virtual bool isIndexReady(StringData indexName) const = 0;
     
     //
     // Stats
@@ -687,7 +701,7 @@ public:
     /**
      * Returns a cached version of the Collection MetaData that matches the version of this Collection instance.
      */
-    virtual const BSONCollectionCatalogEntry::MetaData& getCollectionMetadata() const = 0;
+    virtual const CollectionOptions& getCollectionOptions() const = 0;
 
     /**
      * Fills in each index specification with collation information from this collection and returns

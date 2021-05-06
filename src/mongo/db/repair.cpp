@@ -87,12 +87,12 @@ Status rebuildIndexesForNamespace(OperationContext* opCtx,
 }
 
 namespace {
-Status dropUnfinishedIndexes(OperationContext* opCtx, const CollectionPtr& collection) {
+Status dropUnfinishedIndexes(OperationContext* opCtx, Collection* collection) {
     std::vector<std::string> indexNames;
     auto durableCatalog = DurableCatalog::get(opCtx);
-    durableCatalog->getAllIndexes(opCtx, collection->getCatalogId(), &indexNames);
+    collection->getAllIndexes(&indexNames);
     for (const auto& indexName : indexNames) {
-        if (!durableCatalog->isIndexReady(opCtx, collection->getCatalogId(), indexName)) {
+        if (!collection->isIndexReady(indexName)) {
             LOGV2(3871400,
                   "Dropping unfinished index '{name}' after collection was modified by "
                   "repair",
@@ -104,9 +104,7 @@ Status dropUnfinishedIndexes(OperationContext* opCtx, const CollectionPtr& colle
             // pass in a nullptr for the index 'ident', promising that the index is not in use.
             catalog::removeIndex(opCtx,
                                  indexName,
-                                 collection->getCatalogId(),
-                                 collection->uuid(),
-                                 collection->ns(),
+                                 collection,
                                  nullptr /*ident */);
             wuow.commit();
 

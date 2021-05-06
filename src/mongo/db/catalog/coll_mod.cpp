@@ -525,7 +525,7 @@ Status _collModInternal(OperationContext* opCtx,
         // options so we save the relevant TTL index data in a separate object.
 
         const CollectionOptions& oldCollOptions =
-            coll->getCollectionMetadata().options;
+            coll->getCollectionOptions();
 
         boost::optional<IndexCollModInfo> indexCollModInfo;
 

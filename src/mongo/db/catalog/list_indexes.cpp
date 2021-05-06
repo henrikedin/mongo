@@ -40,7 +40,6 @@
 #include "mongo/db/db_raii.h"
 #include "mongo/db/namespace_string.h"
 #include "mongo/db/operation_context.h"
-#include "mongo/db/storage/durable_catalog.h"
 #include "mongo/db/storage/storage_engine.h"
 #include "mongo/util/uuid.h"
 
@@ -69,21 +68,19 @@ std::list<BSONObj> listIndexesInLock(OperationContext* opCtx,
                                      boost::optional<bool> includeBuildUUIDs) {
     invariant(opCtx->lockState()->isCollectionLockedForMode(nss, MODE_IS));
 
-    auto durableCatalog = DurableCatalog::get(opCtx);
-
     CurOpFailpointHelpers::waitWhileFailPointEnabled(
         &hangBeforeListIndexes, opCtx, "hangBeforeListIndexes", []() {}, nss);
 
     return writeConflictRetry(opCtx, "listIndexes", nss.ns(), [&] {
         std::vector<std::string> indexNames;
         std::list<BSONObj> indexSpecs;
-        durableCatalog->getAllIndexes(opCtx, collection->getCatalogId(), &indexNames);
+        collection->getAllIndexes(&indexNames);
 
         for (size_t i = 0; i < indexNames.size(); i++) {
             if (!includeBuildUUIDs.value_or(false) ||
-                durableCatalog->isIndexReady(opCtx, collection->getCatalogId(), indexNames[i])) {
+                collection->isIndexReady(indexNames[i])) {
                 indexSpecs.push_back(
-                    durableCatalog->getIndexSpec(opCtx, collection->getCatalogId(), indexNames[i]));
+                    collection->getIndexSpec(indexNames[i]));
                 continue;
             }
             // The durable catalog will not have a build UUID for the given index name if it was
@@ -92,14 +89,14 @@ std::list<BSONObj> listIndexesInLock(OperationContext* opCtx,
                 indexNames[i]);
             if (!durableBuildUUID) {
                 indexSpecs.push_back(
-                    durableCatalog->getIndexSpec(opCtx, collection->getCatalogId(), indexNames[i]));
+                    collection->getIndexSpec(indexNames[i]));
                 continue;
             }
 
             BSONObjBuilder builder;
             builder.append(
                 "spec"_sd,
-                durableCatalog->getIndexSpec(opCtx, collection->getCatalogId(), indexNames[i]));
+                collection->getIndexSpec(indexNames[i]));
             durableBuildUUID->appendToBuilder(&builder, "buildUUID"_sd);
             indexSpecs.push_back(builder.obj());
         }

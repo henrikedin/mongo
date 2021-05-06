@@ -130,30 +130,9 @@ public:
     Status dropCollection(OperationContext* opCtx, RecordId catalogId);
 
     Status dropAndRecreateIndexIdentForResume(OperationContext* opCtx,
-                                              RecordId catalogId,
+                                              const CollectionOptions& collOptions,
                                               const IndexDescriptor* spec,
                                               StringData ident);
-
-
-    CollectionOptions getCollectionOptions(OperationContext* opCtx, RecordId catalogId) const;
-
-    int getTotalIndexCount(OperationContext* opCtx, RecordId catalogId) const;
-
-    int getCompletedIndexCount(OperationContext* opCtx, RecordId catalogId) const;
-
-    BSONObj getIndexSpec(OperationContext* opCtx, RecordId catalogId, StringData indexName) const;
-
-    void getAllIndexes(OperationContext* opCtx,
-                       RecordId catalogId,
-                       std::vector<std::string>* names) const;
-
-    void getReadyIndexes(OperationContext* opCtx,
-                         RecordId catalogId,
-                         std::vector<std::string>* names) const;
-
-    bool isIndexPresent(OperationContext* opCtx, RecordId catalogId, StringData indexName) const;
-
-    bool isIndexReady(OperationContext* opCtx, RecordId catalogId, StringData indexName) const;
 
     void setRand_forTest(const std::string& rand);
 

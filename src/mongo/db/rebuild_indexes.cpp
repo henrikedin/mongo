@@ -53,7 +53,7 @@ StatusWith<IndexNameObjs> getIndexNameObjs(OperationContext* opCtx,
     auto durableCatalog = DurableCatalog::get(opCtx);
     {
         // Fetch all indexes
-        durableCatalog->getAllIndexes(opCtx, catalogId, &indexNames);
+        //durableCatalog->getAllIndexes(opCtx, catalogId, &indexNames);
         auto newEnd =
             std::remove_if(indexNames.begin(),
                            indexNames.end(),
@@ -64,7 +64,7 @@ StatusWith<IndexNameObjs> getIndexNameObjs(OperationContext* opCtx,
 
 
         for (const auto& name : indexNames) {
-            BSONObj spec = durableCatalog->getIndexSpec(opCtx, catalogId, name);
+            BSONObj spec;//= durableCatalog->getIndexSpec(opCtx, catalogId, name);
             using IndexVersion = IndexDescriptor::IndexVersion;
             IndexVersion indexVersion = IndexVersion::kV1;
             if (auto indexVersionElem = spec[IndexDescriptor::kIndexVersionFieldName]) {

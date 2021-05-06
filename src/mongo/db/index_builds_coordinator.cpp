@@ -546,7 +546,7 @@ Status IndexBuildsCoordinator::_startIndexBuildForRecovery(OperationContext* opC
             auto descriptor =
                 indexCatalog->findIndexByName(opCtx, indexNames[i], includeUnfinished);
             if (descriptor) {
-                Status s = indexCatalog->dropIndex(opCtx, descriptor);
+                Status s = indexCatalog->dropIndex(opCtx, collection.getWritableCollection(), descriptor);
                 if (!s.isOK()) {
                     return s;
                 }
@@ -556,8 +556,8 @@ Status IndexBuildsCoordinator::_startIndexBuildForRecovery(OperationContext* opC
             // If the index is not present in the catalog, then we are trying to drop an already
             // aborted index. This may happen when rollback-via-refetch restarts an index build
             // after an abort has been rolled back.
-            if (!DurableCatalog::get(opCtx)->isIndexPresent(
-                    opCtx, collection->getCatalogId(), indexNames[i])) {
+            if (!collection->isIndexPresent(
+                     indexNames[i])) {
                 LOGV2(20652,
                       "An index was not found in the catalog while trying to drop the index during "
                       "recovery",
@@ -566,8 +566,8 @@ Status IndexBuildsCoordinator::_startIndexBuildForRecovery(OperationContext* opC
                 continue;
             }
 
-            const auto durableBuildUUID = DurableCatalog::get(opCtx)->getIndexBuildUUID(
-                opCtx, collection->getCatalogId(), indexNames[i]);
+            const auto durableBuildUUID = collection->getIndexBuildUUID(
+                 indexNames[i]);
 
             // A build UUID is present if and only if we are rebuilding a two-phase build.
             invariant((protocol == IndexBuildProtocol::kTwoPhase) ==
@@ -584,7 +584,7 @@ Status IndexBuildsCoordinator::_startIndexBuildForRecovery(OperationContext* opC
             includeUnfinished = true;
             descriptor = indexCatalog->findIndexByName(opCtx, indexNames[i], includeUnfinished);
             if (descriptor) {
-                Status s = indexCatalog->dropUnfinishedIndex(opCtx, descriptor);
+                Status s = indexCatalog->dropUnfinishedIndex(opCtx, collection.getWritableCollection(), descriptor);
                 if (!s.isOK()) {
                     return s;
                 }
@@ -594,9 +594,7 @@ Status IndexBuildsCoordinator::_startIndexBuildForRecovery(OperationContext* opC
                 // use.
                 catalog::removeIndex(opCtx,
                                      indexNames[i],
-                                     collection->getCatalogId(),
-                                     collection->uuid(),
-                                     collection->ns(),
+                                     collection.getWritableCollection(),
                                      nullptr /* ident */);
             }
         }
@@ -664,10 +662,10 @@ Status IndexBuildsCoordinator::_setUpResumeIndexBuild(OperationContext* opCtx,
         // Check that the information in the durable catalog matches the resume info.
         uassert(4841702,
                 "Index not found in durable catalog while attempting to resume index build",
-                durableCatalog->isIndexPresent(opCtx, collection->getCatalogId(), indexName));
+                collection->isIndexPresent(indexName));
 
         const auto durableBuildUUID =
-            durableCatalog->getIndexBuildUUID(opCtx, collection->getCatalogId(), indexName);
+            collection->getIndexBuildUUID(indexName);
         uassert(ErrorCodes::IndexNotFound,
                 str::stream() << "Cannot resume index build with a buildUUID: " << buildUUID
                               << " that did not match the buildUUID in the durable catalog: "
@@ -682,8 +680,8 @@ Status IndexBuildsCoordinator::_setUpResumeIndexBuild(OperationContext* opCtx,
                           << indexName,
             indexIdent.size() > 0);
 
-        uassertStatusOK(durableCatalog->checkMetaDataForIndex(
-            opCtx, collection->getCatalogId(), indexName, spec));
+        uassertStatusOK(collection->checkMetaDataForIndex(
+             indexName, spec));
     }
 
     if (!collection->isInitialized()) {
@@ -859,7 +857,7 @@ void IndexBuildsCoordinator::applyStartIndexBuild(OperationContext* opCtx,
                         !name.empty());
 
                 if (auto desc = indexCatalog->findIndexByName(opCtx, name, includeUnfinished)) {
-                    uassertStatusOK(indexCatalog->dropIndex(opCtx, desc));
+                    uassertStatusOK(indexCatalog->dropIndex(opCtx, coll.getWritableCollection(), desc));
                 }
             }
 
@@ -1629,7 +1627,7 @@ void IndexBuildsCoordinator::createIndexesOnEmptyCollection(OperationContext* op
         // Each index will be added to the mdb catalog using the preceding createIndexes
         // timestamp.
         opObserver->onCreateIndex(opCtx, nss, collectionUUID, spec, fromMigrate);
-        uassertStatusOK(indexCatalog->createIndexOnEmptyCollection(opCtx, spec));
+        uassertStatusOK(indexCatalog->createIndexOnEmptyCollection(opCtx, collection.getWritableCollection(), spec));
     }
 }
 

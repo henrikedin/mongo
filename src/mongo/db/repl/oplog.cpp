@@ -638,8 +638,8 @@ void createOplog(OperationContext* opCtx,
 
     if (collection) {
         if (replSettings.getOplogSizeBytes() != 0) {
-            const CollectionOptions oplogOpts =
-                DurableCatalog::get(opCtx)->getCollectionOptions(opCtx, collection->getCatalogId());
+            const CollectionOptions& oplogOpts =
+                collection->getCollectionOptions();
 
             int o = (int)(oplogOpts.cappedSize / (1024 * 1024));
             int n = (int)(replSettings.getOplogSizeBytes() / (1024 * 1024));

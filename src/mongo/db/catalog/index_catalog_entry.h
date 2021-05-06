@@ -157,19 +157,19 @@ public:
      * not consider whether the index is visible or ready in the current storage snapshot. For
      * that, use isReadyInMySnapshot() or isPresentInMySnapshot().
      */
-    virtual bool isReady(OperationContext* const opCtx) const = 0;
+    virtual bool isReady(OperationContext* opCtx, const CollectionPtr& collection) const = 0;
 
     /**
      * Safely check whether this index is visible in the durable catalog in the current storage
      * snapshot.
      */
-    virtual bool isPresentInMySnapshot(OperationContext* opCtx) const = 0;
+    virtual bool isPresentInMySnapshot(const CollectionPtr& collection) const = 0;
 
     /**
      * Check whether this index is ready in the durable catalog in the current storage snapshot. It
      * is unsafe to call this if isPresentInMySnapshot() has not also been checked.
      */
-    virtual bool isReadyInMySnapshot(OperationContext* opCtx) const = 0;
+    virtual bool isReadyInMySnapshot(const CollectionPtr& collection) const = 0;
 
     /**
      * Returns true if this index is not ready, and it is not currently in the process of being

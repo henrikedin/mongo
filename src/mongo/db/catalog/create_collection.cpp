@@ -256,8 +256,7 @@ Status _createTimeseries(OperationContext* opCtx,
                 // Compare CollectionOptions and eventual TTL index to see if this bucket collection
                 // may be reused for this request.
                 existingBucketCollectionIsCompatible =
-                    DurableCatalog::get(opCtx)
-                        ->getCollectionOptions(opCtx, coll->getCatalogId())
+                    coll->getCollectionOptions()
                         .matchesStorageOptions(
                             bucketsOptions,
                             CollatorFactoryInterface::get(opCtx->getServiceContext()));

@@ -170,7 +170,7 @@ public:
      * Must be called within a WriteUnitOfWork.
      */
     void dropCollection(OperationContext* opCtx, Collection* coll) const;
-    void dropCollection(OperationContext* opCtx, const CollectionPtr& coll) const;
+    //void dropCollection(OperationContext* opCtx, const CollectionPtr& coll) const;
 
     void onCloseDatabase(OperationContext* opCtx, std::string dbName);
 

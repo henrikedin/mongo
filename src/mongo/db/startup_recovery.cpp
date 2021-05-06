@@ -148,11 +148,10 @@ Status restoreMissingFeatureCompatibilityVersionDocument(OperationContext* opCtx
  * Returns true if the collection associated with the given CollectionCatalogEntry has an index on
  * the _id field
  */
-bool checkIdIndexExists(OperationContext* opCtx, RecordId catalogId) {
-    auto durableCatalog = DurableCatalog::get(opCtx);
-    auto indexCount = durableCatalog->getTotalIndexCount(opCtx, catalogId);
+bool checkIdIndexExists(OperationContext* opCtx, const CollectionPtr& coll) {
+    auto indexCount = coll->getTotalIndexCount();
     auto indexNames = std::vector<std::string>(indexCount);
-    durableCatalog->getAllIndexes(opCtx, catalogId, &indexNames);
+    coll->getAllIndexes(&indexNames);
 
     for (auto name : indexNames) {
         if (name == "_id_") {
@@ -225,15 +224,15 @@ Status ensureCollectionProperties(OperationContext* opCtx,
 
         // All user-created replicated collections created since MongoDB 4.0 have _id indexes.
         auto requiresIndex = coll->requiresIdIndex() && coll->ns().isReplicated();
-        auto collOptions =
-            DurableCatalog::get(opCtx)->getCollectionOptions(opCtx, coll->getCatalogId());
+        const auto& collOptions =
+            coll->getCollectionOptions();
         auto hasAutoIndexIdField = collOptions.autoIndexId == CollectionOptions::YES;
 
         // Even if the autoIndexId field is not YES, the collection may still have an _id index
         // that was created manually by the user. Check the list of indexes to confirm index
         // does not exist before attempting to build it or returning an error.
         if (requiresIndex && !hasAutoIndexIdField &&
-            !checkIdIndexExists(opCtx, coll->getCatalogId())) {
+            !checkIdIndexExists(opCtx, coll)) {
             LOGV2(21001,
                   "collection {coll_ns} is missing an _id index",
                   "Collection is missing an _id index",

@@ -271,6 +271,7 @@ public:
      * this operation.
      */
     void unindexRecord(OperationContext* opCtx,
+        const CollectionPtr& collection,
                        const BSONObj& obj,
                        const RecordId& loc,
                        bool noWarn,
@@ -345,6 +346,7 @@ private:
                          int64_t* const keysDeletedOut);
 
     void _unindexKeys(OperationContext* opCtx,
+        const CollectionPtr& collection,
                       IndexCatalogEntry* index,
                       const KeyStringSet& keys,
                       const BSONObj& obj,
@@ -353,6 +355,7 @@ private:
                       int64_t* const keysDeletedOut);
 
     void _unindexRecord(OperationContext* opCtx,
+        const CollectionPtr& collection,
                         IndexCatalogEntry* entry,
                         const BSONObj& obj,
                         const RecordId& loc,

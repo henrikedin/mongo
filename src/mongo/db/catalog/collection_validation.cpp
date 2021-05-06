@@ -371,8 +371,8 @@ void _validateCatalogEntry(OperationContext* opCtx,
                            ValidateState* validateState,
                            ValidateResults* results) {
     const auto& collection = validateState->getCollection();
-    CollectionOptions options =
-        DurableCatalog::get(opCtx)->getCollectionOptions(opCtx, collection->getCatalogId());
+    const auto& options =
+        collection->getCollectionOptions();
     if (options.uuid) {
         addErrorIfUnequal(*(options.uuid), validateState->uuid(), "UUID", results);
     } else {
@@ -408,7 +408,7 @@ void _validateCatalogEntry(OperationContext* opCtx,
     }
 
     std::vector<std::string> indexes;
-    DurableCatalog::get(opCtx)->getReadyIndexes(opCtx, collection->getCatalogId(), &indexes);
+    collection->getReadyIndexes(&indexes);
     for (auto& index : indexes) {
         MultikeyPaths multikeyPaths;
         const bool isMultikey = collection->isIndexMultikey(

@@ -326,21 +326,21 @@ private:
                                 TTLCollectionCache* ttlCollectionCache,
                                 const CollectionPtr& collection,
                                 std::string indexName) {
-        if (!DurableCatalog::get(opCtx)->isIndexPresent(
-                opCtx, collection->getCatalogId(), indexName)) {
+        if (!collection->isIndexPresent(
+                indexName)) {
             ttlCollectionCache->deregisterTTLInfo(collection->uuid(), indexName);
             return;
         }
 
         BSONObj spec =
-            DurableCatalog::get(opCtx)->getIndexSpec(opCtx, collection->getCatalogId(), indexName);
+            collection->getIndexSpec(indexName);
         if (!spec.hasField(IndexDescriptor::kExpireAfterSecondsFieldName)) {
             ttlCollectionCache->deregisterTTLInfo(collection->uuid(), indexName);
             return;
         }
 
-        if (!DurableCatalog::get(opCtx)->isIndexReady(
-                opCtx, collection->getCatalogId(), indexName)) {
+        if (!collection->isIndexReady(
+                indexName)) {
             return;
         }
 
@@ -451,8 +451,8 @@ private:
     void deleteExpiredWithCollscan(OperationContext* opCtx,
                                    TTLCollectionCache* ttlCollectionCache,
                                    const CollectionPtr& collection) {
-        auto collOptions =
-            DurableCatalog::get(opCtx)->getCollectionOptions(opCtx, collection->getCatalogId());
+        const auto& collOptions =
+            collection->getCollectionOptions();
         uassert(5400701,
                 "collection is not clustered by _id but is described as being TTL",
                 collOptions.clusteredIndex);

@@ -181,36 +181,17 @@ public:
      * Drops the provided ident and recreates it as empty for use in resuming an index build.
      */
     virtual Status dropAndRecreateIndexIdentForResume(OperationContext* opCtx,
-                                                      RecordId catalogId,
+                                                      const CollectionOptions& collOptions,
                                                       const IndexDescriptor* spec,
                                                       StringData ident) = 0;
 
-    virtual CollectionOptions getCollectionOptions(OperationContext* opCtx,
-                                                   RecordId catalogId) const = 0;
+    
 
-    virtual int getTotalIndexCount(OperationContext* opCtx, RecordId catalogId) const = 0;
+    
 
-    virtual int getCompletedIndexCount(OperationContext* opCtx, RecordId catalogId) const = 0;
+    
 
-    virtual BSONObj getIndexSpec(OperationContext* opCtx,
-                                 RecordId catalogId,
-                                 StringData indexName) const = 0;
-
-    virtual void getAllIndexes(OperationContext* opCtx,
-                               RecordId catalogId,
-                               std::vector<std::string>* names) const = 0;
-
-    virtual void getReadyIndexes(OperationContext* opCtx,
-                                 RecordId catalogId,
-                                 std::vector<std::string>* names) const = 0;
-
-    virtual bool isIndexPresent(OperationContext* opCtx,
-                                RecordId catalogId,
-                                StringData indexName) const = 0;
-
-    virtual bool isIndexReady(OperationContext* opCtx,
-                              RecordId catalogId,
-                              StringData indexName) const = 0;
+    
 
     virtual void setRand_forTest(const std::string& rand) = 0;
 

@@ -453,6 +453,7 @@ public:
      * this operation.
      */
     virtual void unindexRecord(OperationContext* const opCtx,
+        const CollectionPtr& collection,
                                const BSONObj& obj,
                                const RecordId& loc,
                                const bool noWarn,

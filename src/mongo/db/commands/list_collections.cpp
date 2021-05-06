@@ -192,16 +192,16 @@ BSONObj buildCollectionBson(OperationContext* opCtx,
         return b.obj();
     }
 
-    const auto& metadata = collection->getCollectionMetadata();
+    const auto& options = collection->getCollectionOptions();
 
     // While the UUID is stored as a collection option, from the user's perspective it is an
     // unsettable read-only property, so put it in the 'info' section.
-    b.append("options", metadata.options.toBSON(false));
+    b.append("options", options.toBSON(false));
 
     BSONObjBuilder infoBuilder;
     infoBuilder.append("readOnly", storageGlobalParams.readOnly);
-    if (metadata.options.uuid)
-        infoBuilder.appendElements(metadata.options.uuid->toBSON());
+    if (options.uuid)
+        infoBuilder.appendElements(options.uuid->toBSON());
     b.append("info", infoBuilder.obj());
 
     auto idIndex = collection->getIndexCatalog()->findIdIndex(opCtx);

@@ -575,17 +575,17 @@ void CollectionCatalog::dropCollection(OperationContext* opCtx, Collection* coll
     PublishCatalogUpdates::ensureRegisteredWithRecoveryUnit(opCtx, uncommittedCatalogUpdates);
 }
 
-void CollectionCatalog::dropCollection(OperationContext* opCtx, const CollectionPtr& coll) const {
-    invariant(coll);
-    invariant(opCtx->lockState()->isCollectionLockedForMode(coll->ns(), MODE_X));
-
-    auto& uncommittedCatalogUpdates = getUncommittedCatalogUpdates(opCtx);
-    uncommittedCatalogUpdates.drop(coll.get());
-
-    // Ensure we have registered publish change if this collection haven't been made writable
-    // previously
-    PublishCatalogUpdates::ensureRegisteredWithRecoveryUnit(opCtx, uncommittedCatalogUpdates);
-}
+//void CollectionCatalog::dropCollection(OperationContext* opCtx, const CollectionPtr& coll) const {
+//    invariant(coll);
+//    invariant(opCtx->lockState()->isCollectionLockedForMode(coll->ns(), MODE_X));
+//
+//    auto& uncommittedCatalogUpdates = getUncommittedCatalogUpdates(opCtx);
+//    uncommittedCatalogUpdates.drop(coll.get());
+//
+//    // Ensure we have registered publish change if this collection haven't been made writable
+//    // previously
+//    PublishCatalogUpdates::ensureRegisteredWithRecoveryUnit(opCtx, uncommittedCatalogUpdates);
+//}
 
 void CollectionCatalog::onCloseDatabase(OperationContext* opCtx, std::string dbName) {
     invariant(opCtx->lockState()->isDbLockedForMode(dbName, MODE_X));

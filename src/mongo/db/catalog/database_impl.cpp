@@ -230,8 +230,7 @@ void DatabaseImpl::clearTmpCollections(OperationContext* opCtx) const {
     };
 
     CollectionCatalog::CollectionInfoFn predicate = [&](const CollectionPtr& collection) {
-        return DurableCatalog::get(opCtx)
-            ->getCollectionOptions(opCtx, collection->getCatalogId())
+        return collection->getCollectionOptions()
             .temp;
     };
 
@@ -517,7 +516,7 @@ void DatabaseImpl::_dropCollectionIndexes(OperationContext* opCtx,
         20316, 1, "dropCollection: {namespace} - dropAllIndexes start", "namespace"_attr = nss);
     collection->getIndexCatalog()->dropAllIndexes(opCtx, collection, true);
 
-    invariant(DurableCatalog::get(opCtx)->getTotalIndexCount(opCtx, collection->getCatalogId()) ==
+    invariant(collection->getTotalIndexCount() ==
               0);
     LOGV2_DEBUG(
         20317, 1, "dropCollection: {namespace} - dropAllIndexes done", "namespace"_attr = nss);

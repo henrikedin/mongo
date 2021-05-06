@@ -848,7 +848,7 @@ bool CollectionImpl::_cappedAndNeedDelete(OperationContext* opCtx) const {
         return false;
     }
 
-    if (dataSize(opCtx) > _shared->_collectionLatest->getCollectionMetadata().options.cappedSize) {
+    if (dataSize(opCtx) > _shared->_collectionLatest->getCollectionOptions().cappedSize) {
         return true;
     }
 
@@ -923,7 +923,7 @@ void CollectionImpl::_cappedDeleteAsNeeded(OperationContext* opCtx,
     const long long currentDataSize = dataSize(opCtx);
     const long long currentNumRecords = numRecords(opCtx);
 
-    const auto cappedMaxSize = _shared->_collectionLatest->getCollectionMetadata().options.cappedSize;
+    const auto cappedMaxSize = _shared->_collectionLatest->getCollectionOptions().cappedSize;
     const long long sizeOverCap =
         (currentDataSize > cappedMaxSize) ? currentDataSize - cappedMaxSize : 0;
     const long long docsOverCap =
@@ -981,8 +981,12 @@ void CollectionImpl::_cappedDeleteAsNeeded(OperationContext* opCtx,
             }
 
             int64_t unusedKeysDeleted = 0;
-            _indexCatalog->unindexRecord(
-                opCtx, doc, record->id, /*logIfError=*/false, &unusedKeysDeleted);
+            _indexCatalog->unindexRecord(opCtx,
+                                         CollectionPtr(this, CollectionPtr::NoYieldTag{}),
+                                         doc,
+                                         record->id,
+                                         /*logIfError=*/false,
+                                         &unusedKeysDeleted);
 
             // We're about to delete the record our cursor is positioned on, so advance the cursor.
             RecordId toDelete = record->id;
@@ -1043,7 +1047,7 @@ Status CollectionImpl::SharedState::aboutToDeleteCapped(OperationContext* opCtx,
                                                         RecordData data) {
     BSONObj doc = data.releaseToBson();
     int64_t* const nullKeysDeleted = nullptr;
-    _collectionLatest->getIndexCatalog()->unindexRecord(opCtx, doc, loc, false, nullKeysDeleted);
+    _collectionLatest->getIndexCatalog()->unindexRecord(opCtx, _collectionLatest, doc, loc, false, nullKeysDeleted);
 
     // We are not capturing and reporting to OpDebug the 'keysDeleted' by unindexRecord(). It is
     // questionable whether reporting will add diagnostic value to users and may instead be
@@ -1089,7 +1093,7 @@ void CollectionImpl::deleteDocument(OperationContext* opCtx,
     }
 
     int64_t keysDeleted;
-    _indexCatalog->unindexRecord(opCtx, doc.value(), loc, noWarn, &keysDeleted);
+    _indexCatalog->unindexRecord(opCtx, CollectionPtr(this, CollectionPtr::NoYieldTag{}), doc.value(), loc, noWarn, &keysDeleted);
     _shared->_recordStore->deleteRecord(opCtx, loc);
 
     OpObserver::OplogDeleteEntryArgs deleteArgs{nullptr, fromMigrate, getRecordPreImages()};
@@ -1552,8 +1556,8 @@ const CollatorInterface* CollectionImpl::getDefaultCollator() const {
     return _shared->_collator.get();
 }
 
-const BSONCollectionCatalogEntry::MetaData& CollectionImpl::getCollectionMetadata() const {
-    return *_metadata;
+const CollectionOptions& CollectionImpl::getCollectionOptions() const {
+    return _metadata->options;
 }
 
 StatusWith<std::vector<BSONObj>> CollectionImpl::addCollationDefaultsToIndexSpecsForCreate(
@@ -1868,6 +1872,54 @@ void CollectionImpl::forceSetIndexIsMultikey(OperationContext* opCtx,
     // Make a copy that is safe to read without locks that we insert in the durable catalog
     auto metadataCopy = *_metadata;
     DurableCatalog::get(opCtx)->putMetaData(opCtx, getCatalogId(), metadataCopy);
+}
+
+int CollectionImpl::getTotalIndexCount() const {
+    return static_cast<int>(_metadata->indexes.size());
+}
+
+int CollectionImpl::getCompletedIndexCount() const {
+    int num = 0;
+    for (unsigned i = 0; i < _metadata->indexes.size(); i++) {
+        if (_metadata->indexes[i].ready)
+            num++;
+    }
+    return num;
+}
+
+BSONObj CollectionImpl::getIndexSpec(StringData indexName) const {
+    int offset = _metadata->findIndexOffset(indexName);
+    invariant(offset >= 0,
+              str::stream() << "cannot get index spec for " << indexName << " @ " << getCatalogId()
+                            << " : " << _metadata->toBSON());
+
+    return _metadata->indexes[offset].spec;
+}
+
+void CollectionImpl::getAllIndexes(std::vector<std::string>* names) const {
+    for (unsigned i = 0; i < _metadata->indexes.size(); i++) {
+        names->push_back(_metadata->indexes[i].spec["name"].String());
+    }
+}
+
+void CollectionImpl::getReadyIndexes(std::vector<std::string>* names) const {
+    for (unsigned i = 0; i < _metadata->indexes.size(); i++) {
+        if (_metadata->indexes[i].ready)
+            names->push_back(_metadata->indexes[i].spec["name"].String());
+    }
+}
+
+bool CollectionImpl::isIndexPresent(StringData indexName) const {
+    int offset = _metadata->findIndexOffset(indexName);
+    return offset >= 0;
+}
+
+bool CollectionImpl::isIndexReady(StringData indexName) const {
+    int offset = _metadata->findIndexOffset(indexName);
+    invariant(offset >= 0,
+              str::stream() << "cannot get ready status for index " << indexName << " @ "
+                            << getCatalogId() << " : " << _metadata->toBSON());
+    return _metadata->indexes[offset].ready;
 }
 
 

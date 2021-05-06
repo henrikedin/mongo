@@ -873,7 +873,7 @@ void dropIndex(OperationContext* opCtx,
     }
 
     auto entry = indexCatalog->getEntry(indexDescriptor);
-    if (entry->isReady(opCtx)) {
+    if (entry->isReady(opCtx, collection)) {
         auto status = indexCatalog->dropIndex(opCtx, collection, indexDescriptor);
         if (!status.isOK()) {
             LOGV2_ERROR(21738,
@@ -1647,8 +1647,7 @@ void rollback_internal::syncFixUp(OperationContext* opCtx,
                         "uuid"_attr = uuid,
                         "info"_attr = redact(info),
                         "catalogId"_attr =
-                            redact(DurableCatalog::get(opCtx)
-                                       ->getCollectionOptions(opCtx, collection->getCatalogId())
+                            redact(collection->getCollectionOptions()
                                        .toBSON()));
         }
 

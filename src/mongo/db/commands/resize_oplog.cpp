@@ -107,8 +107,7 @@ public:
 
             LOGV2(20497,
                   "replSetResizeOplog success",
-                  "size"_attr = DurableCatalog::get(opCtx)
-                                    ->getCollectionOptions(opCtx, coll->getCatalogId())
+                  "size"_attr = coll->getCollectionOptions()
                                     .cappedSize,
                   "minRetentionHours"_attr = storageGlobalParams.oplogMinRetentionHours.load());
             return true;

@@ -376,7 +376,7 @@ public:
      */
     const CollatorInterface* getDefaultCollator() const final;
 
-    const BSONCollectionCatalogEntry::MetaData& getCollectionMetadata() const final;
+    const CollectionOptions& getCollectionOptions() const final;
 
     StatusWith<std::vector<BSONObj>> addCollationDefaultsToIndexSpecsForCreate(
         OperationContext* opCtx, const std::vector<BSONObj>& indexSpecs) const final;
@@ -426,6 +426,20 @@ public:
                                  const IndexDescriptor* desc,
                                  bool isMultikey,
                                  const MultikeyPaths& multikeyPaths) const final;
+
+    int getTotalIndexCount() const final;
+
+    int getCompletedIndexCount() const final;
+
+    BSONObj getIndexSpec(StringData indexName) const final;
+
+    void getAllIndexes(std::vector<std::string>* names) const final;
+
+    void getReadyIndexes(std::vector<std::string>* names) const final;
+
+    bool isIndexPresent(StringData indexName) const final;
+
+    bool isIndexReady(StringData indexName) const final;
 
 private:
     /**
