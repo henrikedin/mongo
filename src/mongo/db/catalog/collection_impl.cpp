@@ -70,6 +70,7 @@
 #include "mongo/db/server_recovery.h"
 #include "mongo/db/service_context.h"
 #include "mongo/db/storage/durable_catalog.h"
+#include "mongo/db/storage/durable_catalog_feature_tracker.h"
 #include "mongo/db/storage/key_string.h"
 #include "mongo/db/storage/record_store.h"
 #include "mongo/db/ttl_collection_cache.h"
@@ -237,6 +238,10 @@ private:
     WriteUnitOfWork::RecoveryUnitState _originalRecoveryUnitState;
 };
 
+bool indexTypeSupportsPathLevelMultikeyTracking(StringData accessMethod) {
+    return accessMethod == IndexNames::BTREE || accessMethod == IndexNames::GEO_2DSPHERE;
+}
+
 }  // namespace
 
 CollectionImpl::SharedState::SharedState(CollectionImpl* collection,
@@ -248,8 +253,7 @@ CollectionImpl::SharedState::SharedState(CollectionImpl* collection,
                                                      : nullptr),
       _needCappedLock(options.capped && collection->ns().db() != "local"),
       _isCapped(options.capped),
-      _cappedMaxDocs(options.cappedMaxDocs),
-      _cappedMaxSize(options.cappedSize) {
+      _cappedMaxDocs(options.cappedMaxDocs) {
     if (_cappedNotifier) {
         _recordStore->setCappedCallback(this);
     }
@@ -327,10 +331,8 @@ SharedCollectionDecorations* CollectionImpl::getSharedDecorations() const {
 }
 
 void CollectionImpl::init(OperationContext* opCtx) {
-    auto options = std::make_shared<CollectionOptions>();
-    *options = DurableCatalog::get(opCtx)->getCollectionOptions(opCtx, getCatalogId());
-    _options = std::move(options);
-    const auto& collectionOptions = *_options;
+    _metadata = DurableCatalog::get(opCtx)->getMetaData(opCtx, getCatalogId());
+    const auto& collectionOptions = _metadata->options;
 
     _shared->_collator = parseCollation(opCtx, _ns, collectionOptions.collation);
     auto validatorDoc = collectionOptions.validator.getOwned();
@@ -383,7 +385,7 @@ void CollectionImpl::init(OperationContext* opCtx) {
         }
     }
 
-    getIndexCatalog()->init(opCtx).transitional_ignore();
+    getIndexCatalog()->init(opCtx, this).transitional_ignore();
     _initialized = true;
 }
 
@@ -472,7 +474,7 @@ Status CollectionImpl::checkValidation(OperationContext* opCtx, const BSONObj& d
     if (!validatorMatchExpr)
         return Status::OK();
 
-    if (validationLevelOrDefault(_options->validationLevel) == ValidationLevelEnum::off)
+    if (validationLevelOrDefault(_metadata->options.validationLevel) == ValidationLevelEnum::off)
         return Status::OK();
 
     if (DocumentValidationSettings::get(opCtx).isSchemaValidationDisabled())
@@ -505,7 +507,7 @@ Status CollectionImpl::checkValidation(OperationContext* opCtx, const BSONObj& d
         // writes which result in the validator throwing an exception are accepted when we're in
         // warn mode.
         if (!isFCVAtLeast47 &&
-            validationActionOrDefault(_options->validationAction) == ValidationActionEnum::error) {
+            validationActionOrDefault(_metadata->options.validationAction) == ValidationActionEnum::error) {
             e.addContext("Document validation failed");
             throw;
         }
@@ -516,7 +518,7 @@ Status CollectionImpl::checkValidation(OperationContext* opCtx, const BSONObj& d
         generatedError = doc_validation_error::generateError(*validatorMatchExpr, document);
     }
 
-    if (validationActionOrDefault(_options->validationAction) == ValidationActionEnum::warn) {
+    if (validationActionOrDefault(_metadata->options.validationAction) == ValidationActionEnum::warn) {
         LOGV2_WARNING(20294,
                       "Document would fail validation",
                       "namespace"_attr = ns(),
@@ -568,8 +570,8 @@ Collection::Validator CollectionImpl::parseValidator(
 
     // If the validation action is "warn" or the level is "moderate", then disallow any encryption
     // keywords. This is to prevent any plaintext data from showing up in the logs.
-    if (validationActionOrDefault(_options->validationAction) == ValidationActionEnum::warn ||
-        validationLevelOrDefault(_options->validationLevel) == ValidationLevelEnum::moderate)
+    if (validationActionOrDefault(_metadata->options.validationAction) == ValidationActionEnum::warn ||
+        validationLevelOrDefault(_metadata->options.validationLevel) == ValidationLevelEnum::moderate)
         allowedFeatures &= ~MatchExpressionParser::AllowedFeatures::kEncryptKeywords;
 
     auto statusWithMatcher =
@@ -846,7 +848,7 @@ bool CollectionImpl::_cappedAndNeedDelete(OperationContext* opCtx) const {
         return false;
     }
 
-    if (dataSize(opCtx) > _shared->_cappedMaxSize) {
+    if (dataSize(opCtx) > _shared->_collectionLatest->getCollectionMetadata().options.cappedSize) {
         return true;
     }
 
@@ -921,8 +923,9 @@ void CollectionImpl::_cappedDeleteAsNeeded(OperationContext* opCtx,
     const long long currentDataSize = dataSize(opCtx);
     const long long currentNumRecords = numRecords(opCtx);
 
+    const auto cappedMaxSize = _shared->_collectionLatest->getCollectionMetadata().options.cappedSize;
     const long long sizeOverCap =
-        (currentDataSize > _shared->_cappedMaxSize) ? currentDataSize - _shared->_cappedMaxSize : 0;
+        (currentDataSize > cappedMaxSize) ? currentDataSize - cappedMaxSize : 0;
     const long long docsOverCap =
         (_shared->_cappedMaxDocs != 0 && currentNumRecords > _shared->_cappedMaxDocs)
         ? currentNumRecords - _shared->_cappedMaxDocs
@@ -1113,7 +1116,7 @@ RecordId CollectionImpl::updateDocument(OperationContext* opCtx,
     {
         auto status = checkValidation(opCtx, newDoc);
         if (!status.isOK()) {
-            if (validationLevelOrDefault(_options->validationLevel) ==
+            if (validationLevelOrDefault(_metadata->options.validationLevel) ==
                 ValidationLevelEnum::strict) {
                 uassertStatusOK(status);
             }
@@ -1234,13 +1237,13 @@ StatusWith<RecordData> CollectionImpl::updateDocumentWithDamages(
 }
 
 bool CollectionImpl::isTemporary() const {
-    return _options->temp;
+    return _metadata->options.temp;
 }
 
 void CollectionImpl::clearTemporary() {
-    auto options = std::make_shared<CollectionOptions>(*_options);
-    options->temp = false;
-    _options = std::move(options);
+    //auto options = std::make_shared<CollectionOptions>(*_options);
+    //options->temp = false;
+    //_options = std::move(options);
 }
 
 bool CollectionImpl::isClustered() const {
@@ -1249,12 +1252,13 @@ bool CollectionImpl::isClustered() const {
 
 void CollectionImpl::updateClusteredIndexTTLSetting(OperationContext* opCtx,
                                                     boost::optional<int64_t> expireAfterSeconds) {
-    DurableCatalog::get(opCtx)->updateClusteredIndexTTLSetting(
-        opCtx, getCatalogId(), expireAfterSeconds);
+    uassert(5401000, "The collection doesn't have a clustered index", _metadata->options.clusteredIndex);
 
-    auto options = std::make_shared<CollectionOptions>(*_options);
-    options->clusteredIndex->setExpireAfterSeconds(expireAfterSeconds);
-    _options = std::move(options);
+    auto metadata = std::make_shared<BSONCollectionCatalogEntry::MetaData>(*_metadata);
+    metadata->options.clusteredIndex->setExpireAfterSeconds(expireAfterSeconds);
+    DurableCatalog::get(opCtx)->putMetaData(
+        opCtx, getCatalogId(), *metadata);
+    _metadata = std::move(metadata);
 }
 
 Status CollectionImpl::updateCappedSize(OperationContext* opCtx, long long newCappedSize) {
@@ -1272,22 +1276,27 @@ Status CollectionImpl::updateCappedSize(OperationContext* opCtx, long long newCa
         }
     }
 
-    _shared->_cappedMaxSize = newCappedSize;
+    auto metadata = std::make_shared<BSONCollectionCatalogEntry::MetaData>(*_metadata);
+    metadata->options.cappedSize = newCappedSize;
+    DurableCatalog::get(opCtx)->putMetaData(
+                    opCtx, getCatalogId(), *metadata);
+    _metadata = std::move(metadata);
     return Status::OK();
 }
 
 bool CollectionImpl::getRecordPreImages() const {
-    return _options->recordPreImages;
+    return _metadata->options.recordPreImages;
 }
 
 void CollectionImpl::setRecordPreImages(OperationContext* opCtx, bool val) {
     if (val) {
         uassertStatusOK(validatePreImageRecording(opCtx, _ns));
     }
-    DurableCatalog::get(opCtx)->setRecordPreImages(opCtx, getCatalogId(), val);
-    auto options = std::make_shared<CollectionOptions>(*_options);
-    options->recordPreImages = val;
-    _options = std::move(options);
+
+    auto metadata = std::make_shared<BSONCollectionCatalogEntry::MetaData>(*_metadata);
+    metadata->options.recordPreImages = val;
+    DurableCatalog::get(opCtx)->putMetaData(opCtx, getCatalogId(), *metadata);
+    _metadata = std::move(metadata);
 }
 
 bool CollectionImpl::isCapped() const {
@@ -1299,7 +1308,7 @@ long long CollectionImpl::getCappedMaxDocs() const {
 }
 
 long long CollectionImpl::getCappedMaxSize() const {
-    return _shared->_cappedMaxSize;
+    return _metadata->options.cappedSize;
 }
 
 CappedCallback* CollectionImpl::getCappedCallback() {
@@ -1409,7 +1418,7 @@ Status CollectionImpl::truncate(OperationContext* opCtx) {
     }
 
     // 2) drop indexes
-    _indexCatalog->dropAllIndexes(opCtx, true);
+    _indexCatalog->dropAllIndexes(opCtx, this, true);
 
     // 3) truncate record store
     auto status = _shared->_recordStore->truncate(opCtx);
@@ -1418,7 +1427,7 @@ Status CollectionImpl::truncate(OperationContext* opCtx) {
 
     // 4) re-create indexes
     for (size_t i = 0; i < indexSpecs.size(); i++) {
-        status = _indexCatalog->createIndexOnEmptyCollection(opCtx, indexSpecs[i]).getStatus();
+        status = _indexCatalog->createIndexOnEmptyCollection(opCtx, this, indexSpecs[i]).getStatus();
         if (!status.isOK())
             return status;
     }
@@ -1440,25 +1449,25 @@ void CollectionImpl::setValidator(OperationContext* opCtx, Validator validator) 
     invariant(opCtx->lockState()->isCollectionLockedForMode(ns(), MODE_X));
 
     auto validatorDoc = validator.validatorDoc.getOwned();
-    auto validationLevel = validationLevelOrDefault(_options->validationLevel);
-    auto validationAction = validationActionOrDefault(_options->validationAction);
-    DurableCatalog::get(opCtx)->updateValidator(
-        opCtx, getCatalogId(), validatorDoc, validationLevel, validationAction);
-    auto options = std::make_shared<CollectionOptions>(*_options);
-    options->validator = validatorDoc;
-    options->validationLevel = validationLevel;
-    options->validationAction = validationAction;
-    _options = std::move(options);
-
+    auto validationLevel = validationLevelOrDefault(_metadata->options.validationLevel);
+    auto validationAction = validationActionOrDefault(_metadata->options.validationAction);
+    
+    auto metadata = std::make_shared<BSONCollectionCatalogEntry::MetaData>(*_metadata);
+    metadata->options.validator = validatorDoc;
+    metadata->options.validationLevel = validationLevel;
+    metadata->options.validationAction = validationAction;
+    DurableCatalog::get(opCtx)->putMetaData(opCtx, getCatalogId(), *metadata);
+    _metadata = std::move(metadata);
+    
     _validator = std::move(validator);
 }
 
 boost::optional<ValidationLevelEnum> CollectionImpl::getValidationLevel() const {
-    return _options->validationLevel;
+    return _metadata->options.validationLevel;
 }
 
 boost::optional<ValidationActionEnum> CollectionImpl::getValidationAction() const {
-    return _options->validationAction;
+    return _metadata->options.validationAction;
 }
 
 Status CollectionImpl::setValidationLevel(OperationContext* opCtx, ValidationLevelEnum newLevel) {
@@ -1477,16 +1486,10 @@ Status CollectionImpl::setValidationLevel(OperationContext* opCtx, ValidationLev
         return _validator.getStatus();
     }
 
-    DurableCatalog::get(opCtx)->updateValidator(
-        opCtx,
-        getCatalogId(),
-        _validator.validatorDoc,
-        storedValidationLevel,
-        validationActionOrDefault(_options->validationAction));
-
-    auto options = std::make_shared<CollectionOptions>(*_options);
-    options->validationLevel = storedValidationLevel;
-    _options = std::move(options);
+    auto metadata = std::make_shared<BSONCollectionCatalogEntry::MetaData>(*_metadata);
+    metadata->options.validationLevel = storedValidationLevel;
+    DurableCatalog::get(opCtx)->putMetaData(opCtx, getCatalogId(), *metadata);
+    _metadata = std::move(metadata);
 
     return Status::OK();
 }
@@ -1508,15 +1511,12 @@ Status CollectionImpl::setValidationAction(OperationContext* opCtx,
         return _validator.getStatus();
     }
 
-    DurableCatalog::get(opCtx)->updateValidator(opCtx,
+    auto metadata = std::make_shared<BSONCollectionCatalogEntry::MetaData>(*_metadata);
+    metadata->options.validationAction = storedValidationAction;
+    DurableCatalog::get(opCtx)->putMetaData(opCtx,
                                                 getCatalogId(),
-                                                _validator.validatorDoc,
-                                                validationLevelOrDefault(_options->validationLevel),
-                                                storedValidationAction);
-
-    auto options = std::make_shared<CollectionOptions>(*_options);
-    options->validationAction = storedValidationAction;
-    _options = std::move(options);
+                                                *metadata);
+    _metadata = std::move(metadata);
 
     return Status::OK();
 }
@@ -1527,19 +1527,18 @@ Status CollectionImpl::updateValidator(OperationContext* opCtx,
                                        boost::optional<ValidationActionEnum> newAction) {
     invariant(opCtx->lockState()->isCollectionLockedForMode(ns(), MODE_X));
 
-    DurableCatalog::get(opCtx)->updateValidator(
-        opCtx, getCatalogId(), newValidator, newLevel, newAction);
-
     auto validator =
         parseValidator(opCtx, newValidator, MatchExpressionParser::kAllowAllSpecialFeatures);
     if (!validator.isOK()) {
         return validator.getStatus();
     }
-    auto options = std::make_shared<CollectionOptions>(*_options);
-    options->validator = newValidator;
-    options->validationLevel = newLevel;
-    options->validationAction = newAction;
-    _options = std::move(options);
+    auto metadata = std::make_shared<BSONCollectionCatalogEntry::MetaData>(*_metadata);
+    metadata->options.validator = newValidator;
+    metadata->options.validationLevel = newLevel;
+    metadata->options.validationAction = newAction;
+    DurableCatalog::get(opCtx)->putMetaData(
+        opCtx, getCatalogId(), *metadata);
+    _metadata = std::move(metadata);
 
     _validator = std::move(validator);
     return Status::OK();
@@ -1553,8 +1552,8 @@ const CollatorInterface* CollectionImpl::getDefaultCollator() const {
     return _shared->_collator.get();
 }
 
-const CollectionOptions& CollectionImpl::getCollectionOptions() const {
-    return *_options;
+const BSONCollectionCatalogEntry::MetaData& CollectionImpl::getCollectionMetadata() const {
+    return *_metadata;
 }
 
 StatusWith<std::vector<BSONObj>> CollectionImpl::addCollationDefaultsToIndexSpecsForCreate(
@@ -1622,13 +1621,254 @@ void CollectionImpl::setNs(NamespaceString nss) {
 }
 
 void CollectionImpl::indexBuildSuccess(OperationContext* opCtx, IndexCatalogEntry* index) {
-    DurableCatalog::get(opCtx)->indexBuildSuccess(
-        opCtx, getCatalogId(), index->descriptor()->indexName());
+    const auto& indexName = index->descriptor()->indexName();
+    int offset = _metadata->findIndexOffset(indexName);
+    invariant(offset >= 0,
+              str::stream() << "cannot mark index " << indexName << " as ready @ " << getCatalogId()
+                            << " : " << _metadata->toBSON());
+
+    auto metadata = std::make_shared<BSONCollectionCatalogEntry::MetaData>(*_metadata);
+    metadata->indexes[offset].ready = true;
+    metadata->indexes[offset].buildUUID = boost::none;
+    DurableCatalog::get(opCtx)->putMetaData(opCtx, getCatalogId(), *metadata);
+    _metadata = std::move(metadata);
+    
     _indexCatalog->indexBuildSuccess(opCtx, this, index);
 }
 
 void CollectionImpl::establishOplogCollectionForLogging(OperationContext* opCtx) {
     repl::establishOplogCollectionForLogging(opCtx, this);
 }
+
+Status CollectionImpl::checkMetaDataForIndex(const std::string& indexName,
+                             const BSONObj& spec) const {
+    int offset = _metadata->findIndexOffset(indexName);
+    if (offset < 0) {
+        return {ErrorCodes::IndexNotFound,
+                str::stream() << "Index [" << indexName
+                              << "] not found in metadata for recordId: " << getCatalogId()};
+    }
+
+    if (spec.woCompare(_metadata->indexes[offset].spec)) {
+        return {ErrorCodes::BadValue,
+                str::stream() << "Spec for index [" << indexName
+                              << "] does not match spec in the metadata for recordId: " << getCatalogId()
+                              << ". Spec: " << spec
+                              << " metadata's spec: " << _metadata->indexes[offset].spec};
+    }
+
+    return Status::OK();
+}
+
+void CollectionImpl::updateTTLSetting(OperationContext* opCtx,
+                                  StringData idxName,
+                                      long long newExpireSeconds) {
+    int offset = _metadata->findIndexOffset(idxName);
+    invariant(offset >= 0,
+              str::stream() << "cannot update TTL setting for index " << idxName << " @ "
+                            << getCatalogId() << " : " << _metadata->toBSON());
+    auto metadata = std::make_shared<BSONCollectionCatalogEntry::MetaData>(*_metadata);
+    metadata->indexes[offset].updateTTLSetting(newExpireSeconds);
+    DurableCatalog::get(opCtx)->putMetaData(opCtx, getCatalogId(), *metadata);
+    _metadata = std::move(metadata);
+}
+
+void CollectionImpl::updateHiddenSetting(OperationContext* opCtx,
+                             StringData idxName, bool hidden) {
+    int offset = _metadata->findIndexOffset(idxName);
+    invariant(offset >= 0);
+
+    auto metadata = std::make_shared<BSONCollectionCatalogEntry::MetaData>(*_metadata);
+    metadata->indexes[offset].updateHiddenSetting(hidden);
+    DurableCatalog::get(opCtx)->putMetaData(opCtx, getCatalogId(), *metadata);
+    _metadata = std::move(metadata);
+}
+
+void CollectionImpl::setIsTemp(OperationContext* opCtx, bool isTemp) {
+    auto metadata = std::make_shared<BSONCollectionCatalogEntry::MetaData>(*_metadata);
+    metadata->options.temp = isTemp;
+    DurableCatalog::get(opCtx)->putMetaData(opCtx, getCatalogId(), *metadata);
+    _metadata = std::move(metadata);
+}
+
+void CollectionImpl::removeIndex(OperationContext* opCtx, StringData indexName) {
+    if (_metadata->findIndexOffset(indexName) < 0)
+        return;  // never had the index so nothing to do.
+
+    auto metadata = std::make_shared<BSONCollectionCatalogEntry::MetaData>(*_metadata);
+    metadata->eraseIndex(indexName);
+    DurableCatalog::get(opCtx)->putMetaData(opCtx, getCatalogId(), *metadata);
+    _metadata = std::move(metadata);
+
+}
+
+Status CollectionImpl::prepareForIndexBuild(OperationContext* opCtx,
+                                                const IndexDescriptor* spec,
+                                                boost::optional<UUID> buildUUID,
+                                                bool isBackgroundSecondaryBuild) {
+    BSONCollectionCatalogEntry::IndexMetaData imd;
+    imd.spec = spec->infoObj();
+    imd.ready = false;
+    imd.multikey = false;
+    imd.isBackgroundSecondaryBuild = isBackgroundSecondaryBuild;
+    imd.buildUUID = buildUUID;
+
+    //if (indexTypeSupportsPathLevelMultikeyTracking(spec->getAccessMethodName())) {
+    //    const auto feature = DurableCatalogImpl::FeatureTracker::RepairableFeature::kPathLevelMultikeyTracking;
+    //    if (!getFeatureTracker()->isRepairableFeatureInUse(opCtx, feature)) {
+    //        getFeatureTracker()->markRepairableFeatureAsInUse(opCtx, feature);
+    //    }
+    //    imd.multikeyPaths = MultikeyPaths{static_cast<size_t>(spec->keyPattern().nFields())};
+    //}
+
+    //// Mark collation feature as in use if the index has a non-simple collation.
+    //if (imd.spec["collation"]) {
+    //    const auto feature = DurableCatalogImpl::FeatureTracker::NonRepairableFeature::kCollation;
+    //    if (!getFeatureTracker()->isNonRepairableFeatureInUse(opCtx, feature)) {
+    //        getFeatureTracker()->markNonRepairableFeatureAsInUse(opCtx, feature);
+    //    }
+    //}
+
+    // Confirm that our index is not already in the current metadata.
+    invariant(-1 == _metadata->findIndexOffset(imd.name()));
+
+    auto metadata = std::make_shared<BSONCollectionCatalogEntry::MetaData>(*_metadata);
+    metadata->indexes.push_back(imd);
+    DurableCatalog::get(opCtx)->putMetaData(opCtx, getCatalogId(), *metadata);
+    _metadata = std::move(metadata);
+
+    //std::string ident = DurableCatalog::get(opCtx)->getIndexIdent(opCtx, getCatalogId(), spec->indexName());
+
+    //auto kvEngine = _engine->getEngine();
+    //const Status status = kvEngine->createSortedDataInterface(
+    //    opCtx, getCollectionOptions(opCtx, catalogId), ident, spec);
+    //if (status.isOK()) {
+    //    opCtx->recoveryUnit()->registerChange(
+    //        std::make_unique<AddIndexChange>(opCtx->recoveryUnit(), _engine, ident));
+    //}
+
+    //return status;
+    return Status::OK();
+}
+
+boost::optional<UUID> CollectionImpl::getIndexBuildUUID(StringData indexName) const {
+    int offset = _metadata->findIndexOffset(indexName);
+    invariant(offset >= 0,
+              str::stream() << "cannot get build UUID for index " << indexName << " @ "
+                            << getCatalogId()
+                            << " : " << _metadata->toBSON());
+    return _metadata->indexes[offset].buildUUID;
+}
+
+bool CollectionImpl::isIndexMultikey(StringData indexName,
+                                 MultikeyPaths* multikeyPaths) const {
+    int offset = _metadata->findIndexOffset(indexName);
+    invariant(offset >= 0,
+              str::stream() << "cannot get multikey for index " << indexName << " @ "
+                            << getCatalogId()
+                            << " : " << _metadata->toBSON());
+
+    const auto& index = _metadata->indexes[offset];
+    stdx::lock_guard lock(index.multikeyMutex);
+    if (multikeyPaths && !index.multikeyPaths.empty()) {
+        *multikeyPaths = index.multikeyPaths;
+    }
+
+    return index.multikey;
+}
+
+bool CollectionImpl::setIndexIsMultikey(OperationContext* opCtx,
+    StringData indexName,
+    const MultikeyPaths& multikeyPaths) const {
+
+    int offset = _metadata->findIndexOffset(indexName);
+    invariant(offset >= 0,
+              str::stream() << "cannot set index " << indexName << " as multikey @ "
+                            << getCatalogId()
+                            << " : " << _metadata->toBSON());
+
+    {
+        const auto& index = _metadata->indexes[offset];
+        stdx::lock_guard lock(index.multikeyMutex);
+
+        const bool tracksPathLevelMultikeyInfo = !_metadata->indexes[offset].multikeyPaths.empty();
+        if (tracksPathLevelMultikeyInfo) {
+            invariant(!multikeyPaths.empty());
+            invariant(multikeyPaths.size() == _metadata->indexes[offset].multikeyPaths.size());
+        } else {
+            invariant(multikeyPaths.empty());
+
+            if (_metadata->indexes[offset].multikey) {
+                // The index is already set as multikey and we aren't tracking path-level multikey
+                // information for it. We return false to indicate that the index metadata is
+                // unchanged.
+                return false;
+            }
+        }
+
+        index.multikey = true;
+
+        if (tracksPathLevelMultikeyInfo) {
+            bool newPathIsMultikey = false;
+            bool somePathIsMultikey = false;
+
+            // Store new path components that cause this index to be multikey in catalog's index
+            // metadata.
+            for (size_t i = 0; i < multikeyPaths.size(); ++i) {
+                MultikeyComponents& indexMultikeyComponents = index.multikeyPaths[i];
+                for (const auto multikeyComponent : multikeyPaths[i]) {
+                    auto result = indexMultikeyComponents.insert(multikeyComponent);
+                    newPathIsMultikey = newPathIsMultikey || result.second;
+                    somePathIsMultikey = true;
+                }
+            }
+
+            // If all of the sets in the multikey paths vector were empty, then no component of any
+            // indexed field caused the index to be multikey. setIndexIsMultikey() therefore
+            // shouldn't have been called.
+            invariant(somePathIsMultikey);
+
+            if (!newPathIsMultikey) {
+                // We return false to indicate that the index metadata is unchanged.
+                return false;
+            }
+        }
+    }
+
+    // Make a copy that is safe to read without locks that we insert in the durable catalog
+    auto metadataCopy = *_metadata;
+    DurableCatalog::get(opCtx)->putMetaData(opCtx, getCatalogId(), metadataCopy);
+    return true;
+}
+
+void CollectionImpl::forceSetIndexIsMultikey(OperationContext* opCtx,
+    const IndexDescriptor* desc,
+    bool isMultikey,
+    const MultikeyPaths& multikeyPaths) const {
+
+    int offset = _metadata->findIndexOffset(desc->indexName());
+    invariant(offset >= 0,
+              str::stream() << "cannot set index " << desc->indexName() << " multikey state @ "
+                            << getCatalogId() << " : " << _metadata->toBSON());
+
+    const auto& index = _metadata->indexes[offset];
+    {
+        stdx::lock_guard lock(index.multikeyMutex);
+        index.multikey = isMultikey;
+        if (indexTypeSupportsPathLevelMultikeyTracking(desc->getAccessMethodName())) {
+            if (isMultikey) {
+                index.multikeyPaths = multikeyPaths;
+            } else {
+                index.multikeyPaths =
+                    MultikeyPaths{static_cast<size_t>(desc->keyPattern().nFields())};
+            }
+        }
+    }
+    
+    // Make a copy that is safe to read without locks that we insert in the durable catalog
+    auto metadataCopy = *_metadata;
+    DurableCatalog::get(opCtx)->putMetaData(opCtx, getCatalogId(), metadataCopy);
+}
+
 
 }  // namespace mongo

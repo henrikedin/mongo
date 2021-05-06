@@ -88,8 +88,8 @@ std::list<BSONObj> listIndexesInLock(OperationContext* opCtx,
             }
             // The durable catalog will not have a build UUID for the given index name if it was
             // not being built with two-phase.
-            const auto durableBuildUUID = DurableCatalog::get(opCtx)->getIndexBuildUUID(
-                opCtx, collection->getCatalogId(), indexNames[i]);
+            const auto durableBuildUUID = collection->getIndexBuildUUID(
+                indexNames[i]);
             if (!durableBuildUUID) {
                 indexSpecs.push_back(
                     durableCatalog->getIndexSpec(opCtx, collection->getCatalogId(), indexNames[i]));

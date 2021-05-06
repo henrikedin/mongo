@@ -411,8 +411,8 @@ void _validateCatalogEntry(OperationContext* opCtx,
     DurableCatalog::get(opCtx)->getReadyIndexes(opCtx, collection->getCatalogId(), &indexes);
     for (auto& index : indexes) {
         MultikeyPaths multikeyPaths;
-        const bool isMultikey = DurableCatalog::get(opCtx)->isIndexMultikey(
-            opCtx, collection->getCatalogId(), index, &multikeyPaths);
+        const bool isMultikey = collection->isIndexMultikey(
+            index, &multikeyPaths);
         const bool hasMultiKeyPaths = std::any_of(multikeyPaths.begin(),
                                                   multikeyPaths.end(),
                                                   [](auto& pathSet) { return pathSet.size() > 0; });

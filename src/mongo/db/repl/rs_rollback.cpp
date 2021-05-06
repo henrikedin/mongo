@@ -856,9 +856,10 @@ void checkRbidAndUpdateMinValid(OperationContext* opCtx,
  * collection.
  */
 void dropIndex(OperationContext* opCtx,
-               IndexCatalog* indexCatalog,
+    Collection* collection,
                const string& indexName,
                NamespaceString& nss) {
+    IndexCatalog* indexCatalog = collection->getIndexCatalog();
     bool includeUnfinishedIndexes = true;
     auto indexDescriptor =
         indexCatalog->findIndexByName(opCtx, indexName, includeUnfinishedIndexes);
@@ -873,7 +874,7 @@ void dropIndex(OperationContext* opCtx,
 
     auto entry = indexCatalog->getEntry(indexDescriptor);
     if (entry->isReady(opCtx)) {
-        auto status = indexCatalog->dropIndex(opCtx, indexDescriptor);
+        auto status = indexCatalog->dropIndex(opCtx, collection, indexDescriptor);
         if (!status.isOK()) {
             LOGV2_ERROR(21738,
                         "Rollback failed to drop index {indexName} in {namespace}: {error}",
@@ -883,7 +884,7 @@ void dropIndex(OperationContext* opCtx,
                         "error"_attr = redact(status));
         }
     } else {
-        auto status = indexCatalog->dropUnfinishedIndex(opCtx, indexDescriptor);
+        auto status = indexCatalog->dropUnfinishedIndex(opCtx, collection, indexDescriptor);
         if (!status.isOK()) {
             LOGV2_ERROR(
                 21739,
@@ -945,7 +946,7 @@ void rollbackCreateIndexes(OperationContext* opCtx, UUID uuid, std::set<std::str
               "indexName"_attr = indexName);
 
         WriteUnitOfWork wuow(opCtx);
-        dropIndex(opCtx, collection.getWritableCollection()->getIndexCatalog(), indexName, *nss);
+        dropIndex(opCtx, collection.getWritableCollection(), indexName, *nss);
         wuow.commit();
 
         LOGV2_DEBUG(21673,
@@ -1620,7 +1621,7 @@ void rollback_internal::syncFixUp(OperationContext* opCtx,
             WriteUnitOfWork wuow(opCtx);
 
             // Set collection to whatever temp status is on the sync source.
-            DurableCatalog::get(opCtx)->setIsTemp(opCtx, collection->getCatalogId(), options.temp);
+            collection.getWritableCollection()->setIsTemp(opCtx, options.temp);
 
             // Set any document validation options. We update the validator fields without
             // parsing/validation, since we fetched the options object directly from the sync

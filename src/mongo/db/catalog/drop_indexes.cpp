@@ -184,7 +184,7 @@ std::vector<UUID> abortIndexBuildByIndexNames(OperationContext* opCtx,
  * Drops single index given a descriptor.
  */
 Status dropIndexByDescriptor(OperationContext* opCtx,
-                             const CollectionPtr& collection,
+                             Collection* collection,
                              IndexCatalog* indexCatalog,
                              const IndexDescriptor* desc) {
     if (desc->isIdIndex()) {
@@ -198,7 +198,7 @@ Status dropIndexByDescriptor(OperationContext* opCtx,
         invariant(!entry->isReady(opCtx));
         invariant(getReplSetMemberInStandaloneMode(opCtx->getServiceContext()));
         // Return here. No need to fall through to op observer on standalone.
-        return indexCatalog->dropUnfinishedIndex(opCtx, desc);
+        return indexCatalog->dropUnfinishedIndex(opCtx, collection, desc);
     }
 
     // Do not allow dropping unfinished indexes that are not frozen.
@@ -214,7 +214,7 @@ Status dropIndexByDescriptor(OperationContext* opCtx,
     opCtx->getServiceContext()->getOpObserver()->onDropIndex(
         opCtx, collection->ns(), collection->uuid(), desc->indexName(), desc->infoObj());
 
-    auto s = indexCatalog->dropIndex(opCtx, desc);
+    auto s = indexCatalog->dropIndex(opCtx, collection,desc);
     if (!s.isOK()) {
         return s;
     }
@@ -255,7 +255,7 @@ void dropReadyIndexes(OperationContext* opCtx,
     IndexCatalog* indexCatalog = collection->getIndexCatalog();
     if (indexNames.front() == "*") {
         indexCatalog->dropAllIndexes(
-            opCtx, false, [opCtx, collection](const IndexDescriptor* desc) {
+            opCtx, collection, false, [opCtx, collection](const IndexDescriptor* desc) {
                 opCtx->getServiceContext()->getOpObserver()->onDropIndex(opCtx,
                                                                          collection->ns(),
                                                                          collection->uuid(),
@@ -428,7 +428,7 @@ DropIndexesReply dropIndexes(OperationContext* opCtx,
                 }
 
                 uassertStatusOK(
-                    dropIndexByDescriptor(opCtx, collection->getCollection(), indexCatalog, desc));
+                    dropIndexByDescriptor(opCtx, collection->getWritableCollection(), indexCatalog, desc));
             }
 
             wuow.commit();

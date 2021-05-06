@@ -307,10 +307,10 @@ void StorageEngineImpl::_initCollection(OperationContext* opCtx,
                                         const NamespaceString& nss,
                                         bool forRepair,
                                         Timestamp minVisibleTs) {
-    BSONCollectionCatalogEntry::MetaData md = _catalog->getMetaData(opCtx, catalogId);
+    auto md = _catalog->getMetaData(opCtx, catalogId);
     uassert(ErrorCodes::MustDowngrade,
             str::stream() << "Collection does not have UUID in KVCatalog. Collection: " << nss,
-            md.options.uuid);
+            md->options.uuid);
 
     auto ident = _catalog->getEntry(catalogId).ident;
 
@@ -320,14 +320,12 @@ void StorageEngineImpl::_initCollection(OperationContext* opCtx,
         // repaired. This also ensures that if we try to use it, it will blow up.
         rs = nullptr;
     } else {
-        rs = _engine->getRecordStore(opCtx, nss.ns(), ident, md.options);
+        rs = _engine->getRecordStore(opCtx, nss.ns(), ident, md->options);
         invariant(rs);
     }
 
-    auto options = _catalog->getCollectionOptions(opCtx, catalogId);
-
     auto collectionFactory = Collection::Factory::get(getGlobalServiceContext());
-    auto collection = collectionFactory->make(opCtx, nss, catalogId, options, std::move(rs));
+    auto collection = collectionFactory->make(opCtx, nss, catalogId, md->options, std::move(rs));
     collection->setMinimumVisibleSnapshot(minVisibleTs);
 
     CollectionCatalog::write(opCtx, [&](CollectionCatalog& catalog) {

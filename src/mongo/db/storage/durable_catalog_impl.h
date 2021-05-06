@@ -78,16 +78,11 @@ public:
         return _findEntry(opCtx, catalogId);
     }
 
-    BSONCollectionCatalogEntry::MetaData getMetaData(OperationContext* opCtx,
+    std::shared_ptr<BSONCollectionCatalogEntry::MetaData> getMetaData(OperationContext* opCtx,
                                                      RecordId catalogId) const;
     void putMetaData(OperationContext* opCtx,
                      RecordId catalogId,
                      BSONCollectionCatalogEntry::MetaData& md);
-
-    Status checkMetaDataForIndex(OperationContext* opCtx,
-                                 RecordId catalogId,
-                                 const std::string& indexName,
-                                 const BSONObj& spec);
 
     std::vector<std::string> getAllIdents(OperationContext* opCtx) const;
 
@@ -134,68 +129,11 @@ public:
 
     Status dropCollection(OperationContext* opCtx, RecordId catalogId);
 
-    void updateCappedSize(OperationContext* opCtx, RecordId catalogId, long long size);
-
-    void updateClusteredIndexTTLSetting(OperationContext* opCtx,
-                                        RecordId catalogId,
-                                        boost::optional<int64_t> expireAfterSeconds);
-
-    void updateTTLSetting(OperationContext* opCtx,
-                          RecordId catalogId,
-                          StringData idxName,
-                          long long newExpireSeconds);
-
-    void updateHiddenSetting(OperationContext* opCtx,
-                             RecordId catalogId,
-                             StringData idxName,
-                             bool hidden);
-
-    bool isEqualToMetadataUUID(OperationContext* opCtx, RecordId catalogId, const UUID& uuid);
-
-    void setIsTemp(OperationContext* opCtx, RecordId catalogId, bool isTemp);
-
-    void setRecordPreImages(OperationContext* opCtx, RecordId catalogId, bool val) override;
-
-    void updateValidator(OperationContext* opCtx,
-                         RecordId catalogId,
-                         const BSONObj& validator,
-                         boost::optional<ValidationLevelEnum> newLevel,
-                         boost::optional<ValidationActionEnum> newAction);
-
-    void removeIndex(OperationContext* opCtx, RecordId catalogId, StringData indexName);
-
-    Status prepareForIndexBuild(OperationContext* opCtx,
-                                RecordId catalogId,
-                                const IndexDescriptor* spec,
-                                boost::optional<UUID> buildUUID,
-                                bool isBackgroundSecondaryBuild);
-
     Status dropAndRecreateIndexIdentForResume(OperationContext* opCtx,
                                               RecordId catalogId,
                                               const IndexDescriptor* spec,
                                               StringData ident);
 
-    boost::optional<UUID> getIndexBuildUUID(OperationContext* opCtx,
-                                            RecordId catalogId,
-                                            StringData indexName) const;
-
-    void indexBuildSuccess(OperationContext* opCtx, RecordId catalogId, StringData indexName);
-
-    bool isIndexMultikey(OperationContext* opCtx,
-                         RecordId catalogId,
-                         StringData indexName,
-                         MultikeyPaths* multikeyPaths) const;
-
-    bool setIndexIsMultikey(OperationContext* opCtx,
-                            RecordId catalogId,
-                            StringData indexName,
-                            const MultikeyPaths& multikeyPaths);
-
-    void forceSetIndexIsMultikey(OperationContext* opCtx,
-                                 RecordId catalogId,
-                                 const IndexDescriptor* desc,
-                                 bool isMultikey,
-                                 const MultikeyPaths& multikeyPaths);
 
     CollectionOptions getCollectionOptions(OperationContext* opCtx, RecordId catalogId) const;
 

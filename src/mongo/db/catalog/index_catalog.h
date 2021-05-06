@@ -187,7 +187,7 @@ public:
     virtual std::unique_ptr<IndexCatalog> clone() const = 0;
 
     // Must be called before used.
-    virtual Status init(OperationContext* const opCtx) = 0;
+    virtual Status init(OperationContext* const opCtx, Collection* collection) = 0;
 
     // ---- accessors -----
 
@@ -278,7 +278,7 @@ public:
      * The caller must hold the collection X lock and ensure no index builds are in progress
      * on the collection.
      */
-    virtual const IndexDescriptor* refreshEntry(OperationContext* const opCtx,
+    virtual const IndexDescriptor* refreshEntry(OperationContext* const opCtx,Collection* collection,
                                                 const IndexDescriptor* const oldDesc) = 0;
 
     /**
@@ -313,7 +313,7 @@ public:
      *
      */
 
-    virtual IndexCatalogEntry* createIndexEntry(OperationContext* opCtx,
+    virtual IndexCatalogEntry* createIndexEntry(OperationContext* opCtx,Collection* collection,
                                                 std::unique_ptr<IndexDescriptor> descriptor,
                                                 CreateIndexEntryFlags flags) = 0;
 
@@ -322,7 +322,7 @@ public:
      * empty collection can be rolled back as part of a larger WUOW. Returns the full specification
      * of the created index, as it is stored in this index catalog.
      */
-    virtual StatusWith<BSONObj> createIndexOnEmptyCollection(OperationContext* const opCtx,
+    virtual StatusWith<BSONObj> createIndexOnEmptyCollection(OperationContext* const opCtx,Collection* collection,
                                                              const BSONObj spec) = 0;
 
     /**
@@ -375,10 +375,10 @@ public:
      * 'includingIdIndex' parameter value. If 'onDropFn' is provided, it will be called before each
      * index is dropped to allow timestamping each individual drop.
      */
-    virtual void dropAllIndexes(OperationContext* opCtx,
+    virtual void dropAllIndexes(OperationContext* opCtx,Collection* collection,
                                 bool includingIdIndex,
                                 std::function<void(const IndexDescriptor*)> onDropFn) = 0;
-    virtual void dropAllIndexes(OperationContext* opCtx, bool includingIdIndex) = 0;
+    virtual void dropAllIndexes(OperationContext* opCtx, Collection* collection,bool includingIdIndex) = 0;
 
     /**
      * Drops the index given its descriptor.
@@ -386,14 +386,14 @@ public:
      * The caller must hold the collection X lock and ensure no index builds are in progress on the
      * collection.
      */
-    virtual Status dropIndex(OperationContext* const opCtx, const IndexDescriptor* const desc) = 0;
+    virtual Status dropIndex(OperationContext* const opCtx, Collection* collection, const IndexDescriptor* const desc) = 0;
 
     /**
      * Drops an unfinished index given its descriptor.
      *
      * The caller must hold the collection X lock.
      */
-    virtual Status dropUnfinishedIndex(OperationContext* const opCtx,
+    virtual Status dropUnfinishedIndex(OperationContext* const opCtx,Collection* collection,
                                        const IndexDescriptor* const desc) = 0;
 
     /**
@@ -401,12 +401,12 @@ public:
      *
      * The caller must hold the collection X lock.
      */
-    virtual Status dropIndexEntry(OperationContext* opCtx, IndexCatalogEntry* entry) = 0;
+    virtual Status dropIndexEntry(OperationContext* opCtx, Collection* collection, IndexCatalogEntry* entry) = 0;
 
     /**
      * Deletes the index from the durable catalog on disk.
      */
-    virtual void deleteIndexFromDisk(OperationContext* opCtx, const std::string& indexName) = 0;
+    virtual void deleteIndexFromDisk(OperationContext* opCtx, Collection* collection, const std::string& indexName) = 0;
 
     // ---- modify single index
 

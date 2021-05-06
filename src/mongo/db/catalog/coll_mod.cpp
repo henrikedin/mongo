@@ -525,7 +525,7 @@ Status _collModInternal(OperationContext* opCtx,
         // options so we save the relevant TTL index data in a separate object.
 
         const CollectionOptions& oldCollOptions =
-            DurableCatalog::get(opCtx)->getCollectionOptions(opCtx, coll->getCatalogId());
+            coll->getCollectionMetadata().options;
 
         boost::optional<IndexCollModInfo> indexCollModInfo;
 
@@ -550,8 +550,7 @@ Status _collModInternal(OperationContext* opCtx,
                 if (SimpleBSONElementComparator::kInstance.evaluate(oldExpireSecs !=
                                                                     newExpireSecs)) {
                     // Change the value of "expireAfterSeconds" on disk.
-                    DurableCatalog::get(opCtx)->updateTTLSetting(opCtx,
-                                                                 coll->getCatalogId(),
+                    coll.getWritableCollection()->updateTTLSetting(opCtx,
                                                                  idx->indexName(),
                                                                  newExpireSecs.safeNumberLong());
                 }
@@ -564,8 +563,8 @@ Status _collModInternal(OperationContext* opCtx,
                 // Make sure when we set 'hidden' to false, we can remove the hidden field from
                 // catalog.
                 if (SimpleBSONElementComparator::kInstance.evaluate(oldHidden != newHidden)) {
-                    DurableCatalog::get(opCtx)->updateHiddenSetting(
-                        opCtx, coll->getCatalogId(), idx->indexName(), newHidden.booleanSafe());
+                    coll.getWritableCollection()->updateHiddenSetting(
+                        opCtx, idx->indexName(), newHidden.booleanSafe());
                 }
             }
 
@@ -581,7 +580,7 @@ Status _collModInternal(OperationContext* opCtx,
             // Notify the index catalog that the definition of this index changed. This will
             // invalidate the local idx pointer. On rollback of this WUOW, the idx pointer in
             // cmrNew will be invalidated and the local var idx pointer will be valid again.
-            cmrNew.idx = coll.getWritableCollection()->getIndexCatalog()->refreshEntry(opCtx, idx);
+            cmrNew.idx = coll.getWritableCollection()->getIndexCatalog()->refreshEntry(opCtx, coll.getWritableCollection(), idx);
             opCtx->recoveryUnit()->registerChange(std::make_unique<CollModResultChange>(
                 oldExpireSecs, newExpireSecs, oldHidden, newHidden, result));
 

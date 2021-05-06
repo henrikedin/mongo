@@ -261,7 +261,7 @@ public:
                                                             "Uninitialized");
         writeConflictRetry(opCtx, "dropAllIndexes", toReIndexNss.ns(), [&] {
             WriteUnitOfWork wunit(opCtx);
-            collection.getWritableCollection()->getIndexCatalog()->dropAllIndexes(opCtx, true);
+            collection.getWritableCollection()->getIndexCatalog()->dropAllIndexes(opCtx, collection.getWritableCollection(), true);
 
             swIndexesToRebuild =
                 indexer->init(opCtx, collection, all, MultiIndexBlock::kNoopOnInitFn);

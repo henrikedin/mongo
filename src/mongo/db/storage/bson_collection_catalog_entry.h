@@ -59,7 +59,39 @@ public:
     // ------ for implementors
 
     struct IndexMetaData {
-        IndexMetaData() {}
+        IndexMetaData() {
+        }
+
+        IndexMetaData(const IndexMetaData& other)
+            : spec(other.spec),
+              ready(other.ready),
+              isBackgroundSecondaryBuild(other.isBackgroundSecondaryBuild),
+              buildUUID(other.buildUUID)
+        {
+            stdx::lock_guard lock(other.multikeyMutex);
+            multikey = other.multikey;
+            multikeyPaths = other.multikeyPaths;
+        }
+
+        /*IndexMetaData(IndexMetaData&& other)
+            : spec(std::move(other.spec)),
+              ready(std::move(other.ready)),
+              isBackgroundSecondaryBuild(std::move(other.isBackgroundSecondaryBuild)),
+              buildUUID(std::move(other.buildUUID)),
+            multikey(std::move(other.multikey)),
+            multikeyPaths(std::move(other.multikeyPaths))
+        {
+        }*/
+
+        IndexMetaData& operator=(IndexMetaData&& rhs) {
+            spec = std::move(rhs.spec);
+            ready = std::move(rhs.ready);
+            isBackgroundSecondaryBuild = std::move(rhs.isBackgroundSecondaryBuild);
+            buildUUID = std::move(rhs.buildUUID);
+            multikey = std::move(rhs.multikey);
+            multikeyPaths=std::move(rhs.multikeyPaths);
+            return *this;
+        }
 
         void updateTTLSetting(long long newExpireSeconds);
 
@@ -71,7 +103,6 @@ public:
 
         BSONObj spec;
         bool ready = false;
-        bool multikey = false;
         bool isBackgroundSecondaryBuild = false;
 
         // If initialized, a two-phase index build is in progress.
@@ -81,12 +112,14 @@ public:
         // the index key pattern. Each element in the vector is an ordered set of positions
         // (starting at 0) into the corresponding indexed field that represent what prefixes of the
         // indexed field cause the index to be multikey.
-        MultikeyPaths multikeyPaths;
+        mutable Mutex multikeyMutex;
+        mutable bool multikey = false;
+        mutable MultikeyPaths multikeyPaths;
     };
 
     struct MetaData {
         void parse(const BSONObj& obj);
-        BSONObj toBSON() const;
+        BSONObj toBSON(bool hasExclusiveAccess = false) const;
 
         int findIndexOffset(StringData name) const;
 

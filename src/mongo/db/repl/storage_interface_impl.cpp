@@ -261,7 +261,7 @@ StorageInterfaceImpl::createCollectionForBulkLoading(
             if (!idIndexSpec.isEmpty()) {
                 auto status = autoColl->getWritableCollection()
                                   ->getIndexCatalog()
-                                  ->createIndexOnEmptyCollection(opCtx.get(), idIndexSpec);
+                                  ->createIndexOnEmptyCollection(opCtx.get(), autoColl->getWritableCollection(), idIndexSpec);
                 if (!status.getStatus().isOK()) {
                     return status.getStatus();
                 }
@@ -269,7 +269,7 @@ StorageInterfaceImpl::createCollectionForBulkLoading(
             for (auto&& spec : secondaryIndexSpecs) {
                 auto status = autoColl->getWritableCollection()
                                   ->getIndexCatalog()
-                                  ->createIndexOnEmptyCollection(opCtx.get(), spec);
+                                  ->createIndexOnEmptyCollection(opCtx.get(),autoColl->getWritableCollection(), spec);
                 if (!status.getStatus().isOK()) {
                     return status.getStatus();
                 }

@@ -376,7 +376,7 @@ public:
      */
     const CollatorInterface* getDefaultCollator() const final;
 
-    const CollectionOptions& getCollectionOptions() const final;
+    const BSONCollectionCatalogEntry::MetaData& getCollectionMetadata() const final;
 
     StatusWith<std::vector<BSONObj>> addCollationDefaultsToIndexSpecsForCreate(
         OperationContext* opCtx, const std::vector<BSONObj>& indexSpecs) const final;
@@ -392,6 +392,40 @@ public:
 
     void establishOplogCollectionForLogging(OperationContext* opCtx) final;
     void onDeregisterFromCatalog(OperationContext* opCtx) final;
+
+    Status checkMetaDataForIndex(const std::string& indexName,
+                                 const BSONObj& spec) const final;
+
+    void updateTTLSetting(OperationContext* opCtx,
+                          StringData idxName,
+                          long long newExpireSeconds) final;
+
+    void updateHiddenSetting(OperationContext* opCtx,
+                             StringData idxName,
+                             bool hidden) final;
+
+    void setIsTemp(OperationContext* opCtx, bool isTemp) final;
+
+    void removeIndex(OperationContext* opCtx, StringData indexName) final;
+
+    Status prepareForIndexBuild(OperationContext* opCtx,
+                                const IndexDescriptor* spec,
+                                boost::optional<UUID> buildUUID,
+                                bool isBackgroundSecondaryBuild) final;
+
+    boost::optional<UUID> getIndexBuildUUID(StringData indexName) const final;
+
+    bool isIndexMultikey(StringData indexName,
+                                 MultikeyPaths* multikeyPaths) const final;
+
+    bool setIndexIsMultikey(OperationContext* opCtx,
+                            StringData indexName,
+                            const MultikeyPaths& multikeyPaths) const final;
+
+    void forceSetIndexIsMultikey(OperationContext* opCtx,
+                                 const IndexDescriptor* desc,
+                                 bool isMultikey,
+                                 const MultikeyPaths& multikeyPaths) const final;
 
 private:
     /**
@@ -480,7 +514,6 @@ private:
         // Capped information.
         const bool _isCapped;
         const long long _cappedMaxDocs;
-        long long _cappedMaxSize;
 
         // For capped deletes performed on collections where '_needCappedLock' is false, the mutex
         // below protects '_cappedFirstRecord'. Otherwise, when '_needCappedLock' is true, the
@@ -498,7 +531,7 @@ private:
 
     // CollectionOptions cached from the DurableCatalog. Is kept separate from the SharedState
     // because it may be updated.
-    std::shared_ptr<const CollectionOptions> _options;
+    std::shared_ptr<const BSONCollectionCatalogEntry::MetaData> _metadata;
 
     clonable_ptr<IndexCatalog> _indexCatalog;
 

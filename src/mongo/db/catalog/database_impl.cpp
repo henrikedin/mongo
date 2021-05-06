@@ -515,7 +515,7 @@ void DatabaseImpl::_dropCollectionIndexes(OperationContext* opCtx,
     invariant(_name == nss.db());
     LOGV2_DEBUG(
         20316, 1, "dropCollection: {namespace} - dropAllIndexes start", "namespace"_attr = nss);
-    collection->getIndexCatalog()->dropAllIndexes(opCtx, true);
+    collection->getIndexCatalog()->dropAllIndexes(opCtx, collection, true);
 
     invariant(DurableCatalog::get(opCtx)->getTotalIndexCount(opCtx, collection->getCatalogId()) ==
               0);
@@ -743,7 +743,7 @@ Collection* DatabaseImpl::createCollection(OperationContext* opCtx,
                 // initialized, so use the unsafe fCV getter here.
                 IndexCatalog* ic = collection->getIndexCatalog();
                 fullIdIndexSpec = uassertStatusOK(ic->createIndexOnEmptyCollection(
-                    opCtx, !idIndex.isEmpty() ? idIndex : ic->getDefaultIdIndexSpec()));
+                    opCtx, collection, !idIndex.isEmpty() ? idIndex : ic->getDefaultIdIndexSpec()));
             } else {
                 // autoIndexId: false is only allowed on unreplicated collections.
                 uassert(50001,

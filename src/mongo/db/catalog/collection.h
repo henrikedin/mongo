@@ -49,6 +49,7 @@
 #include "mongo/db/query/plan_executor.h"
 #include "mongo/db/record_id.h"
 #include "mongo/db/repl/oplog.h"
+#include "mongo/db/storage/bson_collection_catalog_entry.h"
 #include "mongo/db/storage/capped_callback.h"
 #include "mongo/db/storage/record_store.h"
 #include "mongo/db/storage/snapshot.h"
@@ -524,6 +525,102 @@ public:
     virtual Status updateCappedSize(OperationContext* opCtx, long long newCappedSize) = 0;
 
     //
+    // Index
+    //
+
+    /**
+     * Checks that the metadata for the index exists and matches the given spec.
+     */
+    virtual Status checkMetaDataForIndex(const std::string& indexName,
+                                         const BSONObj& spec) const = 0;
+
+    /*
+     * Updates the expireAfterSeconds field of the given index to the value in newExpireSecs.
+     * The specified index must already contain an expireAfterSeconds field, and the value in
+     * that field and newExpireSecs must both be numeric.
+     */
+    virtual void updateTTLSetting(OperationContext* opCtx,
+                                  StringData idxName,
+                                  long long newExpireSeconds) = 0;
+
+    /*
+     * Hide or unhide the given index. A hidden index will not be considered for use by the
+     * query planner.
+     */
+    virtual void updateHiddenSetting(OperationContext* opCtx,
+                                     StringData idxName,
+                                     bool hidden) = 0;
+
+    /**
+     * Updates the 'temp' setting for this collection.
+     */
+    virtual void setIsTemp(OperationContext* opCtx, bool isTemp) = 0;
+
+    /**
+     * Removes the index 'indexName' from the persisted collection catalog entry identified by
+     * 'catalogId'.
+     */
+    virtual void removeIndex(OperationContext* opCtx, StringData indexName) = 0;
+
+    /**
+     * Updates the persisted catalog entry for 'ns' with the new index and creates the index on
+     * disk.
+     *
+     * A passed 'buildUUID' implies that the index is part of a two-phase index build.
+     */
+    virtual Status prepareForIndexBuild(OperationContext* opCtx,
+                                        const IndexDescriptor* spec,
+                                        boost::optional<UUID> buildUUID,
+                                        bool isBackgroundSecondaryBuild) = 0;
+
+    /**
+     * Returns a UUID if the index is being built with the two-phase index build procedure.
+     */
+    virtual boost::optional<UUID> getIndexBuildUUID(StringData indexName) const = 0;
+
+    /**
+     * Returns true if the index identified by 'indexName' is multikey, and returns false otherwise.
+     *
+     * If the 'multikeyPaths' pointer is non-null, then it must point to an empty vector. If this
+     * index type supports tracking path-level multikey information in the catalog, then this
+     * function sets 'multikeyPaths' as the path components that cause this index to be multikey.
+     *
+     * In particular, if this function returns false and the index supports tracking path-level
+     * multikey information, then 'multikeyPaths' is initialized as a vector with size equal to the
+     * number of elements in the index key pattern of empty sets.
+     */
+    virtual bool isIndexMultikey(StringData indexName,
+                                 MultikeyPaths* multikeyPaths) const = 0;
+
+    /**
+     * Sets the index identified by 'indexName' to be multikey.
+     *
+     * If 'multikeyPaths' is non-empty, then it must be a vector with size equal to the number of
+     * elements in the index key pattern. Additionally, at least one path component of the indexed
+     * fields must cause this index to be multikey.
+     *
+     * This function returns true if the index metadata has changed, and returns false otherwise.
+     */
+    virtual bool setIndexIsMultikey(OperationContext* opCtx,
+                                    StringData indexName,
+                                    const MultikeyPaths& multikeyPaths) const = 0;
+
+    /**
+     * Sets the index to be multikey with the provided paths. This performs minimal validation of
+     * the inputs and is intended to be used internally to "correct" multikey metadata that drifts
+     * from the underlying collection data.
+     *
+     * When isMultikey is false, ignores multikeyPaths and resets the metadata appropriately based
+     * on the index descriptor. Otherwise, overwrites the existing multikeyPaths with the ones
+     * provided. This only writes multikey paths if the index type supports path-level tracking, and
+     * only sets the multikey boolean flag otherwise.
+     */
+    virtual void forceSetIndexIsMultikey(OperationContext* opCtx,
+                                         const IndexDescriptor* desc,
+                                         bool isMultikey,
+                                         const MultikeyPaths& multikeyPaths) const = 0;
+    
+    //
     // Stats
     //
 
@@ -588,10 +685,9 @@ public:
     virtual const CollatorInterface* getDefaultCollator() const = 0;
 
     /**
-     * Returns a cached version of the CollectionOptions that are stored in the DurableCatalog for
-     * this Collection.
+     * Returns a cached version of the Collection MetaData that matches the version of this Collection instance.
      */
-    virtual const CollectionOptions& getCollectionOptions() const = 0;
+    virtual const BSONCollectionCatalogEntry::MetaData& getCollectionMetadata() const = 0;
 
     /**
      * Fills in each index specification with collation information from this collection and returns
