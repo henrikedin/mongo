@@ -170,7 +170,7 @@ Status buildMissingIdIndex(OperationContext* opCtx, Collection* collection) {
     });
 
     const auto indexCatalog = collection->getIndexCatalog();
-    const auto idIndexSpec = indexCatalog->getDefaultIdIndexSpec();
+    const auto idIndexSpec = indexCatalog->getDefaultIdIndexSpec(collection);
 
     CollectionWriter collWriter(collection);
     auto swSpecs = indexer.init(opCtx, collWriter, idIndexSpec, MultiIndexBlock::kNoopOnInitFn);

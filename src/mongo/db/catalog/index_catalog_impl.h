@@ -58,22 +58,11 @@ struct InsertDeleteOptions;
  */
 class IndexCatalogImpl : public IndexCatalog {
 public:
-    explicit IndexCatalogImpl(const Collection* collection);
-    IndexCatalogImpl(const IndexCatalogImpl& other) = default;
-
     /**
      * Creates a cloned IndexCatalogImpl. Will make shallow copies of IndexCatalogEntryContainers so
      * the IndexCatalogEntry will be shared across IndexCatalogImpl instances'
-     *
-     * Must call setCollection() after cloning to set the correct Collection backpointer
-     */
+    */
     std::unique_ptr<IndexCatalog> clone() const override;
-
-    /**
-     * Must be called after clone() to set the backpointer to the correct Collection instance.
-     * This is required due to limitations in cloned_ptr.
-     */
-    void setCollection(const Collection* collection);
 
     // must be called before used
     Status init(OperationContext* opCtx, Collection* collection) override;
@@ -98,7 +87,7 @@ public:
     /**
      * Returns the spec for the id index to create by default for this collection.
      */
-    BSONObj getDefaultIdIndexSpec() const override;
+    BSONObj getDefaultIdIndexSpec(const CollectionPtr& collection) const override;
 
     const IndexDescriptor* findIdIndex(OperationContext* opCtx) const override;
 
@@ -198,15 +187,16 @@ public:
 
     StatusWith<BSONObj> prepareSpecForCreate(
         OperationContext* opCtx,
+        const CollectionPtr& collection,
         const BSONObj& original,
         const boost::optional<ResumeIndexInfo>& resumeInfo = boost::none) const override;
 
-    std::vector<BSONObj> removeExistingIndexes(OperationContext* const opCtx,
+    std::vector<BSONObj> removeExistingIndexes(OperationContext* const opCtx,const CollectionPtr& collection,
                                                const std::vector<BSONObj>& indexSpecsToBuild,
                                                const bool removeIndexBuildsToo) const override;
 
     std::vector<BSONObj> removeExistingIndexesNoChecks(
-        OperationContext* const opCtx,
+        OperationContext* const opCtx,const CollectionPtr& collection,
         const std::vector<BSONObj>& indexSpecsToBuild) const override;
 
     /**
@@ -377,17 +367,17 @@ private:
      * plugin-level transformations if appropriate, etc.
      */
     StatusWith<BSONObj> _fixIndexSpec(OperationContext* opCtx,
-                                      const Collection* collection,
+                                      const CollectionPtr& collection,
                                       const BSONObj& spec) const;
 
-    Status _isSpecOk(OperationContext* opCtx, const BSONObj& spec) const;
+    Status _isSpecOk(OperationContext* opCtx, const CollectionPtr& collection, const BSONObj& spec) const;
 
     /**
      * Validates the 'original' index specification, alters any legacy fields and does plugin-level
      * transformations for text and geo indexes. Returns a clean spec ready to be built, or an
      * error.
      */
-    StatusWith<BSONObj> _validateAndFixIndexSpec(OperationContext* opCtx,
+    StatusWith<BSONObj> _validateAndFixIndexSpec(OperationContext* opCtx,const CollectionPtr& collection,
                                                  const BSONObj& original) const;
 
     /**
@@ -399,7 +389,7 @@ private:
      * Returns IndexAlreadyExists for both ready and in-progress index builds. Can also return other
      * errors.
      */
-    Status _doesSpecConflictWithExisting(OperationContext* opCtx,
+    Status _doesSpecConflictWithExisting(OperationContext* opCtx,const CollectionPtr& collection,
                                          const BSONObj& spec,
                                          const bool includeUnfinishedIndexes) const;
 
@@ -411,11 +401,10 @@ private:
     Status _isNonIDIndexAndNotAllowedToBuild(OperationContext* opCtx, const BSONObj& spec) const;
 
     void _logInternalState(OperationContext* opCtx,
+        const CollectionPtr& collection,
                            long long numIndexesInCollectionCatalogEntry,
                            const std::vector<std::string>& indexNamesToDrop,
                            bool haveIdIndex);
-
-    const Collection* _collection;
 
     IndexCatalogEntryContainer _readyIndexes;
     IndexCatalogEntryContainer _buildingIndexes;

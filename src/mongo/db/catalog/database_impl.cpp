@@ -742,7 +742,7 @@ Collection* DatabaseImpl::createCollection(OperationContext* opCtx,
                 // initialized, so use the unsafe fCV getter here.
                 IndexCatalog* ic = collection->getIndexCatalog();
                 fullIdIndexSpec = uassertStatusOK(ic->createIndexOnEmptyCollection(
-                    opCtx, collection, !idIndex.isEmpty() ? idIndex : ic->getDefaultIdIndexSpec()));
+                    opCtx, collection, !idIndex.isEmpty() ? idIndex : ic->getDefaultIdIndexSpec(collection)));
             } else {
                 // autoIndexId: false is only allowed on unreplicated collections.
                 uassert(50001,

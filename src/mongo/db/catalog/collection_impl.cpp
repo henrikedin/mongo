@@ -296,7 +296,7 @@ CollectionImpl::CollectionImpl(OperationContext* opCtx,
       _catalogId(catalogId),
       _uuid(options.uuid.get()),
       _shared(std::make_shared<SharedState>(this, std::move(recordStore), options)),
-      _indexCatalog(std::make_unique<IndexCatalogImpl>(this)) {}
+      _indexCatalog(std::make_unique<IndexCatalogImpl>()) {}
 
 CollectionImpl::~CollectionImpl() {
     _shared->instanceDeleted(this);
@@ -319,7 +319,6 @@ std::shared_ptr<Collection> CollectionImpl::FactoryImpl::make(
 
 std::shared_ptr<Collection> CollectionImpl::clone() const {
     auto cloned = std::make_shared<CollectionImpl>(*this);
-    checked_cast<IndexCatalogImpl*>(cloned->_indexCatalog.get())->setCollection(cloned.get());
     cloned->_shared->instanceCreated(cloned.get());
     // We are per definition committed if we get cloned
     cloned->_cachedCommitted = true;

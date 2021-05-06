@@ -97,14 +97,8 @@ const BSONObj IndexCatalogImpl::_idObj = BSON("_id" << 1);
 
 // -------------
 
-IndexCatalogImpl::IndexCatalogImpl(const Collection* collection) : _collection(collection) {}
-
 std::unique_ptr<IndexCatalog> IndexCatalogImpl::clone() const {
     return std::make_unique<IndexCatalogImpl>(*this);
-}
-
-void IndexCatalogImpl::setCollection(const Collection* collection) {
-    _collection = collection;
 }
 
 Status IndexCatalogImpl::init(OperationContext* opCtx, Collection* collection) {
@@ -226,19 +220,20 @@ string IndexCatalogImpl::_getAccessMethodName(const BSONObj& keyPattern) const {
 // ---------------------------
 
 StatusWith<BSONObj> IndexCatalogImpl::_validateAndFixIndexSpec(OperationContext* opCtx,
+    const CollectionPtr& collection,
                                                                const BSONObj& original) const {
-    Status status = _isSpecOk(opCtx, original);
+    Status status = _isSpecOk(opCtx, collection, original);
     if (!status.isOK()) {
         return status;
     }
 
-    auto swFixed = _fixIndexSpec(opCtx, _collection, original);
+    auto swFixed = _fixIndexSpec(opCtx, collection, original);
     if (!swFixed.isOK()) {
         return swFixed;
     }
 
     // we double check with new index spec
-    status = _isSpecOk(opCtx, swFixed.getValue());
+    status = _isSpecOk(opCtx, collection, swFixed.getValue());
     if (!status.isOK()) {
         return status;
     }
@@ -264,11 +259,11 @@ Status IndexCatalogImpl::_isNonIDIndexAndNotAllowedToBuild(OperationContext* opC
     return Status::OK();
 }
 
-void IndexCatalogImpl::_logInternalState(OperationContext* opCtx,
+void IndexCatalogImpl::_logInternalState(OperationContext* opCtx,const CollectionPtr& collection,
                                          long long numIndexesInCollectionCatalogEntry,
                                          const std::vector<std::string>& indexNamesToDrop,
                                          bool haveIdIndex) {
-    invariant(opCtx->lockState()->isCollectionLockedForMode(_collection->ns(), MODE_X));
+    invariant(opCtx->lockState()->isCollectionLockedForMode(collection->ns(), MODE_X));
 
     LOGV2_ERROR(20365,
                 "Internal Index Catalog state",
@@ -301,15 +296,15 @@ void IndexCatalogImpl::_logInternalState(OperationContext* opCtx,
     std::vector<std::string> allIndexes;
     std::vector<std::string> readyIndexes;
 
-    _collection->getAllIndexes(&allIndexes);
-    _collection->getReadyIndexes(&readyIndexes);
+    collection->getAllIndexes(&allIndexes);
+    collection->getReadyIndexes(&readyIndexes);
 
     for (const auto& index : allIndexes) {
         LOGV2_ERROR(20372,
                     "allIndexes",
                     "index"_attr = index,
                     "spec"_attr = redact(
-                        _collection->getIndexSpec(index)));
+                        collection->getIndexSpec(index)));
     }
 
     for (const auto& index : readyIndexes) {
@@ -317,23 +312,24 @@ void IndexCatalogImpl::_logInternalState(OperationContext* opCtx,
                     "readyIndexes",
                     "index"_attr = index,
                     "spec"_attr = redact(
-                        _collection->getIndexSpec(index)));
+                        collection->getIndexSpec(index)));
     }
 
     for (const auto& indexNameToDrop : indexNamesToDrop) {
         LOGV2_ERROR(20376,
                     "indexNamesToDrop",
                     "index"_attr = indexNameToDrop,
-                    "spec"_attr = redact(_collection->getIndexSpec(
+                    "spec"_attr = redact(collection->getIndexSpec(
                         indexNameToDrop)));
     }
 }
 
 StatusWith<BSONObj> IndexCatalogImpl::prepareSpecForCreate(
     OperationContext* opCtx,
+    const CollectionPtr& collection,
     const BSONObj& original,
     const boost::optional<ResumeIndexInfo>& resumeInfo) const {
-    auto swValidatedAndFixed = _validateAndFixIndexSpec(opCtx, original);
+    auto swValidatedAndFixed = _validateAndFixIndexSpec(opCtx, collection, original);
     if (!swValidatedAndFixed.isOK()) {
         return swValidatedAndFixed.getStatus().withContext(
             str::stream() << "Error in specification " << original.toString());
@@ -358,7 +354,7 @@ StatusWith<BSONObj> IndexCatalogImpl::prepareSpecForCreate(
     }
 
     // First check against only the ready indexes for conflicts.
-    status = _doesSpecConflictWithExisting(opCtx, validatedSpec, false);
+    status = _doesSpecConflictWithExisting(opCtx, collection, validatedSpec, false);
     if (!status.isOK()) {
         return status;
     }
@@ -374,7 +370,7 @@ StatusWith<BSONObj> IndexCatalogImpl::prepareSpecForCreate(
     // The index catalog cannot currently iterate over only in-progress indexes. So by previously
     // checking against only ready indexes without error, we know that any errors encountered
     // checking against all indexes occurred due to an in-progress index.
-    status = _doesSpecConflictWithExisting(opCtx, validatedSpec, true);
+    status = _doesSpecConflictWithExisting(opCtx, collection, validatedSpec, true);
     if (!status.isOK()) {
         if (ErrorCodes::IndexAlreadyExists == status.code()) {
             // Callers need to be able to distinguish conflicts against ready indexes versus
@@ -388,7 +384,7 @@ StatusWith<BSONObj> IndexCatalogImpl::prepareSpecForCreate(
 }
 
 std::vector<BSONObj> IndexCatalogImpl::removeExistingIndexesNoChecks(
-    OperationContext* const opCtx, const std::vector<BSONObj>& indexSpecsToBuild) const {
+    OperationContext* const opCtx, const CollectionPtr& collection, const std::vector<BSONObj>& indexSpecsToBuild) const {
     std::vector<BSONObj> result;
     // Filter out ready and in-progress index builds, and any non-_id indexes if 'buildIndexes' is
     // set to false in the replica set's config.
@@ -401,7 +397,7 @@ std::vector<BSONObj> IndexCatalogImpl::removeExistingIndexesNoChecks(
         // _doesSpecConflictWithExisting currently does more work than we require here: we are only
         // interested in the index already exists error.
         if (ErrorCodes::IndexAlreadyExists ==
-            _doesSpecConflictWithExisting(opCtx, spec, true /*includeUnfinishedIndexes*/)) {
+            _doesSpecConflictWithExisting(opCtx, collection, spec, true /*includeUnfinishedIndexes*/)) {
             continue;
         }
 
@@ -411,12 +407,12 @@ std::vector<BSONObj> IndexCatalogImpl::removeExistingIndexesNoChecks(
 }
 
 std::vector<BSONObj> IndexCatalogImpl::removeExistingIndexes(
-    OperationContext* const opCtx,
+    OperationContext* const opCtx,const CollectionPtr& collection,
     const std::vector<BSONObj>& indexSpecsToBuild,
     const bool removeIndexBuildsToo) const {
     std::vector<BSONObj> result;
     for (const auto& spec : indexSpecsToBuild) {
-        auto prepareResult = prepareSpecForCreate(opCtx, spec);
+        auto prepareResult = prepareSpecForCreate(opCtx, collection, spec);
         if (prepareResult == ErrorCodes::IndexAlreadyExists ||
             (removeIndexBuildsToo && prepareResult == ErrorCodes::IndexBuildAlreadyInProgress)) {
             continue;
@@ -431,12 +427,12 @@ IndexCatalogEntry* IndexCatalogImpl::createIndexEntry(OperationContext* opCtx,
     Collection* collection,
                                                       std::unique_ptr<IndexDescriptor> descriptor,
                                                       CreateIndexEntryFlags flags) {
-    Status status = _isSpecOk(opCtx, descriptor->infoObj());
+    Status status = _isSpecOk(opCtx, collection, descriptor->infoObj());
     if (!status.isOK()) {
         LOGV2_FATAL_NOTRACE(28782,
                             "Found an invalid index",
                             "descriptor"_attr = descriptor->infoObj(),
-                            "namespace"_attr = _collection->ns(),
+                            "namespace"_attr = collection->ns(),
                             "error"_attr = redact(status));
     }
 
@@ -471,10 +467,10 @@ IndexCatalogEntry* IndexCatalogImpl::createIndexEntry(OperationContext* opCtx,
     }
 
     bool initFromDisk = CreateIndexEntryFlags::kInitFromDisk & flags;
-    if (!initFromDisk && UncommittedCollections::getForTxn(opCtx, _collection->ns()) == nullptr) {
+    if (!initFromDisk && UncommittedCollections::getForTxn(opCtx, collection->ns()) == nullptr) {
         const std::string indexName = descriptorPtr->indexName();
         opCtx->recoveryUnit()->onRollback(
-            [collectionDecorations = _collection->getSharedDecorations(),
+            [collectionDecorations = collection->getSharedDecorations(),
              indexName = std::move(indexName)] {
                 CollectionIndexUsageTrackerDecoration::get(collectionDecorations)
                     .unregisterIndex(indexName);
@@ -495,7 +491,7 @@ StatusWith<BSONObj> IndexCatalogImpl::createIndexOnEmptyCollection(OperationCont
                             << " UUID: " << collection->uuid()
                             << " Count (from size storer): " << collection->numRecords(opCtx));
 
-    StatusWith<BSONObj> statusWithSpec = prepareSpecForCreate(opCtx, spec);
+    StatusWith<BSONObj> statusWithSpec = prepareSpecForCreate(opCtx, collection, spec);
     Status status = statusWithSpec.getStatus();
     if (!status.isOK())
         return status;
@@ -586,8 +582,8 @@ StatusWith<BSONObj> adjustIndexSpecObject(const BSONObj& obj) {
 
 }  // namespace
 
-Status IndexCatalogImpl::_isSpecOk(OperationContext* opCtx, const BSONObj& spec) const {
-    const NamespaceString& nss = _collection->ns();
+Status IndexCatalogImpl::_isSpecOk(OperationContext* opCtx, const CollectionPtr& collection, const BSONObj& spec) const {
+    const NamespaceString& nss = collection->ns();
 
     BSONElement vElt = spec["v"];
     if (!vElt) {
@@ -747,22 +743,22 @@ Status IndexCatalogImpl::_isSpecOk(OperationContext* opCtx, const BSONObj& spec)
 
     uassert(ErrorCodes::InvalidOptions,
             "Partial indexes are not supported on collections clustered by _id",
-            !_collection->isClustered() || !spec[IndexDescriptor::kPartialFilterExprFieldName]);
+            !collection->isClustered() || !spec[IndexDescriptor::kPartialFilterExprFieldName]);
 
     uassert(ErrorCodes::InvalidOptions,
             "Unique indexes are not supported on collections clustered by _id",
-            !_collection->isClustered() || !spec[IndexDescriptor::kUniqueFieldName].trueValue());
+            !collection->isClustered() || !spec[IndexDescriptor::kUniqueFieldName].trueValue());
 
     uassert(ErrorCodes::InvalidOptions,
             "TTL indexes are not supported on collections clustered by _id",
-            !_collection->isClustered() || !spec[IndexDescriptor::kExpireAfterSecondsFieldName]);
+            !collection->isClustered() || !spec[IndexDescriptor::kExpireAfterSecondsFieldName]);
 
     uassert(ErrorCodes::InvalidOptions,
             "Text indexes are not supported on collections clustered by _id",
-            !_collection->isClustered() || pluginName != IndexNames::TEXT);
+            !collection->isClustered() || pluginName != IndexNames::TEXT);
 
     if (IndexDescriptor::isIdIndexPattern(key)) {
-        if (_collection->isClustered()) {
+        if (collection->isClustered()) {
             return Status(ErrorCodes::CannotCreateIndex,
                           "cannot create an _id index on a collection already clustered by _id");
         }
@@ -782,7 +778,7 @@ Status IndexCatalogImpl::_isSpecOk(OperationContext* opCtx, const BSONObj& spec)
 
         if (collationElement &&
             !CollatorInterface::collatorsMatch(expCtx->getCollator(),
-                                               _collection->getDefaultCollator())) {
+                                               collection->getDefaultCollator())) {
             return Status(ErrorCodes::CannotCreateIndex,
                           "_id index must have the collection default collation");
         }
@@ -816,6 +812,7 @@ Status IndexCatalogImpl::_isSpecOk(OperationContext* opCtx, const BSONObj& spec)
 }
 
 Status IndexCatalogImpl::_doesSpecConflictWithExisting(OperationContext* opCtx,
+    const CollectionPtr& collection,
                                                        const BSONObj& spec,
                                                        const bool includeUnfinishedIndexes) const {
     const char* name = spec.getStringField(IndexDescriptor::kIndexNameFieldName);
@@ -831,7 +828,7 @@ Status IndexCatalogImpl::_doesSpecConflictWithExisting(OperationContext* opCtx,
             // Index already exists with same name. Check whether the options are the same as well.
             IndexDescriptor candidate(_getAccessMethodName(key), spec);
             auto indexComparison =
-                candidate.compareIndexOptions(opCtx, _collection->ns(), getEntry(desc));
+                candidate.compareIndexOptions(opCtx, collection->ns(), getEntry(desc));
 
             // Key pattern or another uniquely-identifying option differs. We can build this index,
             // but not with the specified (duplicate) name. User must specify another index name.
@@ -893,7 +890,7 @@ Status IndexCatalogImpl::_doesSpecConflictWithExisting(OperationContext* opCtx,
             // informative error message.
             IndexDescriptor candidate(_getAccessMethodName(key), spec);
             auto indexComparison =
-                candidate.compareIndexOptions(opCtx, _collection->ns(), getEntry(desc));
+                candidate.compareIndexOptions(opCtx, collection->ns(), getEntry(desc));
 
             // The candidate's key and uniquely-identifying options are equivalent to an existing
             // index, but some other options are not identical. Return a message to that effect.
@@ -914,11 +911,11 @@ Status IndexCatalogImpl::_doesSpecConflictWithExisting(OperationContext* opCtx,
     }
 
     if (numIndexesTotal(opCtx) >= kMaxNumIndexesAllowed) {
-        string s = str::stream() << "add index fails, too many indexes for " << _collection->ns()
+        string s = str::stream() << "add index fails, too many indexes for " << collection->ns()
                                  << " key:" << key;
         LOGV2(20354,
               "Exceeded maximum number of indexes",
-              "namespace"_attr = _collection->ns(),
+              "namespace"_attr = collection->ns(),
               "key"_attr = key,
               "maxNumIndexes"_attr = kMaxNumIndexesAllowed);
         return Status(ErrorCodes::CannotCreateIndex, s);
@@ -940,7 +937,7 @@ Status IndexCatalogImpl::_doesSpecConflictWithExisting(OperationContext* opCtx,
     return Status::OK();
 }
 
-BSONObj IndexCatalogImpl::getDefaultIdIndexSpec() const {
+BSONObj IndexCatalogImpl::getDefaultIdIndexSpec(const CollectionPtr& collection) const {
     dassert(_idObj["_id"].type() == NumberInt);
 
     const auto indexVersion = IndexDescriptor::getDefaultIndexVersion();
@@ -949,9 +946,9 @@ BSONObj IndexCatalogImpl::getDefaultIdIndexSpec() const {
     b.append("v", static_cast<int>(indexVersion));
     b.append("name", "_id_");
     b.append("key", _idObj);
-    if (_collection->getDefaultCollator() && indexVersion >= IndexVersion::kV2) {
+    if (collection->getDefaultCollator() && indexVersion >= IndexVersion::kV2) {
         // Creating an index with the "collation" option requires a v=2 index.
-        b.append("collation", _collection->getDefaultCollator()->getSpec().toBSON());
+        b.append("collation", collection->getDefaultCollator()->getSpec().toBSON());
     }
     return b.obj();
 }
@@ -1011,7 +1008,7 @@ void IndexCatalogImpl::dropAllIndexes(OperationContext* opCtx,Collection* collec
     } else {
         if (numIndexesTotal(opCtx) || numIndexesInCollectionCatalogEntry || _readyIndexes.size()) {
             _logInternalState(
-                opCtx, numIndexesInCollectionCatalogEntry, indexNamesToDrop, haveIdIndex);
+                opCtx, collection, numIndexesInCollectionCatalogEntry, indexNamesToDrop, haveIdIndex);
         }
         fassert(17327, numIndexesTotal(opCtx) == 0);
         fassert(17328, numIndexesInCollectionCatalogEntry == 0);
@@ -1537,7 +1534,7 @@ void IndexCatalogImpl::_unindexKeys(OperationContext* opCtx,
               "Couldn't unindex record {obj} from collection {namespace}: {error}",
               "Couldn't unindex record",
               "record"_attr = redact(obj),
-              "namespace"_attr = _collection->ns(),
+              "namespace"_attr = collection->ns(),
               "error"_attr = redact(status));
     }
 
@@ -1743,7 +1740,7 @@ void IndexCatalogImpl::indexBuildSuccess(OperationContext* opCtx,
 }
 
 StatusWith<BSONObj> IndexCatalogImpl::_fixIndexSpec(OperationContext* opCtx,
-                                                    const Collection* collection,
+                                                    const CollectionPtr& collection,
                                                     const BSONObj& spec) const {
     auto statusWithSpec = adjustIndexSpecObject(spec);
     if (!statusWithSpec.isOK()) {

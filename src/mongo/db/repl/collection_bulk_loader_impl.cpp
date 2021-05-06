@@ -88,7 +88,7 @@ Status CollectionBulkLoaderImpl::init(const std::vector<BSONObj>& secondaryIndex
                 CollectionWriter collWriter(*_collection);
                 auto indexCatalog = collWriter.getWritableCollection()->getIndexCatalog();
                 auto specs =
-                    indexCatalog->removeExistingIndexesNoChecks(_opCtx.get(), secondaryIndexSpecs);
+                    indexCatalog->removeExistingIndexesNoChecks(_opCtx.get(), collWriter.get(), secondaryIndexSpecs);
                 if (specs.size()) {
                     _secondaryIndexesBlock->ignoreUniqueConstraint();
                     auto status =

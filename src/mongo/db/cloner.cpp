@@ -293,7 +293,7 @@ void Cloner::_copyIndexes(OperationContext* opCtx,
 
     auto indexCatalog = collection->getIndexCatalog();
     auto indexesToBuild = indexCatalog->removeExistingIndexesNoChecks(
-        opCtx, {std::begin(from_indexes), std::end(from_indexes)});
+        opCtx, collection.get(), {std::begin(from_indexes), std::end(from_indexes)});
     if (indexesToBuild.empty()) {
         return;
     }

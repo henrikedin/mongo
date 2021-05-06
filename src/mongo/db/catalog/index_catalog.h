@@ -206,7 +206,7 @@ public:
     /**
      * Returns the spec for the id index to create by default for this collection.
      */
-    virtual BSONObj getDefaultIdIndexSpec() const = 0;
+    virtual BSONObj getDefaultIdIndexSpec(const CollectionPtr& collection) const = 0;
 
     virtual const IndexDescriptor* findIdIndex(OperationContext* const opCtx) const = 0;
 
@@ -335,6 +335,7 @@ public:
      */
     virtual StatusWith<BSONObj> prepareSpecForCreate(
         OperationContext* const opCtx,
+        const CollectionPtr& collection,
         const BSONObj& original,
         const boost::optional<ResumeIndexInfo>& resumeInfo) const = 0;
 
@@ -353,7 +354,7 @@ public:
      * they are not, then IndexBuildAlreadyInProgress errors can be thrown.
      */
     virtual std::vector<BSONObj> removeExistingIndexes(
-        OperationContext* const opCtx,
+        OperationContext* const opCtx, const CollectionPtr& collection,
         const std::vector<BSONObj>& indexSpecsToBuild,
         const bool removeIndexBuildsToo) const = 0;
 
@@ -368,7 +369,7 @@ public:
      * via replica set cloning or chunk migrations.
      */
     virtual std::vector<BSONObj> removeExistingIndexesNoChecks(
-        OperationContext* const opCtx, const std::vector<BSONObj>& indexSpecsToBuild) const = 0;
+        OperationContext* const opCtx, const CollectionPtr& collection, const std::vector<BSONObj>& indexSpecsToBuild) const = 0;
 
     /**
      * Drops all indexes in the index catalog, optionally dropping the id index depending on the

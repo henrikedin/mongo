@@ -227,7 +227,7 @@ void createIndexForApplyOps(OperationContext* opCtx,
                                 << "; normalized index specs: "
                                 << BSON("normalSpecs" << normalSpecs));
         auto indexCatalog = indexCollection->getIndexCatalog();
-        auto prepareSpecResult = indexCatalog->prepareSpecForCreate(opCtx, normalSpecs[0], {});
+        auto prepareSpecResult = indexCatalog->prepareSpecForCreate(opCtx, indexCollection, normalSpecs[0], {});
         if (ErrorCodes::IndexBuildAlreadyInProgress == prepareSpecResult) {
             LOGV2(4924900,
                   "Index build: already in progress during initial sync",
