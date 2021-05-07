@@ -144,7 +144,7 @@ void dropIndex(OperationContext* opCtx, const NamespaceString& nss, const std::s
     auto indexDescriptor = collection->getIndexCatalog()->findIndexByName(opCtx, indexName);
     ASSERT(indexDescriptor);
     ASSERT_OK(
-        collection.getWritableCollection()->getIndexCatalog()->dropIndex(opCtx, indexDescriptor));
+        collection.getWritableCollection()->getIndexCatalog()->dropIndex(opCtx, collection.getWritableCollection(), indexDescriptor));
 
     wuow.commit();
 }

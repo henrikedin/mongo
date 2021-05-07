@@ -3345,12 +3345,12 @@ public:
             WriteUnitOfWork wunit(&_opCtx);
             auto collMetadata =
                 DurableCatalog::get(&_opCtx)->getMetaData(&_opCtx, coll->getCatalogId());
-            int offset = collMetadata.findIndexOffset(indexName);
+            int offset = collMetadata->findIndexOffset(indexName);
             ASSERT_GTE(offset, 0);
 
-            auto& indexMetadata = collMetadata.indexes[offset];
+            auto& indexMetadata = collMetadata->indexes[offset];
             indexMetadata.multikeyPaths = {};
-            DurableCatalog::get(&_opCtx)->putMetaData(&_opCtx, coll->getCatalogId(), collMetadata);
+            DurableCatalog::get(&_opCtx)->putMetaData(&_opCtx, coll->getCatalogId(), *collMetadata);
             wunit.commit();
         }
 
@@ -3359,8 +3359,8 @@ public:
         auto descriptor = indexCatalog->findIndexByName(&_opCtx, indexName);
         {
             WriteUnitOfWork wunit(&_opCtx);
-            auto writableCatalog = const_cast<IndexCatalog*>(indexCatalog);
-            descriptor = writableCatalog->refreshEntry(&_opCtx, descriptor);
+            //auto writableCatalog = const_cast<IndexCatalog*>(indexCatalog);
+            //descriptor = writableCatalog->refreshEntry(&_opCtx, descriptor);
             wunit.commit();
         }
 

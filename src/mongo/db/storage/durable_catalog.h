@@ -38,7 +38,6 @@
 #include "mongo/db/storage/storage_engine.h"
 
 namespace mongo {
-
 /**
  * An interface to modify the on-disk catalog metadata.
  */
@@ -102,6 +101,7 @@ public:
 
     virtual bool isCollectionIdent(StringData ident) const = 0;
 
+
     virtual RecordStore* getRecordStore() = 0;
 
     /**
@@ -134,6 +134,14 @@ public:
         const NamespaceString& nss,
         const CollectionOptions& options,
         bool allocateDefaultSpace) = 0;
+
+    virtual Status createIndex(OperationContext* opCtx, RecordId catalogId, const CollectionOptions& collOptions, const IndexDescriptor* spec) = 0;
+
+    virtual BSONCollectionCatalogEntry::IndexMetaData prepareIndexMetaDataForIndexBuild(
+        OperationContext* opCtx,
+        const IndexDescriptor* spec,
+        boost::optional<UUID> buildUUID,
+        bool isBackgroundSecondaryBuild) = 0;
 
     /**
      * Import a collection by inserting the given metadata into the durable catalog and instructing

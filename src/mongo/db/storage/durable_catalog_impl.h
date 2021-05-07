@@ -50,7 +50,6 @@ class StorageEngineInterface;
 class DurableCatalogImpl : public DurableCatalog {
 public:
     class FeatureTracker;
-
     /**
      * The RecordStore must be thread-safe, in particular with concurrent calls to
      * RecordStore::find, updateRecord, insertRecord, deleteRecord and dataFor. The
@@ -115,6 +114,17 @@ public:
         const NamespaceString& nss,
         const CollectionOptions& options,
         bool allocateDefaultSpace);
+
+    Status createIndex(OperationContext* opCtx,
+                       RecordId catalogId,
+                       const CollectionOptions& collOptions,
+                       const IndexDescriptor* spec);
+
+    BSONCollectionCatalogEntry::IndexMetaData prepareIndexMetaDataForIndexBuild(
+        OperationContext* opCtx,
+        const IndexDescriptor* spec,
+        boost::optional<UUID> buildUUID,
+        bool isBackgroundSecondaryBuild);
 
     StatusWith<ImportResult> importCollection(OperationContext* opCtx,
                                               const NamespaceString& nss,

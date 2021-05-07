@@ -1715,51 +1715,19 @@ Status CollectionImpl::prepareForIndexBuild(OperationContext* opCtx,
                                             const IndexDescriptor* spec,
                                             boost::optional<UUID> buildUUID,
                                             bool isBackgroundSecondaryBuild) {
-    BSONCollectionCatalogEntry::IndexMetaData imd;
-    imd.spec = spec->infoObj();
-    imd.ready = false;
-    imd.multikey = false;
-    imd.isBackgroundSecondaryBuild = isBackgroundSecondaryBuild;
-    imd.buildUUID = buildUUID;
-
-    // if (indexTypeSupportsPathLevelMultikeyTracking(spec->getAccessMethodName())) {
-    //    const auto feature =
-    //    DurableCatalogImpl::FeatureTracker::RepairableFeature::kPathLevelMultikeyTracking; if
-    //    (!getFeatureTracker()->isRepairableFeatureInUse(opCtx, feature)) {
-    //        getFeatureTracker()->markRepairableFeatureAsInUse(opCtx, feature);
-    //    }
-    //    imd.multikeyPaths = MultikeyPaths{static_cast<size_t>(spec->keyPattern().nFields())};
-    //}
-
-    //// Mark collation feature as in use if the index has a non-simple collation.
-    // if (imd.spec["collation"]) {
-    //    const auto feature = DurableCatalogImpl::FeatureTracker::NonRepairableFeature::kCollation;
-    //    if (!getFeatureTracker()->isNonRepairableFeatureInUse(opCtx, feature)) {
-    //        getFeatureTracker()->markNonRepairableFeatureAsInUse(opCtx, feature);
-    //    }
-    //}
+    
+    auto durableCatalog = DurableCatalog::get(opCtx);
+    auto imd = durableCatalog->prepareIndexMetaDataForIndexBuild(opCtx, spec, buildUUID, isBackgroundSecondaryBuild);
 
     // Confirm that our index is not already in the current metadata.
     invariant(-1 == _metadata->findIndexOffset(imd.name()));
 
     auto metadata = std::make_shared<BSONCollectionCatalogEntry::MetaData>(*_metadata);
     metadata->indexes.push_back(imd);
-    DurableCatalog::get(opCtx)->putMetaData(opCtx, getCatalogId(), *metadata);
+    durableCatalog->putMetaData(opCtx, getCatalogId(), *metadata);
     _metadata = std::move(metadata);
 
-    // std::string ident = DurableCatalog::get(opCtx)->getIndexIdent(opCtx, getCatalogId(),
-    // spec->indexName());
-
-    // auto kvEngine = _engine->getEngine();
-    // const Status status = kvEngine->createSortedDataInterface(
-    //    opCtx, getCollectionOptions(opCtx, catalogId), ident, spec);
-    // if (status.isOK()) {
-    //    opCtx->recoveryUnit()->registerChange(
-    //        std::make_unique<AddIndexChange>(opCtx->recoveryUnit(), _engine, ident));
-    //}
-
-    // return status;
-    return Status::OK();
+    return durableCatalog->createIndex(opCtx, getCatalogId(), getCollectionOptions(), spec);
 }
 
 boost::optional<UUID> CollectionImpl::getIndexBuildUUID(StringData indexName) const {

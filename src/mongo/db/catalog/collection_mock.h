@@ -360,6 +360,89 @@ public:
         std::abort();
     }
 
+    Status checkMetaDataForIndex(const std::string& indexName, const BSONObj& spec) const {
+        std::abort();
+    }
+
+    void updateTTLSetting(OperationContext* opCtx,
+                          StringData idxName,
+                          long long newExpireSeconds) {
+        std::abort();
+    }
+
+    void updateHiddenSetting(OperationContext* opCtx, StringData idxName, bool hidden) {
+        std::abort();
+    }
+
+    void setIsTemp(OperationContext* opCtx, bool isTemp) {
+        std::abort();
+    }
+
+    void removeIndex(OperationContext* opCtx, StringData indexName) {
+        std::abort();
+    }
+
+    Status prepareForIndexBuild(OperationContext* opCtx,
+                                const IndexDescriptor* spec,
+                                boost::optional<UUID> buildUUID,
+                                bool isBackgroundSecondaryBuild) {
+        std::abort();
+    }
+
+    boost::optional<UUID> getIndexBuildUUID(StringData indexName) const {
+        std::abort();
+    }
+
+    bool isIndexMultikey(StringData indexName, MultikeyPaths* multikeyPaths) const {
+        std::abort();
+    }
+
+    bool setIndexIsMultikey(OperationContext* opCtx,
+                            StringData indexName,
+                            const MultikeyPaths& multikeyPaths) const {
+        std::abort();
+    }
+
+    void forceSetIndexIsMultikey(OperationContext* opCtx,
+                                 const IndexDescriptor* desc,
+                                 bool isMultikey,
+                                 const MultikeyPaths& multikeyPaths) const final {
+        std::abort();
+    }
+
+    int getTotalIndexCount() const {
+        std::abort();
+    }
+
+    int getCompletedIndexCount() const {
+        std::abort();
+    }
+
+    BSONObj getIndexSpec(StringData indexName) const {
+        std::abort();
+    }
+
+    void getAllIndexes(std::vector<std::string>* names) const {
+        std::abort();
+    }
+
+    void getReadyIndexes(std::vector<std::string>* names) const {
+        std::abort();
+    }
+
+    bool isIndexPresent(StringData indexName) const {
+        std::abort();
+    }
+
+    bool isIndexReady(StringData indexName) const {
+        std::abort();
+    }
+
+    void replaceMetadata(OperationContext* opCtx,
+                         std::shared_ptr<BSONCollectionCatalogEntry::MetaData> md) {
+        std::abort();
+    }
+
 private:
     UUID _uuid = UUID::gen();
     NamespaceString _ns;

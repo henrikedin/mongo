@@ -159,22 +159,19 @@ public:
         }
         BSONObj spec = builder.append("name", key).append("v", 2).done();
 
-        CollectionPtr collection =
-            CollectionCatalog::get(opCtx)->lookupCollectionByNamespace(opCtx, collNs);
+        Collection* collection =
+            CollectionCatalog::get(opCtx)->lookupCollectionByNamespaceForMetadataWrite(opCtx, CollectionCatalog::LifetimeMode::kManagedInWriteUnitOfWork, collNs);
         auto descriptor = std::make_unique<IndexDescriptor>(IndexNames::findPluginName(spec), spec);
 
-        auto ret = DurableCatalog::get(opCtx)->prepareForIndexBuild(opCtx,
-                                                                    collection->getCatalogId(),
-                                                                    descriptor.get(),
-                                                                    buildUUID,
-                                                                    isBackgroundSecondaryBuild);
+        auto ret = collection->prepareForIndexBuild(
+            opCtx, descriptor.get(), buildUUID, isBackgroundSecondaryBuild);
         return ret;
     }
 
     void indexBuildSuccess(OperationContext* opCtx, NamespaceString collNs, std::string key) {
-        CollectionPtr collection =
-            CollectionCatalog::get(opCtx)->lookupCollectionByNamespace(opCtx, collNs);
-        DurableCatalog::get(opCtx)->indexBuildSuccess(opCtx, collection->getCatalogId(), key);
+        //Collection* collection =
+        //    CollectionCatalog::get(opCtx)->lookupCollectionByNamespaceForMetadataWrite(opCtx, CollectionCatalog::LifetimeMode::kManagedInWriteUnitOfWork, collNs);
+        //collection->indexBuildSuccess(opCtx, key);
     }
 
     Status removeEntry(OperationContext* opCtx, StringData collNs, DurableCatalog* catalog) {

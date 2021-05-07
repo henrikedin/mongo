@@ -865,6 +865,22 @@ StatusWith<std::pair<RecordId, std::unique_ptr<RecordStore>>> DurableCatalogImpl
     return std::pair<RecordId, std::unique_ptr<RecordStore>>(entry.catalogId, std::move(rs));
 }
 
+Status DurableCatalogImpl::createIndex(OperationContext* opCtx,
+    RecordId catalogId,
+    const CollectionOptions& collOptions,
+    const IndexDescriptor* spec) {
+    std::string ident = getIndexIdent(opCtx, catalogId, spec->indexName());
+
+     auto kvEngine = _engine->getEngine();
+     const Status status = kvEngine->createSortedDataInterface(
+        opCtx, collOptions, ident, spec);
+     if (status.isOK()) {
+        opCtx->recoveryUnit()->registerChange(
+            std::make_unique<AddIndexChange>(opCtx->recoveryUnit(), _engine, ident));
+    }
+     return status;
+}
+
 StatusWith<DurableCatalog::ImportResult> DurableCatalogImpl::importCollection(
     OperationContext* opCtx,
     const NamespaceString& nss,
@@ -995,6 +1011,37 @@ Status DurableCatalogImpl::dropCollection(OperationContext* opCtx, RecordId cata
     }
 
     return Status::OK();
+}
+
+BSONCollectionCatalogEntry::IndexMetaData DurableCatalogImpl::prepareIndexMetaDataForIndexBuild(OperationContext* opCtx,
+        const IndexDescriptor* spec,
+        boost::optional<UUID> buildUUID,
+        bool isBackgroundSecondaryBuild) {
+    BSONCollectionCatalogEntry::IndexMetaData imd;
+    imd.spec = spec->infoObj();
+    imd.ready = false;
+    imd.multikey = false;
+    imd.isBackgroundSecondaryBuild = isBackgroundSecondaryBuild;
+    imd.buildUUID = buildUUID;
+
+
+    if (indexTypeSupportsPathLevelMultikeyTracking(spec->getAccessMethodName())) {
+        const auto feature = FeatureTracker::RepairableFeature::kPathLevelMultikeyTracking;
+        if (!getFeatureTracker()->isRepairableFeatureInUse(opCtx, feature)) {
+            getFeatureTracker()->markRepairableFeatureAsInUse(opCtx, feature);
+        }
+        imd.multikeyPaths = MultikeyPaths{static_cast<size_t>(spec->keyPattern().nFields())};
+    }
+
+    // Mark collation feature as in use if the index has a non-simple collation.
+    if (imd.spec["collation"]) {
+        const auto feature = FeatureTracker::NonRepairableFeature::kCollation;
+        if (!getFeatureTracker()->isNonRepairableFeatureInUse(opCtx, feature)) {
+            getFeatureTracker()->markNonRepairableFeatureAsInUse(opCtx, feature);
+        }
+    }
+
+    return imd;
 }
 
 Status DurableCatalogImpl::dropAndRecreateIndexIdentForResume(OperationContext* opCtx,

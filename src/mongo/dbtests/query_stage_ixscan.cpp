@@ -62,7 +62,7 @@ public:
         _collPtr = _coll;
 
         ASSERT_OK(_coll->getIndexCatalog()->createIndexOnEmptyCollection(
-            &_opCtx,
+            &_opCtx,_coll,
             BSON("key" << BSON("x" << 1) << "name" << DBClientBase::genIndexName(BSON("x" << 1))
                        << "v" << static_cast<int>(kIndexVersion))));
 
