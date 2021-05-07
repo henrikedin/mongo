@@ -160,7 +160,8 @@ public:
         BSONObj spec = builder.append("name", key).append("v", 2).done();
 
         Collection* collection =
-            CollectionCatalog::get(opCtx)->lookupCollectionByNamespaceForMetadataWrite(opCtx, CollectionCatalog::LifetimeMode::kManagedInWriteUnitOfWork, collNs);
+            CollectionCatalog::get(opCtx)->lookupCollectionByNamespaceForMetadataWrite(
+                opCtx, CollectionCatalog::LifetimeMode::kManagedInWriteUnitOfWork, collNs);
         auto descriptor = std::make_unique<IndexDescriptor>(IndexNames::findPluginName(spec), spec);
 
         auto ret = collection->prepareForIndexBuild(
@@ -169,9 +170,10 @@ public:
     }
 
     void indexBuildSuccess(OperationContext* opCtx, NamespaceString collNs, std::string key) {
-        //Collection* collection =
-        //    CollectionCatalog::get(opCtx)->lookupCollectionByNamespaceForMetadataWrite(opCtx, CollectionCatalog::LifetimeMode::kManagedInWriteUnitOfWork, collNs);
-        //collection->indexBuildSuccess(opCtx, key);
+        // Collection* collection =
+        //    CollectionCatalog::get(opCtx)->lookupCollectionByNamespaceForMetadataWrite(opCtx,
+        //    CollectionCatalog::LifetimeMode::kManagedInWriteUnitOfWork, collNs);
+        // collection->indexBuildSuccess(opCtx, key);
     }
 
     Status removeEntry(OperationContext* opCtx, StringData collNs, DurableCatalog* catalog) {

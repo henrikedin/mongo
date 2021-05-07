@@ -249,7 +249,8 @@ public:
             {
                 WriteUnitOfWork wunit(_opCtx);
                 // Drop all indexes including id index.
-                coll.getWritableCollection()->getIndexCatalog()->dropAllIndexes(_opCtx, coll.getWritableCollection(), true);
+                coll.getWritableCollection()->getIndexCatalog()->dropAllIndexes(
+                    _opCtx, coll.getWritableCollection(), true);
                 // Insert some documents.
                 int32_t nDocs = 1000;
                 OpDebug* const nullOpDebug = nullptr;

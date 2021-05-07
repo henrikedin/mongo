@@ -136,7 +136,9 @@ int _createIndexOnEmptyCollection(OperationContext* opCtx, NamespaceString nss, 
     auto indexCatalog = coll.getWritableCollection()->getIndexCatalog();
     ASSERT(indexCatalog);
 
-    ASSERT_OK(indexCatalog->createIndexOnEmptyCollection(opCtx, coll.getWritableCollection(), indexSpec).getStatus());
+    ASSERT_OK(
+        indexCatalog->createIndexOnEmptyCollection(opCtx, coll.getWritableCollection(), indexSpec)
+            .getStatus());
     wunit.commit();
 
     return indexCatalog->numIndexesReady(opCtx);
@@ -792,8 +794,7 @@ TEST_F(StorageInterfaceImplTest, RenameCollectionWithStayTempFalseMakesItNotTemp
 
     AutoGetCollectionForReadCommand autoColl2(opCtx, toNss);
     ASSERT_TRUE(autoColl2.getCollection());
-    ASSERT_FALSE(autoColl2->getCollectionOptions()
-                     .temp);
+    ASSERT_FALSE(autoColl2->getCollectionOptions().temp);
 }
 
 TEST_F(StorageInterfaceImplTest, RenameCollectionWithStayTempTrueMakesItTemp) {
@@ -812,8 +813,7 @@ TEST_F(StorageInterfaceImplTest, RenameCollectionWithStayTempTrueMakesItTemp) {
 
     AutoGetCollectionForReadCommand autoColl2(opCtx, toNss);
     ASSERT_TRUE(autoColl2.getCollection());
-    ASSERT_TRUE(autoColl2->getCollectionOptions()
-                    .temp);
+    ASSERT_TRUE(autoColl2->getCollectionOptions().temp);
 }
 
 TEST_F(StorageInterfaceImplTest, RenameCollectionFailsBetweenDatabases) {

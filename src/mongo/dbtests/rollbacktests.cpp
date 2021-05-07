@@ -146,7 +146,8 @@ void dropIndex(OperationContext* opCtx, const NamespaceString& nss, const string
     CollectionWriter coll(opCtx, nss);
     auto desc = coll.getWritableCollection()->getIndexCatalog()->findIndexByName(opCtx, idxName);
     ASSERT(desc);
-    ASSERT_OK(coll.getWritableCollection()->getIndexCatalog()->dropIndex(opCtx, coll.getWritableCollection(), desc));
+    ASSERT_OK(coll.getWritableCollection()->getIndexCatalog()->dropIndex(
+        opCtx, coll.getWritableCollection(), desc));
 }
 }  // namespace
 
@@ -497,7 +498,8 @@ public:
         {
             WriteUnitOfWork uow(&opCtx);
             IndexCatalog* catalog = coll.getWritableCollection()->getIndexCatalog();
-            ASSERT_OK(catalog->createIndexOnEmptyCollection(&opCtx, coll.getWritableCollection(), spec));
+            ASSERT_OK(
+                catalog->createIndexOnEmptyCollection(&opCtx, coll.getWritableCollection(), spec));
             insertRecord(&opCtx, nss, BSON("a" << 1));
             insertRecord(&opCtx, nss, BSON("a" << 2));
             insertRecord(&opCtx, nss, BSON("a" << 3));
@@ -536,7 +538,8 @@ public:
         {
             WriteUnitOfWork uow(&opCtx);
             IndexCatalog* catalog = coll.getWritableCollection()->getIndexCatalog();
-            ASSERT_OK(catalog->createIndexOnEmptyCollection(&opCtx, coll.getWritableCollection(), spec));
+            ASSERT_OK(
+                catalog->createIndexOnEmptyCollection(&opCtx, coll.getWritableCollection(), spec));
             insertRecord(&opCtx, nss, BSON("a" << 1));
             insertRecord(&opCtx, nss, BSON("a" << 2));
             insertRecord(&opCtx, nss, BSON("a" << 3));
@@ -591,7 +594,8 @@ public:
             WriteUnitOfWork uow(&opCtx);
             IndexCatalog* catalog = coll.getWritableCollection()->getIndexCatalog();
 
-            ASSERT_OK(catalog->createIndexOnEmptyCollection(&opCtx, coll.getWritableCollection(), spec));
+            ASSERT_OK(
+                catalog->createIndexOnEmptyCollection(&opCtx, coll.getWritableCollection(), spec));
             insertRecord(&opCtx, nss, BSON("a" << 1));
             insertRecord(&opCtx, nss, BSON("a" << 2));
             insertRecord(&opCtx, nss, BSON("a" << 3));

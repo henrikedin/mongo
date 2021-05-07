@@ -1715,9 +1715,10 @@ Status CollectionImpl::prepareForIndexBuild(OperationContext* opCtx,
                                             const IndexDescriptor* spec,
                                             boost::optional<UUID> buildUUID,
                                             bool isBackgroundSecondaryBuild) {
-    
+
     auto durableCatalog = DurableCatalog::get(opCtx);
-    auto imd = durableCatalog->prepareIndexMetaDataForIndexBuild(opCtx, spec, buildUUID, isBackgroundSecondaryBuild);
+    auto imd = durableCatalog->prepareIndexMetaDataForIndexBuild(
+        opCtx, spec, buildUUID, isBackgroundSecondaryBuild);
 
     // Confirm that our index is not already in the current metadata.
     invariant(-1 == _metadata->findIndexOffset(imd.name()));

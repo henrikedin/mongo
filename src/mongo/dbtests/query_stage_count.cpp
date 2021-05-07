@@ -74,7 +74,8 @@ public:
         auto coll = _ctx.db()->createCollection(&_opCtx, nss());
 
         coll->getIndexCatalog()
-            ->createIndexOnEmptyCollection(&_opCtx,coll,
+            ->createIndexOnEmptyCollection(&_opCtx,
+                                           coll,
                                            BSON("key" << BSON("x" << 1) << "name"
                                                       << "x_1"
                                                       << "v" << 1))

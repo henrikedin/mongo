@@ -356,8 +356,7 @@ void RollbackResyncsCollectionOptionsTest::resyncCollectionOptionsTest(
 
     // Make sure the collection options are correct.
     AutoGetCollectionForReadCommand autoColl(_opCtx.get(), NamespaceString(nss.toString()));
-    auto collAfterRollbackOptions =
-        autoColl->getCollectionOptions();
+    auto collAfterRollbackOptions = autoColl->getCollectionOptions();
 
     BSONObjBuilder expectedOptionsBob;
     if (localCollOptions.uuid) {

@@ -205,14 +205,13 @@ public:
         // Change value of "expireAfterSeconds" on disk.
         {
             WriteUnitOfWork wuow(&opCtx);
-            _coll->updateTTLSetting(
-                &opCtx, "x_1", 10);
+            _coll->updateTTLSetting(&opCtx, "x_1", 10);
             wuow.commit();
         }
 
         // Verify that the catalog does not yet know of the change.
-        //desc = _coll->findIndexByName(indexName);
-        //ASSERT_EQUALS(5, desc->infoObj()["expireAfterSeconds"].numberLong());
+        // desc = _coll->findIndexByName(indexName);
+        // ASSERT_EQUALS(5, desc->infoObj()["expireAfterSeconds"].numberLong());
 
         {
             // Notify the catalog of the change.

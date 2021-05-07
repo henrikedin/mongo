@@ -376,8 +376,7 @@ TEST_F(DatabaseTest, RenameCollectionPreservesUuidOfSourceCollectionAndUpdatesUu
         auto toCollection = catalog->lookupCollectionByNamespace(opCtx, toNss);
         ASSERT_TRUE(toCollection);
 
-        const auto& toCollectionOptions =
-            toCollection->getCollectionOptions();
+        const auto& toCollectionOptions = toCollection->getCollectionOptions();
 
         auto toUuid = toCollectionOptions.uuid;
         ASSERT_TRUE(toUuid);

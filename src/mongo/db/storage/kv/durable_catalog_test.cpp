@@ -33,10 +33,10 @@
 #include <iostream>
 #include <string>
 
-#include "mongo/db/catalog_raii.h"
 #include "mongo/db/catalog/catalog_test_fixture.h"
 #include "mongo/db/catalog/collection_catalog.h"
 #include "mongo/db/catalog/collection_impl.h"
+#include "mongo/db/catalog_raii.h"
 #include "mongo/db/index/index_descriptor.h"
 #include "mongo/db/index/multikey_paths.h"
 #include "mongo/db/index_names.h"
@@ -75,12 +75,12 @@ public:
         return operationContext()->getServiceContext()->getStorageEngine()->getCatalog();
     }
 
-    CollectionPtr getCollection(){
+    CollectionPtr getCollection() {
         return CollectionCatalog::get(operationContext())
             ->lookupCollectionByUUID(operationContext(), *_collectionUUID);
     }
 
-    CollectionWriter getCollectionWriter(){
+    CollectionWriter getCollectionWriter() {
         return CollectionWriter(operationContext(),
                                 *_collectionUUID,
                                 CollectionCatalog::LifetimeMode::kManagedInWriteUnitOfWork);
@@ -116,12 +116,12 @@ public:
     }
 
     IndexCatalogEntry* createIndex(BSONObj keyPattern,
-                            std::string indexType = IndexNames::BTREE,
-                            bool twoPhase = false) {
+                                   std::string indexType = IndexNames::BTREE,
+                                   bool twoPhase = false) {
         std::string indexName = "idx" + std::to_string(numIndexesCreated);
 
-        auto desc = std::make_unique<IndexDescriptor>(indexType,
-                             BSON("v" << 1 << "key" << keyPattern << "name" << indexName));
+        auto desc = std::make_unique<IndexDescriptor>(
+            indexType, BSON("v" << 1 << "key" << keyPattern << "name" << indexName));
 
         IndexCatalogEntry* entry = nullptr;
         auto collWriter = getCollectionWriter();
@@ -190,7 +190,7 @@ private:
 
     NamespaceString _nss;
     size_t numIndexesCreated = 0;
-    //RecordId _catalogId;
+    // RecordId _catalogId;
     OptionalCollectionUUID _collectionUUID;
 };
 
@@ -199,8 +199,7 @@ TEST_F(DurableCatalogTest, MultikeyPathsForBtreeIndexInitializedToVectorOfEmptyS
     auto collection = getCollection();
     {
         MultikeyPaths multikeyPaths;
-        ASSERT(!collection->isIndexMultikey(
-            indexEntry->descriptor()->indexName(), &multikeyPaths));
+        ASSERT(!collection->isIndexMultikey(indexEntry->descriptor()->indexName(), &multikeyPaths));
         assertMultikeyPathsAreEqual(multikeyPaths, {MultikeyComponents{}, MultikeyComponents{}});
     }
 }
@@ -211,15 +210,15 @@ TEST_F(DurableCatalogTest, CanSetIndividualPathComponentOfBtreeIndexAsMultikey) 
 
     {
         WriteUnitOfWork wuow(operationContext());
-        ASSERT(collection->setIndexIsMultikey(
-            operationContext(), indexEntry->descriptor()->indexName(), {MultikeyComponents{}, {0U}}));
+        ASSERT(collection->setIndexIsMultikey(operationContext(),
+                                              indexEntry->descriptor()->indexName(),
+                                              {MultikeyComponents{}, {0U}}));
         wuow.commit();
     }
 
     {
         MultikeyPaths multikeyPaths;
-        ASSERT(collection->isIndexMultikey(
-            indexEntry->descriptor()->indexName(), &multikeyPaths));
+        ASSERT(collection->isIndexMultikey(indexEntry->descriptor()->indexName(), &multikeyPaths));
         assertMultikeyPathsAreEqual(multikeyPaths, {MultikeyComponents{}, {0U}});
     }
 }
@@ -230,29 +229,29 @@ TEST_F(DurableCatalogTest, MultikeyPathsAccumulateOnDifferentFields) {
 
     {
         WriteUnitOfWork wuow(operationContext());
-        ASSERT(collection->setIndexIsMultikey(
-            operationContext(), indexEntry->descriptor()->indexName(), {MultikeyComponents{}, {0U}}));
+        ASSERT(collection->setIndexIsMultikey(operationContext(),
+                                              indexEntry->descriptor()->indexName(),
+                                              {MultikeyComponents{}, {0U}}));
         wuow.commit();
     }
 
     {
         MultikeyPaths multikeyPaths;
-        ASSERT(collection->isIndexMultikey(
-            indexEntry->descriptor()->indexName(), &multikeyPaths));
+        ASSERT(collection->isIndexMultikey(indexEntry->descriptor()->indexName(), &multikeyPaths));
         assertMultikeyPathsAreEqual(multikeyPaths, {MultikeyComponents{}, {0U}});
     }
 
     {
         WriteUnitOfWork wuow(operationContext());
-        ASSERT(collection->setIndexIsMultikey(
-            operationContext(), indexEntry->descriptor()->indexName(), {{0U}, MultikeyComponents{}}));
+        ASSERT(collection->setIndexIsMultikey(operationContext(),
+                                              indexEntry->descriptor()->indexName(),
+                                              {{0U}, MultikeyComponents{}}));
         wuow.commit();
     }
 
     {
         MultikeyPaths multikeyPaths;
-        ASSERT(collection->isIndexMultikey(
-            indexEntry->descriptor()->indexName(), &multikeyPaths));
+        ASSERT(collection->isIndexMultikey(indexEntry->descriptor()->indexName(), &multikeyPaths));
         assertMultikeyPathsAreEqual(multikeyPaths, {{0U}, {0U}});
     }
 }
@@ -263,27 +262,27 @@ TEST_F(DurableCatalogTest, MultikeyPathsAccumulateOnDifferentComponentsOfTheSame
 
     {
         WriteUnitOfWork wuow(operationContext());
-        ASSERT(collection->setIndexIsMultikey(operationContext(), indexEntry->descriptor()->indexName(), {{0U}}));
+        ASSERT(collection->setIndexIsMultikey(
+            operationContext(), indexEntry->descriptor()->indexName(), {{0U}}));
         wuow.commit();
     }
 
     {
         MultikeyPaths multikeyPaths;
-        ASSERT(collection->isIndexMultikey(
-            indexEntry->descriptor()->indexName(), &multikeyPaths));
+        ASSERT(collection->isIndexMultikey(indexEntry->descriptor()->indexName(), &multikeyPaths));
         assertMultikeyPathsAreEqual(multikeyPaths, {{0U}});
     }
 
     {
         WriteUnitOfWork wuow(operationContext());
-        ASSERT(collection->setIndexIsMultikey(operationContext(), indexEntry->descriptor()->indexName(), {{1U}}));
+        ASSERT(collection->setIndexIsMultikey(
+            operationContext(), indexEntry->descriptor()->indexName(), {{1U}}));
         wuow.commit();
     }
 
     {
         MultikeyPaths multikeyPaths;
-        ASSERT(collection->isIndexMultikey(
-            indexEntry->descriptor()->indexName(), &multikeyPaths));
+        ASSERT(collection->isIndexMultikey(indexEntry->descriptor()->indexName(), &multikeyPaths));
         assertMultikeyPathsAreEqual(multikeyPaths, {{0U, 1U}});
     }
 }
@@ -294,27 +293,27 @@ TEST_F(DurableCatalogTest, NoOpWhenSpecifiedPathComponentsAlreadySetAsMultikey) 
 
     {
         WriteUnitOfWork wuow(operationContext());
-        ASSERT(collection->setIndexIsMultikey(operationContext(), indexEntry->descriptor()->indexName(), {{0U}}));
+        ASSERT(collection->setIndexIsMultikey(
+            operationContext(), indexEntry->descriptor()->indexName(), {{0U}}));
         wuow.commit();
     }
 
     {
         MultikeyPaths multikeyPaths;
-        ASSERT(collection->isIndexMultikey(
-            indexEntry->descriptor()->indexName(), &multikeyPaths));
+        ASSERT(collection->isIndexMultikey(indexEntry->descriptor()->indexName(), &multikeyPaths));
         assertMultikeyPathsAreEqual(multikeyPaths, {{0U}});
     }
 
     {
         WriteUnitOfWork wuow(operationContext());
-        ASSERT(!collection->setIndexIsMultikey(operationContext(), indexEntry->descriptor()->indexName(), {{0U}}));
+        ASSERT(!collection->setIndexIsMultikey(
+            operationContext(), indexEntry->descriptor()->indexName(), {{0U}}));
         // Rollback WUOW.
     }
 
     {
         MultikeyPaths multikeyPaths;
-        ASSERT(collection->isIndexMultikey(
-            indexEntry->descriptor()->indexName(), &multikeyPaths));
+        ASSERT(collection->isIndexMultikey(indexEntry->descriptor()->indexName(), &multikeyPaths));
         assertMultikeyPathsAreEqual(multikeyPaths, {{0U}});
     }
 }
@@ -331,8 +330,7 @@ TEST_F(DurableCatalogTest, CanSetMultipleFieldsAndComponentsAsMultikey) {
 
     {
         MultikeyPaths multikeyPaths;
-        ASSERT(collection->isIndexMultikey(
-            indexEntry->descriptor()->indexName(), &multikeyPaths));
+        ASSERT(collection->isIndexMultikey(indexEntry->descriptor()->indexName(), &multikeyPaths));
         assertMultikeyPathsAreEqual(multikeyPaths, {{0U, 1U}, {0U, 1U}});
     }
 }
@@ -344,7 +342,8 @@ DEATH_TEST_REGEX_F(DurableCatalogTest,
     auto collection = getCollection();
 
     WriteUnitOfWork wuow(operationContext());
-    collection->setIndexIsMultikey(operationContext(), indexEntry->descriptor()->indexName(), MultikeyPaths{});
+    collection->setIndexIsMultikey(
+        operationContext(), indexEntry->descriptor()->indexName(), MultikeyPaths{});
 }
 
 DEATH_TEST_REGEX_F(DurableCatalogTest,
@@ -355,9 +354,9 @@ DEATH_TEST_REGEX_F(DurableCatalogTest,
 
     WriteUnitOfWork wuow(operationContext());
     collection->setIndexIsMultikey(operationContext(),
-                                
-                                indexEntry->descriptor()->indexName(),
-                                {MultikeyComponents{}, MultikeyComponents{}});
+
+                                   indexEntry->descriptor()->indexName(),
+                                   {MultikeyComponents{}, MultikeyComponents{}});
 }
 
 TEST_F(DurableCatalogTest, PathLevelMultikeyTrackingIsSupportedBy2dsphereIndexes) {
@@ -366,8 +365,7 @@ TEST_F(DurableCatalogTest, PathLevelMultikeyTrackingIsSupportedBy2dsphereIndexes
     auto collection = getCollection();
     {
         MultikeyPaths multikeyPaths;
-        ASSERT(!collection->isIndexMultikey(
-            indexEntry->descriptor()->indexName(), &multikeyPaths));
+        ASSERT(!collection->isIndexMultikey(indexEntry->descriptor()->indexName(), &multikeyPaths));
         assertMultikeyPathsAreEqual(multikeyPaths, {MultikeyComponents{}, MultikeyComponents{}});
     }
 }
@@ -381,8 +379,8 @@ TEST_F(DurableCatalogTest, PathLevelMultikeyTrackingIsNotSupportedByAllIndexType
         auto collection = getCollection();
         {
             MultikeyPaths multikeyPaths;
-            ASSERT(!collection->isIndexMultikey(
-                indexEntry->descriptor()->indexName(), &multikeyPaths));
+            ASSERT(!collection->isIndexMultikey(indexEntry->descriptor()->indexName(),
+                                                &multikeyPaths));
             ASSERT(multikeyPaths.empty());
         }
     }
@@ -402,8 +400,7 @@ TEST_F(DurableCatalogTest, CanSetEntireTextIndexAsMultikey) {
 
     {
         MultikeyPaths multikeyPaths;
-        ASSERT(collection->isIndexMultikey(
-            indexEntry->descriptor()->indexName(), &multikeyPaths));
+        ASSERT(collection->isIndexMultikey(indexEntry->descriptor()->indexName(), &multikeyPaths));
         ASSERT(multikeyPaths.empty());
     }
 }
@@ -422,8 +419,7 @@ TEST_F(DurableCatalogTest, NoOpWhenEntireIndexAlreadySetAsMultikey) {
 
     {
         MultikeyPaths multikeyPaths;
-        ASSERT(collection->isIndexMultikey(
-            indexEntry->descriptor()->indexName(), &multikeyPaths));
+        ASSERT(collection->isIndexMultikey(indexEntry->descriptor()->indexName(), &multikeyPaths));
         ASSERT(multikeyPaths.empty());
     }
 
@@ -436,8 +432,7 @@ TEST_F(DurableCatalogTest, NoOpWhenEntireIndexAlreadySetAsMultikey) {
 
     {
         MultikeyPaths multikeyPaths;
-        ASSERT(collection->isIndexMultikey(
-            indexEntry->descriptor()->indexName(), &multikeyPaths));
+        ASSERT(collection->isIndexMultikey(indexEntry->descriptor()->indexName(), &multikeyPaths));
         ASSERT(multikeyPaths.empty());
     }
 }
@@ -451,7 +446,8 @@ TEST_F(DurableCatalogTest, SinglePhaseIndexBuild) {
 
     {
         WriteUnitOfWork wuow(operationContext());
-        getCollectionWriter().getWritableCollection()->indexBuildSuccess(operationContext(), indexEntry);
+        getCollectionWriter().getWritableCollection()->indexBuildSuccess(operationContext(),
+                                                                         indexEntry);
         wuow.commit();
     }
 
@@ -470,7 +466,8 @@ TEST_F(DurableCatalogTest, TwoPhaseIndexBuild) {
 
     {
         WriteUnitOfWork wuow(operationContext());
-        getCollectionWriter().getWritableCollection()->indexBuildSuccess(operationContext(), indexEntry);
+        getCollectionWriter().getWritableCollection()->indexBuildSuccess(operationContext(),
+                                                                         indexEntry);
         wuow.commit();
     }
 
@@ -487,7 +484,8 @@ DEATH_TEST_REGEX_F(DurableCatalogTest,
     auto collection = getCollection();
 
     WriteUnitOfWork wuow(operationContext());
-    collection->setIndexIsMultikey(operationContext(), indexEntry->descriptor()->indexName(), {{0U}, {0U}});
+    collection->setIndexIsMultikey(
+        operationContext(), indexEntry->descriptor()->indexName(), {{0U}, {0U}});
 }
 
 TEST_F(DurableCatalogTest, ImportCollection) {

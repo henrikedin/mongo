@@ -866,19 +866,18 @@ StatusWith<std::pair<RecordId, std::unique_ptr<RecordStore>>> DurableCatalogImpl
 }
 
 Status DurableCatalogImpl::createIndex(OperationContext* opCtx,
-    RecordId catalogId,
-    const CollectionOptions& collOptions,
-    const IndexDescriptor* spec) {
+                                       RecordId catalogId,
+                                       const CollectionOptions& collOptions,
+                                       const IndexDescriptor* spec) {
     std::string ident = getIndexIdent(opCtx, catalogId, spec->indexName());
 
-     auto kvEngine = _engine->getEngine();
-     const Status status = kvEngine->createSortedDataInterface(
-        opCtx, collOptions, ident, spec);
-     if (status.isOK()) {
+    auto kvEngine = _engine->getEngine();
+    const Status status = kvEngine->createSortedDataInterface(opCtx, collOptions, ident, spec);
+    if (status.isOK()) {
         opCtx->recoveryUnit()->registerChange(
             std::make_unique<AddIndexChange>(opCtx->recoveryUnit(), _engine, ident));
     }
-     return status;
+    return status;
 }
 
 StatusWith<DurableCatalog::ImportResult> DurableCatalogImpl::importCollection(
@@ -1013,10 +1012,11 @@ Status DurableCatalogImpl::dropCollection(OperationContext* opCtx, RecordId cata
     return Status::OK();
 }
 
-BSONCollectionCatalogEntry::IndexMetaData DurableCatalogImpl::prepareIndexMetaDataForIndexBuild(OperationContext* opCtx,
-        const IndexDescriptor* spec,
-        boost::optional<UUID> buildUUID,
-        bool isBackgroundSecondaryBuild) {
+BSONCollectionCatalogEntry::IndexMetaData DurableCatalogImpl::prepareIndexMetaDataForIndexBuild(
+    OperationContext* opCtx,
+    const IndexDescriptor* spec,
+    boost::optional<UUID> buildUUID,
+    bool isBackgroundSecondaryBuild) {
     BSONCollectionCatalogEntry::IndexMetaData imd;
     imd.spec = spec->infoObj();
     imd.ready = false;

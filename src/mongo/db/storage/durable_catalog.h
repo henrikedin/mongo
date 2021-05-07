@@ -135,7 +135,10 @@ public:
         const CollectionOptions& options,
         bool allocateDefaultSpace) = 0;
 
-    virtual Status createIndex(OperationContext* opCtx, RecordId catalogId, const CollectionOptions& collOptions, const IndexDescriptor* spec) = 0;
+    virtual Status createIndex(OperationContext* opCtx,
+                               RecordId catalogId,
+                               const CollectionOptions& collOptions,
+                               const IndexDescriptor* spec) = 0;
 
     virtual BSONCollectionCatalogEntry::IndexMetaData prepareIndexMetaDataForIndexBuild(
         OperationContext* opCtx,

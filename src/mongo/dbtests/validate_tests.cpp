@@ -3359,8 +3359,8 @@ public:
         auto descriptor = indexCatalog->findIndexByName(&_opCtx, indexName);
         {
             WriteUnitOfWork wunit(&_opCtx);
-            //auto writableCatalog = const_cast<IndexCatalog*>(indexCatalog);
-            //descriptor = writableCatalog->refreshEntry(&_opCtx, descriptor);
+            // auto writableCatalog = const_cast<IndexCatalog*>(indexCatalog);
+            // descriptor = writableCatalog->refreshEntry(&_opCtx, descriptor);
             wunit.commit();
         }
 

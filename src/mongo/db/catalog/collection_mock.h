@@ -364,9 +364,7 @@ public:
         std::abort();
     }
 
-    void updateTTLSetting(OperationContext* opCtx,
-                          StringData idxName,
-                          long long newExpireSeconds) {
+    void updateTTLSetting(OperationContext* opCtx, StringData idxName, long long newExpireSeconds) {
         std::abort();
     }
 

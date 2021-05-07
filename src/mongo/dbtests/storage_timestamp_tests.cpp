@@ -245,7 +245,8 @@ public:
                 if (_opCtx->recoveryUnit()->getCommitTimestamp().isNull()) {
                     ASSERT_OK(_opCtx->recoveryUnit()->setTimestamp(Timestamp(1, 1)));
                 }
-                collRaii.getWritableCollection()->getIndexCatalog()->dropAllIndexes(_opCtx, collRaii.getWritableCollection(), false);
+                collRaii.getWritableCollection()->getIndexCatalog()->dropAllIndexes(
+                    _opCtx, collRaii.getWritableCollection(), false);
                 wunit.commit();
                 return;
             }
@@ -327,9 +328,8 @@ public:
         return optRecord.get().data.toBson();
     }
 
-    std::shared_ptr<BSONCollectionCatalogEntry::MetaData> getMetaDataAtTime(DurableCatalog* durableCatalog,
-                                                           RecordId catalogId,
-                                                           const Timestamp& ts) {
+    std::shared_ptr<BSONCollectionCatalogEntry::MetaData> getMetaDataAtTime(
+        DurableCatalog* durableCatalog, RecordId catalogId, const Timestamp& ts) {
         OneOffRead oor(_opCtx, ts);
         return durableCatalog->getMetaData(_opCtx, catalogId);
     }
@@ -681,12 +681,10 @@ public:
 
         MultikeyPaths actualMultikeyPaths;
         if (!shouldBeMultikey) {
-            ASSERT_FALSE(collection->isIndexMultikey(
-                indexName, &actualMultikeyPaths))
+            ASSERT_FALSE(collection->isIndexMultikey(indexName, &actualMultikeyPaths))
                 << "index " << indexName << " should not be multikey at timestamp " << ts;
         } else {
-            ASSERT(collection->isIndexMultikey(
-                indexName, &actualMultikeyPaths))
+            ASSERT(collection->isIndexMultikey(indexName, &actualMultikeyPaths))
                 << "index " << indexName << " should be multikey at timestamp " << ts;
         }
 
