@@ -73,7 +73,7 @@ Status rebuildIndexesForNamespace(OperationContext* opCtx,
                                   StorageEngine* engine) {
     opCtx->checkForInterrupt();
     auto collection = CollectionCatalog::get(opCtx)->lookupCollectionByNamespace(opCtx, nss);
-    auto swIndexNameObjs = getIndexNameObjs(opCtx, collection->getCatalogId());
+    auto swIndexNameObjs = getIndexNameObjs(collection);
     if (!swIndexNameObjs.isOK())
         return swIndexNameObjs.getStatus();
 

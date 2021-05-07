@@ -633,6 +633,8 @@ public:
     virtual bool isIndexPresent(StringData indexName) const = 0;
 
     virtual bool isIndexReady(StringData indexName) const = 0;
+
+    virtual void replaceMetadata(OperationContext* opCtx, std::shared_ptr<BSONCollectionCatalogEntry::MetaData> md) = 0;
     
     //
     // Stats

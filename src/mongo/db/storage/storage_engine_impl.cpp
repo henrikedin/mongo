@@ -680,7 +680,11 @@ StatusWith<StorageEngine::ReconcileResult> StorageEngineImpl::reconcileCatalogAn
         }
         if (indexesToDrop.size() > 0) {
             WriteUnitOfWork wuow(opCtx);
-            _catalog->putMetaData(opCtx, entry.catalogId, *metaData);
+            auto collection =
+                CollectionCatalog::get(opCtx)->lookupCollectionByNamespaceForMetadataWrite(
+                    opCtx, CollectionCatalog::LifetimeMode::kInplace, entry.nss);
+            invariant(collection->getCatalogId() == entry.catalogId);
+            collection->replaceMetadata(opCtx, std::move(metaData));
             wuow.commit();
         }
     }

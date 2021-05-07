@@ -1921,5 +1921,10 @@ bool CollectionImpl::isIndexReady(StringData indexName) const {
     return _metadata->indexes[offset].ready;
 }
 
+void CollectionImpl::replaceMetadata(OperationContext* opCtx, std::shared_ptr<BSONCollectionCatalogEntry::MetaData> md) {
+    DurableCatalog::get(opCtx)->putMetaData(opCtx, getCatalogId(), *md);
+    _metadata = std::move(md);
+}
+
 
 }  // namespace mongo

@@ -360,11 +360,12 @@ void reconcileCatalogAndRebuildUnfinishedIndexes(
     // Determine which indexes need to be rebuilt. rebuildIndexesOnCollection() requires that all
     // indexes on that collection are done at once, so we use a map to group them together.
     StringMap<IndexNameObjs> nsToIndexNameObjMap;
+    auto catalog = CollectionCatalog::get(opCtx);
     for (auto&& idxIdentifier : reconcileResult.indexesToRebuild) {
         NamespaceString collNss = idxIdentifier.nss;
         const std::string& indexName = idxIdentifier.indexName;
         auto swIndexSpecs =
-            getIndexNameObjs(opCtx, idxIdentifier.catalogId, [&indexName](const std::string& name) {
+            getIndexNameObjs(catalog->lookupCollectionByNamespace(opCtx, collNss), [&indexName](const std::string& name) {
                 return name == indexName;
             });
         if (!swIndexSpecs.isOK() || swIndexSpecs.getValue().first.empty()) {
@@ -383,7 +384,6 @@ void reconcileCatalogAndRebuildUnfinishedIndexes(
         ino.second.emplace_back(std::move(indexesToRebuild.second.back()));
     }
 
-    auto catalog = CollectionCatalog::get(opCtx);
     for (const auto& entry : nsToIndexNameObjMap) {
         NamespaceString collNss(entry.first);
 

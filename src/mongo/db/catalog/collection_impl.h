@@ -441,6 +441,8 @@ public:
 
     bool isIndexReady(StringData indexName) const final;
 
+    void replaceMetadata(OperationContext* opCtx, std::shared_ptr<BSONCollectionCatalogEntry::MetaData> md) final;
+
 private:
     /**
      * Returns a non-ok Status if document does not pass this collection's validator.
