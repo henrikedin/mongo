@@ -604,8 +604,8 @@ BSONObj DurableCatalogImpl::_findEntry(OperationContext* opCtx, RecordId catalog
     return data.releaseToBson().getOwned();
 }
 
-std::shared_ptr<BSONCollectionCatalogEntry::MetaData> DurableCatalogImpl::getMetaData(OperationContext* opCtx,
-                                                                     RecordId catalogId) const {
+std::shared_ptr<BSONCollectionCatalogEntry::MetaData> DurableCatalogImpl::getMetaData(
+    OperationContext* opCtx, RecordId catalogId) const {
     BSONObj obj = _findEntry(opCtx, catalogId);
     LOGV2_DEBUG(22209, 3, " fetched CCE metadata: {obj}", "obj"_attr = obj);
     std::shared_ptr<BSONCollectionCatalogEntry::MetaData> md;
@@ -986,7 +986,7 @@ Status DurableCatalogImpl::dropCollection(OperationContext* opCtx, RecordId cata
     }
 
     invariant(opCtx->lockState()->isCollectionLockedForMode(entry.nss, MODE_X));
-    //invariant(getTotalIndexCount(opCtx, catalogId) == 0);
+    // invariant(getTotalIndexCount(opCtx, catalogId) == 0);
 
     // Remove metadata from mdb_catalog
     Status status = _removeEntry(opCtx, catalogId);
@@ -1005,8 +1005,7 @@ Status DurableCatalogImpl::dropAndRecreateIndexIdentForResume(OperationContext* 
     if (!status.isOK())
         return status;
 
-    status = _engine->getEngine()->createSortedDataInterface(
-        opCtx, collOptions, ident, spec);
+    status = _engine->getEngine()->createSortedDataInterface(opCtx, collOptions, ident, spec);
 
     return status;
 }

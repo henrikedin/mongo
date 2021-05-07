@@ -256,10 +256,8 @@ Status _createTimeseries(OperationContext* opCtx,
                 // Compare CollectionOptions and eventual TTL index to see if this bucket collection
                 // may be reused for this request.
                 existingBucketCollectionIsCompatible =
-                    coll->getCollectionOptions()
-                        .matchesStorageOptions(
-                            bucketsOptions,
-                            CollatorFactoryInterface::get(opCtx->getServiceContext()));
+                    coll->getCollectionOptions().matchesStorageOptions(
+                        bucketsOptions, CollatorFactoryInterface::get(opCtx->getServiceContext()));
                 if (expireAfterSeconds && !bucketsOptions.clusteredIndex) {
                     auto indexDescriptor =
                         coll->getIndexCatalog()->findIndexByName(opCtx, indexName, true);

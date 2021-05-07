@@ -856,7 +856,7 @@ void checkRbidAndUpdateMinValid(OperationContext* opCtx,
  * collection.
  */
 void dropIndex(OperationContext* opCtx,
-    Collection* collection,
+               Collection* collection,
                const string& indexName,
                NamespaceString& nss) {
     IndexCatalog* indexCatalog = collection->getIndexCatalog();
@@ -1646,9 +1646,7 @@ void rollback_internal::syncFixUp(OperationContext* opCtx,
                         "namespace"_attr = *nss,
                         "uuid"_attr = uuid,
                         "info"_attr = redact(info),
-                        "catalogId"_attr =
-                            redact(collection->getCollectionOptions()
-                                       .toBSON()));
+                        "catalogId"_attr = redact(collection->getCollectionOptions().toBSON()));
         }
 
         // Since we read from the sync source to retrieve the metadata of the

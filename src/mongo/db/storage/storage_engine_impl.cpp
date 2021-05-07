@@ -804,7 +804,8 @@ Status StorageEngineImpl::_dropCollectionsNoTimestamp(OperationContext* opCtx,
     WriteUnitOfWork untimestampedDropWuow(opCtx);
     auto collectionCatalog = CollectionCatalog::get(opCtx);
     for (auto& uuid : toDrop) {
-        auto coll = collectionCatalog->lookupCollectionByUUIDForMetadataWrite(opCtx, CollectionCatalog::LifetimeMode::kInplace, uuid);
+        auto coll = collectionCatalog->lookupCollectionByUUIDForMetadataWrite(
+            opCtx, CollectionCatalog::LifetimeMode::kInplace, uuid);
 
         // No need to remove the indexes from the IndexCatalog because eliminating the Collection
         // will have the same effect.
@@ -815,10 +816,8 @@ Status StorageEngineImpl::_dropCollectionsNoTimestamp(OperationContext* opCtx,
 
             audit::logDropIndex(opCtx->getClient(), ice->descriptor()->indexName(), coll->ns());
 
-            catalog::removeIndex(opCtx,
-                                 ice->descriptor()->indexName(),
-                                 coll,
-                                 ice->getSharedIdent());
+            catalog::removeIndex(
+                opCtx, ice->descriptor()->indexName(), coll, ice->getSharedIdent());
         }
 
         audit::logDropCollection(opCtx->getClient(), coll->ns());

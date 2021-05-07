@@ -59,15 +59,13 @@ public:
     // ------ for implementors
 
     struct IndexMetaData {
-        IndexMetaData() {
-        }
+        IndexMetaData() {}
 
         IndexMetaData(const IndexMetaData& other)
             : spec(other.spec),
               ready(other.ready),
               isBackgroundSecondaryBuild(other.isBackgroundSecondaryBuild),
-              buildUUID(other.buildUUID)
-        {
+              buildUUID(other.buildUUID) {
             stdx::lock_guard lock(other.multikeyMutex);
             multikey = other.multikey;
             multikeyPaths = other.multikeyPaths;
@@ -89,7 +87,7 @@ public:
             isBackgroundSecondaryBuild = std::move(rhs.isBackgroundSecondaryBuild);
             buildUUID = std::move(rhs.buildUUID);
             multikey = std::move(rhs.multikey);
-            multikeyPaths=std::move(rhs.multikeyPaths);
+            multikeyPaths = std::move(rhs.multikeyPaths);
             return *this;
         }
 

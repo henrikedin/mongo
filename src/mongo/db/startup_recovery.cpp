@@ -224,15 +224,13 @@ Status ensureCollectionProperties(OperationContext* opCtx,
 
         // All user-created replicated collections created since MongoDB 4.0 have _id indexes.
         auto requiresIndex = coll->requiresIdIndex() && coll->ns().isReplicated();
-        const auto& collOptions =
-            coll->getCollectionOptions();
+        const auto& collOptions = coll->getCollectionOptions();
         auto hasAutoIndexIdField = collOptions.autoIndexId == CollectionOptions::YES;
 
         // Even if the autoIndexId field is not YES, the collection may still have an _id index
         // that was created manually by the user. Check the list of indexes to confirm index
         // does not exist before attempting to build it or returning an error.
-        if (requiresIndex && !hasAutoIndexIdField &&
-            !checkIdIndexExists(opCtx, coll)) {
+        if (requiresIndex && !hasAutoIndexIdField && !checkIdIndexExists(opCtx, coll)) {
             LOGV2(21001,
                   "collection {coll_ns} is missing an _id index",
                   "Collection is missing an _id index",
@@ -365,9 +363,8 @@ void reconcileCatalogAndRebuildUnfinishedIndexes(
         NamespaceString collNss = idxIdentifier.nss;
         const std::string& indexName = idxIdentifier.indexName;
         auto swIndexSpecs =
-            getIndexNameObjs(catalog->lookupCollectionByNamespace(opCtx, collNss), [&indexName](const std::string& name) {
-                return name == indexName;
-            });
+            getIndexNameObjs(catalog->lookupCollectionByNamespace(opCtx, collNss),
+                             [&indexName](const std::string& name) { return name == indexName; });
         if (!swIndexSpecs.isOK() || swIndexSpecs.getValue().first.empty()) {
             fassert(40590,
                     {ErrorCodes::InternalError,

@@ -371,8 +371,7 @@ void _validateCatalogEntry(OperationContext* opCtx,
                            ValidateState* validateState,
                            ValidateResults* results) {
     const auto& collection = validateState->getCollection();
-    const auto& options =
-        collection->getCollectionOptions();
+    const auto& options = collection->getCollectionOptions();
     if (options.uuid) {
         addErrorIfUnequal(*(options.uuid), validateState->uuid(), "UUID", results);
     } else {
@@ -411,8 +410,7 @@ void _validateCatalogEntry(OperationContext* opCtx,
     collection->getReadyIndexes(&indexes);
     for (auto& index : indexes) {
         MultikeyPaths multikeyPaths;
-        const bool isMultikey = collection->isIndexMultikey(
-            index, &multikeyPaths);
+        const bool isMultikey = collection->isIndexMultikey(index, &multikeyPaths);
         const bool hasMultiKeyPaths = std::any_of(multikeyPaths.begin(),
                                                   multikeyPaths.end(),
                                                   [](auto& pathSet) { return pathSet.size() > 0; });

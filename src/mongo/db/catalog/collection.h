@@ -547,9 +547,7 @@ public:
      * Hide or unhide the given index. A hidden index will not be considered for use by the
      * query planner.
      */
-    virtual void updateHiddenSetting(OperationContext* opCtx,
-                                     StringData idxName,
-                                     bool hidden) = 0;
+    virtual void updateHiddenSetting(OperationContext* opCtx, StringData idxName, bool hidden) = 0;
 
     /**
      * Updates the 'temp' setting for this collection.
@@ -589,8 +587,7 @@ public:
      * multikey information, then 'multikeyPaths' is initialized as a vector with size equal to the
      * number of elements in the index key pattern of empty sets.
      */
-    virtual bool isIndexMultikey(StringData indexName,
-                                 MultikeyPaths* multikeyPaths) const = 0;
+    virtual bool isIndexMultikey(StringData indexName, MultikeyPaths* multikeyPaths) const = 0;
 
     /**
      * Sets the index identified by 'indexName' to be multikey.
@@ -634,8 +631,9 @@ public:
 
     virtual bool isIndexReady(StringData indexName) const = 0;
 
-    virtual void replaceMetadata(OperationContext* opCtx, std::shared_ptr<BSONCollectionCatalogEntry::MetaData> md) = 0;
-    
+    virtual void replaceMetadata(OperationContext* opCtx,
+                                 std::shared_ptr<BSONCollectionCatalogEntry::MetaData> md) = 0;
+
     //
     // Stats
     //
@@ -701,7 +699,8 @@ public:
     virtual const CollatorInterface* getDefaultCollator() const = 0;
 
     /**
-     * Returns a cached version of the Collection MetaData that matches the version of this Collection instance.
+     * Returns a cached version of the Collection MetaData that matches the version of this
+     * Collection instance.
      */
     virtual const CollectionOptions& getCollectionOptions() const = 0;
 

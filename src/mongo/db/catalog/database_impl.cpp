@@ -230,8 +230,7 @@ void DatabaseImpl::clearTmpCollections(OperationContext* opCtx) const {
     };
 
     CollectionCatalog::CollectionInfoFn predicate = [&](const CollectionPtr& collection) {
-        return collection->getCollectionOptions()
-            .temp;
+        return collection->getCollectionOptions().temp;
     };
 
     catalog::forEachCollectionFromDb(opCtx, name(), MODE_X, callback, predicate);
@@ -516,8 +515,7 @@ void DatabaseImpl::_dropCollectionIndexes(OperationContext* opCtx,
         20316, 1, "dropCollection: {namespace} - dropAllIndexes start", "namespace"_attr = nss);
     collection->getIndexCatalog()->dropAllIndexes(opCtx, collection, true);
 
-    invariant(collection->getTotalIndexCount() ==
-              0);
+    invariant(collection->getTotalIndexCount() == 0);
     LOGV2_DEBUG(
         20317, 1, "dropCollection: {namespace} - dropAllIndexes done", "namespace"_attr = nss);
 }
@@ -742,7 +740,9 @@ Collection* DatabaseImpl::createCollection(OperationContext* opCtx,
                 // initialized, so use the unsafe fCV getter here.
                 IndexCatalog* ic = collection->getIndexCatalog();
                 fullIdIndexSpec = uassertStatusOK(ic->createIndexOnEmptyCollection(
-                    opCtx, collection, !idIndex.isEmpty() ? idIndex : ic->getDefaultIdIndexSpec(collection)));
+                    opCtx,
+                    collection,
+                    !idIndex.isEmpty() ? idIndex : ic->getDefaultIdIndexSpec(collection)));
             } else {
                 // autoIndexId: false is only allowed on unreplicated collections.
                 uassert(50001,

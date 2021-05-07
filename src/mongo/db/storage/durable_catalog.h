@@ -82,8 +82,8 @@ public:
 
     virtual BSONObj getCatalogEntry(OperationContext* opCtx, RecordId catalogId) const = 0;
 
-    virtual std::shared_ptr<BSONCollectionCatalogEntry::MetaData> getMetaData(OperationContext* opCtx,
-                                                             RecordId id) const = 0;
+    virtual std::shared_ptr<BSONCollectionCatalogEntry::MetaData> getMetaData(
+        OperationContext* opCtx, RecordId id) const = 0;
 
     /**
      * Updates the catalog entry for the collection 'nss' with the fields specified in 'md'. If
@@ -185,13 +185,6 @@ public:
                                                       const IndexDescriptor* spec,
                                                       StringData ident) = 0;
 
-    
-
-    
-
-    
-
-    
 
     virtual void setRand_forTest(const std::string& rand) = 0;
 

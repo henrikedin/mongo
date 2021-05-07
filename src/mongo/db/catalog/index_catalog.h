@@ -278,7 +278,8 @@ public:
      * The caller must hold the collection X lock and ensure no index builds are in progress
      * on the collection.
      */
-    virtual const IndexDescriptor* refreshEntry(OperationContext* const opCtx,Collection* collection,
+    virtual const IndexDescriptor* refreshEntry(OperationContext* const opCtx,
+                                                Collection* collection,
                                                 const IndexDescriptor* const oldDesc) = 0;
 
     /**
@@ -313,7 +314,8 @@ public:
      *
      */
 
-    virtual IndexCatalogEntry* createIndexEntry(OperationContext* opCtx,Collection* collection,
+    virtual IndexCatalogEntry* createIndexEntry(OperationContext* opCtx,
+                                                Collection* collection,
                                                 std::unique_ptr<IndexDescriptor> descriptor,
                                                 CreateIndexEntryFlags flags) = 0;
 
@@ -322,7 +324,8 @@ public:
      * empty collection can be rolled back as part of a larger WUOW. Returns the full specification
      * of the created index, as it is stored in this index catalog.
      */
-    virtual StatusWith<BSONObj> createIndexOnEmptyCollection(OperationContext* const opCtx,Collection* collection,
+    virtual StatusWith<BSONObj> createIndexOnEmptyCollection(OperationContext* const opCtx,
+                                                             Collection* collection,
                                                              const BSONObj spec) = 0;
 
     /**
@@ -354,7 +357,8 @@ public:
      * they are not, then IndexBuildAlreadyInProgress errors can be thrown.
      */
     virtual std::vector<BSONObj> removeExistingIndexes(
-        OperationContext* const opCtx, const CollectionPtr& collection,
+        OperationContext* const opCtx,
+        const CollectionPtr& collection,
         const std::vector<BSONObj>& indexSpecsToBuild,
         const bool removeIndexBuildsToo) const = 0;
 
@@ -369,17 +373,22 @@ public:
      * via replica set cloning or chunk migrations.
      */
     virtual std::vector<BSONObj> removeExistingIndexesNoChecks(
-        OperationContext* const opCtx, const CollectionPtr& collection, const std::vector<BSONObj>& indexSpecsToBuild) const = 0;
+        OperationContext* const opCtx,
+        const CollectionPtr& collection,
+        const std::vector<BSONObj>& indexSpecsToBuild) const = 0;
 
     /**
      * Drops all indexes in the index catalog, optionally dropping the id index depending on the
      * 'includingIdIndex' parameter value. If 'onDropFn' is provided, it will be called before each
      * index is dropped to allow timestamping each individual drop.
      */
-    virtual void dropAllIndexes(OperationContext* opCtx,Collection* collection,
+    virtual void dropAllIndexes(OperationContext* opCtx,
+                                Collection* collection,
                                 bool includingIdIndex,
                                 std::function<void(const IndexDescriptor*)> onDropFn) = 0;
-    virtual void dropAllIndexes(OperationContext* opCtx, Collection* collection,bool includingIdIndex) = 0;
+    virtual void dropAllIndexes(OperationContext* opCtx,
+                                Collection* collection,
+                                bool includingIdIndex) = 0;
 
     /**
      * Drops the index given its descriptor.
@@ -387,14 +396,17 @@ public:
      * The caller must hold the collection X lock and ensure no index builds are in progress on the
      * collection.
      */
-    virtual Status dropIndex(OperationContext* const opCtx, Collection* collection, const IndexDescriptor* const desc) = 0;
+    virtual Status dropIndex(OperationContext* const opCtx,
+                             Collection* collection,
+                             const IndexDescriptor* const desc) = 0;
 
     /**
      * Drops an unfinished index given its descriptor.
      *
      * The caller must hold the collection X lock.
      */
-    virtual Status dropUnfinishedIndex(OperationContext* const opCtx,Collection* collection,
+    virtual Status dropUnfinishedIndex(OperationContext* const opCtx,
+                                       Collection* collection,
                                        const IndexDescriptor* const desc) = 0;
 
     /**
@@ -402,12 +414,16 @@ public:
      *
      * The caller must hold the collection X lock.
      */
-    virtual Status dropIndexEntry(OperationContext* opCtx, Collection* collection, IndexCatalogEntry* entry) = 0;
+    virtual Status dropIndexEntry(OperationContext* opCtx,
+                                  Collection* collection,
+                                  IndexCatalogEntry* entry) = 0;
 
     /**
      * Deletes the index from the durable catalog on disk.
      */
-    virtual void deleteIndexFromDisk(OperationContext* opCtx, Collection* collection, const std::string& indexName) = 0;
+    virtual void deleteIndexFromDisk(OperationContext* opCtx,
+                                     Collection* collection,
+                                     const std::string& indexName) = 0;
 
     // ---- modify single index
 
@@ -454,7 +470,7 @@ public:
      * this operation.
      */
     virtual void unindexRecord(OperationContext* const opCtx,
-        const CollectionPtr& collection,
+                               const CollectionPtr& collection,
                                const BSONObj& obj,
                                const RecordId& loc,
                                const bool noWarn,

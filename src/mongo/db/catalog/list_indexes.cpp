@@ -77,26 +77,20 @@ std::list<BSONObj> listIndexesInLock(OperationContext* opCtx,
         collection->getAllIndexes(&indexNames);
 
         for (size_t i = 0; i < indexNames.size(); i++) {
-            if (!includeBuildUUIDs.value_or(false) ||
-                collection->isIndexReady(indexNames[i])) {
-                indexSpecs.push_back(
-                    collection->getIndexSpec(indexNames[i]));
+            if (!includeBuildUUIDs.value_or(false) || collection->isIndexReady(indexNames[i])) {
+                indexSpecs.push_back(collection->getIndexSpec(indexNames[i]));
                 continue;
             }
             // The durable catalog will not have a build UUID for the given index name if it was
             // not being built with two-phase.
-            const auto durableBuildUUID = collection->getIndexBuildUUID(
-                indexNames[i]);
+            const auto durableBuildUUID = collection->getIndexBuildUUID(indexNames[i]);
             if (!durableBuildUUID) {
-                indexSpecs.push_back(
-                    collection->getIndexSpec(indexNames[i]));
+                indexSpecs.push_back(collection->getIndexSpec(indexNames[i]));
                 continue;
             }
 
             BSONObjBuilder builder;
-            builder.append(
-                "spec"_sd,
-                collection->getIndexSpec(indexNames[i]));
+            builder.append("spec"_sd, collection->getIndexSpec(indexNames[i]));
             durableBuildUUID->appendToBuilder(&builder, "buildUUID"_sd);
             indexSpecs.push_back(builder.obj());
         }

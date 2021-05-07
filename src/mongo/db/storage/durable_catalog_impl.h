@@ -79,7 +79,7 @@ public:
     }
 
     std::shared_ptr<BSONCollectionCatalogEntry::MetaData> getMetaData(OperationContext* opCtx,
-                                                     RecordId catalogId) const;
+                                                                      RecordId catalogId) const;
     void putMetaData(OperationContext* opCtx,
                      RecordId catalogId,
                      BSONCollectionCatalogEntry::MetaData& md);

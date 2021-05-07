@@ -524,8 +524,7 @@ Status _collModInternal(OperationContext* opCtx,
         // options to provide to the OpObserver. TTL index updates aren't a part of collection
         // options so we save the relevant TTL index data in a separate object.
 
-        const CollectionOptions& oldCollOptions =
-            coll->getCollectionOptions();
+        const CollectionOptions& oldCollOptions = coll->getCollectionOptions();
 
         boost::optional<IndexCollModInfo> indexCollModInfo;
 
@@ -550,9 +549,8 @@ Status _collModInternal(OperationContext* opCtx,
                 if (SimpleBSONElementComparator::kInstance.evaluate(oldExpireSecs !=
                                                                     newExpireSecs)) {
                     // Change the value of "expireAfterSeconds" on disk.
-                    coll.getWritableCollection()->updateTTLSetting(opCtx,
-                                                                 idx->indexName(),
-                                                                 newExpireSecs.safeNumberLong());
+                    coll.getWritableCollection()->updateTTLSetting(
+                        opCtx, idx->indexName(), newExpireSecs.safeNumberLong());
                 }
             }
 
@@ -580,7 +578,8 @@ Status _collModInternal(OperationContext* opCtx,
             // Notify the index catalog that the definition of this index changed. This will
             // invalidate the local idx pointer. On rollback of this WUOW, the idx pointer in
             // cmrNew will be invalidated and the local var idx pointer will be valid again.
-            cmrNew.idx = coll.getWritableCollection()->getIndexCatalog()->refreshEntry(opCtx, coll.getWritableCollection(), idx);
+            cmrNew.idx = coll.getWritableCollection()->getIndexCatalog()->refreshEntry(
+                opCtx, coll.getWritableCollection(), idx);
             opCtx->recoveryUnit()->registerChange(std::make_unique<CollModResultChange>(
                 oldExpireSecs, newExpireSecs, oldHidden, newHidden, result));
 

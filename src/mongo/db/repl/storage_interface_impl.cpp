@@ -261,7 +261,8 @@ StorageInterfaceImpl::createCollectionForBulkLoading(
             if (!idIndexSpec.isEmpty()) {
                 auto status = autoColl->getWritableCollection()
                                   ->getIndexCatalog()
-                                  ->createIndexOnEmptyCollection(opCtx.get(), autoColl->getWritableCollection(), idIndexSpec);
+                                  ->createIndexOnEmptyCollection(
+                                      opCtx.get(), autoColl->getWritableCollection(), idIndexSpec);
                 if (!status.getStatus().isOK()) {
                     return status.getStatus();
                 }
@@ -269,7 +270,8 @@ StorageInterfaceImpl::createCollectionForBulkLoading(
             for (auto&& spec : secondaryIndexSpecs) {
                 auto status = autoColl->getWritableCollection()
                                   ->getIndexCatalog()
-                                  ->createIndexOnEmptyCollection(opCtx.get(),autoColl->getWritableCollection(), spec);
+                                  ->createIndexOnEmptyCollection(
+                                      opCtx.get(), autoColl->getWritableCollection(), spec);
                 if (!status.getStatus().isOK()) {
                     return status.getStatus();
                 }
@@ -479,12 +481,10 @@ StatusWith<size_t> StorageInterfaceImpl::getOplogMaxSize(OperationContext* opCtx
     if (!oplog) {
         return {ErrorCodes::NamespaceNotFound, "Your oplog doesn't exist."};
     }
-    const auto options =
-        oplog->getCollectionOptions();
+    const auto options = oplog->getCollectionOptions();
     if (!options.capped)
         return {ErrorCodes::BadValue,
-                str::stream()
-                    << NamespaceString::kRsOplogNamespace.ns() << " isn't capped"};
+                str::stream() << NamespaceString::kRsOplogNamespace.ns() << " isn't capped"};
     return options.cappedSize;
 }
 

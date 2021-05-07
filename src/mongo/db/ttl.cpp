@@ -326,21 +326,18 @@ private:
                                 TTLCollectionCache* ttlCollectionCache,
                                 const CollectionPtr& collection,
                                 std::string indexName) {
-        if (!collection->isIndexPresent(
-                indexName)) {
+        if (!collection->isIndexPresent(indexName)) {
             ttlCollectionCache->deregisterTTLInfo(collection->uuid(), indexName);
             return;
         }
 
-        BSONObj spec =
-            collection->getIndexSpec(indexName);
+        BSONObj spec = collection->getIndexSpec(indexName);
         if (!spec.hasField(IndexDescriptor::kExpireAfterSecondsFieldName)) {
             ttlCollectionCache->deregisterTTLInfo(collection->uuid(), indexName);
             return;
         }
 
-        if (!collection->isIndexReady(
-                indexName)) {
+        if (!collection->isIndexReady(indexName)) {
             return;
         }
 
@@ -451,8 +448,7 @@ private:
     void deleteExpiredWithCollscan(OperationContext* opCtx,
                                    TTLCollectionCache* ttlCollectionCache,
                                    const CollectionPtr& collection) {
-        const auto& collOptions =
-            collection->getCollectionOptions();
+        const auto& collOptions = collection->getCollectionOptions();
         uassert(5400701,
                 "collection is not clustered by _id but is described as being TTL",
                 collOptions.clusteredIndex);

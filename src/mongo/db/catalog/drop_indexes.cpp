@@ -214,7 +214,7 @@ Status dropIndexByDescriptor(OperationContext* opCtx,
     opCtx->getServiceContext()->getOpObserver()->onDropIndex(
         opCtx, collection->ns(), collection->uuid(), desc->indexName(), desc->infoObj());
 
-    auto s = indexCatalog->dropIndex(opCtx, collection,desc);
+    auto s = indexCatalog->dropIndex(opCtx, collection, desc);
     if (!s.isOK()) {
         return s;
     }
@@ -427,8 +427,8 @@ DropIndexesReply dropIndexes(OperationContext* opCtx,
                     continue;
                 }
 
-                uassertStatusOK(
-                    dropIndexByDescriptor(opCtx, collection->getWritableCollection(), indexCatalog, desc));
+                uassertStatusOK(dropIndexByDescriptor(
+                    opCtx, collection->getWritableCollection(), indexCatalog, desc));
             }
 
             wuow.commit();

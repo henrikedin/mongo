@@ -132,9 +132,8 @@ void openCatalog(OperationContext* opCtx,
         auto indexName = indexIdentifier.indexName;
         auto coll = catalog->lookupCollectionByNamespace(opCtx, indexIdentifier.nss);
         invariant(indexIdentifier.catalogId == coll->getCatalogId());
-        auto indexSpecs =
-            getIndexNameObjs(coll,
-                             [&indexName](const std::string& name) { return name == indexName; });
+        auto indexSpecs = getIndexNameObjs(
+            coll, [&indexName](const std::string& name) { return name == indexName; });
         if (!indexSpecs.isOK() || indexSpecs.getValue().first.empty()) {
             fassert(40689,
                     {ErrorCodes::InternalError,

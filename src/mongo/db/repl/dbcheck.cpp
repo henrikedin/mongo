@@ -370,8 +370,7 @@ std::vector<BSONObj> collectionIndexInfo(OperationContext* opCtx, const Collecti
 }
 
 BSONObj collectionOptions(OperationContext* opCtx, const CollectionPtr& collection) {
-    return collection->getCollectionOptions()
-        .toBSON();
+    return collection->getCollectionOptions().toBSON();
 }
 
 AutoGetDbForDbCheck::AutoGetDbForDbCheck(OperationContext* opCtx, const NamespaceString& nss)

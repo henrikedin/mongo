@@ -123,7 +123,8 @@ void IndexCatalogEntryImpl::init(std::unique_ptr<IndexAccessMethod> accessMethod
     _accessMethod = std::move(accessMethod);
 }
 
-bool IndexCatalogEntryImpl::isReady(OperationContext* opCtx, const CollectionPtr& collection) const {
+bool IndexCatalogEntryImpl::isReady(OperationContext* opCtx,
+                                    const CollectionPtr& collection) const {
     // For multi-document transactions, we can open a snapshot prior to checking the
     // minimumSnapshotVersion on a collection.  This means we are unprotected from reading
     // out-of-sync index catalog entries.  To fix this, we uassert if we detect that the
@@ -265,8 +266,7 @@ void IndexCatalogEntryImpl::forceSetMultikey(OperationContext* const opCtx,
     // caller wants to upgrade this index because it knows exactly which paths are multikey. We rely
     // on the following function to make sure this upgrade only takes place on index types that
     // currently support path-level multikey path tracking.
-    coll->forceSetIndexIsMultikey(
-        opCtx, _descriptor.get(), isMultikey, multikeyPaths);
+    coll->forceSetIndexIsMultikey(opCtx, _descriptor.get(), isMultikey, multikeyPaths);
 
     // The prior call to set the multikey metadata in the catalog does some validation and clean up
     // based on the inputs, so reset the multikey variables based on what is actually in the durable
@@ -366,8 +366,7 @@ bool IndexCatalogEntryImpl::isPresentInMySnapshot(const CollectionPtr& collectio
 
 bool IndexCatalogEntryImpl::_catalogIsMultikey(const CollectionPtr& collection,
                                                MultikeyPaths* multikeyPaths) const {
-    return collection->isIndexMultikey(
-        _descriptor->indexName(), multikeyPaths);
+    return collection->isIndexMultikey(_descriptor->indexName(), multikeyPaths);
 }
 
 void IndexCatalogEntryImpl::_catalogSetMultikey(OperationContext* opCtx,
@@ -378,8 +377,8 @@ void IndexCatalogEntryImpl::_catalogSetMultikey(OperationContext* opCtx,
     // CollectionCatalogEntry::setIndexIsMultikey() requires that we discard the path-level
     // multikey information in order to avoid unintentionally setting path-level multikey
     // information on an index created before 3.4.
-    auto indexMetadataHasChanged = collection->setIndexIsMultikey(
-        opCtx, _descriptor->indexName(), multikeyPaths);
+    auto indexMetadataHasChanged =
+        collection->setIndexIsMultikey(opCtx, _descriptor->indexName(), multikeyPaths);
 
     // In the absense of using the storage engine to read from the catalog, we must set multikey
     // prior to the storage engine transaction committing.

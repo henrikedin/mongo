@@ -506,7 +506,8 @@ Status CollectionImpl::checkValidation(OperationContext* opCtx, const BSONObj& d
         // writes which result in the validator throwing an exception are accepted when we're in
         // warn mode.
         if (!isFCVAtLeast47 &&
-            validationActionOrDefault(_metadata->options.validationAction) == ValidationActionEnum::error) {
+            validationActionOrDefault(_metadata->options.validationAction) ==
+                ValidationActionEnum::error) {
             e.addContext("Document validation failed");
             throw;
         }
@@ -517,7 +518,8 @@ Status CollectionImpl::checkValidation(OperationContext* opCtx, const BSONObj& d
         generatedError = doc_validation_error::generateError(*validatorMatchExpr, document);
     }
 
-    if (validationActionOrDefault(_metadata->options.validationAction) == ValidationActionEnum::warn) {
+    if (validationActionOrDefault(_metadata->options.validationAction) ==
+        ValidationActionEnum::warn) {
         LOGV2_WARNING(20294,
                       "Document would fail validation",
                       "namespace"_attr = ns(),
@@ -569,8 +571,10 @@ Collection::Validator CollectionImpl::parseValidator(
 
     // If the validation action is "warn" or the level is "moderate", then disallow any encryption
     // keywords. This is to prevent any plaintext data from showing up in the logs.
-    if (validationActionOrDefault(_metadata->options.validationAction) == ValidationActionEnum::warn ||
-        validationLevelOrDefault(_metadata->options.validationLevel) == ValidationLevelEnum::moderate)
+    if (validationActionOrDefault(_metadata->options.validationAction) ==
+            ValidationActionEnum::warn ||
+        validationLevelOrDefault(_metadata->options.validationLevel) ==
+            ValidationLevelEnum::moderate)
         allowedFeatures &= ~MatchExpressionParser::AllowedFeatures::kEncryptKeywords;
 
     auto statusWithMatcher =
@@ -1046,7 +1050,8 @@ Status CollectionImpl::SharedState::aboutToDeleteCapped(OperationContext* opCtx,
                                                         RecordData data) {
     BSONObj doc = data.releaseToBson();
     int64_t* const nullKeysDeleted = nullptr;
-    _collectionLatest->getIndexCatalog()->unindexRecord(opCtx, _collectionLatest, doc, loc, false, nullKeysDeleted);
+    _collectionLatest->getIndexCatalog()->unindexRecord(
+        opCtx, _collectionLatest, doc, loc, false, nullKeysDeleted);
 
     // We are not capturing and reporting to OpDebug the 'keysDeleted' by unindexRecord(). It is
     // questionable whether reporting will add diagnostic value to users and may instead be
@@ -1092,7 +1097,12 @@ void CollectionImpl::deleteDocument(OperationContext* opCtx,
     }
 
     int64_t keysDeleted;
-    _indexCatalog->unindexRecord(opCtx, CollectionPtr(this, CollectionPtr::NoYieldTag{}), doc.value(), loc, noWarn, &keysDeleted);
+    _indexCatalog->unindexRecord(opCtx,
+                                 CollectionPtr(this, CollectionPtr::NoYieldTag{}),
+                                 doc.value(),
+                                 loc,
+                                 noWarn,
+                                 &keysDeleted);
     _shared->_recordStore->deleteRecord(opCtx, loc);
 
     OpObserver::OplogDeleteEntryArgs deleteArgs{nullptr, fromMigrate, getRecordPreImages()};
@@ -1244,8 +1254,8 @@ bool CollectionImpl::isTemporary() const {
 }
 
 void CollectionImpl::clearTemporary() {
-    //auto options = std::make_shared<CollectionOptions>(*_options);
-    //options->temp = false;
+    // auto options = std::make_shared<CollectionOptions>(*_options);
+    // options->temp = false;
     //_options = std::move(options);
 }
 
@@ -1255,12 +1265,13 @@ bool CollectionImpl::isClustered() const {
 
 void CollectionImpl::updateClusteredIndexTTLSetting(OperationContext* opCtx,
                                                     boost::optional<int64_t> expireAfterSeconds) {
-    uassert(5401000, "The collection doesn't have a clustered index", _metadata->options.clusteredIndex);
+    uassert(5401000,
+            "The collection doesn't have a clustered index",
+            _metadata->options.clusteredIndex);
 
     auto metadata = std::make_shared<BSONCollectionCatalogEntry::MetaData>(*_metadata);
     metadata->options.clusteredIndex->setExpireAfterSeconds(expireAfterSeconds);
-    DurableCatalog::get(opCtx)->putMetaData(
-        opCtx, getCatalogId(), *metadata);
+    DurableCatalog::get(opCtx)->putMetaData(opCtx, getCatalogId(), *metadata);
     _metadata = std::move(metadata);
 }
 
@@ -1281,8 +1292,7 @@ Status CollectionImpl::updateCappedSize(OperationContext* opCtx, long long newCa
 
     auto metadata = std::make_shared<BSONCollectionCatalogEntry::MetaData>(*_metadata);
     metadata->options.cappedSize = newCappedSize;
-    DurableCatalog::get(opCtx)->putMetaData(
-                    opCtx, getCatalogId(), *metadata);
+    DurableCatalog::get(opCtx)->putMetaData(opCtx, getCatalogId(), *metadata);
     _metadata = std::move(metadata);
     return Status::OK();
 }
@@ -1430,7 +1440,8 @@ Status CollectionImpl::truncate(OperationContext* opCtx) {
 
     // 4) re-create indexes
     for (size_t i = 0; i < indexSpecs.size(); i++) {
-        status = _indexCatalog->createIndexOnEmptyCollection(opCtx, this, indexSpecs[i]).getStatus();
+        status =
+            _indexCatalog->createIndexOnEmptyCollection(opCtx, this, indexSpecs[i]).getStatus();
         if (!status.isOK())
             return status;
     }
@@ -1454,14 +1465,14 @@ void CollectionImpl::setValidator(OperationContext* opCtx, Validator validator) 
     auto validatorDoc = validator.validatorDoc.getOwned();
     auto validationLevel = validationLevelOrDefault(_metadata->options.validationLevel);
     auto validationAction = validationActionOrDefault(_metadata->options.validationAction);
-    
+
     auto metadata = std::make_shared<BSONCollectionCatalogEntry::MetaData>(*_metadata);
     metadata->options.validator = validatorDoc;
     metadata->options.validationLevel = validationLevel;
     metadata->options.validationAction = validationAction;
     DurableCatalog::get(opCtx)->putMetaData(opCtx, getCatalogId(), *metadata);
     _metadata = std::move(metadata);
-    
+
     _validator = std::move(validator);
 }
 
@@ -1516,9 +1527,7 @@ Status CollectionImpl::setValidationAction(OperationContext* opCtx,
 
     auto metadata = std::make_shared<BSONCollectionCatalogEntry::MetaData>(*_metadata);
     metadata->options.validationAction = storedValidationAction;
-    DurableCatalog::get(opCtx)->putMetaData(opCtx,
-                                                getCatalogId(),
-                                                *metadata);
+    DurableCatalog::get(opCtx)->putMetaData(opCtx, getCatalogId(), *metadata);
     _metadata = std::move(metadata);
 
     return Status::OK();
@@ -1539,8 +1548,7 @@ Status CollectionImpl::updateValidator(OperationContext* opCtx,
     metadata->options.validator = newValidator;
     metadata->options.validationLevel = newLevel;
     metadata->options.validationAction = newAction;
-    DurableCatalog::get(opCtx)->putMetaData(
-        opCtx, getCatalogId(), *metadata);
+    DurableCatalog::get(opCtx)->putMetaData(opCtx, getCatalogId(), *metadata);
     _metadata = std::move(metadata);
 
     _validator = std::move(validator);
@@ -1635,7 +1643,7 @@ void CollectionImpl::indexBuildSuccess(OperationContext* opCtx, IndexCatalogEntr
     metadata->indexes[offset].buildUUID = boost::none;
     DurableCatalog::get(opCtx)->putMetaData(opCtx, getCatalogId(), *metadata);
     _metadata = std::move(metadata);
-    
+
     _indexCatalog->indexBuildSuccess(opCtx, this, index);
 }
 
@@ -1644,7 +1652,7 @@ void CollectionImpl::establishOplogCollectionForLogging(OperationContext* opCtx)
 }
 
 Status CollectionImpl::checkMetaDataForIndex(const std::string& indexName,
-                             const BSONObj& spec) const {
+                                             const BSONObj& spec) const {
     int offset = _metadata->findIndexOffset(indexName);
     if (offset < 0) {
         return {ErrorCodes::IndexNotFound,
@@ -1655,8 +1663,8 @@ Status CollectionImpl::checkMetaDataForIndex(const std::string& indexName,
     if (spec.woCompare(_metadata->indexes[offset].spec)) {
         return {ErrorCodes::BadValue,
                 str::stream() << "Spec for index [" << indexName
-                              << "] does not match spec in the metadata for recordId: " << getCatalogId()
-                              << ". Spec: " << spec
+                              << "] does not match spec in the metadata for recordId: "
+                              << getCatalogId() << ". Spec: " << spec
                               << " metadata's spec: " << _metadata->indexes[offset].spec};
     }
 
@@ -1664,7 +1672,7 @@ Status CollectionImpl::checkMetaDataForIndex(const std::string& indexName,
 }
 
 void CollectionImpl::updateTTLSetting(OperationContext* opCtx,
-                                  StringData idxName,
+                                      StringData idxName,
                                       long long newExpireSeconds) {
     int offset = _metadata->findIndexOffset(idxName);
     invariant(offset >= 0,
@@ -1676,8 +1684,7 @@ void CollectionImpl::updateTTLSetting(OperationContext* opCtx,
     _metadata = std::move(metadata);
 }
 
-void CollectionImpl::updateHiddenSetting(OperationContext* opCtx,
-                             StringData idxName, bool hidden) {
+void CollectionImpl::updateHiddenSetting(OperationContext* opCtx, StringData idxName, bool hidden) {
     int offset = _metadata->findIndexOffset(idxName);
     invariant(offset >= 0);
 
@@ -1702,13 +1709,12 @@ void CollectionImpl::removeIndex(OperationContext* opCtx, StringData indexName) 
     metadata->eraseIndex(indexName);
     DurableCatalog::get(opCtx)->putMetaData(opCtx, getCatalogId(), *metadata);
     _metadata = std::move(metadata);
-
 }
 
 Status CollectionImpl::prepareForIndexBuild(OperationContext* opCtx,
-                                                const IndexDescriptor* spec,
-                                                boost::optional<UUID> buildUUID,
-                                                bool isBackgroundSecondaryBuild) {
+                                            const IndexDescriptor* spec,
+                                            boost::optional<UUID> buildUUID,
+                                            bool isBackgroundSecondaryBuild) {
     BSONCollectionCatalogEntry::IndexMetaData imd;
     imd.spec = spec->infoObj();
     imd.ready = false;
@@ -1716,16 +1722,17 @@ Status CollectionImpl::prepareForIndexBuild(OperationContext* opCtx,
     imd.isBackgroundSecondaryBuild = isBackgroundSecondaryBuild;
     imd.buildUUID = buildUUID;
 
-    //if (indexTypeSupportsPathLevelMultikeyTracking(spec->getAccessMethodName())) {
-    //    const auto feature = DurableCatalogImpl::FeatureTracker::RepairableFeature::kPathLevelMultikeyTracking;
-    //    if (!getFeatureTracker()->isRepairableFeatureInUse(opCtx, feature)) {
+    // if (indexTypeSupportsPathLevelMultikeyTracking(spec->getAccessMethodName())) {
+    //    const auto feature =
+    //    DurableCatalogImpl::FeatureTracker::RepairableFeature::kPathLevelMultikeyTracking; if
+    //    (!getFeatureTracker()->isRepairableFeatureInUse(opCtx, feature)) {
     //        getFeatureTracker()->markRepairableFeatureAsInUse(opCtx, feature);
     //    }
     //    imd.multikeyPaths = MultikeyPaths{static_cast<size_t>(spec->keyPattern().nFields())};
     //}
 
     //// Mark collation feature as in use if the index has a non-simple collation.
-    //if (imd.spec["collation"]) {
+    // if (imd.spec["collation"]) {
     //    const auto feature = DurableCatalogImpl::FeatureTracker::NonRepairableFeature::kCollation;
     //    if (!getFeatureTracker()->isNonRepairableFeatureInUse(opCtx, feature)) {
     //        getFeatureTracker()->markNonRepairableFeatureAsInUse(opCtx, feature);
@@ -1740,17 +1747,18 @@ Status CollectionImpl::prepareForIndexBuild(OperationContext* opCtx,
     DurableCatalog::get(opCtx)->putMetaData(opCtx, getCatalogId(), *metadata);
     _metadata = std::move(metadata);
 
-    //std::string ident = DurableCatalog::get(opCtx)->getIndexIdent(opCtx, getCatalogId(), spec->indexName());
+    // std::string ident = DurableCatalog::get(opCtx)->getIndexIdent(opCtx, getCatalogId(),
+    // spec->indexName());
 
-    //auto kvEngine = _engine->getEngine();
-    //const Status status = kvEngine->createSortedDataInterface(
+    // auto kvEngine = _engine->getEngine();
+    // const Status status = kvEngine->createSortedDataInterface(
     //    opCtx, getCollectionOptions(opCtx, catalogId), ident, spec);
-    //if (status.isOK()) {
+    // if (status.isOK()) {
     //    opCtx->recoveryUnit()->registerChange(
     //        std::make_unique<AddIndexChange>(opCtx->recoveryUnit(), _engine, ident));
     //}
 
-    //return status;
+    // return status;
     return Status::OK();
 }
 
@@ -1758,18 +1766,15 @@ boost::optional<UUID> CollectionImpl::getIndexBuildUUID(StringData indexName) co
     int offset = _metadata->findIndexOffset(indexName);
     invariant(offset >= 0,
               str::stream() << "cannot get build UUID for index " << indexName << " @ "
-                            << getCatalogId()
-                            << " : " << _metadata->toBSON());
+                            << getCatalogId() << " : " << _metadata->toBSON());
     return _metadata->indexes[offset].buildUUID;
 }
 
-bool CollectionImpl::isIndexMultikey(StringData indexName,
-                                 MultikeyPaths* multikeyPaths) const {
+bool CollectionImpl::isIndexMultikey(StringData indexName, MultikeyPaths* multikeyPaths) const {
     int offset = _metadata->findIndexOffset(indexName);
     invariant(offset >= 0,
               str::stream() << "cannot get multikey for index " << indexName << " @ "
-                            << getCatalogId()
-                            << " : " << _metadata->toBSON());
+                            << getCatalogId() << " : " << _metadata->toBSON());
 
     const auto& index = _metadata->indexes[offset];
     stdx::lock_guard lock(index.multikeyMutex);
@@ -1781,14 +1786,13 @@ bool CollectionImpl::isIndexMultikey(StringData indexName,
 }
 
 bool CollectionImpl::setIndexIsMultikey(OperationContext* opCtx,
-    StringData indexName,
-    const MultikeyPaths& multikeyPaths) const {
+                                        StringData indexName,
+                                        const MultikeyPaths& multikeyPaths) const {
 
     int offset = _metadata->findIndexOffset(indexName);
     invariant(offset >= 0,
               str::stream() << "cannot set index " << indexName << " as multikey @ "
-                            << getCatalogId()
-                            << " : " << _metadata->toBSON());
+                            << getCatalogId() << " : " << _metadata->toBSON());
 
     {
         const auto& index = _metadata->indexes[offset];
@@ -1845,9 +1849,9 @@ bool CollectionImpl::setIndexIsMultikey(OperationContext* opCtx,
 }
 
 void CollectionImpl::forceSetIndexIsMultikey(OperationContext* opCtx,
-    const IndexDescriptor* desc,
-    bool isMultikey,
-    const MultikeyPaths& multikeyPaths) const {
+                                             const IndexDescriptor* desc,
+                                             bool isMultikey,
+                                             const MultikeyPaths& multikeyPaths) const {
 
     int offset = _metadata->findIndexOffset(desc->indexName());
     invariant(offset >= 0,
@@ -1867,7 +1871,7 @@ void CollectionImpl::forceSetIndexIsMultikey(OperationContext* opCtx,
             }
         }
     }
-    
+
     // Make a copy that is safe to read without locks that we insert in the durable catalog
     auto metadataCopy = *_metadata;
     DurableCatalog::get(opCtx)->putMetaData(opCtx, getCatalogId(), metadataCopy);
@@ -1921,7 +1925,8 @@ bool CollectionImpl::isIndexReady(StringData indexName) const {
     return _metadata->indexes[offset].ready;
 }
 
-void CollectionImpl::replaceMetadata(OperationContext* opCtx, std::shared_ptr<BSONCollectionCatalogEntry::MetaData> md) {
+void CollectionImpl::replaceMetadata(OperationContext* opCtx,
+                                     std::shared_ptr<BSONCollectionCatalogEntry::MetaData> md) {
     DurableCatalog::get(opCtx)->putMetaData(opCtx, getCatalogId(), *md);
     _metadata = std::move(md);
 }

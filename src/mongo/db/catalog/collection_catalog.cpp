@@ -575,7 +575,8 @@ void CollectionCatalog::dropCollection(OperationContext* opCtx, Collection* coll
     PublishCatalogUpdates::ensureRegisteredWithRecoveryUnit(opCtx, uncommittedCatalogUpdates);
 }
 
-//void CollectionCatalog::dropCollection(OperationContext* opCtx, const CollectionPtr& coll) const {
+// void CollectionCatalog::dropCollection(OperationContext* opCtx, const CollectionPtr& coll) const
+// {
 //    invariant(coll);
 //    invariant(opCtx->lockState()->isCollectionLockedForMode(coll->ns(), MODE_X));
 //

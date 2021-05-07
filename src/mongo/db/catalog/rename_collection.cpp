@@ -561,8 +561,7 @@ Status renameBetweenDBs(OperationContext* opCtx,
 
     Collection* tmpColl = nullptr;
     {
-        auto collectionOptions =
-            sourceColl->getCollectionOptions();
+        auto collectionOptions = sourceColl->getCollectionOptions();
 
         // Renaming across databases will result in a new UUID.
         collectionOptions.uuid = UUID::gen();
@@ -760,9 +759,7 @@ void doLocalRenameIfOptionsAndIndexesHaveNotChanged(OperationContext* opCtx,
         // collection was dropped and recreated, as long as the new target collection has the same
         // options and indexes as the original one did. This is mainly to support concurrent $out
         // to the same collection.
-        collectionOptions = collection->getCollectionOptions()
-                                .toBSON()
-                                .removeField("uuid");
+        collectionOptions = collection->getCollectionOptions().toBSON().removeField("uuid");
     }
 
     uassert(ErrorCodes::CommandFailed,

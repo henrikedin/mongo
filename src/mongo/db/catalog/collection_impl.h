@@ -393,16 +393,13 @@ public:
     void establishOplogCollectionForLogging(OperationContext* opCtx) final;
     void onDeregisterFromCatalog(OperationContext* opCtx) final;
 
-    Status checkMetaDataForIndex(const std::string& indexName,
-                                 const BSONObj& spec) const final;
+    Status checkMetaDataForIndex(const std::string& indexName, const BSONObj& spec) const final;
 
     void updateTTLSetting(OperationContext* opCtx,
                           StringData idxName,
                           long long newExpireSeconds) final;
 
-    void updateHiddenSetting(OperationContext* opCtx,
-                             StringData idxName,
-                             bool hidden) final;
+    void updateHiddenSetting(OperationContext* opCtx, StringData idxName, bool hidden) final;
 
     void setIsTemp(OperationContext* opCtx, bool isTemp) final;
 
@@ -415,8 +412,7 @@ public:
 
     boost::optional<UUID> getIndexBuildUUID(StringData indexName) const final;
 
-    bool isIndexMultikey(StringData indexName,
-                                 MultikeyPaths* multikeyPaths) const final;
+    bool isIndexMultikey(StringData indexName, MultikeyPaths* multikeyPaths) const final;
 
     bool setIndexIsMultikey(OperationContext* opCtx,
                             StringData indexName,
@@ -441,7 +437,8 @@ public:
 
     bool isIndexReady(StringData indexName) const final;
 
-    void replaceMetadata(OperationContext* opCtx, std::shared_ptr<BSONCollectionCatalogEntry::MetaData> md) final;
+    void replaceMetadata(OperationContext* opCtx,
+                         std::shared_ptr<BSONCollectionCatalogEntry::MetaData> md) final;
 
 private:
     /**

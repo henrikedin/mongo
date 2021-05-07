@@ -546,7 +546,8 @@ Status IndexBuildsCoordinator::_startIndexBuildForRecovery(OperationContext* opC
             auto descriptor =
                 indexCatalog->findIndexByName(opCtx, indexNames[i], includeUnfinished);
             if (descriptor) {
-                Status s = indexCatalog->dropIndex(opCtx, collection.getWritableCollection(), descriptor);
+                Status s =
+                    indexCatalog->dropIndex(opCtx, collection.getWritableCollection(), descriptor);
                 if (!s.isOK()) {
                     return s;
                 }
@@ -556,8 +557,7 @@ Status IndexBuildsCoordinator::_startIndexBuildForRecovery(OperationContext* opC
             // If the index is not present in the catalog, then we are trying to drop an already
             // aborted index. This may happen when rollback-via-refetch restarts an index build
             // after an abort has been rolled back.
-            if (!collection->isIndexPresent(
-                     indexNames[i])) {
+            if (!collection->isIndexPresent(indexNames[i])) {
                 LOGV2(20652,
                       "An index was not found in the catalog while trying to drop the index during "
                       "recovery",
@@ -566,8 +566,7 @@ Status IndexBuildsCoordinator::_startIndexBuildForRecovery(OperationContext* opC
                 continue;
             }
 
-            const auto durableBuildUUID = collection->getIndexBuildUUID(
-                 indexNames[i]);
+            const auto durableBuildUUID = collection->getIndexBuildUUID(indexNames[i]);
 
             // A build UUID is present if and only if we are rebuilding a two-phase build.
             invariant((protocol == IndexBuildProtocol::kTwoPhase) ==
@@ -584,7 +583,8 @@ Status IndexBuildsCoordinator::_startIndexBuildForRecovery(OperationContext* opC
             includeUnfinished = true;
             descriptor = indexCatalog->findIndexByName(opCtx, indexNames[i], includeUnfinished);
             if (descriptor) {
-                Status s = indexCatalog->dropUnfinishedIndex(opCtx, collection.getWritableCollection(), descriptor);
+                Status s = indexCatalog->dropUnfinishedIndex(
+                    opCtx, collection.getWritableCollection(), descriptor);
                 if (!s.isOK()) {
                     return s;
                 }
@@ -592,10 +592,8 @@ Status IndexBuildsCoordinator::_startIndexBuildForRecovery(OperationContext* opC
                 // There are no concurrent users of the index during startup recovery, so it is OK
                 // to pass in a nullptr for the index 'ident', promising that the index is not in
                 // use.
-                catalog::removeIndex(opCtx,
-                                     indexNames[i],
-                                     collection.getWritableCollection(),
-                                     nullptr /* ident */);
+                catalog::removeIndex(
+                    opCtx, indexNames[i], collection.getWritableCollection(), nullptr /* ident */);
             }
         }
 
@@ -664,8 +662,7 @@ Status IndexBuildsCoordinator::_setUpResumeIndexBuild(OperationContext* opCtx,
                 "Index not found in durable catalog while attempting to resume index build",
                 collection->isIndexPresent(indexName));
 
-        const auto durableBuildUUID =
-            collection->getIndexBuildUUID(indexName);
+        const auto durableBuildUUID = collection->getIndexBuildUUID(indexName);
         uassert(ErrorCodes::IndexNotFound,
                 str::stream() << "Cannot resume index build with a buildUUID: " << buildUUID
                               << " that did not match the buildUUID in the durable catalog: "
@@ -680,8 +677,7 @@ Status IndexBuildsCoordinator::_setUpResumeIndexBuild(OperationContext* opCtx,
                           << indexName,
             indexIdent.size() > 0);
 
-        uassertStatusOK(collection->checkMetaDataForIndex(
-             indexName, spec));
+        uassertStatusOK(collection->checkMetaDataForIndex(indexName, spec));
     }
 
     if (!collection->isInitialized()) {
@@ -857,7 +853,8 @@ void IndexBuildsCoordinator::applyStartIndexBuild(OperationContext* opCtx,
                         !name.empty());
 
                 if (auto desc = indexCatalog->findIndexByName(opCtx, name, includeUnfinished)) {
-                    uassertStatusOK(indexCatalog->dropIndex(opCtx, coll.getWritableCollection(), desc));
+                    uassertStatusOK(
+                        indexCatalog->dropIndex(opCtx, coll.getWritableCollection(), desc));
                 }
             }
 
@@ -1627,7 +1624,8 @@ void IndexBuildsCoordinator::createIndexesOnEmptyCollection(OperationContext* op
         // Each index will be added to the mdb catalog using the preceding createIndexes
         // timestamp.
         opObserver->onCreateIndex(opCtx, nss, collectionUUID, spec, fromMigrate);
-        uassertStatusOK(indexCatalog->createIndexOnEmptyCollection(opCtx, collection.getWritableCollection(), spec));
+        uassertStatusOK(indexCatalog->createIndexOnEmptyCollection(
+            opCtx, collection.getWritableCollection(), spec));
     }
 }
 
@@ -2754,8 +2752,8 @@ std::vector<BSONObj> IndexBuildsCoordinator::prepareSpecListForCreate(
 
     // Remove any index specifications which already exist in the catalog.
     auto indexCatalog = collection->getIndexCatalog();
-    auto resultSpecs =
-        indexCatalog->removeExistingIndexes(opCtx, collection, normalSpecs, true /*removeIndexBuildsToo*/);
+    auto resultSpecs = indexCatalog->removeExistingIndexes(
+        opCtx, collection, normalSpecs, true /*removeIndexBuildsToo*/);
 
     // Verify that each spec is compatible with the collection's sharding state.
     for (const BSONObj& spec : resultSpecs) {

@@ -274,8 +274,7 @@ BSONObj CommonMongodProcessInterface::getCollectionOptions(OperationContext* opC
         return collectionOptions;
     }
 
-    collectionOptions = collection->getCollectionOptions()
-                            .toBSON();
+    collectionOptions = collection->getCollectionOptions().toBSON();
     return collectionOptions;
 }
 

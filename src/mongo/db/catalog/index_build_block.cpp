@@ -145,10 +145,8 @@ Status IndexBuildBlock::init(OperationContext* opCtx, Collection* collection) {
     }
 
     // Setup on-disk structures.
-    Status status = collection->prepareForIndexBuild(opCtx,
-                                                                     descriptor.get(),
-                                                                     _buildUUID,
-                                                                     isBackgroundSecondaryBuild);
+    Status status = collection->prepareForIndexBuild(
+        opCtx, descriptor.get(), _buildUUID, isBackgroundSecondaryBuild);
     if (!status.isOK())
         return status;
 
@@ -193,7 +191,9 @@ void IndexBuildBlock::fail(OperationContext* opCtx, Collection* collection) {
 
     auto indexCatalogEntry = getEntry(opCtx, collection);
     if (indexCatalogEntry) {
-        invariant(collection->getIndexCatalog()->dropIndexEntry(opCtx, collection, indexCatalogEntry).isOK());
+        invariant(collection->getIndexCatalog()
+                      ->dropIndexEntry(opCtx, collection, indexCatalogEntry)
+                      .isOK());
         if (_indexBuildInterceptor) {
             indexCatalogEntry->setIndexBuildInterceptor(nullptr);
         }
