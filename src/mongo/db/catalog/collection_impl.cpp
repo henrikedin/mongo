@@ -1269,10 +1269,9 @@ void CollectionImpl::updateClusteredIndexTTLSetting(OperationContext* opCtx,
             "The collection doesn't have a clustered index",
             _metadata->options.clusteredIndex);
 
-    auto metadata = std::make_shared<BSONCollectionCatalogEntry::MetaData>(*_metadata);
-    metadata->options.clusteredIndex->setExpireAfterSeconds(expireAfterSeconds);
-    DurableCatalog::get(opCtx)->putMetaData(opCtx, getCatalogId(), *metadata);
-    _metadata = std::move(metadata);
+    _writeMetadata(opCtx, [&](BSONCollectionCatalogEntry::MetaData& md) {
+        md.options.clusteredIndex->setExpireAfterSeconds(expireAfterSeconds);
+    });
 }
 
 Status CollectionImpl::updateCappedSize(OperationContext* opCtx, long long newCappedSize) {
@@ -1290,10 +1289,9 @@ Status CollectionImpl::updateCappedSize(OperationContext* opCtx, long long newCa
         }
     }
 
-    auto metadata = std::make_shared<BSONCollectionCatalogEntry::MetaData>(*_metadata);
-    metadata->options.cappedSize = newCappedSize;
-    DurableCatalog::get(opCtx)->putMetaData(opCtx, getCatalogId(), *metadata);
-    _metadata = std::move(metadata);
+    _writeMetadata(opCtx, [&](BSONCollectionCatalogEntry::MetaData& md) {
+        md.options.cappedSize = newCappedSize;
+    });
     return Status::OK();
 }
 
@@ -1306,10 +1304,9 @@ void CollectionImpl::setRecordPreImages(OperationContext* opCtx, bool val) {
         uassertStatusOK(validatePreImageRecording(opCtx, _ns));
     }
 
-    auto metadata = std::make_shared<BSONCollectionCatalogEntry::MetaData>(*_metadata);
-    metadata->options.recordPreImages = val;
-    DurableCatalog::get(opCtx)->putMetaData(opCtx, getCatalogId(), *metadata);
-    _metadata = std::move(metadata);
+    _writeMetadata(opCtx, [&](BSONCollectionCatalogEntry::MetaData& md) {
+        md.options.recordPreImages = val;
+    });
 }
 
 bool CollectionImpl::isCapped() const {
@@ -1466,12 +1463,11 @@ void CollectionImpl::setValidator(OperationContext* opCtx, Validator validator) 
     auto validationLevel = validationLevelOrDefault(_metadata->options.validationLevel);
     auto validationAction = validationActionOrDefault(_metadata->options.validationAction);
 
-    auto metadata = std::make_shared<BSONCollectionCatalogEntry::MetaData>(*_metadata);
-    metadata->options.validator = validatorDoc;
-    metadata->options.validationLevel = validationLevel;
-    metadata->options.validationAction = validationAction;
-    DurableCatalog::get(opCtx)->putMetaData(opCtx, getCatalogId(), *metadata);
-    _metadata = std::move(metadata);
+     _writeMetadata(opCtx, [&](BSONCollectionCatalogEntry::MetaData& md) {
+        md.options.validator = validatorDoc;
+        md.options.validationLevel = validationLevel;
+        md.options.validationAction = validationAction;
+    });
 
     _validator = std::move(validator);
 }
@@ -1500,10 +1496,9 @@ Status CollectionImpl::setValidationLevel(OperationContext* opCtx, ValidationLev
         return _validator.getStatus();
     }
 
-    auto metadata = std::make_shared<BSONCollectionCatalogEntry::MetaData>(*_metadata);
-    metadata->options.validationLevel = storedValidationLevel;
-    DurableCatalog::get(opCtx)->putMetaData(opCtx, getCatalogId(), *metadata);
-    _metadata = std::move(metadata);
+    _writeMetadata(opCtx, [&](BSONCollectionCatalogEntry::MetaData& md) {
+        md.options.validationLevel = storedValidationLevel;
+    });
 
     return Status::OK();
 }
@@ -1525,10 +1520,9 @@ Status CollectionImpl::setValidationAction(OperationContext* opCtx,
         return _validator.getStatus();
     }
 
-    auto metadata = std::make_shared<BSONCollectionCatalogEntry::MetaData>(*_metadata);
-    metadata->options.validationAction = storedValidationAction;
-    DurableCatalog::get(opCtx)->putMetaData(opCtx, getCatalogId(), *metadata);
-    _metadata = std::move(metadata);
+    _writeMetadata(opCtx, [&](BSONCollectionCatalogEntry::MetaData& md) {
+        md.options.validationAction = storedValidationAction;
+    });
 
     return Status::OK();
 }
@@ -1544,12 +1538,12 @@ Status CollectionImpl::updateValidator(OperationContext* opCtx,
     if (!validator.isOK()) {
         return validator.getStatus();
     }
-    auto metadata = std::make_shared<BSONCollectionCatalogEntry::MetaData>(*_metadata);
-    metadata->options.validator = newValidator;
-    metadata->options.validationLevel = newLevel;
-    metadata->options.validationAction = newAction;
-    DurableCatalog::get(opCtx)->putMetaData(opCtx, getCatalogId(), *metadata);
-    _metadata = std::move(metadata);
+    
+    _writeMetadata(opCtx, [&](BSONCollectionCatalogEntry::MetaData& md) {
+        md.options.validator = newValidator;
+    md.options.validationLevel = newLevel;
+    md.options.validationAction = newAction;
+    });
 
     _validator = std::move(validator);
     return Status::OK();
@@ -1638,11 +1632,10 @@ void CollectionImpl::indexBuildSuccess(OperationContext* opCtx, IndexCatalogEntr
               str::stream() << "cannot mark index " << indexName << " as ready @ " << getCatalogId()
                             << " : " << _metadata->toBSON());
 
-    auto metadata = std::make_shared<BSONCollectionCatalogEntry::MetaData>(*_metadata);
-    metadata->indexes[offset].ready = true;
-    metadata->indexes[offset].buildUUID = boost::none;
-    DurableCatalog::get(opCtx)->putMetaData(opCtx, getCatalogId(), *metadata);
-    _metadata = std::move(metadata);
+    _writeMetadata(opCtx, [&](BSONCollectionCatalogEntry::MetaData& md) {
+        md.indexes[offset].ready = true;
+    md.indexes[offset].buildUUID = boost::none;
+    });
 
     _indexCatalog->indexBuildSuccess(opCtx, this, index);
 }
@@ -1678,37 +1671,34 @@ void CollectionImpl::updateTTLSetting(OperationContext* opCtx,
     invariant(offset >= 0,
               str::stream() << "cannot update TTL setting for index " << idxName << " @ "
                             << getCatalogId() << " : " << _metadata->toBSON());
-    auto metadata = std::make_shared<BSONCollectionCatalogEntry::MetaData>(*_metadata);
-    metadata->indexes[offset].updateTTLSetting(newExpireSeconds);
-    DurableCatalog::get(opCtx)->putMetaData(opCtx, getCatalogId(), *metadata);
-    _metadata = std::move(metadata);
+    _writeMetadata(opCtx, [&](BSONCollectionCatalogEntry::MetaData& md) {
+        md.indexes[offset].updateTTLSetting(newExpireSeconds);
+    });
+    
 }
 
 void CollectionImpl::updateHiddenSetting(OperationContext* opCtx, StringData idxName, bool hidden) {
     int offset = _metadata->findIndexOffset(idxName);
     invariant(offset >= 0);
 
-    auto metadata = std::make_shared<BSONCollectionCatalogEntry::MetaData>(*_metadata);
-    metadata->indexes[offset].updateHiddenSetting(hidden);
-    DurableCatalog::get(opCtx)->putMetaData(opCtx, getCatalogId(), *metadata);
-    _metadata = std::move(metadata);
+    _writeMetadata(opCtx, [&](BSONCollectionCatalogEntry::MetaData& md) {
+        md.indexes[offset].updateHiddenSetting(hidden);
+    });
 }
 
 void CollectionImpl::setIsTemp(OperationContext* opCtx, bool isTemp) {
-    auto metadata = std::make_shared<BSONCollectionCatalogEntry::MetaData>(*_metadata);
-    metadata->options.temp = isTemp;
-    DurableCatalog::get(opCtx)->putMetaData(opCtx, getCatalogId(), *metadata);
-    _metadata = std::move(metadata);
+    _writeMetadata(opCtx, [&](BSONCollectionCatalogEntry::MetaData& md) {
+        md.options.temp = isTemp;
+    });
 }
 
 void CollectionImpl::removeIndex(OperationContext* opCtx, StringData indexName) {
     if (_metadata->findIndexOffset(indexName) < 0)
         return;  // never had the index so nothing to do.
 
-    auto metadata = std::make_shared<BSONCollectionCatalogEntry::MetaData>(*_metadata);
-    metadata->eraseIndex(indexName);
-    DurableCatalog::get(opCtx)->putMetaData(opCtx, getCatalogId(), *metadata);
-    _metadata = std::move(metadata);
+    _writeMetadata(opCtx, [&](BSONCollectionCatalogEntry::MetaData& md) {
+        md.eraseIndex(indexName);
+    });
 }
 
 Status CollectionImpl::prepareForIndexBuild(OperationContext* opCtx,
@@ -1723,10 +1713,9 @@ Status CollectionImpl::prepareForIndexBuild(OperationContext* opCtx,
     // Confirm that our index is not already in the current metadata.
     invariant(-1 == _metadata->findIndexOffset(imd.name()));
 
-    auto metadata = std::make_shared<BSONCollectionCatalogEntry::MetaData>(*_metadata);
-    metadata->indexes.push_back(imd);
-    durableCatalog->putMetaData(opCtx, getCatalogId(), *metadata);
-    _metadata = std::move(metadata);
+    _writeMetadata(opCtx, [&](BSONCollectionCatalogEntry::MetaData& md) {
+        md.indexes.push_back(imd);
+    });
 
     return durableCatalog->createIndex(opCtx, getCatalogId(), getCollectionOptions(), spec);
 }
@@ -1898,6 +1887,14 @@ void CollectionImpl::replaceMetadata(OperationContext* opCtx,
                                      std::shared_ptr<BSONCollectionCatalogEntry::MetaData> md) {
     DurableCatalog::get(opCtx)->putMetaData(opCtx, getCatalogId(), *md);
     _metadata = std::move(md);
+}
+
+template <typename Func>
+void CollectionImpl::_writeMetadata(OperationContext* opCtx, Func func) {
+    auto metadata = std::make_shared<BSONCollectionCatalogEntry::MetaData>(*_metadata);
+    func(*metadata);
+    DurableCatalog::get(opCtx)->putMetaData(opCtx, getCatalogId(), *metadata);
+    _metadata = std::move(metadata);
 }
 
 

@@ -465,6 +465,9 @@ private:
      */
     void _cappedDeleteAsNeeded(OperationContext* opCtx, const RecordId& justInserted) const;
 
+    template <typename Func>
+    void _writeMetadata(OperationContext* opCtx, Func func);
+
     /**
      * Holder of shared state between CollectionImpl clones. Also implements CappedCallback, a
      * pointer to which is given to the RecordStore, so that the CappedCallback logic can always be
