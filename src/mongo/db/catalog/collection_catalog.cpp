@@ -546,19 +546,8 @@ Status CollectionCatalog::renameCollection(OperationContext* opCtx,
 
 
     Status status = coll->rename(opCtx, toCollection, stayTemp);
-    /*Status status = DurableCatalog::get(opCtx)->renameCollection(
-        opCtx, coll->getCatalogId(), toCollection, stayTemp);*/
     if (!status.isOK())
         return status;
-
-    // Rather than maintain, in addition to the UUID -> Collection* mapping, an auxiliary
-    // data structure with the UUID -> namespace mapping, the CollectionCatalog relies on
-    // Collection::ns() to provide UUID to namespace lookup. In addition, the CollectionCatalog
-    // does not require callers to hold locks.
-    // coll->setNs(toCollection);
-    /*if (!stayTemp) {
-        coll->clearTemporary();
-    }*/
 
     auto& uncommittedCatalogUpdates = getUncommittedCatalogUpdates(opCtx);
     uncommittedCatalogUpdates.rename(coll, fromCollection);
@@ -576,19 +565,6 @@ void CollectionCatalog::dropCollection(OperationContext* opCtx, Collection* coll
     // (or is the oplog) this is not the case. So make sure we are registered in all cases.
     PublishCatalogUpdates::ensureRegisteredWithRecoveryUnit(opCtx, uncommittedCatalogUpdates);
 }
-
-// void CollectionCatalog::dropCollection(OperationContext* opCtx, const CollectionPtr& coll) const
-// {
-//    invariant(coll);
-//    invariant(opCtx->lockState()->isCollectionLockedForMode(coll->ns(), MODE_X));
-//
-//    auto& uncommittedCatalogUpdates = getUncommittedCatalogUpdates(opCtx);
-//    uncommittedCatalogUpdates.drop(coll.get());
-//
-//    // Ensure we have registered publish change if this collection haven't been made writable
-//    // previously
-//    PublishCatalogUpdates::ensureRegisteredWithRecoveryUnit(opCtx, uncommittedCatalogUpdates);
-//}
 
 void CollectionCatalog::onCloseDatabase(OperationContext* opCtx, std::string dbName) {
     invariant(opCtx->lockState()->isDbLockedForMode(dbName, MODE_X));
