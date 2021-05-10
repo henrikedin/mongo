@@ -134,8 +134,8 @@ public:
                 collWriter.getWritableCollection(),
                 std::move(desc),
                 CreateIndexEntryFlags::kNone);
-            /*ASSERT_OK(collWriter.getWritableCollection()->prepareForIndexBuild(
-                operationContext(), &desc, buildUUID, isSecondaryBackgroundIndexBuild));*/
+            ASSERT_OK(collWriter.getWritableCollection()->prepareForIndexBuild(
+                operationContext(), desc.get(), buildUUID, isSecondaryBackgroundIndexBuild));
             wuow.commit();
         }
 

@@ -415,7 +415,6 @@ CollectionState IdempotencyTest::validate(const NamespaceString& nss) {
 
     std::string dataHash = computeDataHash(collection.getCollection());
 
-    auto durableCatalog = DurableCatalog::get(_opCtx.get());
     auto collectionOptions = collection->getCollectionOptions();
     std::vector<std::string> allIndexes;
     BSONObjSet indexSpecs = SimpleBSONObjComparator::kInstance.makeBSONObjSet();

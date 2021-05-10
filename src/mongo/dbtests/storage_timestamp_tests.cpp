@@ -675,8 +675,6 @@ public:
                              Timestamp ts,
                              bool shouldBeMultikey,
                              const MultikeyPaths& expectedMultikeyPaths) {
-        DurableCatalog* durableCatalog = DurableCatalog::get(opCtx);
-
         OneOffRead oor(_opCtx, ts);
 
         MultikeyPaths actualMultikeyPaths;
