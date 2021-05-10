@@ -293,6 +293,7 @@ public:
      * CollectionCatalog can perform UUID to namespace lookup without holding a Collection lock. See
      * CollectionCatalog::setCollectionNamespace().
      */
+    virtual Status rename(OperationContext* opCtx, const NamespaceString& nss, bool stayTemp) = 0;
     virtual void setNs(NamespaceString nss) = 0;
 
     virtual RecordId getCatalogId() const = 0;

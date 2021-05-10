@@ -71,6 +71,7 @@ public:
         return _ns;
     }
 
+    Status rename(OperationContext* opCtx, const NamespaceString& nss, bool stayTemp) final;
     void setNs(NamespaceString nss) final;
 
     RecordId getCatalogId() const {

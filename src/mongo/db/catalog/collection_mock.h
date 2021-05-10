@@ -73,6 +73,10 @@ public:
         return _ns;
     }
 
+    Status rename(OperationContext* opCtx, const NamespaceString& nss, bool stayTemp) final {
+        std::abort();
+    }
+
     void setNs(NamespaceString nss) final {
         _ns = std::move(nss);
     }

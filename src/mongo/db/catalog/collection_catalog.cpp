@@ -544,8 +544,10 @@ Status CollectionCatalog::renameCollection(OperationContext* opCtx,
                                            bool stayTemp) const {
     invariant(coll);
 
-    Status status = DurableCatalog::get(opCtx)->renameCollection(
-        opCtx, coll->getCatalogId(), toCollection, stayTemp);
+
+    Status status = coll->rename(opCtx, toCollection, stayTemp); 
+    /*Status status = DurableCatalog::get(opCtx)->renameCollection(
+        opCtx, coll->getCatalogId(), toCollection, stayTemp);*/
     if (!status.isOK())
         return status;
 
@@ -553,10 +555,10 @@ Status CollectionCatalog::renameCollection(OperationContext* opCtx,
     // data structure with the UUID -> namespace mapping, the CollectionCatalog relies on
     // Collection::ns() to provide UUID to namespace lookup. In addition, the CollectionCatalog
     // does not require callers to hold locks.
-    coll->setNs(toCollection);
-    if (!stayTemp) {
+    //coll->setNs(toCollection);
+    /*if (!stayTemp) {
         coll->clearTemporary();
-    }
+    }*/
 
     auto& uncommittedCatalogUpdates = getUncommittedCatalogUpdates(opCtx);
     uncommittedCatalogUpdates.rename(coll, fromCollection);

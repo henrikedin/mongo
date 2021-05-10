@@ -178,7 +178,7 @@ public:
     virtual Status renameCollection(OperationContext* opCtx,
                                     RecordId catalogId,
                                     const NamespaceString& toNss,
-                                    bool stayTemp) = 0;
+                                    BSONCollectionCatalogEntry::MetaData& md) = 0;
 
     /**
      * Deletes the persisted collection catalog entry identified by 'catalogId'.

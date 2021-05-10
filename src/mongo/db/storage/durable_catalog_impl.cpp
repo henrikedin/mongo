@@ -623,6 +623,8 @@ void DurableCatalogImpl::putMetaData(OperationContext* opCtx,
                                      BSONCollectionCatalogEntry::MetaData& md) {
     NamespaceString nss(md.ns);
     BSONObj obj = _findEntry(opCtx, catalogId);
+    if (obj.isEmptyPrototype())
+        return;
 
     {
         // rebuilt doc
@@ -669,18 +671,12 @@ void DurableCatalogImpl::putMetaData(OperationContext* opCtx,
 Status DurableCatalogImpl::_replaceEntry(OperationContext* opCtx,
                                          RecordId catalogId,
                                          const NamespaceString& toNss,
-                                         bool stayTemp) {
+                                         BSONCollectionCatalogEntry::MetaData& md) {
     BSONObj old = _findEntry(opCtx, catalogId).getOwned();
     {
         BSONObjBuilder b;
 
         b.append("ns", toNss.ns());
-
-        BSONCollectionCatalogEntry::MetaData md;
-        md.parse(old["md"].Obj());
-        md.ns = toNss.ns();
-        if (!stayTemp)
-            md.options.temp = false;
         b.append("md", md.toBSON());
 
         b.appendElementsUnique(old);
@@ -989,8 +985,8 @@ StatusWith<DurableCatalog::ImportResult> DurableCatalogImpl::importCollection(
 Status DurableCatalogImpl::renameCollection(OperationContext* opCtx,
                                             RecordId catalogId,
                                             const NamespaceString& toNss,
-                                            bool stayTemp) {
-    return _replaceEntry(opCtx, catalogId, toNss, stayTemp);
+                                            BSONCollectionCatalogEntry::MetaData& md) {
+    return _replaceEntry(opCtx, catalogId, toNss, md);
 }
 
 Status DurableCatalogImpl::dropCollection(OperationContext* opCtx, RecordId catalogId) {

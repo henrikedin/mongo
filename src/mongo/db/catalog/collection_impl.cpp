@@ -1254,9 +1254,9 @@ bool CollectionImpl::isTemporary() const {
 }
 
 void CollectionImpl::clearTemporary() {
-    // auto options = std::make_shared<CollectionOptions>(*_options);
-    // options->temp = false;
-    //_options = std::move(options);
+    auto metadata = std::make_shared<BSONCollectionCatalogEntry::MetaData>(*_metadata);
+    metadata->options.temp = false;
+    _metadata = std::move(metadata);
 }
 
 bool CollectionImpl::isClustered() const {
@@ -1618,6 +1618,20 @@ std::unique_ptr<PlanExecutor, PlanExecutor::Deleter> CollectionImpl::makePlanExe
     auto direction = isForward ? InternalPlanner::FORWARD : InternalPlanner::BACKWARD;
     return InternalPlanner::collectionScan(
         opCtx, &yieldableCollection, yieldPolicy, direction, resumeAfterRecordId);
+}
+
+Status CollectionImpl::rename(OperationContext* opCtx, const NamespaceString& nss, bool stayTemp) {
+    auto metadata = std::make_shared<BSONCollectionCatalogEntry::MetaData>(*_metadata);
+    metadata->ns = nss.ns();
+    if (!stayTemp)
+        metadata->options.temp = false;
+    Status status = DurableCatalog::get(opCtx)->renameCollection(
+        opCtx, getCatalogId(), nss, *metadata);
+    if (status.isOK()) {
+        _metadata = std::move(metadata);
+    }
+    setNs(nss);
+    return status;
 }
 
 void CollectionImpl::setNs(NamespaceString nss) {
