@@ -168,8 +168,10 @@ private:
     StatusWith<Entry> _importEntry(OperationContext* opCtx,
                                    NamespaceString nss,
                                    const BSONObj& metadata);
-    Status _replaceEntry(
-        OperationContext* opCtx, RecordId catalogId, const NamespaceString& toNss, BSONCollectionCatalogEntry::MetaData& md);
+    Status _replaceEntry(OperationContext* opCtx,
+                         RecordId catalogId,
+                         const NamespaceString& toNss,
+                         BSONCollectionCatalogEntry::MetaData& md);
     Status _removeEntry(OperationContext* opCtx, RecordId catalogId);
 
     /**

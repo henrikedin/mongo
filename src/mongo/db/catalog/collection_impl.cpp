@@ -1304,9 +1304,8 @@ void CollectionImpl::setRecordPreImages(OperationContext* opCtx, bool val) {
         uassertStatusOK(validatePreImageRecording(opCtx, _ns));
     }
 
-    _writeMetadata(opCtx, [&](BSONCollectionCatalogEntry::MetaData& md) {
-        md.options.recordPreImages = val;
-    });
+    _writeMetadata(
+        opCtx, [&](BSONCollectionCatalogEntry::MetaData& md) { md.options.recordPreImages = val; });
 }
 
 bool CollectionImpl::isCapped() const {
@@ -1463,7 +1462,7 @@ void CollectionImpl::setValidator(OperationContext* opCtx, Validator validator) 
     auto validationLevel = validationLevelOrDefault(_metadata->options.validationLevel);
     auto validationAction = validationActionOrDefault(_metadata->options.validationAction);
 
-     _writeMetadata(opCtx, [&](BSONCollectionCatalogEntry::MetaData& md) {
+    _writeMetadata(opCtx, [&](BSONCollectionCatalogEntry::MetaData& md) {
         md.options.validator = validatorDoc;
         md.options.validationLevel = validationLevel;
         md.options.validationAction = validationAction;
@@ -1538,11 +1537,11 @@ Status CollectionImpl::updateValidator(OperationContext* opCtx,
     if (!validator.isOK()) {
         return validator.getStatus();
     }
-    
+
     _writeMetadata(opCtx, [&](BSONCollectionCatalogEntry::MetaData& md) {
         md.options.validator = newValidator;
-    md.options.validationLevel = newLevel;
-    md.options.validationAction = newAction;
+        md.options.validationLevel = newLevel;
+        md.options.validationAction = newAction;
     });
 
     _validator = std::move(validator);
@@ -1625,8 +1624,8 @@ Status CollectionImpl::rename(OperationContext* opCtx, const NamespaceString& ns
     metadata->ns = nss.ns();
     if (!stayTemp)
         metadata->options.temp = false;
-    Status status = DurableCatalog::get(opCtx)->renameCollection(
-        opCtx, getCatalogId(), nss, *metadata);
+    Status status =
+        DurableCatalog::get(opCtx)->renameCollection(opCtx, getCatalogId(), nss, *metadata);
     if (status.isOK()) {
         _metadata = std::move(metadata);
     }
@@ -1648,7 +1647,7 @@ void CollectionImpl::indexBuildSuccess(OperationContext* opCtx, IndexCatalogEntr
 
     _writeMetadata(opCtx, [&](BSONCollectionCatalogEntry::MetaData& md) {
         md.indexes[offset].ready = true;
-    md.indexes[offset].buildUUID = boost::none;
+        md.indexes[offset].buildUUID = boost::none;
     });
 
     _indexCatalog->indexBuildSuccess(opCtx, this, index);
@@ -1688,7 +1687,6 @@ void CollectionImpl::updateTTLSetting(OperationContext* opCtx,
     _writeMetadata(opCtx, [&](BSONCollectionCatalogEntry::MetaData& md) {
         md.indexes[offset].updateTTLSetting(newExpireSeconds);
     });
-    
 }
 
 void CollectionImpl::updateHiddenSetting(OperationContext* opCtx, StringData idxName, bool hidden) {
@@ -1701,18 +1699,16 @@ void CollectionImpl::updateHiddenSetting(OperationContext* opCtx, StringData idx
 }
 
 void CollectionImpl::setIsTemp(OperationContext* opCtx, bool isTemp) {
-    _writeMetadata(opCtx, [&](BSONCollectionCatalogEntry::MetaData& md) {
-        md.options.temp = isTemp;
-    });
+    _writeMetadata(opCtx,
+                   [&](BSONCollectionCatalogEntry::MetaData& md) { md.options.temp = isTemp; });
 }
 
 void CollectionImpl::removeIndex(OperationContext* opCtx, StringData indexName) {
     if (_metadata->findIndexOffset(indexName) < 0)
         return;  // never had the index so nothing to do.
 
-    _writeMetadata(opCtx, [&](BSONCollectionCatalogEntry::MetaData& md) {
-        md.eraseIndex(indexName);
-    });
+    _writeMetadata(opCtx,
+                   [&](BSONCollectionCatalogEntry::MetaData& md) { md.eraseIndex(indexName); });
 }
 
 Status CollectionImpl::prepareForIndexBuild(OperationContext* opCtx,
@@ -1727,9 +1723,8 @@ Status CollectionImpl::prepareForIndexBuild(OperationContext* opCtx,
     // Confirm that our index is not already in the current metadata.
     invariant(-1 == _metadata->findIndexOffset(imd.name()));
 
-    _writeMetadata(opCtx, [&](BSONCollectionCatalogEntry::MetaData& md) {
-        md.indexes.push_back(imd);
-    });
+    _writeMetadata(opCtx,
+                   [&](BSONCollectionCatalogEntry::MetaData& md) { md.indexes.push_back(imd); });
 
     return durableCatalog->createIndex(opCtx, getCatalogId(), getCollectionOptions(), spec);
 }
