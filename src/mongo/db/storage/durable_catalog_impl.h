@@ -144,6 +144,10 @@ public:
                                               const IndexDescriptor* spec,
                                               StringData ident);
 
+    bool isIndexPresent(OperationContext* opCtx, RecordId catalogId, StringData indexName) const;
+
+    bool isIndexReady(OperationContext* opCtx, RecordId catalogId, StringData indexName) const;
+
     void setRand_forTest(const std::string& rand);
 
     std::string getRand_forTest() const;
