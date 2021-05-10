@@ -1055,6 +1055,9 @@ bool DurableCatalogImpl::isIndexPresent(OperationContext* opCtx,
                                         RecordId catalogId,
                                         StringData indexName) const {
     auto md = getMetaData(opCtx, catalogId);
+    if (!md)
+        return false;
+
     int offset = md->findIndexOffset(indexName);
     return offset >= 0;
 }
@@ -1063,6 +1066,8 @@ bool DurableCatalogImpl::isIndexReady(OperationContext* opCtx,
                                       RecordId catalogId,
                                       StringData indexName) const {
     auto md = getMetaData(opCtx, catalogId);
+    if (!md)
+        return false;
 
     int offset = md->findIndexOffset(indexName);
     invariant(offset >= 0,
