@@ -196,10 +196,6 @@ public:
                                                       const IndexDescriptor* spec,
                                                       StringData ident) = 0;
 
-    virtual bool isIndexPresent(OperationContext* opCtx, RecordId catalogId, StringData indexName) const = 0;
-
-    virtual bool isIndexReady(OperationContext* opCtx, RecordId catalogId, StringData indexName) const = 0;
-
 
     virtual void setRand_forTest(const std::string& rand) = 0;
 

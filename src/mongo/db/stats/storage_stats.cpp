@@ -145,11 +145,11 @@ Status appendCollectionStorageStats(OperationContext* opCtx,
         // Not all indexes in the collection stats may be visible or consistent with our
         // snapshot. For this reason, it is unsafe to check `isReady` on the entry, which
         // asserts that the index's in-memory state is consistent with our snapshot.
-        if (!entry->isPresentInMySnapshot(opCtx)) {
+        if (!entry->isPresentInMySnapshot(collection)) {
             continue;
         }
 
-        if (!entry->isReadyInMySnapshot(opCtx)) {
+        if (!entry->isReadyInMySnapshot(collection)) {
             indexBuilds.push_back(descriptor->indexName());
         }
     }

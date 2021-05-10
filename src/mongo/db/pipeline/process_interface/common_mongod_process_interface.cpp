@@ -197,11 +197,11 @@ std::vector<Document> CommonMongodProcessInterface::getIndexStats(OperationConte
         // Not all indexes in the CollectionIndexUsageTracker may be visible or consistent with our
         // snapshot. For this reason, it is unsafe to check `isReady` on the entry, which
         // asserts that the index's in-memory state is consistent with our snapshot.
-        if (!entry->isPresentInMySnapshot(opCtx)) {
+        if (!entry->isPresentInMySnapshot(*collection)) {
             continue;
         }
 
-        if (!entry->isReadyInMySnapshot(opCtx)) {
+        if (!entry->isReadyInMySnapshot(*collection)) {
             doc["building"] = Value(true);
         }
 

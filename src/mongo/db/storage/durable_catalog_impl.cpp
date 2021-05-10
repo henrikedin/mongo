@@ -623,6 +623,8 @@ void DurableCatalogImpl::putMetaData(OperationContext* opCtx,
                                      BSONCollectionCatalogEntry::MetaData& md) {
     NamespaceString nss(md.ns);
     BSONObj obj = _findEntry(opCtx, catalogId);
+    if (obj.isEmptyPrototype())
+        return;
 
     {
         // rebuilt doc
@@ -1049,26 +1051,6 @@ Status DurableCatalogImpl::dropAndRecreateIndexIdentForResume(OperationContext* 
     status = _engine->getEngine()->createSortedDataInterface(opCtx, collOptions, ident, spec);
 
     return status;
-}
-
-bool DurableCatalogImpl::isIndexPresent(OperationContext* opCtx,
-                                        RecordId catalogId,
-                                        StringData indexName) const {
-    auto md = getMetaData(opCtx, catalogId);
-    int offset = md->findIndexOffset(indexName);
-    return offset >= 0;
-}
-
-bool DurableCatalogImpl::isIndexReady(OperationContext* opCtx,
-                                      RecordId catalogId,
-                                      StringData indexName) const {
-    auto md = getMetaData(opCtx, catalogId);
-
-    int offset = md->findIndexOffset(indexName);
-    invariant(offset >= 0,
-              str::stream() << "cannot get ready status for index " << indexName << " @ "
-                            << catalogId << " : " << md->toBSON());
-    return md->indexes[offset].ready;
 }
 
 void DurableCatalogImpl::setRand_forTest(const std::string& rand) {
