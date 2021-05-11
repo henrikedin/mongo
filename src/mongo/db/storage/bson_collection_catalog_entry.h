@@ -78,7 +78,8 @@ public:
             isBackgroundSecondaryBuild = std::move(rhs.isBackgroundSecondaryBuild);
             buildUUID = std::move(rhs.buildUUID);
 
-            // No need to hold mutex on move, there are no concurrent readers while we're moving the instance.
+            // No need to hold mutex on move, there are no concurrent readers while we're moving the
+            // instance.
             multikey = std::move(rhs.multikey);
             multikeyPaths = std::move(rhs.multikeyPaths);
             return *this;

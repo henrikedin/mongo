@@ -284,7 +284,9 @@ void IndexCatalogEntryImpl::forceSetMultikey(OperationContext* const opCtx,
 }
 
 Status IndexCatalogEntryImpl::_setMultikeyInMultiDocumentTransaction(
-    OperationContext* opCtx, const CollectionPtr& collection, const MultikeyPaths& multikeyPaths) const {
+    OperationContext* opCtx,
+    const CollectionPtr& collection,
+    const MultikeyPaths& multikeyPaths) const {
     // If we are inside a multi-document transaction, we write the on-disk multikey update in a
     // separate transaction so that it will not generate prepare conflicts with other operations
     // that try to set the multikey flag. In general, it should always be safe to update the

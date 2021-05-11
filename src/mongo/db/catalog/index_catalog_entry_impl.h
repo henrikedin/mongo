@@ -231,7 +231,9 @@ private:
     bool _isFrozen;
     AtomicWord<bool> _isDropped;  // Whether the index drop is committed.
 
-    // Members for multikey are mutable so they can be changed in const functions. They are synchronized with the '_indexMultikeyPathsMutex' mutex or are atomic. We don't have the ABA problem as multikey may only go from disabled to enabled. When multikey it stays multikey.
+    // Members for multikey are mutable so they can be changed in const functions. They are
+    // synchronized with the '_indexMultikeyPathsMutex' mutex or are atomic. We don't have the ABA
+    // problem as multikey may only go from disabled to enabled. When multikey it stays multikey.
 
     // Set to true if this index can track path-level multikey information in the catalog. This
     // member is effectively const after IndexCatalogEntry::init() is called.
@@ -244,9 +246,10 @@ private:
     // this point, future writers do not need to update the catalog.
     mutable AtomicWord<bool> _isMultikeyForWrite;
 
-    // Controls concurrent access to '_indexMultikeyPaths' and '_indexTracksMultikeyPathsInCatalog'. We acquire this mutex rather than the
-    // RESOURCE_METADATA lock as a performance optimization so that it is cheaper to detect whether
-    // there is actually any path-level multikey information to update or not.
+    // Controls concurrent access to '_indexMultikeyPaths' and '_indexTracksMultikeyPathsInCatalog'.
+    // We acquire this mutex rather than the RESOURCE_METADATA lock as a performance optimization so
+    // that it is cheaper to detect whether there is actually any path-level multikey information to
+    // update or not.
     mutable Mutex _indexMultikeyPathsMutex =
         MONGO_MAKE_LATCH("IndexCatalogEntryImpl::_indexMultikeyPathsMutex");
 
