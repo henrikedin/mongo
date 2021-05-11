@@ -1332,7 +1332,7 @@ Status IndexCatalogImpl::_indexKeys(OperationContext* opCtx,
                                     const BSONObj& obj,
                                     RecordId loc,
                                     const InsertDeleteOptions& options,
-                                    int64_t* keysInsertedOut) {
+                                    int64_t* keysInsertedOut) const {
     Status status = Status::OK();
     if (index->isHybridBuilding()) {
         // The side table interface accepts only records that meet the criteria for this partial
@@ -1380,7 +1380,7 @@ Status IndexCatalogImpl::_indexFilteredRecords(OperationContext* opCtx,
                                                const CollectionPtr& coll,
                                                IndexCatalogEntry* index,
                                                const std::vector<BsonRecord>& bsonRecords,
-                                               int64_t* keysInsertedOut) {
+                                               int64_t* keysInsertedOut) const {
     auto& executionCtx = StorageExecutionContext::get(opCtx);
 
     InsertDeleteOptions options;
@@ -1431,7 +1431,7 @@ Status IndexCatalogImpl::_indexRecords(OperationContext* opCtx,
                                        const CollectionPtr& coll,
                                        IndexCatalogEntry* index,
                                        const std::vector<BsonRecord>& bsonRecords,
-                                       int64_t* keysInsertedOut) {
+                                       int64_t* keysInsertedOut) const {
     if (MONGO_unlikely(skipIndexNewRecords.shouldFail())) {
         return Status::OK();
     }
@@ -1456,7 +1456,7 @@ Status IndexCatalogImpl::_updateRecord(OperationContext* const opCtx,
                                        const BSONObj& newDoc,
                                        const RecordId& recordId,
                                        int64_t* const keysInsertedOut,
-                                       int64_t* const keysDeletedOut) {
+                                       int64_t* const keysDeletedOut) const {
     IndexAccessMethod* iam = index->accessMethod();
 
     InsertDeleteOptions options;
@@ -1504,7 +1504,7 @@ void IndexCatalogImpl::_unindexKeys(OperationContext* opCtx,
                                     const BSONObj& obj,
                                     RecordId loc,
                                     bool logIfError,
-                                    int64_t* const keysDeletedOut) {
+                                    int64_t* const keysDeletedOut) const {
     InsertDeleteOptions options;
     prepareInsertDeleteOptions(opCtx, collection->ns(), index->descriptor(), &options);
     options.logIfError = logIfError;
@@ -1563,7 +1563,7 @@ void IndexCatalogImpl::_unindexRecord(OperationContext* opCtx,
                                       const BSONObj& obj,
                                       const RecordId& loc,
                                       bool logIfError,
-                                      int64_t* keysDeletedOut) {
+                                      int64_t* keysDeletedOut) const {
     auto& executionCtx = StorageExecutionContext::get(opCtx);
 
     // There's no need to compute the prefixes of the indexed fields that cause the index to be
@@ -1595,7 +1595,7 @@ void IndexCatalogImpl::_unindexRecord(OperationContext* opCtx,
 Status IndexCatalogImpl::indexRecords(OperationContext* opCtx,
                                       const CollectionPtr& coll,
                                       const std::vector<BsonRecord>& bsonRecords,
-                                      int64_t* keysInsertedOut) {
+                                      int64_t* keysInsertedOut) const {
     if (keysInsertedOut) {
         *keysInsertedOut = 0;
     }
@@ -1621,7 +1621,7 @@ Status IndexCatalogImpl::updateRecord(OperationContext* const opCtx,
                                       const BSONObj& newDoc,
                                       const RecordId& recordId,
                                       int64_t* const keysInsertedOut,
-                                      int64_t* const keysDeletedOut) {
+                                      int64_t* const keysDeletedOut) const {
     *keysInsertedOut = 0;
     *keysDeletedOut = 0;
 
@@ -1654,7 +1654,7 @@ void IndexCatalogImpl::unindexRecord(OperationContext* opCtx,
                                      const BSONObj& obj,
                                      const RecordId& loc,
                                      bool noWarn,
-                                     int64_t* keysDeletedOut) {
+                                     int64_t* keysDeletedOut) const {
     if (keysDeletedOut) {
         *keysDeletedOut = 0;
     }
@@ -1743,7 +1743,7 @@ void IndexCatalogImpl::prepareInsertDeleteOptions(OperationContext* opCtx,
 }
 
 void IndexCatalogImpl::indexBuildSuccess(OperationContext* opCtx,
-                                         const CollectionPtr& coll,
+                                         Collection* coll,
                                          IndexCatalogEntry* index) {
     auto releasedEntry = _buildingIndexes.release(index->descriptor());
     invariant(releasedEntry.get() == index);

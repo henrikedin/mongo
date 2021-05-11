@@ -259,7 +259,7 @@ public:
     Status indexRecords(OperationContext* opCtx,
                         const CollectionPtr& coll,
                         const std::vector<BsonRecord>& bsonRecords,
-                        int64_t* keysInsertedOut) override;
+                        int64_t* keysInsertedOut) const override;
 
     /**
      * See IndexCatalog::updateRecord
@@ -270,7 +270,7 @@ public:
                         const BSONObj& newDoc,
                         const RecordId& recordId,
                         int64_t* const keysInsertedOut,
-                        int64_t* const keysDeletedOut) override;
+                        int64_t* const keysDeletedOut) const override;
     /**
      * When 'keysDeletedOut' is not null, it will be set to the number of index keys removed by
      * this operation.
@@ -280,7 +280,7 @@ public:
                        const BSONObj& obj,
                        const RecordId& loc,
                        bool noWarn,
-                       int64_t* keysDeletedOut) override;
+                       int64_t* keysDeletedOut) const override;
 
     Status compactIndexes(OperationContext* opCtx) const override;
 
@@ -304,7 +304,7 @@ public:
                                     InsertDeleteOptions* options) const override;
 
     void indexBuildSuccess(OperationContext* opCtx,
-                           const CollectionPtr& collection,
+                           Collection* coll,
                            IndexCatalogEntry* index) override;
 
 private:
@@ -327,19 +327,19 @@ private:
                       const BSONObj& obj,
                       RecordId loc,
                       const InsertDeleteOptions& options,
-                      int64_t* keysInsertedOut);
+                      int64_t* keysInsertedOut) const;
 
     Status _indexFilteredRecords(OperationContext* opCtx,
                                  const CollectionPtr& coll,
                                  IndexCatalogEntry* index,
                                  const std::vector<BsonRecord>& bsonRecords,
-                                 int64_t* keysInsertedOut);
+                                 int64_t* keysInsertedOut) const;
 
     Status _indexRecords(OperationContext* opCtx,
                          const CollectionPtr& coll,
                          IndexCatalogEntry* index,
                          const std::vector<BsonRecord>& bsonRecords,
-                         int64_t* keysInsertedOut);
+                         int64_t* keysInsertedOut) const;
 
     Status _updateRecord(OperationContext* const opCtx,
                          const CollectionPtr& coll,
@@ -348,7 +348,7 @@ private:
                          const BSONObj& newDoc,
                          const RecordId& recordId,
                          int64_t* const keysInsertedOut,
-                         int64_t* const keysDeletedOut);
+                         int64_t* const keysDeletedOut) const;
 
     void _unindexKeys(OperationContext* opCtx,
                       const CollectionPtr& collection,
@@ -357,7 +357,7 @@ private:
                       const BSONObj& obj,
                       RecordId loc,
                       bool logIfError,
-                      int64_t* const keysDeletedOut);
+                      int64_t* const keysDeletedOut) const;
 
     void _unindexRecord(OperationContext* opCtx,
                         const CollectionPtr& collection,
@@ -365,7 +365,7 @@ private:
                         const BSONObj& obj,
                         const RecordId& loc,
                         bool logIfError,
-                        int64_t* keysDeletedOut);
+                        int64_t* keysDeletedOut) const;
 
     /**
      * Helper to remove the index from disk.

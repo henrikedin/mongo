@@ -449,7 +449,7 @@ public:
     virtual Status indexRecords(OperationContext* const opCtx,
                                 const CollectionPtr& collection,
                                 const std::vector<BsonRecord>& bsonRecords,
-                                int64_t* const keysInsertedOut) = 0;
+                                int64_t* const keysInsertedOut) const = 0;
 
     /**
      * Both 'keysInsertedOut' and 'keysDeletedOut' are required and will be set to the number of
@@ -463,7 +463,7 @@ public:
                                 const BSONObj& newDoc,
                                 const RecordId& recordId,
                                 int64_t* const keysInsertedOut,
-                                int64_t* const keysDeletedOut) = 0;
+                                int64_t* const keysDeletedOut) const = 0;
 
     /**
      * When 'keysDeletedOut' is not null, it will be set to the number of index keys removed by
@@ -474,7 +474,7 @@ public:
                                const BSONObj& obj,
                                const RecordId& loc,
                                const bool noWarn,
-                               int64_t* const keysDeletedOut) = 0;
+                               int64_t* const keysDeletedOut) const = 0;
 
     /*
      * Attempt compaction on all ready indexes to regain disk space, if the storage engine's index
@@ -507,7 +507,7 @@ public:
                                             InsertDeleteOptions* options) const = 0;
 
     virtual void indexBuildSuccess(OperationContext* opCtx,
-                                   const CollectionPtr& coll,
+                                   Collection* coll,
                                    IndexCatalogEntry* index) = 0;
 };
 }  // namespace mongo
