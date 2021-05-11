@@ -81,9 +81,8 @@ public:
     }
 
     CollectionWriter getCollectionWriter() {
-        return CollectionWriter(operationContext(),
-                                *_collectionUUID,
-                                CollectionCatalog::LifetimeMode::kManagedInWriteUnitOfWork);
+        return CollectionWriter(
+            operationContext(), *_collectionUUID, CollectionCatalog::LifetimeMode::kInplace);
     }
 
     CollectionUUID createCollection(const NamespaceString& nss) {
@@ -104,7 +103,11 @@ public:
         RecordId catalogId = coll.first;
 
         std::shared_ptr<Collection> collection = std::make_shared<CollectionImpl>(
-            operationContext(), nss, catalogId, options, std::move(coll.second));
+            operationContext(),
+            nss,
+            catalogId,
+            getCatalog()->getMetaData(operationContext(), catalogId),
+            std::move(coll.second));
         CollectionCatalog::write(operationContext(), [&](CollectionCatalog& catalog) {
             catalog.registerCollection(
                 operationContext(), options.uuid.get(), std::move(collection));
@@ -122,9 +125,18 @@ public:
         Lock::CollectionLock collLk(operationContext(), _nss, MODE_X);
 
         std::string indexName = "idx" + std::to_string(numIndexesCreated);
+        // Make sure we have a valid IndexSpec for the type requested
+        IndexSpec spec;
+        spec.version(1).name(indexName).addKeys(keyPattern);
+        if (indexType == IndexNames::GEO_HAYSTACK) {
+            spec.geoHaystackBucketSize(1.0);
+        } else if (indexType == IndexNames::TEXT) {
+            spec.textWeights(BSON("a" << 1));
+            spec.textIndexVersion(2);
+            spec.textDefaultLanguage("swedish");
+        }
 
-        auto desc = std::make_unique<IndexDescriptor>(
-            indexType, BSON("v" << 1 << "key" << keyPattern << "name" << indexName));
+        auto desc = std::make_unique<IndexDescriptor>(indexType, spec.toBSON());
 
         IndexCatalogEntry* entry = nullptr;
         auto collWriter = getCollectionWriter();
@@ -132,13 +144,13 @@ public:
             WriteUnitOfWork wuow(operationContext());
             const bool isSecondaryBackgroundIndexBuild = false;
             boost::optional<UUID> buildUUID(twoPhase, UUID::gen());
+            ASSERT_OK(collWriter.getWritableCollection()->prepareForIndexBuild(
+                operationContext(), desc.get(), buildUUID, isSecondaryBackgroundIndexBuild));
             entry = collWriter.getWritableCollection()->getIndexCatalog()->createIndexEntry(
                 operationContext(),
                 collWriter.getWritableCollection(),
                 std::move(desc),
                 CreateIndexEntryFlags::kNone);
-            ASSERT_OK(collWriter.getWritableCollection()->prepareForIndexBuild(
-                operationContext(), desc.get(), buildUUID, isSecondaryBackgroundIndexBuild));
             wuow.commit();
         }
 
