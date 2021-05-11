@@ -66,6 +66,7 @@ public:
               ready(other.ready),
               isBackgroundSecondaryBuild(other.isBackgroundSecondaryBuild),
               buildUUID(other.buildUUID) {
+            // We need to hold the multikey mutex when copying, someone else might be modifying this
             stdx::lock_guard lock(other.multikeyMutex);
             multikey = other.multikey;
             multikeyPaths = other.multikeyPaths;
@@ -76,6 +77,8 @@ public:
             ready = std::move(rhs.ready);
             isBackgroundSecondaryBuild = std::move(rhs.isBackgroundSecondaryBuild);
             buildUUID = std::move(rhs.buildUUID);
+
+            // No need to hold mutex on move, there are no concurrent readers while we're moving the instance.
             multikey = std::move(rhs.multikey);
             multikeyPaths = std::move(rhs.multikeyPaths);
             return *this;
@@ -100,6 +103,7 @@ public:
         // the index key pattern. Each element in the vector is an ordered set of positions
         // (starting at 0) into the corresponding indexed field that represent what prefixes of the
         // indexed field cause the index to be multikey.
+        // multikeyMutex must be held when accessing multikey or multikeyPaths
         mutable Mutex multikeyMutex;
         mutable bool multikey = false;
         mutable MultikeyPaths multikeyPaths;

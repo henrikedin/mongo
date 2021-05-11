@@ -201,23 +201,12 @@ public:
         ASSERT(desc);
         ASSERT_EQUALS(5, desc->infoObj()["expireAfterSeconds"].numberLong());
 
-        // Change value of "expireAfterSeconds" on disk.
+        // Change value of "expireAfterSeconds"
         {
             WriteUnitOfWork wuow(&opCtx);
             _coll->updateTTLSetting(&opCtx, "x_1", 10);
             wuow.commit();
         }
-
-        // Verify that the catalog does not yet know of the change.
-        // desc = _coll->findIndexByName(indexName);
-        // ASSERT_EQUALS(5, desc->infoObj()["expireAfterSeconds"].numberLong());
-
-        //{
-        //    // Notify the catalog of the change.
-        //    WriteUnitOfWork wuow(&opCtx);
-        //    desc = _catalog->refreshEntry(&opCtx, _coll, desc);
-        //    wuow.commit();
-        //}
 
         // Test that the catalog reflects the change.
         ASSERT_EQUALS(10, desc->infoObj()["expireAfterSeconds"].numberLong());
