@@ -298,6 +298,15 @@ CollectionImpl::CollectionImpl(OperationContext* opCtx,
       _shared(std::make_shared<SharedState>(this, std::move(recordStore), options)),
       _indexCatalog(std::make_unique<IndexCatalogImpl>()) {}
 
+CollectionImpl::CollectionImpl(OperationContext* opCtx,
+                               const NamespaceString& nss,
+                               RecordId catalogId,
+                               std::shared_ptr<BSONCollectionCatalogEntry::MetaData> metadata,
+                               std::unique_ptr<RecordStore> recordStore)
+    : CollectionImpl(opCtx, nss, catalogId, metadata->options, std::move(recordStore)) {
+    _metadata = std::move(metadata);
+}
+
 CollectionImpl::~CollectionImpl() {
     _shared->instanceDeleted(this);
 }
@@ -315,6 +324,16 @@ std::shared_ptr<Collection> CollectionImpl::FactoryImpl::make(
     const CollectionOptions& options,
     std::unique_ptr<RecordStore> rs) const {
     return std::make_shared<CollectionImpl>(opCtx, nss, catalogId, options, std::move(rs));
+}
+
+std::shared_ptr<Collection> CollectionImpl::FactoryImpl::make(
+    OperationContext* opCtx,
+    const NamespaceString& nss,
+    RecordId catalogId,
+    std::shared_ptr<BSONCollectionCatalogEntry::MetaData> metadata,
+    std::unique_ptr<RecordStore> rs) const {
+    return std::make_shared<CollectionImpl>(
+        opCtx, nss, catalogId, std::move(metadata), std::move(rs));
 }
 
 std::shared_ptr<Collection> CollectionImpl::clone() const {

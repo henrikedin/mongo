@@ -47,6 +47,12 @@ public:
                             const CollectionOptions& options,
                             std::unique_ptr<RecordStore> recordStore);
 
+    explicit CollectionImpl(OperationContext* opCtx,
+                            const NamespaceString& nss,
+                            RecordId catalogId,
+                            std::shared_ptr<BSONCollectionCatalogEntry::MetaData> metadata,
+                            std::unique_ptr<RecordStore> recordStore);
+
     ~CollectionImpl();
 
     std::shared_ptr<Collection> clone() const final;
@@ -58,6 +64,13 @@ public:
                                          RecordId catalogId,
                                          const CollectionOptions& options,
                                          std::unique_ptr<RecordStore> rs) const final;
+
+        std::shared_ptr<Collection> make(
+            OperationContext* opCtx,
+            const NamespaceString& nss,
+            RecordId catalogId,
+            std::shared_ptr<BSONCollectionCatalogEntry::MetaData> metadata,
+            std::unique_ptr<RecordStore> rs) const final;
     };
 
     SharedCollectionDecorations* getSharedDecorations() const final;

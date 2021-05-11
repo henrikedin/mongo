@@ -325,7 +325,7 @@ void StorageEngineImpl::_initCollection(OperationContext* opCtx,
     }
 
     auto collectionFactory = Collection::Factory::get(getGlobalServiceContext());
-    auto collection = collectionFactory->make(opCtx, nss, catalogId, md->options, std::move(rs));
+    auto collection = collectionFactory->make(opCtx, nss, catalogId, md, std::move(rs));
     collection->setMinimumVisibleSnapshot(minVisibleTs);
 
     CollectionCatalog::write(opCtx, [&](CollectionCatalog& catalog) {
