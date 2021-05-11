@@ -204,6 +204,22 @@ public:
                               RecordId catalogId,
                               StringData indexName) const = 0;
 
+    /**
+     * Returns true if the index identified by 'indexName' is multikey, and returns false otherwise.
+     *
+     * If the 'multikeyPaths' pointer is non-null, then it must point to an empty vector. If this
+     * index type supports tracking path-level multikey information in the catalog, then this
+     * function sets 'multikeyPaths' as the path components that cause this index to be multikey.
+     *
+     * In particular, if this function returns false and the index supports tracking path-level
+     * multikey information, then 'multikeyPaths' is initialized as a vector with size equal to the
+     * number of elements in the index key pattern of empty sets.
+     */
+    virtual bool isIndexMultikey(OperationContext* opCtx,
+                                 RecordId catalogId,
+                                 StringData indexName,
+                                 MultikeyPaths* multikeyPaths) const = 0;
+
 
     virtual void setRand_forTest(const std::string& rand) = 0;
 

@@ -144,6 +144,11 @@ public:
                                               const IndexDescriptor* spec,
                                               StringData ident);
 
+    bool isIndexMultikey(OperationContext* opCtx,
+                         RecordId catalogId,
+                         StringData indexName,
+                         MultikeyPaths* multikeyPaths) const;
+
     bool isIndexPresent(OperationContext* opCtx, RecordId catalogId, StringData indexName) const;
 
     bool isIndexReady(OperationContext* opCtx, RecordId catalogId, StringData indexName) const;

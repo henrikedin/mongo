@@ -675,14 +675,18 @@ public:
                              Timestamp ts,
                              bool shouldBeMultikey,
                              const MultikeyPaths& expectedMultikeyPaths) {
+        DurableCatalog* durableCatalog = DurableCatalog::get(opCtx);
+
         OneOffRead oor(_opCtx, ts);
 
         MultikeyPaths actualMultikeyPaths;
         if (!shouldBeMultikey) {
-            ASSERT_FALSE(collection->isIndexMultikey(indexName, &actualMultikeyPaths))
+            ASSERT_FALSE(durableCatalog->isIndexMultikey(
+                opCtx, collection->getCatalogId(), indexName, &actualMultikeyPaths))
                 << "index " << indexName << " should not be multikey at timestamp " << ts;
         } else {
-            ASSERT(collection->isIndexMultikey(indexName, &actualMultikeyPaths))
+            ASSERT(durableCatalog->isIndexMultikey(
+                opCtx, collection->getCatalogId(), indexName, &actualMultikeyPaths))
                 << "index " << indexName << " should be multikey at timestamp " << ts;
         }
 
@@ -3304,7 +3308,7 @@ public:
 
             auto systemViewsMd = getMetaDataAtTime(
                 durableCatalog, catalogId, Timestamp(systemViewsCreateTs.asULL() - 1));
-            ASSERT_EQ("", systemViewsMd->ns)
+            ASSERT_EQ(nullptr, systemViewsMd)
                 << systemViewsNss
                 << " incorrectly exists before creation. CreateTs: " << systemViewsCreateTs;
 

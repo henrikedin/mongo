@@ -1051,6 +1051,24 @@ Status DurableCatalogImpl::dropAndRecreateIndexIdentForResume(OperationContext* 
     return status;
 }
 
+bool DurableCatalogImpl::isIndexMultikey(OperationContext* opCtx,
+                                         RecordId catalogId,
+                                         StringData indexName,
+                                         MultikeyPaths* multikeyPaths) const {
+    auto md = getMetaData(opCtx, catalogId);
+
+    int offset = md->findIndexOffset(indexName);
+    invariant(offset >= 0,
+              str::stream() << "cannot get multikey for index " << indexName << " @ " << catalogId
+                            << " : " << md->toBSON());
+
+    if (multikeyPaths && !md->indexes[offset].multikeyPaths.empty()) {
+        *multikeyPaths = md->indexes[offset].multikeyPaths;
+    }
+
+    return md->indexes[offset].multikey;
+}
+
 bool DurableCatalogImpl::isIndexPresent(OperationContext* opCtx,
                                         RecordId catalogId,
                                         StringData indexName) const {
