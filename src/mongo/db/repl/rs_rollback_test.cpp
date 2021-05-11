@@ -213,7 +213,7 @@ int _createIndexOnEmptyCollection(OperationContext* opCtx,
     Lock::DBLock dbLock(opCtx, nss.db(), MODE_X);
     auto indexCatalog = coll->getIndexCatalog();
     WriteUnitOfWork wunit(opCtx);
-    ASSERT_OK(indexCatalog->createIndexOnEmptyCollection(opCtx, indexSpec).getStatus());
+    ASSERT_OK(indexCatalog->createIndexOnEmptyCollection(opCtx, coll, indexSpec).getStatus());
     wunit.commit();
     return indexCatalog->numIndexesReady(opCtx);
 }
@@ -1358,9 +1358,7 @@ TEST_F(RSRollbackTest, RollbackRenameCollectionInSameDatabaseCommand) {
         ASSERT_TRUE(oldCollName.getCollection());
 
         // Remote collection options should have been empty.
-        auto collAfterRollbackOptions =
-            DurableCatalog::get(_opCtx.get())
-                ->getCollectionOptions(_opCtx.get(), oldCollName.getCollection()->getCatalogId());
+        auto collAfterRollbackOptions = oldCollName->getCollectionOptions();
         ASSERT_BSONOBJ_EQ(BSON("uuid" << *options.uuid), collAfterRollbackOptions.toBSON());
     }
 }
@@ -1416,9 +1414,7 @@ TEST_F(RSRollbackTest,
     ASSERT_TRUE(rollbackSource.getCollectionInfoCalled);
 
     AutoGetCollectionForReadCommand autoColl(_opCtx.get(), NamespaceString(renameFromNss));
-    auto collAfterRollbackOptions =
-        DurableCatalog::get(_opCtx.get())
-            ->getCollectionOptions(_opCtx.get(), autoColl.getCollection()->getCatalogId());
+    auto collAfterRollbackOptions = autoColl->getCollectionOptions();
     ASSERT_TRUE(collAfterRollbackOptions.temp);
     ASSERT_BSONOBJ_EQ(BSON("uuid" << *options.uuid << "temp" << true),
                       collAfterRollbackOptions.toBSON());
@@ -2020,9 +2016,7 @@ TEST_F(RSRollbackTest, RollbackCollectionModificationCommand) {
 
     // Make sure the collection options are correct.
     AutoGetCollectionForReadCommand autoColl(_opCtx.get(), NamespaceString("test.t"));
-    auto collAfterRollbackOptions =
-        DurableCatalog::get(_opCtx.get())
-            ->getCollectionOptions(_opCtx.get(), autoColl.getCollection()->getCatalogId());
+    auto collAfterRollbackOptions = autoColl->getCollectionOptions();
     ASSERT_BSONOBJ_EQ(BSON("uuid" << *options.uuid), collAfterRollbackOptions.toBSON());
 }
 

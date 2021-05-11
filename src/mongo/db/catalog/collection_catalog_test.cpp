@@ -704,9 +704,7 @@ TEST_F(ForEachCollectionFromDbTest, ForEachCollectionFromDbWithPredicate) {
             [&](const CollectionPtr& collection) {
                 ASSERT_TRUE(
                     opCtx->lockState()->isCollectionLockedForMode(collection->ns(), MODE_NONE));
-                return DurableCatalog::get(opCtx)
-                    ->getCollectionOptions(opCtx, collection->getCatalogId())
-                    .temp;
+                return collection->getCollectionOptions().temp;
             });
 
         ASSERT_EQUALS(numCollectionsTraversed, 2);
@@ -728,9 +726,7 @@ TEST_F(ForEachCollectionFromDbTest, ForEachCollectionFromDbWithPredicate) {
             [&](const CollectionPtr& collection) {
                 ASSERT_TRUE(
                     opCtx->lockState()->isCollectionLockedForMode(collection->ns(), MODE_NONE));
-                return !DurableCatalog::get(opCtx)
-                            ->getCollectionOptions(opCtx, collection->getCatalogId())
-                            .temp;
+                return !collection->getCollectionOptions().temp;
             });
 
         ASSERT_EQUALS(numCollectionsTraversed, 1);

@@ -210,8 +210,7 @@ public:
             std::vector<std::string> indexNames;
             writeConflictRetry(opCtx, "listIndexes", toReIndexNss.ns(), [&] {
                 indexNames.clear();
-                DurableCatalog::get(opCtx)->getAllIndexes(
-                    opCtx, collection->getCatalogId(), &indexNames);
+                collection->getAllIndexes(&indexNames);
             });
 
             all.reserve(indexNames.size());
@@ -219,8 +218,7 @@ public:
             for (size_t i = 0; i < indexNames.size(); i++) {
                 const std::string& name = indexNames[i];
                 BSONObj spec = writeConflictRetry(opCtx, "getIndexSpec", toReIndexNss.ns(), [&] {
-                    return DurableCatalog::get(opCtx)->getIndexSpec(
-                        opCtx, collection->getCatalogId(), name);
+                    return collection->getIndexSpec(name);
                 });
 
                 {
@@ -261,7 +259,8 @@ public:
                                                             "Uninitialized");
         writeConflictRetry(opCtx, "dropAllIndexes", toReIndexNss.ns(), [&] {
             WriteUnitOfWork wunit(opCtx);
-            collection.getWritableCollection()->getIndexCatalog()->dropAllIndexes(opCtx, true);
+            collection.getWritableCollection()->getIndexCatalog()->dropAllIndexes(
+                opCtx, collection.getWritableCollection(), true);
 
             swIndexesToRebuild =
                 indexer->init(opCtx, collection, all, MultiIndexBlock::kNoopOnInitFn);

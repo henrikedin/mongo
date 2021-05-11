@@ -151,15 +151,16 @@ public:
 
     /**
      * This function is responsible for safely setting the namespace string inside 'coll' to the
-     * value of 'toCollection'. The caller need not hold locks on the collection.
+     * value of 'toCollection'. Updates the Durable catalog.
      *
      * Must be called within a WriteUnitOfWork. The Collection namespace will be set back to
      * 'fromCollection' if the WriteUnitOfWork aborts.
      */
-    void setCollectionNamespace(OperationContext* opCtx,
-                                Collection* coll,
-                                const NamespaceString& fromCollection,
-                                const NamespaceString& toCollection) const;
+    Status renameCollection(OperationContext* opCtx,
+                            Collection* coll,
+                            const NamespaceString& fromCollection,
+                            const NamespaceString& toCollection,
+                            bool stayTemp) const;
 
     /**
      * Marks a collection as dropped for this OperationContext. Will cause the collection
@@ -169,7 +170,6 @@ public:
      * Must be called within a WriteUnitOfWork.
      */
     void dropCollection(OperationContext* opCtx, Collection* coll) const;
-    void dropCollection(OperationContext* opCtx, const CollectionPtr& coll) const;
 
     void onCloseDatabase(OperationContext* opCtx, std::string dbName);
 

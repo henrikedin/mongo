@@ -424,7 +424,7 @@ CollectionOptions _getCollectionOptions(OperationContext* opCtx, const Namespace
     AutoGetCollectionForRead collection(opCtx, nss);
     ASSERT_TRUE(collection) << "Unable to get collections options for " << nss
                             << " because collection does not exist.";
-    return DurableCatalog::get(opCtx)->getCollectionOptions(opCtx, collection->getCatalogId());
+    return collection->getCollectionOptions();
 }
 
 /**
@@ -472,7 +472,10 @@ void _createIndexOnEmptyCollection(OperationContext* opCtx,
 
         WriteUnitOfWork wuow(opCtx);
         auto indexCatalog = collection.getWritableCollection()->getIndexCatalog();
-        ASSERT_OK(indexCatalog->createIndexOnEmptyCollection(opCtx, indexInfoObj).getStatus());
+        ASSERT_OK(indexCatalog
+                      ->createIndexOnEmptyCollection(
+                          opCtx, collection.getWritableCollection(), indexInfoObj)
+                      .getStatus());
         wuow.commit();
     });
 

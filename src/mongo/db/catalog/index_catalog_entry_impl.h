@@ -57,7 +57,7 @@ class IndexCatalogEntryImpl : public IndexCatalogEntry {
 
 public:
     IndexCatalogEntryImpl(OperationContext* opCtx,
-                          RecordId catalogId,
+                          const CollectionPtr& collection,
                           const std::string& ident,
                           std::unique_ptr<IndexDescriptor> descriptor,  // ownership passes to me
                           bool isFrozen);
@@ -165,7 +165,7 @@ public:
                           bool isMultikey,
                           const MultikeyPaths& multikeyPaths) final;
 
-    bool isReady(OperationContext* opCtx) const final;
+    bool isReady(OperationContext* opCtx, const CollectionPtr& collection) const final;
 
     bool isFrozen() const final;
 
@@ -201,7 +201,7 @@ private:
      *
      * See CollectionCatalogEntry::isIndexMultikey() for more details.
      */
-    bool _catalogIsMultikey(OperationContext* opCtx, MultikeyPaths* multikeyPaths) const;
+    bool _catalogIsMultikey(const CollectionPtr& collection, MultikeyPaths* multikeyPaths) const;
 
     /**
      * Sets on-disk multikey flag for this index.

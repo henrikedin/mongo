@@ -870,7 +870,6 @@ void OpObserverImpl::onCollMod(OperationContext* opCtx,
         CollectionCatalog::get(opCtx)->lookupCollectionByNamespace(opCtx, nss);
 
     invariant(coll->uuid() == uuid);
-    invariant(DurableCatalog::get(opCtx)->isEqualToMetadataUUID(opCtx, coll->getCatalogId(), uuid));
 }
 
 void OpObserverImpl::onDropDatabase(OperationContext* opCtx, const std::string& dbName) {

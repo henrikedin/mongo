@@ -415,15 +415,12 @@ CollectionState IdempotencyTest::validate(const NamespaceString& nss) {
 
     std::string dataHash = computeDataHash(collection.getCollection());
 
-    auto durableCatalog = DurableCatalog::get(_opCtx.get());
-    auto collectionOptions =
-        durableCatalog->getCollectionOptions(_opCtx.get(), collection->getCatalogId());
+    auto collectionOptions = collection->getCollectionOptions();
     std::vector<std::string> allIndexes;
     BSONObjSet indexSpecs = SimpleBSONObjComparator::kInstance.makeBSONObjSet();
-    durableCatalog->getAllIndexes(_opCtx.get(), collection->getCatalogId(), &allIndexes);
+    collection->getAllIndexes(&allIndexes);
     for (auto const& index : allIndexes) {
-        indexSpecs.insert(
-            durableCatalog->getIndexSpec(_opCtx.get(), collection->getCatalogId(), index));
+        indexSpecs.insert(collection->getIndexSpec(index));
     }
     ASSERT_EQUALS(indexSpecs.size(), allIndexes.size());
 

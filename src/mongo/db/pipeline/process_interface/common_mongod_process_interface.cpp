@@ -274,9 +274,7 @@ BSONObj CommonMongodProcessInterface::getCollectionOptions(OperationContext* opC
         return collectionOptions;
     }
 
-    collectionOptions = DurableCatalog::get(opCtx)
-                            ->getCollectionOptions(opCtx, collection->getCatalogId())
-                            .toBSON();
+    collectionOptions = collection->getCollectionOptions().toBSON();
     return collectionOptions;
 }
 
