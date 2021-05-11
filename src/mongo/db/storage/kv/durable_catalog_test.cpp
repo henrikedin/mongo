@@ -118,6 +118,9 @@ public:
     IndexCatalogEntry* createIndex(BSONObj keyPattern,
                                    std::string indexType = IndexNames::BTREE,
                                    bool twoPhase = false) {
+        Lock::DBLock dbLk(operationContext(), _nss.db(), MODE_IX);
+        Lock::CollectionLock collLk(operationContext(), _nss, MODE_X);
+
         std::string indexName = "idx" + std::to_string(numIndexesCreated);
 
         auto desc = std::make_unique<IndexDescriptor>(
@@ -561,8 +564,10 @@ TEST_F(DurableCatalogTest, IdentSuffixUsesRand) {
 
     const NamespaceString nss = NamespaceString("a.b");
 
-    createCollection(nss);
-    RecordId catalogId = getCollection()->getCatalogId();
+    auto uuid = createCollection(nss);
+    auto collection = CollectionCatalog::get(operationContext())
+                          ->lookupCollectionByUUID(operationContext(), uuid);
+    RecordId catalogId = collection->getCatalogId();
     ASSERT(StringData(getCatalog()->getEntry(catalogId).ident).endsWith(rand));
     ASSERT_EQUALS(getCatalog()->getRand_forTest(), rand);
 }
