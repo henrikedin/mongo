@@ -995,6 +995,7 @@ Status DurableCatalogImpl::dropCollection(OperationContext* opCtx, RecordId cata
     }
 
     invariant(opCtx->lockState()->isCollectionLockedForMode(entry.nss, MODE_X));
+    invariant(getTotalIndexCount(opCtx, catalogId) == 0);
 
     // Remove metadata from mdb_catalog
     Status status = _removeEntry(opCtx, catalogId);
@@ -1065,6 +1066,14 @@ bool DurableCatalogImpl::isIndexMultikey(OperationContext* opCtx,
     }
 
     return md->indexes[offset].multikey;
+}
+
+int DurableCatalogImpl::getTotalIndexCount(OperationContext* opCtx, RecordId catalogId) const {
+    auto md = getMetaData(opCtx, catalogId);
+    if (!md)
+        return 0;
+
+    return static_cast<int>(md->indexes.size());
 }
 
 bool DurableCatalogImpl::isIndexPresent(OperationContext* opCtx,

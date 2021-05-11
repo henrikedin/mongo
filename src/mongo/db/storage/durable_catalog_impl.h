@@ -149,6 +149,8 @@ public:
                          StringData indexName,
                          MultikeyPaths* multikeyPaths) const;
 
+    int getTotalIndexCount(OperationContext* opCtx, RecordId catalogId) const;
+
     bool isIndexPresent(OperationContext* opCtx, RecordId catalogId, StringData indexName) const;
 
     bool isIndexReady(OperationContext* opCtx, RecordId catalogId, StringData indexName) const;
