@@ -85,7 +85,6 @@ public:
     }
 
     Status rename(OperationContext* opCtx, const NamespaceString& nss, bool stayTemp) final;
-    void setNs(NamespaceString nss) final;
 
     RecordId getCatalogId() const {
         return _catalogId;
@@ -313,7 +312,6 @@ public:
     void setRecordPreImages(OperationContext* opCtx, bool val) final;
 
     bool isTemporary() const final;
-    void clearTemporary() final;
 
     bool isClustered() const final;
     void updateClusteredIndexTTLSetting(OperationContext* opCtx,

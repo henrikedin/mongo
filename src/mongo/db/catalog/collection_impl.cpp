@@ -1271,12 +1271,6 @@ bool CollectionImpl::isTemporary() const {
     return _metadata->options.temp;
 }
 
-void CollectionImpl::clearTemporary() {
-    auto metadata = std::make_shared<BSONCollectionCatalogEntry::MetaData>(*_metadata);
-    metadata->options.temp = false;
-    _metadata = std::move(metadata);
-}
-
 bool CollectionImpl::isClustered() const {
     return _clustered;
 }
@@ -1647,13 +1641,9 @@ Status CollectionImpl::rename(OperationContext* opCtx, const NamespaceString& ns
     if (status.isOK()) {
         _metadata = std::move(metadata);
     }
-    setNs(nss);
-    return status;
-}
-
-void CollectionImpl::setNs(NamespaceString nss) {
     _ns = std::move(nss);
     _shared->_recordStore.get()->setNs(_ns);
+    return status;
 }
 
 void CollectionImpl::indexBuildSuccess(OperationContext* opCtx, IndexCatalogEntry* index) {

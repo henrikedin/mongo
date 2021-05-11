@@ -299,13 +299,8 @@ public:
 
     /**
      * Sets a new namespace on this Collection, in the case that the Collection is being renamed.
-     * In general, reads and writes to Collection objects are synchronized using locks from the lock
-     * manager. However, there is special synchronization for ns() and setNs() so that the
-     * CollectionCatalog can perform UUID to namespace lookup without holding a Collection lock. See
-     * CollectionCatalog::setCollectionNamespace().
      */
     virtual Status rename(OperationContext* opCtx, const NamespaceString& nss, bool stayTemp) = 0;
-    virtual void setNs(NamespaceString nss) = 0;
 
     virtual RecordId getCatalogId() const = 0;
 
@@ -514,12 +509,6 @@ public:
      * Returns true if this is a temporary collection.
      */
     virtual bool isTemporary() const = 0;
-
-    /**
-     * Clears the flag that this is a temporary collection. Must be called in conjunction with
-     * modifying the flag in the durable catalog for this collection.
-     */
-    virtual void clearTemporary() = 0;
 
     /**
      * Returns true if this collection is clustered on _id values. That is, its RecordIds are _id

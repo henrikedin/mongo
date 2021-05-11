@@ -74,11 +74,8 @@ public:
     }
 
     Status rename(OperationContext* opCtx, const NamespaceString& nss, bool stayTemp) final {
-        std::abort();
-    }
-
-    void setNs(NamespaceString nss) final {
         _ns = std::move(nss);
+        return Status::OK();
     }
 
     const IndexCatalog* getIndexCatalog() const {
@@ -233,10 +230,6 @@ public:
     }
 
     bool isTemporary() const {
-        std::abort();
-    }
-
-    void clearTemporary() {
         std::abort();
     }
 

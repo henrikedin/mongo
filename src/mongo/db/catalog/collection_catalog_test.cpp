@@ -443,7 +443,7 @@ TEST_F(CollectionCatalogTest, RenameCollection) {
     ASSERT_EQUALS(catalog.lookupCollectionByUUID(&opCtx, uuid), collection);
 
     NamespaceString newNss(nss.db(), "newcol");
-    collection->setNs(newNss);
+    ASSERT_OK(collection->rename(&opCtx, newNss, false));
     ASSERT_EQ(collection->ns(), newNss);
     ASSERT_EQUALS(catalog.lookupCollectionByUUID(&opCtx, uuid), collection);
 }
