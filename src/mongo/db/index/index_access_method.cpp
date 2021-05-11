@@ -107,7 +107,7 @@ struct BtreeExternalSortComparison {
     }
 };
 
-AbstractIndexAccessMethod::AbstractIndexAccessMethod(IndexCatalogEntry* btreeState,
+AbstractIndexAccessMethod::AbstractIndexAccessMethod(const IndexCatalogEntry* btreeState,
                                                      std::unique_ptr<SortedDataInterface> btree)
     : _indexCatalogEntry(btreeState),
       _descriptor(btreeState->descriptor()),
@@ -475,11 +475,11 @@ Status AbstractIndexAccessMethod::compact(OperationContext* opCtx) {
 
 class AbstractIndexAccessMethod::BulkBuilderImpl : public IndexAccessMethod::BulkBuilder {
 public:
-    BulkBuilderImpl(IndexCatalogEntry* indexCatalogEntry,
+    BulkBuilderImpl(const IndexCatalogEntry* indexCatalogEntry,
                     size_t maxMemoryUsageBytes,
                     StringData dbName);
 
-    BulkBuilderImpl(IndexCatalogEntry* index,
+    BulkBuilderImpl(const IndexCatalogEntry* index,
                     size_t maxMemoryUsageBytes,
                     const IndexStateInfo& stateInfo,
                     StringData dbName);
@@ -514,7 +514,7 @@ private:
 
     Sorter::Settings _makeSorterSettings() const;
 
-    IndexCatalogEntry* _indexCatalogEntry;
+    const IndexCatalogEntry* _indexCatalogEntry;
     std::unique_ptr<Sorter> _sorter;
     int64_t _keysInserted = 0;
 
@@ -541,12 +541,12 @@ std::unique_ptr<IndexAccessMethod::BulkBuilder> AbstractIndexAccessMethod::initi
         : std::make_unique<BulkBuilderImpl>(_indexCatalogEntry, maxMemoryUsageBytes, dbName);
 }
 
-AbstractIndexAccessMethod::BulkBuilderImpl::BulkBuilderImpl(IndexCatalogEntry* index,
+AbstractIndexAccessMethod::BulkBuilderImpl::BulkBuilderImpl(const IndexCatalogEntry* index,
                                                             size_t maxMemoryUsageBytes,
                                                             StringData dbName)
     : _indexCatalogEntry(index), _sorter(_makeSorter(maxMemoryUsageBytes, dbName)) {}
 
-AbstractIndexAccessMethod::BulkBuilderImpl::BulkBuilderImpl(IndexCatalogEntry* index,
+AbstractIndexAccessMethod::BulkBuilderImpl::BulkBuilderImpl(const IndexCatalogEntry* index,
                                                             size_t maxMemoryUsageBytes,
                                                             const IndexStateInfo& stateInfo,
                                                             StringData dbName)

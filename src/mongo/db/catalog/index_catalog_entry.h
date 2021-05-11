@@ -135,7 +135,7 @@ public:
     virtual void setMultikey(OperationContext* const opCtx,
                              const CollectionPtr& coll,
                              const KeyStringSet& multikeyMetadataKeys,
-                             const MultikeyPaths& multikeyPaths) = 0;
+                             const MultikeyPaths& multikeyPaths) const = 0;
 
     /**
      * Sets the index to be multikey with the provided paths. This performs minimal validation of
@@ -148,7 +148,7 @@ public:
     virtual void forceSetMultikey(OperationContext* const opCtx,
                                   const CollectionPtr& coll,
                                   bool isMultikey,
-                                  const MultikeyPaths& multikeyPaths) = 0;
+                                  const MultikeyPaths& multikeyPaths) const = 0;
 
     /**
      * Returns whether this index is ready for queries. This is potentially unsafe in that it does

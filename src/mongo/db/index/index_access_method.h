@@ -454,7 +454,7 @@ public:
     static std::pair<KeyStringSet, KeyStringSet> setDifference(const KeyStringSet& left,
                                                                const KeyStringSet& right);
 
-    AbstractIndexAccessMethod(IndexCatalogEntry* btreeState,
+    AbstractIndexAccessMethod(const IndexCatalogEntry* btreeState,
                               std::unique_ptr<SortedDataInterface> btree);
 
     Status insert(OperationContext* opCtx,
@@ -579,7 +579,7 @@ protected:
                            MultikeyPaths* multikeyPaths,
                            boost::optional<RecordId> id) const = 0;
 
-    IndexCatalogEntry* const _indexCatalogEntry;  // owned by IndexCatalog
+    const IndexCatalogEntry* const _indexCatalogEntry;  // owned by IndexCatalog
     const IndexDescriptor* const _descriptor;
 
 private:

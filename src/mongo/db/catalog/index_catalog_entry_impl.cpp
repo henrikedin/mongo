@@ -171,7 +171,7 @@ void IndexCatalogEntryImpl::setIsReady(bool newIsReady) {
 void IndexCatalogEntryImpl::setMultikey(OperationContext* opCtx,
                                         const CollectionPtr& collection,
                                         const KeyStringSet& multikeyMetadataKeys,
-                                        const MultikeyPaths& multikeyPaths) {
+                                        const MultikeyPaths& multikeyPaths) const {
     // An index can either track path-level multikey information in the catalog or as metadata keys
     // in the index itself, but not both.
     invariant(!(_indexTracksMultikeyPathsInCatalog && multikeyMetadataKeys.size() > 0));
@@ -257,7 +257,7 @@ void IndexCatalogEntryImpl::setMultikey(OperationContext* opCtx,
 void IndexCatalogEntryImpl::forceSetMultikey(OperationContext* const opCtx,
                                              const CollectionPtr& coll,
                                              bool isMultikey,
-                                             const MultikeyPaths& multikeyPaths) {
+                                             const MultikeyPaths& multikeyPaths) const {
     invariant(opCtx->lockState()->isCollectionLockedForMode(coll->ns(), MODE_X));
 
     // Don't check _indexTracksMultikeyPathsInCatalog because the caller may be intentionally trying
@@ -284,7 +284,7 @@ void IndexCatalogEntryImpl::forceSetMultikey(OperationContext* const opCtx,
 }
 
 Status IndexCatalogEntryImpl::_setMultikeyInMultiDocumentTransaction(
-    OperationContext* opCtx, const CollectionPtr& collection, const MultikeyPaths& multikeyPaths) {
+    OperationContext* opCtx, const CollectionPtr& collection, const MultikeyPaths& multikeyPaths) const {
     // If we are inside a multi-document transaction, we write the on-disk multikey update in a
     // separate transaction so that it will not generate prepare conflicts with other operations
     // that try to set the multikey flag. In general, it should always be safe to update the
@@ -371,7 +371,7 @@ bool IndexCatalogEntryImpl::_catalogIsMultikey(const CollectionPtr& collection,
 
 void IndexCatalogEntryImpl::_catalogSetMultikey(OperationContext* opCtx,
                                                 const CollectionPtr& collection,
-                                                const MultikeyPaths& multikeyPaths) {
+                                                const MultikeyPaths& multikeyPaths) const {
     // It's possible that the index type (e.g. ascending/descending index) supports tracking
     // path-level multikey information, but this particular index doesn't.
     // CollectionCatalogEntry::setIndexIsMultikey() requires that we discard the path-level
