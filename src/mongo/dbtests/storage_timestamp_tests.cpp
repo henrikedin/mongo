@@ -3308,7 +3308,7 @@ public:
 
             auto systemViewsMd = getMetaDataAtTime(
                 durableCatalog, catalogId, Timestamp(systemViewsCreateTs.asULL() - 1));
-            ASSERT_EQ(nullptr, systemViewsMd)
+            ASSERT(systemViewsMd == nullptr)
                 << systemViewsNss
                 << " incorrectly exists before creation. CreateTs: " << systemViewsCreateTs;
 
