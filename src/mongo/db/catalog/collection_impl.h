@@ -477,6 +477,10 @@ private:
      */
     void _cappedDeleteAsNeeded(OperationContext* opCtx, const RecordId& justInserted) const;
 
+    /**
+     * Writes metadata to the DurableCatalog. Func should have the function signature
+     * 'void(BSONCollectionCatalogEntry::MetaData&)'
+     */
     template <typename Func>
     void _writeMetadata(OperationContext* opCtx, Func func);
 
