@@ -78,7 +78,6 @@
 #include "mongo/db/storage/checkpointer.h"
 #include "mongo/db/storage/control/journal_flusher.h"
 #include "mongo/db/storage/control/storage_control.h"
-#include "mongo/db/storage/durable_catalog.h"
 #include "mongo/db/storage/oplog_cap_maintainer_thread.h"
 #include "mongo/logv2/log.h"
 #include "mongo/util/assert_util.h"

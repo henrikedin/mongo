@@ -43,7 +43,6 @@
 #include "mongo/db/repl/dbcheck_gen.h"
 #include "mongo/db/repl/oplog.h"
 #include "mongo/db/repl/optime.h"
-#include "mongo/db/storage/durable_catalog.h"
 
 namespace mongo {
 

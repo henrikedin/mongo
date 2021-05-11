@@ -34,7 +34,6 @@
 #include "mongo/db/client.h"
 #include "mongo/db/db_raii.h"
 #include "mongo/db/index/index_descriptor.h"
-#include "mongo/db/storage/durable_catalog.h"
 #include "mongo/dbtests/dbtests.h"
 
 namespace IndexCatalogTests {

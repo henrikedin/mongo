@@ -56,7 +56,6 @@
 #include "mongo/db/query/query_knobs_gen.h"
 #include "mongo/db/rebuild_indexes.h"
 #include "mongo/db/repl_set_member_in_standalone_mode.h"
-#include "mongo/db/storage/durable_catalog.h"
 #include "mongo/db/storage/storage_engine.h"
 #include "mongo/db/storage/storage_repair_observer.h"
 #include "mongo/db/storage/storage_util.h"

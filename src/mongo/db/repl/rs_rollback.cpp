@@ -74,7 +74,6 @@
 #include "mongo/db/s/shard_identity_rollback_notifier.h"
 #include "mongo/db/session_catalog_mongod.h"
 #include "mongo/db/storage/control/journal_flusher.h"
-#include "mongo/db/storage/durable_catalog.h"
 #include "mongo/db/storage/remove_saver.h"
 #include "mongo/db/transaction_participant.h"
 #include "mongo/logv2/log.h"

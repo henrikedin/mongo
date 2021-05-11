@@ -37,7 +37,6 @@
 #include "mongo/db/concurrency/lock_manager_defs.h"
 #include "mongo/db/operation_context_noop.h"
 #include "mongo/db/service_context_d_test_fixture.h"
-#include "mongo/db/storage/durable_catalog.h"
 #include "mongo/unittest/death_test.h"
 #include "mongo/unittest/unittest.h"
 

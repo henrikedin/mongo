@@ -40,7 +40,6 @@
 #include "mongo/db/catalog/index_key_validate.h"
 #include "mongo/db/index/index_descriptor.h"
 #include "mongo/db/index_builds_coordinator.h"
-#include "mongo/db/storage/durable_catalog.h"
 
 namespace mongo {
 

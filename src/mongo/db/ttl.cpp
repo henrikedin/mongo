@@ -54,7 +54,6 @@
 #include "mongo/db/repl/tenant_migration_access_blocker_registry.h"
 #include "mongo/db/service_context.h"
 #include "mongo/db/stats/resource_consumption_metrics.h"
-#include "mongo/db/storage/durable_catalog.h"
 #include "mongo/db/timeseries/bucket_catalog.h"
 #include "mongo/db/ttl_collection_cache.h"
 #include "mongo/db/ttl_gen.h"

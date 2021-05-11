@@ -40,7 +40,6 @@
 #include "mongo/db/op_observer_impl.h"
 #include "mongo/db/op_observer_registry.h"
 #include "mongo/db/repl/replication_coordinator.h"
-#include "mongo/db/storage/durable_catalog.h"
 #include "mongo/db/storage/snapshot_manager.h"
 #include "mongo/db/storage/wiredtiger/wiredtiger_global_options.h"
 #include "mongo/util/fail_point.h"

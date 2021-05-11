@@ -51,7 +51,6 @@
 #include "mongo/db/repl/local_oplog_info.h"
 #include "mongo/db/repl/replication_coordinator.h"
 #include "mongo/db/service_context.h"
-#include "mongo/db/storage/durable_catalog.h"
 #include "mongo/db/views/view_catalog.h"
 #include "mongo/util/scopeguard.h"
 

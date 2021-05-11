@@ -60,7 +60,6 @@
 #include "mongo/db/repl/replication_consistency_markers_mock.h"
 #include "mongo/db/repl/replication_coordinator_mock.h"
 #include "mongo/db/repl/storage_interface.h"
-#include "mongo/db/storage/durable_catalog.h"
 #include "mongo/util/md5.hpp"
 
 namespace mongo {

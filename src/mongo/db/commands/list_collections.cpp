@@ -61,7 +61,6 @@
 #include "mongo/db/query/find_common.h"
 #include "mongo/db/query/plan_executor_factory.h"
 #include "mongo/db/service_context.h"
-#include "mongo/db/storage/durable_catalog.h"
 #include "mongo/db/storage/storage_engine.h"
 #include "mongo/db/storage/storage_options.h"
 #include "mongo/db/views/view_catalog.h"

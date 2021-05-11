@@ -58,7 +58,6 @@
 #include "mongo/db/repl/rollback_test_fixture.h"
 #include "mongo/db/repl/rs_rollback.h"
 #include "mongo/db/s/shard_identity_rollback_notifier.h"
-#include "mongo/db/storage/durable_catalog.h"
 #include "mongo/unittest/death_test.h"
 #include "mongo/unittest/unittest.h"
 #include "mongo/util/net/hostandport.h"

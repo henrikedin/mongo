@@ -47,7 +47,6 @@
 #include "mongo/db/repl/replication_process.h"
 #include "mongo/db/repl/replication_recovery.h"
 #include "mongo/db/repl/rs_rollback.h"
-#include "mongo/db/storage/durable_catalog.h"
 #include "mongo/unittest/log_test.h"
 #include "mongo/util/str.h"
 
