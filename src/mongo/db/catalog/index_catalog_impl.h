@@ -320,7 +320,7 @@ private:
 
     Status _indexKeys(OperationContext* opCtx,
                       const CollectionPtr& coll,
-                      IndexCatalogEntry* index,
+                      const IndexCatalogEntry* index,
                       const KeyStringSet& keys,
                       const KeyStringSet& multikeyMetadataKeys,
                       const MultikeyPaths& multikeyPaths,
@@ -331,19 +331,19 @@ private:
 
     Status _indexFilteredRecords(OperationContext* opCtx,
                                  const CollectionPtr& coll,
-                                 IndexCatalogEntry* index,
+                                 const IndexCatalogEntry* index,
                                  const std::vector<BsonRecord>& bsonRecords,
                                  int64_t* keysInsertedOut) const;
 
     Status _indexRecords(OperationContext* opCtx,
                          const CollectionPtr& coll,
-                         IndexCatalogEntry* index,
+                         const IndexCatalogEntry* index,
                          const std::vector<BsonRecord>& bsonRecords,
                          int64_t* keysInsertedOut) const;
 
     Status _updateRecord(OperationContext* const opCtx,
                          const CollectionPtr& coll,
-                         IndexCatalogEntry* index,
+                         const IndexCatalogEntry* index,
                          const BSONObj& oldDoc,
                          const BSONObj& newDoc,
                          const RecordId& recordId,
@@ -352,7 +352,7 @@ private:
 
     void _unindexKeys(OperationContext* opCtx,
                       const CollectionPtr& collection,
-                      IndexCatalogEntry* index,
+                      const IndexCatalogEntry* index,
                       const KeyStringSet& keys,
                       const BSONObj& obj,
                       RecordId loc,
@@ -361,7 +361,7 @@ private:
 
     void _unindexRecord(OperationContext* opCtx,
                         const CollectionPtr& collection,
-                        IndexCatalogEntry* entry,
+                        const IndexCatalogEntry* entry,
                         const BSONObj& obj,
                         const RecordId& loc,
                         bool logIfError,

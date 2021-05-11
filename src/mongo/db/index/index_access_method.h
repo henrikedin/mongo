@@ -138,7 +138,7 @@ public:
      * Provides a ticket for actually performing the update.
      */
     virtual void prepareUpdate(OperationContext* opCtx,
-                               IndexCatalogEntry* index,
+                               const IndexCatalogEntry* index,
                                const BSONObj& from,
                                const BSONObj& to,
                                const RecordId& loc,
@@ -490,7 +490,7 @@ public:
                       int64_t* numDeleted) final;
 
     void prepareUpdate(OperationContext* opCtx,
-                       IndexCatalogEntry* index,
+                       const IndexCatalogEntry* index,
                        const BSONObj& from,
                        const BSONObj& to,
                        const RecordId& loc,

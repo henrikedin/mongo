@@ -376,7 +376,7 @@ pair<KeyStringSet, KeyStringSet> AbstractIndexAccessMethod::setDifference(
 }
 
 void AbstractIndexAccessMethod::prepareUpdate(OperationContext* opCtx,
-                                              IndexCatalogEntry* index,
+                                              const IndexCatalogEntry* index,
                                               const BSONObj& from,
                                               const BSONObj& to,
                                               const RecordId& record,

@@ -73,9 +73,7 @@ public:
 
     virtual const IndexDescriptor* descriptor() const = 0;
 
-    virtual IndexAccessMethod* accessMethod() = 0;
-
-    virtual const IndexAccessMethod* accessMethod() const = 0;
+    virtual IndexAccessMethod* accessMethod() const = 0;
 
     virtual bool isHybridBuilding() const = 0;
 

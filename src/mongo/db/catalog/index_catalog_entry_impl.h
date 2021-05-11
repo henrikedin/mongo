@@ -77,10 +77,7 @@ public:
         return _descriptor.get();
     }
 
-    IndexAccessMethod* accessMethod() final {
-        return _accessMethod.get();
-    }
-    const IndexAccessMethod* accessMethod() const final {
+    IndexAccessMethod* accessMethod() const final {
         return _accessMethod.get();
     }
 

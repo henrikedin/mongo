@@ -1325,7 +1325,7 @@ const IndexDescriptor* IndexCatalogImpl::refreshEntry(OperationContext* opCtx,
 
 Status IndexCatalogImpl::_indexKeys(OperationContext* opCtx,
                                     const CollectionPtr& coll,
-                                    IndexCatalogEntry* index,
+                                    const IndexCatalogEntry* index,
                                     const KeyStringSet& keys,
                                     const KeyStringSet& multikeyMetadataKeys,
                                     const MultikeyPaths& multikeyPaths,
@@ -1378,7 +1378,7 @@ Status IndexCatalogImpl::_indexKeys(OperationContext* opCtx,
 
 Status IndexCatalogImpl::_indexFilteredRecords(OperationContext* opCtx,
                                                const CollectionPtr& coll,
-                                               IndexCatalogEntry* index,
+                                               const IndexCatalogEntry* index,
                                                const std::vector<BsonRecord>& bsonRecords,
                                                int64_t* keysInsertedOut) const {
     auto& executionCtx = StorageExecutionContext::get(opCtx);
@@ -1429,7 +1429,7 @@ Status IndexCatalogImpl::_indexFilteredRecords(OperationContext* opCtx,
 
 Status IndexCatalogImpl::_indexRecords(OperationContext* opCtx,
                                        const CollectionPtr& coll,
-                                       IndexCatalogEntry* index,
+                                       const IndexCatalogEntry* index,
                                        const std::vector<BsonRecord>& bsonRecords,
                                        int64_t* keysInsertedOut) const {
     if (MONGO_unlikely(skipIndexNewRecords.shouldFail())) {
@@ -1451,7 +1451,7 @@ Status IndexCatalogImpl::_indexRecords(OperationContext* opCtx,
 
 Status IndexCatalogImpl::_updateRecord(OperationContext* const opCtx,
                                        const CollectionPtr& coll,
-                                       IndexCatalogEntry* index,
+                                       const IndexCatalogEntry* index,
                                        const BSONObj& oldDoc,
                                        const BSONObj& newDoc,
                                        const RecordId& recordId,
@@ -1499,7 +1499,7 @@ Status IndexCatalogImpl::_updateRecord(OperationContext* const opCtx,
 
 void IndexCatalogImpl::_unindexKeys(OperationContext* opCtx,
                                     const CollectionPtr& collection,
-                                    IndexCatalogEntry* index,
+                                    const IndexCatalogEntry* index,
                                     const KeyStringSet& keys,
                                     const BSONObj& obj,
                                     RecordId loc,
@@ -1559,7 +1559,7 @@ void IndexCatalogImpl::_unindexKeys(OperationContext* opCtx,
 
 void IndexCatalogImpl::_unindexRecord(OperationContext* opCtx,
                                       const CollectionPtr& collection,
-                                      IndexCatalogEntry* entry,
+                                      const IndexCatalogEntry* entry,
                                       const BSONObj& obj,
                                       const RecordId& loc,
                                       bool logIfError,
