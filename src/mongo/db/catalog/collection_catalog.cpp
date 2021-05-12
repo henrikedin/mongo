@@ -191,6 +191,20 @@ public:
         _entries.push_back({Entry::Action::kRecreated, std::move(collection), ns, uuid});
     }
 
+    void forEachCollection(std::function<void(Collection*)> func) {
+        stdx::unordered_set<Collection*> processed;
+        for (auto&& entry : _entries) {
+            auto coll = entry.collection.get();
+            if (!coll)
+                continue;
+            if (processed.contains(coll))
+                continue;
+
+            func(coll);
+            processed.insert(coll);
+        }
+    }
+
     /**
      * Releases all entries, needs to be done when WriteUnitOfWork commits or rolls back.
      */
@@ -231,10 +245,20 @@ public:
                           UncommittedCatalogUpdates& uncommittedCatalogUpdates)
         : _opCtx(opCtx), _uncommittedCatalogUpdates(uncommittedCatalogUpdates) {}
 
+    ~PublishCatalogUpdates() {
+        _finish(_uncommittedCatalogUpdates.releaseEntries());
+    }
+
     static void ensureRegisteredWithRecoveryUnit(
         OperationContext* opCtx, UncommittedCatalogUpdates& UncommittedCatalogUpdates) {
         if (opCtx->recoveryUnit()->hasRegisteredChangeForCatalogVisibility())
             return;
+
+        opCtx->recoveryUnit()->registerPreCommitHook([&](OperationContext* opCtx) {
+            UncommittedCatalogUpdates.forEachCollection(
+                [](Collection* coll) { coll->pendingCatalogUpdateStart();
+                });
+            });
 
         opCtx->recoveryUnit()->registerChangeForCatalogVisibility(
             std::make_unique<PublishCatalogUpdates>(opCtx, UncommittedCatalogUpdates));
@@ -250,7 +274,7 @@ public:
             switch (entry.action) {
                 case UncommittedCatalogUpdates::Entry::Action::kWritable:
                     writeJobs.push_back(
-                        [collection = std::move(entry.collection)](CollectionCatalog& catalog) {
+                        [collection = entry.collection](CollectionCatalog& catalog) {
                             catalog._collections[collection->ns()] = collection;
                             catalog._catalog[collection->uuid()] = collection;
                             auto dbIdPair = std::make_pair(collection->ns().db().toString(),
@@ -281,7 +305,7 @@ public:
                     break;
                 case UncommittedCatalogUpdates::Entry::Action::kRecreated:
                     writeJobs.push_back([opCtx = _opCtx,
-                                         collection = std::move(entry.collection),
+                                         collection = entry.collection,
                                          uuid = *entry.externalUUID](CollectionCatalog& catalog) {
                         catalog.registerCollection(opCtx, uuid, std::move(collection));
                     });
@@ -297,13 +321,30 @@ public:
                 }
             });
         }
+
+        _finish(entries);
     }
 
     void rollback() override {
-        _uncommittedCatalogUpdates.releaseEntries();
+        _finish(_uncommittedCatalogUpdates.releaseEntries());
     }
 
 private:
+
+    void _finish(const std::vector<UncommittedCatalogUpdates::Entry>& entries) {
+        stdx::unordered_set<Collection*> processed;
+        for (auto&& entry : entries) {
+            auto coll = entry.collection.get();
+            if (!coll)
+                continue;
+            if (processed.contains(coll))
+                continue;
+
+            coll->pendingCatalogUpdateEnd();
+            processed.insert(coll);
+        }
+    }
+
     OperationContext* _opCtx;
     UncommittedCatalogUpdates& _uncommittedCatalogUpdates;
 };

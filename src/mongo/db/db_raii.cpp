@@ -84,6 +84,8 @@ public:
         return boost::none;
     }
 
+    void waitForPendingCatalogUpdate() const {}
+
 private:
     NamespaceString _ns;
 };
@@ -160,6 +162,9 @@ auto acquireCollectionAndConsistentSnapshot(
         } else {
             opCtx->recoveryUnit()->preallocateSnapshot();
         }
+
+        collection->waitForPendingCatalogUpdate();
+
 
         // The collection may have been dropped since the previous lookup, run the loop one more
         // time to cleanup if newCollection is nullptr

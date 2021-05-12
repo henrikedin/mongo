@@ -742,6 +742,11 @@ public:
      */
     virtual void onDeregisterFromCatalog(OperationContext* opCtx) = 0;
 
+    virtual void pendingCatalogUpdateStart() = 0;
+    virtual void pendingCatalogUpdateEnd() = 0;
+
+    virtual void waitForPendingCatalogUpdate() const = 0;
+
     friend auto logAttrs(const Collection& col) {
         return logv2::multipleAttrs(col.ns(), col.uuid());
     }

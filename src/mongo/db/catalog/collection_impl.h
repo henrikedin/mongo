@@ -452,6 +452,10 @@ public:
     void replaceMetadata(OperationContext* opCtx,
                          std::shared_ptr<BSONCollectionCatalogEntry::MetaData> md) final;
 
+    void pendingCatalogUpdateStart() final;
+    void pendingCatalogUpdateEnd() final;
+    void waitForPendingCatalogUpdate() const final;
+
 private:
     /**
      * Returns a non-ok Status if document does not pass this collection's validator.
@@ -553,6 +557,10 @@ private:
         mutable Mutex _cappedFirstRecordMutex =
             MONGO_MAKE_LATCH("CollectionImpl::SharedState::_cappedFirstRecordMutex");
         RecordId _cappedFirstRecord;
+
+        Mutex _pendingCatalogUpdateMutex;
+        stdx::condition_variable _pendingCatalogUpdateCV;
+        bool _pendingCatalogUpdate = false;
     };
 
     NamespaceString _ns;

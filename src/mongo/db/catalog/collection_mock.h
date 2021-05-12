@@ -433,6 +433,11 @@ public:
         std::abort();
     }
 
+    void pendingCatalogUpdateStart() {}
+    void pendingCatalogUpdateEnd() {}
+    void waitForPendingCatalogUpdate() const {}
+
+
     void replaceMetadata(OperationContext* opCtx,
                          std::shared_ptr<BSONCollectionCatalogEntry::MetaData> md) {
         std::abort();

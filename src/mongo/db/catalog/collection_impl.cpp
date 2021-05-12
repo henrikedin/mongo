@@ -1906,6 +1906,25 @@ void CollectionImpl::replaceMetadata(OperationContext* opCtx,
     _metadata = std::move(md);
 }
 
+void CollectionImpl::pendingCatalogUpdateStart() {
+    stdx::lock_guard lock(_shared->_pendingCatalogUpdateMutex);
+    _shared->_pendingCatalogUpdate = true;
+}
+void CollectionImpl::pendingCatalogUpdateEnd() {
+    {
+        stdx::lock_guard lock(_shared->_pendingCatalogUpdateMutex);
+        _shared->_pendingCatalogUpdate = false;
+    }
+    
+    _shared->_pendingCatalogUpdateCV.notify_all();
+}
+
+void CollectionImpl::waitForPendingCatalogUpdate() const 
+{
+    stdx::unique_lock lock(_shared->_pendingCatalogUpdateMutex);
+    _shared->_pendingCatalogUpdateCV.wait(lock, [&]() { return !_shared->_pendingCatalogUpdate; });
+}
+
 template <typename Func>
 void CollectionImpl::_writeMetadata(OperationContext* opCtx, Func func) {
     auto metadata = std::make_shared<BSONCollectionCatalogEntry::MetaData>(*_metadata);
