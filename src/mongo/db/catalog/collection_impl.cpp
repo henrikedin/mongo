@@ -1775,62 +1775,75 @@ bool CollectionImpl::setIndexIsMultikey(OperationContext* opCtx,
                                         StringData indexName,
                                         const MultikeyPaths& multikeyPaths) const {
 
-    int offset = _metadata->findIndexOffset(indexName);
-    invariant(offset >= 0,
-              str::stream() << "cannot set index " << indexName << " as multikey @ "
-                            << getCatalogId() << " : " << _metadata->toBSON());
+    auto setMultikey = [this, name = indexName.toString(), multikeyPaths](
+                           const BSONCollectionCatalogEntry::MetaData& metadata) {
+        int offset = metadata.findIndexOffset(name);
+        invariant(offset >= 0,
+                  str::stream() << "cannot set index " << name << " as multikey @ "
+                                << getCatalogId() << " : " << metadata.toBSON());
 
-    {
-        const auto& index = _metadata->indexes[offset];
-        stdx::lock_guard lock(index.multikeyMutex);
+        {
+            const auto& index = metadata.indexes[offset];
+            stdx::lock_guard lock(index.multikeyMutex);
 
-        const bool tracksPathLevelMultikeyInfo = !_metadata->indexes[offset].multikeyPaths.empty();
-        if (tracksPathLevelMultikeyInfo) {
-            invariant(!multikeyPaths.empty());
-            invariant(multikeyPaths.size() == _metadata->indexes[offset].multikeyPaths.size());
-        } else {
-            invariant(multikeyPaths.empty());
+            const bool tracksPathLevelMultikeyInfo =
+                !metadata.indexes[offset].multikeyPaths.empty();
+            if (tracksPathLevelMultikeyInfo) {
+                invariant(!multikeyPaths.empty());
+                invariant(multikeyPaths.size() == metadata.indexes[offset].multikeyPaths.size());
+            } else {
+                invariant(multikeyPaths.empty());
 
-            if (_metadata->indexes[offset].multikey) {
-                // The index is already set as multikey and we aren't tracking path-level multikey
-                // information for it. We return false to indicate that the index metadata is
-                // unchanged.
-                return false;
-            }
-        }
-
-        index.multikey = true;
-
-        if (tracksPathLevelMultikeyInfo) {
-            bool newPathIsMultikey = false;
-            bool somePathIsMultikey = false;
-
-            // Store new path components that cause this index to be multikey in catalog's index
-            // metadata.
-            for (size_t i = 0; i < multikeyPaths.size(); ++i) {
-                MultikeyComponents& indexMultikeyComponents = index.multikeyPaths[i];
-                for (const auto multikeyComponent : multikeyPaths[i]) {
-                    auto result = indexMultikeyComponents.insert(multikeyComponent);
-                    newPathIsMultikey = newPathIsMultikey || result.second;
-                    somePathIsMultikey = true;
+                if (metadata.indexes[offset].multikey) {
+                    // The index is already set as multikey and we aren't tracking path-level
+                    // multikey information for it. We return false to indicate that the index
+                    // metadata is unchanged.
+                    return false;
                 }
             }
 
-            // If all of the sets in the multikey paths vector were empty, then no component of any
-            // indexed field caused the index to be multikey. setIndexIsMultikey() therefore
-            // shouldn't have been called.
-            invariant(somePathIsMultikey);
+            index.multikey = true;
 
-            if (!newPathIsMultikey) {
-                // We return false to indicate that the index metadata is unchanged.
-                return false;
+            if (tracksPathLevelMultikeyInfo) {
+                bool newPathIsMultikey = false;
+                bool somePathIsMultikey = false;
+
+                // Store new path components that cause this index to be multikey in catalog's
+                // index metadata.
+                for (size_t i = 0; i < multikeyPaths.size(); ++i) {
+                    MultikeyComponents& indexMultikeyComponents = index.multikeyPaths[i];
+                    for (const auto multikeyComponent : multikeyPaths[i]) {
+                        auto result = indexMultikeyComponents.insert(multikeyComponent);
+                        newPathIsMultikey = newPathIsMultikey || result.second;
+                        somePathIsMultikey = true;
+                    }
+                }
+
+                // If all of the sets in the multikey paths vector were empty, then no component
+                // of any indexed field caused the index to be multikey. setIndexIsMultikey()
+                // therefore shouldn't have been called.
+                invariant(somePathIsMultikey);
+
+                if (!newPathIsMultikey) {
+                    // We return false to indicate that the index metadata is unchanged.
+                    return false;
+                }
             }
         }
-    }
+        return true;
+    };
 
-    // Make a copy that is safe to read without locks that we insert in the durable catalog
+    // Make a copy that is safe to read without locks that we insert in the durable catalog, we only
+    // update the stored metadata on successful commit. This does not allow us to "read our own writes", but this is fine as we have a separate cache for multikey in the IndexCatalogEntry that handles this.
     auto metadataCopy = *_metadata;
+    if (!setMultikey(metadataCopy))
+        return false;
     DurableCatalog::get(opCtx)->putMetaData(opCtx, getCatalogId(), metadataCopy);
+
+    opCtx->recoveryUnit()->onCommit(
+        [this, setMultikey = std::move(setMultikey)](auto ts) { 
+        // Don't check for result as another thread could be setting multikey at the same time
+        setMultikey(*_metadata); });
     return true;
 }
 
@@ -1838,29 +1851,36 @@ void CollectionImpl::forceSetIndexIsMultikey(OperationContext* opCtx,
                                              const IndexDescriptor* desc,
                                              bool isMultikey,
                                              const MultikeyPaths& multikeyPaths) const {
+    auto forceSetMultikey = [this,
+                             isMultikey,
+                             indexName = desc->indexName(),
+                             accessMethod = desc->getAccessMethodName(),
+                             numKeyPatternFields = desc->keyPattern().nFields(),
+                             multikeyPaths](const BSONCollectionCatalogEntry::MetaData& metadata) {
+        int offset = metadata.findIndexOffset(indexName);
+        invariant(offset >= 0,
+                  str::stream() << "cannot set index " << indexName << " multikey state @ "
+                                << getCatalogId() << " : " << metadata.toBSON());
 
-    int offset = _metadata->findIndexOffset(desc->indexName());
-    invariant(offset >= 0,
-              str::stream() << "cannot set index " << desc->indexName() << " multikey state @ "
-                            << getCatalogId() << " : " << _metadata->toBSON());
-
-    const auto& index = _metadata->indexes[offset];
-    {
+        const auto& index = metadata.indexes[offset];
         stdx::lock_guard lock(index.multikeyMutex);
         index.multikey = isMultikey;
-        if (indexTypeSupportsPathLevelMultikeyTracking(desc->getAccessMethodName())) {
+        if (indexTypeSupportsPathLevelMultikeyTracking(accessMethod)) {
             if (isMultikey) {
                 index.multikeyPaths = multikeyPaths;
             } else {
-                index.multikeyPaths =
-                    MultikeyPaths{static_cast<size_t>(desc->keyPattern().nFields())};
+                index.multikeyPaths = MultikeyPaths{static_cast<size_t>(numKeyPatternFields)};
             }
         }
-    }
+    };
 
-    // Make a copy that is safe to read without locks that we insert in the durable catalog
+    // Make a copy that is safe to read without locks that we insert in the durable catalog, we only
+    // update the stored metadata on successful commit. This does not allow us to "read our own writes", but this is fine as we have a separate cache for multikey in the IndexCatalogEntry that handles this.
     auto metadataCopy = *_metadata;
+    forceSetMultikey(metadataCopy);
     DurableCatalog::get(opCtx)->putMetaData(opCtx, getCatalogId(), metadataCopy);
+    opCtx->recoveryUnit()->onCommit([this, forceSetMultikey = std::move(forceSetMultikey)](
+                                        auto ts) { forceSetMultikey(*_metadata); });
 }
 
 int CollectionImpl::getTotalIndexCount() const {
