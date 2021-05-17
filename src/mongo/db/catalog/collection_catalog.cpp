@@ -37,7 +37,6 @@
 #include "mongo/db/concurrency/lock_manager_defs.h"
 #include "mongo/db/concurrency/write_conflict_exception.h"
 #include "mongo/db/server_options.h"
-#include "mongo/db/storage/durable_catalog.h"
 #include "mongo/db/storage/recovery_unit.h"
 #include "mongo/db/storage/snapshot_helper.h"
 #include "mongo/logv2/log.h"
@@ -537,21 +536,13 @@ void CollectionCatalog::write(OperationContext* opCtx,
 }
 
 
-Status CollectionCatalog::renameCollection(OperationContext* opCtx,
+void CollectionCatalog::onCollectionRename(OperationContext* opCtx,
                                            Collection* coll,
-                                           const NamespaceString& fromCollection,
-                                           const NamespaceString& toCollection,
-                                           bool stayTemp) const {
+                                           const NamespaceString& fromCollection) const {
     invariant(coll);
-
-
-    Status status = coll->rename(opCtx, toCollection, stayTemp);
-    if (!status.isOK())
-        return status;
 
     auto& uncommittedCatalogUpdates = getUncommittedCatalogUpdates(opCtx);
     uncommittedCatalogUpdates.rename(coll, fromCollection);
-    return Status::OK();
 }
 
 void CollectionCatalog::dropCollection(OperationContext* opCtx, Collection* coll) const {

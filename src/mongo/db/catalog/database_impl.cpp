@@ -578,9 +578,12 @@ Status DatabaseImpl::renameCollection(OperationContext* opCtx,
     // because the CollectionCatalog manages the necessary isolation for this Collection until the
     // WUOW commits.
     auto writableCollection = collToRename.getWritableCollection();
+        Status status = writableCollection->rename(opCtx, toNss, stayTemp);
+    if (!status.isOK())
+        return status;
 
-    Status status = CollectionCatalog::get(opCtx)->renameCollection(
-        opCtx, writableCollection, fromNss, toNss, stayTemp);
+    CollectionCatalog::get(opCtx)->onCollectionRename(
+        opCtx, writableCollection, fromNss);
 
     opCtx->recoveryUnit()->onCommit([writableCollection](boost::optional<Timestamp> commitTime) {
         // Ban reading from this collection on committed reads on snapshots before now.

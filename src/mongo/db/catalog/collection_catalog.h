@@ -150,17 +150,13 @@ public:
     static void write(OperationContext* opCtx, CatalogWriteFn job);
 
     /**
-     * This function is responsible for safely setting the namespace string inside 'coll' to the
-     * value of 'toCollection'. Updates the Durable catalog.
+     * This function is responsible for safely tracking a Collection rename within a WriteUnitOfWork. 
      *
-     * Must be called within a WriteUnitOfWork. The Collection namespace will be set back to
-     * 'fromCollection' if the WriteUnitOfWork aborts.
+     * Must be called within a WriteUnitOfWork.
      */
-    Status renameCollection(OperationContext* opCtx,
+    void onCollectionRename(OperationContext* opCtx,
                             Collection* coll,
-                            const NamespaceString& fromCollection,
-                            const NamespaceString& toCollection,
-                            bool stayTemp) const;
+                            const NamespaceString& fromCollection) const;
 
     /**
      * Marks a collection as dropped for this OperationContext. Will cause the collection
