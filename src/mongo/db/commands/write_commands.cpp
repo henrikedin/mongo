@@ -213,7 +213,6 @@ void rewriteBucketAsColumn(OperationContext* opCtx,
         // Use clustered _id index for faster lookup.
         auto rid = record_id_helpers::keyForOID(bucketId);
         if (!coll->findDoc(opCtx, rid, &snapshotted)) {
-            LOGV2(0, "COULD NOT FIND BUCKET", "id"_attr = bucketId);
             return;
         }
         auto& bucketDoc = snapshotted.value();
@@ -243,12 +242,6 @@ void rewriteBucketAsColumn(OperationContext* opCtx,
                 }
                 dataBuilder.append(BSONElement(buf.buf()));
 
-                LOGV2_DEBUG(0,
-                            1,
-                            "rewriting column",
-                            "fieldName"_attr = column.fieldName(),
-                            "originalSize"_attr = column.size(),
-                            "newSize"_attr = buf.len());
             }
             dataBuilder.done();
         }
@@ -256,11 +249,6 @@ void rewriteBucketAsColumn(OperationContext* opCtx,
         // Technically we shouldn't need to get the owned object, however, updateDocument invariants
         // that it is.
         auto rewritten = builder.obj();
-        LOGV2(0,
-              "rewrote bucket",
-              "id"_attr = bucketId,
-              "originalSize"_attr = bucketDoc.objsize(),
-              "newSize"_attr = rewritten.objsize());
 
         DisableDocumentValidation disableValidation(opCtx);
         CollectionUpdateArgs args;

@@ -1234,10 +1234,10 @@ BucketCatalog::Bucket* BucketCatalog::WriteBatch::bucket() const {
     return _bucket;
 }
 
-const std::vector<BSONObj>& BucketCatalog::WriteBatch::measurements() const {
-    invariant(!_active);
-    return _measurements;
-}
+//const std::vector<BSONObj>& BucketCatalog::WriteBatch::measurements() const {
+//    invariant(!_active);
+//    return _measurements;
+//}
 
 const BSONObj& BucketCatalog::WriteBatch::min() const {
     invariant(!_active);

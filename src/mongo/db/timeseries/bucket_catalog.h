@@ -97,7 +97,7 @@ public:
 
         Bucket* bucket() const;
 
-        const std::vector<BSONObj>& measurements() const;
+        //const std::vector<BSONObj>& measurements() const;
         const BSONObj& min() const;
         const BSONObj& max() const;
         const StringMap<std::size_t>& newFieldNamesToBeInserted() const;

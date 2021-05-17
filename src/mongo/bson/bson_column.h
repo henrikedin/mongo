@@ -73,7 +73,6 @@ class BSONColumn {
 public:
     BSONColumn() = default;
     BSONColumn(BSONElement bin) : _bin(bin) {
-        tassert(0, "invalid BSON type for column", isValid());
     }
 
     /**
@@ -173,7 +172,7 @@ public:
             return strings[k];
         }
         Instruction() = default;
-        Instruction(Kind kind, uint64_t arg) {
+        Instruction(Kind kind, int64_t arg) {
             // logd("new insn:  kind = {}, arg = {:x}", kind, arg);
             switch (kind) {
                 case Skip:
@@ -207,7 +206,7 @@ public:
         }
 
         /** Return the smallests possible SetDelta or SetNegDelta instruction. */
-        static Instruction makeDelta(uint64_t delta) {
+        static Instruction makeDelta(int64_t delta) {
             Instruction pos(Instruction::SetDelta, delta);
             Instruction neg(Instruction::SetNegDelta, -delta);
             // logd("makeDelta: pos = {}, neg = {}", pos, neg);
@@ -285,11 +284,11 @@ public:
             return _op;
         }
 
-        uint64_t countArg() const {
+        int64_t countArg() const {
             return _prefix * 16 + _op % 16;
         }
 
-        uint64_t deltaArg() const {
+        int64_t deltaArg() const {
             return (_prefix + 1) << (_op % 16 * 4);
         }
 
