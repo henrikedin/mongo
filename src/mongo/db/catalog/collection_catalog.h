@@ -188,7 +188,11 @@ public:
     /**
      * Deregister all the collection objects.
      */
-    void deregisterAllCollections();
+    void deregisterAllCollectionsAndViews();
+
+    void registerView(const NamespaceString& ns);
+    void deregisterView(const NamespaceString& ns);
+    void replaceViewsForDatabase(StringData dbName, absl::flat_hash_set<NamespaceString> views);
 
     /**
      * This function gets the Collection pointer that corresponds to the CollectionUUID.
@@ -384,6 +388,8 @@ private:
     CollectionCatalogMap _catalog;
     OrderedCollectionMap _orderedCollections;  // Ordered by <dbName, collUUID> pair
     NamespaceCollectionMap _collections;
+
+    StringMap<absl::flat_hash_set<NamespaceString>> _views;
 
     // Incremented whenever the CollectionCatalog gets closed and reopened (onCloseCatalog and
     // onOpenCatalog).

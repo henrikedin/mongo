@@ -343,7 +343,7 @@ void StorageEngineImpl::closeCatalog(OperationContext* opCtx) {
     }
 
     CollectionCatalog::write(
-        opCtx, [&](CollectionCatalog& catalog) { catalog.deregisterAllCollections(); });
+        opCtx, [&](CollectionCatalog& catalog) { catalog.deregisterAllCollectionsAndViews(); });
 
     _catalog.reset();
     _catalogRecordStore.reset();
@@ -712,7 +712,7 @@ void StorageEngineImpl::cleanShutdown() {
     }
 
     CollectionCatalog::write(getGlobalServiceContext(), [](CollectionCatalog& catalog) {
-        catalog.deregisterAllCollections();
+        catalog.deregisterAllCollectionsAndViews();
     });
 
     _catalog.reset();

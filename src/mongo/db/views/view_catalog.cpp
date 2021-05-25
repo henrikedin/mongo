@@ -175,17 +175,20 @@ Status ViewCatalog::reload(OperationContext* opCtx,
                         NamespaceString::kSystemDotViewsCollectionName),
         MODE_IS);
     auto result =
-        catalog.writable()->_reload(opCtx, ViewCatalogLookupBehavior::kValidateDurableViews);
+        catalog.writable()->_reload(opCtx, ViewCatalogLookupBehavior::kValidateDurableViews, true);
     catalog.commit();
     return result;
 }
 
-Status ViewCatalog::_reload(OperationContext* opCtx, ViewCatalogLookupBehavior lookupBehavior) {
-    LOGV2_DEBUG(22546, 1, "Reloading view catalog for database", "db"_attr = _durable->getName());
+Status ViewCatalog::_reload(OperationContext* opCtx, ViewCatalogLookupBehavior lookupBehavior, bool reloadForCollectionCatalog) {
+    const auto& dbName = _durable->getName();
+    LOGV2_DEBUG(22546, 1, "Reloading view catalog for database", "db"_attr = dbName);
 
     _viewMap.clear();
     _valid = false;
     _viewGraphNeedsRefresh = true;
+
+    absl::flat_hash_set<NamespaceString> viewsForDb;
 
     auto reloadCallback = [&](const BSONObj& view) -> Status {
         BSONObj collationSpec = view.hasField("collation") ? view["collation"].Obj() : BSONObj();
@@ -211,6 +214,9 @@ Status ViewCatalog::_reload(OperationContext* opCtx, ViewCatalogLookupBehavior l
                                                                    view["viewOn"].str(),
                                                                    pipeline,
                                                                    std::move(collator.getValue()));
+        if (reloadForCollectionCatalog) {
+            viewsForDb.insert(viewName);
+        }
         return Status::OK();
     };
 
@@ -221,6 +227,12 @@ Status ViewCatalog::_reload(OperationContext* opCtx, ViewCatalogLookupBehavior l
             _durable->iterateIgnoreInvalidEntries(opCtx, reloadCallback);
         } else {
             MONGO_UNREACHABLE;
+        }
+        if (reloadForCollectionCatalog) {
+            CollectionCatalog::write(
+                opCtx, [&dbName, viewsForDb = std::move(viewsForDb)](CollectionCatalog& catalog) {
+                    catalog.replaceViewsForDatabase(dbName, std::move(viewsForDb));
+                });
         }
     } catch (const DBException& ex) {
         auto status = ex.toStatus();
@@ -314,17 +326,21 @@ Status ViewCatalog::_createOrUpdateView(OperationContext* opCtx,
     // Register the view in the CollectionCatalog mapping from ResourceID->namespace
     auto viewRid = ResourceId(RESOURCE_COLLECTION, viewName.ns());
     CollectionCatalog::write(
-        opCtx, [&](CollectionCatalog& catalog) { catalog.addResource(viewRid, viewName.ns()); });
+        opCtx, [&](CollectionCatalog& catalog) { 
+            catalog.registerView(viewName);
+            catalog.addResource(viewRid, viewName.ns());
+        });
 
     opCtx->recoveryUnit()->onRollback([viewName, opCtx, viewRid]() {
         CollectionCatalog::write(opCtx, [&](CollectionCatalog& catalog) {
             catalog.removeResource(viewRid, viewName.ns());
+            catalog.deregisterView(viewName);
         });
     });
 
 
     // Reload the view catalog with the changes applied.
-    return _reload(opCtx, ViewCatalogLookupBehavior::kValidateDurableViews);
+    return _reload(opCtx, ViewCatalogLookupBehavior::kValidateDurableViews, false);
 }
 
 Status ViewCatalog::_upsertIntoGraph(OperationContext* opCtx, const ViewDefinition& viewDef) {
@@ -623,6 +639,12 @@ Status ViewCatalog::dropView(OperationContext* opCtx,
             catalog.removeResource(viewRid, viewName.ns());
         });
 
+        opCtx->recoveryUnit()->onCommit([viewName, opCtx](auto ts) {
+            CollectionCatalog::write(opCtx, [&](CollectionCatalog& catalog) {
+                catalog.deregisterView(viewName);
+            });
+        });
+
         opCtx->recoveryUnit()->onRollback([viewName, opCtx, viewRid]() {
             CollectionCatalog::write(opCtx, [&](CollectionCatalog& catalog) {
                 catalog.addResource(viewRid, viewName.ns());
@@ -631,7 +653,7 @@ Status ViewCatalog::dropView(OperationContext* opCtx,
 
         // Reload the view catalog with the changes applied.
         result =
-            catalog.writable()->_reload(opCtx, ViewCatalogLookupBehavior::kValidateDurableViews);
+            catalog.writable()->_reload(opCtx, ViewCatalogLookupBehavior::kValidateDurableViews, false);
     }
     catalog.commit();
     return result;

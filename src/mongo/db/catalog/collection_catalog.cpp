@@ -931,7 +931,15 @@ void CollectionCatalog::registerCollection(OperationContext* opCtx,
                                            CollectionUUID uuid,
                                            std::shared_ptr<Collection> coll) {
     auto ns = coll->ns();
-    if (_collections.find(ns) != _collections.end()) {
+    bool conflict = _collections.find(ns) != _collections.end();
+    if (!conflict) {
+        auto it = _views.find(ns.db());
+        if (it != _views.end())
+        {
+            conflict = it->second.contains(ns);
+        }
+    }
+    if (conflict) {
         auto& uncommittedCatalogUpdates = getUncommittedCatalogUpdates(opCtx);
         auto [found, uncommittedPtr] = uncommittedCatalogUpdates.lookup(ns);
         // If we have an uncommitted drop of this collection we can defer the creation, the register
@@ -1000,7 +1008,7 @@ std::shared_ptr<Collection> CollectionCatalog::deregisterCollection(OperationCon
     return coll;
 }
 
-void CollectionCatalog::deregisterAllCollections() {
+void CollectionCatalog::deregisterAllCollectionsAndViews() {
     LOGV2(20282, "Deregistering all the collections");
     for (auto& entry : _catalog) {
         auto uuid = entry.first;
@@ -1017,9 +1025,31 @@ void CollectionCatalog::deregisterAllCollections() {
     _collections.clear();
     _orderedCollections.clear();
     _catalog.clear();
+    _views.clear();
 
     _resourceInformation.clear();
 }
+
+void CollectionCatalog::registerView(const NamespaceString& ns) {
+    if (_collections.contains(ns))
+        throw WriteConflictException();
+
+    _views[ns.db()].insert(ns);
+}
+void CollectionCatalog::deregisterView(const NamespaceString& ns) {
+    auto it = _views.find(ns.db());
+    if (it == _views.end())
+        return;
+
+    auto& viewsForDb = it->second;
+    viewsForDb.erase(ns);
+    if (viewsForDb.empty()) {
+        _views.erase(it);
+    }
+}
+
+void CollectionCatalog::replaceViewsForDatabase(StringData dbName,
+                                                absl::flat_hash_set<NamespaceString> views) {}
 
 CollectionCatalog::iterator CollectionCatalog::begin(OperationContext* opCtx, StringData db) const {
     return iterator(opCtx, db, *this);
