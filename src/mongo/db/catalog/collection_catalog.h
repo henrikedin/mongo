@@ -191,6 +191,12 @@ public:
     void deregisterAllCollections();
 
     /**
+     * Checks if namespace is registered with the catalog, returns true even if associated
+     * collection is uncommitted.
+     */
+    bool isNamespaceRegistered(const NamespaceString& nss) const;
+
+    /**
      * This function gets the Collection pointer that corresponds to the CollectionUUID.
      * The required locks must be obtained prior to calling this function, or else the found
      * Collection pointer might no longer be valid when the call returns.

@@ -43,6 +43,9 @@
 #include "mongo/db/audit.h"
 #include "mongo/db/catalog/collection_catalog.h"
 #include "mongo/db/catalog/database.h"
+#include "mongo/db/catalog/database_holder.h"
+#include "mongo/db/catalog/namespace_registration.h"
+#include "mongo/db/concurrency/write_conflict_exception.h"
 #include "mongo/db/curop.h"
 #include "mongo/db/namespace_string.h"
 #include "mongo/db/operation_context.h"
@@ -155,6 +158,17 @@ StatusWith<std::unique_ptr<CollatorInterface>> parseCollator(OperationContext* o
     }
     return CollatorFactoryInterface::get(opCtx->getServiceContext())->makeFromBSON(collationSpec);
 }
+
+struct RegisterNamespaceUsedByViewCatalogFunc {
+    RegisterNamespaceUsedByViewCatalogFunc() {
+        registerNamespaceUsedByViewCatalogFunction(
+            [](OperationContext* opCtx, const NamespaceString& ns) -> bool {
+                auto viewCatalog = DatabaseHolder::get(opCtx)->getViewCatalog(opCtx, ns.db());
+                return viewCatalog->lookupWithoutValidatingDurableViews(opCtx, ns.toString()).get();
+            });
+    }
+} registerFunc;
+
 }  // namespace
 
 std::shared_ptr<const ViewCatalog> ViewCatalog::get(const Database* db) {
@@ -527,6 +541,7 @@ Status ViewCatalog::createView(OperationContext* opCtx,
             opCtx, viewName, viewOn, pipeline, std::move(collator.getValue()));
     }
     if (result.isOK()) {
+        RegisterNamespaceForViewBlock viewCreate(opCtx, viewName);
         catalog.commit();
     }
     return result;
