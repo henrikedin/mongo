@@ -1021,10 +1021,6 @@ void CollectionCatalog::deregisterAllCollections() {
     _resourceInformation.clear();
 }
 
-bool CollectionCatalog::isNamespaceRegistered(const NamespaceString& nss) const {
-    return _collections.contains(nss);
-}
-
 CollectionCatalog::iterator CollectionCatalog::begin(OperationContext* opCtx, StringData db) const {
     return iterator(opCtx, db, *this);
 }

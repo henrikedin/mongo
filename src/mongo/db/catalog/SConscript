@@ -290,7 +290,6 @@ env.Library(
     target='collection_catalog',
     source=[
         'collection_catalog.cpp',
-        'namespace_registration.cpp',
         'uncommitted_collections.cpp',
     ],
     LIBDEPS=[

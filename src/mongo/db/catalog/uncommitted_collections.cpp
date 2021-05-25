@@ -32,7 +32,6 @@
 #include "mongo/platform/basic.h"
 
 #include "mongo/db/catalog/collection_catalog.h"
-#include "mongo/db/catalog/namespace_registration.h"
 #include "mongo/db/catalog/uncommitted_collections.h"
 #include "mongo/db/storage/durable_catalog.h"
 #include "mongo/util/assert_util.h"
@@ -148,14 +147,9 @@ void UncommittedCollections::commit(OperationContext* opCtx,
     auto collPtr = it->second.get();
 
     auto nss = it->second->ns();
-
-    {
-        RegisterNamespaceForCollectionBlock collCreate(opCtx, nss);
-        CollectionCatalog::write(opCtx, [&](CollectionCatalog& catalog) {
-            catalog.registerCollection(opCtx, uuid, it->second);
-        });
-    }
-
+    CollectionCatalog::write(opCtx, [&](CollectionCatalog& catalog) {
+        catalog.registerCollection(opCtx, uuid, it->second);
+    });
 
     map->_collections.erase(it);
     map->_nssIndex.erase(nss);
