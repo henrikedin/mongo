@@ -171,7 +171,7 @@ public:
             // Timeseries bucket collection does not provide 'count' or 'avgObjSize'.
             BSONElement countField = res.getField("count");
             const auto shardObjCount =
-                static_cast<long long>(!countField.eoo() ? res["count"].Number() : 0);
+                static_cast<long long>(!countField.eoo() ? countField.Number() : 0);
 
             for (const auto& e : res) {
                 StringData fieldName = e.fieldNameStringData();
